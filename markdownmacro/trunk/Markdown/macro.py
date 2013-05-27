@@ -13,7 +13,7 @@
 
     @author Douglas Clifton <dwclifton@gmail.com>
     @date December, 2008
-    @version 0.11.3
+    @version 0.11.4
 """
 
 import re
@@ -41,7 +41,7 @@ class MarkdownMacro(WikiMacroBase):
         abs_href = env.abs_href.base
         abs_href = abs_href[:len(abs_href) - len(env.href.base)]
         f = Formatter(formatter.env, formatter.context)
-        
+
         def convert(m):
             pre, target, suf = filter(None, m.groups())
             out = StringIO()
@@ -63,7 +63,7 @@ class MarkdownMacro(WikiMacroBase):
             
         try:
             from markdown import markdown
-            return markdown(re.sub(LINK, convert, content))
+            return markdown(re.sub(LINK, convert, content), ['tables'])
         except ImportError:
             msg = 'Error importing Python Markdown, install it from '
             url = 'http://www.freewisdom.org/projects/python-markdown/'
