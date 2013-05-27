@@ -15,6 +15,8 @@ from collections import defaultdict
 from trac.config import IntOption
 from trac.core import implements
 from trac.db.api import get_column_names
+from trac.util.presentation import to_json
+from trac.util.text import to_unicode
 from trac.web.chrome import ITemplateProvider
 from trac.wiki.macros import WikiMacroBase
 from trac.ticket.query import Query
@@ -185,12 +187,8 @@ def _unique_list(iterable):
     return list(set(iterable))
 
 
-def _create_javascript_array(array_name, values,
-                             function=lambda x: x and unicode(x) or ''):
-    from trac.util.text import to_js_string
-    array_values = ', '.join([to_js_string(function(value))
-                              for value in values])
-    return 'var %s = new Array(%s)' % (array_name, array_values)
+def _create_javascript_array(array_name, values, function=to_unicode):
+    return 'var %s = %s' % (array_name, to_json(map(function, values)))
 
 
 def _create_query_object(env, query, required_columns=None):
@@ -247,8 +245,8 @@ def _get_stacked_bar_chart_stats(env, key, x_axis, query):
         if key:
             key_field_value = row[key_field_index]
         else:
-            key_field_value = None
-        x_axis_field_value = row[x_axis_field_index]
+            key_field_value = ''
+        x_axis_field_value = row[x_axis_field_index] or ''
         ticket_stats[x_axis_field_value][key_field_value] += 1
         keys.append(key_field_value)
 
@@ -399,7 +397,7 @@ def _get_pie_graph_stats(env, factor, query=None):
 
     ticket_stats = defaultdict(lambda: 0)
     for row in cursor:
-        factor_value = row[factor_index]
+        factor_value = row[factor_index] or ''
         ticket_stats[factor_value] += 1
 
     return ticket_stats
