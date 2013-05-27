@@ -12,7 +12,7 @@
 
     @author Douglas Clifton <dwclifton@gmail.com>
     @date December, 2008
-    @version 0.11.1
+    @version 0.11.3
 """
 
 from trac.core import Component, implements
@@ -27,7 +27,7 @@ from StringIO import StringIO
 # links, autolinks, and reference-style links
 
 LINK = re.compile(
-    r'(\]\()([^) ]+)([^)]*\))|(<)([^>]+)(>)|(\n\[[^]]+\]: *)([^ \n]+)(.*\n)'
+    r'(\[.*\]\()([^) ]+)([^)]*\))|(<)([^>]+)(>)|(\n\[[^]]+\]: *)([^ \n]+)(.*\n)'
 )
 HREF = re.compile(r'href=[\'"]?([^\'" ]*)', re.I)
 
@@ -45,12 +45,20 @@ class MarkdownMacro(WikiMacroBase):
             pre, target, suf = filter(None, m.groups())
             out = StringIO()
             f.format(target, out)
-            url = re.search(HREF, out.getvalue()).groups()[0]
-            # Trac creates relative links, which Markdown won't touch inside
-            # <autolinks> because they look like HTML
-            if pre == '<' and url != target:
-               pre += abs
-            return pre + str(url) + suf
+            out_value = out.getvalue()
+            # Render obfuscated emails without a link
+            if u'…' in out_value:
+                idx = out_value.find('mailto:')
+                if idx != -1:
+                    out_value = out_value[:idx-1] + out_value[idx+7:]
+                return out_value
+            else:
+                url = re.search(HREF, out_value).groups()[0]
+                # Trac creates relative links, which Markdown won't touch
+                # inside <autolinks> because they look like HTML
+                if pre == '<' and url != target:
+                   pre += abs
+                return pre + str(url) + suf
             
         try:
             from markdown import markdown

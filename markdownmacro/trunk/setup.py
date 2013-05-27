@@ -7,7 +7,7 @@ from setuptools import setup
 setup(
     name = 'TracMarkdownMacro',
     packages = ['Markdown'],
-    version = '0.11.2',
+    version = '0.11.3',
 
     author = 'Douglas Clifton',
     author_email = 'dwclifton@gmail.com',
