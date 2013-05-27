@@ -186,7 +186,7 @@ def _unique_list(iterable):
 
 
 def _create_javascript_array(array_name, values,
-                             function=lambda x: unicode(x)):
+                             function=lambda x: x and unicode(x) or ''):
     from trac.util.text import to_js_string
     array_values = ', '.join([to_js_string(function(value))
                               for value in values])
