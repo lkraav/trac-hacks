@@ -186,9 +186,11 @@ def _unique_list(iterable):
 
 
 def _create_javascript_array(array_name, values,
-                             function=lambda x: repr(str(x))):
-    array_values = ", ".join([function(value) for value in values])
-    return "var %s = new Array(%s)" % (array_name, array_values)
+                             function=lambda x: unicode(x)):
+    from trac.util.text import to_js_string
+    array_values = ', '.join([to_js_string(function(value))
+                              for value in values])
+    return 'var %s = new Array(%s)' % (array_name, array_values)
 
 
 def _create_query_object(env, query, required_columns=None):
