@@ -8,8 +8,9 @@ from trac.core import Component, implements
 from trac.util.translation import domain_functions
 from trac.web.chrome import add_stylesheet, add_script, ITemplateProvider
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
-from pkg_resources import resource_filename #@UnresolvedImport
+from pkg_resources import resource_filename  # @UnresolvedImport
 import os
+from re import split
 
 # domain name has to be the same entry_points, described in setup.py
 _, tag_, N_, add_domain = \
@@ -29,44 +30,56 @@ overflow:scroll;" class="system-message">%s<div>
 }}}
     """
     implements(ITemplateStreamFilter, IRequestFilter, ITemplateProvider)
-    
+
     description_descr = Option('ticket', 'description_descr', '',
         """Explaination of description.""")
-    descr_template = Option('ticket', 'descr_template',
-        '<div style="white-space: normal; width: 250px; height: 250px; '
-        'overflow:scroll;" class="%s">%s<div>',
+    descr_template = Option('ticket-display', 'descr_template',
+        '<div class="ticket-descr %s">%s<div>',
         """Explaination of description.""")
-       
+    descr_rntag = Option('ticket-display', 'releasenotes_relevant_tag',
+        '')
+    rn_relevant = Option('ticket-display',
+        'releasenotes_relevant', '', """Commaseperated enumeration of
+        releasenotes relevant text areas""")
+
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html':
 #            print "_____________ am in TextAreaDescription"
+            propfieldset = Transformer('.//fieldset[@id="properties"]')
+            rn_relevants = split('\s*,\s*', self.rn_relevant)
             fields = data['fields']
+            html_descr = ''
+
             if self.description_descr:
-#                print "having description_descr: %s" % self.description_descr
-#                print "having description_template: %s" % self.descr_template
-                html_d = self.descr_template % \
-                    ('ticket-rndescr', self.description_descr)
-                stream |= Transformer('.//th/label[@for="field-description"]')\
-                    .after(HTML(html_d))
-                
+                if 'description' in rn_relevants:
+                    html_descr = self.descr_template % ('rnrelevant',
+                                                        self.description_descr,
+                                                        self.descr_rntag)
+                else:
+                    html_descr = self.descr_template % ('',
+                                                        self.description_descr,
+                                                        '')
+                stream |= propfieldset.select('.//th/label[@for="field-description"]')\
+                    .after(HTML(html_descr))
+
             for f in fields:
                 if f['skip'] or not f['type'] == 'textarea':
-                    continue 
-                 
+                    continue
+
                 descr = self.config.get('ticket-custom', '%s.descr' % f['name'])
                 if descr:
-#                    print "processing field %s" % f
-                    css_class = self.config.get('ticket-custom','%s.css_class'\
-                                                 % f['name'])
-#                    print css_class
                     field_name = 'field-%s' % f['name']
-                    tr_str = './/label[@for="%s"]' % field_name
-                    html = self.descr_template % (css_class, descr)
-                    stream |= Transformer(tr_str).after(HTML(html))
+                    tr_str = './/th/label[@for="%s"]' % field_name
+                    if f['name'] in rn_relevants:
+                        html_descr = self.descr_template % ('rnrelevant', descr,
+                                                        self.descr_rntag)
+                    else:
+                        html_descr = self.descr_template % ('', descr, '')
+                    stream |= propfieldset.select(tr_str).after(HTML(html_descr))
         return stream
-    
+
     # IRequestHandler methods
-    def pre_process_request(self, req, handler):        
+    def pre_process_request(self, req, handler):
         return handler
     #==========================================================================
     # Add JavaScript an an additional css to ticket template
@@ -81,10 +94,10 @@ overflow:scroll;" class="system-message">%s<div>
             req.path_info .startswith('/ticket'):
             add_stylesheet(req, 'hw/css/ticket_descr.css')
         return template, data, content_type
-    
+
     def get_templates_dirs(self):
-        return #[resource_filename(__name__, 'templates')]
-    
+        return  # [resource_filename(__name__, 'templates')]
+
     def get_htdocs_dirs(self):
         return [('hw', resource_filename(__name__, 'htdocs'))]
 
@@ -103,10 +116,10 @@ Examples for files which resides in projects `templates` folder:
 || `ticket_additional.css` || only added for `ticket.html` pages || 
 """
     implements(IRequestFilter, ITemplateProvider)
-    
+
     _init_done = False
     _css_dict = {}
-    
+
     # IRequestHandler methods
     def pre_process_request(self, req, handler):
         self.log.debug('pre_process_request')
@@ -116,20 +129,20 @@ Examples for files which resides in projects `templates` folder:
         if not self._init_done:
             self._init_done = self._do_init(req, template)
             self.log.info('initialized CSS dictionary: %s ' % self._css_dict)
-        
+
         if self._css_dict.has_key(template):
             for css_file in self._css_dict[template]:
                 add_stylesheet(req, css_file)
-        
+
         if self._css_dict.has_key('*'):
             for css_file in self._css_dict['*']:
                 add_stylesheet(req, css_file)
-                
+
         return template, data, content_type
-        
+
     def _do_init(self, req, template):
         template_dir = self.env.get_templates_dir()
-        
+
         if os.access(template_dir, os.R_OK):
             for file in os.listdir(template_dir):
                 file_name = str(file)
@@ -138,40 +151,40 @@ Examples for files which resides in projects `templates` folder:
                     if templ_name:
                         css_file = "css_templates/%s" % (file_name)
                         if self._css_dict.has_key(templ_name):
-                            self._css_dict[templ_name].append( css_file )
+                            self._css_dict[templ_name].append(css_file)
                         else:
                             self._css_dict[templ_name] = [ css_file]
         else:
             self.log.warn('could not read template dir!')
-                
+
         return True
-    
+
     # ITemplateProvider methods
     def get_templates_dirs(self):
         return
-    
+
     def get_htdocs_dirs(self):
         template_dir = self.env.get_templates_dir()
         return [('css_templates', template_dir)]
-    
-    
+
+
     def _extract_template_name(self, file_name):
         """extracts template name to indicate 
         for which template the CSS should be"""
         templ_name = None
         if not file_name:
             return None
-        
+
         if file_name.lower().startswith('all_templates'):
             templ_name = "*"
-        else: 
+        else:
             idx = file_name.find("_")
             if idx != -1:
                 templ_name = file_name[0:idx]
                 templ_name += ".html"
         return templ_name
 
-    
+
 class CustomizedTicketView(Component):
     """Small changes of ticket view.
 
@@ -180,7 +193,7 @@ Concretely:
  * disables button `Reply`, so no comment could be made to any description
 """
     implements(ITemplateStreamFilter)
-    
+
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html':
             stream |= Transformer('.//input[@id="field-reporter"]') \
@@ -189,7 +202,7 @@ Concretely:
                 .attr('style', 'display: none')
         return stream
 
-    
+
 class SortMilestoneVersion(Component):
     """Sorts drop-down lists of version and milestone regardless of the case and 
 make milestone a must field, when a default milestone is set.
@@ -205,8 +218,8 @@ inbox, Inbox, v1, V1, v2, V2
 }}}
 """
     implements (ITemplateStreamFilter)
-    
-    #ITemplateStreamFilter
+
+    # ITemplateStreamFilter
     def filter_stream(self, req, method, filename, stream, data):
         if filename and (filename == 'ticket.html' or filename == 'newticket'):
 #            print "filename '%s' matches" % filename
@@ -218,18 +231,18 @@ inbox, Inbox, v1, V1, v2, V2
                     return stream
                 version = self.get_field_list(fields, 'version')
                 version['options'].sort(key=unicode.lower)
-                
+
                 milestones = self.get_field_list(fields, 'milestone')
                 if self.config.get('ticket', 'default_milestone'):
                     milestones['optional'] = False
-                    
+
                 for opt in milestones['optgroups']:
                     opt['options'].sort(key=unicode.lower)
-                    
+
             except Exception, e:
                 self.log.error('error has occured by sorting: %s' % e)
         return stream
-        
+
     def get_field_list(self, fields, fieldname):
         if not fields or not fieldname:
             return None
@@ -237,7 +250,7 @@ inbox, Inbox, v1, V1, v2, V2
             if fld['name'] == fieldname:
                 return fld
 
-                    
+
 class TicketNavigation(Component):
     """Implements an extra Navigation menu
 by dividing the main ticket information in
@@ -251,9 +264,9 @@ This code fragment is evil, since it raises an error on imported umlauts:
 {{{
 newStream = HTML(stream)
 }}}
-"""  
-    implements(ITemplateStreamFilter, IRequestFilter, ITemplateProvider) 
-            
+"""
+    implements(ITemplateStreamFilter, IRequestFilter, ITemplateProvider)
+
     css_banner_top1 = tag.div(id_='top1')
     css_banner_top2 = tag.div(id_='top2')
     css_banner_top3 = tag.div(id_='top3')
@@ -261,16 +274,16 @@ newStream = HTML(stream)
     css_left = tag.div(id_='left')
 
     # ITemplateStreamFilter methods
-    #self.log.debug("Filer: %r", filter) oder print
+    # self.log.debug("Filer: %r", filter) oder print
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html' or filename == 'newticket':
             stream = self.__getAnchors(stream)
             stream = self._customize_View(stream)
             return stream
         return stream
-                  
+
     # IRequestHandler methods
-    def pre_process_request(self, req, handler):        
+    def pre_process_request(self, req, handler):
         return handler
 
     #===========================================================================
@@ -282,116 +295,116 @@ newStream = HTML(stream)
             add_script(req, 'hw/js/scrollup.js')
             add_stylesheet(req, 'hw/css/navstyle.css')
         return template, data, content_type
-    
+
     #==========================================================================
     # ITemplateProvider methods
-    # Used to add the plugin's templates and htdocs 
+    # Used to add the plugin's templates and htdocs
     #==========================================================================
     def get_templates_dirs(self):
-        return #[resource_filename(__name__, 'templates')]
-    
+        return  # [resource_filename(__name__, 'templates')]
+
     def get_htdocs_dirs(self):
-        return [('hw', resource_filename(__name__, 'htdocs'))]   
-    
+        return [('hw', resource_filename(__name__, 'htdocs'))]
+
 #===============================================================================
 # Private Methods
 #===============================================================================
-   
+
     #===========================================================================
     # Search for the defined anchors in the webdocume, in order to print them
     # in the document navigation menue
     #===========================================================================
     def __getAnchors(self, stream):
         #=======================================================================
-        # this code fragment is evil, since it raises an error on 
+        # this code fragment is evil, since it raises an error on
         # imported umlauts:
         # newStream = HTML(stream)
         #
         # *** tried also this, but didn't work:
-        #newStream = stream.select('//h1 [@id="trac-ticket-title"]//a/text()')
+        # newStream = stream.select('//h1 [@id="trac-ticket-title"]//a/text()')
         #
         # *** tried also:
-        #stream_str = '%s' % stream
-        #stream_str = stream_str.encode('utf-8')
-        #self.log.info("stream: ")
-        #self.log.info(stream_str)
-        #newStream = HTML(stream_str)
+        # stream_str = '%s' % stream
+        # stream_str = stream_str.encode('utf-8')
+        # self.log.info("stream: ")
+        # self.log.info(stream_str)
+        # newStream = HTML(stream_str)
         #
         # *** tried also:
-        #test = Path('//h1 [@id="trac-ticket-title"]//a/text()').test()
-        #namespaces, variables = {}, {}
-        #head = ''
-        #for event in stream:
+        # test = Path('//h1 [@id="trac-ticket-title"]//a/text()').test()
+        # namespaces, variables = {}, {}
+        # head = ''
+        # for event in stream:
         #    if test(event, namespaces, variables):
         #        self.log.info('%s: %s' % (event[0], event[1]))
         #        print('%s %r' % (event[0], event[1]))
         #        if event[0] == 'TEXT':
-        #            if isinstance(event[1], Markup): 
+        #            if isinstance(event[1], Markup):
         #                head += event[1].striptags()
         #            else:
         #                head += event[1]
         #        #START (QName('child'), Attrs([(QName('id'), u'2')]))
-        #print "namespaces, variables; head: %s, %s; %s" % \ 
+        # print "namespaces, variables; head: %s, %s; %s" % \
         #     (namespaces, variables, head)
         #======================================================================
         newStream = HTML(stream)
         self.anchors = {}
         self.keylist = []
-        #headline
+        # headline
         headline = newStream.select('//h1 [@id="trac-ticket-title"]//a/text()')
         if headline:
             for item in headline:
                 self.anchors[item[1]] = ''
                 self.keylist.append(item[1])
 
-        #further entities
+        # further entities
         list = newStream.select('//h2 [@class="foldable"]/text()')
         if list:
             for index, item in enumerate(list):
                 self.anchors[item[1]] = "no%s" % str(index + 1)
                 self.keylist.append(item[1])
         list = newStream.select('//form [@id="propertyform"]//fieldset/@id')
-        
-        #comment
-        comment = newStream.select('//h2 [@id="trac-add-comment"]//a/text()')        
+
+        # comment
+        comment = newStream.select('//h2 [@id="trac-add-comment"]//a/text()')
         for com in comment:
             self.anchors[com[1]] = "comment"
             self.keylist.append(com[1])
 
         return newStream
-     
+
     #==========================================================================
     # Customize the Ticket view to provide an frame like look an additional
-    # document navigation menue 
+    # document navigation menue
     #==========================================================================
     def _customize_View(self, stream):
 
         filter = Transformer('.//div [@id="banner"]')
         stream = stream | filter.wrap(self.css_banner_top2)
-          
+
         buffer = StreamBuffer();
         stream = stream | Transformer('.//div [@id="banner"]').copy(buffer) \
               .end().select('.//div [@id="top2"]') \
               .after(tag.div(id_='top1')(buffer))
-                
+
         filter = Transformer('.//div [@id="mainnav"]')
         stream = stream | filter.wrap(self.css_banner_top4)
-            
+
         buffer = StreamBuffer()
         stream = stream | Transformer('.//div [@id="mainnav"]').copy(buffer) \
               .end().select('.//div [@id="top4"]') \
-              .after(tag.div(id_='top3')(buffer))    
-        
+              .after(tag.div(id_='top3')(buffer))
+
         filter = Transformer('.//div [@id="top3"]');
         stream = stream | filter.after(tag.div(id_='right')(tag.p()))
-        
-        filter = Transformer('.//div [@id="right"]')  
+
+        filter = Transformer('.//div [@id="right"]')
         stream = stream | filter. \
-            append(tag.div(class_='wiki-toc')(tag.h4(_('Table of Contents'))))   
-        
+            append(tag.div(class_='wiki-toc')(tag.h4(_('Table of Contents'))))
+
         # just for the menu / TOC
         filter = Transformer('.//div [@class="wiki-toc"]')
-        
+
         if self.anchors and self.keylist:
             for key in self.keylist:
                 stream = stream | filter.append(tag.a(key,
@@ -399,15 +412,13 @@ newStream = HTML(stream)
                                           onclick="scrollup();") + tag.br())
         filter = Transformer('.//div [@id="main"]')
         stream = stream | filter.wrap(self.css_left)
-            
+
         return stream;
-
-
 
 #===============================================================================
 # DEPRECATED COMPONENTS
 #===============================================================================
-   
+
 class HtmlContent(Component):
     """DEPRECATED
 
@@ -461,25 +472,25 @@ Line 3 has to be inserted into `py:choose` block in above template-snippet.
 Also `py:choose` block has to be added into div-block near the end of file 
 (see above template-snippet)."""
     implements(IRequestFilter, ITemplateStreamFilter)
-    
+
     description_format = Option('ticket', 'description_format', '',
         """Format of description.
         Empty or wiki is Trac Standard; html formats description as HTML.""")
-    
+
     additional_css_file = Option('ticket', 'additional_css', '',
         """Path to additional css file, which overrides css-declarations.""")
-    
+
     editor_source = Option('ticket', 'editor_source', '',
         """Path to javascript editor.
         Usually it should stored in project or common js folder.
         For ckeditor for example it could be site/js/ckeditor/ckeditor.js.""")
-    
+
     editor_replace = Option('ticket', 'editor_replace', '',
         """Javascript, which should replace textareas.""")
-    
+
     def pre_process_request(self, req, handler):
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         if data and template == 'ticket.html':
             data['description_format'] = self.description_format
@@ -488,14 +499,14 @@ Also `py:choose` block has to be added into div-block near the end of file
             if self.additional_css_file:
                 add_stylesheet(req, self.additional_css_file)
         return template, data, content_type
-    
+
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html' and self.editor_source \
             and self.editor_replace:
             self.log.debug ("further processing: template %s, "
                             "editor-source %s, editor-replace %s" % \
                             (filename, self.editor_source, self.editor_replace))
-            
+
             # check if description should be in HTML
             if self.description_format == "html":
                 add_editor = self.editor_replace \
@@ -506,7 +517,7 @@ Also `py:choose` block has to be added into div-block near the end of file
             fields = data['fields']
             for f in fields:
                 if f['skip'] or not f['type'] == 'textarea' or not f.has_key('format') or not f['format'] == 'html':
-                    continue 
+                    continue
                 # only textarea-fields with format HTML should be processed at this point
                 field_name = 'field_%s' % f['name']
                 add_editor = self.editor_replace.replace("@FIELD_NAME@", field_name)
@@ -514,9 +525,9 @@ Also `py:choose` block has to be added into div-block near the end of file
                 tr_str = './/textarea[@name="%s"]' % field_name
                 self.log.debug ("add_editor for field %s is %s; tr_str is %s" % (field_name, add_editor, tr_str))
                 stream |= Transformer(tr_str).after(html)
-            
+
         return stream
-       
+
 
 
 #===============================================================================
@@ -527,10 +538,10 @@ Also `py:choose` block has to be added into div-block near the end of file
 
 
 #===============================================================================
-#class FileUploader(Component): 
+# class FileUploader(Component):
 #    """Test for uploading images by CKEditor"""
 #    implements (IAttachmentChangeListener, IAttachmentManipulator, IRequestHandler)
-#    
+#
 #    def match_request(self, req):
 #        """Return whether the handler wants to process the given request."""
 #        return re.match(r'/image_upload', req.path_info)
@@ -558,16 +569,16 @@ Also `py:choose` block has to be added into div-block near the end of file
 #            print "========= ____  [process_request] correct path ... doing more"
 #            data = {}
 #            return 'ticketnav/image-uploader.html', data, None
-#        
+#
 #    def prepare_attachment(self, req, attachment, fields):
 #        """Not currently called, but should be provided for future
 #        compatibility."""
 #        print "--------------.... [prepare_attachment] try to add attachment"
-#        
+#
 #    def validate_attachment(self, req, attachment):
 #        """Validate an attachment after upload but before being stored in Trac
 #        environment.
-#        
+#
 #        Must return a list of `(field, message)` tuples, one for each problem
 #        detected. `field` can be any of `description`, `username`, `filename`,
 #        `content`, or `None` to indicate an overall problem with the
@@ -575,17 +586,17 @@ Also `py:choose` block has to be added into div-block near the end of file
 #        OK."""
 #        print "_______________.... [validate_attachment] try to add attachment"
 #        return []
-#        
+#
 #    def attachment_added(self, attachment):
 #        """Called when an attachment is added."""
 #        print "_______________ [attachment_added] try to add attachment"
 #        print "_______________ [attachment_added] add attachment: %s" % attachment
-##        return attachment
+# #        return attachment
 #
 #    def attachment_deleted(self, attachment):
 #        """Called when an attachment is deleted."""
 #        print "_______________ [attachment_deleted] try to delete attachment"
-##        return attachment
+# #        return attachment
 #
 #    def attachment_reparented(self, attachment, old_parent_realm, old_parent_id):
 #        """Called when an attachment is reparented."""
@@ -597,49 +608,49 @@ Also `py:choose` block has to be added into div-block near the end of file
 #===============================================================================
 # Tested if copying ticket-box.html is working, but it is not!
 #===============================================================================
-#class HtmlContent(Component):
+# class HtmlContent(Component):
 #    implements (IRequestFilter)
 #    """Allow description and other textarea-fields having HTML-content"""
-#    
+#
 #    # IRequestHandler methods
-##    def match_request(self, req):
-##        print "===== HtmlContent, path_info: %s" % req.path_info
-##        return re.match(r'/(ticket|newticket)(?:_trac)?(?:/.*)?$', req.path_info)
-#        
+# #    def match_request(self, req):
+# #        print "===== HtmlContent, path_info: %s" % req.path_info
+# #        return re.match(r'/(ticket|newticket)(?:_trac)?(?:/.*)?$', req.path_info)
+#
 #    def pre_process_request(self, req, handler):
 #        return handler
-#    
+#
 #    # IRequestHandler methods
 #    def post_process_request(self, req, template, data, content_type):
 #        print "template: %s" % template
 #        self._check_init()
-##        data = {}
-##        return handler
-##        return 'ticket.html', data, None
+# #        data = {}
+# #        return handler
+# #        return 'ticket.html', data, None
 #        return template, data, content_type
 #
-#    
+#
 #    def _check_init(self):
-#        """First check if Plugin has already been initialized. 
+#        """First check if Plugin has already been initialized.
 #        """
-#        
-#        print "====== _check_init" 
-#        
+#
+#        print "====== _check_init"
+#
 #        template_path = self.env.path
-#            
+#
 #        if template_path and template_path.endswith('/'):
 #            template_path += 'templates'
 #        else:
 #            template_path += '/templates'
-#        
+#
 #        if os.access(template_path, os.W_OK):
 #            print "can write to path %s" % template_path
 #            from pkg_resources import resource_filename
-##            src_name = resource_filename(__name__, 'templates/ticket-box.html')
+# #            src_name = resource_filename(__name__, 'templates/ticket-box.html')
 #            src_name = resource_filename(__name__, 'templates')
 #            print "src_name: %s" % src_name
 #            shutil.copy(src_name + '/ticket-box.html', template_path + '/ticket-box.html')
 #        elif os.access(template_path, os.R_OK):
 #            print "can read to path %s" % template_path
-#            
+#
 #        print "template_path: %s" % template_path
