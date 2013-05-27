@@ -8,21 +8,20 @@
     
     From Markdown.py by Alex Mizrahi aka killer_storm
     See: http://trac-hacks.org/attachment/ticket/353/Markdown.py
-    Get Python Markdown from: http://www.freewisdom.org/projects/python-markdown/
+    Get Python Markdown from:
+        http://www.freewisdom.org/projects/python-markdown/
 
     @author Douglas Clifton <dwclifton@gmail.com>
     @date December, 2008
     @version 0.11.3
 """
 
-from trac.core import Component, implements
-from trac.wiki.macros import WikiMacroBase
-from trac.wiki.formatter import Formatter, system_message
-
-from genshi.builder import tag
-
 import re
 from StringIO import StringIO
+
+from genshi.builder import tag
+from trac.wiki.formatter import Formatter, system_message
+from trac.wiki.macros import WikiMacroBase
 
 # links, autolinks, and reference-style links
 
@@ -31,14 +30,16 @@ LINK = re.compile(
 )
 HREF = re.compile(r'href=[\'"]?([^\'" ]*)', re.I)
 
+
 class MarkdownMacro(WikiMacroBase):
-    """Implements Markdown syntax [WikiProcessors WikiProcessor] as a Trac macro."""
+    """Implements Markdown syntax [WikiProcessors WikiProcessor] as a Trac
+       macro."""
 
     def expand_macro(self, formatter, name, content):
 
         env = formatter.env
-        abs = env.abs_href.base
-        abs = abs[:len(abs) - len(env.href.base)]
+        abs_href = env.abs_href.base
+        abs_href = abs_href[:len(abs_href) - len(env.href.base)]
         f = Formatter(formatter.env, formatter.context)
         
         def convert(m):
@@ -57,7 +58,7 @@ class MarkdownMacro(WikiMacroBase):
                 # Trac creates relative links, which Markdown won't touch
                 # inside <autolinks> because they look like HTML
                 if pre == '<' and url != target:
-                   pre += abs
+                   pre += abs_href
                 return pre + str(url) + suf
             
         try:
