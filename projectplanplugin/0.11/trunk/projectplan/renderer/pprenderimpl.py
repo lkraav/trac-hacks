@@ -123,8 +123,8 @@ class RenderImpl():
       self.macroenv.tracenv.log.debug('getDateOfSegment: year=%s,month=%s,day=%s' % (year,month,day))
       return(date(int(year),int(month),int(day)))
     except Exception,e:
-      self.macroenv.tracenv.log.warn('getDateOfSegment: '+str(e)+' '+dateformat+' '+timestr)
-      return None
+      self.macroenv.tracenv.log.warn('getDateOfSegment: '+str(e)+' '+dateformat+' --> return: '+timestr)
+      return timestr
 
   def getNormalizedDateStringOfSegment( self, timestr ):
     return self.getNormalizedDateStringOfDate(self.getDateOfSegment(timestr))
@@ -132,9 +132,11 @@ class RenderImpl():
   def getNormalizedDateStringOfDate( self, mydate):
     if mydate == None:
       return '0000-00-00'
-    else:
+    elif type(mydate) == type(datetime):
       return mydate.strftime('%Y-%m-%d')
-
+    else:
+      return mydate # if it is not a date object
+  
   def getNormalizedDateTimeStringOfDate( self, mydatetime):
     if mydatetime == None:
       return '0000-00-00 00:00:00'
@@ -225,7 +227,39 @@ class RenderImpl():
       creates a unique element id 
     '''
     return "%s_%d_%d" % ('ppelement',int(time.time()*1000000),random.randint(1,1000000) ) 
-    
+  
+  def getDropZoneDataConfiguration(self, datadict):
+    '''
+      returns the string that is needed for the configuration of drop zones (drag and drop)
+    '''
+    ret = []
+    actionneeded = True
+    for key, value in datadict.items():
+      if key == 'status':
+        actionneeded = False
+      if type([]) == type(value):
+        # if array
+        value = value[0]
+      ret.append("\"%s\":\"%s\"" % (key,value))
+    if actionneeded:
+      ret.append("\"%s\":\"%s\"" % ('action','leave'))
+    return "{%s}" % ((','.join(ret)),)
+
+  def getWorkflowDefinition(self):
+    '''
+      returns workflow definition as needed for drag and drop embedded as JSON into HTML
+    '''
+    json = []
+    workflow_dict = self.macroenv.get_workflow_dict()
+    for ticketstate in workflow_dict.keys():
+      json.append("\"%s:%s\": \"leave\"" % (ticketstate,ticketstate) )
+      for prevstate in workflow_dict[ticketstate].keys():
+        action = workflow_dict[ticketstate][prevstate]
+        # to establish ticketstate you have to use action if the previous state was prevstate
+        json.append("\"%s:%s\": \"%s\"" % (ticketstate,prevstate,action) )
+    return tag.div("{ %s }" % (",".join(json), ) , style='display:none', class_='ppdraganddropconfiguration' )
+
+  
   def render(self, ticketset):
     '''
       Generate Output and Return XML/HTML Code/Tags suited for Genshi

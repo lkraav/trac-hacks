@@ -1130,9 +1130,8 @@ $(document).ready(function () {
 	$('.pptickettable .headerSortUp').click();
 	$('.pptickettable .headerSortDown').click().click(); // Hack: to ensure correct sortation
 
-// 	$.getScript("http://code.jquery.com/ui/1.10.3/jquery-ui.js").done(function(){initDraggable();});
 	$.ajax({
-	  url: "http://code.jquery.com/ui/1.10.3/jquery-ui.js",
+	  url: "//code.jquery.com/ui/1.10.3/jquery-ui.js",
 	  dataType: "script",
 	  cache: true,
 	  success: function(){ppInitDraggable();}
@@ -1176,7 +1175,9 @@ function moveDroppedElement(targetDroppable, droppedElement) {
  * BETA: implements drag and drop functionality (e.g., at renderer "tableticketperuserday")
  * requires XML-RPC plugin: http://trac-hacks.org/wiki/XmlRpcPlugin#Installation
  */
+var pp_workflow_definition = [];
 function ppInitDraggable(){
+	pp_workflow_definition = $.parseJSON($(".ppdraganddropconfiguration").first().html());
 	var RPCURL = $("#mainnav .first a").attr("href")+"/../login/rpc";
 	console.log("init draggable to "+RPCURL);
 	$("body").append($("<div id='pp-event-history-list'>").append($("<h5>Drag & Drop History</h5>")).hide());
@@ -1217,17 +1218,41 @@ function ppInitDraggable(){
 					newEventItem.fadeOut();
 					// newEventItem.remove();
 				  }).hide();
-				$("#pp-event-history-list").fadeIn().append(newEventItem.append(undoButton));
-				undoButton.delay(1000).fadeIn(1000);
+				var new_ticket_data = $.parseJSON(targetDroppable.attr("data"));
+				
+				if ( (new_ticket_data["action"] == "") || (typeof new_ticket_data["action"] === "undefined") ){
+					old_state = $.parseJSON(sourceDroppable.attr("data"))["status"];
+					new_state = new_ticket_data["status"];
+					// the action needs to be determined if the ticket state should switch
+					action = pp_workflow_definition[new_state+":"+old_state]
+					console.log("#"+ui.draggable.attr("data")+" old:"+old_state+" --"+action+"--> new:"+new_state);
+					// define needed action
+					new_ticket_data["action"] = action;
+				}
 
-				markDroppedElement(ui.draggable, newEventItem, "loading"); // mark as in work
-				ppSaveNewTicketDataViaRPC(
-				  ui.draggable, // element
-				  ui.draggable.attr("data"), // ticket id
-				  targetDroppable.attr("data"), // new field data
-				  newEventItem, // ppEventHistoryElement
-				  RPCURL // url to RPC API
-				);
+				if ( new_ticket_data["action"] == "undefined"  ||  (typeof new_ticket_data["action"] === "undefined") ){
+					// reset drop operation
+					console.log("ppSaveNewTicketDataViaRPC: ERROR: no action found for "+old_state+" -> "+new_state);
+					$("#pp-event-history-list").fadeIn().append(
+						newEventItem.append("<div class='pp-droppableNotice'>#"+ui.draggable.attr("data")+": illegal by ticket workflow</div>")
+					);
+					ppResetDroppable();
+					ui.draggable.hide();
+					moveDroppedElement(sourceDroppable, ui.draggable);
+					ui.draggable.fadeIn(1000);
+				} else {
+					$("#pp-event-history-list").fadeIn().append(newEventItem.append(undoButton));
+					undoButton.delay(1000).fadeIn(1000);
+
+					markDroppedElement(ui.draggable, newEventItem, "loading"); // mark as in work
+					ppSaveNewTicketDataViaRPC(
+					  ui.draggable, // element
+					  ui.draggable.attr("data"), // ticket id
+					  new_ticket_data, // new field data
+					  newEventItem, // ppEventHistoryElement
+					  RPCURL // url to RPC API
+					);
+				}
 			}
 			
 		}
@@ -1240,13 +1265,14 @@ function ppResetDroppable(){
 }
 
 function ppSaveNewTicketDataViaRPC(dropped_element, ticket_id, new_ticket_data, ppEventHistoryElement, RPCURL) {
-	console.log("ppSaveNewTicketDataViaRPC: new_ticket_data: "+parseInt(ticket_id)+" --> "+new_ticket_data);
 	$.ajax({
 		url : RPCURL,
 		data : JSON.stringify({
 			method : "ticket.update",
-			params : [ parseInt(ticket_id), "KOMMENTAR", 
-				      $.parseJSON(new_ticket_data)
+			params : [ 
+				parseInt(ticket_id), 
+				"changed via drag and drop on "+document.URL, 
+				new_ticket_data
 			],
 			id : "jsonrpc"
 		}),
@@ -1255,14 +1281,47 @@ function ppSaveNewTicketDataViaRPC(dropped_element, ticket_id, new_ticket_data, 
 		contentType : "application/json",
 		success : function(result) {
 			// console.log("ppSaveNewTicketDataViaRPC: success");
-			// console.log(result);
 			if ( !(result.error === null) && !(result.error.name === null) && result.error.name == "JSONRPCError" ){
 			  // an error has happened
 			  markDroppedElement(dropped_element, ppEventHistoryElement, "error"); // mark as error
 			  console.log("ppSaveNewTicketDataViaRPC: onsuccess: ERROR");
+			  // console.log("ppSaveNewTicketDataViaRPC: onsuccess: "+result.error);
+			  // console.log("ppSaveNewTicketDataViaRPC: onsuccess: "+result.error.name);
 			} else {
-			  markDroppedElement(dropped_element, ppEventHistoryElement, "success"); // mark as success
 			  // console.log("ppSaveNewTicketDataViaRPC: onsuccess: NO error");
+			  
+			  // while updating the ticket workflow it might happen that the user changes, e.g., set_owner (c.f., trac.ini)
+			  // if user has specify an owner, then we have to check and set the owner again
+			  // it can be ignored if the report makes no statements about the ticket owners (i.e., owner is undefined)
+			  if (!(typeof new_ticket_data.owner === "undefined") && (result.result[3].owner != new_ticket_data.owner) ){
+				console.log("CHANGED: result.result[3].owner: "+result.result[3].owner+", update to "+new_ticket_data.owner);
+				$.ajax({
+					url : RPCURL,
+					data : JSON.stringify({
+						method : "ticket.update",
+						params : [ 
+							parseInt(ticket_id), 
+							"updated owner, changed via drag and drop on "+document.URL, 
+							{"owner": new_ticket_data.owner, "action":"leave"}
+						],
+						id : "jsonrpc"
+					}),
+					type : "POST",
+					dataType : "json",
+					contentType : "application/json",
+					success : function(result) {
+						markDroppedElement(dropped_element, ppEventHistoryElement, "success"); // mark as success
+					},
+					error : function(err, status, thrown) {
+						console.log("ppSaveNewTicketDataViaRPC: owner update, onerror");
+						markDroppedElement(dropped_element, ppEventHistoryElement, "error"); // mark as error
+					}
+				});
+			  } else {
+				// console.log("OK: result.result[3].owner: "+result.result[3].owner);
+				markDroppedElement(dropped_element, ppEventHistoryElement, "success"); // mark as success
+			  }
+			  
 			}
 		},
 		error : function(err, status, thrown) {
