@@ -535,6 +535,13 @@ table.pplisting tbody td.ppimagecol {
   background-repeat: no-repeat; 
 }
 
+#pp-event-history-list .pp-droppableNotice {
+  font-size:85%;
+  color:#990;
+  padding:0.5ex;
+  background-color:#DDD;
+}
+
 #pp-event-history-list .pp-droppableLoading {
   background-image: url(../images/loading.gif);
 }
