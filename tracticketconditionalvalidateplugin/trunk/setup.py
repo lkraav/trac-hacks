@@ -11,7 +11,7 @@ from setuptools import setup
 
 setup(
     name='TracTicketConditionalValidateFieldsPlugin',
-    version='0.1.0',
+    version='0.1.1',
     keywords='trac plugin ticket validate field',
     author='Zack Shahan',
     author_email='zshahan@dig-inc.net',

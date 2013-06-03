@@ -25,13 +25,14 @@ class TicketsValidator(Component):
     def validate_ticket(self, req, ticket):
         result = None
 
-        if ticket.values['type'] and ticket.values['type'] != '':
-            if ticket.values['type'] in self._validate_config.keys():
-                validator = self._validate_config[ticket.values['type']]
-                for field in (x.strip() for x in validator.split(',')):
-                    errorMessage = self._validate(req, ticket, field)
-                    if errorMessage:
-                        yield None, errorMessage
+        if ticket.values['status'] and ticket.values['status'] != 'closed':
+            if ticket.values['type'] and ticket.values['type'] != '':
+                if ticket.values['type'] in self._validate_config.keys():
+                    validator = self._validate_config[ticket.values['type']]
+                    for field in (x.strip() for x in validator.split(',')):
+                        errorMessage = self._validate(req, ticket, field)
+                        if errorMessage:
+                            yield None, errorMessage
 
     def _validate(self, req, ticket, field):
         if field in self._validate_config.keys():
