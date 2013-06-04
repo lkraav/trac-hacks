@@ -143,6 +143,8 @@ $.fn.extend({
                     // reset isLoad
                     isLoad = false;
                 }
+
+                initTypeChanged();
             }
         }
 
@@ -327,23 +329,16 @@ $.fn.extend({
                 return;
             }
 
+            if (isLoad) {
+                return;
+            }
+
             if (evt.type == "change" && isLoad == false) {
                 var answer = confirm("${_('Replace ticket content with template?')}");
                 if (!answer) {
                     return;
                 }
             }
-
-            
-            if ($("#ticket.ticketdraft").length && isLoad) {
-                // reset isLoad
-                isLoad = false;
-                return;
-            }
-            
-            // reset isLoad
-            isLoad = false;
-            
 
             var ticketType = queryResult.field_value_mapping[tt_name];
             if (!ticketType) {
@@ -353,8 +348,32 @@ $.fn.extend({
 
         }
 
+        function initTypeChanged() { 
+            // reset isLoad
+            isLoad = false;
+
+            if (location.href.indexOf("newticket#ticket", location.href.length - "newticket#ticket".length) !== -1) {
+                return;
+            }
+
+            var tt_name = $("#field-type").val();
+            if (! tt_name){
+                tt_name = $("#field-type", ttTypeCache["Default"]).val();
+            }
+            
+            if (!queryResult) {
+                return;
+            }
+
+            var ticketType = queryResult.field_value_mapping[tt_name];
+            if (!ticketType) {
+                ticketType = queryResult.field_value_mapping['default'];
+            }
+            _updateTargetElem(ticketType);
+        }
+
         $("#field-type").change(onTypeChanged);
-        
+
         // requery
         if ($("#warning").get(0))
         {
