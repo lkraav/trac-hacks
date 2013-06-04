@@ -154,15 +154,15 @@ class SmpVersionProject(Component):
             hide            = smp_settings(req, 'roadmap', 'hide', None)
             filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
             
-            if hide:
+            if data and hide:
                 data['hide'] = hide
                 
-            if not hide or 'versions' not in hide:
+            if data and (not hide or 'versions' not in hide):
                 versions, version_stats = self._versions_and_stats(req, filter_projects)
                 data['versions'] = versions
                 data['version_stats'] = version_stats
             
-            if hide and 'milestones' in hide:
+            if data and hide and 'milestones' in hide:
                 data['milestones'] = []
                 data['milestone_stats'] = []
                 
