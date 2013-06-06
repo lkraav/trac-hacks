@@ -28,7 +28,7 @@ from trac.web.chrome import Chrome, ITemplateProvider, INavigationContributor, \
 from acct_mgr.htfile import HtPasswdStore
 from acct_mgr.api import IPasswordStore, IAccountChangeListener
 from tractags.api import TagSystem
-from tractags.macros import render_cloud
+from tractags.macros import TagWikiMacros
 from tractags.query import Query
 from tracvote import VoteSystem
 from svnauthz.io import AuthzFileReader, AuthzFileWriter
@@ -346,7 +346,8 @@ class TracHacksHandler(Component):
             return builder.a(tag, href='#', style='font-size: %ipx' %
                              int(min_px + percent * (max_px - min_px)))
 
-        data['cloud'] = render_cloud(self.env, req, cloud, cloud_renderer)
+        data['cloud'] = TagWikiMacros(self.env). \
+            render_cloud(self.env, req, cloud, cloud_renderer)
 
         add_script(req, 'common/js/wikitoolbar.js')
         add_script(req, 'common/js/folding.js')
