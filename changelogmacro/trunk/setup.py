@@ -27,5 +27,4 @@ setup(
             'changelog.ChangeLogMacro = changelog.ChangeLogMacro'
         ]
     },
-   install_requires = ['trac >= 0.13dev'],
 )
