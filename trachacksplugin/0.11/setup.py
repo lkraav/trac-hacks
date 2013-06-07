@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name='TracHacks',
-    version='2.0',
+    version='3.0',
     packages=['trachacks'],
     package_data={
         'trachacks': [
@@ -24,6 +24,7 @@ setup(
     author='Alex Thomas',
     maintainer='Michael Renzmann',
     maintainer_email='mrenzmann@otaku42.de',
+    description='Customizations of the trac-hacks site.',
     license='BSD 3-Clause',
     url='http://trac-hacks.org/wiki/TracHacksPlugin',
     dependency_links=[
