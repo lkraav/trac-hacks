@@ -665,6 +665,12 @@ class TracHacksHtPasswdStore(HtPasswdStore):
     def user_deleted(self, user):
         pass
 
+    def user_password_reset(self, user, email, password):
+        pass
+
+    def user_email_verification_requested(self, user, token):
+        pass
+
 
 class ListHacksMacro(WikiMacroBase):
     """ Provide a list of registered hacks.
