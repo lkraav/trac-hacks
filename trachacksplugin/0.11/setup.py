@@ -13,15 +13,19 @@ from setuptools import setup
 
 setup(
     name='TracHacks',
-    license='3-Clause BSD',
     version='2.0',
     packages=['trachacks'],
     package_data={
-        'trachacks' : [
+        'trachacks': [
             'templates/*.html', 'htdocs/js/*.js',
             'htdocs/css/*.css', 'htdocs/*.gif',
             ]
         },
+    author='Alex Thomas',
+    maintainer='Michael Renzmann',
+    maintainer_email='mrenzmann@otaku42.de',
+    license='BSD 3-Clause',
+    url='http://trac-hacks.org/wiki/TracHacksPlugin',
     dependency_links=[
         'http://trac-hacks.org/svn/tagsplugin/trunk#egg=TracTags-0.6',
         'http://trac-hacks.org/svn/accountmanagerplugin/trunk#egg=TracAccountManager',
