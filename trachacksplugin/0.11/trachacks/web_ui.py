@@ -8,32 +8,35 @@
 # you should have received as part of this distribution.
 #
 
-import re
 import random
+import re
 from string import Template
-from trac.core import *
+
+from genshi.builder import tag as builder
+from trac.core import Component, TracError, implements
 from trac.config import IntOption, Option
 from trac.perm import IPermissionRequestor, PermissionCache, PermissionSystem
 from trac.resource import Resource, ResourceNotFound, render_resource_link
-from trac.wiki.formatter import wiki_to_oneliner, wiki_to_html
-from trac.wiki.model import WikiPage
-from trac.wiki.macros import WikiMacroBase
 from trac.ticket.model import Component as TicketComponent
+from trac.wiki.formatter import wiki_to_html, wiki_to_oneliner
+from trac.wiki.macros import WikiMacroBase
+from trac.wiki.model import WikiPage
 from trac.util.compat import sorted
-from trac.web.api import IRequestHandler, ITemplateStreamFilter, \
-                         IRequestFilter, RequestDone
-from trac.web.chrome import Chrome, ITemplateProvider, INavigationContributor, \
-                            add_stylesheet, add_script, add_ctxtnav, \
-                            add_warning, add_notice
+from trac.web.api import (
+    IRequestFilter, IRequestHandler, ITemplateStreamFilter, RequestDone
+)
+from trac.web.chrome import (
+    INavigationContributor, ITemplateProvider, add_notice, add_script,
+    add_stylesheet, add_warning
+)
+
 from acct_mgr.htfile import HtPasswdStore
-from acct_mgr.api import IPasswordStore, IAccountChangeListener
+from acct_mgr.api import IAccountChangeListener, IPasswordStore
 from tractags.api import TagSystem
 from tractags.macros import TagWikiMacros
 from tractags.query import Query
 from tracvote import VoteSystem
 from svnauthz.io import AuthzFileReader, AuthzFileWriter
-from genshi.builder import tag as builder
-from genshi.filters.transform import Transformer
 from trachacks.validate import *
 
 
@@ -64,7 +67,7 @@ def get_page_name(hack_name, hack_type):
 
 
 class FakeRequest(object):
-    def __init__(self, env, authname = 'anonymous'):
+    def __init__(self, env, authname='anonymous'):
         self.perm = PermissionCache(env, authname)
 
 
@@ -88,7 +91,7 @@ class HackDoesntExist(Aspect):
 
         try:
             TicketComponent(self.env, page_name)
-        except ResourceNotFound, e:
+        except ResourceNotFound:
             pass
         else:
             raise ValidationError(
@@ -97,7 +100,7 @@ class HackDoesntExist(Aspect):
 
         authz_file = self.env.config.get('trac', 'authz_file')
         authz = AuthzFileReader().read(authz_file)
-        authz_paths = [ p.get_path() for p in authz.get_paths() ]
+        authz_paths = [p.get_path() for p in authz.get_paths()]
         for ap in authz_paths:
             if ap.startswith(path):
                 raise ValidationError(
@@ -118,7 +121,7 @@ class ReleasesExist(Aspect):
             req = FakeRequest(self.env)
             releases = [r.id for r, _ in tags.query(req, 'realm:wiki release')]
             if isinstance(selected, (basestring, unicode)):
-                selected = [ selected ]
+                selected = [selected]
             for s in selected:
                 if s not in releases:
                     hack = context.data.get('name', '') + \
@@ -126,7 +129,8 @@ class ReleasesExist(Aspect):
                     self.env.log.error(
                         "Invalid release %s selected for new hack %s" % (s, hack)
                     )
-                    raise ValidationError('Selected release "%s" invalid?!' % str(s))
+                    raise ValidationError('Selected release "%s" invalid?!'
+                                          % str(s))
         return selected
 
 
@@ -169,9 +173,9 @@ class TracHacksHandler(Component):
         # Validate form
         form = Form('content')
         form.add('name', Chain(
-                Pattern(r'[A-Z][A-Za-z0-9]+(?:[A-Z][A-Za-z0-9]+)*'),
-                HackDoesntExist(self.env),
-                ),
+                 Pattern(r'[A-Z][A-Za-z0-9]+(?:[A-Z][A-Za-z0-9]+)*'),
+                 HackDoesntExist(self.env),
+                 ),
                  'Name must be in CamelCase.')
         form.add('title', MinLength(8),
                  'Please write a few words for the description.')
@@ -210,7 +214,7 @@ class TracHacksHandler(Component):
         # Hack types and their description
         types = []
         for category in sorted([r.id for r, _ in
-                             tag_system.query(req, 'realm:wiki type')]):
+                                tag_system.query(req, 'realm:wiki type')]):
             page = WikiPage(self.env, category)
             match = self.title_extract.search(page.text)
             if match:
@@ -226,10 +230,12 @@ class TracHacksHandler(Component):
         data['types'] = types
         data['releases'] = releases
 
-        selected_releases = req.args.get('release', set(['0.10', '0.11', 'anyrelease']))
+        selected_releases = req.args.get('release',
+                                         set(['0.10', '0.11', 'anyrelease']))
         data['selected_releases'] = selected_releases
 
-        hacks = self.fetch_hacks(req, data, [ t[0] for t in types ], selected_releases)
+        hacks = self.fetch_hacks(req, data, [t[0] for t in types],
+                                 selected_releases)
 
         add_stylesheet(req, 'tags/css/tractags.css')
         add_stylesheet(req, 'hacks/css/trachacks.css')
@@ -262,7 +268,7 @@ class TracHacksHandler(Component):
                 self.env.log.debug('Hacks: no notice: no GET request')
             elif not (path.startswith('/wiki/') or path == '/wiki'):
                 self.env.log.debug('Hacks: no notice: not a wiki path')
-            elif not args.has_key('hack'):
+            elif not 'hack' in args:
                 self.env.log.debug('Hacks: no notice: hack= missing')
             elif args['hack'] != 'created':
                 self.env.log.debug('Hacks: no notice: hack=%s' % args['hack'])
@@ -272,7 +278,7 @@ class TracHacksHandler(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        return (template, data, content_type)
+        return template, data, content_type
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -286,7 +292,7 @@ class TracHacksHandler(Component):
         #        builder.a('View Hacks', href=req.href.hacks(), accesskey='H'))
         if 'HACK_CREATE' in req.perm:
             yield ('mainnav', 'newhack',
-                    builder.a('New Hack', href=req.href.newhack()))
+                   builder.a('New Hack', href=req.href.newhack()))
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
@@ -318,7 +324,8 @@ class TracHacksHandler(Component):
         hacks = list(hacks)
         hack_names = set(r[2].id for r in hacks)
         users = set(u.id for u, _ in tag_system.query(req, 'realm:wiki user'))
-        exclude = hack_names.union(users).union(data['types']).union(data['releases'])
+        exclude = \
+            hack_names.union(users).union(data['types']).union(data['releases'])
 
         cloud = {}
 
@@ -355,7 +362,8 @@ class TracHacksHandler(Component):
         data['focus'] = 'name'
 
         # Populate data with form submission
-        if req.method == 'POST' and 'create' in req.args or 'preview' in req.args:
+        if req.method == 'POST' \
+                and 'create' in req.args or 'preview' in req.args:
             data.update(req.args)
 
             context = self.form.validate(data)
@@ -385,7 +393,7 @@ class TracHacksHandler(Component):
             elif 'preview' in req.args and not context.errors:
                 page = WikiPage(self.env, self.template)
                 if not page.exists:
-                    raise TracError('New hack template %s does not exist.' % \
+                    raise TracError('New hack template %s does not exist.' %
                                     self.template)
                 template = Template(page.text).substitute(vars)
                 template = re.sub(r'\[\[ChangeLog[^\]]*\]\]',
@@ -429,25 +437,25 @@ class TracHacksHandler(Component):
                 svn_path = svn_path.rstrip('/')
                 page_name = vars['WIKINAME']
                 hack_path = vars['LCNAME']
-                paths = [ '%s/%s' % (svn_path, hack_path) ]
+                paths = ['%s/%s' % (svn_path, hack_path)]
                 selected_releases = data['selected_releases']
                 if isinstance(selected_releases, (basestring, unicode)):
-                    selected_releases = [ selected_releases, ]
+                    selected_releases = [selected_releases, ]
                 for release in selected_releases:
-                    if release == 'anyrelease': continue
-                    paths.append("%s/%s/%s" % \
-                        (svn_path, hack_path, release))
+                    if release == 'anyrelease':
+                        continue
+                    paths.append("%s/%s/%s" % (svn_path, hack_path, release))
 
-                cmd  = '/usr/bin/op create-hack %s ' % req.authname
-                cmd += '"New hack %s, created by %s" ' % \
-                        (page_name, req.authname)
+                cmd = '/usr/bin/op create-hack %s ' % req.authname
+                cmd += '"New hack %s, created by %s" '\
+                       % (page_name, req.authname)
                 cmd += '%s 2>&1' % ' '.join(paths)
                 output = popen(cmd).readlines()
                 if output:
                     raise Exception(
-                        "Failed to create Subversion paths:\n%s" % \
-                            '\n'.join(output)
-                        )
+                        "Failed to create Subversion paths:\n%s"
+                        % '\n'.join(output)
+                    )
                 steps_done.append('repository')
 
                 # Step 2: Add permissions
@@ -457,7 +465,7 @@ class TracHacksHandler(Component):
                 authz = AuthzFileReader().read(authz_file)
 
                 svn_path_acl = PathAcl(User(req.authname), r=True, w=True)
-                authz.add_path(Path("/%s" % hack_path, acls = [svn_path_acl,]))
+                authz.add_path(Path("/%s" % hack_path, acls=[svn_path_acl, ]))
                 AuthzFileWriter().write(authz_file, authz)
                 steps_done.append('permissions')
 
@@ -472,8 +480,8 @@ class TracHacksHandler(Component):
                 template_page = WikiPage(self.env, self.template)
                 page = WikiPage(self.env, page_name)
                 page.text = Template(template_page.text).substitute(vars)
-                page.save(req.authname, 'New hack %s, created by %s' % \
-                          (page_name, req.authname), '0.0.0.0')
+                page.save(req.authname, 'New hack %s, created by %s'
+                                        % (page_name, req.authname), '0.0.0.0')
                 steps_done.append('wiki')
 
                 # Step 5: Tag the new wiki page
@@ -506,11 +514,12 @@ class TracHacksHandler(Component):
                     rv = fcntl.flock(lockfile, fcntl.LOCK_UN)
                 self.env.log.error(e, exc_info=True)
                 raise TracError(str(e))
-        return (created, messages)
+        return created, messages
 
     def render_list(self, req, data, hacks):
         ul = builder.ul()
-        for votes, rank, resource, tags, title in sorted(hacks, key=lambda h: h[2].id):
+        for votes, rank, resource, tags, title \
+                in sorted(hacks, key=lambda h: h[2].id):
             li = builder.li(builder.a(resource.id,
                                       href=req.href.wiki(resource.id)),
                             ' - ', title)
@@ -529,7 +538,8 @@ class TracHacksHandler(Component):
             colour = 128.0 - (percent * 128.0)
             colour = '#%02x%02x%02x' % ((colour,) * 3)
             a = builder.a(tag, rel='tag', title=title, href=href, class_='tag',
-                style='font-size: %ipx; color: %s' % (font_size, colour))
+                          style='font-size: %ipx; color: %s'
+                                % (font_size, colour))
             return a
 
         # TODO Top-n + sample
@@ -614,7 +624,6 @@ class TracHacksHandler(Component):
         return hacks
 
 
-
 class TracHacksHtPasswdStore(HtPasswdStore):
     """Do some basic validation on new users and create a new user page."""
     implements(IPasswordStore, IAccountChangeListener)
@@ -622,21 +631,25 @@ class TracHacksHtPasswdStore(HtPasswdStore):
     # IPasswordStore
     def set_password(self, user, password):
         perm = PermissionSystem(self.env)
-        all_perms = [ p[0] for p in perm.get_all_permissions() ]
+        all_perms = [p[0] for p in perm.get_all_permissions()]
         if user in all_perms:
-            raise TracError('%s is a reserved name that can not be registered.' % user)
+            raise TracError('%s is a reserved name that can not be registered.'
+                            % user)
 
-        needles = [ ':', '[', ']' ]
+        needles = [':', '[', ']']
         for needle in needles:
             if needle in user:
-                raise TracError('Character "%s" may not be used in user names.' % needle)
+                raise TracError('Character "%s" may not be used in user names.'
+                                % needle)
 
         if len(user) < 3:
-            raise TracError('User name must be at least 3 characters long.')
+            raise TracError("User name must be at least 3 characters long.")
         if not re.match(r'^\w+$', user):
-            raise TracError('User name must consist only of alpha-numeric characters.')
+            raise TracError("User name must consist only of alpha-numeric "
+                            "characters.")
         if user.isupper():
-            raise TracError('User name must not consist of upper-case characters only.')
+            raise TracError("User name must not consist of upper-case "
+                            "characters only.")
 
         if WikiPage(self.env, user).exists:
             raise TracError('wiki page "%s" already exists' % user)
@@ -651,10 +664,11 @@ class TracHacksHtPasswdStore(HtPasswdStore):
         req = FakeRequest(self.env, user)
         resource = Resource('wiki', user)
         tag_system = TagSystem(self.env)
-        tag_system.add_tags(req, resource, ['user',])
+        tag_system.add_tags(req, resource, ['user', ])
 
         page = WikiPage(self.env, user)
-        page.text = '''= %(user)s =\n\n[[ListTagged(%(user)s)]]\n''' % {'user' : user}
+        page.text = '''= %(user)s =\n\n[[ListTagged(%(user)s)]]\n'''\
+                    % {'user': user}
         page.save(user, 'New user %s registered' % user, None)
 
         self.env.log.debug("New user %s registered" % user)
@@ -683,9 +697,12 @@ class ListHacksMacro(WikiMacroBase):
     Hack types and Trac releases may be specified as parameter to the macro to
     limit which types and/or releases are specified. Please note:
 
-     * If one or more releases are specified, the "version picker" is not displayed.
-     * Specified releases are 'OR'-based, i.e. `0.11 0.12` will show hacks which are tagged for `0.11` OR `0.12`.
-     * If exactly one category is specified, the fieldset legend is not displayed.
+     * If one or more releases are specified, the "version picker" is not
+       displayed.
+     * Specified releases are 'OR'-based, i.e. `0.11 0.12` will show hacks
+       which are tagged for `0.11` OR `0.12`.
+     * If exactly one category is specified, the fieldset legend is not
+       displayed.
 
     See [wiki:type] for a list of hack types, [wiki:release] for a list of
     supported Trac releases.
@@ -701,16 +718,17 @@ class ListHacksMacro(WikiMacroBase):
     }}}
     """
     title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
-    self_extract = re.compile(r'\[\[ListHacks[^\]]*\]\]\s?\n?', re.MULTILINE | re.UNICODE)
+    self_extract = re.compile(r'\[\[ListHacks[^\]]*\]\]\s?\n?',
+                              re.MULTILINE | re.UNICODE)
 
     def expand_macro(self, formatter, name, args):
         req = formatter.req
         tag_system = TagSystem(self.env)
 
-        all_releases = natural_sort([r.id for r, _ in
-                                     tag_system.query(req, 'realm:wiki release')])
-        all_categories = sorted([r.id for r, _ in
-                                 tag_system.query(req, 'realm:wiki type')])
+        all_releases = natural_sort(
+            [r.id for r, _ in tag_system.query(req, 'realm:wiki release')])
+        all_categories = sorted(
+            [r.id for r, _ in tag_system.query(req, 'realm:wiki type')])
 
         hide_release_picker = False
         hide_fieldset_legend = False
@@ -748,7 +766,8 @@ class ListHacksMacro(WikiMacroBase):
                 show_releases = [show_releases]
             req.session['th_release_filter'] = ','.join(show_releases)
         else:
-            show_releases = req.session.get('th_release_filter', '0.11').split(',')
+            show_releases = \
+                req.session.get('th_release_filter', '0.11').split(',')
 
         output = builder.tag()
         if not hide_release_picker:
@@ -771,7 +790,6 @@ class ListHacksMacro(WikiMacroBase):
             form('\n', span, '\n')
             output.append(form)
 
-
         def link(resource):
             return render_resource_link(self.env, formatter.context,
                                         resource, 'compact')
@@ -787,7 +805,7 @@ class ListHacksMacro(WikiMacroBase):
                 cat_body = page.text
             cat_body = self.self_extract.sub('', cat_body).strip()
 
-            style = "padding:1em; margin:0em 5em 2em 5em; border:1px solid #999;"
+            style = 'padding:1em; margin:0em 5em 2em 5em; border:1px solid #999;'
             fieldset = builder.fieldset('\n', style=style)
             if not hide_fieldset_legend:
                 legend = builder.legend(style="color: #999;")
@@ -796,7 +814,7 @@ class ListHacksMacro(WikiMacroBase):
             if not hide_fieldset_description:
                 fieldset(builder.p(wiki_to_html(cat_body, self.env, req)))
 
-            ul = builder.ul('\n', class_="listtagged")
+            ul = builder.ul('\n', class_='listtagged')
             query = 'realm:wiki (%s) %s %s' % \
                 (' or '.join(show_releases), category, ' '.join(other))
 
@@ -804,7 +822,7 @@ class ListHacksMacro(WikiMacroBase):
             for resource, tags in tag_system.query(req, query):
                 # filter out the page used to make important tags
                 # persistent
-                if resource.id == "tags/persistent":
+                if resource.id == 'tags/persistent':
                     continue
 
                 lines += 1
@@ -819,13 +837,14 @@ class ListHacksMacro(WikiMacroBase):
 
                 li(wiki_to_oneliner(description, self.env, req=req))
                 if tags:
-                    if hide_fieldset_legend == False and category in tags:
+                    if hide_fieldset_legend is False and category in tags:
                         tags.remove(category)
                         self.log.debug("hide %s: no legend" % category)
                     for o in other:
-                        if o in tags: tags.remove(o)
-                    rendered_tags = [ link(resource('tag', tag))
-                                      for tag in natural_sort(tags) ]
+                        if o in tags:
+                            tags.remove(o)
+                    rendered_tags = [link(resource('tag', tag))
+                                     for tag in natural_sort(tags)]
 
                     span = builder.span(style="font-size:xx-small;")
                     span(' (tags: ', rendered_tags[0],
@@ -847,7 +866,8 @@ class ListHacksMacro(WikiMacroBase):
 class ListHackTypesMacro(WikiMacroBase):
     """ Provide a list of known hack types (categories). """
     title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
-    self_extract = re.compile(r'\[\[ListHacks[^\]]*\]\]\s?\n?', re.MULTILINE | re.UNICODE)
+    self_extract = re.compile(r'\[\[ListHacks[^\]]*\]\]\s?\n?',
+                              re.MULTILINE | re.UNICODE)
 
     def expand_macro(self, formatter, name, args):
         req = formatter.req
@@ -856,7 +876,7 @@ class ListHackTypesMacro(WikiMacroBase):
         tag_system = TagSystem(self.env)
 
         categories = natural_sort([r.id for r, _ in
-                                 tag_system.query(req, 'realm:wiki type')])
+                                   tag_system.query(req, 'realm:wiki type')])
 
         def link(resource):
             return render_resource_link(self.env, formatter.context,
