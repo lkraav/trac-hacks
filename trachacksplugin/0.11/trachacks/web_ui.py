@@ -744,7 +744,7 @@ class ListHacksMacro(WikiMacroBase):
         else:
             show_releases = req.session.get('th_release_filter', '0.11').split(',')
 
-        output = ""
+        output = builder.tag()
         if not hide_release_picker:
             style = "text-align:right; padding-top:1em; margin-right:5em;"
             form = builder.form('\n', style=style, method="get")
@@ -763,7 +763,7 @@ class ListHacksMacro(WikiMacroBase):
             span(builder.input(name="update_th_filter", type_="submit",
                                style=style, value="Update"), '\n')
             form('\n', span, '\n')
-            output = "%s%s\n" % (output, form)
+            output.append(form)
 
 
         def link(resource):
@@ -833,7 +833,7 @@ class ListHacksMacro(WikiMacroBase):
                 message = "No results for %s." % \
                     (hide_release_picker and "this version" or "your selection")
                 fieldset(builder.p(builder.em(message)), '\n')
-            output = "%s%s\n" % (output, fieldset)
+            output.append(fieldset)
 
         return output
 
