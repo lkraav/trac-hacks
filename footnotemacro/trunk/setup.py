@@ -23,9 +23,9 @@ setup(
     maintainer = 'Ryan J Ollos',
     maintainer_email = 'ryan.j.ollos@gmail.com',
     description = 'Add footnotes to a wiki page',
-    license = '3-Clause BSD',
+    license = 'BSD 3-Clause',
     keywords = 'trac plugin',
-    url = 'http://trac-hacks.org/wiki/FootNoteMacroPlugin',
+    url = 'http://trac-hacks.org/wiki/FootNoteMacro',
     classifiers = [
         'Framework :: Trac',
     ],
