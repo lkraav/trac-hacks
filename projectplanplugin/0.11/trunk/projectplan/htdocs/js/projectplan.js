@@ -1014,9 +1014,10 @@ function ppAddTooltip( sel ){
 
 function ppAddTooltipWrapper(element_selector){
 	ppAddTooltip(element_selector+" .project_image .ticket_inner a"); // project image, @deprecated
-	ppAddTooltip(element_selector+" .projectplanrender .ticket_inner a"); // project plan general
-	ppAddTooltip(element_selector+" .properties a.ticket_inner"); // ticket view
-	ppAddTooltip(element_selector+" .pptickettable a.ticket"); // ticket view in report table 
+	ppAddTooltip(element_selector+" .projectplanrender .ticket_inner a"); // project plan general @deprecated
+	ppAddTooltip(element_selector+" .properties a.ticket_inner"); // ticket view @deprecated
+	ppAddTooltip(element_selector+" .pptickettable a.ticket"); // ticket view in report table @deprecated
+	ppAddTooltip(element_selector+" .projectplanrender a.ticket_inner"); // default
 }
 
 
@@ -1162,13 +1163,17 @@ function markDroppedElement(dragged_element, ppEventHistoryElement, state){
     .addClass(droppableStates[state]); 
 }
 
-function moveDroppedElement(targetDroppable, droppedElement) {
-	targetDroppable.append(droppedElement);
+function ppResetDroppedElement(droppedElement){
 	droppedElement.css({
 		left : "",
 		top : "",
 		border : "1px dotted #393"
 	});
+}
+
+function ppMoveDroppedElement(targetDroppable, droppedElement) {
+	targetDroppable.append(droppedElement);
+	ppResetDroppedElement(droppedElement);
 }
 
 /**
@@ -1192,7 +1197,7 @@ function ppInitDraggable(){
 	});
 	$(".droppable").droppable({
 		accept : ".draggable",
-		activeClass : ".pp-draggable-ui-state-active",
+		activeClass : "pp-draggable-ui-state-active",
 		hoverClass : "pp-draggable-ui-state-hover", 
 		deactivate : function(event, ui) {
 			       ppResetDroppable();
@@ -1207,14 +1212,14 @@ function ppInitDraggable(){
 			// console.log("drop: source="+sourceDroppable.attr("data"));
 			
 			if ($.trim(sourceDroppable.attr("data")) != $.trim(targetDroppable.attr("data"))) {
-				moveDroppedElement(targetDroppable, ui.draggable);
+				ppMoveDroppedElement(targetDroppable, ui.draggable);
 				
 				// add element to event history
 				var newEventItem = $("<div>").addClass("pp-event-history-item");
 				var undoButton = $("<input type='button' value='undo #" + ui.draggable.attr("data")+"' class='undo droppedTicket'>")
 				  .click(function() {
-					console.log("moveDroppedElement: revert");
-					moveDroppedElement(sourceDroppable, ui.draggable);
+					console.log("ppMoveDroppedElement: revert");
+					ppMoveDroppedElement(sourceDroppable, ui.draggable);
 					newEventItem.fadeOut();
 					// newEventItem.remove();
 				  }).hide();
@@ -1238,7 +1243,7 @@ function ppInitDraggable(){
 					);
 					ppResetDroppable();
 					ui.draggable.hide();
-					moveDroppedElement(sourceDroppable, ui.draggable);
+					ppMoveDroppedElement(sourceDroppable, ui.draggable);
 					ui.draggable.fadeIn(1000);
 				} else {
 					$("#pp-event-history-list").fadeIn().append(newEventItem.append(undoButton));
@@ -1253,7 +1258,10 @@ function ppInitDraggable(){
 					  RPCURL // url to RPC API
 					);
 				}
-			}
+			} else {
+				console.log("dropped at orgin field");
+				ppResetDroppedElement(ui.draggable);
+			} 
 			
 		}
 	});
@@ -1261,7 +1269,7 @@ function ppInitDraggable(){
 
 function ppResetDroppable(){
   $("#tooltip").removeClass("invisible"); 
-  $(".droppable").removeClass("pp-ui-droppable"); 
+  $(".droppable").removeClass("pp-ui-droppable");
 }
 
 function ppSaveNewTicketDataViaRPC(dropped_element, ticket_id, new_ticket_data, ppEventHistoryElement, RPCURL) {

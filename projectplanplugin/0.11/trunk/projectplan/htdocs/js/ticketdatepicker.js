@@ -10,7 +10,8 @@ $(document).ready(function () {
 	url: "http://code.jquery.com/ui/1.10.3/jquery-ui.js", // load from CDN
 	dataType: "script",
 	cache: true,
-	success: function(){ initPPticketDatePicker(); }
+	success: function(){ initPPticketDatePicker(); },
+	error: function(err, status, thrown) { console.log("unable to load jquery-ui.js: status " + status); console.log(err); }
       });
     } else {
       console.log("initPPticketDatePicker: jquery ui was already loaded.")
@@ -30,9 +31,9 @@ function initPPticketDatePicker(){
       currentText: "current"
     }); 
     console.log("initPPticketDatePicker: init: "+($("#custom_due_assign_field_id").html())+", "+($("#custom_due_close_field_id").html()) );
-    $("#field-"+$("#custom_due_assign_field_id").html()).datepicker('destroy'); // safety
+    // $("#field-"+$("#custom_due_assign_field_id").html()).datepicker('destroy'); // safety, kills to late
     $("#field-"+$("#custom_due_assign_field_id").html()).datepicker( { dateFormat: $("#custom_due_assign_field_format").html().toLowerCase().replace("yyyy","yy") } );
-    $("#field-"+$("#custom_due_close_field_id").html()).datepicker('destroy'); // safety
+    // $("#field-"+$("#custom_due_close_field_id").html()).datepicker('destroy'); // safety, kills to late
     $("#field-"+$("#custom_due_close_field_id").html()).datepicker( { dateFormat: $("#custom_due_close_field_format").html().toLowerCase().replace("yyyy","yy") } );
     $(".ui-datepicker-trigger").hide();
 }

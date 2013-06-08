@@ -590,7 +590,7 @@ class TicketTableAvsB(RenderImpl):
       for colkey in self.cols :
         td = tag.td(class_='droppable', data=self.getDropZoneDataConfiguration({  self.rowtype: rowkey, self.coltype: colkey  })  )
         for ticket in data[str(rowkey)][str(colkey)] :
-          td( tag.span(self.createTicketLink(ticket), class_ = 'ticket_inner' ), " " , mytitle="%s is %s and %s is %s" % (self.rowtype,rowkey,self.coltype,colkey) ) # mytitle might be used later by javascript
+          td( self.createTicketLink(ticket), " " , mytitle="%s is %s and %s is %s" % (self.rowtype,rowkey,self.coltype,colkey) ) # mytitle might be used later by javascript
           if not statistics[str(rowkey)][str(colkey)].has_key( ticket.getstatus() ) :
             statistics[str(rowkey)][str(colkey)][ticket.getstatus()] = 0
           statistics[str(rowkey)][str(colkey)][ticket.getstatus()] += 1

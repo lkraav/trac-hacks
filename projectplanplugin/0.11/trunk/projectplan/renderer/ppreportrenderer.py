@@ -245,7 +245,7 @@ class ReportRenderer(RenderImpl):
         else:
           cssclass ="ticket "
         #text = tag.p(tag.a( '#'+str(t.getfielddef( f, '' )), href=t.getfielddef( 'href', '' ), class_ = cssclass ) )
-        text = tag.p(self.createTicketLink(t, False)) # no markup using colors and images here
+        text = tag.p(self.createTicketLink(t, not ('status' in self.fields or 'priority' in self.fields)) ) # no markup using colors and images here if status or priority are present
       elif f == 'priority' : # special case 
         # two-digit integer representation of priority sorting (as definend in trac admin panel)
         text = tag.span(str(99-int(t.getfielddef( 'priority_value', '0' ))), class_ = 'invisible')+self.wiki2html(field)
