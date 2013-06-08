@@ -173,9 +173,7 @@ class RenderImpl():
         style += 'background-color: '+self.macroenv.conf.get_map_val('ColorForPriority', priority )
     
     return tag.span( tag.span( 
-	      tag.a(
-	        tag.span('#%s'%(tid,), class_='ticketnr'), href=self.macroenv.tracenv.href.ticket(tid), class_=cssclass, style=style 
-	      ), 
+	        tag.a('#%s'%(tid,), class_='ticketnr %s' % (cssclass,), href=self.macroenv.tracenv.href.ticket(tid), style=style ),
 	   class_=cssclassouter ), data=tid, class_='ppticket draggable' )
   
   def createGoogleChartFromDict( self, colorschema, mydict, title='', width=170, height=50 ):
