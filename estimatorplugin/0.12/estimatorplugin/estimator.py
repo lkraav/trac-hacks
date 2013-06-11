@@ -31,7 +31,7 @@ def getEstimateResultSet(env, id):
     return dbhelper.get_result_set(env, "SELECT * FROM estimate WHERE id=%s", id)
 
 def getEstimateLineItemsResultSet(env, id):
-    return dbhelper.get_result_set(env, "SELECT * FROM estimate_line_item WHERE estimate_id=%s", id)
+    return dbhelper.get_result_set(env, "SELECT * FROM estimate_line_item WHERE estimate_id=%s ORDER BY ordinal ASC", id)
 
 removeLineItemsNotInListSql = """
 DELETE FROM estimate_line_item
