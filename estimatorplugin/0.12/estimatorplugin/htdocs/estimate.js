@@ -1,5 +1,6 @@
 /* -*- js2-basic-offset:2 -*- */
 var cn = ADW.Controls.createNode;
+var LOOPLIMIT=100;
 
 var numval = function(selector, root){
   var v = Number($.trim($(selector,root).val()));
@@ -148,8 +149,6 @@ function enterMeansNewRow(event){
    if(!event) event = window.event;
    if(event.keyCode == 13){
       var tr = newLineItem();
-      tr.cells[0].firstChild.focus();
-      tr.cells[0].firstChild.value="";
       return false;
    }
    return true;
@@ -232,11 +231,15 @@ function lineItemRow (lineitem){
 			     onkeydown:'return enterMeansNewRow(event)'})),
 	     cn('td', {id:uid('ave'), 'class':"numberCell", valign:'top', style:"width:80px;"}),
 	     cn('td', {id:uid('buttons'), 'class':'buttons',valign:'top'},
-                cn('input', {id:uid('ordinal'), name:uid('ordinal'), type:'hidden', value: valFn('ordinal')}),
-	        cn('button',{onclick:'removeLineItem(this);return false;', 'class':'delete'},
+                cn('input', {id:uid('ordinal'), name:uid('ordinal'), type:'hidden',
+                             value: valFn('ordinal')}),
+	        cn('button',{onclick:'removeLineItem(this);return false;', 'class':'delete',
+                             tabindex:20000},
 		'remove'),
-		cn('button',{onclick:'swapUp(this);return false;', 'class':'up'},'&nbsp;'),
-		cn('button',{onclick:'swapDown(this);return false;', 'class':'down'},'&nbsp;')));
+		cn('button',{onclick:'swapUp(this);return false;', 'class':'up',
+                             tabindex:20000},'&nbsp;'),
+		cn('button',{onclick:'swapDown(this);return false;', 'class':'down',
+                             tabindex:20000},'&nbsp;')));
    tr.item = lineitem;
    lineitem.row = tr;
    $(tarea).autoResize({extraSpace:20});
@@ -251,6 +254,7 @@ function newLineItem(){
    var lineItem = {};
    var tr = lineItemRow(lineItem);
    $('#estimateBody tbody').append(tr);
+   $(tr).find('textarea').focus();
    return tr;
 }
 
@@ -336,7 +340,7 @@ function removeRow( elem, n ){
 
 function fillLines(o){
   //console.log('fillLines', o);
-  var line, limit=100; o.lines=[];
+  var line, limit=LOOPLIMIT; o.lines=[];
   while(o.text && o.text.length>=0 && (limit-- > 0)){
     line = "";
     var start, i = o.width;
@@ -345,7 +349,7 @@ function fillLines(o){
     var foundSpace=false;
     if(explicitNewline) i = nextLine;
     else if(i >= o.text.length) i = o.text.length;
-    else{
+    else {
       start = i;
       while(i >= 0 && !o.text[i].match(/\s/i)) i--;
       if(i < 0) i = start; // no spaces in long word... overflow?
@@ -359,6 +363,7 @@ function fillLines(o){
     line = fillwith(jQuery.extend({line:line}, o));
     o.lines.push(line);
   }
+  if(limit <= 0) console.log('Limit stopped an infinite loop in fillLines');
   return o;
 };
 
@@ -385,7 +390,7 @@ function fillTexts(texts, widths, alignments){
   // splice the chunks of line together, while there are
   // more lines in any part
   //return parts;
-  var limit=100;
+  var limit=LOOPLIMIT;
   while(more && (limit-- > 0)){
     more = false;
     for(i=0; part = parts[i]; i++){
@@ -396,6 +401,7 @@ function fillTexts(texts, widths, alignments){
     }
     out+="\n";
   }
+  if(limit <= 0) console.log('Limit stopped an infinite loop in fillTexts');
   return out;
 };
 
@@ -461,15 +467,10 @@ function loadLineItems() {
   var item;
   lineItems.sort(
     function(a,b) {
-      if (a.ordinal < b.ordinal) {
-        return -1;
-      }
-      if (a.ordinal > b.ordinal) {
-        return 1;
-      }
-      else {
-        return 0;
-      }
+      var o = Number(a.ordinal), p = Number(b.ordinal);
+      if (o < p) return -1;
+      if (o > p) return 1;
+      else return 0;
     }
   );
   for(var i=0; item = lineItems[i] ; i++){
