@@ -23,14 +23,9 @@ class DiscussionSpamFilter(Component):
     def filter_topic(self, context, topic):
         # Test topic for spam.
         try:
-            if arity(FilterSystem.test) == 4: #SpamFilter < 0.3.2 or >= 0.7.0
-                FilterSystem(self.env).test(context.req, topic['author'],
-                    [(None, topic['author']), (None, topic['subject']),
-                     (None, topic['body'])])
-            else: #SpamFilter >= 0.3.2 or < 0.7.0
-                FilterSystem(self.env).test(context.req, topic['author'],
-                    [(None, topic['author']), (None, topic['subject']),
-                     (None, topic['body'])], context.req.remote_addr)
+            self._spam_test(context.req, topic['author'], [(None,
+                topic['author']), (None, topic['subject']), (None,
+                topic['body'])], context.req.remote_addr)
         except RejectContent, error:
             # Topic contains spam.
             return False, error.message
@@ -41,11 +36,19 @@ class DiscussionSpamFilter(Component):
     def filter_message(self, context, message):
         # Test message for spam.
         try:
-            FilterSystem(self.env).test(context.req, message['author'], [(None,
-              message['author']), (None, message['body'])])
+            self._spam_test(context.req, message['author'], [(None,
+                message['author']), (None, message['body'])],
+                context.req.remote_addr)
         except RejectContent, error:
             # Message contains spam.
             return False, error.message
 
         # Message is fine.
         return True, message
+
+    def _spam_test(self, req, author, changes, ip):
+        if arity(FilterSystem.test) == 4: #SpamFilter < 0.3.2 or >= 0.7.0
+            FilterSystem(self.env).test(req, author, changes)
+        else: #SpamFilter >= 0.3.2 or < 0.7.0
+            FilterSystem(self.env).test(req, author, changes, ip)
+
