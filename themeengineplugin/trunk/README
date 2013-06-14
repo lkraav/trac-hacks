@@ -30,7 +30,7 @@ Theme
 Use the arrows to select your theme from the installed options and then click
 the button to activate it.
 
-.. image:: http://trac-hacks.org/attachment/wiki/ThemeEnginePlugin/admin_theme.png?format=raw
+.. image:: http://trac-hacks.org/raw-attachment/wiki/ThemeEnginePlugin/admin_theme.png
 
 Customize
 ~~~~~~~~~
@@ -40,7 +40,7 @@ pieces of the UI. The scheme drop down allows you to load pre-configured
 color schemes. Note that not all themes will support this, or support the
 same options.
 
-.. image:: http://trac-hacks.org/attachment/wiki/ThemeEnginePlugin/admin_customize.png?format=raw
+.. image:: http://trac-hacks.org/raw-attachment/wiki/ThemeEnginePlugin/admin_customize.png
 
 Customize: Advanced
 ~~~~~~~~~~~~~~~~~~~
@@ -49,7 +49,7 @@ Here you can customize the CSS even further. As mentioned in the file, if you
 edit this file by hand, you should not use the simple customizer system or
 you will lose your changes.
 
-.. image:: http://trac-hacks.org/attachment/wiki/ThemeEnginePlugin/admin_advanced.png?format=raw
+.. image:: http://trac-hacks.org/raw-attachment/wiki/ThemeEnginePlugin/admin_advanced.png
 
 Example
 =======
