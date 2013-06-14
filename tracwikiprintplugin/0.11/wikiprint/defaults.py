@@ -204,7 +204,8 @@ small {
 
 
 li {
-    /* Ugly fix for PISA? It won't line break instead... but this breaks display in Printable HTML */
+    /* Ugly fix for PISA? It won't line break instead...
+       but this breaks display in Printable HTML */
     display: block;
 }
 
@@ -286,9 +287,10 @@ table.wiki {
 
 """
 
-#This CSS is included when creating Books. Default @page style is not specified,
-#so front page has no header or footer. After front_page, 'standard' template
-#must be selected using <div><pdf:nexttemplate name="standard"/><pdf:nextpage /></div>
+# This CSS is included when creating Books. Default @page style is not
+# specified, so front page has no header or footer. After front_page,
+# 'standard' template must be selected using:
+# <div><pdf:nexttemplate name="standard"/><pdf:nextpage /></div>
 BOOK_EXTRA_CSS = """
 /* Set options when using 'standard' template */
 @page standard {
@@ -325,7 +327,8 @@ ARTICLE_EXTRA_CSS = """
     margin-top: 2.5cm;
     margin-bottom: 2.5cm;
     
-    /* Define a header frame. Frame contents will be taken from 'headerContent' element (<div>) */
+    /* Define a header frame. Frame contents will be taken from 'headerContent'
+       element (<div>) */
     @frame header {
         /* -pdf-frame-border: 1; */
         -pdf-frame-content: headerContent;
@@ -335,7 +338,8 @@ ARTICLE_EXTRA_CSS = """
         height: 0.5cm;
     }
     
-    /* Define a footer frame. Frame contents will be taken from 'footerContent' element (<div>) */
+    /* Define a footer frame. Frame contents will be taken from 'footerContent'
+       element (<div>) */
     @frame footer {
         /* -pdf-frame-border: 1; */
         -pdf-frame-content: footerContent;

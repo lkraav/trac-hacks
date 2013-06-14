@@ -25,8 +25,8 @@ function reorder_item(from, dir) {
 }
 
 function compile_pages(form) {
-    var arr = new Array();
-    for(i=0;i<form.rightpages.options.length;i++) {
+    var arr = [];
+    for(var i=0; i<form.rightpages.options.length; i++) {
         arr.push(form.rightpages.options[i].value);
     }
     form.rightpages_all.value = arr.join(',');
