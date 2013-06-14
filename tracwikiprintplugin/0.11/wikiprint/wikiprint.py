@@ -26,7 +26,10 @@ from trac.util import hex_entropy
 from trac.util.datefmt import format_datetime, to_datetime
 from trac.util.text import to_unicode
 
-import ho.pisa as pisa
+try:
+    import xhtml2pdf.pisa as pisa
+except ImportError:
+    import ho.pisa as pisa
 
 # Kludge to workaround the lack of absolute imports in Python version prior to
 # 2.5
