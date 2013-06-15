@@ -981,6 +981,13 @@ function hideIfShown(){
 // }
 
 /**
+ * returns a URL allowing to construct relative links
+ */
+function ppGetBaseUrl(){
+	return( $("#mainnav li").first().find("a").first().attr("href")+"/.." );
+}
+
+/**
  * add an AJAX tooltip to each ticket ref
  */
 function ppAddTooltip( sel ){
@@ -989,14 +996,14 @@ function ppAddTooltip( sel ){
  		bodyHandler: function() { 
 			$("#tooltip div.ticketcache").each(function(i){ $(this).hide();} ); // hide all
 			myid = "ticket"+this.href.split("/").pop(); 
-			mybaseurl = $("#mainnav li").first().find("a").first().attr("href");
+			mybaseurl = ppGetBaseUrl();
 			
 			if( $("#"+myid).size() != 0 ){
 			  $("#"+myid).fadeIn(); // to increase performance: if exists, only show the previous result
 			  $("#tooltip .url").hide();
 			} else {
 			  $("#tooltip .url").fadeIn();
-			  $("#tooltip").append("<div id='"+myid+"' class='ticketcache'><img src='"+mybaseurl+"/../chrome/projectplan/images/loading.gif'> "+this.href+"</div>");
+			  $("#tooltip").append("<div id='"+myid+"' class='ticketcache'><img src='"+mybaseurl+"/chrome/projectplan/images/loading.gif'> "+this.href+"</div>");
 			  $("#"+myid).load(this.href+" #ticket"); // works on Trac 0.12, Trac 1.0
 			  $("#tooltip .url").fadeOut();
 			}
@@ -1132,7 +1139,7 @@ $(document).ready(function () {
 	$('.pptickettable .headerSortDown').click().click(); // Hack: to ensure correct sortation
 
 	$.ajax({
-	  url: "//code.jquery.com/ui/1.10.3/jquery-ui.js",
+	  url: ppGetBaseUrl()+"/chrome/projectplan/js/jquery-ui.min.js", // loading from CDN does not work if https is used on Trac
 	  dataType: "script",
 	  cache: true,
 	  success: function(){ppInitDraggable();}
@@ -1181,11 +1188,13 @@ function ppMoveDroppedElement(targetDroppable, droppedElement) {
  * requires XML-RPC plugin: http://trac-hacks.org/wiki/XmlRpcPlugin#Installation
  */
 var pp_workflow_definition = [];
+var pp_rpc_title = "click to see if you can use/see the RPC API";
+
 function ppInitDraggable(){
 	pp_workflow_definition = $.parseJSON($(".ppdraganddropconfiguration").first().html());
-	var RPCURL = $("#mainnav .first a").attr("href")+"/../login/rpc";
+	var RPCURL = ppGetBaseUrl()+"/login/rpc";
 	console.log("init draggable to "+RPCURL);
-	$("body").append($("<div id='pp-event-history-list'>").append($("<h5>Drag & Drop History</h5>")).hide());
+	$("body").append($("<div id='pp-event-history-list'>").append("<a href='"+RPCURL+"' class='rpccheck' title='"+pp_rpc_title+"'>check RPC</a>").append($("<h5>Drag & Drop History</h5>")).hide());
 	$(".draggable").draggable({
 		cursor : "move", // cursor change
 		revert : "invalid", // revert if invalid drop zone

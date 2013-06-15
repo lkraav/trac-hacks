@@ -7,7 +7,7 @@ $(document).ready(function () {
   
     if (!jQuery.ui) {
       $.ajax({
-	url: "http://code.jquery.com/ui/1.10.3/jquery-ui.js", // load from CDN
+	url: ppGetBaseUrl()+"/chrome/projectplan/js/jquery-ui.min.js", // loading from CDN does not work if https is used on Trac
 	dataType: "script",
 	cache: true,
 	success: function(){ initPPticketDatePicker(); },
