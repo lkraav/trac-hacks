@@ -507,6 +507,9 @@ table.pplisting tbody td.ppimagecol {
 
 
 /* ***************** drag and drop ***************** */
+.ui-draggable a {
+  cursor:move;
+}
 
 .pp-draggable-ui-state-hover {
   background-color:#DD9;
@@ -554,6 +557,10 @@ table.pplisting tbody td.ppimagecol {
 }
 #pp-event-history-list .pp-droppableLoading {
   color: #660;
+}
+#pp-event-history-list .rpccheck {
+  font-size:75%;
+  float:right;
 }
 
 .pp-droppableError, #pp-event-history-list .pp-droppableError {
