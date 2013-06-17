@@ -32,11 +32,13 @@ class SmpTimelineProjectFilter(Component):
         
     def post_process_request(self, req, template, data, content_type):
         if template == 'timeline.html':
-            filter_projects = self._filtered_projects(req)
-            if not filter_projects: #no filter means likely more than 1 project, so we insert the project name
-                filter_projects = [project[1] for project in self.__SmpModel.get_all_projects()]
+            filter_off = False
+            displayed_projects = self._filtered_projects(req)
+            if not displayed_projects: #no filter means likely more than 1 project, so we insert the project name
+                filter_off = True
+                displayed_projects = [project[1] for project in self.__SmpModel.get_all_projects()]
             
-            if filter_projects:               
+            if displayed_projects:               
                 filtered_events = []
                 tickettypes = ("newticket", "editedticket", "closedticket", "attachment", "reopenedticket")
                 self._old_render_fn = []
@@ -48,8 +50,11 @@ class SmpTimelineProjectFilter(Component):
                         if resource.realm == "ticket":
                             ticket = Ticket( self.env, resource.id )   
                             project = ticket.get_value_or_default('project')
-                            if project and project in filter_projects:
-                                if len(filter_projects) > 1: #only if more than 1 filtered project
+                            if not project:
+                                if filter_off: #display all tickets without a set project
+                                    filtered_events.append(event)
+                            elif project in displayed_projects:
+                                if len(displayed_projects) > 1: #only if more than 1 filtered project
                                     #store the old render function and the project to be inserted
                                     self._old_render_fn.append(event['render'])
                                     self._current_project.append(project)
