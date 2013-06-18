@@ -1042,6 +1042,7 @@ class PPEnv():
   # TODO: move to constants
   connectimg = 'crystal_project/16x16/conf/configure.png'
   PPConstant = PPConstant()
+  workflow = None # workflow as dict
   
   def __init__( self, env, req, content ):
     '''
@@ -1132,6 +1133,30 @@ class PPEnv():
     except:
       return default
 
+  def init_workflow_dict( self ):
+    '''
+      parse the workflow and organize as dict
+    '''
+    self.workflow = {}
+    for (action, value) in self.tracenv.config.options('ticket-workflow'):
+      if not '.' in action:
+	action = action.strip()
+	pre  = [ x.strip()   for x in value.split("->")[0].split(",") ]
+	post = [ x.strip()   for x in value.split("->")[1].split(",") ]
+	for poststate in post:
+	  if not self.workflow.has_key(poststate):
+	    self.workflow[poststate] = {}
+	  for prestate in pre:
+	    self.workflow[poststate][prestate] = action
+    self.tracenv.log.debug("workflow: %s" % (repr(self.workflow),))
+
+  def get_workflow_dict( self ):
+    # lazy init
+    if self.workflow == None:
+      self.init_workflow_dict()
+    return self.workflow
+    
+    
   def convertDependenciesToMastertickets(self):
     '''
       converts ticket dependencies save with version ProjectPlanPlugin 0.9* to dependencies used in ProjectPlanPlugin 1.* or higher

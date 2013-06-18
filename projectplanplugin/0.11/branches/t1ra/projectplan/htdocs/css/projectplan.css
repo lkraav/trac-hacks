@@ -507,13 +507,15 @@ table.pplisting tbody td.ppimagecol {
 
 
 /* ***************** drag and drop ***************** */
+.ui-draggable a {
+  cursor:move;
+}
 
 .pp-draggable-ui-state-hover {
   background-color:#DD9;
 }
 
 .pp-draggable-ui-state-active {
-  background-color:#CCC;
 }
 
 #pp-event-history-list {
@@ -535,6 +537,13 @@ table.pplisting tbody td.ppimagecol {
   background-repeat: no-repeat; 
 }
 
+#pp-event-history-list .pp-droppableNotice {
+  font-size:85%;
+  color:#990;
+  padding:0.5ex;
+  background-color:#DDD;
+}
+
 #pp-event-history-list .pp-droppableLoading {
   background-image: url(../images/loading.gif);
 }
@@ -546,11 +555,26 @@ table.pplisting tbody td.ppimagecol {
 .pp-droppableLoading, #pp-event-history-list .pp-droppableLoading {
   border-color: #FF0;
 }
+#pp-event-history-list .pp-droppableLoading {
+  color: #660;
+}
+#pp-event-history-list .rpccheck {
+  font-size:75%;
+  float:right;
+}
+
 .pp-droppableError, #pp-event-history-list .pp-droppableError {
   border-color: #F00;
 }
+#pp-event-history-list .pp-droppableError {
+  color: #C00;
+}
+
 .pp-droppableSuccess, #pp-event-history-list .pp-droppableSuccess {  
   border-color: #0F0;
+}
+#pp-event-history-list .pp-droppableSuccess {  
+  color: #090;
 }
 
 .pp-droppableLoading, .pp-droppableError, .pp-droppableSuccess {

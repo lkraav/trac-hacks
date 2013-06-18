@@ -16,19 +16,32 @@ function ppCreateNewDependingTicket()
   }
 }
 
+
+/**
+ * get query parameter of current url, thanks to http://css-tricks.com/snippets/javascript/get-url-variables/
+ */
+function getQueryVariable(variable)
+{
+       var query = window.location.search.substring(1);
+       var vars = query.split("&");
+       for (var i=0;i<vars.length;i++) {
+               var pair = vars[i].split("=");
+               if(pair[0] == variable){return pair[1];}
+       }
+       return(false);
+}
+
 /**
  * add dependencies ticket to new ticket form
  */
 function ppAddDependenciesToNewDependingTicket()
 {
   if( /\/newticket/.test(window.location.href) ) {
-  pos = window.location.search.search(/\?dep=/);
-    if( pos > -1 ) {
-      $('#field-dependencies').val(window.location.search.substr(pos+('?dep='.length)));
+    if( getQueryVariable('dep') != "" ) {
+      $('#field-dependencies').val( getQueryVariable('dep') );
     }
-  pos = window.location.search.search(/\?blocking=/);
-    if( pos > -1 ) {
-      $('#field-dependenciesreverse').val(window.location.search.substr(pos+('?blocking='.length)));
+    if( getQueryVariable('blocking') != "" ) {
+      $('#field-dependenciesreverse').val( getQueryVariable('blocking') );
     }
   }
 }
@@ -37,14 +50,15 @@ function ppAddDependenciesToNewDependingTicket()
  * new form action
  */
 function ppCreateNewDependingTicketAction(mylink) {
-  mylink.href = window.location.href.replace(/\/ticket\//, '/newticket?dep=' );
+  mylink.href = '../newticket?dep='+$('.trac-id').html().replace('#','');
+  console.log(mylink.href);
   return true;
 }
 function ppCreateNewBlockingTicketAction(mylink) {
-  mylink.href = window.location.href.replace(/\/ticket\//, '/newticket?blocking=' );
+  mylink.href = '../newticket?blocking='+$('.trac-id').html().replace('#','');
+  console.log(mylink.href);
   return true;
 }
- 
 
 
 $(document).ready(function () {

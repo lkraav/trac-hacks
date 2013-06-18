@@ -259,7 +259,7 @@ class TicketsPerUserDay(RenderImpl):
         color_class = ''
         if calendar[segment]['date'] == None:
           self.macroenv.tracenv.log.warning("TicketsPerUserDay.render: calendar[%s][date] is null" % (segment,))
-        if  self.showAggregatedTicketState()  and  calendar[segment]['date'] < currentDate:
+        if  self.showAggregatedTicketState()  and  (not isinstance(calendar[segment]['date'], datetime.datetime)  or  calendar[segment]['date'] < currentDate):
           # determine color 
           state_new = 1
           state_work = 2
@@ -288,14 +288,13 @@ class TicketsPerUserDay(RenderImpl):
         
         for ticket in orderedtickets[segment][o]:
           counttickets[segment] += 1
-          td_div(tag.div( tag.span(self.createTicketLink(ticket), class_ = 'ticket_inner') , class_="draggable", data="%s" % (ticket.getfield("id"),) ) )
+          td_div( tag.div(self.createTicketLink(ticket) ) )
           
           if ticket.getfield('status') in countStatus.keys(): # count values
             countStatus[ticket.getfield('status')] += 1
           else:
             countStatus[ticket.getfield('status')] = 1
         
-        #tr(tag.td( tag.div( td_div, style = 'border-left:3px solid %s;' % (color) ) ) )
         tr(tag.td( tag.div( td_div ), self.render_statistics(orderedtickets[segment][o]), class_ = 'droppable %s %s %s' % (color_class, class_, self.statistics_class), 
           data="{ \"%s\":\"%s\", \"%s\":\"%s\", \"%s\":\"%s\" }" % (self.rowtype, o, field, segment, "action", "leave" )   ) 
         )
@@ -316,7 +315,7 @@ class TicketsPerUserDay(RenderImpl):
     tfoot(tr)
     table(tfoot)
     
-    div(table)
+    div(self.getWorkflowDefinition(),table)
     return div
 
 
@@ -518,6 +517,7 @@ class TicketTableAvsB(RenderImpl):
       ticket = ticketset.getTicket(tid)
       ticket_rowtype = ticket.getfield(self.rowtype)
       ticket_coltype =  ticket.getfield(self.coltype)
+      self.macroenv.tracenv.log.debug("table ticket values: #%s -> row: %s, col: %s" % (tid,ticket_rowtype,ticket_coltype) )
       
       
       # create new rows and cols if the parameter contains a '*'
@@ -588,9 +588,9 @@ class TicketTableAvsB(RenderImpl):
       td(tag.h5(tag.a( tableKeyPrettyPrint(rowkey), href='%s/query?%s&order=%s' % ( baseurl, tableKeyQueryParameter( self.rowtype,rowkey),self.coltype)) ),title="%s is %s" % (self.rowtype, tableKeyPrettyPrint(rowkey) ) ) # first cell contains row key
       tr(td)
       for colkey in self.cols :
-        td = tag.td()
+        td = tag.td(class_='droppable', data=self.getDropZoneDataConfiguration({  self.rowtype: rowkey, self.coltype: colkey  })  )
         for ticket in data[str(rowkey)][str(colkey)] :
-          td( tag.span(self.createTicketLink(ticket), class_ = 'ticket_inner' ), " " , mytitle="%s is %s and %s is %s" % (self.rowtype,rowkey,self.coltype,colkey) ) # mytitle might be used later by javascript
+          td( self.createTicketLink(ticket), " " , mytitle="%s is %s and %s is %s" % (self.rowtype,rowkey,self.coltype,colkey) ) # mytitle might be used later by javascript
           if not statistics[str(rowkey)][str(colkey)].has_key( ticket.getstatus() ) :
             statistics[str(rowkey)][str(colkey)][ticket.getstatus()] = 0
           statistics[str(rowkey)][str(colkey)][ticket.getstatus()] += 1
@@ -646,7 +646,7 @@ class TicketTableAvsB(RenderImpl):
       tfoot(tr)
       table(tfoot)
     
-    return_div(table)
+    return_div(self.getWorkflowDefinition(),table)
     
     return return_div 
 
