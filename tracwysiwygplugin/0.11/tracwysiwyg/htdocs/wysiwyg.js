@@ -2871,6 +2871,12 @@ TracWysiwyg.prototype._msieInsertHTML = function(html) {
     range = this.contentDocument.selection.createRange();
 };
 
+TracWysiwyg.prototype.insertLineBreak = function() {
+    this.insertHTML('<br>');
+};
+
+TracWysiwyg.prototype.insertLineBreakOnShiftEnter = null;
+
 if (window.getSelection) {
     TracWysiwyg.prototype.appendBogusLineBreak = function(element) {
         var wikiInlineTags = this.wikiInlineTags;
@@ -2938,13 +2944,7 @@ if (window.getSelection) {
     TracWysiwyg.prototype.getFocusNode = function() {
         return this.contentWindow.getSelection().focusNode;
     };
-    if (window.opera) {
-        TracWysiwyg.prototype.insertLineBreak = function() {
-            this.execCommand("inserthtml", "<br>");
-        };
-        TracWysiwyg.prototype.insertLineBreakOnShiftEnter = null;
-    }
-    else if (window.getSelection().setBaseAndExtent) {  // Safari 2+
+    if (window.getSelection().setBaseAndExtent) {  // Safari 2+
         TracWysiwyg.prototype.insertLineBreak = function() {
             this.execCommand("insertlinebreak");
         };
@@ -2952,15 +2952,6 @@ if (window.getSelection) {
             this.insertLineBreak();
             TracWysiwyg.stopEvent(event);
         };
-    }
-    else {  // Firefox 2+
-        TracWysiwyg.prototype.insertLineBreak = function() {
-            var d = this.contentDocument;
-            var event = d.createEvent("KeyboardEvent");
-            event.initKeyEvent("keypress", true, true, null, false, false, true, false, 0x000d, 0);
-            d.body.dispatchEvent(event);
-        };
-        TracWysiwyg.prototype.insertLineBreakOnShiftEnter = null;
     }
     if (window.getSelection().removeAllRanges) {
         TracWysiwyg.prototype.selectNode = function(node) {
@@ -3124,10 +3115,6 @@ else if (document.selection) {
     TracWysiwyg.prototype.appendBogusLineBreak = function(element) { };
     TracWysiwyg.prototype.isBogusLineBreak = function(node) { return false };
     TracWysiwyg.prototype.insertParagraphOnEnter = null;
-    TracWysiwyg.prototype.insertLineBreak = function() {
-        this.insertHTML("<br>");
-    };
-    TracWysiwyg.prototype.insertLineBreakOnShiftEnter = null;
     TracWysiwyg.prototype.tableHTML = function(id, row, col) {
         var html = this._tableHTML(row, col);
         return html.replace(/<td>/, '<td id="' + id + '">');
