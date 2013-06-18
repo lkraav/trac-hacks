@@ -5,8 +5,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='ContextChrome',
-    version='0.2',
-    license='Modified BSD',
+    version='0.3',
+    license='Modified BSD;  except xdr.js under MIT-LICENSE',
     author='MATOBA Akihiro',
     author_email='matobaa+trac-hacks@gmail.com',
     url='http://trac-hacks.org/wiki/matobaa',
@@ -22,6 +22,7 @@ setup(
             'DecayedWiki = decayed.wiki',
             'ContextChrome.TicketValidator = contextchrome.ticketvalidator',
             'ContextChrome.LinkDecorator = contextchrome.linkdeco',
+            'ContextChrome.CrossOriginResourceSharingEnabler = contextchrome.cors',
         ]
     },
 )
