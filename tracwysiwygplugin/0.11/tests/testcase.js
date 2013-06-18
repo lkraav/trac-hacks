@@ -1485,6 +1485,17 @@ addEvent(window, "load", function() {
             assertRangeText(" fox jumps over t", paragraph1, 3, paragraph1.childNodes[4], 2);
         });
 
+        unit.add("insertHTML", function() {
+            var d = instance.contentDocument;
+            var body = d.body;
+            while (body.childNodes.length > 0) {
+                body.removeChild(body.lastChild);
+            }
+            instance.insertHTML('<p>blah</p>');
+            var paragraph1 = body.childNodes[0];
+            unit.assertEqual('blah', paragraph1.innerHTML);
+        });
+
         unit.run();
     }
 

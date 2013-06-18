@@ -3133,6 +3133,16 @@ TracWysiwyg.prototype.domToWikitext = function(root, options) {
     return texts.join("").replace(/^(?: *\n)+|(?: *\n)+$/g, "");
 };
 
+TracWysiwyg.prototype._msieInsertHTML = function(html) {
+    this.contentWindow.focus();
+    var selection = this.contentDocument.selection;
+    var range = selection.createRange();
+    range.pasteHTML(html.replace(/\t/g, "&#9;"));
+    range.collapse(false);
+    range.select();
+    range = this.contentDocument.selection.createRange();
+};
+
 if (window.getSelection) {
     TracWysiwyg.prototype.appendBogusLineBreak = function(element) {
         var wikiInlineTags = this.wikiInlineTags;
@@ -3265,9 +3275,14 @@ if (window.getSelection) {
                 selection.addRange(range);
             }
         };
-        TracWysiwyg.prototype.insertHTML = function(html) {
-            this.execCommand("inserthtml", html);
-        };
+        if (/*@cc_on true || @*/ false) { // Internet Explorer
+            TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._msieInsertHTML;
+        }
+        else {
+            TracWysiwyg.prototype.insertHTML = function(html) {
+                this.execCommand("inserthtml", html);
+            };
+        }
     }
     else {      // Safari 2
         TracWysiwyg.prototype.selectNode = function(node) {
@@ -3678,15 +3693,7 @@ else if (document.selection) {
         }
         return false;
     };
-    TracWysiwyg.prototype.insertHTML = function(html) {
-        this.contentWindow.focus();
-        var selection = this.contentDocument.selection;
-        var range = selection.createRange();
-        range.pasteHTML(html.replace(/\t/g, "&#9;"));
-        range.collapse(false);
-        range.select();
-        range = this.contentDocument.selection.createRange();
-    };
+    TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._msieInsertHTML;
 }
 else {
     TracWysiwyg.prototype.appendBogusLineBreak = function(element) { };
