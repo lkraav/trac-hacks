@@ -319,15 +319,16 @@ TracWysiwyg.prototype.setupMenuEvents = function() {
         addEvent(element, "click", function(event) {
             var w = self.contentWindow;
             TracWysiwyg.stopEvent(event || w.event);
-            var keepMenus = false, exception;
-            try { keepMenus = method.apply(self, args) } catch (e) { exception = e }
-            if (!keepMenus) {
-                self.hideAllMenus();
+            var keepMenus = false;
+            try {
+                keepMenus = method.apply(self, args);
             }
-            element.blur();
-            w.focus();
-            if (exception) {
-                throw exception;
+            finally {
+                if (!keepMenus) {
+                    self.hideAllMenus();
+                }
+                element.blur();
+                w.focus();
             }
         });
     }
