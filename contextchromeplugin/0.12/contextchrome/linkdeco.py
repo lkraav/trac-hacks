@@ -16,7 +16,8 @@ from genshi.builder import Element
 from trac.wiki.api import WikiSystem
 from trac.wiki.model import WikiPage
 from datetime import datetime
-from trac.web.chrome import ITemplateProvider, add_stylesheet
+from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script,\
+    add_script_data
 from pkg_resources import ResourceManager
 
 
@@ -136,3 +137,27 @@ class InternalStylesheet(Component):
 
     def get_templates_dirs(self):
         return []
+
+
+class InterTracTicketLinkDecorator(Component):
+    """ set css-class to type on external ticket. """
+    implements(IRequestFilter, ITemplateProvider)
+
+    # IRequestFilter methods
+    def pre_process_request(self, req, handler):
+        add_script(req, "contextchrome/js/xdr.js")
+        add_script(req, "contextchrome/js/intertracticketlinkdecorator.js")
+        add_script_data(req, {'config__ticket__decolate_fields': self.config.getlist('ticket', 'decorate_fields')})
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        return template, data, content_type
+
+    # ITemplateProvider methods
+    def get_htdocs_dirs(self):
+        return [('contextchrome', ResourceManager().resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        return []
+
+
