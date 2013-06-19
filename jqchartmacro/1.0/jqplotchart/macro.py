@@ -391,7 +391,14 @@ class ChartIdGenerator(object):
     context: the trac request context, used to store the current id.
     """
     def __init__(self, context):
-        self.context = context
+      current = context
+      while current != None:
+        if current.parent == None:
+          self.context = current.parent
+          break
+        else:
+          current = current.parent
+      self.context = current
 
     """
     get_id: returns a unique id each time it is called.
