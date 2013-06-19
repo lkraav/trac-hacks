@@ -16,6 +16,9 @@ class ComponentManagerStub(object):
         pass
 
 class ContextStub(object):
+
+    parent = None
+
     def __init__(self):
         self.hints = {}
 
