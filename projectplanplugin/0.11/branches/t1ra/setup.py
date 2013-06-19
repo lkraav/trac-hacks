@@ -1,36 +1,43 @@
 # -*- coding: utf-8 -*-
 
-import os
-
 # http://docs.python.org/distutils/apiref.html
 from setuptools import find_packages, setup
 
-# define some names/files/pathes
-pppackagedir = u'projectplan'
-pppackage = 'projectplan'
-templatesdir = u'templates'
-htdocsdir = u'htdocs'
-htdocsubdirmapping = { 
-		       u'css': u'*.*',
-		       u'images': u'*.*',
-		       u'images/*': u'*.*',
-		       u'images/*/*': u'*.*',
-		       u'images/*/*/*': u'*.*',
-		       u'js': u'*.js',
-		       u'js/jquery-tablesorter': u'*.*',
-		       u'js/jquery-tooltip': u'*.*',
-		       u'js/jquery-tooltip/lib': u'*.js',
-		       u'js/jquery-burndown': u'*.*',
-		        }
-pptemplatesglob = [ os.path.join( templatesdir, u'*.html' ) ]
-pphtdocsglob = [ os.path.join( htdocsdir, subdir, globmap )
-		 for subdir, globmap in htdocsubdirmapping.items() ]
-pppackagedataglobs = pphtdocsglob + pptemplatesglob
+##
+# Add L10N support for newer trac distributions
+# see http://trac.edgewall.org/wiki/CookBook/PluginL10N
+##
+setup_l10n = {}
+try:
+  from trac.util.dist import get_l10n_cmdclass
+  cmdclass = get_l10n_cmdclass()
+  if cmdclass:
+    setup_l10n = {
+      'cmdclass': cmdclass,
+      'message_extractors': { 'projectplan': [
+        ('**.py',                'python', None), # generic python extractor
+        ('**/templates/**.html', 'genshi', None), # genshi (x)html Template extractor
+        ('**/templates/**.txt',  'genshi', {      # genshi Text Template extractor
+          'template_class': 'genshi.template:TextTemplate'
+        }),
+      ]}
+    }
+except ImportError:
+  pass
 
-# create setup instance - done
+##
+# create setup instance
+##
 setup(
   name = u'ProjectPlan',
-  version = u'2.1.3', # semantic versioning, c.f. http://semver.org/
+  ###
+  #  * setuptools/distutils versioning: https://pythonhosted.org/setuptools/setuptools.html#specifying-your-project-s-version
+  #  * semantic versioning, c.f. http://semver.org/
+  #  FIXME: on Reintegration, fix the version numbering according to semver (next major increase)
+  #  currently i'm using <last trunk merged ver>-dev.tira<nrchanges> which allows
+  #  setuptools parse_version to compare the version (<ver> predecessor < <ver>-dev.tiraN < <ver>)
+  ###
+  version = u'2.1.3-dev.tira1',
   description = u'ProjectPlanPlugin for Trac',
   long_description = u"""
     ProjectPlan Plugin basicaly adds the possibility for fast and
@@ -46,12 +53,22 @@ setup(
   author_email = u' anbo@informatik-tipps.net',
   url = u'http://trac-hacks.org/wiki/ProjectPlanPlugin',
   download_url = u'http://trac-hacks.org/svn/projectplanplugin',
-  #packages = [ pppackage ],
   packages = find_packages(),
   license = u'GPL2',
   keywords = u'project plan visualization',
-  #package_dir={ pppackage: pppackagedir , },
-  package_data = { pppackage: pppackagedataglobs },
-  install_requires = ( u'Trac >=0.11, <1.1' ),
-  entry_points = { u'trac.plugins': u'projectplan = projectplan.projectplan' }
+  package_data = { 'projectplan': [
+    u'templates/*.html',
+    u'htdocs/css/*.*',
+    u'htdocs/images/*.*',
+    u'htdocs/images/*/*.*',
+    u'htdocs/images/*/*/*.*',
+    u'htdocs/images/*/*/*/*.*',
+    u'htdocs/js/*.*',
+    u'htdocs/js/*/*.*',
+    u'htdocs/js/*/*/*.*',
+    u'locale/*/LC_MESSAGES/*.mo'
+  ] },
+  install_requires = ( u'Trac >=0.12, <1.1' ),
+  entry_points = { u'trac.plugins': u'projectplan = projectplan.projectplan' },
+  **setup_l10n
 )

@@ -3,6 +3,23 @@
 import re
 
 from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script
+from trac.util.translation import domain_functions
+
+_, \
+textn_, \
+tag_, \
+tagn_, \
+N_, \
+gettext, \
+add_domain = \
+    domain_functions('projectplanplugin', (
+      '_', 
+      'ngettext',
+      'tag_', 
+      'tagn_',
+      'N_', 
+      'gettext',
+      'add_domain'))
 
 class __TicketIDMatcher:
   '''

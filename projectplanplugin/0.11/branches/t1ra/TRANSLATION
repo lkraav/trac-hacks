@@ -1,0 +1,80 @@
+0. Translation Guide
+
+  0.0 Prerequisite
+    * for the testing and catalog changes, 
+      be sure to have >= trac 0.12 with i18n support installed (babel),
+      corresponding genshi and 
+      correct LC_* settings/locale user settings for testing
+
+  0.1 Code Guideline
+    * Use single quote ('string content') for constants, 
+      and double quote ("message content") for (language 
+      specific) messages
+    
+    * The domain specific L10N function set is imported in
+      pputil.py, ready to be imported in other code
+      (it should also contain other localization specific code
+      like date/time formats, currencies ...)
+
+  0.2 Imported L10N Functions
+    * General Message Translation
+      * _("Message")
+      * textn_(singular,plural,num)
+        * f.e. textn_("%(num)d Query","%(num)d Queries",num)
+
+    * Markup Translation
+      * tag_ analog _
+      * tagn_ analog textn_
+
+    * Only Extract / Only Translate pair
+      * N_("Extract this. Do not Translate.")
+      * gettext("Translate this. Do not Extract.")
+
+   0.3 Editing
+     * have a look at
+       http://trac.edgewall.org/wiki/TracL10N
+   
+   0.4 Extended Documentation (extended informations)
+     * http://genshi.edgewall.org/wiki/ApiDocs/genshi.filters.i18n
+     * http://trac.edgewall.org/wiki/TracL10N
+     * http://babel.edgewall.org/wiki/Documentation/index.html
+
+1. Extracting Messages
+  * run $python setup.py extract_messages
+    this will (re)generate the locale/messages.pot template
+  * clear the Last-Translator: and Language-Team: fields,
+    remove the FIRST AUTHOR comment - these lines are introduced 
+    every time but are quite meaningless in smaller projects -  
+
+2. Update a Message Catalog
+  * run $python setup.py update_catalog -l <Locale Specifier>
+    which updates a specific catalog (<Locale Specifier>.po) or
+    run $python setup.py compile_catalog
+    which updates all catalogs
+  * check for fuzzy entries (automatic inserted translations) and
+    remove the fuzzy tags
+
+3. Compile a Message Catalog
+  * run $python setup.py compile_catalog -l <Locale Specifier>
+    this should add a 
+    locale/<Locale Specifier>/LC_MESSAGES/projectplanplugin.mo file
+
+4. Add new Translations
+   * regenerate the Message Catalog (1. Extracting Messages)
+   * run $python setup.py init_catalog -l <Locale Specifier>
+     f.e.: $python setup.py init_catalog -l en_AU
+     for australian english
+   * translate the messages in
+     locale/en_AU/LC_MESSAGES/projectplanplugin.po
+   * compile the catalog (3. Compile a Message Catalog)
+
+5. Update Translations
+   * regenerate the Message Catalog (1. Extracting Messages)
+   * update the Translation (2. Update a Message Catalog)
+   * Add your changes to the <Locale Specifier>.po
+   * compile the catalog (3. Compile a Message Catalog)
+
+6. File a Report
+   * Feel free to file an extension ticket at 
+     http://trac-hacks.org/wiki/ProjectPlanPlugin#BugsFeatureRequests
+     with the new/updated *.po

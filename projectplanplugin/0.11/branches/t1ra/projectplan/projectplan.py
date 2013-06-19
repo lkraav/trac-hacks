@@ -360,6 +360,11 @@ class ProjectPlanMacro(WikiMacroBase):
     '''
     implements(ITemplateProvider)
 
+    def __init__(self):
+      WikiMacroBase.__init__(self)
+      locale_dir = resource_filename('projectplan', 'locale')
+      add_domain(self.env.path, locale_dir)
+
     def get_templates_dirs( self ):
       return [ resource_filename( __name__, 'templates' ) ]
 
