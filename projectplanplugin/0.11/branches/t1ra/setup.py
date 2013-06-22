@@ -37,7 +37,7 @@ setup(
   #  currently i'm using <last trunk merged ver>-dev.tira<nrchanges> which allows
   #  setuptools parse_version to compare the version (<ver> predecessor < <ver>-dev.tiraN < <ver>)
   ###
-  version = u'2.1.3-dev.tira1',
+  version = u'2.1.4-dev.tira1',
   description = u'ProjectPlanPlugin for Trac',
   long_description = u"""
     ProjectPlan Plugin basicaly adds the possibility for fast and

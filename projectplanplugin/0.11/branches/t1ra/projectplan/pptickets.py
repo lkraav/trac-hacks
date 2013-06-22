@@ -537,7 +537,7 @@ class ppTSCriticalPathSimple( ppTicketSetExtension ):
       if len(self.__ts[ k ].getextension( 'dependencies' )) <= 0:
         starts.add( self.__ts[ k ] )
 
-    dateNow = datetime.datetime.today()
+    dateNow = datetime.date.today()
     # add the pseudo ticket
     dateStart = dateNow
     for t in starts:
@@ -790,7 +790,7 @@ class DataAccessDependencies(object):
     field = None
     fieldrev = None
 
-    def __init__(self, env):
+    def __init__(self, env, authname):
       self.env = env
       self.authname = authname
       self.field = PPConfiguration( self.env ).get('custom_dependency_field')
@@ -799,7 +799,7 @@ class DataAccessDependencies(object):
     
     def getDependsOn( self, ticket_id ):
       # self.env.log.debug('DataAccessDependenciesInCustomFields.getDependsOn of #'+str(ticket_id)+': '+ repr(Ticket(self.env, int(ticket_id)).get_value_or_default(self.field).replace(ticket_id, "")))
-      return Ticket(self.env, int(ticket_id)).get_value_or_default(self.field).replace(ticket_id, "")
+      return Ticket(self.env, int(ticket_id)).get_value_or_default(self.field).replace(str(ticket_id), "")
 
     def getBlockedTickets(self, ticket_id):
       '''
@@ -807,10 +807,10 @@ class DataAccessDependencies(object):
 	returns list of ticket ids (as string)
 	Note: This a very inconvenient and expensive way. If you consider performance issues, then switch to Mastertickets compatibility mode
       '''
-      sqlconstraint = 'false'
+      sqlconstraint = ''
       
       # TODO precondition: normalize dependencies field
-      sqlconstraint += " OR value = \"%s\"" % (ticket_id,) # lonely value
+      sqlconstraint += " value = \"%s\"" % (ticket_id,) # lonely value
       sqlconstraint += " OR value LIKE \"%% %s,%%\"" % (ticket_id,) # middle
       sqlconstraint += " OR value LIKE \"%% %s\"" % (ticket_id,) # left 
       sqlconstraint += " OR value LIKE \"%s,%%\"" % (ticket_id,) # right
@@ -1037,7 +1037,7 @@ class DataAccessDependencies(object):
     
     useTable = None
     try:
-      useTable = PPConfiguration( self.env ).get('use_fast_save_changes');
+      useTable = (PPConfiguration( self.env ).get('use_fast_save_changes') == 'enabled')
     except Exception,e:
       useTable = False
     
@@ -1045,7 +1045,7 @@ class DataAccessDependencies(object):
       self.dataaccess = DataAccessDependencies.DataAccessDependenciesInExtraTable(self.env, authname)
     else:
       # for legacy support
-      self.dataaccess = DataAccessDependencies.DataAccessDependenciesInCustomFields(self.env)
+      self.dataaccess = DataAccessDependencies.DataAccessDependenciesInCustomFields(self.env, authname)
     
   
   def getDependsOn( self, ticket_id ):
