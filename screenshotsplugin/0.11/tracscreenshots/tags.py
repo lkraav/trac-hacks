@@ -26,13 +26,18 @@ class ScreenshotsTagProvider(DefaultTagProvider):
     """
     realm = 'screenshots'
 
-    def check_permission(self, perm, operation):
-        # Permission table for screenshot tags.
-        permissions = {'view' : 'WIKI_VIEW', 'modify' : 'WIKI_ADMIN'}
-
-        # First check permissions in default provider then for screenshots.
-        return super(ScreenshotsTagProvider, self).check_permission(perm,
-          operation) and permissions[operation] in perm
+    def check_permission(self, perm, action):
+        # Permission mapping for screenshot tagging operations.
+        perm_map = {'create': 'SCREENSHOTS_ADD', 'modify': 'SCREENSHOTS_EDIT',
+                    'view': 'SCREENSHOTS_VIEW'}
+        # First check default provider permissions (TAGS_*), then
+        # specifically for screenshot resources.
+        # Hint: We do not care for fine-grained per-resource restrictions yet.
+        realm_perm = perm('screenshots') 
+        return super(ScreenshotsTagProvider,
+                     self).check_permission(realm_perm, action) and \
+            (perm_map[action] in realm_perm or
+             action == 'modify' and perm_map['create'] in realm_perm)
 
 class ScreenshotsTags(Component):
     """
