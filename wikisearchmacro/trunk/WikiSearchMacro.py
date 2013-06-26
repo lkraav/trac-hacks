@@ -20,7 +20,7 @@ class WikiSearchMacro(WikiMacroBase):
     The fourth parameter is an optional name of a page to not include in the list
     """
 
-    def render_macro(self, req, name, content):
+    def expand_macro(self, formatter, name, content):
         search = prefix = limit = skips = None
         if not content:
             return html.H2('Need to specify a search')
@@ -65,5 +65,5 @@ class WikiSearchMacro(WikiMacroBase):
         wiki = WikiSystem(self.env)
         return html.DIV(
             html.UL([html.LI(
-                html.A(wiki.format_page_name(name), href=req.href.wiki(name)))
+                html.A(wiki.format_page_name(name), href=formatter.req.href.wiki(name)))
                       for name, version in cursor]))
