@@ -3,7 +3,15 @@
  * parent elment by the id hiddenbudgettable
  */
 function hideTable() {
-	$('#hiddenbudgettable').hide();
+	$('#budget_table').hide();
+}
+
+function showTable() {
+	$('#budget_table').show();
+}
+
+function getBudgetRows() {
+	return $('#budget_container').children('tr');
 }
 
 /*
@@ -15,7 +23,7 @@ function addBudgetRow() {
 	// Element with the id selectTypes in the html page
 	if ($('#selectTypes').length != 0) {
 		var types = $('#selectTypes').html();
-		types = types.split(';');
+		types = types.split('|');
 	}
 	var def_type_index = 0;
 	if ($('#def_type').length != 0) {
@@ -33,7 +41,7 @@ function addBudgetRow() {
 	// Getting the name-select values from html
 	if ($('#selectNames').length != 0)
 		var names = $('#selectNames').html();
-	names = names.split(';');
+	names = names.split('|');
 	// Getting the default values for Name, Estimation, Cost and State
 	var def_name_index = 0;
 	if ($('#def_name').length != 0)
@@ -44,61 +52,63 @@ function addBudgetRow() {
 			break;
 		}
 	}
-	if ($('#def_est').length != 0)
-		var def_est = $('#def_est').html();
+	if ($('#def_estimation').length != 0)
+		var def_estimation = $('#def_estimation').html();
 	if ($('#def_cost').length != 0)
 		var def_cost = $('#def_cost').html();
-	if ($('#def_state').length != 0)
-		var def_state = $('#def_state').html();
+	if ($('#def_status').length != 0)
+		var def_status = $('#def_status').html();
 
-	var tBodyContainer = $('#budget_container');
-	// initialise the rowcounter by the current amount of rows
-	var trElements = tBodyContainer.children('tr');
+	var trElements = getBudgetRows();
+	
+	// initialise the rowcounter by the number of the last row
 	var rowCounter = 1;
 	if (trElements && trElements.length > 0) {
-		rowCounter = trElements[trElements.length - 1].id.split('-')[1];
+		rowCounter = trElements[trElements.length - 1].id.split('-')[2];
 		rowCounter++;
 	}
+
 	var tableRow = document.createElement('tr');
-	// Amount of Columns, may should be given by function call
-	var columnCount = 6;
-	tableRow.id = 'row-' + rowCounter;
-	tBodyContainer.append(tableRow);
+	tableRow.id = 'budgeting-row-' + rowCounter;
+	$('#budget_container').append(tableRow);
+
 	// Adding column by column to the row element
-	for (column = 1; column <= columnCount; column++) {
+	var col_names = new Array('username', 'type', 'estimation', 'cost', 'status',
+			'comment')
+	for (var column = 0; column < col_names.length; column++) {
 		var td = document.createElement('td');
 		tableRow.appendChild(td);
 		var columnElement;
 		switch (column) {
-		case 1:
+		case 0:
 			// Select NAME Column Position 1
 			columnElement = getSelect(names);
 			columnElement.selectedIndex = def_name_index;
 			break;
-		case 2:
+		case 1:
 			// Select TYPES Column Position 2
 			columnElement = getSelect(types);
 			columnElement.selectedIndex = def_type_index;
 			break;
-		case 3:
+		case 2:
 			// Estimation
 			columnElement = document.createElement('input');
-			columnElement.setAttribute('value', def_est)
+			columnElement.setAttribute('value', def_estimation);
+			columnElement.size = 10;
+			break;
+		case 3:
+			// Cost
+			columnElement = document.createElement('input');
+			columnElement.setAttribute('value', def_cost);
 			columnElement.size = 10;
 			break;
 		case 4:
-			// Cost
+			// State
 			columnElement = document.createElement('input');
-			columnElement.setAttribute('value', def_cost)
+			columnElement.setAttribute('value', def_status);
 			columnElement.size = 10;
 			break;
 		case 5:
-			// State
-			columnElement = document.createElement('input');
-			columnElement.setAttribute('value', def_state)
-			columnElement.size = 10;
-			break;
-		case 6:
 			// Comment
 			columnElement = document.createElement('input');
 			columnElement.size = 60;
@@ -106,19 +116,19 @@ function addBudgetRow() {
 		default:
 			break;
 		}
-		columnElement.name = rowCounter + '-' + column + "-Insert";
+		columnElement.name = 'budgeting-' + rowCounter + '-'
+				+ col_names[column] + "-insert";
 		td.appendChild(columnElement);
 	}
 	// Adding a Delete Button to the end of the row
 	deleteButtonElement = document.createElement('td');
 	deleteButtonElement.innerHTML = '<div class="inlinebuttons">'
-			+ '<input type="button" style="border-radius: 1em 1em 1em 1em;'
-			+ ' font-size: 100%" name="deleteRow' + rowCounter
-			+ '" onclick="deleteRow(' + rowCounter
-			+ ')" value = "&#x2718"/></div>';
+			+ '<input type="button" class="deleteBudgetRow"'
+			+ ' name="deleteRow' + rowCounter + '" onclick="deleteRow('
+			+ rowCounter + ')"' + ' value = "&#x2718"/></div>';
 	tableRow.appendChild(deleteButtonElement);
 	// Change hidden tbody elment to be visible
-	$('#hiddenbudgettable').show();
+	showTable();
 }
 
 /*
@@ -139,6 +149,7 @@ function getSelect(optionArray) {
 			columnElement.add(newOption, columnElement.selectedIndex);
 		}
 	}
+	columnElement.setAttribute("class","budgeting_select")
 	return columnElement
 }
 
@@ -153,11 +164,12 @@ function deleteRow(rowID) {
 	if (rowID < 0)
 		return;
 
-	var row = $("#row-" + rowID);
+	var row = $("#budgeting-row-" + rowID);
 	row.hide();
 	var rowElems = row.find("select , input");
 	for ( var i in rowElems) {
-		rowElems[i].name = (rowElems[i].name + "").match(/\d+-\d+/) + "-Delete";
+		rowElems[i].name = "budgeting-"
+				+ (rowElems[i].name + '').match(/\d+-\w+/) + "-delete";
 	}
 
 	// This logic ist responsible for hidding the complete tbody element, if no
@@ -167,10 +179,6 @@ function deleteRow(rowID) {
 	}
 }
 
-function update(row, column) {
-	if (row < 0 || column < 0)
-		return;
-
-	var ename = row + "-" + column
-	$("[name='" + ename + "']").attr('name', ename + '-Update');
+function update(field) {
+	$("[name='" + field + "']").attr('name', field + '-update');
 }
