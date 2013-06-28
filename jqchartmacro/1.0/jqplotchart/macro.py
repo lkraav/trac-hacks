@@ -72,7 +72,7 @@ class QueryRunner(object):
         query = result[0].replace('$USER', "'" + self.current_user + "'")
         parameters = result[1];
 
-        groups = re.match('^(.*)({(\\d)})(.*)$', query)
+        groups = re.match('^(.*)({(\\d+)})(.*)$', query)
         if groups:
             result = self.get_query_from_report(groups.group(3))
             query = ''.join([groups.group(1), result[0], groups.group(4)])
