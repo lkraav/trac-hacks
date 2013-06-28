@@ -40,7 +40,7 @@ msgid "Cost"
 msgstr "Aufwand"
 
 msgid "State"
-msgstr "Status in %%"
+msgstr "Status in %"
 
 msgid "Comment"
 msgstr "Kommentar"
