@@ -18,7 +18,7 @@
         <div>
           <input type="checkbox" id="showall" name="show" value="all"
                  checked="${showall or None}" />
-          <label for="showall">Show already completed versions</label>
+          <label for="showall">Show completed versions</label>
         </div>
         <div class="buttons">
           <input type="submit" value="Update" />
@@ -26,14 +26,14 @@
       </form>
 
       <ul class="milestones">
-        <li py:for="idx, version in enumerate(versions)" class="milestone">
+        <li py:for="version in versions" class="milestone">
 
           <div class="info">
             <h2><a href="${href.version(version.name)}">
               Version: <em>${version.name}</em>
             </a></h2>
             <py:choose>
-              <p py:when="is_released[idx]" class="date">
+              <p py:when="version.is_released" class="date">
                 Released ${dateinfo(version.time)} ago
                 (${format_datetime(version.time)})
               </p>
@@ -48,7 +48,7 @@
           </div>
 
           <div class="description" xml:space="preserve">
-            ${wiki_to_html(context(resources[idx]), version.description)}
+            ${wiki_to_html(context(version.resource), version.description)}
           </div>
 
         </li>

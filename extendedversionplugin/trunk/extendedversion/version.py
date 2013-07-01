@@ -10,7 +10,7 @@
 
 import re
 
-from datetime import date
+from datetime import datetime
 from pkg_resources import parse_version
 
 from genshi.builder import tag
@@ -27,7 +27,7 @@ from trac.ticket.roadmap import (
     ITicketGroupStatsProvider, apply_ticket_permissions,
     get_tickets_for_milestone, get_ticket_stats
 )
-from trac.util.datefmt import get_datetime_format_hint, parse_date
+from trac.util.datefmt import get_datetime_format_hint, parse_date, utc
 from trac.util.translation import _
 from trac.web.chrome import (
     Chrome, INavigationContributor, IRequestHandler, ITemplateProvider,
@@ -387,12 +387,11 @@ class VisibleVersion(Component):
         version.resource = Resource('version', version.name)
         context = Context.from_request(req, version.resource)
 
-        version.is_released = version.time and version.time.date() < date.today()
+        version.is_released = version.time and version.time < datetime.now(utc)
         version.stats = stats
         version.interval_hrefs = interval_hrefs
         version.stats_href = [] # Not implemented yet, see th:#10349
         data = {
-            'context': context,
             'version': version,
             'attachments': AttachmentModule(self.env).attachment_data(context),
             'milestones': milestones,
