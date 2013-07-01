@@ -54,12 +54,22 @@
         </li>
       </ul>
 
-      <div py:if="'VERSION_CREATE' in perm" class="buttons">
-       <form method="get" action="${href.version()}"><div>
-        <input type="hidden" name="action" value="new" />
-        <input type="submit" value="Add new version" />
-       </div></form>
-      </div>
+
+      <py:with vars="version_create = 'VERSION_CREATE' in perm;
+                     milestone_create = roadmap_navigation and 'MILESTONE_CREATE' in perm;">
+        <div py:if="milestone_create or version_create" class="buttons">
+          <form py:if="version_create" method="get"
+                action="${href.version()}"><div>
+            <input type="hidden" name="action" value="new" />
+            <input type="submit" value="${_('Add new version')}" />
+          </div></form>
+          <form py:if="milestone_create" method="get"
+                action="${href.milestone()}"><div>
+            <input type="hidden" name="action" value="new" />
+            <input type="submit" value="${_('Add new milestone')}" />
+          </div></form>
+        </div>
+      </py:with>
 
       <div id="help"><strong>Note:</strong> See
         <a href="${href.wiki('TracRoadmap')}">TracRoadmap</a> for help on using

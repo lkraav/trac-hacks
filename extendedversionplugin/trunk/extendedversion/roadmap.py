@@ -82,6 +82,8 @@ class ReleasesModule(Component):
             'resources': resources,
             'is_released': is_released,
             'showall': showall,
+            'roadmap_navigation': self.config.getbool('extended_version',
+                                                      'roadmap_navigation'),
         }
         add_stylesheet(req, 'common/css/roadmap.css')
         return 'versions.html', data, None
