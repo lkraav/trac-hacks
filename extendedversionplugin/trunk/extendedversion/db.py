@@ -8,20 +8,22 @@
 # you should have received as part of this distribution.
 #
 
-from trac.core import Component, implements
+from trac.core import Component, TracError, implements
 from trac.env import IEnvironmentSetupParticipant
+from trac.util.translation import _
 
 db_version = 1
 upgrades = [
-    [], # zero-indexing
-        [# First revision
-         #-- Add the milestone_version table for mapping milestones to versions
-         """CREATE TABLE milestone_version (
-             milestone    text PRIMARY KEY,
-             version      text
-         );""",
-         """INSERT INTO system (name, value) VALUES ('extended_version_plugin', 1)""",
-        ],
+    [],  # zero-indexing
+    [# First revision
+     #-- Add the milestone_version table for mapping milestones to versions
+     """CREATE TABLE milestone_version (
+         milestone    text PRIMARY KEY,
+         version      text
+     );""",
+     """INSERT INTO system (name, value)
+        VALUES ('extended_version_plugin', 1)""",
+    ],
 ]
 
 
@@ -46,17 +48,16 @@ class ExtendedVersionsSetup(Component):
         return True
 
     def upgrade_environment(self, db):
-        dbver = self._get_version(db)
+        db_version = self._get_version(db)
 
         cursor = db.cursor()
-        for i in range(dbver + 1, db_version + 1):
+        for i in range(db_version + 1, db_version + 1):
             for sql in upgrades[i]:
                 cursor.execute(sql)
         cursor.execute("UPDATE system SET value=%s WHERE "
                        "name='extended_version_plugin'", (db_version,))
         self.log.info('Upgraded ExtendedVersionTracPlugin schema from %d to %d',
-                      dbver, db_version)
-
+                      db_version, db_version)
 
     # Internal methods
 
