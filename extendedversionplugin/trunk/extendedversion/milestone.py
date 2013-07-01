@@ -10,9 +10,7 @@
 
 from genshi.builder import tag
 from genshi.filters.transform import StreamBuffer, Transformer
-from genshi.template.markup import MarkupTemplate
-
-from trac.core import *
+from trac.core import Component, implements
 from trac.util.datefmt import to_timestamp
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import INavigationContributor
@@ -33,14 +31,13 @@ class MilestoneVersion(Component):
     def get_navigation_items(self, req):
         return []
 
-
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
         action = req.args.get('action', 'view')
         if req.path_info.startswith('/milestone') \
-            and req.method == 'POST' \
-            and action == 'edit' or action == 'delete':
+                and req.method == 'POST' \
+                and action == 'edit' or action == 'delete':
 
             old_name = req.args.get('id')
             new_name = req.args.get('name')
@@ -54,7 +51,7 @@ class MilestoneVersion(Component):
                 if version_id and action == 'edit':
                     self._insert_milestone_version(db, new_name, version_id)
 
-            db.commit() # is called when milestone save succeeds
+            db.commit()  # is called when milestone save succeeds
 
         return handler
 
@@ -79,7 +76,7 @@ class MilestoneVersion(Component):
 
         return stream
 
-    # internal methods
+    # Internal methods
 
     def _delete_milestone_version(self, db, milestone):
         cursor = db.cursor()
@@ -97,8 +94,10 @@ class MilestoneVersion(Component):
         def apply_version():
             return self._version_display(req, buffer.events[1][1])
 
-        filter = Transformer('//li[@class="milestone"]/div/h2/a/em').copy(buffer).end() \
-            .select('//li[@class="milestone"]//p[@class="date"]').append(apply_version)
+        filter = Transformer('//li[@class="milestone"]/div/h2/a/em') \
+            .copy(buffer).end() \
+            .select('//li[@class="milestone"]//p[@class="date"]') \
+            .append(apply_version)
         return stream | filter
 
     def _version_display(self, req, milestone):
@@ -136,4 +135,3 @@ class MilestoneVersion(Component):
                     [tag.option(row[0], selected=(value == row[0] or None)) for row in cursor],
                     name="version")),
             class_="field")
-

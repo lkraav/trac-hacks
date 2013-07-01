@@ -17,7 +17,7 @@ from trac.resource import Resource
 from trac.ticket import Version
 from trac.util.datefmt import utc
 from trac.util.translation import _
-from trac.web.api import IRequestHandler, IRequestFilter
+from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import(
     INavigationContributor, add_stylesheet
 )
@@ -31,6 +31,7 @@ class ReleasesModule(Component):
         the versions page.""")
 
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         return 'versions'
 
@@ -44,6 +45,7 @@ class ReleasesModule(Component):
                        tag.a(_('Versions'), href=req.href.versions()))
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -53,6 +55,7 @@ class ReleasesModule(Component):
         return template, data, content_type
 
     # IRequestHandler methods
+
     def match_request(self, req):
         return req.path_info == '/versions'
 
@@ -86,7 +89,7 @@ class ReleasesModule(Component):
 
         navitems = req.chrome['nav']['mainnav']
 
-        active = False;
+        active = False
         for navitem in navitems:
             if navitem['active'] and navitem['name'] == name:
                 active = True
@@ -96,4 +99,3 @@ class ReleasesModule(Component):
             for navitem in navitems:
                 if navitem['name'] == 'versions':
                     navitem['active'] = True
-

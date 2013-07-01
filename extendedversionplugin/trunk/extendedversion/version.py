@@ -17,15 +17,15 @@ from genshi.builder import tag
 from trac import __version__ as trac_version
 from trac.attachment import AttachmentModule, ILegacyAttachmentPolicyDelegate
 from trac.config import BoolOption, ExtensionOption, Option
-from trac.core import *
+from trac.core import Component, TracError, implements
 from trac.mimeview.api import Context
 from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager, Resource, ResourceNotFound
-from trac.ticket import Milestone, Version
+from trac.ticket.model import Milestone, Version
 from trac.ticket.query import QueryModule
 from trac.ticket.roadmap import (
     ITicketGroupStatsProvider, apply_ticket_permissions,
-    get_tickets_for_milestone, get_ticket_stats
+    get_ticket_stats, get_tickets_for_milestone
 )
 from trac.util.datefmt import get_datetime_format_hint, parse_date, utc
 from trac.util.translation import _
@@ -116,7 +116,6 @@ class VisibleVersion(Component):
                                (username, resource, action))
         return decision
 
-
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
@@ -125,14 +124,12 @@ class VisibleVersion(Component):
     def get_navigation_items(self, req):
         return []
 
-
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
         actions = ['VERSION_CREATE', 'VERSION_DELETE', 'VERSION_MODIFY',
                    'VERSION_VIEW']
         return actions + [('VERSION_ADMIN', actions)]
-
 
     # IRequestHandler methods
 
@@ -152,7 +149,7 @@ class VisibleVersion(Component):
         action = req.args.get('action', 'view')
 
         if req.method == 'POST':
-            if req.args.has_key('cancel'):
+            if 'cancel' in req.args:
                 if version.exists:
                     req.redirect(req.href.version(version.name))
                 else:
@@ -171,7 +168,6 @@ class VisibleVersion(Component):
 
         add_stylesheet(req, 'common/css/roadmap.css')
         return self._render_view(req, db, version)
-
 
     # IResourceManager methods
 
@@ -199,7 +195,6 @@ class VisibleVersion(Component):
         except ResourceNotFound:
             return False
 
-
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
@@ -209,7 +204,6 @@ class VisibleVersion(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename('extendedversion', 'templates')]
-
 
     # IWikiSyntaxProvider methods
 
@@ -266,7 +260,7 @@ class VisibleVersion(Component):
                 #        (#4130) and should behave like a WikiPage does in
                 #        this respect.
                 try:
-                    other_version = Version(self.env, new_name, db)
+                    Version(self.env, new_name, db)
                     warn(_('Version "%(name)s" already exists, please '
                            'choose another name', name=new_name))
                 except ResourceNotFound:
@@ -390,17 +384,16 @@ class VisibleVersion(Component):
         version.is_released = version.time and version.time < datetime.now(utc)
         version.stats = stats
         version.interval_hrefs = interval_hrefs
-        version.stats_href = [] # Not implemented yet, see th:#10349
+        version.stats_href = []  # Not implemented yet, see th:#10349
         data = {
             'version': version,
             'attachments': AttachmentModule(self.env).attachment_data(context),
             'milestones': milestones,
             'milestone_stats': milestone_stats,
-            'show_milestone_description': self.show_milestone_description # Not implemented yet
+            'show_milestone_description': self.show_milestone_description  # Not implemented yet
         }
 
         add_stylesheet(req, 'extendedversion/css/version.css')
         add_script(req, 'common/js/folding.js')
         add_ctxtnav(req, _("Back to Versions"), req.href.versions())
         return 'version_view.html', data, None
-
