@@ -8,13 +8,14 @@
 # you should have received as part of this distribution.
 #
 
-from datetime import date
-from genshi.builder import tag
+from datetime import datetime
 
+from genshi.builder import tag
 from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.resource import Resource
 from trac.ticket import Version
+from trac.util.datefmt import utc
 from trac.util.translation import _
 from trac.web.api import IRequestHandler, IRequestFilter
 from trac.web.chrome import(
@@ -61,26 +62,20 @@ class ReleasesModule(Component):
         showall = req.args.get('show') == 'all'
 
         versions = []
-        resources = []
-        is_released = []
         for v in Version.select(self.env):
-            r = Resource('version', v.name)
-            ir = v.time and v.time.date() < date.today()
+            resource = Resource('version', v.name)
+            is_released = v.time and v.time < datetime.now(utc)
 
-            # apply more visibiity
-            if (showall or not ir) and 'VERSION_VIEW' in req.perm(r):
+            if (showall or not is_released) and \
+                    'VERSION_VIEW' in req.perm(resource):
+                v.is_released = is_released
+                v.resource = resource
                 versions.append(v)
-                resources.append(r)
-                is_released.append(v.time and v.time.date() < date.today())
 
-        versions.reverse(),
-        resources.reverse(),
-        is_released.reverse(),
+        versions.reverse()
 
         data = {
             'versions': versions,
-            'resources': resources,
-            'is_released': is_released,
             'showall': showall,
             'roadmap_navigation': self.config.getbool('extended_version',
                                                       'roadmap_navigation'),
