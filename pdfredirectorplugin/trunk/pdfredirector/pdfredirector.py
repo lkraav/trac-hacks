@@ -4,6 +4,7 @@ from trac.config import ListOption
 from trac.core import Component, implements
 from trac.web.api import IRequestFilter
 
+
 class PDFRedirector(Component):
 
     implements(IRequestFilter)
@@ -20,8 +21,10 @@ class PDFRedirector(Component):
 
         path = req.path_info.strip('/').split('/')
 
-        if len(path) > 1 and path[-1].lower().rsplit('.', 1)[-1] in self.extensions:
-            if path[0] == 'attachment' and not req.args.get('action') == 'delete':
+        if len(path) > 1 and \
+                path[-1].lower().rsplit('.', 1)[-1] in self.extensions:
+            if path[0] == 'attachment' and \
+                    not req.args.get('action') == 'delete':
                 filepath = req.href(*(['raw-attachment'] + path[1:]))
                 req.redirect(filepath)
             elif path[0] == 'browser':
