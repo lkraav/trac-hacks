@@ -47,7 +47,7 @@
             u'new',
             None,
             u'newticket',
-            u"\n[[BR]][[BR]]\n''Batch insert from file test/simple_with_comments.csv:''\n comment for a new ticket",
+            u"''Batch insert from file test/simple_with_comments.csv:''\r\n comment for a new ticket",
             u'')],
     [   (1245, u'mycustomfield', u'customfield2'),
         (1246, u'mycustomfield', u'mycustomfield1 modified'),

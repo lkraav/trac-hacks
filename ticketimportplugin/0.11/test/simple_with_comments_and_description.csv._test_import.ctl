@@ -47,7 +47,7 @@
             u'new',
             None,
             u'newticket',
-            u"new description\n[[BR]][[BR]]\n''Batch insert from file test/simple_with_comments_and_description.csv:''\ncomment for a new ticket",
+            u"new description\r\n[[BR]][[BR]]\r\n''Batch insert from file test/simple_with_comments_and_description.csv:''\r\ncomment for a new ticket",
             u'')],
     [   (1245, u'mycustomfield', u'customfield2'),
         (1246, u'mycustomfield', u'mycustomfield1'),
