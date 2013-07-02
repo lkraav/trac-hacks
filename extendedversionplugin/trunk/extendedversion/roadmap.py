@@ -13,7 +13,7 @@ from datetime import datetime
 from genshi.builder import tag
 from trac.core import Component, implements
 from trac.resource import Resource
-from trac.ticket import Version
+from trac.ticket.model import Version
 from trac.ticket.roadmap import RoadmapModule
 from trac.util.datefmt import utc
 from trac.util.translation import _
@@ -51,22 +51,22 @@ class ReleasesModule(Component):
         showall = req.args.get('show') == 'all'
 
         versions = []
-        for v in Version.select(self.env):
-            resource = Resource('version', v.name)
-            is_released = v.time and v.time < datetime.now(utc)
+        for version in Version.select(self.env):
+            resource = Resource('version', version.name)
+            is_released = version.time and version.time < datetime.now(utc)
 
             if (showall or not is_released) and \
                     'VERSION_VIEW' in req.perm(resource):
-                v.is_released = is_released
-                v.resource = resource
-                versions.append(v)
+                version.is_released = is_released
+                version.resource = resource
+                versions.append(version)
 
         versions.reverse()
 
         data = {
             'versions': versions,
             'showall': showall,
-            'roadmap_navigation': not self.env.enabled[RoadmapModule]
+            'roadmapmodule_disabled': not self.env.enabled[RoadmapModule]
         }
         add_stylesheet(req, 'common/css/roadmap.css')
         return 'versions.html', data, None
