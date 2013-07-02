@@ -55,7 +55,7 @@
       </ul>
 
       <py:with vars="version_create = 'VERSION_CREATE' in perm;
-                     milestone_create = roadmap_navigation and 'MILESTONE_CREATE' in perm;">
+                     milestone_create = roadmapmodule_disabled and 'MILESTONE_CREATE' in perm;">
         <div py:if="milestone_create or version_create" class="buttons">
           <form py:if="version_create" method="get"
                 action="${href.version()}"><div>
