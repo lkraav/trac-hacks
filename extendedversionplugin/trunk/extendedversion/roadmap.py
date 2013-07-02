@@ -11,24 +11,20 @@
 from datetime import datetime
 
 from genshi.builder import tag
-from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.resource import Resource
 from trac.ticket import Version
+from trac.ticket.roadmap import RoadmapModule
 from trac.util.datefmt import utc
 from trac.util.translation import _
-from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.api import IRequestHandler
 from trac.web.chrome import(
     INavigationContributor, add_stylesheet
 )
 
 
 class ReleasesModule(Component):
-    implements(INavigationContributor, IRequestHandler, IRequestFilter)
-
-    roadmap_navigation = BoolOption('extended_version', 'roadmap_navigation',
-        'false', doc="""Whether to have the roadmap navigation item link to
-        the versions page.""")
+    implements(INavigationContributor, IRequestHandler)
 
     # INavigationContributor methods
 
@@ -37,22 +33,12 @@ class ReleasesModule(Component):
 
     def get_navigation_items(self, req):
         if 'VERSION_VIEW' in req.perm:
-            if self.roadmap_navigation:
-                yield ('mainnav', 'versions',
-                       tag.a(_('Roadmap'), href=req.href.versions()))
+            if self.env.enabled[RoadmapModule]:
+                label = _("Versions")
             else:
-                yield ('mainnav', 'versions',
-                       tag.a(_('Versions'), href=req.href.versions()))
-
-    # IRequestFilter methods
-
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        if self.roadmap_navigation and 'VERSION_VIEW' in req.perm:
-            self._remove_item(req, 'roadmap')
-        return template, data, content_type
+                label = _("Roadmap")
+            yield ('mainnav', 'versions',
+                   tag.a(label, href=req.href.versions()))
 
     # IRequestHandler methods
 
@@ -80,22 +66,7 @@ class ReleasesModule(Component):
         data = {
             'versions': versions,
             'showall': showall,
-            'roadmap_navigation': self.roadmap_navigation
+            'roadmap_navigation': not self.env.enabled[RoadmapModule]
         }
         add_stylesheet(req, 'common/css/roadmap.css')
         return 'versions.html', data, None
-
-    def _remove_item(self, req, name):
-
-        navitems = req.chrome['nav']['mainnav']
-
-        active = False
-        for navitem in navitems:
-            if navitem['active'] and navitem['name'] == name:
-                active = True
-            if navitem['name'] == name:
-                navitems.remove(navitem)
-        if active:
-            for navitem in navitems:
-                if navitem['name'] == 'versions':
-                    navitem['active'] = True
