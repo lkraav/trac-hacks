@@ -354,7 +354,7 @@ class TracHacksHandler(Component):
                              int(min_px + percent * (max_px - min_px)))
 
         data['cloud'] = TagWikiMacros(self.env). \
-            render_cloud(self.env, req, cloud, cloud_renderer)
+            render_cloud(req, cloud, cloud_renderer)
 
         add_script(req, 'common/js/wikitoolbar.js')
         add_script(req, 'common/js/folding.js')
