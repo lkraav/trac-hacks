@@ -4,6 +4,7 @@
 # Licensed under the same license as Trac - http://trac.edgewall.org/wiki/TracLicense
 #
 
+import re
 import time
 
 from trac.ticket import Ticket, model
@@ -12,6 +13,14 @@ from trac.util.datefmt import format_datetime
 from trac.util.html import Markup
 from trac.util.text import to_unicode
 from trac.wiki import wiki_to_html
+
+
+_normalize_newline_re = re.compile('\r?\n|\r')
+
+def _normalize_newline(value):
+    if isinstance(value, basestring):
+        value = _normalize_newline_re.sub('\r\n', value)
+    return value
 
 
 class ImportProcessor(object):
@@ -78,7 +87,7 @@ class ImportProcessor(object):
         self.comment = ''
 
     def process_cell(self, column, cell):
-        cell = unicode(cell)
+        cell = _normalize_newline(unicode(cell))
         column = column.lower()
         # if status of new ticket is empty, force to use 'new'
         if not self.ticket.exists and column == 'status' and not cell:
@@ -87,7 +96,7 @@ class ImportProcessor(object):
         self.ticket[column] = cell
 
     def process_comment(self, comment):
-        self.comment = comment
+        self.comment = _normalize_newline(comment)
 
     def _tickettime(self):
         try:
@@ -121,7 +130,14 @@ class ImportProcessor(object):
                         self.ticket[f] = ''
 
             if self.comment:
-                self.ticket['description'] = self.ticket['description'] + "\n[[BR]][[BR]]\n''Batch insert from file " + self.filename + ":''\n" + self.comment
+                description = self.ticket['description']
+                if description:
+                    description += '\r\n[[BR]][[BR]]\r\n'
+                else:
+                    description = ''
+                self.ticket['description'] = (
+                        "%s''Batch insert from file %s:''\r\n%s" %
+                        (description, self.filename, self.comment))
 
             if self.computedfields:
                 for f in self.computedfields:
