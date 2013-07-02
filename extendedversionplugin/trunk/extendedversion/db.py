@@ -42,22 +42,22 @@ class ExtendedVersionsSetup(Component):
         if dbver == db_version:
             return False
         elif dbver > db_version:
-            raise TracError(_('Database newer than ExtendedVersionTracPlugin version'))
-        self.log.info("ExtendedVersionTracPlugin schema version is %d, should be %d",
+            raise TracError(_("Database newer than ExtendedVersionPlugin version"))
+        self.log.info("ExtendedVersionPlugin schema version is %d, should be %d",
                       dbver, db_version)
         return True
 
     def upgrade_environment(self, db):
-        db_version = self._get_version(db)
+        dbver = self._get_version(db)
 
         cursor = db.cursor()
-        for i in range(db_version + 1, db_version + 1):
+        for i in range(dbver + 1, db_version + 1):
             for sql in upgrades[i]:
                 cursor.execute(sql)
         cursor.execute("UPDATE system SET value=%s WHERE "
                        "name='extended_version_plugin'", (db_version,))
-        self.log.info('Upgraded ExtendedVersionTracPlugin schema from %d to %d',
-                      db_version, db_version)
+        self.log.info('Upgraded ExtendedVersionPlugin schema from %d to %d',
+                      dbver, db_version)
 
     # Internal methods
 
@@ -72,4 +72,3 @@ class ExtendedVersionsSetup(Component):
                 return 0
         except:
             return 0
-

@@ -111,7 +111,7 @@ class VisibleVersion(Component):
 
         decision = action in perm(resource.parent)
         if not decision:
-            self.env.log.debug('ExtendedVersionTracPlugin denied %s '
+            self.env.log.debug('ExtendedVersionPlugin denied %s '
                                'access to %s. User needs %s' %
                                (username, resource, action))
         return decision
