@@ -8,23 +8,35 @@
 # you should have received as part of this distribution.
 #
 
+from trac.db.schema import Column, Table
 from trac.core import Component, TracError, implements
 from trac.env import IEnvironmentSetupParticipant
 from trac.util.translation import _
 
 db_version = 1
-upgrades = [
-    [],  # zero-indexing
-    [# First revision
-     #-- Add the milestone_version table for mapping milestones to versions
-     """CREATE TABLE milestone_version (
-         milestone    text PRIMARY KEY,
-         version      text
-     );""",
-     """INSERT INTO system (name, value)
-        VALUES ('extended_version_plugin', 1)""",
-    ],
+
+schema = [
+    Table('milestone_version', key='milestone')[
+        Column('milestone'),
+        Column('version'),
+    ]
 ]
+
+
+def to_sql(env, table):
+    from trac.db.api import DatabaseManager
+    dc = DatabaseManager(env)._get_connector()[0]
+    return dc.to_sql(table)
+
+
+def create_tables(env, db):
+    cursor = db.cursor()
+    for table in schema:
+        for stmt in to_sql(env, table):
+            cursor.execute(stmt)
+    cursor.execute("""
+        INSERT into system values ('extended_version_plugin', %s)
+        """, str(db_version))
 
 
 class ExtendedVersionsSetup(Component):
@@ -37,27 +49,23 @@ class ExtendedVersionsSetup(Component):
         pass
 
     def environment_needs_upgrade(self, db):
-        dbver = self._get_version(db)
+        current_version = self._get_version(db)
 
-        if dbver == db_version:
+        if current_version == db_version:
             return False
-        elif dbver > db_version:
+        elif current_version > db_version:
             raise TracError(_("Database newer than ExtendedVersionPlugin version"))
         self.log.info("ExtendedVersionPlugin schema version is %d, should be %d",
-                      dbver, db_version)
+                      current_version, db_version)
         return True
 
     def upgrade_environment(self, db):
-        dbver = self._get_version(db)
+        current_version = self._get_version(db)
 
-        cursor = db.cursor()
-        for i in range(dbver + 1, db_version + 1):
-            for sql in upgrades[i]:
-                cursor.execute(sql)
-        cursor.execute("UPDATE system SET value=%s WHERE "
-                       "name='extended_version_plugin'", (db_version,))
-        self.log.info('Upgraded ExtendedVersionPlugin schema from %d to %d',
-                      dbver, db_version)
+        if current_version == 0:
+            create_tables(self.env, db)
+        else:
+            pass
 
     # Internal methods
 
