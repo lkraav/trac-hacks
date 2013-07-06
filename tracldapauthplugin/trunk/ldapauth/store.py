@@ -7,7 +7,6 @@ from trac.core import (
     )
 
 from trac.config import (
-    BoolOption,
     ChoiceOption,
     Option,
     )
@@ -123,5 +122,3 @@ class LDAPStore(Component):
             self.search_scope = SEARCH_SCOPES[0]
         self.log.debug('LDAPAuth: using search scope %s', self.search_scope)
         return getattr(ldap, 'SCOPE_%s' % self.search_scope.upper())
-
-
