@@ -20,6 +20,19 @@ PASSWORDSTORE_FAILURE = False
 PASSWORDSTORE_FALLTHROUGH = None
 
 
+def is_empty(sequence):
+    """Returns True if sequence is empty
+
+    Although empty Python sequences (strings, lists, tuples, dictionaries) are
+    False, this function aims to define "emptiness". In addition, strings that
+    contain only spaces are also considered empty.
+
+    """
+    if isinstance(sequence, basestring):
+        sequence = sequence.strip()
+    return not sequence
+
+
 class LDAPStore(Component):
     """An AccountManager backend to use LDAP."""
 
@@ -40,6 +53,13 @@ class LDAPStore(Component):
 
     def check_password(self, user, password):
         self.log.debug('LDAPAuth: Checking password for user %s', user)
+
+        if is_empty(user) or is_empty(password):
+            # Based on RFC 4513 "Clients SHOULD disallow an empty password
+            # input to a Name/Password Authentication user interface".
+            # For more info see http://www.rfc-editor.org/rfc/rfc4513.txt
+            self.log.debug('LDAPAuth: User or password is an empty string.')
+            return PASSWORDSTORE_FAILURE
 
         conn = None
         try:
