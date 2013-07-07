@@ -554,6 +554,7 @@ table.pplisting tbody td.ppimagecol {
 
 .pp-droppableLoading, #pp-event-history-list .pp-droppableLoading {
   border-color: #FF0;
+  cursor:wait;
 }
 #pp-event-history-list .pp-droppableLoading {
   color: #660;
@@ -561,6 +562,7 @@ table.pplisting tbody td.ppimagecol {
 #pp-event-history-list .rpccheck {
   font-size:75%;
   float:right;
+  cursor:help;
 }
 
 .pp-droppableError, #pp-event-history-list .pp-droppableError {
