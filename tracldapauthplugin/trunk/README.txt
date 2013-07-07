@@ -25,7 +25,7 @@ search_scope
 	The ldap search scope: base, onelevel or subtree
 
 search_filter
-	The ldap search filter template where %s is replace with the username
+	The ldap search filter template where %s is replaced with the username
 
 
 Example configuration

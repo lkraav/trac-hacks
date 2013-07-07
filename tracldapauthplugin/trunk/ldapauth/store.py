@@ -34,7 +34,7 @@ class LDAPStore(Component):
     search_filter = Option('ldap', 'search_filter',
                            default='(&(objectClass=user)(sAMAccountName=%s))',
                            doc='The ldap search filter template where %%s is '
-                               'replace with the username')
+                               'replaced with the username')
 
     implements(IPasswordStore)
 
