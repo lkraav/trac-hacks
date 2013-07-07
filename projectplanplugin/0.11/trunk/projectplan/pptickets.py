@@ -1037,10 +1037,12 @@ class DataAccessDependencies(object):
     
     useTable = None
     try:
-      useTable = (PPConfiguration( self.env ).get('use_fast_save_changes') == 'enabled')
+      useTable = (PPConfiguration( self.env ).get('enable_mastertickets_compatiblity_mode') == 'enabled')
+      self.env.log.debug("useTable: %s" % (useTable,))
     except Exception,e:
       useTable = False
-    
+      self.env.log.debug("useTable: False because of %s" % (repr(e)))
+
     if useTable:
       self.dataaccess = DataAccessDependencies.DataAccessDependenciesInExtraTable(self.env, authname)
     else:

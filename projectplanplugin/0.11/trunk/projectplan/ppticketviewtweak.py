@@ -50,6 +50,7 @@ class PPTicketViewTweak(Component):
         req.args.__delitem__('field_%s' % (self.fieldrev,))
       except:
         pass
+      self.env.log.debug(req.path_info+': cleanup: self.dataaccess.commit()')
       self.dataaccess.commit()
   
   # ITemplateStreamFilter methods
@@ -86,9 +87,12 @@ class PPTicketViewTweak(Component):
     
     blocked_tickets_with_links = self.getTicketLinkList(req, blocked_tickets, [])
     
-    self.env.log.debug('nodeptickets of '+str(current_ticket_id)+': '+repr(nodeptickets))
-    self.env.log.debug('actualdeptickets of '+str(current_ticket_id)+': '+repr(actualdeptickets))
-    self.env.log.debug('dependencies of '+str(current_ticket_id)+': '+repr(blocking_tickets_string))
+    self.env.log.debug(req.path_info+': (depends on, blocking) nodeptickets of '+str(current_ticket_id)+': '+repr(nodeptickets)) # problem tickets
+    self.env.log.debug(req.path_info+': (depends on, blocking) actualdeptickets of '+str(current_ticket_id)+': '+repr(actualdeptickets)) # correct dependencies
+    self.env.log.debug(req.path_info+': (depends on, blocking) dependencies of '+str(current_ticket_id)+': '+repr(blocking_tickets_string)) #  correct dependencies as string
+    
+    self.env.log.debug(req.path_info+': blocked tickets of '+str(current_ticket_id)+': '+repr(blocked_tickets)) # problem tickets
+    self.env.log.debug(req.path_info+': blocked tickets string of '+str(current_ticket_id)+': '+repr(blocked_tickets_string)) # correct dependencies
     
     # change summary block
     if str(depwithlinks) != '' or PPConfiguration(self.env).isMasterticketsCompatible(): # change HTML only if there is actually a link to show
@@ -147,18 +151,23 @@ class PPTicketViewTweak(Component):
       
       newTicketFlag = False
       if (0 <= createDiff( ticket_id ) <= 1) and req.path_info.startswith('/ticket') :
-        blocked_tickets = Ticket(self.env, int(ticket_id)).get_value_or_default(self.fieldrev) # read from the DB
-        self.env.log.debug('pre_process_request: new ticket #%s created: %s --> save blocked tickets' % (ticket_id, blocked_tickets)) # hack
+        blocked_tickets = Ticket(self.env, int(ticket_id)).get_value_or_default(self.fieldrev) # read from the DB where it was stored automatically
+        blocking_tickets = Ticket(self.env, int(ticket_id)).get_value_or_default(self.field) # read from the DB where it was stored automatically
+        self.env.log.debug(req.path_info+': pre_process_request: new ticket #%s created: %s --> save blocked tickets' % (ticket_id, blocked_tickets)) # hack
         newTicketFlag = True
-      
+      else:
+        self.env.log.debug(req.path_info+': pre_process_request: #%s is NO new ticket (blocked: %s), diff: %s' % (ticket_id, blocked_tickets, (createDiff( ticket_id ) )))
+        
       # save "blocks tickets": save if the field was provided and changed, moreover, the submit button was hit 
       if (blocked_tickets != None and req.path_info.startswith('/ticket') and req.args.get('submit') != "" and req.args.get('submit') != None) or newTicketFlag:
+	self.env.log.debug(req.path_info+': pre_process_request: #%s, blocked ticket: %s, blocked_tickets_backup: %s' % (ticket_id, blocked_tickets, blocked_tickets_backup))
 	if blocked_tickets != blocked_tickets_backup:
-          self.env.log.debug('pre_process_request: ticket #%s change_blocked_tickets %s' % (ticket_id, blocked_tickets)) # hack
+          self.env.log.debug(req.path_info+': pre_process_request: ticket #%s change blocked_tickets %s' % (ticket_id, blocked_tickets)) 
           self.authname = req.authname
           #blocked_tickets = Ticket(self.env, int(ticket_id)).get_value_or_default(self.fieldrev)
           self.change_blocked_tickets( ticket_id , blocked_tickets )
         if blocking_tickets != blocking_tickets_backup:
+          self.env.log.debug(req.path_info+': pre_process_request: ticket #%s: %s != %s' % (ticket_id, blocked_tickets, blocked_tickets_backup)) # hack
 	  self.change_blocking_tickets( ticket_id, blocking_tickets )
         self.cleanUp(req)
       
@@ -170,9 +179,12 @@ class PPTicketViewTweak(Component):
   def post_process_request(self, req, template, data, content_type):
     '''
       add javascript and stylesheet to ticket view
+      Note: it looks like there is no post_process_request for /newticket
     '''
+    
     if req.path_info.startswith('/ticket/') or req.path_info.startswith('/newticket'):
       addExternFiles(req)
+      self.env.log.debug(req.path_info+": post_process_request\n\n" )
     
     return template, data, content_type
 
@@ -267,6 +279,8 @@ class PPTicketViewTweak(Component):
       elif not blocked_ticket_id in stored_blocked_tickets: # new blocking ticket id
         self.env.log.debug('ADD: new blocked ticket id '+blocked_ticket_id+' at #'+str(ticket_id))
         self.dataaccess.addBlockedTicket(ticket_id, blocked_ticket_id)
+      else:
+        self.env.log.debug('done nothing with %s ' % (blocked_ticket_id,) )
     
     for tid in stored_blocked_tickets:
       if tid in saved_blocked_tickets : # change nothing 
