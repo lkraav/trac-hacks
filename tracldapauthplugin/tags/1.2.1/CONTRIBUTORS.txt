@@ -1,0 +1,6 @@
+Contributors
+------------
+
+- Noah Kantrowitz (Author)
+- Nikolaos Papagrigoriou (Maintainer)
+- Russell Ballestrini
