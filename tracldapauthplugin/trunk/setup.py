@@ -8,7 +8,7 @@ install_requires = [
 
 setup(
     name='TracLDAPAuth',
-    version='1.2',
+    version='1.2.1',
     packages=['ldapauth'],
 
     author='Noah Kantrowitz',
