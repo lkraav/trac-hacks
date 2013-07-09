@@ -14,7 +14,7 @@ setup(
     packages = find_packages(exclude=['*.tests*']),
     entry_points = {
         'trac.plugins': [
-            'tracsharingbuttons.filter = tracsharingbuttons.filter',
+            'tracsharingbuttons.web_ui = tracsharingbuttons.web_ui',
         ],
     },
 )
