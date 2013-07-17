@@ -109,10 +109,11 @@ class FieldTooltip(Component):
             add_script(req, 'fieldtooltip/jquerytools/jquery.tools.min.js')
             add_script(req, 'fieldtooltip/jquerytools/enabler.js')
             add_stylesheet(req, 'fieldtooltip/jquerytools/jquery_tools_tooltip.css')
-            # jquery tooltip ... dont work collectly
+            # jquery tooltip ... tested
 #            add_script(req, 'fieldtooltip/jquerytooltip/jquery.dimensions.js')
 #            add_script(req, 'fieldtooltip/jquerytooltip/jquery.tooltip.js')
 #            add_script(req, 'fieldtooltip/jquerytooltip/enabler.js')
+#            add_stylesheet(req, 'fieldtooltip/jquerytooltip/jquery.tooltip.css')
             # jquery powertip ... tested
 #            add_script(req, 'fieldtooltip/jquerypowertip/jquery.powertip.js')
 #            add_script(req, 'fieldtooltip/jquerypowertip/enabler.js')
@@ -186,12 +187,12 @@ class FieldTooltipFilter(object):
                 data = self._add_title(data, 'th', 'id', 'h_', after_stream, depth)
                 yield kind, data, pos
             elif kind is END:
-                yield kind, data, pos
                 # add div element after the element
                 if str(depth) in after_stream:
                     for subevent in after_stream[str(depth)]:
                         yield subevent
                     del after_stream[str(depth)]
+                yield kind, data, pos
                 depth -= 1
             else:
                 yield kind, data, pos
@@ -201,12 +202,12 @@ class FieldTooltipFilter(object):
             data parameter as element has same tagname attribute for the parameter and
             attribute named the attr_name starts with the prefix,
             add description in title attribute and rel attribute to the element
-            and store div element generated to after_stream[depth] for later use.
+            and store span element generated to after_stream[depth] for later use.
 
             (In Japanese/KANJI)
             data で与えられた要素が、引数で指定された tagname であり、attr_name 属性の値が prefix で始まる場合、
                         説明文をtitle属性およびrel属性としてその要素に設定します。
-                        またそのとき、after_stream[depth] に DIV 要素を格納します。
+                        またそのとき、after_stream[depth] に SPAN 要素を格納します。
         """
         element, attrs = data
         attr_value = attrs.get(attr_name)
@@ -226,7 +227,7 @@ class FieldTooltipFilter(object):
                 a = tag.a(img, href='%s/wiki/%s%s' \
                            % (self.context.req.base_url, FieldTooltip._wiki_prefix, attr_value))
                 after_stream[str(depth)] = \
-                tag.div(a, '%s:\n' % attr_value,
+                tag.span(a, '%s:\n' % attr_value,
                         format_to_html(self.parent.env, self.context, text, False),
                         id='tooltip-' + attr_value,
                         class_='tooltip',
