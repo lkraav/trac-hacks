@@ -8,13 +8,13 @@
 # you should have received as part of this distribution.
 #
 
-import random
 import string
 from collections import defaultdict
 
 from trac.config import IntOption
 from trac.core import implements
 from trac.db.api import get_column_names
+from trac.util import hex_entropy
 from trac.util.presentation import to_json
 from trac.util.text import to_unicode
 from trac.web.chrome import ITemplateProvider
@@ -466,17 +466,8 @@ def pie_graph(env, args):
                       title=args.get('title'))
 
 
-def _get_random_string(length):
-    return ''.join([random.choice(string.letters + string.digits)
-                    for i in xrange(length)])
-
-
 def _create_chart_div_id():
-    div_id_prefix = 'chart_'
-
-    random_string = _get_random_string(10)
-
-    return div_id_prefix + random_string
+    return 'chart_' + hex_entropy(10)
 
 
 def _get_chart_html(chart_object, chart_div_id, htdocs_dir, height=300,
