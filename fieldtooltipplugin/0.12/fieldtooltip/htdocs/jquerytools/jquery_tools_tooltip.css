@@ -1,7 +1,7 @@
 .tooltip {
 	background: #ffff99;
 	padding: 3px;
-	word-wrap: break-word;
+	white-space: normal;
 	width: 400px;
 	text-align: left;
 	color: #663;
@@ -9,5 +9,5 @@
 .tooltip p {
 	margin: 0;
 	color: black;
-	font-size: 120%;
+	font-size: 12px;
 }
