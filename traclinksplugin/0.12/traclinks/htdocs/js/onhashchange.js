@@ -12,7 +12,7 @@ $(document).ready(function() {
     if ($('#main #ticket').length == 1) { // ticket
       path_elements = document.location.pathname.split('/');
       ticketid = path_elements[path_elements.length - 1];
-      if (location.hash.indexOf('#comment:') == 0) { // comment of ticket
+      if (location.search == "" && location.hash.indexOf('#comment:') == 0) { // comment of ticket
         traclinks = location.hash.slice(1) + ':ticket:' + ticketid;
       } else {
         traclinks = 'ticket:' + ticketid + location.search + location.hash;
@@ -28,7 +28,8 @@ $(document).ready(function() {
       traclinks = 'wiki:' + pagename + location.hash
       $("#proj-search").attr('value', traclinks);
     }
-    if ($('#main #preview').length == 1) { // browser
+    if (($('#main #preview').length == 1) ||  // browser
+        ($('#main #content.changeset').length == 1) ) {  // changeset
       // TODO: rewrite this ad-hoc code
       if ((i = traclinks.indexOf('#')) >= 0) traclinks = traclinks.slice(0, i)
       traclinks = traclinks + '#' + location.hash.slice(1)

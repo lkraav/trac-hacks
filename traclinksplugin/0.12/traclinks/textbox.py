@@ -99,8 +99,9 @@ class TextBox(Component):
                 resource = Resource('query', data['query'].to_string().replace("\n", "")[7:])
         else:
             pass
+
         # link hash TODO: check wiki_view for agilo
-        if filename in ['browser.html', 'ticket.html', 'agilo_ticket_view.html', 'wiki_view.html']:
+        if filename in ['browser.html', 'changeset.html', 'ticket.html', 'agilo_ticket_view.html', 'wiki_view.html']:
             add_script(req, 'traclinks/js/jquery.ba-hashchange.js')
             add_script(req, 'traclinks/js/onhashchange.js')
         #
@@ -155,6 +156,7 @@ class TextBox(Component):
  - comment:1:ticket:1
  - source:/trunk/file.txt#L20
  - ticket:1#no1
+ - changeset:12//trunk#file0
 """
 
 # Not Implemented Yet
@@ -165,6 +167,3 @@ class TextBox(Component):
 # diff:...#file0
 # /ticket/2?action=diff&version=1
 # /ticket/2?action=comment-diff&cnum=2&version=1
-
-# Known bugs
-# /ticket/2?version=1 makes 'ticket:2@1' but it's wrong
