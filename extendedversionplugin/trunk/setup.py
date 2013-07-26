@@ -33,4 +33,6 @@ setup(
       extendedversion.roadmap = extendedversion.roadmap
       extendedversion.version = extendedversion.version
     """,
+    test_suite='extendedversion.tests.test_suite',
+    tests_require=[]
 )
