@@ -96,6 +96,7 @@ class TicketTemplateModule(Component):
                 print textwrap.fill(inspect.getdoc(function))
                 function(self.env, db)
                 print 'Done.'
+        cursor = db.cursor()
         cursor.execute("UPDATE system SET value=%s WHERE "
                        "name='tt_version'", (schema_version,))
         self.log.info('Upgraded tt tables from version %d to %d',
