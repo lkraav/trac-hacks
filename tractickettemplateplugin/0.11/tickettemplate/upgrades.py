@@ -168,36 +168,9 @@ def add_tt_custom(env, db):
     # for stmt in connector.to_sql(table):
         # cursor.execute(stmt)
 
-def add_ticket_template_store(env, db):
-    """Add table ticket_template_store."""
-    from tickettemplate.model import schema, schema_version, TT_Template
-    from trac.db import DatabaseManager
-
-    connector, _ = DatabaseManager(env)._get_connector()
-    cursor = db.cursor()
-
-    table = schema[0]
-    for stmt in connector.to_sql(table):
-        try:
-            cursor.execute(stmt)
-        except:
-            pass
-
-    from default_templates import DEFAULT_TEMPLATES
-    from ttadmin import SYSTEM_USER
-
-    now = int(time.time())
-    for tt_name, tt_value in DEFAULT_TEMPLATES:
-        record = (now, SYSTEM_USER, tt_name, "description", tt_value,)
-        TT_Template.insert(env, record)
-
-    for id, modi_time, tt_name, tt_text in cursor.fetchall():
-        record = (modi_time, SYSTEM_USER, tt_name, "description", tt_text,)
-        TT_Template.insert(env, record)
-
 map = {
     1: [],
     2: [],
     3: [],
-    4: [add_ticket_template_store],
+    4: [],
 }

@@ -218,5 +218,18 @@ class TT_Template(object):
 
     fetch = classmethod(fetch)
     
+    def fetchNames(cls, env):
+        """fetch a list of existing tt names from database"""
+        db = env.get_db_cnx()
+        cursor = db.cursor()
+        sqlString = "SELECT DISTINCT tt_name FROM ticket_template_store"
+        cursor.execute(sqlString)
+        # create a list of strings from the list of tuples
+        # cursor.fetchall() ~= [(u'default',), (u'task',), ...]
+        return [row[0] for row in cursor.fetchall()]
+
+    fetchNames = classmethod(fetchNames)
+
+
 schema = TT_Template._schema
 schema_version = 4
