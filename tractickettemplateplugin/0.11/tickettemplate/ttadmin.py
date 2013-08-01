@@ -26,6 +26,7 @@ from trac.web.chrome import add_ctxtnav, add_link, add_script, add_stylesheet, \
 from trac.ticket.web_ui import TicketModule
 
 from trac.admin import IAdminPanelProvider
+from trac.admin import IAdminCommandProvider
 
 from trac.util.compat import partial
 
@@ -52,17 +53,22 @@ from utils import *
 
 from i18n_domain import gettext, _, tag_, N_, add_domain
 
+from default_templates import DEFAULT_TEMPLATES
+
 __all__ = ['TicketTemplateModule']
 
 class TicketTemplateModule(Component):
     
     implements(ITemplateProvider, 
                IAdminPanelProvider, 
+               IAdminCommandProvider,
                IEnvironmentSetupParticipant, 
                IPermissionRequestor,
                ITemplateStreamFilter,
                IRequestHandler, 
                )
+
+    SECTION_NAME = 'tickettemplate'
 
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
@@ -88,21 +94,18 @@ class TicketTemplateModule(Component):
         # Insert a global version flag
         cursor.execute("INSERT INTO system (name,value) "
                        "VALUES ('tt_version',%s)", (schema_version,))
+        db.commit()
 
         # Create some default templates
-        now = int(time.time())
-        from default_templates import DEFAULT_TEMPLATES
-        for tt_name, tt_value in DEFAULT_TEMPLATES:
-            record = [
-                now,
-                SYSTEM_USER,
-                tt_name,
-                "description",
-                tt_value,
-                ]
-            TT_Template.insert(self.env, record)
-        
-        db.commit()
+
+        # get default json_template_file from trac.ini or empty string
+        json_template_file = self._get_json_template_file_from_conf()
+
+        if json_template_file == '':
+            # use default templates from module
+            self._insert_templates(DEFAULT_TEMPLATES)
+        else:
+            self.ticket_template_import(json_template_file)
 
     def environment_needs_upgrade(self, db):
         cursor = db.cursor()
@@ -133,10 +136,89 @@ class TicketTemplateModule(Component):
         self.log.info('Upgraded tt tables from version %d to %d',
                       current_version, schema_version)
 
+    def _insert_templates(self, templates):
+        """
+        accept list of tuples called templates and insert into database.
+        example: templates = [('tt_name','tt_value'),] 
+        """
+        db = self.env.get_db_cnx()
+        now = int(time.time())
+        for tt_name, tt_value in templates:
+            record = [
+                now,
+                SYSTEM_USER,
+                tt_name,
+                "description",
+                tt_value,
+                ]
+            TT_Template.insert(self.env, record)
+            # increment timestamp; other code expects it to be unique
+            now += 1
+
+        db.commit()
+
+    def _get_json_template_file_from_conf(self):
+        """return json_template_file path from trac.ini config or empty string"""
+        return self.config.get(self.SECTION_NAME,'json_template_file', '')
+
+
+    # IAdminCommandProvider methods
+
+    def get_admin_commands(self):
+        """Implement get_admin_commands to provide two trac-admin commands:
+
+        *ticket_template export*
+            export ticket_templates as json to stdout
+
+        *ticket_template import <json_template_file>*
+            import ticket_templates from json file specified in trac.ini
+        """
+        yield ('ticket_template export', '',
+               """export ticket templates as json to stdout""",
+               None, self.ticket_template_export)
+
+        yield ('ticket_template import', '<json_template_file>',
+               """import ticket templates from json file
+               
+               Specify json file path via:
+               * json_template_file argument
+               * json_template_file option in trac.ini
+               """,
+               None, self.ticket_template_import)
+
+    def ticket_template_export(self):
+        """export current ticket templates as json to stdout"""
+        template_names = TT_Template.fetchNames(self.env)
+        export_data = []
+        for template_name in template_names:
+            export_datum = (
+              template_name,
+              TT_Template.fetch(self.env, template_name),
+            )
+            export_data.append(export_datum)
+        print(json.dumps(export_data,indent=2))
+
+    def ticket_template_import(self, json_template_file=''):
+        """
+        Import ticket templates from json file.
+        Specify json file path via:
+         * json_template_file argument
+         * json_template_file option in trac.ini
+        """
+        if json_template_file == '':
+            json_template_file = self._get_json_template_file_from_conf()
+
+        if json_template_file:
+            # convert template_file json to python data structure then insert
+            with open(json_template_file) as f:
+                self._insert_templates(json.load(f))
+        
+
     # IAdminPanelProvider methods
+
     def get_admin_panels(self, req):
         if 'TT_ADMIN' in req.perm:
-            yield ('ticket', _('Ticket System'), 'tickettemplate', _('Ticket Template'))
+            yield ('ticket', _('Ticket System'), self.SECTION_NAME, _('Ticket Template'))
 
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('TT_ADMIN')
@@ -251,7 +333,7 @@ class TicketTemplateModule(Component):
             result = TT_Template.fetchAll(self.env, data)
             result["status"] = "1"
             result["field_list"] = self._getFieldList()
-            if self.config.getbool("tickettemplate", "enable_custom", True) and \
+            if self.config.getbool(self.SECTION_NAME, "enable_custom", True) and \
                 'TT_USER' in req.perm:
                 result["enable_custom"] = True
             else:
@@ -380,7 +462,7 @@ class TicketTemplateModule(Component):
             return:
                 ["summary", "description", ...]
         """
-        field_list = self.config.getlist("tickettemplate", "field_list", [])
+        field_list = self.config.getlist(self.SECTION_NAME, "field_list", [])
         field_list = [field.lower() for field in field_list]
         if "description" not in field_list:
             field_list.append("description")
@@ -414,7 +496,7 @@ class TicketTemplateModule(Component):
                 result[k] = v
 
         for field in field_list:
-            field_type = self.config.get("tickettemplate", field + ".type", "text")
+            field_type = self.config.get(self.SECTION_NAME, field + ".type", "text")
             field_value = field_value_mapping.get(field)
             field_detail = {"field_type":field_type, "field_value": field_value}
             result[field] = field_detail
