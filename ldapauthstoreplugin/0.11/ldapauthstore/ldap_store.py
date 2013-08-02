@@ -25,7 +25,7 @@ class LdapAuthStore(Component):
         self._ldapcfg = {}
         for name, value in self.config.options('ldap'):
             if name in LDAP_DIRECTORY_PARAMS:
-                self._ldapcfg[name] = value
+                self._ldapcfg[str(name)] = value
 
         # user entry local cache
         self._cache = {}
