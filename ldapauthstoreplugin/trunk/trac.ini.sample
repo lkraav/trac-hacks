@@ -1,0 +1,82 @@
+[trac]
+...
+permission_store = DefaultPermissionStore
+
+
+[account-manager]
+...
+password_store = LdapAuthStore
+
+[components]
+acct_mgr.admin.accountmanageradminpage = enabled
+acct_mgr.api.accountmanager = enabled
+acct_mgr.web_ui.accountmodule = enabled
+acct_mgr.web_ui.loginmodule = enabled
+trac.web.auth.loginmodule = disabled
+...
+ldapplugin.* = enabled
+ldapauthstore.* = enabled
+
+
+[ldap]
+# enable LDAP support for Trac
+enable = true
+# enable TLS support
+use_tls = false
+# LDAP directory host
+host = localhost
+# LDAP directory port (default port for LDAPS/TLS connections is 636)
+port = 389
+# BaseDN
+basedn = dc=example,dc=com
+# Relative DN for users (defaults to none)
+user_rdn = ou=people
+# Relative DN for group of names (defaults to none)
+group_rdn = ou=groups
+# objectclass for groups
+groupname = groupOfNames
+# dn entry in a groupname
+groupmember = member
+# attribute name for a group
+groupattr = cn
+# attribute name for a user
+uidattr = uid
+# attribute name to store trac permission
+permattr = tracperm
+# filter to search for dn with 'permattr' attributes
+permfilter = objectclass=*
+# time, in seconds, before a cached entry is purged out of the local cache.
+cache_ttl = 900
+# maximum number of entries in the cache
+cache_size = 100
+# whether to perform an authenticated bind for group resolution
+group_bind = yes
+# whether to perform an authenticated bind for permision store operations
+store_bind = true
+# user for authenticated connection to the LDAP directory
+bind_user =  cn=anonbind,dc=example,dc=com
+# password for authenticated connection
+bind_passwd = anonbind
+# global permissions (vs. per-environment permissions)
+global_perms = false
+# group permissions are managed as addition/removal to the LDAP directory groups
+manage_groups = true
+# whether a group member contains the full dn or a simple uid
+groupmemberisdn = yes
+...
+# 
+# ldapauthstore settings
+#
+#--- from #1147, not present in #1600 
+# default: basedn_filter = objectClass=*
+#basedn_filter = objectClass=inetOrgPerson
+#---
+# default: name = name
+name = cn
+# default: email = email
+email = mail
+#--- from #1600, not present in #1147
+# users must be in this group to use trac
+allusers_group = tracusers
+#---
+

@@ -1,0 +1,15 @@
+* 0.1.0
+- imported base plugin code from k0s plugin repo https://trac-hacks.org/svn/ldapauthstoreplugin/0.11
+
+* 0.2.0 Immo Goltz <immo.goltz@gmail.com>
+- used #1147_ldap_store.3.py as base
+- merged in the auth stuff from #1147_account-manager-ldap.4.patch
+
+* 0.2.1 Immo Goltz <immo.goltz@gmail.com>
+- set up as own plugin instead of patch into accountmanager
+
+* 0.3.0 Immo Goltz <immo.goltz@gmail.com>
+- used #1600_ldap-auth-store.patch as base
+- merged in the session cache from #1147
+
+
