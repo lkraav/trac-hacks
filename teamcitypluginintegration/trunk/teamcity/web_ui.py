@@ -267,14 +267,14 @@ class TeamCityBuildPage(Component):
 
 class TeamCityProxy(Component):
 	implements(IRequestHandler)
-
+	
 	def __init__(self):
 		self.options = get_options(self.config)
-
+	
 	#IRequestHandler methods
 	def match_request(self,req):
 		return re.match(r'/builds/proxy(?:_trac)?(?:/.*)?$',req.path_info)
-
+	
 	def process_request(self,req):
 		try:
 			path = req.path_info.split('/builds/proxy/')[1]
@@ -291,19 +291,19 @@ class TeamCityProxy(Component):
 		content_type = response.headers.get('Content-Type', 'text/plain')
 		req.send_header('Content-Type',content_type)
 		# need to save original Content-Type header
+		responseText = response.read();
+		req.send_header('Content-Length', len(responseText))
 		req.end_headers()
-		req.write(response.read())
-
-
+		req.write(responseText)
+	
 class TeamCityHistory(Component):
-
+	
 	implements(IRequestHandler)
-
+	
 	#IRequestHandler methods
 	def match_request(self,req):
 		return re.match(r'/builds/history/?(bt\d+)?$',req.path_info)
-
-
+	
 	def process_request(self,req):
 		options = get_options(self.config)
 		build_type_match =  re.match('/builds/history/(bt\d+)?$',req.path_info)

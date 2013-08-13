@@ -11,9 +11,9 @@ from setuptools import find_packages, setup
 
 setup(
 	name='TeamCityPlugin',
-	author='Max Sinelnikov',
-	author_email='siniy@unigine.com',
-	version='0.3',
+	author='Evgeniy Tetenchuk',
+	author_email='webdev@unigine.com',
+	version='0.3.3',
 	license='BSD 3-Clause',
 	url="http://trac-hacks.org/wiki/TeamcityPluginIntegration",
 	packages=find_packages(exclude=['*.tests*']),
