@@ -195,7 +195,9 @@ class TextFormat:
     def __init__(self, config, force_long=False):
         self.config = config
         self.style1 = copy.copy(_default_style)
+        self.style1.num_format_str = '@'
         self.style2 = copy.copy(_default_style)
+        self.style2.num_format_str = '@'
         self.style2.alignment = Alignment()
         self.style2.alignment.wrap = self.style2.alignment.WRAP_AT_RIGHT
         self.style2.alignment.shri = self.style2.alignment.SHRINK_TO_FIT
