@@ -21,17 +21,17 @@ except ImportError:
 
 class ThemeNotFound(TracError):
     """The requested theme isn't found."""
-    
+
     def __init__(self, name):
         self.theme_name = name
         TracError.__init__(self, 'Unknown theme %s' % name)
 
 class IThemeProvider(Interface):
     """An interface to provide style information."""
-    
+
     def get_theme_names():
         """Return an iterable of names."""
-        
+
     def get_template_overrides(name):
         """(Optional) local changes to specific templates 
 
@@ -57,7 +57,7 @@ class IThemeProvider(Interface):
 
     def get_theme_info(name):
         """Return a dict containing 0 or more of the following pairs:
-        
+
          description::
            A brief description of the theme.
          template::
@@ -78,12 +78,12 @@ class IThemeProvider(Interface):
 
 class ThemeEngineSystem(Component):
     """Central functionality for the theme system."""
-    
+
     theme_name = Option('theme', 'theme', default='default',
                    doc='The theme to use to style this Trac.')
-    
+
     implements(IThemeProvider)
-                   
+
     def theme(self):
         if self.theme_name.lower() == 'default' or self.theme_name == '':
             return None
@@ -94,7 +94,7 @@ class ThemeEngineSystem(Component):
     theme = property(theme)
 
     providers = ExtensionPoint(IThemeProvider)
-    
+
     def __init__(self):
         if lazy is None:
             # Trac < 1.0 : this can safely go in here because the data can 
@@ -135,7 +135,7 @@ class ThemeEngineSystem(Component):
     # IThemeProvider methods
     def get_theme_names(self):
         yield 'default'
-        
+
     def get_theme_info(self, name):
         return {
             'description': 'The default Trac theme.',
@@ -173,11 +173,11 @@ class ThemeEngineSystem(Component):
 
 class ThemeBase(Component):
     """A base class for themes."""
-    
+
     abstract = True
-    
+
     implements(IThemeProvider)
-    
+
     # Defaults
     theme = css = htdocs = screenshot = False
     colors = schemes = disable_trac_css = False
@@ -196,37 +196,48 @@ class ThemeBase(Component):
             return False
         return active_theme.get('provider') is self
 
-    # IThemeProviderMethods
+    # IThemeProvider methods
     def get_theme_names(self):
+        """Generate theme name off class name by removing Theme suffix
+        """
         name = self.__class__.__name__
         if name.endswith('Theme'):
             name = name[:-5]
         yield name
-        
+
     def get_theme_info(self, name):
+        """Generate theme info considering declared class attributes
+        """
         info = {}
-        
+
         info['description'] = inspect.getdoc(self.__class__)
-        self._set_info(info, 'template', os.path.join('templates', self.get_theme_names().next().lower()+'_theme.html'))
-        self._set_info(info, 'css', self.get_theme_names().next().lower()+'.css')
+        name = self.get_theme_names().next().lower()
+        self._set_info(info, 'template', 
+                       os.path.join('templates', name + '_theme.html'))
+        self._set_info(info, 'css', name + '.css')
         self._set_info(info, 'htdocs', 'htdocs')
         self._set_info(info, 'screenshot', 'htdocs/screenshot.png')
         self._set_info(info, 'colors', ())
         self._set_info(info, 'schemes', ())
         self._set_info(info, 'disable_trac_css', True)
-        
+
         return info
-            
+
+    def get_template_overrides(self, name):
+        """No overrides by default
+        """
+        return []
+
     # Internal methods
     def _set_info(self, info, attr, default):
         if not hasattr(self, attr):
             return # This should never happen, but better to be safe
-        
+
         val = getattr(self, attr)
         if val:
             if val is True:
                 info[attr] = default
             elif val is not False:
                 info[attr] = val
-           
+
 

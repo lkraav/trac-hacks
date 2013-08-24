@@ -193,4 +193,4 @@ custom Genshi templates::
         def _modify_wiki(self, req, template, data, content_type): 
             data['var'] = 'value'
 
-Notice that, in sample code, new data will added to render wiki pages. 
+Notice that, in sample code, new data will be added to render wiki pages. 
