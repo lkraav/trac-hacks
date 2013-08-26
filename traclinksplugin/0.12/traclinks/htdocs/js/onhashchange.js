@@ -28,7 +28,7 @@ $(document).ready(function() {
       traclinks = 'wiki:' + pagename + location.hash
       $("#proj-search").attr('value', traclinks);
     }
-    if (($('#main #preview').length == 1) ||  // browser
+    if (($('#main #content.browser').length == 1) ||  // browser
         ($('#main #content.changeset').length == 1) ) {  // changeset
       // TODO: rewrite this ad-hoc code
       if ((i = traclinks.indexOf('#')) >= 0) traclinks = traclinks.slice(0, i)

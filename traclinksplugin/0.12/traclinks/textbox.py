@@ -109,10 +109,12 @@ class TextBox(Component):
             traclinks = '%s' % (resource.id)
             if resource.version != None:
                 traclinks += (resource.realm == 'ticket' and '?version=%s' or '@%s') % resource.version
-            if resource.parent and resource.parent.id:
-                traclinks += ':%s:%s' % (resource.parent.realm, resource.parent.id)
-                if resource.parent.version != None:
-                    traclinks += '@%s' % resource.parent.version
+            parent = resource.parent
+            while parent and parent.id:
+                traclinks += ':%s:%s' % (parent.realm, parent.id)
+                if parent.version != None:
+                    traclinks += '@%s' % parent.version
+                parent = parent.parent
             if ' ' in traclinks:
                 traclinks = '"%s"' % traclinks  # surround quote if needed
             traclinks = '%s:%s' % (resource.realm, traclinks)

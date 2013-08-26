@@ -6,7 +6,7 @@ p:hover .anchor, li:hover .anchor {
 	position: absolute;
 }
 
-p:target, li:target {
+p:target, li:target, th:target ~ td, td:target {
  background: #ffb;
  box-shadow: .1em .1em .4em .1em #DDA;
  border-radius: .2em;
