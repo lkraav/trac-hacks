@@ -90,8 +90,9 @@
               </select>
             </td>
             <td class="col-permissions selectable">
-              <select multiple="multiple">
-                <option py:for="perm in perms">${perm}</option>
+              <select multiple="multiple"><!--! first item is "All users" -->
+                <option py:for="idx, perm in enumerate(perms)"
+                        selected="${idx == 0 and 'selected' or None}">${perm}</option>
               </select>
             </td>
             <td class="col-next-status selectable">
