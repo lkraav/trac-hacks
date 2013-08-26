@@ -1,7 +1,11 @@
-from trac.core import Component, implements, TracError
-from trac.ticket import Ticket
-from trac.web.api import ITemplateStreamFilter
-from genshi.filters.transform import Transformer
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2008, Stephen Hansen <shansen@advpubtech.com>
+# Copyright (C) 2012-2013 Reinhard Wobst <rwobst@gmx.de>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 # R.Wobst, @(#) Jan 11 2013, 17:50:43
 #
@@ -15,6 +19,11 @@ from genshi.filters.transform import Transformer
 #
 # This plugin is based on Genshi, not on Javascript; can easily be extended. A
 # detailed documentation can be found in condfieldsgenshi.txt.
+
+from trac.core import Component, implements, TracError
+from trac.ticket import Ticket
+from trac.web.api import ITemplateStreamFilter
+from genshi.filters.transform import Transformer
 
 
 class CondfieldTweaks(Component):
