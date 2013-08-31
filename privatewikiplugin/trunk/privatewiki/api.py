@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from trac.core import *
-from trac.perm import IPermissionRequestor, IPermissionGroupProvider, IPermissionPolicy, PermissionSystem
+from trac.perm import IPermissionRequestor, IPermissionGroupProvider, \
+                      IPermissionPolicy, PermissionSystem
 from trac.wiki.model import WikiPage
 from trac.config import IntOption, ListOption
 
@@ -25,7 +26,11 @@ class PrivateWikiSystem(Component):
 
     # IPermissionPolicy(Interface)
     def check_permission(self, action, username, resource, perm):
-        self.env.log.debug('Checking permission called with: action(%s), username(%s), resource(%s), perm(%s)' % (str(action), str(username), str(resource), str(perm)))
+        log_msg = 'Checking permission called with: action(%s), \
+                   username(%s), resource(%s), perm(%s)'
+        log_msg_vars = (str(action), str(username), str(resource), str(perm))
+        self.env.log.debug(log_msg % log_msg_vars)
+        
         if resource is None or resource.id is None:
             return None
 
@@ -35,7 +40,10 @@ class PrivateWikiSystem(Component):
             if self._protected_page(page):
                 return False
 
-        if resource.realm == 'wiki' and action in ('WIKI_VIEW', 'WIKI_MODIFY'):
+        if (resource.realm == 'wiki' 
+            and action in ('WIKI_VIEW', 
+                           'WIKI_MODIFY', 
+                           'WIKI_CREATE')):
             wiki = WikiPage(self.env, resource.id)
             return self.check_wiki_access(perm, resource, action, wiki.name)
         return None
@@ -64,7 +72,7 @@ class PrivateWikiSystem(Component):
 
     # Public methods
     def check_wiki_access(self, perm, res, action, page):
-        """Return if this req is permitted access to the given ticket ID."""
+        """Return if this req is permitted access/modify/create a given wiki page."""
 
         try:
             page = self._prep_page(page)
@@ -78,19 +86,25 @@ class PrivateWikiSystem(Component):
                 view_perm = 'PRIVATE_VIEW_%s' % p;
                 edit_perm = 'PRIVATE_EDIT_%s' % p;
 
+                self.env.log.debug('Attempting to protect against %s' % action)
+                
                 if action == 'WIKI_VIEW':
-                    self.env.log.debug('Protecting against VIEW')
-                    if 'PRIVATE_ALL_VIEW' in perm(res) or \
-                       view_perm in perm(res) or edit_perm in perm(res):
+                    if ('PRIVATE_ALL_VIEW' in perm(res)
+                        or view_perm in perm(res)
+                        or edit_perm in perm(res)):
+
+                        self.env.log.debug('--Can VIEW')
                         return True
 
-                if action == 'WIKI_MODIFY':
-                    self.env.log.debug('Protecting against MODIFY')
-                    if 'PRIVATE_ALL_EDIT' in perm(res) or \
-                       edit_perm in perm(res):
+                elif action in ('WIKI_MODIFY', 'WIKI_CREATE'):
+                    if ('PRIVATE_ALL_EDIT' in perm(res)
+                        or edit_perm in perm(res)):
+
+                        self.env.log.debug('--Can MODIFY or CREATE')
                         return True
 
         except TracError:
             return None
 
         return False
+
