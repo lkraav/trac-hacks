@@ -26,9 +26,11 @@ class AnchorAnywhere(Component):
         add_script(req, 'traclinks/js/anchoranywhere.js')
         add_stylesheet(req, 'traclinks/css/anchoranywhere.css')
         if filename in ['browser.html', 'dir_entries.html']:
-            referer = req.environ.get('HTTP_REFERER', '')
-            referer = urlparse(referer)[2] or (req.base_path + req.path_info)
-            trimmer = lambda x: re.match("(%s/)?([^?]+)(\?.*)?" % referer, x).groups()[1]
+            pathinfo = req.base_path + req.path_info
+            if req.get_header('x-requested-with') == 'XMLHttpRequest':
+                referer = req.get_header('referer')
+                pathinfo = referer and urlparse(referer)[2] or pathinfo
+            trimmer = lambda x: re.match("(%s/)?([^?]+)(\?.*)?" % pathinfo, x).groups()[1]
             stream |= Transformer('//td[@class="name"]').apply(_AttrLaterTransformation('id', '//a', trimmer))
         return stream
 
