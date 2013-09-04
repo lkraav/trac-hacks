@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Trac 1.0.1\n"
 "Report-Msgid-Bugs-To: trac-dev@googlegroups.com\n"
 "POT-Creation-Date: 2013-01-27 11:21+0900\n"
-"PO-Revision-Date: 2013-09-04 18:28+0300\n"
+"PO-Revision-Date: 2013-09-04 19:24+0300\n"
 "Last-Translator: Dmitri Bogomolov <4glitch@gmail.com>\n"
 "Language-Team: ru_RU <trac-dev@googlegroups.com>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
@@ -1021,7 +1021,6 @@ msgid "Unknown administration panel"
 msgstr "Неизвестная панель администрирования"
 
 #: trac/admin/web_ui.py:133
-#, fuzzy
 msgid "Untitled"
 msgstr "Безымянный"
 
@@ -1906,12 +1905,10 @@ msgid "Default format"
 msgstr "Формат по умолчанию"
 
 #: trac/prefs/templates/prefs_datetime.html:79
-#, fuzzy
 msgid "Relative format"
 msgstr "Относительный формат"
 
 #: trac/prefs/templates/prefs_datetime.html:81
-#, fuzzy
 msgid "Absolute format"
 msgstr "Абсолютный формат"
 
@@ -3002,7 +2999,6 @@ msgid "add / remove"
 msgstr "добавить/удалить"
 
 #: trac/ticket/batch.py:98
-#, fuzzy
 msgid "set to"
 msgstr "установить в"
 
@@ -3893,12 +3889,10 @@ msgid "changed from %(old)s to %(new)s"
 msgstr "изменено с %(old)s на %(new)s"
 
 #: trac/ticket/templates/batch_modify.html:8
-#, fuzzy
 msgid "Batch Modify"
 msgstr "Групповое изменение"
 
 #: trac/ticket/templates/batch_modify.html:9
-#, fuzzy
 msgid "Batch modification fields"
 msgstr "Поля группового изменения"
 
@@ -3917,7 +3911,7 @@ msgstr "Изменить билеты"
 #: trac/ticket/templates/batch_ticket_notify_email.txt:1
 #, python-format
 msgid "Batch modification to %(tickets)s by %(author)s:"
-msgstr ""
+msgstr "Групповое изменение %(tickets)s от %(author)s:"
 
 #: trac/ticket/templates/batch_ticket_notify_email.txt:5
 #, python-format
@@ -4268,7 +4262,6 @@ msgid "Sort by:"
 msgstr "Сортировать по:"
 
 #: trac/ticket/templates/report_list.html:70
-#, fuzzy
 msgid "Identifier"
 msgstr "Идентификатор"
 
@@ -4586,7 +4579,6 @@ msgid "Revert this change"
 msgstr "Отменить это изменение"
 
 #: trac/ticket/templates/ticket_change.html:100
-#, fuzzy
 msgid "revert"
 msgstr "откатить"
 
@@ -7073,7 +7065,7 @@ msgstr "[1:Последнее изменение] %(reldate)s"
 #: trac/wiki/templates/wiki_view.html:62
 #, python-format
 msgid "Last modified on %(date)s"
-msgstr "Последее изменение от %(author)s"
+msgstr "Последнее изменение %(date)s"
 
 #: trac/wiki/templates/wiki_view.html:66
 #, python-format
@@ -7085,7 +7077,6 @@ msgid "You could also create the same page higher in the hierarchy:"
 msgstr "Также вы можете создать такую же страницу выше в иерархии:"
 
 #: trac/wiki/templates/wiki_view.html:90
-#, fuzzy
 msgid "Revert to this version"
 msgstr "Вернуть эту версию"
 
