@@ -15,6 +15,7 @@ from pkg_resources import ResourceManager
 from trac.core import Component, implements
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import add_script, ITemplateProvider, add_stylesheet
+from urllib import quote, unquote
 from urlparse import urlparse
 import re
 
@@ -27,10 +28,15 @@ class AnchorAnywhere(Component):
         add_stylesheet(req, 'traclinks/css/anchoranywhere.css')
         if filename in ['browser.html', 'dir_entries.html']:
             pathinfo = req.base_path + req.path_info
+            pathinfo = quote(pathinfo.encode('utf-8'))
             if req.get_header('x-requested-with') == 'XMLHttpRequest':
                 referer = req.get_header('referer')
                 pathinfo = referer and urlparse(referer)[2] or pathinfo
-            trimmer = lambda x: re.match("(%s/)?([^?]+)(\?.*)?" % pathinfo, x).groups()[1]
+            pathinfo = re.compile("(%s/)?([^?]+)(\?.*)?" % pathinfo)
+            trimmer = lambda x: re.match(pathinfo, x).groups()[1]
+            # thanks to feedback! https://twitter.com/jun66j5/status/374523396857417729
+            if req.get_header('user-agent').find('Firefox') > 0:
+                trimmer = lambda x: unicode(unquote(re.match(pathinfo, x).groups()[1].encode('utf-8')), 'utf-8')
             stream |= Transformer('//td[@class="name"]').apply(_AttrLaterTransformation('id', '//a', trimmer))
         return stream
 
