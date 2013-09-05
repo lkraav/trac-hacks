@@ -265,6 +265,8 @@ class TimeTrackingSetupParticipant(Component):
             return True
         sys_stats = get_statuses(self.env)
         s = s.split(',')
+        #self.env.log.debug('T&E: Statuses: stored:%r , sys:%r' %(s, sys_stats))
         sys_stats.symmetric_difference_update(s)
         sys_stats.difference_update(['', None])
+        #self.env.log.debug('T&E: Statuses: diff:%r ' %(sys_stats, ))
         return len(sys_stats) > 0

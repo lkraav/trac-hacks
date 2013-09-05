@@ -41,11 +41,7 @@ The 'Time Reports' button should be in the main title bar.  Whether or not you s
 
 === Set Bill Date ===
 
-This button will add now as a bill date.  This is mostly to make it
-easier to select the last time you billed.  This would allow you to
-set a ticket as having been billed at a given time while others have
-not, and accurately get the correct billing information for all
-tickets.
+This button will add now as a bill date.  This is mostly to make it easier to select the last time you billed. 
 
 == Reports ==
 === Report Types ===
