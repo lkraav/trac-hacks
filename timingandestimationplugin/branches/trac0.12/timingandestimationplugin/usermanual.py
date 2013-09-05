@@ -34,11 +34,7 @@ The direct url is '/billing'.
 
 === Set Bill Date ===
 
-This button will add now as a bill date.  This is mostly to make it
-easier to select the last time you billed.  This would allow you to
-set a ticket as having been billed at a given time while others have
-not, and accurately get the correct billing information for all
-tickets.
+This button will add now as a bill date.  This is mostly to make it easier to select the last time you billed.
 
 === Configuration ===
 ==== TimingAndEstimation ====
