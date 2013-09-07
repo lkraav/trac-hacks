@@ -15,7 +15,7 @@ setup(
     keywords='trac plugin ticket validate field',
     author='Zack Shahan',
     author_email='zshahan@dig-inc.net',
-    url='http://trac-hacks.org/wiki/TracTicketConditionalValidateFieldsPlugin',
+    url='http://trac-hacks.org/wiki/TracTicketConditionalValidatePlugin',
     description='Validates fields based on ticket type.',
     long_description="""
     This plugin for Trac 1.0 and later provides validation of ticket fields based off
