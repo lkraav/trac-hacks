@@ -12,20 +12,54 @@ from genshi.core import QName
 from genshi.filters.transform import Transformer, ENTER, OUTSIDE, EXIT
 from genshi.path import Path
 from pkg_resources import ResourceManager
-from trac.core import Component, implements
+from trac.core import Component, implements, ExtensionPoint
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import add_script, ITemplateProvider, add_stylesheet
+from trac.wiki.api import IWikiSyntaxProvider
 from urllib import quote, unquote
 from urlparse import urlparse
 import re
 
 
 class AnchorAnywhere(Component):
+    """ Put anchor in all paragraphs """
     implements(ITemplateStreamFilter, ITemplateProvider)
+
+    syntax_providers = ExtensionPoint(IWikiSyntaxProvider)
+    title = "Keywords for search, or \n"
+
+    def __init__(self):
+        namespaces = {}
+        for syntax_provider in self.syntax_providers:
+            for x in syntax_provider.get_link_resolvers():
+                namespaces[x] = syntax_provider
+        self.title += ":\n".join([x[0] for x in namespaces.keys()]) + ":\n for quickjump"
 
     def filter_stream(self, req, method, filename, stream, data):
         add_script(req, 'traclinks/js/anchoranywhere.js')
         add_stylesheet(req, 'traclinks/css/anchoranywhere.css')
+        return stream | Transformer('//input[@id="proj-search"]').attr('title', self.title)
+
+    """
+    #number for ticket,
+    /path for source on repository,
+    [number] for changeset,
+    rnumber for revision,
+    yyyy-mm-ddThh:mm:ss for timeline """
+
+    # ITemplateProvider methods
+    def get_templates_dirs(self):
+        return []
+
+    def get_htdocs_dirs(self):
+        return [('traclinks', ResourceManager().resource_filename(__name__, 'htdocs'))]
+
+
+class Browser(Component):
+    """ Anchor on dirlist or browser """
+    implements(ITemplateStreamFilter)
+
+    def filter_stream(self, req, method, filename, stream, data):
         if filename in ['browser.html', 'dir_entries.html']:
             pathinfo = req.base_path + req.path_info
             pathinfo = quote(pathinfo.encode('utf-8'))
@@ -40,15 +74,9 @@ class AnchorAnywhere(Component):
             stream |= Transformer('//td[@class="name"]').apply(_AttrLaterTransformation('id', '//a', trimmer))
         return stream
 
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        return []
-
-    def get_htdocs_dirs(self):
-        return [('traclinks', ResourceManager().resource_filename(__name__, 'htdocs'))]
-
 
 class _AttrLaterTransformation(object):
+    """ Support class for Browser """
 
     def __init__(self, name, pathfrom, trimmer=None):
         self.ispathfrom = Path(pathfrom).test()
