@@ -6,9 +6,10 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+from genshi.builder import tag
+
 from trac.core import Component, ExtensionPoint, implements
 from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.util import Markup
 
 
 class NavAdd(Component):
@@ -38,6 +39,6 @@ class NavAdd(Component):
             if target not in ('mainnav', 'metanav'):
                 target = 'mainnav'
 
-            items.append((target, a, Markup('<a href="%s">%s</a>' % (url, title))))
+            items.append((target, a, tag.a(title, href=req.href(url))))
 
         return items
