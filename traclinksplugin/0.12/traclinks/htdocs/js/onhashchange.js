@@ -12,12 +12,14 @@ $(document).ready(function() {
     if ($('#main #ticket').length == 1) { // ticket
       path_elements = document.location.pathname.split('/');
       ticketid = path_elements[path_elements.length - 1];
-      if (location.search == "" && location.hash.indexOf('#comment:') == 0) { // comment of ticket
-        traclinks = location.hash.slice(1) + ':ticket:' + ticketid;
-      } else {
-        traclinks = 'ticket:' + ticketid + location.search + location.hash;
+      if (ticketid != "newticket") {
+        if (location.search == "" && location.hash.indexOf('#comment:') == 0) { // comment of ticket
+          traclinks = location.hash.slice(1) + ':ticket:' + ticketid;
+        } else {
+          traclinks = 'ticket:' + ticketid + location.search + location.hash;
+        }
+        $("#proj-search").attr('value', traclinks);
       }
-      $("#proj-search").attr('value', traclinks);
     }
     if ($('#main #wikipage').length == 1) { // wiki
       start = $('link[rel="start"]')[0].href
