@@ -77,7 +77,7 @@ class TextBox(Component):
                 resource = data['context'].resource
                 if resource.parent and resource.parent.realm == 'repository':
                     resource.id = '%s/%s' % (resource.id, resource.parent.id)  # OK, I know
-                    resource.parent = None
+#                    resource.parent = None
                 if data['restricted']:
                     resource.id = '%s/%s' % (resource.id, data['new_path'])
             else:  # diff:
