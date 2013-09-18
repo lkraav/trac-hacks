@@ -36,7 +36,7 @@ class DirAuthStore(Component):
     dir_scope = IntOption('account-manager', 'dir_scope', 1, '0=Base, 1=OneLevel, 2=Subtree')
     dir_binddn = Option('account-manager', 'dir_binddn', '', 'DN used to bind to AD, leave blank for anonymous bind')
     dir_bindpw = Option('account-manager', 'dir_bindpw', '', 'Password used when binding to AD, leave blank for anonymous bind')
-    dir_timeout = Option('account-manager', 'dir_timeout', 5, 'ldap response timeout in seconds')
+    dir_timeout = IntOption('account-manager', 'dir_timeout', 5, 'ldap response timeout in seconds')
     dir_basedn = Option('account-manager', 'dir_basedn', None, 'Base DN used for account searches')
     user_attr = Option('account-manager', 'user_attr', 'sAMAccountName', 'attribute of the user in the directory')
     name_attr = Option('account-manager', 'name_attr', 'displayName', 'attribute of the users name in the directory')
@@ -44,11 +44,11 @@ class DirAuthStore(Component):
     group_basedn = Option('account-manager', 'group_basedn', None, 'Base DN used for group searches')
     group_validusers = Option('account-manager', 'group_validusers', None, 'CN of group containing valid users. If None, any AD user is valid')
     group_tracadmin = Option('account-manager', 'group_tracadmin', None, 'CN of group containing TRAC_ADMIN users (can also assign TRAC_ADMIN to an LDAP group.)')
-    group_expand = Option('account-manager', 'group_expand', 1, 'binary: expand ldap_groups into trac groups.')
-    cache_ttl = Option('account-manager', 'cache_timeout', 60, 'cache timeout in seconds')
-    cache_memsize = Option('account-manager', 'cache_memsize', 400, 'size of memcache in entries, zero to disable')
-    cache_memprune = Option('account-manager', 'cache_memprune', 5, 'percent of entries to prune')
-    cache_memsize_warn = Option('account-manager', 'cache_memsize_warn', 300, 'warning message for cache pruning in seconds')
+    group_expand = IntOption('account-manager', 'group_expand', 1, 'binary: expand ldap_groups into trac groups.')
+    cache_ttl = IntOption('account-manager', 'cache_timeout', 60, 'cache timeout in seconds')
+    cache_memsize = IntOption('account-manager', 'cache_memsize', 400, 'size of memcache in entries, zero to disable')
+    cache_memprune = IntOption('account-manager', 'cache_memprune', 5, 'percent of entries to prune')
+    cache_memsize_warn = IntOption('account-manager', 'cache_memsize_warn', 300, 'warning message for cache pruning in seconds')
     
     def __init__(self, ldap=None):
         # -- cache my ldap handle
