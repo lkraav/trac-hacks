@@ -36,7 +36,7 @@ class BackLinksMacro(WikiMacroBase):
         buf.write('Pages linking to %s:\n' % backlinks_page)
         buf.write('<ul>')
         for page in backlinked_pages:
-            buf.write('<li><a href="%s">' % self.env.href.wiki(page))
+            buf.write('<li><a href="%s">' % formatter.req.href.wiki(page))
             buf.write(page)
             buf.write('</a></li>\n')
         buf.write('</ul>')
@@ -65,7 +65,7 @@ class BackLinksMenuMacro(WikiMacroBase):
         buf.write('<div class="wiki-toc">')
         buf.write('Pages linking to %s:<br />\n' % backlinks_page)
         for page in backlinked_pages:
-            buf.write('<a href="%s">' % self.env.href.wiki(page))
+            buf.write('<a href="%s">' % formatter.req.href.wiki(page))
             buf.write(page)
             buf.write('</a><br />\n')
         buf.write('</div>')
