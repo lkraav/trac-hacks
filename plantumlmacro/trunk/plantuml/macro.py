@@ -114,14 +114,15 @@ class PlantUmlMacro(WikiMacroBase):
 
         img_id = hashlib.sha1(markup).hexdigest()
         if not self._is_img_existing(img_id):
+            self._write_markup_to_file(img_id, markup)
             cmd = '%s -jar -Djava.awt.headless=true "%s" ' \
-                  '-charset UTF-8 -pipe' % (self.java_bin, self.plantuml_jar)
-            p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            img_data, stderr = p.communicate(input=markup)
+                  '-charset UTF-8 "%s"' % (self.java_bin, self.plantuml_jar,
+                                           self._get_markup_path(img_id))
+            p = Popen(cmd, shell=True)
+            stderr = p.wait()
             if p.returncode != 0:
                 return system_message(_("Error running plantuml: '%(error)s'",
                                         error=stderr))
-            self._write_img_to_file(img_id, img_data)
         img_link = formatter.href('plantuml', id=img_id)
         cmap = self._read_cmapx_from_file(img_id) if \
             self._is_cmapx_existing(img_id) else ''
@@ -142,6 +143,11 @@ class PlantUmlMacro(WikiMacroBase):
         req.send(img_data, 'image/png', status=200)
 
     # Internal
+    def _get_markup_path(self, img_id):
+        img_path = os.path.join(self.abs_img_dir, img_id)
+        img_path += '.txt'
+        return img_path
+
     def _get_img_path(self, img_id):
         img_path = os.path.join(self.abs_img_dir, img_id)
         img_path += '.png'
@@ -160,9 +166,9 @@ class PlantUmlMacro(WikiMacroBase):
         img_path = self._get_cmapx_path(img_id)
         return os.path.isfile(img_path)
 
-    def _write_img_to_file(self, img_id, data):
-        img_path = self._get_img_path(img_id)
-        open(img_path, 'wb').write(data)
+    def _write_markup_to_file(self, img_id, markup):
+        img_path = self._get_markup_path(img_id)
+        open(img_path, 'wb').write(markup)
 
     def _read_cmapx_from_file(self, img_id):
         img_path = self._get_cmapx_path(img_id)
