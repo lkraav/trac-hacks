@@ -16,6 +16,7 @@ from subprocess import Popen, PIPE
 from genshi.builder import tag
 from trac.config import Option
 from trac.core import implements
+from trac.util.html import Markup
 from trac.util.translation import _
 from trac.versioncontrol.api import RepositoryManager
 from trac.web import IRequestHandler
@@ -121,8 +122,10 @@ class PlantUmlMacro(WikiMacroBase):
                 return system_message(_("Error running plantuml: '%(error)s'",
                                         error=stderr))
             self._write_img_to_file(img_id, img_data)
-        link = formatter.href('plantuml', id=img_id)
-        return tag.img(src=link)
+        img_link = formatter.href('plantuml', id=img_id)
+        cmap = self._read_cmapx_from_file(img_id) if \
+            self._is_cmapx_existing(img_id) else ''
+        return Markup(cmap) + tag.img(src=img_link, usemap=img_id + '_map')
 
     def get_macros(self):
         yield 'plantuml'  # WikiProcessor syntax
@@ -137,7 +140,6 @@ class PlantUmlMacro(WikiMacroBase):
         img_id = req.args.get('id')
         img_data = self._read_img_from_file(img_id)
         req.send(img_data, 'image/png', status=200)
-        return ""
 
     # Internal
     def _get_img_path(self, img_id):
@@ -145,13 +147,27 @@ class PlantUmlMacro(WikiMacroBase):
         img_path += '.png'
         return img_path
 
+    def _get_cmapx_path(self, img_id):
+        img_path = os.path.join(self.abs_img_dir, img_id)
+        img_path += '.cmapx'
+        return img_path
+
     def _is_img_existing(self, img_id):
         img_path = self._get_img_path(img_id)
+        return os.path.isfile(img_path)
+
+    def _is_cmapx_existing(self, img_id):
+        img_path = self._get_cmapx_path(img_id)
         return os.path.isfile(img_path)
 
     def _write_img_to_file(self, img_id, data):
         img_path = self._get_img_path(img_id)
         open(img_path, 'wb').write(data)
+
+    def _read_cmapx_from_file(self, img_id):
+        img_path = self._get_cmapx_path(img_id)
+        img_data = open(img_path, 'r').read()
+        return img_data
 
     def _read_img_from_file(self, img_id):
         img_path = self._get_img_path(img_id)
