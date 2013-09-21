@@ -50,9 +50,7 @@
 
         YAHOO.example.getDataTipText_$id = function( item, index, series )
         {
-          var toolTipText = series.displayName + " for " + item.date;
-          toolTipText += "\\n" + item[series.yField] ;
-          return toolTipText;
+          return item[series.yField] + " " + series.displayName + " for " + item.date;
         }
 
         var mychart_$id = new YAHOO.widget.ColumnChart( "chart_$id", myDataSource_$id,
@@ -85,9 +83,7 @@
 
         YAHOO.example.getDataTipText_$id = function( item, index, series )
         {
-          var toolTipText = series.displayName + " for " + item.date;
-          toolTipText += "\\n" + item[series.yField] ;
-          return toolTipText;
+          return item[series.yField] + " " + series.displayName + " for " + item.date;
         }
 
         var mychart_$id = new YAHOO.widget.ColumnChart( "chart_$id", myDataSource_$id,
