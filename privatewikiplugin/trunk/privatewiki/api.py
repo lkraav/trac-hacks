@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from trac.config import IntOption, ListOption
 from trac.core import *
 from trac.perm import IPermissionRequestor, IPermissionGroupProvider, \
                       IPermissionPolicy, PermissionSystem
+from trac.util.compat import set
 from trac.wiki.model import WikiPage
-from trac.config import IntOption, ListOption
-
-try:
-    set = set
-except NameError:
-    from sets import Set as set
 
 __all__ = ['PrivateWikiSystem']
 
