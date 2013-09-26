@@ -7,16 +7,17 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+from copy import copy
 from genshi.filters.transform import Transformer
 from pkg_resources import ResourceManager
 from trac.attachment import Attachment
 from trac.core import Component, implements, ExtensionPoint
 from trac.resource import Resource
 from trac.util.datefmt import format_datetime
+from trac.util.text import unicode_urlencode
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_script
 from trac.wiki.api import IWikiSyntaxProvider
-from trac.util.text import unicode_urlencode
 
 
 class TextBox(Component):
@@ -45,16 +46,16 @@ class TextBox(Component):
         resource = None
         if filename in ['ticket.html', 'wiki_view.html', 'report_view.html', 'milestone_view.html', 'agilo_ticket_view.html'] \
                 and 'context' in data:
-            resource = data['context'].resource
+            resource = copy(data['context'].resource)
         elif filename in ['search.html']:  # search:
             resource = Resource('search', data['query'])
         elif filename in ['browser.html']:  # source:
-            resource = data['context'].resource
+            resource = copy(data['context'].resource)
             if resource.parent and resource.parent.realm == 'repository':
                 resource.id = '%s/%s' % (resource.parent.id, resource.id)
                 resource.parent = None
         elif filename in ['revisionlog.html']:  # log:
-            resource = data['context'].resource
+            resource = copy(data['context'].resource)
             resource.realm = 'log'
             if resource.parent and resource.parent.realm == 'repository':
                 resource.id = '%s/%s' % (resource.parent.id, resource.id)
@@ -67,17 +68,17 @@ class TextBox(Component):
                 resource.version = rev
         elif filename in ['attachment.html']:
             if isinstance(data['attachment'], Attachment):  # attachment:
-                resource = data['attachment'].resource
+                resource = copy(data['attachment'].resource)
             else:
                 pass  # attachment list page of the ticket; no TracLinks defined
         elif filename in ['timeline.html']:  # timeline:
             resource = Resource('timeline', format_datetime(data['precisedate'], 'iso8601'))
         elif filename in ['changeset.html']:
             if data['changeset']:  # changeset:
-                resource = data['context'].resource
+                resource = copy(data['context'].resource)
                 if resource.parent and resource.parent.realm == 'repository':
                     resource.id = '%s/%s' % (resource.id, resource.parent.id)  # OK, I know
-#                    resource.parent = None
+                    resource.parent = None
                 if data['restricted']:
                     resource.id = '%s/%s' % (resource.id, data['new_path'])
             else:  # diff:
@@ -94,7 +95,7 @@ class TextBox(Component):
                     resource = Resource('diff', '%s//%s' % (old_path, new_path))
         elif filename in ['query.html']:
             if 'report_resource' in data:
-                resource = data['report_resource']
+                resource = copy(data['report_resource'])
             else:
                 resource = Resource('query', data['query'].to_string().replace("\n", "")[7:])
         else:
@@ -167,5 +168,5 @@ class TextBox(Component):
 # 'raw-attachment',
 # 'htdocs'
 # diff:...#file0
-# /ticket/2?action=diff&version=1
+# /ticket/2?action=diff&version=1 ticket:2?action=diff&version=1
 # /ticket/2?action=comment-diff&cnum=2&version=1
