@@ -22,7 +22,8 @@ class TypeClassToTicket(Component):
             return stream
         ticket = data['ticket'].values
         fields = self.config.getlist('ticket', 'decorate_fields')
-        value = ' '.join(['%s_is_%s' % (field, ticket.get(field)) for field in fields if field in ticket]
+        value = ' '.join(['%s_is_%s' % (field, value.rstrip(' ').rstrip(',').replace('"', ''))
+                          for field in fields for value in ticket.get(field).split(' ') if field in ticket]
                          + [ticket.get('type')]  # backward compatibility
                          )
 
