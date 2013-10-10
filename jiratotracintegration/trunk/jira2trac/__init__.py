@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.1
+#!/usr/bin/env python
 #
 # Copyright (c) 2008-2009 The Jira2Trac Project.
 # See LICENSE.txt for details.

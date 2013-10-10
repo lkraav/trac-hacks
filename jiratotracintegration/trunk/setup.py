@@ -47,6 +47,15 @@ setup(
     description = 'Tools to migrate from Jira to Trac',
     license = 'MIT License',
     classifiers = ['Framework :: Trac'],
+    entry_points = """
+        [console_scripts]
+        jira2trac = jira2trac:main
+    """,
+    install_requires = [
+        'TracXMLRPC',
+        'TracAccountManager',
+        'TracHTTPAuth'
+    ],
     zip_safe = True,
     packages = [PACKAGE],
 )
