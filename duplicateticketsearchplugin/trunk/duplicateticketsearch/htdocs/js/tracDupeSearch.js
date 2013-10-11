@@ -133,7 +133,6 @@ $(document).ready(function() {
 							resolution: summaryMatches[5]
 						};
 					}
-					alert(summaryMatches[5])
 				}
 				
 			});
@@ -146,3 +145,4 @@ $(document).ready(function() {
 		return returnData;
 	}
 });
+
