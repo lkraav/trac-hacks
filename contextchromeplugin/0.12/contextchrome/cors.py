@@ -69,7 +69,7 @@ try:
             return 'CORS'
 
         def xmlrpc_methods(self):
-            yield (None, None, lambda req: None, 'dummy')
+            yield ('TICKET_VIEW', ((None,),), lambda req: None, 'dummy')
 
         def wrap(self):
             jsonRpcProtocol = self.compmgr[JsonRpcProtocol]
