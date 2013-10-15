@@ -31,7 +31,7 @@ class TypeClassToTicket(Component):
             ticket = data['ticket'].values
             fields = self.config.getlist('ticket', 'decorate_fields')
             value = ' '.join(['%s_is_%s' % (field, value.rstrip(' ').rstrip(',').replace('"', ''))
-                              for field in fields for value in ticket.get(field).split(' ') if field in ticket]
+                              for field in fields if field in ticket for value in ticket.get(field).split(' ')]
                              + [ticket.get('type')]  # backward compatibility
                              )
         if filename == 'wiki_view.html':
