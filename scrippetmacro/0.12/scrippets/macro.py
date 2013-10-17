@@ -40,6 +40,9 @@ class ScrippetMacro(WikiMacroBase):
         default_re = re.compile('([^<>]*?)\n')
         #clean up
         cleanup_re = re.compile('<p class="action">[\n\s]*?<\/p>')
+        cleanup_parentheticals_re = re.compile('<p class="dialogue"><p class="parenthetical">(.*?)<\/p>(.*?)<\/p>\n')
+        cleanup_dialogs_re = re.compile('(<p class="parenthetical">.*<\/p>)\n<p class="action">(.*?)<\/p>')
+        cleanup_empty_dialogs_re = re.compile('<p class="dialogue"></p>\n')
         #styling
 #        bold_re = re.compile('(\*{2}|\[b\])(.*?)(\*{2}|\[\/b\])')
 #        italic_re = re.compile('(\*{1}|\[i\])(.*?)(\*{1}|\[\/i\])')
@@ -54,12 +57,15 @@ class ScrippetMacro(WikiMacroBase):
         _content = actions_re.sub("\n" + r'<p class="action">\2</p>' + "\n",_content)
 #        self.log.debug("BEFORE CHARACTERS: %s" % _content)
 #        self.log.debug(_content);
-        _content = characters_re.sub(r'<p class="character">\1</p>',_content)
+        _content = characters_re.sub(r'<p class="character">\1</p>' + "\n",_content)
 #        self.log.debug(characters_re.sub(r'<p class="character">\1</p>',_content));
         _content = parentheticals_re.sub(r'<p class="parenthetical">\1</p>',_content); #format_to_oneliner(_env, _context, _content))
         _content = dialog_re.sub(r'\1' + "\n" + r'<p class="dialogue">\2</p>' + "\n",_content); #format_to_oneliner(_env, _context, _content))
+        _content = cleanup_parentheticals_re.sub(r'<p class="parenthetical">\1</p>' + "\n" + r'<p class="dialogue">\2</p>' + "\n",_content)
         _content = default_re.sub(r'<p class="action">\1</p>' + "\n",_content)
+        _content = cleanup_dialogs_re.sub(r'\1' + "\n" + r'<p class="dialogue">\2</p>' + "\n",_content)
         _content = cleanup_re.sub("",_content)
+        _content = cleanup_empty_dialogs_re.sub("",_content)
 #        _content = bold_re.sub(r'<b>\2</b>',_content)
 #        _content = italic_re.sub(r'<i>\2</i>',_content)
 #        _content = underline_re.sub(r'<u>\2</u>',_content)
