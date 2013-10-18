@@ -666,3 +666,13 @@ div.system-message p.system-message-title { font-weight: bold; }
 #notice.system-message {
     background-color: #FFF765;
 }
+
+tt {
+  background-color #F7F7F9;
+  border: 1px solid #E1E1E8;
+  padding: 2px 4px;
+  color: #DD1144;
+  color: #AA5500;
+  border-radius: 3px 3px 3px 3px;
+  font-size: 13px;
+}
