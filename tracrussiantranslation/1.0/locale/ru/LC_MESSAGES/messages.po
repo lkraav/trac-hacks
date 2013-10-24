@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Trac 1.0.1\n"
 "Report-Msgid-Bugs-To: trac-dev@googlegroups.com\n"
 "POT-Creation-Date: 2013-01-27 11:21+0900\n"
-"PO-Revision-Date: 2013-09-04 19:24+0300\n"
+"PO-Revision-Date: 2013-10-24 14:56+0300\n"
 "Last-Translator: Dmitri Bogomolov <4glitch@gmail.com>\n"
 "Language-Team: ru_RU <trac-dev@googlegroups.com>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
@@ -2600,7 +2600,7 @@ msgstr "История изменений для [1:%(name)s]"
 #: trac/versioncontrol/templates/revisionlog.html:101
 #: trac/versioncontrol/templates/revisionlog.html:204
 msgid "View changes"
-msgstr "Просмотреть изменения"
+msgstr "Смотреть изменения"
 
 #: trac/templates/history_view.html:24
 msgid "Change history"
@@ -2643,7 +2643,7 @@ msgid ""
 "       ([3:%(size)s]) -\n"
 "      added by [4:%(author)s] %(date)s."
 msgstr ""
-"[1:%(file)s][2:]\n"
+"[1:%(file)s][2:​]\n"
 "       ([3:]%(size)s]) -\n"
 "      добавлен [4:%(author)s] %(date)s."
 
@@ -3350,7 +3350,7 @@ msgstr ""
 #: trac/ticket/query.py:1378
 #, python-format
 msgid "Ticket completion status for each %(group)s"
-msgstr ""
+msgstr "Статус выполнения для каждой %(group)s"
 
 #: trac/ticket/query.py:1393
 msgid "No results"
@@ -3593,7 +3593,7 @@ msgstr "Билеты %(ticketids)s"
 #: trac/ticket/web_ui.py:426
 #, python-format
 msgid "Tickets %(ticketlist)s batch updated"
-msgstr ""
+msgstr "Билеты %(ticketlist)s обновлены"
 
 #: trac/ticket/web_ui.py:576
 #, python-format
@@ -3902,7 +3902,7 @@ msgstr "Добавить поле:"
 
 #: trac/ticket/templates/batch_modify.html:50
 msgid "[1:Note:] See [2:TracBatchModify] for help on using batch modify."
-msgstr ""
+msgstr "[1:Примечание:] См. [2:TracBatchModify] для справки по работе с групповым изменением."
 
 #: trac/ticket/templates/batch_modify.html:57
 msgid "Change tickets"
@@ -4086,7 +4086,7 @@ msgstr "Группировать результаты по"
 
 #: trac/ticket/templates/query.html:198
 msgid "descending"
-msgstr "убыванию"
+msgstr "по убыванию"
 
 #: trac/ticket/templates/query.html:202
 msgid "Show under each result:"
@@ -4251,7 +4251,7 @@ msgstr ""
 
 #: trac/ticket/templates/report_list.html:60
 msgid "Compose a new ticket query by selecting filters and columns to display."
-msgstr ""
+msgstr "Составить новый запрос путем выбора фильтров и столбцов для отображения."
 
 #: trac/ticket/templates/report_list.html:65
 msgid "SQL reports and saved custom queries"
