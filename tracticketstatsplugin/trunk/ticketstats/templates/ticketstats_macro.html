@@ -2,15 +2,15 @@
       xmlns:py="http://genshi.edgewall.org/">
 
     <!-- Dependencies -->
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/yahoo-dom-event/yahoo-dom-event.js"></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/element/element-min.js"></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/datasource/datasource-min.js"></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/json/json-min.js"></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/swf/swf-min.js"></script>
+    <script type="text/javascript" src="${yui_base_url}/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="${yui_base_url}/build/element/element-min.js"></script>
+    <script type="text/javascript" src="${yui_base_url}/build/datasource/datasource-min.js"></script>
+    <script type="text/javascript" src="${yui_base_url}/build/json/json-min.js"></script>
+    <script type="text/javascript" src="${yui_base_url}/build/swf/swf-min.js"></script>
     <!-- OPTIONAL: Connection (enables XHR) -->
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/connection/connection-min.js"></script>
+    <script type="text/javascript" src="${yui_base_url}/build/connection/connection-min.js"></script>
     <!-- Source files -->
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/charts/charts-min.js"></script>
+    <script type="text/javascript" src="${yui_base_url}/build/charts/charts-min.js"></script>
 
     <style type="text/css">#chart_$id { height: ${height}px }</style>
 
@@ -20,7 +20,7 @@
       <div id="chart_$id"></div>
 
       <script type = "text/javascript">
-        YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.9.0/build/charts/assets/charts.swf";
+        YAHOO.widget.Chart.SWFURL = "${yui_base_url}/build/charts/assets/charts.swf";
 
         var mychartdata_$id =
         [

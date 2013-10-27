@@ -12,6 +12,7 @@ import re
 import random
 from datetime import timedelta, datetime
 
+from trac.config import IntOption, Option
 from trac.ticket.query import Query
 from trac.web.chrome import Chrome
 from trac.wiki.macros import WikiMacroBase
@@ -140,6 +141,9 @@ def _get_args_defaults(env, args):
 
 
 class TicketStatsMacro(WikiMacroBase):
+    yui_base_url = Option('ticketstats', 'yui_base_url',
+                          default='http://yui.yahooapis.com/2.9.0',
+                          doc='Location of YUI API')
 
     # ==[ Helper functions ]==
     def _get_num_closed_tix(self, from_date, at_date, req, ticketFilter=""):
@@ -289,7 +293,8 @@ class TicketStatsMacro(WikiMacroBase):
             'chart_data': chart_data,
             'height': args['height'],
             'column_width': args['column_width'],
-            'id': random.randint(1, 9999999)
+            'id': random.randint(1, 9999999),
+            'yui_base_url': self.yui_base_url
         }
 
         template = Chrome(self.env).load_template('ticketstats_macro.html')
