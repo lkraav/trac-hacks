@@ -137,7 +137,7 @@ class ExcelTicketModule(Component):
                         name, result.get(name), req, ticket_context, writer)
                     cells.append((value, style, width, line))
                 writer.write_row(cells)
-            writer.row_idx += 1    # blank row
+            writer.move_row()
 
         writer.set_col_widths()
 
@@ -269,7 +269,7 @@ class ExcelReportModule(Component):
             'header', -1, -1)])
 
         for value_for_group, row_group in data['row_groups']:
-            writer.row_idx += 1
+            writer.move_row()
 
             if value_for_group and len(row_group):
                 writer.write_row([(
