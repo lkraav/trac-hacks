@@ -24,8 +24,13 @@ class WorksheetWriter(object):
         self.row_idx = 0
         self._col_widths = {}
         self._metrics_cache = {}
+        self._cells_count = 0
 
     _normalize_newline = re.compile(r'\r\n?').sub
+
+    def move_row(self):
+        self.row_idx += 1
+        self._flush_row()
 
     def write_row(self, cells):
         row = self.sheet.row(self.row_idx)
@@ -66,9 +71,15 @@ class WorksheetWriter(object):
             if max_height < style.font.height:
                 max_height = style.font.height
             row.write(idx, value, style)
+            self._cells_count += 1
         row.height = min(max_line, 10) * max(max_height * 255 / 180, 255)
         row.height_mismatch = True
-        self.row_idx += 1
+        self.move_row()
+
+    def _flush_row(self):
+        if self.row_idx % 512 == 0 or self._cells_count >= 4096:
+            self.sheet.flush_row_data()
+            self._cells_count = 0
 
     def set_col_widths(self):
         for idx, width in self._col_widths.iteritems():
@@ -85,6 +96,8 @@ class WorksheetWriter(object):
             width = max(sum((1, 2)[east_asian_width(ch) in doubles]
                             for ch in line)
                         for line in lines)
+            if len(value) > 64:
+                return width, len(lines)
             self._metrics_cache[value] = (width, len(lines))
         return self._metrics_cache[value]
 
