@@ -27,7 +27,7 @@ class NeverNotifyUpdaterSetupParticipant(Component):
         defaultDomain = self.env.config.get("notification", "smtp_default_domain")
         domain = ''
         if defaultDomain: domain = '@'+defaultDomain
-        db = env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         # Suppress the updater from the recipients
         updater = None
