@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
 # List all Trac Plugins in a parent directory.
 
-from trac.wiki.macros import WikiMacroBase
 import os
+from urlparse import urljoin
+
+from genshi.builder import tag
+from trac.config import Option
+from trac.wiki.macros import WikiMacroBase
 
 class ListTracProjectsMacro(WikiMacroBase):
-    '''
-    Trac 0.11 port of the ListTracProjects Macro
-    '''
 
-    def render_macro(self, req, name, content):
-      DIR = '/srv/trac/teams-example'
-      str = ''
-      i = 0
+    base_dir = Option('projects', 'base_dir',
+        doc="""Base directory for Trac projects.""")
 
-      for f in os.listdir(DIR):
-         if (i==0):
-            str = '<a href="/teams-example/' + f + '" target="_new">' + f + '</a>'
-            i = i + 1
-         else:
-            str = str + ' :: ' + '<a href="/teams-example/' + f + '" target="_new">' + f + '</a>'
-      return str + '<br>'
+    base_url = Option('projects', 'base_url',
+        doc="""Base URL for Trac projects.""")
+
+    def expand_macro(self, formatter, name, content, args=None):
+        out = tag()
+
+        if self.base_url:
+            href = self.base_url
+        elif formatter.req.base_path:
+            href = formatter.req.abs_href().rsplit('/', 1)[0]
+        else:
+            href = formatter.req.abs_href()
+        for i, f in enumerate(os.listdir(self.base_dir)):
+            if i != 0:
+                out.append(" :: ")
+            out.append(tag.a(f, href=urljoin(href, f), target='_new'))
+        return out
