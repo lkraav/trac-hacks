@@ -365,7 +365,7 @@ class TracHacksHandler(Component):
 
             vars = {}
             vars['OWNER'] = req.authname
-            vars['WIKINAME'] = get_page_name(data['name'], data['type'])
+            vars['WIKINAME'] = get_page_name(data['name'], data.get('type', ''))
             vars['TYPE'] = data.setdefault('type', 'plugin')
             vars['TITLE'] = data.setdefault('title', 'No title available')
             vars['LCNAME'] = vars['WIKINAME'].lower()
