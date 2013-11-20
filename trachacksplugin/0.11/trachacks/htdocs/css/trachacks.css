@@ -1,7 +1,9 @@
 .tagcloud li:after { content: " "; }
 .tagcloud li.last:after { content: ""; }
 
-.newhack {
+#content.newhack {
+  margin-left: auto;
+  margin-right: auto;
   width: 640px;
 }
 
