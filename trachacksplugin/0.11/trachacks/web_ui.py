@@ -392,6 +392,7 @@ class TracHacksHandler(Component):
                 template = Template(page.text).substitute(vars)
                 template = re.sub(r'\[\[ChangeLog[^\]]*\]\]',
                                   'No changes yet', template)
+                add_stylesheet(req, 'common/css/wiki.css')
                 data['page_preview'] = wiki_to_html(template, self.env, req)
         else:
             data['form_context'] = None
