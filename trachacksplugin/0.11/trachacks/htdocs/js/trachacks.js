@@ -15,6 +15,9 @@ jQuery(document).ready(function($) {
         });
     };
 
+    // This can be removed in Trac 1.0.2 since it is provided in layout.html
+    $(".trac-target-new").attr("target", "_blank");
+
     // Move the label for each field into the hint block.
     $('.hint').each(function() {
         var hint = this;

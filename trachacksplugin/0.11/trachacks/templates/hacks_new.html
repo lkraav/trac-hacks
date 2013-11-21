@@ -118,7 +118,7 @@
                     id="${t}" name="type"/>
                   <nobr>
                     <label for="${t}">
-                      <a href="${href.wiki(t)}">${t}</a>
+                      <a href="${href.wiki(t)}" class="trac-target-new">${t}</a>
                       <span style="font-size:xx-small;">(${d})</span>
                     </label>
                   </nobr>
@@ -142,7 +142,7 @@
                   <input tabindex="5" type="checkbox" name="release" value="${r}"
                     id="${r}" checked="${r in release or None}"/>
                   <label for="${r}">
-                    <a href="${href.wiki(r)}">${r}</a>
+                    <a href="${href.wiki(r)}" class="trac-target-new">${r}</a>
                   </label>
                 </py:for>
               </dd>
