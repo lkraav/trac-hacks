@@ -3,7 +3,8 @@
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
-      xmlns:xi="http://www.w3.org/2001/XInclude">
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xml:lang="en">
   <xi:include href="layout.html" />
   <xi:include href="macros.html" />
 
@@ -31,7 +32,7 @@
               CamelCase</a> name for your hack.
             </div>
 
-            <div id="namehint" class="hint">
+            <div id="namehint" class="hint" style="display:none">
               <span class="hint-pointer">&nbsp;</span>
               <p>
                 A new Wiki page will be created by concatenating the hack name
@@ -57,7 +58,7 @@
               You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here.
             </div>
 
-            <div id="titlehint" class="hint">
+            <div id="titlehint" class="hint" style="display:none">
               <span class="hint-pointer">&nbsp;</span>
               <p>
                 This will be the main heading in the Wiki page for your hack.
@@ -78,7 +79,7 @@
               You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here.
             </div>
 
-            <div id="descriptionhint" class="hint">
+            <div id="descriptionhint" class="hint" style="display:none">
               <span class="hint-pointer">&nbsp;</span>
               <p>
                 This is what visitors will read to determine if your hack
@@ -103,7 +104,7 @@
                 The type that best describes your hack.
               </div>
 
-              <div id="typehint" class="hint">
+              <div id="typehint" class="hint" style="display:none">
                 <p>
                   The title-cased version of the type will be appended to your
                   hack name to create your Wiki page.
@@ -128,7 +129,7 @@
             <dd id="release">
               <div>Release(s) of Trac this hack works with.</div>
 
-              <div id="releasehint" class="hint">
+              <div id="releasehint" class="hint" style="display:none">
                 <p>
                   <strong>anyrelease</strong> indicates your hack will work
                   with any Trac release.
@@ -156,7 +157,7 @@
             (You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here)
             </div>
 
-            <div id="installationhint" class="hint">
+            <div id="installationhint" class="hint" style="display:none">
               <p>
                 Please include full instructions on how to install your hack,
                 including changes that need to be made to the <a
@@ -176,7 +177,7 @@
             <div>
               Space-separated list of tags classifying your hack.
             </div>
-            <div id="tagshint" class="hint">
+            <div id="tagshint" class="hint" style="display:none">
               <p>
                 Use any words you like. The more tags you use the easier it will
                 be for people to find your hack.
@@ -202,7 +203,5 @@
         disabled="${(form_context.errors or not (preview or create)) or None}"
         type="submit" name="create" value="Create Hack"/>
     </form>
-    <script type="text/javascript">
-    </script>
   </body>
 </html>
