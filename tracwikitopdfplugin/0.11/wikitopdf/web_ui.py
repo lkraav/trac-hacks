@@ -3,26 +3,21 @@ Copyright (C) 2008 Prognus Software Livre - www.prognus.com.br
 Author: Diorgenes Felipe Grzesiuk <diorgenes@prognus.com.br>
 """
 
-from genshi.core import Markup
-from trac.admin.web_ui import IAdminPanelProvider
-from trac.core import Component, ExtensionPoint, implements
-from trac.perm import IPermissionRequestor
+from trac.admin.api import IAdminPanelProvider
+from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.util.translation import _
-from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script
 from trac.wiki.api import WikiSystem
+
 from api import IWikiToPdfFormat
+
 
 class WikiToPdfAdmin(Component):
     """A plugin allowing the export of multiple wiki pages in a single file."""
 
     formats = ExtensionPoint(IWikiToPdfFormat)
 
-    implements(IPermissionRequestor, IAdminPanelProvider, ITemplateProvider, IRequestFilter)
-
-    # IPermissionRequestor methods
-    def get_permission_actions(self):
-        return []
+    implements(IAdminPanelProvider, ITemplateProvider)
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
@@ -38,16 +33,10 @@ class WikiToPdfAdmin(Component):
         if req.perm.has_permission('WIKI_ADMIN'):
             yield ('general', _('General'), 'wikitopdf', _('WikiToPdf'))
 
-    # IRequestFilter methods
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type	
-
-    def process_admin_request(self, req, cat, page, path_info):
+    def render_admin_panel(self, req, cat, page, path_info):
         allpages = list(WikiSystem(self.env).get_pages())
-        rightpages = [x for x in req.session.get('wikitopdf_rightpages', '').split(',') if x]
+        rightpages = req.session.get('wikitopdf_rightpages', '')
+        rightpages = filter(None, rightpages.split(','))
 
         formats = {}
         for provider in self.formats:
@@ -78,15 +67,13 @@ class WikiToPdfAdmin(Component):
             
             return formats[format]['provider'].process_wikitopdf(req, format, title, subject, rightpages, date, version, pdfbookname)
             
-        req.hdf['wikitopdf.allpages'] = allpages
-        leftpages = [x for x in allpages if x not in rightpages]
-        leftpages.sort()
-        req.hdf['wikitopdf.leftpages'] = leftpages
-        req.hdf['wikitopdf.rightpages'] = rightpages
-        req.hdf['wikitopdf.formats'] = formats
-        req.hdf['wikitopdf.default_format'] = formats.iterkeys().next()
+        data = {
+            'allpages': allpages,
+            'leftpages': sorted(x for x in allpages if x not in rightpages),
+            'rightpages': rightpages,
+            'formats': formats,
+        }
 
         add_script(req, 'wikitopdf/js/admin_wikitopdf.js') 
 
-        return 'admin_wikitopdf.cs', None
-
+        return 'admin_wikitopdf.html', {'wikitopdf': data}

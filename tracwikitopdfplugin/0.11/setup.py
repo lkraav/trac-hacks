@@ -9,7 +9,7 @@ setup(
     name = 'TracWikiToPdfPlugin',
     version = '2.3.1',
     packages = ['wikitopdf'],
-    package_data={ 'wikitopdf' : [ 'templates/*.cs', 'htdocs/js/*.js' ] },     
+    package_data={ 'wikitopdf' : [ 'templates/*.html', 'htdocs/js/*.js' ] },
     author = "Diorgenes Felipe Grzesiuk",
     author_email = "diorgenes@prognus.com.br",
     description = "Generating PDF files from Wiki pages",
