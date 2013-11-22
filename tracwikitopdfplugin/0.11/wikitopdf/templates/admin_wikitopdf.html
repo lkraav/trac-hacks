@@ -1,3 +1,17 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+
+<xi:include href="admin.html" />
+
+<head>
+  <title>Generate WikiToPdf</title>
+</head>
+
+<body>
 <h2>Generate WikiToPdf</h2>
 
 <form method="post" onsubmit="compile_pages(this);">
@@ -35,9 +49,7 @@
         <tr>
             <td colspan="2">
                 <select id="leftpages_select" name="leftpages" size="10" style="width: 100%;" multiple="multiple">
-                    <?cs each:page = wikitopdf.leftpages ?>
-                    <option value="<?cs var:page ?>"><?cs var:page ?></option>
-                    <?cs /each ?>
+                    <option py:for="page in wikitopdf.leftpages" value="$page">$page</option>
                 </select>
             </td>
 	</tr>
@@ -54,14 +66,12 @@
 	 <tr>
 	 	<td width="95%">
 	                <select id="rightpages_select" name="rightpages" size="10" style="width: 100%;" multiple="multiple">
-                    		<?cs each:page = wikitopdf.rightpages ?>
-                    		<option value="<?cs var:page ?>"><?cs var:page ?></option>
-                    		<?cs /each ?>
+                                <option py:for="page in wikitopdf.rightpages" value="$page">$page</option>
                 	</select>
 		</td>
 		<td width="5%" align="center">
 			<input type="button" onclick="reorder_item('right', -1)" value="/\" />
-			<br><br>
+                        <br /><br />
 			<input type="button" onclick="reorder_item('right', 1)" value="\/" />
 		</td>
         </tr>
@@ -70,9 +80,11 @@
 
 <fieldset>
     <legend>Output Format</legend>
-    <?cs each:format = wikitopdf.formats ?>
-    <label><input type="radio" name="format" value="<?cs name:format ?>" <?cs if:name(format)==wikitopdf.default_format ?>checked="checked"<?cs /if ?> /><?cs var:format.name ?></label>
-    <?cs /each ?>
+    <label py:for="idx, (key, format) in enumerate(wikitopdf.formats.iteritems())">
+        <input type="radio" name="format" value="$key"
+               checked="${(None, 'checked')[idx == 0]}"
+               />${format.name}
+    </label>
 </fieldset>
 
 <input type="hidden" name="rightpages_all" value="" />
@@ -81,5 +93,5 @@
     <input type="submit" name="create" value="Create" />
 </div>
 </form>
-
-
+</body>
+</html>
