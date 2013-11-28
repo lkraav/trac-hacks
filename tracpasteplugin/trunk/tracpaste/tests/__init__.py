@@ -10,7 +10,10 @@ from unittest import TestSuite
 def test_suite():
     suite = TestSuite()
     
+    import tracpaste.tests.web_ui
     import tracpaste.tests.wikisyntax
+
     suite.addTest(tracpaste.tests.wikisyntax.test_suite())
+    suite.addTest(tracpaste.tests.web_ui.test_suite())
     
     return suite
