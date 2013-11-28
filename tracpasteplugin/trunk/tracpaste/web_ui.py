@@ -12,13 +12,14 @@ from genshi.builder import tag
 from trac.core import *
 from trac.perm import IPermissionRequestor
 from trac.resource import Resource, IResourceManager
+from trac.search import ISearchSource, search_to_sql, shorten_result
 from trac.config import BoolOption, IntOption, ListOption
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_stylesheet, add_link, Chrome
 from trac.wiki.api import IWikiSyntaxProvider
 from trac.timeline.api import ITimelineEventProvider
-from trac.util.datefmt import http_date
+from trac.util.datefmt import http_date, to_datetime
 from trac.util.translation import _
 from trac.mimeview.pygments import get_all_lexers
 
@@ -28,7 +29,8 @@ from tracpaste.model import Paste, get_pastes
 
 class TracpastePlugin(Component):
     implements(INavigationContributor, ITemplateProvider, IRequestHandler,
-               IPermissionRequestor, ITimelineEventProvider, IWikiSyntaxProvider)
+               IPermissionRequestor, ITimelineEventProvider, IWikiSyntaxProvider,
+               ISearchSource)
 
     _url_re = re.compile(r'^/pastebin(?:/(\d+))?/?$')
 
@@ -249,7 +251,30 @@ class TracpastePlugin(Component):
 
     def get_link_resolvers(self):
         yield('paste', self._format_link)
-        
+    
+    # ISearchsource methods
+    def get_search_filters(self, req):
+        if 'PASTEBIN_VIEW' in req.perm:
+            yield ('pastebin', 'Pastebin', 1)
+
+    def get_search_results(self, req, query, filters):
+        if 'pastebin' not in filters:
+            return
+
+        db = self.env.get_db_cnx()
+        sql, args = search_to_sql(db, ['title', 'mimetype', 'data'], query)
+        cursor = db.cursor()
+        cursor.execute(self.query % sql, args)
+        for id, author, time, title, mimetype, data in cursor:
+            pb_realm = Resource('pastebin')
+            if req.perm(pb_realm(id=id)).has_permission('PASTEBIN_VIEW'):
+                yield (self.env.href.pastebin(id),
+                       '%s (paste type: %s)' % (title, mimetype),
+                       to_datetime(time), author,
+                       shorten_result(data, query))
+    
+    query = """SELECT id, author, time, title, mimetype, data FROM pastes WHERE %s"""
+
     # private methods
     def _format_link(self, formatter, ns, target, label, match=None):
         try:
