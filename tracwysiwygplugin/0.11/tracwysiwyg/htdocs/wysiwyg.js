@@ -3101,10 +3101,17 @@ if (window.getSelection) {
         if (ancestor.nodeType != 1) {
             return false;
         }
+        var START_TO_END = Range.START_TO_END;
+        var END_TO_START = Range.END_TO_START;
+        var d = this.contentDocument;
         var elements = ancestor.getElementsByTagName(name);
         var length = elements.length;
         for (var i = 0; i < length; i++) {
-            if (selection.containsNode(elements[i], true)) {
+            var source = d.createRange();
+            source.selectNode(elements[i]);
+            if (range.compareBoundaryPoints(START_TO_END, source) === -1 &&
+                range.compareBoundaryPoints(END_TO_START, source) === 1)
+            {
                 return true;
             }
         }
