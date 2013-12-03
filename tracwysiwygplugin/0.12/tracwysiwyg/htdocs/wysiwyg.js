@@ -3140,7 +3140,21 @@ TracWysiwyg.prototype._msieInsertHTML = function(html) {
     range.pasteHTML(html.replace(/\t/g, "&#9;"));
     range.collapse(false);
     range.select();
-    range = this.contentDocument.selection.createRange();
+};
+
+TracWysiwyg.prototype._fragmentInsertHTML = function(html) {
+    var range = this.getNativeSelectionRange();
+    if (range) {
+        var d = this.contentDocument;
+        var tmp = d.createRange();
+        tmp.setStart(d.body, 0);
+        tmp.setEnd(d.body, 0);
+        var fragment = tmp.createContextualFragment(html);
+        range.deleteContents();
+        range.insertNode(fragment);
+        range.detach();
+        tmp.detach();
+    }
 };
 
 TracWysiwyg.prototype.insertLineBreak = function() {
@@ -3266,8 +3280,11 @@ if (window.getSelection) {
                 selection.addRange(range);
             }
         };
-        if (/*@cc_on true || @*/ false) { // Internet Explorer
+        if (/*@cc_on true && @*/ Range.prototype.pasteHTML) {  // Internet Explorer 9 or 10
             TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._msieInsertHTML;
+        }
+        else if (window.Selection && !Selection.containsNode) {  // Internet Explorer 11
+            TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._fragmentInsertHTML;
         }
         else {
             TracWysiwyg.prototype.insertHTML = function(html) {
@@ -3318,20 +3335,7 @@ if (window.getSelection) {
                 range.detach();
             }
         };
-        TracWysiwyg.prototype.insertHTML = function(html) {
-            var range = this.getNativeSelectionRange();
-            if (range) {
-                var d = this.contentDocument;
-                var tmp = d.createRange();
-                tmp.setStart(d.body, 0);
-                tmp.setEnd(d.body, 0);
-                var fragment = tmp.createContextualFragment(html);
-                range.deleteContents();
-                range.insertNode(fragment);
-                range.detach();
-                tmp.detach();
-            }
-        };
+        TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._fragmentInsertHTML;
     }
     TracWysiwyg.prototype.getSelectionRange = TracWysiwyg.prototype.getNativeSelectionRange;
     TracWysiwyg.prototype.getSelectionText = function() {
