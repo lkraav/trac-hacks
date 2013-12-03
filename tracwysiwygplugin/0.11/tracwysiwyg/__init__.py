@@ -53,7 +53,6 @@ class WysiwygModule(Component):
             add_link(req, 'tracwysiwyg.stylesheet', _expand_filename(req, stylesheet))
         add_stylesheet(req, 'tracwysiwyg/wysiwyg.css')
         add_script(req, 'tracwysiwyg/wysiwyg.js')
-        add_script(req, 'tracwysiwyg/wysiwyg-load.js')
 
         return template, data, content_type
 
@@ -65,11 +64,10 @@ class WysiwygModule(Component):
         options = {}
         if filename == 'ticket.html':
             options['escapeNewlines'] = _preserve_newlines(self.env)
-
-        if options:
-            text = 'var _tracwysiwyg = %s' % _to_json(options)
-            stream |= Transformer('//head').append(tag.script(text, type='text/javascript'))
-
+        scripts = tag.script('var _tracwysiwyg = %s;' % _to_json(options),
+                             type='text/javascript')
+        # insert <script> tag once
+        stream |= Transformer('//script').before(scripts.generate())
         return stream
 
 

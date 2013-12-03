@@ -3539,11 +3539,7 @@ TracWysiwyg.getTracPaths = function() {
 };
 
 TracWysiwyg.getOptions = function() {
-    var options = {};
-    if (typeof window._tracwysiwyg != "undefined") {
-        options = _tracwysiwyg;
-    }
-    return options;
+    return window._tracwysiwyg || {};
 };
 
 TracWysiwyg.getEditorMode = function() {
@@ -3754,3 +3750,9 @@ TracWysiwyg.initialize = function() {
     }
     return true;
 };
+
+if (window._tracwysiwyg !== undefined) {
+    jQuery(document).ready(function($) {
+        setTimeout(TracWysiwyg.initialize, 10);
+    });
+}
