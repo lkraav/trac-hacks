@@ -46,9 +46,7 @@ class WysiwygModule(Component):
         options = {}
         if template == 'ticket.html':
             options['escapeNewlines'] = TicketModule(self.env).must_preserve_newlines
-
-        if options:
-            add_script_data(req, { '_tracwysiwyg': options })
+        add_script_data(req, {'_tracwysiwyg': options})
         add_link(req, 'tracwysiwyg.base', req.href() or '/')
         stylesheets = ['chrome/common/css/trac.css', 'chrome/tracwysiwyg/editor.css']
         stylesheets += self.wysiwyg_stylesheets
@@ -56,7 +54,6 @@ class WysiwygModule(Component):
             add_link(req, 'tracwysiwyg.stylesheet', _expand_filename(req, stylesheet))
         add_stylesheet(req, 'tracwysiwyg/wysiwyg.css')
         add_script(req, 'tracwysiwyg/wysiwyg.js')
-        add_script(req, 'tracwysiwyg/wysiwyg-load.js')
 
         return template, data, content_type
 
