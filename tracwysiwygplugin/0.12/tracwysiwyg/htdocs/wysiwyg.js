@@ -1,7 +1,7 @@
 var TracWysiwyg = function(textarea, options) {
     var self = this;
     var editorMode = TracWysiwyg.getEditorMode();
-
+    textarea.setAttribute('data-tracwysiwyg-initialized', 'doing');
     this.autolink = true;
     this.textarea = textarea;
     this.options = options = options || {};
@@ -101,6 +101,9 @@ var TracWysiwyg = function(textarea, options) {
                 self.autolinkButton.parentNode.style.display = "none";
                 alert("Failed to activate the wysiwyg editor.");
                 throw exception;
+            }
+            else {
+                textarea.setAttribute('data-tracwysiwyg-initialized', 'done');
             }
         }
         else {
@@ -3998,21 +4001,24 @@ TracWysiwyg.getTextContent = (function() {
 
 TracWysiwyg.initialize = function() {
     if ("replace".replace(/[a-e]/g, function(m) { return "*" }) != "r*pl***") {
-        return;
+        return false;
     }
     if (typeof document.designMode == "undefined") {
-        return;
+        return false;
     }
     TracWysiwyg.tracPaths = TracWysiwyg.getTracPaths();
     if (!TracWysiwyg.tracPaths) {
-        return;
+        return false;
     }
     var options = TracWysiwyg.getOptions();
     var textareas = document.getElementsByTagName("textarea");
     for (var i = 0; i < textareas.length; i++) {
         var textarea = textareas[i];
-        if (/\bwikitext\b/.test(textarea.className || "")) {
+        if (/\bwikitext\b/.test(textarea.className || "") &&
+            textarea.getAttribute('data-tracwysiwyg-initialized') === null)
+        {
             TracWysiwyg.newInstance(textarea, options);
         }
     }
+    return true;
 };
