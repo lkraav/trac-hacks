@@ -133,7 +133,7 @@ jQuery(document).ready(function($) {
     }
     var attachments = $('div#content > div#attachments');
     var attachfile = $('form#attachfile');
-    var viewpage = attachfile.size() !== 0;
+    var viewpage = attachfile.length !== 0;
     var xhrHasUpload = !window.ActiveXObject && window.XMLHttpRequest &&
                        !!(new XMLHttpRequest()).upload;
     var hasFileReader = !window.ActiveXObject && !!window.FileReader;
@@ -165,8 +165,8 @@ jQuery(document).ready(function($) {
     var containers = {list: null, queue: null, dropdown: null};
     var queueItems = [];
     var queueCount = 0;
-    var compact = attachments.find('form#attachfile').size() === 0 &&
-                  attachments.find('dl.attachments').size() === 0;
+    var compact = attachments.find('form#attachfile').length === 0 &&
+                  attachments.find('dl.attachments').length === 0;
 
     function ajaxUpload(options) {
         var opts = $.extend({}, options);
@@ -344,7 +344,7 @@ jQuery(document).ready(function($) {
             setTimeout(function() {
                 var element = editable.find('img');
                 editable.empty();
-                if (element.size() === 0) {
+                if (element.length === 0) {
                     alert(_("No available image on your clipboard"));
                     return;
                 }
@@ -646,7 +646,7 @@ jQuery(document).ready(function($) {
                    .append(fieldset);
         var queue;
         var hidden = false;
-        if (attachfile.size() === 0) {
+        if (attachfile.length === 0) {
             queue = $('<ul />').addClass('tracdragdrop-queue');
             attachfile = form.attr('id', 'attachfile');
             attachments.append(queue, form);
@@ -849,10 +849,10 @@ jQuery(document).ready(function($) {
             }
             var self = $(this);
             var rawlink = self.next('a.trac-rawlink');
-            if (rawlink.size() === 0) {
+            if (rawlink.length === 0) {
                 rawlink = self.prev('a.trac-rawlink');
             }
-            if (rawlink.size() === 0) {
+            if (rawlink.length === 0) {
                 return;
             }
             var item = rawlink.parent();
@@ -1017,29 +1017,29 @@ jQuery(document).ready(function($) {
     }
 
     function initialize() {
-        if (compact && attachments.size() === 0) {
+        if (compact && attachments.length === 0) {
             var content = $('div#content');
             var buttons = content.children('div.buttons');
-            var list = buttons.size() !== 0
+            var list = buttons.length !== 0
                      ? buttons.prev('ul') : content.children('ul:last-child');
             var header = list.prev('h3');
             attachments = $('<div />');
-            if (list.size() !== 0 && header.size() !== 0) {
+            if (list.length !== 0 && header.length !== 0) {
                 attachments.append(header, list);
             }
-            if (buttons.size() !== 0) {
+            if (buttons.length !== 0) {
                 buttons.before(attachments);
             }
             else {
                 content.append(attachments);
             }
         }
-        if (attachments.size() === 0) {
+        if (attachments.length === 0) {
             return;
         }
         $.each(compact ? ['ul'] : ['dl.attachments'], function(idx, val) {
             var list = attachments.find(val);
-            if (list.size() !== 0) {
+            if (list.length !== 0) {
                 setContainerList($(list.get(0)));
                 return false;
             }
