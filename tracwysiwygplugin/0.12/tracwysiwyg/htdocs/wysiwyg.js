@@ -3283,16 +3283,16 @@ if (window.getSelection) {
                 selection.addRange(range);
             }
         };
-        if (/*@cc_on true && @*/ Range.prototype.pasteHTML) {  // Internet Explorer 9 or 10
-            TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._msieInsertHTML;
-        }
-        else if (window.Selection && !Selection.containsNode) {  // Internet Explorer 11
-            TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._fragmentInsertHTML;
-        }
-        else {
+        if (window.TextRange === undefined || !TextRange.prototype.pasteHTML) {
             TracWysiwyg.prototype.insertHTML = function(html) {
                 this.execCommand("inserthtml", html);
             };
+        }
+        else if (document.selection === undefined) {  // Internet Explorer 11
+            TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._fragmentInsertHTML;
+        }
+        else {  // Internet Explorer 9 or 10
+            TracWysiwyg.prototype.insertHTML = TracWysiwyg.prototype._msieInsertHTML;
         }
     }
     else {      // Safari 2
