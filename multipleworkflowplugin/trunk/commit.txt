@@ -1,0 +1,5 @@
+ Fixes #6328:
+ * Renamed `0.11` directory to `trunk`
+ * Modified entry point
+ * Replaced tabs with spaces, fixed indentation problems and converted dos line-endings to unix
+
