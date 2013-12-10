@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = 'TracDropbears',
-    version = '2.0',
+    version = '2.1',
     packages = ['dropbears'],
     package_data = { 'dropbears': ['templates/*.html', 'templates/*.js', 'htdocs/*.gif', 'htdocs/*.css' ] },
 
