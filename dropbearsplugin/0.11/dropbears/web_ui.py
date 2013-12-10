@@ -1,16 +1,18 @@
-from trac.core import *
-from trac.web.main import IRequestFilter, IRequestHandler
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
-from trac.prefs.api import IPreferencePanelProvider
 from trac.config import IntOption
+from trac.core import Component, implements
+from trac.prefs.api import IPreferencePanelProvider
+from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
+from trac.web.main import IRequestFilter, IRequestHandler
+
 
 class DropbearFilter(Component):
     """A filter to show dropbears."""
-    
+
+    implements(IRequestFilter, IRequestHandler, ITemplateProvider,
+               IPreferencePanelProvider)
+
     default_dropbears = IntOption('dropbears', 'default', default=0,
-                                  doc='The number of dropbears to show by default.')
-    
-    implements(IRequestFilter, IRequestHandler, ITemplateProvider, IPreferencePanelProvider)
+        doc='The number of dropbears to show by default.')
     
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -97,7 +99,7 @@ class DropbearFilter(Component):
     def process_request(self, req):
         data = {}
         data['dropbears'] = int(req.session.get('dropbears', self.default_dropbears))
-        data['dropbears_physics'] = req.session.get('dropbears') or None
+        data['dropbears_physics'] = req.session.get('dropbears_physics') or None
         template = data['dropbears_physics'] and 'dropbears_physics.js' or 'dropbears.js'
         return template, data, 'text/plain'
         
