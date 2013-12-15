@@ -124,8 +124,8 @@ class PlantUmlMacro(WikiMacroBase):
                 return system_message(_("Error running plantuml: '%(error)s'",
                                         error=stderr))
         img_link = formatter.href('plantuml', id=img_id)
-        cmap = self._read_cmapx_from_file(img_id) if \
-            self._is_cmapx_existing(img_id) else ''
+        cmap = self._is_cmapx_existing(img_id) and \
+               self._read_cmapx_from_file(img_id) or ''
         return Markup(cmap) + tag.img(src=img_link, usemap=img_id + '_map')
 
     def get_macros(self):
