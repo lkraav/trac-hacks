@@ -81,10 +81,14 @@ class TracKeywordsComponent(Component):
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html':
             ticket = data.get('ticket')
-            if self.keywords and ticket and ticket.exists and \
-               'TICKET_CHGPROP' in req.perm(ticket.resource):
-                filter = Transformer('//fieldset[@id="properties"]')
-                stream |= filter.after(self._render_template(req))
+            if self.keywords and ticket:
+                if ticket.exists and \
+                        'TICKET_CHGPROP' in req.perm(ticket.resource):
+                    filter = Transformer('//fieldset[@id="properties"]')
+                    stream |= filter.after(self._render_template(req))
+                elif not ticket.exists:
+                    filter = Transformer('//fieldset[@id="properties"]')
+                    stream |= filter.after(self._render_template(req))
         elif filename == 'wiki_edit.html' and self.tagsplugin_enabled:
             filter = Transformer('//fieldset[@id="changeinfo"]')
             stream |= filter.after(self._render_template(req))
