@@ -65,7 +65,7 @@ class SmpModel(Component):
     def get_project_info(self, name):
         cursor = self.__get_cursor()
         query = """SELECT
-                        id_project,name,summary,description
+                        id_project,name,summary,description,closed,restrict
                    FROM
                         smp_project
                    WHERE
@@ -77,7 +77,7 @@ class SmpModel(Component):
     def get_all_projects(self):
         cursor = self.__get_cursor()
         query = """SELECT
-                        id_project,name,summary,description
+                        id_project,name,summary,description,closed,restrict
                    FROM
                         smp_project"""
         
@@ -118,13 +118,13 @@ class SmpModel(Component):
         self.__start_transacction()
         
     # AdminPanel Methods
-    def insert_project(self, name, summary, description):
+    def insert_project(self, name, summary, description, closed, restrict):
         cursor = self.__get_cursor()
         query    = """INSERT INTO
-                        smp_project (name, summary, description)
-                      VALUES (%s, %s, %s);"""
+                        smp_project (name, summary, description, closed, restrict)
+                      VALUES (%s, %s, %s, %s, %s);"""
 
-        cursor.execute(query, [name, summary, description])
+        cursor.execute(query, [name, summary, description, closed, restrict])
         self.__start_transacction()
 
     def delete_project(self, ids_projects):
@@ -135,16 +135,16 @@ class SmpModel(Component):
             
         self.__start_transacction()
 
-    def update_project(self, id, name, summary, description):
+    def update_project(self, id, name, summary, description, closed, restrict):
         cursor = self.__get_cursor()
 
         query    = """UPDATE
                         smp_project
                       SET
-                        name = %s, summary = %s, description = %s
+                        name = %s, summary = %s, description = %s, closed = %s, restrict = %s
                       WHERE
                         id_project = %s"""
-        cursor.execute(query, [name, summary, description, id])
+        cursor.execute(query, [name, summary, description, closed, restrict, id])
 
         self.__start_transacction()
 

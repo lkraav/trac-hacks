@@ -14,7 +14,7 @@ from trac.util.text import printout
 
 # Database schema variables
 db_version_key = 'simplemultiproject_version'
-db_version = 4
+db_version = 5
 
 tables = [
     Table('smp_project', key = 'id_project') [
@@ -142,3 +142,17 @@ class smpEnvironmentSetupParticipant(Component):
             sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
             cursor.execute(sqlInsertVersion, [db_version, db_version_key])
             db_installed_version = 4
+
+        if db_installed_version < 5:
+            # Insert new column
+            cursor.execute("""ALTER TABLE smp_project ADD closed integer""")
+            
+            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
+            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
+
+            # Insert new column
+            cursor.execute("""ALTER TABLE smp_project ADD restrict text""")
+            
+            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
+            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
+            db_installed_version = 5
