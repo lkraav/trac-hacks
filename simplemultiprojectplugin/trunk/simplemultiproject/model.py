@@ -84,6 +84,19 @@ class SmpModel(Component):
         cursor.execute(query)
         return  cursor.fetchall()
 
+    def get_all_projects_but_closed(self):
+        all_projects = self.get_all_projects()
+
+        # no closed projects in the project-combobox
+        if all_projects:
+            for project in list(all_projects):
+                project_name = project[1]
+                project_info = self.get_project_info(project_name)
+                if project_info:
+                    if project_info[4] > 0: # project closed
+                        all_projects.remove(project)
+        return all_projects
+
     def get_project_name(self, project_id):
         cursor = self.__get_cursor()
         query = """SELECT
