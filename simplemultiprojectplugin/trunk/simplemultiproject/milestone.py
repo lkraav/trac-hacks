@@ -104,7 +104,7 @@ class SmpMilestoneProject(Component):
     
     def __edit_project(self, data):
         milestone = data.get('milestone').name
-        all_projects = self.__SmpModel.get_all_projects()
+        all_projects = self.__SmpModel.get_all_projects_but_closed()
         id_project_milestone = self.__SmpModel.get_id_project_milestone(milestone)
 
         if id_project_milestone != None:
@@ -124,7 +124,7 @@ class SmpMilestoneProject(Component):
                        class_="field")
 
     def __new_project(self):
-        all_projects = self.__SmpModel.get_all_projects()
+        all_projects = self.__SmpModel.get_all_projects_but_closed()
 
         return tag.div(
                        tag.label(

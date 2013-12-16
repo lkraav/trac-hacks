@@ -190,7 +190,7 @@ class SmpVersionProject(Component):
 
     def __edit_project(self, data):
         version = data.get('version').name
-        all_projects = self.__SmpModel.get_all_projects()
+        all_projects = self.__SmpModel.get_all_projects_but_closed()
         id_project_version = self.__SmpModel.get_id_project_version(version)
 
         if id_project_version != None:
@@ -210,7 +210,7 @@ class SmpVersionProject(Component):
                        class_="field")
 
     def __new_project(self):
-        all_projects = self.__SmpModel.get_all_projects()
+        all_projects = self.__SmpModel.get_all_projects_but_closed()
 
         return tag.div(
                        tag.label(
