@@ -84,18 +84,29 @@ class SmpModel(Component):
         cursor.execute(query)
         return  cursor.fetchall()
 
-    def get_all_projects_but_closed(self):
+    def get_all_projects_filtered_by_conditions(self, req):
         all_projects = self.get_all_projects()
 
-        # no closed projects in the project-combobox
+        # now filter out
         if all_projects:
             for project in list(all_projects):
                 project_name = project[1]
                 project_info = self.get_project_info(project_name)
-                if project_info:
-                    if project_info[4] > 0: # project closed
-                        all_projects.remove(project)
+                self.filter_project_by_conditions(all_projects, project, project_info, req)
         return all_projects
+
+    def filter_project_by_conditions(self, all_projects, project, project_info, req):
+        if project_info:
+            if project_info[4] > 0:
+                # column 4 of table smp_project tells if project is closed
+                all_projects.remove(project)
+            else:
+                # column 5 of table smp_project returns the allowed users
+                restricted_users = project_info[5]
+                if restricted_users:
+                    user_list = [users.strip() for users in restricted_users.split(',')]
+                    if (req.authname not in user_list): # current browser user not allowed?
+                        all_projects.remove(project)
 
     def get_project_name(self, project_id):
         cursor = self.__get_cursor()

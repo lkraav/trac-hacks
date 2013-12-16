@@ -79,10 +79,10 @@ class SmpMilestoneProject(Component):
         if filename == 'milestone_edit.html':
             if action == 'new':
                 filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__new_project())
+                return stream | filter.before(self.__new_project(req))
             elif action == 'edit':
                 filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__edit_project(data))
+                return stream | filter.before(self.__edit_project(data, req))
         # Display project for milestone
         elif filename == 'milestone_view.html':
             milestone = data.get('milestone').name
@@ -102,9 +102,9 @@ class SmpMilestoneProject(Component):
         else:
             return []
     
-    def __edit_project(self, data):
+    def __edit_project(self, data, req):
         milestone = data.get('milestone').name
-        all_projects = self.__SmpModel.get_all_projects_but_closed()
+        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
         id_project_milestone = self.__SmpModel.get_id_project_milestone(milestone)
 
         if id_project_milestone != None:
@@ -123,8 +123,8 @@ class SmpMilestoneProject(Component):
                        ),
                        class_="field")
 
-    def __new_project(self):
-        all_projects = self.__SmpModel.get_all_projects_but_closed()
+    def __new_project(self, req):
+        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
         return tag.div(
                        tag.label(

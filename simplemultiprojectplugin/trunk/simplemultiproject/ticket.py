@@ -42,7 +42,7 @@ class SmpTicketProject(Component):
     def post_process_request(self, req, template, data, content_type):
         if template == 'ticket.html':
             all_components = model.Component.select(self.env)
-            all_projects   = [project[1] for project in sorted(self.__SmpModel.get_all_projects_but_closed(), key=itemgetter(1))]
+            all_projects   = [project[1] for project in sorted(self.__SmpModel.get_all_projects_filtered_by_conditions(req), key=itemgetter(1))]
             component_projects = {}
             components = []
             project_versions = {}
@@ -100,7 +100,7 @@ class SmpTicketProject(Component):
         milestone = ticket_data.get_value_or_default('milestone')
         project   = ticket_data.get_value_or_default('project')
 
-        allProjects = self.__SmpModel.get_all_projects_but_closed()
+        allProjects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
         initialProjectMilestone = [ project, milestone ]
         milestonesForProject = {}
@@ -128,9 +128,7 @@ class SmpTicketProject(Component):
         for project_name in list(all_projects):
             if cur_project != project_name:
                 project_info = self.__SmpModel.get_project_info(project_name)
-                if project_info:
-                    if project_info[4] > 0: # project closed
-                        all_projects.remove(project_name)
+                self.__SmpModel.filter_project_by_conditions(all_projects, project_name, project_info, req)
 
         select.append(tag.option("", value=""))
         for project in all_projects:

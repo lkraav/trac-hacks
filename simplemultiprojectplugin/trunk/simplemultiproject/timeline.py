@@ -36,9 +36,14 @@ class SmpTimelineProjectFilter(Component):
             displayed_projects = self._filtered_projects(req)
             if not displayed_projects: #no filter means likely more than 1 project, so we insert the project name
                 filter_off = True
-                displayed_projects = [project[1] for project in self.__SmpModel.get_all_projects_but_closed()]
+                displayed_projects = [project[1] for project in self.__SmpModel.get_all_projects()]
 
-            if displayed_projects:               
+            if displayed_projects:
+                # first remove undesired projects
+                for project in displayed_projects:
+                    project_info = self.__SmpModel.get_project_info(project)
+                    self.__SmpModel.filter_project_by_conditions(displayed_projects, project, project_info, req)
+
                 filtered_events = []
                 tickettypes = ("newticket", "editedticket", "closedticket", "attachment", "reopenedticket")
                 self._old_render_fn = []
@@ -102,7 +107,7 @@ class SmpTimelineProjectFilter(Component):
         return output
 
     def _projects_field_input(self, req, selectedcomps):
-        cursor = self.__SmpModel.get_all_projects_but_closed()
+        cursor = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
         sorted_project_names_list = sorted(cursor, key=itemgetter(1))
         number_displayed_entries = len(sorted_project_names_list)+1     # +1 for special entry 'All'

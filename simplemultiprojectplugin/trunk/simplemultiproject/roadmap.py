@@ -73,7 +73,7 @@ class SmpRoadmapProjectFilter(Component):
     # Internal
 
     def _projects_field_input(self, req, selectedcomps):
-        cursor = self.__SmpModel.get_all_projects_but_closed()
+        cursor = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
         sorted_project_names_list = sorted(cursor, key=itemgetter(1))
         number_displayed_entries = len(sorted_project_names_list)+1     # +1 for special entry 'All'
