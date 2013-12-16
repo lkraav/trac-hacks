@@ -179,18 +179,18 @@ class SmpVersionProject(Component):
         if filename == "version_edit.html":
             if action == 'new':
                 filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__new_project())
+                return stream | filter.before(self.__new_project(req))
             elif action == 'edit':
                 filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__edit_project(data))
+                return stream | filter.before(self.__edit_project(data, req))
 
         return stream
 
     # Internal methods
 
-    def __edit_project(self, data):
+    def __edit_project(self, data, req):
         version = data.get('version').name
-        all_projects = self.__SmpModel.get_all_projects_but_closed()
+        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
         id_project_version = self.__SmpModel.get_id_project_version(version)
 
         if id_project_version != None:
@@ -209,8 +209,8 @@ class SmpVersionProject(Component):
                        ),
                        class_="field")
 
-    def __new_project(self):
-        all_projects = self.__SmpModel.get_all_projects_but_closed()
+    def __new_project(self, req):
+        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
         return tag.div(
                        tag.label(
