@@ -120,7 +120,7 @@ class SmpRoadmapProject(Component):
         return divarray
 
     def __process_div_projects_milestones(self,milestones,div_milestones_array, req):
-        project = self._map_milestones_to_projects(milestones)
+        projects = self._map_milestones_to_projects(milestones)
         hide = smp_settings(req, 'roadmap', 'hide')
         show_proj_descr = False
         if hide is None or 'projectdescription' not in hide:
@@ -128,13 +128,22 @@ class SmpRoadmapProject(Component):
 
         div_projects_milestones = ''
         
-        for a in sorted(project.keys()):
-            if(a == "--None Project--"):
+        for project_name in sorted(projects.keys()):
+            has_access = True
+            if (project_name == "--None Project--"):
                 div_project = '<br><div id="project"><fieldset><legend><h2>No Project</h2></legend>'
             else:
-                project_info = self.__SmpModel.get_project_info(a)
-                div_project = '<br><div id="project"><fieldset><legend><b>Project </b> <em style="font-size: 12pt; color: black;">%s</em></legend>' % a
-                if project_info and show_proj_descr:
+                project_info = self.__SmpModel.get_project_info(project_name)
+
+                # column 5 of table smp_project returns the allowed users
+                restricted_users = project_info[5]
+                if restricted_users:
+                    user_list = [users.strip() for users in restricted_users.split(',')]
+                    if (req.authname not in user_list): # current browser user not allowed?
+                        has_access = False
+
+                div_project = '<br><div id="project"><fieldset><legend><b>Project </b> <em style="font-size: 12pt; color: black;">%s</em></legend>' % project_name
+                if has_access and project_info and show_proj_descr:
                     div_project = div_project + '<div class="description" xml:space="preserve">'
                     if project_info[2]:
                         div_project = div_project + '%s<br/><br/>' % project_info[2]
@@ -143,12 +152,15 @@ class SmpRoadmapProject(Component):
 
             div_milestone = ''
             
-            if len(project[a]) > 0:
-                for b in project[a]:
-                    mi = '<em>%s</em>' % b
-                    for i in range(len(div_milestones_array)):
-                        if(div_milestones_array[i].find(mi)>0):
-                            div_milestone = div_milestone + div_milestones_array[i]
+            if len(projects[project_name]) > 0:
+                if has_access:
+                    for milestone in projects[project_name]:
+                        mi = '<em>%s</em>' % milestone
+                        for i in range(len(div_milestones_array)):
+                            if(div_milestones_array[i].find(mi)>0):
+                                div_milestone = div_milestone + div_milestones_array[i]
+                else:
+                    div_milestone = '<em style="color: red;">no permission</em>'
                 div_project = div_project + to_unicode(div_milestone) + '</fieldset></div>'
                 div_projects_milestones = to_unicode(div_projects_milestones + div_project)
 
@@ -156,25 +168,25 @@ class SmpRoadmapProject(Component):
         return stream_div_projects_milestones
         
     def _map_milestones_to_projects(self, milestones):
-        project = {}
+        projects = {}
         for milestone in milestones:
-            project_id = self.__SmpModel.get_project_milestone(milestone)
+            project_name = self.__SmpModel.get_project_milestone(milestone)
             
-            if project_id == None:
-                project_id = self.__SmpModel.get_project_version(milestone)
+            if project_name == None:
+                project_name = self.__SmpModel.get_project_version(milestone)
             
-            if project_id == None:
-                if project.has_key("--None Project--"):
-                    project["--None Project--"].append(milestone)
+            if project_name == None:
+                if projects.has_key("--None Project--"):
+                    projects["--None Project--"].append(milestone)
                 else:
-                    project["--None Project--"] = [milestone]
+                    projects["--None Project--"] = [milestone]
             else:
-                if project.has_key(project_id[0]):
-                    project[project_id[0]].append(milestone)
+                if projects.has_key(project_name[0]):
+                    projects[project_name[0]].append(milestone)
                 else:
-                    project[project_id[0]] = [milestone]
+                    projects[project_name[0]] = [milestone]
         
-        return project
+        return projects
 
     # ITemplateStreamFilter methods
 
