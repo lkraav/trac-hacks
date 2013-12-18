@@ -40,6 +40,13 @@ class SmpTicketProject(Component):
         return handler
         
     def post_process_request(self, req, template, data, content_type):
+        if req.path_info.startswith('/ticket'):
+            ticket = data['ticket']
+            if ticket:
+                project_name = self.__SmpModel.get_ticket_project(ticket.id)
+                if project_name and project_name[0]:
+                    self.__SmpModel.check_project_permission(req, project_name[0])
+
         if template == 'ticket.html':
             all_components = model.Component.select(self.env)
             all_projects   = [project[1] for project in sorted(self.__SmpModel.get_all_projects_filtered_by_conditions(req), key=itemgetter(1))]
