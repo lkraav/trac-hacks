@@ -30,14 +30,14 @@ from trac.web.chrome import (
     add_stylesheet, add_warning
 )
 
-from acct_mgr.htfile import HtPasswdStore
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
+from acct_mgr.htfile import HtPasswdStore
+from svnauthz.io import AuthzFileReader, AuthzFileWriter
+from trachacks.validate import *
 from tractags.api import TagSystem
 from tractags.macros import TagWikiMacros
 from tractags.query import Query
 from tracvote import VoteSystem
-from svnauthz.io import AuthzFileReader, AuthzFileWriter
-from trachacks.validate import *
 
 
 def pluralise(n, word):
@@ -296,17 +296,10 @@ class TracHacksHandler(Component):
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
 
     def get_htdocs_dirs(self):
-        """Return the absolute path of a directory containing additional
-        static resources (such as images, style sheets, etc).
-        """
         from pkg_resources import resource_filename
         htdocs = resource_filename(__name__, 'htdocs')
         return [('hacks', htdocs), ('newhack', htdocs)]
@@ -354,7 +347,7 @@ class TracHacksHandler(Component):
                              int(min_px + percent * (max_px - min_px)))
 
         data['cloud'] = TagWikiMacros(self.env). \
-            render_cloud(req, cloud, cloud_renderer)
+                        render_cloud(req, cloud, cloud_renderer)
 
         add_script(req, 'common/js/wikitoolbar.js')
         add_script(req, 'common/js/folding.js')
@@ -404,7 +397,6 @@ class TracHacksHandler(Component):
             data['type'] = 'plugin'
             data['release'] = ['0.11']
 
-        self.env.log.debug('MUPPETS AHOY')
         return 'hacks_new.html', data, None
 
     def create_hack(self, req, data, vars):
