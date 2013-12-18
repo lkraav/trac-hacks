@@ -6,6 +6,7 @@
 from trac import __version__ as VERSION
 from trac.core import *
 from trac.util.text import to_unicode
+from trac.web.chrome import add_warning
 
 def smp_settings(req, context, kind, name=None):
     
@@ -107,6 +108,17 @@ class SmpModel(Component):
                     user_list = [users.strip() for users in restricted_users.split(',')]
                     if (req.authname not in user_list): # current browser user not allowed?
                         all_projects.remove(project)
+
+    def check_project_permission(self, req, project_name):
+        project_info = self.get_project_info(project_name)
+        if project_info:
+            # column 5 of table smp_project returns the allowed users
+            restricted_users = project_info[5]
+            if restricted_users:
+                user_list = [users.strip() for users in restricted_users.split(',')]
+                if (req.authname not in user_list): # current browser user not allowed?
+                    add_warning(req, "no permission for project %s" % project_name)
+                    req.perm.require('PROJECT_ACCESS')
 
     def get_project_name(self, project_id):
         cursor = self.__get_cursor()

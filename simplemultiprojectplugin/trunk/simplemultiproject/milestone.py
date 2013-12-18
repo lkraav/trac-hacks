@@ -68,6 +68,13 @@ class SmpMilestoneProject(Component):
         return handler
         
     def post_process_request(self, req, template, data, content_type):
+        if req.path_info.startswith('/milestone'):
+            milestone = data['milestone']
+            if milestone:
+                project_name = self.__SmpModel.get_project_milestone(milestone.name)
+                if project_name and project_name[0]:
+                    self.__SmpModel.check_project_permission(req, project_name[0])
+
         return template, data, content_type
 
     # ITemplateStreamFilter methods

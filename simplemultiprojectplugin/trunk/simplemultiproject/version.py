@@ -150,7 +150,14 @@ class SmpVersionProject(Component):
         return handler
         
     def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith('/roadmap'):
+        if req.path_info.startswith('/version'):
+            version = data['version']
+            if version:
+                project_name = self.__SmpModel.get_project_version(version.name)
+                if project_name and project_name[0]:
+                    self.__SmpModel.check_project_permission(req, project_name[0])
+
+        elif req.path_info.startswith('/roadmap'):
             hide            = smp_settings(req, 'roadmap', 'hide', None)
             filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
             
