@@ -8,13 +8,14 @@
 # you should have received as part of this distribution.
 #
 
+import os
 import random
 import re
 from string import Template
 
 from genshi.builder import tag as builder
 from trac.core import Component, TracError, implements
-from trac.config import IntOption, Option
+from trac.config import ConfigurationError, IntOption, Option
 from trac.perm import IPermissionRequestor, PermissionCache, PermissionSystem
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.ticket.model import Component as TicketComponent
@@ -22,6 +23,7 @@ from trac.wiki.formatter import wiki_to_html, wiki_to_oneliner
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 from trac.util.compat import sorted
+from trac.util.translation import tag_
 from trac.web.api import (
     IRequestFilter, IRequestHandler, ITemplateStreamFilter, RequestDone
 )
@@ -38,6 +40,10 @@ from tractags.api import TagSystem
 from tractags.macros import TagWikiMacros
 from tractags.query import Query
 from tracvote import VoteSystem
+
+
+_SVN_CONFIG_DIR = os.environ.get('TRACHACKS_SVN_CONFIG_DIR',
+                                 '/var/www/trac-hacks.org/trac/.subversion')
 
 
 def pluralise(n, word):
@@ -98,7 +104,7 @@ class HackDoesntExist(Aspect):
                 'Resulting component "%s" already exists.' % page_name
             )
 
-        authz_file = self.env.config.get('trac', 'authz_file')
+        authz_file = self.env.config.getpath('trac', 'authz_file')
         authz = AuthzFileReader().read(authz_file)
         authz_paths = [p.get_path() for p in authz.get_paths()]
         for ap in authz_paths:
@@ -173,7 +179,7 @@ class TracHacksHandler(Component):
         # Validate form
         form = Form('content')
         form.add('name', Chain(
-                 Pattern(r'[A-Z][A-Za-z0-9]+(?:[A-Z][A-Za-z0-9]+)*'),
+                 Pattern(r'[A-Z][A-Za-z0-9]+(?:[A-Z][A-Za-z0-9]+)*\Z'),
                  HackDoesntExist(self.env),
                  ),
                  'Name must be in CamelCase.')
@@ -181,6 +187,8 @@ class TracHacksHandler(Component):
                  'Please write a few words for the description.')
         form.add('description', MinLength(16),
                  'Please write at least a sentence or two for the description.')
+        form.add('installation', MinLength(16),
+                 'Please write at least a sentence or two for the installation.')
         form.add('release', Chain(MinLength(1), ReleasesExist(self.env)),
                  'At least one release must be checked.',
                  path='//dd[@id="release"]', where='append')
@@ -211,6 +219,17 @@ class TracHacksHandler(Component):
         #if match.group(1):
         #    view = match.group(1)
 
+        authz_file = self.env.config.getpath('trac', 'authz_file')
+        if not authz_file:
+            raise ConfigurationError(
+                tag_("The configuration option %(option)s is empty or "
+                     "missing.", option=builder.tt("[trac] authz_file")))
+
+        if not os.path.exists(authz_file):
+            raise ConfigurationError(
+                tag_("The authz file is not found at %(path)s.",
+                     path=builder.tt(authz_file)))
+
         # Hack types and their description
         types = []
         for category in sorted([r.id for r, _ in
@@ -230,8 +249,8 @@ class TracHacksHandler(Component):
         data['types'] = types
         data['releases'] = releases
 
-        selected_releases = req.args.get('release',
-                                         set(['0.10', '0.11', 'anyrelease']))
+        selected_releases = req.args.getlist('release') or \
+                            ('0.12', '1.0', 'anyrelease')
         data['selected_releases'] = selected_releases
 
         hacks = self.fetch_hacks(req, data, [t[0] for t in types],
@@ -364,7 +383,7 @@ class TracHacksHandler(Component):
 
             vars = {}
             vars['OWNER'] = req.authname
-            vars['WIKINAME'] = get_page_name(data['name'], data['type'])
+            vars['WIKINAME'] = get_page_name(data['name'], data.get('type', ''))
             vars['TYPE'] = data.setdefault('type', 'plugin')
             vars['TITLE'] = data.setdefault('title', 'No title available')
             vars['LCNAME'] = vars['WIKINAME'].lower()
@@ -391,6 +410,7 @@ class TracHacksHandler(Component):
                 template = Template(page.text).substitute(vars)
                 template = re.sub(r'\[\[ChangeLog[^\]]*\]\]',
                                   'No changes yet', template)
+                add_stylesheet(req, 'common/css/wiki.css')
                 data['page_preview'] = wiki_to_html(template, self.env, req)
         else:
             data['form_context'] = None
@@ -421,39 +441,19 @@ class TracHacksHandler(Component):
         if have_lock:
             steps_done = []
             try:
-                # Step 1: create repository paths
-                from os import popen
-
-                svn_path = 'file://%s' % \
-                    self.env.config.get('trac', 'repository_dir')
-                svn_path = svn_path.rstrip('/')
                 page_name = vars['WIKINAME']
                 hack_path = vars['LCNAME']
-                paths = ['%s/%s' % (svn_path, hack_path)]
                 selected_releases = data['selected_releases']
-                if isinstance(selected_releases, (basestring, unicode)):
-                    selected_releases = [selected_releases, ]
-                for release in selected_releases:
-                    if release == 'anyrelease':
-                        continue
-                    paths.append("%s/%s/%s" % (svn_path, hack_path, release))
 
-                cmd = '/usr/bin/op create-hack %s ' % req.authname
-                cmd += '"New hack %s, created by %s" '\
-                       % (page_name, req.authname)
-                cmd += '%s 2>&1' % ' '.join(paths)
-                output = popen(cmd).readlines()
-                if output:
-                    raise Exception(
-                        "Failed to create Subversion paths:\n%s"
-                        % '\n'.join(output)
-                    )
+                # Step 1: create repository paths
+                self._create_repository_paths(req, page_name, hack_path,
+                                              selected_releases)
                 steps_done.append('repository')
 
                 # Step 2: Add permissions
                 from svnauthz.model import User, Path, PathAcl
 
-                authz_file = self.env.config.get('trac', 'authz_file')
+                authz_file = self.config.getpath('trac', 'authz_file')
                 authz = AuthzFileReader().read(authz_file)
 
                 svn_path_acl = PathAcl(User(req.authname), r=True, w=True)
@@ -495,7 +495,7 @@ class TracHacksHandler(Component):
                     if 'component' in steps_done:
                         TicketComponent(self.env, page_name).delete()
                     if 'permissions' in steps_done:
-                        authz_file = self.env.config.get('trac', 'authz_file')
+                        authz_file = self.env.config.getpath('trac', 'authz_file')
                         authz = AuthzFileReader().read(authz_file)
                         authz.del_path(Path("/%s" % hack_path))
                         AuthzFileWriter().write(authz_file, authz)
@@ -507,6 +507,33 @@ class TracHacksHandler(Component):
                 self.env.log.error(e, exc_info=True)
                 raise TracError(str(e))
         return created, messages
+
+    def _create_repository_paths(self, req, page_name, hack_path,
+                                 selected_releases):
+        from subprocess import Popen, PIPE
+
+        env = os.environ.copy()
+        env['LC_ALL'] = env['LANG'] = 'en_US.UTF-8'
+        svn_path = 'file://%s' % self.config.get('trac', 'repository_dir')
+        svn_path = svn_path.rstrip('/')
+        paths = ['%s/%s' % (svn_path, hack_path)]
+        paths.extend('%s/%s/%s' % (svn_path, hack_path, release)
+                     for release in selected_releases
+                     if release != 'anyrelease')
+        message = 'New hack %s, created by %s' % (page_name, req.authname)
+        args = ['/usr/bin/svn', 'mkdir', '-q', '--username', req.authname,
+                '--config-dir', _SVN_CONFIG_DIR, '--non-interactive',
+                '-m', message, '--'] + paths
+        saved_umask = os.umask(002)
+        try:
+            proc = Popen(args, stdout=PIPE, stderr=PIPE, close_fds=True,
+                         env=env)
+        finally:
+            os.umask(saved_umask)
+        stdout, stderr = proc.communicate()
+        if proc.returncode != 0:
+            raise Exception('Failed to create Subversion paths:\n%s%s' %
+                            (stdout, stderr))
 
     def render_list(self, req, data, hacks):
         ul = builder.ul()
