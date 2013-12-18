@@ -544,7 +544,8 @@ class TracHacksHandler(Component):
 
         # TODO Top-n + sample
         cloud_hacks = dict([(hack[2].id, hack[0]) for hack in hacks])
-        data['body'] = render_cloud(self.env, req, cloud_hacks, link_renderer)
+        data['body'] = TagWikiMacros(self.env).render_cloud(req, cloud_hacks,
+                                                            link_renderer)
 
         return 'hacks_view.html', data, None
 
