@@ -194,7 +194,7 @@ class FormInjector(object):
         for name, message in self.errors.items():
             field = self.form[name]
             message = field.format_error(message)
-            transform = Transformer('//form[@id="%s"]' % self.form.id) \
+            transform = Transformer('//div[@id="%s"]' % self.form.id) \
                         .select(field.path).attr('class', 'error')
             transform = getattr(transform, field.where)(message)
             stream |= transform
