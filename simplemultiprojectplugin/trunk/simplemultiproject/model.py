@@ -6,7 +6,8 @@
 from trac import __version__ as VERSION
 from trac.core import *
 from trac.util.text import to_unicode
-from trac.web.chrome import add_warning
+from trac.web.chrome import add_warning, add_notice
+#from trac.perm import PermissionSystem
 
 def smp_settings(req, context, kind, name=None):
     
@@ -101,24 +102,30 @@ class SmpModel(Component):
             if project_info[4] > 0:
                 # column 4 of table smp_project tells if project is closed
                 all_projects.remove(project)
-            else:
-                # column 5 of table smp_project returns the allowed users
-                restricted_users = project_info[5]
-                if restricted_users:
-                    user_list = [users.strip() for users in restricted_users.split(',')]
-                    if (req.authname not in user_list): # current browser user not allowed?
-                        all_projects.remove(project)
+            elif self.is_not_in_restricted_users(req, project_info):
+                all_projects.remove(project)
 
     def check_project_permission(self, req, project_name):
         project_info = self.get_project_info(project_name)
         if project_info:
-            # column 5 of table smp_project returns the allowed users
-            restricted_users = project_info[5]
-            if restricted_users:
-                user_list = [users.strip() for users in restricted_users.split(',')]
-                if (req.authname not in user_list): # current browser user not allowed?
-                    add_warning(req, "no permission for project %s" % project_name)
-                    req.perm.require('PROJECT_ACCESS')
+            if self.is_not_in_restricted_users(req, project_info):
+                add_warning(req, "no permission for project %s" % project_name)
+                req.perm.require('PROJECT_ACCESS')
+
+    def is_not_in_restricted_users(self, req, project_info):
+        # column 5 of table smp_project returns the allowed users
+        restricted_users = project_info[5]
+        if restricted_users:
+            #TEST
+            #perm = PermissionSystem(self.env)
+            #perms_and_groups = perm.get_user_permissions(username=req.authname)
+            #groups = [i for i in perms_and_groups if not i[0].isupper()]
+            #add_notice(req, groups)
+
+            restricted_list = [users.strip() for users in restricted_users.split(',')]
+            if req.authname not in restricted_list: # current browser user not allowed?
+                return True
+        return False
 
     def get_project_name(self, project_id):
         cursor = self.__get_cursor()

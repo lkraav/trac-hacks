@@ -134,12 +134,8 @@ class SmpRoadmapProject(Component):
                 div_project = '<br><div id="project"><fieldset><legend><h2>No Project</h2></legend>'
             else:
                 project_info = self.__SmpModel.get_project_info(project_name)
-
-                # column 5 of table smp_project returns the allowed users
-                restricted_users = project_info[5]
-                if restricted_users:
-                    user_list = [users.strip() for users in restricted_users.split(',')]
-                    if (req.authname not in user_list): # current browser user not allowed?
+                if project_info:
+                    if self.__SmpModel.is_not_in_restricted_users(req, project_info):
                         has_access = False
 
                 div_project = '<br><div id="project"><fieldset><legend><b>Project </b> <em style="font-size: 12pt; color: black;">%s</em></legend>' % project_name
