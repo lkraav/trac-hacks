@@ -7,7 +7,7 @@ from trac import __version__ as VERSION
 from trac.core import *
 from trac.util.text import to_unicode
 from trac.web.chrome import add_warning, add_notice
-#from trac.perm import PermissionSystem
+from trac.perm import PermissionSystem, IPermissionGroupProvider
 
 def smp_settings(req, context, kind, name=None):
     
@@ -48,6 +48,8 @@ def smp_filter_settings(req, context, name):
 
 
 class SmpModel(Component):
+    # needed in self.is_not_in_restricted_users()
+    group_providers = ExtensionPoint(IPermissionGroupProvider)
 
     # DB Method
     def __get_cursor(self):
@@ -116,14 +118,24 @@ class SmpModel(Component):
         # column 5 of table smp_project returns the allowed users
         restricted_users = project_info[5]
         if restricted_users:
-            #TEST
-            #perm = PermissionSystem(self.env)
-            #perms_and_groups = perm.get_user_permissions(username=req.authname)
-            #groups = [i for i in perms_and_groups if not i[0].isupper()]
-            #add_notice(req, groups)
-
             restricted_list = [users.strip() for users in restricted_users.split(',')]
-            if req.authname not in restricted_list: # current browser user not allowed?
+
+            # detect groups of the current user including the user name
+            g = set([req.authname])
+            for provider in self.group_providers:
+                for group in provider.get_permission_groups(req.authname):
+                    g.add(group)
+            perms = PermissionSystem(self.env).get_all_permissions()
+            repeat = True
+            while repeat:
+                repeat = False
+                for subject, action in perms:
+                    if subject in g and not action.isupper() and action not in g:
+                        g.add(action)
+                        repeat = True
+            g = g.intersection( set(restricted_list) ) # some of the user's groups must be in the restrictions
+
+            if not (g or len(g)): # current browser user not allowed?
                 return True
         return False
 

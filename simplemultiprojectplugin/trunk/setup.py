@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='SimpleMultiProject',
-    version='0.0.3',
+    version='0.0.4',
     packages=['simplemultiproject'],
     package_data={
         'simplemultiproject' : [
@@ -16,8 +16,8 @@ setup(
     maintainer = "falkb",
     license='GPL',
     url='http://trac-hacks.org/wiki/SimpleMultiProject',
-    description='Simple Project',
-    long_description='Simple Project',
-    keywords='Simple Project',
+    description='Simple Multi Project',
+    long_description='Simple Multi Project',
+    keywords='Simple Multi Project',
     entry_points = {'trac.plugins': ['simplemultiproject = simplemultiproject']}
 )
