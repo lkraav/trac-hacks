@@ -12,12 +12,21 @@ from trac.util.translation import _
 from trac.perm import IPermissionRequestor
 from trac.admin.api import IAdminPanelProvider
 from trac.web.chrome import ITemplateProvider, add_notice
-from trac.util.datefmt import get_datetime_format_hint, from_utimestamp, to_utimestamp, user_time, parse_date
+from trac.util.datefmt import get_datetime_format_hint, from_utimestamp, to_utimestamp, parse_date
 
 # Model Class
 from simplemultiproject.model import *
 
 from operator import itemgetter
+
+try:
+    from trac.util.datefmt import user_time
+except ImportError:
+    def user_time(req, func, *args, **kwargs):
+        """port from 1.0-stable"""
+        if 'tzinfo' not in kwargs:
+            kwargs['tzinfo'] = getattr(req, 'tz', None)
+        return func(*args, **kwargs)
 
 # Trac Administration Panel
 class SmpAdminPanel(Component):
