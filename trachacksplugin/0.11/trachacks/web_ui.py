@@ -166,9 +166,6 @@ class TracHacksHandler(Component):
         'Default maximum number of hacks to display.')
     template = Option('trachacks', 'template', 'NewHackTemplate',
         'Name of wiki page that serves as template for new hacks.')
-    svnbase = Option('trachacks', 'subversion_base_url',
-        'http://trac-hacks.org/svn',
-        'Base URL of the Subversion repository.')
     lockfile = Option('trachacks', 'lock_file', '/var/tmp/newhack.lock',
         'Path and name of lockfile to secure new hack creation')
 
@@ -381,13 +378,16 @@ class TracHacksHandler(Component):
             context = self.form.validate(data)
             data['form_context'] = context
 
+            repos = self.env.get_repository()
+
             vars = {}
             vars['OWNER'] = req.authname
             vars['WIKINAME'] = get_page_name(data['name'], data.get('type', ''))
             vars['TYPE'] = data.setdefault('type', 'plugin')
             vars['TITLE'] = data.setdefault('title', 'No title available')
             vars['LCNAME'] = vars['WIKINAME'].lower()
-            vars['SOURCEURL'] = '%s/%s' % (self.svnbase, vars['LCNAME'])
+            vars['SOURCEURL'] = repos.get_path_url(vars['LCNAME'], None) or \
+                                'http://localhost/svn/' + vars['LCNAME']
             vars['DESCRIPTION'] = data.setdefault('description',
                                                   'No description available')
             vars['EXAMPLE'] = data.setdefault('example',
@@ -514,8 +514,8 @@ class TracHacksHandler(Component):
 
         env = os.environ.copy()
         env['LC_ALL'] = env['LANG'] = 'en_US.UTF-8'
-        svn_path = 'file://%s' % self.config.get('trac', 'repository_dir')
-        svn_path = svn_path.rstrip('/')
+        repos = self.env.get_repository()
+        svn_path = ('file://%s' % repos.params['dir']).rstrip('/')
         paths = ['%s/%s' % (svn_path, hack_path)]
         paths.extend('%s/%s/%s' % (svn_path, hack_path, release)
                      for release in selected_releases
