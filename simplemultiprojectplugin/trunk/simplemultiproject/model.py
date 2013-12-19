@@ -118,7 +118,12 @@ class SmpModel(Component):
         # column 5 of table smp_project returns the allowed users
         restricted_users = project_info[5]
         if restricted_users:
+            allowed = True
+            should_invert = False
+
             restricted_list = [users.strip() for users in restricted_users.split(',')]
+            if restricted_list[0] == '!': # if the list starts with "!," (needs comma!), its meaning is inverted
+                should_invert = True
 
             # detect groups of the current user including the user name
             g = set([req.authname])
@@ -133,10 +138,13 @@ class SmpModel(Component):
                     if subject in g and not action.isupper() and action not in g:
                         g.add(action)
                         repeat = True
-            g = g.intersection( set(restricted_list) ) # some of the user's groups must be in the restrictions
 
+            g = g.intersection( set(restricted_list) ) # some of the user's groups must be in the restrictions
             if not (g or len(g)): # current browser user not allowed?
-                return True
+                allowed = False
+            if should_invert:
+                allowed = not allowed
+            return not allowed
         return False
 
     def get_project_name(self, project_id):
