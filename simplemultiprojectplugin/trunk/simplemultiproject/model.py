@@ -104,17 +104,17 @@ class SmpModel(Component):
             if project_info[4] > 0:
                 # column 4 of table smp_project tells if project is closed
                 all_projects.remove(project)
-            elif self.is_not_in_restricted_users(req, project_info):
+            elif self.is_not_in_restricted_users(req.authname, project_info):
                 all_projects.remove(project)
 
     def check_project_permission(self, req, project_name):
         project_info = self.get_project_info(project_name)
         if project_info:
-            if self.is_not_in_restricted_users(req, project_info):
+            if self.is_not_in_restricted_users(req.authname, project_info):
                 add_warning(req, "no permission for project %s" % project_name)
                 req.perm.require('PROJECT_ACCESS')
 
-    def is_not_in_restricted_users(self, req, project_info):
+    def is_not_in_restricted_users(self, username, project_info):
         # column 5 of table smp_project returns the allowed users
         restricted_users = project_info[5]
         if restricted_users:
@@ -126,9 +126,9 @@ class SmpModel(Component):
                 should_invert = True
 
             # detect groups of the current user including the user name
-            g = set([req.authname])
+            g = set([username])
             for provider in self.group_providers:
-                for group in provider.get_permission_groups(req.authname):
+                for group in provider.get_permission_groups(username):
                     g.add(group)
             perms = PermissionSystem(self.env).get_all_permissions()
             repeat = True

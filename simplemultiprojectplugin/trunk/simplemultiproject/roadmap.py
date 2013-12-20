@@ -34,7 +34,7 @@ class SmpRoadmapProjectFilter(Component):
         if req.path_info.startswith('/roadmap'):
             filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
                 
-            if filter_projects and len(filter_projects) > 0:
+            if data and filter_projects and len(filter_projects) > 0:
                 milestones = data.get('milestones')
                 milestones_stats = data.get('milestone_stats')
                 
@@ -135,7 +135,7 @@ class SmpRoadmapProject(Component):
             else:
                 project_info = self.__SmpModel.get_project_info(project_name)
                 if project_info:
-                    if self.__SmpModel.is_not_in_restricted_users(req, project_info):
+                    if self.__SmpModel.is_not_in_restricted_users(req.authname, project_info):
                         has_access = False
 
                 div_project = '<br><div id="project"><fieldset><legend><b>Project </b> <em style="font-size: 12pt; color: black;">%s</em></legend>' % project_name
