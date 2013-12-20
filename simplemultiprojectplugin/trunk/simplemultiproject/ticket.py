@@ -9,7 +9,8 @@ from simplemultiproject.model import *
 from trac.util.text import to_unicode
 from trac.core import *
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
-from trac.web.chrome import add_script
+from trac.web.chrome import add_script, add_notice
+from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.ticket import model
 from operator import itemgetter
 
@@ -40,7 +41,7 @@ class SmpTicketProject(Component):
         return handler
         
     def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith('/ticket'):
+        if data and req.path_info.startswith('/ticket'):
             ticket = data['ticket']
             if ticket:
                 project_name = self.__SmpModel.get_ticket_project(ticket.id)
@@ -144,3 +145,30 @@ class SmpTicketProject(Component):
             else:
                 select.append(tag.option(project, value=project))
         return select
+
+class ProjectTicketsPolicy(Component):
+
+    implements(IPermissionPolicy, IPermissionRequestor)
+
+    def __init__(self):
+        self.__SmpModel = SmpModel(self.env)
+
+    # IPermissionPolicy methods
+
+    def check_permission(self, action, username, resource, perm):
+        # Check whether we're dealing with a ticket resource
+        while resource:
+            if resource.realm == 'ticket':
+                break
+            resource = resource.parent
+
+        if resource and resource.realm == 'ticket' and resource.id is not None:
+            project_name = self.__SmpModel.get_ticket_project(resource.id)
+            if project_name and project_name[0]:
+                project_info = self.__SmpModel.get_project_info(project_name[0])
+                if project_info:
+                    if self.__SmpModel.is_not_in_restricted_users(username, project_info):
+                        return False
+
+    def get_permission_actions(self):
+        return

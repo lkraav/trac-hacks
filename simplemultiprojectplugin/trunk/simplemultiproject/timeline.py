@@ -39,11 +39,6 @@ class SmpTimelineProjectFilter(Component):
                 displayed_projects = [project[1] for project in self.__SmpModel.get_all_projects()]
 
             if displayed_projects:
-                # first remove undesired projects
-                for project in displayed_projects:
-                    project_info = self.__SmpModel.get_project_info(project)
-                    self.__SmpModel.filter_project_by_conditions(displayed_projects, project, project_info, req)
-
                 filtered_events = []
                 tickettypes = ("newticket", "editedticket", "closedticket", "attachment", "reopenedticket")
                 self._old_render_fn = []
