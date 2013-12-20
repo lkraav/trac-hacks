@@ -42,7 +42,7 @@ class SmpTicketProject(Component):
         
     def post_process_request(self, req, template, data, content_type):
         if data and req.path_info.startswith('/ticket'):
-            ticket = data['ticket']
+            ticket = data.get('ticket', None)
             if ticket:
                 project_name = self.__SmpModel.get_ticket_project(ticket.id)
                 if project_name and project_name[0]:
