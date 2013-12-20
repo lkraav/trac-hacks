@@ -7,8 +7,15 @@ setup(
     name = 'TracDropbears',
     version = '2.1',
     packages = ['dropbears'],
-    package_data = { 'dropbears': ['templates/*.html', 'templates/*.js', 'htdocs/*.gif', 'htdocs/*.css' ] },
-
+    package_data = { 'dropbears': [
+        'templates/*.html',
+        'templates/*.js',
+        'htdocs/*.gif',
+        'htdocs/*.css',
+        'htdocs/js/*.js',
+        'htdocs/js/box2d/*/*.js',
+        'htdocs/js/box2d/*/*/*.js'
+    ]},
     author = 'Noah Kantrowitz',
     author_email = 'noah@coderanger.net',
     description = 'Aaaaaaaaah! The Dropbears cometh!',
