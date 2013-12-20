@@ -1,12 +1,12 @@
-jQuery(document).ready(function() {
-    for (var i = 0; i < $dropbears; ++i) make_bear();
+jQuery(document).ready(function($) {
+    for (var i = 0; i < $dropbears; i++) make_bear();
     function make_bear() {
-        var y = Math.round(document.width * Math.random());
+        var y = Math.round($(document).width() * Math.random());
         var bear = $('<img class="dropbear" src="${href.chrome('dropbear', 'dropbear.gif')}" alt="DROPBEAR!" />');
         bear.css('left', y + 'px')
             .appendTo('body')
             .animate(
-                {top: document.height}, 3000 + Math.round(2000 * Math.random()),
+                {top: $(document).height()}, 4000 + Math.round(2000 * Math.random()),
                 'linear', function () {
                     $(this).remove();
                     if (bear.attr('alt') != 'Dead bear') {
