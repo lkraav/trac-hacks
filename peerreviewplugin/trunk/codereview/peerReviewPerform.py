@@ -128,7 +128,7 @@ class UserbaseModule(Component):
             return 'error.cs', data, None
 
         #get the respository
-        repos = self.env.get_repository(req.authname)
+        repos = self.env.get_repository(authname=req.authname)
         #get the file attributes
         data['review_path'] = resultFile.Path
         data['review_version'] = resultFile.Version
