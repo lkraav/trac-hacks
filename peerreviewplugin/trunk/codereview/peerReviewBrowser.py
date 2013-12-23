@@ -84,7 +84,7 @@ class peerReviewBrowser(Component):
         path = req.args.get('path', '/')
         rev = req.args.get('rev')
 
-        repos = self.env.get_repository(req.authname)
+        repos = self.env.get_repository(authname=req.authname)
 
         try:
             node = get_existing_node(self.env, repos, path, rev)
