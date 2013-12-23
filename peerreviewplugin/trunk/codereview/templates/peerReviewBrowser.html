@@ -1,12 +1,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
     xmlns:py="http://genshi.edgewall.org/"
     xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+  <xi:include href="macros.html" />
 
-<xi:include href="macros.html" />
-<head>
-<link rel="stylesheet" href="/trac-mysql/chrome/common/css/code.css" type="text/css" media="screen, projector, print" />
-<link rel="stylesheet" href="/trac-mysql/chrome/common/css/browser.css" type="text/css" media="screen, projector, print" />
-</head>
+  <head>
+    <title>Code Review Browser</title>
+  </head>
+
 <body>
 <py:def function="sortable_th(order, desc, class_, title)">
   <th class="$class_${order == class_ and (desc and ' desc' or ' asc') or ''}">

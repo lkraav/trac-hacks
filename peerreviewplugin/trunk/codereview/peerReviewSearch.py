@@ -14,7 +14,8 @@ import time
 
 from trac.core import *
 from trac.util import format_date
-from trac.web.chrome import INavigationContributor, ITemplateProvider
+from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+                            add_stylesheet
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
@@ -86,6 +87,8 @@ class UserbaseModule(Component):
         data['years'] = years
         data['cycle'] = itertools.cycle
 
+        add_stylesheet(req, 'common/css/code.css')
+        add_stylesheet(req, 'common/css/browser.css')
         return 'peerReviewSearch.html', data, None
 
     # ITemplateProvider methods

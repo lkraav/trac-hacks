@@ -115,7 +115,6 @@ class peerReviewBrowser(Component):
 
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
-        
         return 'peerReviewBrowser.html', data, None
 
     # Internal methods

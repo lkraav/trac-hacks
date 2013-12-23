@@ -132,6 +132,8 @@ class UserbaseModule(Component):
 
         data['cycle'] = itertools.cycle
 
+        add_stylesheet(req, 'common/css/code.css')
+        add_stylesheet(req, 'common/css/browser.css')
         return 'peerReviewMain.html', data, None
 
     # ITemplateProvider methods

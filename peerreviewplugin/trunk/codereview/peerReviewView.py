@@ -180,11 +180,10 @@ class UserbaseModule(Component):
         if req.args.get('Inclusion') == '1':
             self.submit_for_inclusion(reviewID, req)
 
-        add_stylesheet(req, 'common/css/code.css')
-        add_stylesheet(req, 'common/css/browser.css')
-
         data['cycle'] = itertools.cycle
 
+        add_stylesheet(req, 'common/css/code.css')
+        add_stylesheet(req, 'common/css/browser.css')
         return 'peerReviewView.html', data, None
 
     # ITemplateProvider methods
