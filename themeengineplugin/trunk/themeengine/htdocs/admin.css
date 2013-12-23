@@ -41,6 +41,7 @@
 }
 
 #themebuttons {
+  margin: 4px auto;
   text-align: center;
   width: 420px;
 }
@@ -75,3 +76,8 @@
   height: 195px !important;
   height: 195px;
 }
+
+.pull-right {
+  float: right;
+}
+

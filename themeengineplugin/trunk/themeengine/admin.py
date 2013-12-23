@@ -66,8 +66,10 @@ class SimpleThemeAdminModule(Component):
         #add_stylesheet(req, 'themeengine/jquery.jcarousel.css')
         #add_stylesheet(req, 'themeengine/skins/tango/skin.css')
         #add_script(req, 'themeengine/jquery.jcarousel.pack.js')
+        add_script(req, 'themeengine/jquery.cycle2.min.js')
         add_stylesheet(req, 'themeengine/admin.css')
-        add_script(req, 'themeengine/jcarousellite_1.0.1.js')
+        add_stylesheet(req, 'themeengine/cycle2.css')
+        #add_script(req, 'themeengine/jcarousellite_1.0.1.js')
         return 'admin_theme.html', data
         
     # IPermissionRequestor methods
