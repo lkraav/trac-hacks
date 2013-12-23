@@ -1,24 +1,28 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
 # This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
-import time
+
 import os
 import shutil
+import sys
+import time
+import unicodedata
 import urllib
+
+from trac import util
 from trac.core import *
+from trac.util import Markup
 from trac.web.chrome import ITemplateProvider
 from trac.web.main import IRequestHandler
-from trac import util
-from trac.util import escape, Markup
+
 from codereview.dbBackend import *
-from trac.web.chrome import add_stylesheet, add_script 
 
 
 class UserbaseModule(Component):
@@ -29,7 +33,7 @@ class UserbaseModule(Component):
         return req.path_info == '/peerReviewCommentCallback'
 
     #This page should never be called directly.  It should only be called
-    #by javascrpit HTTPRequest calls.
+    #by JavaScript HTTPRequest calls.
     def process_request(self, req):
 
         data = {}
@@ -40,9 +44,9 @@ class UserbaseModule(Component):
             data['invalid'] = 4
             return 'peerReviewCommentCallback.html', data, None
 
-
         data['invalid'] = 0
-        data['trac.href.peerReviewCommentCallback'] = self.env.href.peerReviewCommentCallback()
+        data['trac.href.peerReviewCommentCallback'] = \
+            self.env.href.peerReviewCommentCallback()
         actionType = req.args.get('actionType')
 
         if actionType == 'addComment':
@@ -77,16 +81,18 @@ class UserbaseModule(Component):
         data['invalid'] = 6
         shortPath = req.args.get('fileName')
         idFile = req.args.get('IDFile')
-        if idFile == None or shortPath == None:
+        if idFile is None or shortPath is None:
             return
        
-       	shortPath = urllib.unquote(shortPath)
-        self.path = os.path.join(self.env.path, 'attachments', 'CodeReview', urllib.quote(idFile))
+        shortPath = urllib.unquote(shortPath)
+        self.path = os.path.join(self.env.path, 'attachments', 'CodeReview',
+                                 urllib.quote(idFile))
         self.path = os.path.normpath(self.path)
-        attachments_dir = os.path.join(os.path.normpath(self.env.path),'attachments')
+        attachments_dir = os.path.join(os.path.normpath(self.env.path),
+                                       'attachments')
         commonprefix = os.path.commonprefix([attachments_dir, self.path])
         assert commonprefix == attachments_dir
-        fullPath = os.path.join(self.path,shortPath)
+        fullPath = os.path.join(self.path, shortPath)
         req.send_header('Content-Disposition', 'attachment; filename=' + shortPath)
         req.send_file(fullPath)
 
@@ -101,30 +107,30 @@ class UserbaseModule(Component):
         struct.Text = req.args.get('Text')
         struct.DateCreate = int(time.time())
 
-        if (struct.IDFile == None or struct.LineNum == None or
-            struct.Author == None or struct.Text == None):
-
+        if struct.IDFile is None or struct.LineNum is None or \
+                struct.Author is None or struct.Text is None:
             return
 
-        if (struct.IDFile == "" or struct.LineNum == "" or struct.Author == ""):
+        if struct.IDFile == "" or struct.LineNum == "" or struct.Author == "":
             return
 
-        if (struct.Text == ""):
+        if struct.Text == "":
             return
 
-        if (struct.IDParent == None or struct.IDParent == ""):
+        if struct.IDParent is None or struct.IDParent == "":
             struct.IDParent = "-1"
 
         #If there was a file uploaded with the comment, place it in the correct spot
         #The basic parts of this code were taken from the file upload portion of
         #the trac wiki code
-	
-        if req.args.has_key('FileUp'):
+
+        if 'FileUp' in req.args:
             upload = req.args['FileUp']
             if upload and upload.filename:
-                self.path = os.path.join(self.env.path, 'attachments', 'CodeReview', urllib.quote(struct.IDFile))
-                self.path = os.path.normpath(self.path) 
-                size = 0
+                self.path = \
+                    os.path.join(self.env.path, 'attachments',
+                                 'CodeReview', urllib.quote(struct.IDFile))
+                self.path = os.path.normpath(self.path)
                 if hasattr(upload.file, 'fileno'):
                     size = os.fstat(upload.file.fileno())[6]
                 else:
@@ -133,15 +139,14 @@ class UserbaseModule(Component):
                     filename = urllib.unquote(upload.filename)
                     filename = filename.replace('\\', '/').replace(':', '/')
                     filename = os.path.basename(filename)
-                    import sys, unicodedata
                     if sys.version_info[0] > 2 or (sys.version_info[0] == 2 and sys.version_info[1] >= 3):
-                        filename = unicodedata.normalize('NFC',unicode(filename,'utf-8')).encode('utf-8')
-                    attachments_dir = os.path.join(os.path.normpath(self.env.path),'attachments')
+                        filename = unicodedata.normalize('NFC', unicode(filename, 'utf-8')).encode('utf-8')
+                    attachments_dir = os.path.join(os.path.normpath(self.env.path), 'attachments')
                     commonprefix = os.path.commonprefix([attachments_dir, self.path])
                     assert commonprefix == attachments_dir
                     if not os.access(self.path, os.F_OK):
                         os.makedirs(self.path)
-                    path, targetfile = util.create_unique_file(os.path.join(self.path,filename))
+                    path, targetfile = util.create_unique_file(os.path.join(self.path, filename))
                     try:
                         shutil.copyfileobj(upload.file, targetfile)
                         struct.AttachmentPath = os.path.basename(path)
@@ -154,7 +159,7 @@ class UserbaseModule(Component):
     def getCommentTree(self, req, data):
         IDFile = req.args.get('IDFile')
         LineNum = req.args.get('LineNum')
-        if (IDFile == None) or (LineNum == None):
+        if IDFile is None or LineNum is None:
             data['invalid'] = 1
             return
         db = self.env.get_db_cnx()
@@ -163,11 +168,11 @@ class UserbaseModule(Component):
         commentHtml = ""
         first = True
         keys = comments.keys()
-        keys.sort();
+        keys.sort()
         for key in keys:
-            if not comments.has_key(comments[key].IDParent):
+            if comments[key].IDParent not in comments:
                 commentHtml += self.buildCommentHTML(comments[key], 0, LineNum, IDFile, first)
-                first = False;
+                first = False
         if commentHtml == "":
             commentHtml = "No Comments on this Line"
         data['lineNum'] = LineNum
@@ -181,13 +186,13 @@ class UserbaseModule(Component):
 
         childrenHTML = ""
         keys = comment.Children.keys()
-        keys.sort();
+        keys.sort()
         for key in keys:
             child = comment.Children[key]
-            childrenHTML += self.buildCommentHTML(child, nodesIn+1, LineNum, IDFile, False)
+            childrenHTML += self.buildCommentHTML(child, nodesIn + 1, LineNum, IDFile, False)
                
         factor = 15
-        width = (5+nodesIn*factor);
+        width = 5 + nodesIn * factor
         
         html = "<table width=\"400px\" style=\"border-collapse: collapse; display: block;\" id=\"" + str(comment.IDParent) + ":" + str(comment.IDComment) + "\">"
         if not first:
@@ -213,4 +218,3 @@ class UserbaseModule(Component):
 
         html += childrenHTML
         return html
-

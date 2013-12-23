@@ -5,6 +5,8 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
+#
+
 
 class CodeReviewStruct(object):
     "Stores a Code Review Entry"
@@ -28,7 +30,7 @@ class CodeReviewStruct(object):
     Notes = ""
 
     def __init__(self, row):
-        if row != None:
+        if row is not None:
             #initialize variables
             self.IDReview = row[0]
             self.Author = row[1]
@@ -43,8 +45,9 @@ class CodeReviewStruct(object):
             cursor = db.cursor()
             cursor.execute("""
                 INSERT INTO CodeReviews (Author, Status, DateCreate, Name, Notes)
-                VALUES (%s, %s, %s, %s, %s)""",
-                (self.Author, self.Status, self.DateCreate, self.Name, self.Notes))
+                VALUES (%s, %s, %s, %s, %s)
+                """, (self.Author, self.Status, self.DateCreate,
+                      self.Name, self.Notes))
             self.IDReview = db.get_last_id(cursor, 'CodeReviews', 'IDReview')
             db.commit()
         else:
@@ -52,7 +55,8 @@ class CodeReviewStruct(object):
             cursor = db.cursor()
             cursor.execute("""
                 UPDATE CodeReviews SET Author=%s, Status=%s, DateCreate=%s,
-                  Name=%s, Notes=%s WHERE IDReview=%s""",
-                (self.Author, self.Status, self.DateCreate, self.Name, self.Notes, self.IDReview))
+                  Name=%s, Notes=%s WHERE IDReview=%s
+                """, (self.Author, self.Status, self.DateCreate, self.Name,
+                      self.Notes, self.IDReview))
             db.commit()
         return self.IDReview

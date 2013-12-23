@@ -1,18 +1,18 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
-# This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
 from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
-#from codereview.db import version as codereview_version, schema
 
 import db_default
+
 
 class PeerReviewInit(Component):
     """ Initialise database and environment for codereview plugin """
@@ -45,10 +45,12 @@ class PeerReviewInit(Component):
         # Insert the default table
         cursor = db.cursor()
         if not self.found_db_version:
-            cursor.execute("INSERT INTO system (name, value) VALUES ('codereview_version', %s)",(db_default.version,))
+            cursor.execute("INSERT INTO system (name, value) VALUES ('codereview_version', %s)",
+                           (db_default.version,))
             cursor.execute("INSERT INTO system VALUES ('CodeReviewVoteThreshold', '0')")
         else:
-            cursor.execute("UPDATE system SET value = %s WHERE name = 'codereview_version'",(db_default.version,))
+            cursor.execute("UPDATE system SET value = %s WHERE name = 'codereview_version'",
+                           (db_default.version,))
             for tbl in db_default.tables:
                 try:
                     cursor.execute('DROP TABLE %s'%tbl.name,)
@@ -58,4 +60,3 @@ class PeerReviewInit(Component):
         for tbl in db_default.tables:
             for sql in db_manager.to_sql(tbl):
                 cursor.execute(sql)
-

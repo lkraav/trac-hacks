@@ -1,15 +1,16 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
 # This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
 from trac.core import *
-from trac.db.schema import Table, Column, Index
+from trac.db.schema import Table, Column
+
 
 # Version of Code Review schema
 version = 1

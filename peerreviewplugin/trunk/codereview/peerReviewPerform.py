@@ -1,12 +1,11 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
-# This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
-# Author: Team5
 #
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
+#
+# Author: Team5
 #
 
 # Code Review plugin
@@ -16,23 +15,21 @@
 # repository browser's line number to indicate what lines are being
 # reviewed and if there are any comments on a particular line.
 
+from genshi.builder import tag
 from trac.core import *
-from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.web.main import IRequestHandler
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
-from trac import util
-from trac.util import escape
-from codereview.dbBackend import *
-from trac.web.chrome import add_stylesheet
+from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+                            add_link, add_stylesheet
+from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
-from trac.web.chrome import add_link, add_stylesheet
-import string
 
-from genshi.builder import tag
+from codereview.dbBackend import *
+
 
 class UserbaseModule(Component):
-    implements(INavigationContributor, IRequestHandler, ITemplateProvider, IHTMLPreviewAnnotator)
+    implements(INavigationContributor, IRequestHandler,
+               ITemplateProvider, IHTMLPreviewAnnotator)
 
     #global variables for the line annotator
     comments = {}
@@ -43,7 +40,7 @@ class UserbaseModule(Component):
     
     # ITextAnnotator methods
     def get_annotation_type(self):
-    	return 'performCodeReview', 'Line', 'Line numbers'
+        return 'performCodeReview', 'Line', 'Line numbers'
 
     def get_annotation_data(self, context):
         return None
@@ -55,11 +52,11 @@ class UserbaseModule(Component):
     def annotate_row(self, context, row, lineno, line, data):
         htmlImageString = '<img src="' + self.imagePath + '">'
         #make line number light gray
-        if(lineno <= self.lineEnd and lineno >= self.lineStart):
+        if lineno <= self.lineEnd and lineno >= self.lineStart:
             #if there is a comment on this line
-            if(self.comments.has_key(lineno)):
+            if self.comments.has_key(lineno):
                 #if there is more than 0 comments
-                if(self.comments[lineno] > 0):
+                if self.comments[lineno] > 0:
                     return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno), href='javascript:getComments(%s, %s)' % (lineno, self.fileID))))
             return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)' % (lineno, self.fileID))))
         return row.append(tag.th(id='L%s' % lineno)(tag.font(lineno, color='#CCCCCC')))
@@ -75,18 +72,18 @@ class UserbaseModule(Component):
     #                return ('<th id="L%s"><a href="javascript:getComments(%s, %s)">' % (number, number, self.fileID)) + htmlImageString + ('&nbsp;%s</a></th>' % (number))
     #        return '<th id="L%s"><a href="javascript:addComment(%s, %s, -1)">%s</a></th>' % (number, number, self.fileID, number)
     #    return '<th id="L%s"><font color="#CCCCCC">%s</font></th>' % (number, number)
-        
+
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
-                
+
     def get_navigation_items(self, req):
         return []
         
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info == '/peerReviewPerform'
-                                        
+
     def process_request(self, req):
 
         data = {}
@@ -107,7 +104,7 @@ class UserbaseModule(Component):
         idFile = req.args.get('IDFile')
         self.fileID = idFile
         #if the file id is not set - display an error message
-        if idFile == None:
+        if idFile is None:
             data['error.type'] = "TracError"
             data['error.title'] = "File ID Error"
             data['error.message'] = "No file ID given - unable to load page."
@@ -124,7 +121,7 @@ class UserbaseModule(Component):
         self.imagePath = self.env.href.chrome() + '/hw/images/thumbtac11x11.gif'
 
         #if the file is not found in the database - display an error message
-        if resultFile == None:
+        if resultFile is None:
             data['error.type'] = "TracError"
             data['error.title'] = "File ID Error"
             data['error.message'] = "Unable to locate given file ID in database."
@@ -143,7 +140,7 @@ class UserbaseModule(Component):
         self.lineStart = resultFile.LineStart
 
         #if the repository can't be found - display an error message
-        if(repos == None):
+        if repos is None:
             data['error.type'] = "TracError"
             data['error.title'] = "Subversion Repository Error"
             data['error.message'] = "Unable to acquire subversion repository."
@@ -157,7 +154,7 @@ class UserbaseModule(Component):
             node = get_existing_node(self.env, repos, resultFile.Path, youngest_rev)
 
         #if the node can't be found - display error message
-        if(node == None):
+        if node is None:
             data['error.type'] = "TracError"
             data['error.title'] = "Subversion Node Error"
             data['error.message'] = "Unable to locate subversion node for this file."
@@ -183,19 +180,18 @@ class UserbaseModule(Component):
                 plain_href = self.env.href.peerReviewBrowser(node.path, rev=rev and node.rev, format='txt')
                 add_link(req, 'alternate', plain_href, 'Plain Text', 'text/plain')
 
-        #assign the preview to a variable for clearsilver
         context = Context.from_request(req, 'source', path, node.created_rev)
         preview_data = mimeview.preview_data(context, content, len(content),
                                              mime_type, node.created_path,
                                              None,
                                              annotations=['performCodeReview'])
-        
-        data['file'] = preview_data['rendered'];
+
+        data['file'] = preview_data['rendered']
         
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
         return 'peerReviewPerform.html', data, None
-                
+
     # ITemplateProvider methods
     def get_templates_dirs(self):
         """
@@ -204,7 +200,7 @@ class UserbaseModule(Component):
         """
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
-    
+
     #gets the directory where the htdocs are stored - images, etc.
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename

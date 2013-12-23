@@ -6,8 +6,9 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+
 class ReviewFileStruct(object):
-    "Stores a ReviewFile Entry"
+    """Stores a ReviewFile Entry"""
 
     #Individual CodeReview's attached file ID number
     IDFile = ""
@@ -28,7 +29,7 @@ class ReviewFileStruct(object):
     Version = ""
 
     def __init__(self, row):
-        if row != None:
+        if row is not None:
             self.IDFile = row[0]
             self.IDReview = row[1]
             self.Path = row[2]
@@ -43,9 +44,9 @@ class ReviewFileStruct(object):
             cursor.execute("""
                 INSERT INTO ReviewFiles (IDReview, Path, LineStart,
                   LineEnd, Version)
-                VALUES (%s, %s, %s, %s, %s)""",
-                (self.IDReview, self.Path, self.LineStart, self.LineEnd,
-                 self.Version))
+                VALUES (%s, %s, %s, %s, %s)
+                """, (self.IDReview, self.Path, self.LineStart, self.LineEnd,
+                      self.Version))
             self.IDFile = db.get_last_id(cursor, 'ReviewFiles', 'IDFile')
             db.commit()
         else:
@@ -54,8 +55,8 @@ class ReviewFileStruct(object):
             cursor.execute("""
                 UPDATE ReviewFiles SET IDReview=%s, Path=%s, LineStart=%s,
                   LineEnd=%s, Version=%s
-                WHERE IDFile=%s""",
-                (self.IDReview, self.Path, self.LineStart, self.LineEnd,
-                 self.Version, self.IDFile))
+                WHERE IDFile=%s
+                """, (self.IDReview, self.Path, self.LineStart, self.LineEnd,
+                      self.Version, self.IDFile))
             db.commit()
         return self.IDFile

@@ -1,33 +1,37 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
-# This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
 # Provides functionality for main page
 # Works with peerReviewMain.cs
 
-from genshi.builder import tag
-
-from trac.core import *
-from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.timeline.api import ITimelineEventProvider
-from trac.web.main import IRequestHandler
-from trac.perm import IPermissionRequestor
-from trac.resource import *
-from trac.util.datefmt import to_timestamp
-from trac import util
-from trac.util import escape, Markup
-from codereview.dbBackend import *
-from trac.web.chrome import add_stylesheet
 import itertools
 
+from genshi.builder import tag
+
+from trac import util
+from trac.core import *
+from trac.perm import IPermissionRequestor
+from trac.resource import *
+from trac.timeline.api import ITimelineEventProvider
+from trac.util import Markup
+from trac.util.datefmt import to_timestamp
+from trac.web.chrome import INavigationContributor, ITemplateProvider,\
+                            add_stylesheet
+from trac.web.main import IRequestHandler
+
+from codereview.dbBackend import *
+
+
 class UserbaseModule(Component):
-    implements(INavigationContributor, IRequestHandler, ITemplateProvider, IPermissionRequestor,ITimelineEventProvider)
+    implements(INavigationContributor, IRequestHandler, ITemplateProvider,
+               IPermissionRequestor, ITimelineEventProvider)
         
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -38,16 +42,14 @@ class UserbaseModule(Component):
             return
         yield ('mainnav', 'peerReviewMain',
                Markup('<a href="%s">Peer Review</a>') % req.href.peerReviewMain())
-        
-    # IRequestHandler methods
-    def match_request(self, req):
-        return req.path_info == '/peerReviewMain'
-
 
     # IPermissionRequestor methods
     def get_permission_actions(self):
          return ['CODE_REVIEW_DEV', 'CODE_REVIEW_MGR']
-                                        
+
+    # IRequestHandler methods
+    def match_request(self, req):
+        return req.path_info == '/peerReviewMain'
 
     def process_request(self, req):
 
@@ -89,7 +91,6 @@ class UserbaseModule(Component):
                 dataArray.append(struct.Name)
                 reviewReturnArray.append(dataArray)
                 dataArray = []
-                dataArray = []
         
         # fill the table of code reviews currently assigned to you
         for struct in assignedReviewArray:
@@ -106,7 +107,6 @@ class UserbaseModule(Component):
                 elif reviewstruct.Vote == 1:
                     dataArray.append('Accepted')
                 assignedReturnArray.append(dataArray)
-                dataArray = []
                 dataArray = []
 
         # fill the table of reviews assigned to you in a manager role
@@ -168,7 +168,9 @@ class UserbaseModule(Component):
                 for reviewer in reviewers:
                      reviewersList = reviewersList + reviewer.Reviewer + ','
             
-                yield('codereview', codeReview.DateCreate, codeReview.Author, (codereview_page, codeReview.Name, codeReview.Notes, reviewersList))
+                yield('codereview', codeReview.DateCreate, codeReview.Author,
+                      (codereview_page, codeReview.Name, codeReview.Notes,
+                       reviewersList))
 
     def render_timeline_event(self, context, field, event):
         codereview_page, name, notes, reviewersList = event[3]

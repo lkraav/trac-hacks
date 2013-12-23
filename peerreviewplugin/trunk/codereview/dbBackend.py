@@ -1,19 +1,20 @@
-#	
+#
 # Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
+# All rights reserved.
+#
 # This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
+import string
 
 from codereview.CodeReviewStruct import *
 from codereview.ReviewerStruct import *
 from codereview.ReviewFilesStruct import *
 from codereview.ReviewCommentStruct import *
-import string
+
 
 class dbBackend(object):
     db = None
@@ -235,7 +236,7 @@ class dbBackend(object):
 
         for key in comments.keys():
             comment = comments[key]
-            if comment.IDParent != "-1" and comments.has_key(comment.IDParent) and comment.IDParent != comment.IDComment:
+            if comment.IDParent != "-1" and comment.IDParent in comments and comment.IDParent != comment.IDComment:
                 comments[comment.IDParent].Children[comment.IDComment] = comment
             
         return comments

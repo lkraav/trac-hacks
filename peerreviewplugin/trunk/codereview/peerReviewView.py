@@ -1,45 +1,49 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
-# This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
 # Provides functionality for view code review page
 # Works with peerReviewView.cs
 
-from trac.core import *
-from trac.web.chrome import INavigationContributor,ITemplateProvider
-from trac.web.main import IRequestHandler
+import itertools
+
 from trac import util
-from trac.util import escape
+from trac.core import *
+from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+                            add_stylesheet
+from trac.web.main import IRequestHandler
+
 from codereview.CodeReviewStruct import *
 from codereview.dbBackend import *
 from codereview.ReviewerStruct import *
-from trac.web.chrome import add_stylesheet
-import time
-import itertools
+
 
 class UserbaseModule(Component):
     implements(IRequestHandler, ITemplateProvider, INavigationContributor)
 
     number = -1
     files = []
-    
+
     # INavigationContributor methods
+    def __init__(self):
+        self.env = None
+
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
 
     def get_navigation_items(self, req):
         return [] 
-       
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info == '/peerReviewView'
-                                        
+
     def process_request(self, req):
 
         data = {}
@@ -52,7 +56,7 @@ class UserbaseModule(Component):
 
         # reviewID argument checking
         reviewID = req.args.get('Review')
-        if reviewID == None or not reviewID.isdigit():
+        if reviewID is None or not reviewID.isdigit():
             data['error.type'] = "TracError"
             data['error.title'] = "Review ID error"
             data['error.message'] = "Invalid review ID supplied - unable to load page."
@@ -86,7 +90,7 @@ class UserbaseModule(Component):
         data['users'] = dbBack.getPossibleUsers()
         review = dbBack.getCodeReviewsByID(reviewID)
         # error if review id does not exist in the database
-        if review == None:
+        if review is None:
             data['error.type'] = "TracError"
             data['error.title'] = "Review error"
             data['error.message'] = "Review does not exist in database - unable to load page."
@@ -107,15 +111,19 @@ class UserbaseModule(Component):
 
         # figure out whether I can vote on this review or not
         entry = dbBack.getReviewerEntry(reviewID, data['myname'])
-        if entry != None:
+        if entry is not None:
             data['canivote'] = 1
             data['myvote'] = entry.Vote
         else:
             data['canivote'] = 0
 
-        #display vote summary only if I have voted or am the author/manager, or if the review is "Ready for inclusion" or "Closed
+        # display vote summary only if I have voted or am the author/manager,
+        # or if the review is "Ready for inclusion" or "Closed
         data['viewvotesummary'] = 0
-        if data['author'] == data['myname'] or data['manager'] == '1' or (dbBack.getReviewerEntry(reviewID, data['myname']) != None and dbBack.getReviewerEntry(reviewID, data['myname']).Vote != '-1') or data['status']=="Closed" or data['status']=="Ready for inclusion":
+        if data['author'] == data['myname'] or data['manager'] == '1' or \
+                (dbBack.getReviewerEntry(reviewID, data['myname']) is not None and
+                 dbBack.getReviewerEntry(reviewID, data['myname']).Vote != '-1') or \
+                data['status'] == "Closed" or data['status'] == "Ready for inclusion":
             data['viewvotesummary'] = 1
         else:
             data['viewvotesummary'] = 0
@@ -159,7 +167,6 @@ class UserbaseModule(Component):
         data['rvs'] = rvs
         data['rvsLength'] = len(rvs)
 
-
         # execute based on URL arguments
         if req.args.get('Vote') == 'yes':
             self.vote("1", reviewID, req, data['myname'])
@@ -183,13 +190,9 @@ class UserbaseModule(Component):
         data['cycle'] = itertools.cycle
 
         return 'peerReviewView.html', data, None
-                
+
     # ITemplateProvider methods
     def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
 
@@ -204,7 +207,7 @@ class UserbaseModule(Component):
         db = self.env.get_db_cnx()
         dbBack = dbBackend(db)
         reviewEntry = dbBack.getReviewerEntry(number, myname)
-        if reviewEntry != None:
+        if reviewEntry is not None:
             reviewEntry.Vote = type
             reviewEntry.save(db)
 
@@ -220,7 +223,7 @@ class UserbaseModule(Component):
         # recalculate vote ratio, while preventing divide by zero tests, and change status if necessary
         if total_votes_possible != 0:
             vote_ratio = float(voteyes)/float(total_votes_possible)
-            if (vote_ratio >= threshold):
+            if vote_ratio >= threshold:
                 review.Status = "Reviewed"
             else:
                 review.Status = "Open for review"
@@ -261,4 +264,3 @@ class UserbaseModule(Component):
         review.Status = type
         review.save(db)
         req.redirect(self.env.href.peerReviewView() + "?Review=" + number)
-        

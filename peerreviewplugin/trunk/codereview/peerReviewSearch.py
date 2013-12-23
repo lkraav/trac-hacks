@@ -1,29 +1,29 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
-# This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
-# This class performs searches for code reviews.
-# Queries are passed in through POST and results are
-# outputted in clearsilver friendly format.
+import datetime
+import itertools
+import time
+
 from trac.core import *
+from trac.util import format_date
 from trac.web.chrome import INavigationContributor, ITemplateProvider
 from trac.web.main import IRequestHandler
-from trac.util import escape, format_date
+
 from codereview.dbBackend import *
 from codereview.CodeReviewStruct import *
-import datetime
-import time
-import itertools
+
 
 class UserbaseModule(Component):
     implements(IRequestHandler, ITemplateProvider, INavigationContributor)
-        
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info == '/peerReviewSearch'
@@ -31,10 +31,10 @@ class UserbaseModule(Component):
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
-                
+
     def get_navigation_items(self, req):
         return []
-                                        
+
     def process_request(self, req):
 
         data = {}
@@ -45,30 +45,30 @@ class UserbaseModule(Component):
         else:
             req.perm.assert_permission('CODE_REVIEW_DEV')
             data['manager'] = 0
-            
+
         #if the doSearch parameter is 'yes', perform the search
         #this parameter is set when someone searches
-        if(req.args.get('doSearch') == 'yes'):
-            results = self.performSearch(req, data);
+        if req.args.get('doSearch') == 'yes':
+            results = self.performSearch(req, data)
             #if there are no results - fill the return array
             #with blank data.
-            if(len(results) == 0):
+            if len(results) == 0:
                 noValResult = []
                 noValResult.append("No results match query.")
                 noValResult.append("")
                 noValResult.append("")
                 noValResult.append("")
                 noValResult.append("")
-                results.append(noValResult)        
-            data['results'] = results;
-            data['doSearch'] = 'yes';
-            
+                results.append(noValResult)
+            data['results'] = results
+            data['doSearch'] = 'yes'
+
         #for the top-right nav links
         data['main'] = "no"
         data['create'] = "no"
         data['search'] = "yes"
         data['options'] = "no"
-        
+
         #get the database
         db = self.env.get_db_cnx()
         dbBack = dbBackend(db)
@@ -78,16 +78,16 @@ class UserbaseModule(Component):
         #creates a year array containing the last 10
         #years - for the year combo-box
         now = datetime.datetime.now()
-        year = now.year;
+        year = now.year
         years = []
-        for i in 0,1,2,3,4,5,6,7,8,9,10:
+        for i in range(0, 11):
             years.append(year - i)
 
         data['years'] = years
         data['cycle'] = itertools.cycle
 
         return 'peerReviewSearch.html', data, None
-                
+
     # ITemplateProvider methods
     def get_templates_dirs(self):
         """
@@ -115,26 +115,26 @@ class UserbaseModule(Component):
 
         #check for entered date values, if none are set
         #default to 0
-        if(month == None):
-            month = '0';
-        if(day == None):
-            day = '0';
-        if(year == None):
-            year = '0';
+        if month is None:
+            month = '0'
+        if day is None:
+            day = '0'
+        if year is None:
+            year = '0'
 
         #store date values for ClearSilver - used to reset values to
         #search parameters after a search is performed
-        data['searchValues_month'] = month;
-        data['searchValues_day'] = day;
-        data['searchValues_year'] = year;
-        data['searchValues_status'] = status;
-        data['searchValues_author'] = author;
-        data['searchValues_name'] = name;
+        data['searchValues_month'] = month
+        data['searchValues_day'] = day
+        data['searchValues_year'] = year
+        data['searchValues_status'] = status
+        data['searchValues_author'] = author
+        data['searchValues_name'] = name
 
         #dates are ints in TRAC - convert search date to int
-        fromdate = "-1";
+        fromdate = "-1"
 
-        if((month != '0') and (day != '0') and (year != '0')):
+        if (month != '0') and (day != '0') and (year != '0'):
             t = time.strptime(month + '/' + day + '/' + year[2] + year[3], '%x')
             #I have no idea what this is doing - obtained from TRAC source
             fromdate = time.mktime((t[0], t[1], t[2], 23, 59, 59, t[6], t[7], t[8]))
@@ -142,19 +142,19 @@ class UserbaseModule(Component):
             fromdate = `fromdate`
 
         selectString = 'Select...'
-        data['dateSelected'] = fromdate;
+        data['dateSelected'] = fromdate
         #if user has not selected parameter - leave
         #value in struct NULL
-        if(author != selectString):
+        if author != selectString:
             crStruct.Author = author
 
-        if(name != selectString):
-            crStruct.Name = name;
+        if name != selectString:
+            crStruct.Name = name
 
-        if(status != selectString):
+        if status != selectString:
             crStruct.Status = status
 
-        crStruct.DateCreate = fromdate;
+        crStruct.DateCreate = fromdate
         #get the database
         db = self.env.get_db_cnx()
         dbBack = dbBackend(db)
@@ -163,8 +163,8 @@ class UserbaseModule(Component):
         results = dbBack.searchCodeReviews(crStruct)
         returnArray = []
         tempArray = []
-        
-        if(results == None):
+
+        if results is None:
             return returnArray
         #fill ClearSilver friendly array with
         #search results
@@ -176,5 +176,5 @@ class UserbaseModule(Component):
             tempArray.append(struct.Name)
             returnArray.append(tempArray)
             tempArray = []
-            
-        return returnArray;
+
+        return returnArray
