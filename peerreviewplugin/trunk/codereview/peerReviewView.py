@@ -30,10 +30,6 @@ class UserbaseModule(Component):
     number = -1
     files = []
 
-    # INavigationContributor methods
-    def __init__(self):
-        self.env = None
-
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
 
