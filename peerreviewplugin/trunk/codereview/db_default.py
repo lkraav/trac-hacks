@@ -8,7 +8,6 @@
 # Author: Team5
 #
 
-from trac.core import *
 from trac.db.schema import Table, Column
 
 
