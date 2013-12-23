@@ -447,3 +447,5 @@ function addButtonEnable()
     addButton.disabled = false;
     addButton.style.color = "#000000";
 }
+
+getBrowser(browserCallback);
