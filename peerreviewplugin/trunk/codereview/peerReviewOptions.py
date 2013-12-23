@@ -1,10 +1,10 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
-# This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
@@ -14,9 +14,9 @@
 from trac.core import *
 from trac.web.chrome import INavigationContributor, ITemplateProvider
 from trac.web.main import IRequestHandler
-from trac import util
-from trac.util import escape
+
 from codereview.dbBackend import *
+
 
 class UserbaseModule(Component):
     implements(IRequestHandler, ITemplateProvider, INavigationContributor)
@@ -31,7 +31,7 @@ class UserbaseModule(Component):
                 
     def get_navigation_items(self, req):
         return []
-                                        
+
     def process_request(self, req):
 
         data = {}
@@ -51,7 +51,7 @@ class UserbaseModule(Component):
         newThreshold = req.args.get('percentage')
        
         #Set the new threshold value
-        if (newThreshold != None):
+        if newThreshold is not None:
             data['success'] = 1
             dbBack.setThreshold(newThreshold)
             newThreshold = float(newThreshold)/100
@@ -64,7 +64,7 @@ class UserbaseModule(Component):
                 if total_votes_possible != 0:
                     vote_ratio = voteyes/total_votes_possible
                 # calculate vote ratio, while preventing divide by zero tests
-                if (vote_ratio >= newThreshold):
+                if vote_ratio >= newThreshold:
                     struct.Status = "Reviewed"
                     struct.save(db)
             reviewArray = dbBack.getCodeReviewsByStatus("Reviewed")
@@ -76,7 +76,7 @@ class UserbaseModule(Component):
                 if total_votes_possible != 0:
                     vote_ratio = voteyes/total_votes_possible
                 # calculate vote ratio, while preventing divide by zero tests
-                if (vote_ratio < newThreshold):
+                if vote_ratio < newThreshold:
                     struct.Status = "Open for review"
                     struct.save(db)
 

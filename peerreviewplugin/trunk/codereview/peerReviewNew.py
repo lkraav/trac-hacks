@@ -1,27 +1,28 @@
-#	
-# Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
+#
+# Copyright (C) 2005-2006 Team5
+# All rights reserved.
+#
 # This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
 # Provides functionality to create a new code review.
 # Works with peerReviewNew.cs
 
+import itertools
+import time
+
+from trac import util
 from trac.core import *
 from trac.web.chrome import INavigationContributor,ITemplateProvider
 from trac.web.main import IRequestHandler
-from trac import util
-from trac.util import escape
+
 from codereview.CodeReviewStruct import *
 from codereview.dbBackend import *
 from codereview.ReviewerStruct import *
-from trac.web.chrome import add_stylesheet
-import time
-import itertools
+
 
 class UserbaseModule(Component):
     implements(IRequestHandler, ITemplateProvider, INavigationContributor)
@@ -32,13 +33,11 @@ class UserbaseModule(Component):
         return 'peerReviewMain'
 
     def get_navigation_items(self, req):
-        return [] 
-       
+        return []
 
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info == '/peerReviewNew'
-                                        
 
     def process_request(self, req):
         
@@ -63,14 +62,16 @@ class UserbaseModule(Component):
         data['oldid'] = -1
 
         # if we tried resubmitting and the reviewID is not a valid number or not a valid code review, error
-        if reviewID != None and (not reviewID.isdigit() or dbBack.getCodeReviewsByID(reviewID) == None):
+        if reviewID is not None and (not reviewID.isdigit() or dbBack.getCodeReviewsByID(reviewID) is None):
             data['error.type'] = "TracError"
             data['error.title'] = "Resubmit ID error"
             data['error.message'] = "Invalid resubmit ID supplied - unable to load page correctly."
             return 'error.html', data, None
 
         # if we are resubmitting a code review and we are the author or the manager
-        if reviewID != None and (dbBack.getCodeReviewsByID(reviewID).Author == util.get_reporter_id(req) or req.perm.has_permission('CODE_REVIEW_MGR')):
+        if reviewID is not None and \
+                (dbBack.getCodeReviewsByID(reviewID).Author == util.get_reporter_id(req) or
+                 req.perm.has_permission('CODE_REVIEW_MGR')):
             review = dbBack.getCodeReviewsByID(reviewID)
             data['new'] = "no"
             data['oldid'] = reviewID
@@ -79,7 +80,7 @@ class UserbaseModule(Component):
             returnUsers = ""
             popUsers = []
             for struct in userStructs:
-                returnUsers+=struct.Reviewer + "#"
+                returnUsers += struct.Reviewer + "#"
                 popUsers.append(struct.Reviewer)
 
             files = dbBack.getReviewFiles(reviewID)
@@ -87,13 +88,13 @@ class UserbaseModule(Component):
             popFiles = []
             # Set up the file information
             for struct in files:
-                returnFiles+= "%s,%s,%s, %s#" % (struct.Path, struct.Version, struct.LineStart, struct.LineEnd ) 
+                returnFiles += "%s, %s, %s, %s#" % (struct.Path, struct.Version, struct.LineStart, struct.LineEnd)
                 tempFiles = []
                 tempFiles.append(struct.Path)
                 tempFiles.append(struct.Version)
                 tempFiles.append(struct.LineStart)
                 tempFiles.append(struct.LineEnd)
-                popFiles.append(tempFiles);
+                popFiles.append(tempFiles)
 
             data['files'] = returnFiles
             data['name'] = review.Name
@@ -121,8 +122,11 @@ class UserbaseModule(Component):
             else:
                 data['notPrevUsers'] = []
                 data['emptyList'] = 1
-        #if we resubmitting a code review, and are neiter the author and the manager
-        elif reviewID != None and not dbBack.getCodeReviewsByID(reviewID).Author == util.get_reporter_id(req) and not req.perm.has_permission('CODE_REVIEW_MGR'):
+
+        #if we resubmitting a code review, and are neither the author and the manager
+        elif reviewID is not None and \
+                not dbBack.getCodeReviewsByID(reviewID).Author == util.get_reporter_id(req) and \
+                not req.perm.has_permission('CODE_REVIEW_MGR'):
             data['error.type'] = "TracError"
             data['error.title'] = "Access error"
             data['error.message'] = "You need to be a manager or the author of this code review to resubmit it."
@@ -131,7 +135,7 @@ class UserbaseModule(Component):
         else:
             if req.args.get('reqAction') == 'createCodeReview':
                 oldid = req.args.get('oldid')
-                if oldid != None:
+                if oldid is not None:
                     review = dbBack.getCodeReviewsByID(oldid)
                     review.Status = "Closed"
                     review.save(db)
@@ -162,12 +166,10 @@ class UserbaseModule(Component):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
 
-
     # Needed to be filled out based on interface
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('hw', resource_filename(__name__, 'htdocs'))]
-
 
     # Takes the information given when the page is posted
     # and creates a new code review struct in the database
@@ -210,4 +212,4 @@ class UserbaseModule(Component):
                 struct.LineEnd = segment[3]
                 struct.save(self.env.get_db_cnx())
 
-        return id    
+        return id

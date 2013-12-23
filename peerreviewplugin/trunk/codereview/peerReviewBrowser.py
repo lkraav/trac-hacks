@@ -1,36 +1,33 @@
-#	
+#
 # Copyright (C) 2005-2006 Team5	
-# All rights reserved.	
-#	
+# All rights reserved.
+#
 # This software is licensed as described in the file COPYING.txt, which	
-# you should have received as part of this distribution.	
-#	
+# you should have received as part of this distribution.
+#
 # Author: Team5
 #
 
 from __future__ import generators
 import re
-import urllib
 
+from genshi.builder import tag
 from trac import util
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.perm import IPermissionRequestor
-from trac.web.chrome import ITemplateProvider
+from trac.util import embedded_numbers
+from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
 from trac.web.chrome import add_link, add_stylesheet
-from trac.wiki import wiki_to_html, wiki_to_oneliner, IWikiSyntaxProvider
-from trac.versioncontrol.web_ui.util import *
-from trac.util import sorted, embedded_numbers
-
-from genshi.builder import tag
+from trac.wiki import wiki_to_html
 
 IMG_RE = re.compile(r"\.(gif|jpg|jpeg|png)(\?.*)?$", re.IGNORECASE)
-
 CHUNK_SIZE = 4096
-
 DIGITS = re.compile(r'[0-9]+')
+
+
 def _natural_order(x, y):
     """Comparison function for natural order sorting based on
     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/214202."""
@@ -52,7 +49,7 @@ class peerReviewBrowser(Component):
 
     # ITextAnnotator methods
     def get_annotation_type(self):
-    	return 'lineno', 'Line', 'Line numbers'
+        return 'lineno', 'Line', 'Line numbers'
 
     def get_annotation_data(self, context):
         return None
@@ -61,7 +58,7 @@ class peerReviewBrowser(Component):
         row.append(tag.th(id='L%s' % lineno)(
             tag.a(lineno, href='javascript:setLineNum(%s)' % lineno)
         ))
-    
+
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
@@ -119,12 +116,11 @@ class peerReviewBrowser(Component):
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
         
-	return 'peerReviewBrowser.html', data, None
+        return 'peerReviewBrowser.html', data, None
 
     # Internal methods
 
     def get_path_links_CRB(self, href, fullpath, rev):
-
         path = '/'
         links = [{'name': 'root',
                   'href': href.peerReviewBrowser(path, rev=rev)}]
@@ -156,7 +152,6 @@ class peerReviewBrowser(Component):
 
                 return result
 
-
         info = []
 
         if order == 'date':
@@ -176,7 +171,6 @@ class peerReviewBrowser(Component):
             return a.isdir and dir_order or 0, file_order(a)
 
         for entry in node.get_entries():
-            entry_rev = rev and entry.rev
             info.append({
                 'name': entry.name,
                 'fullpath': entry.path,
@@ -184,7 +178,7 @@ class peerReviewBrowser(Component):
                 'content_length': entry.content_length,
                 'size': util.pretty_size(entry.content_length),
                 'rev': entry.rev,
-                'permission': 1, # FIXME
+                'permission': 1,  # FIXME
                 'log_href': util.escape(self.env.href.log(entry.path, rev=rev)),
                 'browser_href': util.escape(self.env.href.peerReviewBrowser(entry.path,
                                                                   rev=rev))
@@ -207,7 +201,7 @@ class peerReviewBrowser(Component):
         info.sort(cmp_func)
 
         return {'order': order, 'desc': desc and 1 or None,
-                'items': info, 'changes': changes }
+                'items': info, 'changes': changes}
 
     def _render_file(self, req, context, repos, node, rev=None):
         req.perm(context.resource).require('FILE_VIEW')
@@ -281,14 +275,10 @@ class peerReviewBrowser(Component):
                 'author': changeset.author or 'anonymous',
                 'message': wiki_to_html(changeset.message or '--', self.env, req,
                                         escape_newlines=True)
-                }
+            }
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
 

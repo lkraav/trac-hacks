@@ -6,8 +6,9 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+
 class ReviewCommentStruct(object):
-    "Stores a ReviewComment Entry"
+    """Stores a ReviewComment Entry"""
 
     #Individual comment ID number
     IDComment = "-1"
@@ -15,7 +16,7 @@ class ReviewCommentStruct(object):
     #File ID to which the comment belongs
     IDFile = ""
 
-    #Comment ID of the comment's heirarchical parent
+    #Comment ID of the comment's hierarchically parent
     IDParent = "-1"
 
     #Line number the ID refers to
@@ -33,11 +34,11 @@ class ReviewCommentStruct(object):
     #Date comment created
     DateCreate = -1
 
-    #Collection of comment IDs belonging to the comment's heirarchical children
+    #Collection of comment IDs belonging to the comment's hierarchically children
     Children = {}
 
     def __init__(self, row):
-        if row != None:
+        if row is not None:
             #initialize variables
             self.IDComment = row[0]
             self.IDFile = row[1]
@@ -56,9 +57,9 @@ class ReviewCommentStruct(object):
             cursor.execute("""
                 INSERT INTO ReviewComments (IDFile, IDParent, LineNum,
                   Author, Text, AttachmentPath, DateCreate)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                (self.IDFile, self.IDParent, self.LineNum, self.Author,
-                 self.Text, self.AttachmentPath, self.DateCreate))
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (self.IDFile, self.IDParent, self.LineNum, self.Author,
+                      self.Text, self.AttachmentPath, self.DateCreate))
             self.IDComment = db.get_last_id(cursor, 'ReviewComments', 'IDComment')
             db.commit()
         else:
@@ -67,8 +68,9 @@ class ReviewCommentStruct(object):
             cursor.execute("""
                 UPDATE ReviewComments SET IDFile=%s, IDParent=%s, LineNum=%s,
                   Author=%s, Text=%s, AttachmentPath=%s, DateCreate=%s
-                WHERE IDComment=%s""",
-                (self.IDFile, self.IDParent, self.LineNum, self.Author,
-                 self.Text, self.AttachmentPath, self.DateCreate, self.IDComment))
+                WHERE IDComment=%s
+                """, (self.IDFile, self.IDParent, self.LineNum, self.Author,
+                      self.Text, self.AttachmentPath, self.DateCreate,
+                      self.IDComment))
             db.commit()
         return self.IDComment
