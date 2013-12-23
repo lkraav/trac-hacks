@@ -12,7 +12,8 @@
 # of only the threshold setting.
 
 from trac.core import *
-from trac.web.chrome import INavigationContributor, ITemplateProvider
+from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+                            add_stylesheet
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
@@ -83,6 +84,8 @@ class UserbaseModule(Component):
         #Get the threshold value
         data['percentage'] = dbBack.getThreshold()
 
+        add_stylesheet(req, 'common/css/browser.css')
+        add_stylesheet(req, 'common/css/code.css')
         return 'peerReviewOptions.html', data, None
 
     # ITemplateProvider methods
