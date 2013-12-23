@@ -24,7 +24,7 @@ from trac.web.chrome import INavigationContributor, ITemplateProvider, \
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
 
-from codereview.dbBackend import *
+from dbBackend import *
 
 
 class UserbaseModule(Component):

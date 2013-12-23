@@ -17,8 +17,8 @@ from trac.util import format_date
 from trac.web.chrome import INavigationContributor, ITemplateProvider
 from trac.web.main import IRequestHandler
 
-from codereview.dbBackend import *
-from codereview.CodeReviewStruct import *
+from dbBackend import *
+from CodeReviewStruct import *
 
 
 class UserbaseModule(Component):

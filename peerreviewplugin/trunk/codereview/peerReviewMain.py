@@ -26,7 +26,7 @@ from trac.web.chrome import INavigationContributor, ITemplateProvider,\
                             add_stylesheet
 from trac.web.main import IRequestHandler
 
-from codereview.dbBackend import *
+from dbBackend import *
 
 
 class UserbaseModule(Component):

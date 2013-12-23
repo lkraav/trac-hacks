@@ -10,10 +10,10 @@
 
 import string
 
-from codereview.CodeReviewStruct import *
-from codereview.ReviewerStruct import *
-from codereview.ReviewFilesStruct import *
-from codereview.ReviewCommentStruct import *
+from CodeReviewStruct import *
+from ReviewerStruct import *
+from ReviewFilesStruct import *
+from ReviewCommentStruct import *
 
 
 class dbBackend(object):
