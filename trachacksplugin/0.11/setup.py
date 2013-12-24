@@ -35,6 +35,7 @@ setup(
         ],
     entry_points={
         'trac.plugins': [
+            'trachacks.macros = trachacks.macros',
             'trachacks.web_ui = trachacks.web_ui',
             ]
         },

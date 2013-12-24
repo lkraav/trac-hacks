@@ -11,20 +11,11 @@
 
 import re
 import threading
-from trac.perm import PermissionCache
+
 from trac.wiki.model import WikiPage
+
+from trachacks.util import FakeRequest, natural_sort
 from tractags.api import TagSystem
-
-def natural_sort(l):
-    """Sort a list of CacheObjects in the way that humans expect."""
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key.name)]
-    return sorted(l, key=alphanum_key)
-
-
-class FakeRequest(object):
-    def __init__(self, env, authname = 'anonymous'):
-        self.perm = PermissionCache(env, authname)
 
 
 class Borg(object):
@@ -42,6 +33,7 @@ class Borg(object):
 
 extract_title = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
 filter_macros = re.compile(r'\[\[[^\]]*\]\]\s?\n?', re.MULTILINE | re.UNICODE)
+
 
 class CacheObject(object):
     name = None
@@ -218,7 +210,6 @@ class HacksCache(Borg):
         else:
             return v
 
-
     # Public API
     def update(self, hack = None):
         """ Update cache for all or just the given hack """
@@ -246,4 +237,3 @@ class HacksCache(Borg):
 
     def get_all_hacks(self, sorted = False):
         return self._get_all(self._hacks, sorted)
-
