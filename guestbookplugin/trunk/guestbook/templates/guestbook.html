@@ -1,41 +1,48 @@
-<?cs include "header.cs" ?>
-<?cs include "macros.cs" ?>
-
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
+  <xi:include href="macros.html" />
+<head><title>${guestbook_title}</title></head>
+<body>
 <div id="ctxtnav" class="nav">
 </div>
 
 <div id="content" class="guestbook">
   <h1>
-    <?cs var:guestbook.title ?>
+    ${guestbook_title}
   </h1>
-  <?cs each:message = guestbook.messages ?>
+  <div py:for="message in guestbook_messages">
     <div class="message">
       <div class="header">
         <div class="title">
-          <?cs var:message.title ?>
+          ${message.title}
         </div>
         <div class="body">
-          <?cs var:message.body ?>
+          ${message.body}
         </div>
       </div>
       <div class="controls">
-        <?cs if:trac.acl.GUESTBOOK_DELETE ?>
-          <a href="<?cs var:trac.href.guestbook ?>?action=delete;id=<?cs var:message.id ?>">Delete</a>
-        <?cs /if ?>
+        <py:if test="perm.has_permission('GUESTBOOK_DELETE')">
+          <a href="${href.guestbook('delete')}?action=delete&amp;id=${message.id}">Delete</a>
+        </py:if>
       </div>
       <div class="footer">
         <div class="author">
-          <?cs var:message.author ?>
+          ${message.author}
         </div>
         <div class="time">
-          <?cs var:message.time ?>
+          ${message.time}
         </div>
       </div>
     </div>
-  <?cs /each ?>
+  </div>
 
-  <?cs if:trac.acl.GUESTBOOK_APPEND ?>
-    <form class="append_form" method="post" action="<?cs var:trac.href.guestbook ?>">
+  <py:if test="perm.has_permission('GUESTBOOK_APPEND')">
+    <form class="append_form" method="POST" action="${href.guestbook('newentry')}">
       <fieldset>
         <legend>
           Add entry:<br/>
@@ -54,13 +61,15 @@
 Enter your message here...
           </textarea>
         </div>
-        <input type="hidden" name="action" value="newentry"/>
+        <input type="hidden" name="action" value="newentry" />
         <div class="buttons">
           <input type="submit" name="submit" value="Submit"/>
         </div>
       </fieldset>
     </form>
-  <?cs /if ?>
+  </py:if>
+  <py:if test="not perm.has_permission('GUESTBOOK_APPEND')">
+     <em>Sorry, no permission to add elements</em>
+  </py:if>
 </div>
-
-<?cs include "footer.cs" ?>
+</body></html>
