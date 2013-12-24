@@ -108,7 +108,7 @@
   <body>
     <h2>Custom theme</h2>
     
-    <form method="post" id="simple">
+    <form method="post" id="simple" class="theme">
       <fieldset>
         <legend>General</legend>
         <div>
@@ -134,7 +134,7 @@
         </div>
       </fieldset>
       <div class="buttons">
-        <input type="submit" value="Submit" />
+        <input type="submit" value="Submit" class="${'btn' if bhdb else None}" />
       </div>
     </form>
   </body>

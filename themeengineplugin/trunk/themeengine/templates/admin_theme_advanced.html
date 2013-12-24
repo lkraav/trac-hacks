@@ -16,7 +16,7 @@
   <body>
     <h2>Customize theme: Advanced</h2>
     
-    <form method="post" id="advanced">
+    <form method="post" id="advanced" class="theme">
       <fieldset>
         <legend>General</legend>
         <div>
@@ -29,7 +29,7 @@
         <textarea name="css" rows="40" cols="80">$css</textarea>
       </fieldset>
       <div class="buttons">
-        <input type="submit" value="Submit" />
+        <input type="submit" value="Submit" class="${'btn' if bhdb else None}" />
       </div>
     </form>
   </body>
