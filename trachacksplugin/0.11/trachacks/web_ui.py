@@ -390,8 +390,8 @@ class TracHacksHandler(Component):
                                 'http://localhost/svn/' + vars['LCNAME']
             vars['DESCRIPTION'] = data.setdefault('description',
                                                   'No description available')
-            vars['EXAMPLE'] = data.setdefault('example',
-                                              'No example available')
+            vars['INSTALLATION'] = data.setdefault('installation',
+                                                   'No installation available')
 
             if 'create' in req.args and not context.errors:
                 success, message = self.create_hack(req, data, vars)
@@ -478,7 +478,8 @@ class TracHacksHandler(Component):
 
                 # Step 5: Tag the new wiki page
                 res = Resource('wiki', page_name)
-                tags = data['tags'].split() + selected_releases + [data['type']]
+                tags = sorted(set(data['tags'].split() + selected_releases + \
+                                  [data['type'], req.authname]))
                 TagSystem(self.env).set_tags(req, res, tags)
                 steps_done.append('tags')
 
