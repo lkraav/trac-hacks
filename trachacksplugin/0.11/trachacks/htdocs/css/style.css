@@ -1,0 +1,90 @@
+/* vim: syntax=css
+*/
+form, input, body {
+	background-image: url(<?cs var:chrome.href ?>/site/trachacks_bg.png);
+	background-position: 64px 64px;
+}
+
+#ticket form {
+	background-image: none;
+}
+
+form#search {
+	background: transparent;
+}
+
+pre, tt {
+	color: #600;
+}
+
+.ext-link {
+	background-image: none;
+	padding-left: 0px;
+	border-bottom: solid 1px;
+}
+
+/* For Mozilla and Safari */
+*>#content {
+	padding: 0;
+	margin: 15px 15px 0 15px;
+	text-align: left;
+	min-height: 770px;
+}
+
+/* For IE */
+* html #content {
+	padding: 0;
+	margin: 15px 15px 0 15px;
+	text-align: left;
+	height: 770px;
+}
+
+#newsflash {
+	border: solid 2px #8f8;
+	width: 400px;
+	float: right;
+	background: #dfd;
+	font-size: 0.8em;
+	margin: 0em;
+	margin-left: 1em;
+	padding: 0.5em 1em 0.5em 1em;
+}
+
+#newsflash h1 {
+	font-size: 1.2em;
+	padding: 0em;
+	margin: 0em;
+}
+
+#newsflash .post hr {
+	display: none;
+}
+
+span.tagcount {
+	color: #999;
+	font-size: 0.6em;
+	vertical-align: middle;
+}
+
+#newticketguide {
+ background: #fdc;
+ border: 2px solid #d00;
+ font-style: italic;
+ padding: 0 .5em;
+ margin: 1em 0;
+ text-align: center;
+}
+
+#newticketguide h1 {
+	font-variant: small-caps;
+	letter-spacing: 0.3em;
+	font-weight: bold;
+}
+
+#newticketguide hr {
+	padding: 0;
+	margin: 1em auto;
+	width: 40%;
+	text-align: center;
+	border: 1px dotted #d00;
+}
