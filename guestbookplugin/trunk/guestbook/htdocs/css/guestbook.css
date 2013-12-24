@@ -1,0 +1,68 @@
+/* Message list styles. */
+div.guestbook
+{
+  margin: 1.5em 0em 4em 0em;
+  padding: 0em 0em 0em 0em;
+}
+
+div.guestbook div.message
+{
+  width: 60%;
+  margin: auto;
+  margin-top: 1em;
+  border: 1px solid #d7d7d7;
+}
+
+div.guestbook div.message div.title
+{
+  font-weight: bold;
+  margin: 0em;
+  padding: 0.25em 1em 0.25em 1em;
+  background-color: #f7f7f7;
+  border-bottom: 1px solid #d7d7d7;
+}
+
+div.guestbook div.controls
+{
+  float: right;
+  padding: 0.5em;
+  padding-right: 2.5em;
+}
+
+div.guestbook div.controls a
+{
+  margin: 0.3em;
+}
+
+div.guestbook div.footer
+{
+  font-weight: bold;
+  margin: 0em;
+  padding: 0.5em;
+}
+
+div.guestbook div.author, div.guestbook div.time
+{
+  display: inline;
+  padding: 0em 0.5em;
+}
+
+
+/* Add message form styles. */
+div.guestbook div.message div.body
+{
+  margin: 1em;
+}
+
+div.guestbook form
+{
+  margin: 2em;
+  margin-left: auto;
+  margin-right: auto;
+  width: 60%;
+}
+
+div.guestbook form
+{
+  overflow: auto;
+}
