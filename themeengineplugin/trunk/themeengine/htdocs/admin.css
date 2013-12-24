@@ -46,13 +46,11 @@
   width: 420px;
 }
 
-#simple fieldset {
-  min-width: 220px;
-  max-width: 350px;
-  width: 250px;
+.admin .theme fieldset {
+  margin-bottom: 10px;
 }
 
-#simple label { 
+.admin .theme label { 
   display: block;  /* block float the labels to left column, set a width */
   float: left; 
   width: 125px; 
@@ -61,17 +59,17 @@
   text-align: right; 
 }
 
-#simple  input {
+.admin .theme  input {
   width: auto;      /* set width of form elements to auto-size, otherwise watch for wrap on resize */
   margin: 5px 0 0 10px; /* set margin on left of form elements rather than right of
                               label aligns textarea better in IE */
 }
 
-#simple #schemes {
+.admin .theme #schemes {
   display: none;
 }
 
-#simple .js#colors {
+.admin .theme .js#colors {
   min-height: 195px;
   height: 195px !important;
   height: 195px;
@@ -79,5 +77,13 @@
 
 .pull-right {
   float: right;
+}
+
+.admin .theme legend+textarea {
+  margin-top: 20px;
+}
+
+textarea {
+  width: auto !important;
 }
 
