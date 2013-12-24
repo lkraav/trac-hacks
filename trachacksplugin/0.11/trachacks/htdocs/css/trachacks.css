@@ -81,7 +81,7 @@
 }
 
 #preview {
- -moz-background-clip: border;
+ -moz-background-clip: border-box;
  -moz-background-inline-policy: continuous;
  -moz-background-origin: padding;
  background: #F4F4F4 url(/chrome/common/draft.png) repeat scroll 0 0;
