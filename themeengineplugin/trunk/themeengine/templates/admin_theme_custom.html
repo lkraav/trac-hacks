@@ -16,7 +16,7 @@
     <script type="text/javascript">
       $(function() {
         var theme_colors = {};
-        <py:for each="color in current_theme.get('colors',())">
+        <py:for each="color in (current_theme or {}).get('colors',())">
         theme_colors['${color[0]}'] = {
           name: '${color[0]}',
           prop: '${color[1]}',
