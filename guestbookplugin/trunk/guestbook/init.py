@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from trac.core import *
+from trac.core import Component, implements
 from trac.db import *
-
 from trac.env import IEnvironmentSetupParticipant
 
 # Last guestbook database schema version
 last_db_version = 1
+
 
 class GuestbookInit(Component):
     """
