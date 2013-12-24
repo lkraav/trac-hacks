@@ -77,6 +77,7 @@ class ThemeEngineModule(Component):
                                 del links['stylesheet'][i]
                                 break
                 if theme:
+                    req.chrome['theme_info'] = theme
                     # Template overrides (since 2.2.0)
                     overrides = self._get_template_overrides(theme)
                     template, modifier = overrides.get(template, 
