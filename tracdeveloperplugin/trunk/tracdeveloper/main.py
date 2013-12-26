@@ -4,6 +4,7 @@ import re
 
 from genshi.builder import tag
 from trac.core import *
+from trac.perm import IPermissionRequestor
 from trac.web import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider
 from trac.prefs.api import IPreferencePanelProvider
@@ -12,7 +13,8 @@ __all__ = ['DeveloperPlugin']
 
 
 class DeveloperPlugin(Component):
-    implements(INavigationContributor, IRequestHandler, ITemplateProvider, IPreferencePanelProvider)
+    implements(INavigationContributor, IPermissionRequestor,
+               IPreferencePanelProvider, IRequestHandler, ITemplateProvider)
 
     # INavigationContributor methods
 
@@ -20,8 +22,13 @@ class DeveloperPlugin(Component):
         return 'developer'
 
     def get_navigation_items(self, req):
-        yield ('metanav', 'developer',
-               tag.a('Developer Tools', href=req.href.developer()))
+        if req.perm.has_permission('DEVELOP'):
+            yield ('metanav', 'developer',
+                   tag.a('Developer Tools', href=req.href.developer()))
+
+    # IPermissionRequestor methods
+    def get_permission_actions(self):
+        return ['DEVELOP']
 
     # IRequestHandler methods
 
@@ -29,6 +36,7 @@ class DeveloperPlugin(Component):
         return re.match(r'/developer/?$', req.path_info)
 
     def process_request(self, req):
+        req.perm.require('DEVELOP')
         return 'developer/index.html', {}, None
 
     # ITemplateProvider methods
@@ -43,9 +51,14 @@ class DeveloperPlugin(Component):
 
     # IPreferencePanelProvider methods
     def get_preference_panels(self, req):
-        yield 'developer', 'Developer Options'
+        if req.perm.has_permission('DEVELOP'):
+            yield 'developer', 'Developer Options'
 
     def render_preference_panel(self, req, panel):
+        # JIC
+        req.perm.require('DEVELOP')
         if req.method == 'POST':
-            req.session['developer.js.enable_debug'] = req.args.get('enable_debug', '0')
+            key = 'developer.js.enable_debug'
+            req.session[key] = req.args.get('enable_debug', '0')
         return 'developer/prefs_developer.html', {}
+
