@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='TracDeveloper',
-    version='0.2',
+    version='0.3.0',
     packages=['tracdeveloper', 'tracdeveloper.dozer'],
     author='Alec Thomas',
     maintainer='Olemis Lang',
