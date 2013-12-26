@@ -167,6 +167,13 @@ For more advanced control you can implement ``IThemeProvider`` from
                A list of (name, css-property, selector) tuples.
              schemes::
                A list of (name, {color-name: value, ...}) tuples.
+             scripts::
+               A list of (filename, mimetype, charset, ie_if) respectively for
+               script (relative | absolute) URI (mandatory), 
+               script MIME type (optional , defaults to 'text/javascript'),
+               script charset encoding (optional, defaults to 'utf-8'),
+               and a bool flag for MSIE-only shims (optional, defaults to False)
+               @since 2.2.2
             """
 
 Most of these are the same as the simple API above, except ``description``

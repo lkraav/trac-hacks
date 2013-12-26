@@ -74,6 +74,13 @@ class IThemeProvider(Interface):
            A list of (name, css-property, selector) tuples.
          schemes::
            A list of (name, {color-name: value, ...}) tuples.
+         scripts::
+           A list of (filename, mimetype, charset, ie_if) respectively for
+           script (relative | absolute) URI (mandatory), 
+           script MIME type (optional , defaults to 'text/javascript'),
+           script charset encoding (optional, defaults to 'utf-8'),
+           and a bool flag for MSIE-only shims (optional, defaults to False)
+           @since 2.2.2
         """
 
 class ThemeEngineSystem(Component):
@@ -220,6 +227,7 @@ class ThemeBase(Component):
         self._set_info(info, 'colors', ())
         self._set_info(info, 'schemes', ())
         self._set_info(info, 'disable_trac_css', True)
+        self._set_info(info, 'scripts', [])
 
         return info
 
@@ -231,7 +239,7 @@ class ThemeBase(Component):
     # Internal methods
     def _set_info(self, info, attr, default):
         if not hasattr(self, attr):
-            return # This should never happen, but better to be safe
+            return # Skip some e.g. scripts
 
         val = getattr(self, attr)
         if val:
