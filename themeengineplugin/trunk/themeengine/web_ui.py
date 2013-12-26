@@ -17,7 +17,8 @@ from trac.core import *
 from trac.core import ComponentMeta
 from trac.config import BoolOption
 from trac.util.text import exception_to_unicode
-from trac.web.chrome import ITemplateProvider, add_stylesheet, Chrome, add_warning
+from trac.web.chrome import add_script, add_stylesheet, add_warning, Chrome, \
+                            ITemplateProvider
 from trac.web.api import IRequestFilter
 
 from themeengine.api import ThemeEngineSystem, ThemeNotFound
@@ -68,6 +69,14 @@ class ThemeEngineModule(Component):
                     add_stylesheet(req, 'theme/'+theme['css'])
                 if theme and 'template' in theme:
                     req.chrome['theme'] = os.path.basename(theme['template'])
+                if theme and 'scripts' in theme:
+                    for script_def in theme['scripts']:
+                        if (isinstance(script_def, tuple) and 
+                            1 <= len(script_def) <= 4):
+                            add_script(req, *script_def)
+                        else:
+                            self.log.warning('Bad script def %s for theme %s',
+                                             script_def, theme['name'])
                 if theme and theme.get('disable_trac_css'):
                     links = req.chrome.get('links')
                     if links and 'stylesheet' in links:
