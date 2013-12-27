@@ -7,13 +7,26 @@
 ## trac@colin.guthr.ie
 ## trac-hacks user: coling
 
+import sys
 from setuptools import find_packages, setup
+from pkg_resources import parse_version
+
+name = 'WorkLog'
+version = '0.4'
+min_trac = '1.0'
+try:
+    import trac
+    if parse_version(trac.__version__) < parse_version(min_trac):
+        print("%s %s requires Trac >= %s" % (name, version, min_trac))
+    sys.exit(1)
+except ImportError:
+    pass
 
 setup(
-    name='worklog',
+    name=name,
     description='Plugin to manage the which tickets users are currently working on',
     keywords='trac plugin ticket working',
-    version='0.3',
+    version=version,
     url='http://trac-hacks.org/wiki/WorklogPlugin',
     license='http://www.opensource.org/licenses/mit-license.php',
     author='Colin Guthrie',
