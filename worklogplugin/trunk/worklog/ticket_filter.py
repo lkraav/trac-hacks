@@ -5,7 +5,7 @@ from genshi import XML
 from genshi.filters.transform import Transformer
 from trac.core import Component, implements
 from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import add_stylesheet, add_script
+from trac.web.chrome import Chrome, add_stylesheet, add_script
 from trac.wiki.formatter import wiki_to_oneliner
 
 from manager import WorkLogManager
@@ -106,10 +106,9 @@ class WorkLogTicketAddon(Component):
 
             add_script(req, 'worklog/jqModal.js')
             add_stylesheet(req, 'worklog/jqModal.css')
-            
-            add_script(req, 'worklog/ui.datepicker.js')
-            add_stylesheet(req, 'worklog/ui.datepicker.css')
-            
+
+            Chrome(self.env).add_jquery_ui(req)
+
             add_script(req, 'worklog/jquery.mousewheel.pack.js')
             add_script(req, 'worklog/jquery.timeentry.pack.js')
             
