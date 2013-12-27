@@ -69,16 +69,9 @@ class WorkLogManager:
         # If we get here then we know we can start work :)
         return True
 
-    def save_ticket(self, tckt, msg):
-        # determine sequence number... 
-        cnum = 0
-        tm = TicketModule(self.env)
-        for change in tm.grouped_changelog_entries(tckt, None):
-            if change['permanent']:
-                cnum += 1
-        nowdt = self.now
-        nowdt = to_datetime(nowdt)
-        tckt.save_changes(self.authname, msg, nowdt, cnum=str(cnum+1))
+    def save_ticket(self, tkt, msg):
+        now_dt = to_datetime(self.now)
+        tkt.save_changes(self.authname, msg, now_dt)
         ## Often the time overlaps and causes a db error,
         ## especially when the trac integration post-commit hook is used.
         ## NOTE TO SELF. I DON'T THINK THIS IS NECESSARY RIGHT NOW...
@@ -92,7 +85,7 @@ class WorkLogManager:
         #        count += 1
         
         tn = TicketNotifyEmail(self.env)
-        tn.notify(tckt, newticket=0, modtime=nowdt)
+        tn.notify(tkt, newticket=0, modtime=now_dt)
         # We fudge time as it has to be unique
         self.now += 1
         
