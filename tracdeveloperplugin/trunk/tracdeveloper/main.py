@@ -22,13 +22,13 @@ class DeveloperPlugin(Component):
         return 'developer'
 
     def get_navigation_items(self, req):
-        if req.perm.has_permission('DEVELOP'):
+        if req.perm.has_permission('TRAC_DEVELOP'):
             yield ('metanav', 'developer',
                    tag.a('Developer Tools', href=req.href.developer()))
 
     # IPermissionRequestor methods
     def get_permission_actions(self):
-        return ['DEVELOP']
+        return ['TRAC_DEVELOP']
 
     # IRequestHandler methods
 
@@ -36,7 +36,7 @@ class DeveloperPlugin(Component):
         return re.match(r'/developer/?$', req.path_info)
 
     def process_request(self, req):
-        req.perm.require('DEVELOP')
+        req.perm.require('TRAC_DEVELOP')
         return 'developer/index.html', {}, None
 
     # ITemplateProvider methods
@@ -51,12 +51,12 @@ class DeveloperPlugin(Component):
 
     # IPreferencePanelProvider methods
     def get_preference_panels(self, req):
-        if req.perm.has_permission('DEVELOP'):
+        if req.perm.has_permission('TRAC_DEVELOP'):
             yield 'developer', 'Developer Options'
 
     def render_preference_panel(self, req, panel):
         # JIC
-        req.perm.require('DEVELOP')
+        req.perm.require('TRAC_DEVELOP')
         if req.method == 'POST':
             key = 'developer.js.enable_debug'
             req.session[key] = req.args.get('enable_debug', '0')
