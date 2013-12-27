@@ -18,7 +18,7 @@ try:
     import trac
     if parse_version(trac.__version__) < parse_version(min_trac):
         print("%s %s requires Trac >= %s" % (name, version, min_trac))
-    sys.exit(1)
+        sys.exit(1)
 except ImportError:
     pass
 
