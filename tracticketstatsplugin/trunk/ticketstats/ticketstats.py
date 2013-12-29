@@ -198,7 +198,7 @@ def get_num_closed_tix(db, from_date, at_date, milestone):
         SELECT newvalue
         FROM ticket_change tc
         INNER JOIN ticket t ON t.id = tc.ticket AND tc.time > %%s
-          AND tc.time <= %%s AND tc.field == 'status' %s
+          AND tc.time <= %%s AND tc.field = 'status' %s
         ORDER BY tc.time""" % milestone_str, args)
 
     closed_count = 0
@@ -233,7 +233,7 @@ def get_num_open_tix(db, at_date, milestone):
         SELECT newvalue
         FROM ticket_change tc
         INNER JOIN ticket t ON t.id = tc.ticket AND tc.time > 0
-          AND tc.time <= %%s AND tc.field == 'status' %s
+          AND tc.time <= %%s AND tc.field = 'status' %s
         ORDER BY tc.time""" % milestone_str, args)
 
     for (status,) in cursor:
