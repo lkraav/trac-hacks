@@ -17,18 +17,18 @@ from genshi.builder import tag as builder
 from trac.core import Component, TracError, implements
 from trac.config import ConfigurationError, IntOption, Option
 from trac.perm import IPermissionRequestor, PermissionSystem
-from trac.resource import Resource, ResourceNotFound
+from trac.resource import Resource, ResourceNotFound, resource_exists
 from trac.ticket.model import Component as TicketComponent
 from trac.wiki.formatter import wiki_to_html
 from trac.wiki.model import WikiPage
 from trac.util.compat import sorted
-from trac.util.translation import tag_
+from trac.util.translation import _, tag_
 from trac.web.api import (
     IRequestFilter, IRequestHandler, ITemplateStreamFilter, RequestDone
 )
 from trac.web.chrome import (
-    INavigationContributor, ITemplateProvider, add_notice, add_script,
-    add_stylesheet, add_warning
+    INavigationContributor, ITemplateProvider, add_ctxtnav, add_notice,
+    add_script, add_stylesheet, add_warning
 )
 
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
@@ -282,6 +282,17 @@ class TracHacksHandler(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
+        if template == 'ticket.html':
+            ticket = data['ticket']
+            component = ticket['component']
+            if ticket.exists and component:
+                wiki_resource = Resource('wiki', component)
+                if resource_exists(self.env, wiki_resource):
+                    add_ctxtnav(req, component, req.href.wiki(component),
+                                _("Go to Project's Wiki Page"))
+                else:
+                    self.env.log.warn('No wiki page for component "%s"'
+                                      % component)
         return template, data, content_type
 
     # INavigationContributor methods
