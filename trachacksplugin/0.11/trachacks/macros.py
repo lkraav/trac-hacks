@@ -11,10 +11,13 @@
 import re
 
 from genshi.builder import tag as builder
-from trac.resource import Resource, render_resource_link
+from trac.core import TracError
+from trac.resource import Resource, ResourceNotFound, render_resource_link
+from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
-from trac.wiki.formatter import wiki_to_html, wiki_to_oneliner
-from trac.wiki.macros import WikiMacroBase
+from trac.wiki.formatter import format_to_oneliner, wiki_to_html,\
+                                wiki_to_oneliner
+from trac.wiki.macros import WikiMacroBase, parse_args
 from trac.wiki.model import WikiPage
 
 from trachacks.util import natural_sort
@@ -263,3 +266,32 @@ class ListTracReleasesMacro(WikiMacroBase):
             dl(builder.dd(wiki_to_html(rel_title, self.env, req)))
 
         return dl
+
+
+class MaintainerMacro(WikiMacroBase):
+    """Returns the maintainer of a hack.
+
+    The macro accepts the hack name as an optional parameter. If not
+    specified, the context must be a wiki page and the hack name is inferred
+    from the wiki page name.
+    """
+
+    def expand_macro(self, formatter, name, args):
+        largs = parse_args(args)[0]
+        if len(largs) > 1:
+            raise TracError(_("Invalid number of arguments"))
+        resource = formatter.context.resource
+        if resource.realm == 'wiki' or largs and largs[0]:
+            id = largs[0] if largs and largs[0] else resource.id
+            from trac.ticket.model import Component
+            try:
+                component = Component(self.env, id)
+            except ResourceNotFound:
+                return builder.em(_('Component "%(name)s" does not exist',
+                                    name=id))
+            else:
+                maintainer = component.owner
+        else:
+            raise TracError(_("Hack name must be specified as argument when "
+                              "the context realm is not 'wiki'"))
+        return format_to_oneliner(self.env, formatter.context, maintainer)

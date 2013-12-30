@@ -45,4 +45,5 @@ setup(
         'TracVote >= 0.1',
         'SvnAuthzAdminPlugin',
         ],
+    test_suite='trachacks.tests.test_suite',
     )
