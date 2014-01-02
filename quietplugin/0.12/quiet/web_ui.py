@@ -1,6 +1,7 @@
 from trac.core import *
 from genshi.builder import tag
-from trac.web.chrome import add_script, add_stylesheet, add_ctxtnav
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, \
+                            add_ctxtnav
 from trac.web.chrome import ITemplateProvider
 from trac.web.main import IRequestFilter, IRequestHandler
 from trac.perm import IPermissionRequestor
@@ -68,8 +69,7 @@ class QuietBase(object):
 
 
 class QuietModule(Component,QuietBase):
-    implements(IRequestHandler, IRequestFilter,
-               ITemplateProvider, IPermissionRequestor)
+    implements(IRequestFilter, ITemplateProvider, IPermissionRequestor)
         
     # IPermissionRequestor methods  
     def get_permission_actions(self):
@@ -81,8 +81,7 @@ class QuietModule(Component,QuietBase):
         return [('quiet', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return []
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -98,19 +97,11 @@ class QuietModule(Component,QuietBase):
             href = req.href(MODE,'toggle')
             a = tag.a(self._get_label(req), href=href, id=MODE)
             add_ctxtnav(req, a)
-            add_script(req, '/quiet/quiet.html')
             add_script(req, 'quiet/quiet.js')
             add_stylesheet(req, 'quiet/quiet.css')
+            add_script_data(req, {'quiet': {'toggle': MODE,
+                                            'listen': LISTEN}})
         return template, data, content_type
-    
-    # IRequestHandler methods
-    def match_request(self, req):
-        return req.path_info.startswith('/quiet/')
-    
-    def process_request(self, req):
-        req.perm.require('QUIET_MODE')
-        return 'quiet.html', {'toggle':MODE,'listen':LISTEN}, 'text/javascript'
-
 
 class QuietAjaxModule(Component,QuietBase):
     implements(IRequestHandler)
