@@ -1,20 +1,20 @@
-var refresh = function(a,o){
+var refresh = function(a,o) {
     a.text(o.label);
     if (o.is_quiet)
       jQuery('body').addClass('quiet');
     else
       jQuery('body').removeClass('quiet');
-}
+};
 
-var listen = function(listeners){
+var listen = function(listeners) {
     for (var i=0; i!=listeners.length; i++){
         bind_and_ask(listeners[i]);
     }
-}
+};
 
-var bind_and_ask = function(listener){
+var bind_and_ask = function(listener) {
     var el = jQuery(listener.selector);
-    el.click(function(e){
+    el.click(function(e) {
         // first check if no need for action
         if ((listener.action == 'enter' && !jQuery('body').hasClass('quiet')) ||
             (listener.action == 'leave' && jQuery('body').hasClass('quiet'))) {
@@ -42,36 +42,36 @@ var bind_and_ask = function(listener){
             }
         }
     });
-}
+};
 
-var query = function(action){
+var query = function(action) {
     jQuery.ajax({
         'type': "GET",
         'url': get_url()+'/'+quiet['toggle']+'/'+action,
         'success': function(data){refresh(jQuery('#'+quiet['toggle']),data);},
         'error': function(r){alert("ERROR:\n\n"+r.responseText);}
     });
-}
+};
 
-var listeners = function(action){
+var listeners = function(action) {
     jQuery.ajax({
         'type': "GET",
         'url': get_url()+'/'+quiet['listen'],
         'success': function(data){listen(data);},
         'error': function(r){alert("ERROR:\n\n"+r.responseText);}
     });
-}
+};
 
-var get_url = function(){
+var get_url = function() {
     return jQuery('link[rel="search"]').attr('href').replace(/\/search/, '');
-}
+};
 
-jQuery(document).ready(function($){
+jQuery(document).ready(function($) {
     // set the visuals
     query('status');
     
     // toggle on link click
-    $('#'+quiet['toggle']).click(function(e){
+    $('#'+quiet['toggle']).click(function(e) {
         e.preventDefault();
         query('toggle');
         return false;
