@@ -26,7 +26,7 @@ LISTEN = 'quietlisten'
 
 # WARNING: dependency on Announcer plugin!
 class QuietEmailDistributor(EmailDistributor):
-    """"Specializes Announcer's email distributor to honor quiet mode."""
+    """Specializes Announcer's email distributor to honor quiet mode."""
     def distribute(self, transport, recipients, event):
         if hasattr(event, 'author') and self._is_quiet_mode(event.author):
             return
