@@ -45,6 +45,13 @@ osimons
 </p>
 ------------------------------
 ==============================
+[[Maintainer(MilestoneMacro)]]
+------------------------------
+<p>
+<em>none (needsadoption)</em>
+</p>
+------------------------------
+==============================
 [[Maintainer(TracHacksPlugin, owner)]]
 ------------------------------
 <p>
@@ -96,6 +103,9 @@ def setup(tc):
     component2.name = 'FullBlogPlugin'
     component2.owner = 'osimons'
     component2.insert()
+    component3 = Component(tc.env)
+    component3.name = 'MilestoneMacro'
+    component3.insert()
     ticket = Ticket(tc.env)
     ticket['summary'] = 'Ticket summary'
     ticket['reporter'] = 'hasienda'

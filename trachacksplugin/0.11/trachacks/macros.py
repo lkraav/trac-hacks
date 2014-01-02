@@ -294,6 +294,8 @@ class MaintainerMacro(WikiMacroBase):
                                     name=id))
             else:
                 maintainer = component.owner
+                if not maintainer:
+                    return builder.em(_("none (needsadoption)"))
         else:
             raise TracError(_("Hack name must be specified as argument when "
                               "the context realm is not 'wiki'"))
