@@ -15,8 +15,7 @@ from trac.core import TracError
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
-from trac.wiki.formatter import format_to_oneliner, wiki_to_html,\
-                                wiki_to_oneliner
+from trac.wiki.formatter import format_to_oneliner, format_to_html
 from trac.wiki.macros import WikiMacroBase, parse_args
 from trac.wiki.model import WikiPage
 
@@ -61,6 +60,7 @@ class ListHacksMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, args):
         req = formatter.req
+        context = formatter.context
         tag_system = TagSystem(self.env)
 
         all_releases = natural_sort(
@@ -129,8 +129,8 @@ class ListHacksMacro(WikiMacroBase):
             output.append(form)
 
         def link(resource):
-            return render_resource_link(self.env, formatter.context,
-                                        resource, 'compact')
+            return render_resource_link(self.env, context, resource,
+                                        'compact')
 
         for category in categories:
             page = WikiPage(self.env, category)
@@ -150,7 +150,8 @@ class ListHacksMacro(WikiMacroBase):
                 legend(builder.a(cat_title, href=self.env.href.wiki(category)))
                 fieldset(legend, '\n')
             if not hide_fieldset_description:
-                fieldset(builder.p(wiki_to_html(cat_body, self.env, req)))
+                fieldset(builder.p(format_to_html(self.env, context,
+                                                  cat_body)))
 
             ul = builder.ul('\n', class_='listtagged')
             query = 'realm:wiki (%s) %s %s' % \
@@ -173,7 +174,7 @@ class ListHacksMacro(WikiMacroBase):
                     if match.group(1):
                         description = match.group(1).strip()
 
-                li(wiki_to_oneliner(description, self.env, req=req))
+                li(format_to_oneliner(self.env, context, description))
                 if tags:
                     if hide_fieldset_legend is False and category in tags:
                         tags.remove(category)
@@ -209,6 +210,7 @@ class ListHackTypesMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, args):
         req = formatter.req
+        context = formatter.context
         add_stylesheet(req, 'hacks/css/trachacks.css')
 
         tag_system = TagSystem(self.env)
@@ -217,8 +219,8 @@ class ListHackTypesMacro(WikiMacroBase):
                                    tag_system.query(req, 'realm:wiki type')])
 
         def link(resource):
-            return render_resource_link(self.env, formatter.context,
-                                        resource, 'compact')
+            return render_resource_link(self.env, context, resource,
+                                        'compact')
 
         dl = builder.dl(class_='hacktypesmacro')
         for category in categories:
@@ -232,7 +234,7 @@ class ListHackTypesMacro(WikiMacroBase):
                 cat_body = page.text
             cat_body = self.self_extract.sub('', cat_body).strip()
             dl(builder.dt(link(Resource('wiki', category))))
-            dl(builder.dd(wiki_to_html(cat_body, self.env, req)))
+            dl(builder.dd(format_to_html(self.env, context, cat_body)))
 
         return dl
 
@@ -243,6 +245,7 @@ class ListTracReleasesMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, args):
         req = formatter.req
+        context = formatter.context
         add_stylesheet(req, 'hacks/css/trachacks.css')
 
         tag_system = TagSystem(self.env)
@@ -250,8 +253,8 @@ class ListTracReleasesMacro(WikiMacroBase):
                                  tag_system.query(req, 'realm:wiki release')])
 
         def link(resource):
-            return render_resource_link(self.env, formatter.context,
-                                        resource, 'compact')
+            return render_resource_link(self.env, context, resource,
+                                        'compact')
 
         dl = builder.dl(class_='tracreleasesmacro')
         for release in releases:
@@ -263,7 +266,7 @@ class ListTracReleasesMacro(WikiMacroBase):
                 rel_title = '%s' % release
 
             dl(builder.dt(link(Resource('wiki', release))))
-            dl(builder.dd(wiki_to_html(rel_title, self.env, req)))
+            dl(builder.dd(format_to_html(self.env, context, rel_title)))
 
         return dl
 
