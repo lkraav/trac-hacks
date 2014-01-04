@@ -276,7 +276,7 @@ The Macro accepts arguments as well:
                 elif lang_code == self.base_lang:
                     resargs += "||[[wiki:/%s]]||%s||Revision specified for base page\n" \
                         % (page, argstr)
-            elif arg != 'outdated':
+            elif arg != 'outdated' and arg != 'label_outdated':
                 resargs += "||[[wiki:/%s]]||%s||unknown argument '%s'='%s'||\n" \
                     % (page, argstr, arg, kw[arg])
         if lang_code != self.base_lang and not kw.has_key(u'revision') and not show:
