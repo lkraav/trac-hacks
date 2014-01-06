@@ -151,7 +151,8 @@ class smpEnvironmentSetupParticipant(Component):
             cursor.execute(sqlInsertVersion, [db_version, db_version_key])
 
             # Insert new column
-            cursor.execute("""ALTER TABLE smp_project ADD restrict text""")
+            cursor.execute("""ALTER TABLE smp_project ADD %s text"""
+                           % db.quote('restrict'))
             
             sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
             cursor.execute(sqlInsertVersion, [db_version, db_version_key])
