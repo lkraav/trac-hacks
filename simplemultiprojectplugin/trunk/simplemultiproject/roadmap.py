@@ -34,29 +34,30 @@ class SmpRoadmapProjectFilter(Component):
         if req.path_info.startswith('/roadmap'):
             filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
                 
-            if data and filter_projects and len(filter_projects) > 0:
-                milestones = data.get('milestones')
-                milestones_stats = data.get('milestone_stats')
-                
-                filtered_milestones = []
-                filtered_milestone_stats = []
-        
-                if milestones:
-                    for idx, milestone in enumerate(milestones):
-                        milestone_name = milestone.name
-                        project = self.__SmpModel.get_project_milestone(milestone_name)
-    
-                        if project and project[0] in filter_projects:
-                            filtered_milestones.append(milestone)
-                            filtered_milestone_stats.append(milestones_stats[idx])
-        
-                    data['milestones'] = filtered_milestones
-                    data['milestone_stats'] = filtered_milestone_stats
+            if data:
+                if filter_projects and len(filter_projects) > 0:
+                    milestones = data.get('milestones')
+                    milestones_stats = data.get('milestone_stats')
+                    
+                    filtered_milestones = []
+                    filtered_milestone_stats = []
             
-            if VERSION <= '0.12':
-                data['infodivclass'] = 'info'
-            else:
-                data['infodivclass'] = 'info trac-progress'
+                    if milestones:
+                        for idx, milestone in enumerate(milestones):
+                            milestone_name = milestone.name
+                            project = self.__SmpModel.get_project_milestone(milestone_name)
+        
+                            if project and project[0] in filter_projects:
+                                filtered_milestones.append(milestone)
+                                filtered_milestone_stats.append(milestones_stats[idx])
+            
+                        data['milestones'] = filtered_milestones
+                        data['milestone_stats'] = filtered_milestone_stats
+                
+                if VERSION <= '0.12':
+                    data['infodivclass'] = 'info'
+                else:
+                    data['infodivclass'] = 'info trac-progress'
 
         return template, data, content_type
 
