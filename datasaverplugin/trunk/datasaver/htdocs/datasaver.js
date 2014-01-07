@@ -63,10 +63,15 @@ function datasaver_savior(event)
     datasaver_save()
 }
 
-function datasaver_clear()
+function datasaver_clear_cookie()
 {
     var path = document.location.pathname
     document.cookie = '__FORMDATA__=; path=' + path + '; ';
+}
+
+function datasaver_clear_local()
+{
+    localStorage.removeItem( document.location.href + '__FORMDATA__' );
 }
 
 function datasaver_capture()
@@ -102,9 +107,7 @@ function datasaver_save(formdough)
     // Set a cookie in the document.
     if (formdough && formdough != datasaver_initial)
     {
-        var path = document.location.pathname
-        document.cookie = '__FORMDATA__=' + formdough + 
-            '; path=' + path + '; '
+	_datasaver_save(formdough);
     }
     else
     {
@@ -112,7 +115,18 @@ function datasaver_save(formdough)
     }
 }
 
-function datasaver_load()
+function _datasaver_save_cookie(formdough)
+{
+    var path = document.location.pathname
+    document.cookie = '__FORMDATA__=' + formdough + '; path=' + path + '; '
+}
+
+function _datasaver_save_local(formdough)
+{
+    localStorage.setItem( document.location.href + '__FORMDATA__', formdough );
+}
+
+function datasaver_load_cookie()
 {
     // Look for a FORMDATA cookie element.
     var dough = document.cookie
@@ -128,6 +142,11 @@ function datasaver_load()
         }
     }
     return formdough;
+}
+
+function datasaver_load()
+{
+    return localStorage.getItem( document.location.href + '__FORMDATA__' );
 }
 
 function datasaver_restore(formdough)
@@ -160,5 +179,18 @@ function datasaver_restore(formdough)
     {
         alert(_("No form data is available for restoration."))
     }
+}
+
+if( !!localStorage )
+{
+    datasaver_clear = datasaver_clear_local;
+    _datasaver_save = _datasaver_save_local;
+    datasaver_load = datasaver_load_local;
+}
+else
+{
+    datasaver_clear = datasaver_clear_cookie;
+    _datasaver_save = _datasaver_save_cookie;
+    datasaver_load = datasaver_load_cookie;
 }
 
