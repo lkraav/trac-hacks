@@ -144,7 +144,7 @@ function datasaver_load_cookie()
     return formdough;
 }
 
-function datasaver_load()
+function datasaver_load_local()
 {
     return localStorage.getItem( document.location.href + '__FORMDATA__' );
 }
