@@ -34,8 +34,6 @@ class LastModifiedMacro(WikiMacroBase):
     Examples:
      * `[[LastModified(WikiMacros)]]` produces: [[LastModified(WikiMacros)]]
      * `[[LastModified(WikiMacros,delta)]]` produces: [[LastModified(WikiMacros,delta)]]
-     * `[[LastModified]]` produces: [[LastModified]]
-     * `[[LastModified(delta)]]` produces: [[LastModified(delta)]]
     """
 
     def expand_macro(self, formatter, name, content):
