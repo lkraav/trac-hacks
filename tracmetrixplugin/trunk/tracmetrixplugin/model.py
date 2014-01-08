@@ -83,7 +83,7 @@ class ProgressTicketGroupStatsProvider(Component):
 
             cursor.execute("""
                 SELECT resolution, count(resolution) FROM ticket
-                WHERE status='closed' AND id IN (%s)"""
+                WHERE status='closed' AND id IN (%s) GROUP BY resolution"""
                 % ",".join(str_ids))
 
             resolution_count = {}
