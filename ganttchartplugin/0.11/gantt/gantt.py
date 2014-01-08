@@ -466,8 +466,8 @@ class GanttMacro(Component):
 
         ## column titles, centered horizontally and vertically:
         ## font could be "arial.ttf"
-	font_path = self.config.get('gantt', 'font_path')
-	font = ImageFont.truetype(font_path,12)
+	font_file = self.config.get('gantt', 'font_file')
+	font = ImageFont.truetype(font_file,12)
 	
         x = 0
         for i in range(cols):
