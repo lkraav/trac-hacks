@@ -39,11 +39,11 @@ import sys
 import re
 import inspect
 
+import yaml
 import getopt
+from PIL import Image, ImageDraw, ImageColor, ImageFont
 from dateutil.relativedelta import *
 from datetime import *
-import yaml
-import Image, ImageDraw, ImageColor, ImageFont
 
 from trac.core import *
 from trac.wiki.api import IWikiMacroProvider
@@ -76,14 +76,12 @@ class GanttMacro(Component):
         #self.log.info('processors: %s' % str(GanttMacro.processors))
         #self.log.info('formats: %s' % str(GanttMacro.formats))
 
-
     def get_macros(self):
         """Return an iterable that provides the names of the provided macros."""
         self.load_config()
         for p in ['.' + p for p in GanttMacro.processors] + ['']: 
             for f in ['/' + f for f in GanttMacro.formats] + ['']:
                 yield 'gantt%s%s' % (p, f)
-
 
     def get_macro_description(self, name):
         """
@@ -95,11 +93,11 @@ class GanttMacro(Component):
         else:
             return None
 
-
     def expand_macro(self, formatter, name, content):
-        """Called by the formatter when rendering the parsed wiki text. (since 0.11)
+        """Called by the formatter when rendering the parsed wiki text.
 
-	Should be used instead of render_macro to return the HTML output of the macro.
+        Should be used instead of render_macro to return the HTML output of
+        the macro.
 
         req - can be retrieved via formatter.context.req
         
@@ -145,7 +143,7 @@ class GanttMacro(Component):
         # first try with the RegExp engine
         try: 
             m = re.match('gantt\.?([a-z]*)\/?([a-z]*)', name)
-            (l_proc, l_out_format) = m.group(1, 2)
+            l_proc, l_out_format = m.group(1, 2)
 
         # or use the string.split method
         except:
@@ -160,7 +158,7 @@ class GanttMacro(Component):
             
         # assign default values, if instance ones are empty
         self.out_format = (self.out_format, l_out_format)[bool(len(l_out_format))]
-        self.processor  = (self.processor,  l_proc)      [bool(len(l_proc))]
+        self.processor  = (self.processor,  l_proc)[bool(len(l_proc))]
 
 
         if self.processor in GanttMacro.processors:
@@ -182,7 +180,7 @@ class GanttMacro(Component):
         else:
             sha_text = self.processor + content
 
-        sha_key  = hashlib.sha1(sha_text).hexdigest()
+        sha_key = hashlib.sha1(sha_text).hexdigest()
         img_name = '%s.%s.%s' % (sha_key, self.processor, self.out_format) # cache: hash.<dot>.<png>
         img_path = os.path.join(self.cache_dir, img_name)
         map_name = '%s.%s.map' % (sha_key, self.processor)       # cache: hash.<dot>.map
@@ -197,18 +195,20 @@ class GanttMacro(Component):
 
         #self.log.debug('render_macro.URL_in_graph: %s' % str(URL_in_graph))
         if URL_in_graph: # translate wiki TracLinks in URL
-            content = re.sub(r'URL\s*:\s*"(.*?)"', self.expand_wiki_links, content.decode(encoding)).encode(encoding)
-        try :
+            content = re.sub(r'URL\s*:\s*"(.*?)"', self.expand_wiki_links,
+                             content.decode(encoding)).encode(encoding)
+        try:
             data = yaml.load(content)
             mstart,mend = self.process_dates(data)
-            self.draw_chart(data,mstart,mend,img_path,80,20,False)
-        except yaml.YAMLError,  detail :
+            self.draw_chart(data,mstart, mend,img_path, 80, 20, False)
+        except yaml.YAMLError, detail:
             msg = "Data Loading Error: "
             if hasattr(detail, 'message'):
-                msg = msg + detail.message	    
+                msg = msg + detail.message
             if hasattr(detail, 'problem_mark'):
                 mark = detail.problem_mark
-                msg = msg + "<br />Error position: (%s:%s)" % (mark.line+1, mark.column+1)		
+                msg = msg + "<br />Error position: (%s:%s)" \
+                      % (mark.line+1, mark.column+1)
             return self.show_err(msg).getvalue()
             
         buf.write('<img src="%s/gantt/%s"/>' % (formatter.context.req.base_url, img_name))
@@ -258,18 +258,20 @@ class GanttMacro(Component):
             #Get optional configuration parameters from trac.ini.
 
             # check for the default processor - processor
-            self.processor = self.config.get('gantt', 'processor', GanttMacro.processors[0])
+            self.processor = self.config.get('gantt', 'processor',
+                                             GanttMacro.processors[0])
             #self.log.debug('self.processor: %s' % self.processor)
 
             # check for the default output format - out_format
-            self.out_format = self.config.get('gantt', 'out_format', GanttMacro.formats[0])
+            self.out_format = self.config.get('gantt', 'out_format',
+                                              GanttMacro.formats[0])
             #self.log.debug('self.out_format: %s' % self.out_format)
 
             # check if we should run the cache manager
             self.cache_manager = self.boolean(self.config.get('gantt', 'cache_manager', False))
             if self.cache_manager:
-                self.cache_max_size  = int(self.config.get('gantt', 'cache_max_size',  10000000))
-                self.cache_min_size  = int(self.config.get('gantt', 'cache_min_size',  5000000))
+                self.cache_max_size = int(self.config.get('gantt', 'cache_max_size',  10000000))
+                self.cache_min_size = int(self.config.get('gantt', 'cache_min_size',  5000000))
                 self.cache_max_count = int(self.config.get('gantt', 'cache_max_count', 2000))
                 self.cache_min_count = int(self.config.get('gantt', 'cache_min_count', 1500))
 
@@ -287,7 +289,6 @@ class GanttMacro(Component):
 
         return trouble, buf
 
-
     def show_err(self, msg):
         """Display msg in an error box, using Trac style."""
         buf = StringIO()
@@ -297,7 +298,6 @@ class GanttMacro(Component):
                    </div></div>' % escape(msg))
         self.log.error(msg)
         return buf
-
 
     def clean_cache(self):
         """
@@ -369,7 +369,7 @@ class GanttMacro(Component):
         return bool(value)
 
 
-    MIME_TYPES = ('application/gantt')
+    MIME_TYPES = 'application/gantt'
 
     # IHTMLPreviewRenderer methods
     
@@ -384,11 +384,9 @@ class GanttMacro(Component):
         text = hasattr(content, 'read') and content.read() or content
         return self.render_macro(req, name, text)
 
-
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/gantt')
-
 
     def process_request(self, req):
         # check and load the configuration
@@ -409,18 +407,19 @@ class GanttMacro(Component):
 
 
     # Gantt Drawing code
-    def draw_chart(self,data,mstart,mend,outfilename,cellW,cellH,verbose) :
+    def draw_chart(self, data, mstart, mend, outfilename, cellW, cellH, verbose):
         # Calculate scale days 
         scale_days = (mend - mstart).days
         pixels_per_day = cellW / 30
 
-        titles = [];
-        monthdays = [];
+        titles = []
+        monthdays = []
         cur = mstart
-        while (cur <= mend) :
+        while cur <= mend:
             stitle = cur.strftime("%Y-%m")
             titles.append(stitle)
-            monthdays.append((self.datefromstr(stitle) + relativedelta(months=+1,days=-1)).day)
+            monthdays.append((self.datefromstr(stitle) +
+                              relativedelta(months=+1,days=-1)).day)
             cur = cur + relativedelta(months=+1)
             
         # Render graphic
@@ -431,7 +430,6 @@ class GanttMacro(Component):
         #cellH = 20         # cell height
         lftColW = 150      # width of left column (task names)
         topRowH = 25       # height top row (month names)
-
 
         # calculate image size and define the canvas:
         imgH = topRowH + (cellH * rows)
@@ -463,26 +461,25 @@ class GanttMacro(Component):
         for y in range(topRowH, imgH, cellH):
             draw.line((0, y, imgW, y),fill="black")
 
-
         ## column titles, centered horizontally and vertically:
         ## font could be "arial.ttf"
-	font_file = self.config.get('gantt', 'font_file')
-	font = ImageFont.truetype(font_file,12)
-	
+        font_file = self.config.get('gantt', 'font_file')
+        font = ImageFont.truetype(font_file,12)
+
         x = 0
         for i in range(cols):
             xpos = monthdays[i] * pixels_per_day
             tsizeX,tsizeY = font.getsize(titles[i])
             draw.text( (lftColW + x
                     + (xpos - tsizeX)/2, # left
-                    (topRowH - tsizeY )),                         # top
+                    (topRowH - tsizeY )), # top
                     titles[i],
                     font = font, fill="black")
             x = x + xpos
 
 
         now = datetime.now()
-        if ((now - mstart).days > 0) :
+        if (now - mstart).days > 0:
             ## draw "past" shading first, so it goes on bottom:
             draw.rectangle((lftColW,topRowH, lftColW 
                 + ((now - mstart).days * pixels_per_day), imgH),
@@ -500,85 +497,82 @@ class GanttMacro(Component):
                 data[k]["title"],
                 font=font, fill="black")
 
-            rect = (lftColW + (data[k]["start_days"].days * pixels_per_day), # left
-                topRowH + (i * cellH),           # top
-                lftColW + (data[k]["end_days"].days * pixels_per_day),   # right
-                topRowH + ((i+1) * cellH))       # bottom
-            if (verbose) :
+            rect = (lftColW + (data[k]["start_days"].days * pixels_per_day),
+                    topRowH + (i * cellH),
+                    lftColW + (data[k]["end_days"].days * pixels_per_day),
+                    topRowH + ((i+1) * cellH))
+            if verbose:
                 print data[k]["title"],rect
                 
             # Draw task duration sized box
-            if ("color" in data[k].keys()) :
+            if "color" in data[k].keys():
                 colorname = data[k]["color"]
-            else :
+            else:
                 colorname = "green"
-            # colorname = data[k].keys()
             draw.rectangle(rect,
               outline="black",
               fill=ImageColor.getrgb(colorname)
              )
-            i = i + 1
+            i += 1
             
 
         ## redraw outer border
-        draw.rectangle((0, 0, imgW-1, imgH-1),outline="black")
+        draw.rectangle((0, 0, imgW-1, imgH-1), outline="black")
         im.save(outfilename)
-        draw = None
-        im = None
 
-    def process_dates(self,data) :
-        startdates = enddates = [];
+    def process_dates(self,data):
+        startdates = enddates = []
         keylist = data.keys()
         keylist.sort()
-        for k in keylist :
+        for k in keylist:
             row = data[k]
             days = 0.0
             start = self.datefromstr(row["start"])
             row["startdt"] = start
-            if ("end" in row.keys()) :
+            if "end" in row.keys():
                 row["enddt"] = self.datefromstr(row["end"])
 
-            if (not "enddt" in row.keys()) :
-                if ("w" in row["dur"].lower())  :
-                    days = float(row["dur"].lower().replace("w",""))*7.0
-                if ("d" in row["dur"].lower()) :
-                    days = float(row["dur"].lower().replace("d",""))
+            if not "enddt" in row.keys():
+                if "w" in row["dur"].lower():
+                    days = float(row["dur"].lower().replace("w", "")) * 7.0
+                if "d" in row["dur"].lower():
+                    days = float(row["dur"].lower().replace("d", ""))
                 row["enddt"] = timedelta(days) + start
             
             startdates.append(row["startdt"] .strftime("%Y-%m"))
             enddates.append(row["enddt"] .strftime("%Y-%m"))
 
-        mstart  = self.datefromstr(min(startdates))
-        mend  = self.datefromstr(max(enddates))
+        mstart = self.datefromstr(min(startdates))
+        mend = self.datefromstr(max(enddates))
 
         cur = mstart
-        while 1 :
+        while 1:
             cur = cur + relativedelta(months=+1)
-            if (cur > mend) :
+            if cur > mend:
                 break
         # Set ending range to next month after max end date
         mend = cur
 
-        for k in data.keys() :
+        for k in data.keys():
             row = data[k]
             dur_days = row["enddt"] - row["startdt"] 
             row["start_days"] = row["startdt"] - mstart
             row["end_days"] = row["enddt"] - mstart
 
-        return mstart,mend
+        return mstart, mend
 
-    def datefromstr(self,sDate) :
+    def datefromstr(self, sDate):
         tmp = sDate.split("-")
-        if len(tmp) > 2 :
-            d = datetime(int(tmp[0]),int(tmp[1]),int(tmp[2]))
+        if len(tmp) > 2:
+            d = datetime(int(tmp[0]), int(tmp[1]), int(tmp[2]))
             return d
 
-        if len(tmp) > 1 :
-            d = datetime(int(tmp[0]),int(tmp[1]),1)
+        if len(tmp) > 1:
+            d = datetime(int(tmp[0]), int(tmp[1]), 1)
             return d
 
     # from http://mail.python.org/pipermail/image-sig/2004-December.txt 
-    def IntelliDraw(self,drawer,text,font,containerWidth):
+    def IntelliDraw(self, drawer, text, font, containerWidth):
         words = text.split()  
         lines = [] # prepare a return argument
         lines.append(words) 
@@ -590,87 +584,88 @@ class GanttMacro(Component):
             innerFinished = False
             while not innerFinished:
                 #print 'thistext: '+str(thistext)
-                if drawer.textsize(' '.join(thistext),font)[0] > containerWidth:
+                if drawer.textsize(' '.join(thistext), font)[0] > containerWidth:
                     # this is the heart of the algorithm: we pop words off the current
                     # sentence until the width is ok, then in the next outer loop
                     # we move on to the next sentence. 
-                    newline.insert(0,thistext.pop(-1))
+                    newline.insert(0, thistext.pop(-1))
                 else:
                     innerFinished = True
             if len(newline) > 0:
                 lines.append(newline)
-                line = line + 1
+                line += 1
             else:
                 finished = True
         tmp = []        
         for i in lines:
-            tmp.append( ' '.join(i) )
+            tmp.append(' '.join(i))
         lines = tmp
-        (width,height) = drawer.textsize(lines[0],font)            
-        return (lines,width,height)
-
-def main()  : 
-	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hvo", ["help", "verbose", "outfile=","infile="])
-	except getopt.GetoptError, err:
-		# print help information and exit:
-		print str(err) # will print something like "option -a not recognized"
-		usage(2)
-
-	verbose = False
-	outfilename = "test.png"
-	infile = None
-	
-	for o, a in opts:
-		if o in ("-v", "--verbose"):
-			verbose = True
-		elif o in ("-h", "--help"):
-			usage(0)
-			sys.exit()
-		elif o in ("-o", "--outfile"):
-			outfilename = a 
-		elif o in ("--infile"):
-			infile = open(a,"r") 
-		else:
-			assert False, "unhandled option"
-	if (not infile) :
-		infile = sys.stdin
-	try :
-		data = yaml.load(infile)
-	except yaml.YAMLError,  detail :
-		msg = "Data Loading Error: "
-                if hasattr(detail, 'message'):
-			msg = msg + detail.message
-		if hasattr(detail, 'problem_mark'):
-			mark = detail.problem_mark
-			msg = msg + "\nError position: (%s:%s)" % (mark.line+1, mark.column+1)		
-		print msg
-		sys.exit(0)
-		
-	if (verbose) : 
-		print "input"
-		print yaml.dump(data)
-
-	from trac.core import ComponentManager, ComponentMeta
-	compmgr = ComponentManager()
-	# Make sure we have no external components hanging around in the
-	# component registry
-	old_registry = ComponentMeta._registry
-	ComponentMeta._registry = {}
+        width, height = drawer.textsize(lines[0],font)
+        return lines, width, height
 
 
-	xx = GanttMacro(compmgr)
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hvo", ["help", "verbose", "outfile=","infile="])
+    except getopt.GetoptError, err:
+        # print help information and exit:
+        print str(err) # will print something like "option -a not recognized"
+        usage(2)
 
-	start,end = xx.process_dates(data)
+    verbose = False
+    outfilename = "test.png"
+    infile = None
 
-	if (verbose) : 
-		print "min start %s" % start
-		print "max end %s" % end
-		print "processed"
-		print yaml.dump(data)
+    for o, a in opts:
+        if o in ("-v", "--verbose"):
+            verbose = True
+        elif o in ("-h", "--help"):
+            usage(0)
+            sys.exit()
+        elif o in ("-o", "--outfile"):
+            outfilename = a
+        elif o in "--infile":
+            infile = open(a,"r")
+        else:
+            assert False, "unhandled option"
+    if not infile:
+        infile = sys.stdin
+    try :
+        data = yaml.load(infile)
+    except yaml.YAMLError,  detail:
+        msg = "Data Loading Error: "
+        if hasattr(detail, 'message'):
+            msg = msg + detail.message
+        if hasattr(detail, 'problem_mark'):
+            mark = detail.problem_mark
+            msg = msg + "\nError position: (%s:%s)" \
+                  % (mark.line + 1, mark.column + 1)
+        print msg
+        sys.exit(0)
+
+    if verbose:
+        print "input"
+        print yaml.dump(data)
+
+    from trac.core import ComponentManager, ComponentMeta
+    compmgr = ComponentManager()
+    # Make sure we have no external components hanging around in the
+    # component registry
+    old_registry = ComponentMeta._registry
+    ComponentMeta._registry = {}
 
 
-	xx.draw_chart(data,start,end,outfilename,80,20,verbose)
+    xx = GanttMacro(compmgr)
+
+    start, end = xx.process_dates(data)
+
+    if verbose:
+        print "min start %s" % start
+        print "max end %s" % end
+        print "processed"
+        print yaml.dump(data)
+
+    xx.draw_chart(data,start,end,outfilename,80,20,verbose)
 
 
 def usage(code, msg=''):
@@ -683,4 +678,3 @@ def usage(code, msg=''):
 # Start here 
 if __name__ == "__main__":
     main()
-    
