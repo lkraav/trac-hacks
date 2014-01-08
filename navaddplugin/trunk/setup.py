@@ -10,7 +10,7 @@
 from setuptools import setup
 
 setup(name='NavAdd',
-      version='0.2',
+      version='0.3',
       packages=['navadd'],
       author='Michael Renzmann',
       author_email='mrenzmann@otaku42.de',
