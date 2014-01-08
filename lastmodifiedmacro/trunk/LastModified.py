@@ -12,6 +12,7 @@ from trac.core import TracError
 from trac.resource import get_resource_name
 from trac.util.datefmt import format_datetime, to_datetime
 from trac.util.html import Markup
+from trac.util.translation import _
 from trac.wiki.macros import WikiMacroBase, parse_args
 
 revision = "$Rev$"
@@ -33,21 +34,28 @@ class LastModifiedMacro(WikiMacroBase):
     Examples:
      * `[[LastModified(WikiMacros)]]` produces: [[LastModified(WikiMacros)]]
      * `[[LastModified(WikiMacros,delta)]]` produces: [[LastModified(WikiMacros,delta)]]
+     * `[[LastModified]]` produces: [[LastModified]]
+     * `[[LastModified(delta)]]` produces: [[LastModified(delta)]]
     """
 
     def expand_macro(self, formatter, name, content):
 
         args, kwargs = parse_args(content)
-        
+
+        mode = 'normal'
         if not args:
             page_name = get_resource_name(self.env, formatter.resource)
-            mode = 'normal'
         elif len(args) == 1:
-            page_name = args[0]
-            mode = 'normal'
-        else:
-            page_name = args[0]
+            if args[0].strip() == "delta":
+                page_name = get_resource_name(self.env, formatter.resource)
+                mode = args[0].strip()
+            else:
+                page_name = args[0].strip()
+        elif len(args) == 2:
+            page_name = args[0].strip()
             mode = 'delta'
+        else:
+            raise TracError(_("Invalid number of arguments."))
 
         db = self.env.get_db_cnx()
         cursor = db.cursor()
