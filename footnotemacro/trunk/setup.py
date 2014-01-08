@@ -35,4 +35,5 @@ setup(
             'footnotemacro.macro = footnotemacro.macro',
         ]
     },
+    test_suite = 'footnotemacro.tests.test_suite',
 )
