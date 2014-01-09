@@ -4,7 +4,7 @@ from trac.wiki.formatter import wiki_to_html
 from time import clock
 import re
 
-CAMEL     = r"!?(?<!/|\?)\b[A-Z][a-z]+(?:[A-Z][a-z]*[a-z/])+" + \
+CAMEL     = r"!?(?<!/|\?|#)\b[A-Z][a-z]+(?:[A-Z][a-z]*[a-z/])+" + \
              "(?:#[A-Za-z0-9]+)?(?=\Z|\s|[.,;:!?\)}\]])"
 FANCY     = r"(\[wiki:([^\] ]+) *.*?\])"
 EXCLUDE   = r"(?s)(`[^`]*`)|(\[.*?\])|({{{.*?}}})"
