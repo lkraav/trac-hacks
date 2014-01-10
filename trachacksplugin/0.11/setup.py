@@ -14,6 +14,12 @@ from setuptools import setup
 setup(
     name='TracHacks',
     version='3.0',
+    author='Alex Thomas',
+    maintainer='Michael Renzmann',
+    maintainer_email='mrenzmann@otaku42.de',
+    description='Customizations of the trac-hacks site.',
+    license='BSD 3-Clause',
+    url='http://trac-hacks.org/wiki/TracHacksPlugin',
     packages=['trachacks'],
     package_data={
         'trachacks': [
@@ -21,12 +27,6 @@ setup(
             'htdocs/css/*.css', 'htdocs/*.gif',
             ]
         },
-    author='Alex Thomas',
-    maintainer='Michael Renzmann',
-    maintainer_email='mrenzmann@otaku42.de',
-    description='Customizations of the trac-hacks site.',
-    license='BSD 3-Clause',
-    url='http://trac-hacks.org/wiki/TracHacksPlugin',
     dependency_links=[
         'http://trac-hacks.org/svn/tagsplugin/trunk#egg=TracTags-0.6',
         'http://trac-hacks.org/svn/accountmanagerplugin/trunk#egg=TracAccountManager',
