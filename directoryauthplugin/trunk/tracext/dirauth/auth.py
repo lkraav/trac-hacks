@@ -426,7 +426,7 @@ class DirAuthStore(Component):
       
           # --  Check database
           cur = db.cursor()
-          cur.execute("""SELECT lut,data FROM ad_cache WHERE id=%s""", [key])
+          cur.execute("""SELECT lut,data FROM dir_cache WHERE id=%s""", [key])
           row = cur.fetchone()
           if row:      
             lut, data = row
@@ -439,7 +439,7 @@ class DirAuthStore(Component):
             else: 
               # -- old data, delete it and anything else that's old.
               lut = str(current_time - int(self.cache_ttl)) 
-              cur.execute("""DELETE FROM ad_cache WHERE lut < %s""", [lut])
+              cur.execute("""DELETE FROM dir_cache WHERE lut < %s""", [lut])
               db.commit()
       else:
         self.log.debug('_dir_search: skipping cache.')
@@ -468,7 +468,7 @@ class DirAuthStore(Component):
       res_str = cPickle.dumps(res, 0)
       try:
           cur = db.cursor()
-          cur.execute("""INSERT OR REPLACE INTO ad_cache (id, lut, data) 
+          cur.execute("""INSERT OR REPLACE INTO dir_cache (id, lut, data) 
                          VALUES (%s, %s, %s)""", [str(key), int(current_time), buffer(res_str)])
           db.commit()
            
