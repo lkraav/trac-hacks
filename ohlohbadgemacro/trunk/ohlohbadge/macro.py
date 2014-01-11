@@ -19,8 +19,5 @@ class OhlohBadgeMacro(WikiMacroBase):
     
     def expand_macro(self, formatter, name, content, args=None):
         content = content.strip()
-        if not content.isdigit():
-            return system_message('Invalid Ohloh project ID',
-                                  '%s is not a number' % content)
         return tag.script('', src=self.SCRIPT_LOCATION % content,
                           type='text/javascript')
