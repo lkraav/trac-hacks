@@ -96,7 +96,7 @@ class IniEditorBasicSecurityManager(Component):
       if level != ACCESS_HIDDEN and level != ACCESS_READONLY and level != ACCESS_MODIFIABLE:
         self.log.warning('Invalid restriction level for ' + restriction_on + ': ' + level)
         continue
-        
+
       if parts[0] not in self.restrictions:
         self.restrictions[parts[0]] = { parts[1]: level }
       else:
@@ -109,7 +109,7 @@ class IniEditorBasicSecurityManager(Component):
     changed), ACCESS_READONLY (option can be seen but not changed), or
     ACCESS_MODIFIABLE (option can be seen and changed).
     """
-    section_restrictions = self.restrictions.get(section_name, None)
+    section_restrictions = self.restrictions.get(section_name.lower(), None)
     if section_restrictions is None:
       return self.default_access
     
