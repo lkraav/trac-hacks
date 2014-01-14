@@ -33,3 +33,10 @@ class TypedTicketWorkflow(ConfigurableTicketWorkflow):
             else:
                 filtered_actions.append((default, action_name))
         return filtered_actions
+
+    def get_actions_by_operation_for_req(self, req, ticket, operation):
+        actions = ConfigurableTicketWorkflow \
+                  .get_actions_by_operation_for_req(self, req, ticket,
+                                                    operation)
+        actions = self.filter_actions(actions, ticket)
+        return actions
