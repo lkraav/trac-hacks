@@ -75,7 +75,7 @@ class TicketTeamDispatcherAdmin(Component):
                         teams.remove(item)
                         self.set_teams(teams)
 
-        return 'ttd_admin.html', {
+        return 'team_dispatcher_admin.html', {
             'teams': teams,
             'users': users,
             'caption': caption
