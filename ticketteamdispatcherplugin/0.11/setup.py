@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2008-2009 Alexander von Bremen-Kuehne
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 from setuptools import setup
 
 PACKAGE = 'TicketTeamDispatcher'
@@ -9,7 +17,7 @@ setup(
     version=VERSION,
     packages=[PACKAGE_SHORT],
     package_data={PACKAGE_SHORT: ['templates/*.html']},
-    author_email = 'Alexander von Bremen-Kuehne',
+    author = 'Alexander von Bremen-Kuehne',
     url = 'http://trac-hacks.org/wiki/TicketTeamDispatcherPlugin',
     license = 'GPLv2 or later',
     description = 'Sends mails on ticket-creation to specified addresses according to the selected team.',

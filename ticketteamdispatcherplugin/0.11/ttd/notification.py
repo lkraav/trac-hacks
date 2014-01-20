@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2008-2009 Alexander von Bremen-Kuehne
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 from trac.config import *
 from trac.ticket.notification import TicketNotifyEmail
 
