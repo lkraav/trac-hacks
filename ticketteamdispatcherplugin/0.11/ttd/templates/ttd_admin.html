@@ -6,98 +6,94 @@
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:i18n="http://genshi.edgewall.org/i18n">
   <xi:include href="admin.html" />
+  <head>
+    <title>Ticket Team Dispatcher</title>
+  </head>
 
-<head><title>Ticket Team Dispatcher</title>
-<script language="JavaScript">
-<!--
-function addNewLine() {
-    document.forms['ttd'].action.value = "newLine";
-    document.forms['ttd'].submit();
-}
-//-->
-</script>
-</head>
-<body>
+  <body>
+    <h2>Manage Ticket Teams</h2>
 
-<h2>Ticket Team Dispatcher: Administration</h2>
-<hr />
-<h3>Ticket Team Dispatcher Field Caption</h3>
-  <form id="ttd" action="ttd" method="post">
-  <table>
-      <tr>
-          <td><label for="caption">Caption of the field:</label></td>
-            <td><input type="text" name="caption" value="$caption" /></td>
-      </tr>
-  </table>
-    <input type="hidden" name="action" value="rename" />
-    <input type="submit" name="save" value="Save" />
-</form>
-  <hr />
-<h3>Add a new team</h3>	
-    <form id="ttd" action="ttd" method="post">
-  <table>
-    <tr>
-      <td>Name</td>
-      <td><input type="text" name="newTeam" /></td>
-    </tr>
-  </table>
-    <br />
-    <input type="hidden" name="action" value="add" />
-    <input type="submit" name="save" value="Add" />
-</form>
-  <hr />
-<h3>Administrate teams</h3>
-  <table>
-    <py:for each="team in teams">
-      <tr>
-          <td>
-            <py:if test="editRow == team">
-            <input type="text" name="team" value="$team"/>
-            </py:if>
-            <py:if test="editRow != team">
-            $team
-            </py:if>
-          </td>
-          <td><a href="ttd?action=up&amp;id=$team">Up</a></td>
-          <td><a href="ttd?action=down&amp;id=$team">Down</a></td>
-          <!--<td><a href="ttd?action=edit&amp;editRow=$team.name">Edit</a></td>//-->
-          <td><a href="ttd?action=delete&amp;id=$team">Delete</a></td>
-      </tr>
-      </py:for>
-  </table>
-    <br />
-<hr />
-<h3>Administrate Users and Teams</h3>
-    <form id="ttd" action="ttd" method="post">
-<table>
-  <tr>
-    <td></td>
-    <py:for each="team in teams">
-      <td>$team</td>
-    </py:for>
-  </tr>
-    <py:for each="user in users">
-  <tr>
-    <td>
-      $user.username
-    </td>
-    <py:for each="team in teams">
-      <td>
-            <py:if test="user[team] == '1'">
-                <input type="checkbox" checked="true" value="true" name="${user.username}_$team" />
-            </py:if>
-            <py:if test="user[team] == '0'">
-                <input type="checkbox" value="true" name="${user.username}_$team" />
-            </py:if>
+    <form id="modcaption" class="addnew" method="post" action="">
+      <fieldset>
+        <legend>Edit Caption:</legend>
+        <label>Name:
+          <input type="text" name="caption" value="$caption" />
+        </label>
+        <div class="buttons">
+          <input type="hidden" name="action" value="rename" />
+          <input type="submit" value="${_('Save')}" />
+        </div>
+      </fieldset>
+    </form>
+
+    <form id="addteam" class="addnew" method="post" action="">
+      <fieldset>
+        <legend>Add Team:</legend>
+        <div class="field">
+          <label>Name:
+            <input type="text" name="team" />
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="hidden" name="action" value="addteam" />
+          <input type="submit" value="${_('Add')}" />
+        </div>
+      </fieldset>
+    </form>
+
+    <form id="addsubject" class="addnew" method="post" action="">
+      <fieldset>
+        <legend>Add Subject to Team:</legend>
+        <div class="field">
+          <label>Subject:
+            <select id="subject" name="subject">
+              <option py:for="user in sorted(users)">$user.username</option>
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <label>Subject:
+            <select id="team" name="team">
+              <option py:for="team in sorted(teams)">$team</option>
+            </select>
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="hidden" name="action" value="addtoteam" />
+          <input type="submit" name="save" value="${_('Add')}" />
+        </div>
+      </fieldset>
+    </form>
+
+    <h3>Team Membership</h3>
+    <form method="post" action="">
+      <table id="teamlist" class="listing">
+        <thead>
+          <tr><th>Team</th><th>Subject</th></tr>
+        </thead>
+        <tbody>
+          <tr py:for="team in sorted(teams)">
+            <td>
+              <label>
+                <input type="checkbox" name="sel"
+                       value="${team}"/> $team
+              </label>
             </td>
-    </py:for>
-  </tr>
-    </py:for>
-</table>
-    <input type="hidden" name="action" value="updateUsers" />
-    <input type="submit" name="save" value="Save" />
-</form>
+            <td>
+              <label py:for="user in sorted(users, key=lambda u: u.username)" py:if="user[team] == '1'">
+                <input type="checkbox" name="sel"
+                       value="${'%s:%s' % (user.username, team)}"/> $user.username
+              </label>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-</body>
+      <div class="buttons">
+        <input type="hidden" name="action" value="remove" />
+        <input type="submit" id="remove" value="${_('Remove selected items')}" />
+      </div>
+    </form>
+  </body>
 
 </html>
