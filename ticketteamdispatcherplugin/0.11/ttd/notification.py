@@ -6,18 +6,18 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from trac.config import *
 from trac.ticket.notification import TicketNotifyEmail
 
-from tracusermanager.api import UserManager, User
+from tracusermanager.api import UserManager
+
 
 class SpecialTicketNotifyEmail(TicketNotifyEmail):
     """Special Notification of ticket changes."""
     __team = None
     
     def notify(self, ticket, newticket=True, modtime=None):
-        self.__team = ticket["ttd"]
-        if self.__team != None:
+        self.__team = ticket['ttd']
+        if self.__team is not None:
             TicketNotifyEmail.notify(self, ticket, newticket, modtime)
         else:
             self.env.log.warning("Ticket has no custom field called 'ttd'!")
@@ -28,5 +28,6 @@ class SpecialTicketNotifyEmail(TicketNotifyEmail):
         for user in UserManager(self.env).get_active_users():
             if user[self.__team] == '1':
                 recipients.append(user['email'])
-                #self.env.log.warning('Whhich is %s %s.' % (user.username, user['email']))
-        return (recipients, [])
+                #self.env.log.warning('Which is %s %s.' #
+                #                     % (user.username, user['email']))
+        return recipients, []

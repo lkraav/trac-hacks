@@ -9,8 +9,8 @@
 from trac.core import Component, implements
 from trac.ticket.api import ITicketChangeListener
 
-#local
 from notification import SpecialTicketNotifyEmail
+
 
 class TicketTeamDispatcher(Component):
     implements(ITicketChangeListener)
