@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2008-2009 Alexander von Bremen-Kuehne
+# Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -8,7 +9,8 @@
 
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
-from trac.web.chrome import ITemplateProvider
+from trac.util.translation import _
+from trac.web.chrome import ITemplateProvider, add_warning
 
 from tracusermanager.api import UserManager
 
@@ -34,61 +36,49 @@ class TicketTeamDispatcherAdmin(Component):
         teams = self.get_teams()
                 
         if action:
-            # load data from post
             if action == 'rename':
                 caption = req.args.get('caption')
                 self.set_caption(caption)
-            elif action == 'add':
-                new_team = req.args.get('newTeam')
-                
-                can_add = True
-                for team in teams:
-                    if team == new_team:
-                        can_add = False
-                        break
-                
-                if can_add:
-                    teams.append(new_team)
-                    for user in users:
-                        user[new_team] = '0'
+
+            elif action == 'addteam':
+                new_team = req.args.get('team')
+                if new_team:
+                    if new_team not in teams:
+                        teams.append(new_team)
+                        self.set_teams(teams)
+                    else:
+                        add_warning(req, _('Team "%(team)s" already exists',
+                                           team=new_team))
+
+            elif action == 'addtoteam':
+                team = req.args.get('team')
+                username = req.args.get('subject')
+                for user in users:
+                    if user.username == username:
+                        user[team] = '1'
                         user.save()
-                    self.set_teams(teams)
-            elif action == 'up':
-                id = req.args.get('id')
-                i = teams.index(id)
-                if i > 0:
-                    tmp = teams[i-1]
-                    teams[i-1] = teams[i]
-                    teams[i] = tmp
-                    self.set_teams(teams)
-            elif action == 'down':
-                id = req.args.get('id')
-                i = teams.index(id)
-                if i < len(teams)-1:
-                    tmp = teams[i+1]
-                    teams[i+1] = teams[i]
-                    teams[i] = tmp
-                    self.set_teams(teams)
-            elif action == 'delete':
-                id = req.args.get('id')
-                teams.remove(id)
-                for user in users:
-                    del user[id]
-                    user.save()
-                self.set_teams(teams)
-            elif action == 'updateUsers':
-                for user in users:
-                    for team in teams:
-                        if req.args.get('%s_%s' % (user.username, team)):
-                            user[team] = '1'
-                        else:
-                            user[team] = '0'
-                    user.save()
+
+            elif action == 'remove':
+                sel = req.args.get('sel')
+                sel = sel if isinstance(sel, list) else [sel]
+                for item in sel:
+                    if ':' in item:
+                        username, team = item.split(':', 1)
+                        for user in users:
+                            if user.username == username:
+                                user[team] = '0'
+                                user.save()
+                    else:
+                        for user in users:
+                            del user[item]
+                            user.save()
+                        teams.remove(item)
+                        self.set_teams(teams)
 
         return 'ttd_admin.html', {
-            'teams' : teams,
-            'users' : users,
-            'caption' : caption
+            'teams': teams,
+            'users': users,
+            'caption': caption
         }
 
     # INavigationContributor methods
