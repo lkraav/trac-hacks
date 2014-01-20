@@ -101,7 +101,7 @@ class TicketTeamDispatcherAdmin(Component):
             Return the absolute path of the directory containing the provided
             templates
         """
-        return [resource_filename(__name__, 'tpl')]
+        return [resource_filename(__name__, 'templates')]
 
     def get_htdocs_dirs(self):
         """

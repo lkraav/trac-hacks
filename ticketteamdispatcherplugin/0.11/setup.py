@@ -11,7 +11,7 @@ setup(
     name=PACKAGE,
     version=VERSION,
     packages=[PACKAGE_SHORT],
-    package_data={PACKAGE_SHORT: ['tpl/*']},
+    package_data={PACKAGE_SHORT: ['templates/*.html']},
     author_email = 'Alexander von Bremen-Kuehne',
     url = 'http://trac-hacks.org/wiki/TicketTeamDispatcherPlugin',
     license = 'GPLv2 or later',
