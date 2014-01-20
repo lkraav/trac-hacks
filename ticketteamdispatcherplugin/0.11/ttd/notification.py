@@ -18,7 +18,8 @@ class SpecialTicketNotifyEmail(TicketNotifyEmail):
     def notify(self, ticket, newticket=True, modtime=None):
         self.__team = ticket['ttd']
         if self.__team is not None:
-            TicketNotifyEmail.notify(self, ticket, newticket, modtime)
+            super(SpecialTicketNotifyEmail, self) \
+                .notify(ticket, newticket, modtime)
         else:
             self.env.log.warning("Ticket has no custom field called 'ttd'!")
     
