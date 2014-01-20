@@ -5,7 +5,7 @@ pkg_resources.require("TracUserManagerPlugin>=0.4")
 
 PACKAGE = 'TicketTeamDispatcher'
 PACKAGE_SHORT = 'ttd'
-VERSION = '0.2'
+VERSION = '0.3'
 
 setup(
     name=PACKAGE,
