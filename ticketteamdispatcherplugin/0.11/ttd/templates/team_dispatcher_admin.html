@@ -47,7 +47,7 @@
         <div class="field">
           <label>Subject:
             <select id="subject" name="subject">
-              <option py:for="user in sorted(users)">$user.username</option>
+              <option py:for="user in sorted(users, key=lambda u: u.username)">$user.username</option>
             </select>
           </label>
         </div>
