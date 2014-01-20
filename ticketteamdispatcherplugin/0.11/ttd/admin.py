@@ -22,7 +22,7 @@ class TicketTeamDispatcherAdmin(Component):
     # IAdminPanelProvider methods
     def get_admin_panels(self, req):
         if req.perm.has_permission('TICKET_ADMIN'):
-            yield ('ticket', 'Ticket System', 'ttd', 'Ticket Team Dispatcher')
+            yield ('ticket', 'Ticket System', 'ttd', 'Team Dispatcher')
         
     def render_admin_panel(self, req, category, page, path_info):
         req.perm.require('TICKET_ADMIN')
