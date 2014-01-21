@@ -1,4 +1,15 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2005-2006 Alec Thomas
+# Copyright (C) 2006 Noah Kantrowitz <noah@coderanger.net>
+# Copyright (C) 2007 Christian Boos <cboosr@neuf.fr>
+# Copyright (C) 2007-2008 Odd Simon Simonsen <simon-code@bvnetwork.no>
+# Copyright (C) 2008 Michael Jouvin <jouvin@lal.in2p3.fr>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 import re
 
 from genshi.core import Markup
