@@ -75,10 +75,18 @@ class TicketTeamDispatcherAdmin(Component):
                         teams.remove(item)
                         self.set_teams(teams)
 
+            elif action == 'notify':
+                self.set_notify_on('create', req.args.get('notify_on_create'))
+                self.set_notify_on('change', req.args.get('notify_on_change'))
+                self.set_notify_on('delete', req.args.get('notify_on_delete'))
+
         return 'team_dispatcher_admin.html', {
             'teams': teams,
             'users': users,
-            'caption': caption
+            'caption': caption,
+            'notify_on_create': self.get_notify_on('create'),
+            'notify_on_change': self.get_notify_on('change'),
+            'notify_on_delete': self.get_notify_on('delete'),
         }
 
     # INavigationContributor methods
@@ -95,6 +103,14 @@ class TicketTeamDispatcherAdmin(Component):
 
     def set_caption(self, caption):
         self.config.set('ticket-custom', 'ttd.label', caption)
+        self.config.save()
+
+    def get_notify_on(self, opt):
+        return self.config.getbool('team-dispatcher', 'notify_on_' + opt)
+
+    def set_notify_on(self, opt, value):
+        value = True if value == 'on' else False
+        self.config.set('team-dispatcher', 'notify_on_' + opt, value)
         self.config.save()
 
     def get_teams(self):

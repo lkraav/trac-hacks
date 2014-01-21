@@ -13,6 +13,35 @@
   <body>
     <h2>Manage Ticket Teams</h2>
 
+    <form id="notifications" class="addnew" method="post" action="">
+      <fieldset>
+        <legend>Edit Notification Settings:</legend>
+        Notify on:
+        <div class="field">
+          <label>
+            <input type="checkbox" name="notify_on_create" checked="${notify_on_create or None}" />
+            ticket creation
+          </label>
+        </div>
+        <div class="field">
+          <label>
+            <input type="checkbox" name="notify_on_change" checked="${notify_on_change or None}" />
+            ticket change
+          </label>
+        </div>
+        <div class="field">
+          <label>
+            <input type="checkbox" name="notify_on_delete" checked="${notify_on_delete or None}" />
+            ticket deletion
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="hidden" name="action" value="notify" />
+          <input type="submit" value="${_('Save')}" />
+        </div>
+      </fieldset>
+    </form>
+
     <form id="modcaption" class="addnew" method="post" action="">
       <fieldset>
         <legend>Edit Caption:</legend>
