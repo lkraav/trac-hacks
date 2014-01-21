@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-# Stractistics
 # Copyright (C) 2008 GMV SGI Team <http://www.gmv-sgi.es>
 #
 # This program is free software; you can redistribute it and/or
@@ -16,8 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-#
-# $Id: web_ui.py 432 2008-07-11 12:58:49Z ddgb $
 #
 
 from genshi.builder import tag
@@ -38,6 +35,7 @@ from util import read_config_options
 from global_reports import global_reports
 from user_reports import user_reports
 
+
 class StractisticsModule(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
                IPermissionRequestor)
@@ -47,9 +45,9 @@ class StractisticsModule(Component):
         return 'stractistics'
 
     def get_navigation_items(self, req):
-        if req.perm.has_permission('STRACTISTICS_VIEW'):
-            yield 'mainnav', 'stractistics', tag.a('Stractistics',
-                                                   href=req.href.stractistics())
+        if 'STRACTISTICS_VIEW' in req.perm:
+            yield 'mainnav', 'stractistics', \
+                  tag.a('Stractistics', href=req.href.stractistics())
 
     #IPermissionRequestor methods
     def get_permission_actions(self):
@@ -67,7 +65,8 @@ class StractisticsModule(Component):
     # IRequestHandler methods
     def match_request(self, req):
         import re
-        match = re.match('/stractistics(?:/([^/]+))?(?:/(.*)$)?', req.path_info)
+        match = re.match(r'/stractistics(?:/([^/]+))?(?:/(.*)$)?',
+                         req.path_info)
         if match: 
             req.args['module'] = match.group(1)
             req.args['arguments'] = match.group(2)
@@ -76,7 +75,7 @@ class StractisticsModule(Component):
             return False
 
     def process_request(self, req):
-        req.perm.assert_permission('STRACTISTICS_VIEW')
+        req.perm.require('STRACTISTICS_VIEW')
         add_stylesheet(req, 'hw/css/stractistics.css')
         add_script(req, 'hw/javascript/swfobject.js')
         add_script(req, 'hw/javascript/prototype.js')
@@ -91,7 +90,6 @@ class StractisticsModule(Component):
         add_ctxtnav(req, 'Project Reports', req.href.stractistics("/project_reports"))
         add_ctxtnav(req, 'User Reports', req.href.stractistics("/user_reports"))
 
-        #Reading options from trac.ini
         config = read_config_options(self.env.config)
 
         db = self.env.get_db_cnx()

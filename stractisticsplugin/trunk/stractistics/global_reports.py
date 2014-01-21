@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-# Stractistics
 # Copyright (C) 2008 GMV SGI Team <http://www.gmv-sgi.es>
 #
 # This program is free software; you can redistribute it and/or
@@ -17,23 +16,22 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
-# $Id: global_reports.py 432 2008-07-11 12:58:49Z ddgb $
-#
 
 from util import *
+
 
 def global_reports(req, config, db):
     data = {}
     start_date, end_date, weeks_back = parse_time_gap(req, data)
-    #First , repository activity 
+    # First , repository activity
     data['repository_activity'] = _repository_activity(req, config,
                                           start_date, end_date, 
                                           weeks_back, db)
         
-    #Second, ticket activity.
+    # Second, ticket activity.
     data['ticket_activity'] = _ticket_activity(req, config, end_date, db)
                 
-    #Third, wiki activity.
+    # Third, wiki activity.
     data['wiki_activity'] = _wiki_activity(req, config, 
                                             start_date, end_date, 
                                             weeks_back, db)
@@ -55,7 +53,7 @@ def _repository_activity(req, config, start_date, end_date, weeks_back, db):
                                                start_date,
                                                end_date,
                                                db)
-    #Now we retrieve all the revisions commited in the time frame
+    #Now we retrieve all the revisions committed in the time frame
     revisions = _retrieve_revisions(authors, start_date, end_date, db)        
     #Last, for every author we determine how many commits per week he's done. 
     weeks_list, authors_data = _authors_commit_data(authors, revisions, 
@@ -77,31 +75,31 @@ def _repository_activity(req, config, start_date, end_date, weeks_back, db):
     chart.set_tool_tip("#key#<br>week:#x_label#<br>commits:#val#")
          
     return query_response
-        
-def _most_active_repository_authors(AUTHORS_LIMIT, ignored_authors, start_date, 
+
+
+def _most_active_repository_authors(limit, ignored_authors, start_date,
                                     end_date, db):
     """
-    Retrieves the AUTHORS_LIMIT most active repository authors between 
-    start_date and end_date.
+    Retrieves the `limit` most active repository authors between start_date
+    and end_date.
     Returns a list with their names.
     """
-    authors = []
     sql_expr = """
-    SELECT r.author AS author, COUNT( r.author ) AS commits 
+    SELECT r.author AS author, COUNT(r.author) AS commits
      FROM revision r 
      WHERE r.time > %s AND r.time < %s %s
      GROUP BY r.author 
      ORDER BY commits DESC 
      LIMIT %s
     """
-    def ignoreList(authors):
+    def ignore_list(authors):
         if not authors:
             return ""
         return "AND r.author NOT IN ( %s )" % ','.join( map(lambda x:"'%s'" % x, authors) )
-    sql_expr = sql_expr % ( datetime_to_secs(start_date),
-                                      datetime_to_secs(end_date),
-                                      ignoreList(ignored_authors),
-                                      AUTHORS_LIMIT)
+    sql_expr = sql_expr % (datetime_to_secs(start_date),
+                           datetime_to_secs(end_date),
+                           ignore_list(ignored_authors),
+                           limit)
     
     def map_rows(row):
         return row[0]
@@ -111,27 +109,26 @@ def _most_active_repository_authors(AUTHORS_LIMIT, ignored_authors, start_date,
     
 def _retrieve_revisions(authors, start_date, end_date, db):
     """
-    Retrieves every revision commited by any author in authors between start_date and end_date
-    Returs a list of author and date pairs.
+    Retrieves every revision committed by any author in authors between
+    start_date and end_date. Returns a list of author and date pairs.
     """
-    revisions = []
     sql_expr = """
     SELECT r.author AS author, r.time AS date
     FROM revision r 
     WHERE r.time > %s AND r.time < %s %s
     """   
 
-    def valuesList(authors):
+    def values_list(authors):
         if not authors:
             return ""
         return "AND r.author IN ( %s )" % ','.join( map(lambda x:"'%s'" % x, authors) )
     
     sql_expr = sql_expr % (datetime_to_secs(start_date),
                                      datetime_to_secs(end_date),
-                                     valuesList(authors))
+                                     values_list(authors))
     def map_rows(row):
         import datetime
-        return (row[0],datetime.datetime.fromtimestamp(row[1]))
+        return row[0],datetime.datetime.fromtimestamp(row[1])
     revisions = execute_sql_expression(db, sql_expr, map_rows)
     return revisions
 
@@ -148,7 +145,7 @@ def _authors_commit_data(authors, revisions, start_date, end_date, db):
     for rev in revisions:
         author = rev[0]
         week = format_to_week(rev[1])
-        authors_data[author][week] = authors_data[author][week] + 1
+        authors_data[author][week] += 1
     
     weeks_labels = [k for k in weeks.iterkeys()]
     weeks_labels.sort()
@@ -158,7 +155,7 @@ def _authors_commit_data(authors, revisions, start_date, end_date, db):
     for author in authors_data.iterkeys():
         aux_dic[author] = sort_values_by_key(authors_data[author])
     authors_data = aux_dic
-    return (weeks_labels, authors_data)
+    return weeks_labels, authors_data
      
 
 def _ticket_activity(req, config, end_date, db):
@@ -182,7 +179,7 @@ def _ticket_activity(req, config, end_date, db):
     sql_expr = sql_expr % start_date
 
     def map_rows(row):
-        return (row[0],row[1])
+        return row[0], row[1]
     results = execute_sql_expression(db, sql_expr, map_rows)
 
     query_response = QueryResponse("ticket_activity", req.href('/chrome'))
@@ -247,7 +244,6 @@ def _wiki_authors_data(authors_list, wiki_pages_list,
     We iterate over wiki_pages_list and for each wiki page edition, we
     increment the counter of the correspondent author and week.
     """
-    weeks_dic = {}
     weeks_dic = get_weeks_elapsed(start_date, end_date)
     
     authors_data = {}
@@ -258,7 +254,7 @@ def _wiki_authors_data(authors_list, wiki_pages_list,
         week = format_to_week(page[1])
         author = page[0]
         if author in authors_list:
-            authors_data[author][week] = authors_data[author][week] + 1
+            authors_data[author][week] += 1
     
     #Sorting time!
     weeks_list = [key for key in weeks_dic.iterkeys()]
@@ -269,11 +265,11 @@ def _wiki_authors_data(authors_list, wiki_pages_list,
     for author in authors_data:
         data_aux[author] = sort_values_by_key(authors_data[author])
     authors_data = data_aux
-    return (weeks_list, authors_data)
+    return weeks_list, authors_data
                 
         
 def _retrieve_most_active_wiki_authors(AUTHORS_LIMIT, ignored_authors,
-                                            start_date, end_date, db):
+                                       start_date, end_date, db):
     """
     Retrieves the AUTHORS_LIMIT most active wiki authors between start_date
      and end_date
@@ -286,14 +282,14 @@ def _retrieve_most_active_wiki_authors(AUTHORS_LIMIT, ignored_authors,
     ORDER BY modifications DESC
     LIMIT %s  
     """
-    import datetime
-    def ignoreList(authors):
+
+    def ignore_list(authors):
         if not authors:
             return ""
         return "AND w.author NOT IN ( %s )" % ','.join( map(lambda x:"'%s'" % x, authors) )
     sql_expr = sql_expr % (datetime_to_secs(start_date),
                                      datetime_to_secs(end_date),
-                                     ignoreList(ignored_authors),
+                                     ignore_list(ignored_authors),
                                      AUTHORS_LIMIT)
     
     authors_list = execute_sql_expression(db, sql_expr, lambda row:row[0])
@@ -310,7 +306,7 @@ def _retrieve_wiki_pages(start_date, end_date, db):
     
     def map_rows(row):
         import datetime
-        return (row[0], datetime.datetime.fromtimestamp(row[1]))
+        return row[0], datetime.datetime.fromtimestamp(row[1])
     
     wiki_pages_list = execute_sql_expression(db, sql_expr, map_rows)
     return wiki_pages_list        

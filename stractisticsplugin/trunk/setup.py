@@ -1,6 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
 #
-# Stractistics
 # Copyright (C) 2008 GMV SGI Team <http://www.gmv-sgi.es>
 #
 # This program is free software; you can redistribute it and/or
@@ -17,21 +16,21 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
-# $Id: setup.py 432 2008-07-11 12:58:49Z ddgb $
-#
+
 from setuptools import setup, find_packages
 
 PACKAGE = 'STractistics'
-VERSION = '0.5.0b'
+VERSION = '0.6'
+
 
 setup(name=PACKAGE, 
       version=VERSION, 
-      author='Daniel Gómez Brito, Manuel Jesús Recena Soto',
+      author='GMV Soluciones Globales Internet, Daniel Gómez Brito, Manuel Jesús Recena Soto',
       author_email='dagomez@gmv.com, mjrecena@gmv.com',
       maintainer='Ryan J Ollos',
       maintainer_email='ryan.j.ollos@gmail.com',
       license='GNU GPL v2',
-      description='Allows to gauge project activity at a glance. Developed by GMV Soluciones Globales Internet',
+      description='Allows to gauge project activity at a glance.',
       url='http://trac-hacks.org/wiki/StractisticsPlugin',
       packages = ['stractistics'], 
       entry_points={'trac.plugins': ['%s = stractistics.web_ui' % PACKAGE ]},

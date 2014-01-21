@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-# Stractistics
 # Copyright (C) 2008 GMV SGI Team <http://www.gmv-sgi.es>
 #
 # This program is free software; you can redistribute it and/or
@@ -17,39 +16,37 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
-# $Id: util.py 432 2008-07-11 12:58:49Z ddgb $
-#
 
 import OpenFlashChart
+
 
 def read_config_options(config):
     """
     Reads available configurations options from trac.ini 
     """
     options = {}
-    repository_authors_limit = config.getint('stractistics',\
-                                                'repository_authors_limit', 5)
+    repository_authors_limit = config.getint('stractistics',
+                                             'repository_authors_limit', 5)
     options['repository_authors_limit'] = repository_authors_limit
         
-    repository_ignored_authors = [str(elem) for elem in config.getlist(\
-                                                'stractistics',
-                                                'ignored_repository_authors',
-                                                default=[])]
+    repository_ignored_authors = \
+        [str(elem) for elem in config.getlist('stractistics',
+                                              'ignored_repository_authors',
+                                              default=[])]
     options['repository_ignored_authors'] = repository_ignored_authors
         
     wiki_authors_limit = config.getint('stractistics', 
                                                     'wiki_authors_limit', 5)
     options['wiki_authors_limit'] = wiki_authors_limit
         
-    wiki_ignored_authors = [str(elem) for elem in config.getlist(\
-                                                'stractistics',
-                                                'ignored_wiki_authors',
-                                                default=[])]
+    wiki_ignored_authors = \
+        [str(elem) for elem in config.getlist('stractistics',
+                                              'ignored_wiki_authors',
+                                              default=[])]
     options['wiki_ignored_authors'] = wiki_ignored_authors
         
-    max_author_characters = config.getint('stractistics', 
-                                                    'max_author_characters', 
-                                                    None)
+    max_author_characters = \
+        config.getint('stractistics', 'max_author_characters', None)
     options['max_author_characters'] = max_author_characters
     return options 
 
@@ -102,13 +99,15 @@ def swap_week_year(x):
     """
     aux = x.split('/')
     return "%s/%s" % (aux[1], aux[0])
-    
+
+
 def remove_duplicates(list):
     #Not very efficient.
     dic = {}
     for elem in list:
         dic[elem] = None
     return dic.keys()
+
 
 def execute_sql_expression(db, sql_expr, map_rows = lambda x:x):
     """
@@ -120,6 +119,7 @@ def execute_sql_expression(db, sql_expr, map_rows = lambda x:x):
     db.commit()
     return results
 
+
 def sort_values_by_key(dic):
     """
     Returns a list of the values in dic sorted by key.
@@ -128,12 +128,14 @@ def sort_values_by_key(dic):
     keys.sort()
     return map(dic.get, keys)
 
+
 def format_to_week(datetime):
     """
     Picks a datetime and formats it into a "Year/Week" string.
     """
     format = "%y/%W"
     return datetime.strftime(format)
+
 
 def get_weeks_elapsed(start_date, end_date):
     """
@@ -153,6 +155,7 @@ def get_weeks_elapsed(start_date, end_date):
     weeks[format_to_week(end_date)] = 0
     return weeks    
 
+
 def adapt_to_table(weeks_list, authors_data, config):
     """
     This function rearranges our data in order to be displayed easier 
@@ -163,18 +166,15 @@ def adapt_to_table(weeks_list, authors_data, config):
     reversed_weeks_list = list(weeks_list)
     reversed_weeks_list.reverse()
         
-    """Now, we must reverse the order of the results to match the new 
-    order of weeks.""" 
+    # Reverse the order of the results to match the new order of weeks.
     results = {}
     for author in authors_data.iterkeys():
         results[author] = list(authors_data[author])
         results[author].reverse()
-        
-    """
-    Every row in rows is a 2-tuple, the first element of the tuple is the 
-    week and the second element of the tuple is an array of the wiki 
-    modifications per author for that week.
-    """
+
+    # Every row in rows is a 2-tuple, the first element of the tuple is the
+    # week and the second element of the tuple is an array of the wiki
+    # modifications per author for that week.
     authors = results.keys()
     rows = []
     index = 0
@@ -193,7 +193,8 @@ def adapt_to_table(weeks_list, authors_data, config):
     
     columns = [mangle_name(name, config['max_author_characters']) \
                     for name in authors]
-    return (columns, rows)
+    return columns, rows
+
 
 def restructure_data(authors_data):
     """
@@ -201,9 +202,7 @@ def restructure_data(authors_data):
     """
     new_data = []
     for author in authors_data.keys():
-        dic = {}
-        dic['author'] = author
-        dic['info'] = authors_data[author]
+        dic = {'author': author, 'info': authors_data[author]}
         new_data.append(dic)
     return new_data        
 
