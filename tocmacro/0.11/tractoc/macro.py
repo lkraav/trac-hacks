@@ -97,6 +97,7 @@ class TOCMacro(WikiMacroBase):
     || `sectionindex` || Only display the page name and title of each page in the wiki section. ||
     || `titleindex`   || Only display the page name and title of each page, similar to TitleIndex. ||
     || `notitle`      || Supress display of page title. ||
+    || `reverse`      || Display TOC sorted in reversed order. ||
     For `titleindex` argument, an empty pagelist will evaluate to all pages:
     {{{
     [[TOC(titleindex, notitle, heading=All pages)]]
@@ -131,6 +132,7 @@ class TOCMacro(WikiMacroBase):
         # Options
         inline = False
         pagenames = []
+        reverse = False
         
         default_heading = 'Table of Contents'
         params = {'min_depth': 1, 'max_depth': 6}
@@ -149,6 +151,8 @@ class TOCMacro(WikiMacroBase):
                     params['section_index'] = True
                 params['title_index'] = True
                 default_heading = default_heading and 'Page Index'
+            elif arg == 'reverse':
+                reverse = True
             elif arg == 'nofloat':
                 return ''
             elif arg != '':
@@ -185,7 +189,8 @@ class TOCMacro(WikiMacroBase):
                     pagename += '*'
             if pagename.endswith('*'):
                 temp_pagenames.extend(
-                    sorted(WikiSystem(self.env).get_pages(pagename[:-1])))
+                    sorted(WikiSystem(self.env).get_pages(pagename[:-1]),
+                           reverse=reverse))
             else:
                 temp_pagenames.append(pagename)
         pagenames = temp_pagenames
