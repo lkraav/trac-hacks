@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import re
 
 from genshi.core import Markup
@@ -8,8 +7,8 @@ from genshi.builder import tag
 from trac.core import *
 from trac.resource import get_resource_url
 from trac.util.compat import sorted
-from trac.wiki.formatter import OutlineFormatter, system_message
 from trac.wiki.api import WikiSystem, parse_args
+from trac.wiki.formatter import OutlineFormatter, system_message
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 
@@ -174,8 +173,8 @@ class TOCMacro(WikiMacroBase):
                 if not pagename.endswith('*'):
                     pagename += '*'
             if pagename.endswith('*'):
-                temp_pagenames.extend(sorted(
-                        WikiSystem(self.env).get_pages(pagename[:-1])))
+                temp_pagenames.extend(
+                    sorted(WikiSystem(self.env).get_pages(pagename[:-1])))
             else:
                 temp_pagenames.append(pagename)
         pagenames = temp_pagenames
@@ -202,12 +201,13 @@ class TOCMacro(WikiMacroBase):
     def get_page_text(self, formatter, page_resource):
         """Return a tuple of `(text, exists)` for the given page (resource)."""
         if page_resource.id == formatter.context.resource.id:
-            return (formatter.source, True)
+            return formatter.source, True
         else:
             page = WikiPage(self.env, page_resource)
-            return (page.text, page.exists)
+            return page.text, page.exists
 
-    def _render_title_index(self, formatter, ol, page_resource, active, show_title):
+    def _render_title_index(self, formatter, ol, page_resource, active,
+                            show_title):
         page_text, page_exists = self.get_page_text(formatter, page_resource)
         if not page_exists:
             ol.append(system_message('Error: No page matching %s found' %
@@ -220,12 +220,13 @@ class TOCMacro(WikiMacroBase):
         if show_title and fmt.outline:
             title = ': ' + fmt.outline[0][2]
         ol.append((tag.li(tag.a(page_resource.id,
-                      href=get_resource_url(self.env, page_resource, ctx.href)),
-                      Markup(title),
-                      class_= active and 'active' or None)))
+                                href=get_resource_url(self.env, page_resource,
+                                                      ctx.href)),
+                                Markup(title),
+                                class_= active and 'active' or None)))
 
-    def _render_page_outline(self, formatter, ol, page_resource, active, params):
-        page = params.get('root', '') + page_resource.id
+    def _render_page_outline(self, formatter, ol, page_resource, active,
+                             params):
         page_text, page_exists = self.get_page_text(formatter, page_resource)
         if page_exists:
             ctx = formatter.context(page_resource)
