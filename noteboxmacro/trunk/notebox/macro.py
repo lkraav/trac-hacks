@@ -14,10 +14,9 @@ from trac.wiki.api import parse_args
 from trac.wiki.formatter import format_to_html
 from trac.wiki.macros import WikiMacroBase
 
-class NoteBox(WikiMacroBase):
-    """
-    The !NoteBox macro will render a small colored box with an
-    icon and text. 
+
+class NoteBoxMacro(WikiMacroBase):
+    """Renders a small colored box with an icon and text.
     
     To display a !NoteBox on a page, you must call the !NoteBox
     macro and pass the ''style'' and ''text'' as arguments. The
@@ -40,7 +39,9 @@ class NoteBox(WikiMacroBase):
     }}}
     
     [[NoteBox(warn,If you don't run `update` before `commit`\, your checkin may fail.)]]
+
     [[NoteBox(tip,The !NoteBox macro can bring '''attention''' to text within a page.,50%)]]
+
     [[NoteBox(note,More styles may be added in a ''future'' release.,350px)]]
     """    
     
@@ -49,9 +50,10 @@ class NoteBox(WikiMacroBase):
     def expand_macro(self, formatter, name, content):
         add_stylesheet(formatter.req, 'notebox/css/notebox.css')
         args, kwargs = parse_args(content)
-        width = len(args) > 2 and args[2] or '70%'
-        return tag.div(format_to_html(self.env, formatter.context, args[1]), 
-                       class_='notebox-%s' % (args[0],),
+        width = len(args) > 2 and args[2].strip() or '70%'
+        return tag.div(format_to_html(self.env, formatter.context,
+                                      args[1].strip()),
+                       class_='notebox-%s' % (args[0].strip(),),
                        style='width: %s' % (width,))
 
     # ITemplateProvider
