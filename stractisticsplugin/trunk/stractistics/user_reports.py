@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-# Stractistics
 # Copyright (C) 2008 GMV SGI Team <http://www.gmv-sgi.es>
 #
 # This program is free software; you can redistribute it and/or
@@ -17,10 +16,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
-# $Id: user_reports.py 432 2008-07-11 12:58:49Z ddgb $
-#
 
 from util import *
+
 
 def user_reports(req, config, db):
     data = {}
@@ -111,7 +109,7 @@ def _get_created_tickets(db, user, start, end):
                            datetime_to_secs(end))
     def map_rows(xx):
         import datetime
-        return (xx[0], datetime.datetime.fromtimestamp(xx[1]), None)
+        return xx[0], datetime.datetime.fromtimestamp(xx[1]), None
     user_created_tickets = execute_sql_expression(db, sql_expr, map_rows)
     return user_created_tickets
 
@@ -131,7 +129,7 @@ def _get_closed_or_reopened_tickets(db, user, start, end):
                            datetime_to_secs(end))
     def map_rows(xx):
         import datetime
-        return (xx[0], datetime.datetime.fromtimestamp(xx[1]), xx[2])
+        return xx[0], datetime.datetime.fromtimestamp(xx[1]), xx[2]
     closed_or_reopened_tickets = execute_sql_expression(db, sql_expr, map_rows)
     return closed_or_reopened_tickets
 
@@ -151,7 +149,7 @@ def _user_wiki_activity(req, user, config, start, end, weeks_back, db):
                            datetime_to_secs(end))
     def map_rows(xx):
         import datetime
-        return (datetime.datetime.fromtimestamp(xx[0]),xx[1])
+        return datetime.datetime.fromtimestamp(xx[0]),xx[1]
     wiki_pages = execute_sql_expression(db, sql_expr, map_rows)
     
     weeks_dic = get_weeks_elapsed(start, end)
@@ -261,6 +259,7 @@ def _get_default_user(args, trac_users):
             default_user = url_user
     return default_user
 
+
 #If I figure a database independent query to do this, this function code
 #will go the way of the dodo.
 def _retrieve_trac_users(req, config, db):
@@ -277,9 +276,9 @@ def _retrieve_trac_users(req, config, db):
     wiki_users = _retrieve_wiki_users(config, db)
     ticket_users = _retrieve_ticket_users(config, db)
     repo_users = _retrieve_repo_users(config, db)
-    print "wiki_users %r" % (wiki_users)
-    print "ticket_users %r" % (ticket_users)
-    print "repo_users %r" % (repo_users)
+    print "wiki_users %r" % wiki_users
+    print "ticket_users %r" % ticket_users
+    print "repo_users %r" % repo_users
     #Not elegant at all.    
     users_list.extend(wiki_users)
     users_list.extend(ticket_users)
@@ -297,6 +296,7 @@ def _retrieve_wiki_users(config, db):
     wiki_users = execute_sql_expression(db, sql_expr, lambda x:x[0])
     return wiki_users
 
+
 def _retrieve_repo_users(config, db):
     sql_expr = """
         SELECT DISTINCT rr.author
@@ -304,6 +304,7 @@ def _retrieve_repo_users(config, db):
     """
     repo_users = execute_sql_expression(db, sql_expr, lambda x:x[0])
     return repo_users
+
 
 def _retrieve_ticket_users(config, db):
     """
@@ -314,14 +315,14 @@ def _retrieve_ticket_users(config, db):
     sql_expr = "SELECT DISTINCT author FROM ticket_change"
     tc_users = execute_sql_expression(db, sql_expr, lambda x:x[0])
     
-    sql_expre = "SELECT DISTINCT reporter FROM ticket"
+    sql_expr = "SELECT DISTINCT reporter FROM ticket"
     reporters = execute_sql_expression(db, sql_expr, lambda x:x[0])
-    print "reporters %r" % (reporters)
+    print "reporters %r" % reporters
     
     tc_users.extend(reporters)
-    print "tc_users %r" % (tc_users)
+    print "tc_users %r" % tc_users
     ticket_users = remove_duplicates(tc_users)
-    print "ticket_users %r" % (ticket_users)
+    print "ticket_users %r" % ticket_users
     
     cursor = db.cursor()
     cursor.execute(sql_expr)
