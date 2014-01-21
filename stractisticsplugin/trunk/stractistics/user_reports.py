@@ -17,12 +17,15 @@
 # USA
 #
 
+from trac.util.datefmt import from_utimestamp, to_datetime, to_utimestamp
+
 from util import *
 
 
-def user_reports(req, config, db):
+def user_reports(req, env, config):
     data = {}
     start, end, weeks_back = parse_time_gap(req, data)
+    db = env.get_db_cnx()
     
     trac_users = _retrieve_trac_users(req, config, db)    
     data['trac_users'] = trac_users
@@ -32,8 +35,8 @@ def user_reports(req, config, db):
     data['repository_activity'] = _user_svn_activity(req, user, config, 
                                         start, end, weeks_back, db)
     
-    data['wiki_activity'] = _user_wiki_activity(req, user, config, start, end,
-                                         weeks_back, db)
+    data['wiki_activity'] = _user_wiki_activity(req, env, user, config,
+                                                start, end, weeks_back)
     
     data['ticket_activity'] = _user_ticket_activity(req, user, config, start, end,
                                          weeks_back, db)
@@ -134,23 +137,19 @@ def _get_closed_or_reopened_tickets(db, user, start, end):
     return closed_or_reopened_tickets
 
 
-def _user_wiki_activity(req, user, config, start, end, weeks_back, db):
+def _user_wiki_activity(req, env, user, config, start, end, weeks_back):
     """
     Computes the number of pages created and the number of pages edited by the
     user between start and end.
     """
-    sql_expr = """
-    SELECT ww.time, ww.version
-    FROM wiki ww
-    WHERE ww.author = '%s' AND time > %s AND time < %s
-    """
-    sql_expr = sql_expr % (user,
-                           datetime_to_secs(start),
-                           datetime_to_secs(end))
-    def map_rows(xx):
-        import datetime
-        return datetime.datetime.fromtimestamp(xx[0]),xx[1]
-    wiki_pages = execute_sql_expression(db, sql_expr, map_rows)
+    wiki_pages = []
+    for time, version in env.db_query("""
+            SELECT time, version
+            FROM wiki
+            WHERE author=%s AND time>=%s AND time<=%s
+        """, (user, to_utimestamp(to_datetime(start, req.tz)),
+              to_utimestamp(to_datetime(end, req.tz)))):
+        wiki_pages += [(from_utimestamp(time), version)]
     
     weeks_dic = get_weeks_elapsed(start, end)
     wiki_data = _group_wiki_pages(wiki_pages, weeks_dic)

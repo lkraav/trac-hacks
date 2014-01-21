@@ -95,7 +95,7 @@ class StractisticsModule(Component):
         db = self.env.get_db_cnx()
         module = req.args.get('module', None)
         if module is not None and module == 'user_reports':
-            template, data = user_reports(req, config, db)
+            template, data = user_reports(req, self.env, config)
         else:
             template, data = global_reports(req, config, db)
         data['json'] = {
