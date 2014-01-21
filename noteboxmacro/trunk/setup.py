@@ -21,7 +21,7 @@ setup(
     maintainer_email = 'ryan.j.ollos@gmail.com',
     url = 'http://trac-hacks.org/wiki/NoteBoxMacro',
     description = 'Macro for rendering a notebox with an icon.',
-    entry_points={'trac.plugins': ['NoteBox = notebox.macro']},
+    entry_points={'trac.plugins': ['notebox = notebox.macro']},
     keywords = 'trac macro notebox',
     license = 'GPLv2+',
 )
