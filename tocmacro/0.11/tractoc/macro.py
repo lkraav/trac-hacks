@@ -82,7 +82,7 @@ class TOCMacro(WikiMacroBase):
           TracRoadmap, TracChangeset, TracTickets, TracReports, TracQuery,
           TracTimeline, TracRss, TracNotification)]]
     }}}
-    A wildcard '*' can be used to fetch a sorted list of all pages starting with
+    A wildcard `*` can be used to fetch a sorted list of all pages starting with
     the preceding pagename stub:
     {{{
     [[TOC(Trac*, WikiFormatting, WikiMacros)]]
@@ -97,7 +97,7 @@ class TOCMacro(WikiMacroBase):
     || `sectionindex` || Only display the page name and title of each page in the wiki section. ||
     || `titleindex`   || Only display the page name and title of each page, similar to TitleIndex. ||
     || `notitle`      || Supress display of page title. ||
-    || `reverse`      || Display TOC sorted in reversed order. ||
+    || `reverse`      || Display TOC sorted in reversed order.  ''(Since 11.0.0.4)'' ||
     For `titleindex` argument, an empty pagelist will evaluate to all pages:
     {{{
     [[TOC(titleindex, notitle, heading=All pages)]]
