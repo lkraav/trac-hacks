@@ -14,9 +14,10 @@ setup(
     version='0.3',
     author='Dan Ordille',
     author_email='dordille@gmail.com',
-    license='3-Clause BSD',
+    license='BSD 3-Clause',
+    description="Files can be attached to tickets from the New Ticket form.",
     packages=find_packages(exclude=['*.tests']),
-    package_data={ 'awesome': [ 'htdocs/images/*', 'htdocs/js/*', 'htdocs/css/*' ]},
+    package_data={ 'awesome': [ 'htdocs/images/*', 'htdocs/js/*' ]},
     entry_points = """
         [trac.plugins]
         awesome = awesome.awesomeattachments
