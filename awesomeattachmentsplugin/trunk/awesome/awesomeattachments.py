@@ -10,14 +10,35 @@
 import os
 import unicodedata
 
+from genshi.builder import tag
 from trac.attachment import Attachment
 from trac.core import Component, TracError, implements
 from trac.ticket.notification import TicketNotifyEmail
 from trac.ticket.web_ui import TicketModule
 from trac.util import get_reporter_id
-from trac.util.translation import _
+from trac.util.text import exception_to_unicode
+from trac.util.translation import _, tag_
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_link, add_script
+from trac.web.chrome import ITemplateProvider, add_link, add_notice,\
+                            add_script, add_warning
+try:
+    from trac.util.html import to_fragment
+except ImportError:
+    from genshi.builder import Fragment
+    from trac.util.text import to_unicode
+    try:
+        from babel.support import LazyProxy
+    except ImportError:
+        LazyProxy = None
+    def to_fragment(input):
+        """Convert input to a `Fragment` object."""
+        if isinstance(input, TracError):
+            input = input.message
+        if LazyProxy and isinstance(input, LazyProxy):
+            input = input.value
+        if isinstance(input, Fragment):
+            return input
+        return tag(to_unicode(input))
 
 
 class AwesomeAttachments(Component):
@@ -95,10 +116,14 @@ class TicketUploadModule(TicketModule):
             tn = TicketNotifyEmail(self.env)
             tn.notify(ticket, newticket=True)
         except Exception, e:
-            self.log.error("""Failure sending notification on creation of
-                ticket #%s: %s""", ticket.id, e)
+            self.log.error("Failure sending notification on creation of "
+                    "ticket #%s: %s", ticket.id, exception_to_unicode(e))
+            add_warning(req, tag_("The ticket has been created, but an error "
+                                  "occurred while sending notifications: "
+                                  "%(message)s", message=to_fragment(e)))
 
         # Redirect the user to the newly created ticket or add attachment
+        ticketref = tag.a('#', ticket.id, href=req.href.ticket(ticket.id))
         if isinstance(req.args['attachment[]'], list):
             for i in range(len(req.args['attachment[]'])):
                 self._create_attachment(req, ticket,
@@ -109,6 +134,9 @@ class TicketUploadModule(TicketModule):
                                     req.args['description[]'])
 
         if 'TICKET_VIEW' not in req.perm('ticket', ticket.id):
+            add_notice(req, tag_("The ticket %(ticketref)s has been created, "
+                                 "but you don't have permission to view it.",
+                                 ticketref=ticketref))
             req.redirect(req.href.newticket())
 
         req.redirect(req.href.ticket(ticket.id))
