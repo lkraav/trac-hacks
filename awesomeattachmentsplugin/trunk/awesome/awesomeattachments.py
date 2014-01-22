@@ -75,7 +75,7 @@ class AwesomeAttachments(Component):
 
 
 class TicketUploadModule(TicketModule):
-  
+
     def _create_attachment(self, req, ticket, upload, description):
         if hasattr(upload, 'filename'):
             attachment = Attachment(self.env, 'ticket', ticket.id)
@@ -124,14 +124,15 @@ class TicketUploadModule(TicketModule):
 
         # Redirect the user to the newly created ticket or add attachment
         ticketref = tag.a('#', ticket.id, href=req.href.ticket(ticket.id))
-        if isinstance(req.args['attachment[]'], list):
-            for i in range(len(req.args['attachment[]'])):
-                self._create_attachment(req, ticket,
-                                        req.args['attachment[]'][i],
-                                        req.args['description[]'][i])
-        else:
-            self._create_attachment(req, ticket, req.args['attachment[]'],
-                                    req.args['description[]'])
+        if req.args['attachment[]'] != '':
+            if isinstance(req.args['attachment[]'], list):
+                for i in range(len(req.args['attachment[]'])):
+                    self._create_attachment(req, ticket,
+                                            req.args['attachment[]'][i],
+                                            req.args['description[]'][i])
+            else:
+                self._create_attachment(req, ticket, req.args['attachment[]'],
+                                        req.args['description[]'])
 
         if 'TICKET_VIEW' not in req.perm('ticket', ticket.id):
             add_notice(req, tag_("The ticket %(ticketref)s has been created, "
