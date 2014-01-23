@@ -2,10 +2,10 @@ Stractistics
 Copyright (C) 2008 GMV SGI Team <http://www.gmv-sgi.es>
 
 Developed by:
-	Daniel Gómez Brito <dagomez@gmv.com>
+    Daniel Gómez Brito <dagomez@gmv.com>
 
 Contributors:
-	Manuel Jesús Recena Soto <mjrecena@gmv.com>
+    Manuel Jesús Recena Soto <mjrecena@gmv.com>
 
 GMV Soluciones Globales Internet, S.A.
 Avda. Américo Vespucio, Nº5
