@@ -24,22 +24,22 @@
           <li py:for="idx, option in enumerate(iniadmin.options)" class="align${idx % 3}">
             <fieldset class="col${idx % 2}">
               <legend>${option.name}</legend>
-              <py:choose test="option.type">
-                <div class="select" py:when="'extension'">
+              <py:choose>
+                <div class="select" py:when="option.type in ('extension', 'choice')">
                   <select name="${option.name}">
                     <option py:for="val in option.options"
                             value="$val"
-                            selected="${option.value == val and 'selected' or None}"
-                      >$val</option>
+                            selected="${option.value == val or None}">$val</option>
                   </select>
                 </div>
-                <div class="bool" py:when="'bool'">
+                <div class="bool" py:when="option.type == 'bool'">
                   <label py:for="val in ('true', 'false')">
                     <input type="radio" name="${option.name}" value="$val"
-                           checked="${option.value == val or None}"
-                      />$val</label>
+                           checked="${option.value == val or None}" />
+                    $val
+                  </label>
                 </div>
-                <div class="text" py:when="'password'">
+                <div class="text" py:when="option.type == 'password'">
                   <input type="password" name="${option.name}" value="${option.value}" />
                 </div>
                 <div class="text" py:otherwise="">
