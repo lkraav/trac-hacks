@@ -82,6 +82,10 @@ class IniAdminPlugin(Component):
                 option_data['options'] = sorted(
                     impl.__class__.__name__
                     for impl in option.xtnpt.extensions(self))
+            elif type == 'choice':
+                option_data['options'] = sorted([to_unicode(val)
+                                                 for val in option.choices],
+                                                key=unicode.lower)
             elif type == 'text' and \
                  password_match('%s:%s' % (option.section, option.name)):
                 option_data['type'] = 'password'
