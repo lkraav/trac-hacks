@@ -14,9 +14,9 @@
 
 import SVGdraw as SVG
 import os
-import md5
 
 from colorsys import rgb_to_hsv, hsv_to_rgb
+from hashlib import md5
 from math import sqrt
 from random import randrange, seed
 from revtree.api import *
