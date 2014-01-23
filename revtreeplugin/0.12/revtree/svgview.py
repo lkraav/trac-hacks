@@ -115,7 +115,7 @@ class SvgColor(object):
     random = staticmethod(random)
     
     def from_name(name):
-        dig = md5.new(name.encode('utf-8')).digest()
+        dig = md5(name.encode('utf-8')).digest()
         vr = 14*(int(ord(dig[0]))%10)
         vg = 14*(int(ord(dig[1]))%10)
         vb = 14*(int(ord(dig[2]))%10)
