@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008 Martin Scharrer <martin@scharrer-online.de>
-# This is Free Software under the GPLv3 or BSD license.
 #
-# $Id$
+# Copyright (C) 2008-2010 Martin Scharrer <martin@scharrer-online.de>
+# All rights reserved.
 #
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 __url__      = ur"$URL$"[6:-2]
 __author__   = ur"$Author$"[9:-2]
