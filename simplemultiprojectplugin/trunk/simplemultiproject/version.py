@@ -152,7 +152,7 @@ class SmpVersionProject(Component):
     def post_process_request(self, req, template, data, content_type):
         if data and req.path_info.startswith('/version'):
             version = data['version']
-            if version:
+            if version and (type(version) is Version):
                 project_name = self.__SmpModel.get_project_version(version.name)
                 if project_name and project_name[0]:
                     self.__SmpModel.check_project_permission(req, project_name[0])

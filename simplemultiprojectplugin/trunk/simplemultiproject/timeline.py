@@ -86,20 +86,21 @@ class SmpTimelineProjectFilter(Component):
         if (field == 'url'):
             self._read_idx += 1 #next index now
 
-        #call the original render function
-        output = self._old_render_fn[self._read_idx](field, context)
-
-        if field == 'title': #now it's time to insert the project name
-            #split the whole string until we can insert
-            splitted_output = to_unicode(output).split("</em>")
-            tooltip = splitted_output[0].split('\"')
-            ticket_no = splitted_output[0].split('>')
-            if len(tooltip) == 3: #it's a ticket
-                #now rebuild the puzzle by inserting the name
-                output = tag('Ticket' + ' ', tag.em(ticket_no[1], title=tooltip[1]), ' ', tag.span(self._current_project[self._read_idx], style="background-color: #ffffd0;"), splitted_output[1])
-            elif len(tooltip) == 1 and len(splitted_output) == 3: #it's an attachment
-                output += tag(' ', tag.span(self._current_project[self._read_idx], style="background-color: #ffffd0;"))
-        return output
+        if self._read_idx < len(self._old_render_fn):
+            #call the original render function
+            output = self._old_render_fn[self._read_idx](field, context)
+    
+            if field == 'title': #now it's time to insert the project name
+                #split the whole string until we can insert
+                splitted_output = to_unicode(output).split("</em>")
+                tooltip = splitted_output[0].split('\"')
+                ticket_no = splitted_output[0].split('>')
+                if len(tooltip) == 3: #it's a ticket
+                    #now rebuild the puzzle by inserting the name
+                    output = tag('Ticket' + ' ', tag.em(ticket_no[1], title=tooltip[1]), ' ', tag.span(self._current_project[self._read_idx], style="background-color: #ffffd0;"), splitted_output[1])
+                elif len(tooltip) == 1 and len(splitted_output) == 3: #it's an attachment
+                    output += tag(' ', tag.span(self._current_project[self._read_idx], style="background-color: #ffffd0;"))
+            return output
 
     def _projects_field_input(self, req, selectedcomps):
         cursor = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
