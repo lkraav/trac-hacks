@@ -12,13 +12,36 @@ import os
 
 from setuptools import setup
 
+extra = {}
+try:
+    from trac.util.dist import get_l10n_js_cmdclass
+    cmdclass = get_l10n_js_cmdclass()
+    if cmdclass:
+        extra['cmdclass'] = cmdclass
+        extractors = [
+            ('**.py',                'trac.dist:extract_python', None),
+            ('**/templates/**.html', 'genshi', None),
+            ('**/templates/**.txt',  'genshi', {
+                'template_class': 'genshi.template:TextTemplate'
+            }),
+        ]
+        extra['message_extractors'] = {
+            'bhdashboard': extractors,
+        }
+except ImportError:
+    pass
+
 setup(
     name = 'TracThemeEngine',
     version = '2.2.2',
     packages = ['themeengine'],
-    package_data = { 'themeengine': ['templates/*.html', 'htdocs/*.js', 'htdocs/*.css', 'htdocs/*.png', 'htdocs/img/*.gif',
-                                     'htdocs/farbtastic/*.png', 'htdocs/farbtastic/*.js', 'htdocs/farbtastic/*.css' ] },
-
+    package_data = { 'themeengine': ['templates/*.html', 'htdocs/*.js', 
+                                     'htdocs/*.css', 'htdocs/*.png', 
+                                     'htdocs/img/*.gif', 
+                                     'htdocs/farbtastic/*.png', 
+                                     'htdocs/farbtastic/*.js', 
+                                     'htdocs/farbtastic/*.css',
+                                     'locale/*/LC_MESSAGES/*.mo'] },
     author = 'Noah Kantrowitz',
     author_email = 'noah@coderanger.net',
     maintainer='Olemis Lang',
@@ -54,4 +77,5 @@ setup(
             'themeengine.admin = themeengine.admin',
         ],
     },
+    **extra
 )

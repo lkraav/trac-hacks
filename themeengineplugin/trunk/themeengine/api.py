@@ -14,6 +14,8 @@ import inspect
 from trac.core import *
 from trac.config import Option
 
+from themeengine.translation import _, add_domain
+
 try:
     from trac.util import lazy
 except ImportError:
@@ -87,7 +89,8 @@ class ThemeEngineSystem(Component):
     """Central functionality for the theme system."""
 
     theme_name = Option('theme', 'theme', default='default',
-                   doc='The theme to use to style this Trac.')
+                   doc='The theme to use to style this Trac.',
+                   doc_domain='themeengine')
 
     implements(IThemeProvider)
 
@@ -103,6 +106,10 @@ class ThemeEngineSystem(Component):
     providers = ExtensionPoint(IThemeProvider)
 
     def __init__(self):
+        import pkg_resources
+        locale_dir = pkg_resources.resource_filename(__name__, 'locale')
+        add_domain(self.env.path, locale_dir)
+
         if lazy is None:
             # Trac < 1.0 : this can safely go in here because the data can 
             # only change on a restart anyway
@@ -218,7 +225,7 @@ class ThemeBase(Component):
         info = {}
 
         info['description'] = inspect.getdoc(self.__class__)
-        name = self.get_theme_names().next().lower()
+        name = name.lower()
         self._set_info(info, 'template', 
                        os.path.join('templates', name + '_theme.html'))
         self._set_info(info, 'css', name + '.css')
