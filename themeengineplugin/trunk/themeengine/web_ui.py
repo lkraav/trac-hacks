@@ -27,7 +27,8 @@ class ThemeEngineModule(Component):
     """A module to provide the theme content."""
 
     custom_css = BoolOption('theme', 'enable_css', default='false',
-                    doc='Enable or disable custom CSS from theme.')
+                    doc='Enable or disable custom CSS from theme.',
+                    doc_domain='themeengine')
 
     implements(ITemplateProvider, IRequestFilter)
 
@@ -39,7 +40,10 @@ class ThemeEngineModule(Component):
         try:
             theme = self.system.theme
             if theme and 'htdocs' in theme:
-                yield 'theme', resource_filename(theme['module'], theme['htdocs'])
+                theme_htdocs = theme['htdocs']
+                if not os.path.isabs(theme_htdocs):
+                    theme_htdocs = resource_filename(theme['module'], theme_htdocs)
+                yield 'theme', theme_htdocs
         except ThemeNotFound:
             pass
 
@@ -47,7 +51,11 @@ class ThemeEngineModule(Component):
         try:
             theme = self.system.theme
             if theme and 'template' in theme:
-                yield resource_filename(theme['module'], os.path.dirname(theme['template']))
+                theme_templates = os.path.dirname(theme['template'])
+                if not os.path.isabs(theme_templates):
+                    theme_templates = resource_filename(theme['module'],
+                                                        theme_templates)
+                yield theme_templates
         except ThemeNotFound:
             pass
 

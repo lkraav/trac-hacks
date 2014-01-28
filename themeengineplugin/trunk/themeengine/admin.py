@@ -12,13 +12,14 @@ import os.path
 
 from pkg_resources import resource_filename, resource_string
 
+from trac.admin.api import IAdminPanelProvider
 from trac.core import *
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 from trac.web.api import IRequestHandler, HTTPNotFound
 from trac.perm import IPermissionRequestor
-from trac.admin.api import IAdminPanelProvider
 
 from themeengine.api import ThemeEngineSystem, ThemeNotFound
+from themeengine.translation import _
 
 class SimpleThemeAdminModule(Component):
     """An admin panel for ThemeEngine."""
@@ -31,7 +32,7 @@ class SimpleThemeAdminModule(Component):
     # IAdminPanelProvider methods
     def get_admin_panels(self, req):
         if req.perm.has_permission('THEME_ADMIN'):
-            yield 'theme', 'Theme', 'theme', 'Theme'
+            yield 'theme', _('Theme'), 'theme', _('Theme')
 
     def render_admin_panel(self, req, cat, page, path_info):
         if req.method == 'POST':
@@ -121,8 +122,8 @@ class CustomThemeAdminModule(Component):
     # IAdminPanelProvider methods
     def get_admin_panels(self, req):
         if req.perm.has_permission('THEME_ADMIN'):
-            yield 'theme', 'Theme', 'custom', 'Customize'
-            yield 'theme', 'Theme', 'advanced', 'Customize: Advanced'
+            yield 'theme', _('Theme'), 'custom', _('Customize')
+            yield 'theme', _('Theme'), 'advanced', _('Customize: Advanced')
 
     def render_admin_panel(self, req, cat, page, path_info):
         data = {
