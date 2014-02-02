@@ -19,7 +19,7 @@ except ImportError:
 
 setup(
     name = 'TracTicketTemplate',
-    version = '0.7',
+    version = '0.8',
     packages = ['tickettemplate'],
     package_data = { 'tickettemplate': [ '*.txt', 'templates/*.*', 'htdocs/*.*', 
         'tests/*.*', 'locale/*.*', 'locale/*/LC_MESSAGES/*.*' ] },
