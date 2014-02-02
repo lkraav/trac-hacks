@@ -140,7 +140,8 @@ class XmlRpcProtocol(Component):
             self._send_response(req,
                     xmlrpclib.dumps(
                         xmlrpclib.Fault(err_code,
-                            "'%s' while executing '%s()'" % (str(e), method))))
+                            "'%s' while executing '%s()'" % (str(e), method))),
+                    rpcreq['mimetype'])
 
     # Internal methods
 
