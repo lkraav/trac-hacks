@@ -22,13 +22,14 @@ from trac.web.chrome import add_script, add_stylesheet, add_warning, Chrome, \
 from trac.web.api import IRequestFilter
 
 from themeengine.api import ThemeEngineSystem, ThemeNotFound
+from themeengine.translation import I18N_DOC_OPTIONS
 
 class ThemeEngineModule(Component):
     """A module to provide the theme content."""
 
     custom_css = BoolOption('theme', 'enable_css', default='false',
-                    doc='Enable or disable custom CSS from theme.',
-                    doc_domain='themeengine')
+                            doc='Enable or disable custom CSS from theme.',
+                            **I18N_DOC_OPTIONS)
 
     implements(ITemplateProvider, IRequestFilter)
 
