@@ -14,7 +14,7 @@ import inspect
 from trac.core import *
 from trac.config import Option
 
-from themeengine.translation import _, add_domain
+from themeengine.translation import _, add_domain, I18N_DOC_OPTIONS
 
 try:
     from trac.util import lazy
@@ -89,8 +89,8 @@ class ThemeEngineSystem(Component):
     """Central functionality for the theme system."""
 
     theme_name = Option('theme', 'theme', default='default',
-                   doc='The theme to use to style this Trac.',
-                   doc_domain='themeengine')
+                        doc='The theme to use to style this Trac.',
+                        **I18N_DOC_OPTIONS)
 
     implements(IThemeProvider)
 
