@@ -12,6 +12,9 @@
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       i18n:domain="themeengine">
       <xi:include href="admin.html" />
+  <?python
+    if _dgettext is not None:
+        dgettext = _dgettext ?>
   <head>
     <title>Customize theme</title>
   </head>
@@ -31,7 +34,7 @@
         <textarea name="css" rows="40" cols="80">$css</textarea>
       </fieldset>
       <div class="buttons">
-        <input type="submit" value="Submit" class="${'btn' if bhdb else None}" />
+        <input type="submit" value="${dgettext('themeengine', 'Submit')}" class="${'btn' if bhdb else None}" />
       </div>
     </form>
   </body>
