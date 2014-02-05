@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TracThemeEngine 2.2.2\n"
 "Report-Msgid-Bugs-To: olemis+trac@gmail.com\n"
-"POT-Creation-Date: 2014-01-10 13:22-0500\n"
+"POT-Creation-Date: 2014-02-05 14:30-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,4 +15,65 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
+
+#: themeengine/admin.py:35 themeengine/admin.py:125 themeengine/admin.py:126
+#: themeengine/templates/admin_theme.html:16
+#: themeengine/templates/admin_theme.html:19
+msgid "Theme"
+msgstr ""
+
+#: themeengine/admin.py:125
+msgid "Customize"
+msgstr ""
+
+#: themeengine/admin.py:126
+msgid "Customize: Advanced"
+msgstr ""
+
+#: themeengine/api.py:91
+msgid "The theme to use to style this Trac."
+msgstr ""
+
+#: themeengine/web_ui.py:30
+msgid "Enable or disable custom CSS from theme."
+msgstr ""
+
+#: themeengine/templates/admin_theme_advanced.html:16
+msgid "Customize theme"
+msgstr ""
+
+#: themeengine/templates/admin_theme_advanced.html:19
+msgid "Customize theme: Advanced"
+msgstr ""
+
+#: themeengine/templates/admin_theme_advanced.html:23
+#: themeengine/templates/admin_theme_custom.html:115
+msgid "General"
+msgstr ""
+
+#: themeengine/templates/admin_theme_advanced.html:25
+#: themeengine/templates/admin_theme_custom.html:117
+msgid "Enable:"
+msgstr ""
+
+#: themeengine/templates/admin_theme_advanced.html:30
+msgid "Style"
+msgstr ""
+
+#: themeengine/templates/admin_theme_custom.html:16
+#: themeengine/templates/admin_theme_custom.html:111
+msgid "Custom theme"
+msgstr ""
+
+#: themeengine/templates/admin_theme_custom.html:122
+msgid "Schemes"
+msgstr ""
+
+#: themeengine/templates/admin_theme_custom.html:124
+msgid "Scheme:"
+msgstr ""
+
+#: themeengine/templates/admin_theme_custom.html:132
+msgid "Colors"
+msgstr ""
 
