@@ -12,6 +12,9 @@
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       i18n:domain="themeengine">
       <xi:include href="admin.html" />      
+  <?python
+    if _dgettext is not None:
+        dgettext = _dgettext ?>
   <head>
     <title>Theme</title>
   </head>
@@ -44,7 +47,7 @@
       <div id="themebuttons">
         <img src="${href.chrome('themeengine', 'img', 'next.gif')}" border="0" id="nextbutton" />
         <img src="${href.chrome('themeengine', 'img', 'prev.gif')}" border="0" id="prevbutton" />
-        <input type="submit" value="Use this theme" class="${'btn' if bhdb else None}"/>
+        <input type="submit" value="${dgettext('themeengine', 'Use this theme')}" class="${'btn' if bhdb else None}"/>
       </div>
     </form>
   

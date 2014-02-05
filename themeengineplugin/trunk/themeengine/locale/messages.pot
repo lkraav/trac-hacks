@@ -1,13 +1,13 @@
 # Translations template for TracThemeEngine.
-# Copyright (C) 2014 Olemis Lang
+# Copyright (C) 2014 ORGANIZATION
 # This file is distributed under the same license as the TracThemeEngine project.
-# Olemis Lang <olemis+trac@gmail.com>, 2014.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
 ##, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: TracThemeEngine 2.2.2\n"
 "Report-Msgid-Bugs-To: olemis+trac@gmail.com\n"
-"POT-Creation-Date: 2014-02-05 14:30-0500\n"
+"POT-Creation-Date: 2014-02-05 18:46-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,8 +17,8 @@ msgstr ""
 "Generated-By: Babel 0.9.6\n"
 
 #: themeengine/admin.py:35 themeengine/admin.py:125 themeengine/admin.py:126
-#: themeengine/templates/admin_theme.html:16
 #: themeengine/templates/admin_theme.html:19
+#: themeengine/templates/admin_theme.html:22
 msgid "Theme"
 msgstr ""
 
@@ -38,42 +38,51 @@ msgstr ""
 msgid "Enable or disable custom CSS from theme."
 msgstr ""
 
-#: themeengine/templates/admin_theme_advanced.html:16
-msgid "Customize theme"
+#: themeengine/templates/admin_theme.html:50
+msgid "Use this theme"
 msgstr ""
 
 #: themeengine/templates/admin_theme_advanced.html:19
+msgid "Customize theme"
+msgstr ""
+
+#: themeengine/templates/admin_theme_advanced.html:22
 msgid "Customize theme: Advanced"
 msgstr ""
 
-#: themeengine/templates/admin_theme_advanced.html:23
-#: themeengine/templates/admin_theme_custom.html:115
+#: themeengine/templates/admin_theme_advanced.html:26
+#: themeengine/templates/admin_theme_custom.html:118
 msgid "General"
 msgstr ""
 
-#: themeengine/templates/admin_theme_advanced.html:25
-#: themeengine/templates/admin_theme_custom.html:117
+#: themeengine/templates/admin_theme_advanced.html:28
+#: themeengine/templates/admin_theme_custom.html:120
 msgid "Enable:"
 msgstr ""
 
-#: themeengine/templates/admin_theme_advanced.html:30
+#: themeengine/templates/admin_theme_advanced.html:33
 msgid "Style"
 msgstr ""
 
-#: themeengine/templates/admin_theme_custom.html:16
-#: themeengine/templates/admin_theme_custom.html:111
+#: themeengine/templates/admin_theme_advanced.html:37
+#: themeengine/templates/admin_theme_custom.html:142
+msgid "Submit"
+msgstr ""
+
+#: themeengine/templates/admin_theme_custom.html:19
+#: themeengine/templates/admin_theme_custom.html:114
 msgid "Custom theme"
 msgstr ""
 
-#: themeengine/templates/admin_theme_custom.html:122
+#: themeengine/templates/admin_theme_custom.html:125
 msgid "Schemes"
 msgstr ""
 
-#: themeengine/templates/admin_theme_custom.html:124
+#: themeengine/templates/admin_theme_custom.html:127
 msgid "Scheme:"
 msgstr ""
 
-#: themeengine/templates/admin_theme_custom.html:132
+#: themeengine/templates/admin_theme_custom.html:135
 msgid "Colors"
 msgstr ""
 
