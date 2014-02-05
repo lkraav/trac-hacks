@@ -24,6 +24,6 @@ _, ngettext, tag_, tagn_, gettext, N_, add_domain = \
 
 if parse_version(trac_version) >= parse_version('1.0'):
     I18N_DOC_OPTIONS = dict(doc_domain='themeengine')
-else 
+else: 
     I18N_DOC_OPTIONS = {}
 
