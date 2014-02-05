@@ -26,7 +26,7 @@ try:
             }),
         ]
         extra['message_extractors'] = {
-            'bhdashboard': extractors,
+            'themeengine': extractors,
         }
 except ImportError:
     pass
