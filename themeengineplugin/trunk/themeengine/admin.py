@@ -19,7 +19,7 @@ from trac.web.api import IRequestHandler, HTTPNotFound
 from trac.perm import IPermissionRequestor
 
 from themeengine.api import ThemeEngineSystem, ThemeNotFound
-from themeengine.translation import _
+from themeengine.translation import _, dgettext
 
 class SimpleThemeAdminModule(Component):
     """An admin panel for ThemeEngine."""
@@ -45,6 +45,7 @@ class SimpleThemeAdminModule(Component):
             'themeengine': {
                 'info': self.system.info.items(),
             },
+            '_dgettext' : dgettext,
         }
 
         try:
@@ -128,6 +129,7 @@ class CustomThemeAdminModule(Component):
     def render_admin_panel(self, req, cat, page, path_info):
         data = {
             'themes': self.system.info.items(),
+            '_dgettext' : dgettext,
         }
         
         theme_name = self.system.theme_name or 'Default'
