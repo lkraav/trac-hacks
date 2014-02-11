@@ -6,7 +6,7 @@
 # Copyright (C) 2007 Mike Comb <mcomb@mac.com>
 # Copyright (C) 2008 JaeWook Choi <http://trac-hacks.org/wiki/butterflow>
 # Copyright (C) 2008, 2009 W. Martin Borgert <debacle@debian.org>
-# Copyright (C) 2010-2013 Steffen Hoffmann <hoff.st@shaas.net>
+# Copyright (C) 2010-2014 Steffen Hoffmann <hoff.st@shaas.net>
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
@@ -448,8 +448,6 @@ class WikiCalendarMacros(Component):
                     query_args = kwargs['query']
                 except KeyError:
                     query_args = args[6]
-            provider = WikiCalendarTicketProvider(env)
-            tickets = provider.harvest(req, query_args)
 
             # compress long ticket lists
             if len(args) >= 8 or kwargs.has_key('short'):
@@ -492,6 +490,19 @@ class WikiCalendarMacros(Component):
                        (last_day_month - first_day).days + 1) % 7)
         else:
             last_day = last_day_month
+
+        # Find relevant tickets.
+        if name == 'WikiTicketCalendar':
+            daystr = (uts and '..' or ':').join([
+                         format_datetime(first_day, locale=locale),
+                         format_datetime(last_day, locale=locale)])
+            provider = WikiCalendarTicketProvider(env)
+            query_args = query_args and query_args + '&' or ''
+            tkt_due = provider.harvest(req, query_args +
+                                       '='.join([self.tkt_due_field, daystr]))
+            if show_t_open_dates:
+                tkt_new = provider.harvest(req, query_args +
+                                           '='.join(['created', daystr]))
 
         # Finally building the output now.
         # Begin with caption and optional navigation links.
@@ -632,7 +643,7 @@ class WikiCalendarMacros(Component):
                     ticket_list(align='left', class_='condense')
 
                     # Get tickets with due date set to day.
-                    for t in tickets:
+                    for t in tkt_due:
                         due = t.get(self.tkt_due_field)
                         if due is None or due in ('', '--'):
                             continue
@@ -665,12 +676,12 @@ class WikiCalendarMacros(Component):
                             match.append(tkt_id)
 
                     # Optionally, get tickets created on day too.
-                    if show_t_open_dates is True:
+                    if show_t_open_dates:
                         ticket_od_list = tag.div('')
                         ticket_od_list(align='left',
                                        class_='opendate_condense')
 
-                        for t in tickets:
+                        for t in tkt_new:
                             if uts:
                                 ticket_ts = to_utimestamp(t.get('time'))
                             else:
