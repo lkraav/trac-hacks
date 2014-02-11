@@ -52,12 +52,20 @@ Website: http://trac-hacks.org/wiki/MindMapMacro
 
     def environment_needs_upgrade(self, db):
         cursor = db.cursor()
-        try:
-            cursor.execute("select count(*) from mindmapcache")
-            cursor.fetchone()
-            return False
-        except:
-            db.rollback()
+        cursor.execute("""
+            SELECT value
+              FROM system
+             WHERE name='mindmap_version'
+        """)
+        row = cursor.fetchone()
+        if not row:
+            dburi = self.config.get('trac', 'database')
+            tables = self._get_tables(dburi, cursor)
+            if 'mindmapcache' in tables:
+                return False
+            else:
+                return True
+        elif int(row[0]) < self.DB_VERSION:
             return True
 
     def upgrade_environment(self, db):
@@ -71,12 +79,38 @@ Website: http://trac-hacks.org/wiki/MindMapMacro
                 for stmt in db_backend.to_sql(table):
                     self.log.debug(stmt)
                     cursor.execute(stmt)
+            cursor.execute("""
+                INSERT INTO system ('name', 'value')
+                  VALUES ('mindmap_version', %s)
+                """, (self.DB_VERSION,))
+            db.commit()
         except Exception, e:
             db.rollback()
             self.log.error(e, exc_info=True)
             raise TracError(unicode(e))
 
-
+    def _get_tables(self, dburi, cursor):
+        """Code from TracMigratePlugin by Jun Omae (see tracmigrate.admin)."""
+        if dburi.startswith('sqlite:'):
+            sql = """
+                SELECT name
+                  FROM sqlite_master
+                 WHERE type='table'
+                   AND NOT name='sqlite_sequence'
+            """
+        elif dburi.startswith('postgres:'):
+            sql = """
+                SELECT tablename
+                  FROM pg_tables
+                 WHERE schemaname = ANY (current_schemas(false))
+            """
+        elif dburi.startswith('mysql:'):
+            sql = "SHOW TABLES"
+        else:
+            raise TracError('Unsupported database type "%s"'
+                            % dburi.split(':')[0])
+        cursor.execute(sql)
+        return sorted([row[0] for row in cursor])
 
     # IHTMLPreviewRenderer methods
     supported_mimetypes = {
