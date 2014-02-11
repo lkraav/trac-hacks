@@ -136,71 +136,71 @@ Website: http://trac-hacks.org/wiki/MindMapMacro
         add_script( req, 'mindmap/tools.flashembed-1.0.4.min.js', mimetype='text/javascript' )
         add_script( req, 'mindmap/mindmap.js', mimetype='text/javascript' )
         if self.resizable:
-          add_stylesheet( req, 'mindmap/ui.theme.css', mimetype='text/css' )
-          add_stylesheet( req, 'mindmap/ui.resizable.css', mimetype='text/css' )
-          add_script( req, 'mindmap/ui.core.js', mimetype='text/javascript' )
-          add_script( req, 'mindmap/ui.resizable.js', mimetype='text/javascript' )
+            add_stylesheet( req, 'mindmap/ui.theme.css', mimetype='text/css' )
+            add_stylesheet( req, 'mindmap/ui.resizable.css', mimetype='text/css' )
+            add_script( req, 'mindmap/ui.core.js', mimetype='text/javascript' )
+            add_script( req, 'mindmap/ui.resizable.js', mimetype='text/javascript' )
         return (template, data, content_type)
 
 
     def _set_cache(self, hash, content):
-      db = self.env.get_db_cnx()
-      cursor = db.cursor()
-      cursor.execute("INSERT INTO mindmapcache VALUES ('%s','%s')" % (hash,content) )
-      db.commit()
+        db = self.env.get_db_cnx()
+        cursor = db.cursor()
+        cursor.execute("INSERT INTO mindmapcache VALUES ('%s','%s')" % (hash,content) )
+        db.commit()
 
     def _get_cache(self, hash, default=None):
-      db = self.env.get_db_cnx()
-      cursor = db.cursor()
-      try:
-        cursor.execute('SELECT content FROM mindmapcache WHERE hash=%s', (hash,))
-        (content,) = cursor.fetchone()
-        return content
-      except Exception, e:
-        if default == None:
-          raise e
-        return unicode(e)
+        db = self.env.get_db_cnx()
+        cursor = db.cursor()
+        try:
+            cursor.execute('SELECT content FROM mindmapcache WHERE hash=%s', (hash,))
+            (content,) = cursor.fetchone()
+            return content
+        except Exception, e:
+            if default == None:
+                raise e
+            return unicode(e)
 
     def _check_cache(self, hash):
-      db = self.env.get_db_cnx()
-      cursor = db.cursor()
-      cursor.execute('SELECT count(content) FROM mindmapcache WHERE hash=%s', (hash,))
-      (content,) = cursor.fetchone()
-      return content
+        db = self.env.get_db_cnx()
+        cursor = db.cursor()
+        cursor.execute('SELECT count(content) FROM mindmapcache WHERE hash=%s', (hash,))
+        (content,) = cursor.fetchone()
+        return content
 
     ### methods for IWikiMacroProvider
     def get_macros(self):
-      return ['MindMap','Mindmap']
+        return ['MindMap','Mindmap']
 
-    def get_macro_description(self, name): 
-      return self.__doc__
+    def get_macro_description(self, name):
+        return self.__doc__
 
     def expand_macro(self, formatter, name, content, args={}):
         "Produces XHTML code to display mindmaps"
 
         # Test if this is the long or short version of a macro call
         try:
-          # Starting from Trac 0.12 the `args` argument should be set for long 
-          # macros with arguments. However, it can be still empty and is not
-          # used at all in 0.11.
-          if not args:
-            # Check for multi-line content, i.e. long macro form
-            args, content = content.split("\n",1)
+            # Starting from Trac 0.12 the `args` argument should be set for long
+            # macros with arguments. However, it can be still empty and is not
+            # used at all in 0.11.
+            if not args:
+                # Check for multi-line content, i.e. long macro form
+                args, content = content.split("\n",1)
         except: # Short macro
-          largs, kwargs = parse_args( content )
-          if not largs:
-            raise TracError("File name missing!")
-          file = largs[0]
-          url = extract_url (self.env, formatter.context, file, raw=True)
+            largs, kwargs = parse_args( content )
+            if not largs:
+                raise TracError("File name missing!")
+            file = largs[0]
+            url = extract_url (self.env, formatter.context, file, raw=True)
         else: # Long macro
-          largs, kwargs = parse_args( args )
-          digest = md5()
-          digest.update(unicode(content).encode('utf-8'))
-          hash = digest.hexdigest()
-          if not self._check_cache(hash):
-            mm = MindMap(content)
-            self._set_cache(hash, mm)
-          url = formatter.context.href.mindmap(hash + '.mm')
+            largs, kwargs = parse_args( args )
+            digest = md5()
+            digest.update(unicode(content).encode('utf-8'))
+            hash = digest.hexdigest()
+            if not self._check_cache(hash):
+                mm = MindMap(content)
+                self._set_cache(hash, mm)
+            url = formatter.context.href.mindmap(hash + '.mm')
         return self.produce_html(formatter.context, url, kwargs)
 
     def produce_html(self, context, url, kwargs={}):
@@ -209,38 +209,38 @@ Website: http://trac-hacks.org/wiki/MindMapMacro
         attr['width']  = kwargs.pop('width',self.default_width)
         attr['height'] = kwargs.pop('height',self.default_height)
         try:
-          int( attr['height'] )
+            int( attr['height'] )
         except:
-          pass
+            pass
         else:
-          attr['height'] += "px"
+            attr['height'] += "px"
         try:
-          int( attr['width'] )
+            int( attr['width'] )
         except:
-          pass
+            pass
         else:
-          attr['width'] += "px"
+            attr['width'] += "px"
 
         flashvars = dict([ [k.strip(),v.strip()] for k,v in [ kv.split('=') for kv in self.default_flashvars]])
         try:
-          flashvars.update([ [k.strip(),v.strip()] for k,v in [kv.split('=') for kv in kwargs['flashvars'].strip("\"'").split('|') ] ])
+            flashvars.update([ [k.strip(),v.strip()] for k,v in [kv.split('=') for kv in kwargs['flashvars'].strip("\"'").split('|') ] ])
         except:
-          pass
+            pass
         flashvars['initLoadFile'] = url
 
         css  = ''
         if 'border' in kwargs:
-          border = kwargs['border'].strip("\"'").replace(';','')
-          if border == "1":
-            border = "solid"
-          elif border == "0":
-            border = "none"
-          css = 'border: ' + border
+            border = kwargs['border'].strip("\"'").replace(';','')
+            if border == "1":
+                border = "solid"
+            elif border == "0":
+                border = "none"
+            css = 'border: ' + border
 
         if self.resizable and ( ('resizable' not in kwargs and self.default_resizable) or kwargs.get('resizable','false').lower() == "true" ):
-          class_ = "resizablemindmap mindmap"
+            class_ = "resizablemindmap mindmap"
         else:
-          class_ = "mindmap"
+            class_ = "mindmap"
 
         return tag.div(
             tag.object(
@@ -269,25 +269,25 @@ Website: http://trac-hacks.org/wiki/MindMapMacro
 
     def process_request(self, req):
         if req.path_info == '/mindmap/status':
-          db = self.env.get_db_cnx()
-          cursor = db.cursor()
-          try:
-              cursor.execute('SELECT hash,content FROM mindmapcache')
-              content = tag.html(tag.body(tag.dd(
-                  [ [tag.dt(tag.a(k,href=req.href.mindmap(k + '.mm'))),tag.dd(tag.pre(v))] for k,v in cursor.fetchall()]
-                )))
-          except Exception, e:
-              content = tag.html(tag.body(tag.strong("DB Error: " + unicode(e))))
-          html = content.generate().render("xhtml")
-          req.send_response(200)
-          req.send_header('Cache-control', 'must-revalidate')
-          req.send_header('Content-Type', 'text/html;charset=utf-8')
-          req.send_header('Content-Length', len(html))
-          req.end_headers()
+            db = self.env.get_db_cnx()
+            cursor = db.cursor()
+            try:
+                cursor.execute('SELECT hash,content FROM mindmapcache')
+                content = tag.html(tag.body(tag.dd(
+                    [ [tag.dt(tag.a(k,href=req.href.mindmap(k + '.mm'))),tag.dd(tag.pre(v))] for k,v in cursor.fetchall()]
+                  )))
+            except Exception, e:
+                content = tag.html(tag.body(tag.strong("DB Error: " + unicode(e))))
+            html = content.generate().render("xhtml")
+            req.send_response(200)
+            req.send_header('Cache-control', 'must-revalidate')
+            req.send_header('Content-Type', 'text/html;charset=utf-8')
+            req.send_header('Content-Length', len(html))
+            req.end_headers()
 
-          if req.method != 'HEAD':
-             req.write(html)
-          raise RequestDone
+            if req.method != 'HEAD':
+                req.write(html)
+            raise RequestDone
 
         try:
             hash = req.path_info[9:-3]
@@ -298,17 +298,17 @@ Website: http://trac-hacks.org/wiki/MindMapMacro
             req.send_header('Content-Length', len(mm))
             req.end_headers()
             if req.method != 'HEAD':
-              req.write( mm )
+                req.write( mm )
         except RequestDone:
             pass
         except Exception, e:
             self.log.error(e)
             req.send_response(500)
             try:
-              req.end_headers()
-              req.write( str(e) )
+                req.end_headers()
+                req.write( str(e) )
             except Exception, e:
-              self.log.error(e)
+                self.log.error(e)
         raise RequestDone
 
 
@@ -317,80 +317,79 @@ mmline = re.compile(r"^( *)([*o+-]|\d+\.)(\([^\)]*\))?\s+(.*)$")
 #mmline = re.compile(r"^( *)\*()(.*)")
 
 class MindMap:
-  "Generates Freemind Mind Map file"
+    "Generates Freemind Mind Map file"
 
-  def __init__(self, tree):
-    if isinstance(tree, basestring):
-      tree = self.decode(tree)
-    if len(tree) != 2:
-      raise TracError("Tree must only have one trunk!")
-    (name,branch) = tree
-    self.xml = tag.map( self.node(name,branch), version="0.8.0")
+    def __init__(self, tree):
+        if isinstance(tree, basestring):
+            tree = self.decode(tree)
+        if len(tree) != 2:
+            raise TracError("Tree must only have one trunk!")
+        (name,branch) = tree
+        self.xml = tag.map( self.node(name,branch), version="0.8.0")
 
-  def __repr__(self):
-    return self.xml.generate().render("xml", encoding='utf-8')
-
-
-  def node(self, name, content, args={}):
-    if not content:
-      return tag.node(TEXT=name,**args)
-    else:
-      return tag.node( [ self.node(n,c,a) for n,c,a in content ], TEXT=name, **args)
+    def __repr__(self):
+        return self.xml.generate().render("xml", encoding='utf-8')
 
 
-  def decode(self, code):
-    indent = -1
-    lines = code.splitlines()
-    name = ''
-    while not name and lines:
-      name = lines.pop(0).strip()
+    def node(self, name, content, args={}):
+        if not content:
+            return tag.node(TEXT=name,**args)
+        else:
+            return tag.node( [ self.node(n,c,a) for n,c,a in content ], TEXT=name, **args)
 
-    rec = [name, []]
-    while lines:
-      self._decode(rec[1], lines, indent)
-    return rec
 
-  def _decode(self, ptr, lines, indent):
-    if not lines:
-      return False
-    if lines[0].strip() == '':
-      lines.pop(0)
-      return True
-    m = mmline.match(lines[0])
-    if not m:
-      lines.pop(0)
-      return False
-    ind,marker,argstr,text = m.groups()
-    args = self._parse_args(argstr)
-    ind = len(ind)
-    text = text.strip()
-    if (indent == -1):
-        indent = ind
-    if (ind == indent):
-      lines.pop(0)
-      ptr.append([text, [], args])
-      while self._decode(ptr, lines, ind):
-        pass
-      return True
-    elif (ind > indent):
-      lines.pop(0)
-      ptr[-1][1].append( [text, [], args] )
-      while self._decode(ptr[-1][1], lines, ind):
-        pass
-      return True
-    else:
-      return False
+    def decode(self, code):
+        indent = -1
+        lines = code.splitlines()
+        name = ''
+        while not name and lines:
+            name = lines.pop(0).strip()
 
-  def _parse_args(self, str):
-    d = dict()
-    if not str:
-      return d
-    for pair in str[1:-1].split(','):
-      try:
-        key,value = pair.split('=')
-      except:
-        key,value = pair,''
-      key = key.strip().upper().encode()
-      d[key] = value.strip()
-    return d
+        rec = [name, []]
+        while lines:
+            self._decode(rec[1], lines, indent)
+        return rec
 
+    def _decode(self, ptr, lines, indent):
+        if not lines:
+            return False
+        if lines[0].strip() == '':
+            lines.pop(0)
+            return True
+        m = mmline.match(lines[0])
+        if not m:
+            lines.pop(0)
+            return False
+        ind,marker,argstr,text = m.groups()
+        args = self._parse_args(argstr)
+        ind = len(ind)
+        text = text.strip()
+        if indent == -1:
+            indent = ind
+        if ind == indent:
+            lines.pop(0)
+            ptr.append([text, [], args])
+            while self._decode(ptr, lines, ind):
+                pass
+            return True
+        elif ind > indent:
+            lines.pop(0)
+            ptr[-1][1].append( [text, [], args] )
+            while self._decode(ptr[-1][1], lines, ind):
+                pass
+            return True
+        else:
+            return False
+
+    def _parse_args(self, str):
+        d = dict()
+        if not str:
+            return d
+        for pair in str[1:-1].split(','):
+            try:
+                key,value = pair.split('=')
+            except:
+                key,value = pair,''
+            key = key.strip().upper().encode()
+            d[key] = value.strip()
+        return d
