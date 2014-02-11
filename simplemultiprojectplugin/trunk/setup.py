@@ -15,7 +15,7 @@ setup(
     author_email='jesuchristopher@gmail.com',
     maintainer = "falkb",
     license='GPL',
-    url='http://trac-hacks.org/wiki/SimpleMultiProject',
+    url='http://trac-hacks.org/wiki/SimpleMultiProjectPlugin',
     description='Simple Multi Project',
     long_description='Simple Multi Project',
     keywords='Simple Multi Project',
