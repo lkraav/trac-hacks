@@ -166,11 +166,9 @@ hiderule.apply = function(input, spec){
         (jQuery.inArray(v,l) == -1 && spec.op == 'show')){
         
         // we want to hide the input fields's td and related th
-        var field = jQuery('#field-'+target);
+        var field = jQuery('#field-'+target+',input[name="field_'+target+'"]');
         var td = field.parents('td:first');
-        var th = td.siblings('th')
-                   .find('label[for=field-'+target+']')
-                   .parents('th:first');
+        var th = td.prev('th');
         var cls = 'dynfields-hide dynfields-'+trigger;
         if (spec.link_to_show.toLowerCase() == 'true')
             cls += ' dynfields-link';
