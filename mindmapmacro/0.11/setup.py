@@ -23,6 +23,7 @@ setup(
     license      = 'GPLv3',
     zip_safe     = False,
     keywords = 'trac mindmap freemind flash macro',
+    install_requires = ['TracExtractUrl'],
     classifiers = ['Framework :: Trac'],
     entry_points = {'trac.plugins': [
       'tracmindmap.macro = tracmindmap.macro',
