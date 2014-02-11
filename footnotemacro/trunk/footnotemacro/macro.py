@@ -53,8 +53,11 @@ class FootNoteMacro(WikiMacroBase):
     
     def expand_macro(self, formatter, name, content):
         # Make sure data capsule is in place
-        if not hasattr(formatter, '_footnotes'):
-            formatter._footnotes = []
+        context = formatter.context
+        while hasattr(context, 'parent') and context.parent is not None:
+            context = context.parent
+        if not hasattr(context, '_footnotes'):
+            context._footnotes = []
 
         # Chrome
         add_stylesheet(formatter.req, 'footnote/footnote.css')
@@ -67,15 +70,15 @@ class FootNoteMacro(WikiMacroBase):
                 output_id = int(content)
 
                 try:
-                    content = formatter._footnotes[output_id-1][0]
+                    content = context._footnotes[output_id-1][0]
                 except IndexError:
                     content = 'Unknown footnote'
             except ValueError:
                 output_id = None
 
                 # Try to collate with an existing footnote
-                for i in xrange(len(formatter._footnotes)):
-                    if formatter._footnotes[i][0] == content:
+                for i in xrange(len(context._footnotes)):
+                    if context._footnotes[i][0] == content:
                         output_id = i + 1
                         break
 
@@ -84,8 +87,8 @@ class FootNoteMacro(WikiMacroBase):
 
                 # Adding a new footnote
                 if not output_id:
-                    formatter._footnotes.append((content, markup))
-                    output_id = len(formatter._footnotes)
+                    context._footnotes.append((content, markup))
+                    output_id = len(context._footnotes)
 
             return tag.sup(
                 tag.a(
@@ -98,9 +101,9 @@ class FootNoteMacro(WikiMacroBase):
             )
         else:
             # Dump all accumulated notes
-            footnotes = formatter._footnotes[:]
-            formatter._footnotes = [(content, None) for content, markup in footnotes]
-            if formatter._footnotes:
+            footnotes = context._footnotes[:]
+            context._footnotes = [(content, None) for content, markup in footnotes]
+            if context._footnotes:
                 return tag.div(
                     tag.hr(),
                     tag.ol(
