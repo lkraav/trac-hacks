@@ -15,14 +15,14 @@ from xmlrpclib import ServerProxy, Fault
 from trac.config import *
 from trac.core import *
 from trac.ticket.api import ITicketChangeListener
-from trac.versioncontrol.api import IRepositoryListener
+from trac.versioncontrol.api import IRepositoryChangeListener
 from trac.wiki.api import IWikiChangeListener
 from tracext.ircannouncer.utils import prepare_ticket_values, \
      prepare_changeset_values, prepare_wiki_page_values
 
 
 class ChangeListener(Component):
-    implements(ITicketChangeListener, IRepositoryListener,
+    implements(ITicketChangeListener, IRepositoryChangeListener,
                IWikiChangeListener)
 
     host = Option('ircannouncer', 'bot_host', '127.0.0.1',
@@ -59,7 +59,7 @@ class ChangeListener(Component):
     def ticket_deleted(self, ticket):
         pass
 
-    # -- IRepositoryListener
+    # -- IRepositoryChangeListener
 
     def changeset_synced(self, chgset):
         pass
