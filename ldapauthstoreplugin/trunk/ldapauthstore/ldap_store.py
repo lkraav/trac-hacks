@@ -36,7 +36,7 @@ class LdapAuthStore(Component):
         # max cache entries
         self._cache_size = min(25, int(self.config.get('ldap', 'cache_size', '100')))
 
-    self.env.log.debug('LdapAuthStore: Initiated')
+        self.env.log.debug('LdapAuthStore: Initiated')
 
     def get_users(self):
         """Returns an iterable of the known usernames.
@@ -67,28 +67,28 @@ class LdapAuthStore(Component):
         self._openldap()
         return self._ldap.is_in_group(dn, gdn)
 
-#       def has_user(self, user):
-#               self.env.log.info("checking user: %s"%user)
-#               return user in self.get_users()
-
-#       def get_users(self):
-#               self._openldap()
-#               #2008-03-17 change objectclass=simpleSecurityObject to object=*
-#               #MODIFIKEI
-#               #ldap_users = self._ldap.get_dn(self._ldap.basedn, '(objectclass=*)')
-#               self._basedn_filter = self.config.get('ldap', 'basedn_filter', 'objectClass=*')
-#               ldap_users = self._ldap.get_dn(self._ldap.basedn, self._basedn_filter)
-#
-#               self.env.log.info("ldap_users: %s"%(ldap_users))
-#               users = []
-#               for user in ldap_users:
-#                       m = re.match('uid=([^,]+)', user)
-#                       if m:
-#                               users.append(m.group(1))
-#               return users
+    # def has_user(self, user):
+    #     self.env.log.info("checking user: %s"%user)
+    #     return user in self.get_users()
+    #
+    # def get_users(self):
+    #     self._openldap()
+    #     #2008-03-17 change objectclass=simpleSecurityObject to object=*
+    #     #MODIFIKEI
+    #     #ldap_users = self._ldap.get_dn(self._ldap.basedn, '(objectclass=*)')
+    #     self._basedn_filter = self.config.get('ldap', 'basedn_filter', 'objectClass=*')
+    #     ldap_users = self._ldap.get_dn(self._ldap.basedn, self._basedn_filter)
+    #
+    #     self.env.log.info("ldap_users: %s"%(ldap_users))
+    #     users = []
+    #     for user in ldap_users:
+    #         m = re.match('uid=([^,]+)', user)
+    #         if m:
+    #             users.append(m.group(1))
+    #     return users
 
 # do we want to set ldap passwd via trac?
-# maybe only if enabled in ini
+    # maybe only if enabled in ini
     def set_password(self, user, password, old_password = None):
         dn = self.util.user_attrdn(user)
         try:
@@ -179,13 +179,13 @@ class LdapAuthStore(Component):
                 pass
         return None
 
-#we dont delete/add to ldap
-#       def delete_user(self, user):
-#               """Deletes the user account.
-#
-#               Returns True if the account existed and was deleted, False otherwise.
-#               """
-#               return False
+    # we don't delete/add to ldap
+    # def delete_user(self, user):
+    #     """Deletes the user account.
+    #
+    #     Returns True if the account existed and was deleted, False otherwise.
+    #     """
+    #     return False
 
     def _openldap(self):
         """Ensure self._ldap is set to a privileged LDAP connection.
