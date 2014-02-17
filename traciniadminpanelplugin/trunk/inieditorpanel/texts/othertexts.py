@@ -12,3 +12,4 @@ N_('modifiable')
 
 # display field value when default
 N_('<default value>')
+N_('<none>')

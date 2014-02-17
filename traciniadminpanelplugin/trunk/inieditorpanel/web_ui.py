@@ -382,7 +382,8 @@ class TracIniAdminPanel(Component):
              'descriptions' : descriptions,
              'modifiable_options': modifiable_options,
              'readonly_options': readonly_options,
-             'hidden_options': hidden_options
+             'hidden_options': hidden_options,
+             '_': _
            }
 
     section_counters = {}
