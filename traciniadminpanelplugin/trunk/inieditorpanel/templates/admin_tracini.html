@@ -146,12 +146,12 @@
                         <py:when test="'envrelativepath'"><span>file system path relative to the Trac env</span></py:when>
                         <py:when test="'extension'"><span i18n:msg="name">one component implementing '${option.option_info.xtnpt.interface.__name__}'</span></py:when>
                         <py:when test="'orderedextensions'"><span i18n:msg="name">ordered list of components implementing '${option.option_info.xtnpt.interface.__name__}' (comma separated)</span></py:when>
-                        <py:otherwise>${gettext(option.type)}</py:otherwise>
+                        <py:otherwise>${_(option.type)}</py:otherwise>
                       </py:choose>
-                      | <b>Access:</b> ${gettext(option.access)}
+                      | <b>Access:</b> ${_(option.access)}
                       <py:choose test="option.type">
                         <py:when test="'password'"><span i18n:msg="default,stored">
-                          | <b>Default value:</b> ${option.default_value and _('&lt;hidden&gt;') or _('&lt;none&gt;')} 
+                          | <b>Default value:</b> ${option.default_value and _('&lt;hidden&gt;') or _('&lt;none&gt;')}
                           | <b>Currently stored value:</b> ${option.stored_value and _('&lt;hidden&gt;') or _('&lt;default value&gt;')}</span>
                         </py:when>
                         <py:otherwise><span i18n:msg="default,stored">
@@ -182,7 +182,7 @@
                 <input type="submit" name="inieditor-submit-discard-${section_name}" value="${_('Discard changes')}" title="Discards the changes from this section. Also removes custom options, if they still have their default value."/>
                 <span class="option-modify-section">
                   <input name="new-options-${section_name}" size="70" title="Options to be added to this section; comma-separated"/>
-                  <input type="submit" name="inieditor-submit-addnewoptions-${section_name}" value="Add options" title="Adds the specified options to this section"/>
+                  <input type="submit" name="inieditor-submit-addnewoptions-${section_name}" value="${_('Add options')}" title="Adds the specified options to this section"/>
                 </span>
               </td>
             </tr>

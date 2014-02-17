@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2013-04-21 11:47+0200\n"
+"POT-Creation-Date: 2014-02-17 19:10+0100\n"
 "PO-Revision-Date: 2013-04-07 13:27+0000\n"
 "Last-Translator: Dirk Stöcker <launchpad@dstoecker.de>\n"
 "Language-Team: de <LL@li.org>\n"
@@ -160,20 +160,20 @@ msgstr "Die neuen Felder wurden zum Abschnitt %s hinzugefügt."
 msgid "No new fields have been added."
 msgstr "Es wurden keine neuen Felder hinzugefügt."
 
-#: inieditorpanel/web_ui.py:403
+#: inieditorpanel/web_ui.py:404
 #, python-format
 msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
 msgstr "Geändert: %(mod)d | Standard:  %(def)d | Optionsanzahl: %(opt)d"
 
-#: inieditorpanel/web_ui.py:538 inieditorpanel/web_ui.py:541
+#: inieditorpanel/web_ui.py:539 inieditorpanel/web_ui.py:542
 msgid "text"
 msgstr "Text"
 
-#: inieditorpanel/web_ui.py:545
+#: inieditorpanel/web_ui.py:546
 msgid "password"
 msgstr "Passwort"
 
-#: inieditorpanel/web_ui.py:601
+#: inieditorpanel/web_ui.py:602
 #, python-format
 msgid ""
 "The default value for option \"%s\" in section \"%s\" is invalid. Reason:"
@@ -182,7 +182,7 @@ msgstr ""
 "Der Standardwert für Option \"%s\" in Abschnitt \"%s\" ist ungültig. "
 "Grund: %s"
 
-#: inieditorpanel/web_ui.py:630
+#: inieditorpanel/web_ui.py:631
 #, python-format
 msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
 msgstr "Der Wert für Option \"%s\" in Abschnitt \"%s\" ist ungültig. Grund: %s"
@@ -343,6 +343,12 @@ msgid "Access:"
 msgstr "Zugriff:"
 
 #: inieditorpanel/templates/admin_tracini.html:153
+#, python-format
+msgid ""
+"| [1:Default value:] %(default)s\n"
+"                          | [2:Currently stored value:] %(stored)s"
+msgstr "| [1:Standardwert:] %(default)s | [2:Gespeicherter Wert:] %(stored)s"
+
 #: inieditorpanel/templates/admin_tracini.html:157
 #, python-format
 msgid ""
@@ -397,6 +403,10 @@ msgid "Options to be added to this section; comma-separated"
 msgstr "Zu diesem Abschnitt hinzuzufügende Optionen; kommagetrennt"
 
 #: inieditorpanel/templates/admin_tracini.html:185
+msgid "Add options"
+msgstr "Optionen ergänzen"
+
+#: inieditorpanel/templates/admin_tracini.html:185
 msgid "Adds the specified options to this section"
 msgstr "Fügt die angegebenen Optionen zu diesem Abschnitt hinzu"
 
@@ -427,4 +437,8 @@ msgstr "änderbar"
 #: inieditorpanel/texts/othertexts.py:14
 msgid "<default value>"
 msgstr "<Standardwert>"
+
+#: inieditorpanel/texts/othertexts.py:15
+msgid "<none>"
+msgstr "<leer>"
 

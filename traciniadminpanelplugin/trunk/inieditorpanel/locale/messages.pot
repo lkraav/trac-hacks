@@ -1,15 +1,15 @@
 # Translations template for TracIniAdminPanel.
-# Copyright (C) 2013 ORGANIZATION
+# Copyright (C) 2014 ORGANIZATION
 # This file is distributed under the same license as the
 # TracIniAdminPanel project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2013.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: TracIniAdminPanel 1.0.1\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2013-04-21 11:47+0200\n"
+"POT-Creation-Date: 2014-02-17 19:10+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -142,27 +142,27 @@ msgstr ""
 msgid "No new fields have been added."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:403
+#: inieditorpanel/web_ui.py:404
 #, python-format
 msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:538 inieditorpanel/web_ui.py:541
+#: inieditorpanel/web_ui.py:539 inieditorpanel/web_ui.py:542
 msgid "text"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:545
+#: inieditorpanel/web_ui.py:546
 msgid "password"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:601
+#: inieditorpanel/web_ui.py:602
 #, python-format
 msgid ""
 "The default value for option \"%s\" in section \"%s\" is invalid. "
 "Reason: %s"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:630
+#: inieditorpanel/web_ui.py:631
 #, python-format
 msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
 msgstr ""
@@ -306,6 +306,12 @@ msgid "Access:"
 msgstr ""
 
 #: inieditorpanel/templates/admin_tracini.html:153
+#, python-format
+msgid ""
+"| [1:Default value:] %(default)s\n"
+"                          | [2:Currently stored value:] %(stored)s"
+msgstr ""
+
 #: inieditorpanel/templates/admin_tracini.html:157
 #, python-format
 msgid ""
@@ -354,6 +360,10 @@ msgid "Options to be added to this section; comma-separated"
 msgstr ""
 
 #: inieditorpanel/templates/admin_tracini.html:185
+msgid "Add options"
+msgstr ""
+
+#: inieditorpanel/templates/admin_tracini.html:185
 msgid "Adds the specified options to this section"
 msgstr ""
 
@@ -383,5 +393,9 @@ msgstr ""
 
 #: inieditorpanel/texts/othertexts.py:14
 msgid "<default value>"
+msgstr ""
+
+#: inieditorpanel/texts/othertexts.py:15
+msgid "<none>"
 msgstr ""
 
