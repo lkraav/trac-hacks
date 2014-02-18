@@ -127,20 +127,28 @@ class SmpRoadmapProject(Component):
         if hide is None or 'projectdescription' not in hide:
             show_proj_descr = True
 
+        hide_closed = False
+        filter_projects_setting = smp_settings(req, 'roadmap', 'filter-projects')
+        if filter_projects_setting is None or 'All' in filter_projects_setting:
+            hide_closed = True
+
         div_projects_milestones = ''
         
         for project_name in sorted(projects.keys()):
             has_access = True
+            can_show = True
             if (project_name == "--None Project--"):
                 div_project = '<br><div id="project"><fieldset><legend><h2>No Project</h2></legend>'
             else:
                 project_info = self.__SmpModel.get_project_info(project_name)
                 if project_info:
+                    if hide_closed and project_info[4] > 0: # column 4 of table smp_project tells if project is closed
+                        can_show = False
                     if self.__SmpModel.is_not_in_restricted_users(req.authname, project_info):
                         has_access = False
 
                 div_project = '<br><div id="project"><fieldset><legend><b>Project </b> <em style="font-size: 12pt; color: black;">%s</em></legend>' % project_name
-                if has_access and project_info and show_proj_descr:
+                if can_show and has_access and project_info and show_proj_descr:
                     div_project = div_project + '<div class="description" xml:space="preserve">'
                     if project_info[2]:
                         div_project = div_project + '%s<br/><br/>' % project_info[2]
@@ -149,7 +157,7 @@ class SmpRoadmapProject(Component):
 
             div_milestone = ''
             
-            if len(projects[project_name]) > 0:
+            if can_show and len(projects[project_name]) > 0:
                 if has_access:
                     for milestone in projects[project_name]:
                         mi = '<em>%s</em>' % milestone
