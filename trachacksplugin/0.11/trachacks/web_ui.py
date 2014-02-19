@@ -298,7 +298,7 @@ class TracHacksHandler(Component):
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         #if req.path_info == '/newhack':
-            return 'newhack'
+        return 'newhack'
         #else:
         #    return 'hacks'
 
