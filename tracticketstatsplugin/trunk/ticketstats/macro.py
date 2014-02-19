@@ -228,10 +228,10 @@ class TicketStatsMacro(WikiMacroBase):
     def expand_macro(self, formatter, name, args):
         """
 
-        @param formatter: 
-        @param name: 
-        @param args: 
-        @return: 
+        @param formatter:
+        @param name:
+        @param args:
+        @return:
         """
         args = _parse_args(args)
         args = _get_args_defaults(formatter.env, args)
