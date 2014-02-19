@@ -1,8 +1,8 @@
 #
-# Copyright (C) 2005-2006 Team5	
+# Copyright (C) 2005-2006 Team5
 # All rights reserved.
 #
-# This software is licensed as described in the file COPYING.txt, which	
+# This software is licensed as described in the file COPYING.txt, which
 # you should have received as part of this distribution.
 #
 # Author: Team5
@@ -150,7 +150,7 @@ class dbBackend(object):
         cursor = self.db.cursor()
         cursor.execute(query)
         rows = cursor.fetchall()
-        d = {} 
+        d = {}
         if not rows:
             return d
         for row in rows:
@@ -168,7 +168,7 @@ class dbBackend(object):
         users = []
         for row in rows:
             users.append(row[0])
-        return users 
+        return users
 
     #A generic method for executing queries that return CodeReview structures
     #query: the query to execute
@@ -181,11 +181,11 @@ class dbBackend(object):
             if not row:
                 return None
             return CodeReviewStruct(row)
-        
+
         rows = cursor.fetchall()
         if not rows:
             return []
-        
+
         codeReviews = []
         for row in rows:
             codeReviews.append(CodeReviewStruct(row))
@@ -202,11 +202,11 @@ class dbBackend(object):
             if not row:
                 return None
             return ReviewerStruct(row)
-            
+
         rows = cursor.fetchall()
         if not rows:
             return []
-        
+
         reviewers = []
         for row in rows:
             reviewers.append(ReviewerStruct(row))
@@ -238,7 +238,7 @@ class dbBackend(object):
             comment = comments[key]
             if comment.IDParent != "-1" and comment.IDParent in comments and comment.IDParent != comment.IDComment:
                 comments[comment.IDParent].Children[comment.IDComment] = comment
-            
+
         return comments
 
     #A generic method for executing queries that return File structures

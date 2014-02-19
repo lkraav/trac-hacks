@@ -45,7 +45,7 @@ class UserbaseModule(Component):
 
     # IPermissionRequestor methods
     def get_permission_actions(self):
-         return ['CODE_REVIEW_DEV', 'CODE_REVIEW_MGR']
+        return ['CODE_REVIEW_DEV', 'CODE_REVIEW_MGR']
 
     # IRequestHandler methods
     def match_request(self, req):
@@ -128,7 +128,7 @@ class UserbaseModule(Component):
         data['managerReviews'] = managerReturnArray
 
         add_stylesheet(req, 'common/css/code.css')
-        add_stylesheet(req, 'common/css/browser.css')	
+        add_stylesheet(req, 'common/css/browser.css')   
 
         data['cycle'] = itertools.cycle
 
@@ -166,8 +166,8 @@ class UserbaseModule(Component):
 
                 reviewersList = ''
                 for reviewer in reviewers:
-                     reviewersList = reviewersList + reviewer.Reviewer + ','
-            
+                    reviewersList = reviewersList + reviewer.Reviewer + ','
+           
                 yield('codereview', codeReview.DateCreate, codeReview.Author,
                       (codereview_page, codeReview.Name, codeReview.Notes,
                        reviewersList))
