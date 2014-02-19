@@ -15,28 +15,28 @@ from trac.wiki.model import WikiPage
 class WikinfoMacro(WikiMacroBase):
     """
     Output wiki page info.
-    
+
     Currently supported arguments:
-    
+
     author      - Author of first version
     version     - Latest version of page
     changed_by  - Page last changed by
     comment     - Latest comment of changed by
     changed_ts  - Page last changed timestamp
     """
-    
+
     def expand_macro(self, formatter, name, content):
-        
+
         if not content:
             return ''
-        
-        args, kwargs = parse_args(content)        
+
+        args, kwargs = parse_args(content)
         if len(args) > 1:
             return system_message("Number of args can't be greater than 1")
-        
+
         if args[0] == 'author':
             page = WikiPage(self.env, formatter.context.resource, 1)
-            text = page.author 
+            text = page.author
         elif args[0] == 'version':
             page = WikiPage(self.env, formatter.context.resource)
             text = str(page.version)
@@ -51,6 +51,5 @@ class WikinfoMacro(WikiMacroBase):
             text = format_datetime(page.time)
         else:
             return system_message("Unkwown argument %s" % args[0])
-        
+
         return format_to_oneliner(self.env, formatter.context, text)
-    
