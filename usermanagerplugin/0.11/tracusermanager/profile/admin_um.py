@@ -11,17 +11,17 @@ from tracusermanager.admin import IUserManagerPanelProvider, IUserListCellContri
 from tracusermanager.profile.api import UserProfileManager
 
 class UserProfileUserManagerPanel(Component):
-    
+
     implements(IUserManagerPanelProvider, IUserListCellContributor)
-    
+
     # IUserManagerPanelProvider
     def get_usermanager_admin_panels(self, req):
         return [('profile', _('Profile'))]
-    
+
     def render_usermanager_admin_panel(self, req, panel, user, path_info):
         data = dict(messages=[], errors=[],
                     um_profile_fields=UserProfileManager(self.env).get_user_profile_fields())
-        
+
         if req.method=="POST":
             if req.args.has_key("um_profile_picture_remove"):
                 if UserProfileManager(self.env).remove_user_file(user["picture_href"]):
@@ -52,17 +52,17 @@ class UserProfileUserManagerPanel(Component):
 
                 if user.save():
                     data['messages'].append(_("Successfully updated profile for user [%s].")%(user.username))
-        
+
         add_stylesheet(req, 'tracusermanager/css/admin_um_profile.css')
-        
-        return 'admin_um_profile.html', data    
+
+        return 'admin_um_profile.html', data
 
     # IUserListCellContributor methods
     def get_userlist_cells(self):
         yield ('name', _('Name'),0)
         yield ('email', _('Email'),1)
         yield ('role', _('Role'),2)
-        
+
     def render_userlist_cell(self, cell_name, user):
         """Should render user cell"""
         #if cell_name in ('name', 'email', 'role'):

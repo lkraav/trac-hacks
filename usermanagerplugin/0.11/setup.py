@@ -8,12 +8,12 @@ from setuptools import setup
 
 setup(name="TracUserManagerPlugin",
       version="0.5",
-      packages=['tracusermanager', 
-                'tracusermanager.account', 
+      packages=['tracusermanager',
+                'tracusermanager.account',
                 'tracusermanager.permissions',
                 'tracusermanager.profile'],
-      author="Catalin Balan", 
-      author_email="cbalan@optaros.com", 
+      author="Catalin Balan",
+      author_email="cbalan@optaros.com",
       url="http://code.optaros.com/trac/oforge",
       description="Trac User Manager",
       license="BSD",
@@ -24,10 +24,10 @@ setup(name="TracUserManagerPlugin",
             'tracusermanager.permissions = tracusermanager.permissions',
             'tracusermanager.profile = tracusermanager.profile'
             ]},
-      package_data={'tracusermanager' : ['htdocs/js/*.js', 
-                                         'htdocs/css/*.css', 
+      package_data={'tracusermanager' : ['htdocs/js/*.js',
+                                         'htdocs/css/*.css',
                                          'templates/*.html',
                                          'htdocs/img/*.png']},
-      
+
       test_suite = 'tracusermanager.tests'
-      ) 
+      )

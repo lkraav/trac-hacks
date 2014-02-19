@@ -8,7 +8,7 @@ import unittest
 
 from tracusermanager.tests import api, macros_um_profile
 
-def suite():    
+def suite():
     suite = unittest.TestSuite()
     suite.addTest(api.suite())
     suite.addTest(macros_um_profile.suite())

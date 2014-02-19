@@ -16,20 +16,20 @@ from acct_mgr.api import AccountManager
 from tracusermanager.admin import IUserManagerPanelProvider
 
 class AccountUserManagerPanel(Component):
-    
+
     implements(IUserManagerPanelProvider)
-    
+
     def get_usermanager_admin_panels(self, req):
-       return [('account', _('Authentication'))]
-    
+        return [('account', _('Authentication'))]
+
     def render_usermanager_admin_panel(self, req, panel, user, path_info):
-        
+
         data={'TYPES':['trac-managed', 'server-managed'],
               'set_password_enabled': AccountManager(self.env).supports('set_password'),
               'delete_enabled': AccountManager(self.env).supports('delete_user')}
         messages=[]
         errors=[]
-        
+
         if req.method=='POST':
             if req.args.has_key('um_account_update_type'):
                 if req.args.get('um_account_type')=='trac-managed' and not AccountManager(self.env).has_user(user.username):
@@ -48,8 +48,8 @@ class AccountUserManagerPanel(Component):
                     errors.append(_('Passwords don\'t match'))
             else:
                 raise TracError("Unknow action")
-        
+
         # Adding type
         data.update(type=AccountManager(self.env).has_user(user.username) and 'trac-managed' or 'server-managed')
-        
+
         return 'admin_um_account.html',{'um_account':data, 'messages':messages, 'errors':errors}
