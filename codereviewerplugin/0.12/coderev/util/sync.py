@@ -1,6 +1,6 @@
 #! /usr/bin/python
 # -*- coding: UTF-8 -*-
-# 
+#
 # Sample sync utility for sqlite3 dbs and git repos that updates the
 # codereviewer_map table.
 
@@ -16,18 +16,18 @@ EPOCH_MULTIPLIER = 1000000.0
 def sync(db_path, repo_dir):
     db = sqlite3.connect(db_path)
     reponame = os.path.basename(repo_dir.rstrip('/')).lower()
-    
+
     # extract changesets to sync
     changeset_lines = get_changeset_lines(repo_dir)
     print "processing %d changesets" % len(changeset_lines)
-    
+
     # purge table for this repo
     cursor = db.cursor()
     cursor.execute("""
         DELETE FROM codereviewer_map
         WHERE repo='%s'
     """ % reponame)
-    
+
     # insert a row per ticket in commit message
     for changeset_line in changeset_lines:
         print '.',
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         file = os.path.basename(sys.argv[0])
         print "usage: %s <db_path> <repo_dir>" % file
         sys.exit(1)
-    
+
     # sync
     db_path = sys.argv[1]
     repo_dir = sys.argv[2]

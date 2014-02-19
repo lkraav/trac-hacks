@@ -10,17 +10,17 @@ from trac.ticket.model import Ticket
 
 class CodeReview(object):
     """A review for a single changeset."""
-    
+
     # default status choices - configurable but must always be exactly three
     STATUSES = ['FAILED','PENDING','PASSED']
     DEFAULT_STATUS = STATUSES[1]
     NOT_PASSED = "(not %s)" % STATUSES[2]
     EPOCH_MULTIPLIER = 1000000.0
-    
+
     # db schema
     db_name = 'coderev'
     db_version = 2 # see upgrades dir
-    
+
     def __init__(self, env, repo, changeset, req=None):
         """The summary field will only get converted to html format in
         a html_summary field if a req object is provided."""
@@ -33,7 +33,7 @@ class CodeReview(object):
         if not isinstance(self.statuses,list):
             self.statuses = self.statuses.split(',')
         self._clear()
-    
+
     def _clear(self):
         self._status = None    # updated to latest status
         self._reviewer = None  # updated to reviewer who made latest status
@@ -41,43 +41,43 @@ class CodeReview(object):
         self._tickets = None   # updated from commit message on save
         self._summaries = None
         self._changeset_when = None
-    
+
     @property
     def status(self):
         if self._status is None:
             self._populate()
         return self._status
-    
+
     @property
     def reviewer(self):
         if self._reviewer is None:
             self._populate()
         return self._reviewer
-    
+
     @property
     def when(self):
         if self._when is None:
             self._populate()
         return self._when
-    
+
     @property
     def summaries(self):
         if self._summaries is None:
             self._populate_summaries()
         return self._summaries
-    
+
     @property
     def changeset_when(self):
         if self._changeset_when is None:
             self._populate_tickets()
         return self._changeset_when
-    
+
     @property
     def tickets(self):
         if self._tickets is None:
             self._populate_tickets()
         return self._tickets
-    
+
     def save(self, status, reviewer, summary, **kw):
         status = self.encode(status)
         when = int(time.time() * self.EPOCH_MULTIPLIER)
@@ -94,7 +94,7 @@ class CodeReview(object):
         self.db.commit()
         self._clear()
         return True
-    
+
     def decode(self, status):
         if status:
             try:
@@ -104,7 +104,7 @@ class CodeReview(object):
             except Exception, e:
                 pass
         return status
-    
+
     def encode(self, status):
         if status:
             try:
@@ -114,7 +114,7 @@ class CodeReview(object):
             except Exception, e:
                 pass
         return status
-    
+
     @staticmethod
     def get_reviews(env, ticket, req=None):
         """Return all reviews for the given ticket in changeset order."""
@@ -130,14 +130,14 @@ class CodeReview(object):
             review = CodeReview(env, repo, changeset, req)
             reviews.append(review)
         return reviews
-    
+
     def is_incomplete(self, ticket):
         """Returns False if the ticket is complete - meaning:
-        
+
          * the ticket satisfies its completeness criteria
          * no reviews are PENDING for this ticket
          * this ticket's last review PASSED
-        
+
         If the ticket is incomplete, then a string is returned that explains
         the reason.
         """
@@ -155,7 +155,7 @@ class CodeReview(object):
                             (tkt.id,field,value,rule)
         except ResourceNotFound:
             pass # e.g., incorrect ticket reference
-        
+
         # check review status
         reviews = CodeReview.get_reviews(self.env, ticket)
         if not reviews:
@@ -167,9 +167,9 @@ class CodeReview(object):
         if review.encode(review.status) != 'PASSED':
             return "Ticket #%s's last changeset %s = %s %s" % \
                    (ticket,review.changeset,review.status,self.NOT_PASSED)
-                   
+
         return False
-    
+
     def _populate(self):
         """Populate this object from the database."""
         # get the last status change ('' status indicates no change)
@@ -183,7 +183,7 @@ class CodeReview(object):
         row = cursor.fetchone() or (self.DEFAULT_STATUS,'',0)
         status,self._reviewer,self._when = row
         self._status = self.decode(status)
-    
+
     def _populate_summaries(self):
         """Returns all summary records for the given changeset."""
         summaries = []
@@ -209,7 +209,7 @@ class CodeReview(object):
                 'pretty_when': pretty_when,
             })
         self._summaries = summaries
-    
+
     def _populate_tickets(self):
         """Populate this object's tickets from the database."""
         cursor = self.db.cursor()
@@ -224,7 +224,7 @@ class CodeReview(object):
             if ticket:
                 self._tickets.append(ticket)
             self._changeset_when = when
-    
+
     def _wiki_to_html(self, message):
         if not self.req:
             return message

@@ -1,7 +1,7 @@
 from trac.db import Table, Column, Index, DatabaseManager
 
 def do_upgrade(env, cursor):
-    
+
     db_tables = [
         Table('codereviewer_map', key=['repo','changeset','ticket'])[
             Column('repo', type='text'),
@@ -10,7 +10,7 @@ def do_upgrade(env, cursor):
             Column('time', type='integer'),
         ],
     ]
-    
+
     # create the map table
     db_connector = DatabaseManager(env).get_connector()[0]
     for table in db_tables:
