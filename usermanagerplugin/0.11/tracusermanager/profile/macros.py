@@ -47,7 +47,7 @@ Usage:
         layout_args = {}
         rendered_result = ""
         user_profile_templates = []
-        
+
         # collecting arguments
         if content:
             for i, macro_args in enumerate( content.split('|') ):
@@ -57,16 +57,16 @@ Usage:
                 if i == 1:
                     layout_args = MacroArguments( macro_args )
                     break
-            
+
             # extracting userProfile attrs
             if len(content_args) > 0:
                 user_profile_templates.append(User(**content_args))
-                
+
             if len(content_args.get_list_args()) > 0:
                 for list_item in content_args.get_list_args():
                     user_profile_templates.append(
                         User(**MacroArguments(list_item[1:len(list_item)-1])))
-        
+
         # adding profiles fields description
         data['user_profile_fields'].update(UserProfileManager(env)
                     .get_user_profile_fields(ignore_internal=True))
@@ -78,20 +78,20 @@ Usage:
             return wiki_to_html(text, env, req)
 
         data['wiki_to_html'] = inline_wiki_to_html
-        
+
         # grabbing users
         if len(user_profile_templates) > 0:
             data['user_profiles'] = UserManager(env).search_users(
                                                      user_profile_templates)
         else:
             data['user_profiles'] = UserManager(env).get_active_users()
-        
+
         data['cells'] = list(self._get_cells(req, data['user_profiles']))
-        
+
         # add stylesheet&script
         add_script(req, 'tracusermanager/js/macros_um_profile.js')
         add_stylesheet(req, 'tracusermanager/css/macros_um_profile.css')
-        
+
         # render template
         template = Chrome(env).load_template('macro_um_profile.html',
                                                   method='xhtml')
@@ -104,7 +104,7 @@ Usage:
             rendered_result = html.div(rendered_result, **layout_args)
 
         return rendered_result
-    
+
     def _get_cells(self, req, user_list):
         for provider in self.cells_providers:
             for cell, label, order in provider.get_userlistmacro_cells():
@@ -148,19 +148,19 @@ Usage:
 Please use UserProfilesList macro insted of TeamRoster macro.
 Keeping this for backward compatibility with !TeamRosterPlugin.
     """
-   
+
 class MacroArguments(dict):
-    
+
     largs = []
 
     def __init__(self, arguments):
         self.largs, kwargs = parse_args(arguments)
         for k, v in kwargs.items():
             self[str(k)] = v
-    
+
     def get_list_args(self):
         return self.largs
-        
+
     def get_int(self, name, default=None):
         value = self.get(name, default)
         if value == '':
@@ -169,16 +169,15 @@ class MacroArguments(dict):
             return int(value)
         except (TypeError, ValueError):
             return default
-    
+
     def get_list(self, name, default=None):
         value = self.get(name, default)
         try:
             return value.split(',')
         except AttributeError:
             return default
-    
+
     def get_dict(self, name, default=None):
         value = self.get(name, default)
         if value.startswith('{') and value.endswith('}'):
             return MacroArguments(value[1:len(value)-1])
-

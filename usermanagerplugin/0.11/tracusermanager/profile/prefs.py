@@ -14,19 +14,19 @@ from tracusermanager.api import UserManager
 
 class UserProfileModule(Component):
     implements(IPreferencePanelProvider)
-    
+
     # IPreferencePanelProvider methods
     def get_preference_panels(self, req):
         if req.session.authenticated:
-            yield ('userprofile', _('My Profile'))    
-        
+            yield ('userprofile', _('My Profile'))
+
     def render_preference_panel(self, req, panel):
         """"""
         user = UserManager(self.env).get_user(req.session.sid)
         data = dict(messages=[], errors=[],
                 user=user,
                 um_profile_fields=UserProfileManager(self.env).get_user_profile_fields(ignore_internal=True))
-        
+
         if req.method=="POST":
             if req.args.has_key("um_profile_picture_remove"):
                 if UserProfileManager(self.env).remove_user_file(user["picture_href"]):
@@ -34,8 +34,8 @@ class UserProfileModule(Component):
                     if user.save():
                         data['messages'].append(_("Successfully removed %s's picture.")%(user.username))
                         req.redirect(req.href.prefs('userprofile'))
-                        return 
-            
+                        return
+
             for field in data['um_profile_fields'].keys():
                 if req.args.has_key("um_profile_%s"%(field)):
                     if data['um_profile_fields'][field]['type']=='file':
@@ -60,7 +60,7 @@ class UserProfileModule(Component):
             if user.save():
                 data['messages'].append(_("Successfully updated profile for user [%s].")%(user.username))
                 req.redirect(req.href.prefs('userprofile'))
-                
+
         add_stylesheet(req, 'tracusermanager/css/prefs_um_profile.css')
-        
+
         return 'prefs_um_profile.html', data

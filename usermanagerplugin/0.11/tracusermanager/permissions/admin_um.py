@@ -11,29 +11,29 @@ from trac.web.chrome import add_stylesheet, add_script
 from tracusermanager.admin import IUserManagerPanelProvider
 
 class PermissionUserManagerPanel(Component):
-    
+
     implements(IUserManagerPanelProvider)
-    
+
     def get_usermanager_admin_panels(self, req):
-       return [('permissions', _('Permissions'))]
-    
+        return [('permissions', _('Permissions'))]
+
     def render_usermanager_admin_panel(self, req, panel, user, path_info):
         user_actions = self._get_user_permissions(user)
         all_user_actions = PermissionSystem(self.env).get_user_permissions(user.username)
         actions = PermissionSystem(self.env).get_actions()+list(set([group for group, permissions in PermissionSystem(self.env).get_all_permissions()]))
-        data = dict(actions=actions, 
-                    all_user_actions=all_user_actions, 
+        data = dict(actions=actions,
+                    all_user_actions=all_user_actions,
                     user_actions=user_actions,
-                    permsys = PermissionSystem(self.env), 
+                    permsys = PermissionSystem(self.env),
                     messages=[], errors=[])
- 
+
         if req.method=="POST":
             updated_user_permissions = req.args.getlist('um_permission')
-            
+
             for action in actions:
                 if action in updated_user_permissions:
                     if not all_user_actions.has_key(action):
-                        try: 
+                        try:
                             PermissionSystem(self.env).grant_permission(user.username, action)
                             data['messages'].append(_("Granted permission [%s] for user [%s].")%(action, user.username))
                         except Exception, e:
@@ -47,17 +47,17 @@ class PermissionUserManagerPanel(Component):
                             data['errors'].append(e)
             if len(data['errors'])==0:
                 data['messages'].append(_('Successfully updated user permissions for user [%s]')%(user.username))
-                
+
             # Updating data
             data['user_actions'] = self._get_user_permissions(user)
             data['all_user_actions'] = PermissionSystem(self.env).get_user_permissions(user.username)
 
         add_stylesheet(req, 'tracusermanager/css/admin_um_permissions.css')
         add_script(req, 'tracusermanager/js/admin_um_permissions.js')
-        
+
         return 'admin_um_permissions.html', data
-        
+
     def _get_user_permissions(self, user):
         #return PermissionSystem(self.env).get_user_permissions(user.username)
-        return dict([(action, True) for username, action in PermissionSystem(self.env).get_all_permissions() 
+        return dict([(action, True) for username, action in PermissionSystem(self.env).get_all_permissions()
                      if username == user.username ])
