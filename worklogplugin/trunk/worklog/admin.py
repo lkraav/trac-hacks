@@ -16,7 +16,7 @@ class WorklogAdminPanel(Component):
             yield ('ticket', _("Ticket System"), 'worklog', _("Work Log"))
 
     def render_admin_panel(self, req, category, page, path_info):
-        req.perm.require('WORK_ADMIN') 
+        req.perm.require('WORK_ADMIN')
 
         settings = ('autostop', 'autostopstart', 'autoreassignaccept',
                     'comment', 'timingandestimation', 'trachoursplugin')
@@ -48,4 +48,3 @@ class WorklogAdminPanel(Component):
             data['roundup'] = self.config.getint('worklog', 'roundup')
 
         return 'worklog_admin.html', data
-

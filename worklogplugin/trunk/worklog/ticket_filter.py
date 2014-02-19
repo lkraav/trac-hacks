@@ -16,31 +16,31 @@ from datetime import datetime
 
 class WorkLogTicketAddon(Component):
     implements(ITemplateStreamFilter)
-    
+
     def __init__(self):
         pass
-    
+
     def get_task_markup(self, req, ticket, task):
         if not task:
             return ''
-        
+
         ticket_text = 'ticket #' + str(task['ticket'])
         if task['ticket'] == ticket:
             ticket_text = 'this ticket'
         timedelta = pretty_timedelta(datetime.fromtimestamp(task['starttime']), None);
-        
+
         return '<li>%s</li>' % wiki_to_oneliner('You have been working on %s for %s' % (ticket_text, timedelta), self.env, req=req)
-    
-    
+
+
     def get_ticket_markup(self, who, since):
         timedelta = pretty_timedelta(datetime.fromtimestamp(since), None);
         return '<li>%s has been working on this ticket for %s</li>' % (who, timedelta)
-    
-    
+
+
     def get_ticket_markup_noone(self):
         return '<li>Nobody is working on this ticket</li>'
-    
-    
+
+
     def get_button_markup(self, req, ticket, stop=False):
         if stop:
             action = 'stop'
@@ -48,7 +48,7 @@ class WorkLogTicketAddon(Component):
         else:
             action = 'start'
             label = 'Start Work'
-        
+
         return '''
             <form id="worklogTicketForm" method="post" action="%s" class="inlinebuttons" onsubmit="return tracWorklog.%s();">
               <input type="hidden" name="source_url" value="%s" />
@@ -111,9 +111,9 @@ class WorkLogTicketAddon(Component):
 
             add_script(req, 'worklog/jquery.mousewheel.pack.js')
             add_script(req, 'worklog/jquery.timeentry.pack.js')
-            
+
             add_script(req, 'worklog/tracWorklog.js')
-            
+
             mgr = WorkLogManager(self.env, self.config, req.authname)
             task_markup = ''
             if req.authname != 'anonymous':
@@ -129,7 +129,7 @@ class WorkLogTicketAddon(Component):
                     ticket_markup = self.get_ticket_markup(who, since)
             else:
                 ticket_markup = self.get_ticket_markup_noone()
-            
+
             button_markup = ''
             if req.authname != 'anonymous':
                 if mgr.can_work_on(ticket):
@@ -138,7 +138,7 @@ class WorkLogTicketAddon(Component):
                 elif task and task['ticket'] == ticket:
                     # We are currently working on this, so display the stop button...
                     button_markup = self.get_button_markup(req, ticket, True)
-            
+
             # User's current task information
             html = XML('''
               <fieldset class="workloginfo">

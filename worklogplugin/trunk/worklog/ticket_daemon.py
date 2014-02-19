@@ -12,10 +12,10 @@ class WorkLogTicketObserver(Component):
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
         pass
-    
+
     def ticket_changed(self, ticket, comment, author, old_values):
         """Called when a ticket is modified.
-        
+
         `old_values` is a dictionary containing the previous values of the
         fields that have changed.
         """
@@ -32,4 +32,3 @@ class WorkLogTicketObserver(Component):
     def ticket_deleted(self, ticket):
         """Called when a ticket is deleted."""
         pass
-

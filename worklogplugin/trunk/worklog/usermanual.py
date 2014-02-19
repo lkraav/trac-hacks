@@ -12,7 +12,7 @@ The !WorkLog Plugin uses javascript to add a button to the ticket page to allow 
 
 If the [http://trac-hacks.org/wiki/TimingAndEstimationPlugin TimingAndEstimationPlugin] is installed then when you clock off, the time spent on the ticket will be recorded - but only if you explicitly enabled this on the [/admin/ticket/worklog plugins admin page].
 
-If you visit the Work Log page (a new navigation entry), you will see a list of people (developers) and which tickets they are currently working on. Work log events are also logged to the Timeline for a historical view. 
+If you visit the Work Log page (a new navigation entry), you will see a list of people (developers) and which tickets they are currently working on. Work log events are also logged to the Timeline for a historical view.
 
 In the future it will also provide an extension to the XMLRPC plugin which allows the integration with Desktop applications which will make interaction with this plugin seemless.
 
