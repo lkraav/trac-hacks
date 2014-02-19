@@ -1,7 +1,7 @@
 /*
  * Rule 'class'
  */
-var Rule = function(name){
+var Rule = function(name) {
     var noop = function(input, spec){};
     this.setup    = noop;
     this.apply    = noop;
