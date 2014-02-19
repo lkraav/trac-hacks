@@ -249,14 +249,14 @@ def date_range(begin, end, delta=timedelta(1)):
     """Stolen from:
     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/574441
 
-    Form a range of dates and iterate over them.  
+    Form a range of dates and iterate over them.
 
     Arguments:
     begin -- a date (or datetime) object; the beginning of the range.
     end   -- a date (or datetime) object; the end of the range.
     delta -- (optional) a timedelta object; how much to step each iteration.
              Default step is 1 day.
-             
+
     Usage:
 
     """
