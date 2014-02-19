@@ -24,7 +24,7 @@ class WorkLogSetupParticipant(Component):
     db_version_key = None
     db_version = None
     db_installed_version = None
-    
+
     """Extension point interface for components that need to participate in the
     creation and upgrading of Trac environments, for example to create
     additional database tables."""
@@ -41,19 +41,19 @@ class WorkLogSetupParticipant(Component):
             self.db_installed_version = int(cursor.fetchone()[0])
         except:
             self.db_installed_version = 0
-            try: 
+            try:
                 cursor.execute("INSERT INTO system (name,value) VALUES(%s,%s)",
                                (self.db_version_key, self.db_installed_version))
                 db.commit()
             except Exception, e:
                 db.rollback()
                 raise e
-    
+
     def environment_created(self):
         """Called when a new Trac environment is created."""
         if self.environment_needs_upgrade(None):
             self.upgrade_environment(None)
-            
+
     def system_needs_upgrade(self):
         return self.db_installed_version < self.db_version
 
@@ -61,7 +61,7 @@ class WorkLogSetupParticipant(Component):
         # Legacy support hack (supports upgrades from revisions r2495 or before)
         if self.db_installed_version == 0:
             try:
-                
+
                 db = self.env.get_db_cnx()
                 cursor = db.cursor()
                 cursor.execute('SELECT * FROM work_log LIMIT 1')
@@ -79,7 +79,7 @@ class WorkLogSetupParticipant(Component):
             # keyword. We need to skip over new installations but not upgrades
             # for other db backends.
             skip = False
-            
+
             if self.db_installed_version < 1:
                 print 'Creating work_log table'
                 cursor.execute('CREATE TABLE work_log ('
@@ -120,9 +120,9 @@ class WorkLogSetupParticipant(Component):
             #if self.db_installed_version < 4:
             #    print 'Updating work_log table (v4)'
             #    cursor.execute('...')
-            
+
             # Updates complete, set the version
-            cursor.execute("UPDATE system SET value=%s WHERE name=%s", 
+            cursor.execute("UPDATE system SET value=%s WHERE name=%s",
                            (self.db_version, self.db_version_key))
             db.commit()
         except Exception, e:
@@ -154,21 +154,21 @@ class WorkLogSetupParticipant(Component):
             db.commit()
         except Exception, e:
             db.rollback()
-            self.log.error("WorklogPlugin Exception: %s" % (e,));
-        
+            self.log.error("WorklogPlugin Exception: %s" % (e,))
+
     def environment_needs_upgrade(self, db):
         """Called when Trac checks whether the environment needs to be upgraded.
-        
+
         Should return `True` if this participant needs an upgrade to be
         performed, `False` otherwise.
 
         """
-        return (self.system_needs_upgrade() \
+        return (self.system_needs_upgrade()
                 or self.needs_user_man())
-            
+
     def upgrade_environment(self, db):
         """Actually perform an environment upgrade.
-        
+
         Implementations of this method should not commit any database
         transactions. This is done implicitly after all participants have
         performed the upgrades they need without an error being raised.
@@ -181,4 +181,3 @@ class WorkLogSetupParticipant(Component):
             print " * Upgrading usermanual"
             self.do_user_man_update(db)
         print "Done upgrading Worklog"
-

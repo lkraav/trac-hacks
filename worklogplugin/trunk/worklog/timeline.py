@@ -17,7 +17,7 @@ from datetime import datetime
 
 class WorklogTimelineEventProvider(Component):
     implements(ITimelineEventProvider)
-    
+
     # ITimelineEventProvider methods
 
     def get_timeline_filters(self, req):
@@ -31,7 +31,7 @@ class WorklogTimelineEventProvider(Component):
         show_stops = 'workstop' in filters
         if show_starts or show_stops:
             add_stylesheet(req, "worklog/worklogplugin.css")
-            
+
             ts_start = to_timestamp(start)
             ts_stop = to_timestamp(stop)
 
@@ -41,7 +41,7 @@ class WorklogTimelineEventProvider(Component):
 
             cursor.execute("""SELECT wl.worker,wl.ticket,wl.time,wl.starttime,wl.comment,wl.kind,t.summary,t.status,t.resolution,t.type
                              FROM (
-                             
+
                              SELECT worker, ticket, starttime AS time, starttime, comment, 'start' AS kind
                              FROM work_log
 
@@ -51,8 +51,8 @@ class WorklogTimelineEventProvider(Component):
                              FROM work_log
 
                              ) AS wl
-                             INNER JOIN ticket t ON t.id = wl.ticket 
-                                 AND wl.time>=%s AND wl.time<=%s 
+                             INNER JOIN ticket t ON t.id = wl.ticket
+                                 AND wl.time>=%s AND wl.time<=%s
                            ORDER BY wl.time"""
                            % (ts_start, ts_stop))
             previous_update = None
@@ -73,7 +73,7 @@ class WorklogTimelineEventProvider(Component):
                     else:
                         comment = '(Time spent: %s)' % pretty_timedelta(started, time)
                     yield ('workstop', time, worker, (ticket,summary,status,resolution,type, started, comment))
-    
+
     def render_timeline_event(self, context, field, event):
         ticket,summary,status,resolution,type, started, comment = event[3]
         if field == 'url':
@@ -94,5 +94,3 @@ class WorklogTimelineEventProvider(Component):
             #        wiki_page.id, version=wiki_page.version, action='diff')
             #    markup = tag(markup, ' ', tag.a('(diff)', href=diff_href))
             return markup
-
-
