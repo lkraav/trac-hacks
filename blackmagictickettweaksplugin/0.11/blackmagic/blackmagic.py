@@ -27,17 +27,17 @@ class BlackMagicTicketTweaks(Component):
 
     permissions = ListOption('blackmagic', 'permissions', [])
     enchants = dict()
-        
+
     #used to store extra permissions to prevent recursion when using non-blackmagic permissions for ticket options
     extra_permissions = []
-    
+
     gray_disabled = Option('blackmagic', 'gray_disabled', '',
         doc="""If not set, disabled items will have their label striked through.
         Otherwise, this color will be used to gray them out. Suggested #cccccc.""")
-    
+
     #stores the number of blocked tickets used for matching the count on reports
     blockedTickets = 0
-    
+
     def __init__(self):
         tweaks = self.config.get('blackmagic','tweaks','');
         self.env.log.debug("Tweaks %s " %  tweaks)
@@ -51,7 +51,7 @@ class BlackMagicTicketTweaks(Component):
             self.enchants[e]["tip"]=self.config.get('blackmagic', '%s.tip' % e, None)
             self.enchants[e]["ondenial"]=self.config.get('blackmagic','%s.ondenial' % e, "disable")
         self.env.log.debug("Enchants %s " %  self.enchants)
-    
+
     # IPermissionPolicy(Interface)
     def check_permission(self, action, username, resource, perm):
         #skip if permission is in ignore_permissions
@@ -88,8 +88,8 @@ class BlackMagicTicketTweaks(Component):
                 self.blockedTickets+=1
                 return False
         return None
-    
-    
+
+
     #IRequestFilter methods
 
     def pre_process_request(self, req, handler):
@@ -119,40 +119,40 @@ class BlackMagicTicketTweaks(Component):
                             self.env.log.debug("User %s has permission %s" % (req.authname, ticketperm) );
                     data["fields"][i]["options"]=newTypes
                 i+=1
-        #report page        
+        #report page
         if template == "report_view.html":
-                    newItems = []
-                    for row in data["row_groups"]:
-                        for l in row:
-                            if isinstance(l,list):
-                              for t in l:
-                                id = t["id"]
-                                for cell_group in t["cell_groups"]:
-                                    for group in cell_group:
-                                        for field in cell_group:
-                                            c = field["header"]["col"].lower()
-                                            if c in self.enchants:
-                                                #hide hidden fields
-                                                if self.enchants[c]["hide"]:
-                                                    field["value"]=''
-                                                #hide fields user doesn't have permission to and they have ondenial = hide    
-                                                if self.enchants[c]["permission"] != '' and self.enchants[c]["ondenial"]=="hide":
-                                                    for perm in (x.strip() for x in self.enchants[c]["permission"].split(',')):
-                                                        denied = True
-                                                        if perm and perm in req.perm(Ticket(self.env,id).resource):
-                                                            denied = False
-                                                        if denied:
-                                                            field["value"]=''
-                                                #re-label fields            
-                                                if self.enchants[c]["label"] is not None:
-                                                    field["header"]["title"]=self.enchants[c]["label"]
-        #query page                                                            
+            newItems = []
+            for row in data["row_groups"]:
+                for l in row:
+                    if isinstance(l,list):
+                        for t in l:
+                            id = t["id"]
+                            for cell_group in t["cell_groups"]:
+                                for group in cell_group:
+                                    for field in cell_group:
+                                        c = field["header"]["col"].lower()
+                                        if c in self.enchants:
+                                            #hide hidden fields
+                                            if self.enchants[c]["hide"]:
+                                                field["value"]=''
+                                            #hide fields user doesn't have permission to and they have ondenial = hide
+                                            if self.enchants[c]["permission"] != '' and self.enchants[c]["ondenial"]=="hide":
+                                                for perm in (x.strip() for x in self.enchants[c]["permission"].split(',')):
+                                                    denied = True
+                                                    if perm and perm in req.perm(Ticket(self.env,id).resource):
+                                                        denied = False
+                                                    if denied:
+                                                        field["value"]=''
+                                            #re-label fields
+                                            if self.enchants[c]["label"] is not None:
+                                                field["header"]["title"]=self.enchants[c]["label"]
+        #query page
         if template == "query.html":
             #remove ticket types user doesn't have permission to
             if "type" in data["fields"]:
                 newTypes = []
                 for option in data["fields"]["type"]["options"]:
-                    #get perm for ticket type
+            #get perm for ticket type
                     ticketperm = self.config.get('blackmagic','ticket_type.%s' % option, None)
                     if not ticketperm:
                         ticketperm = None
@@ -169,8 +169,8 @@ class BlackMagicTicketTweaks(Component):
                     if c in self.enchants:
                         #hide hidden fields
                         if self.enchants[c]["hide"]:
-                           data["tickets"][i][c]=''
-                        #hide fields user doesn't have permission to and they have ondenial = hide    
+                            data["tickets"][i][c]=''
+                        #hide fields user doesn't have permission to and they have ondenial = hide
                         if self.enchants[c]["permission"] != '' and self.enchants[c]["ondenial"]=="hide":
                             for perm in (x.strip() for x in self.enchants[c]["permission"].split(',')):
                                 denied = True
@@ -178,21 +178,21 @@ class BlackMagicTicketTweaks(Component):
                                     denied = False
                                 if denied:
                                     data["tickets"][i][c]=''
-            #headers            
+            #headers
             for i in range(len(data["headers"])):
                 c = data["headers"][i]["name"]
                 if c in self.enchants:
-                    #re-label fields            
+                    #re-label fields
                     if self.enchants[c]["label"] is not None:
                         data["headers"][i]["label"]=self.enchants[c]["label"]
-            #fields            
+            #fields
             for c,v in data["fields"].items():
                 if c in self.enchants:
-                    #re-label fields            
+                    #re-label fields
                     if self.enchants[c]["label"] is not None:
                         data["fields"][c]["label"]=self.enchants[c]["label"]
         return template, data, content_type
-    
+
 
     # ITicketManipulator methods
 
@@ -219,10 +219,10 @@ class BlackMagicTicketTweaks(Component):
                         self.env.log.debug("Checking permission %s" % perm)
                         #user has permission no denied
                         if perm and perm in req.perm(ticket.resource):
-                           self.env.log.debug("Has %s permission" % perm)
-                           editable = True
-                    
-        
+                            self.env.log.debug("Has %s permission" % perm)
+                            editable = True
+
+
             #field is disabled or hidden, cannot be modified by user
             if not editable:
                 self.env.log.debug('%s disabled or hidden ' % e)
@@ -236,7 +236,7 @@ class BlackMagicTicketTweaks(Component):
                 if new != original:
                     res.append(('%s' % e, 'Access denied to modifying %s' % e))
                     self.env.log.debug('Denied access to: %s' % e)
-        
+
         #check if user has perm to create ticket type
         ticketperm = self.config.get("blackmagic","ticket_type.%s" % ticket["type"],None)
         if not ticketperm:
@@ -244,7 +244,7 @@ class BlackMagicTicketTweaks(Component):
         if ticketperm is not None and ticketperm not in req.perm:
             self.env.log.debug("Ticket validation failed type %s permission %s"% (ticket["type"], ticketperm))
             res.append(('type', "Access denied to ticket type %s" % ticket["type"]))
-            
+
         return res
 
 
@@ -288,7 +288,7 @@ class BlackMagicTicketTweaks(Component):
                             else:
                                 disabled = True
                         else:
-                                disabled = True
+                            disabled = True
 
                 #hide fields
                 if hidden:
