@@ -34,7 +34,7 @@ class UserbaseModule(Component):
         return 'peerReviewMain'
 
     def get_navigation_items(self, req):
-        return [] 
+        return []
 
     # IRequestHandler methods
     def match_request(self, req):
@@ -130,7 +130,7 @@ class UserbaseModule(Component):
 
         # if we are the manager, list who has voted and what their vote was.
         # if we are the author, list who has voted and who has not.
-        # if we are neither, list the users who are participating in this review. 
+        # if we are neither, list the users who are participating in this review.
         if data['manager'] == 1:
             self.env.log.debug("I am a manager")
             for reviewer in reviewers:
@@ -224,7 +224,7 @@ class UserbaseModule(Component):
                 review.Status = "Open for review"
             review.save(db)
         req.redirect(self.env.href.peerReviewView() + "?Review=" + reviewID)
-            
+
     # If it is confirmed that the user is the author of this review and they
     # have attempted to submit for inclusion, change the status of this review
     # to "Ready for inclusion" and reload the page.
@@ -249,7 +249,7 @@ class UserbaseModule(Component):
             review.Status = "Closed"
             review.save(db)
             req.redirect(self.env.href.peerReviewView() + "?Review=" + number)
-            
+
     # It has already been confirmed that this user is a manager, so this routine
     # just changes the status of the review to the type specified by the manager.
     def manager_change_status(self, type, number, req):
