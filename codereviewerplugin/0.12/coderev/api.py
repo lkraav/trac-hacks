@@ -7,9 +7,9 @@ from model import CodeReview
 
 class CodeReviewerSystem(Component):
     """System management for codereviewer plugin."""
-    
+
     implements(IEnvironmentSetupParticipant, IPermissionRequestor)
-    
+
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
         self.current_db_version = 0
@@ -36,23 +36,23 @@ class CodeReviewerSystem(Component):
             script.do_upgrade(self.env, cursor)
             self._set_version(cursor, i)
             db.commit()
-            
+
     def _get_version(self, cursor):
         cursor.execute("SELECT value FROM system " +\
                        "WHERE name=%s", (CodeReview.db_name,))
         value = cursor.fetchone()
         return int(value[0]) if value else 0
-            
+
     def _set_version(self, cursor, ver):
         cursor.execute("UPDATE system SET value=%s WHERE name=%s",
                        (ver,CodeReview.db_name))
         if cursor.rowcount==0:
             cursor.execute("INSERT INTO system (value,name) VALUES (%s,%s)",
                            (ver,CodeReview.db_name))
-            
+
         self.log.info('Upgraded CodeReviewer version from %d to %d',ver-1,ver)
-    
-    
-    # IPermissionRequestor methods  
+
+
+    # IPermissionRequestor methods
     def get_permission_actions(self):
         return ['CODEREVIEWER_MODIFY']

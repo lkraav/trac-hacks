@@ -47,7 +47,7 @@ def exists(conn, ticket, time_, author):
 def main(dbfile, repos_dir):
     counts = {'inserts':0, 'svnrepo':0, 'wrongrepo':0, 'exists':0}
     ticketref_re = re.compile(r"(addresses|ref|refs|references|see|merges) #([0-9]+)")
-    
+
     conn = sqlite3.connect(dbfile)
     c = conn.cursor()
 
@@ -56,7 +56,7 @@ def main(dbfile, repos_dir):
     repo_counts = {}
     for reponame in repos.values():
         repo_counts[reponame] = 0
-    
+
     # iterate through each revision
     c.execute("select repos, rev, time, author, message from revision;")
     for repo, rev, time_, author, message in c:
@@ -65,25 +65,25 @@ def main(dbfile, repos_dir):
             counts['svnrepo'] += 1
             print '.',
             continue
-        
+
         for _,ticket in ticketref_re.findall(message):
             # check if changeset comment already exists
             if exists(conn, ticket, time_, author):
                 counts['exists'] += 1
                 print '-',
                 continue
-            
+
             # find correct repos
             # .. and correct the repos num in revision table!
             reponame = get_reponame(conn, repo, repos_dir, repos, rev, counts)
             repo_counts[reponame] += 1
-            
+
             # insert changeset
             insert_ticket_comment(conn, ticket, time_, author,
                                   reponame, rev, message)
             counts['inserts'] += 1
             print '+',
-            
+
     conn.close()
     print
     print counts
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 #    parser.add_option("--hint", action="append", default=[],
 #        help="if string is found then line can't be end of INSERT")
     (options, args) = parser.parse_args()
-    
+
     try:
         main(args[0], args[1])
     except (ValueError, IndexError):
