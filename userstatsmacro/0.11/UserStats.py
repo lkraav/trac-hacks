@@ -51,7 +51,7 @@ class UserStatsMacro(WikiMacroBase):
             return "|| [query:?status=assigned&status=new&status=reopened&group=milestone&order=priority&col=id&col=summary&col=status&col=owner&col=type&col=priority&col=component&col=due_close&type=task&owner=%s %s] || %s || %s day(s)||\n" % (user, user, last_date, how_long.days)
         else:
             return "|| [query:?status=assigned&status=new&status=reopened&group=milestone&order=priority&col=id&col=summary&col=status&col=owner&col=type&col=priority&col=component&col=due_close&type=task&owner=%s %s]|| %s || <24h ||\n" % (user, user,last_date)
-    
+
     def get_users_last_login(self):
 
         db = self.env.get_db_cnx()
@@ -60,6 +60,5 @@ class UserStatsMacro(WikiMacroBase):
         dt = "||'''User'''||'''Last Login'''||'''How long ago'''||\n"
         users = set([u[0] for u in self.env.get_known_users()])
         for user in sorted(users):
-            dt += self.get_user_last_login(user) 
+            dt += self.get_user_last_login(user)
         return dt
-
