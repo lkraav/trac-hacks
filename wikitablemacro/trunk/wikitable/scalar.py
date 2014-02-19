@@ -21,7 +21,7 @@ from trac.util.translation import _
 
 class SQLScalar(WikiMacroBase):
     """Output a number from a scalar (1x1) SQL query.
-     
+
     Examples:
     {{{
         {{{

@@ -18,7 +18,7 @@ setup(
     maintainer = 'Ryan J Ollos',
     maintainer_email = 'ryan.j.ollos@gmail.com',
     description = 'Trac plugin for drawing a table from a SQL query in a wiki page',
-    url = 'http://trac-hacks.org/wiki/WikiTableMacro', 
+    url = 'http://trac-hacks.org/wiki/WikiTableMacro',
     version = '0.2',
     license='BSD 3-Clause',
     packages=['wikitable'],
