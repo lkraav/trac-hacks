@@ -17,34 +17,34 @@ from trac.wiki.macros import WikiMacroBase
 
 class NoteBoxMacro(WikiMacroBase):
     """Renders a small colored box with an icon and text.
-    
+
     To display a !NoteBox on a page, you must call the !NoteBox
     macro and pass the ''style'' and ''text'' as arguments. The
     text may contain wiki formatting, however it is not possible
     to embed other wiki macros within the macro. Also, commas must
     be escaped with a backslash.
-    
+
     A third optional argument allows the ''width'' of the !NoteBox
     to be specified. The ''width'' can be specified in pixels
     as a percent of the page width. The default width is 70%.
-    
+
     The following styles are available: '''warn''', '''tip'''
     and '''note'''.
-    
+
     Examples:
     {{{
     [[NoteBox(warn,If you don't run `update` before `commit`\, your checkin may fail.)]]
     [[NoteBox(tip,The !NoteBox macro can bring '''attention''' to text within a page.,50%)]]
     [[NoteBox(note,More styles may be added in a ''future'' release.,350px)]]
     }}}
-    
+
     [[NoteBox(warn,If you don't run `update` before `commit`\, your checkin may fail.)]]
 
     [[NoteBox(tip,The !NoteBox macro can bring '''attention''' to text within a page.,50%)]]
 
     [[NoteBox(note,More styles may be added in a ''future'' release.,350px)]]
-    """    
-    
+    """
+
     implements(ITemplateProvider)
 
     def expand_macro(self, formatter, name, content):
