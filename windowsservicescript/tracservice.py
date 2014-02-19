@@ -1,5 +1,5 @@
-#!C:\programme\python\2.3\python.exe
-# -*- coding: iso8859-1 -*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Author: Florent Xicluna <laxyf@yahoo.fr>
 
@@ -33,32 +33,50 @@
 import locale
 import sys
 import os
+from distutils import sysconfig
 
 import win32serviceutil
 import win32service
 
-from trac.web.standalone import BasicAuth, DigestAuth, TracHTTPServer
+from trac.web.standalone import BasicAuthentication as BasicAuth, \
+    DigestAuthentication as DigestAuth, TracHTTPServer, \
+    AuthenticationMiddleware, BasePathMiddleware, TracEnvironMiddleware
+
+from trac.web.main import dispatch_request
 
 # ==  Editable CONSTANTS SECTION  ============================================
 
-PYTHON = r'C:\Python23\python.exe'
-INSTANCE_HOME = r'c:\path\to\instance\trac'
+TRAC_PROJECT = 'c:\\path\\to\\Trac\\Projects'
 
-# Trac options (see C:\Python23\Script\tracd)
+# Trac options (see tracd --help)
+#  -a DIGESTAUTH, --auth=DIGESTAUTH
+#                        [projectdir],[htdigest_file],[realm]
+#  --basic-auth=BASICAUTH
+#                        [projectdir],[htpasswd_file],[realm]
+#  -p PORT, --port=PORT  the port number to bind to
+#  -b HOSTNAME, --hostname=HOSTNAME
+#                        the host name or IP address to bind to
+#  -e PARENTDIR, --env-parent-dir=PARENTDIR
+#                        parent directory of the project environments
+#  --base-path=BASE_PATH
+#                        the initial portion of the request URL's "path"
+#  -s, --single-env      only serve a single project without the project list
 OPTS = [
-  ( '--auth', ('trac,%s\conf\htdigest,TracRealm' % INSTANCE_HOME) ),
-  ( '--port', '80' ),
+    ('--hostname', 'mycomputer.mydomain.com'),
+    ('--single-env', True),
+    ('--auth', ('trac,c:\\path\\to\\pswd\\file,TracRealm')),
+    ('--port', '80'),
 ]
 
 # ==  End of CONSTANTS SECTION  ==============================================
 
 # Other constants
-PYTHONDIR = os.path.split(PYTHON)[0]
-PYTHONSERVICE_EXE=r'%s\Lib\site-packages\win32\pythonservice.exe' % PYTHONDIR
-LOG_DIR = r'%s\log' % INSTANCE_HOME
+PYTHONDIR = sysconfig.get_python_lib()  # gets site-packages folder
+PYTHONSERVICE_EXE=os.path.join(PYTHONDIR, 'win32', 'pythonservice.exe')
+LOG_DIR = os.path.join(TRAC_PROJECT, log)
 
 # Trac instance(s)
-ARGS = [ INSTANCE_HOME, ]
+ARGS = [TRAC_PROJECT]
 
 def add_auth(auths, vals, cls):
     info = vals.split(',', 3)
@@ -81,8 +99,8 @@ class TracWindowsService(win32serviceutil.ServiceFramework):
     prompt.
     """
 
-    _svc_name_ = 'Trac_%s' % str(hash(INSTANCE_HOME))
-    _svc_display_name_ = 'Trac instance at %s' % INSTANCE_HOME
+    _svc_name_ = 'Trac_%s' % str(hash(TRAC_PROJECT))
+    _svc_display_name_ = 'Trac instance at %s' % TRAC_PROJECT
     _exe_name_ = PYTHONSERVICE_EXE
 
     def SvcDoRun(self):
@@ -111,7 +129,6 @@ class TracWindowsService(win32serviceutil.ServiceFramework):
         port = 80
         hostname = ''
         auths = {}
-        daemonize = 0
         env_parent_dir = None
 
         for o, a in OPTS:
@@ -125,15 +142,32 @@ class TracWindowsService(win32serviceutil.ServiceFramework):
                 hostname = a
             if o in ("-e", "--env-parent-dir"):
                 env_parent_dir = a
+            if o in ("-s", "--single-env"):
+                single_env = a
+            if o in ("--base-path"):
+                base_path = a
 
         if not env_parent_dir and not ARGS:
             raise ValueError("""No Trac project specified""")
+
+        wsgi_app = TracEnvironMiddleware(dispatch_request,
+                                         env_parent_dir, ARGS,
+                                         single_env)
+        if auths:
+            if single_env:
+                project_name = os.path.basename(ARGS[0])
+                wsgi_app = AuthenticationMiddleware(wsgi_app, auths, project_name)
+            else:
+                wsgi_app = AuthenticationMiddleware(wsgi_app, auths)
+        base_path = base_path.strip('/').strip('\\')
+        if base_path:
+            wsgi_app = BasePathMiddleware(wsgi_app, base_path)
 
         sys.stdout = open(os.path.join(LOG_DIR, 'stdout.log'),'a')
         sys.stderr = open(os.path.join(LOG_DIR, 'stderr.log'),'a')
 
         server_address = (hostname, port)
-        return TracHTTPServer(server_address, env_parent_dir, ARGS, auths)
+        return TracHTTPServer(server_address, wsgi_app, env_parent_dir, ARGS)
 
 if __name__ == '__main__':
     # The following are the most common command-line arguments that are used
