@@ -3,7 +3,7 @@ from trac.db import Table, Column, Index, DatabaseManager
 def do_upgrade(env, cursor):
 
     db_tables = [
-        Table('codereviewer_map', key=['repo','changeset','ticket'])[
+        Table('codereviewer_map', key=['repo', 'changeset', 'ticket'])[
             Column('repo', type='text'),
             Column('changeset', type='text'),
             Column('ticket', type='text'),

@@ -10,7 +10,7 @@ def do_upgrade(env, cursor):
             Column('reviewer', type='text'),
             Column('summary', type='text'),
             Column('time', type='integer'),
-            Index(columns=['repo','changeset','time']),
+            Index(columns=['repo', 'changeset', 'time']),
         ],
     ]
 

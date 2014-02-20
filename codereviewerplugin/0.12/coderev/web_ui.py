@@ -53,11 +53,11 @@ class CodeReviewerModule(Component):
     def post_process_request(self, req, template, data, content_type):
         if self._valid_request(req):
             if req.method == 'POST':
-                repo,changeset = get_repo_changeset(req)
+                repo, changeset = get_repo_changeset(req)
                 review = CodeReview(self.env, repo, changeset, req)
                 if review.save(reviewer=req.authname, **req.args):
                     tickets = self._update_tickets(req, review)
-                    url = req.href(req.path_info,{'ticket':tickets})
+                    url = req.href(req.path_info, {'ticket': tickets})
                     req.send_header('Cache-Control', 'no-cache')
                     req.redirect(url+'#reviewbutton')
             add_stylesheet(req, 'coderev/coderev.css')
@@ -72,7 +72,7 @@ class CodeReviewerModule(Component):
         return req.path_info.startswith('/coderev/')
 
     def process_request(self, req):
-        repo,changeset = get_repo_changeset(req, check_referer=True)
+        repo, changeset = get_repo_changeset(req, check_referer=True)
         review = CodeReview(self.env, repo, changeset, req)
         data = {'review': review,
                 'tickets': get_tickets(req),
@@ -91,12 +91,12 @@ class CodeReviewerModule(Component):
     def _get_form_token(self, req):
         """Ajax POST requests require a __FORM_TOKEN param from the cookie."""
         # first search for req attribute
-        if hasattr(req,'form_token') and req.form_token:
+        if hasattr(req, 'form_token') and req.form_token:
             return req.form_token
 
         # next look for token in the cookie
         if hasattr(req, 'environ'):
-            cookie = req.environ.get('HTTP_COOKIE','')
+            cookie = req.environ.get('HTTP_COOKIE', '')
             token_re = re.compile(r"trac_form_token=(?P<token>[a-z0-9]*)")
             match = token_re.search(cookie)
             if match:
@@ -145,7 +145,7 @@ class CodeReviewerModule(Component):
 
             # update ticket if there's a review summary or ticket changes
             if summary['summary'] or changes:
-                for field,value in changes.items():
+                for field, value in changes.items():
                     tkt[field] = value
                 tkt.save_changes(author=summary['reviewer'], comment=comment)
 
@@ -191,8 +191,8 @@ class CodeReviewerModule(Component):
         already = verifying, then the owner change will not be included.
         """
         changes = {}
-        for group in getattr(self,status,[]):
-            field,value = group.split('=',1)
+        for group in getattr(self, status, []):
+            field, value = group.split('=', 1)
             if value.startswith('{'):
                 value = tkt[value.strip('{}')]
             if tkt[field] == value:
@@ -208,7 +208,7 @@ class CodeReviewerModule(Component):
         if p.returncode == 0:
             self.log.info('command: %s' % self.command)
         else:
-            self.log.error('command error: %s\n%s' % (self.command,out))
+            self.log.error('command error: %s\n%s' % (self.command, out))
 
 
 class CommitTicketReferenceMacro(WikiMacroBase):
@@ -243,7 +243,7 @@ class CommitTicketReferenceMacro(WikiMacroBase):
 
             rev = changeset.rev
             resource = repos.resource
-        except Exception, e:
+        except Exception:
             message = content
             resource = Resource('repository', reponame)
         if formatter.context.resource.realm == 'ticket':
@@ -253,9 +253,11 @@ class CommitTicketReferenceMacro(WikiMacroBase):
                 return tag.p("(The changeset message doesn't reference this "
                              "ticket)", class_='hint')
         if ChangesetModule(self.env).wiki_format_messages:
-            return tag.div(format_to_html(self.env,
-                formatter.context('changeset', rev, parent=resource),
-                message, escape_newlines=True), class_='message')
+            ctxt = formatter.context
+            return tag.div(format_to_html(self.env, ctxt('changeset', rev,
+                                                         parent=resource),
+                                          message, escape_newlines=True),
+                           class_='message')
         else:
             return tag.pre(message, class_='message')
 
@@ -287,8 +289,8 @@ class ChangesetTicketMapper(Component):
         if update:
             cursor.execute("""
                 DELETE FROM codereviewer_map
-                WHERE repo=%s and changeset=%s;
-                """, (reponame,changeset.rev))
+                WHERE repo=%s and changeset=%s
+                """, (reponame, changeset. rev))
         if not tickets:
             tickets = [''] # we still want merges inserted
         for ticket in tickets:
@@ -296,26 +298,28 @@ class ChangesetTicketMapper(Component):
                 cursor.execute("""
                     INSERT INTO codereviewer_map
                            (repo,changeset,ticket,time)
-                    VALUES (%s,%s,%s,%s);
-                    """, (reponame,changeset.rev,ticket,when))
+                    VALUES (%s,%s,%s,%s)
+                    """, (reponame, changeset.rev, ticket, when))
             except Exception, e:
-                self.log.warning("Unable to insert changeset " +\
-                    "%s/%s and ticket %s into db: %s" %\
-                    (changeset.rev,reponame,ticket,str(e)))
+                self.log.warning("Unable to insert changeset " +
+                                 "%s/%s and ticket %s into db: %s"
+                                 % (changeset.rev, reponame, ticket, str(e)))
         db.commit()
 
 
 # common functions
 def get_repo_changeset(req, check_referer=False):
     """Returns the changeset and repo as a tuple."""
-    path=req.environ.get('HTTP_REFERER','') if check_referer else req.path_info
-    pattern = r"/changeset/(?P<rev>[a-f0-9]+)(/(?P<repo>[^/?#]+))?"
+    path = req.environ.get('HTTP_REFERER', '') if check_referer \
+                                               else req.path_info
+    pattern = r'/changeset/(?P<rev>[a-f0-9]+)(/(?P<repo>[^/?#]+))?'
     match = re.compile(pattern).search(path)
     if match:
-        return (match.groupdict()['repo'],match.groupdict().get('rev',''))
-    return None,None
+        return match.groupdict()['repo'], match.groupdict().get('rev', '')
+    return None, None
+
 
 def get_tickets(req):
     ticket_re = re.compile(r"ticket=(?P<id>[0-9]+)")
-    path = req.environ.get('HTTP_REFERER','')
+    path = req.environ.get('HTTP_REFERER', '')
     return ticket_re.findall(path)

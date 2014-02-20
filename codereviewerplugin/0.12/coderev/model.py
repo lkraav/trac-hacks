@@ -12,7 +12,7 @@ class CodeReview(object):
     """A review for a single changeset."""
 
     # default status choices - configurable but must always be exactly three
-    STATUSES = ['FAILED','PENDING','PASSED']
+    STATUSES = ['FAILED', 'PENDING', 'PASSED']
     DEFAULT_STATUS = STATUSES[1]
     NOT_PASSED = "(not %s)" % STATUSES[2]
     EPOCH_MULTIPLIER = 1000000.0
@@ -29,8 +29,8 @@ class CodeReview(object):
         self.changeset = changeset
         self.req = req
         self.db = self.env.get_db_cnx()
-        self.statuses = self.env.config.get('codereviewer','status_choices')
-        if not isinstance(self.statuses,list):
+        self.statuses = self.env.config.get('codereviewer', 'status_choices')
+        if not isinstance(self.statuses, list):
             self.statuses = self.statuses.split(',')
         self._clear()
 
@@ -90,7 +90,7 @@ class CodeReview(object):
             INSERT INTO codereviewer
                    (repo,changeset,status,reviewer,summary,time)
             VALUES (%s,%s,%s,%s,%s,%s);
-            """, (self.repo,self.changeset,status,reviewer,summary,when))
+            """, (self.repo, self.changeset, status, reviewer, summary, when))
         self.db.commit()
         self._clear()
         return True
@@ -101,7 +101,7 @@ class CodeReview(object):
                 # convert from canonical to configured
                 i = self.STATUSES.index(status)
                 status = self.statuses[i]
-            except Exception, e:
+            except Exception:
                 pass
         return status
 
@@ -111,7 +111,7 @@ class CodeReview(object):
                 # convert from configured to canonical
                 i = self.statuses.index(status)
                 status = self.STATUSES[i]
-            except Exception, e:
+            except Exception:
                 pass
         return status
 
@@ -124,9 +124,9 @@ class CodeReview(object):
             SELECT repo, changeset
             FROM codereviewer_map
             WHERE ticket='%s'
-            ORDER BY time ASC;
+            ORDER BY time ASC
             """ % ticket)
-        for repo,changeset in cursor:
+        for repo, changeset in cursor:
             review = CodeReview(env, repo, changeset, req)
             reviews.append(review)
         return reviews
@@ -144,15 +144,16 @@ class CodeReview(object):
         # check completeness criteria
         try:
             tkt = Ticket(self.env, ticket)
-            completeness = self.env.config.get('codereviewer','completeness','')
+            completeness = self.env.config.get('codereviewer', 'completeness',
+                                               '')
             if completeness:
                 for criteria in completeness.split(','):
-                    field,rule = criteria.split('=',1)
+                    field, rule = criteria.split('=', 1)
                     value = tkt[field]
                     rule_re = re.compile(rule)
                     if not rule_re.search(value):
-                        return "Ticket #%s field %s=%s which violates rule %s"%\
-                            (tkt.id,field,value,rule)
+                        return "Ticket #%s field %s=%s which violates rule " \
+                               "%s" % (tkt.id, field, value, rule)
         except ResourceNotFound:
             pass # e.g., incorrect ticket reference
 
@@ -162,11 +163,12 @@ class CodeReview(object):
             return "Ticket #%s has no reviews." % ticket
         for review in reviews:
             if review.encode(review.status) == 'PENDING':
-                return "Ticket #%s has a %s review for changeset %s" % \
-                       (ticket,review.status,review.changeset)
+                return "Ticket #%s has a %s review for changeset %s" \
+                       % (ticket, review. status, review. changeset)
         if review.encode(review.status) != 'PASSED':
-            return "Ticket #%s's last changeset %s = %s %s" % \
-                   (ticket,review.changeset,review.status,self.NOT_PASSED)
+            return "Ticket #%s's last changeset %s = %s %s" \
+                   % (ticket, review. changeset, review. status,
+                      self.NOT_PASSED)
 
         return False
 
@@ -179,9 +181,9 @@ class CodeReview(object):
             FROM codereviewer
             WHERE repo='%s' AND changeset='%s' AND status != ''
             ORDER BY time DESC LIMIT 1;
-            """ % (self.repo,self.changeset))
-        row = cursor.fetchone() or (self.DEFAULT_STATUS,'',0)
-        status,self._reviewer,self._when = row
+            """ % (self.repo, self.changeset))
+        row = cursor.fetchone() or (self.DEFAULT_STATUS, '', 0)
+        status, self._reviewer, self._when = row
         self._status = self.decode(status)
 
     def _populate_summaries(self):
@@ -192,11 +194,12 @@ class CodeReview(object):
             SELECT status, reviewer, summary, time
             FROM codereviewer
             WHERE repo='%s' AND changeset='%s'
-            ORDER BY time ASC;
-            """ % (self.repo,self.changeset))
-        for status,reviewer,summary,when in cursor:
+            ORDER BY time ASC
+            """ % (self.repo, self.changeset))
+        for status, reviewer, summary, when in cursor:
             pretty_when = time.strftime('%Y-%m-%d %H:%M',
-                time.localtime(long(when) / self.EPOCH_MULTIPLIER))
+                                        time.localtime(long(when) /
+                                                       self.EPOCH_MULTIPLIER))
             pretty_when += ' (%s ago)' % pretty_timedelta(when)
             summaries.append({
                 'repo': self.repo,
@@ -216,11 +219,11 @@ class CodeReview(object):
         cursor.execute("""
             SELECT ticket, time
             FROM codereviewer_map
-            WHERE repo='%s' AND changeset='%s';
-            """ % (self.repo,self.changeset))
+            WHERE repo='%s' AND changeset='%s'
+            """ % (self.repo, self.changeset))
         self._tickets = []
         self._changeset_when = 0
-        for ticket,when in cursor:
+        for ticket, when in cursor:
             if ticket:
                 self._tickets.append(ticket)
             self._changeset_when = when
@@ -230,4 +233,6 @@ class CodeReview(object):
             return message
         ctx = Context.from_request(self.req)
         html = format_to_html(self.env, ctx, message, escape_newlines=True)
-        return html.replace("'","\\'").replace('"','\\"').replace('\n','\\n')
+        return html.replace("'", "\\'") \
+                   .replace('"', '\\"') \
+                   .replace('\n', '\\n')
