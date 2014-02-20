@@ -122,8 +122,14 @@ class CodeReviewerModule(Component):
         comment += " for [%(_ref)s]:\n\n%(summary)s" % summary
 
         # find and update tickets
-        # TODO: handle when there's no explicitly named repo
-        repo = RepositoryManager(self.env).get_repository(review.repo)
+        rm = RepositoryManager(self.env)
+        path = req.args.get('new_path')
+        reponame = req.args.get('reponame')
+        if reponame:
+            repo = rm.get_repository(reponame)
+        else:
+            repo = rm.get_repository_by_path(path)[1]
+
         changeset = repo.get_changeset(review.changeset)
         ticket_re = CommitTicketUpdater.ticket_re
         tickets = ticket_re.findall(changeset.message)
