@@ -1,67 +1,36 @@
-import trac.ticket.notification as note
+# -*- coding: utf-8 -*-
+
+import trac.ticket.notification as notification
+from trac.core import Component, implements
+from trac.env import IEnvironmentSetupParticipant
+from trac.config import ListOption
+from trac.ticket.model import Ticket
 
 
-def get_recipients(self, tktid):
+class FlexibleReporterNotifyEmail(Component):
 
-    notify_reporter = self.config.getbool('notification',
-                                          'always_notify_reporter')
-    notify_owner = self.config.getbool('notification',
-                                       'always_notify_owner')
-    notify_updater = self.config.getbool('notification',
-                                         'always_notify_updater')
-    reporter_states = self.config.getlist('notification', 'reporter_states')
+    implements(IEnvironmentSetupParticipant)
 
-    ccrecipients = self.prev_cc
-    torecipients = []
+    notify_states = ListOption('notification','reporter_states', [],
+        doc="Ticket states in which the reporter should be notified.")
 
-    # Harvest email addresses from the cc, reporter, owner and status fields
-    cursor = self.db.cursor()
-    cursor.execute("SELECT cc,reporter,owner,status FROM ticket WHERE id=%s",
-                   (tktid,))
-    row = cursor.fetchone()
-    if row:
-        ccrecipients += row[0] and row[0].replace(',', ' ').split() or []
-        self.reporter = row[1]
-        self.owner = row[2]
-        self.status = row[3]
-        if notify_reporter:
-            for state in reporter_states:
-                if self.ticket.values.get('status') == state:
-                    torecipients.append(row[1])
-        if notify_owner:
-            torecipients.append(row[2])
+    def environment_created(self):
+      pass
 
-    # Harvest email addresses from the author field of ticket_change(s)
-    if notify_updater:
-        cursor.execute("SELECT DISTINCT author,ticket FROM ticket_change "
-                       "WHERE ticket=%s", (tktid,))
-        for author, ticket in cursor:
-            torecipients.append(author)
+    def environment_needs_upgrade(self, db):
+        get_recipients_base = notification.TicketNotifyEmail.get_recipients
 
-    # Suppress the updater from the recipients
-    updater = None
-    cursor.execute("SELECT author FROM ticket_change WHERE ticket=%s "
-                   "ORDER BY time DESC LIMIT 1", (tktid,))
-    for updater, in cursor:
-        break
-    else:
-        cursor.execute("SELECT reporter FROM ticket WHERE id=%s",
-                       (tktid,))
-        for updater, in cursor:
-            break
+        def get_recipients(self, tktid):
+            to_recipients, cc_recipients = get_recipients_base(self, tktid)
+            notify_states = self.config.get('notification', 'reporter_states')
+            ticket = Ticket(self.env, tktid)
+            if ticket['status'] not in notify_states and \
+                    ticket['reporter'] in to_recipients:
+                to_recipients.remove(ticket['reporter'])
 
-    if not notify_updater:
-        filter_out = True
-        if notify_reporter and (updater == self.reporter):
-            filter_out = False
-        if notify_owner and (updater == self.owner):
-            filter_out = False
-        if filter_out:
-            torecipients = [r for r in torecipients if r and r != updater]
-    elif updater:
-        torecipients.append(updater)
+            return to_recipients, cc_recipients
 
-    return torecipients, ccrecipients
+        notification.TicketNotifyEmail.get_recipients = get_recipients
 
-
-note.TicketNotifyEmail.get_recipients = get_recipients
+    def upgrade_environment(self, db):
+      pass

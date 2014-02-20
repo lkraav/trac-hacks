@@ -2,12 +2,12 @@
 
 from setuptools import setup
 
-PACKAGE = 'flexiblereporternotification'
-
-setup(name=PACKAGE,
-      version='0.0.1',
-      packages=[PACKAGE],
+setup(name='FlexibleReporterNotification',
+      version='0.1',
+      packages=['flexiblereporternotification'],
       url='http://trac-hacks.org/wiki/FlexibleReporterNotificationPlugin',
       author='Satyam',
-      entry_points={'trac.plugins': '%s = %s.api' % (PACKAGE, PACKAGE)},
+      entry_points={
+          'trac.plugins': 'flexiblereporternotification=flexiblereporternotification.api'
+      }
 )
