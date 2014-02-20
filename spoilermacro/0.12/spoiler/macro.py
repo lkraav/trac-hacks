@@ -9,7 +9,7 @@ from trac.core import *
 from trac.wiki.formatter import format_to_oneliner, format_to_html
 from trac.util import TracError
 from trac.util.text import to_unicode
-from trac.web.chrome import add_stylesheet, add_javascript, ITemplateProvider
+from trac.web.chrome import add_stylesheet, add_script, ITemplateProvider
 from trac.wiki.api import parse_args, IWikiMacroProvider
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
@@ -26,7 +26,7 @@ class SpoilerMacro(WikiMacroBase):
     def expand_macro(self, formatter, name, content, args):
         self.log.debug("SpoilerMacro: expand_macro")
         add_stylesheet(formatter.req, 'spoiler/css/spoiler.css')
-        add_javascript(formatter.req, 'spoiler/js/spoiler.js')
+        add_script(formatter.req, 'spoiler/js/spoiler.js')
         if '\n' in content:
             output = tag.div(class_="spoiler")(format_to_html(self.env, formatter.context,content))
         else:
