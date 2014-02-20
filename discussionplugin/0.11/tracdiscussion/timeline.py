@@ -41,8 +41,7 @@ class DiscussionTimeline(Component):
             context.realm = 'discussion-core'
 
             # Get database access.
-            db = self.env.get_db_cnx()
-            context.cursor = db.cursor()
+            context.db = self.env.get_db_cnx()
 
             # Get API component.
             api = self.env[DiscussionApi]

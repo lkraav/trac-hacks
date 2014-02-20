@@ -1866,10 +1866,11 @@ class DiscussionApi(Component):
                "%(order_by)s "% (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
         self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
 
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
         # Convert row to dictionaries.
-        for row in context.cursor:
+        for row in cursor:
             row = dict(zip(columns, row))
             yield row
 
@@ -1967,8 +1968,10 @@ class DiscussionApi(Component):
                "%(order_by)s" % (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
         self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
-        for row in context.cursor:
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
+        for row in cursor:
             row = dict(zip(columns, row))
             row['status'] = self._topic_status_to_list(row['status'])
             yield row
@@ -2039,8 +2042,10 @@ class DiscussionApi(Component):
                "%(order_by)s"% (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
         self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
-        for row in context.cursor:
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
+        for row in cursor:
             row = dict(zip(columns, row))
             yield row
 
