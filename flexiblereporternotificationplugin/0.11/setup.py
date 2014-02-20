@@ -9,5 +9,5 @@ setup(name=PACKAGE,
       packages=[PACKAGE],
       url='http://trac-hacks.org/wiki/FlexibleReporterNotificationPlugin',
       author='Satyam',
-      entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)},
+      entry_points={'trac.plugins': '%s = %s.api' % (PACKAGE, PACKAGE)},
 )
