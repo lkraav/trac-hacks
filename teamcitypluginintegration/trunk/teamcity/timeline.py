@@ -13,7 +13,7 @@ from datetime import datetime
 
 from trac.core import *
 from trac.timeline import ITimelineEventProvider
-from trac.web.chrome import add_stylesheet, add_javascript
+from trac.web.chrome import add_script, add_stylesheet
 from genshi.builder import tag
 
 from helpers import GMT0, get_options, TeamCityQuery, TeamCityError
@@ -72,7 +72,7 @@ class TeamCityTimeline(Component):
             self.log.error("Can't get teamcity feed")
             return
         add_stylesheet(req,'teamcity/css/teamcity.css')
-        add_javascript(req,'teamcity/js/loadlog.js')
+        add_script(req,'teamcity/js/loadlog.js')
         # iterate over resulted xml feed
         for entry in feed.iterfind('{http://www.w3.org/2005/Atom}entry'):
             event_date = entry.find('{http://www.w3.org/2005/Atom}published').text

@@ -19,7 +19,7 @@ from trac.util.html import html
 from trac.web import HTTPNotFound, HTTPBadGateway, HTTPForbidden
 from trac.web.main import IRequestHandler
 from trac.perm import IPermissionRequestor
-from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_javascript
+from trac.web.chrome import INavigationContributor, ITemplateProvider, add_script, add_stylesheet
 
 from helpers import get_options, TeamCityQuery, TeamCityError
 
@@ -258,8 +258,8 @@ class TeamCityBuildPage(Component):
                         'btypes': [build_info,]
                 }
         add_stylesheet(req,'teamcity/css/teamcity.css')
-        add_javascript(req,'teamcity/js/jquery.timers-1.2.js')
-        add_javascript(req,'teamcity/js/event_tracker.js')
+        add_script(req,'teamcity/js/jquery.timers-1.2.js')
+        add_script(req,'teamcity/js/event_tracker.js')
         return 'teamcity_builds.html', {
                                 'projects':projects,
                                 'dpath':req.href('builds/download')
