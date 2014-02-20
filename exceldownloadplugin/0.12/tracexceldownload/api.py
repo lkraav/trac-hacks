@@ -3,6 +3,7 @@
 import os
 import re
 from datetime import datetime
+from decimal import Decimal
 from tempfile import mkstemp
 from unicodedata import east_asian_width
 from xlwt import XFStyle, Style, Alignment, Borders, Pattern, Font
@@ -33,14 +34,27 @@ class WorksheetWriter(object):
         self._flush_row()
 
     def write_row(self, cells):
+        _get_style = self._get_style
+        _set_col_width = self._set_col_width
+        _normalize_newline = self._normalize_newline
+        get_metrics = self.get_metrics
+        tz = self.tz
+        has_tz_normalize = hasattr(tz, 'normalize')  # pytz
+
         row = self.sheet.row(self.row_idx)
         max_line = 1
         max_height = 0
         for idx, (value, style, width, line) in enumerate(cells):
-            if isinstance(value, datetime):
-                value = value.astimezone(self.tz)
-                if hasattr(self.tz, 'normalize'): # pytz
-                    value = self.tz.normalize(value)
+            if isinstance(value, basestring):
+                if isinstance(value, str):
+                    value = to_unicode(value)
+                value = value.rstrip()
+                if '\r' in value:
+                    value = _normalize_newline('\n', value)
+            elif isinstance(value, datetime):
+                value = value.astimezone(tz)
+                if has_tz_normalize: # pytz
+                    value = tz.normalize(value)
                 value = datetime(*(value.timetuple()[0:6]))
                 if style == '[date]':
                     width = len('YYYY-MM-DD')
@@ -48,26 +62,27 @@ class WorksheetWriter(object):
                     width = len('HH:MM:SS')
                 else:
                     width = len('YYYY-MM-DD HH:MM:SS')
-                line = 1
-            elif isinstance(value, basestring):
-                value = self._normalize_newline('\n',
-                                                to_unicode(value).strip())
+                _set_col_width(idx, width)
+                row.set_cell_date(idx, value, _get_style(style))
+                continue
+            elif isinstance(value, (int, long, float, Decimal)):
+                _set_col_width(idx, len('%g' % value))
+                row.set_cell_number(idx, value, _get_style(style))
+                continue
+            elif value is True or value is False:
+                _set_col_width(idx, 1)
+                row.set_cell_number(idx, int(value), _get_style(style))
+                continue
             if width is None or line is None:
-                metrics = self.get_metrics(value)
+                metrics = get_metrics(value)
                 if width is None:
                     width = metrics[0]
                 if line is None:
                     line = metrics[1]
-            if width >= 0:
-                self._col_widths.setdefault(idx, 0)
-                if self._col_widths[idx] < width:
-                    self._col_widths[idx] = width
-            if line >= 0 and max_line < line:
+            if max_line < line:
                 max_line = line
-            if isinstance(style, basestring):
-                if style not in self.styles:
-                    style = ('*', '*:change')[style.endswith(':change')]
-                style = self.styles[style]
+            _set_col_width(idx, width)
+            style = _get_style(style)
             if max_height < style.font.height:
                 max_height = style.font.height
             row.write(idx, value, style)
@@ -80,6 +95,22 @@ class WorksheetWriter(object):
         if self.row_idx % 512 == 0 or self._cells_count >= 4096:
             self.sheet.flush_row_data()
             self._cells_count = 0
+
+    def _get_style(self, style):
+        if isinstance(style, basestring):
+            if style not in self.styles:
+                if style.endswith(':change'):
+                    style = '*:change'
+                else:
+                    style = '*'
+            style = self.styles[style]
+        return style
+
+    def _set_col_width(self, idx, width):
+        widths = self._col_widths
+        widths.setdefault(idx, 1)
+        if widths[idx] < width:
+            widths[idx] = width
 
     def set_col_widths(self):
         for idx, width in self._col_widths.iteritems():
