@@ -11,4 +11,3 @@ setup(name=PACKAGE,
       author='Satyam',
       entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)},
 )
-
