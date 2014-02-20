@@ -14,7 +14,7 @@ from tracusermanager.api import UserManager
 class SpecialTicketNotifyEmail(TicketNotifyEmail):
     """Special Notification of ticket changes."""
     __team = None
-    
+
     def notify(self, ticket, newticket=True, modtime=None):
         self.__team = ticket['ttd']
         if self.__team is not None:
@@ -22,7 +22,7 @@ class SpecialTicketNotifyEmail(TicketNotifyEmail):
                 .notify(ticket, newticket, modtime)
         else:
             self.env.log.warning("Ticket has no custom field called 'ttd'!")
-    
+
     def get_recipients(self, tktid):
         recipients = []
         #self.env.log.warning('Sending to %s' % self.__team)

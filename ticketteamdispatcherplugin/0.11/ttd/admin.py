@@ -25,16 +25,16 @@ class TicketTeamDispatcherAdmin(Component):
     def get_admin_panels(self, req):
         if req.perm.has_permission('TICKET_ADMIN'):
             yield ('ticket', 'Ticket System', 'ttd', 'Team Dispatcher')
-        
+
     def render_admin_panel(self, req, category, page, path_info):
         req.perm.require('TICKET_ADMIN')
 
         action = req.args.get('action')
-        
+
         users = UserManager(self.env).get_active_users()
         caption = self.get_caption()
         teams = self.get_teams()
-                
+
         if action:
             if action == 'rename':
                 caption = req.args.get('caption')
