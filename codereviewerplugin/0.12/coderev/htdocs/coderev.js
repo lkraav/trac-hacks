@@ -58,17 +58,17 @@ var setup = function(){
            +'</form>';
     jQuery('#content').append(html);
     jQuery('#codereviewform').after(jQuery('#help')); // move help after form
-}
+};
 
 // utils
 var decode = function(encoded){
     return encoded.replace(/&lt;/g,"<").replace(/&gt;/g,">");
-}
+};
 
 var href = function(text){
     return '<a href="#codereview" title="View/edit code review">'+text+'</a>';
-}
+};
 
 var get_url = function(){
     return jQuery('link[rel="search"]').attr('href').replace(/\/search/, '');
-}
+};
