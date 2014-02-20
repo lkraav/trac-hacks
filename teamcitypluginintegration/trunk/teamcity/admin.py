@@ -9,7 +9,7 @@
 from trac.core import *
 from trac.admin.api import IAdminPanelProvider
 from helpers import get_options, TeamCityQuery, TeamCityError
-from trac.web.chrome import add_stylesheet, add_javascript
+from trac.web.chrome import add_script, add_stylesheet
 from trac.web import HTTPForbidden
 
 class TeamCityAdmin(Component):
@@ -54,7 +54,7 @@ class TeamCityAdmin(Component):
                             'checked': btype_id in options.get('builds',[])
             })
         add_stylesheet(req,'teamcity/css/admin.css')
-        add_javascript(req,'teamcity/js/admin.js')
+        add_script(req,'teamcity/js/admin.js')
         t_data = {'options':options,'projects':projects,'errors':errors}
         return 'teamcity_admin.html',t_data
 
