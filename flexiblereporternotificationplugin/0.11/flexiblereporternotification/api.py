@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import trac.ticket.notification as notification
 from trac.core import Component, implements
