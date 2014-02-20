@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 PACKAGE = 'TracCodeReviewer'
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 
 setup(
     name=PACKAGE, version=VERSION,
