@@ -2,16 +2,19 @@
 
 import re
 from datetime import datetime
-from itertools import chain
+from itertools import chain, groupby
 from xlwt import Workbook, Formula
 
 from trac.core import Component, implements
+from trac.env import Environment
 from trac.mimeview.api import Context, IContentConverter
 from trac.resource import Resource, get_resource_url
+from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
 from trac.ticket.query import Query
 from trac.ticket.web_ui import TicketModule
-from trac.util.text import unicode_urlencode
+from trac.util import Ranges
+from trac.util.text import empty, unicode_urlencode
 from trac.web.api import IRequestFilter, RequestDone
 from trac.web.chrome import Chrome, add_link
 try:
@@ -27,7 +30,102 @@ from tracexceldownload.api import WorksheetWriter, get_workbook_content, \
 from tracexceldownload.translation import _, dgettext, dngettext
 
 
-__all__ = ['ExcelTicketModule', 'ExcelReportModule']
+if hasattr(Environment, 'get_read_db'):
+    _get_db = lambda env: env.get_read_db()
+else:
+    _get_db = lambda env: env.get_db_cnx()
+
+
+def _tkt_id_conditions(column, tkt_ids):
+    ranges = Ranges()
+    ranges.appendrange(','.join(map(str, sorted(tkt_ids))))
+    condition = []
+    tkt_ids = []
+    for a, b in ranges.pairs:
+        if a == b:
+            tkt_ids.append(a)
+        else:
+            condition.append('%s BETWEEN %d AND %d' % (column, a, b))
+    if tkt_ids:
+        condition.append('%s IN (%s)' % (column, ','.join(map(str, tkt_ids))))
+    return ' OR '.join(condition)
+
+
+class BulkFetchTicket(Ticket):
+
+    @classmethod
+    def select(cls, env, tkt_ids):
+        db = _get_db(env)
+        fields = TicketSystem(env).get_ticket_fields()
+        std_fields = [f['name'] for f in fields if not f.get('custom')]
+        time_fields = [f['name'] for f in fields if f['type'] == 'time']
+        custom_fields = set(f['name'] for f in fields if f.get('custom'))
+        cursor = db.cursor()
+        tickets = {}
+
+        cursor.execute('SELECT %s,id FROM ticket WHERE %s' %
+                       (','.join(std_fields),
+                        _tkt_id_conditions('id', tkt_ids)))
+        for row in cursor:
+            id = row[-1]
+            values = {}
+            for idx, field in enumerate(std_fields):
+                value = row[idx]
+                if field in time_fields:
+                    value = from_utimestamp(value)
+                elif value is None:
+                    value = empty
+                values[field] = value
+            tickets[id] = (values, [])  # values, changelog
+
+        cursor.execute('SELECT ticket,name,value FROM ticket_custom '
+                       'WHERE %s ORDER BY ticket' %
+                       _tkt_id_conditions('ticket', tkt_ids))
+        for id, rows in groupby(cursor, lambda row: row[0]):
+            if id not in tickets:
+                continue
+            values = {}
+            for id, name, value in rows:
+                if name in custom_fields:
+                    if value is None:
+                        value = empty
+                    values[name] = value
+            tickets[id][0].update(values)
+
+        cursor.execute('SELECT ticket,time,author,field,oldvalue,newvalue '
+                       'FROM ticket_change WHERE %s ORDER BY ticket,time' %
+                       _tkt_id_conditions('ticket', tkt_ids))
+        for id, rows in groupby(cursor, lambda row: row[0]):
+            if id not in tickets:
+                continue
+            tickets[id][1].extend(
+                    (from_utimestamp(t), author, field, oldvalue or '',
+                     newvalue or '', 1)
+                    for id, t, author, field, oldvalue, newvalue in rows)
+
+        return dict((id, cls(env, id, values=values, changelog=changelog,
+                             fields=fields, time_fields=time_fields))
+                    for id, (values, changelog) in tickets.iteritems())
+
+    def __init__(self, env, tkt_id=None, db=None, version=None, values=None,
+                 changelog=None, fields=None, time_fields=None):
+        self.env = env
+        if tkt_id is not None:
+            tkt_id = int(tkt_id)
+        self.resource = Resource('ticket', tkt_id, version)
+        self.fields = fields
+        self.time_fields = time_fields
+        self.id = tkt_id
+        self._values = values
+        self.values = values.copy()
+        self._changelog = changelog
+        self._old = {}
+
+    def _fetch_ticket(self, tkt_id, db=None):
+        self.values = self._values.copy()
+
+    def get_changelog(self, when=None, db=None):
+        return self._changelog[:]
 
 
 class ExcelTicketModule(Component):
@@ -62,41 +160,61 @@ class ExcelTicketModule(Component):
         query.max = 0
         query.has_more_pages = False
         query.offset = 0
+        db = _get_db(self.env)
 
         # extract all fields except custom fields
+        custom_fields = [f['name'] for f in query.fields if f.get('custom')]
         cols = ['id']
-        cols.extend(f['name'] for f in query.fields if not f.get('custom'))
+        cols.extend(f['name'] for f in query.fields
+                              if f['name'] not in custom_fields)
         cols.extend(name for name in ('time', 'changetime')
                          if name not in cols)
         query.cols = cols
 
-        if hasattr(self.env, 'get_read_db'):
-            db = self.env.get_read_db()
-        else:
-            db = self.env.get_db_cnx()
-        tickets = query.execute(req, db)
+        # prevent "SELECT COUNT(*)" query
+        saved_count_prop = query._count
+        try:
+            query._count = lambda self, sql, args, db=None: 0
+            tickets = query.execute(req, db)
+            query.num_items = len(tickets)
+        finally:
+            query._count = saved_count_prop
+
         # add custom fields to avoid error to join many tables
-        custom_fields = [f['name'] for f in query.fields if f.get('custom')]
-        self._fill_custom_fields(tickets, custom_fields, db)
+        self._fill_custom_fields(tickets, query.fields, custom_fields, db)
 
         context = Context.from_request(req, 'query', absurls=True)
         cols.extend([name for name in custom_fields if name not in cols])
         data = query.template_data(context, tickets)
 
-        book = Workbook(encoding='utf-8', style_compression=1)
+        book = Workbook(encoding='utf-8')
         if sheet_query:
             self._create_sheet_query(req, context, data, book)
         if sheet_history:
             self._create_sheet_history(req, context, data, book)
         return get_workbook_content(book), 'application/vnd.ms-excel'
 
-    def _fill_custom_fields(self, tickets, custom_fields, db):
+    def _fill_custom_fields(self, tickets, fields, custom_fields, db):
+        if not tickets or not custom_fields:
+            return
+        fields = dict((f['name'], f) for f in fields)
+        tickets = dict((int(ticket['id']), ticket) for ticket in tickets)
+        query = "SELECT ticket,name,value " \
+                "FROM ticket_custom WHERE %s ORDER BY ticket" % \
+                _tkt_id_conditions('ticket', tickets)
+
         cursor = db.cursor()
-        for ticket in tickets:
-            cursor.execute('SELECT name,value FROM ticket_custom '
-                           'WHERE ticket=%s', (ticket['id'],))
-            for row in cursor:
-                ticket[row[0]] = row[1]
+        cursor.execute(query)
+        for id, name, value in cursor:
+            if id not in tickets:
+                continue
+            f = fields.get(name)
+            if f and f['type'] == 'checkbox':
+                try:
+                    value = bool(int(value))
+                except (TypeError, ValueError):
+                    value = False
+            tickets[id][name] = value
 
     def _create_sheet_query(self, req, context, data, book):
         sheet = book.add_sheet(dgettext('messages', 'Custom Query'))
@@ -159,11 +277,18 @@ class ExcelTicketModule(Component):
             (header['label'], 'thead', None, None)
             for idx, header in enumerate(headers))
 
+        tkt_ids = [result['id']
+                   for result in chain(*[results for groupname, results
+                                                 in groups])]
+        tickets = BulkFetchTicket.select(self.env, tkt_ids)
+
         mod = TicketModule(self.env)
         for result in chain(*[results for groupname, results in groups]):
             id = result['id']
-            ticket = Ticket(self.env, id)
+            ticket = tickets[id]
             ticket_context = context('ticket', id)
+            if 'TICKET_VIEW' not in req.perm(ticket_context.resource):
+                continue
             values = ticket.values.copy()
             changes = []
 
@@ -258,7 +383,7 @@ class ExcelReportModule(Component):
         return template, data, content_type
 
     def _convert_report(self, req, data):
-        book = Workbook(encoding='utf-8', style_compression=1)
+        book = Workbook(encoding='utf-8')
         sheet = book.add_sheet(dgettext('messages', 'Report'))
         writer = WorksheetWriter(sheet, req)
 
