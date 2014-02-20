@@ -64,7 +64,7 @@ TRAC_PROJECT = 'c:\\path\\to\\Trac\\Projects'
 OPTS = [
     ('--hostname', 'mycomputer.mydomain.com'),
     ('--single-env', True),
-    ('--auth', ('trac,c:\\path\\to\\pswd\\file,TracRealm')),
+    ('--auth', ('TracProj', 'c:\\path\\to\\pswd\\file', 'TracRealm')),
     ('--port', '80'),
 ]
 
@@ -73,16 +73,15 @@ OPTS = [
 # Other constants
 PYTHONDIR = sysconfig.get_python_lib()  # gets site-packages folder
 PYTHONSERVICE_EXE=os.path.join(PYTHONDIR, 'win32', 'pythonservice.exe')
-LOG_DIR = os.path.join(TRAC_PROJECT, log)
+LOG_DIR = os.path.join(TRAC_PROJECT, 'log')
 
 # Trac instance(s)
 ARGS = [TRAC_PROJECT]
 
-def add_auth(auths, vals, cls):
-    info = vals.split(',', 3)
+def add_auth(auths, info, cls):
     p, h, r = info
     if auths.has_key(p):
-        print >>sys.stderr, 'Ignoring duplicate authentication option for ' \
+        print >> sys.stderr, 'Ignoring duplicate authentication option for ' \
                             'project: %s' % p
     else:
         auths[p] = cls(h, r)
@@ -130,6 +129,7 @@ class TracWindowsService(win32serviceutil.ServiceFramework):
         hostname = ''
         auths = {}
         env_parent_dir = None
+        base_path = None
 
         for o, a in OPTS:
             if o in ("-a", "--auth"):
@@ -159,8 +159,8 @@ class TracWindowsService(win32serviceutil.ServiceFramework):
                 wsgi_app = AuthenticationMiddleware(wsgi_app, auths, project_name)
             else:
                 wsgi_app = AuthenticationMiddleware(wsgi_app, auths)
-        base_path = base_path.strip('/').strip('\\')
         if base_path:
+            base_path = base_path.strip('\\')
             wsgi_app = BasePathMiddleware(wsgi_app, base_path)
 
         sys.stdout = open(os.path.join(LOG_DIR, 'stdout.log'),'a')
