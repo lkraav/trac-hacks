@@ -10,24 +10,24 @@
 from setuptools import find_packages, setup
 
 setup(
-	name='TeamCityPlugin',
-	author='Evgeniy Tetenchuk',
-	author_email='webdev@unigine.com',
-	version='0.3.3',
-	license='BSD 3-Clause',
-	url="http://trac-hacks.org/wiki/TeamcityPluginIntegration",
-	packages=find_packages(exclude=['*.tests*']),
-	install_requires=[
-		"lxml>=2.2",
-	],
-	entry_points = """
-	[trac.plugins]
-	teamcity.web_ui = teamcity.web_ui
-	teamcity.timeline = teamcity.timeline
-	teamcity.admin = teamcity.admin
-	""",
-	package_data={'teamcity': ['templates/*.html',
-						'htdocs/css/*.css',
-						'htdocs/img/*.gif',
-						'htdocs/js/*.js',]},
+    name='TeamCityPlugin',
+    author='Evgeniy Tetenchuk',
+    author_email='webdev@unigine.com',
+    version='0.3.3',
+    license='BSD 3-Clause',
+    url="http://trac-hacks.org/wiki/TeamcityPluginIntegration",
+    packages=find_packages(exclude=['*.tests*']),
+    install_requires=[
+            "lxml>=2.2",
+    ],
+    entry_points = """
+    [trac.plugins]
+    teamcity.web_ui = teamcity.web_ui
+    teamcity.timeline = teamcity.timeline
+    teamcity.admin = teamcity.admin
+    """,
+    package_data={'teamcity': ['templates/*.html',
+                                            'htdocs/css/*.css',
+                                            'htdocs/img/*.gif',
+                                            'htdocs/js/*.js',]},
 )
