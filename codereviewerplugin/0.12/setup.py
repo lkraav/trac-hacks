@@ -9,7 +9,7 @@ setup(
     name=PACKAGE, version=VERSION,
     description='Reviews changesets and updates ticket with results',
     author="Rob Guttman", author_email="guttman@alum.mit.edu",
-    license='GPL', url='http://trac-hacks.org/wiki/TracCodeReviewerPlugin',
+    license='GPL', url='http://trac-hacks.org/wiki/CodeReviewerPlugin',
     packages=['coderev'],
     package_data={'coderev': ['templates/*.html',
                               'htdocs/*.css',
