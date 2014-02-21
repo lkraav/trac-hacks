@@ -281,9 +281,6 @@ class DiscussionApi(Component):
         context.data['time'] = datetime.now(utc)
         context.data['env'] = self.env
 
-        # Commit database changes.
-        context.db.commit()
-
         # Add context navigation.
         if context.forum:
             add_ctxtnav(context.req, 'Forum Index',
@@ -1870,7 +1867,6 @@ class DiscussionApi(Component):
                "WHERE f.time BETWEEN %%s AND %%s "
                "%(order_by)s "% (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
-        self.log.debug(sql % values)
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
@@ -1973,7 +1969,6 @@ class DiscussionApi(Component):
                "WHERE t.time BETWEEN %%s AND %%s "
                "%(order_by)s" % (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
-        self.log.debug(sql % values)
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
@@ -2048,7 +2043,6 @@ class DiscussionApi(Component):
                "WHERE time BETWEEN %%s AND %%s "
                "%(order_by)s"% (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
-        self.log.debug(sql % values)
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
@@ -2079,9 +2073,9 @@ class DiscussionApi(Component):
         sql = ("INSERT INTO %(table)s "
                "(%(fields)s) "
                "VALUES (%(values)s)" % (sql_values))
-        self.log.debug(sql % values)
         cursor = context.db.cursor()
         cursor.execute(sql, values)
+        context.db.commit()
 
     def add_group(self, context, group):
         self._add_item(context, 'forum_group', group)
@@ -2123,6 +2117,7 @@ class DiscussionApi(Component):
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
+        context.db.commit()
 
     def delete_group(self, context, id):
         # Delete group.
@@ -2170,6 +2165,7 @@ class DiscussionApi(Component):
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
+        context.db.commit()
 
     def set_group(self, context, forum_id, group_id):
         # Change group of specified forum.
@@ -2197,6 +2193,7 @@ class DiscussionApi(Component):
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
+        context.db.commit()
 
     def edit_group(self, context, id, group):
         # Edit froum group.
