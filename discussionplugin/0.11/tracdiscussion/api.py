@@ -419,11 +419,11 @@ class DiscussionApi(Component):
             if context.realm == 'discussion-admin':
                 pass
             elif context.realm == 'discussion-ajax':
-               if action == 'edit-attribute':
+                if action == 'edit-attribute':
                     return ['message-edit-attribute']
-               elif action == 'subscribe':
+                elif action == 'subscribe':
                     return ['topic-subscribe']
-               elif action == 'unsubscribe':
+                elif action == 'unsubscribe':
                     return ['topic-unsubscribe']
             elif context.realm == 'discussion-wiki':
                 if action == 'add':
@@ -477,11 +477,11 @@ class DiscussionApi(Component):
             if context.realm == 'discussion-admin':
                 pass
             elif context.realm == 'discussion-ajax':
-               if action == 'edit-attribute':
+                if action == 'edit-attribute':
                     return ['topic-edit-attribute']
-               elif action == 'subscribe':
+                elif action == 'subscribe':
                     return ['topic-subscribe']
-               elif action == 'unsubscribe':
+                elif action == 'unsubscribe':
                     return ['topic-unsubscribe']
             elif context.realm == 'discussion-wiki':
                 if action == 'add':
@@ -548,11 +548,11 @@ class DiscussionApi(Component):
                 else:
                     return ['admin-forum-list']
             elif context.realm == 'discussion-ajax':
-               if action == 'edit-attribute':
+                if action == 'edit-attribute':
                     return ['forum-edit-attribute']
-               elif action == 'subscribe':
+                elif action == 'subscribe':
                     return ['forum-subscribe']
-               elif action == 'unsubscribe':
+                elif action == 'unsubscribe':
                     return ['forum-unsubscribe']
             elif context.realm == 'discussion-wiki':
                 return ['wiki-message-list']
@@ -588,7 +588,7 @@ class DiscussionApi(Component):
                     else:
                         return ['admin-forum-list']
             elif context.realm == 'discussion-ajax':
-               if action == 'edit-attribute':
+                if action == 'edit-attribute':
                     return ['group-edit-attribute']
             elif context.realm == 'discussion-wiki':
                 return ['wiki-message-list']
@@ -770,8 +770,8 @@ class DiscussionApi(Component):
                 if not forum['moderators']:
                     forum['moderators'] = []
                 if not isinstance(forum['moderators'], list):
-                     forum['moderators'] = [moderator.strip() for moderator in
-                       forum['moderators'].replace(',', ' ').split()]
+                    forum['moderators'] = [moderator.strip() for moderator in
+                      forum['moderators'].replace(',', ' ').split()]
 
                 # Fix subscribers attribute to be a list.
                 if not forum['subscribers']:
@@ -821,7 +821,7 @@ class DiscussionApi(Component):
 
                 # Fix moderators attribute to be a list.
                 if not forum['moderators']:
-                   forum['moderators'] = []
+                    forum['moderators'] = []
                 if not isinstance(forum['moderators'], list):
                     forum['moderators'] = [moderator.strip() for moderator in
                       forum['moderators'].replace(',', ' ').split()]
@@ -1140,9 +1140,9 @@ class DiscussionApi(Component):
                     if name in ('status.locked'):
                         topic['status'] = context.topic['status'].copy()
                         if value in ('true', 'yes', True):
-                           topic['status'] |= set(['locked'])
+                            topic['status'] |= set(['locked'])
                         else:
-                           topic['status'] -= set(['locked'])
+                            topic['status'] -= set(['locked'])
                     else:
                         topic[name] = value;
 
@@ -1162,11 +1162,11 @@ class DiscussionApi(Component):
                     if name in ('status.solved'):
                         topic['status'] = context.topic['status'].copy()
                         if value in ('true', 'yes', True):
-                           topic['status'] |= set(['solved'])
-                           topic['status'] -= set(['unsolved'])
+                            topic['status'] |= set(['solved'])
+                            topic['status'] -= set(['unsolved'])
                         else:
-                           topic['status'] |= set(['unsolved'])
-                           topic['status'] -= set(['solved'])
+                            topic['status'] |= set(['unsolved'])
+                            topic['status'] -= set(['solved'])
                     else:
                         topic[name] = value;
                 else:
@@ -1500,13 +1500,13 @@ class DiscussionApi(Component):
         # Prepare links to next or previous page.
         if paginator.has_next_page:
             add_link(context.req, 'next', context.req.href(
-              context.req.path_info, discussion_page = paginator.page + 2, 
-              order = context.req.args.get('order'), desc = context.req.args.get('desc')) 
+              context.req.path_info, discussion_page = paginator.page + 2,
+              order = context.req.args.get('order'), desc = context.req.args.get('desc'))
                      + anchor, 'Next Page')
         if paginator.has_previous_page:
             add_link(context.req, 'prev', context.req.href(
               context.req.path_info, discussion_page = paginator.page,
-                        order = context.req.args.get('order'), desc = context.req.args.get('desc')) 
+                        order = context.req.args.get('order'), desc = context.req.args.get('desc'))
                      + anchor, 'Previous Page')
 
         return paginator
@@ -1550,7 +1550,7 @@ class DiscussionApi(Component):
             topic['unregistered_subscribers'] = []
             for subscriber in topic['subscribers']:
                 if subscriber not in context.users:
-                     topic['unregistered_subscribers'].append(subscriber)
+                    topic['unregistered_subscribers'].append(subscriber)
             topic['status'] = self._topic_status_to_list(topic['status'])
 
         return topic
@@ -1568,7 +1568,7 @@ class DiscussionApi(Component):
             topic['unregistered_subscribers'] = []
             for subscriber in topic['subscribers']:
                 if subscriber not in context.users:
-                     topic['unregistered_subscribers'].append(subscriber)
+                    topic['unregistered_subscribers'].append(subscriber)
             topic['status'] = self._topic_status_to_list(topic['status'])
 
         return topic
@@ -1586,30 +1586,30 @@ class DiscussionApi(Component):
             topic['unregistered_subscribers'] = []
             for subscriber in topic['subscribers']:
                 if subscriber not in context.users:
-                     topic['unregistered_subscribers'].append(subscriber)
+                    topic['unregistered_subscribers'].append(subscriber)
             topic['status'] = self._topic_status_to_list(topic['status'])
 
         return topic
 
     def _topic_status_to_list(self, status):
         if status == 0:
-           return set(['unsolved'])
+            return set(['unsolved'])
         status_list = set([])
         if status & 0x01:
-           status_list.add('solved')
+            status_list.add('solved')
         else:
-           status_list.add('unsolved')
+            status_list.add('unsolved')
         if status & 0x02:
-           status_list.add('locked')
+            status_list.add('locked')
         return status_list
 
     def _topic_status_from_list(self, status_list):
-       status = 0
-       if 'solved' in status_list:
-           status = status | 0x01
-       if 'locked' in status_list:
-           status = status | 0x02
-       return status
+        status = 0
+        if 'solved' in status_list:
+            status = status | 0x01
+        if 'locked' in status_list:
+            status = status | 0x02
+        return status
 
     def get_forum(self, context, id):
         # Get forum by ID.
@@ -1749,18 +1749,18 @@ class DiscussionApi(Component):
     def get_forums(self, context, order_by = 'subject', desc = False):
 
         def _get_new_topic_count(context, forum_id):
-           sql_values = {'forum_id' : forum_id,
-             'time' : int(context.visited_forums.has_key(forum_id) and
-               (context.visited_forums[forum_id] or 0))}
-           sql = ("SELECT COUNT(id) "
-                  "FROM topic t "
-                  "WHERE t.forum = %(forum_id)s AND t.time > %(time)s" %
-                    (sql_values))
-           self.env.log.debug(sql)
-           context.cursor.execute(sql)
-           for row in context.cursor:
-              return int(row[0])
-           return 0
+            sql_values = {'forum_id' : forum_id,
+              'time' : int(context.visited_forums.has_key(forum_id) and
+                (context.visited_forums[forum_id] or 0))}
+            sql = ("SELECT COUNT(id) "
+                   "FROM topic t "
+                   "WHERE t.forum = %(forum_id)s AND t.time > %(time)s" %
+                     (sql_values))
+            self.env.log.debug(sql)
+            context.cursor.execute(sql)
+            for row in context.cursor:
+                return int(row[0])
+            return 0
 
         def _get_new_replies_count(context, forum_id):
             sql_values = {'forum_id' : forum_id}
@@ -1788,7 +1788,7 @@ class DiscussionApi(Component):
                 self.env.log.debug(sql)
                 context.cursor.execute(sql)
                 for row in context.cursor:
-                   count += int(row[0])
+                    count += int(row[0])
 
             return count
 
@@ -1844,7 +1844,7 @@ class DiscussionApi(Component):
             forum['unregistered_subscribers'] = []
             for subscriber in forum['subscribers']:
                 if subscriber not in context.users:
-                     forum['unregistered_subscribers'].append(subscriber)
+                    forum['unregistered_subscribers'].append(subscriber)
 
             # Get forum tags.
             self.log.debug(context.resource)
@@ -1888,7 +1888,7 @@ class DiscussionApi(Component):
             self.env.log.debug(sql)
             context.cursor.execute(sql)
             for row in context.cursor:
-               return int(row[0])
+                return int(row[0])
             return 0
 
         # Prepere SQL query.
@@ -1943,7 +1943,7 @@ class DiscussionApi(Component):
             topic['unregistered_subscribers'] = []
             for subscriber in topic['subscribers']:
                 if subscriber not in context.users:
-                     topic['unregistered_subscribers'].append(subscriber)
+                    topic['unregistered_subscribers'].append(subscriber)
             topic['status'] = self._topic_status_to_list(topic['status'])
             if context.has_tags:
                 tag_system = TagSystem(self.env)
