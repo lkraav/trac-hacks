@@ -85,12 +85,12 @@ class DiscussionTimeline(Component):
 
         # Return apropriate content.
         if field == 'url':
-           url = context.href.discussion(*ids)
-           if len(ids) == 3:
-               url = context.href.discussion(*ids[0])
-               url = '%s#%s%s' % (url,ids[1], ids[2])
-           return url
+            url = context.href.discussion(*ids)
+            if len(ids) == 3:
+                url = context.href.discussion(*ids[0])
+                url = '%s#%s%s' % (url,ids[1], ids[2])
+            return url
         elif field == 'title':
-           return tag(title)
+            return tag(title)
         elif field == 'description':
-           return tag(description)
+            return tag(description)

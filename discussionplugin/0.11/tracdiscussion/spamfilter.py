@@ -51,4 +51,3 @@ class DiscussionSpamFilter(Component):
             FilterSystem(self.env).test(req, author, changes)
         else: #SpamFilter >= 0.3.2 or < 0.7.0
             FilterSystem(self.env).test(req, author, changes, ip)
-

@@ -247,9 +247,9 @@ class DiscussionWiki(Component):
 
     def _discussion_link(self, formatter, namespace, params, label):
         try:
-           id = int(params)
+            id = int(params)
         except:
-           id = -1
+            id = -1
 
         # Create request context.
         context = Context.from_request(formatter.req)
