@@ -214,8 +214,7 @@ class DiscussionEmailNotification(Component):
 
     def topic_created(self, context, topic):
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         # Get forum of the topic.
         api = self.env[DiscussionApi]
@@ -235,8 +234,7 @@ class DiscussionEmailNotification(Component):
             old_topic.update(topic)
 
             # Get database access.
-            db = self.env.get_db_cnx()
-            context.cursor = db.cursor()
+            context.db = self.env.get_db_cnx()
 
             # Get forum of the topic.
             api = self.env[DiscussionApi]
@@ -253,8 +251,7 @@ class DiscussionEmailNotification(Component):
 
     def message_created(self, context, message):
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         # Get access to api component.
         api = self.env[DiscussionApi]
