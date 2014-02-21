@@ -182,8 +182,7 @@ class DiscussionApi(Component):
         context = Context('discussion-core')
 
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         type, id = resource.id.split('/')
 
@@ -223,8 +222,7 @@ class DiscussionApi(Component):
         context = Context('discussion-core')
 
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         type, id = resource.id.split('/')
 
@@ -247,8 +245,7 @@ class DiscussionApi(Component):
 
     def process_discussion(self, context):
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         # Get request items and actions.
         self._prepare_context(context)
@@ -285,7 +282,7 @@ class DiscussionApi(Component):
         context.data['env'] = self.env
 
         # Commit database changes.
-        db.commit()
+        context.db.commit()
 
         # Add context navigation.
         if context.forum:
@@ -1520,9 +1517,10 @@ class DiscussionApi(Component):
         sql = ("SELECT %(columns)s "
                "FROM %(table)s "
                "%(where)s" % (sql_values))
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
-        for row in context.cursor:
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
+        for row in cursor:
             row = dict(zip(columns, row))
             return row
         return None
@@ -1673,9 +1671,10 @@ class DiscussionApi(Component):
         sql = ("SELECT COUNT(id) "
                "FROM %(table)s "
                "%(where)s" % (sql_values))
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
-        for row in context.cursor:
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
+        for row in cursor:
             return row[0]
         return 0
 
@@ -1704,10 +1703,11 @@ class DiscussionApi(Component):
                "%(order_by)s "
                "%(limit)s "
                "%(offset)s" % (sql_values))
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
         items = []
-        for row in context.cursor:
+        for row in cursor:
             row = dict(zip(columns, row))
             items.append(row)
         return items
@@ -1717,10 +1717,11 @@ class DiscussionApi(Component):
         sql = ("SELECT COUNT(f.id) "
                "FROM forum f "
                "WHERE f.forum_group = 0")
-        self.env.log.debug(sql)
-        context.cursor.execute(sql)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql)
         no_group_forums = 0
-        for row in context.cursor:
+        for row in cursor:
             no_group_forums = row[0]
         groups = [{'id' : 0, 'name' : 'None', 'description' : 'No Group',
           'forums' : no_group_forums}]
@@ -1739,9 +1740,10 @@ class DiscussionApi(Component):
                  "GROUP BY forum_group) f "
                "ON g.id = f.forum_group "
                "%(order_by)s" % (sql_values))
-        self.env.log.debug(sql)
-        context.cursor.execute(sql)
-        for row in context.cursor:
+
+        cursor = context.db.cursor()
+        cursor.execute(sql)
+        for row in cursor:
             row = dict(zip(columns, row))
             groups.append(row)
         return groups
@@ -1756,9 +1758,10 @@ class DiscussionApi(Component):
                    "FROM topic t "
                    "WHERE t.forum = %(forum_id)s AND t.time > %(time)s" %
                      (sql_values))
-            self.env.log.debug(sql)
-            context.cursor.execute(sql)
-            for row in context.cursor:
+
+            cursor = context.db.cursor()
+            cursor.execute(sql)
+            for row in cursor:
                 return int(row[0])
             return 0
 
@@ -1767,12 +1770,12 @@ class DiscussionApi(Component):
             sql = ("SELECT id "
                    "FROM topic t "
                    "WHERE t.forum = %(forum_id)s" % (sql_values))
-            self.env.log.debug(sql)
-            context.cursor.execute(sql)
 
+            cursor = context.db.cursor()
+            cursor.execute(sql)
             # Get IDs of topics in this forum.
             topics = []
-            for row in context.cursor:
+            for row in cursor:
                 topics.append(row[0])
 
             #Count unseen messages.
@@ -1785,9 +1788,10 @@ class DiscussionApi(Component):
                        "FROM message m "
                        "WHERE m.topic = %(topic_id)s AND m.time > %(time)s" %
                        (sql_values))
-                self.env.log.debug(sql)
-                context.cursor.execute(sql)
-                for row in context.cursor:
+
+                cursor = context.db.cursor()
+                cursor.execute(sql)
+                for row in cursor:
                     count += int(row[0])
 
             return count
@@ -1817,12 +1821,13 @@ class DiscussionApi(Component):
                  "GROUP BY forum) ta "
                "ON f.id = ta.forum "
                "%(order_by)s" %(sql_values))
-        self.env.log.debug(sql)
-        context.cursor.execute(sql)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql)
 
         # Convert certain forum attributes.
         forums = []
-        for row in context.cursor:
+        for row in cursor:
             row = dict(zip(columns, row))
             forums.append(row)
 
@@ -1885,9 +1890,10 @@ class DiscussionApi(Component):
                    "FROM message m "
                    "WHERE m.topic = %(topic_id)s AND m.time > %(time)s" %
                      (sql_values))
-            self.env.log.debug(sql)
-            context.cursor.execute(sql)
-            for row in context.cursor:
+
+            cursor = context.db.cursor()
+            cursor.execute(sql)
+            for row in cursor:
                 return int(row[0])
             return 0
 
@@ -1926,12 +1932,12 @@ class DiscussionApi(Component):
         values = tuple(values)
 
         # Execute the query.
-        self.env.log.debug(sql % values)
-        context.cursor.execute(sql, values)
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
 
         # Convert result to dictionaries.
         topics = []
-        for row in context.cursor:
+        for row in cursor:
             row = dict(zip(columns, row))
             topics.append(row)
 
@@ -1986,11 +1992,12 @@ class DiscussionApi(Component):
                "FROM message m "
                "WHERE m.topic = %(topic_id)s "
                "%(order_by)s" % (sql_values))
-        self.env.log.debug(sql)
-        context.cursor.execute(sql)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql)
         messagemap = {}
         messages = []
-        for row in context.cursor:
+        for row in cursor:
             row = dict(zip(columns, row))
             messagemap[row['id']] = row
 
@@ -2073,7 +2080,8 @@ class DiscussionApi(Component):
                "(%(fields)s) "
                "VALUES (%(values)s)" % (sql_values))
         self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
 
     def add_group(self, context, group):
         self._add_item(context, 'forum_group', group)
@@ -2112,8 +2120,9 @@ class DiscussionApi(Component):
           'where' : ' WHERE ' + where if where else ''}
         sql = ("DELETE FROM %(table)s "
                "%(where)s" % (sql_values))
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
 
     def delete_group(self, context, id):
         # Delete group.
@@ -2158,8 +2167,9 @@ class DiscussionApi(Component):
                "SET %(column)s = %%s "
                "%(where)s" % (sql_values))
         values = (value,) + values
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
 
     def set_group(self, context, forum_id, group_id):
         # Change group of specified forum.
@@ -2184,8 +2194,9 @@ class DiscussionApi(Component):
         sql = ("UPDATE %(table)s "
                "SET %(fields)s "
                "WHERE id = %(id)s" % (sql_values))
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
 
     def edit_group(self, context, id, group):
         # Edit froum group.

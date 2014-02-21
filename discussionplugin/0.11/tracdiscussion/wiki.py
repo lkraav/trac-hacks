@@ -11,6 +11,7 @@ from trac.core import *
 from trac.wiki.web_ui import WikiModule
 from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.web.href import Href
+from trac.mimeview.api import Context
 from trac.web.chrome import Chrome, add_stylesheet
 from trac.util import format_date, format_datetime
 from trac.util.text import to_unicode
@@ -115,8 +116,7 @@ class DiscussionWiki(Component):
         context.realm = 'discussion-wiki'
 
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         # Get API component.
         api = self.env[DiscussionApi]
@@ -172,8 +172,7 @@ class DiscussionWiki(Component):
         context.has_tags = is_tags_enabled(self.env)
 
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         # Get API object.
         api = self.env[DiscussionApi]
@@ -214,12 +213,13 @@ class DiscussionWiki(Component):
                "  GROUP BY topic "
                "  ORDER BY max_time DESC" +
                (limit and " LIMIT %s" or ""))
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
 
         # Collect recent topics.
         entries = []
-        for row in context.cursor:
+        for row in cursor:
             row = dict(zip(columns, row))
             entries.append(row)
 
@@ -256,8 +256,7 @@ class DiscussionWiki(Component):
         context.realm = 'discussion-wiki'
 
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         if namespace == 'forum':
             columns = ('subject',)
@@ -265,9 +264,9 @@ class DiscussionWiki(Component):
                    "FROM forum f "
                    "WHERE f.id = %s")
             values = (id,)
-            self.log.debug(sql % values)
-            context.cursor.execute(sql, values)
-            for row in context.cursor:
+            cursor = context.db.cursor()
+            cursor.execute(sql, values)
+            for row in cursor:
                 row = dict(zip(columns, row))
                 return tag.a(label, href = formatter.href.discussion('forum',
                   id), title = row['subject'].replace('"', ''))
@@ -282,9 +281,9 @@ class DiscussionWiki(Component):
                    "  FROM forum "
                    "  WHERE forum_group = %s)")
             values = (id,)
-            self.log.debug(sql % values)
-            context.cursor.execute(sql, values)
-            for row in context.cursor:
+            cursor = context.db.cursor()
+            cursor.execute(sql, values)
+            for row in cursor:
                 row = dict(zip(columns, row))
                 return tag.a(label, href = formatter.href.discussion('forum',
                   row['id']), title = row['subject'].replace('"', ''))
@@ -298,9 +297,9 @@ class DiscussionWiki(Component):
                    "ON t.forum = f.id "
                    "WHERE t.id = %s")
             values = (id,)
-            self.log.debug(sql % values)
-            context.cursor.execute(sql, values)
-            for row in context.cursor:
+            cursor = context.db.cursor()
+            cursor.execute(sql, values)
+            for row in cursor:
                 row = dict(zip(columns, row))
                 return tag.a(label, href = '%s#-1' % \
                   (formatter.href.discussion('topic', id),), title =
@@ -318,9 +317,9 @@ class DiscussionWiki(Component):
                    "  FROM topic "
                    "  WHERE forum = %s)")
             values = (id,)
-            self.log.debug(sql % values)
-            context.cursor.execute(sql, values)
-            for row in context.cursor:
+            cursor = context.db.cursor()
+            cursor.execute(sql, values)
+            for row in cursor:
                 row = dict(zip(columns, row))
                 return tag.a(label, href = '%s#-1' % \
                   (formatter.href.discussion('topic', row['id']),), title =
@@ -338,9 +337,9 @@ class DiscussionWiki(Component):
                 "FROM topic) t "
               "WHERE m.forum = f.id AND m.topic = t.id AND m.id = %s")
             values = (id,)
-            self.log.debug(sql % values)
-            context.cursor.execute(sql, values)
-            for row in context.cursor:
+            cursor = context.db.cursor()
+            cursor.execute(sql, values)
+            for row in cursor:
                 row = dict(zip(columns, row))
                 return tag.a(label, href = '%s#message%s' % \
                   (formatter.href.discussion('topic', row['topic']), id), title = (
@@ -360,8 +359,7 @@ class DiscussionWiki(Component):
         context.realm = 'discussion-wiki'
 
         # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
+        context.db = self.env.get_db_cnx()
 
         if namespace == 'topic-attachment':
             return format_to_html(self.env, context,
