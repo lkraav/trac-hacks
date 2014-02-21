@@ -373,6 +373,7 @@ class RpcTicketTestCase(TracRpcTestCase):
                           "</methodResponse>\n", response.read())
         self.admin.ticket.delete(1)
 
+
 class RpcTicketVersionTestCase(TracRpcTestCase):
     
     def setUp(self):
@@ -394,10 +395,30 @@ class RpcTicketVersionTestCase(TracRpcTestCase):
         self.assertEquals({'time': dt, 'description': desc, 'name': '9.99'},
                            self.admin.ticket.version.get('9.99'))
 
+
+class RpcTicketTypeTestCase(TracRpcTestCase):
+
+    def setUp(self):
+        TracRpcTestCase.setUp(self)
+        self.anon = xmlrpclib.ServerProxy(rpc_testenv.url_anon)
+        self.user = xmlrpclib.ServerProxy(rpc_testenv.url_user)
+        self.admin = xmlrpclib.ServerProxy(rpc_testenv.url_admin)
+
+    def tearDown(self):
+        TracRpcTestCase.tearDown(self)
+
+    def test_getall_default(self):
+        self.assertEquals(['defect', 'enhancement', 'task'],
+                sorted(self.anon.ticket.type.getAll()))
+        self.assertEquals(['defect', 'enhancement', 'task'],
+                sorted(self.admin.ticket.type.getAll()))
+
+
 def test_suite():
     test_suite = unittest.TestSuite()
     test_suite.addTest(unittest.makeSuite(RpcTicketTestCase))
     test_suite.addTest(unittest.makeSuite(RpcTicketVersionTestCase))
+    test_suite.addTest(unittest.makeSuite(RpcTicketTypeTestCase))
     return test_suite
 
 if __name__ == '__main__':
