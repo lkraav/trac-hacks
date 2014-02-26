@@ -88,9 +88,15 @@ function addBudgetRow() {
 			break;
 		case 4:
 			// Cost
-			columnElement = document.createElement('input');
-			columnElement.setAttribute('value', def_cost)
-			columnElement.size = 10;
+			if (def_cost == "-1") {
+				columnElement = document.createElement('input');
+				columnElement.size = 10;
+				columnElement.disabled = "disabled"
+			} else {
+				columnElement = document.createElement('input');
+				columnElement.setAttribute('value', def_cost)
+				columnElement.size = 10;
+			}
 			break;
 		case 5:
 			// State
