@@ -44,6 +44,8 @@ def _tkt_id_conditions(column, tkt_ids):
     for a, b in ranges.pairs:
         if a == b:
             tkt_ids.append(a)
+        elif a + 1 == b:
+            tkt_ids.extend((a, b))
         else:
             condition.append('%s BETWEEN %d AND %d' % (column, a, b))
     if tkt_ids:
@@ -55,6 +57,9 @@ class BulkFetchTicket(Ticket):
 
     @classmethod
     def select(cls, env, tkt_ids):
+        if not tkt_ids:
+            return {}
+
         db = _get_db(env)
         fields = TicketSystem(env).get_ticket_fields()
         std_fields = [f['name'] for f in fields if not f.get('custom')]
