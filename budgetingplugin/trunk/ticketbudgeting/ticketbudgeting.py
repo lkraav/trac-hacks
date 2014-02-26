@@ -2,7 +2,7 @@ from genshi import HTML
 from genshi.builder import tag
 from genshi.filters import Transformer
 from pkg_resources import resource_filename  # @UnresolvedImport
-from trac.config import Option
+from trac.config import Option, IntOption
 from trac.core import Component, implements
 from trac.db.api import DatabaseManager
 from trac.db.schema import Table, Column
@@ -212,6 +212,12 @@ class TicketBudgetingView(Component):
     Option(_CONFIG_SECTION, 'exclude_users',
            "'anonymous','authenticated','tracadmin'",
            'list of users, which should be excluded to show in the drop-down list; should be usable as SQL-IN list')
+    
+    _def_cost = IntOption( _CONFIG_SECTION, 'default_cost', 0,
+                doc = """Default costs or -1 to disabled entering costs.
+                         This might useful when costs are entered by third 
+                         party software.""" )
+    
     _type_list = None
     _name_list = None
     _name_list_str = None
@@ -222,7 +228,7 @@ class TicketBudgetingView(Component):
     BUDGET_REPORTS = [(BUDGET_REPORT_ALL_ID, 'report_title_90', 'report_description_90',
     u"""SELECT t.id, t.summary, t.milestone AS __group__, '../milestone/' || t.milestone AS __grouplink__, 
     t.owner, t.reporter, t.status, t.type, t.priority, t.component,
-    count(b.ticket) AS Anz, sum(b.cost) AS Aufwand, sum(b.estimation) AS Schätzung,
+    count(b.ticket) AS Anz, sum(b.cost) AS Aufwand, sum(b.estimation) AS Schaetzung,
     floor(avg(b.status)) || '%' AS "Status", 
     (CASE t.status 
       WHEN 'closed' THEN 'color: #777; background: #ddd; border-color: #ccc;'
@@ -233,7 +239,7 @@ class TicketBudgetingView(Component):
     left join budgeting b ON b.ticket = t.id
     where t.milestone like 
     (CASE $MILESTONE
-              WHEN '''' THEN ''%'' 
+              WHEN '' THEN '%' 
               ELSE $MILESTONE END) and
     (t.component like (CASE $COMPONENT
               WHEN '' THEN '%' 
@@ -289,9 +295,7 @@ class TicketBudgetingView(Component):
                 def_est = self._get_budget_attr('default_estimation')
                 if not def_est:
                     def_est = '0.0'
-                def_cost = self._get_budget_attr('default_cost')
-                if not def_cost:
-                    def_est = '0.0'
+                    
                 def_state = self._get_budget_attr('default_state')
                 if not def_state:
                     def_state = '0'
@@ -301,7 +305,7 @@ class TicketBudgetingView(Component):
                                     tag.a(req.authname, id="def_name"),
                                     tag.a(def_type, id="def_type"),
                                     tag.a(def_est, id="def_est"),
-                                    tag.a(def_cost, id="def_cost"),
+                                    tag.a(self._def_cost, id="def_cost"),
                                     tag.a(def_state, id="def_state"),
                                     style="display: none")
 
@@ -564,7 +568,11 @@ class TicketBudgetingView(Component):
                         else:
                             col_val = ''
                             size = 60
-                    input_html += '<td><input size="%s" onChange="update(%s,%s)" name="%s-%s" value="%s"></td>' % (size, pos, col, pos, col, col_val)
+                    
+                    if col == 4 and self._def_cost == -1: # disable cost
+                        input_html += '<td><input size="%s" name="%s-%s" value="%s" disabled="disabled"></td>' % (size, pos, col, col_val)
+                    else:
+                        input_html += '<td><input size="%s" onChange="update(%s,%s)" name="%s-%s" value="%s"></td>' % (size, pos, col, pos, col, col_val)
                     preview_html += '<td>%s' % col_val
                     if col == 5:
                         preview_html += '&nbsp;%'
@@ -688,11 +696,14 @@ class TicketBudgetingView(Component):
         try:
             with self.env.db_transaction as db:
                 for stmt in conn.to_sql(BUDGETING_TABLE):
-                    if db.schema:
-                        stmt = re.sub(r'CREATE TABLE ', 'CREATE TABLE "'
-                                      + db.schema + '".', stmt)
+                    try:
+                        if db.schema:
+                            stmt = re.sub(r'CREATE TABLE ', 'CREATE TABLE "'
+                                          + db.schema + '".', stmt)
+                    except Exception, e:
+                        self.log.warn('[INIT table] substitutung schema throws error: %s' % e)
                     stmt = re.sub(r'(?i)bigint', 'NUMERIC(10,2)', stmt)
-                    stmt += ";"
+#                    stmt += ";"
                     self.log.info("[INIT table] executing sql: %s" % stmt)
                     db(stmt)
                     self.log.info("[INIT table] successfully created table %s"
@@ -718,7 +729,7 @@ class TicketBudgetingView(Component):
                 self.log.info("[INIT reports] successfully created report with id %s" % report[0])
             except Exception, e:
                 self.log.error("[INIT reports] Error executing SQL Statement \n %s" % e)
-                raise e
+#                raise e
 
     def get_col_list(self, ignore_cols=None):
         """ return col list as string; usable for selecting all cols 
