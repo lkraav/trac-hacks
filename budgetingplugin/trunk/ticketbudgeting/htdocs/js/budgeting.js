@@ -66,8 +66,10 @@ function addBudgetRow() {
 	tBodyContainer.append(tableRow);
 	// Adding column by column to the row element
 	for (column = 1; column <= columnCount; column++) {
-		var td = document.createElement('td');
-		tableRow.appendChild(td);
+		if (column != 4 && def_cost == "-1") {
+			var td = document.createElement('td');
+			tableRow.appendChild(td);
+		}
 		var columnElement;
 		switch (column) {
 		case 1:
@@ -91,7 +93,9 @@ function addBudgetRow() {
 			if (def_cost == "-1") {
 				columnElement = document.createElement('input');
 				columnElement.size = 10;
-				columnElement.disabled = "disabled"
+				//columnElement.disabled = "disabled"
+				columnElement.type = "hidden"
+				columnElement.setAttribute('value', 0)
 			} else {
 				columnElement = document.createElement('input');
 				columnElement.setAttribute('value', def_cost)
