@@ -14,8 +14,8 @@ from setuptools import setup
 
 extra = {}
 try:
-    from trac.util.dist import get_l10n_js_cmdclass
-    cmdclass = get_l10n_js_cmdclass()
+    from trac.util.dist import get_l10n_cmdclass
+    cmdclass = get_l10n_cmdclass()
     if cmdclass:
         extra['cmdclass'] = cmdclass
         extractors = [
@@ -41,6 +41,8 @@ setup(
                                      'htdocs/farbtastic/*.png', 
                                      'htdocs/farbtastic/*.js', 
                                      'htdocs/farbtastic/*.css',
+                                     'locale/*.pot',
+                                     'locale/*/LC_MESSAGES/*.po',
                                      'locale/*/LC_MESSAGES/*.mo'] },
     author = 'Noah Kantrowitz',
     author_email = 'noah@coderanger.net',
