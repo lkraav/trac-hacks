@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2006-2008 Emmanuel Blot <emmanuel.blot@free.fr>
+# Copyright (C) 2006-2014 Emmanuel Blot <emmanuel.blot@free.fr>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -18,7 +18,7 @@ import os
 from colorsys import rgb_to_hsv, hsv_to_rgb
 from hashlib import md5
 from math import sqrt
-from random import randrange, seed
+from random import randrange
 from revtree.api import *
 from trac.core import *
 from trac.web.href import Href
@@ -912,8 +912,6 @@ class SvgRevtree(object):
         self._oppoints = {}
         # Add-on elements (from enhancers)
         self._addons = []
-        # Init color generator with a predefined value
-        seed(0)
                 
     def position(self):
         """Return the position of the revision tree widget"""
