@@ -40,6 +40,23 @@ authorizedToModify = ['TICKET_MODIFY', 'TRAC_ADMIN', 'TICKET_BUDGETING_MODIFY']
 _VALUE_NAMES = 'username,type,estimation,cost,status,comment'
 _VALUE_NAMES_LIST = _VALUE_NAMES.split(',')
 
+def get_float(value, fld='UNKNOWN FIELD'):
+    ret_val = 0
+    try:
+        if value == '':
+            ret_val = 0
+        else:
+            try:
+                ret_val = locale.atof(value)
+            except:
+                str(value).replace(',', '.')
+                ret_val = float(value)
+    except Exception, e:
+        fld = '%s.%s' % (BUDGETING_TABLE.name, fld)
+        raise Exception (fld, e)
+    return ret_val
+
+
 class Budget:
     """ Container class for budgeting info"""
     _action = None
@@ -67,17 +84,7 @@ class Budget:
                     fld = '%s.%s' % (BUDGETING_TABLE.name, fld)
                     raise Exception (fld, e)
             elif fld in ('estimation', 'cost'):
-                try:
-                    if value == '':
-                        self._values[fld] = 0
-                    else:
-                        try:
-                            self._values[fld] = locale.atof(value)
-                        except:
-                            self._values[fld] = float(value)
-                except Exception, e:
-                    fld = '%s.%s' % (BUDGETING_TABLE.name, fld)
-                    raise Exception (fld, e)
+                self._values[fld] = get_float(value, fld)
             else:
                 self._values[fld] = value
 
@@ -95,6 +102,7 @@ class Budget:
             setAttrs = 'ticket,position'
             setValsSpace = '%s,%s'
             setVals = [ticket_id, position]
+
             for key, value in self._values.iteritems():
                 if key in ('username', 'type', 'comment'):
                     value = value.encode("utf-8")
@@ -104,6 +112,7 @@ class Budget:
                 setVals.append(value)
 
             self._diff[''] = (self._toStr(), '')
+#            env.log.debug('### diff: %s, setVals: %s, setAttrs: %s' % (self._diff, setVals, setAttrs) )
 
             sql = ("INSERT INTO %s (%s) VALUES (%s)" %
                     (BUDGETING_TABLE.name, setAttrs, setValsSpace))
@@ -129,7 +138,7 @@ class Budget:
                 if key in ('username', 'type', 'comment'):
                     value = value.encode("utf-8")
                 elif key in ('estimation', 'cost', 'status'):
-                    value = 0 if value == '' or float(value) == 0 else value
+                    value = 0 if value == '' or get_float(value) == 0 else value
 
                 if not oldValues[attrnr] == value:
                     new = '%s: %s' % (key, value)
@@ -185,8 +194,13 @@ class Budget:
         number = int (number)
         if number > 0 and number < _VALUE_NAMES_LIST.__len__() + 1:
             fld = _VALUE_NAMES_LIST[number - 1]
-            if fld in ('estimation', 'cost'):
+            if fld in 'estimation':
                 return locale.format('%.2f', self._values[fld])
+            elif fld in 'cost':
+                if self._values.has_key('cost'):
+                    return locale.format('%.2f', self._values[fld])
+                else:
+                    return locale.format('%.2f', 0)
             return self._values[fld]
         return ""
 
@@ -285,8 +299,6 @@ class TicketBudgetingView(Component):
                 fieldset = self._get_budget_fieldset() % (visibility, input_html)
                 stream |= Transformer('.//fieldset [@id="properties"]').after(HTML(fieldset))
 
-
-
                 # Load default values for Type, Estimation, Cost an State from trac.ini
                 def_type = self._get_budget_attr('default_type')
                 if not def_type:
@@ -342,8 +354,8 @@ class TicketBudgetingView(Component):
                        '<tr>' \
                             '<th>' + _('Person') + '</th>' \
                             '<th>' + _('Type') + '</th>' \
-                            '<th title="' + title + '">' + _('Estimation') + '</th>' \
-                            '<th title="' + title + '">' + _('Cost') + '</th>' \
+                            '<th title="' + title + '">' + _('Estimation') + '</th>' +
+                            ('<th title="' + title + '">' + _('Cost') + '</th>' if self._def_cost != -1 else '') +
                             '<th>' + _('State') + '</th>' \
                             '<th style="width:300px">' + _('Comment') + '</th>' \
                         '</tr>' \
@@ -352,7 +364,7 @@ class TicketBudgetingView(Component):
                         '</table>' \
                         '</span>' \
                         '</fieldset>')
-
+        self.log.debug('fieldset: %s' % fieldset)
         return fieldset
 
     def _get_budget_preview(self):
@@ -570,7 +582,7 @@ class TicketBudgetingView(Component):
                             size = 60
                     
                     if col == 4 and self._def_cost == -1: # disable cost
-                        input_html += '<td><input size="%s" name="%s-%s" value="%s" disabled="disabled"></td>' % (size, pos, col, col_val)
+                        input_html += '<input type="hidden" name="%s-%s" value="%s" />' % (pos, col, 0)
                     else:
                         input_html += '<td><input size="%s" onChange="update(%s,%s)" name="%s-%s" value="%s"></td>' % (size, pos, col, pos, col, col_val)
                     preview_html += '<td>%s' % col_val
@@ -636,6 +648,7 @@ class TicketBudgetingView(Component):
         except Exception, e:
             self.log.error("Error executing SQL Statement %s \n Error: %s" %
                            (sql % ticket_id, e))
+            raise e
 
     def _save_budget(self, tkt):
         if self._budgets and tkt and tkt.id:
