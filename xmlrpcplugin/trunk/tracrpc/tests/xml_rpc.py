@@ -5,6 +5,8 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
+import os
+import sys
 import unittest
 
 import xmlrpclib
@@ -107,6 +109,39 @@ class RpcXmlTestCase(TracRpcTestCase):
         self.assertEquals('One & Two < Four', ticket[3]['summary'])
         self.assertEquals('Desc & ription', ticket[3]['description'])
         self.admin.ticket.delete(tid1)
+
+    def test_xml_encoding_invalid_characters(self):
+        # Enable ticket manipulator
+        plugin = os.path.join(rpc_testenv.tracdir, 'plugins',
+                              'InvalidXmlCharHandler.py')
+        open(plugin, 'w').write(
+        "from trac.core import *\n"
+        "from tracrpc.api import IXMLRPCHandler\n"
+        "class UniChr(Component):\n"
+        "    implements(IXMLRPCHandler)\n"
+        "    def xmlrpc_namespace(self):\n"
+        "        return 'test_unichr'\n"
+        "    def xmlrpc_methods(self):\n"
+        "        yield ('XML_RPC', ((str, int),), self.unichr)\n"
+        "    def unichr(self, req, code):\n"
+        "        return unichr(code)\n")
+        rpc_testenv.restart()
+
+        from tracrpc.xml_rpc import _illegal_unichrs, REPLACEMENT_CHAR
+
+        num_checked = 0
+        for low, high in _illegal_unichrs:
+            if low < sys.maxunicode:
+                for x in (low, (low + high) / 2, high):
+                    self.assertEquals(REPLACEMENT_CHAR,
+                                      self.user.test_unichr.unichr(x),
+                                      "Failed unichr with %d" % (x,))
+                    num_checked += 1
+        self.assertTrue(num_checked, "No invalid XML characters checked.")
+
+        # Remove plugin and restart
+        os.unlink(plugin)
+        rpc_testenv.restart()
 
 def test_suite():
     return unittest.makeSuite(RpcXmlTestCase)
