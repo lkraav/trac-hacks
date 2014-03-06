@@ -1,7 +1,6 @@
 // Fixme: Too many legacy codes here, refactor needed.
 
-;
-(function ($) {
+jQuery(document).ready(function ($) {
   $.fn.extend({
     tt_newticket: function () {
       function _(message) {
@@ -380,9 +379,5 @@
       }
     }
   });
-
-})(jQuery);
-
-jQuery(document).ready(function ($) {
   $("body").tt_newticket();
 });
