@@ -386,7 +386,6 @@ $.fn.extend({
 
 })(jQuery);
 
-
-$(document).ready(function() {
+jQuery(document).ready(function($) {
     $("body").tt_newticket();
 });
