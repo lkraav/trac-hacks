@@ -124,20 +124,19 @@ class RpcXmlTestCase(TracRpcTestCase):
         "    def xmlrpc_methods(self):\n"
         "        yield ('XML_RPC', ((str, int),), self.unichr)\n"
         "    def unichr(self, req, code):\n"
-        "        return unichr(code)\n")
+        "        return (r'\U%08x' % code).decode('unicode-escape')\n")
         rpc_testenv.restart()
 
         from tracrpc.xml_rpc import _illegal_unichrs, REPLACEMENT_CHAR
 
-        num_checked = 0
         for low, high in _illegal_unichrs:
-            if low < sys.maxunicode:
-                for x in (low, (low + high) / 2, high):
-                    self.assertEquals(REPLACEMENT_CHAR,
-                                      self.user.test_unichr.unichr(x),
-                                      "Failed unichr with %d" % (x,))
-                    num_checked += 1
-        self.assertTrue(num_checked, "No invalid XML characters checked.")
+            for x in (low, (low + high) / 2, high):
+                self.assertEquals(REPLACEMENT_CHAR,
+                                  self.user.test_unichr.unichr(x),
+                                  "Failed unichr with U+%04X" % (x,))
+
+        # surrogate pair on narrow build
+        self.assertEquals(u'\U0001D4C1', self.user.test_unichr.unichr(0x1D4C1))
 
         # Remove plugin and restart
         os.unlink(plugin)
