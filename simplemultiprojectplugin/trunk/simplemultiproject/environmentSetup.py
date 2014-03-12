@@ -14,7 +14,7 @@ from trac.util.text import printout
 
 # Database schema variables
 db_version_key = 'simplemultiproject_version'
-db_version = 5
+db_version = 6
 
 tables = [
     Table('smp_project', key = 'id_project') [
@@ -44,6 +44,17 @@ tables_v3 = [
         Column('id', type = 'integer', auto_increment = True),
         Column('component',type = 'varchar(255)'),
         Column('id_project',type = 'integer')
+    ],
+]
+
+tables_v6 = [
+    Table('smp_project', key = 'id_project') [
+        Column('id_project', type = 'integer', auto_increment = True),
+        Column('name',type = 'varchar(255)'),
+        Column('description',type='varchar(255)'),
+        Column('summary',type='varchar(255)'),
+        Column('closed',type='int64'),
+        Column('restrict_to')
     ],
 ]
 
@@ -157,3 +168,26 @@ class smpEnvironmentSetupParticipant(Component):
             sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
             cursor.execute(sqlInsertVersion, [db_version, db_version_key])
             db_installed_version = 5
+
+        if db_installed_version < 6:
+            # TH ticket 11553 (problems with int range in PostgreSQL):
+            # fix: make field 'closed' of table 'smp_project' which is int a int64
+            cursor.execute("""CREATE TEMPORARY TABLE smp_project_old AS SELECT * FROM smp_project""")
+            cursor.execute("""DROP TABLE smp_project""")
+            # Create tables
+            for table in tables_v6:
+                for statement in db_connector.to_sql(table):
+                    cursor.execute(statement)
+
+            cursor.execute("""INSERT INTO
+                                   smp_project
+                                   (id_project,name,description,summary,closed,restrict_to)
+                              SELECT
+                                   id_project,name,description,summary,closed,%s
+                              FROM smp_project_old"""
+                           % db.quote('restrict'))
+            cursor.execute("""DROP TABLE smp_project_old""")
+
+            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
+            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
+            db_installed_version = 6

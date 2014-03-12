@@ -66,18 +66,18 @@ class SmpModel(Component):
         else:
             db = self.env.get_read_db()
         query = """SELECT
-                        id_project,name,summary,description,closed,%s
+                        id_project,name,summary,description,closed,restrict_to
                    FROM
                         smp_project
                    WHERE
-                        name = %%s""" % db.quote('restrict')
+                        name = %s"""
 
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
         else:
             db = self.env.get_read_db()
         cursor = db.cursor()
-        cursor.execute(query, [name])
+        cursor.execute(query, [str(name)])
         return  cursor.fetchone()
         
     def get_all_projects(self):
@@ -86,9 +86,9 @@ class SmpModel(Component):
         else:
             db = self.env.get_read_db()
         query = """SELECT
-                        id_project,name,summary,description,closed,%s
+                        id_project,name,summary,description,closed,restrict_to
                    FROM
-                        smp_project""" % db.quote('restrict')
+                        smp_project"""
 
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
@@ -205,8 +205,8 @@ class SmpModel(Component):
         else:
             db = self.env.get_read_db()
         query    = """INSERT INTO
-                        smp_project (name, summary, description, closed, %s)
-                      VALUES (%%s, %%s, %%s, %%s, %%s);""" % db.quote('restrict')
+                        smp_project (name, summary, description, closed, restrict_to)
+                      VALUES (%s, %s, %s, %s, %s);"""
 
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
@@ -244,9 +244,9 @@ class SmpModel(Component):
         query    = """UPDATE
                         smp_project
                       SET
-                        name = %%s, summary = %%s, description = %%s, closed = %%s, %s = %%s
+                        name = %s, summary = %s, description = %s, closed = %s, restrict_to = %s
                       WHERE
-                        id_project = %%s""" % db.quote('restrict')
+                        id_project = %s"""
 
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
