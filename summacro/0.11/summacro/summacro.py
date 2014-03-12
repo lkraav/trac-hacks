@@ -74,7 +74,3 @@ class SumMacro(Component):
         """Return an iterable that provides the names of the provided macros."""
         yield 'sum'
 
-    def render_macro(self, req, name, content):
-        """Return the HTML output of the macro (deprecated)"""
-
-        return '<deprecated>'
