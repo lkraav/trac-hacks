@@ -32,7 +32,7 @@ from setuptools import find_packages, setup
 
 setup(
     name = 'BlackMagicTicketTweaks',
-    version = '0.11r1',
+    version = '0.11.2',
     author = 'Stephen Hansen',
     maintainer = 'Rowan Wookey',
     maintainer_email = 'support@obsidianproject.co.uk',

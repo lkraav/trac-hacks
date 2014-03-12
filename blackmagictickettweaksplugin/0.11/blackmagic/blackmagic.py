@@ -26,19 +26,15 @@ class BlackMagicTicketTweaks(Component):
     implements(ITemplateStreamFilter, ITemplateProvider, IPermissionRequestor, ITicketManipulator, IPermissionPolicy, IRequestFilter, IPermissionStore)
 
     permissions = ListOption('blackmagic', 'permissions', [])
-    enchants = dict()
-
-    #used to store extra permissions to prevent recursion when using non-blackmagic permissions for ticket options
-    extra_permissions = []
 
     gray_disabled = Option('blackmagic', 'gray_disabled', '',
         doc="""If not set, disabled items will have their label striked through.
         Otherwise, this color will be used to gray them out. Suggested #cccccc.""")
 
-    #stores the number of blocked tickets used for matching the count on reports
-    blockedTickets = 0
-
     def __init__(self):
+        self.enchants = dict()
+        self.extra_permissions = []
+        self.blockedTickets = 0
         tweaks = self.config.get('blackmagic','tweaks','');
         self.env.log.debug("Tweaks %s " %  tweaks)
         for e in (x.strip() for x in tweaks.split(',')):
