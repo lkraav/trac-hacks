@@ -98,7 +98,7 @@ class SmpAdminPanel(Component):
                     time = to_utimestamp(time)
 
                     if not self.update_project(req.args.get('id'), req.args.get('name'), req.args.get('summary'), req.args.get('description'), time, req.args.get('restrict')):
-                        self.log.error("SimpleMultiProject Error: Failed to added project '%s'" % (req.args.get('name'),))
+                        self.log.error("SimpleMultiProject Error: Failed to add project '%s'" % (req.args.get('name'),))
                     else:
                         add_notice(req, "'The project '%s' has been modified." % req.args.get('name'))
                         req.redirect(req.href.admin(category, page))
