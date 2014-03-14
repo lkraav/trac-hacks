@@ -209,7 +209,8 @@ class CatagorizedFields(Component):
             else:
 
                 stream |= Transformer('//div[@id="modify"]/fieldset[@id="properties"]')\
-                    .append(tag.span(catagory.display_name, style='margin-left: 5px;'))
+                    .append(tag.span(catagory.display_name, style='margin-left: 5px; %s' % \
+                        ('display: none;' if self.catagory_is_hidden(catagory, ticket) else '')))
 
                 stream |= Transformer('//div[@id="modify"]/fieldset[@id="properties"]').append(
                     tag.table(id='edit_%s' % catagory.name, style='border-top: solid 1px darkgray; margin-bottom: 5px; %s' \
