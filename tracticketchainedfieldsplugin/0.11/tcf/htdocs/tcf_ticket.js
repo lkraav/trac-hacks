@@ -1,4 +1,4 @@
-$(document).ready(function() {
+jQuery(document).ready(function($) {
     
     function handleTcfQuery(result) {
         if (result == 0 || result == -1) {
