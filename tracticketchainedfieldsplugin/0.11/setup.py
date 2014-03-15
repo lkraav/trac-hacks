@@ -1,3 +1,4 @@
+import sys
 from setuptools import find_packages, setup
 
 setup(
@@ -16,6 +17,6 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    install_requires = [],
+    install_requires = ['simplejson'] if sys.version_info < (2,6) else [],
     entry_points = {'trac.plugins': ['tcf = tcf.web_ui']},
 )
