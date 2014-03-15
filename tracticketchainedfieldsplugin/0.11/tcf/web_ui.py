@@ -106,7 +106,7 @@ class TracTicketChainedFieldsModule(Component):
         return [('tcf', resource_filename(__name__, 'htdocs'))]
 
     # ITemplateStreamFilter
-    
+
     def filter_stream(self, req, method, filename, stream, data):
         if filename == "ticket.html":
             # common js files
@@ -123,24 +123,24 @@ class TracTicketChainedFieldsModule(Component):
         req.perm.assert_permission('TCF_ADMIN')
 
         data = {}
-        
+
         if req.method == 'POST':
             if 'save' in req.args:
                 tcf_define_json = req.args.get("tcf_define", "").strip()
-                
+
                 try:
                     tcf_define = json.loads(tcf_define_json)
                 except:
                     raise TracError(u"Format error, which should be JSON. Please back to last page and check the configuration.")
-                
+
                 TracTicketChainedFields_List.insert(self.env, tcf_define_json)
-                
+
                 req.redirect(req.abs_href.admin(cat, page))
 
         else:
             data["tcf_define"] = TracTicketChainedFields_List.get_tcf_define(self.env)
             return 'tcf_admin.html', data
-            
+
     # IRequestHandler methods
 
     def match_request(self, req):
@@ -150,35 +150,35 @@ class TracTicketChainedFieldsModule(Component):
     def process_request(self, req):
         hide_empty_fields = self.config.getbool("tcf", "hide_empty_fields", False)
         chained_fields = self.config.getlist("tcf", "chained_fields", [])
-        
+
         if req.path_info.startswith('/tcf/query_tcf_define'):
             # handle XMLHTTPRequest
             result = {}
             result["status"] = "1"
             result["hide_empty_fields"] = hide_empty_fields
             result["chained_fields"] = chained_fields
-            
+
             tcf_define = TracTicketChainedFields_List.get_tcf_define(self.env)
             try:
                 result["tcf_define"] = json.loads(tcf_define)
             except:
                 pass
-            
+
             if req.args.has_key("warning"):
                 result["warning"] = "1"
             jsonstr = json.dumps(result)
             self._sendResponse(req, jsonstr)
-            
+
         elif req.path_info.startswith('/tcf/query_field_change'):
             result = {}
             result["status"] = "1"
             result["hide_empty_fields"] = hide_empty_fields
-            
+
             trigger = req.args.get("trigger", "").lstrip("field-")
             trigger_value = req.args.get("field-" + trigger, "")
             if not trigger:
                 result["status"] = "0"
-                
+
             tcf_define = TracTicketChainedFields_List.get_tcf_define(self.env)
             try:
                 tcf_define_target = json.loads(tcf_define)
@@ -207,14 +207,14 @@ class TracTicketChainedFieldsModule(Component):
                     target_field = k
                     target_options = [target_option for target_option in v.keys() if target_option]
                     target_options.sort(cmp=lambda x,y: cmp(x.lower(), y.lower()))
-                    
+
                     targets.append({
-                        "target_field": target_field, 
-                        "target_options": target_options, 
+                        "target_field": target_field,
+                        "target_options": target_options,
                     })
 
             result["targets"] = targets
-            
+
             if req.args.has_key("warning"):
                 result["warning"] = "1"
             jsonstr = json.dumps(result)
@@ -234,4 +234,3 @@ class TracTicketChainedFieldsModule(Component):
         if req.method != 'HEAD':
             req.write(message)
         raise RequestDone
-
