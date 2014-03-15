@@ -27,7 +27,11 @@ import os
 import inspect
 import time
 import textwrap
-import simplejson
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 
 from model import schema, schema_version, TracTicketChainedFields_List
 
@@ -125,7 +129,7 @@ class TracTicketChainedFieldsModule(Component):
                 tcf_define_json = req.args.get("tcf_define", "").strip()
                 
                 try:
-                    tcf_define = simplejson.loads(tcf_define_json)
+                    tcf_define = json.loads(tcf_define_json)
                 except:
                     raise TracError(u"Format error, which should be JSON. Please back to last page and check the configuration.")
                 
@@ -156,13 +160,13 @@ class TracTicketChainedFieldsModule(Component):
             
             tcf_define = TracTicketChainedFields_List.get_tcf_define(self.env)
             try:
-                result["tcf_define"] = simplejson.loads(tcf_define)
+                result["tcf_define"] = json.loads(tcf_define)
             except:
                 pass
             
             if req.args.has_key("warning"):
                 result["warning"] = "1"
-            jsonstr = simplejson.dumps(result)
+            jsonstr = json.dumps(result)
             self._sendResponse(req, jsonstr)
             
         elif req.path_info.startswith('/tcf/query_field_change'):
@@ -177,7 +181,7 @@ class TracTicketChainedFieldsModule(Component):
                 
             tcf_define = TracTicketChainedFields_List.get_tcf_define(self.env)
             try:
-                tcf_define_target = simplejson.loads(tcf_define)
+                tcf_define_target = json.loads(tcf_define)
             except:
                 pass
 
@@ -213,7 +217,7 @@ class TracTicketChainedFieldsModule(Component):
             
             if req.args.has_key("warning"):
                 result["warning"] = "1"
-            jsonstr = simplejson.dumps(result)
+            jsonstr = json.dumps(result)
             self._sendResponse(req, jsonstr)
 
     # internal methods
