@@ -56,7 +56,7 @@ class TracTicketChainedFields_List(object):
             handle_ta = True
         else:
             handle_ta = False
-        
+
         tcf_time = int(time.time())
         cursor = db.cursor()
         cursor.execute("INSERT INTO tcf_list (tcf_define, tcf_time) VALUES (%s, %s)",
@@ -77,7 +77,7 @@ class TracTicketChainedFields_List(object):
         cursor = db.cursor()
 
         cursor.execute("SELECT tcf_define FROM tcf_list ORDER BY tcf_time DESC LIMIT 1")
-        
+
         row = cursor.fetchone()
         if row:
             return row[0]
