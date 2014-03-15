@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name = 'TracTicketChainedFields',
-    version = '0.1',
+    version = '0.2',
     packages = ['tcf'],
     package_data = { 'tcf': [ '*.txt', 'templates/*.*', 'htdocs/*.*', 'tests/*.*' ] },
     author = "Richard Liao",
