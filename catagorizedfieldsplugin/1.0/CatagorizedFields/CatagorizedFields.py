@@ -247,7 +247,7 @@ class CatagorizedFields(Component):
                                     tag.td(edit_buffer2[field], class_='col1', colspan='3'),
                                     id='edit_tr_%s_%s' % (catagory.name, str(line_number)))
 
-                        wrapper.append(tr)
+                        content.append(tr)
 
                         line_number += 1
                         return_line = True
@@ -263,7 +263,7 @@ class CatagorizedFields(Component):
                                         tag.td(edit_buffer2[field], class_='col1'),
                                         id='edit_tr_%s_%s' % (catagory.name, str(line_number)))
 
-                            wrapper.append(last_line)
+                            content.append(last_line)
 
                             return_line = False
 
