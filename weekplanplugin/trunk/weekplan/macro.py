@@ -33,6 +33,7 @@ class WeekPlanMacro(WikiMacroBase):
       * `multiweek`: A multi-week calendar. (The default.)
       * `count`: A simple count of events.
     * `matchtitle`: A regexp that matches event titles. (Defaults to match all events.)
+    * `hidelegend`: Show a legend below the calendar. (Defaults to shown.)
     Example:
     {{{
         [[WeekPlan(plan=example, start=1.1.2014,weeks=10)]]
@@ -107,7 +108,21 @@ class WeekPlanMacro(WikiMacroBase):
         add_stylesheet(req, 'weekplan/css/fullcalendar.css')
         Chrome(self.env).add_jquery_ui(req)
         
-        return tag.div("Enable JavaScript to display the week plan.",
-                    class_='trac-weekplan system-message',
-                    id='trac-weekplan-%s' % plan_data_id,
-                    style='width:%spx' % width)
+        calendar_element = tag.div("Enable JavaScript to display the week plan.",
+            class_='trac-weekplan system-message',
+            id='trac-weekplan-%s' % plan_data_id,
+            style='width:%spx' % width)
+        if 'hidelegend' in args:
+            return calendar_element
+        else:
+            return tag.div(
+                calendar_element,
+                self._render_legend(plan_ids, colors))
+
+    def _render_legend(self, names, colors):
+        def merge(a, b):
+            return a + u' | ' + b
+        items = [tag.span(u'¦', style='color:%s' % colors[name]) + ' ' + name for name in names]
+        return tag.p(
+            reduce(merge, items),
+            class_='trac-weekplan-legend')
