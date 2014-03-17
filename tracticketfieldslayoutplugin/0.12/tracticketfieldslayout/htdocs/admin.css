@@ -1,0 +1,64 @@
+.ticketfieldslayout-admin {
+ -moz-user-select: none;
+ -webkit-user-select: none;
+ -ms-user-select: none;
+ -o-user-select: none;
+ -khtml-user-select: none;
+ user-select: none;
+}
+.ticketfieldslayout-admin fieldset {
+ vertical-align: top;
+ display: inline-block;
+ *float: left;
+ *zoom: 1;
+ min-height: 25em;
+ background: transparent none;
+ margin: 0.5em 1em 0.5em 0;
+}
+.ticketfieldslayout-admin fieldset.ticketfieldslayout-tmpl-group { display: none }
+.ticketfieldslayout-admin ul {
+ margin: 0;
+ padding: 0;
+ width: 20em;
+ min-height: 23em;
+ list-style-type: none;
+}
+.ticketfieldslayout-admin li {
+ border: 1px solid #ccc;
+ background: #f7f7f0 none;
+ margin: 0.1em 0;
+ padding: 0.1em 0.2em;
+ cursor: move;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ -moz-border-radius: 3px;
+ -webkit-border-radius: 3px;
+ border-radius: 3px;
+}
+.ticketfieldslayout-admin li.ticketfieldslayout-tmpl-item { display: none }
+.ticketfieldslayout-admin li span.ticketfieldslayout-type {
+ display: inline-block;
+ *float: left;
+ *zoom: 1;
+ width: 1.2em;
+ height: 1.2em;
+ line-height: 1.2em;
+ text-align: center;
+ background: #dd9 none;
+}
+.ticketfieldslayout-admin li.ticketfieldslayout-group span.ticketfieldslayout-type {
+ background: #9d9 none;
+}
+.ticketfieldslayout-admin li.ticketfieldslayout-placeholder {
+ background: #edd none;
+ border-color: #b00;
+ height: 1.2em;
+}
+.ticketfieldslayout-remove {
+ font-size: 150%;
+ font-weight: bold;
+ line-height: 0.666;
+ cursor: pointer;
+}
+.ticketfieldslayout-remove:hover { color: #000 }
