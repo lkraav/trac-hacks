@@ -81,7 +81,7 @@ class WeekPlanModule(Component):
             parse_date(req.args.get('end')))
 
     def _send_event(self, req, event):
-        context = web_context(req, 'wiki')
+        context = web_context(req, 'weekplan')
         self._send_json(req, event.serialized(self.env, context))
 
     def _send_json(self, req, data):
