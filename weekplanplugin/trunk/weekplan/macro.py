@@ -24,13 +24,13 @@ class WeekPlanMacro(WikiMacroBase):
       * Can be a `|`-separated list of multiple plans.
     * `start`: A date  in the first week shown. (Defaults to today.)
     * `weeks`: Number of weeks shown. (Defaults to one.)
-    * `width`: Width of the calendar. (Defaults to 400)
-    * `rowheight`: Height of one row of the calendar. (Defaults to 100)
-    * `showweekends`: Show Saturdays and Sundays (Default is hidden)
-    * `color`: Color of the events. (Defaults to #3A87AD|#39AC60|#D7A388|#88BDD7|#9939AC|#AC9939)
+    * `width`: Width of the calendar. (Defaults to 400.)
+    * `rowheight`: Height of one row of the calendar. (Defaults to 100.)
+    * `showweekends`: Show Saturdays and Sundays (Defaults to hidden.)
+    * `color`: Color of the events. (Defaults to `#3A87AD|#39AC60|#D7A388|#88BDD7|#9939AC|#AC9939`.)
       * Can be a `|`-separated list of multiple colors. Each plan uses a different colors if multiple plans are specified.
     * `format`: One of the following formatting modes:
-      * `multiweek`: A multi-week calendar. (The default)
+      * `multiweek`: A multi-week calendar. (The default.)
       * `count`: A simple count of events.
     * `matchtitle`: A regexp that matches event titles. (Defaults to match all events.)
     Example:
