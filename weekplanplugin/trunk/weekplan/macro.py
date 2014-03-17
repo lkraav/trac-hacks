@@ -29,6 +29,8 @@ class WeekPlanMacro(WikiMacroBase):
     * `showweekends`: Show Saturdays and Sundays (Defaults to hidden.)
     * `color`: Color of the events. (Defaults to `#3A87AD|#39AC60|#D7A388|#88BDD7|#9939AC|#AC9939`.)
       * Can be a `|`-separated list of multiple colors. Each plan uses a different colors if multiple plans are specified.
+    * `label`: Labels shown instead of the plan ids. (Defaults to the plan ids.)
+      * Can be a `|`-separated list of multiple labels. Each plan uses a different label if multiple plans are specified.
     * `format`: One of the following formatting modes:
       * `multiweek`: A multi-week calendar. (The default.)
       * `count`: A simple count of events.
@@ -53,6 +55,9 @@ class WeekPlanMacro(WikiMacroBase):
         def colorize(serialized_event):
             serialized_event['color'] = colors[serialized_event['plan']]
             return serialized_event
+
+        labels = [label for label in kw.get('label', '').split('|') if label]
+        labels = dict(zip(plan_ids, labels + plan_ids[len(labels):]))
 
         start = kw.get('start')
         if start is None:
@@ -82,6 +87,7 @@ class WeekPlanMacro(WikiMacroBase):
             'api_url': formatter.href('weekplan'),
             'plans': plan_ids,
             'colors': colors,
+            'labels': labels,
             'calendar_data': {
                 'firstDay': 1, # Start weeks on Monday
                 'weekends': 'showweekends' in args, # Hide Saturdays and Sundays by default
@@ -117,12 +123,12 @@ class WeekPlanMacro(WikiMacroBase):
         else:
             return tag.div(
                 calendar_element,
-                self._render_legend(plan_ids, colors))
+                self._render_legend(plan_ids, labels, colors))
 
-    def _render_legend(self, names, colors):
+    def _render_legend(self, names, labels, colors):
         def merge(a, b):
             return a + u' | ' + b
-        items = [tag.span(u'¦', style='color:%s' % colors[name]) + ' ' + name for name in names]
+        items = [tag.span(u'â– ', style='color:%s' % colors[name]) + ' ' + labels[name] for name in names]
         return tag.p(
             reduce(merge, items),
             class_='trac-weekplan-legend')

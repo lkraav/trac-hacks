@@ -47,7 +47,7 @@
             var ctrlCreateTitle = createDialog.find("input[name='title']");
             var ctrlCreatePlan = createDialog.find("select[name='plan']");
             $.each(plan_data.plans, function(i, plan) {
-                    $('<option/>', { 'value': plan }).text(plan).css('background-color', plan_data.colors[plan]).appendTo(ctrlCreatePlan);
+                    $('<option/>', { 'value': plan }).text(plan_data.labels[plan]).css('background-color', plan_data.colors[plan]).appendTo(ctrlCreatePlan);
                 });
 
             calendar_data.selectable = true;
@@ -60,7 +60,7 @@
                         "Create": function() {
                             var proposed_event = {
                                 title: ctrlCreateTitle.val(),
-                                plan: ctrlCreatePlan.find("option:selected").text(),
+                                plan: ctrlCreatePlan.find("option:selected").val(),
                                 start: start,
                                 end: end
                             };
@@ -110,7 +110,7 @@
             var ctrlEditTitle = eventEditDialog.find("input[name='title']");
             var ctrlEditPlan = eventEditDialog.find("select[name='plan']");
             $.each(plan_data.plans, function(i, plan) {
-                    $('<option/>', { 'value': plan }).text(plan).css('background-color', plan_data.colors[plan]).appendTo(ctrlEditPlan);
+                    $('<option/>', { 'value': plan }).text(plan_data.labels[plan]).css('background-color', plan_data.colors[plan]).appendTo(ctrlEditPlan);
                 });
 
             calendar_data.eventClick = function(edited_event) {
@@ -122,7 +122,7 @@
                         "Edit": function() {
                             var post_data = serialized_post_data(edited_event, 'update_event', plan_data);
                             post_data.title = ctrlEditTitle.val();
-                            post_data.plan = ctrlEditPlan.find("option:selected").text();
+                            post_data.plan = ctrlEditPlan.find("option:selected").val();
                             var current_dialog = $(this);
                             $.post( plan_data.api_url, post_data, function(updated_event) {
                                 
