@@ -182,7 +182,8 @@ class Backlog(object):
             self.db.commit()
         except:
             self.env.log.error(traceback.format_exc())
-            raise BacklogException("Failed to add ticket %s to backlog %s" % (tkt_id, self.name))
+            raise BacklogException("Failed to add ticket %s to backlog %s"
+                                   % (tkt_id, getattr(self, 'name', None)))
 
     def reset_priority(self, tkt_id, only_if_deleted=False):
         """

@@ -24,7 +24,11 @@ class BacklogTicketChangeListener(Component):
 
         backlog_name = ticket.values['backlog']
         if backlog_name != NO_BACKLOG:
-            Backlog(self.env, name=backlog_name).add_ticket(ticket.id)
+            try:
+                Backlog(self.env, name=backlog_name).add_ticket(ticket.id)
+            except BacklogException:
+                pass
+
 
     def ticket_changed(self, ticket, comment, author, old_values):
         """Called when a ticket is modified. Adds and removes tickets
