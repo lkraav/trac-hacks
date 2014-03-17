@@ -56,7 +56,7 @@ def get_custom_fields_w_backlog(self):
             field['options'] = [val.name for val in BacklogList(self.env)]
             field['options'].insert(0, NO_BACKLOG)
     return fields
-TicketSystem.get_custom_fields = get_custom_fields_w_backlog 
+TicketSystem.get_custom_fields = get_custom_fields_w_backlog
 
 
 class BacklogModule(Component):
@@ -64,7 +64,7 @@ class BacklogModule(Component):
                ITemplateProvider, IPermissionRequestor)
 
     # IAdminPanelProvider methods
-    
+
     def get_admin_panels(self, req):
         if 'BACKLOG_ADMIN' in req.perm:
             yield 'ticket', _("Ticket System"), 'backlogs', _("Backlogs")
@@ -216,7 +216,7 @@ class BacklogModule(Component):
                 ('BACKLOG_ADMIN', ['BACKLOG_OWNER'])]
 
     # ITemplateProvider methods
- 
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
@@ -224,4 +224,3 @@ class BacklogModule(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('backlog', resource_filename(__name__, 'htdocs'))]
-

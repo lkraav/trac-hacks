@@ -57,7 +57,7 @@ def create_tables(env, db):
     cursor = db.cursor()
     for table in SCHEMA:
         for stmt in to_sql(env, table):
-            cursor.execute(stmt)    
+            cursor.execute(stmt)
     cursor.executemany('INSERT INTO backlog (id, name) VALUES (%s, %s)', BACKLOGS)
     cursor.execute("INSERT into system values ('backlog_version', %s)", (db_version,))
 
@@ -80,7 +80,7 @@ pass
 
 class BacklogSetup(Component):
     """Component that deals with database setup and upgrades."""
-    
+
     implements(IEnvironmentSetupParticipant)
 
     def environment_created(self):
@@ -96,8 +96,8 @@ class BacklogSetup(Component):
         """Actually perform an environment upgrade, but don't commit as
         that is done by the common upgrade procedure when all plugins are done."""
         if self._get_version(db) == 0:
-           create_tables(self.env, db)
-           add_custom_fields(self.env)
+            create_tables(self.env, db)
+            add_custom_fields(self.env)
         else:
             # do upgrades here when they are needed
             pass

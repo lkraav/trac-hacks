@@ -17,7 +17,7 @@ class BacklogRequestHandlerTestCase(unittest.TestCase):
 
     def tearDown(self):
         pass
-    
+
     def test_something(self):
         pass
 
