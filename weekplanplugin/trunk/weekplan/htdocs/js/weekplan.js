@@ -37,6 +37,9 @@
 
             calendar_data.eventRender = function(event, element, view) {
                 $(element).children(".fc-event-inner").html(event.title_html);
+                $(element).find("a").click(function(ev) {
+                    ev.stopPropagation();
+                });
             };
 
             // Create event
