@@ -1,0 +1,100 @@
+# Japanese translations for TracTicketFieldsLayoutPlugin.
+# Copyright (C) 2013 ORGANIZATION
+# This file is distributed under the same license as the
+# TracTicketFieldsLayoutPlugin project.
+# Jun Omae <jun66j5@gmail.com>, 2013.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TracTicketFieldsLayoutPlugin 0.12.0.1\n"
+"Report-Msgid-Bugs-To: jun66j5@gmail.com\n"
+"POT-Creation-Date: 2013-07-21 00:34+0900\n"
+"PO-Revision-Date: 2013-07-17 17:37+0900\n"
+"Last-Translator: Jun Omae <jun66j5@gmail.com>\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: tracticketfieldslayout/admin.py:34
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:12
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:17
+msgid "Ticket Layout"
+msgstr "チケットレイアウト"
+
+#: tracticketfieldslayout/admin.py:165
+msgid "The default settings have been restored."
+msgstr "デフォルトの設定を復元しました。"
+
+#: tracticketfieldslayout/web_ui.py:38
+msgid ""
+"List of comma delimited field names of ticket and group names which\n"
+"start with an `@` character. A group defines as `group.<name>` in the\n"
+"section.\n"
+"\n"
+"{{{\n"
+"[ticketfieldslayout]\n"
+"fields = summary,reporter,owner,description,@stdprop\n"
+"group.stdprop = type,priority,milestone,component,cc\n"
+"group.stdprop.label = Standard properties\n"
+"group.stdprop.collapsed = enabled\n"
+"group.unused = keywords\n"
+"}}}"
+msgstr ""
+"チケットのフィールド名とグループ名をカンマ区切りで指定します。グループ名は `@` 文字で始めます。グループはこのセクションに "
+"`group.<name>` で定義を行います。\n"
+"\n"
+"{{{\n"
+"[ticketfieldslayout]\n"
+"fields = summary,reporter,owner,description,@stdprop\n"
+"group.stdprop = type,priority,milestone,component,cc\n"
+"group.stdprop.label = Standard properties\n"
+"group.stdprop.collapsed = enabled\n"
+"group.unused = keywords\n"
+"}}}"
+
+#: tracticketfieldslayout/web_ui.py:55
+msgid ""
+"File names of the stylesheet which the plugin adds to ticket page and\n"
+"ticket form"
+msgstr "チケットページとフォームに追加するスタイルシートのファイル名を指定します。"
+
+#: tracticketfieldslayout/web_ui.py:61
+msgid ""
+"List of template names to apply the fields layout in ticket page and\n"
+"ticket form"
+msgstr "チケットページやフォームのフィールドレイアウトを適用するテンプレートのファイル名を指定します。"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:19
+msgid ""
+"You can group fields of a ticket and hide fields of a ticket in the page "
+"and the form."
+msgstr "チケットフィールドをグループ化や、フィールドを非表示に設定することができます。"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:25
+msgid "Add group"
+msgstr "グループを追加"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:27
+msgid "Restore the default settings"
+msgstr "デフォルト設定を復元"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:31
+msgid "Ticket Fields"
+msgstr "チケットフィールド"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:43
+msgid "Group"
+msgstr "グループ"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:55
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:84
+msgid "Collapsed"
+msgstr "最小化"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:68
+msgid "(Hidden)"
+msgstr "(非表示)"
+

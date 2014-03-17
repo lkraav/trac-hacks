@@ -1,0 +1,5 @@
+/build
+/dist
+/*.egg-info
+/*/locale/*/LC_MESSAGES/*.mo
+*.pyc

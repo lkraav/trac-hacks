@@ -1,0 +1,91 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      xmlns:py="http://genshi.edgewall.org/"
+      i18n:domain="ticketfieldslayout"
+      py:with="_gettext = gettext">
+  <xi:include href="admin.html" />
+  <head>
+    <title>Ticket Layout</title>
+    <script type="text/javascript">jQuery('html').addClass('ticketfieldslayout-script');</script>
+  </head>
+
+  <body>
+    <h2>Ticket Layout</h2>
+
+    <p class="help">
+      You can group fields of a ticket and hide fields of a ticket in the page and the form.
+    </p>
+
+    <form class="ticketfieldslayout-admin" method="post" action="${panel_href()}">
+      <div class="buttons">
+        <input type="submit" name="add" value="${dgettext('ticketfieldslayout', 'Add group')}" />
+        <input type="submit" name="apply" value="${_gettext('Apply changes')}" />
+        <input type="submit" name="restore" value="${dgettext('ticketfieldslayout', 'Restore the default settings')}" />
+      </div>
+
+      <fieldset class="ticketfieldslayout-root">
+        <legend>
+          Ticket Fields
+          <input type="hidden" name="group" value="" />
+        </legend>
+        <ul>
+          <li py:for="field in fields"
+              class="${field.group and 'ticketfieldslayout-group' or None}">
+            <span class="ticketfieldslayout-type">${'fG'[bool(field.group)]}</span>
+            <span>${field.label}</span>
+            <input type="hidden" name="field" value="${field.name}" />
+          </li>
+          <li class="ticketfieldslayout-group ticketfieldslayout-tmpl-item">
+            <span class="ticketfieldslayout-type" xml:lang="en">G</span> <span>Group</span>
+            <input type="hidden" name="field" value="" disabled="disabled" />
+          </li>
+        </ul>
+      </fieldset>
+
+      <fieldset py:for="group in groups">
+        <legend>
+          <input type="hidden" name="group" value="${group.name}" />
+          <input type="text" name="label.${group.name}" value="${group.label}" />
+          <label>
+            <input type="checkbox" name="collapsed.${group.name}" value="1"
+                   checked="${group.collapsed and 'checked' or None}" />Collapsed
+          </label>
+          <span class="ticketfieldslayout-remove">&times;</span>
+        </legend>
+        <ul>
+          <li py:for="field in group.fields">
+            <span class="ticketfieldslayout-type" xml:lang="en">f</span> ${field.label}
+            <input type="hidden" name="field.${group.name}" value="${field.name}" />
+          </li>
+        </ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>
+          (Hidden)
+          <input type="hidden" name="group" value="=hidden" />
+        </legend>
+        <ul id="ticketfieldslayout-hiddens">
+          <li py:for="field in hiddens">
+            <span class="ticketfieldslayout-type" xml:lang="en">f</span> ${field.label}
+            <input type="hidden" name="field.=hidden" value="${field.name}" />
+          </li>
+        </ul>
+      </fieldset>
+
+      <fieldset class="ticketfieldslayout-tmpl-group">
+        <legend>
+          <input type="hidden" name="group" value="" disabled="disabled" />
+          <input type="text" name="label" value="" disabled="disabled" />
+          <label><input type="checkbox" name="collapsed" value="1" disabled="disabled" />Collapsed</label>
+          <span class="ticketfieldslayout-remove">&times;</span>
+        </legend>
+        <ul></ul>
+      </fieldset>
+    </form>
+  </body>
+</html>
