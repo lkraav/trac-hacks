@@ -1,9 +1,17 @@
+# -*- coding: utf8 -*-
+
+'''
+Created on 2014-03-17
+
+@author: cauly
+'''
+
 from trac.core import Component, implements, TracError
 from trac.ticket import Ticket
 from trac.web.api import ITemplateStreamFilter
 from genshi.filters.transform import Transformer, StreamBuffer
 from genshi.builder import tag
-
+import time
 
 class CatagorizedFields(Component):
     implements(ITemplateStreamFilter)
@@ -16,6 +24,9 @@ class CatagorizedFields(Component):
             return stream
 
         if 'ticket' in data:
+
+            t = time.time()
+
             ticket = data['ticket']
 
             self.fields = ['reporter', 'summary', 'owner', 'priority', 'component', 'milestone', 'serverity',
@@ -32,6 +43,8 @@ class CatagorizedFields(Component):
             self.map_fields_to_catagory(self.fields, self.catagories)
 
             stream = self.catagorize_ticket_edit(stream, ticket, edit_buffer, edit_buffer2)
+
+            print "Catagorized Fields used time: " + str(time.time() - t)
 
         return stream
 
@@ -111,19 +124,22 @@ class CatagorizedFields(Component):
         edit_buffer = dict([[field, StreamBuffer()] for field in fields])
         edit_buffer2 = dict([[field, StreamBuffer()] for field in fields])
 
+        vb = StreamBuffer()
+        eb = StreamBuffer()
+
+        stream |= Transformer('//div[@id="ticket"]/table[@class="properties"]').cut(vb).buffer()
+        stream |= Transformer('//div[@id="modify"]/fieldset/table').cut(eb).buffer()
+
         for field in fields:
 
-            stream |= Transformer('//th[@id="h_%s"]' % field).cut(view_buffer[field]).buffer()
-            stream |= Transformer('//td[@headers="h_%s"]' % field).cut(view_buffer[field], True).buffer()
+            vb |= Transformer('//th[@id="h_%s"]' % field).cut(view_buffer[field]).buffer()
+            vb |= Transformer('//td[@headers="h_%s"]' % field).cut(view_buffer[field], True).buffer()
 
-            stream |= Transformer('//label[@for="field-%s"]' % field).cut(edit_buffer[field]).buffer()
-            stream |= Transformer('//*[@id="field-%s"]' % field).cut(edit_buffer2[field], True).buffer()
+            eb |= Transformer('//label[@for="field-%s"]' % field).cut(edit_buffer[field]).buffer()
+            eb |= Transformer('//*[@id="field-%s"]' % field).cut(edit_buffer2[field], True).buffer()
 
             if field == 'description':
                 edit_buffer[field] = tag.span('')
-
-        stream |= Transformer('//div[@id="ticket"]/table[@class="properties"]').remove()
-        stream |= Transformer('//div[@id="modify"]/fieldset/table').remove()
 
         return view_buffer, edit_buffer, edit_buffer2, stream
 
@@ -147,19 +163,20 @@ class CatagorizedFields(Component):
 
                 continue
 
+            content = tag.table(class_='properties')
+
             if catagory.name == '_uncatagorized':
 
-                wrapper = tag.div(tag.table(class_='properties'), id='cat__uncatagorized', style='margin-bottom: 1em;')
+                wrapper = tag.div(content, id='cat__uncatagorized', style='margin-bottom: 1em;')
 
             else:
 
-                wrapper = tag.div(tag.span(catagory.display_name), tag.table(class_='properties'),
+                wrapper = tag.div(tag.span(catagory.display_name), content,
                                   id='cat_%s' % catagory.name, style='margin: 5px 0 1em 0;')
-
-            stream |= Transformer(last_id).after(wrapper)
 
             return_line = True
             line_number = 1
+            last_line = StreamBuffer()
 
             for field in catagory.fields:
 
@@ -169,8 +186,7 @@ class CatagorizedFields(Component):
 
                         line_number += 1
 
-                        stream |= Transformer('//div[@id="cat_%s"]/table[@class="properties"]' % catagory.name) \
-                            .append(tag.tr(view_buffer[field], id='tr_%s_%s' % (catagory.name, str(line_number))))
+                        content.append(tag.tr(view_buffer[field], id='tr_%s_%s' % (catagory.name, str(line_number))))
 
                         line_number += 1
                         return_line = True
@@ -181,17 +197,19 @@ class CatagorizedFields(Component):
 
                             line_number += 1
 
-                            stream |= Transformer('//div[@id="cat_%s"]/table[@class="properties"]' % catagory.name) \
-                                .append(tag.tr(view_buffer[field], id='tr_%s_%s' % (catagory.name, str(line_number))))
+                            last_line = tag.tr(view_buffer[field], id='tr_%s_%s' % (catagory.name, str(line_number)))
+
+                            content.append(last_line)
 
                             return_line = False
 
                         else:
 
-                            stream |= Transformer('//tr[@id="tr_%s_%s"]' % (catagory.name, str(line_number))) \
-                                .append(view_buffer[field])
+                            last_line.append(view_buffer[field])
 
                             return_line = True
+
+            stream |= Transformer(last_id).after(wrapper)
 
             last_id = '//div[@id="cat_%s"]' % catagory.name
 
@@ -203,18 +221,15 @@ class CatagorizedFields(Component):
 
             if catagory.name == '_uncatagorized':
 
-                stream |= Transformer('//div[@id="modify"]/fieldset[@id="properties"]').\
-                    append(tag.table(id='edit_%s' % catagory.name, style='margin-bottom: 5px;'))
+                content = tag.table(id='edit_%s' % catagory.name, style='margin-bottom: 5px;')
+                wrapper = content
 
             else:
 
-                stream |= Transformer('//div[@id="modify"]/fieldset[@id="properties"]')\
-                    .append(tag.span(catagory.display_name, style='margin-left: 5px; %s' % \
-                        ('display: none;' if self.catagory_is_hidden(catagory, ticket) else '')))
+                content = tag.table(id='edit_%s' % catagory.name, style='border-top: solid 1px darkgray; margin-bottom: 5px;')
 
-                stream |= Transformer('//div[@id="modify"]/fieldset[@id="properties"]').append(
-                    tag.table(id='edit_%s' % catagory.name, style='border-top: solid 1px darkgray; margin-bottom: 5px; %s' \
-                              % ('display: none;' if self.catagory_is_hidden(catagory, ticket) else '')))
+                wrapper = tag.div(tag.span(catagory.display_name, content, style='margin-left: 5px; %s' \
+                                  % ('display: none;' if self.catagory_is_hidden(catagory, ticket) else '')))
 
             return_line = True
             line_number = 1
@@ -232,10 +247,11 @@ class CatagorizedFields(Component):
                                     tag.td(edit_buffer2[field], class_='col1', colspan='3'),
                                     id='edit_tr_%s_%s' % (catagory.name, str(line_number)))
 
-                        stream |= Transformer('//table[@id="edit_%s"]' % catagory.name).append(tr)
+                        wrapper.append(tr)
 
                         line_number += 1
                         return_line = True
+                        last_line = StreamBuffer()
 
                     else:
 
@@ -243,23 +259,23 @@ class CatagorizedFields(Component):
 
                             line_number += 1
 
-                            tr = tag.tr(tag.th(edit_buffer[field], class_='col1'),
+                            last_line = tag.tr(tag.th(edit_buffer[field], class_='col1'),
                                         tag.td(edit_buffer2[field], class_='col1'),
                                         id='edit_tr_%s_%s' % (catagory.name, str(line_number)))
 
-                            stream |= Transformer('//table[@id="edit_%s"]' % catagory.name).append(tr)
+                            wrapper.append(last_line)
 
                             return_line = False
 
                         else:
 
-                            stream |= Transformer('//tr[@id="edit_tr_%s_%s"]' % (catagory.name, str(line_number))) \
-                                .append(tag.th(edit_buffer[field], class_='col2'))
+                            last_line.append(tag.th(edit_buffer[field], class_='col2'))
 
-                            stream |= Transformer('//tr[@id="edit_tr_%s_%s"]' % (catagory.name, str(line_number))) \
-                                .append(tag.td(edit_buffer2[field], class_='col2'))
+                            last_line.append(tag.td(edit_buffer2[field], class_='col2'))
 
                             return_line = True
+
+            stream |= Transformer('//div[@id="modify"]/fieldset[@id="properties"]').append(wrapper)
 
         return stream
 
