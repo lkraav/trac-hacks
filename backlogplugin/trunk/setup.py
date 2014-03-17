@@ -12,7 +12,7 @@ from setuptools import find_packages, setup
 import sys
 
 name = 'BacklogPlugin'
-version = '0.2.0'
+version = '0.2'
 min_trac_version = '0.11.1'
 
 # Check for minimum required Trac version
@@ -52,4 +52,3 @@ setup(
     test_suite='backlog.tests.test_suite',
     tests_require=[]
 )
-

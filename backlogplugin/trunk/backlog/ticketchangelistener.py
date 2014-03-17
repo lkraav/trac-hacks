@@ -50,4 +50,3 @@ class BacklogTicketChangeListener(Component):
         backlog_name = ticket.values['backlog']
         if backlog_name != NO_BACKLOG:
             Backlog(self.env, name=old_values['backlog']).delete_ticket(ticket.id)
-

@@ -10,8 +10,8 @@ from unittest import TestSuite
 
 def test_suite():
     suite = TestSuite()
-    
+
     import backlog.tests.web_ui
     suite.addTest(backlog.tests.web_ui.test_suite())
-    
+
     return suite

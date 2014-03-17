@@ -7,24 +7,24 @@ jQuery(document).ready(function($) {
     $("#remove_closed").attr('disabled', false);
 
     $(".backlog_tickets").sortable({
-        update : function() {
+        update: function() {
             list_changed();
         },
-        connectWith : '.backlog_tickets'
+        connectWith: '.backlog_tickets'
     }).disableSelection();
 
-    $("#save_order").click(function(){
+    $("#save_order").click(function() {
         updateOrder();
     });
 
-    $("#reset_order").click(function(){
+    $("#reset_order").click(function() {
         changes_saved = true;
         $('#ticket_order').attr('value', '');
         $('#tickets_out').attr('value', '');
         return true;
     });
 
-    $("#remove_closed").click(function(){
+    $("#remove_closed").click(function() {
         if (changes_saved) {
             $('#remove_tickets').attr('value', true);
             return true;
