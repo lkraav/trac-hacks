@@ -10,7 +10,7 @@ setup(
     name=PACKAGE, version=VERSION,
     description='Manages ticket queues via drag-and-drop',
     author="Rob Guttman", author_email="guttman@alum.mit.edu",
-    license='GPL', url='http://trac-hacks.org/wiki/TracQueuesPlugin',
+    license='GPL', url='http://trac-hacks.org/wiki/QueuesPlugin',
     packages=['queues'],
     package_data={
         'queues': ['templates/*.html', 'htdocs/*.css', 'htdocs/*.js']
