@@ -28,10 +28,13 @@ class CollapsibleStartMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content):
 
-        add_script(formatter.req, 'common/js/folding.js')
-        add_script(formatter.req, 'collapsible/collapsible.js')
+        # Make sure we don't call enableFolding more than once on a page.
+        folding_chrome_path = 'common/js/folding.js'
+        if folding_chrome_path not in formatter.req.chrome['scriptset']:
+            add_script(formatter.req, folding_chrome_path)
+            add_script(formatter.req, 'collapsible/collapsible.js')
 
-        return '<div><h3 class="foldable">%s</h3><div>' % content
+        return '<div class="collapsed"><h3 class="foldable">%s</h3><div>' % content
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
