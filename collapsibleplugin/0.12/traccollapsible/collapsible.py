@@ -37,9 +37,9 @@ class CollapsibleStartMacro(WikiMacroBase):
      """
     
     def expand_macro(self, formatter, name, content):
-	
-	# process arguments
-	args, kw = parse_args(content)
+
+    # process arguments
+    args, kw = parse_args(content)
         title = ''
 
         for i in range(0, len(args)):
