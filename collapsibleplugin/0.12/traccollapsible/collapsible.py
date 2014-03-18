@@ -14,47 +14,26 @@
 
 __author__ = 'Matthew Noyes'
 
-from genshi.builder import tag
-
 from trac.core import *
-from trac.wiki.api import parse_args
-from trac.wiki.macros import WikiMacroBase
-from StringIO import StringIO
-from trac.wiki.formatter import format_to_html
-from trac.util import TracError
-from trac.util.text import to_unicode
-from trac.wiki.model import WikiPage
-from trac.wiki.web_ui import WikiModule
 from trac.web.chrome import ITemplateProvider, add_script
-
-__all__ = ['CollapsiblePlugin']
+from trac.wiki.macros import WikiMacroBase
 
 
 class CollapsibleStartMacro(WikiMacroBase):
-    r"""CollapsibleStartMacro marks the start of a collapsible list
+    """CollapsibleStart macro marks the start of a collapsible list
 
-    Example:    
-    `[[CollapsibleStart(Title)]]`
+    Example: `[[CollapsibleStart(Title)]]`
      """
     implements(ITemplateProvider)
 
     def expand_macro(self, formatter, name, content):
-
-        # process arguments
-        args, kw = parse_args(content)
-        title = ''
-
-        for i in range(0, len(args)):
-            title += args[i]
 
         folding_chrome_path = 'common/js/folding.js'
         if folding_chrome_path not in formatter.req.chrome['scriptset']:
             add_script(formatter.req, folding_chrome_path)
         add_script(formatter.req, 'collapsible/collapsible.js')
 
-        return("<div> " +
-               "<h3 class=\"foldable\">" + title + "</h3>" + 
-               "<div>")
+        return '<div><h3 class="foldable">%s</h3><div>' % content
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
@@ -65,10 +44,9 @@ class CollapsibleStartMacro(WikiMacroBase):
 
 
 class CollapsibleEndMacro(WikiMacroBase):
-    r"""CollapsibleEndMacro marks the end of a collapsible list
+    r"""CollapsibleEnd macro marks the end of a collapsible list
 
-    Example:
-    `[[CollapsibleEnd]]`
+    Example: `[[CollapsibleEnd]]`
     """
     def expand_macro(self, formatter, name, content):
-        return("</div></div>")
+        return '</div></div>'
