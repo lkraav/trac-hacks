@@ -20,7 +20,7 @@ try:
 except ImportError:
     from distutils.core import setup
 
-latest = '0.1'
+latest = '0.2'
 
 status = {
             'planning' :  "Development Status :: 1 - Planning",
@@ -65,7 +65,8 @@ if version < '2.2.3':
 DIST_NM = 'TracCollapsiblePlugin'
 PKG_INFO = {'traccollapsible' : ('traccollapsible',                     # Package dir
                                  # Package data
-                                 ['../CHANGES', '../TODO', '../COPYRIGHT', 
+                                 ['htdocs/*.js',
+                                  '../CHANGES', '../TODO', '../COPYRIGHT',
                                   '../NOTICE', '../README'],
                                  ), 
             }

@@ -25,6 +25,7 @@ from trac.util import TracError
 from trac.util.text import to_unicode
 from trac.wiki.model import WikiPage
 from trac.wiki.web_ui import WikiModule
+from trac.web.chrome import ITemplateProvider, add_script
 
 __all__ = ['CollapsiblePlugin']
 
@@ -35,19 +36,33 @@ class CollapsibleStartMacro(WikiMacroBase):
     Example:    
     `[[CollapsibleStart(Title)]]`
      """
-    
+    implements(ITemplateProvider)
+
     def expand_macro(self, formatter, name, content):
 
-    # process arguments
-    args, kw = parse_args(content)
+        # process arguments
+        args, kw = parse_args(content)
         title = ''
 
         for i in range(0, len(args)):
             title += args[i]
 
+        folding_chrome_path = 'common/js/folding.js'
+        if folding_chrome_path not in formatter.req.chrome['scriptset']:
+            add_script(formatter.req, folding_chrome_path)
+        add_script(formatter.req, 'collapsible/collapsible.js')
+
         return("<div> " +
                "<h3 class=\"foldable\">" + title + "</h3>" + 
                "<div>")
+
+    def get_htdocs_dirs(self):
+        from pkg_resources import resource_filename
+        return [('collapsible', resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        return []
+
 
 class CollapsibleEndMacro(WikiMacroBase):
     r"""CollapsibleEndMacro marks the end of a collapsible list
