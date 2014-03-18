@@ -5,7 +5,8 @@ import re
 from trac.config import ChoiceOption, IntOption, ListOption
 from trac.core import *
 from trac.ticket.model import Ticket
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
+from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
+                            add_stylesheet
 from trac.web.main import IRequestFilter, IRequestHandler
 
 
@@ -35,7 +36,10 @@ class QueuesModule(Component):
     def post_process_request(self, req, template, data, content_type):
         if self._valid_request(req):
             add_stylesheet(req, 'queues/queues.css')
-            add_script(req, 'queues/jquery-ui-1.8.16.custom.min.js')
+            try:
+                Chrome(self.env).add_jquery_ui(req)
+            except AttributeError:
+                add_script(req, 'queues/jquery-ui-1.8.16.custom.min.js')
             add_script(req, '/queues/queues.js')
         return template, data, content_type
 
