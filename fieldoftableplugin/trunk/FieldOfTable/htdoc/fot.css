@@ -1,0 +1,11 @@
+.fieldoftable th {
+    text-align: center;
+    width: auto;
+}
+.fieldoftable td {
+    text-align: left;
+    width: auto;
+}
+.fieldoftable input {
+    width: auto;
+}
