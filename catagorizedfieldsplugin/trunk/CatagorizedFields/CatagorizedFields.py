@@ -180,6 +180,10 @@ class CatagorizedFields(Component):
 
             for field in catagory.fields:
 
+                if field == 'description' or field == 'summary':
+
+                    continue
+
                 if len(filter(lambda x: x['name'] == field, ticket.fields)) == 1:
 
                     if filter(lambda x: x['name'] == field, ticket.fields)[0]['type'] == 'textarea':
