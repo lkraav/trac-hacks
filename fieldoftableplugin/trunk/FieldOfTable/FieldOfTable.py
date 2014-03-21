@@ -61,16 +61,6 @@ class FieldOfTablePlugin(Component):
         return handler
 
     def get_htdocs_dirs(self):
-        """Return a list of directories with static resources (such as style
-        sheets, images, etc.)
-
-        Each item in the list must be a `(prefix, abspath)` tuple. The
-        `prefix` part defines the path in the URL that requests to these
-        resources are prefixed with.
-
-        The `abspath` is the absolute path to the directory containing the
-        resources on the local file system.
-        """
         from pkg_resources import resource_filename
         return [('FieldOfTable', resource_filename(__name__, 'htdoc'))]
 

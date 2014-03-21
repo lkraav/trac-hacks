@@ -23,22 +23,24 @@ $(document).ready( function () {
 
                 var col = row.split('||')[j];
 
-                if (col.replace(' ') == '') continue;
+                if (col.replace(' ') != '') {
 
-                if (col.match(/=(.+)=/))
-                {
-                    var td = $('<th>' + col.match(/=(.+)=/)[1] + '</th>');
+                    if (col.match(/=(.+)=/))
+                    {
+                        var td = $('<th>' + col.match(/=(.+)=/)[1] + '</th>');
 
-                    tr.append(td);
-                } else {
-                    var td = $('<td><input type="text" value="' + col + '" /></td>');
+                        tr.append(td);
+                    } else {
+                        var td = $('<td><input type="text" value="' + col + '" /></td>');
 
-                    td.children().change(fieldOfTableChange);
+                        td.children().change(fieldOfTableChange);
+
+                        tr.append(td);
+                    }
 
                     tr.append(td);
                 }
 
-                tr.append(td);
             }
 
             table.append(tr);
