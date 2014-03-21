@@ -77,7 +77,7 @@ class SmpModel(Component):
         else:
             db = self.env.get_read_db()
         cursor = db.cursor()
-        cursor.execute(query, [str(name)])
+        cursor.execute(query, [unicode(name)])
         return  cursor.fetchone()
         
     def get_all_projects(self):
