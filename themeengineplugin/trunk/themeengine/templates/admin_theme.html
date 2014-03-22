@@ -47,7 +47,7 @@
       <div id="themebuttons">
         <img src="${href.chrome('themeengine', 'img', 'next.gif')}" border="0" id="nextbutton" />
         <img src="${href.chrome('themeengine', 'img', 'prev.gif')}" border="0" id="prevbutton" />
-        <input type="submit" value="${dgettext('themeengine', 'Use this theme')}" class="${'btn' if bhdb else None}"/>
+        <input type="submit" value="${dgettext('themeengine', 'Use this theme')}" class="${bhdb and 'btn' or None}"/>
       </div>
     </form>
   

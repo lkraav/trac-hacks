@@ -34,7 +34,7 @@
         <textarea name="css" rows="40" cols="80">$css</textarea>
       </fieldset>
       <div class="buttons">
-        <input type="submit" value="${dgettext('themeengine', 'Submit')}" class="${'btn' if bhdb else None}" />
+        <input type="submit" value="${dgettext('themeengine', 'Submit')}" class="${bhdb and 'btn' or None}" />
       </div>
     </form>
   </body>
