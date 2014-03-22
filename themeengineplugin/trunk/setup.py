@@ -41,8 +41,8 @@ setup(
                                      'htdocs/farbtastic/*.png', 
                                      'htdocs/farbtastic/*.js', 
                                      'htdocs/farbtastic/*.css',
-                                     'locale/*.pot',
-                                     'locale/*/LC_MESSAGES/*.po',
+                                     # Ensure that locale folder is deployed
+                                     'locale/README.txt',
                                      'locale/*/LC_MESSAGES/*.mo'] },
     author = 'Noah Kantrowitz',
     author_email = 'noah@coderanger.net',
