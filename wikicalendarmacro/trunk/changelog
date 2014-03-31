@@ -10,6 +10,11 @@ formation of the current macro bundle.
 wikicalendar-2.2.0 (not yet released) - compatible to Trac 0.11 - 1.0
 
 
+wikicalendar-2.1.1 (not yet released) - compatible to Trac 0.11 - 1.0
+ resolved issues
+ * #11656: Datetime calculation breaks calendar at last day(s)-of-month
+
+
 wikicalendar-2.1.0 (20-Apr-2013) - compatible to Trac 0.11 - 1.0
  resolved issues
  * #1145: Start on sunday option

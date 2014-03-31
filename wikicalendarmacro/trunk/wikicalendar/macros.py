@@ -6,7 +6,7 @@
 # Copyright (C) 2007 Mike Comb <mcomb@mac.com>
 # Copyright (C) 2008 JaeWook Choi <http://trac-hacks.org/wiki/butterflow>
 # Copyright (C) 2008, 2009 W. Martin Borgert <debacle@debian.org>
-# Copyright (C) 2010-2014 Steffen Hoffmann <hoff.st@shaas.net>
+# Copyright (C) 2010-2014 Steffen Hoffmann <hoff.st@web.de>
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
@@ -398,11 +398,8 @@ class WikiCalendarMacros(Component):
         # but use it only on request of different month/year.
         now.replace(second=1)
         today = None
-        if month and month != now.month:
-            today = now.replace(month=month)
-        if year and year != now.year:
-            today = today and today.replace(year=year) or \
-                    now.replace(year=year)
+        if (month and month != now.month) or (year and year != now.year):
+            today = now.replace(year=year, month=month, day=1)
         # Use current month and year, if nothing else has been requested.
         if not today:
             today = now.replace(hour=0, minute=0, second=0, microsecond=0)
