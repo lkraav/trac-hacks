@@ -36,7 +36,7 @@ class CatagorizedFields(Component):
 
             ticket = data['ticket']
 
-            self.fields = ['reporter', 'summary', 'owner', 'priority', 'component', 'milestone', 'severity',
+            self.fields = ['reporter', 'summary', 'type', 'owner', 'priority', 'component', 'milestone', 'severity',
                            'keywords', 'cc', 'description']
 
             self.catagories = self.build_catagory()
