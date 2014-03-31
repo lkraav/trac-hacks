@@ -18,6 +18,8 @@ setup(
     name='TracAccreditation', version='1.1',
     packages=find_packages(exclude=['*.tests*']),
     license = "BSD 3-Clause",
+    author_email='cauliflower.kan@gmail.com',
+    author='Cauly Kan',
     entry_points = {
         'trac.plugins': [
             'tracaccreditation = Accreditation',
