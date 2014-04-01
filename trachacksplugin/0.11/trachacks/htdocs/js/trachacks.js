@@ -1,6 +1,6 @@
 jQuery(document).ready(function($) {
     var split_tags = function(text) {
-        return $.grep(text.split(/ +/g), function(v) { return !!v });
+        return $.grep((text || '').split(/ +/g), function(v) { return !!v });
     };
 
     var form = $('#content.newhack form');
