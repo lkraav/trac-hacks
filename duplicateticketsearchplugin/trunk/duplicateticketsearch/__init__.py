@@ -17,7 +17,7 @@ class DuplicateTicketSearch(Component):
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        import pkg_resources import resource_filename
+        from pkg_resources import resource_filename
         return [('duplicateticketsearch',
                  resource_filename(__name__, 'htdocs'))]
 

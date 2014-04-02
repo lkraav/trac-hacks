@@ -11,7 +11,7 @@ from setuptools import setup
 
 setup(
     name='DuplicateTicketSearch',
-    version='1.0.2',
+    version='1.0.3',
     author='gregmac',
     license='BSD',
     description='Adds XMLRPC-based check from ticket entry page for potential duplicate tickets.',
