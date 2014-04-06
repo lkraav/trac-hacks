@@ -1,0 +1,86 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"      
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="tractags">
+  <xi:include href="layout.html" />
+  <xi:include href="macros.html" />
+  <?python
+    from tractags.api import _
+  ?>
+
+  <head>
+    <title py:if="page_title">$page_title</title>
+  </head>
+
+  <body>
+    <div id="content" class="tags">
+      <form id="query" action="${href.tags()}" method="get">
+        <div>
+          <input type="text" id="tag-query" name="q" size="40" accesskey="t"
+            value="${tag_query}"/>
+          <input type="submit" value="${_('Filter Tags')}"/>
+        </div>
+        <div>
+          <py:for each="realm in tag_realms">
+            <input type="checkbox" id="${realm.name}" name="${realm.name}"
+              checked="${realm.checked or None}"/>
+            <label for="${realm.name}">${realm.name}</label>
+          </py:for>
+        </div>
+        <div py:if="tag_query_error" id="query-error">
+          <strong>Error:</strong> ${tag_query_error}
+        </div>
+        <div>
+          <p><strong>Query syntax:</strong></p>
+          <ul i18n:msg="">
+            <li>Use <strong>tag1 tag2</strong> to match <em>all</em> tags.</li>
+            <li><strong>tag1 or tag2</strong> will match <em>any</em> tag.</li>
+            <li>Negate a tag with <strong>-tag1</strong>.</li>
+            <li>Group sub-queries with <strong>(tag1 or tag2)</strong>.</li>
+            <li>Quote strings to include special characters.</li>
+            <li>Restrict search to a specific realm with <strong>realm:wiki</strong>.</li>
+          </ul>
+        </div>
+      </form>
+
+      <div id="tag_body">
+        <py:choose test="">
+          <h1 py:when="tag_query and tag_page and tag_page.exists and
+                       'WIKI_VIEW' in perm('wiki', tag_page.resource)"
+              i18n:msg="query">
+            Showing objects tagged with
+            <a href="${href.wiki(tag_page.name)}" title="Go to wiki page">
+              '${tag_query}'
+            </a>
+          </h1>
+          <h1 py:when="tag_query and tag_page" i18n:msg="query">
+            Showing objects tagged with '${tag_query}'
+          </h1>
+          <h1 py:when="tag_query" i18n:msg="query">
+            Showing objects matching '${tag_query}'
+          </h1>
+        </py:choose>
+        <p py:if="tag_page and not tag_page.exists and
+                  'WIKI_CREATE' in perm" class="hint" i18n:msg="">
+          <a href="${href.wiki(tag_page.name, action='edit',
+                   text='= %s =\n\n[[ListTagged(%s)]]'
+                   % (tag_page.name, tag_page.name))}">
+            Create Wiki page
+          </a>
+          for this tag
+        </p>
+        ${tag_body}
+        <p py:if="mincount > 1" i18n:msg="mincount">
+          Showing only tags with ${mincount} or more occurrences
+          (<a href="${href.tags(dict(zip([r for r in checked_realms],
+                                         ['on' for r in checked_realms])),
+                                mincount=1)}">view all tags</a>)
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
