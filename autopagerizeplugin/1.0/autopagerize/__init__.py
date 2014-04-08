@@ -1,0 +1,1 @@
+from autopagerize import *  # @UnresolvedImport
