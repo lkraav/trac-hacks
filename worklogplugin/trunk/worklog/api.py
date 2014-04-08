@@ -51,8 +51,9 @@ class WorkLogSetupParticipant(Component):
 
     def environment_created(self):
         """Called when a new Trac environment is created."""
-        if self.environment_needs_upgrade(None):
-            self.upgrade_environment(None)
+        @self.env.with_transaction()
+        def tx(db):
+            self.upgrade_environment(db)
 
     def system_needs_upgrade(self):
         return self.db_installed_version < self.db_version
