@@ -40,8 +40,7 @@ class query(Component):  # I know batch_modify doesn't work
     # ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
         if filename in ["query.html"]:
-            stream |= Transformer().select('//table[contains(@class,"listing")]/tbody').apply(addAutoPagerizeAttribute).end() \
-                        .select('//div[contains(@class, "paging")]/span[contains(@class, "next")]/a').attr('rel', 'next').end()
+            stream |= Transformer().select('//table[contains(@class,"listing")]/tbody').apply(addAutoPagerizeAttribute).end()
         return stream
 
 
@@ -62,8 +61,7 @@ class search(Component):
     # ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
         if filename in ["search.html"]:
-            stream |= Transformer().select('//dl[@id="results"]').apply(addAutoPagerizeAttribute).end() \
-                        .select('//div[contains(@class, "paging")]/span[contains(@class, "next")]/a').attr('rel', 'next').end()
+            stream |= Transformer().select('//dl[@id="results"]').apply(addAutoPagerizeAttribute).end()
         return stream
 
 
