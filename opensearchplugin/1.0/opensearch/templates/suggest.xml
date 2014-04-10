@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!-- Licensed under Modified BSD by matobaa+trac-hacks@gmail.com. -->
+<SearchSuggestion xmlns="http://schemas.microsoft.com/Search/2008/suggestions"
+    xmlns:py="http://genshi.edgewall.org/">
+    <Query>${query}</Query>
+    <Section>
+	<Separator title="Suggestions at $project.name"/>
+	<py:for each="result in results">
+	   	<Item>
+			<Text>${result.title}</Text>
+			<Description>${result.excerpt}</Description>
+	 		<Url>${result.href}</Url>
+		</Item>
+	</py:for>
+    </Section>
+</SearchSuggestion>

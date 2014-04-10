@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Licensed under Modified BSD by matobaa+trac-hacks@gmail.com. -->
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<ShortName>Trac Search at $project.name</ShortName>
+	<Description>Trac Search at $project.name</Description>
+	<InputEncoding>utf-8</InputEncoding>
+	<Url type="text/html"
+		template="${abs_href.search()}?q={searchTerms}" />
+</OpenSearchDescription>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed under Modified BSD by matobaa+trac-hacks@gmail.com. -->
+<openServiceDescription xmlns="http://www.microsoft.com/schemas/openservicedescription/1.0"
+     xmlns:py="http://genshi.edgewall.org/">
+    <homepageUrl>${abs_href.search()}</homepageUrl>
+    <display>
+	    <name>search at $project.name</name>
+        <icon py:if="chrome.icon.abs_src">$chrome.icon.abs_src</icon>
+    </display>
+    <activity category="Search" >
+        <activityAction context="selection" >
+  			<execute type="text/html" method="get"
+       			action="${abs_href.search()}?q={selection}"/>
+        </activityAction>
+    </activity>
+</openServiceDescription>
+

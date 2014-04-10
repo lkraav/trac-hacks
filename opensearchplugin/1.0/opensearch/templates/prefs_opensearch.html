@@ -1,0 +1,35 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- Licensed under Modified BSD by matobaa+trac-hacks@gmail.com. -->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+  <?python from trac.perm import PermissionSystem ?>
+      
+  <body>
+    <div class="field">
+	  <ul>
+	  	<li><a href="#" onclick="window.external.AddSearchProvider('${abs_href.search('opensearch')}')">Add OpenSearch Provider</a></li>
+	    <li><a href="#" onclick="window.external.AddService('${abs_href.search('accelerator')}')">Add OpenService Accelerator</a></li>
+        <li><a href="${abs_href.search('opensearch')}">Add Federated Search</a></li>
+        <li><a href="${abs_href.search('2010.imesx')}">Add Search</a> for <a href="http://www.microsoft.com/ja-jp/office/2010/ime/default.aspx">Microsoft Office IME 2010</a></li>
+      </ul>
+      
+      <p py:if="not PermissionSystem(perm.env).check_permission('SEARCH_VIEW', username=None)" class="hint" xml:lang="en">
+        <strong>Note:</strong> Federated search is currently unavailable.
+        <py:choose>
+		  <py:when test="'TRAC_ADMIN' in req.perm">
+            <a href="${abs_href.admin('general/perm')}">SEARCH_VIEW permission</a> for anonymous user is required to use federated search.
+          </py:when>
+          <py:otherwise>
+            Please contact your
+            <a py:strip="not project.admin" href="mailto:${project.admin}">Trac administrator</a>
+            to enable Federated search.
+          </py:otherwise>
+        </py:choose>
+      </p>
+    </div>
+  </body>
+</html>
