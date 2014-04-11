@@ -21,15 +21,15 @@
     <div>
       <fieldset>
         <legend>Actions</legend>
-        <p>
+        <div>
           <button id="line-up">Move up</button>
           <button id="line-down">Move down</button>
           <button id="line-remove">Remove</button>
-        </p>
+        </div>
       </fieldset>
       <fieldset>
         <legend>Columns</legend>
-        <p id="setview">
+        <div id="setview">
           <label for="setview-logname">
             <input type="checkbox" id="setview-logname" checked="checked" />Display name
           </label>
@@ -42,7 +42,7 @@
           <label for="setview-next-status">
             <input type="checkbox" id="setview-next-status" checked="checked" />Next status
           </label>
-        </p>
+        </div>
       </fieldset>
     </div>
     <div id="table-wrapper" style="display:none">
@@ -168,7 +168,7 @@
     <fieldset id="chart-area">
       <legend>Workflow diagram</legend>
       <p><button id="chart-update-button">Update</button><span id="chart-update-status">Updating...</span></p>
-      <p id="image-area"><img alt="diagram" /></p>
+      <p id="image-area" style="display:none"><img alt="diagram" /></p>
     </fieldset>
     <form id="main-form" method="post" action="${panel_href()}"><p>
       <input id="editor-mode" name='editor_mode' type="hidden" value="${editor_mode}" />

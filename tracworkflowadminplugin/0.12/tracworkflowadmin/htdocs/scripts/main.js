@@ -249,7 +249,7 @@ jQuery(document).ready(function(){
                         $('#image-area').html('');
                         $('#image-area').append($('<img>').attr('src', src));
                         uiEnabled();
-                        $('#image-area').css('display', 'block');
+                        $('#image-area').show();
                     } else {
                         uiEnabled();
                         $('#tabcontent .system-message').remove();
