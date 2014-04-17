@@ -25,7 +25,7 @@ class OpenSeachProvider(Component):
 
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
-        return [('opensearch', ResourceManager().resource_filename(__name__, 'htdocs'))]
+        return []
 
     def get_templates_dirs(self):
         return [ResourceManager().resource_filename(__name__, 'templates')]
