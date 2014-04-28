@@ -27,10 +27,10 @@
       ${author_or_creator(message.author)}
       <pubDate>${http_date(message.time)}</pubDate>
       <title>Reply #${message.id} to topic #${discussion.topic.id} - ${discussion.topic.subject}</title>
-      <link>${abs_href.discussion('message', message.id)}#message${message.id}</link>
-      <guid isPermaLink="false">${abs_href.discussion('message', message.id)}#message${message.id}</guid>
+      <link>${abs_href.discussion('message', message.id)}#message_${message.id}</link>
+      <guid isPermaLink="false">${abs_href.discussion('message', message.id)}#message_${message.id}</guid>
       <description>
-        ${unicode(wiki_to_html(context('discussion', 'message/%s' % (message.id)), message.body))}
+        ${unicode(wiki_to_html(context('discussion', 'message_%s' % (message.id)), message.body))}
       </description>
       <category>Message</category>
     </item>

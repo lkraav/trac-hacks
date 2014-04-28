@@ -14,7 +14,6 @@ from trac.core import *
 from trac.config import Option, IntOption
 from trac.mimeview import Context
 from trac.perm import PermissionError
-from trac.resource import get_resource_url
 from trac.web.chrome import Chrome, add_link, add_stylesheet, add_script, \
   add_ctxtnav
 from trac.web.href import Href
