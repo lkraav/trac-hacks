@@ -644,6 +644,13 @@ class TracHacksHandler(Component):
         return hacks
 
 
+USER_PAGE_TEMPLATE = """\
+= %(user)s
+
+[[ListTagged(%(user)s)]]
+"""
+
+
 class TracHacksHtPasswdStore(HtPasswdStore):
     """Do some basic validation on new users and create a new user page."""
     implements(IPasswordStore, IAccountChangeListener)
@@ -681,15 +688,14 @@ class TracHacksHtPasswdStore(HtPasswdStore):
 
     # IAccountChangeListener
     def user_created(self, user, password):
-        req = FakeRequest(self.env, user)
-        resource = Resource('wiki', user)
-        tag_system = TagSystem(self.env)
-        tag_system.add_tags(req, resource, ['user', ])
-
         page = WikiPage(self.env, user)
-        page.text = '''= %(user)s =\n\n[[ListTagged(%(user)s)]]\n'''\
-                    % {'user': user}
-        page.save(user, 'New user %s registered' % user, None)
+
+        req = FakeRequest(self.env, user)
+        tag_system = TagSystem(self.env)
+        tag_system.add_tags(req, page.resource, ('user', ))
+
+        page.text = USER_PAGE_TEMPLATE % {'user': user}
+        page.save(user, 'New user //%s// registered' % user, None)
 
         self.env.log.debug("New user %s registered" % user)
 
