@@ -5,7 +5,7 @@ from genshi.builder import tag
 from genshi.filters.transform import Transformer
 
 # Trac imports.
-from trac.core import *
+from trac.core import implements
 from trac.resource import Resource
 from trac.config import ListOption
 
@@ -13,29 +13,22 @@ from trac.config import ListOption
 from tractags.api import DefaultTagProvider, TagSystem
 
 # Local interfaces.
-from tracdiscussion.api import DiscussionApi, IForumChangeListener, ITopicChangeListener
+from tracdiscussion.api import DiscussionApi, IForumChangeListener
+from tracdiscussion.api import ITopicChangeListener
+
 
 class DiscussionTagProvider(DefaultTagProvider):
-    """
-      Tag provider for the discussion forums and topics.
-    """
-    realm = 'discussion'
+    """Tag provider for discussion forums and topics.
 
-    def check_permission(self, perm, operation):
-        permissions = {'view': 'WIKI_VIEW', 'modify': 'WIKI_MODIFY'}
-
-        # First check permissions in default provider then for discussion.
-        return super(DiscussionTagProvider, self).check_permission(perm,
-          operation) and permissions[operation] in perm
-
-class DiscussionTags(Component):
+    The module implements plugin's ability to create tags related
+    to discussion forums and topics.
     """
-       The tags module implements plugin's ability to create tags related
-       to discussion forums and topics.
-    """
+
     implements(IForumChangeListener, ITopicChangeListener)
 
-    # Configuration options.
+    realm = 'discussion'
+
+    # Configuration options
     automatic_forum_tags = ListOption('discussion', 'automatic_forum_tags',
       'name,author', doc = "Tags that will be created automatically from "
       "discussion forums fields. Possible values are: name, author.")
@@ -43,72 +36,59 @@ class DiscussionTags(Component):
       'author,status', doc = "Tags that will be created automatically from "
       "discussion topics fields. Possible values are: author, status.")
 
-    # IForumChangeListener methods.
+    # ITagProvider method overwrite
+    def check_permission(self, perm, operation):
+        permissions = {'view': 'DISCUSSION_VIEW',
+                       'modify': 'DISCUSSION_MODIFY'}
+
+        # Check tag permissions (in default provider), then for discussion.
+        return super(DiscussionTagProvider, self)
+                     .check_permission(perm, operation) and \
+                     permissions[operation] in perm
+
+    # IForumChangeListener methods
 
     def forum_created(self, context, forum):
-        # Create temporary resource.
-        resource = Resource(DiscussionTagProvider.realm, 'forum/%s' % (
-          forum['id']))
-
-        # Update tags.
+        # Create temporary resource to update tags.
+        resource = Resource(self.realm, 'forum/%s' % forum['id'])
         new_tags = self._get_forum_tags(forum)
         self._update_tags(context.req, resource, new_tags)
 
     def forum_changed(self, context, forum, old_forum):
-        # Create temporary resource.
-        resource = Resource(DiscussionTagProvider.realm, 'forum/%s' % (
-          forum['id']))
-
-        # Update tags.
+        resource = Resource(self.realm, 'forum/%s' % forum['id'])
         new_tags = self._get_forum_tags(forum)
         self._update_tags(context.req, resource, new_tags)
 
     def forum_deleted(self, context, forum_id):
-        # Create temporary resource.
-        resource = Resource(DiscussionTagProvider.realm, 'forum/%s' % (
-          forum_id))
-
-        # Remove tags.
+        resource = Resource(self.realm, 'forum/%s' % forum_id)
         self._delete_tags(context.req, resource)
 
-    # ITopicChangeListener methods.
+    # ITopicChangeListener methods
 
     def topic_created(self, context, topic):
-        # Create temporary resource.
-        resource = Resource(DiscussionTagProvider.realm, 'topic/%s' % (
-          topic['id']))
-
-        # Update tags.
+        resource = Resource(self.realm, 'topic/%s' % topic['id'])
         new_tags = self._get_topic_tags(topic)
         self._update_tags(context.req, resource, new_tags)
 
     def topic_changed(self, context, topic, old_topic):
-        # Create temporary resource.
-        resource = Resource(DiscussionTagProvider.realm, 'topic/%s' % (
-          topic['id']))
-
-        # Update tags.
+        resource = Resource(self.realm, 'topic/%s' % topic['id'])
         new_tags = self._get_topic_tags(topic)
         self._update_tags(context.req, resource, new_tags)
 
     def topic_deleted(self, context, topic):
-        # Create temporary resource.
-        resource = Resource(DiscussionTagProvider.realm, 'topic/%s' % (
-          topic['id']))
-
-        # Remove tags.
+        resource = Resource(self.realm, 'topic/%s' % topic['id'])
         self._delete_tags(context.req, resource)
 
-    # Internal methods.
+    # Internal methods
 
     def _update_tags(self, req, resource, new_tags):
-        # Get old tags of the resource.
+        # Get recorded tags for the discussion resource.
         tag_system = TagSystem(self.env)
         old_tags = self._get_stored_tags(req, resource)
 
-        self.log.debug("setting tags: %s" % (new_tags,))
+        self.log.debug("Setting discussion tags: %s" % new_tags)
 
-        # Replace with new tags if different.
+        # Replace with new tags, if different.
         if old_tags != new_tags:
             tag_system.set_tags(req, resource, new_tags)
             return True
