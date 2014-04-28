@@ -13,7 +13,7 @@ from trac.perm import PermissionCache
 
 
 class FakeRequest(object):
-    def __init__(self, env, authname = 'anonymous'):
+    def __init__(self, env, authname='anonymous'):
         self.authname = authname
         self.perm = PermissionCache(env, authname)
 

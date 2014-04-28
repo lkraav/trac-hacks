@@ -121,7 +121,8 @@ class ReleasesExist(Aspect):
                     hack = context.data.get('name', '') + \
                            context.data.get('type', '').title()
                     self.env.log.error(
-                        "Invalid release %s selected for new hack %s" % (s, hack)
+                        "Invalid release %s selected for new hack %s"
+                        % (s, hack)
                     )
                     raise ValidationError('Selected release "%s" invalid?!'
                                           % str(s))
@@ -151,11 +152,11 @@ class TracHacksHandler(Component):
                ITemplateProvider, IPermissionRequestor, ITemplateStreamFilter)
 
     limit = IntOption('trachacks', 'limit', 25,
-        'Default maximum number of hacks to display.')
+        "Default maximum number of hacks to display.")
     template = Option('trachacks', 'template', 'NewHackTemplate',
-        'Name of wiki page that serves as template for new hacks.')
+        "Name of wiki page that serves as template for new hacks.")
     lock_file = Option('trachacks', 'lock_file', '/var/tmp/newhack.lock',
-        'Path and name of lock file to secure new hack creation')
+        "Path and name of lock file to secure new hack creation")
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
     title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
@@ -171,9 +172,11 @@ class TracHacksHandler(Component):
         form.add('title', MinLength(8),
                  'Please write a few words for the description.')
         form.add('description', MinLength(16),
-                 'Please write at least a sentence or two for the description.')
+                 'Please write at least a sentence or two for the'
+                 ' description.')
         form.add('installation', MinLength(16),
-                 'Please write at least a sentence or two for the installation.')
+                 'Please write at least a sentence or two for the'
+                 ' installation.')
         form.add('release', Chain(MinLength(1), ReleasesExist(self.env)),
                  'At least one release must be checked.',
                  path='//dd[@id="release"]', where='append')
@@ -333,7 +336,9 @@ class TracHacksHandler(Component):
         hack_names = set(r[2].id for r in hacks)
         users = set(u.id for u, _ in tag_system.query(req, 'realm:wiki user'))
         exclude = \
-            hack_names.union(users).union(data['types']).union(data['releases'])
+            hack_names.union(users) \
+                      .union(data['types']) \
+                      .union(data['releases'])
 
         cloud = {}
 
@@ -381,7 +386,8 @@ class TracHacksHandler(Component):
 
             vars = {}
             vars['OWNER'] = req.authname
-            vars['WIKINAME'] = get_page_name(data['name'], data.get('type', ''))
+            vars['WIKINAME'] = get_page_name(data['name'],
+                                             data.get('type', ''))
             vars['TYPE'] = data.setdefault('type', 'plugin')
             vars['TITLE'] = data.setdefault('title', 'No title available')
             vars['LCNAME'] = vars['WIKINAME'].lower()
@@ -477,12 +483,12 @@ class TracHacksHandler(Component):
 
                 # Step 5: Tag the new wiki page
                 res = Resource('wiki', page_name)
-                tags = sorted(set(data['tags'].split() + selected_releases + \
+                tags = sorted(set(data['tags'].split() + selected_releases +
                                   [data['type'], req.authname]))
                 TagSystem(self.env).set_tags(req, res, tags)
                 steps_done.append('tags')
 
-                rv = fcntl.flock(lock_file, fcntl.LOCK_UN)
+                fcntl.flock(lock_file, fcntl.LOCK_UN)
                 created = True
             except Exception, e:
                 try:
@@ -495,15 +501,16 @@ class TracHacksHandler(Component):
                     if 'component' in steps_done:
                         TicketComponent(self.env, page_name).delete()
                     if 'permissions' in steps_done:
-                        authz_file = self.env.config.getpath('trac', 'authz_file')
+                        authz_file = self.env.config.getpath('trac',
+                                                             'authz_file')
                         authz = AuthzFileReader().read(authz_file)
                         authz.del_path(Path("/%s" % hack_path))
                         AuthzFileWriter().write(authz_file, authz)
                     # TODO: rollback subversion path creation
-                    rv = fcntl.flock(lock_file, fcntl.LOCK_UN)
+                    fcntl.flock(lock_file, fcntl.LOCK_UN)
                 except:
                     self.env.log.error("Rollback failed")
-                    rv = fcntl.flock(lock_file, fcntl.LOCK_UN)
+                    fcntl.flock(lock_file, fcntl.LOCK_UN)
                 self.env.log.error(e, exc_info=True)
                 raise TracError(str(e))
         return created, messages
