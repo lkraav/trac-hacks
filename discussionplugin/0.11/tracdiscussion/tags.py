@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# Genshi imports.
-from genshi.builder import tag
-from genshi.filters.transform import Transformer
-
-# Trac imports.
 from trac.core import implements
-from trac.resource import Resource
+from trac.resource import Resource, get_resource_description, resource_exists 
 from trac.config import ListOption
 
-# TracTags imports.
 from tractags.api import DefaultTagProvider, TagSystem
 
-# Local interfaces.
-from tracdiscussion.api import DiscussionApi, IForumChangeListener
-from tracdiscussion.api import ITopicChangeListener
+from tracdiscussion.api import IForumChangeListener, ITopicChangeListener
 
 
 class DiscussionTagProvider(DefaultTagProvider):
@@ -36,16 +28,6 @@ class DiscussionTagProvider(DefaultTagProvider):
       'author,status', doc = "Tags that will be created automatically from "
       "discussion topics fields. Possible values are: author, status.")
 
-    # ITagProvider method overwrite
-    def check_permission(self, perm, operation):
-        permissions = {'view': 'DISCUSSION_VIEW',
-                       'modify': 'DISCUSSION_MODIFY'}
-
-        # Check tag permissions (in default provider), then for discussion.
-        return super(DiscussionTagProvider, self)
-                     .check_permission(perm, operation) and \
-                     permissions[operation] in perm
-
     # IForumChangeListener methods
 
     def forum_created(self, context, forum):
@@ -56,12 +38,13 @@ class DiscussionTagProvider(DefaultTagProvider):
 
     def forum_changed(self, context, forum, old_forum):
         resource = Resource(self.realm, 'forum/%s' % forum['id'])
+        # ToDo: Delete tags for old_forum.
         new_tags = self._get_forum_tags(forum)
         self._update_tags(context.req, resource, new_tags)
 
     def forum_deleted(self, context, forum_id):
         resource = Resource(self.realm, 'forum/%s' % forum_id)
-        self._delete_tags(context.req, resource)
+        TagSystem(self.env).delete_tags(context.req, resource)
 
     # ITopicChangeListener methods
 
@@ -72,38 +55,40 @@ class DiscussionTagProvider(DefaultTagProvider):
 
     def topic_changed(self, context, topic, old_topic):
         resource = Resource(self.realm, 'topic/%s' % topic['id'])
+        # ToDo: Delete tags for old_topic.
         new_tags = self._get_topic_tags(topic)
         self._update_tags(context.req, resource, new_tags)
 
     def topic_deleted(self, context, topic):
         resource = Resource(self.realm, 'topic/%s' % topic['id'])
-        self._delete_tags(context.req, resource)
+        TagSystem(self.env).delete_tags(context.req, resource)
+
+    # ITagProvider methods
+
+    def check_permission(self, perm, action):
+        map = {'view': 'DISCUSSION_VIEW', 'modify': 'DISCUSSION_APPEND'}
+        # Check tag permissions (in default provider), then for discussion.
+        return super(DiscussionTagProvider, self) \
+               .check_permission(perm, action) and map[action] in perm
+
+    def describe_tagged_resource(self, req, resource):
+        if not self.check_permission(req.perm(resource), 'view'):
+            return ''
+        if resource_exists(self.env, resource):
+            return get_resource_description(self.env, resource, 'compact')
 
     # Internal methods
 
     def _update_tags(self, req, resource, new_tags):
-        # Get recorded tags for the discussion resource.
         tag_system = TagSystem(self.env)
-        old_tags = self._get_stored_tags(req, resource)
-
-        self.log.debug("Setting discussion tags: %s" % new_tags)
-
+        # Get recorded tags associated to the discussion resource.
+        old_tags = tag_system.get_tags(req, resource)
         # Replace with new tags, if different.
         if old_tags != new_tags:
             tag_system.set_tags(req, resource, new_tags)
+            self.log.debug("Setting discussion tags: %s" % new_tags)
             return True
         return False
-
-    def _delete_tags(self, req, resource):
-        # Delete tags of the resource.
-        tag_system = TagSystem(self.env)
-        tag_system.delete_tags(req, resource)
-
-    def _get_stored_tags(self, req, resource):
-        # Return tags associated to resource.
-        tag_system = TagSystem(self.env)
-        tags = tag_system.get_tags(req, resource)
-        return sorted(tags)
 
     def _get_forum_tags(self, forum):
         tags = []
@@ -115,7 +100,7 @@ class DiscussionTagProvider(DefaultTagProvider):
         if 'author' in self.automatic_forum_tags and forum['author']:
             if forum['author'] not in tags:
                 tags.append(forum['author'])
-        return sorted(tags)
+        return set(tags)
 
     def _get_topic_tags(self, topic):
         tags = []
@@ -128,4 +113,4 @@ class DiscussionTagProvider(DefaultTagProvider):
             for status in topic['status']:
                 if not status in tags:
                     tags.append(status)
-        return sorted(tags)
+        return set(tags)
