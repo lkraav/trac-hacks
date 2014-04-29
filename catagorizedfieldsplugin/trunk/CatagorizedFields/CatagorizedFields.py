@@ -76,6 +76,8 @@ class CatagorizedFields(Component):
 
         catagories = {"_uncatagorized": Catagory('_uncatagorized', '')}
 
+        catagories['_uncatagorized'].index = 0
+
         for opt_name, opt_value in self.config.options('catagorized-fields'):
 
             if not '.' in opt_name:
@@ -88,6 +90,12 @@ class CatagorizedFields(Component):
 
                 catagories[catagory_name].hide_condition.setdefault(hide_condition[len('hide_when_'):], []) \
                     .extend(filter(lambda x: x != '', opt_value.strip().split(',')))
+
+            elif opt_name.split('.')[-1] == 'index':
+
+                catagory_name = opt_name.split('.')[0]
+
+                catagories[catagory_name].index = int(opt_value)
 
         return catagories
 
@@ -160,17 +168,41 @@ class CatagorizedFields(Component):
 
         return False
 
+    def _get_field_size(self, ticket, field_name):
+
+        size = self.config.get('ticket-custom', '%s.display_size' % field_name, None)
+
+        if (size != None and size in ['big', 'small']):
+
+            return size
+
+        else:
+
+            return 'big' if filter(lambda x: x['name'] == field_name, ticket.fields)[0]['type'] == 'textarea' else 'small'
+
+    def _sort_catagories(self, catagories):
+
+        return sorted(catagories.values(), key=lambda x: x.index)
+
+    def _sort_fields(self, fields):
+
+        def foo(x):
+
+            return self.config.getint('ticket-custom', x + '.index', 0)
+
+        return sorted(fields, key=foo)
+
     def catagorize_ticket_view(self, stream, ticket, view_buffer):
 
         last_id = '//h1[@id="trac-ticket-title"]'
 
-        for catagory in self.catagories.values():
+        for catagory in self._sort_catagories(self.catagories):
 
             if self.catagory_is_hidden(catagory, ticket):
 
                 continue
 
-            content = tag.table(class_='properties')
+            content = tag.table(class_='properties', style='border-top: none;')
 
             if catagory.name == '_uncatagorized':
 
@@ -178,14 +210,14 @@ class CatagorizedFields(Component):
 
             else:
 
-                wrapper = tag.div(tag.span(catagory.display_name), content,
-                                  id='cat_%s' % catagory.name, style='margin: 5px 0 1em 0;')
+                wrapper = tag.div(tag.h3(catagory.display_name), content,
+                                  id='cat_%s' % catagory.name, class_='description')
 
             return_line = True
             line_number = 1
             last_line = StreamBuffer()
 
-            for field in catagory.fields:
+            for field in self._sort_fields(catagory.fields):
 
                 if field == 'description' or field == 'summary':
 
@@ -193,7 +225,7 @@ class CatagorizedFields(Component):
 
                 if len(filter(lambda x: x['name'] == field, ticket.fields)) == 1:
 
-                    if filter(lambda x: x['name'] == field, ticket.fields)[0]['type'] == 'textarea':
+                    if self._get_field_size(ticket, field) == 'big':
 
                         line_number += 1
 
@@ -228,34 +260,35 @@ class CatagorizedFields(Component):
 
     def catagorize_ticket_edit(self, stream, ticket, edit_buffer, edit_buffer2):
 
-        for catagory in self.catagories.values():
+        for catagory in self._sort_catagories(self.catagories):
 
             if catagory.name == '_uncatagorized':
 
-                content = tag.table(id='edit_%s' % catagory.name, style='margin-bottom: 5px;')
+                content = tag.table(id='edit_%s' % catagory.name, style='margin-bottom: 5px; table-layout: fixed;')
                 wrapper = content
 
             else:
 
-                content = tag.table(id='edit_%s' % catagory.name, style='border-top: solid 1px darkgray; margin-bottom: 5px;')
+                content = tag.table(id='edit_%s' % catagory.name, style='margin-bottom: 5px; table-layout: fixed;')
 
-                wrapper = tag.div(tag.span(catagory.display_name, content, style='margin-left: 5px; %s' \
-                                  % ('display: none;' if self.catagory_is_hidden(catagory, ticket) else '')))
+                wrapper = tag.div(tag.div(catagory.display_name,
+                                          style='margin: 15px 5px 10px 5px; border-bottom: solid 1px darkgray; color: #999999;'),
+                                  content,
+                                  style="%s" % ('display: none;' if self.catagory_is_hidden(catagory, ticket) else ''))
 
             return_line = True
             line_number = 1
 
-            for field in catagory.fields:
+            for field in self._sort_fields(catagory.fields):
 
                 if len(filter(lambda x: x['name'] == field, ticket.fields)) == 1:
 
-                    if field == 'summary' or field == 'reporter' or \
-                        filter(lambda x: x['name'] == field, ticket.fields)[0]['type'] == 'textarea':
+                    if field == 'summary' or field == 'reporter' or self._get_field_size(ticket, field) == 'big':
 
                         line_number += 1
 
                         tr = tag.tr(tag.th(edit_buffer[field], class_='col1'),
-                                    tag.td(edit_buffer2[field], class_='col1', colspan='3'),
+                                    tag.td(edit_buffer2[field], class_='fullrow', colspan='3'),
                                     id='edit_tr_%s_%s' % (catagory.name, str(line_number)))
 
                         content.append(tr)
@@ -298,4 +331,5 @@ class Catagory(object):
         self.display_name = display_name
         self.hide_condition = {}
         self.fields = []
+        self.index = 1
 

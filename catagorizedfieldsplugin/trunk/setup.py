@@ -15,7 +15,7 @@ Created on 2014-03-12
 from setuptools import find_packages, setup
 
 setup(
-    name='TracCatagorizedFields', version='1.1',
+    name='TracCatagorizedFields', version='1.2',
     packages=find_packages(exclude=['*.tests*']),
     license = "BSD 3-Clause",
     author_email='cauliflower.kan@gmail.com',
