@@ -43,6 +43,7 @@ class DiscussionInit(Component):
         db.commit()
 
     def _get_db_version(self, cursor):
+        # ToDo: Replace with exception-free code here.
         try:
             sql = ("SELECT value "
                    "FROM system "
