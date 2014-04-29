@@ -52,11 +52,11 @@
 
         <div class="controls">
           <py:if test="'DISCUSSION_APPEND' in perm">
-            <a style="${'display: none;' if 'locked' in discussion.topic.status
-              else ''}" class="reply"
+            <a style="${'locked' in discussion.topic.status and 'display: none;'
+              or ''}" class="reply"
               href="${href}?discussion_action=add;#reply">Reply</a>
-            <a style="${'display: none;' if 'locked' in discussion.topic.status
-              else ''}" class="quote"
+            <a style="${'locked' in discussion.topic.status and 'display: none;'
+              or ''}" class="quote"
               href="${href}?discussion_action=quote;#reply">Quote</a>
             <a py:if="discussion.moderator or ((discussion.authname ==
               discussion.topic.author) and (not 'locked' in
@@ -362,12 +362,12 @@
 
         <div class="controls">
           <py:if test="'DISCUSSION_APPEND' in perm">
-            <a style="${'display: none;' if 'locked' in discussion.topic.status
-              else ''}" class="reply"
+            <a style="${'locked' in discussion.topic.status and 'display: none;'
+              or ''}" class="reply"
               href="${href}?discussion_action=add;message=${message.id}#message_${message.id}">
               Reply</a>
-            <a style="${'display: none;' if 'locked' in discussion.topic.status
-              else ''}" class="quote"
+            <a style="${'locked' in discussion.topic.status and 'display: none;'
+              or ''}" class="quote"
               href="${href}?discussion_action=quote;message=${message.id}#message_${message.id}">
               Quote</a>
             <a py:if="discussion.moderator or ((discussion.authname ==

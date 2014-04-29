@@ -4,7 +4,7 @@
 from setuptools import setup
 import sys
 
-min_python = (2, 5)
+min_python = (2, 4)
 if sys.version_info < min_python:
     print "DiscussionPlugin requires Python %d.%d or later" % min_python
     sys.exit(1)

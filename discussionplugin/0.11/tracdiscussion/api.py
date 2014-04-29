@@ -1115,7 +1115,7 @@ class DiscussionApi(Component):
                 # Important flag is implemented as integer priority.
                 if name == 'important':
                     name = 'priority'
-                    value = 1 if value in ('true', 'yes', True) else 0;
+                    value = (value in ('true', 'yes', True) and 1 or 0);
 
                 # Attributes that can be changed only by administrator.
                 topic = {}
@@ -1509,7 +1509,7 @@ class DiscussionApi(Component):
     def _get_item(self, context, table, columns, where = '', values = ()):
         sql_values = {'columns' : ', '.join(columns),
           'table' : table,
-          'where' : 'WHERE ' + where if where else ''}
+          'where' : (where and ('WHERE ' + where) or '')}
         sql = ("SELECT %(columns)s "
                "FROM %(table)s "
                "%(where)s" % (sql_values))
@@ -1663,7 +1663,7 @@ class DiscussionApi(Component):
 
     def _get_items_count(self, context, table, where = '', values = ()):
         sql_values = {'table' : table,
-          'where' : 'WHERE ' + where if where else ''}
+          'where' : (where and ('WHERE ' + where) or '')}
         sql = ("SELECT COUNT(id) "
                "FROM %(table)s "
                "%(where)s" % (sql_values))
@@ -1688,11 +1688,10 @@ class DiscussionApi(Component):
       order_by = '', desc = False, limit = 0, offset = 0):
         sql_values = {'columns' : ', '.join(columns),
           'table' : table,
-          'where' : 'WHERE ' + where if where else '',
-          'order_by' : 'ORDER BY ' + order_by + (' ASC', ' DESC')[bool(desc)]
-            if order_by else '',
-          'limit' : 'LIMIT ' + to_unicode(limit) if limit else '',
-          'offset' : ' OFFSET ' + to_unicode(offset) if offset else ''}
+          'where' : (where and ('WHERE ' + where) or ''),
+          'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')[bool(desc)]) or ''),
+          'limit' : (limit and ('LIMIT ' + to_unicode(limit)) or ''),
+          'offset' : (offset and (' OFFSET ' + to_unicode(offset)) or '')}
         sql = ("SELECT %(columns)s "
                "FROM %(table)s "
                "%(where)s "
@@ -1726,8 +1725,8 @@ class DiscussionApi(Component):
         if order_by != 'forum':
             order_by = 'g.' + order_by
         columns = ('id', 'name', 'description', 'forums')
-        sql_values = {'order_by' : 'ORDER BY ' + order_by +
-          (' ASC', ' DESC')[bool(desc)] if order_by else ''}
+        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by +
+          (' ASC', ' DESC')[bool(desc)]) or '')}
         sql = ("SELECT g.id, g.name, g.description, f.forums "
                "FROM forum_group g "
                "LEFT JOIN "
@@ -1797,8 +1796,8 @@ class DiscussionApi(Component):
         columns = ('id', 'name', 'author', 'time', 'moderators', 'subscribers',
           'forum_group', 'subject', 'description', 'topics', 'replies',
           'lasttopic', 'lastreply')
-        sql_values = {'order_by' : ('ORDER BY ' + order_by + (' ASC',
-          ' DESC')[bool(desc)]) if order_by else ''}
+        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC',
+          ' DESC')[bool(desc)]) or '')}
         sql = ("SELECT f.id, f.name, f.author, f.time, f.moderators, "
                  "f.subscribers, f.forum_group, f.subject, f.description, "
                  "ta.topics, ta.replies, ta.lasttopic, ta.lastreply "
@@ -1859,8 +1858,8 @@ class DiscussionApi(Component):
     def get_changed_forums(self, context, start, stop, order_by = 'time', desc
       = False):
         columns = ('id', 'name', 'author', 'time', 'subject', 'description')
-        sql_values = {'order_by' : ('ORDER BY ' + order_by + (' ASC', ' DESC')
-          [bool(desc)]) if order_by else ''}
+        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')
+          [bool(desc)]) and '')}
         sql = ("SELECT f.id, f.name, f.author, f.time, f.subject, f.description "
                "FROM forum f "
                "WHERE f.time BETWEEN %%s AND %%s "
@@ -1901,11 +1900,11 @@ class DiscussionApi(Component):
         else:
             columns = ('id', 'forum', 'time', 'author', 'subscribers',
               'subject', 'status', 'priority', 'replies', 'lastreply')
-        sql_values = {'with_body' : 't.body, ' if with_body else '',
-          'order_by' : 'ORDER BY priority DESC' + (", " + order_by + (' ASC',
-          ' DESC')[bool(desc)]) if order_by else '',
-          'limit' : 'LIMIT %s' if limit else '',
-          'offset' : 'OFFSET %s' if offset else ''}
+        sql_values = {'with_body' : (with_body and 't.body, ' or ''),
+          'order_by' : (order_by and ('ORDER BY priority DESC' + (", " + order_by + (' ASC',
+          ' DESC')[bool(desc)])) or ''),
+          'limit' : (limit and 'LIMIT %s' or ''),
+          'offset' : (offset and 'OFFSET %s' or '')}
         sql = ("SELECT t.id, t.forum, t.time, t.author, t.subscribers, "
                  "t.subject, %(with_body)s t.status, t.priority, m.replies, "
                  "m.lastreply "
@@ -1956,8 +1955,8 @@ class DiscussionApi(Component):
       desc = False):
         columns = ('id', 'forum', 'forum_name', 'time', 'author', 'subject',
           'status')
-        sql_values = {'order_by' : ('ORDER BY ' + order_by + (' ASC', ' DESC')
-          [bool(desc)]) if order_by else ''}
+        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')
+          [bool(desc)]) and '')}
         sql = ("SELECT t.id, t.forum, f.name, t.time, t.author, t.subject, "
                  "t.status "
                "FROM topic t "
@@ -1980,8 +1979,8 @@ class DiscussionApi(Component):
         order_by = 'm.' + order_by
         columns = ('id', 'replyto', 'time', 'author', 'body')
         sql_values = {'topic_id' : to_unicode(topic_id),
-          'order_by' : 'ORDER BY ' + order_by + (' ASC',' DESC')[bool(desc)]
-            if order_by else ''}
+          'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC',' DESC')[bool(desc)]
+            ) or '')}
         sql = ("SELECT m.id, m.replyto, m.time, m.author, m.body "
                "FROM message m "
                "WHERE m.topic = %(topic_id)s "
@@ -2026,8 +2025,8 @@ class DiscussionApi(Component):
       desc = False):
         columns = ('id', 'forum', 'forum_name', 'topic', 'topic_subject', 'time',
           'author')
-        sql_values = {'order_by' : ('ORDER BY ' + order_by + (' ASC', ' DESC')
-          [bool(desc)]) if order_by else ''}
+        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')
+          [bool(desc)]) or '')}
         sql = ("SELECT m.id, m.forum, f.name, m.topic, t.subject, m.time, "
                  "m.author "
                "FROM message m "
@@ -2098,8 +2097,8 @@ class DiscussionApi(Component):
 
         # Pack subscribers field.
         tmp_topic['subscribers'] = ' '.join(tmp_topic['subscribers'])
-        tmp_topic['status'] = self._topic_status_from_list(tmp_topic['status']
-          if tmp_topic.has_key('status') else [])
+        tmp_topic['status'] = self._topic_status_from_list(
+          tmp_topic.has_key('status') and tmp_topic['status'] or [])
 
         self._add_item(context, 'topic', tmp_topic)
 
@@ -2110,7 +2109,7 @@ class DiscussionApi(Component):
 
     def _delete_item(self, context, table, where = '', values = ()):
         sql_values = {'table' : table,
-          'where' : ' WHERE ' + where if where else ''}
+          'where' : (where and (' WHERE ' + where) or '')}
         sql = ("DELETE FROM %(table)s "
                "%(where)s" % (sql_values))
 
@@ -2156,7 +2155,7 @@ class DiscussionApi(Component):
     def _set_item(self, context, table, column, value, where = '', values = ()):
         sql_values = {'table' : table,
           'column' : column,
-          'where' : 'WHERE ' + where if where else ''}
+          'where' : (where and ('WHERE ' + where) and '')}
         sql = ("UPDATE %(table)s "
                "SET %(column)s = %%s "
                "%(where)s" % (sql_values))
