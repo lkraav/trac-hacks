@@ -84,15 +84,9 @@ class DiscussionTimeline(Component):
         # Decompose event data.
         resource, title, description = event[3]
 
-        # Return apropriate content.
-        if field == 'url':
-            if resource.parent:
-                # ToDo: Fix DiscussionApi.get_resource_url() to do that.
-                return '%s#message_%s' % \
-                       (get_resource_url(env, resource.parent,  context.href),
-                        resource.id.split('/')[-1])
-            return get_resource_url(env, resource, context.href)
-        elif field == 'title':
-            return tag(title)
-        elif field == 'description':
+        if 'description' == field:
             return tag(description)
+        elif 'title' == field:
+            return tag(title)
+        elif 'url' == field:
+            return get_resource_url(env, resource, context.href)

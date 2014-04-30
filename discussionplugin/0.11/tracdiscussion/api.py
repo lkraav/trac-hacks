@@ -1,163 +1,168 @@
 # -*- coding: utf-8 -*-
 
-# Standard imports.
 from datetime import *
 from copy import deepcopy
 
-# Genshi imports.
 from genshi.input import HTML
 from genshi.core import Markup
 from genshi.filters import Transformer
 
-# Trac imports.
-from trac.core import *
-from trac.config import Option, IntOption
+from trac.attachment import AttachmentModule, ILegacyAttachmentPolicyDelegate
+from trac.core import Component, ExtensionPoint, Interface, TracError
+from trac.core import implements
+from trac.config import IntOption, Option
 from trac.mimeview import Context
-from trac.perm import PermissionError
-from trac.web.chrome import Chrome, add_link, add_stylesheet, add_script, \
-  add_ctxtnav
+from trac.perm import IPermissionRequestor, PermissionError
+from trac.resource import IResourceManager, Resource
+from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
+from trac.web.chrome import add_ctxtnav
 from trac.web.href import Href
-from trac.resource import Resource
 from trac.wiki.formatter import format_to_html, format_to_oneliner
-from trac.attachment import AttachmentModule
-from trac.util.datefmt import to_timestamp, to_datetime, utc, \
-  format_datetime, pretty_timedelta
+from trac.util.datefmt import format_datetime, pretty_timedelta, to_datetime
+from trac.util.datefmt import to_timestamp, utc
 from trac.util.html import html
-from trac.util.text import to_unicode
 from trac.util.presentation import Paginator
+from trac.util.text import to_unicode
 
-# Trac interfaces
-from trac.resource import IResourceManager
-from trac.perm import IPermissionRequestor
-from trac.attachment import ILegacyAttachmentPolicyDelegate
-
-# TracTags imports.
 try:
     from tractags.api import TagSystem
 except:
     pass
 
 def is_tags_enabled(env):
-    return env.is_component_enabled(
-               'tracdiscussion.tags.DiscussionTags') and \
-           env.is_component_enabled(
-               'tractags.api.TagSystem')
+    return env.is_component_enabled('tractags.api.TagSystem') and \
+           env.is_component_enabled('tracdiscussion.tags.DiscussionTags')
+
 
 class IDiscussionFilter(Interface):
     """Extension point interface for components that want to filter discussion
-    topics and messages before their addition."""
+    topics and messages before their addition.
+    """
 
     def filter_topic(context, topic):
         """ Called before new topic creation. May return tuple (False,
         <error_message>) or (True, <topic>) where <error_message> is a message
         that will be displayed when topic creation will be canceled and <topic>
-        is modified topic that will be added."""
+        is modified topic that will be added.
+        """
 
     def filter_message(context, message):
         """ Called before new message creation. May return tuple (False,
         <error_message>) or (True, <message>) where <error_message> is a
         message that will be displayed when message creation will be canceled
-        and <message> is modified message that will be added."""
+        and <message> is modified message that will be added.
+        """
 
 class IForumChangeListener(Interface):
     """Extension point interface for components that require notification
-    when new forums are created, modified or deleted."""
+    when new forums are created, modified or deleted.
+    """
 
     def forum_created(context, forum):
-        """Called when a forum is created. Argument `forum` is a dictionary with
-        forum attributes."""
+        """Called when a forum is created. Argument `forum` is a dictionary
+        with forum attributes.
+        """
 
     def forum_changed(context, forum, old_forum):
         """Called when a forum is modified. `old_forum` is a dictionary
         containing the previous values of the forum attributes and `forum` is
-        a dictionary with new values that has changed."""
+        a dictionary with new values that has changed.
+        """
 
     def forum_deleted(context, forum):
         """Called when a forum is deleted. Argument `forum` is a dictionary
-        with values of attributes of just deleted forum."""
+        with values of attributes of just deleted forum.
+        """
+
 
 class ITopicChangeListener(Interface):
     """Extension point interface for components that require notification
-    when new forum topics are created, modified or deleted."""
+    when new forum topics are created, modified or deleted.
+    """
 
     def topic_created(context, topic):
-        """Called when a topic is created. Argument `topic` is a dictionary with
-        topic attributes."""
+        """Called when a topic is created. Argument `topic` is a dictionary
+        with topic attributes.
+        """
 
     def topic_changed(context, topic, old_topic):
         """Called when a topic is modified. `old_topic` is a dictionary
         containing the previous values of the topic attributes and `topic` is
-        a dictionary with new values that has changed."""
+        a dictionary with new values that has changed.
+        """
 
     def topic_deleted(context, topic):
         """Called when a topic is deleted. Argument `topic` is a dictionary
-        with values of attributes of just deleted topic."""
+        with values of attributes of just deleted topic.
+        """
+
 
 class IMessageChangeListener(Interface):
     """Extension point interface for components that require notification
-    when new forum messages are created, modified or deleted."""
+    when new forum messages are created, modified or deleted.
+    """
 
     def message_created(context, message):
         """Called when a message is created. Argument `message` is a dictionary
-        with message attributes."""
+        with message attributes.
+        """
 
     def message_changed(context, message, old_message):
         """Called when a message is modified. `old_message` is a dictionary
         containing the previous values of the message attributes and `message`
-        is a dictionary with new values that has changed."""
+        is a dictionary with new values that has changed.
+        """
 
     def message_deleted(context, message):
         """Called when a message is deleted. Argument `message` is a dictionary
-        with values of attributes of just deleted message."""
+        with values of attributes of just deleted message.
+        """
+
 
 class DiscussionApi(Component):
+    """[main] Implements most of the functionality, especially database
+    access and request handling.
     """
-        The API component implements most of functionality of the plugin,
-        especially database access and request handling.
-    """
-    implements(IResourceManager, ILegacyAttachmentPolicyDelegate,
-      IPermissionRequestor)
 
-    # Configuration options.
-    default_topic_display = Option('discussion', 'default_topic_display',
-      'classic', 'Default display mode for forum topics list.')
-    default_message_display = Option('discussion', 'default_message_display',
-      'tree', 'Default display mode for topic messages list.')
-    forum_sort = Option('discussion', 'forum_sort', 'lasttopic', 'Column by which' +
-      ' will be sorted forum lists. Possible values are: id group name'
-      ' subject time moderators description topics replies lasttopic lastreply')
-    forum_sort_direction = Option('discussion', 'forum_sort_direction', 'asc',
-      'Direction of forum lists sorting. Possible values are: asc desc.')
-    topic_sort = Option('discussion', 'topic_sort', 'lastreply', 'Column by which' +
-      ' will be sorted topic lists. Possible values are: id forum subject' +
-      ' time author body replies lastreply.')
-    topic_sort_direction = Option('discussion', 'topic_sort_direction', 'asc',
-      'Direction of topic lists sorting. Possible values are: asc desc.')
-    topics_per_page = IntOption('discussion', 'topics_per_page', 30,
-      'Number of topics per page in topic list.')
-    messages_per_page = IntOption('discussion', 'messages_per_page', 50,
-      'Number of messages per page in message list.')
+    implements(ILegacyAttachmentPolicyDelegate, IResourceManager,
+               IPermissionRequestor)
 
-    # Extension points.
-    forum_change_listeners = ExtensionPoint(IForumChangeListener)
-    topic_change_listeners = ExtensionPoint(ITopicChangeListener)
-    message_change_listeners = ExtensionPoint(IMessageChangeListener)
+    default_topic_display = Option(
+        'discussion', 'default_topic_display', 'classic',
+        doc='Default display mode for forum topics list.')
+    default_message_display = Option(
+        'discussion', 'default_message_display', 'tree',
+        doc='Default display mode for topic messages list.')
+    forum_sort = Option(
+        'discussion', 'forum_sort', 'lasttopic',
+        doc='Column by which will be sorted forum lists. Possible values '
+            'are: id, group, name, subject, time, moderators, description, '
+            'topics, replies, lasttopic, lastreply.')
+    forum_sort_direction = Option(
+        'discussion', 'forum_sort_direction', 'asc',
+        doc='Direction of forum lists sorting. Possible values are: '
+            'asc, desc.')
+    topic_sort = Option(
+        'discussion', 'topic_sort', 'lastreply',
+        doc='Column by which will be sorted topic lists. Possible values '
+            'are: id, forum, subject, time, author, body, replies, lastreply.')
+    topic_sort_direction = Option(
+        'discussion', 'topic_sort_direction', 'asc',
+        doc='Direction of topic lists sorting. Possible values are: '
+            'asc, desc.')
+    topics_per_page = IntOption(
+        'discussion', 'topics_per_page', 30,
+        doc='Number of topics per page in topic list.')
+    messages_per_page = IntOption(
+        'discussion', 'messages_per_page', 50,
+        doc='Number of messages per page in message list.')
+
     discussion_filters = ExtensionPoint(IDiscussionFilter)
+    forum_change_listeners = ExtensionPoint(IForumChangeListener)
+    message_change_listeners = ExtensionPoint(IMessageChangeListener)
+    topic_change_listeners = ExtensionPoint(ITopicChangeListener)
 
-    # IPermissionRequestor methods.
-
-    def get_permission_actions(self):
-        view = 'DISCUSSION_VIEW'
-        append = ('DISCUSSION_APPEND', ['DISCUSSION_VIEW'])
-        attach = ('DISCUSSION_ATTACH', ['DISCUSSION_APPEND', 'DISCUSSION_VIEW'])
-        moderate = ('DISCUSSION_MODERATE', ['DISCUSSION_VIEW',
-          'DISCUSSION_ATTACH'])
-        admin = ('DISCUSSION_ADMIN', ['DISCUSSION_VIEW', 'DISCUSSION_APPEND',
-          'DISCUSSION_ATTACH', 'DISCUSSION_MODERATE'])
-        return [view, append, attach, moderate, admin]
-
-    # ILegacyAttachmentPolicyDelegate methods.
-
+    # ILegacyAttachmentPolicyDelegate method
     def check_attachment_permission(self, action, username, resource, perm):
         if resource.parent.realm == 'discussion':
             if action in ('ATTACHMENT_CREATE', 'ATTACHMENT_DELETE'):
@@ -165,13 +170,28 @@ class DiscussionApi(Component):
             elif action in ('ATTACHMENT_VIEW'):
                 return 'DISCUSSION_VIEW' in perm(resource.parent)
 
-    # IResourceManager methods.
+    # IPermissionRequestor method
+    def get_permission_actions(self):
+        action = ('DISCUSSION_VIEW', 'DISCUSSION_APPEND',
+                  'DISCUSSION_ATTACH', 'DISCUSSION_MODERATE')
+        append = (action[1], action[:1])
+        attach = (action[2], action[:2])
+        moderate = (action[3], action[:3])
+        admin = ('DISCUSSION_ADMIN', action)
+        return [action[0], append, attach, moderate, admin]
+
+    # IResourceManager methods
 
     def get_resource_realms(self):
         yield 'discussion'
 
     def get_resource_url(self, resource, href, **kwargs):
         if resource.id:
+            # Topic view has one anchor per message.
+            if resource.id.startswith('message/'):
+                return '%s#message_%s' % \
+                       (self.get_resource_url(resource.parent, href),
+                        resource.id.split('/')[-1])
             return href(resource.realm, resource.id, **kwargs)
         else:
             return href(resource.realm, **kwargs)
