@@ -1,39 +1,34 @@
 # -*- coding: utf-8 -*-
 
-# Standard imports.
 import re
+
 from pkg_resources import resource_filename
 
-# Trac imports.
-from trac.core import *
+from trac.core import Component, implements
 from trac.config import Option
+from trac.mimeview.api import Context, IContentConverter, Mimeview
 from trac.resource import Resource, get_resource_url
-from trac.mimeview.api import Mimeview, Context
 from trac.util.html import html
-from trac.util.translation import _
-
-# Trac interfaces.
+from trac.util.translation import _, N_
 from trac.web.chrome import INavigationContributor, ITemplateProvider
+from trac.web.chrome import add_link
 from trac.web.main import IRequestHandler
-from trac.mimeview.api import IContentConverter
 
-# Local imports.
-from tracdiscussion.api import *
+from tracdiscussion.api import DiscussionApi
+
 
 class DiscussionCore(Component):
+    """[main] Provides a message board including wiki links to discussions,
+    topics and messages.
     """
-        The core module implements a message board, including wiki links to
-        discussions, topics and messages.
-    """
-    implements(ITemplateProvider, INavigationContributor, IContentConverter,
-      IRequestHandler)
 
-    # Configuration options.
+    implements(IContentConverter, INavigationContributor,
+               IRequestHandler, ITemplateProvider)
 
-    title = Option('discussion', 'title', _('Discussion'),
-      _('Main navigation bar button title.'))
+    title = Option('discussion', 'title', N_('Discussion'),
+                   doc=_('Main navigation bar button title.'))
 
-    # ITemplateProvider methods.
+    # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
         return [('discussion', resource_filename(__name__, 'htdocs'))]
@@ -41,17 +36,17 @@ class DiscussionCore(Component):
     def get_templates_dirs(self):
         return [resource_filename(__name__, 'templates')]
 
-    # INavigationContributor methods.
+    # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
         return 'discussion'
 
     def get_navigation_items(self, req):
         if req.perm.has_permission('DISCUSSION_VIEW'):
-            yield 'mainnav', 'discussion', html.a(self.title,
-              href = req.href.discussion())
+            yield 'mainnav', 'discussion', html.a(_(self.title),
+                                                  href=req.href.discussion())
 
-    # IContentConverter methods.
+    # IContentConverter methods
 
     def get_supported_conversions(self):
         yield ('rss', _('RSS Feed'), 'xml', 'tracdiscussion.topic',
@@ -67,12 +62,14 @@ class DiscussionCore(Component):
 
     def match_request(self, req):
         if req.path_info == '/discussion/redirect':
-            # Proces redirection request.
+            # Process redirection request.
             req.redirect(req.args.get('redirect_url'))
         else:
             # Try to match request pattern to request URL.
-            match = re.match(r'''/discussion(?:/?$|/(forum|topic|message)/(\d+)(?:/?$))''',
-              req.path_info)
+            match = re.match(
+                r'''/discussion(?:/?$|/(forum|topic|message)/(\d+)(?:/?$))''',
+                req.path_info
+                )
             if match:
                 resource_type = match.group(1)
                 resource_id = match.group(2)
@@ -88,51 +85,52 @@ class DiscussionCore(Component):
         # Create request context.
         context = Context.from_request(req)
         context.realm = 'discussion-core'
+        realm = Resource('discussion')
         if req.args.has_key('forum'):
-            context.resource = Resource('discussion', 'forum/%s' % (
-              req.args['forum'],))
+            context.resource = realm(id='forum/%s' % req.args['forum'])
         if req.args.has_key('topic'):
-            context.resource = Resource('discussion', 'topic/%s' % (
-              req.args['topic'],))
+            context.resource = realm(id='topic/%s' % req.args['topic'])
         if req.args.has_key('message'):
-            context.resource = Resource('discussion', 'message/%s' % (
-              req.args['message'],))
+            context.resource = realm(id='message/%s' % req.args['message'])
 
         # Redirect to content converter if requested.
         if req.args.has_key('format'):
+            format = req.args.get('format')
             if req.args.has_key('topic'):
-                Mimeview(self.env).send_converted(req, 'tracdiscussion.topic',
-                  context.resource, req.args.get('format'), filename = None)
+                in_type = 'tracdiscussion.topic'
+                Mimeview(self.env).send_converted(
+                    req, in_type, context.resource, format, filename=None)
             elif req.args.has_key('forum'):
-                Mimeview(self.env).send_converted(req, 'tracdiscussion.forum',
-                  context.resource, req.args.get('format'), filename = None)
+                in_type = 'tracdiscussion.forum'
+                Mimeview(self.env).send_converted(
+                    req, in_type, context.resource, format, filename=None),
 
-        # Process request and return content.
-        api = self.env[DiscussionApi]
+        api = DiscussionApi(self.env)
         template, data = api.process_discussion(context)
 
         if context.redirect_url:
-            # Redirect if needed.
+            # Redirect, if needed.
             href = req.href(context.redirect_url[0]) + context.redirect_url[1]
-            self.log.debug(_("Redirecting to %s") % (href))
-            req.redirect(req.href('discussion', 'redirect', redirect_url =
-              href))
+            self.log.debug(_("Redirecting to %s") % href)
+            req.redirect(req.href('discussion', 'redirect',
+                                  redirect_url=href))
         else:
             # Add links to other formats.
             if context.forum or context.topic or context.message:
-                for conversion in Mimeview(self.env).get_supported_conversions(
-                  'tracdiscussion.topic'):
+                for conversion in Mimeview(self.env) \
+                        .get_supported_conversions('tracdiscussion.topic'):
                     format, name, extension, in_mimetype, out_mimetype, \
-                      quality, component = conversion
+                        quality, component = conversion
                     conversion_href = get_resource_url(self.env,
-                      context.resource,  context.req.href, format = format)
+                                                       context.resource,
+                                                       context.req.href,
+                                                       format=format)
                     add_link(context.req, 'alternate', conversion_href, name,
-                      out_mimetype, format)
-
-            # Return template and its data.
+                             out_mimetype, format)
             return template, data, None
 
-    # Internal methods.
+    # Internal methods
+
     def _export_rss(self, req, resource):
         # Create request context.
         context = Context.from_request(req)
@@ -140,10 +138,8 @@ class DiscussionCore(Component):
         context.resource = resource
 
         # Process request and get template and template data.
-        api = self.env[DiscussionApi]
+        api = DiscussionApi(self.env)
         template, data = api.process_discussion(context)
-
-        # Render template and return RSS feed.
         output = Chrome(self.env).render_template(req, template, data,
-          'application/rss+xml')
+                                                  'application/rss+xml')
         return output, 'application/rss+xml'
