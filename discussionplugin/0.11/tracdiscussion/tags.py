@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2011 Radek Bartoň <blackhex@post.cz>
+# Copyright (C) 2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 from trac.core import implements
 from trac.resource import Resource, get_resource_description, resource_exists 

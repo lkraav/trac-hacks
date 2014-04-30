@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006-2011 Radek Bartoň <blackhex@post.cz>
+# Copyright (C) 2012-2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
-from datetime import *
 from copy import deepcopy
+from datetime import datetime
 
 from genshi.input import HTML
 from genshi.core import Markup
@@ -52,6 +60,7 @@ class IDiscussionFilter(Interface):
         message that will be displayed when message creation will be canceled
         and <message> is modified message that will be added.
         """
+
 
 class IForumChangeListener(Interface):
     """Extension point interface for components that require notification

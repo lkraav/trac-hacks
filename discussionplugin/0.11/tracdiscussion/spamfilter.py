@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2009-2010 Radek Bartoň <blackhex@post.cz>
+# Copyright (C) 2012-2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 # Spamfilter imports.
 from trac.util import arity

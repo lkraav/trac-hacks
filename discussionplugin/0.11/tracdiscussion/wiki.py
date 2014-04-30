@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2005 Alec Thomas <alec@swapoff.org>
+# Copyright (C) 2006-2011 Radek Bartoň <blackhex@post.cz>
+# Copyright (C) 2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 # Standard imports.
 import time, re
