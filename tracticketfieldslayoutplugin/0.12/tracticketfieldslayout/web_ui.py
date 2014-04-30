@@ -173,59 +173,64 @@ class TicketFieldsLayoutTransformer(object):
             if depth == 0:
                 return
 
-        name = None
+        field_name = None
         fullrow = None
         cells = {}
         cell_buf = None
         cell_depth = None
         last_event = None
         for event in stream:
-            if cell_buf is not None:
-                cell_buf.append(event)
-
             kind, data, pos = event
-            if kind is START:
-                localname = data[0].localname
-                tmp = None
-                if localname in ('th', 'td'):
-                    cell_depth = depth
-                    cell_buf = StreamBuffer()
+            if kind is END:
+                depth -= 1
+                if depth < table_depth:
+                    last_event = event  # END of <table>
+                    break
+            if kind is not START:
+                continue
+
+            depth += 1
+            localname = data[0].localname
+            if localname == 'th':
+                cell_depth = depth - 1
+                cell_buf = StreamBuffer()
+                cell_buf.append(event)
+                for event in stream:
                     cell_buf.append(event)
-                    fullrow = False
-                    if localname == 'td':
-                        fullrow = data[1].get('colspan') == '3'
-                elif cell_buf is None or name:
-                    pass
-                elif localname == 'label':
-                    tmp = data[1].get('for')
-                elif localname in ('input', 'select', 'textarea'):
-                    tmp = data[1].get('id')
-                if tmp and tmp.startswith('field-'):
-                    name = tmp[6:]
-                depth += 1
+                    kind, data, pos = event
+                    if kind is START:
+                        depth += 1
+                    elif kind is END:
+                        depth -= 1
+                        if cell_depth == depth:
+                            break
                 continue
 
-            if kind is not END:
-                continue
-
-            depth -= 1
-            if depth == cell_depth:
-                if name and cell_buf is not None:
-                    if name not in cells:
-                        cells[name] = {'fullrow': None, 'buffer': None}
-                    cell = cells[name]
-                    if fullrow is not None:
-                        cell['fullrow'] = fullrow
-                    buf = cell['buffer']
-                    if buf:
-                        for event in cell_buf:
-                            buf.append(event)
-                    else:
-                        cell['buffer'] = cell_buf
-                cell_buf = name = None
-            if depth < table_depth:
-                last_event = event  # END of <table>
-                break
+            if localname == 'td':
+                cell_depth = depth - 1
+                fullrow = data[1].get('colspan') == '3'
+                if cell_buf is None:
+                    cell_buf = StreamBuffer()
+                cell_buf.append(event)
+                for event in stream:
+                    cell_buf.append(event)
+                    kind, data, pos = event
+                    if kind is START:
+                        depth += 1
+                        if field_name is None and \
+                                data[0].localname in ('input', 'select',
+                                                      'textarea'):
+                            tmp = data[1].get('name', '')
+                            if tmp.startswith('field_'):
+                                field_name = tmp[6:]
+                    elif kind is END:
+                        depth -= 1
+                        if cell_depth == depth:
+                            break
+                if field_name is not None and cell_buf is not None:
+                    cells[field_name] = {'fullrow': fullrow,
+                                         'buffer': cell_buf}
+                cell_buf = field_name = None
 
         def list_except_owner(names):
             return [name for name in names if name != 'owner']
