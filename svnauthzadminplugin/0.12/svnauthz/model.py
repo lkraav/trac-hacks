@@ -8,14 +8,14 @@ class Member:
         self.name = name
 
     def get_name(self):
-        return self.name        
+        return self.name
 
     def __eq__(self, obj):
         return self.__class__ == obj.__class__ and self.name == obj.name
-    
+
     def __str__(self):
         return self.name
-    
+
     def serialize(self):
         return self.name
 
@@ -33,11 +33,11 @@ class UniqueList(list):
     def extend(self, obj):
         for x in obj:
             self.append(x)
-    
+
     def __add__(self, obj):
         if not obj in self:
             list.__add__(self, obj)
-            
+
     def __contains__(self, obj):
         if not self.uniqop:
             return list.__contains__(self, obj)
@@ -74,23 +74,23 @@ class Group(Member, UniqueList):
         return "@" + self.name
 
     def serialize(self):
-        ret = self.name + " = " 
+        ret = self.name + " = "
         for elem in self:
             ret += elem.__str__() + ","
         return ret[0:-1]
-        
+
 class Path(UniqueList):
     def __init__(self, path, acls=None, repo=None):
         self.path = path
         self.repo = repo
         UniqueList.__init__(self, acls, unique_acl_member)
-        
+
     def get_path(self):
         return self.path
-    
+
     def get_repo(self):
         return self.repo
-    
+
     def find_path_member(self, member):
         for m in self:
             if m.get_member() == member:
@@ -116,13 +116,13 @@ class PathAcl:
 
     def get_member(self):
         return self.member
-    
+
     def is_read(self):
         return self.r
-    
+
     def is_write(self):
         return self.w
-    
+
     def set_read(self, r):
         assert (r == True or r == False)
         self.r = r
@@ -130,7 +130,7 @@ class PathAcl:
     def set_write(self, w):
         assert (w == True or w == False)
         self.w = w
-        
+
     def serialize(self):
         ret=""+ self.member.__str__() + " = "
         if (self.r):
@@ -144,13 +144,13 @@ class AuthModel:
         self.filename = filename
         self.groups = UniqueList(groups, unique_group_name)
         self.paths = UniqueList(paths, unique_path_name)
-            
+
     def get_groups(self):
         return self.groups
-    
+
     def get_paths(self):
         return self.paths
-    
+
     def find_group(self, name, creategroup=False):
         for g in self.groups:
             if name == g.get_name():
@@ -160,30 +160,30 @@ class AuthModel:
             self.add_group(g)
             return g
         return None
-    
+
     def find_path(self, path, repo=None):
         for p in self.paths:
             if path == p.get_path() and repo == p.get_repo():
                 return p
         return []
-    
+
     def add_path(self, p):
-        if isinstance(p, Path):           
+        if isinstance(p, Path):
             self.paths.append(p)
 
     def del_path(self, p, repo = None):
-        if isinstance(p, Path):           
+        if isinstance(p, Path):
             self.paths.remove(p)
         elif isinstance(p, types.StringTypes):
             rp = self.find_path(p, repo)
             if isinstance(rp, Path):
                 self.paths.remove(rp)
 
-    
+
     def add_group(self, g):
         if isinstance(g, Group):
             self.groups.append(g)
-            
+
     def del_group(self, g):
         if isinstance(g, types.StringTypes):
             g = self.find_group(g)
@@ -196,7 +196,7 @@ class AuthModel:
             for pacl in p:
                 if pacl.get_member() == g:
                     p.remove(pacl)
-    
+
     def serialize(self):
         ret = "\n[groups]\n"
         for group in self.groups:

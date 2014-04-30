@@ -7,11 +7,11 @@ class MemberTest(unittest.TestCase):
     def test_member_name(self):
         self.assertRaises(AssertionError, Member, None)
         self.assertRaises(AssertionError, Member, "            ")
-        
+
     def test_equality(self):
         self.assertEquals(Member("a"),Member("a"))
         self.assertNotEquals(Member("a"), Member("b"))
-        
+
 class GroupTest(unittest.TestCase):
     def test_group_name(self):
         self.assertRaises(AssertionError, Group, None)
@@ -20,7 +20,7 @@ class GroupTest(unittest.TestCase):
     def test_group_members(self):
         self.failUnless(isinstance(Group("test", None), Group))
         self.failUnless(isinstance(Group("test", []), Group))
-        
+
         self.assertRaises(AssertionError, Group, "test", ["blabla"])
         g = Group("test", [Member("zuzu")])
         self.failUnless(isinstance(g, Group))
@@ -37,7 +37,7 @@ class GroupTest(unittest.TestCase):
         g = Group("test", [Member("test"), Member("test2"), Member("test")])
         self.assertEquals(g, Group("test", [Member("test"), Member("test2")]))
         g.append(Member("test"))
-        self.assertEquals(g, Group("test", [Member("test"), Member("test2")]))        
+        self.assertEquals(g, Group("test", [Member("test"), Member("test2")]))
 
 class PathTest(unittest.TestCase):
     def test_uniq_acls(self):
@@ -61,7 +61,7 @@ class AuthModelTest(unittest.TestCase):
 
         m = AuthModel("fname", None, [Path("/1", [], "izee"), Path("/2"), Path("/1", [], "izee")])
         self.assertEquals(2, len(m.get_paths()))
-    
+
         m = AuthModel("fname", None, [Path("/1", [], "izee"), Path("/2"), Path("/1", [], "bigyo")])
         self.assertEquals(3, len(m.get_paths()))
 
@@ -69,7 +69,7 @@ class AuthModelTest(unittest.TestCase):
     def test_unique_groups(self):
         m = AuthModel("fname", [Group("x1",[]), Group("x2",[]), Group("x1",[])], None)
         self.assertEquals(2, len(m.get_groups()))
-        
+
     def test_find_path(self):
         p = Path("/ize", [])
         p2 = Path("/ize2", [], "bigyo")
@@ -84,7 +84,7 @@ class AuthModelTest(unittest.TestCase):
         m = AuthModel("fname", [g], [])
         self.assertEquals(None, m.find_group("bigyo"))
         self.assertEquals(g, m.find_group("ize"))
-        
+
 
 class SerializerTest(unittest.TestCase):
 
@@ -99,7 +99,7 @@ gamma = user5
 @alfa = r
 @beta = rw
 @gamma = rw
-user2 = 
+user2 =
 
 [izee:/bigyo]
 @gamma = r
@@ -109,14 +109,13 @@ user2 = rw
         gamma = Group("gamma", [User("user5")])
         beta = Group("beta", [User("user4"), gamma])
         alfa = Group("alfa",[User("user1"), beta, User("user2"), User("user4")])
-        
-        root = Path("/", [PathAcl(alfa, True, False), 
-                          PathAcl(beta, True, True), 
-                          PathAcl(gamma, True, True), 
+
+        root = Path("/", [PathAcl(alfa, True, False),
+                          PathAcl(beta, True, True),
+                          PathAcl(gamma, True, True),
                           PathAcl(User("user2"), False, False)]
                           )
         izee_bigyo = Path("/bigyo", [PathAcl(gamma, True, False), PathAcl(User("user2"), True, True)], "izee")
-        
+
         m = AuthModel("fname", [alfa, beta, gamma], [root, izee_bigyo])
         self.assertEquals(reference,m.serialize())
-        

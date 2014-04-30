@@ -6,13 +6,13 @@ from model import *
 class AuthzFileReader:
     def __init__(self):
         pass
-    
+
     def read(self, filename):
         fp = open(filename, "r")
         parser = AuthzFileParser(filename, fp)
         return parser.parse()
 
-    
+
 class AuthzFileWriter:
     def __init__(self):
         pass
@@ -36,23 +36,23 @@ PARSE_PATH_ACL = 2
 
 
 class AuthzFileParser:
-    
-    
+
+
     def __init__(self, filename, fp):
         self.filename = filename
         self.fp = fp
         self.state = PARSE_NORMAL
-    
+
     def parse(self):
         try:
             m = AuthModel(self.filename, [], [])
             self.state = PARSE_NORMAL
             self._parse_root(m)
-            return m        
+            return m
         finally:
             self.fp.close()
-    
-        
+
+
     def _parse_root(self, m):
         while True:
             line = self.fp.readline()
@@ -96,7 +96,7 @@ class AuthzFileParser:
         for me in members:
             me = me.strip()
             if me.startswith("@"):
-                
+
                 memberg = m.find_group(me.lstrip("@"))
                 if memberg == None:
                     memberg = Group(me.lstrip("@"), [])
@@ -104,7 +104,7 @@ class AuthzFileParser:
                 g.append(memberg)
             else:
                 g.append(User(me))
-            
+
     def _parse_path(self, m, line):
         line = line.lstrip("[").rstrip("]")
         if ":" in line:
@@ -127,9 +127,9 @@ class AuthzFileParser:
             if "w" in aclstr:
                 acl[1] = True
         subjectstr = subjectstr.strip()
-        assert (len(subjectstr) > 0)        
-        if subjectstr.startswith("@"):            
-            assert (len(subjectstr) > 1)        
+        assert (len(subjectstr) > 0)
+        if subjectstr.startswith("@"):
+            assert (len(subjectstr) > 1)
             subject = m.find_group(subjectstr.lstrip("@"), True)
             assert (subject != None)
         else:

@@ -8,12 +8,12 @@ class ParserTest(unittest.TestCase):
         r = AuthzFileReader()
         m = r.read("testdata")
         self.assertEquals(m.serialize().strip(),open("testdata","r").read().strip())
-        
+
     def test_parse_mixed(self):
         r = AuthzFileReader()
         m = r.read("testdata-mixed")
         self.assertEquals(m.serialize().strip(),open("testdata","r").read().strip())
-                        
+
     def test_parse_comments(self):
         r1 = AuthzFileReader()
         r2 = AuthzFileReader()
