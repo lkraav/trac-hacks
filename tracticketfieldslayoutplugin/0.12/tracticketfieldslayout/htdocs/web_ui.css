@@ -1,39 +1,29 @@
 #properties table { table-layout: fixed }
-#ticket table.properties td[colspan="4"],
-#ticket table.properties td[colspan="4"] table,
-#properties td[colspan="4"],
-#properties td[colspan="4"] table {
+#ticket table.properties .ticketfieldslayout-toggle td,
+#properties .ticketfieldslayout-toggle td {
  width: 100%;
  padding: 0;
 }
-#ticket table.properties td[colspan="4"] > fieldset {
+#ticket table.properties .ticketfieldslayout-toggle td fieldset,
+#properties .ticketfieldslayout-toggle td fieldset {
  margin: 0;
  padding: 0;
  border: none;
  background: transparent none;
  box-shadow: none;
 }
-#properties td[colspan="4"] > fieldset {
- margin: 0;
- padding: 0;
- border: none;
- background: transparent none;
- box-shadow: none;
-}
-#properties td[colspan="4"] > fieldset.collapsed { margin-bottom: 0 }
-#properties td[colspan="4"] > fieldset div.trac-resizable textarea { width: 100% }
-#ticket table.properties td[colspan="4"] legend {
+#ticket table.properties .ticketfieldslayout-toggle td legend {
  font-size: 90.9%;
  padding-top: 0.5em;
  padding-bottom: 0.5em;
 }
-#properties td[colspan="4"] legend {
+#properties .ticketfieldslayout-toggle td legend {
  font-size: 90.9%;
  padding-top: 0.4em;
  padding-bottom: 0.4em;
 }
-#ticket table.properties td[colspan="4"] .collapsed legend.foldable,
-#properties td[colspan="4"] .collapsed legend.foldable {
+#ticket table.properties .ticketfieldslayout-toggle td .collapsed legend.foldable,
+#properties .ticketfieldslayout-toggle td .collapsed legend.foldable {
  background: transparent;
 }
 .ticketfieldslayout-col-th { width: 20% }
