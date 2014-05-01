@@ -23,6 +23,8 @@ if arity(Option.__init__) <= 5:
     def _option_tx_0_12(Base):  # Trac 0.12.x
         class OptionTx(Base):
             def __getattribute__(self, name):
+                if name == '__class__':
+                    return Base
                 val = Base.__getattribute__(self, name)
                 if name == '__doc__':
                     val = dgettext(_DOMAIN, val)
@@ -31,11 +33,10 @@ if arity(Option.__init__) <= 5:
     _option_tx = _option_tx_0_12
 else:
     def _option_tx_1_0(Base):  # Trac 1.0 or later
-        class OptionTx(Base):
-            def __init__(self, *args, **kwargs):
-                kwargs['doc_domain'] = _DOMAIN
-                Base.__init__(self, *args, **kwargs)
-        return OptionTx
+        def fn(*args, **kwargs):
+            kwargs['doc_domain'] = _DOMAIN
+            return Base(*args, **kwargs)
+        return fn
     _option_tx = _option_tx_1_0
 
 
