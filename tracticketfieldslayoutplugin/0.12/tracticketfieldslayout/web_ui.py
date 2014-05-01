@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 OpenGroove,Inc.
+# Copyright (C) 2013,2014 OpenGroove,Inc.
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -71,7 +71,6 @@ ticket form"""))
         if req and data and template in self._templates:
             for path in self._stylesheet_files:
                 add_stylesheet(req, path)
-            add_script(req, 'common/js/folding.js')
             add_script(req, 'ticketfieldslayout/web_ui.js')
         return template, data, content_type
 
@@ -164,7 +163,7 @@ class TicketFieldsLayoutTransformer(object):
             if kind is START:
                 depth += 1
                 if data[0].localname == 'table':
-                    table_depth = depth
+                    table_depth = depth - 1
                     yield event
                     break
             elif kind is END:
@@ -178,13 +177,13 @@ class TicketFieldsLayoutTransformer(object):
         cells = {}
         cell_buf = None
         cell_depth = None
-        last_event = None
+        table_end = None
         for event in stream:
             kind, data, pos = event
             if kind is END:
                 depth -= 1
-                if depth < table_depth:
-                    last_event = event  # END of <table>
+                if depth == table_depth:
+                    table_end = event  # END of <table>
                     break
             if kind is not START:
                 continue
@@ -236,12 +235,14 @@ class TicketFieldsLayoutTransformer(object):
             return [name for name in names if name != 'owner']
 
         def iter_cell(cell):
-            idx = cell_idx[0]
+            idx = status['cell']
             if cell['fullrow'] and idx % 2 == 1:
-                yield tr_end
+                for event in close_tr():
+                    yield event
                 idx = 0
             if idx % 2 == 0:
-                yield tr_start
+                for event in open_tr():
+                    yield event
             for event in cell['buffer']:
                 kind, data, pos = event
                 if kind is START and data[0].localname in ('th', 'td'):
@@ -256,12 +257,13 @@ class TicketFieldsLayoutTransformer(object):
                     data = (data[0], attrs)
                 yield kind, data, pos
             if idx % 2 == 1:
-                yield tr_end
+                for event in close_tr():
+                    yield event
             if cell['fullrow']:
                 idx = 0
             else:
                 idx += 1
-            cell_idx[0] = idx
+            status['cell'] = idx
 
         def iter_fields(fields):
             fields = [name for name in fields
@@ -273,6 +275,8 @@ class TicketFieldsLayoutTransformer(object):
                 if not name.startswith('@'):
                     if name not in self.ticket_fields or name not in cells:
                         continue
+                    for event in open_tbody():
+                        yield event
                     for event in iter_cell(cells[name]):
                         yield event
                     continue
@@ -282,49 +286,70 @@ class TicketFieldsLayoutTransformer(object):
                 group_fields = list_except_owner(group['fields'])
                 if not group_fields:
                     continue
-                if cell_idx[0] % 2 == 1:
-                    yield tr_end
-                yield tr_start
-                fragment = iter(self.create_group(group, ticket_box=False))
-                for event in fragment:
+                for event in close_tbody():
                     yield event
-                    kind, data, pos = event
-                    if kind is START and data[0].localname == 'table':
-                        break
-                for event in self.create_colgroup():
+                for event in create_group(group):
                     yield event
-                cell_idx[0] = 0
                 for event in iter_fields(group_fields):
                     yield event
-                for event in fragment:
+                for event in close_tbody():
                     yield event
-                cell_idx[0] = 0
-            if cell_idx[0] % 2 == 1:
-                for event in tag(tag.th(class_='col2'), tag.td(class_='col2')):
+                status['cell'] = 0
+
+            if status['cell'] % 2 == 1:
+                for event in tag(tag.th('', class_='col2'),
+                                 tag.td('', class_='col2')):
                     yield event
+                for event in close_tr():
+                    yield event
+
+        def open_tr():
+            if status['tr']:
                 yield tr_end
+            else:
+                for event in open_tbody():
+                    yield event
+            status['tr'] = True
+            yield tr_start
+
+        def close_tr():
+            if status['tr']:
+                status['tr'] = False
+                yield tr_end
+
+        def open_tbody():
+            if not status['tbody']:
+                status['tbody'] = True
+                yield tbody_start
+
+        def close_tbody():
+            for event in close_tr():
+                yield event
+            if status['tbody']:
+                status['tbody'] = False
+                yield tbody_end
+
+        def create_group(group):
+            for event in self.create_group(group, ticket_box=False):
+                yield event
+            status['tbody'] = True
+            status['tr'] = False
+            status['cell'] = 0
 
         qname_class = QName('class')
         tr_start, tr_end = list(tag.tr)
+        tbody_start, tbody_end = list(tag.tbody)
+        status = {'tbody': False, 'tr': False, 'cell': 0}
         used_fields = set()
-        cell_idx = [0]
         for event in self.create_colgroup():
             yield event
         fields = list_except_owner(self.fields)
         fields.append('owner')
         for event in iter_fields(fields):
             yield event
-        yield last_event  # END of <table>
-
-        if not self.ticket.exists:
-            hiddens = tag.div
-            for name, value in self.ticket_fields.iteritems():
-                if name in used_fields:
-                    continue
-                hiddens.append(tag.input(type='hidden', name=name,
-                                         value=value))
-            for event in hiddens:
-                yield event
+        for event in close_tbody():
+            yield event
+        yield table_end  # END of <table>
 
     def transform_ticket_box(self, stream):
         depth = 1
@@ -349,7 +374,7 @@ class TicketFieldsLayoutTransformer(object):
         cells = {}
         cell_buf = None
         cell_depth = None
-        last_event = None
+        table_end = None
 
         for event in stream:
             if cell_buf is not None:
@@ -395,25 +420,28 @@ class TicketFieldsLayoutTransformer(object):
                         cell['buffer'] = cell_buf
                 cell_buf = name = None
             if depth < table_depth:
-                last_event = event  # END of <table>
+                table_end = event  # END of <table>
                 break
 
         def iter_cell(cell):
-            idx = cell_idx[0]
+            idx = status['cell']
             if cell['fullrow'] and idx % 2 == 1:
-                yield tr_end
+                for event in close_tr():
+                    yield event
                 idx = 0
             if idx % 2 == 0:
-                yield tr_start
+                for event in open_tr():
+                    yield event
             for event in cell['buffer']:
                 yield event
             if idx % 2 == 1:
-                yield tr_end
+                for event in close_tr():
+                    yield event
             if cell['fullrow']:
                 idx = 0
             else:
                 idx += 1
-            cell_idx[0] = idx
+            status['cell'] = idx
 
         def iter_fields(fields):
             fields = [name for name in fields
@@ -431,49 +459,79 @@ class TicketFieldsLayoutTransformer(object):
                 group = self.groups.get(name[1:])
                 if not group or not group['fields']:
                     continue
-                if cell_idx[0] % 2 == 1:
-                    yield tr_end
-                yield tr_start
-                fragment = iter(self.create_group(group, ticket_box=True))
-                for event in fragment:
+                for event in close_tbody():
                     yield event
-                    kind, data, pos = event
-                    if kind is START and data[0].localname == 'table':
-                        break
-                for event in self.create_colgroup():
+                for event in create_group(group):
                     yield event
-                cell_idx[0] = 0
                 for event in iter_fields(group['fields']):
                     yield event
-                for event in fragment:
+                for event in close_tbody():
                     yield event
-                cell_idx[0] = 0
-            if cell_idx[0] % 2 == 1:
+                status['cell'] = 0
+            if status['cell'] % 2 == 1:
+                for event in close_tr():
+                    yield event
+
+        def open_tr():
+            if status['tr']:
+                yield tr_end
+            else:
+                for event in open_tbody():
+                    yield event
+            status['tr'] = True
+            yield tr_start
+
+        def close_tr():
+            if status['tr']:
+                status['tr'] = False
                 yield tr_end
 
+        def open_tbody():
+            if not status['tbody']:
+                status['tbody'] = True
+                yield tbody_start
+
+        def close_tbody():
+            for event in close_tr():
+                yield event
+            if status['tbody']:
+                status['tbody'] = False
+                yield tbody_end
+
+        def create_group(group):
+            for event in self.create_group(group, ticket_box=True):
+                yield event
+            status['tbody'] = True
+            status['tr'] = False
+            status['cell'] = 0
+
         tr_start, tr_end = list(tag.tr)
+        tbody_start, tbody_end = list(tag.tbody)
         used_fields = set()
-        cell_idx = [0]
+        status = {'tbody': False, 'tr': False, 'cell': 0}
         for event in self.create_colgroup():
             yield event
         for event in iter_fields(self.fields):
             yield event
-        yield last_event  # END of <table>
+        for event in close_tbody():
+            yield event
+        yield table_end  # END of <table>
 
     def create_group(self, group, ticket_box=None):
-        anchor = tag.a(group['label'], href='javascript:void(0)',
-                       onclick="jQuery(this).parent().parent()"
-                               ".toggleClass('collapsed')")
-        legend = tag.legend(anchor,
-                            class_=('ticketfieldslayout-foldable',
-                                    'foldable')[bool(self.preview_ajax)])
-        table = tag.table(class_=(None, 'properties')[ticket_box])
+        anchor = tag.a(group['label'], href='javascript:void(0)')
+        foldable = tag.legend(anchor,
+                              class_=('ticketfieldslayout-foldable',
+                                      'foldable')[bool(self.preview_ajax)])
+        tbody = tag.tbody
         collapsed = (None, 'collapsed')[
                 group['collapsed'] and
                 (not ticket_box or not self.preview_form and
                                    not self.preview_ajax)]
-        return tag.td(tag.fieldset(legend, table, class_=collapsed),
-                      colspan='4')
+        tbody(tag.tr(tag.td(tag.fieldset(foldable, class_=collapsed),
+                            colspan='4'),
+                     class_='ticketfieldslayout-toggle'),
+              class_=collapsed)
+        return list(tbody)[:-1]
 
     def create_colgroup(self):
         fragment = tag.colgroup

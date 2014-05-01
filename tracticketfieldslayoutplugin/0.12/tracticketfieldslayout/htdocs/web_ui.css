@@ -40,3 +40,5 @@
 .ticketfieldslayout-col-td { width: 30% }
 .ticketfieldslayout-foldable :link,
 .ticketfieldslayout-foldable :visited { padding-left: 16px }
+tbody.collapsed tr { display: none }
+tbody.collapsed tr.ticketfieldslayout-toggle { display: table-row }
