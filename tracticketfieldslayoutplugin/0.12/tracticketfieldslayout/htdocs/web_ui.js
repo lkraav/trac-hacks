@@ -8,7 +8,8 @@ jQuery(document).ready(function($) {
     setTimeout(function() {
         var onclick = function() {
             var node = $(this);
-            node.parent().add(node.closest('tbody')).toggleClass('collapsed');
+            node.parent().toggleClass('collapsed');
+            node.closest('tbody').toggleClass('ticketfieldslayout-collapsed');
             return false;
         };
         $('.ticketfieldslayout-foldable')

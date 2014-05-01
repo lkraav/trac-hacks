@@ -518,19 +518,20 @@ class TicketFieldsLayoutTransformer(object):
         yield table_end  # END of <table>
 
     def create_group(self, group, ticket_box=None):
-        anchor = tag.a(group['label'], href='javascript:void(0)')
-        foldable = tag.legend(anchor,
-                              class_=('ticketfieldslayout-foldable',
-                                      'foldable')[bool(self.preview_ajax)])
+        collapsed = (group['collapsed'] and
+                     (not ticket_box or not self.preview_form and
+                                        not self.preview_ajax))
+
+        foldable = ('ticketfieldslayout-foldable',
+                    'foldable')[bool(self.preview_ajax)]
+        fieldset = tag.fieldset(tag.legend(tag.a(group['label'],
+                                                 href='javascript:void(0)'),
+                                           class_=foldable),
+                                class_=(None, 'collapsed')[collapsed])
         tbody = tag.tbody
-        collapsed = (None, 'collapsed')[
-                group['collapsed'] and
-                (not ticket_box or not self.preview_form and
-                                   not self.preview_ajax)]
-        tbody(tag.tr(tag.td(tag.fieldset(foldable, class_=collapsed),
-                            colspan='4'),
+        tbody(tag.tr(tag.td(fieldset, colspan='4'),
                      class_='ticketfieldslayout-toggle'),
-              class_=collapsed)
+              class_=(None, 'ticketfieldslayout-collapsed')[collapsed])
         return list(tbody)[:-1]
 
     def create_colgroup(self):

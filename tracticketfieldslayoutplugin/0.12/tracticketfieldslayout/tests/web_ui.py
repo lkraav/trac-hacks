@@ -208,7 +208,8 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
                        (kind is START and data[0].localname == 'tbody'),
                        XML(content).select('//tbody'))
         self.assertEqual(None, tbody[0][1][1].get('class'))
-        self.assertEqual('collapsed', tbody[1][1][1].get('class'))
+        self.assertEqual('ticketfieldslayout-collapsed',
+                         tbody[1][1][1].get('class'))
         self.assertEqual(None, tbody[2][1][1].get('class'))
         self.assertEqual(3, len(tbody))
 
@@ -241,7 +242,8 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
                        (kind is START and data[0].localname == 'tbody'),
                        XML(content).select('//tbody'))
         self.assertEqual(None, tbody[0][1][1].get('class'))
-        self.assertEqual('collapsed', tbody[1][1][1].get('class'))
+        self.assertEqual('ticketfieldslayout-collapsed',
+                         tbody[1][1][1].get('class'))
         self.assertEqual(None, tbody[2][1][1].get('class'))
         self.assertEqual(3, len(tbody))
 
