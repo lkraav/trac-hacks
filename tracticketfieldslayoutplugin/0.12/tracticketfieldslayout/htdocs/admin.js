@@ -1,4 +1,4 @@
-// Copyright (C) 2013 OpenGroove,Inc.
+// Copyright (C) 2013,2014 OpenGroove,Inc.
 // All rights reserved.
 //
 // This software is licensed as described in the file COPYING, which
@@ -90,7 +90,9 @@ jQuery(document).ready(function($) {
         var text = this.value;
         form.find('.ticketfieldslayout-root input[name=field]').each(function() {
             if (this.value === id) {
-                $(this).closest('li').find('span').text(text);
+                $(this).closest('li')
+                       .find('span.ticketfieldslayout-name')
+                       .text(text);
                 return false;
             }
         });

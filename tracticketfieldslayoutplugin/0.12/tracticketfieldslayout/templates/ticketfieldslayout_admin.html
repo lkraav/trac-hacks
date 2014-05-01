@@ -36,11 +36,12 @@
           <li py:for="field in fields"
               class="${field.group and 'ticketfieldslayout-group' or None}">
             <span class="ticketfieldslayout-type">${'fG'[bool(field.group)]}</span>
-            <span>${field.label}</span>
+            <span class="ticketfieldslayout-name">${field.label}</span>
             <input type="hidden" name="field" value="${field.name}" />
           </li>
           <li class="ticketfieldslayout-group ticketfieldslayout-tmpl-item">
-            <span class="ticketfieldslayout-type" xml:lang="en">G</span> <span>Group</span>
+            <span class="ticketfieldslayout-type" xml:lang="en">G</span>
+            <span class="ticketfieldslayout-name">Group</span>
             <input type="hidden" name="field" value="" disabled="disabled" />
           </li>
         </ul>
