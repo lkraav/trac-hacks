@@ -40,5 +40,5 @@ setup(name='TracDiscussion',
       },
       install_requires=[],
       extras_require={'spamfilter' : ['TracSpamFilter >= 0.2'],
-                      'tags' : ['TracTags >= 0.6']}
+                      'tags' : ['TracTags >= 0.7']}
       )
