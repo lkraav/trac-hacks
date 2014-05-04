@@ -10,11 +10,10 @@ from trac.core import Component, implements
 from trac.admin.api import IAdminPanelProvider
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
-from trac.util import hex_entropy
 from trac.util.translation import dgettext
 from trac.web.chrome import Chrome, add_notice, add_script, add_stylesheet
 
-from tracticketfieldslayout.api import get_groups, _
+from tracticketfieldslayout.api import get_default_fields, get_groups, _
 from tracticketfieldslayout.web_ui import TicketFieldsLayoutModule
 
 
@@ -49,7 +48,7 @@ class TicketFieldsLayoutAdminModule(Component):
             elif req.args.getfirst('restore'):
                 func = self._process_field_restore
             if func is None:
-                req.redirect(req.href('admin', category, page))
+                self._redirect(req, category, page)
             func(req, category, page, path_info)
 
         return self._process_view(req, category, page, path_info)
@@ -114,6 +113,12 @@ class TicketFieldsLayoutAdminModule(Component):
                              in enumerate(tktsys.custom_fields))
 
         options = {'fields': req.args.getlist('field')}
+        if options['fields'] == get_default_fields(self.env):
+            self._clear_layout_settings()
+            self.config.save()
+            self._add_notice_saved(req)
+            self._redirect(req, category, page)
+
         group_names = [name[1:] for name in options['fields']
                                 if name.startswith('@')]
 
@@ -155,18 +160,25 @@ class TicketFieldsLayoutAdminModule(Component):
         self.config.save()
 
         self._add_notice_saved(req)
-        req.redirect(req.href('admin', category, page))
+        self._redirect(req, category, page)
 
     def _process_field_restore(self, req, category, page, path_info):
-        self.config.remove(_SECTION, 'fields')
+        self._clear_layout_settings()
         self.config.save()
 
         add_notice(req, _("The default settings have been restored."))
+        self._redirect(req, category, page)
+
+    def _redirect(self, req, category, page):
         req.redirect(req.href('admin', category, page))
 
     def _add_notice_saved(self, req):
         add_notice(req, (dgettext)('messages',
                                    "Your changes have been saved."))
 
-    def _new_group_name(self):
-        return hex_entropy(16)
+    def _clear_layout_settings(self):
+        names = ['fields']
+        names.extend(name for name, value in self.config.options(_SECTION)
+                          if name.startswith('group.'))
+        for name in names:
+            self.config.remove(_SECTION, name)

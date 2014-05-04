@@ -13,12 +13,12 @@ from genshi.filters.transform import StreamBuffer
 from trac.core import Component, implements
 from trac.admin.web_ui import AdminModule
 from trac.ticket.api import TicketSystem
-from trac.ticket.model import Ticket
 from trac.util.translation import N_
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 
-from tracticketfieldslayout.api import ListOption, get_groups
+from tracticketfieldslayout.api import ListOption, get_default_fields, \
+                                       get_groups
 
 
 __all__ = ['TicketFieldsLayoutModule']
@@ -148,9 +148,7 @@ ticket form"""))
         config.save()
 
     def _default_fields(self):
-        protected_fields = set(Ticket.protected_fields)
-        names = [f['name'] for f in TicketSystem(self.env).get_ticket_fields()]
-        return [name for name in names if name not in protected_fields]
+        return get_default_fields(self.env)
 
     def _get_custom_fields(self):
         return [f['name'] for f in TicketSystem(self.env).get_custom_fields()]

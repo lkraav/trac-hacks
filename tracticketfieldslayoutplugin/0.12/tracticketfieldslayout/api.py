@@ -9,6 +9,8 @@
 from trac.core import Component, implements
 from trac.config import ListOption, Option
 from trac.env import IEnvironmentSetupParticipant
+from trac.ticket.api import TicketSystem
+from trac.ticket.model import Ticket
 from trac.util import arity
 from trac.util.translation import dgettext, domain_functions
 
@@ -61,6 +63,12 @@ class TicketFieldsLayoutTxModule(Component):
 
     def upgrade_environment(self, db):
         pass
+
+
+def get_default_fields(env):
+    protected_fields = set(Ticket.protected_fields)
+    names = [f['name'] for f in TicketSystem(env).get_ticket_fields()]
+    return [name for name in names if name not in protected_fields]
 
 
 def get_groups(config):
