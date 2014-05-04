@@ -11,6 +11,7 @@ from genshi.builder import tag
 from genshi.filters.transform import StreamBuffer
 
 from trac.core import Component, implements
+from trac.admin.web_ui import AdminModule
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
 from trac.util.translation import N_
@@ -65,6 +66,13 @@ List of template names to apply the fields layout in ticket page and
 ticket form"""))
 
     def pre_process_request(self, req, handler):
+        if req.method == 'POST' and \
+                isinstance(handler, AdminModule) and \
+                req.args.get('cat_id') == 'ticket' and \
+                req.args.get('panel_id') == 'customfields':
+            req._ticket_custom_fields = self._get_custom_fields()
+            req._ticket_fields = self._default_fields()
+            req.add_redirect_listener(self._redirected)
         return handler
 
     def post_process_request(self, req, template, data, content_type):
@@ -95,10 +103,57 @@ ticket form"""))
         stream |= TicketFieldsLayoutTransformer(fields, groups, req, data)
         return stream
 
+    def _redirected(self, req, url, permanent):
+        if req._ticket_custom_fields == self._get_custom_fields():
+            return
+        del TicketSystem(self.env).fields
+        new_fields = self._default_fields()
+        if new_fields == req._ticket_fields:
+            return
+        old_fields = set(req._ticket_fields)
+        removed = old_fields - set(new_fields)
+        added = [name for name in new_fields if name not in old_fields]
+        if not removed and not added:
+            return
+
+        section = 'ticketfieldslayout'
+        config = self.config
+        options = map(lambda (name, value): name, config.options(section))
+        if removed:
+            for option in options:
+                if not (option.startswith('group.') and
+                        len(option.split('.')) == 2):
+                    continue
+                old = config.getlist(section, option)
+                new = [val for val in old if val not in removed]
+                if old == new:
+                    continue
+                if new:
+                    config.set(section, option, ','.join(new))
+                else:
+                    config.remove(section, option)
+                    for tmp in options:
+                        if tmp.startswith(option + '.'):
+                            config.remove(section, tmp)
+                    # remove the group from "fields"
+                    removed.add('@' + option[6:])
+        new = old = config.getlist(section, 'fields')
+        new = [val for val in old if val not in removed] + added
+        if not new:
+            for option in options:
+                if option == 'fields' or option.startswith('group.'):
+                    config.remove(section, option)
+        elif old != new:
+            config.set(section, 'fields', ','.join(new))
+        config.save()
+
     def _default_fields(self):
         protected_fields = set(Ticket.protected_fields)
         names = [f['name'] for f in TicketSystem(self.env).get_ticket_fields()]
         return [name for name in names if name not in protected_fields]
+
+    def _get_custom_fields(self):
+        return [f['name'] for f in TicketSystem(self.env).get_custom_fields()]
 
     def _prepend_stdprops(self, fields, groups):
         used = set(fields)
