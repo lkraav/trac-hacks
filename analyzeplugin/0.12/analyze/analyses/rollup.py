@@ -102,11 +102,11 @@ def _get_stat_rollup(field, rollup, tickets):
             counts[val] = counts.get(val,0)+1
             if counts[val] > hi_count:
                 hi_count = counts[val]
-                hi_val = val
+                hi_value = val
         if rollup['numeric']:
-            return hi_val
+            return hi_value
         else:
-            return options[hi_val]
+            return options[hi_value]
     
     # assume stat is the pivot field - the pivot algorithm is as follows:
     # 
