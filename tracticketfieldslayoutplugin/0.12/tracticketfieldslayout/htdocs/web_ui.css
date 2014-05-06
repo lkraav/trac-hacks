@@ -1,4 +1,9 @@
 #properties table { table-layout: fixed }
+#properties table td.col1 > label,
+#properties table td.col2 > label {
+ float: left;
+ margin-right: 0.5em;
+}
 #ticket table.properties .ticketfieldslayout-toggle td,
 #properties .ticketfieldslayout-toggle td {
  width: 100%;
