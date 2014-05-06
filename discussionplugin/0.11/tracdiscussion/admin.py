@@ -13,8 +13,6 @@ from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.mimeview import Context
 from trac.perm import IPermissionRequestor
-from trac.web.chrome import add_stylesheet
-from trac.wiki import wiki_to_html, wiki_to_oneliner
 
 from tracdiscussion.api import DiscussionApi
 
@@ -30,8 +28,8 @@ class DiscussionWebAdmin(Component):
 
     def get_admin_panels(self, req):
         if req.perm.has_permission('DISCUSSION_ADMIN'):
-            yield ('discussion', 'Discussion System', 'group', 'Forum Groups')
             yield ('discussion', 'Discussion System', 'forum', 'Forums')
+            yield ('discussion', 'Discussion System', 'group', 'Forum Groups')
 
     def render_admin_panel(self, req, category, page, path_info):
         if page == 'forum':

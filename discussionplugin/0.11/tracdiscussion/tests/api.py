@@ -1,0 +1,188 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
+import shutil
+import tempfile
+import unittest
+
+from genshi.builder import tag
+from genshi.core import Markup
+
+from trac.db.api import DatabaseManager
+from trac.mimeview import Context
+from trac.perm import PermissionCache, PermissionError, PermissionSystem
+from trac.resource import Resource
+from trac.test import EnvironmentStub, Mock
+from trac.web.href import Href
+
+from tracdiscussion.api import DiscussionApi, format_to_oneliner_no_links
+from tracdiscussion.init import DiscussionInit
+
+
+class _BaseTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=['trac.*', 'tracdiscussion.*'])
+        self.env.path = tempfile.mkdtemp()
+        self.perms = PermissionSystem(self.env)
+
+        self.realm = 'discussion'
+
+    def tearDown(self):
+        self.env.shutdown()
+        shutil.rmtree(self.env.path)
+
+
+class DiscussionApiTestCase(_BaseTestCase):
+
+    def setUp(self):
+        _BaseTestCase.setUp(self)
+        self.req = Mock(authname='')
+
+        self.actions = ('DISCUSSION_ADMIN', 'DISCUSSION_MODERATE',
+                        'DISCUSSION_ATTACH', 'DISCUSSION_APPEND',
+                        'DISCUSSION_VIEW')
+        self.db = self.env.get_db_cnx()
+        # Accomplish Discussion db schema setup.
+        setup = DiscussionInit(self.env)
+        setup.upgrade_environment(self.db)
+        # Populate tables with initial test data.
+        cursor = self.db.cursor()
+        cursor.execute("""
+            INSERT INTO forum
+                   (name, subject, description)
+            VALUES (%s,%s,%s)
+        """, ('forum1', 'forum-subject', 'forum-desc1'))
+        cursor.executemany("""
+            INSERT INTO topic
+                   (forum, subject, body)
+            VALUES (%s,%s,%s)
+        """, [(1, 'top1', 'topic-desc1'),
+              (1, 'top2', 'topic-desc2'),
+             ])
+        cursor.executemany("""
+            INSERT INTO message
+                   (forum, topic, body)
+            VALUES (%s,%s,%s)
+        """, [(1, 1, 'msg1'),
+              (1, 2, 'msg2'),
+              (1, 2, 'msg3'),
+              (1, 2, 'msg4'),
+             ])
+
+        self.api = DiscussionApi(self.env)
+
+        self.forum = Resource(self.realm, 'forum/1')
+        self.topic = Resource(self.realm, 'topic/2')
+        self.message = Resource(self.realm, 'message/3', None, self.topic)
+
+    def tearDown(self):
+        self.db.close()
+        # Really close db connections.
+        _BaseTestCase.tearDown(self)
+
+    # Tests
+
+    def test_available_actions(self):
+        for action in self.actions:
+            self.assertFalse(action not in self.perms.get_actions())
+
+    def test_meta_inherit_actions(self):
+        user = 'anonymous'
+        self.assertEqual(set(self.perms.get_user_permissions(user))
+                         .intersection(self.actions), set())
+        user = 'visitor'
+        self.perms.grant_permission(user, 'DISCUSSION_VIEW')
+        self.assertTrue(set(self.perms.get_user_permissions(user))
+                        .issuperset(self.actions[4:]))
+        self.assertEqual(set(self.perms.get_user_permissions(user))
+                         .intersection(self.actions[:4]), set())
+        user = 'msg+file-editor'
+        self.perms.grant_permission(user, 'DISCUSSION_APPEND')
+        self.assertTrue(set(self.perms.get_user_permissions(user))
+                        .issuperset(self.actions[3:]))
+        self.assertEqual(set(self.perms.get_user_permissions(user))
+                         .intersection(self.actions[:3]), set())
+        user = 'msg-only-editor'
+        self.perms.grant_permission(user, 'DISCUSSION_ATTACH')
+        self.assertTrue(set(self.perms.get_user_permissions(user))
+                        .issuperset(self.actions[2:]))
+        self.assertEqual(set(self.perms.get_user_permissions(user))
+                         .intersection(self.actions[:2]), set())
+        user = 'moderator'
+        self.perms.grant_permission(user, 'DISCUSSION_MODERATE')
+        self.assertTrue(set(self.perms.get_user_permissions(user))
+                        .issuperset(self.actions[1:]))
+        self.assertEqual(set(self.perms.get_user_permissions(user))
+                         .intersection(self.actions[:1]), set())
+        user = 'admin'
+        self.perms.grant_permission(user, 'DISCUSSION_ADMIN')
+        self.assertTrue(set(self.perms.get_user_permissions(user))
+                        .issuperset(self.actions))
+
+    def test_get_resource_realms(self):
+        self.assertEqual(list(self.api.get_resource_realms()), [self.realm])
+
+    def test_get_resource_description(self):
+        desc = self.api.get_resource_description # method shorthand
+        self.assertEqual(desc(self.forum), 'Forum forum1')
+        self.assertEqual(desc(self.forum, 'summary'),
+                         'Forum forum1 - forum-subject')
+        self.assertEqual(desc(self.topic), 'Topic #2')
+        self.assertEqual(desc(self.topic, 'summary'), 'Topic #2 (top2)')
+        self.assertEqual(desc(self.message), 'Message #3')
+        self.assertEqual(desc(self.message, 'summary'), 'Message #3')
+
+    def test_get_resource_url(self):
+        url = self.api.get_resource_url # method shorthand
+        self.assertEqual(url(self.forum, Href('/')), '/discussion/forum/1')
+        self.assertEqual(url(self.topic, Href('/')), '/discussion/topic/2')
+        self.assertEqual(url(self.message, Href('/')),
+                         '/discussion/topic/2#message_3')
+
+    def test_resource_exists(self):
+        self.assertTrue(self.api.resource_exists(self.forum))
+        self.assertFalse(self.api.resource_exists(self.forum(id='forum/2')))
+        self.assertTrue(self.api.resource_exists(self.topic))
+        self.assertFalse(self.api.resource_exists(self.forum(id='topic/3')))
+        self.assertTrue(self.api.resource_exists(self.message))
+        self.assertFalse(self.api.resource_exists(self.forum(id='message/5')))
+
+
+class FormatToOnlinerNoLinksTestCase(_BaseTestCase):
+
+    def setUp(self):
+        _BaseTestCase.setUp(self)
+        self.req = Mock(authname='user', method='GET',
+                   args=dict(), abs_href=self.env.abs_href,
+                   chrome=dict(notices=[], warnings=[]),
+                   href=self.env.abs_href, locale='',
+                   redirect=lambda x: None, session=dict(), tz=''
+        )
+        self.req.perm = PermissionCache(self.env, 'user')
+
+    def test_format_to_oneliner_no_links(self):
+        markup = tag('text-only fragment')
+        self.assertEqual(format_to_oneliner_no_links(
+                             self.env, Context.from_request(self.req),
+                             markup), str(markup))
+        self.assertEqual(format_to_oneliner_no_links(
+                             self.env, Context.from_request(self.req),
+                             'text fragment with [/ link]'),
+                             'text fragment with link')
+
+
+def test_suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(DiscussionApiTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(FormatToOnlinerNoLinksTestCase, 'test'))
+    return suite
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='test_suite')
