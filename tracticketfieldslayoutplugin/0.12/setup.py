@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 OpenGroove,Inc.
+# Copyright (C) 2013,2014 OpenGroove,Inc.
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -28,7 +28,7 @@ else:
 
 setup(
     name='TracTicketFieldsLayoutPlugin',
-    version='0.12.0.1',
+    version='0.12.0.2',
     description='Allow to customize the layout of ticket fields in view and form',
     license='BSD',  # the same as Trac
     url='http://trac-hacks.org/wiki/TracTicketFieldsLayoutPlugin',
