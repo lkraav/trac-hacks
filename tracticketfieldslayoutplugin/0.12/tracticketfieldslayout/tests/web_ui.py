@@ -248,11 +248,11 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
         self.assertEqual(3, len(tbody))
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TicketFieldsLayoutTestCase))
     return suite
 
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main()

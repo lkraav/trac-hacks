@@ -8,9 +8,11 @@
 
 from trac.core import Component, implements
 from trac.admin.api import IAdminPanelProvider
+from trac.admin.web_ui import AdminModule
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
-from trac.util.translation import dgettext
+from trac.util.translation import gettext as _gettext
+from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, add_notice, add_script, add_stylesheet
 
 from tracticketfieldslayout.api import get_default_fields, get_groups, _
@@ -25,12 +27,14 @@ _SECTION = 'ticketfieldslayout'
 
 class TicketFieldsLayoutAdminModule(Component):
 
-    implements(IAdminPanelProvider)
+    implements(IAdminPanelProvider, IRequestFilter)
+
+    # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
         if 'TICKET_ADMIN' in req.perm:
-            return [('ticket', (dgettext)('messages', "Ticket System"),
-                     'ticketlayout', _("Ticket Layout"))]
+            yield ('ticket', _gettext("Ticket System"),
+                   'ticketlayout', _("Ticket Layout"))
 
     def render_admin_panel(self, req, category, page, path_info):
         req.perm.require('TICKET_ADMIN')
@@ -48,10 +52,26 @@ class TicketFieldsLayoutAdminModule(Component):
             elif req.args.getfirst('restore'):
                 func = self._process_field_restore
             if func is None:
-                self._redirect(req, category, page)
+                req.redirect(req.href('admin', category, page))
             func(req, category, page, path_info)
 
         return self._process_view(req, category, page, path_info)
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        if req.method == 'POST' and \
+                isinstance(handler, AdminModule) and \
+                req.args.get('cat_id') == 'ticket' and \
+                req.args.get('panel_id') == 'customfields':
+            req._ticket_custom_fields = self._get_custom_fields()
+            req.add_redirect_listener(self._redirected)
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        return template, data, content_type
+
+    # internal methods
 
     def _process_view(self, req, category, page, path_info):
         mod = TicketFieldsLayoutModule(self.env)
@@ -117,7 +137,7 @@ class TicketFieldsLayoutAdminModule(Component):
             self._clear_layout_settings()
             self.config.save()
             self._add_notice_saved(req)
-            self._redirect(req, category, page)
+            req.redirect(req.href('admin', category, page))
 
         group_names = [name[1:] for name in options['fields']
                                 if name.startswith('@')]
@@ -160,21 +180,17 @@ class TicketFieldsLayoutAdminModule(Component):
         self.config.save()
 
         self._add_notice_saved(req)
-        self._redirect(req, category, page)
+        req.redirect(req.href('admin', category, page))
 
     def _process_field_restore(self, req, category, page, path_info):
         self._clear_layout_settings()
         self.config.save()
 
         add_notice(req, _("The default settings have been restored."))
-        self._redirect(req, category, page)
-
-    def _redirect(self, req, category, page):
         req.redirect(req.href('admin', category, page))
 
     def _add_notice_saved(self, req):
-        add_notice(req, (dgettext)('messages',
-                                   "Your changes have been saved."))
+        add_notice(req, _gettext("Your changes have been saved."))
 
     def _clear_layout_settings(self):
         names = ['fields']
@@ -182,3 +198,47 @@ class TicketFieldsLayoutAdminModule(Component):
                           if name.startswith('group.'))
         for name in names:
             self.config.remove(_SECTION, name)
+
+    def _redirected(self, req, url, permanent):
+        old_fields = req._ticket_custom_fields
+        new_fields = self._get_custom_fields()
+        if new_fields == old_fields:
+            return
+        old_fields = set(old_fields)
+        removed = old_fields - set(new_fields)
+        added = [name for name in new_fields if name not in old_fields]
+        if not removed and not added:
+            return
+
+        config = self.config
+        options = map(lambda (name, _): name, config.options(_SECTION))
+        if removed:
+            for option in options:
+                if not (option.startswith('group.') and
+                        len(option.split('.')) == 2):
+                    continue
+                old = config.getlist(_SECTION, option)
+                new = [val for val in old if val not in removed]
+                if old == new:
+                    continue
+                if new:
+                    config.set(_SECTION, option, ','.join(new))
+                else:
+                    config.remove(_SECTION, option)
+                    for tmp in options:
+                        if tmp.startswith(option + '.'):
+                            config.remove(_SECTION, tmp)
+                    # remove the group from "fields"
+                    removed.add('@' + option[6:])
+        old_fields = config.getlist(_SECTION, 'fields')
+        new_fields = filter(lambda val: val not in removed, old_fields) + added
+        if not new_fields:
+            for option in options:
+                if option == 'fields' or option.startswith('group.'):
+                    config.remove(_SECTION, option)
+        elif old_fields != new_fields:
+            config.set(_SECTION, 'fields', ','.join(new_fields))
+        config.save()
+
+    def _get_custom_fields(self):
+        return [f['name'] for f in TicketSystem(self.env).get_custom_fields()]

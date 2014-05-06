@@ -42,7 +42,7 @@ setup(
             'htdocs/*.*', 'templates/*.html', 'locale/*/LC_*/*.mo',
             ],
         },
-    test_suite='tracticketfieldslayout.tests.suite',
+    test_suite='tracticketfieldslayout.tests.test_suite',
     entry_points={
         'trac.plugins': [
             'tracticketfieldslayout.admin = tracticketfieldslayout.admin',
