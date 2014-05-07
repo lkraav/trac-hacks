@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2011 Sergio Talens-Oliag <sto@iti.es>
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -30,14 +30,14 @@ permission_policy list and it works as follows:
 
 1. If the blacklist is available and the permission being considered is on
    the list the check_permission function returns False and the permission
-   evaluation stops. 
+   evaluation stops.
 
 2. If the whitelist is available and the permission we are checking is
    not on the list the check_permission function returns False and the
-   permission evaluation stops. 
+   permission evaluation stops.
 
 3. If the evaluation gets here the permission is ignored by the
-   plugin and the next permission policy is checked. 
+   plugin and the next permission policy is checked.
 
 If the boolean option `adminmeta` is True the filters are ignored for users
 with TRAC_ADMIN permission.
@@ -50,7 +50,9 @@ from trac.perm import IPermissionPolicy
 __all__ = ['PermissionFilter']
 
 class PermissionFilter(Component):
+
     implements(IPermissionPolicy)
+
     adminmeta = BoolOption(
         'permission-filter', 'adminmeta', True,
         doc="""If this option is set to True (the default) the filters don't
@@ -59,19 +61,22 @@ class PermissionFilter(Component):
         permission because we reject based on action name and TRAC_ADMIN is
         usually not checked directly"""
     )
+
     blacklist = ListOption(
         'permission-filter', 'blacklist', '',
         doc="""List of invalid permissions, the ones listed here are always False"""
     )
+
     whitelist = ListOption(
         'permission-filter', 'whitelist', '',
         doc="""List of valid permissions, the ones not listed here are always False"""
     )
+
     def check_permission(self, action, username, resource, perm):
         _admin = False
         if self.adminmeta:
             if action == 'TRAC_ADMIN':
-		return
+                return
             elif 'TRAC_ADMIN' in perm:
                 _admin = True
         if self.blacklist and len(self.blacklist) != 0:
@@ -80,4 +85,4 @@ class PermissionFilter(Component):
         if self.whitelist and len(self.whitelist) != 0:
             if not _admin and action not in self.whitelist:
                 return False
-        return 
+        return
