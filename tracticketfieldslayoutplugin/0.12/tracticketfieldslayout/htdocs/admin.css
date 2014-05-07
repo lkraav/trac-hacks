@@ -15,11 +15,15 @@
  background: transparent none;
  margin: 0.5em 1em 0.5em 0;
 }
+.ticketfieldslayout-admin fieldset label {
+ font-weight: normal;
+ font-size: 90.9%;
+}
 .ticketfieldslayout-admin fieldset.ticketfieldslayout-tmpl-group { display: none }
 .ticketfieldslayout-admin ul {
  margin: 0;
  padding: 0;
- width: 20em;
+ width: 18em;
  min-height: 23em;
  list-style-type: none;
 }
@@ -28,6 +32,7 @@
  background: #f7f7f0 none;
  margin: 0.1em 0;
  padding: 0.1em 0.2em;
+ line-height: 1.3em;
  cursor: move;
  white-space: nowrap;
  overflow: hidden;
@@ -61,4 +66,7 @@
  line-height: 0.666;
  cursor: pointer;
 }
-.ticketfieldslayout-remove:hover { color: #000 }
+.ticketfieldslayout-admin fieldset label:hover,
+.ticketfieldslayout-remove:hover {
+ color: #000;
+}

@@ -51,7 +51,7 @@ jQuery(document).ready(function($) {
 
         var items = root.find('ul');
         var item = items.find('.ticketfieldslayout-tmpl-item').clone();
-        var label = item.find('span').text();
+        var label = item.find('span.ticketfieldslayout-name').text();
         item.find('[name=field]').val('@' + id);
         item.find('input').removeAttr('disabled');
         item.removeClass('ticketfieldslayout-tmpl-item');
