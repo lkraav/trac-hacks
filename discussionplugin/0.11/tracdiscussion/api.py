@@ -1594,6 +1594,61 @@ class DiscussionApi(DiscussionDb):
 
         return paginator
 
+    def get_group(self, context, id):
+        # Get forum group.
+        return self._get_item(context, 'forum_group',
+                              ('id', 'name', 'description'), 'id=%s', (id,)
+               ) or dict(id=0, name='None', description='No Group')
+
+    def get_topic(self, context, id):
+        # Get topic by ID.
+        topic = self._get_item(context, 'topic', self.topic_cols, 'id=%s',
+                               (id,))
+        return self._prepare_topic(context, topic)
+
+    def get_topic_by_time(self, context, time):
+        # Get topic by time of creation.
+        topic = self._get_item(context, 'topic', self.topic_cols, 'time=%s',
+                               (time,))
+        return self._prepare_topic(context, topic)
+
+    def get_topic_by_subject(self, context, subject):
+        # Get topic by subject.
+        topic = self._get_item(context, 'topic', self.topic_cols,
+                               'subject=%s', (subject,))
+        return self._prepare_topic(context, topic)
+
+    def _prepare_topic(self, context, topic):
+        """Unpack list of topic subscribers and get topic status."""
+        if topic:
+            topic['subscribers'] = as_list(topic['subscribers'])
+            topic['unregistered_subscribers'] = [
+                subscriber for subscriber in topic['subscribers']
+                if subscriber not in context.users
+            ]
+            topic['status'] = self._topic_status_to_list(topic['status'])
+        return topic
+
+    def _topic_status_to_list(self, status):
+        if status == 0:
+            return set(['unsolved'])
+        status_list = set([])
+        if status & 0x01:
+            status_list.add('solved')
+        else:
+            status_list.add('unsolved')
+        if status & 0x02:
+            status_list.add('locked')
+        return status_list
+
+    def _topic_status_from_list(self, status_list):
+        status = 0
+        if 'solved' in status_list:
+            status = status | 0x01
+        if 'locked' in status_list:
+            status = status | 0x02
+        return status
+
     def get_forum(self, context, forum_id):
         context.resource = Resource(self.realm, 'forum/%s' % forum_id)
         return self._get_forum(context)
@@ -1619,6 +1674,16 @@ class DiscussionApi(DiscussionDb):
                 forum['tags'] = tag_system.get_tags(context.req,
                                                     context.resource)
         return forum
+
+    def get_message(self, context, id):
+        # Get message by ID.
+        return self._get_item(context, 'message', self.message_cols, 'id=%s',
+                              (id,))
+
+    def get_message_by_time(self, context, time):
+        # Get message by time of creation.
+        return self._get_item(context, 'message', self.message_cols,
+                              'time=%s', (time,))
 
 
 def as_list(value):

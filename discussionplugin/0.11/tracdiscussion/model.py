@@ -26,115 +26,28 @@ class DiscussionDb(Component):
 
     abstract = True
 
+    topic_cols = ('id', 'forum', 'time', 'author', 'subscribers', 'subject',
+                  'body', 'status', 'priority')
     forum_cols = ('id', 'forum_group', 'name', 'subject', 'time', 'author',
                   'moderators', 'subscribers', 'description')
+    message_cols = ('id', 'forum', 'topic', 'replyto', 'time', 'author',
+                    'body')
 
-    # Get one item functions.
+    def _get_item(self, context, table, columns, where='', values=()):
+        """Universal single item getter method."""
 
-    def _get_item(self, context, table, columns, where = '', values = ()):
-        sql_values = {'columns' : ', '.join(columns),
-          'table' : table,
-          'where' : (where and ('WHERE ' + where) or '')}
-        sql = ("SELECT %(columns)s "
-               "FROM %(table)s "
-               "%(where)s" % (sql_values))
+        sql_values = {'columns': ', '.join(columns),
+                      'table': table,
+                      'where': (where and (' '.join(['WHERE', where])) or '')}
+        sql = ("SELECT %(columns)s"
+               "  FROM %(table)s"
+               " %(where)s" % (sql_values))
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         for row in cursor:
-            row = dict(zip(columns, row))
-            return row
+            return dict(zip(columns, row))
         return None
-
-    def get_message(self, context, id):
-        # Get message by ID.
-        return self._get_item(context, 'message', ('id', 'forum', 'topic',
-          'replyto', 'time', 'author', 'body'), 'id = %s', (id,))
-
-    def get_message_by_time(self, context, time):
-        # Get message by time of creation.
-        return self._get_item(context, 'message', ('id', 'forum', 'topic',
-          'replyto', 'time', 'author', 'body'), 'time = %s', (time,))
-
-    def get_topic(self, context, id):
-        # Get topic by ID.
-        topic = self._get_item(context, 'topic', ('id', 'forum', 'time',
-          'author', 'subscribers', 'subject', 'body', 'status', 'priority'),
-          'id = %s', (id,))
-
-        # Unpack list of subscribers.
-        if topic:
-            topic['subscribers'] = [subscribers.strip() for subscribers in
-              topic['subscribers'].split()]
-            topic['unregistered_subscribers'] = []
-            for subscriber in topic['subscribers']:
-                if subscriber not in context.users:
-                    topic['unregistered_subscribers'].append(subscriber)
-            topic['status'] = self._topic_status_to_list(topic['status'])
-
-        return topic
-
-    def get_topic_by_time(self, context, time):
-        # Get topic by time of creation.
-        topic = self._get_item(context, 'topic', ('id', 'forum', 'time',
-          'author', 'subscribers', 'subject', 'body', 'status', 'priority'),
-          'time = %s', (time,))
-
-        # Unpack list of subscribers.
-        if topic:
-            topic['subscribers'] = [subscribers.strip() for subscribers in
-              topic['subscribers'].split()]
-            topic['unregistered_subscribers'] = []
-            for subscriber in topic['subscribers']:
-                if subscriber not in context.users:
-                    topic['unregistered_subscribers'].append(subscriber)
-            topic['status'] = self._topic_status_to_list(topic['status'])
-
-        return topic
-
-    def get_topic_by_subject(self, context, subject):
-        # Get topic by subject.
-        topic = self._get_item(context, 'topic', ('id', 'forum', 'time',
-          'author', 'subscribers', 'subject', 'body', 'status', 'priority'),
-          'subject = %s', (subject,))
-
-        # Unpack list of subscribers.
-        if topic:
-            topic['subscribers'] = [subscribers.strip() for subscribers in
-              topic['subscribers'].split()]
-            topic['unregistered_subscribers'] = []
-            for subscriber in topic['subscribers']:
-                if subscriber not in context.users:
-                    topic['unregistered_subscribers'].append(subscriber)
-            topic['status'] = self._topic_status_to_list(topic['status'])
-
-        return topic
-
-    def _topic_status_to_list(self, status):
-        if status == 0:
-            return set(['unsolved'])
-        status_list = set([])
-        if status & 0x01:
-            status_list.add('solved')
-        else:
-            status_list.add('unsolved')
-        if status & 0x02:
-            status_list.add('locked')
-        return status_list
-
-    def _topic_status_from_list(self, status_list):
-        status = 0
-        if 'solved' in status_list:
-            status = status | 0x01
-        if 'locked' in status_list:
-            status = status | 0x02
-        return status
-
-    def get_group(self, context, id):
-        # Get forum group or none group.
-        return self._get_item(context, 'forum_group', ('id', 'name',
-          'description'), 'id = %s', (id,)) or {'id' : 0, 'name': 'None',
-          'description': 'No Group'}
 
     # Get attribute functions.
 
