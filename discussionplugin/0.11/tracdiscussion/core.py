@@ -93,13 +93,6 @@ class DiscussionCore(Component):
         # Create request context.
         context = Context.from_request(req)
         context.realm = 'discussion-core'
-        realm = Resource('discussion')
-        if req.args.has_key('forum'):
-            context.resource = realm(id='forum/%s' % req.args['forum'])
-        if req.args.has_key('topic'):
-            context.resource = realm(id='topic/%s' % req.args['topic'])
-        if req.args.has_key('message'):
-            context.resource = realm(id='message/%s' % req.args['message'])
 
         # Redirect to content converter if requested.
         if req.args.has_key('format'):

@@ -6,30 +6,27 @@
 # you should have received as part of this distribution.
 #
 
-# Standard imports.
 import re
 
-# Trac imports.
-from trac.core import *
-
-# Trac interfaces.
+from trac.core import Component, implements
+from trac.mimeview import Context
 from trac.web.main import IRequestHandler
 
-# Local imports.
-from tracdiscussion.api import *
+from tracdiscussion.api import DiscussionApi
+
 
 class DiscussionAjax(Component):
-    """
-        The AJAX module implements AJAX requests handler.
-    """
+    """[main] Implements the AJAX requests handler."""
+
     implements(IRequestHandler)
 
-    # IRequestHandler methods.
+    # IRequestHandler methods
 
     def match_request(self, req):
         # Try to match request pattern to request URL.
-        match = re.match(r'''/discussion/ajax(?:/(forum|topic|message)/(\d+)(?:/?$))''',
-          req.path_info)
+        match = re.match(
+            r'''/discussion/ajax(?:/(forum|topic|message)/(\d+)(?:/?$))''',
+            req.path_info)
         if match:
             resource_type = match.group(1)
             resource_id = match.group(2)
@@ -45,19 +42,9 @@ class DiscussionAjax(Component):
         # Create request context.
         context = Context.from_request(req)
         context.realm = 'discussion-ajax'
-        if req.args.has_key('forum'):
-            context.resource = Resource('discussion', 'forum/%s' % (
-              req.args['forum'],))
-        if req.args.has_key('topic'):
-            context.resource = Resource('discussion', 'topic/%s' % (
-              req.args['topic'],))
-        if req.args.has_key('message'):
-            context.resource = Resource('discussion', 'message/%s' % (
-              req.args['message'],))
 
         # Process request and return content.
-        api = self.env[DiscussionApi]
+        api = DiscussionApi(self.env)
         template, data = api.process_discussion(context)
 
-        # Return template and its data.
         return template, data, None

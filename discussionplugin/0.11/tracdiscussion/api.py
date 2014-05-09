@@ -8,6 +8,7 @@
 # you should have received as part of this distribution.
 #
 
+import re
 from copy import deepcopy
 from datetime import datetime
 
@@ -196,23 +197,24 @@ class DiscussionApi(Component):
 
     def get_resource_url(self, resource, href, **kwargs):
         if resource.id:
+            type, id = self._parse_resource_id(resource)
             # Topic view has one anchor per message.
-            if resource.id.startswith('message/'):
+            if 'message' == type:
                 return '%s#message_%s' % \
                        (self.get_resource_url(resource.parent, href),
                         resource.id.split('/')[-1])
-            return href(resource.realm, resource.id, **kwargs)
+            return href(resource.realm, type, id, **kwargs)
         else:
             return href(resource.realm, **kwargs)
 
-    def get_resource_description(self, resource, format = None, **kwargs):
+    def get_resource_description(self, resource, format=None, **kwargs):
         # Create context.
         context = Context('discussion-core')
 
         # Get database access.
         context.db = self.env.get_db_cnx()
 
-        type, id = resource.id.split('/')
+        type, id = self._parse_resource_id(resource)
 
         # Generate description for forums.
         if type == 'forum':
@@ -252,7 +254,7 @@ class DiscussionApi(Component):
         # Get database access.
         context.db = self.env.get_db_cnx()
 
-        type, id = resource.id.split('/')
+        type, id = self._parse_resource_id(resource)
 
         # Check if forum exists.
         if type == 'forum':
@@ -341,6 +343,30 @@ class DiscussionApi(Component):
 
     # Internal methods.
 
+    def _parse_resource_id(self, resource):
+        """Return discussion resource type and resource ID for a discussion
+        identifier, typically a request path.
+        """
+        match = re.match(
+            r'''(?:/?$|forum/(\d+)'''
+            r'''(?:/?$|/topic/(\d+)'''
+            r'''(?:/?$|/message/(\d+)(?:/?$))))''',
+            resource.id)
+        if match:
+            forum, topic, message = match.groups()
+            if message:
+                type = 'message'
+                id = message
+            elif topic:
+                type = 'topic'
+                id = topic
+            elif forum:
+                type = 'forum'
+                id = forum
+        else:
+            type, id = resource.id.split('/')
+        return type, id
+
     def _prepare_context(self, context):
         # Prepare template data.
         context.data = {}
@@ -356,70 +382,65 @@ class DiscussionApi(Component):
         context.forum = None
         context.topic = None
         context.message = None
+
+        realm = Resource('discussion')
         if 'message' in context.req.args:
             message_id = int(context.req.args.get('message') or 0)
             context.message = self.get_message(context, message_id)
-            if context.message:
-                context.topic = self.get_topic(context, context.message['topic'])
-                context.forum = self.get_forum(context, context.topic['forum'])
-                context.group = self.get_group(context, context.forum['forum_group'])
-
-                # Create request resource.
-                context.resource = Resource('discussion', 'message/%s' % (
-                  context.message['id'],))
-            else:
-                raise TracError('Message with ID %s does not exist.' % (
-                  message_id,))
+            if not context.message:
+                raise TracError('Message with ID %s does not exist.'
+                                % message_id)
+            # Create request resource.
+            context.topic = self.get_topic(context, context.message['topic'])
+            context.forum = self.get_forum(context, context.topic['forum'])
+            context.group = self.get_group(context,
+                                           context.forum['forum_group'])
+            context.resource = realm(id='forum/%s/topic/%s/message/%s'
+                                        % (context.forum['id'],
+                                           context.topic['id'],
+                                           context.message['id']))
 
         # Populate active topic.
         elif context.req.args.has_key('topic'):
             topic_id = int(context.req.args.get('topic') or 0)
             context.topic = self.get_topic(context, topic_id)
-            if context.topic:
-                context.forum = self.get_forum(context, context.topic['forum'])
-                context.group = self.get_group(context, context.forum[
-                  'forum_group'])
+            if not context.topic:
+                raise TracError('Topic with ID %s does not exist.' % topic_id)
 
-                # Create request resource.
-                context.resource = Resource('discussion', 'topic/%s' % (
-                  context.topic['id'],))
-            else:
-                raise TracError('Topic with ID %s does not exist.' % (
-                  topic_id,))
+            # Create request resource.
+            context.forum = self.get_forum(context, context.topic['forum'])
+            context.group = self.get_group(context,
+                                           context.forum['forum_group'])
+            context.resource = realm(id='forum/%s/topic/%s'
+                                        % (context.forum['id'],
+                                           context.topic['id']))
 
         # Populate active forum.
         elif context.req.args.has_key('forum'):
             forum_id = int(context.req.args.get('forum') or 0)
             context.forum = self.get_forum(context, forum_id)
-            if context.forum:
-                context.group = self.get_group(context, context.forum[
-                  'forum_group'])
+            if not context.forum:
+                raise TracError('Forum with ID %s does not exist.' % forum_id)
 
-                # Create request resource.
-                context.resource = Resource('discussion', 'forum/%s' % (
-                  context.forum['id'],))
-            else:
-                raise TracError('Forum with ID %s does not exist.' % (
-                  forum_id,))
+            # Create request resource.
+            context.group = self.get_group(context,
+                                           context.forum['forum_group'])
+            context.resource = realm(id='forum/%s' % context.forum['id'])
 
         # Populate active group.
         elif context.req.args.has_key('group'):
             group_id = int(context.req.args.get('group') or 0)
             context.group = self.get_group(context, group_id)
+            if not context.group:
+                raise TracError('Group with ID %s does not exist.' % group_id)
 
             # Create request resource.
-            context.resource = Resource('discussion', 'group/%s' % (
-              context.group['id'],))
-
-            if not context.group:
-                raise TracError('Group with ID %s does not exist.' % (
-                  group_id,))
+            context.resource = realm(id='group/%s' % context.group['id'])
 
         # Determine moderator rights.
-        context.moderator = context.forum and (context.req.authname in
-        context.forum['moderators']) and context.req.perm.has_permission(
-          'DISCUSSION_MODERATE') or context.req.perm.has_permission(
-          'DISCUSSION_ADMIN')
+        context.moderator = context.forum and \
+            (context.req.authname in context.forum['moderators']) and \
+            context.req.perm.has_permission('DISCUSSION_MODERATE')
 
         # Determine if user has e-mail set.
         context.authemail = context.req.session.get('email')
@@ -747,7 +768,8 @@ class DiscussionApi(Component):
                 context.data['forums'] = self.get_forums(context, order, desc)
 
             elif action == 'forum-rss':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
+                                                   context.resource)
 
                 # Get topics and messges.
                 messages =  self.get_flat_messages_by_forum(context,
@@ -912,7 +934,8 @@ class DiscussionApi(Component):
                 context.req.session['topic-list-display'] = display
 
             elif action == 'forum-subscriptions-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE')
+                context.req.perm.assert_permission('DISCUSSION_MODERATE',
+                                                   context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
@@ -938,8 +961,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'forum-subscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
-
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
+                                                   context.resource)
                 if context.authemail and not (context.req.authname in
                   context.forum['subscribers']):
 
@@ -959,8 +982,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'forum-unsubscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
-
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
+                                                   context.resource)
                 if context.authemail and (context.req.authname in
                   context.forum['subscribers']):
 
@@ -980,7 +1003,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'topic-list':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
+                                                   context.resource)
 
                 # Update this forum visit time.
                 context.visited_forums[context.forum['id']] = to_timestamp(
@@ -1015,7 +1039,8 @@ class DiscussionApi(Component):
                 context.data['paginator'] = paginator
 
             elif action == 'topic-rss':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
+                                                   context.resource)
 
                 # Display list of messages for topic.
                 context.data['messages'] = self.get_flat_messages(context,
@@ -1023,10 +1048,12 @@ class DiscussionApi(Component):
                   self.messages_per_page);
 
             elif action == 'topic-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
+                                                   context.resource)
 
             elif action == 'topic-quote':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
+                                                   context.resource)
 
                 # Prepare old content.
                 lines = context.topic['body'].splitlines()
@@ -1035,7 +1062,8 @@ class DiscussionApi(Component):
                 context.req.args['body'] = '\n'.join(lines)
 
             elif action == 'topic-post-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
+                                                   context.resource)
 
                 # Get form values.
                 topic = {'forum' : context.forum['id'],
@@ -1091,7 +1119,8 @@ class DiscussionApi(Component):
                     context.redirect_url = (context.req.path_info, '#topic')
 
             elif action == 'topic-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
+                                                   context.resource)
                 if not context.moderator and (context.topic['author'] !=
                   context.req.authname):
                     raise PermissionError('Topic edit')
@@ -1101,7 +1130,8 @@ class DiscussionApi(Component):
                 context.req.args['body'] = context.topic['body']
 
             elif action == 'topic-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                   context.resource)
 
                 # Check if user can edit topic.
                 if not context.moderator and (context.topic['author'] !=
@@ -1129,7 +1159,8 @@ class DiscussionApi(Component):
 
             elif action == 'topic-edit-attribute':
                 # Check general topic editing permission.
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                   context.resource)
                 if not context.moderator and (context.topic['author'] !=
                   context.req.authname):
                     raise PermissionError("Topic editing")
@@ -1154,7 +1185,8 @@ class DiscussionApi(Component):
                 # Attributes that can be changed by moderator.
                 elif name in ('forum', 'author', 'subscribers', 'priority',
                   'status.locked', 'status'):
-                    context.req.perm.assert_permission('DISCUSSION_MODERATE')
+                    context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                                                       context.resource)
                     if not context.moderator:
                         raise PermissionError("Topic editing")
 
@@ -1173,7 +1205,8 @@ class DiscussionApi(Component):
                 elif name in ('subject', 'body', 'status.solved'):
 
                     self.log.debug((context.topic['author'], context.req.authname))
-                    context.req.perm.assert_permission('DISCUSSION_APPEND')
+                    context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                       context.resource)
 
                     # Check if user can edit topic.
                     if not context.moderator and (context.topic['author'] !=
@@ -1198,7 +1231,8 @@ class DiscussionApi(Component):
                 self.edit_topic(context, context.topic['id'], topic)
 
             elif action == 'topic-move':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE')
+                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                                                   context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
@@ -1206,7 +1240,8 @@ class DiscussionApi(Component):
                 context.data['forums'] = self.get_forums(context)
 
             elif action == 'topic-post-move':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE')
+                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                                                   context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
@@ -1220,7 +1255,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '')
 
             elif action == 'topic-delete':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE')
+                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                                                   context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
@@ -1249,7 +1285,8 @@ class DiscussionApi(Component):
                 context.req.session['message-list-display'] = display
 
             elif action == 'topic-subscriptions-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE')
+                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                                                   context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
@@ -1275,7 +1312,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'topic-subscriptions-post-add':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                                                   context.resource)
 
                 # Prepare edited attributes of the forum..
                 topic = {'subscribers' : context.topic['subscribers']}
@@ -1296,7 +1334,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'topic-subscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                                                   context.resource)
 
                 if context.authemail and not (context.req.authname in
                   context.topic['subscribers']):
@@ -1317,7 +1356,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'topic-unsubscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                                                   context.resource)
 
                 if context.authemail and (context.req.authname in
                   context.topic['subscribers']):
@@ -1338,7 +1378,8 @@ class DiscussionApi(Component):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'message-list':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                                                   context.resource)
                 self._prepare_message_list(context, context.topic)
 
             elif action == 'wiki-message-list':
@@ -1346,10 +1387,12 @@ class DiscussionApi(Component):
                     self._prepare_message_list(context, context.topic)
 
             elif action == 'message-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                   context.resource)
 
             elif action == 'message-quote':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                   context.resource)
 
                 # Prepare old content.
                 lines = context.message['body'].splitlines()
@@ -1358,7 +1401,8 @@ class DiscussionApi(Component):
                 context.req.args['body'] = '\n'.join(lines)
 
             elif action == 'message-post-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                   context.resource)
 
                 # Check if user can post to locked topic.
                 if not context.moderator and ('locked' in
@@ -1402,7 +1446,8 @@ class DiscussionApi(Component):
                   context.message['id'],))
 
             elif action == 'message-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                   context.resource)
                 if not context.moderator and (context.message['author'] !=
                   context.req.authname):
                     raise PermissionError('Message edit')
@@ -1411,7 +1456,8 @@ class DiscussionApi(Component):
                 context.req.args['body'] = context.message['body']
 
             elif action == 'message-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND')
+                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                                                   context.resource)
 
                 # Check if user can edit message.
                 if not context.moderator and (context.message['author'] !=
@@ -1438,7 +1484,8 @@ class DiscussionApi(Component):
                   context.message['id'],))
 
             elif action == 'message-delete':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE')
+                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                                                   context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
@@ -1497,8 +1544,15 @@ class DiscussionApi(Component):
         context.data['paginator'] = paginator
 
         # Display list of attachments.
+        real_resource = context.resource
+        # DEVEL: Work around for AttachmentModule.process_request() that
+        #        calculates the parent id from the path.
+        #        Therefore we need to fix the attach_href property.
+        context.resource = Resource('discussion', '/'.join(
+                                    context.resource.id.split('/')[-2:]))
         context.data['attachments'] = AttachmentModule(self.env) \
-          .attachment_data(context)
+                                      .attachment_data(context)
+        context.resource = real_resource
 
     def _get_paginator(self, context, page, items_limit, items_count,
       anchor = ''):
@@ -2255,6 +2309,7 @@ class DiscussionApi(Component):
     def edit_message(self, context, id, message):
         # Edit message,
         self._edit_item(context, 'message', id, message)
+
 
 # Formats wiki text to signle line HTML but removes all links.
 def format_to_oneliner_no_links(env, context, content):
