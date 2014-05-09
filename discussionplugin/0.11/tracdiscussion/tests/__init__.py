@@ -27,8 +27,8 @@ def test_suite():
     import tracdiscussion.tests.init
     suite.addTest(tracdiscussion.tests.init.test_suite())
 
-#    import tracdiscussion.tests.model
-#    suite.addTest(tracdiscussion.tests.model.test_suite())
+    import tracdiscussion.tests.model
+    suite.addTest(tracdiscussion.tests.model.test_suite())
 
     import tracdiscussion.tests.notification
     suite.addTest(tracdiscussion.tests.notification.test_suite())
