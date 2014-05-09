@@ -26,6 +26,9 @@ class DiscussionDb(Component):
 
     abstract = True
 
+    forum_cols = ('id', 'forum_group', 'name', 'subject', 'time', 'author',
+                  'moderators', 'subscribers', 'description')
+
     # Get one item functions.
 
     def _get_item(self, context, table, columns, where = '', values = ()):
@@ -126,47 +129,6 @@ class DiscussionDb(Component):
         if 'locked' in status_list:
             status = status | 0x02
         return status
-
-    def get_forum(self, context, id):
-        # Get forum by ID.
-        forum = self._get_item(context, 'forum', ('id', 'forum_group', 'name',
-          'subject', 'time', 'author', 'moderators', 'subscribers',
-          'description'), 'id = %s', (id,))
-
-        # Unpack list of moderators and subscribers and get forum tags.
-        if forum:
-            forum['moderators'] = [moderator.strip() for moderator in
-                                   forum['moderators'].split()]
-            forum['subscribers'] = [subscribers.strip() for subscribers in
-                                    forum['subscribers'].split()]
-            forum['unregistered_subscribers'] = []
-            for subscriber in forum['subscribers']:
-                if subscriber not in context.users:
-                    forum['unregistered_subscribers'].append(subscriber)
-            if context.has_tags:
-                tag_system = TagSystem(self.env)
-                forum['tags'] = tag_system.get_tags(context.req,
-                                                    context.resource)
-
-        return forum
-
-    def get_forum_by_time(self, context, time):
-        # Get forum by time of creation.
-        forum = self._get_item(context, 'forum', ('id', 'forum_group', 'name',
-          'subject', 'time', 'author', 'moderators', 'subscribers',
-          'description'), 'time = %s', (time,))
-
-        # Unpack list of moderators and subscribers and get forum tags.
-        if forum:
-            forum['moderators'] = [moderator.strip() for moderator in
-                                   forum['moderators'].split()]
-            forum['subscribers'] = forum['subscribers'].split()
-            if context.has_tags:
-                tag_system = TagSystem(self.env)
-                forum['tags'] = tag_system.get_tags(context.req,
-                                                    context.resource)
-
-        return forum
 
     def get_group(self, context, id):
         # Get forum group or none group.

@@ -35,6 +35,11 @@ from trac.util.text import to_unicode
 
 from tracdiscussion.model import DiscussionDb
 
+try:
+    from tractags.api import TagSystem
+except ImportError:
+    pass
+
 
 def is_tags_enabled(env):
     return env.is_component_enabled('tractags.api.TagSystem') and \
@@ -173,6 +178,8 @@ class DiscussionApi(DiscussionDb):
     message_change_listeners = ExtensionPoint(IMessageChangeListener)
     topic_change_listeners = ExtensionPoint(ITopicChangeListener)
 
+    realm = 'discussion'
+
     # ILegacyAttachmentPolicyDelegate method
     def check_attachment_permission(self, action, username, resource, perm):
         if resource.parent.realm == 'discussion':
@@ -194,7 +201,7 @@ class DiscussionApi(DiscussionDb):
     # IResourceManager methods
 
     def get_resource_realms(self):
-        yield 'discussion'
+        yield self.realm
 
     def get_resource_url(self, resource, href, **kwargs):
         if resource.id:
@@ -384,7 +391,7 @@ class DiscussionApi(DiscussionDb):
         context.topic = None
         context.message = None
 
-        realm = Resource('discussion')
+        realm = Resource(self.realm)
         if 'message' in context.req.args:
             message_id = int(context.req.args.get('message') or 0)
             context.message = self.get_message(context, message_id)
@@ -419,14 +426,13 @@ class DiscussionApi(DiscussionDb):
         # Populate active forum.
         elif context.req.args.has_key('forum'):
             forum_id = int(context.req.args.get('forum') or 0)
-            context.forum = self.get_forum(context, forum_id)
+            context.resource = realm(id='forum/%s' % forum_id)
+            context.forum = self._get_forum(context)
             if not context.forum:
                 raise TracError('Forum with ID %s does not exist.' % forum_id)
 
-            # Create request resource.
             context.group = self.get_group(context,
                                            context.forum['forum_group'])
-            context.resource = realm(id='forum/%s' % context.forum['id'])
 
         # Populate active group.
         elif context.req.args.has_key('group'):
@@ -1588,6 +1594,38 @@ class DiscussionApi(DiscussionDb):
 
         return paginator
 
+    def get_forum(self, context, forum_id):
+        context.resource = Resource(self.realm, 'forum/%s' % forum_id)
+        return self._get_forum(context)
+
+    def get_forum_by_time(self, context, time):
+        # Get forum by time of creation.
+        forum_id = self._get_item(context, 'forum', ('id',), 'time=%s',
+                                  (time,))
+        return self.get_forum(context, forum_id)
+
+    def _get_forum(self, context):
+        # Get forum by ID.
+        forum = self._get_item(context, 'forum', self.forum_cols, 'id=%s',
+                               (context.resource.id.split('/')[-1],))
+        # Unpack list of moderators and subscribers and get forum tags.
+        if forum:
+            forum['moderators'] = as_list(forum['moderators'])
+            forum['subscribers'] = as_list(forum['subscribers'])
+            forum['unregistered_subscribers'] = set(forum['subscribers']) \
+                                                .difference(context.users)
+            if context.has_tags:
+                tag_system = TagSystem(self.env)
+                forum['tags'] = tag_system.get_tags(context.req,
+                                                    context.resource)
+        return forum
+
+
+def as_list(value):
+    if isinstance(value, basestring):
+        return [s.strip() for s in value.split()]
+    raise NotImplementedError('Conversion of %r to list is not implemented'
+                              % value)
 
 # Formats wiki text to single line HTML but removes all links.
 def format_to_oneliner_no_links(env, context, content):
