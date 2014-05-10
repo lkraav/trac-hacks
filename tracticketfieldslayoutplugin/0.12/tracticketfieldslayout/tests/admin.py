@@ -67,12 +67,22 @@ class CustomFieldsModificationTestCase(unittest.TestCase):
 
     def test_add_to_fields(self):
         def fn():
-            self.config.set('ticket-custom', 'blah', 'text')
+            self.config.set('ticket-custom', 'blah1', 'text')
+            self.config.set('ticket-custom', 'blah1.order', '2')
+            self.config.set('ticket-custom', 'blah2', 'textarea')
+            self.config.set('ticket-custom', 'blah2.order', '1')
         self.config.set('ticketfieldslayout', 'fields',
                         'summary,reporter,owner,description')
         self._pseudo_process_request(fn)
-        self.assertEqual('summary,reporter,owner,description,blah',
+        self.assertEqual('summary,reporter,owner,description,blah2,blah1',
                          self.config.get('ticketfieldslayout', 'fields'))
+
+    def test_add_to_fields_if_not_configured(self):
+        def fn():
+            self.config.set('ticket-custom', 'blah', 'text')
+        self.config.set('ticketfieldslayout', 'fields', '')
+        self._pseudo_process_request(fn)
+        self.assertEqual('', self.config.get('ticketfieldslayout', 'fields'))
 
     def test_remove_from_fields(self):
         def fn():

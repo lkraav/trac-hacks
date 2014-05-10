@@ -63,7 +63,8 @@ class TicketFieldsLayoutAdminModule(Component):
         if req.method == 'POST' and \
                 isinstance(handler, AdminModule) and \
                 req.args.get('cat_id') == 'ticket' and \
-                req.args.get('panel_id') == 'customfields':
+                req.args.get('panel_id') == 'customfields' and \
+                self.config.getlist(_SECTION, 'fields'):
             req._ticket_custom_fields = self._get_custom_fields()
             req.add_redirect_listener(self._redirected)
         return handler
