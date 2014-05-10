@@ -43,7 +43,13 @@ class DiscussionApiTestCase(_BaseTestCase):
 
     def setUp(self):
         _BaseTestCase.setUp(self)
-        self.req = Mock(authname='')
+        self.req = Mock(authname='editor', method='GET',
+                   args=dict(), abs_href=self.env.abs_href,
+                   chrome=dict(notices=[], warnings=[]),
+                   href=self.env.abs_href, locale='',
+                   redirect=lambda x: None, session=dict(), tz=''
+        )
+        self.req.perm = PermissionCache(self.env, 'editor')
 
         self.actions = ('DISCUSSION_ADMIN', 'DISCUSSION_MODERATE',
                         'DISCUSSION_ATTACH', 'DISCUSSION_APPEND',
@@ -86,6 +92,13 @@ class DiscussionApiTestCase(_BaseTestCase):
         self.db.close()
         # Really close db connections.
         _BaseTestCase.tearDown(self)
+
+    # Helpers
+
+    def _prepare_context(self, req):
+        context = Context.from_request(req)
+        context.db = self.db
+        return context
 
     # Tests
 
@@ -153,6 +166,18 @@ class DiscussionApiTestCase(_BaseTestCase):
         self.assertFalse(self.api.resource_exists(self.forum(id='topic/3')))
         self.assertTrue(self.api.resource_exists(self.message))
         self.assertFalse(self.api.resource_exists(self.forum(id='message/5')))
+
+    def test_get_topic_subject(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(self.api.get_topic_subject(context, 2), 'top2')
+
+    def test_get_topics_count(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(self.api.get_topics_count(context, 1), 2)
+
+    def test_get_messages_count(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(self.api.get_messages_count(context, 2), 3)
 
 
 class FormatToOnlinerNoLinksTestCase(_BaseTestCase):

@@ -36,73 +36,64 @@ class DiscussionDb(Component):
     def _get_item(self, context, table, columns, where='', values=()):
         """Universal single item getter method."""
 
-        sql_values = {'columns': ', '.join(columns),
-                      'table': table,
-                      'where': (where and (' '.join(['WHERE', where])) or '')}
+        sql_values = {
+            'columns': ', '.join(columns),
+            'table': table,
+            'where': where and ' '.join(['WHERE', where]) or ''
+        }
         sql = ("SELECT %(columns)s"
                "  FROM %(table)s"
-               " %(where)s" % (sql_values))
-
+               " %(where)s" % (sql_values)
+        )
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         for row in cursor:
             return dict(zip(columns, row))
         return None
 
-    # Get attribute functions.
+    def _get_items_count(self, context, table, where='', values = ()):
+        """Versatile item counter method."""
 
-    def get_topic_subject(self, context, id):
-        # Get subject of the topic.
-        topic = self._get_item(context, 'topic', ('subject',), 'id = %s', (id,))
-        return topic['subject']
-
-    # Get items count functions.
-
-    def _get_items_count(self, context, table, where = '', values = ()):
-        sql_values = {'table' : table,
-          'where' : (where and ('WHERE ' + where) or '')}
-        sql = ("SELECT COUNT(id) "
-               "FROM %(table)s "
-               "%(where)s" % (sql_values))
-
+        sql_values = {
+            'table': table,
+            'where': where and ' '.join(['WHERE', where]) or ''
+        }
+        sql = ("SELECT COUNT(id)"
+               "  FROM %(table)s"
+               " %(where)s" % (sql_values)
+        )
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         for row in cursor:
             return row[0]
         return 0
 
-    def get_topics_count(self, context, forum_id):
-        return self._get_items_count(context, 'topic', 'forum = %s', (
-          forum_id,))
+    # List getter methods.
 
-    def get_messages_count(self, context, topic_id):
-        return self._get_items_count(context, 'message', 'topic = %s', (
-          topic_id,))
+    def _get_items(self, context, table, columns, where='', values=(),
+                   order_by='', desc=False, limit=0, offset=0):
+        """Universal dataset getter method."""
 
-    # Get list functions.
-
-    def _get_items(self, context, table, columns, where = '', values = (),
-      order_by = '', desc = False, limit = 0, offset = 0):
-        sql_values = {'columns' : ', '.join(columns),
-          'table' : table,
-          'where' : (where and ('WHERE ' + where) or ''),
-          'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')[bool(desc)]) or ''),
-          'limit' : (limit and ('LIMIT ' + to_unicode(limit)) or ''),
-          'offset' : (offset and (' OFFSET ' + to_unicode(offset)) or '')}
-        sql = ("SELECT %(columns)s "
-               "FROM %(table)s "
-               "%(where)s "
-               "%(order_by)s "
-               "%(limit)s "
-               "%(offset)s" % (sql_values))
-
+        sql_values = {
+            'columns': ', '.join(columns),
+            'table': table,
+            'where': where and ' '.join(['WHERE', where]) or '',
+            'order_by': order_by and ' '.join(['ORDER BY', order_by,
+                                               ('ASC', 'DESC')[bool(desc)]]) \
+                        or '',
+            'limit': limit and ' '.join(['LIMIT', str(limit)]) or '',
+            'offset': offset and ' '.join(['OFFSET', str(offset)]) or ''
+        }
+        sql = ("SELECT %(columns)s"
+               "  FROM %(table)s"
+               " %(where)s"
+               " %(order_by)s"
+               " %(limit)s"
+               " %(offset)s" % (sql_values)
+        )
         cursor = context.db.cursor()
         cursor.execute(sql, values)
-        items = []
-        for row in cursor:
-            row = dict(zip(columns, row))
-            items.append(row)
-        return items
+        return [dict(zip(columns, row)) for row in cursor]
 
     def get_groups(self, context, order_by = 'id', desc = False):
         # Get count of forums without group.

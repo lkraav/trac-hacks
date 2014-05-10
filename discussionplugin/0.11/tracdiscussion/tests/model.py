@@ -75,13 +75,32 @@ class DiscussionDbTestCase(unittest.TestCase):
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
+    # Helpers
+
+    def _prepare_context(self, req):
+        context = Context.from_request(req)
+        context.db = self.db
+        return context        
+
     # Tests
 
     def test_get_item(self):
-        context = Context.from_request(self.req)
-        context.db = self.db
-        self.assertEqual(self.ddb._get_item(context, 'topic', ['id']),
+        context = self._prepare_context(self.req)
+        self.assertEqual(self.ddb._get_item(context, 'topic', ('id',)),
                          dict(id=1))
+
+    def test_get_items(self):
+        context = self._prepare_context(self.req)
+        cols = ('forum', 'subject')
+        # Empty result list case.
+        self.assertEqual(self.ddb._get_items(context, 'topic', cols,
+                                             'forum=%s', (3,)), [])
+        # Ordered result list by subject (reversed).
+        self.assertEqual(self.ddb._get_items(context, 'topic', cols,
+                                             order_by=cols[1], desc=True),
+                         [dict(forum=1, subject='top2'),
+                          dict(forum=1, subject='top1')])
+
 
 def test_suite():
     suite = unittest.TestSuite()

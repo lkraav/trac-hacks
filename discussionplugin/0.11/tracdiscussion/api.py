@@ -1685,6 +1685,22 @@ class DiscussionApi(DiscussionDb):
         return self._get_item(context, 'message', self.message_cols,
                               'time=%s', (time,))
 
+    # Attribute getter methods.
+
+    def get_topic_subject(self, context, id):
+        # Get subject of the topic.
+        return self._get_item(context, 'topic', ('subject',), 'id=%s',
+                              (id,))['subject']
+    # Counter methods.
+
+    def get_topics_count(self, context, forum_id):
+        return self._get_items_count(context, 'topic', 'forum=%s',
+                                     (forum_id,))
+
+    def get_messages_count(self, context, topic_id):
+        return self._get_items_count(context, 'message', 'topic=%s',
+                                     (topic_id,))
+
 
 def as_list(value):
     if isinstance(value, basestring):
