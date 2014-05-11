@@ -282,6 +282,9 @@ class DiscussionApi(DiscussionDb):
     # Main request processing function.
 
     def process_discussion(self, context):
+        if not 'DISCUSSION_VIEW' in context.req.perm:
+            raise PermissionError()
+
         # Get database access.
         context.db = self.env.get_db_cnx()
 
