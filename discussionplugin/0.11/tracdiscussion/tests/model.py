@@ -45,10 +45,18 @@ class DiscussionDbTestCase(unittest.TestCase):
         # Populate tables with initial test data.
         cursor = self.db.cursor()
         cursor.execute("""
+            INSERT INTO forum_group
+                   (name, description)
+            VALUES (%s,%s)
+        """, ('forum_group1', 'group-desc'))
+        cursor.executemany("""
             INSERT INTO forum
-                   (name, subject, description)
-            VALUES (%s,%s,%s)
-        """, ('forum1', 'forum-subject', 'forum-desc1'))
+                   (forum_group, name, subject, description)
+            VALUES (%s,%s,%s,%s)
+        """, [(0, 'forum1', 'forum-subject1', 'forum-desc1'),
+              (1, 'forum2', 'forum-subject2', 'forum-desc2'),
+              (1, 'forum3', 'forum-subject3', 'forum-desc3'),
+             ])
         cursor.executemany("""
             INSERT INTO topic
                    (forum, subject, body)
@@ -100,6 +108,15 @@ class DiscussionDbTestCase(unittest.TestCase):
                                              order_by=cols[1], desc=True),
                          [dict(forum=1, subject='top2'),
                           dict(forum=1, subject='top1')])
+
+    def test_get_groups(self):
+        context = self._prepare_context(self.req)
+        # Order is known because of list concatenation in this method.
+        self.assertEqual(self.ddb.get_groups(context),
+                         [dict(id=0, forums=1, name='None',
+                               description='No Group'),
+                          dict(id=1, forums=2, name='forum_group1',
+                               description='group-desc')])
 
 
 def test_suite():

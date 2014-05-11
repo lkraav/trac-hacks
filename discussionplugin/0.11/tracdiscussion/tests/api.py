@@ -167,6 +167,19 @@ class DiscussionApiTestCase(_BaseTestCase):
         self.assertTrue(self.api.resource_exists(self.message))
         self.assertFalse(self.api.resource_exists(self.forum(id='message/5')))
 
+    def test_get_forums(self):
+        context = self._prepare_context(self.req)
+        context.has_tags = False
+        context.users = ('user',)
+        context.visited_forums = dict()
+        context.visited_topics = dict()
+        self.assertEqual(
+            set(self.api.get_forums(context)[0].keys()),
+            set(['id', 'name', 'author', 'time', 'moderators',
+                 'subscribers', 'forum_group', 'subject', 'description',
+                 'topics', 'replies', 'lasttopic', 'lastreply',
+                 'new_replies', 'new_topics', 'unregistered_subscribers']))
+
     def test_get_topic_subject(self):
         context = self._prepare_context(self.req)
         self.assertEqual(self.api.get_topic_subject(context, 2), 'top2')

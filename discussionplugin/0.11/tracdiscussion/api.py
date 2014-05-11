@@ -1675,6 +1675,50 @@ class DiscussionApi(DiscussionDb):
                                                     context.resource)
         return forum
 
+    def get_forums(self, context, order_by='subject', desc=False):
+
+        def _new_replies_count(context, forum_id):
+            # Get IDs of topics in this forum.
+            where = "forum=%s"
+            topics = [topic['id'] for topic in self._get_items(
+                          context, 'topic', ('id',), where, (forum_id,))]
+            # Count unseen messages.
+            count = 0
+            for topic_id in topics:
+                values = (topic_id, topic_id in context.visited_topics and
+                                    int(context.visited_topics[topic_id]) or 0)
+                where = "topic=%s AND time>%s"
+                count += self._get_items_count(context, 'message', where,
+                                               values )
+            return count
+
+        def _new_topic_count(context, forum_id):
+            values = (forum_id, forum_id in context.visited_forums and
+                                int(context.visited_forums[forum_id]) or 0)
+            where = "forum=%s AND time>%s"
+            return self._get_items_count(context, 'topic', where, values)
+
+        forums = self._get_forums(context, order_by, desc)
+        # Add some more forum attributes and convert others.
+        for forum in forums:
+            # Compute count of new replies and topics.
+            forum['new_topics'] = _new_topic_count(context, forum['id'])
+            forum['new_replies'] = _new_replies_count(context, forum['id'])
+
+            # Convert floating-point result of SUM() above into integer.
+            forum['replies'] = int(forum['replies'] or 0)
+            forum['moderators'] = as_list(forum['moderators'])
+            forum['subscribers'] = as_list(forum['subscribers'])
+            forum['unregistered_subscribers'] = set(forum['subscribers']) \
+                                                .difference(context.users)
+
+            # Get forum tags.
+            if context.has_tags:
+                tag_system = TagSystem(self.env)
+                forum['tags'] = tag_system.get_tags(context.req, Resource(
+                    'discussion', 'forum/%s' % forum['id']))
+        return forums
+
     def get_message(self, context, id):
         # Get message by ID.
         return self._get_item(context, 'message', self.message_cols, 'id=%s',
@@ -1705,6 +1749,9 @@ class DiscussionApi(DiscussionDb):
 def as_list(value):
     if isinstance(value, basestring):
         return [s.strip() for s in value.split()]
+    # Handle None value and empty objects gracefully.
+    if not value:
+        return []
     raise NotImplementedError('Conversion of %r to list is not implemented'
                               % value)
 

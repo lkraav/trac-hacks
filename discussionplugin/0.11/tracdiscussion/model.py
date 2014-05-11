@@ -26,10 +26,10 @@ class DiscussionDb(Component):
 
     abstract = True
 
-    topic_cols = ('id', 'forum', 'time', 'author', 'subscribers', 'subject',
-                  'body', 'status', 'priority')
     forum_cols = ('id', 'forum_group', 'name', 'subject', 'time', 'author',
                   'moderators', 'subscribers', 'description')
+    topic_cols = ('id', 'forum', 'time', 'author', 'subscribers', 'subject',
+                  'body', 'status', 'priority')
     message_cols = ('id', 'forum', 'topic', 'replyto', 'time', 'author',
                     'body')
 
@@ -95,153 +95,72 @@ class DiscussionDb(Component):
         cursor.execute(sql, values)
         return [dict(zip(columns, row)) for row in cursor]
 
-    def get_groups(self, context, order_by = 'id', desc = False):
-        # Get count of forums without group.
-        sql = ("SELECT COUNT(f.id) "
-               "FROM forum f "
-               "WHERE f.forum_group = 0")
+    def get_groups(self, context, order_by='id', desc=False):
+        """Return coarse information on forums by forum group."""
 
-        cursor = context.db.cursor()
-        cursor.execute(sql)
-        no_group_forums = 0
-        for row in cursor:
-            no_group_forums = row[0]
-        groups = [{'id' : 0, 'name' : 'None', 'description' : 'No Group',
-          'forums' : no_group_forums}]
-
-        # Get forum groups.
-        if order_by != 'forum':
-            order_by = 'g.' + order_by
+        # Count forums without group assignment.
+        unassigned = [dict(id=0, name='None', description='No Group',
+                       forums=self._get_items_count(context, 'forum',
+                                                    'forum_group=0', []))]
+        # Get all grouped forums.
         columns = ('id', 'name', 'description', 'forums')
-        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by +
-          (' ASC', ' DESC')[bool(desc)]) or '')}
-        sql = ("SELECT g.id, g.name, g.description, f.forums "
-               "FROM forum_group g "
-               "LEFT JOIN "
-                 "(SELECT COUNT(id) AS forums, forum_group "
-                 "FROM forum "
-                 "GROUP BY forum_group) f "
-               "ON g.id = f.forum_group "
-               "%(order_by)s" % (sql_values))
-
+        if order_by != 'forum':
+            # All other group-able columns are from forum_group db table.
+            order_by = '.'.join(['g', order_by])
+        sql_values = {
+            'order_by': order_by and ' '.join(['ORDER BY', order_by,
+                                               ('ASC', 'DESC')[bool(desc)]]) \
+                        or ''
+        }
+        sql = ("SELECT g.id, g.name, g.description, f.forums"
+               "  FROM forum_group g"
+               "  LEFT JOIN"
+               "  (SELECT COUNT(id) AS forums, forum_group"
+               "     FROM forum"
+               "    GROUP BY forum_group) f"
+               "  ON g.id = f.forum_group"
+               "  %(order_by)s" % (sql_values)
+        )
         cursor = context.db.cursor()
         cursor.execute(sql)
-        for row in cursor:
-            row = dict(zip(columns, row))
-            groups.append(row)
-        return groups
+        return unassigned + [dict(zip(columns, row)) for row in cursor]
 
-    def get_forums(self, context, order_by = 'subject', desc = False):
+    def _get_forums(self, context, order_by='subject', desc=False):
+        """Return detailed information on forums."""
 
-        def _get_new_topic_count(context, forum_id):
-            sql_values = {'forum_id' : forum_id,
-              'time' : int(context.visited_forums.has_key(forum_id) and
-                (context.visited_forums[forum_id] or 0))}
-            sql = ("SELECT COUNT(id) "
-                   "FROM topic t "
-                   "WHERE t.forum = %(forum_id)s AND t.time > %(time)s" %
-                     (sql_values))
+        forum_cols = ('id', 'name', 'author', 'time', 'moderators',
+                      'subscribers', 'forum_group', 'subject', 'description')
+        topic_cols = ('topics', 'replies', 'lasttopic', 'lastreply')
 
-            cursor = context.db.cursor()
-            cursor.execute(sql)
-            for row in cursor:
-                return int(row[0])
-            return 0
-
-        def _get_new_replies_count(context, forum_id):
-            sql_values = {'forum_id' : forum_id}
-            sql = ("SELECT id "
-                   "FROM topic t "
-                   "WHERE t.forum = %(forum_id)s" % (sql_values))
-
-            cursor = context.db.cursor()
-            cursor.execute(sql)
-            # Get IDs of topics in this forum.
-            topics = []
-            for row in cursor:
-                topics.append(row[0])
-
-            #Count unseen messages.
-            count = 0
-            for topic_id in topics:
-                sql_values = {'topic_id' : topic_id,
-                  'time' : int(context.visited_topics.has_key(topic_id) and
-                    (context.visited_topics[topic_id] or 0))}
-                sql = ("SELECT COUNT(id) "
-                       "FROM message m "
-                       "WHERE m.topic = %(topic_id)s AND m.time > %(time)s" %
-                       (sql_values))
-
-                cursor = context.db.cursor()
-                cursor.execute(sql)
-                for row in cursor:
-                    count += int(row[0])
-
-            return count
-
+        # All other group-able columns are from forum db table.
         if not order_by in ('topics', 'replies', 'lasttopic', 'lastreply'):
-            order_by = 'f.' + order_by
-        columns = ('id', 'name', 'author', 'time', 'moderators', 'subscribers',
-          'forum_group', 'subject', 'description', 'topics', 'replies',
-          'lasttopic', 'lastreply')
-        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC',
-          ' DESC')[bool(desc)]) or '')}
-        sql = ("SELECT f.id, f.name, f.author, f.time, f.moderators, "
-                 "f.subscribers, f.forum_group, f.subject, f.description, "
-                 "ta.topics, ta.replies, ta.lasttopic, ta.lastreply "
-               "FROM forum f "
-               "LEFT JOIN "
-                 "(SELECT COUNT(t.id) AS topics, MAX(t.time) AS lasttopic, "
-                   "SUM(ma.replies) AS replies, MAX(ma.lastreply) AS "
-                   "lastreply, t.forum AS forum "
-                 "FROM topic t "
-                 "LEFT JOIN "
-                   "(SELECT COUNT(m.id) AS replies, MAX(m.time) AS lastreply, "
-                     "m.topic AS topic "
-                   "FROM message m "
-                   "GROUP BY m.topic) ma "
-                 "ON t.id = ma.topic "
-                 "GROUP BY forum) ta "
-               "ON f.id = ta.forum "
-               "%(order_by)s" %(sql_values))
-
+            order_by = '.'.join(['f', order_by])
+        sql_values = {
+            'forum_cols': 'f.' + ', f.'.join(forum_cols),
+            'topic_cols': 'ta.' + ', ta.'.join(topic_cols),
+            'order_by': order_by and ' '.join(['ORDER BY', order_by,
+                                               ('ASC', 'DESC')[bool(desc)]]) \
+                        or ''
+        }
+        sql = ("SELECT %(forum_cols)s, %(topic_cols)s"
+               "  FROM forum f"
+               "  LEFT JOIN"
+               "  (SELECT COUNT(t.id) AS topics, MAX(t.time) AS lasttopic,"
+                       "  SUM(ma.replies) AS replies,"
+                       "  MAX(ma.lastreply) AS lastreply, t.forum AS forum"
+                   " FROM topic t"
+                   " LEFT JOIN"
+                   " (SELECT COUNT(m.id) AS replies,"
+                           " MAX(m.time) AS lastreply, m.topic AS topic"
+                   "    FROM message m"
+                   "   GROUP BY m.topic) ma"
+                   " ON t.id=ma.topic"
+                   " GROUP BY forum) ta"
+               "  ON f.id = ta.forum"
+               "  %(order_by)s" % (sql_values))
         cursor = context.db.cursor()
         cursor.execute(sql)
-
-        # Convert certain forum attributes.
-        forums = []
-        for row in cursor:
-            row = dict(zip(columns, row))
-            forums.append(row)
-
-        for forum in forums:
-            # Compute count of new replies and topics.
-            forum['new_topics'] = _get_new_topic_count(context, forum['id'])
-            forum['new_replies'] = _get_new_replies_count(context, forum['id'])
-
-            # Convert FP result of SUM() above into integer.
-            forum['replies'] = int(forum['replies'] or 0)
-
-            # Split moderators list.
-            forum['moderators'] = [subscribers.strip() for subscribers in
-              forum['moderators'].split()]
-
-            # Split subscriber list to uregistered and unregistered subscribers.
-            forum['subscribers'] = [subscribers.strip() for subscribers in
-              forum['subscribers'].split()]
-            forum['unregistered_subscribers'] = []
-            for subscriber in forum['subscribers']:
-                if subscriber not in context.users:
-                    forum['unregistered_subscribers'].append(subscriber)
-
-            # Get forum tags.
-            self.log.debug(context.resource)
-            if context.has_tags:
-                tag_system = TagSystem(self.env)
-                forum['tags'] = tag_system.get_tags(context.req, Resource(
-                  'discussion', 'forum/%s' % (forum['id'])))
-
-        return forums
+        return [dict(zip(forum_cols + topic_cols, row)) for row in cursor]
 
     def get_changed_forums(self, context, start, stop, order_by = 'time', desc
       = False):
@@ -279,7 +198,7 @@ class DiscussionDb(Component):
                 return int(row[0])
             return 0
 
-        # Prepere SQL query.
+        # Prepare SQL query.
         if not order_by in ('replies', 'lastreply'):
             order_by = 't.' + order_by
         if with_body:
