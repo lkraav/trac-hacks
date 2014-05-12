@@ -13,7 +13,7 @@
     @brief The markdownMacro class
 
     Implements Markdown syntax WikiProcessor as a Trac macro.
-    
+
     From Markdown.py by Alex Mizrahi aka killer_storm
     See: http://trac-hacks.org/attachment/ticket/353/Markdown.py
     Get Python Markdown from:
@@ -66,9 +66,9 @@ class MarkdownMacro(WikiMacroBase):
                 # Trac creates relative links, which Markdown won't touch
                 # inside <autolinks> because they look like HTML
                 if pre == '<' and url != target:
-                   pre += abs_href
+                    pre += abs_href
                 return pre + str(url) + suf
-            
+
         try:
             from markdown import markdown
             return markdown(re.sub(LINK, convert, content), ['tables'])
