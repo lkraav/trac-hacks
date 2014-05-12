@@ -23,15 +23,15 @@ from trac.config import IntOption, Option
 from trac.mimeview import Context
 from trac.perm import IPermissionRequestor, PermissionError
 from trac.resource import IResourceManager, Resource
-from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
-from trac.web.chrome import add_ctxtnav
-from trac.web.href import Href
-from trac.wiki.formatter import format_to_html, format_to_oneliner
-from trac.util.datefmt import format_datetime, pretty_timedelta, to_datetime
+from trac.util.datefmt import format_datetime, pretty_timedelta
 from trac.util.datefmt import to_timestamp, utc
 from trac.util.html import html
 from trac.util.presentation import Paginator
 from trac.util.text import to_unicode
+from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
+from trac.web.chrome import add_ctxtnav
+from trac.web.href import Href
+from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 from tracdiscussion.model import DiscussionDb
 
@@ -1602,55 +1602,6 @@ class DiscussionApi(DiscussionDb):
                               ('id', 'name', 'description'), 'id=%s', (id,)
                ) or dict(id=0, name='None', description='No Group')
 
-    def get_topic(self, context, id):
-        # Get topic by ID.
-        topic = self._get_item(context, 'topic', self.topic_cols, 'id=%s',
-                               (id,))
-        return self._prepare_topic(context, topic)
-
-    def get_topic_by_time(self, context, time):
-        # Get topic by time of creation.
-        topic = self._get_item(context, 'topic', self.topic_cols, 'time=%s',
-                               (time,))
-        return self._prepare_topic(context, topic)
-
-    def get_topic_by_subject(self, context, subject):
-        # Get topic by subject.
-        topic = self._get_item(context, 'topic', self.topic_cols,
-                               'subject=%s', (subject,))
-        return self._prepare_topic(context, topic)
-
-    def _prepare_topic(self, context, topic):
-        """Unpack list of topic subscribers and get topic status."""
-        if topic:
-            topic['subscribers'] = as_list(topic['subscribers'])
-            topic['unregistered_subscribers'] = [
-                subscriber for subscriber in topic['subscribers']
-                if subscriber not in context.users
-            ]
-            topic['status'] = self._topic_status_to_list(topic['status'])
-        return topic
-
-    def _topic_status_to_list(self, status):
-        if status == 0:
-            return set(['unsolved'])
-        status_list = set([])
-        if status & 0x01:
-            status_list.add('solved')
-        else:
-            status_list.add('unsolved')
-        if status & 0x02:
-            status_list.add('locked')
-        return status_list
-
-    def _topic_status_from_list(self, status_list):
-        status = 0
-        if 'solved' in status_list:
-            status = status | 0x01
-        if 'locked' in status_list:
-            status = status | 0x02
-        return status
-
     def get_forum(self, context, forum_id):
         context.resource = Resource(self.realm, 'forum/%s' % forum_id)
         return self._get_forum(context)
@@ -1691,7 +1642,7 @@ class DiscussionApi(DiscussionDb):
                                     int(context.visited_topics[topic_id]) or 0)
                 where = "topic=%s AND time>%s"
                 count += self._get_items_count(context, 'message', where,
-                                               values )
+                                               values)
             return count
 
         def _new_topic_count(context, forum_id):
@@ -1720,6 +1671,87 @@ class DiscussionApi(DiscussionDb):
                 forum['tags'] = tag_system.get_tags(context.req, Resource(
                     'discussion', 'forum/%s' % forum['id']))
         return forums
+
+    def get_changed_forums(self, context, start, stop, order_by='time',
+                           desc=False):
+        """Return forum content for timeline."""
+
+        columns = ('id', 'name', 'author', 'time', 'subject', 'description')
+        where = "time BETWEEN %s AND %s"
+        values = (to_timestamp(start), to_timestamp(stop))
+        return self._get_items(context, 'forum', columns, where, values)
+
+    def get_topic(self, context, id):
+        # Get topic by ID.
+        topic = self._get_item(context, 'topic', self.topic_cols, 'id=%s',
+                               (id,))
+        return self._prepare_topic(context, topic)
+
+    def get_topic_by_time(self, context, time):
+        # Get topic by time of creation.
+        topic = self._get_item(context, 'topic', self.topic_cols, 'time=%s',
+                               (time,))
+        return self._prepare_topic(context, topic)
+
+    def get_topic_by_subject(self, context, subject):
+        # Get topic by subject.
+        topic = self._get_item(context, 'topic', self.topic_cols,
+                               'subject=%s', (subject,))
+        return self._prepare_topic(context, topic)
+
+    def _prepare_topic(self, context, topic):
+        """Unpack list of topic subscribers and get topic status."""
+        if topic:
+            topic['subscribers'] = as_list(topic['subscribers'])
+            topic['unregistered_subscribers'] = set(topic['subscribers']) \
+                                                .difference(context.users)
+            topic['status'] = self._topic_status_to_list(topic['status'])
+        return topic
+
+    def _topic_status_to_list(self, status):
+        if status == 0:
+            return set(['unsolved'])
+        status_list = set([])
+        if status & 0x01:
+            status_list.add('solved')
+        else:
+            status_list.add('unsolved')
+        if status & 0x02:
+            status_list.add('locked')
+        return status_list
+
+    def _topic_status_from_list(self, status_list):
+        status = 0
+        if 'solved' in status_list:
+            status = status | 0x01
+        if 'locked' in status_list:
+            status = status | 0x02
+        return status
+
+    def get_topics(self, context, forum_id, order_by='time', desc=False,
+                   limit=0, offset=0, with_body=True):
+
+        def _new_replies_count(context, topic_id):
+            values = (topic_id, topic_id in context.visited_topics and
+                                int(context.visited_topics[topic_id]) or 0) 
+            where = "topic=%s AND time>%s"
+            return self._get_items_count(context, 'message', where, values)
+
+        topics = self._get_topics(context, forum_id, order_by, desc,
+                                  limit, offset, with_body)
+        # Add some more topic attributes and convert others.
+        for topic in topics:
+            # Compute count of new replies.
+            topic['new_replies'] = _new_replies_count(context, topic['id'])
+            topic['subscribers'] = as_list(topic['subscribers'])
+            topic['unregistered_subscribers'] = set(topic['subscribers']) \
+                                                .difference(context.users)
+            topic['status'] = self._topic_status_to_list(topic['status'])
+            if context.has_tags:
+                tag_system = TagSystem(self.env)
+                topic['tags'] = tag_system.get_tags(context.req, Resource(
+                    'discussion', 'topic/%s' % topic['id']))
+        return topics
 
     def get_message(self, context, id):
         # Get message by ID.

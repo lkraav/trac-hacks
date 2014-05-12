@@ -10,6 +10,7 @@ import shutil
 import tempfile
 import unittest
 
+from datetime import timedelta
 from genshi.builder import tag
 from genshi.core import Markup
 
@@ -18,6 +19,7 @@ from trac.mimeview import Context
 from trac.perm import PermissionCache, PermissionError, PermissionSystem
 from trac.resource import Resource
 from trac.test import EnvironmentStub, Mock
+from trac.util.datefmt import to_datetime, utc
 from trac.web.href import Href
 
 from tracdiscussion.api import DiscussionApi, format_to_oneliner_no_links
@@ -180,9 +182,28 @@ class DiscussionApiTestCase(_BaseTestCase):
                  'topics', 'replies', 'lasttopic', 'lastreply',
                  'new_replies', 'new_topics', 'unregistered_subscribers']))
 
+    def test_get_changed_forums(self):
+        context = self._prepare_context(self.req)
+        start = to_datetime(None, tzinfo=utc)
+        stop = start - timedelta(seconds=1)
+        self.assertEqual(
+            list(self.api.get_changed_forums(context, start, stop)), [])
+
     def test_get_topic_subject(self):
         context = self._prepare_context(self.req)
         self.assertEqual(self.api.get_topic_subject(context, 2), 'top2')
+
+    def test_get_topics(self):
+        context = self._prepare_context(self.req)
+        context.has_tags = False
+        context.users = ('user',)
+        context.visited_forums = dict()
+        context.visited_topics = dict()
+        self.assertEqual(
+            set(self.api.get_topics(context, 1)[0].keys()),
+            set(['id', 'forum', 'time', 'author', 'subscribers', 'subject',
+                 'body', 'status', 'priority', 'replies', 'lastreply',
+                 'new_replies', 'unregistered_subscribers']))
 
     def test_get_topics_count(self):
         context = self._prepare_context(self.req)

@@ -15,11 +15,6 @@ from trac.resource import Resource
 from trac.util.datefmt import to_timestamp
 from trac.util.text import to_unicode
 
-try:
-    from tractags.api import TagSystem
-except:
-    pass
-
 
 class DiscussionDb(Component):
     """[main] Implements database access methods."""
@@ -81,8 +76,8 @@ class DiscussionDb(Component):
             'order_by': order_by and ' '.join(['ORDER BY', order_by,
                                                ('ASC', 'DESC')[bool(desc)]]) \
                         or '',
-            'limit': limit and ' '.join(['LIMIT', str(limit)]) or '',
-            'offset': offset and ' '.join(['OFFSET', str(offset)]) or ''
+            'limit': limit and 'LIMIT %s' or '',
+            'offset': offset and 'OFFSET %s' or ''
         }
         sql = ("SELECT %(columns)s"
                "  FROM %(table)s"
@@ -91,6 +86,11 @@ class DiscussionDb(Component):
                " %(limit)s"
                " %(offset)s" % (sql_values)
         )
+        values = list(values)
+        if limit:
+            values.append(limit)
+        if offset:
+            values.append(offset)
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         return [dict(zip(columns, row)) for row in cursor]
@@ -100,8 +100,8 @@ class DiscussionDb(Component):
 
         # Count forums without group assignment.
         unassigned = [dict(id=0, name='None', description='No Group',
-                       forums=self._get_items_count(context, 'forum',
-                                                    'forum_group=0', []))]
+                      forums=self._get_items_count(context, 'forum',
+                                                   'forum_group=0', []))]
         # Get all grouped forums.
         columns = ('id', 'name', 'description', 'forums')
         if order_by != 'forum':
@@ -162,101 +162,47 @@ class DiscussionDb(Component):
         cursor.execute(sql)
         return [dict(zip(forum_cols + topic_cols, row)) for row in cursor]
 
-    def get_changed_forums(self, context, start, stop, order_by = 'time', desc
-      = False):
-        columns = ('id', 'name', 'author', 'time', 'subject', 'description')
-        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')
-          [bool(desc)]) and '')}
-        sql = ("SELECT f.id, f.name, f.author, f.time, f.subject, f.description "
-               "FROM forum f "
-               "WHERE f.time BETWEEN %%s AND %%s "
-               "%(order_by)s "% (sql_values))
-        values = (to_timestamp(start), to_timestamp(stop))
+    def _get_topics(self, context, forum_id, order_by='time', desc=False,
+                    limit=0, offset=0, with_body=True):
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        # Convert row to dictionaries.
-        for row in cursor:
-            row = dict(zip(columns, row))
-            yield row
-
-    def get_topics(self, context, forum_id, order_by = 'time', desc = False,
-      limit = 0, offset = 0, with_body = True):
-
-        def _get_new_replies_count(context, topic_id):
-            sql_values = {'topic_id' : topic_id,
-              'time' : int(context.visited_topics.has_key(topic_id) and
-                (context.visited_topics[topic_id] or 0))}
-            sql = ("SELECT COUNT(id) "
-                   "FROM message m "
-                   "WHERE m.topic = %(topic_id)s AND m.time > %(time)s" %
-                     (sql_values))
-
-            cursor = context.db.cursor()
-            cursor.execute(sql)
-            for row in cursor:
-                return int(row[0])
-            return 0
-
-        # Prepare SQL query.
+        # All other group-able columns are from topic db table.
+        message_cols = ('replies', 'lastreply')
+        topic_cols = ['id', 'forum', 'time', 'author', 'subscribers',
+                      'subject', 'body', 'status', 'priority']
+        if not with_body:
+            topic_cols.pop(6)
+        topic_cols = tuple(topic_cols) # fixture for subsequent concatenation
         if not order_by in ('replies', 'lastreply'):
-            order_by = 't.' + order_by
-        if with_body:
-            columns = ('id', 'forum', 'time', 'author', 'subscribers',
-              'subject', 'body', 'status', 'priority', 'replies', 'lastreply')
-        else:
-            columns = ('id', 'forum', 'time', 'author', 'subscribers',
-              'subject', 'status', 'priority', 'replies', 'lastreply')
-        sql_values = {'with_body' : (with_body and 't.body, ' or ''),
-          'order_by' : (order_by and ('ORDER BY priority DESC' + (", " + order_by + (' ASC',
-          ' DESC')[bool(desc)])) or ''),
-          'limit' : (limit and 'LIMIT %s' or ''),
-          'offset' : (offset and 'OFFSET %s' or '')}
-        sql = ("SELECT t.id, t.forum, t.time, t.author, t.subscribers, "
-                 "t.subject, %(with_body)s t.status, t.priority, m.replies, "
-                 "m.lastreply "
-               "FROM topic t "
-               "LEFT JOIN "
-                 "(SELECT COUNT(id) AS replies, MAX(time) AS lastreply, topic "
-                 "FROM message "
-                 "GROUP BY topic) m "
-               "ON t.id = m.topic "
-               "WHERE t.forum = %%s "
-               "%(order_by)s "
-               "%(limit)s "
-               "%(offset)s" % (sql_values))
+            order_by = '.'.join(['t', order_by])
+        sql_values = {
+            'message_cols': 'm.' + ', m.'.join(message_cols),
+            'topic_cols': 't.' + ', t.'.join(topic_cols),
+            'order_by': order_by and ' '.join(['ORDER BY', order_by,
+                                               ('ASC', 'DESC')[bool(desc)]]) \
+                         or '',
+            'limit': limit and 'LIMIT %s' or '',
+            'offset': offset and 'OFFSET %s' or ''
+        }
+        sql = ("SELECT %(topic_cols)s, %(message_cols)s"
+               "  FROM topic t"
+               "  LEFT JOIN"
+               "  (SELECT COUNT(id) AS replies, MAX(time) AS lastreply,"
+                       "  topic"
+                   " FROM message"
+               "    GROUP BY topic) m"
+               "  ON t.id=m.topic"
+               " WHERE t.forum=%%s"
+               " %(order_by)s"
+               " %(limit)s"
+               " %(offset)s" % (sql_values))
         values = [forum_id]
         if limit:
             values.append(limit)
         if offset:
             values.append(offset)
-        values = tuple(values)
-
-        # Execute the query.
         cursor = context.db.cursor()
         cursor.execute(sql, values)
-
-        # Convert result to dictionaries.
-        topics = []
-        for row in cursor:
-            row = dict(zip(columns, row))
-            topics.append(row)
-
-        for topic in topics:
-            # Compute count of new replies.
-            topic['new_replies'] = _get_new_replies_count(context, topic['id'])
-            topic['subscribers'] = [subscribers.strip() for subscribers in
-              topic['subscribers'].split()]
-            topic['unregistered_subscribers'] = []
-            for subscriber in topic['subscribers']:
-                if subscriber not in context.users:
-                    topic['unregistered_subscribers'].append(subscriber)
-            topic['status'] = self._topic_status_to_list(topic['status'])
-            if context.has_tags:
-                tag_system = TagSystem(self.env)
-                topic['tags'] = tag_system.get_tags(context.req, Resource(
-                  'discussion', 'topic/%s' % (topic['id'])))
-        return topics
+        return [dict(zip(topic_cols + message_cols, row)) for row in cursor]
 
     def get_changed_topics(self, context, start, stop, order_by = 'time',
       desc = False):
