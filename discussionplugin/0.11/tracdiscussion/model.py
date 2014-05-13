@@ -11,6 +11,7 @@
 from copy import deepcopy
 
 from trac.core import Component
+from trac.mimeview import Context
 from trac.resource import Resource
 from trac.util.datefmt import to_timestamp
 from trac.util.text import to_unicode
@@ -19,7 +20,7 @@ from trac.util.text import to_unicode
 class DiscussionDb(Component):
     """[main] Implements database access methods."""
 
-    abstract = True
+    abstract = True # not instantiated directly, but as part of API module
 
     forum_cols = ('id', 'forum_group', 'name', 'subject', 'time', 'author',
                   'moderators', 'subscribers', 'description')
@@ -30,6 +31,10 @@ class DiscussionDb(Component):
 
     def _get_item(self, context, table, columns, where='', values=()):
         """Universal single item getter method."""
+        if not context:
+            # Prepare generic context for database access.
+            context = Context('discussion-core')
+            context.db = self.env.get_db_cnx()
 
         sql_values = {
             'columns': ', '.join(columns),
@@ -305,13 +310,6 @@ class DiscussionDb(Component):
         # Return replies of specified message.
         return self._get_items(context, 'message', ('id', 'replyto', 'time',
           'author', 'body'), 'replyto = %s',(id,), order_by, desc)
-
-    def get_users(self, context):
-        # Return users that Trac knows.
-        users = []
-        for user in self.env.get_known_users():
-            users.append(user[0])
-        return users
 
     # Add items functions.
 

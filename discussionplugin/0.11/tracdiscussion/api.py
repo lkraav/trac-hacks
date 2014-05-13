@@ -20,7 +20,6 @@ from trac.attachment import AttachmentModule, ILegacyAttachmentPolicyDelegate
 from trac.core import ExtensionPoint, Interface, TracError
 from trac.core import implements
 from trac.config import IntOption, Option
-from trac.mimeview import Context
 from trac.perm import IPermissionRequestor, PermissionError
 from trac.resource import IResourceManager, Resource
 from trac.util.datefmt import format_datetime, pretty_timedelta
@@ -135,10 +134,9 @@ class IMessageChangeListener(Interface):
 class DiscussionApi(DiscussionDb):
     """[main] Provides essential definitions including configuration options,
     permission actions and request handling instructions.
-
-    Database access methods are inherited from
-    `tracdiscussion.model.DiscussionDb`.
     """
+    # Hint: Methods for database access within plugin's schema are inherited
+    #       from tracdiscussion.model.DiscussionDb.
 
     implements(ILegacyAttachmentPolicyDelegate, IResourceManager,
                IPermissionRequestor)
@@ -216,68 +214,42 @@ class DiscussionApi(DiscussionDb):
             return href(resource.realm, **kwargs)
 
     def get_resource_description(self, resource, format=None, **kwargs):
-        # Create context.
-        context = Context('discussion-core')
-
-        # Get database access.
-        context.db = self.env.get_db_cnx()
-
         type, id = self._parse_resource_id(resource)
-
-        # Generate description for forums.
-        if type == 'forum':
-            forum = self._get_item(context, 'forum', ('id', 'name', 'subject'),
-              where = 'id = %s', values = (id,))
-            if format == 'compact':
-                return '#%s' % (forum['id'],)
-            elif format == 'summary':
+        if 'forum' == type:
+            forum = self._get_item(None, 'forum', ('id', 'name', 'subject'),
+                                   where='id=%s', values=(id,))
+            if 'compact' == format:
+                return '#%s' % forum['id']
+            elif 'summary' == format:
                 return 'Forum %s - %s' % (forum['name'], forum['subject'])
             else:
-                return 'Forum %s' % (forum['name'],)
-
-        # Generate description for topics.
-        elif type == 'topic':
-            topic = self._get_item(context, 'topic', ('id', 'subject'), where =
-              'id = %s', values = (id,))
-            if format == 'compact':
-                return '#%s' % (topic['id'],)
-            elif format == 'summary':
+                return 'Forum %s' % forum['name']
+        elif 'topic' == type:
+            topic = self._get_item(None, 'topic', ('id', 'subject'),
+                                   where='id=%s', values=(id,))
+            if 'compact' == format:
+                return '#%s' % topic['id']
+            elif 'summary' == format:
                 return 'Topic #%s (%s)' % (topic['id'], topic['subject'])
             else:
-                return 'Topic #%s' % (topic['id'],)
-
-        # Generate description for messages.
-        elif type == 'message':
-            if format == 'compact':
-                return '#%s' % (id,)
-            elif format == 'summary':
-                return 'Message #%s' % (id,)
+                return 'Topic #%s' % topic['id']
+        elif 'message' == type:
+            if 'compact' == format:
+                return '#%s' % id
             else:
-                return 'Message #%s' % (id,)
+                return 'Message #%s' % id
 
     def resource_exists(self, resource):
-        # Create context.
-        context = Context('discussion-core')
-
-        # Get database access.
-        context.db = self.env.get_db_cnx()
-
         type, id = self._parse_resource_id(resource)
-
-        # Check if forum exists.
         if type == 'forum':
-            return self._get_item(context, 'forum', ('id',), where = 'id = %s',
-              values = (id,)) != None
-
-        # Check if topic exits.
+            return self._get_item(None, 'forum', ('id',), where='id=%s',
+                                  values=(id,)) != None
         elif type == 'topic':
-            return self._get_item(context, 'topic', ('id',), where = 'id = %s',
-              values = (id,)) != None
-
-        # Check if message exists.
+            return self._get_item(None, 'topic', ('id',), where='id=%s',
+                                  values=(id,)) != None
         elif type == 'message':
-            return self._get_item(context, 'message', ('id',), where = 'id = %s',
-              values = (id,)) != None
+            return self._get_item(None, 'message', ('id',), where='id=%s',
+                                  values=(id,)) != None
 
     # Main request processing function.
 
@@ -290,8 +262,8 @@ class DiscussionApi(DiscussionDb):
         # Get request items and actions.
         self._prepare_context(context)
         actions = self._get_actions(context)
-        self.log.debug('actions: %s' % (actions,))
-        self.log.debug('req.args: %s' % (str(context.req.args)))
+        self.log.debug('Discussion actions: %s' % actions)
+        self.log.debug('req.args: %s' % str(context.req.args))
 
         # Get session data.
         context.visited_forums = eval(context.req.session.get('visited-forums')
@@ -345,10 +317,8 @@ class DiscussionApi(DiscussionDb):
 
         # Determine template name.
         context.template = self._get_template(context, actions)
-
-        # Return request template and data.
-        self.log.debug('template: %s data: %s' % (context.template,
-          context.data,))
+        self.log.debug('Discussion emplate: %s data: %s'
+                       % (context.template, context.data))
         return context.template, {'discussion' : context.data}
 
     # Internal methods.
@@ -1778,6 +1748,10 @@ class DiscussionApi(DiscussionDb):
     def get_messages_count(self, context, topic_id):
         return self._get_items_count(context, 'message', 'topic=%s',
                                      (topic_id,))
+
+    def get_users(self, context):
+        # Return users, that Trac knows.
+        return [user for user in self.env.get_known_users()]
 
 
 def as_list(value):
