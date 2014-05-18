@@ -22,11 +22,11 @@ from trac.test import EnvironmentStub, Mock
 from trac.util.datefmt import to_datetime, utc
 from trac.web.href import Href
 
-from tracdiscussion.api import DiscussionApi, format_to_oneliner_no_links
+from tracdiscussion.api import DiscussionApi
 from tracdiscussion.init import DiscussionInit
 
 
-class _BaseTestCase(unittest.TestCase):
+class DiscussionApiTestCase(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
@@ -36,15 +36,6 @@ class _BaseTestCase(unittest.TestCase):
 
         self.realm = 'discussion'
 
-    def tearDown(self):
-        self.env.shutdown()
-        shutil.rmtree(self.env.path)
-
-
-class DiscussionApiTestCase(_BaseTestCase):
-
-    def setUp(self):
-        _BaseTestCase.setUp(self)
         self.req = Mock(authname='editor', method='GET',
                    args=dict(), abs_href=self.env.abs_href,
                    chrome=dict(notices=[], warnings=[]),
@@ -97,7 +88,8 @@ class DiscussionApiTestCase(_BaseTestCase):
     def tearDown(self):
         self.db.close()
         # Really close db connections.
-        _BaseTestCase.tearDown(self)
+        self.env.shutdown()
+        shutil.rmtree(self.env.path)
 
     # Helpers
 
@@ -260,33 +252,9 @@ class DiscussionApiTestCase(_BaseTestCase):
         )
 
 
-class FormatToOnlinerNoLinksTestCase(_BaseTestCase):
-
-    def setUp(self):
-        _BaseTestCase.setUp(self)
-        self.req = Mock(authname='user', method='GET',
-                   args=dict(), abs_href=self.env.abs_href,
-                   chrome=dict(notices=[], warnings=[]),
-                   href=self.env.abs_href, locale='',
-                   redirect=lambda x: None, session=dict(), tz=''
-        )
-        self.req.perm = PermissionCache(self.env, 'user')
-
-    def test_format_to_oneliner_no_links(self):
-        markup = tag('text-only fragment')
-        self.assertEqual(format_to_oneliner_no_links(
-                             self.env, Context.from_request(self.req),
-                             markup), str(markup))
-        self.assertEqual(format_to_oneliner_no_links(
-                             self.env, Context.from_request(self.req),
-                             'text fragment with [/ link]'),
-                             'text fragment with link')
-
-
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(DiscussionApiTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(FormatToOnlinerNoLinksTestCase, 'test'))
     return suite
 
 if __name__ == '__main__':

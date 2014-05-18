@@ -16,6 +16,8 @@ from trac.resource import Resource
 from trac.util.datefmt import to_timestamp
 from trac.util.text import to_unicode
 
+from tracdiscussion.util import topic_status_from_list, topic_status_to_list
+
 
 class DiscussionDb(Component):
     """[main] Implements database access methods."""
@@ -233,7 +235,7 @@ class DiscussionDb(Component):
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         return [dict(zip(columns, row),
-                     status=self._topic_status_to_list(row['status']))
+                     status=topic_status_to_list(row['status']))
                 for row in cursor]
 
     def get_messages(self, context, topic_id, order_by='time', desc=False):
@@ -339,7 +341,7 @@ class DiscussionDb(Component):
 
         # Pack subscribers field.
         tmp_topic['subscribers'] = ' '.join(tmp_topic['subscribers'])
-        tmp_topic['status'] = self._topic_status_from_list(
+        tmp_topic['status'] = topic_status_from_list(
           tmp_topic.has_key('status') and tmp_topic['status'] or [])
 
         self._add_item(context, 'topic', tmp_topic)
@@ -460,7 +462,7 @@ class DiscussionDb(Component):
 
         # Encode status field.
         if tmp_topic.has_key('status'):
-            tmp_topic['status'] = self._topic_status_from_list(tmp_topic['status'])
+            tmp_topic['status'] = topic_status_from_list(tmp_topic['status'])
 
         # Edit topic.
         self._edit_item(context, 'topic', id, tmp_topic)

@@ -12,10 +12,6 @@ import re
 from copy import deepcopy
 from datetime import datetime
 
-from genshi.input import HTML
-from genshi.core import Markup
-from genshi.filters import Transformer
-
 from trac.attachment import AttachmentModule, ILegacyAttachmentPolicyDelegate
 from trac.core import ExtensionPoint, Interface, TracError
 from trac.core import implements
@@ -30,9 +26,10 @@ from trac.util.text import to_unicode
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
 from trac.web.chrome import add_ctxtnav
 from trac.web.href import Href
-from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 from tracdiscussion.model import DiscussionDb
+from tracdiscussion.util import as_list, format_to_oneliner_no_links
+from tracdiscussion.util import prepare_topic, topic_status_to_list
 
 try:
     from tractags.api import TagSystem
@@ -1566,6 +1563,8 @@ class DiscussionApi(DiscussionDb):
 
         return paginator
 
+    # Item getter convenience methods wrapping generic db access methods.
+
     def get_group(self, context, id):
         # Get forum group.
         return self._get_item(context, 'forum_group',
@@ -1655,48 +1654,19 @@ class DiscussionApi(DiscussionDb):
         # Get topic by ID.
         topic = self._get_item(context, 'topic', self.topic_cols, 'id=%s',
                                (id,))
-        return self._prepare_topic(context, topic)
+        return prepare_topic(context, topic)
 
     def get_topic_by_time(self, context, time):
         # Get topic by time of creation.
         topic = self._get_item(context, 'topic', self.topic_cols, 'time=%s',
                                (time,))
-        return self._prepare_topic(context, topic)
+        return prepare_topic(context, topic)
 
     def get_topic_by_subject(self, context, subject):
         # Get topic by subject.
         topic = self._get_item(context, 'topic', self.topic_cols,
                                'subject=%s', (subject,))
-        return self._prepare_topic(context, topic)
-
-    def _prepare_topic(self, context, topic):
-        """Unpack list of topic subscribers and get topic status."""
-        if topic:
-            topic['subscribers'] = as_list(topic['subscribers'])
-            topic['unregistered_subscribers'] = set(topic['subscribers']) \
-                                                .difference(context.users)
-            topic['status'] = self._topic_status_to_list(topic['status'])
-        return topic
-
-    def _topic_status_to_list(self, status):
-        if status == 0:
-            return set(['unsolved'])
-        status_list = set([])
-        if status & 0x01:
-            status_list.add('solved')
-        else:
-            status_list.add('unsolved')
-        if status & 0x02:
-            status_list.add('locked')
-        return status_list
-
-    def _topic_status_from_list(self, status_list):
-        status = 0
-        if 'solved' in status_list:
-            status = status | 0x01
-        if 'locked' in status_list:
-            status = status | 0x02
-        return status
+        return prepare_topic(context, topic)
 
     def get_topics(self, context, forum_id, order_by='time', desc=False,
                    limit=0, offset=0, with_body=True):
@@ -1716,7 +1686,7 @@ class DiscussionApi(DiscussionDb):
             topic['subscribers'] = as_list(topic['subscribers'])
             topic['unregistered_subscribers'] = set(topic['subscribers']) \
                                                 .difference(context.users)
-            topic['status'] = self._topic_status_to_list(topic['status'])
+            topic['status'] = topic_status_to_list(topic['status'])
             if context.has_tags:
                 tag_system = TagSystem(self.env)
                 topic['tags'] = tag_system.get_tags(context.req, Resource(
@@ -1771,18 +1741,3 @@ class DiscussionApi(DiscussionDb):
     def get_users(self, context):
         # Return users, that Trac knows.
         return [user[0] for user in self.env.get_known_users()]
-
-
-def as_list(value):
-    if isinstance(value, basestring):
-        return [s.strip() for s in value.split()]
-    # Handle None value and empty objects gracefully.
-    if not value:
-        return []
-    raise NotImplementedError('Conversion of %r to list is not implemented'
-                              % value)
-
-# Formats wiki text to single line HTML but removes all links.
-def format_to_oneliner_no_links(env, context, content):
-    stream = HTML(format_to_oneliner(env, context, to_unicode(content)))
-    return Markup(stream | Transformer('//a').unwrap())

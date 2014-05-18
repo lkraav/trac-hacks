@@ -54,6 +54,9 @@ def test_suite():
     import tracdiscussion.tests.timeline
     suite.addTest(tracdiscussion.tests.timeline.test_suite())
 
+    import tracdiscussion.tests.util
+    suite.addTest(tracdiscussion.tests.util.test_suite())
+
     import tracdiscussion.tests.wiki
     suite.addTest(tracdiscussion.tests.wiki.test_suite())
 
