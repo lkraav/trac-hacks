@@ -62,26 +62,30 @@ class DiscussionApiTestCase(_BaseTestCase):
         setup.upgrade_environment(self.db)
         # Populate tables with initial test data.
         cursor = self.db.cursor()
-        cursor.execute("""
+        cursor.executemany("""
             INSERT INTO forum
                    (name, subject, description)
             VALUES (%s,%s,%s)
-        """, ('forum1', 'forum-subject', 'forum-desc1'))
+        """, [('forum1', 'forum-subject1', 'forum-desc1'),
+              ('forum2', 'forum-subject2', 'forum-desc2')
+             ])
         cursor.executemany("""
             INSERT INTO topic
                    (forum, subject, body)
             VALUES (%s,%s,%s)
         """, [(1, 'top1', 'topic-desc1'),
               (1, 'top2', 'topic-desc2'),
+              (2, 'top3', 'topic-desc3')
              ])
         cursor.executemany("""
             INSERT INTO message
-                   (forum, topic, body)
-            VALUES (%s,%s,%s)
-        """, [(1, 1, 'msg1'),
-              (1, 2, 'msg2'),
-              (1, 2, 'msg3'),
-              (1, 2, 'msg4'),
+                   (forum, topic, body, replyto, time)
+            VALUES (%s,%s,%s,%s,%s)
+        """, [(1, 1, 'msg1', -1, 1400361000),
+              (1, 2, 'msg2', -1, 1400362000),
+              (1, 2, 'msg3', 2, 1400362200),
+              (1, 2, 'msg4', -1, 1400362400),
+              (2, 3, 'msg5', -1, 1400362600)
              ])
 
         self.api = DiscussionApi(self.env)
@@ -148,7 +152,7 @@ class DiscussionApiTestCase(_BaseTestCase):
         desc = self.api.get_resource_description # method shorthand
         self.assertEqual(desc(self.forum), 'Forum forum1')
         self.assertEqual(desc(self.forum, 'summary'),
-                         'Forum forum1 - forum-subject')
+                         'Forum forum1 - forum-subject1')
         self.assertEqual(desc(self.topic), 'Topic #2')
         self.assertEqual(desc(self.topic, 'summary'), 'Topic #2 (top2)')
         self.assertEqual(desc(self.message), 'Message #3')
@@ -163,11 +167,11 @@ class DiscussionApiTestCase(_BaseTestCase):
 
     def test_resource_exists(self):
         self.assertTrue(self.api.resource_exists(self.forum))
-        self.assertFalse(self.api.resource_exists(self.forum(id='forum/2')))
+        self.assertFalse(self.api.resource_exists(self.forum(id='forum/3')))
         self.assertTrue(self.api.resource_exists(self.topic))
-        self.assertFalse(self.api.resource_exists(self.forum(id='topic/3')))
+        self.assertFalse(self.api.resource_exists(self.forum(id='topic/4')))
         self.assertTrue(self.api.resource_exists(self.message))
-        self.assertFalse(self.api.resource_exists(self.forum(id='message/5')))
+        self.assertFalse(self.api.resource_exists(self.forum(id='message/6')))
 
     def test_get_forums(self):
         context = self._prepare_context(self.req)
@@ -209,9 +213,51 @@ class DiscussionApiTestCase(_BaseTestCase):
         context = self._prepare_context(self.req)
         self.assertEqual(self.api.get_topics_count(context, 1), 2)
 
+    def test_get_flat_messages(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(
+            self.api.get_flat_messages(context, 1), [{
+            'id': 1, 'author': None, 'body': u'msg1', 'replyto': -1,
+            'time': 1400361000}]
+        )
+
+    def test_get_flat_messages_by_forum(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(
+            self.api.get_flat_messages_by_forum(context, 2), [{
+            'id': 5, 'topic': 3, 'author': None, 'body': u'msg5',
+            'replyto': -1, 'time': 1400362600}]
+        )
+
+    def test_get_message(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(
+            self.api.get_message(context, 1), {
+            'id': 1, 'forum': 1, 'topic': 1, 'author': None, 'body': u'msg1',
+            'replyto': -1, 'time': 1400361000}
+        )
+
+    def test_get_message_by_time(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(None, self.api.get_message_by_time(context,
+                                                            1400360001))
+        self.assertEqual(
+            self.api.get_message_by_time(context, 1400362200), {
+            'id': 3, 'forum': 1, 'topic': 2, 'author': None, 'body': u'msg3',
+            'replyto': 2, 'time': 1400362200}
+        )
+
     def test_get_messages_count(self):
         context = self._prepare_context(self.req)
         self.assertEqual(self.api.get_messages_count(context, 2), 3)
+
+    def test_get_replies(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(
+            self.api.get_replies(context, 2), [{
+            'id': 3, 'author': None, 'body': u'msg3', 'replyto': 2,
+            'time': 1400362200}]
+        )
 
 
 class FormatToOnlinerNoLinksTestCase(_BaseTestCase):

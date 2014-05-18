@@ -10,10 +10,13 @@ import shutil
 import tempfile
 import unittest
 
+from datetime import timedelta
+
 from trac.mimeview import Context
 from trac.perm import PermissionCache, PermissionSystem
 from trac.resource import Resource
 from trac.test import EnvironmentStub, Mock
+from trac.util.datefmt import to_datetime, utc
 
 from tracdiscussion.init import DiscussionInit
 from tracdiscussion.model import DiscussionDb
@@ -66,12 +69,12 @@ class DiscussionDbTestCase(unittest.TestCase):
              ])
         cursor.executemany("""
             INSERT INTO message
-                   (forum, topic, body)
-            VALUES (%s,%s,%s)
-        """, [(1, 1, 'msg1'),
-              (1, 2, 'msg2'),
-              (1, 2, 'msg3'),
-              (1, 2, 'msg4'),
+                   (forum, topic, body, replyto)
+            VALUES (%s,%s,%s,%s)
+        """, [(1, 1, 'msg1', -1),
+              (1, 2, 'msg2', -1),
+              (1, 2, 'msg3', 2),
+              (1, 2, 'msg4', 3),
              ])
 
         self.realm = 'discussion'
@@ -117,6 +120,33 @@ class DiscussionDbTestCase(unittest.TestCase):
                                description='No Group'),
                           dict(id=1, forums=2, name='forum_group1',
                                description='group-desc')])
+
+    def test_get_changed_topics(self):
+        context = self._prepare_context(self.req)
+        start = to_datetime(None, tzinfo=utc)
+        stop = start - timedelta(seconds=1)
+        self.assertEqual(
+            list(self.ddb.get_changed_topics(context, start, stop)), [])
+
+    def test_get_messages(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(
+            self.ddb.get_messages(context, 2), [{
+            'author': None, 'body': u'msg2', 'replyto': -1, 'time': None,
+            'replies': [{'author': None, 'body': u'msg3', 'replyto': 2,
+                         'time': None,
+                         'replies': [{'author': None, 'body': u'msg4',
+                                      'replyto': 3, 'time': None, 'id': 4}],
+                         'id': 3}],
+            'id': 2}]
+        )
+
+    def test_get_changed_messages(self):
+        context = self._prepare_context(self.req)
+        start = to_datetime(None, tzinfo=utc)
+        stop = start - timedelta(seconds=1)
+        self.assertEqual(
+            list(self.ddb.get_changed_messages(context, start, stop)), [])
 
 
 def test_suite():

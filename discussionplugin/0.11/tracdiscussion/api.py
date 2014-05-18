@@ -1733,6 +1733,25 @@ class DiscussionApi(DiscussionDb):
         return self._get_item(context, 'message', self.message_cols,
                               'time=%s', (time,))
 
+    def get_flat_messages(self, context, id, order_by='time', desc=False,
+                          limit=0, offset=0):
+        # Return messages of specified topic.
+        return self._get_items(context, 'message', self.msg_cols, 'topic=%s',
+                               (id,), order_by, desc, limit, offset)
+
+    def get_flat_messages_by_forum(self, context, id, order_by='time',
+                                   desc=False, limit=0, offset=0):
+        # Return messages of specified topic.
+        return self._get_items(context, 'message', ('id', 'replyto', 'topic',
+                                                    'time', 'author', 'body'),
+                               'forum=%s', (id,), order_by, desc, limit,
+                               offset)
+
+    def get_replies(self, context, id, order_by='time', desc=False):
+        # Return replies of specified message.
+        return self._get_items(context, 'message', self.msg_cols,
+                               'replyto=%s', (id,), order_by, desc)
+
     # Attribute getter methods.
 
     def get_topic_subject(self, context, id):
@@ -1751,7 +1770,7 @@ class DiscussionApi(DiscussionDb):
 
     def get_users(self, context):
         # Return users, that Trac knows.
-        return [user for user in self.env.get_known_users()]
+        return [user[0] for user in self.env.get_known_users()]
 
 
 def as_list(value):

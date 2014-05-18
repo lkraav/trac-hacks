@@ -28,6 +28,7 @@ class DiscussionDb(Component):
                   'body', 'status', 'priority')
     message_cols = ('id', 'forum', 'topic', 'replyto', 'time', 'author',
                     'body')
+    msg_cols = ('id', 'replyto', 'time', 'author', 'body')
 
     def _get_item(self, context, table, columns, where='', values=()):
         """Universal single item getter method."""
@@ -133,8 +134,7 @@ class DiscussionDb(Component):
     def _get_forums(self, context, order_by='subject', desc=False):
         """Return detailed information on forums."""
 
-        forum_cols = ('id', 'name', 'author', 'time', 'moderators',
-                      'subscribers', 'forum_group', 'subject', 'description')
+        forum_cols = self.forum_cols
         topic_cols = ('topics', 'replies', 'lasttopic', 'lastreply')
 
         # All other group-able columns are from forum db table.
@@ -172,8 +172,7 @@ class DiscussionDb(Component):
 
         # All other group-able columns are from topic db table.
         message_cols = ('replies', 'lastreply')
-        topic_cols = ['id', 'forum', 'time', 'author', 'subscribers',
-                      'subject', 'body', 'status', 'priority']
+        topic_cols = list(self.topic_cols)
         if not with_body:
             topic_cols.pop(6)
         topic_cols = tuple(topic_cols) # fixture for subsequent concatenation
@@ -209,54 +208,61 @@ class DiscussionDb(Component):
         cursor.execute(sql, values)
         return [dict(zip(topic_cols + message_cols, row)) for row in cursor]
 
-    def get_changed_topics(self, context, start, stop, order_by = 'time',
-      desc = False):
+    def get_changed_topics(self, context, start, stop, order_by='time',
+                           desc=False):
+        """Return topic content for timeline."""
+
         columns = ('id', 'forum', 'forum_name', 'time', 'author', 'subject',
-          'status')
-        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')
-          [bool(desc)]) and '')}
-        sql = ("SELECT t.id, t.forum, f.name, t.time, t.author, t.subject, "
-                 "t.status "
-               "FROM topic t "
-               "LEFT JOIN "
-                 "(SELECT id, name "
-                 "FROM forum) f "
-               "ON t.forum = f.id "
-               "WHERE t.time BETWEEN %%s AND %%s "
-               "%(order_by)s" % (sql_values))
+                   'status')
+        sql_values = {
+            'order_by': order_by and ' '.join(['ORDER BY', order_by,
+                                               ('ASC', 'DESC')[bool(desc)]]) \
+                        or ''
+        }
+        sql = ("SELECT t.id, t.forum, f.name, t.time, t.author, t.subject,"
+                   "   t.status"
+               "  FROM topic t"
+               "  LEFT JOIN"
+               "  (SELECT id, name"
+                   " FROM forum) f"
+               "  ON t.forum=f.id"
+               " WHERE t.time BETWEEN %%s AND %%s"
+               " %(order_by)s" % (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
-        for row in cursor:
-            row = dict(zip(columns, row))
-            row['status'] = self._topic_status_to_list(row['status'])
-            yield row
+        return [dict(zip(columns, row),
+                     status=self._topic_status_to_list(row['status']))
+                for row in cursor]
 
-    def get_messages(self, context, topic_id, order_by = 'time', desc = False):
-        order_by = 'm.' + order_by
-        columns = ('id', 'replyto', 'time', 'author', 'body')
-        sql_values = {'topic_id' : to_unicode(topic_id),
-          'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC',' DESC')[bool(desc)]
-            ) or '')}
-        sql = ("SELECT m.id, m.replyto, m.time, m.author, m.body "
-               "FROM message m "
-               "WHERE m.topic = %(topic_id)s "
-               "%(order_by)s" % (sql_values))
+    def get_messages(self, context, topic_id, order_by='time', desc=False):
+        columns = self.msg_cols
+        sql_values = {
+            'columns': ', '.join(columns),
+            'topic_id': topic_id,
+            'order_by': order_by and ' '.join(['ORDER BY', order_by,
+                                               ('ASC', 'DESC')[bool(desc)]]) \
+                        or ''
+        }
+        sql = ("SELECT %(columns)s"
+               "  FROM message"
+               " WHERE topic=%%s"
+               " %(order_by)s" % (sql_values))
+        values = [topic_id]
 
         cursor = context.db.cursor()
-        cursor.execute(sql)
+        cursor.execute(sql, values)
         messagemap = {}
         messages = []
         for row in cursor:
             row = dict(zip(columns, row))
             messagemap[row['id']] = row
-
             # Add top-level messages to the main list, in order of time.
             if row['replyto'] == -1:
                 messages.append(row)
 
-        # Second pass, add replies.
+        # Second pass: Add replies.
         for message in messagemap.values():
             if message['replyto'] != -1:
                 parent = messagemap[message['replyto']]
@@ -264,52 +270,37 @@ class DiscussionDb(Component):
                     parent['replies'].append(message)
                 else:
                     parent['replies'] = [message]
-        return messages;
+        return messages
 
-    def get_flat_messages(self, context, id, order_by = 'time', desc = False,
-      limit = 0, offset = 0):
-        # Return messages of specified topic.
-        return self._get_items(context, 'message', ('id', 'replyto', 'time',
-          'author', 'body'), 'topic = %s', (id,), order_by, desc, limit, offset)
+    def get_changed_messages(self, context, start, stop, order_by='time',
+                             desc=False):
+        """Return message content for timeline."""
 
-    def get_flat_messages_by_forum(self, context, id, order_by = 'time',
-      desc = False, limit = 0, offset = 0):
-        # Return messages of specified topic.
-        return self._get_items(context, 'message', ('id', 'replyto', 'topic',
-          'time', 'author', 'body'), 'forum = %s', (id,), order_by, desc, limit,
-          offset)
-
-    def get_changed_messages(self, context, start, stop, order_by = 'time',
-      desc = False):
-        columns = ('id', 'forum', 'forum_name', 'topic', 'topic_subject', 'time',
-          'author')
-        sql_values = {'order_by' : (order_by and ('ORDER BY ' + order_by + (' ASC', ' DESC')
-          [bool(desc)]) or '')}
-        sql = ("SELECT m.id, m.forum, f.name, m.topic, t.subject, m.time, "
-                 "m.author "
-               "FROM message m "
-               "LEFT JOIN "
-                 "(SELECT id, name "
-                 "FROM forum) f "
-               "ON m.forum = f.id "
-               "LEFT JOIN "
-                 "(SELECT id, subject "
-                 "FROM topic) t "
-               "ON m.topic = t.id "
-               "WHERE time BETWEEN %%s AND %%s "
-               "%(order_by)s"% (sql_values))
+        columns = ('id', 'forum', 'forum_name', 'topic', 'topic_subject',
+                   'time', 'author')
+        sql_values = {
+            'order_by': order_by and ' '.join(['ORDER BY', order_by,
+                                               ('ASC', 'DESC')[bool(desc)]]) \
+                        or ''
+        }
+        sql = ("SELECT m.id, m.forum, f.name, m.topic, t.subject, m.time,"
+                   "   m.author"
+               "  FROM message m"
+               "  LEFT JOIN"
+               "  (SELECT id, name"
+                   " FROM forum) f"
+               "  ON m.forum=f.id"
+               "  LEFT JOIN"
+               "  (SELECT id, subject"
+                   " FROM topic) t"
+               "  ON m.topic=t.id"
+               " WHERE time BETWEEN %%s AND %%s"
+               " %(order_by)s"% (sql_values))
         values = (to_timestamp(start), to_timestamp(stop))
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
-        for row in cursor:
-            row = dict(zip(columns, row))
-            yield row
-
-    def get_replies(self, context, id, order_by = 'time', desc = False):
-        # Return replies of specified message.
-        return self._get_items(context, 'message', ('id', 'replyto', 'time',
-          'author', 'body'), 'replyto = %s',(id,), order_by, desc)
+        return [dict(zip(columns, row)) for row in cursor]
 
     # Add items functions.
 
