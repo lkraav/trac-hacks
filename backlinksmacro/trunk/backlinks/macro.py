@@ -84,10 +84,11 @@ def _get_backlinked_pages(db, caller_page, backlinks_page):
         (w1.text %s)""" % db.like(),
         ('%' + db.like_escape(backlinks_page) + '%',))
 
+    pattern = re.compile(r'\b%s\b' % re.escape(backlinks_page), re.UNICODE)
     backlinked_pages = []
     for page, text in cursor:
-        if page != backlinks_page and page != caller_page and \
-                re.search(r'\b%s\b' % backlinks_page, text):
+        if page != backlinks_page and page != caller_page \
+                and pattern.search(text):
             backlinked_pages.append(page)
 
     return backlinked_pages
