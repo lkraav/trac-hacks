@@ -165,6 +165,18 @@ class DiscussionApiTestCase(unittest.TestCase):
         self.assertTrue(self.api.resource_exists(self.message))
         self.assertFalse(self.api.resource_exists(self.forum(id='message/6')))
 
+    def test_get_forum(self):
+        context = self._prepare_context(self.req)
+        context.has_tags = False
+        forum = self.api.get_forum(context, 1)
+        self.assertEqual(
+            set(['id', 'name', 'author', 'time', 'forum_group', 'subject',
+                 'description', 'moderators', 'subscribers',
+                 'unregistered_subscribers']),
+            set(forum.keys())
+        )
+        self.assertEqual('forum1', forum['name']) 
+
     def test_get_forums(self):
         context = self._prepare_context(self.req)
         context.has_tags = False
@@ -173,8 +185,8 @@ class DiscussionApiTestCase(unittest.TestCase):
         context.visited_topics = dict()
         self.assertEqual(
             set(self.api.get_forums(context)[0].keys()),
-            set(['id', 'name', 'author', 'time', 'moderators',
-                 'subscribers', 'forum_group', 'subject', 'description',
+            set(['id', 'name', 'author', 'time', 'forum_group', 'subject',
+                 'description', 'moderators', 'subscribers', 
                  'topics', 'replies', 'lasttopic', 'lastreply',
                  'new_replies', 'new_topics', 'unregistered_subscribers']))
 
@@ -184,6 +196,16 @@ class DiscussionApiTestCase(unittest.TestCase):
         stop = start - timedelta(seconds=1)
         self.assertEqual(
             list(self.api.get_changed_forums(context, start, stop)), [])
+
+    def test_get_topic(self):
+        context = self._prepare_context(self.req)
+        topic = self.api.get_topic(context, 1)
+        self.assertEqual(
+            set(['id', 'forum', 'author', 'time', 'status', 'subject', 'body',  
+                 'priority', 'subscribers', 'unregistered_subscribers']),
+            set(topic.keys())
+        )
+        self.assertEqual('top1', topic['subject']) 
 
     def test_get_topic_subject(self):
         context = self._prepare_context(self.req)
@@ -197,8 +219,8 @@ class DiscussionApiTestCase(unittest.TestCase):
         context.visited_topics = dict()
         self.assertEqual(
             set(self.api.get_topics(context, 1)[0].keys()),
-            set(['id', 'forum', 'time', 'author', 'subscribers', 'subject',
-                 'body', 'status', 'priority', 'replies', 'lastreply',
+            set(['id', 'forum', 'author', 'time', 'status', 'subject', 'body',
+                 'priority', 'subscribers', 'replies', 'lastreply',
                  'new_replies', 'unregistered_subscribers']))
 
     def test_get_topics_count(self):

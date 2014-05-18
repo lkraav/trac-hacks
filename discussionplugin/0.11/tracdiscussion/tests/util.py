@@ -71,14 +71,12 @@ class FormatToOnlinerNoLinksTestCase(_BaseTestCase):
 class PrepareTopicTestCase(_BaseTestCase):
 
     def test(self):
-        _BaseTestCase.setUp(self)
-        self.context.users = (('a', '1st user', 'a@b.com'),
-                              ('b', '2nd user', 'b@d.net'))
+        uids = (('a', '1st user', 'a@b.com'), ('b', '2nd user', 'b@d.net'))
         self.assertEqual(dict(status=set(['unsolved']),
                               subscribers=['a', 'b'],
                               unregistered_subscribers=set(['a', 'b'])),
-                         prepare_topic(self.context, dict(status=0,
-                                                          subscribers='a b')))
+                         prepare_topic(uids, dict(status=0,
+                                                  subscribers='a b')))
 
 
 class TopicStatusTestCase(_BaseTestCase):

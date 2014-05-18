@@ -1589,8 +1589,8 @@ class DiscussionApi(DiscussionDb):
         if forum:
             forum['moderators'] = as_list(forum['moderators'])
             forum['subscribers'] = as_list(forum['subscribers'])
-            forum['unregistered_subscribers'] = set(forum['subscribers']) \
-                                                .difference(context.users)
+            forum['unregistered_subscribers'] = set(
+                forum['subscribers']).difference(self.get_users(context))
             if context.has_tags:
                 tag_system = TagSystem(self.env)
                 forum['tags'] = tag_system.get_tags(context.req,
@@ -1629,12 +1629,11 @@ class DiscussionApi(DiscussionDb):
 
             # Convert floating-point result of SUM() above into integer.
             forum['replies'] = int(forum['replies'] or 0)
+            # Unpack list of moderators and subscribers and get forum tags.
             forum['moderators'] = as_list(forum['moderators'])
             forum['subscribers'] = as_list(forum['subscribers'])
-            forum['unregistered_subscribers'] = set(forum['subscribers']) \
-                                                .difference(context.users)
-
-            # Get forum tags.
+            forum['unregistered_subscribers'] = set(
+                forum['subscribers']).difference(self.get_users(context))
             if context.has_tags:
                 tag_system = TagSystem(self.env)
                 forum['tags'] = tag_system.get_tags(context.req, Resource(
@@ -1654,19 +1653,19 @@ class DiscussionApi(DiscussionDb):
         # Get topic by ID.
         topic = self._get_item(context, 'topic', self.topic_cols, 'id=%s',
                                (id,))
-        return prepare_topic(context, topic)
+        return prepare_topic(self.get_users(context), topic)
 
     def get_topic_by_time(self, context, time):
         # Get topic by time of creation.
         topic = self._get_item(context, 'topic', self.topic_cols, 'time=%s',
                                (time,))
-        return prepare_topic(context, topic)
+        return prepare_topic(self.get_users(context), topic)
 
     def get_topic_by_subject(self, context, subject):
         # Get topic by subject.
         topic = self._get_item(context, 'topic', self.topic_cols,
                                'subject=%s', (subject,))
-        return prepare_topic(context, topic)
+        return prepare_topic(self.get_users(context), topic)
 
     def get_topics(self, context, forum_id, order_by='time', desc=False,
                    limit=0, offset=0, with_body=True):
@@ -1681,12 +1680,9 @@ class DiscussionApi(DiscussionDb):
                                   limit, offset, with_body)
         # Add some more topic attributes and convert others.
         for topic in topics:
-            # Compute count of new replies.
             topic['new_replies'] = _new_replies_count(context, topic['id'])
-            topic['subscribers'] = as_list(topic['subscribers'])
-            topic['unregistered_subscribers'] = set(topic['subscribers']) \
-                                                .difference(context.users)
-            topic['status'] = topic_status_to_list(topic['status'])
+            # Unpack list of topic subscribers and get topic status.
+            topic = prepare_topic(self.get_users(context), topic)
             if context.has_tags:
                 tag_system = TagSystem(self.env)
                 topic['tags'] = tag_system.get_tags(context.req, Resource(
@@ -1739,5 +1735,10 @@ class DiscussionApi(DiscussionDb):
                                      (topic_id,))
 
     def get_users(self, context):
-        # Return users, that Trac knows.
-        return [user[0] for user in self.env.get_known_users()]
+        try:
+            # Use already customized discussion context.
+            return context.users
+        except AttributeError:
+            # Fallback for pristine Trac context:
+            # Return users, that Trac knows.
+            return [user[0] for user in self.env.get_known_users()]

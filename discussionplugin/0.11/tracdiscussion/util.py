@@ -29,12 +29,12 @@ def format_to_oneliner_no_links(env, context, content):
     stream = HTML(format_to_oneliner(env, context, to_unicode(content)))
     return Markup(stream | Transformer('//a').unwrap())
 
-def prepare_topic(context, topic):
+def prepare_topic(uids, topic):
     """Unpack list of topic subscribers and get topic status."""
     if topic:
         topic['subscribers'] = as_list(topic['subscribers'])
         topic['unregistered_subscribers'] = set(topic['subscribers']) \
-                                            .difference(context.users)
+                                            .difference(uids)
         topic['status'] = topic_status_to_list(topic['status'])
     return topic
 
