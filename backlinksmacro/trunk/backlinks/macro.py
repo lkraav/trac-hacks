@@ -7,12 +7,12 @@
 # License: GPL 3.0
 #
 
-from genshi.builder import tag
+import re
+from StringIO import StringIO
+
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 
-from StringIO import StringIO
-import re
 
 class BackLinksMacro(WikiMacroBase):
     """
@@ -29,7 +29,8 @@ class BackLinksMacro(WikiMacroBase):
         backlinks_page = args or caller_page
         db = self.env.get_db_cnx()
 
-        backlinked_pages = _get_backlinked_pages(db, caller_page, backlinks_page)
+        backlinked_pages = \
+            _get_backlinked_pages(db, caller_page, backlinks_page)
 
         buf = StringIO()
         buf.write('<hr style="width: 10%; padding: 0; margin: 2em 0 1em 0;"/>')
@@ -59,7 +60,8 @@ class BackLinksMenuMacro(WikiMacroBase):
         backlinks_page = args or caller_page
         db = self.env.get_db_cnx()
         
-        backlinked_pages = _get_backlinked_pages(db, caller_page, backlinks_page)
+        backlinked_pages = \
+            _get_backlinked_pages(db, caller_page, backlinks_page)
 
         buf = StringIO()
         buf.write('<div class="wiki-toc">')
@@ -79,12 +81,13 @@ def _get_backlinked_pages(db, caller_page, backlinks_page):
     cursor.execute("""SELECT w1.name, w1.text FROM wiki AS w1,
         (SELECT name, MAX(version) AS version FROM wiki GROUP BY name) AS w2
         WHERE w1.version = w2.version AND w1.name = w2.name AND
-        (w1.text %s)""" % db.like(), ('%' + db.like_escape(backlinks_page) + '%',))
+        (w1.text %s)""" % db.like(),
+        ('%' + db.like_escape(backlinks_page) + '%',))
 
     backlinked_pages = []
     for page, text in cursor:
         if page != backlinks_page and page != caller_page and \
-           re.search(r'\b%s\b' % backlinks_page, text):
+                re.search(r'\b%s\b' % backlinks_page, text):
             backlinked_pages.append(page)
 
     return backlinked_pages
