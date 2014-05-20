@@ -33,31 +33,17 @@ class DefaultTicketImage(Component):
             self.upgrade_environment(None)
 
     def environment_needs_upgrade(self, db):
-        """Called when Trac checks whether the environment needs to be upgraded.
-
-        Should return `True` if this participant needs an upgrade to be
-        performed, `False` otherwise.
-        """
-        if db is not None:
-            db.commit()
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        try:
-            cursor.execute("SELECT * FROM default_image")
+        dburi = self.config.get('trac', 'database')
+        tables = self._get_tables(dburi, cursor)
+        if 'default_image' in tables:
             return False
-        except:
-            return True
+        return True
 
     def upgrade_environment(self, db):
-        """Actually perform an environment upgrade.
-
-        Implementations of this method should not commit any database
-        transactions. This is done implicitly after all participants have
-        performed the upgrades they need without an error being raised.
-        """
-        if db is not None:
-            db.commit()
         self.create_db()
+        db.commit()
 
     ### method for IRequireComponents
 
@@ -70,8 +56,7 @@ class DefaultTicketImage(Component):
         default_image = Table('default_image', key=('ticket',))[
             Column('ticket', type='int'),
             Column('image'),
-            ]
-
+        ]
         create_table(self.env, default_image)
 
     def default_image(self, ticket_id, size=None):
@@ -94,3 +79,26 @@ class DefaultTicketImage(Component):
 
     def set_default(self, ticket_id, image):
         insert_update(self.env, 'default_image', 'ticket', ticket_id, dict(image=image))
+
+    def _get_tables(self, dburi, cursor):
+        """Code from TracMigratePlugin by Jun Omae (see tracmigrate.admin)."""
+        if dburi.startswith('sqlite:'):
+            sql = """
+                SELECT name
+                  FROM sqlite_master
+                 WHERE type='table'
+                   AND NOT name='sqlite_sequence'
+            """
+        elif dburi.startswith('postgres:'):
+            sql = """
+                SELECT tablename
+                  FROM pg_tables
+                 WHERE schemaname = ANY (current_schemas(false))
+            """
+        elif dburi.startswith('mysql:'):
+            sql = "SHOW TABLES"
+        else:
+            raise TracError('Unsupported database type "%s"'
+                            % dburi.split(':')[0])
+        cursor.execute(sql)
+        return sorted([row[0] for row in cursor])
