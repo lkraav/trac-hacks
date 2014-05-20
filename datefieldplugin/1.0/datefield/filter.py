@@ -1,6 +1,7 @@
 from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import ITemplateProvider, add_script, add_script_data, add_stylesheet
+from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
+                            add_script_data, add_stylesheet
 from trac.ticket.api import ITicketManipulator
 from trac.config import Option, IntOption, BoolOption, ListOption
 
@@ -90,9 +91,8 @@ class DateFieldModule(Component):
                 'change_month': self.change_month,
                 'change_year': self.change_year
                 }})
-            add_script(req, 'datefield/js/jquery-ui-1.8.16.custom.min.js')
             add_script(req, 'datefield/js/datefield.js')
-            add_stylesheet(req, 'datefield/css/jquery-ui-1.8.16.custom.css')
+            Chrome(self.env).add_jquery_ui(req)
         return template, data, content_type
         
     # ITemplateProvider methods
