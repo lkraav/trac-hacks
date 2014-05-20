@@ -1,14 +1,11 @@
 from componentdependencies import IRequireComponents
-from genshi.builder import tag
 from genshi.filters import Transformer
-from genshi.template import TemplateLoader
 from imagetrac.image import ImageTrac
 from imagetrac.default_image import DefaultTicketImage
 from pkg_resources import resource_filename
 from ticketsidebarprovider import ITicketSidebarProvider
 from ticketsidebarprovider import TicketSidebarProvider
 from trac.attachment import Attachment
-from trac.attachment import AttachmentModule
 from trac.config import Option
 from trac.core import *
 from trac.mimeview import Mimeview
@@ -43,7 +40,7 @@ class SidebarImage(Component):
             return attachment.filename
 
     ### method for IRequireComponents
-    
+
     def requires(self):
         return [ TicketSidebarProvider ]
 
@@ -79,7 +76,7 @@ class SidebarImage(Component):
             default = DefaultTicketImage(self.env).default_image(ticket.id)
 
         # generate the template
-        return template.generate(display=display, 
+        return template.generate(display=display,
                                  images=images,
                                  req=req,
                                  default=default,
@@ -99,7 +96,7 @@ class SidebarImage(Component):
         Each item in the list must be a `(prefix, abspath)` tuple. The
         `prefix` part defines the path in the URL that requests to these
         resources are prefixed with.
-        
+
         The `abspath` is the absolute path to the directory containing the
         resources on the local file system.
         """
@@ -118,9 +115,9 @@ class ImageFormFilter(Component):
     """add image submission to the ticket form"""
 
     implements(ITemplateStreamFilter)
-    fieldset_id = Option('ticket-image', 'fieldset_id', 'properties', 
+    fieldset_id = Option('ticket-image', 'fieldset_id', 'properties',
                          'fieldset after which to insert the form')
-        
+
     ### methods for ITemplateStreamFilter
 
     """Filter a Genshi event stream prior to rendering."""
@@ -159,7 +156,7 @@ class ImageFormFilter(Component):
         Each item in the list must be a `(prefix, abspath)` tuple. The
         `prefix` part defines the path in the URL that requests to these
         resources are prefixed with.
-        
+
         The `abspath` is the absolute path to the directory containing the
         resources on the local file system.
         """
@@ -195,7 +192,7 @@ class Galleria(Component):
         Each item in the list must be a `(prefix, abspath)` tuple. The
         `prefix` part defines the path in the URL that requests to these
         resources are prefixed with.
-        
+
         The `abspath` is the absolute path to the directory containing the
         resources on the local file system.
         """
@@ -216,7 +213,7 @@ class Galleria(Component):
         """Do any post-processing the request might need; typically adding
         values to the template `data` dictionary, or changing template or
         mime type.
-        
+
         `data` may be update in place.
 
         Always returns a tuple of (template, data, content_type), even if
@@ -237,13 +234,13 @@ class Galleria(Component):
                 add_stylesheet(req, 'imagetrac/css/galleria.css')
                 add_script(req, 'imagetrac/js/jquery.galleria.js')
                 add_script(req, 'imagetrac/js/init_galleria.js')
-            
+
         return (template, data, content_type)
 
     def pre_process_request(self, req, handler):
         """Called after initial handler selection, and can be used to change
         the selected handler or redirect request.
-        
+
         Always returns the request handler, even if unchanged.
         """
         return handler
@@ -259,11 +256,11 @@ class TicketImageHandler(Component):
     web handler for returning images for a ticket
     """
 
-    
+
     implements(IRequestHandler, IRequireComponents)
 
     ### method for IRequireComponents
-        
+
     def requires(self):
         return [ DefaultTicketImage ]
 
@@ -275,7 +272,7 @@ class TicketImageHandler(Component):
         """Return whether the handler wants to process the given request."""
 
         if req.method == 'GET':
-            
+
             try:
                 ticket_id, size = self.ticket_id_and_size(req.path_info)
                 return True
@@ -294,7 +291,7 @@ class TicketImageHandler(Component):
             except ValueError:
                 return False
             return True
-            
+
 
     def process_request(self, req):
         """Process the request. For ClearSilver, return a (template_name,
@@ -348,9 +345,8 @@ class TicketImageHandler(Component):
         if path[3] not in sizes + [ 'original' ]:
             return None
         return (ticket_id, path[3])
-        
+
     def set_default_image(self, req):
         ticket_id, size = self.ticket_id_and_size(req.path_info)
         default_ticket_image = DefaultTicketImage(self.env)
         default_ticket_image.set_default(ticket_id, req.args['default'])
-

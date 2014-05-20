@@ -10,7 +10,7 @@ try:
 
     class MarkerImage(Component):
         """image map marker"""
-        
+
         implements(IMapMarkerStyle, IRequireComponents)
 
         image_size = Option('geo', 'marker_image_size', 'thumbnail',
@@ -30,7 +30,7 @@ try:
         # method for IRequireComponents
         def requires(self):
             return [ TicketImageHandler ]
-        
-        
+
+
 except ImportError:
     pass

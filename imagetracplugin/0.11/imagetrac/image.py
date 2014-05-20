@@ -9,7 +9,6 @@ from cropresize import crop_resize
 from trac.attachment import Attachment
 from trac.attachment import IAttachmentChangeListener
 from trac.config import BoolOption
-from trac.config import ListOption
 from trac.config import Option
 from trac.core import *
 from trac.mimeview import Mimeview
@@ -19,14 +18,15 @@ from trac.ticket.api import ITicketManipulator
 from trac.web.api import IRequestFilter
 from PIL import Image
 
+
 class ImageTrac(Component):
 
-    implements(ITicketManipulator, 
-               ITicketChangeListener, 
-               IRequestFilter, 
+    implements(ITicketManipulator,
+               ITicketChangeListener,
+               IRequestFilter,
                IAttachmentChangeListener)
 
-    mandatory_image = BoolOption('ticket-image', 'mandatory_image', 'false', 
+    mandatory_image = BoolOption('ticket-image', 'mandatory_image', 'false',
                                  "Enforce a mandatory image for created tickets")
     thumbnail = Option('ticket-image', 'size.thumbnail', '32x32',
                        "size of the ticket thumbnail image")
@@ -44,7 +44,7 @@ class ImageTrac(Component):
 
     def validate_ticket(self, req, ticket):
         """Validate a ticket after it's been populated from user input.
-        
+
         Must return a list of `(field, message)` tuples, one for each problem
         detected. `field` can be `None` to indicate an overall problem with the
         ticket. Therefore, a return value of `[]` means everything is OK."""
@@ -57,7 +57,7 @@ class ImageTrac(Component):
                 return[('ticket_image', 'Uploaded file is not an image')]
             if mimetype.split('/',1)[0] != 'image':
                 return [('ticket_image', 'Uploaded file is not an image, instead it is %s' % mimetype)]
-            
+
             try:
                 Image.open(image.file)
             except IOError, e:
@@ -85,7 +85,7 @@ class ImageTrac(Component):
 
     def ticket_changed(self, ticket, comment, author, old_values):
         """Called when a ticket is modified.
-        
+
         `old_values` is a dictionary containing the previous values of the
         fields that have changed.
         """
@@ -93,16 +93,16 @@ class ImageTrac(Component):
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
         if not hasattr(self, 'image'):
-            return 
+            return
         image = self.image.pop(ticket['summary'], None)
         if image is None:
-            return 
+            return
 
-        self.attach(ticket, image)            
+        self.attach(ticket, image)
 
     def ticket_deleted(self, ticket):
         """Called when a ticket is deleted."""
-        
+
 
     ### methods for IRequestFilter
 
@@ -113,7 +113,7 @@ class ImageTrac(Component):
         """Do any post-processing the request might need; typically adding
         values to the template `data` dictionary, or changing template or
         mime type.
-        
+
         `data` may be update in place.
 
         Always returns a tuple of (template, data, content_type), even if
@@ -129,13 +129,13 @@ class ImageTrac(Component):
         if template == 'ticket.html':
             ticket = data['ticket']
             data['images'] = self.images(ticket, req.href)
-                        
+
         return (template, data, content_type)
 
     def pre_process_request(self, req, handler):
         """Called after initial handler selection, and can be used to change
         the selected handler or redirect request.
-        
+
         Always returns the request handler, even if unchanged.
         """
         return handler
@@ -158,9 +158,9 @@ class ImageTrac(Component):
 
     def attachment_deleted(self, attachment):
         """Called when an attachment is deleted."""
-        # XXX should delete the default from the DB 
+        # XXX should delete the default from the DB
         # if the attachment deleted is the default
-    
+
     ### internal methods
 
     def attach(self, ticket, image):
@@ -213,7 +213,7 @@ class ImageTrac(Component):
 
         if not ticket.exists:
             return {}
-        
+
         attachments = list(Attachment.select(self.env, 'ticket', ticket.id))
         images = {}
         for attachment in attachments:
@@ -251,7 +251,7 @@ class ImageTrac(Component):
 
         return (filename, 'original')
 
-        
+
     def sizes(self):
         """return image sizes"""
         sizes = { 'default': self.default_size,
