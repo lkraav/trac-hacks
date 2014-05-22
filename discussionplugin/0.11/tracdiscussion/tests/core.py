@@ -6,31 +6,31 @@
 # you should have received as part of this distribution.
 #
 
-import shutil
-import tempfile
 import unittest
 
-from trac.perm import PermissionCache, PermissionSystem
-from trac.test import EnvironmentStub, Mock
+from trac.perm import PermissionCache
+from trac.test import Mock
 from trac.web.chrome import Chrome
 from trac.web.href import Href
 
 from tracdiscussion.core import DiscussionCore
+from tracdiscussion.tests.test import DiscussionBaseTestCase
 
 
-class DiscussionCoreTestCase(unittest.TestCase):
+class DiscussionCoreTestCase(DiscussionBaseTestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
-        self.env.path = tempfile.mkdtemp()
+        DiscussionBaseTestCase.setUp(self)
 
-        self.perms = PermissionSystem(self.env)
+        self.req = Mock(authname='reader', method='GET',
+                   args=dict(), abs_href=self.env.abs_href,
+                   chrome=dict(notices=[], warnings=[]),
+                   href=self.env.abs_href, locale='',
+                   redirect=lambda x: None, session=dict(), tz=''
+        )
+        self.req.perm = PermissionCache(self.env, 'reader')
 
         self.core = DiscussionCore(self.env)
-
-    def tearDown(self):
-        self.env.shutdown()
-        shutil.rmtree(self.env.path)
 
     # Tests
 
@@ -59,6 +59,14 @@ class DiscussionCoreTestCase(unittest.TestCase):
         nav = Chrome(self.env).prepare_request(req)['nav']
         self.assertTrue([entry for entry in nav['mainnav']
                          if 'discussion' == entry['name']])
+
+    def test_search(self):
+        results = [i for i in self.core.get_search_results(self.req,
+                                                          ('hello',),
+                                                          ('discussion',))]
+        self.assertEqual(2, len(results))
+        self.assertEqual(set(['Othello ;-)', 'Say "Hello world!"']),
+                         set([result[-1] for result in results]))
 
     def test_template_dirs_added(self):
         self.assertTrue(self.core in Chrome(self.env).template_providers)

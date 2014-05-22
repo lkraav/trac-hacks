@@ -33,9 +33,6 @@ def test_suite():
     import tracdiscussion.tests.notification
     suite.addTest(tracdiscussion.tests.notification.test_suite())
 
-    import tracdiscussion.tests.search
-    suite.addTest(tracdiscussion.tests.search.test_suite())
-
     msg_fail = '%s not found: skipping tracdiscussion.tests.%s'
     try:
         import tracdiscussion.tests.spamfilter

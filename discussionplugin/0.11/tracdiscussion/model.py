@@ -13,7 +13,9 @@ from copy import deepcopy
 from trac.core import Component
 from trac.mimeview import Context
 from trac.resource import Resource
-from trac.util.datefmt import to_timestamp
+from trac.search import search_to_sql, shorten_result
+from trac.util import shorten_line
+from trac.util.datefmt import to_datetime, to_timestamp, utc
 from trac.util.text import to_unicode
 
 from tracdiscussion.util import topic_status_from_list, topic_status_to_list
@@ -303,6 +305,57 @@ class DiscussionDb(Component):
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         return [dict(zip(columns, row)) for row in cursor]
+
+    def get_search_results(self, href, terms):
+        """Returns discussion content matching TracSearch terms."""
+
+        db = self.env.get_db_cnx()
+        cursor = db.cursor()
+
+        # Search in topics.
+        query, args = search_to_sql(db, ['author', 'subject', 'body'], terms)
+        columns = ('id', 'forum', 'time', 'subject', 'body', 'author')
+        sql = ("SELECT %s"
+               "  FROM topic"
+               " WHERE %s" % (', '.join(columns), query))
+        cursor.execute(sql, args)
+        for row in cursor:
+            # Class references are valid only in sub-class (api).
+            row = dict(zip(columns, row))
+            resource = Resource(self.realm, 'forum/%s/topic/%s'
+                                            % (row['forum'], row['id']))
+            yield (''.join([self.get_resource_url(resource, href), '#-1']),
+                   "Topic #%d: %s" % (row['id'],
+                                      shorten_line(row['subject'])),
+                   to_datetime(row['time'], utc), row['author'],
+                   shorten_result(row['body'], [query]))
+
+        # Search in messages.
+        query, args = search_to_sql(db, ['m.author', 'm.body', 't.subject'],
+                                    terms)
+        columns = ('id', 'forum', 'topic', 'time', 'author', 'body', 'subject')
+        sql = ("SELECT %s, t.subject"
+               "  FROM message m"
+               "  LEFT JOIN"
+               "  (SELECT subject, id"
+                   " FROM topic) t"
+               "  ON t.id=m.topic"
+               " WHERE %s" % ('m.' + ', m.'.join(columns[:-1]), query))
+        cursor.execute(sql, args)
+        for row in cursor:
+            # Class references are valid only in sub-class (api).
+            row = dict(zip(columns, row))
+            parent = Resource(self.realm, 'forum/%s/topic/%s'
+                                           % (row['forum'], row['topic']))
+            resource = Resource(self.realm,
+                                'forum/%s/topic/%s/message/%s'
+                                % (row['forum'], row['topic'], row['id']),
+                                parent=parent)
+            yield (self.get_resource_url(resource, href),
+                   "Message  #%d: %s" % (row['id'],
+                                         shorten_line(row['subject'])),
+                   to_datetime(row['time'], utc), row['author'],
+                   shorten_result(row['body'], [query]))
 
     # Item manipulation methods.
 

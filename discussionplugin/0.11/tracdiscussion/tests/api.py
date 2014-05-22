@@ -6,35 +6,27 @@
 # you should have received as part of this distribution.
 #
 
-import shutil
-import tempfile
 import unittest
 
 from datetime import timedelta
 from genshi.builder import tag
 from genshi.core import Markup
 
-from trac.db.api import DatabaseManager
 from trac.mimeview import Context
-from trac.perm import PermissionCache, PermissionError, PermissionSystem
+from trac.perm import PermissionCache
 from trac.resource import Resource
-from trac.test import EnvironmentStub, Mock
+from trac.test import Mock
 from trac.util.datefmt import to_datetime, utc
 from trac.web.href import Href
 
 from tracdiscussion.api import DiscussionApi
-from tracdiscussion.init import DiscussionInit
+from tracdiscussion.tests.test import DiscussionBaseTestCase
 
 
-class DiscussionApiTestCase(unittest.TestCase):
+class DiscussionApiTestCase(DiscussionBaseTestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub(default_data=True,
-                                   enable=['trac.*', 'tracdiscussion.*'])
-        self.env.path = tempfile.mkdtemp()
-        self.perms = PermissionSystem(self.env)
-
-        self.realm = 'discussion'
+        DiscussionBaseTestCase.setUp(self)
 
         self.req = Mock(authname='editor', method='GET',
                    args=dict(), abs_href=self.env.abs_href,
@@ -47,54 +39,12 @@ class DiscussionApiTestCase(unittest.TestCase):
         self.actions = ('DISCUSSION_ADMIN', 'DISCUSSION_MODERATE',
                         'DISCUSSION_ATTACH', 'DISCUSSION_APPEND',
                         'DISCUSSION_VIEW')
-        self.db = self.env.get_db_cnx()
-        # Accomplish Discussion db schema setup.
-        setup = DiscussionInit(self.env)
-        setup.upgrade_environment(self.db)
-        # Populate tables with initial test data.
-        cursor = self.db.cursor()
-        cursor.execute("""
-            INSERT INTO forum_group
-                   (name, description)
-            VALUES (%s,%s)
-        """, ('forum_group1', 'group-desc'))
-        cursor.executemany("""
-            INSERT INTO forum
-                   (name, subject, description)
-            VALUES (%s,%s,%s)
-        """, [('forum1', 'forum-subject1', 'forum-desc1'),
-              ('forum2', 'forum-subject2', 'forum-desc2')
-             ])
-        cursor.executemany("""
-            INSERT INTO topic
-                   (forum, subject, body)
-            VALUES (%s,%s,%s)
-        """, [(1, 'top1', 'topic-desc1'),
-              (1, 'top2', 'topic-desc2'),
-              (2, 'top3', 'topic-desc3')
-             ])
-        cursor.executemany("""
-            INSERT INTO message
-                   (forum, topic, body, replyto, time)
-            VALUES (%s,%s,%s,%s,%s)
-        """, [(1, 1, 'msg1', -1, 1400361000),
-              (1, 2, 'msg2', -1, 1400362000),
-              (1, 2, 'msg3', 2, 1400362200),
-              (1, 2, 'msg4', -1, 1400362400),
-              (2, 3, 'msg5', -1, 1400362600)
-             ])
-
-        self.api = DiscussionApi(self.env)
 
         self.forum = Resource(self.realm, 'forum/1')
         self.topic = Resource(self.realm, 'topic/2')
         self.message = Resource(self.realm, 'message/3', None, self.topic)
 
-    def tearDown(self):
-        self.db.close()
-        # Really close db connections.
-        self.env.shutdown()
-        shutil.rmtree(self.env.path)
+        self.api = DiscussionApi(self.env)
 
     # Helpers
 

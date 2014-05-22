@@ -16,6 +16,7 @@ from trac.core import Component, implements
 from trac.config import Option
 from trac.mimeview.api import Context, IContentConverter, Mimeview
 from trac.resource import Resource, get_resource_url
+from trac.search import ISearchSource
 from trac.util.html import html
 from trac.util.translation import _, N_
 from trac.web.chrome import INavigationContributor, ITemplateProvider
@@ -26,33 +27,18 @@ from tracdiscussion.api import DiscussionApi
 
 
 class DiscussionCore(Component):
-    """[main] Provides a message board including wiki links to discussions,
-    topics and messages.
+    """[main] Provides views and search on discussion content.
+
+    At the message board discussion messages are organized in forums under
+    their corresponding topic within optional forum groups, and discussion
+    topics and messages are searchable by TracSearch queries.
     """
 
     implements(IContentConverter, INavigationContributor,
-               IRequestHandler, ITemplateProvider)
+               IRequestHandler, ISearchSource, ITemplateProvider)
 
     title = Option('discussion', 'title', N_('Discussion'),
                    doc=_('Main navigation bar button title.'))
-
-    # ITemplateProvider methods
-
-    def get_htdocs_dirs(self):
-        return [('discussion', resource_filename(__name__, 'htdocs'))]
-
-    def get_templates_dirs(self):
-        return [resource_filename(__name__, 'templates')]
-
-    # INavigationContributor methods
-
-    def get_active_navigation_item(self, req):
-        return 'discussion'
-
-    def get_navigation_items(self, req):
-        if req.perm.has_permission('DISCUSSION_VIEW'):
-            yield 'mainnav', 'discussion', html.a(_(self.title),
-                                                  href=req.href.discussion())
 
     # IContentConverter methods
 
@@ -65,6 +51,29 @@ class DiscussionCore(Component):
     def convert_content(self, req, mimetype, resource, key):
         if key == 'rss':
             return self._export_rss(req, resource)
+
+    def _export_rss(self, req, resource):
+        # Create request context.
+        context = Context.from_request(req)
+        context.realm = 'discussion-core'
+        context.resource = resource
+
+        # Process request and get template and template data.
+        api = DiscussionApi(self.env)
+        template, data = api.process_discussion(context)
+        output = Chrome(self.env).render_template(req, template, data,
+                                                  'application/rss+xml')
+        return output, 'application/rss+xml'
+
+    # INavigationContributor methods
+
+    def get_active_navigation_item(self, req):
+        return 'discussion'
+
+    def get_navigation_items(self, req):
+        if req.perm.has_permission('DISCUSSION_VIEW'):
+            yield 'mainnav', 'discussion', html.a(_(self.title),
+                                                  href=req.href.discussion())
 
     # IRequestHandler methods.
 
@@ -130,17 +139,22 @@ class DiscussionCore(Component):
                              out_mimetype, format)
             return template, data, None
 
-    # Internal methods
+    # ISearchSource methods.
 
-    def _export_rss(self, req, resource):
-        # Create request context.
-        context = Context.from_request(req)
-        context.realm = 'discussion-core'
-        context.resource = resource
+    def get_search_filters(self, req):
+        if 'DISCUSSION_VIEW' in req.perm:
+            yield ('discussion', self.config.get('discussion', 'title'))
 
-        # Process request and get template and template data.
-        api = DiscussionApi(self.env)
-        template, data = api.process_discussion(context)
-        output = Chrome(self.env).render_template(req, template, data,
-                                                  'application/rss+xml')
-        return output, 'application/rss+xml'
+    def get_search_results(self, req, terms, filters):
+        if not 'discussion' in filters:
+            return
+
+        return DiscussionApi(self.env).get_search_results(req.href, terms)
+
+    # ITemplateProvider methods
+
+    def get_htdocs_dirs(self):
+        return [('discussion', resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        return [resource_filename(__name__, 'templates')]
