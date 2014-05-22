@@ -29,7 +29,8 @@ from trac.web.href import Href
 
 from tracdiscussion.model import DiscussionDb
 from tracdiscussion.util import as_list, format_to_oneliner_no_links
-from tracdiscussion.util import prepare_topic, topic_status_to_list
+from tracdiscussion.util import prepare_topic, topic_status_from_list
+from tracdiscussion.util import topic_status_to_list
 
 try:
     from tractags.api import TagSystem
@@ -1563,7 +1564,8 @@ class DiscussionApi(DiscussionDb):
 
         return paginator
 
-    # Item getter convenience methods wrapping generic db access methods.
+    ## Convenience methods wrapping generic db access methods.
+    # Item getter methods.
 
     def get_group(self, context, id):
         # Get forum group.
@@ -1603,7 +1605,7 @@ class DiscussionApi(DiscussionDb):
             # Get IDs of topics in this forum.
             where = "forum=%s"
             topics = [topic['id'] for topic in self._get_items(
-                          context, 'topic', ('id',), where, (forum_id,))]
+                         context, 'topic', ('id',), where, (forum_id,))]
             # Count unseen messages.
             count = 0
             for topic_id in topics:
@@ -1718,7 +1720,7 @@ class DiscussionApi(DiscussionDb):
         return self._get_items(context, 'message', self.msg_cols,
                                'replyto=%s', (id,), order_by, desc)
 
-    # Attribute getter methods.
+    # Attribute getter method.
 
     def get_topic_subject(self, context, id):
         # Get subject of the topic.
@@ -1742,3 +1744,107 @@ class DiscussionApi(DiscussionDb):
             # Fallback for pristine Trac context:
             # Return users, that Trac knows.
             return [user[0] for user in self.env.get_known_users()]
+
+    # Add item methods.
+
+    def add_group(self, context, group):
+        self._add_item(context, 'forum_group', group)
+
+    def add_forum(self, context, forum):
+        tmp_forum = deepcopy(forum)
+
+        # Pack moderators and subscribers fields.
+        tmp_forum['moderators'] = ' '.join(tmp_forum['moderators'])
+        tmp_forum['subscribers'] = ' '.join(tmp_forum['subscribers'])
+
+        # Tags are not stored in discussion schema.
+        if 'tags' in tmp_forum:
+            # DEVEL: Store tags instead of discarging them.
+            del tmp_forum['tags']
+
+        self._add_item(context, 'forum', tmp_forum)
+
+    def add_topic(self, context, topic):
+        tmp_topic = deepcopy(topic)
+
+        # Pack subscribers field.
+        tmp_topic['subscribers'] = ' '.join(tmp_topic['subscribers'])
+        # Encode status field.
+        tmp_topic['status'] = topic_status_from_list(
+            'status' in tmp_topic and tmp_topic['status'] or [])
+
+        self._add_item(context, 'topic', tmp_topic)
+
+    def add_message(self, context, message):
+        self._add_item(context, 'message', message)
+
+    # Delete item methods
+
+    def delete_group(self, context, id):
+        # Assing forums of this group to 'None' group first.
+        self._set_item(context, 'forum', 'forum_group', '0','forum_group=%s',
+                       (id,))
+        self._delete_item(context, 'forum_group', 'id=%s', (id,))
+
+    def delete_forum(self, context, id):
+        # Delete all forum messages and topics first.
+        self._delete_item(context, 'message', 'forum=%s', (id,))
+        self._delete_item(context, 'topic', 'forum=%s', (id,))
+        self._delete_item(context, 'forum', 'id=%s', (id,))
+
+    def delete_topic(self, context, id):
+        # Delete all topic messages first.
+        self._delete_item(context, 'message', 'topic=%s', (id,))
+        self._delete_item(context, 'topic', 'id=%s', (id,))
+
+    def delete_message(self, context, id):
+        # Delete all replies to this message first.
+        for reply in self.get_replies(context, id):
+            self.delete_message(context, reply['id'])
+        self._delete_item(context, 'message', 'id=%s', (id,))
+
+    # Edit item methods
+
+    def edit_group(self, context, id, group):
+        # Edit forum group.
+        self._edit_item(context, 'forum_group', id, group)
+
+    def edit_forum(self, context, id, forum):
+        tmp_forum = deepcopy(forum)
+
+        # Pack moderators and subscribers fields.
+        if 'moderators' in tmp_forum:
+            tmp_forum['moderators'] = ' '.join(tmp_forum['moderators'])
+        if 'subscribers' in tmp_forum:
+            tmp_forum['subscribers'] = ' '.join(tmp_forum['subscribers'])
+
+        self._edit_item(context, 'forum', id, tmp_forum)
+
+    def edit_topic(self, context, id, topic):
+        tmp_topic = deepcopy(topic)
+
+        # Pack subscribers field.
+        if 'subscribers' in tmp_topic:
+            tmp_topic['subscribers'] = ' '.join(tmp_topic['subscribers'])
+        # Encode status field.
+        if 'status' in tmp_topic:
+            tmp_topic['status'] = topic_status_from_list(tmp_topic['status'])
+
+        self._edit_item(context, 'topic', id, tmp_topic)
+
+    def edit_message(self, context, id, message):
+        self._edit_item(context, 'message', id, message)
+
+    # Set item methods
+
+    def set_group(self, context, forum_id, group_id):
+        # Change group of specified forum.
+        self._set_item(context, 'forum', 'forum_group', group_id or '0',
+                       'id=%s', (forum_id,))
+
+    def set_forum(self, context, topic_id, forum_id):
+        # Change forum of all topics and messages.
+        self._set_item(context, 'topic', 'forum', forum_id, 'id=%s',
+                       (topic_id,))
+        self._set_item(context, 'message', 'forum', forum_id, 'topic=%s',
+                       (topic_id,))

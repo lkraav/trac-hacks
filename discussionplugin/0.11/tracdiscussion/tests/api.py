@@ -53,6 +53,11 @@ class DiscussionApiTestCase(unittest.TestCase):
         setup.upgrade_environment(self.db)
         # Populate tables with initial test data.
         cursor = self.db.cursor()
+        cursor.execute("""
+            INSERT INTO forum_group
+                   (name, description)
+            VALUES (%s,%s)
+        """, ('forum_group1', 'group-desc'))
         cursor.executemany("""
             INSERT INTO forum
                    (name, subject, description)
@@ -165,6 +170,11 @@ class DiscussionApiTestCase(unittest.TestCase):
         self.assertTrue(self.api.resource_exists(self.message))
         self.assertFalse(self.api.resource_exists(self.forum(id='message/6')))
 
+    def test_get_group(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual('forum_group1',
+                         self.api.get_group(context, 1)['name'])
+
     def test_get_forum(self):
         context = self._prepare_context(self.req)
         context.has_tags = False
@@ -272,6 +282,63 @@ class DiscussionApiTestCase(unittest.TestCase):
             'id': 3, 'author': None, 'body': u'msg3', 'replyto': 2,
             'time': 1400362200}]
         )
+
+    def test_modify_group(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual('None', self.api.get_group(context, 2)['name'])
+        self.api.add_group(context, dict(name='newgroup', description='desc'))
+        self.assertEqual('newgroup', self.api.get_group(context, 2)['name'])
+        self.api.edit_group(context, 2, dict(description='changed'))
+        self.assertEqual('changed',
+                         self.api.get_group(context, 2)['description'])
+        self.api.delete_group(context, 2)
+        self.assertEqual('None', self.api.get_group(context, 2)['name'])
+
+    def test_modify_forum(self):
+        context = self._prepare_context(self.req)
+        context.has_tags = False
+        self.assertEqual(None, self.api.get_forum(context, 3))
+        self.api.add_forum(context, dict(name='newforum',
+                                         description='forum-desc3',
+                                         moderators='', subscribers=''))
+        self.assertEqual('newforum', self.api.get_forum(context, 3)['name'])
+        self.api.edit_forum(context, 3, dict(description='changed'))
+        self.assertEqual('changed',
+                         self.api.get_forum(context, 3)['description'])
+        self.assertEqual(None, self.api.get_forum(context, 3)['forum_group'])
+        self.api.set_group(context, 3, 1)
+        self.assertEqual(1, self.api.get_forum(context, 3)['forum_group'])
+        self.api.delete_forum(context, 3)
+        self.assertEqual(None, self.api.get_forum(context, 3))
+
+    def test_modify_topic(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(None, self.api.get_topic(context, 4))
+        self.api.add_topic(context, dict(subject='newtopic',
+                                         body='topic-desc4', forum=2,
+                                         status='locked', subscribers=''))
+        self.assertEqual('newtopic',
+                         self.api.get_topic(context, 4)['subject'])
+        self.api.edit_topic(context, 4, dict(body='changed'))
+        self.assertEqual('changed', self.api.get_topic(context, 4)['body'])
+        self.api.set_forum(context, 4, 1)
+        self.assertEqual(1, self.api.get_topic(context, 4)['forum'])
+        self.api.delete_topic(context, 4)
+        self.assertEqual(None, self.api.get_topic(context, 4))
+
+    def test_modify_message(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(None, self.api.get_message(context, 6))
+        self.api.add_message(context, dict(body='msg6', forum=1, topic=2,
+                                           replyto=3))
+        self.assertEqual('msg6', self.api.get_message(context, 6)['body'])
+        self.api.edit_message(context, 6, dict(body='changed'))
+        self.assertEqual('changed', self.api.get_message(context, 6)['body'])
+        # Check propagation of topic change into topic message.
+        self.api.set_forum(context, 2, 2)
+        self.assertEqual(2, self.api.get_message(context, 6)['forum'])
+        self.api.delete_message(context, 6)
+        self.assertEqual(None, self.api.get_message(context, 6))
 
 
 def test_suite():

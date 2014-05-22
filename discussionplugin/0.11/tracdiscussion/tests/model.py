@@ -148,6 +148,32 @@ class DiscussionDbTestCase(unittest.TestCase):
         self.assertEqual(
             list(self.ddb.get_changed_messages(context, start, stop)), [])
 
+    def test_add_item(self):
+        body = "txt"
+        context = self._prepare_context(self.req)
+        self.ddb._add_item(context, 'message', dict(body=body, topic=3,
+                                                    replyto=-1,))
+        self.assertEqual(body, self.ddb.get_messages(context, 3,
+                                                     desc=True)[0]['body'])
+
+    def test_delete_item(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(1, len(self.ddb.get_messages(context, 1)))
+        self.ddb._delete_item(context, 'message', 'topic=%s', (1,))
+        self.assertEqual(0, len(self.ddb.get_messages(context, 1)))
+
+    def test_edit_item(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual('msg1', self.ddb.get_messages(context, 1)[0]['body'])
+        self.ddb._edit_item(context, 'message', 1, dict(body='msg0'))
+        self.assertEqual('msg0', self.ddb.get_messages(context, 1)[0]['body'])
+
+    def test_set_item(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(1, len(self.ddb.get_messages(context, 1)))
+        self.ddb._set_item(context, 'message', 'topic', 1, 'topic=%s', (2,))
+        self.assertEqual(2, len(self.ddb.get_messages(context, 1)))
+
 
 def test_suite():
     suite = unittest.TestSuite()

@@ -46,7 +46,7 @@ class DiscussionDb(Component):
         }
         sql = ("SELECT %(columns)s"
                "  FROM %(table)s"
-               " %(where)s" % (sql_values)
+               " %(where)s" % sql_values
         )
         cursor = context.db.cursor()
         cursor.execute(sql, values)
@@ -63,7 +63,7 @@ class DiscussionDb(Component):
         }
         sql = ("SELECT COUNT(id)"
                "  FROM %(table)s"
-               " %(where)s" % (sql_values)
+               " %(where)s" % sql_values
         )
         cursor = context.db.cursor()
         cursor.execute(sql, values)
@@ -92,7 +92,7 @@ class DiscussionDb(Component):
                " %(where)s"
                " %(order_by)s"
                " %(limit)s"
-               " %(offset)s" % (sql_values)
+               " %(offset)s" % sql_values
         )
         values = list(values)
         if limit:
@@ -127,7 +127,7 @@ class DiscussionDb(Component):
                "     FROM forum"
                "    GROUP BY forum_group) f"
                "  ON g.id = f.forum_group"
-               "  %(order_by)s" % (sql_values)
+               "  %(order_by)s" % sql_values
         )
         cursor = context.db.cursor()
         cursor.execute(sql)
@@ -164,7 +164,7 @@ class DiscussionDb(Component):
                    " ON t.id=ma.topic"
                    " GROUP BY forum) ta"
                "  ON f.id = ta.forum"
-               "  %(order_by)s" % (sql_values))
+               "  %(order_by)s" % sql_values)
         cursor = context.db.cursor()
         cursor.execute(sql)
         return [dict(zip(forum_cols + topic_cols, row)) for row in cursor]
@@ -200,7 +200,7 @@ class DiscussionDb(Component):
                " WHERE t.forum=%%s"
                " %(order_by)s"
                " %(limit)s"
-               " %(offset)s" % (sql_values))
+               " %(offset)s" % sql_values)
         values = [forum_id]
         if limit:
             values.append(limit)
@@ -229,7 +229,7 @@ class DiscussionDb(Component):
                    " FROM forum) f"
                "  ON t.forum=f.id"
                " WHERE t.time BETWEEN %%s AND %%s"
-               " %(order_by)s" % (sql_values))
+               " %(order_by)s" % sql_values)
         values = (to_timestamp(start), to_timestamp(stop))
 
         cursor = context.db.cursor()
@@ -250,7 +250,7 @@ class DiscussionDb(Component):
         sql = ("SELECT %(columns)s"
                "  FROM message"
                " WHERE topic=%%s"
-               " %(order_by)s" % (sql_values))
+               " %(order_by)s" % sql_values)
         values = [topic_id]
 
         cursor = context.db.cursor()
@@ -297,176 +297,66 @@ class DiscussionDb(Component):
                    " FROM topic) t"
                "  ON m.topic=t.id"
                " WHERE time BETWEEN %%s AND %%s"
-               " %(order_by)s"% (sql_values))
+               " %(order_by)s" % sql_values)
         values = (to_timestamp(start), to_timestamp(stop))
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         return [dict(zip(columns, row)) for row in cursor]
 
-    # Add items functions.
+    # Item manipulation methods.
 
     def _add_item(self, context, table, item):
         fields = tuple(item.keys())
         values = tuple(item.values())
-        sql_values = {'table' : table,
-         'fields' : ', '.join(fields),
-         'values' : ','.join(["%s" for I in range(len(values))])}
-        sql = ("INSERT INTO %(table)s "
-               "(%(fields)s) "
-               "VALUES (%(values)s)" % (sql_values))
+        sql_values = {
+            'table': table,
+            'fields': ', '.join(fields),
+            'values': ', '.join(('%s',) * len(values))}
+        sql = ("INSERT INTO %(table)s"
+                   "   (%(fields)s) "
+               "VALUES (%(values)s)" % sql_values)
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         context.db.commit()
 
-    def add_group(self, context, group):
-        self._add_item(context, 'forum_group', group)
-
-    def add_forum(self, context, forum):
-        tmp_forum = deepcopy(forum)
-
-        # Pack moderators and subscribers fields.
-        tmp_forum['moderators'] = ' '.join(tmp_forum['moderators'])
-        tmp_forum['subscribers'] = ' '.join(tmp_forum['subscribers'])
-
-        # Remove tags field.
-        if tmp_forum.has_key('tags'):
-            del tmp_forum['tags']
-
-        # Add forum.
-        self._add_item(context, 'forum', tmp_forum)
-
-    def add_topic(self, context, topic):
-        tmp_topic = deepcopy(topic)
-
-        # Pack subscribers field.
-        tmp_topic['subscribers'] = ' '.join(tmp_topic['subscribers'])
-        tmp_topic['status'] = topic_status_from_list(
-          tmp_topic.has_key('status') and tmp_topic['status'] or [])
-
-        self._add_item(context, 'topic', tmp_topic)
-
-    def add_message(self, context, message):
-        self._add_item(context, 'message', message)
-
-    # Delete items functions.
-
-    def _delete_item(self, context, table, where = '', values = ()):
-        sql_values = {'table' : table,
-          'where' : (where and (' WHERE ' + where) or '')}
-        sql = ("DELETE FROM %(table)s "
-               "%(where)s" % (sql_values))
+    def _delete_item(self, context, table, where='', values=()):
+        sql_values = {
+            'table': table,
+            'where': where and ' '.join(['WHERE', where]) or ''
+        }
+        sql = ("DELETE FROM %(table)s %(where)s" % sql_values)
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         context.db.commit()
 
-    def delete_group(self, context, id):
-        # Delete group.
-        self._delete_item(context, 'forum_group', 'id = %s', (id,))
+    def _edit_item(self, context, table, id, item):
+        fields = tuple(item.keys())
+        values = tuple(item.values())
+        sql_values = {
+            'table': table,
+            'fields' : ', '.join([('%s=%%s' % field) for field in fields]),
+            'id' : id}
+        sql = ("UPDATE %(table)s"
+               "   SET %(fields)s"
+               " WHERE id=%(id)s" % sql_values)
 
-        # Assing forums of this group to none group.
-        self._set_item(context, 'forum', 'forum_group', '0', 'forum_group = %s',
-          (id,))
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
+        context.db.commit()
 
-    def delete_forum(self, context, id):
-        # Delete all messages of this forum.
-        self._delete_item(context, 'message', 'forum = %s', (id,))
-
-        # Delete all topics of this forum.
-        self._delete_item(context, 'topic', 'forum = %s', (id,))
-
-        # Finally delete forum.
-        self._delete_item(context, 'forum', 'id = %s', (id,))
-
-    def delete_topic(self, context, id):
-        # Delete all messages of this topic.
-        self._delete_item(context, 'message', 'topic = %s', (id,))
-
-        # Delete topic itself.
-        self._delete_item(context, 'topic', 'id = %s', (id,))
-
-    def delete_message(self, context, id):
-        # Delete all replies of this message.
-        for reply in self.get_replies(context, id):
-            self.delete_message(context, reply['id'])
-
-        # Delete message itself.
-        self._delete_item(context, 'message', 'id = %s', (id,))
-
-    # Set item functions.
-
-    def _set_item(self, context, table, column, value, where = '', values = ()):
-        sql_values = {'table' : table,
-          'column' : column,
-          'where' : (where and ('WHERE ' + where) and '')}
+    def _set_item(self, context, table, column, value, where='', values=()):
+        sql_values = {
+            'table': table,
+            'column': column,
+            'where': where and ' '.join(['WHERE', where]) or ''
+        }
         sql = ("UPDATE %(table)s "
-               "SET %(column)s = %%s "
-               "%(where)s" % (sql_values))
+               "   SET %(column)s=%%s"
+               " %(where)s" % sql_values)
         values = (value,) + values
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         context.db.commit()
-
-    def set_group(self, context, forum_id, group_id):
-        # Change group of specified forum.
-        self._set_item(context, 'forum', 'forum_group', group_id or '0',
-          'id = %s', (forum_id,))
-
-    def set_forum(self, context, topic_id, forum_id):
-        # Change forum of all topics and messages.
-        self._set_item(context, 'topic', 'forum', forum_id, 'id = %s',
-          (topic_id,))
-        self._set_item(context, 'message', 'forum', forum_id, 'topic = %s',
-          (topic_id,))
-
-    # Edit functions.
-
-    def _edit_item(self, context, table, id, item):
-        fields = tuple(item.keys())
-        values = tuple(item.values())
-        sql_values = {'table' : table,
-         'fields' : ", ".join([("%s = %%s" % (field)) for field in fields]),
-         'id' : id}
-        sql = ("UPDATE %(table)s "
-               "SET %(fields)s "
-               "WHERE id = %(id)s" % (sql_values))
-
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        context.db.commit()
-
-    def edit_group(self, context, id, group):
-        # Edit froum group.
-        self._edit_item(context, 'forum_group', id, group)
-
-    def edit_forum(self, context, id, forum):
-        tmp_forum = deepcopy(forum)
-
-        # Pack moderators and subscribers fields.
-        if tmp_forum.has_key('moderators'):
-            tmp_forum['moderators'] = ' '.join(tmp_forum['moderators'])
-        if forum.has_key('subscribers'):
-            tmp_forum['subscribers'] = ' '.join(tmp_forum['subscribers'])
-
-        # Edit forum.
-        self._edit_item(context, 'forum', id, tmp_forum)
-
-    def edit_topic(self, context, id, topic):
-        tmp_topic = deepcopy(topic)
-
-        # Pack subscribers field.
-        if tmp_topic.has_key('subscribers'):
-            tmp_topic['subscribers'] = ' '.join(tmp_topic['subscribers'])
-
-        # Encode status field.
-        if tmp_topic.has_key('status'):
-            tmp_topic['status'] = topic_status_from_list(tmp_topic['status'])
-
-        # Edit topic.
-        self._edit_item(context, 'topic', id, tmp_topic)
-
-    def edit_message(self, context, id, message):
-        # Edit message,
-        self._edit_item(context, 'message', id, message)
