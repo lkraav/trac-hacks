@@ -16,7 +16,7 @@ from trac.attachment import AttachmentModule, ILegacyAttachmentPolicyDelegate
 from trac.core import ExtensionPoint, Interface, TracError
 from trac.core import implements
 from trac.config import IntOption, Option
-from trac.perm import IPermissionRequestor, PermissionError
+from trac.perm import IPermissionRequestor, PermissionError, PermissionSystem
 from trac.resource import IResourceManager, Resource
 from trac.util.datefmt import format_datetime, pretty_timedelta
 from trac.util.datefmt import to_timestamp, utc
@@ -278,6 +278,8 @@ class DiscussionApi(DiscussionDb):
 
         # Fill up template data structure.
         context.data['users'] = context.users
+        context.data['moderators'] = self.get_users(None,
+                                                    'DISCUSSION_MODERATE')
         context.data['has_tags'] = context.has_tags
         context.data['group'] = context.group
         context.data['forum'] = context.forum
@@ -349,7 +351,7 @@ class DiscussionApi(DiscussionDb):
         # Prepare template data.
         context.data = {}
 
-        # Get list of Trac users.
+        # Get list of users with DISCUSSION_VIEW permission.
         context.users = self.get_users(context)
 
         # Check if TracTags plugin is enabled.
@@ -1736,14 +1738,15 @@ class DiscussionApi(DiscussionDb):
         return self._get_items_count(context, 'message', 'topic=%s',
                                      (topic_id,))
 
-    def get_users(self, context):
+    def get_users(self, context, action='DISCUSSION_VIEW'):
         try:
             # Use already customized discussion context.
             return context.users
         except AttributeError:
             # Fallback for pristine Trac context:
-            # Return users, that Trac knows.
-            return [user[0] for user in self.env.get_known_users()]
+            # Return users with satisfying permission.
+            return PermissionSystem(self.env) \
+                   .get_users_with_permission(action)
 
     # Add item methods.
 

@@ -52,10 +52,10 @@
           <div class="field">
             <label for="moderators">Moderators:</label><br/>
             <py:choose>
-              <select py:when="len(discussion.users) > 0 and 7 >
-                len(discussion.users)" id="moderators" name="moderators"
+              <select py:when="len(discussion.moderators) > 0 and 7 >
+                len(discussion.moderators)" id="moderators" name="moderators"
                 multiple="on">
-                <py:for each="user in discussion.users">
+                <py:for each="user in discussion.moderators">
                   <py:choose>
                     <option py:when="is_edit and user in
                       discussion.forum.moderators" value="$user"
@@ -64,9 +64,9 @@
                   </py:choose>
                 </py:for>
               </select>
-              <select py:when="len(discussion.users) > 6" id="moderators"
+              <select py:when="len(discussion.moderators) > 6" id="moderators"
                 name="moderators" size="6" multiple="on">
-                <py:for each="user in discussion.users">
+                <py:for each="user in discussion.moderators">
                   <py:choose>
                     <option py:when="is_edit and user in
                       discussion.forum.moderators" value="$user"
