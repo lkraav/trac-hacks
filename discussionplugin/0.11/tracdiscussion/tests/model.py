@@ -151,8 +151,9 @@ class DiscussionDbTestCase(unittest.TestCase):
     def test_add_item(self):
         body = "txt"
         context = self._prepare_context(self.req)
-        self.ddb._add_item(context, 'message', dict(body=body, topic=3,
-                                                    replyto=-1,))
+        id = self.ddb._add_item(context, 'message', dict(body=body, topic=3,
+                                                         replyto=-1,))
+        self.assertEqual(5, id)
         self.assertEqual(body, self.ddb.get_messages(context, 3,
                                                      desc=True)[0]['body'])
 

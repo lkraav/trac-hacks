@@ -45,7 +45,7 @@ class DiscussionTagProvider(DefaultTagProvider):
         self._update_tags(context.req, resource, new_tags)
 
     def forum_changed(self, context, forum, old_forum):
-        resource = Resource(self.realm, 'forum/%s' % forum['id'])
+        resource = Resource(self.realm, 'forum/%s' % old_forum['id'])
         # ToDo: Delete tags for old_forum.
         new_tags = self._get_forum_tags(forum)
         self._update_tags(context.req, resource, new_tags)
@@ -62,7 +62,7 @@ class DiscussionTagProvider(DefaultTagProvider):
         self._update_tags(context.req, resource, new_tags)
 
     def topic_changed(self, context, topic, old_topic):
-        resource = Resource(self.realm, 'topic/%s' % topic['id'])
+        resource = Resource(self.realm, 'topic/%s' % old_topic['id'])
         # ToDo: Delete tags for old_topic.
         new_tags = self._get_topic_tags(topic)
         self._update_tags(context.req, resource, new_tags)

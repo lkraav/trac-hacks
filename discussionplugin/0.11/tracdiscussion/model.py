@@ -9,6 +9,7 @@
 #
 
 from copy import deepcopy
+from datetime import datetime
 
 from trac.core import Component
 from trac.mimeview import Context
@@ -341,6 +342,7 @@ class DiscussionDb(Component):
                    " FROM topic) t"
                "  ON t.id=m.topic"
                " WHERE %s" % ('m.' + ', m.'.join(columns[:-1]), query))
+
         cursor.execute(sql, args)
         for row in cursor:
             # Class references are valid only in sub-class (api).
@@ -362,6 +364,10 @@ class DiscussionDb(Component):
     def _add_item(self, context, table, item):
         fields = tuple(item.keys())
         values = tuple(item.values())
+        if not 'forum_group' == table:
+            fields += ('time',)
+            values += (to_timestamp(datetime.now(utc)),)
+
         sql_values = {
             'table': table,
             'fields': ', '.join(fields),
@@ -369,9 +375,11 @@ class DiscussionDb(Component):
         sql = ("INSERT INTO %(table)s"
                    "   (%(fields)s) "
                "VALUES (%(values)s)" % sql_values)
+
         cursor = context.db.cursor()
         cursor.execute(sql, values)
         context.db.commit()
+        return context.db.get_last_id(cursor, table)
 
     def _delete_item(self, context, table, where='', values=()):
         sql_values = {
@@ -385,18 +393,17 @@ class DiscussionDb(Component):
         context.db.commit()
 
     def _edit_item(self, context, table, id, item):
-        fields = tuple(item.keys())
-        values = tuple(item.values())
         sql_values = {
             'table': table,
-            'fields' : ', '.join([('%s=%%s' % field) for field in fields]),
+            'fields' : ', '.join([('%s=%%s' % field)
+                                  for field in item.keys()]),
             'id' : id}
         sql = ("UPDATE %(table)s"
                "   SET %(fields)s"
                " WHERE id=%(id)s" % sql_values)
 
         cursor = context.db.cursor()
-        cursor.execute(sql, values)
+        cursor.execute(sql, item.values())
         context.db.commit()
 
     def _set_item(self, context, table, column, value, where='', values=()):

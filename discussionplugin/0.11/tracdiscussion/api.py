@@ -27,6 +27,7 @@ from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
 from trac.web.chrome import add_ctxtnav
 from trac.web.href import Href
 
+from tracdiscussion.compat import exception_to_unicode, is_enabled
 from tracdiscussion.model import DiscussionDb
 from tracdiscussion.util import as_list, format_to_oneliner_no_links
 from tracdiscussion.util import prepare_topic, topic_status_from_list
@@ -39,8 +40,8 @@ except ImportError:
 
 
 def is_tags_enabled(env):
-    return env.is_component_enabled('tractags.api.TagSystem') and \
-           env.is_component_enabled('tracdiscussion.tags.DiscussionTags')
+    return is_enabled(env, 'tractags.api.TagSystem') and \
+           is_enabled(env, 'tracdiscussion.tags.DiscussionTags')
 
 
 class IDiscussionFilter(Interface):
@@ -398,13 +399,13 @@ class DiscussionApi(DiscussionDb):
         # Populate active forum.
         elif context.req.args.has_key('forum'):
             forum_id = int(context.req.args.get('forum') or 0)
-            context.resource = realm(id='forum/%s' % forum_id)
-            context.forum = self._get_forum(context)
+            context.forum = self.get_forum(context, forum_id)
             if not context.forum:
                 raise TracError('Forum with ID %s does not exist.' % forum_id)
 
             context.group = self.get_group(context,
                                            context.forum['forum_group'])
+            context.resource = realm(id='forum/%s' % forum_id)
 
         # Populate active group.
         elif context.req.args.has_key('group'):
@@ -786,7 +787,6 @@ class DiscussionApi(DiscussionDb):
                          'moderators' : context.req.args.get('moderators'),
                          'subscribers' : context.req.args.get('subscribers'),
                          'forum_group' : int(context.req.args.get('group') or 0),
-                         'time': to_timestamp(datetime.now(utc)),
                          'tags': context.req.args.get('tags')}
 
                 # Fix moderators attribute to be a list.
@@ -814,19 +814,20 @@ class DiscussionApi(DiscussionDb):
                       .replace(',', ' ').split()]
 
                 # Perform new forum add.
-                self.add_forum(context, forum)
-
-                # Get inserted forum with new ID.
-                context.forum = self.get_forum_by_time(context, forum['time'])
+                forum_id = self.add_forum(context, forum)
+                context.forum = self.get_forum(context, forum_id)
 
                 # Copy tags field which is not stored in the database table.
                 context.forum['tags'] = forum['tags']
 
                 # Notify change listeners.
-                self.log.debug('forum_change_listeners: %s' % (
-                  self.forum_change_listeners))
+                self.log.debug('forum_change_listeners: %s'
+                               % self.forum_change_listeners)
                 for listener in self.forum_change_listeners:
-                    listener.forum_created(context, context.forum)
+                    try:
+                        listener.forum_created(context, context.forum)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '')
@@ -862,9 +863,11 @@ class DiscussionApi(DiscussionDb):
                 # Perform forum edit.
                 self.edit_forum(context, context.forum['id'], forum)
 
-                # Notify change listeners.
                 for listener in self.forum_change_listeners:
-                    listener.forum_changed(context, forum, context.forum)
+                    try:
+                        listener.forum_changed(context, forum, context.forum)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '')
@@ -875,9 +878,11 @@ class DiscussionApi(DiscussionDb):
                 # Delete forum.
                 self.delete_forum(context, context.forum['id'])
 
-                # Notify change listeners.
                 for listener in self.forum_change_listeners:
-                    listener.forum_deleted(context, context.forum)
+                    try:
+                        listener.forum_deleted(context, context.forum)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '')
@@ -893,12 +898,15 @@ class DiscussionApi(DiscussionDb):
                 # Delete selected forums.
                 if selection:
                     for forum_id in selection:
-                        # Delete forum.
-                        self.delete_forum(context, int(forum_id))
+                        # Retrieve current forum attributes.
+                        forum = self.get_forum(context, int(forum_id))
+                        self.delete_forum(context, forum['id'])
 
-                        # Notify change listeners.
                         for listener in self.forum_change_listeners:
-                            listener.forum_deleted(context, int(forum_id))
+                            try:
+                                listener.forum_deleted(context, forum)
+                            except Exception, e:
+                                self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '')
@@ -932,9 +940,11 @@ class DiscussionApi(DiscussionDb):
                 # Edit topic.
                 self.edit_forum(context, context.forum['id'], forum)
 
-                # Notify change listeners.
                 for listener in self.forum_change_listeners:
-                    listener.forum_changed(context, forum, context.forum)
+                    try:
+                        listener.forum_changed(context, forum, context.forum)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
@@ -953,9 +963,12 @@ class DiscussionApi(DiscussionDb):
                     # Edit topic.
                     self.edit_forum(context, context.forum['id'], forum)
 
-                    # Notify change listeners.
                     for listener in self.forum_change_listeners:
-                        listener.forum_changed(context, forum, context.forum)
+                        try:
+                            listener.forum_changed(context, forum,
+                                                   context.forum)
+                        except Exception, e:
+                            self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
@@ -974,9 +987,12 @@ class DiscussionApi(DiscussionDb):
                     # Edit topic.
                     self.edit_forum(context, context.forum['id'], forum)
 
-                    # Notify change listeners.
                     for listener in self.forum_change_listeners:
-                        listener.forum_changed(context, forum, context.forum)
+                        try:
+                            listener.forum_changed(context, forum,
+                                                   context.forum)
+                        except Exception, e:
+                            self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
@@ -1047,7 +1063,6 @@ class DiscussionApi(DiscussionDb):
                 # Get form values.
                 topic = {'forum' : context.forum['id'],
                          'subject' : context.req.args.get('subject'),
-                         'time': to_timestamp(datetime.now(utc)),
                          'author' : context.req.args.get('author'),
                          'subscribers' : context.req.args.get('subscribers'),
                          'body' : context.req.args.get('body')}
@@ -1078,16 +1093,16 @@ class DiscussionApi(DiscussionDb):
                         raise TracError(topic_or_error)
 
                 # Add new topic.
-                self.add_topic(context, topic)
+                topic_id = self.add_topic(context, topic)
+                context.topic = self.get_topic(context, topic_id)
 
-                # Get inserted topic with new ID.
-                context.topic = self.get_topic_by_time(context, topic['time'])
-
-                # Notify change listeners.
-                self.log.debug('topic_change_listeners: %s' % (
-                  self.topic_change_listeners))
+                self.log.debug('topic_change_listeners: %s'
+                               % self.topic_change_listeners)
                 for listener in self.topic_change_listeners:
-                    listener.topic_created(context, context.topic)
+                    try:
+                        listener.topic_created(context, context.topic)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 if context.realm != 'discussion-wiki':
@@ -1129,9 +1144,11 @@ class DiscussionApi(DiscussionDb):
                 # Edit topic.
                 self.edit_topic(context, context.topic['id'], topic)
 
-                # Notify change listeners.
                 for listener in self.topic_change_listeners:
-                    listener.topic_changed(context, topic, context.topic)
+                    try:
+                        listener.topic_changed(context, topic, context.topic)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#topic')
@@ -1242,9 +1259,11 @@ class DiscussionApi(DiscussionDb):
                 # Delete topic.
                 self.delete_topic(context, context.topic['id'])
 
-                # Notify change listeners.
                 for listener in self.topic_change_listeners:
-                    listener.topic_deleted(context, context.topic)
+                    try:
+                        listener.topic_deleted(context, context.topic)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 if context.realm != 'discussion-wiki':
@@ -1283,9 +1302,11 @@ class DiscussionApi(DiscussionDb):
                 # Edit topic.
                 self.edit_topic(context, context.topic['id'], topic)
 
-                # Notify change listeners.
                 for listener in self.topic_change_listeners:
-                    listener.topic_changed(context, topic, context.topic)
+                    try:
+                        listener.topic_changed(context, topic, context.topic)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
@@ -1305,9 +1326,11 @@ class DiscussionApi(DiscussionDb):
                 # Edit topic.
                 self.edit_topic(context, context.topic['id'], topic)
 
-                # Notify change listeners.
                 for listener in self.topic_change_listeners:
-                    listener.topic_changed(context, topic, context.topic)
+                    try:
+                        listener.topic_changed(context, topic, context.topic)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
@@ -1327,9 +1350,12 @@ class DiscussionApi(DiscussionDb):
                     # Edit topic.
                     self.edit_topic(context, context.topic['id'], topic)
 
-                    # Notify change listeners.
                     for listener in self.topic_change_listeners:
-                        listener.topic_changed(context, topic, context.topic)
+                        try:
+                            listener.topic_changed(context, topic,
+                                                   context.topic)
+                        except Exception, e:
+                            self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
@@ -1349,9 +1375,12 @@ class DiscussionApi(DiscussionDb):
                     # Edit topic.
                     self.edit_topic(context, context.topic['id'], topic)
 
-                    # Notify change listeners.
                     for listener in self.topic_change_listeners:
-                        listener.topic_changed(context, topic, context.topic)
+                        try:
+                            listener.topic_changed(context, topic,
+                                                   context.topic)
+                        except Exception, e:
+                            self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
@@ -1394,8 +1423,8 @@ class DiscussionApi(DiscussionDb):
                            'replyto' : context.message and context.message['id']
                               or -1,
                            'author' : context.req.args.get('author'),
-                           'body' : context.req.args.get('body'),
-                           'time' : to_timestamp(datetime.now(utc))}
+                           'body' : context.req.args.get('body')
+                }
 
                 # Filter message.
                 for discussion_filter in self.discussion_filters:
@@ -1408,17 +1437,16 @@ class DiscussionApi(DiscussionDb):
                         raise TracError(message_or_error)
 
                 # Add message.
-                self.add_message(context, message)
+                message_id = self.add_message(context, message)
+                context.message = self.get_message(context, message_id)
 
-                # Get inserted message with new ID.
-                context.message = self.get_message_by_time(context,
-                  message['time'])
-
-                # Notify change listeners.
-                self.log.debug('message_change_listeners: %s' % (
-                  self.message_change_listeners))
+                self.log.debug('message_change_listeners: %s'
+                               % self.message_change_listeners)
                 for listener in self.message_change_listeners:
-                    listener.message_created(context, context.message)
+                    try:
+                        listener.message_created(context, context.message)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#message%s' % (
@@ -1454,9 +1482,12 @@ class DiscussionApi(DiscussionDb):
                 # Edit message.
                 self.edit_message(context, context.message['id'], message)
 
-                # Notify change listeners.
                 for listener in self.message_change_listeners:
-                    listener.message_changed(context, message, context.message)
+                    try:
+                        listener.message_changed(context, message,
+                                                 context.message)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#message%s' % (
@@ -1471,9 +1502,11 @@ class DiscussionApi(DiscussionDb):
                 # Delete message.
                 self.delete_message(context, context.message['id'])
 
-                # Notify change listeners.
                 for listener in self.message_change_listeners:
-                    listener.message_deleted(context, context.message)
+                    try:
+                        listener.message_deleted(context, context.message)
+                    except Exception, e:
+                        self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#message%s' % (
@@ -1576,17 +1609,8 @@ class DiscussionApi(DiscussionDb):
                ) or dict(id=0, name='None', description='No Group')
 
     def get_forum(self, context, forum_id):
+        """Get forum by ID."""
         context.resource = Resource(self.realm, 'forum/%s' % forum_id)
-        return self._get_forum(context)
-
-    def get_forum_by_time(self, context, time):
-        # Get forum by time of creation.
-        forum_id = self._get_item(context, 'forum', ('id',), 'time=%s',
-                                  (time,))
-        return self.get_forum(context, forum_id)
-
-    def _get_forum(self, context):
-        # Get forum by ID.
         forum = self._get_item(context, 'forum', self.forum_cols, 'id=%s',
                                (context.resource.id.split('/')[-1],))
         # Unpack list of moderators and subscribers and get forum tags.
@@ -1654,19 +1678,13 @@ class DiscussionApi(DiscussionDb):
         return self._get_items(context, 'forum', columns, where, values)
 
     def get_topic(self, context, id):
-        # Get topic by ID.
+        """Get topic by ID."""
         topic = self._get_item(context, 'topic', self.topic_cols, 'id=%s',
                                (id,))
         return prepare_topic(self.get_users(context), topic)
 
-    def get_topic_by_time(self, context, time):
-        # Get topic by time of creation.
-        topic = self._get_item(context, 'topic', self.topic_cols, 'time=%s',
-                               (time,))
-        return prepare_topic(self.get_users(context), topic)
-
     def get_topic_by_subject(self, context, subject):
-        # Get topic by subject.
+        """Get topic by subject."""
         topic = self._get_item(context, 'topic', self.topic_cols,
                                'subject=%s', (subject,))
         return prepare_topic(self.get_users(context), topic)
@@ -1694,14 +1712,9 @@ class DiscussionApi(DiscussionDb):
         return topics
 
     def get_message(self, context, id):
-        # Get message by ID.
+        """Get message by ID."""
         return self._get_item(context, 'message', self.message_cols, 'id=%s',
                               (id,))
-
-    def get_message_by_time(self, context, time):
-        # Get message by time of creation.
-        return self._get_item(context, 'message', self.message_cols,
-                              'time=%s', (time,))
 
     def get_flat_messages(self, context, id, order_by='time', desc=False,
                           limit=0, offset=0):
@@ -1751,7 +1764,7 @@ class DiscussionApi(DiscussionDb):
     # Add item methods.
 
     def add_group(self, context, group):
-        self._add_item(context, 'forum_group', group)
+        return self._add_item(context, 'forum_group', group)
 
     def add_forum(self, context, forum):
         tmp_forum = deepcopy(forum)
@@ -1765,7 +1778,7 @@ class DiscussionApi(DiscussionDb):
             # DEVEL: Store tags instead of discarging them.
             del tmp_forum['tags']
 
-        self._add_item(context, 'forum', tmp_forum)
+        return self._add_item(context, 'forum', tmp_forum)
 
     def add_topic(self, context, topic):
         tmp_topic = deepcopy(topic)
@@ -1776,10 +1789,10 @@ class DiscussionApi(DiscussionDb):
         tmp_topic['status'] = topic_status_from_list(
             'status' in tmp_topic and tmp_topic['status'] or [])
 
-        self._add_item(context, 'topic', tmp_topic)
+        return self._add_item(context, 'topic', tmp_topic)
 
     def add_message(self, context, message):
-        self._add_item(context, 'message', message)
+        return self._add_item(context, 'message', message)
 
     # Delete item methods
 

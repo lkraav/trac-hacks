@@ -211,16 +211,6 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
             'replyto': -1, 'time': 1400361000}
         )
 
-    def test_get_message_by_time(self):
-        context = self._prepare_context(self.req)
-        self.assertEqual(None, self.api.get_message_by_time(context,
-                                                            1400360001))
-        self.assertEqual(
-            self.api.get_message_by_time(context, 1400362200), {
-            'id': 3, 'forum': 1, 'topic': 2, 'author': None, 'body': u'msg3',
-            'replyto': 2, 'time': 1400362200}
-        )
-
     def test_get_messages_count(self):
         context = self._prepare_context(self.req)
         self.assertEqual(self.api.get_messages_count(context, 2), 3)
