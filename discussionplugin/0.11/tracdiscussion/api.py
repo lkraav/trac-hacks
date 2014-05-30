@@ -240,14 +240,8 @@ class DiscussionApi(DiscussionDb):
 
     def resource_exists(self, resource):
         type, id = self._parse_resource_id(resource)
-        if type == 'forum':
-            return self._get_item(None, 'forum', ('id',), where='id=%s',
-                                  values=(id,)) != None
-        elif type == 'topic':
-            return self._get_item(None, 'topic', ('id',), where='id=%s',
-                                  values=(id,)) != None
-        elif type == 'message':
-            return self._get_item(None, 'message', ('id',), where='id=%s',
+        if type in ('forum', 'topic', 'message'):
+            return self._get_item(None, type, ('id',), where='id=%s',
                                   values=(id,)) != None
 
     # Main request processing function.
@@ -379,7 +373,11 @@ class DiscussionApi(DiscussionDb):
             context.resource = realm(id='forum/%s/topic/%s/message/%s'
                                         % (context.forum['id'],
                                            context.topic['id'],
-                                           context.message['id']))
+                                           context.message['id']),
+                                     parent=realm(id='forum/%s/topic/%s'
+                                                      % (context.forum['id'],
+                                                         context.topic['id']))
+            )
 
         # Populate active topic.
         elif context.req.args.has_key('topic'):
@@ -1560,6 +1558,9 @@ class DiscussionApi(DiscussionDb):
         # DEVEL: Work around for AttachmentModule.process_request() that
         #        calculates the parent id from the path.
         #        Therefore we need to fix the attach_href property.
+        if 'topic' != context.resource.id.split('/')[-2]:
+            context.resource = Resource('discussion', '/'.join(
+                                        context.resource.id.split('/')[-4:-2]))
         context.resource = Resource('discussion', '/'.join(
                                     context.resource.id.split('/')[-2:]))
         context.data['attachments'] = AttachmentModule(self.env) \
