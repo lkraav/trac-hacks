@@ -30,8 +30,6 @@ setup(
         'Framework :: Trac',
     ],
     
-    install_requires = ['Trac'],
-
     entry_points = {
         'trac.plugins': [
             'privatetickets.policy = privatetickets.policy',
