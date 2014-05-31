@@ -167,9 +167,14 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         )
         self.assertEqual('top1', topic['subject']) 
 
+    def test_get_forum_subject(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual('forum-subject1',
+                         self.api.get_forum_subject(context, 1))
+
     def test_get_topic_subject(self):
         context = self._prepare_context(self.req)
-        self.assertEqual(self.api.get_topic_subject(context, 2), 'top2')
+        self.assertEqual('top2', self.api.get_topic_subject(context, 2))
 
     def test_get_topics(self):
         context = self._prepare_context(self.req)
@@ -192,7 +197,7 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         self.assertEqual(
             self.api.get_flat_messages(context, 1), [{
             'id': 1, 'author': None, 'body': u'msg1', 'replyto': -1,
-            'time': 1400361000}]
+            'time': 1400361500}]
         )
 
     def test_get_flat_messages_by_forum(self):
@@ -208,7 +213,7 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         self.assertEqual(
             self.api.get_message(context, 1), {
             'id': 1, 'forum': 1, 'topic': 1, 'author': None, 'body': u'msg1',
-            'replyto': -1, 'time': 1400361000}
+            'replyto': -1, 'time': 1400361500}
         )
 
     def test_get_messages_count(self):

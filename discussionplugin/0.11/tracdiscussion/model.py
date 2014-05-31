@@ -241,6 +241,30 @@ class DiscussionDb(Component):
                      status=topic_status_to_list(row['status']))
                 for row in cursor]
 
+    def get_recent_topics(self, context, forum_id, limit):
+        columns = ('forum', 'topic', 'time')
+        sql = ("SELECT forum, topic, MAX(time) as max_time"
+               "  FROM"
+               "  (SELECT forum, topic, time"
+                   " FROM message"
+               "   UNION"
+               "   SELECT forum, id as topic, time"
+                   " FROM topic)" +
+               (forum_id and " WHERE forum=%s" or '') +
+               " GROUP BY topic"
+               " ORDER BY max_time DESC" +
+               (limit and " LIMIT %s" or ''))
+        values = []
+        if forum_id:
+            values.append(forum_id)
+        if limit:
+            values.append(limit)
+        values = tuple(values)
+
+        cursor = context.db.cursor()
+        cursor.execute(sql, values)
+        return [dict(zip(columns, row)) for row in cursor]
+
     def get_messages(self, context, topic_id, order_by='time', desc=False):
         columns = self.msg_cols
         sql_values = {

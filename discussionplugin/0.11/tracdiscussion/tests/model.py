@@ -126,7 +126,13 @@ class DiscussionDbTestCase(unittest.TestCase):
         start = to_datetime(None, tzinfo=utc)
         stop = start - timedelta(seconds=1)
         self.assertEqual(
-            list(self.ddb.get_changed_topics(context, start, stop)), [])
+            [], list(self.ddb.get_changed_topics(context, start, stop)))
+
+    def test_get_recent_topics(self):
+        context = self._prepare_context(self.req)
+        self.assertEqual(
+            [dict(forum=1, time=None, topic=1)],
+            self.ddb.get_recent_topics(context, 1, 1))
 
     def test_get_messages(self):
         context = self._prepare_context(self.req)

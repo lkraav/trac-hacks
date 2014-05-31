@@ -9,52 +9,64 @@
 # you should have received as part of this distribution.
 #
 
-# Standard imports.
-import time, re
+import re
 
-# Genshi imports.
 from genshi.builder import tag
 
-# Trac imports.
-from trac.core import *
-from trac.wiki.web_ui import WikiModule
-from trac.wiki.formatter import format_to_html, format_to_oneliner
-from trac.web.href import Href
+from trac.core import Component, TracError, implements
 from trac.mimeview.api import Context
+from trac.resource import Resource, ResourceNotFound
 from trac.web.chrome import Chrome, add_stylesheet
+from trac.web.href import Href
+from trac.web.main import IRequestFilter
+from trac.wiki import IWikiSyntaxProvider
+from trac.wiki.api import IWikiMacroProvider, parse_args
+from trac.wiki.formatter import format_to_html, format_to_oneliner
+from trac.wiki.web_ui import WikiModule
 from trac.util import format_date, format_datetime
 from trac.util.text import to_unicode
 from trac.util.translation import _
 
-# Trac interfaces.
-from trac.web.main import IRequestFilter
-from trac.wiki import IWikiSyntaxProvider, IWikiMacroProvider
+from tracdiscussion.api import DiscussionApi
 
-# Local imports.
-from tracdiscussion.api import *
-from tracdiscussion.core import *
 
 class DiscussionWiki(Component):
+    """[opt] Implements TracLinks syntax and WikiMacros for references to
+    disussion forums, topics and individual messages.
     """
-        The wiki module implements macros for forums, topics and messages
-        referencing.
-    """
-    implements(IWikiSyntaxProvider, IWikiMacroProvider, IRequestFilter)
 
-    # Wiki macro documentations.
+    implements(IRequestFilter, IWikiMacroProvider, IWikiSyntaxProvider)
 
-    view_topic_doc = _("Displays content of a discussion topic. If no argument "
-      "passed tries to find the topic with the same name as is the name of the "
-      "current wiki page. If the topic name is passed, displays that topic. ")
+    # Wiki macro documentation
 
-    recent_topics_doc = _("Lists all topics that have been recently active "
-      "grouping them by the day they were lastly active. This macro accepts "
-      "two parameters. The first is a forum ID. If provided, only topics in "
-      "that forum are included in the resulting list. If omitted, topics from "
-      "all forums are listed. The second parameter is a number for limiting "
-      "the number of topics returned. For example, specifying a limit of 5 "
-      "will result in only the five most recently active topics to be included "
-      "in the list.")
+    view_topic_doc = _("Displays content of a discussion topic. Unless "
+        "argument passed, it tries to find the topic with the same name as "
+        "the current wiki page. If a name is passed, displays that topic.")
+
+    recent_topics_doc = _("Lists all topics, that have been recently active, "
+        "grouping them by the day they were lastly active. Accepts two "
+        "parameters: First one is a forum ID. If provided, only topics in "
+        "that forum are included in the resulting list. Otherwise topics "
+        "from all forums are listed. Second parameter is a number. I. e. "
+        "specifying 5 will result in only the five most recently active "
+        "topics to be included in the list.")
+
+    def __init__(self):
+        self.api = DiscussionApi(self.env)
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        # Change method from POST to GET.
+        match = re.match(r'^/wiki(?:/(.*))?', req.path_info)
+        action = req.args.get('discussion_action')
+        if match and action and 'POST' == req.method:
+            req.environ['REQUEST_METHOD'] = 'GET'
+        # Continue processing request.
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        return (template, data, content_type)
 
     # IWikiSyntaxProvider methods
 
@@ -81,72 +93,41 @@ class DiscussionWiki(Component):
             return self.view_topic_doc
         elif name == 'RecentTopics':
             return self.recent_topics_doc
-        else:
-            return ""
 
     def expand_macro(self, formatter, name, content):
-        if name == 'ViewTopic':
-            return self._expand_view_topic(formatter, name, content)
-        elif name == 'RecentTopics':
-            return self._expand_recent_topics(formatter, name, content)
-        else:
-            raise TracError('Not implemented macro %s' % (name))
-
-    # IRequestFilter methods.
-
-    def pre_process_request(self, req, handler):
-        # Change method from POST to GET.
-        match = re.match(r'^/wiki(?:/(.*))?', req.path_info)
-        action = req.args.get('discussion_action')
-        if match and action and req.method == 'POST':
-            req.environ['REQUEST_METHOD'] = 'GET'
-
-        # Continue processing request.
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        return (template, data, content_type)
-
-    # Internal methods.
-
-    def _expand_view_topic(self, formatter, name, content):
-        self.log.debug("Rendering ViewTopic macro...")
-
-        # Check permission
         if not formatter.perm.has_permission('DISCUSSION_VIEW'):
             return
+        if name == 'ViewTopic':
+            return self._view_topic(formatter, content)
+        elif name == 'RecentTopics':
+            return self._recent_topics(formatter, content)
+
+    # Internal methods
+
+    def _view_topic(self, formatter, content):
 
         # Determine topic subject
         page_name = formatter.req.path_info[6:] or 'WikiStart'
         subject = content or page_name
 
-        # Create request context.
+        # Prepare context including db access.
         context = Context.from_request(formatter.req)
         context.realm = 'discussion-wiki'
-
-        # Get database access.
         context.db = self.env.get_db_cnx()
 
-        # Get API component.
-        api = self.env[DiscussionApi]
-
-        # Get topic by subject
         try:
             id = int(subject)
-            topic = api.get_topic(context, id)
+            topic = self.api.get_topic(context, id)
         except:
-            topic = api.get_topic_by_subject(context, subject)
-        self.log.debug('subject: %s' % (subject,))
-        self.log.debug('topic: %s' % (topic,))
+            topic = self.api.get_topic_by_subject(context, subject)
 
-        # Prepare request and resource object.
         if topic:
             context.req.args['topic'] = topic['id']
-            context.resource = Resource('discussion', 'topic/%s' % (topic['id']
-              ,))
-
+            context.resource = Resource('discussion',
+                                        'forum/%s/topic/%s'
+                                        % (topic['forum'], topic['id']))
         # Process discussion request.
-        template, data = api.process_discussion(context)
+        template, data = self.api.process_discussion(context)
 
         # Return rendered template.
         data['discussion']['mode'] = 'message-list'
@@ -164,77 +145,29 @@ class DiscussionWiki(Component):
         else:
             # Render template.
             return to_unicode(Chrome(self.env).render_template(formatter.req,
-              template, data, 'text/html', True))
+                                               template, data, 'text/html',
+                                               True))
 
-    def _expand_recent_topics(self, formatter, name, content):
-        self.log.debug("Rendering RecentTopics macro...")
-
-        # Check permission
-        if not formatter.perm.has_permission('DISCUSSION_VIEW'):
-            return
-
-        # Create request context.
+    def _recent_topics(self, formatter, content):
+        # Prepare context including db access.
         context = Context.from_request(formatter.req)
         context.realm = 'discussion-wiki'
-
-        # Check if TracTags plugin is enabled.
-        context.has_tags = is_tags_enabled(self.env)
-
-        # Get database access.
         context.db = self.env.get_db_cnx()
+        context.users = self.api.get_users(context)
+        # Don't care for tags here.
+        context.has_tags = False
 
-        # Get API object.
-        api = self.env[DiscussionApi]
-
-        # Get list of Trac users.
-        context.users = api.get_users(context)
-
-        # Parse macro arguments.
-        arguments = []
+        args, kw = parse_args(content)
         forum_id = None
         limit = 10
-        if content:
-            arguments = [argument.strip() for argument in content.split(',')]
-        if len(arguments) == 1:
-            limit = arguments[0]
-        elif len(arguments) == 2:
-            forum_id = arguments[0]
-            limit = arguments[1]
+        if 1 == len(args):
+            limit = args[0]
+        elif 2 == len(args):
+            forum_id, limit = args[:2]
         else:
             raise TracError("Invalid number of macro arguments.")
 
-        # Construct and execute SQL query.
-        columns = ('forum', 'topic', 'time')
-        values = []
-        if forum_id:
-            values.append(forum_id)
-        if limit:
-            values.append(limit)
-        values = tuple(values)
-        sql = ("SELECT forum, topic, MAX(time) as max_time "
-               "FROM "
-               "  (SELECT forum, topic, time "
-               "  FROM message "
-               "  UNION "
-               "  SELECT forum, id as topic, time "
-               "  FROM topic)" +
-               (forum_id and " WHERE forum = %s" or "") +
-               "  GROUP BY topic "
-               "  ORDER BY max_time DESC" +
-               (limit and " LIMIT %s" or ""))
-
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-
-        # Collect recent topics.
-        entries = []
-        for row in cursor:
-            row = dict(zip(columns, row))
-            entries.append(row)
-
-        self.log.debug(entries)
-
-        # Format entries data.
+        entries = self.api.get_recent_topics(context, forum_id, limit)
         entries_per_date = []
         prevdate = None
         for entry in entries:
@@ -242,140 +175,124 @@ class DiscussionWiki(Component):
             if date != prevdate:
                 prevdate = date
                 entries_per_date.append((date, []))
-            forum_name = api.get_forum(context, entry['forum'])['name']
-            topic_subject = api.get_topic_subject(context, entry['topic'])
+            forum_name = self.api.get_forum(context, entry['forum'])['name']
+            topic_subject = self.api.get_topic_subject(context, entry['topic'])
             entries_per_date[-1][1].append((entry['forum'], forum_name,
-              entry['topic'], topic_subject))
-
-        # Format result.
-        return tag.div((tag.h3(date), tag.ul(tag.li(tag.a(forum_name, href =
-          formatter.href.discussion('forum', forum_id)), ': ', tag.a(
-          topic_subject, href = formatter.href.discussion('topic', topic_id)))
-          for forum_id, forum_name, topic_id, topic_subject in entries)) for
-          date, entries in entries_per_date)
+                                            entry['topic'], topic_subject))
+        href = formatter.href
+        return tag.div(
+               (tag.h3(date),
+                    tag.ul(
+                        tag.li(
+                            tag.a(forum_name,
+                                  href=href.discussion('forum', forum_id)),
+                            ': ',
+                            tag.a(topic_subject,
+                                  href=href.discussion('topic', topic_id)))
+                        for forum_id, forum_name, topic_id, topic_subject
+                        in entries)
+                    )
+               for date, entries in entries_per_date)
 
     def _discussion_link(self, formatter, namespace, params, label):
+        # Prepare context including db access.
+        context = Context.from_request(formatter.req)
+        context.realm = 'discussion-wiki'
+        context.db = self.env.get_db_cnx()
+
+        href = formatter.href
+        title = label.replace('"', '')
         try:
             id = int(params)
-        except:
+        except (TypeError, ValueError):
             id = -1
 
-        # Create request context.
-        context = Context.from_request(formatter.req)
-        context.realm = 'discussion-wiki'
-
-        # Get database access.
-        context.db = self.env.get_db_cnx()
-
-        if namespace == 'forum':
+        if 'forum' == namespace:
             columns = ('subject',)
-            sql = ("SELECT f.subject "
-                   "FROM forum f "
-                   "WHERE f.id = %s")
-            values = (id,)
-            cursor = context.db.cursor()
-            cursor.execute(sql, values)
-            for row in cursor:
-                row = dict(zip(columns, row))
-                return tag.a(label, href = formatter.href.discussion('forum',
-                  id), title = row['subject'].replace('"', ''))
-            return tag.a(label, href = formatter.href.discussion('forum', id),
-              title = label, class_ = 'missing')
-        elif namespace == 'last-forum':
+            forum = self.api._get_item(context, 'forum', columns, 'id=%s',
+                                       (id,))
+            if forum:
+                return tag.a(label, href=href.discussion('forum', id),
+                             title=forum['subject'].replace('"', ''))
+            return tag.a(label, href=href.discussion('forum', id),
+                         title=title, class_='missing')
+
+        elif 'last-forum' == namespace:
             columns = ('id', 'subject')
-            sql = ("SELECT f.id, f.subject "
-                   "FROM forum f "
-                   "WHERE f.time = "
-                   "  (SELECT MAX(time) "
-                   "  FROM forum "
-                   "  WHERE forum_group = %s)")
-            values = (id,)
-            cursor = context.db.cursor()
-            cursor.execute(sql, values)
-            for row in cursor:
-                row = dict(zip(columns, row))
-                return tag.a(label, href = formatter.href.discussion('forum',
-                  row['id']), title = row['subject'].replace('"', ''))
-            return tag.a(label, href = formatter.href.discussion('forum',
-              '-1'), title = label, class_ = 'missing')
-        elif namespace == 'topic':
-            columns = ('forum', 'forum_subject', 'subject')
-            sql = ("SELECT t.forum, f.subject, t.subject "
-                   "FROM topic t "
-                   "LEFT JOIN forum f "
-                   "ON t.forum = f.id "
-                   "WHERE t.id = %s")
-            values = (id,)
-            cursor = context.db.cursor()
-            cursor.execute(sql, values)
-            for row in cursor:
-                row = dict(zip(columns, row))
-                return tag.a(label, href = '%s#-1' % \
-                  (formatter.href.discussion('topic', id),), title =
-                  ('%s: %s' % (row['forum_subject'], row['subject']))
-                  .replace('"', ''))
-            return tag.a(label, href = formatter.href.discussion('topic', id),
-              title = label.replace('"', ''), class_ = 'missing')
-        elif namespace == 'last-topic':
-            columns = ('id', 'forum_subject', 'subject')
-            sql = ("SELECT t.id, f.subject, t.subject "
-                   "FROM topic t "
-                   "LEFT JOIN forum f "
-                   "ON t.forum = f.id WHERE t.time = "
-                   "  (SELECT MAX(time) "
-                   "  FROM topic "
-                   "  WHERE forum = %s)")
-            values = (id,)
-            cursor = context.db.cursor()
-            cursor.execute(sql, values)
-            for row in cursor:
-                row = dict(zip(columns, row))
-                return tag.a(label, href = '%s#-1' % \
-                  (formatter.href.discussion('topic', row['id']),), title =
-                  ('%s: %s' % (row['forum_subject'], row['subject']))
-                  .replace('"', ''))
-            return tag.a(label, href = formatter.href.discussion('topic',
-              '-1'), title = label.replace('"', ''), class_ = 'missing')
-        elif namespace == 'message':
-            columns = ('forum', 'topic', 'forum_subject', 'subject')
-            sql = ("SELECT m.forum, m.topic, f.subject, t.subject "
-              "FROM message m, "
-                "(SELECT subject, id "
-                "FROM forum) f, "
-                "(SELECT subject, id "
-                "FROM topic) t "
-              "WHERE m.forum = f.id AND m.topic = t.id AND m.id = %s")
-            values = (id,)
-            cursor = context.db.cursor()
-            cursor.execute(sql, values)
-            for row in cursor:
-                row = dict(zip(columns, row))
-                return tag.a(label, href = '%s#message%s' % \
-                  (formatter.href.discussion('topic', row['topic']), id), title = (
-                  '%s: %s' % (row['forum_subject'], row['subject'])).replace(
-                  '"', ''))
-            return tag.a(label, href = formatter.href.discussion('message', id),
-              title = label.replace('"', ''), class_ = 'missing')
-        else:
-            return tag.a(label, href = formatter.href.discussion('message', id),
-              title = label.replace('"', ''), class_ = 'missing')
+            forum = self.api._get_items(context, 'forum', columns,
+                                        'forum_group=%s', (id,),
+                                        'time', True, limit=1)
+            if forum:
+                return tag.a(label,
+                             href=href.discussion('forum', forum[0]['id']),
+                             title=forum[0]['subject'].replace('"', ''))
+            return tag.a(label, href=href.discussion('forum', '-1'),
+                         title=title, class_='missing')
 
-    def _discussion_attachment_link(self, formatter, namespace, params, label):
-        id, name = params.split(':')
+        elif 'topic' == namespace:
+            columns = ('forum', 'subject')
+            topic = self.api._get_item(context, 'topic', columns, 'id=%s',
+                                       (id,))
+            if topic:
+                forum_subject = self.api.get_forum_subject(context,
+                                                           topic['forum'])
+                return tag.a(label, href='%s#-1'
+                                         % href.discussion('topic', id),
+                             title=('%s: %s'
+                                    % (forum_subject, topic['subject']))
+                                   .replace('"', ''))
+            return tag.a(label, href=href.discussion('topic', id),
+                         title=title, class_='missing')
 
-        # Create request context.
-        context = Context.from_request(formatter.req)
+        elif 'last-topic' == namespace:
+            columns = ('id', 'forum', 'subject')
+            topic = self.api._get_items(context, 'topic', columns,
+                                        'forum=%s', (id,),
+                                        'time', True, limit=1)
+            if topic:
+                forum_subject = self.api.get_forum_subject(context,
+                                                           topic[0]['forum'])
+                return tag.a(label, href='%s#-1'
+                                         % (href.discussion('topic',
+                                                            topic[0]['id']),),
+                             title=('%s: %s'
+                                    % (forum_subject, topic[0]['subject']))
+                                   .replace('"', ''))
+            return tag.a(label, href=href.discussion('topic', '-1'),
+                         title=title, class_='missing')
+
+        elif 'message' == namespace:
+            message = self.api.get_message(context, id)
+            if message:
+                forum_subject = self.api.get_forum_subject(context,
+                                                           message['forum'])
+                topic_subject = self.api.get_topic_subject(context,
+                                                           message['topic'])
+                return tag.a(label, href='%s#message_%s'
+                                         % (href.discussion('topic',
+                                                            message['topic']),
+                                            id),
+                             title=('%s: %s' % (forum_subject, topic_subject))
+                                   .replace('"', ''))
+            return tag.a(label, href=href.discussion('message', id),
+                         title=title, class_='missing')
+
+    def _discussion_attachment_link(self, fmt, namespace, params, label):
+        # Prepare context.
+        context = Context.from_request(fmt.req)
         context.realm = 'discussion-wiki'
 
-        # Get database access.
-        context.db = self.env.get_db_cnx()
+        try:
+            id, name = params.split(':')
+        except (TypeError, ValueError):
+            raise ResourceNotFound('Invalid identifier %s' % params)
 
-        if namespace == 'topic-attachment':
+        if 'topic-attachment' == namespace:
             return format_to_html(self.env, context,
-              '[attachment:discussion:topic/%s:%s %s]' % (id, name, label))
-        elif namespace == 'raw-topic-attachment':
+                                  '[attachment:discussion:topic/%s:%s %s]'
+                                  % (id, name, label))
+
+        elif 'raw-topic-attachment' == namespace:
             return format_to_html(self.env, context,
-              '[raw-attachment:discussion:topic/%s:%s %s]' % (id, name, label))
-        else:
-            return tag.a(label, href = formatter.href.discussion('topic', id),
-              title = label.replace('"', ''), class_ = 'missing')
+                                  '[raw-attachment:discussion:topic/%s:%s %s]'
+                                  % (id, name, label))

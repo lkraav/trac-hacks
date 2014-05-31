@@ -759,7 +759,7 @@ class DiscussionApi(DiscussionDb):
                 # Create map of topic subjects.
                 topic_subjects = {}
                 for message in messages:
-                    if not topic_subjects.has_key(message['topic']):
+                    if not message['topic'] in topic_subjects:
                         topic_subjects[message['topic']] = \
                           self.get_topic_subject(context, message['topic'])
 
@@ -1736,12 +1736,18 @@ class DiscussionApi(DiscussionDb):
         return self._get_items(context, 'message', self.msg_cols,
                                'replyto=%s', (id,), order_by, desc)
 
-    # Attribute getter method.
+    # Attribute getter methods.
+
+    def get_forum_subject(self, context, id):
+        """Get subject of the forum."""
+        return self._get_item(context, 'forum', ('subject',), 'id=%s',
+                              (id,))['subject']
 
     def get_topic_subject(self, context, id):
-        # Get subject of the topic.
+        """Get subject of the topic."""
         return self._get_item(context, 'topic', ('subject',), 'id=%s',
                               (id,))['subject']
+
     # Counter methods.
 
     def get_topics_count(self, context, forum_id):
