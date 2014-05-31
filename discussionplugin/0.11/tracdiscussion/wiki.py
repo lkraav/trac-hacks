@@ -135,18 +135,21 @@ class DiscussionWiki(Component):
         if context.redirect_url:
             # Generate HTML elements for redirection.
             href = context.req.href(context.redirect_url[0]) + \
-              context.redirect_url[1]
-            self.log.debug("Redirecting to %s" % (href))
+                   context.redirect_url[1]
+            self.log.debug("Redirecting to %s" % href)
             return tag.div(tag.strong('Redirect: '),
-              ' This page redirects to ', tag.a(href, href = href),
-              tag.script("window.location = '" + context.req.href('discussion',
-              'redirect', redirect_url = href) + "'", language = "JavaScript"),
-              class_ = "system-message")
+                           ' This page redirects to ',
+                           tag.a(href, href=href),
+                           tag.script("window.location = '" + 
+                                      context.req.href('discussion',
+                                                       'redirect',
+                                                        redirect_url=href) +
+                                      "'", language="JavaScript"),
+                           class_="system-message")
         else:
-            # Render template.
-            return to_unicode(Chrome(self.env).render_template(formatter.req,
-                                               template, data, 'text/html',
-                                               True))
+            return to_unicode(Chrome(self.env)
+                              .render_template(formatter.req, template, data,
+                                               'text/html', True))
 
     def _recent_topics(self, formatter, content):
         # Prepare context including db access.
@@ -209,11 +212,10 @@ class DiscussionWiki(Component):
 
         if 'forum' == namespace:
             columns = ('subject',)
-            forum = self.api._get_item(context, 'forum', columns, 'id=%s',
-                                       (id,))
-            if forum:
+            forum_subject = self.api.get_forum_subject(context, id)
+            if forum_subject:
                 return tag.a(label, href=href.discussion('forum', id),
-                             title=forum['subject'].replace('"', ''))
+                             title=forum_subject.replace('"', ''))
             return tag.a(label, href=href.discussion('forum', id),
                          title=title, class_='missing')
 

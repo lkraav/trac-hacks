@@ -1740,13 +1740,15 @@ class DiscussionApi(DiscussionDb):
 
     def get_forum_subject(self, context, id):
         """Get subject of the forum."""
-        return self._get_item(context, 'forum', ('subject',), 'id=%s',
-                              (id,))['subject']
+        forum = self._get_item(context, 'forum', ('subject',), 'id=%s', (id,))
+        if forum:
+            return forum['subject']
 
     def get_topic_subject(self, context, id):
         """Get subject of the topic."""
-        return self._get_item(context, 'topic', ('subject',), 'id=%s',
-                              (id,))['subject']
+        topic = self._get_item(context, 'topic', ('subject',), 'id=%s', (id,))
+        if topic:
+            return topic['subject']
 
     # Counter methods.
 
