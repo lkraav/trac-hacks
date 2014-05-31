@@ -8,12 +8,14 @@
 # you should have received as part of this distribution.
 
 
-from trac.config import IntOption, ListOption
+from trac.config import ListOption
 from trac.core import *
-from trac.perm import IPermissionRequestor, IPermissionGroupProvider, IPermissionPolicy, PermissionSystem
+from trac.perm import IPermissionGroupProvider, IPermissionPolicy, \
+                      IPermissionRequestor, PermissionSystem
 from trac.ticket.model import Ticket
 from trac.util.compat import set
 from trac.web.chrome import Chrome
+
 
 class PrivateTicketsPolicy(Component):
     """Central tasks for the PrivateTickets plugin."""
@@ -22,8 +24,10 @@ class PrivateTicketsPolicy(Component):
     
     group_providers = ExtensionPoint(IPermissionGroupProvider)
     
-    blacklist = ListOption('privatetickets', 'group_blacklist', default='anonymous, authenticated',
-                           doc='Groups that do not affect the common membership check.')
+    blacklist = ListOption('privatetickets', 'group_blacklist',
+                           default='anonymous, authenticated',
+                           doc='Groups that do not affect the common'
+                               ' membership check.')
     
     ignore_permissions = set([
         'TRAC_ADMIN',
@@ -54,10 +58,14 @@ class PrivateTicketsPolicy(Component):
     
     # IPermissionRequestor methods
     def get_permission_actions(self):
-        actions = ['TICKET_VIEW_REPORTER', 'TICKET_VIEW_OWNER', 'TICKET_VIEW_CC']
-        group_actions = ['TICKET_VIEW_REPORTER_GROUP', 'TICKET_VIEW_OWNER_GROUP', 'TICKET_VIEW_CC_GROUP'] 
+        actions = ['TICKET_VIEW_REPORTER', 'TICKET_VIEW_OWNER',
+                   'TICKET_VIEW_CC']
+        group_actions = ['TICKET_VIEW_REPORTER_GROUP',
+                         'TICKET_VIEW_OWNER_GROUP',
+                         'TICKET_VIEW_CC_GROUP']
         all_actions = actions + [(a+'_GROUP', [a]) for a in actions]
-        return all_actions + [('TICKET_VIEW_SELF', actions), ('TICKET_VIEW_GROUP', group_actions)]
+        return all_actions + [('TICKET_VIEW_SELF', actions),
+                              ('TICKET_VIEW_GROUP', group_actions)]
     
     # Public methods
     def check_ticket_access(self, perm, res):
@@ -65,7 +73,7 @@ class PrivateTicketsPolicy(Component):
         try:
             tkt = Ticket(self.env, res.id)
         except TracError:
-            return None # Ticket doesn't exist
+            return None  # Ticket doesn't exist
         
         had_any = False
         
@@ -132,7 +140,8 @@ class PrivateTicketsPolicy(Component):
         while repeat:
             repeat = False
             for subject, action in perms:
-                if subject in groups and not action.isupper() and action not in groups:
+                if subject in groups and not action.isupper() \
+                        and action not in groups:
                     groups.add(action)
                     repeat = True 
         
