@@ -12,6 +12,7 @@ droplet_defaults = {
     'chef_boot_run_list': '',
     'chef_boot_sudo': True,
     'chef_boot_version': '',
+    'chef_distro': '',
     'jabber_channel': '',
     'jabber_password': '',
     'jabber_port': 5222,

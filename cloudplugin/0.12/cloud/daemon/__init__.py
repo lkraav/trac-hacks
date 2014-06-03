@@ -36,6 +36,7 @@ class Daemon(object):
         parser.add_option("--chef-boot-run-list", default=[], action='append')
         parser.add_option("--chef-boot-sudo",default=False, action="store_true")
         parser.add_option("--chef-boot-version")
+        parser.add_option("--chef-distro")
         parser.add_option("--aws-key")
         parser.add_option("--aws-secret")
         parser.add_option("--aws-keypair")
@@ -72,6 +73,7 @@ class Daemon(object):
                                self.options.chef_boot_run_list,
                                self.options.chef_boot_sudo,
                                self.options.chef_boot_version,
+                               self.options.chef_distro,
                                self.log)
         
         self.cloudapi = Aws(self.options.aws_key,

@@ -61,6 +61,9 @@ class CloudModule(Component):
     chef_boot_version = Option('cloud', 'chef_boot_version', '',
         _("Version of chef-client to install."))
     
+    chef_distro = Option('cloud', 'chef_distro', '',
+        _("Distribution template to use for launch."))
+    
     jabber_server = Option('cloud', 'jabber_server', '', _("Jabber server."))
     
     jabber_port = Option('cloud', 'jabber_port', '', _("Jabber port."))
@@ -151,6 +154,7 @@ class CloudModule(Component):
                               self.chef_boot_run_list,
                               self.chef_boot_sudo,
                               self.chef_boot_version,
+                              self.chef_distro,
                               self.log)
             
             cloudapi = Aws(self.aws_key,

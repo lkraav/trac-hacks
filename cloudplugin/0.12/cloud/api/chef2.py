@@ -18,13 +18,14 @@ class Chef(object):
     """
     
     def __init__(self, base_path, keypair_pem, user,
-                 run_list, boot_sudo, boot_version, log):
+                 run_list, boot_sudo, boot_version, distro, log):
         self.base_path = os.path.abspath(base_path)
         self.keypair_pem = keypair_pem
         self.user = user
         self.boot_run_list = run_list
         self.boot_sudo = boot_sudo
         self.boot_version = boot_version
+        self.distro = distro
         self.log = log
         self.chef = chef.autoconfigure(self.base_path)
     
@@ -159,6 +160,8 @@ class Chef(object):
             cmd += ' --sudo'
         if self.boot_version:
             cmd += ' --bootstrap-version %s' % self.boot_version
+        if self.distro:
+            cmd += ' --distro %s' % self.distro
             
         expected_transient_errors = [
             "409 Conflict: Client already exists",
