@@ -464,7 +464,7 @@ class Droplet(object):
         if self.chefapi.boot_version:
             cmd += ['--chef-boot-version="%s"' % self.chefapi.boot_version]
         if self.chefapi.distro:
-            cmd += ['--chef-distro"%s"' % self.chefapi.distro]
+            cmd += ['--chef-distro="%s"' % self.chefapi.distro]
         cmd = ' '.join(cmd)
         
         # Spawn command as daemon to launch and bootstrap instance in background
