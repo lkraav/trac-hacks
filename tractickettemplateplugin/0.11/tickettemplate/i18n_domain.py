@@ -9,8 +9,9 @@
 
 try:
     from trac.util.translation import domain_functions
-    gettext, _, tag_, N_, add_domain = domain_functions('tickettemplate', 
-    'gettext', '_', 'tag_', 'N_', 'add_domain')
+    gettext, _, tag_, N_, add_domain = \
+        domain_functions('tickettemplate', 'gettext', '_', 'tag_', 'N_',
+                         'add_domain')
 except ImportError:
     # ignore domain functions
     def add_domain(*args, **kwargs): pass
@@ -22,4 +23,3 @@ except ImportError:
         def _(string, **kwargs): return string
         def tag_(string, **kwargs): return string
         def N_(string, **kwargs): return string
-    

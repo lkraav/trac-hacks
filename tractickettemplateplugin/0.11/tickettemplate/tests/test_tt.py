@@ -1,15 +1,15 @@
+import os.path
+import shutil
+import tempfile
+import unittest
+
 from trac.core import *
 from trac.test import EnvironmentStub, Mock
 from trac.env import Environment
-from trac.core import ComponentManager, ComponentMeta
+from trac.core import ComponentManager
 
 import tickettemplate.ttadmin as ttadmin
 
-import os.path
-import tempfile
-import shutil
-
-import unittest
 
 class TicketTemplateTestCase(unittest.TestCase):
 
@@ -19,7 +19,7 @@ class TicketTemplateTestCase(unittest.TestCase):
         env_path = os.path.join(tempfile.gettempdir(), 'trac-tempenv')
         self.env = Environment(env_path, create=True)
         self.db = self.env.get_db_cnx()
-        
+
         self.compmgr = ComponentManager()
 
         # init TicketTemplateModule
@@ -56,18 +56,20 @@ class TicketTemplateTestCase(unittest.TestCase):
         self.assertEqual(["default", "defect", "enhancement", "task"], options)
 
     def test_loadSaveTemplateText(self):
-        for tt_name, tt_text in [("default", "default text"), 
-                                ("defect", "defect text"), 
-                                ("enhancement", "enhancement text"), 
+        for tt_name, tt_text in [("default", "default text"),
+                                ("defect", "defect text"),
+                                ("enhancement", "enhancement text"),
                                 ("task", "task text"),
                                 ]:
             self.tt._saveTemplateText(tt_name, tt_text)
             self.assertEqual(tt_name + " text", self.tt._loadTemplateText(tt_name))
 
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TicketTemplateTestCase, 'test'))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main()

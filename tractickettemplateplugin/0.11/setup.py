@@ -1,4 +1,8 @@
-from setuptools import find_packages, setup
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+from setuptools import setup
 
 extra = {}
 
@@ -21,7 +25,7 @@ setup(
     name = 'TracTicketTemplate',
     version = '0.9',
     packages = ['tickettemplate'],
-    package_data = { 'tickettemplate': [ '*.txt', 'templates/*.*', 'htdocs/*.*', 
+    package_data = { 'tickettemplate': [ '*.txt', 'templates/*.*', 'htdocs/*.*',
         'tests/*.*', 'locale/*.*', 'locale/*/LC_MESSAGES/*.*' ] },
 
     author = "Richard Liao",
@@ -35,8 +39,10 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    
-    install_requires = [],
-    entry_points = {'trac.plugins': ['tickettemplate = tickettemplate.ttadmin']},
+
+    install_requires = ['simple_json' if sys.version_info < (2, 6) else ''],
+    entry_points = {
+        'trac.plugins': ['tickettemplate = tickettemplate.ttadmin'],
+    },
     **extra
 )

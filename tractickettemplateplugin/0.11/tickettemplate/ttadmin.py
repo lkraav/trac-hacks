@@ -7,40 +7,23 @@
 #
 #----------------------------------------------------------------------------
 
-from trac.core import *
-from trac.db import DatabaseManager
-from trac.util.html import html
-from trac.web.chrome import *
-from trac.wiki import wiki_to_html, wiki_to_oneliner
-from trac.perm import IPermissionRequestor
-from trac.web import IRequestHandler
-
-from trac.web.api import RequestDone
-
-from trac.web.api import ITemplateStreamFilter
-
-from trac.ticket import Milestone, Ticket, TicketSystem, ITicketManipulator
-from trac.web.chrome import add_ctxtnav, add_link, add_script, add_stylesheet, \
-                            Chrome
-
-from trac.ticket.web_ui import TicketModule
-
-from trac.admin import IAdminPanelProvider
-from trac.admin import IAdminCommandProvider
-
-from trac.util.compat import partial
-
-from genshi.filters.transform import Transformer
+from __future__ import with_statement
 
 from pkg_resources import resource_filename
-
-import sys
-import os
-import pickle
 import inspect
+import sys
 import time
 import textwrap
 import urllib
+
+from genshi.filters.transform import Transformer
+from trac.admin.api import IAdminCommandProvider, IAdminPanelProvider
+from trac.core import *
+from trac.db import DatabaseManager
+from trac.perm import IPermissionRequestor
+from trac.ticket import Ticket
+from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
+from trac.web.chrome import add_stylesheet, Chrome
 
 if sys.version_info[0] == 2 and sys.version_info[1] > 5:
     import json
@@ -48,7 +31,6 @@ else:
     import simplejson as json
 
 from tickettemplate.model import schema, schema_version, TT_Template
-
 from utils import *
 
 from i18n_domain import gettext, _, tag_, N_, add_domain
@@ -57,15 +39,16 @@ from default_templates import DEFAULT_TEMPLATES
 
 __all__ = ['TicketTemplateModule']
 
+
 class TicketTemplateModule(Component):
-    
-    implements(ITemplateProvider, 
-               IAdminPanelProvider, 
+
+    implements(ITemplateProvider,
+               IAdminPanelProvider,
                IAdminCommandProvider,
-               IEnvironmentSetupParticipant, 
+               IEnvironmentSetupParticipant,
                IPermissionRequestor,
                ITemplateStreamFilter,
-               IRequestHandler, 
+               IRequestHandler,
                )
 
     SECTION_NAME = 'tickettemplate'
@@ -121,9 +104,9 @@ class TicketTemplateModule(Component):
         if not row:
             self.environment_created()
             current_version = 0
-        else:    
+        else:
             current_version = int(row[0])
-            
+
         from tickettemplate import upgrades
         for version in range(current_version + 1, schema_version + 1):
             for function in upgrades.map.get(version):
@@ -139,7 +122,7 @@ class TicketTemplateModule(Component):
     def _insert_templates(self, templates):
         """
         accept list of tuples called templates and insert into database.
-        example: templates = [('tt_name','tt_value'),] 
+        example: templates = [('tt_name','tt_value'),]
         """
         db = self.env.get_db_cnx()
         now = int(time.time())
@@ -150,7 +133,7 @@ class TicketTemplateModule(Component):
                 tt_name,
                 "description",
                 tt_value,
-                ]
+            ]
             TT_Template.insert(self.env, record)
             # increment timestamp; other code expects it to be unique
             now += 1
@@ -159,8 +142,7 @@ class TicketTemplateModule(Component):
 
     def _get_json_template_file_from_conf(self):
         """return json_template_file path from trac.ini config or empty string"""
-        return self.config.get(self.SECTION_NAME,'json_template_file', '')
-
+        return self.config.get(self.SECTION_NAME, 'json_template_file', '')
 
     # IAdminCommandProvider methods
 
@@ -179,7 +161,7 @@ class TicketTemplateModule(Component):
 
         yield ('ticket_template import', '<json_template_file>',
                """import ticket templates from json file
-               
+
                Specify json file path via:
                * json_template_file argument
                * json_template_file option in trac.ini
@@ -192,11 +174,11 @@ class TicketTemplateModule(Component):
         export_data = []
         for template_name in template_names:
             export_datum = (
-              template_name,
-              TT_Template.fetch(self.env, template_name),
+                template_name,
+                TT_Template.fetch(self.env, template_name),
             )
             export_data.append(export_datum)
-        print(json.dumps(export_data,indent=2))
+        print(json.dumps(export_data, indent=2))
 
     def ticket_template_import(self, json_template_file=''):
         """
@@ -212,13 +194,13 @@ class TicketTemplateModule(Component):
             # convert template_file json to python data structure then insert
             with open(json_template_file) as f:
                 self._insert_templates(json.load(f))
-        
 
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
         if 'TT_ADMIN' in req.perm:
-            yield ('ticket', _('Ticket System'), self.SECTION_NAME, _('Ticket Template'))
+            yield ('ticket', _('Ticket System'), self.SECTION_NAME,
+                   _('Ticket Template'))
 
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('TT_ADMIN')
@@ -229,18 +211,16 @@ class TicketTemplateModule(Component):
             "tag_": tag_,
             "N_": N_,
         }
-        
+
         data['options'] = self._getTicketTypeNames()
         data['type'] = req.args.get('type')
 
-        
-        if req.args.has_key("id"):
+        if 'id' in req.args:
             # after load history
-            id = req.args.get("id")
+            id = req.args.get('id')
             data['tt_text'] = self._loadTemplateTextById(id)
             data['type'] = self._getNameById(id)
 
-        
         elif req.method == 'POST':
 
             # Load
@@ -252,21 +232,21 @@ class TicketTemplateModule(Component):
             # Load history
             if req.args.get('loadhistory'):
                 tt_name = req.args.get('type')
-                
+
                 data['tt_name'] = tt_name
-                
+
                 tt_history = []
-                for id,modi_time,tt_name,tt_text in TT_Template.selectByName(self.env, tt_name):
-                    history = {}
-                    history["id"] = id
-                    history["tt_name"] = tt_name
-                    history["modi_time"] = self._formatTime(int(modi_time))
-                    history["tt_text"] = tt_text
-                    history["href"] = req.abs_href.admin(cat, page, {"id":id})
+                for id, modi_time, tt_name, tt_text \
+                        in TT_Template.selectByName(self.env, tt_name):
+                    history = {'id': id, 'tt_name': tt_name,
+                               'modi_time': self._formatTime(int(modi_time)),
+                               'tt_text': tt_text,
+                               'href': req.abs_href.admin(cat, page,
+                                                          {'id': id})}
                     tt_history.append(history)
-                
+
                 data['tt_history'] = tt_history
-                                
+
                 return 'loadhistory.html', data
 
             # Save
@@ -276,19 +256,21 @@ class TicketTemplateModule(Component):
 
                 self._saveTemplateText(tt_name, tt_text)
                 data['tt_text'] = tt_text
-                
+
             # preview
             elif req.args.get('preview'):
                 tt_text = req.args.get('description').replace('\r', '')
                 tt_name = req.args.get('type')
 
-                description_preview = self._previewTemplateText(tt_name, tt_text, req)
+                description_preview = \
+                    self._previewTemplateText(tt_name, tt_text, req)
                 data['tt_text'] = tt_text
                 data['description_preview'] = description_preview
 
         return 'admin_tickettemplate.html', data
 
-    # ITemplateProvider
+    # ITemplateProvider methods
+
     def get_templates_dirs(self):
         """
             Return the absolute path of the directory containing the provided
@@ -300,11 +282,11 @@ class TicketTemplateModule(Component):
         """
             Return a list of directories with static resources (such as style
             sheets, images, etc.)
-    
+
             Each item in the list must be a `(prefix, abspath)` tuple. The
             `prefix` part defines the path in the URL that requests to these
             resources are prefixed with.
-            
+
             The `abspath` is the absolute path to the directory containing the
             resources on the local file system.
         """
@@ -319,88 +301,86 @@ class TicketTemplateModule(Component):
     def process_request(self, req):
         req.perm.assert_permission('TICKET_CREATE')
         data = {
-            "gettext": gettext,
-            "_": _,
-            "tag_": tag_,
-            "N_": N_,
+            'gettext': gettext,
+            '_': _,
+            'tag_': tag_,
+            'N_': N_,
         }
-        
+
         if req.path_info.startswith('/tt/query'):
             # handle XMLHTTPRequest
             data["req_args"] = req.args
-                
+
             data.update({"tt_user": req.authname})
             result = TT_Template.fetchAll(self.env, data)
             result["status"] = "1"
             result["field_list"] = self._getFieldList()
-            if self.config.getbool(self.SECTION_NAME, "enable_custom", True) and \
-                'TT_USER' in req.perm:
+            if self.config.getbool(self.SECTION_NAME, "enable_custom", True) \
+                    and 'TT_USER' in req.perm:
                 result["enable_custom"] = True
             else:
                 result["enable_custom"] = False
-            if req.args.has_key("warning"):
+            if 'warning' in req.args:
                 result["warning"] = "1"
             jsonstr = json.dumps(result)
             self._sendResponse(req, jsonstr)
 
         # tt_custom save
         elif req.path_info.startswith('/tt/custom_save'):
-            tt_name, custom_template = self._handleCustomSave(req);
-            result = {}
-            result["status"] = "1"
-            result["tt_name"] = tt_name
-            result["new_template"] = custom_template
+            tt_name, custom_template = self._handleCustomSave(req)
+            result = {"status": "1", "tt_name": tt_name,
+                      "new_template": custom_template}
             jsonstr = json.dumps(result)
             self._sendResponse(req, jsonstr)
 
         # tt_custom delete
         elif req.path_info.startswith('/tt/custom_delete'):
-            tt_name = self._handleCustomDelete(req);
-            result = {}
-            result["status"] = "1"
-            result["tt_name"] = tt_name
+            tt_name = self._handleCustomDelete(req)
+            result = {"status": "1", "tt_name": tt_name}
             jsonstr = json.dumps(result)
             self._sendResponse(req, jsonstr)
 
         elif req.path_info.startswith('/tt/edit_buffer_save'):
-            tt_name, custom_template = self._handleCustomSave(req);
-            result = {}
-            result["status"] = "1"
-            result["tt_name"] = tt_name
-            result["new_template"] = custom_template
+            tt_name, custom_template = self._handleCustomSave(req)
+            result = {"status": "1", "tt_name": tt_name,
+                      "new_template": custom_template}
             jsonstr = json.dumps(result)
             self._sendResponse(req, jsonstr)
         elif req.path_info.startswith('/tt/tt_newticket.js'):
             filename = resource_filename(__name__, 'templates/tt_newticket.js')
             chrome = Chrome(self.env)
             message = chrome.render_template(req, filename, data, 'text/plain')
-            
+
             req.send_response(200)
             req.send_header('Cache-control', 'no-cache')
             req.send_header('Expires', 'Fri, 01 Jan 1999 00:00:00 GMT')
             req.send_header('Content-Type', 'text/x-javascript')
-            req.send_header('Content-Length', len(isinstance(message, unicode) and message.encode("utf-8") or message))
+            req.send_header('Content-Length',
+                            len(isinstance(message, unicode)
+                            and message.encode("utf-8") or message))
             req.end_headers()
 
             if req.method != 'HEAD':
                 req.write(message)
             raise RequestDone
-            
+
     # ITemplateStreamFilter
-    
+
     def filter_stream(self, req, method, filename, stream, data):
-        if filename == "ticket.html" and req.path_info.startswith('/newticket'):
+        if filename == "ticket.html" \
+                and req.path_info.startswith('/newticket'):
             # common js files
             add_script(req, 'tt/json2.js')
-            
+
             stream = stream | Transformer('body').append(
-                tag.script(type="text/javascript", 
+                tag.script(type="text/javascript",
                 src=req.href("tt", "tt_newticket.js"))()
             )
 
         return stream
-    
-    # internal methods
+
+    # Internal methods
+
     def _handleCustomDelete(self, req):
         """ delete custom template
         """
@@ -416,7 +396,7 @@ class TicketTemplateModule(Component):
         delete_data = {
             "tt_user": tt_user,
             "tt_name": tt_name,
-            }
+        }
         TT_Template.deleteCustom(self.env, delete_data)
         return tt_name
 
@@ -437,7 +417,7 @@ class TicketTemplateModule(Component):
         delete_data = {
             "tt_user": tt_user,
             "tt_name": tt_name,
-            }
+        }
         TT_Template.deleteCustom(self.env, delete_data)
 
         # save custom template
@@ -452,7 +432,7 @@ class TicketTemplateModule(Component):
                     tt_name,
                     tt_field,
                     tt_value,
-                    ]
+                ]
                 TT_Template.insert(self.env, record)
 
         return tt_name, custom_template
@@ -489,22 +469,26 @@ class TicketTemplateModule(Component):
         data = {
             "tt_user": tt_user,
             "tt_name": tt_name,
-            }
+        }
         field_value_mapping = TT_Template.fetchCurrent(self.env, data)
         for k, v in field_value_mapping.items():
             if k in field_list:
                 result[k] = v
 
         for field in field_list:
-            field_type = self.config.get(self.SECTION_NAME, field + ".type", "text")
+            field_type = self.config.get(self.SECTION_NAME, field + ".type",
+                                         "text")
             field_value = field_value_mapping.get(field)
-            field_detail = {"field_type":field_type, "field_value": field_value}
+            field_detail = {
+                "field_type": field_type,
+                "field_value": field_value
+            }
             result[field] = field_detail
 
         return result
-        
+
     def _loadTemplateText(self, tt_name):
-        """ get tempate text from tt_dict.
+        """ get template text from tt_dict.
             return tt_text if found in db
                 or default tt_text if exists
                 or empty string if default not exists.
@@ -512,7 +496,7 @@ class TicketTemplateModule(Component):
         tt_text = TT_Template.fetch(self.env, tt_name)
         if not tt_text:
             tt_text = TT_Template.fetch(self.env, "default")
-        
+
         return tt_text
 
     def _sendResponse(self, req, message):
@@ -522,21 +506,22 @@ class TicketTemplateModule(Component):
         req.send_header('Cache-control', 'no-cache')
         req.send_header('Expires', 'Fri, 01 Jan 1999 00:00:00 GMT')
         req.send_header('Content-Type', 'text/plain' + ';charset=utf-8')
-        req.send_header('Content-Length', len(isinstance(message, unicode) and message.encode("utf-8") or message))
+        req.send_header('Content-Length',
+                        len(isinstance(message, unicode)
+                        and message.encode("utf-8") or message))
         req.end_headers()
 
         if req.method != 'HEAD':
             req.write(message)
         raise RequestDone
 
-
     def _saveTemplateText(self, tt_name, tt_text):
         """ save ticket template text to db.
         """
-        id = TT_Template.insert(self.env, (int(time.time()), "SYSTEM", tt_name, "description", tt_text))
+        id = TT_Template.insert(self.env, (int(time.time()), "SYSTEM",
+                                           tt_name, "description", tt_text))
         return id
 
-        
     def _getTicketTypeNames(self):
         """ get ticket type names
             return:
@@ -552,4 +537,3 @@ class TicketTemplateModule(Component):
         options.extend(["default"])
 
         return options
-        

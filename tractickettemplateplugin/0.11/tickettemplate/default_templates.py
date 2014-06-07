@@ -28,4 +28,4 @@ DEFAULT_TEMPLATES = [
 = reason =
 
 = recommendation ="""),
-                     ]
+]

@@ -19,7 +19,7 @@ class TicketTemplateTestCase(unittest.TestCase):
         env_path = os.path.join(tempfile.gettempdir(), 'trac-tempenv')
         self.env = Environment(env_path, create=True)
         self.db = self.env.get_db_cnx()
-        
+
         self.compmgr = ComponentManager()
 
         # init TicketTemplateModule
@@ -56,9 +56,9 @@ class TicketTemplateTestCase(unittest.TestCase):
         self.assertEqual(["default", "defect", "enhancement", "task"], options)
 
     def test_loadSaveTemplateText(self):
-        for tt_name, tt_text in [("default", "default text"), 
-                                ("defect", "defect text"), 
-                                ("enhancement", "enhancement text"), 
+        for tt_name, tt_text in [("default", "default text"),
+                                ("defect", "defect text"),
+                                ("enhancement", "enhancement text"),
                                 ("task", "task text"),
                                 ]:
             self.tt._saveTemplateText(tt_name, tt_text)

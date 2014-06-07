@@ -9,9 +9,7 @@
 
 """Model classes for objects persisted in the database."""
 
-import time
-
-from trac.db import Table, Column, Index
+from trac.db import Column, Table
 
 from utils import *
 
@@ -22,8 +20,8 @@ class TT_Template(object):
     _schema = [
         Table('ticket_template_store')[
             Column('tt_time', type='int'),
-            Column('tt_user'), 
-            Column('tt_name'), 
+            Column('tt_user'),
+            Column('tt_name'),
             Column('tt_field'),
             Column('tt_value'),
         ]
@@ -44,8 +42,8 @@ class TT_Template(object):
         """Remove the tt from the database."""
         db = env.get_db_cnx()
         cursor = db.cursor()
-        sqlString = """DELETE FROM ticket_template_store 
-                        WHERE tt_user=%s 
+        sqlString = """DELETE FROM ticket_template_store
+                        WHERE tt_user=%s
                         AND tt_name=%s
                     """
         cursor.execute(sqlString, (data["tt_user"], data["tt_name"], ))
@@ -56,30 +54,30 @@ class TT_Template(object):
     def insert(cls, env, record):
         """Insert a new tt into the database."""
         db = env.get_db_cnx()
-            
+
         cursor = db.cursor()
-        sqlString = """INSERT INTO ticket_template_store 
-                       (tt_time,tt_user,tt_name,tt_field,tt_value) 
+        sqlString = """INSERT INTO ticket_template_store
+                       (tt_time,tt_user,tt_name,tt_field,tt_value)
                        VALUES (%s,%s,%s,%s,%s)"""
         cursor.execute(sqlString, record)
         db.commit()
-        
+
     insert = classmethod(insert)
-    
+
     def fetchCurrent(cls, env, data):
         """Retrieve an existing tt from the database by ID."""
         db = env.get_db_cnx()
 
         cursor = db.cursor()
-        sqlString = """SELECT tt_field, tt_value  
-                        FROM ticket_template_store 
+        sqlString = """SELECT tt_field, tt_value
+                        FROM ticket_template_store
                         WHERE tt_user = %s
-                        AND tt_time =  (SELECT max(tt_time) 
-                            FROM ticket_template_store 
+                        AND tt_time =  (SELECT max(tt_time)
+                            FROM ticket_template_store
                             WHERE tt_name=%s)
                     """
         cursor.execute(sqlString, (data["tt_user"], data["tt_name"], ))
-        
+
         field_value_mapping = {}
         for tt_field, tt_value in cursor.fetchall():
             if tt_value:
@@ -121,54 +119,55 @@ class TT_Template(object):
         field_value_mapping_custom = {}
 
         # field_value_mapping_custom
-        sqlString = """SELECT tt_name, tt_field, tt_value 
-                        FROM ticket_template_store 
+        sqlString = """SELECT tt_name, tt_field, tt_value
+                        FROM ticket_template_store
                         WHERE tt_user = %s
                     """
 
         cursor.execute(sqlString, (data["tt_user"], ))
-    
+
         for tt_name, tt_field, tt_value in cursor.fetchall():
-            if not field_value_mapping_custom.has_key(tt_name):
+            if tt_name not in field_value_mapping_custom:
                 field_value_mapping_custom[tt_name] = {}
             if tt_value:
-                tt_value = formatField(env.config, tt_value, real_user, req_args)
+                tt_value = formatField(env.config, tt_value, real_user,
+                                       req_args)
                 field_value_mapping_custom[tt_name][tt_field] = tt_value
 
-
         # field_value_mapping
-        sqlString = """SELECT DISTINCT tt_name 
+        sqlString = """SELECT DISTINCT tt_name
                         FROM ticket_template_store
                         WHERE tt_user = %s
                     """
         cursor.execute(sqlString, (SYSTEM_USER, ))
-        
+
         tt_name_list = [row[0] for row in cursor.fetchall()]
 
         data["tt_user"] = SYSTEM_USER
         for tt_name in tt_name_list:
             data["tt_name"] = tt_name
 
-            sqlString = """SELECT tt_field, tt_value 
-                            FROM ticket_template_store 
-                            WHERE tt_user = %s 
-                            AND tt_name = %s 
-                            AND tt_time =  (SELECT max(tt_time) 
-                                FROM ticket_template_store 
+            sqlString = """SELECT tt_field, tt_value
+                            FROM ticket_template_store
+                            WHERE tt_user = %s
+                            AND tt_name = %s
+                            AND tt_time =  (SELECT max(tt_time)
+                                FROM ticket_template_store
                                 WHERE tt_name = %s)
                         """
-            cursor.execute(sqlString, (data["tt_user"], data["tt_name"], data["tt_name"], ))
-        
+            cursor.execute(sqlString,(data["tt_user"], data["tt_name"],
+                                       data["tt_name"]))
+
             for tt_field, tt_value in cursor.fetchall():
-                if not field_value_mapping.has_key(tt_name):
+                if tt_name not in field_value_mapping:
                     field_value_mapping[tt_name] = {}
                 if tt_value:
-                    tt_value = formatField(env.config, tt_value, real_user, req_args)
+                    tt_value = formatField(env.config, tt_value, real_user,
+                                           req_args)
                     field_value_mapping[tt_name][tt_field] = tt_value
 
-        result = {}
-        result["field_value_mapping"] = field_value_mapping
-        result["field_value_mapping_custom"] = field_value_mapping_custom
+        result = {"field_value_mapping": field_value_mapping,
+                  "field_value_mapping_custom": field_value_mapping_custom}
         return result
 
     fetchAll = classmethod(fetchAll)
@@ -181,14 +180,14 @@ class TT_Template(object):
 
         cursor = db.cursor()
 
-        sqlString = """SELECT DISTINCT tt_name 
-                       FROM ticket_template_store 
-                       WHERE tt_user = %s 
-                       ORDER BY tt_name 
+        sqlString = """SELECT DISTINCT tt_name
+                       FROM ticket_template_store
+                       WHERE tt_user = %s
+                       ORDER BY tt_name
                     """
 
         cursor.execute(sqlString, (tt_user, ))
-        
+
         return [row[0] for row in cursor.fetchall()]
 
     getCustomTemplate = classmethod(getCustomTemplate)
@@ -199,17 +198,17 @@ class TT_Template(object):
             db = env.get_db_cnx()
 
         cursor = db.cursor()
-        sqlString = """SELECT tt_value 
-                        FROM ticket_template_store 
+        sqlString = """SELECT tt_value
+                        FROM ticket_template_store
                         WHERE tt_time=(
-                            SELECT max(tt_time) 
-                                FROM ticket_template_store 
+                            SELECT max(tt_time)
+                                FROM ticket_template_store
                                 WHERE tt_name=%s and tt_field='description'
                             )
                     """
-        
+
         cursor.execute(sqlString, (tt_name,))
-        
+
         row = cursor.fetchone()
         if not row:
             return None
@@ -217,7 +216,7 @@ class TT_Template(object):
             return row[0]
 
     fetch = classmethod(fetch)
-    
+
     def fetchNames(cls, env):
         """fetch a list of existing tt names from database"""
         db = env.get_db_cnx()
