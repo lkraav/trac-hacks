@@ -22,8 +22,12 @@ from trac.perm import IPermissionRequestor
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
 from trac.web.chrome import (Chrome, ITemplateProvider, add_script,
                              add_stylesheet)
+from trac.util.datefmt import format_datetime
+try:
+    from trac.util.datefmt import from_utimestamp as from_timestamp
+except ImportError:
+    from trac.util.datefmt import from_timestamp
 
-from utils import *
 from i18n_domain import _, N_, add_domain, gettext, tag_
 
 
@@ -182,14 +186,11 @@ class TicketlogModule(Component):
 
         revisions.sort(key=lambda r: r['time'], reverse=True)
         
-        def format_revision(revision):
-            if revision['time'] > 2147483647:
-                revision['time'] /= 1000000
-            
-            revision['time'] = format_date_full(revision['time'])
-            revision['author'] = \
-                Chrome(self.env).format_author(req, revision['author'])
-            return revision
+        def format_revision(rev):
+            rev['time'] = format_datetime(from_timestamp(rev['time']),
+                                          tzinfo=req.tz)
+            rev['author'] = Chrome(self.env).format_author(req, rev['author'])
+            return rev
         revisions = map(format_revision, revisions)
 
         return revisions
