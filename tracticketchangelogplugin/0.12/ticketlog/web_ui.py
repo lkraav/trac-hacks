@@ -17,6 +17,7 @@ except ImportError:
     import simplejson as json
 
 import trac
+from trac.config import IntOption
 from trac.core import *
 from trac.perm import IPermissionRequestor
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
@@ -35,6 +36,9 @@ class TicketlogModule(Component):
 
     implements(IPermissionRequestor, IRequestHandler, ITemplateProvider,
                ITemplateStreamFilter)
+
+    max_message_length = IntOption('ticketlog', 'log_message_maxlength',
+        doc="""Maximum length of log message to display.""")
 
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
@@ -144,8 +148,6 @@ class TicketlogModule(Component):
 
         log_pattern = self.config.get('ticketlog', 'log_pattern',
                                       '\s*#%s\s+.*')
-        log_message_maxlength = self.config.get('ticketlog',
-                                                'log_message_maxlength')
         p = re.compile(log_pattern % ticket_id, re.M + re.S + re.U)
 
         intermediate = {}
@@ -167,7 +169,7 @@ class TicketlogModule(Component):
                 intermediate[(rev, author, timestamp, message)] = link
             else:
                 intermediate[(rev, author, timestamp, message)] = rev
-            
+
         for key in intermediate:
             rev, author, timestamp, message = key
             revision = {
@@ -175,9 +177,9 @@ class TicketlogModule(Component):
                 'author': author,
                 'time': timestamp,
             }
-            if log_message_maxlength and len(message) > log_message_maxlength:
-                # cut message
-                message = message[:log_message_maxlength] + ' (...)'
+            if self.max_message_length \
+                    and len(message) > self.max_message_length:
+                message = message[:self.max_message_length] + ' (...)'
             message = cgi.escape(message)
             revision['message'] = message
             
