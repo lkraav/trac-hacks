@@ -4,6 +4,11 @@
 import sys
 from setuptools import setup
 
+min_python = (2, 5)
+if sys.version_info < min_python:
+    print("TracTicketTemplate requires Python %d.%d or later" % min_python)
+    sys.exit(1)
+
 extra = {}
 
 try:
