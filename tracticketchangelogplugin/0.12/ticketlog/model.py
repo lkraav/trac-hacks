@@ -11,6 +11,7 @@
 
 from trac.db import Table, Column, Index
 
+
 class TicketlogStore(object):
     """Represents a table."""
 
@@ -25,8 +26,8 @@ class TicketlogStore(object):
     def __init__(self, env, col1=None):
         """Initialize a new entry with the specified attributes.
 
-        To actually create this build log in the database, the `insert` method
-        needs to be called.
+        To actually create this build log in the database, the `insert`
+        method needs to be called.
         """
         self.env = env
         self.id = None
@@ -41,7 +42,7 @@ class TicketlogStore(object):
             handle_ta = False
 
         cursor = db.cursor()
-        cursor.execute("DELETE FROM ticketlog_store WHERE col1=%s;", (col1,))
+        cursor.execute("DELETE FROM ticketlog_store WHERE col1=%s", (col1,))
 
         if handle_ta:
             db.commit()
@@ -57,8 +58,8 @@ class TicketlogStore(object):
             handle_ta = False
 
         cursor = db.cursor()
-        cursor.execute("INSERT INTO ticketlog_store (col1, ) VALUES (%s,);",
-                       (col1, ))
+        cursor.execute("INSERT INTO ticketlog_store (col1, ) VALUES (%s,)",
+                       (col1,))
         id = db.get_last_id(cursor, 'ticketlog_store')
 
         if handle_ta:
@@ -77,7 +78,7 @@ class TicketlogStore(object):
 
         cursor = db.cursor()
 
-        cursor.execute("SELECT col1 FROM ticketlog_store ORDER BY col1;")
+        cursor.execute("SELECT col1 FROM ticketlog_store ORDER BY col1")
 
         return [m[0] for m in cursor.fetchall()]
 

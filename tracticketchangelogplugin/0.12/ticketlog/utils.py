@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
-# Name:         utils.py
-# Purpose:      The TracTicketChangelogPlugin utils module
 #
-# Author:       Richard Liao <richard.liao.i@gmmail.com>
+# Copyright (C) 2010-2011 Richard Liao <richard.liao.i@gmail.com>
+# All rights reserved.
 #
-#----------------------------------------------------------------------------
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 import time
 
@@ -25,15 +25,16 @@ def get_date_from_str(date_str):
         "%m/%d/%Y",
     ]
 
-    timeTuple = None
+    time_tuple = None
     for format in formats:
         try:
-            timeTuple = time.strptime(date_str, format)
-            return int(time.mktime(timeTuple))
+            time_tuple = time.strptime(date_str, format)
+            return int(time.mktime(time_tuple))
         except:
             continue
-    if not timeTuple:
+    if not time_tuple:
         return None
+
 
 def format_date_full(t):
     """ convert int to 2008-01-01
@@ -44,12 +45,14 @@ def format_date_full(t):
         return ""
     return time.strftime("%Y-%m-%d", time.localtime(t))
 
+
 def format_time_full(t):
     try:
         t = int(t)
     except:
         return ""
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t))
+
 
 def format_date_compact(t):
     return time.strftime("%y%m%d", time.localtime(t))

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
-# Name:         i18n_domain.py
-# Purpose:      The TracTicketChangelogPlugin Trac plugin i18n_domain module
 #
-# Author:       Richard Liao <richard.liao.i@gmmail.com>
+# Copyright (C) 2010-2011 Richard Liao <richard.liao.i@gmail.com>
+# All rights reserved.
 #
-#----------------------------------------------------------------------------
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 try:
     from trac.util.translation import domain_functions
@@ -22,4 +22,3 @@ except ImportError:
         def _(string, **kwargs): return string
         def tag_(string, **kwargs): return string
         def N_(string, **kwargs): return string
-    
