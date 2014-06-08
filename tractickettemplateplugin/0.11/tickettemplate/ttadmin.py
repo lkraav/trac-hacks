@@ -25,9 +25,9 @@ from trac.ticket import Ticket
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
 from trac.web.chrome import add_stylesheet, Chrome
 
-if sys.version_info[0] == 2 and sys.version_info[1] > 5:
+try:
     import json
-else:
+except ImportError:
     import simplejson as json
 
 from tickettemplate.model import schema, schema_version, TT_Template
