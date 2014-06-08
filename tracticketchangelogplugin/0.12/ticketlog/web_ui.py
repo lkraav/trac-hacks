@@ -17,7 +17,7 @@ except ImportError:
     import simplejson as json
 
 import trac
-from trac.config import IntOption
+from trac.config import IntOption, Option
 from trac.core import *
 from trac.perm import IPermissionRequestor
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
@@ -39,6 +39,9 @@ class TicketlogModule(Component):
 
     max_message_length = IntOption('ticketlog', 'log_message_maxlength',
         doc="""Maximum length of log message to display.""")
+
+    log_pattern = Option('ticketlog', 'log_pattern', '\s*#%s\s+.*',
+        "Regex to determine which changesets reference the ticket.")
 
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
@@ -146,9 +149,7 @@ class TicketlogModule(Component):
             
         rows = cursor.fetchall()
 
-        log_pattern = self.config.get('ticketlog', 'log_pattern',
-                                      '\s*#%s\s+.*')
-        p = re.compile(log_pattern % ticket_id, re.M + re.S + re.U)
+        p = re.compile(self.log_pattern % ticket_id, re.M + re.S + re.U)
 
         intermediate = {}
         for row in rows:
