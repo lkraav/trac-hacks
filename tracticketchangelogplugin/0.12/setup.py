@@ -1,4 +1,10 @@
+import sys
 from setuptools import find_packages, setup
+
+min_python = (2, 5)
+if sys.version_info < min_python:
+    print("TracTicketTemplate requires Python %d.%d or later" % min_python)
+    sys.exit(1)
 
 extra = {}
 
@@ -34,7 +40,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    install_requires = [],
+    install_requires = ['simple_json' if sys.version_info < (2, 6) else ''],
     entry_points = """
     [trac.plugins]
     ticketlog = ticketlog.web_ui
