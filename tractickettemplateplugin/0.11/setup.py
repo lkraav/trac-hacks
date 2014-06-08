@@ -13,6 +13,9 @@ extra = {}
 
 try:
     import babel
+except ImportError:
+    babel = None
+else:
     extractors = [
         ('**.py',                'python', None),
         ('**/templates/**.html', 'genshi', None),
@@ -23,8 +26,6 @@ try:
     extra['message_extractors'] = {
         'tickettemplate': extractors,
     }
-except ImportError:
-    pass
 
 setup(
     name = 'TracTicketTemplate',
