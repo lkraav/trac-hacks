@@ -20,6 +20,7 @@ import trac
 from trac.config import IntOption, Option
 from trac.core import *
 from trac.perm import IPermissionRequestor
+from trac.versioncontrol.api import RepositoryManager
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
 from trac.web.chrome import (Chrome, ITemplateProvider, add_script,
                              add_stylesheet)
@@ -154,16 +155,18 @@ class TicketlogModule(Component):
         intermediate = {}
         for row in rows:
             if self.supports_multirepos:
-                repository_name, rev, author, timestamp, message = row
+                repos_name, rev, author, timestamp, message = row
+                repos = RepositoryManager(self.env).get_repository(repos_name)
+                rev = repos.normalize_rev(rev)
             else:
-                repository_name = None
+                repos_name = None
                 rev, author, timestamp, message = row
 
             if not p.match(message):
                 continue
 
             if self.supports_multirepos:
-                link = '%s/%s' % (rev, repository_name)
+                link = '%s/%s' % (rev, repos_name)
                 # Using (rev, author, time, message) as the key 
                 # If branches from the same repo are under Trac system
                 # Only one changeset will be in the ticket changelog
