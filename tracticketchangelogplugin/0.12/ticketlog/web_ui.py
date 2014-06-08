@@ -175,26 +175,19 @@ class TicketlogModule(Component):
             rev, author, timestamp, message = key
             revision = {
                 'rev': rev,
-                'author': author,
-                'time': timestamp,
+                'author': Chrome(self.env).format_author(req, author),
+                'time': format_datetime(from_timestamp(timestamp),
+                                        tzinfo=req.tz)
             }
             if self.max_message_length \
                     and len(message) > self.max_message_length:
                 message = message[:self.max_message_length] + ' (...)'
             message = cgi.escape(message)
             revision['message'] = message
-            
             revision['link'] = intermediate[key]
             revisions.append(revision)
 
         revisions.sort(key=lambda r: r['time'], reverse=True)
-        
-        def format_revision(rev):
-            rev['time'] = format_datetime(from_timestamp(rev['time']),
-                                          tzinfo=req.tz)
-            rev['author'] = Chrome(self.env).format_author(req, rev['author'])
-            return rev
-        revisions = map(format_revision, revisions)
 
         return revisions
 
