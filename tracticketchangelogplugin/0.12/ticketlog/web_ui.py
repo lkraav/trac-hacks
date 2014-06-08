@@ -40,9 +40,9 @@ from trac.web.api import ITemplateStreamFilter
 from pkg_resources import resource_filename
 
 try:
-    import simplejson
+    import json
 except ImportError:
-    import json as simplejson
+    import simplejson as json
 
 # import plugins module
 from model import schema, schema_version, TicketlogStore
