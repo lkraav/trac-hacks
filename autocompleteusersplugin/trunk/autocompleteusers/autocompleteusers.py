@@ -6,19 +6,17 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from trac.core import Component, implements
-from trac.config import ListOption
-from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import (
-    Chrome, ITemplateProvider, ITemplateStreamFilter, add_script,
-    add_stylesheet
-    )
-
 import fnmatch
 
-USER = 0;
-NAME = 1;
-EMAIL = 2 # indices
+from trac.config import ListOption
+from trac.core import Component, implements
+from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.chrome import Chrome, ITemplateProvider, \
+                            ITemplateStreamFilter, add_script, add_stylesheet
+
+USER = 0
+NAME = 1
+EMAIL = 2  # indices
 
 
 class AutocompleteUsers(Component):
@@ -26,7 +24,7 @@ class AutocompleteUsers(Component):
                ITemplateProvider, ITemplateStreamFilter)
 
     selectfields = ListOption('autocomplete', 'fields', default='',
-                              doc='select fields to transform to autocomplete text boxes')
+        doc="select fields to transform to autocomplete text boxes")
 
     # IRequestHandler methods
 
@@ -41,7 +39,7 @@ class AutocompleteUsers(Component):
             subjects = ['%s|%s|%s' % (user[USER],
                                       user[EMAIL] and '&lt;%s&gt; ' % user[EMAIL] or '',
                                       user[NAME])
-                        for value, user in users] # value unused (placeholder needed for sorting)
+                        for value, user in users]  # value unused (placeholder needed for sorting)
 
         if req.args.get('groups'):
             groups = self._get_groups(req)
@@ -71,7 +69,7 @@ class AutocompleteUsers(Component):
             add_script(req, 'autocomplete/js/autocomplete.js')
             add_script(req, 'autocomplete/js/format_item.js')
             if template == 'ticket.html':
-                restrict_owner = self.env.config.getbool('ticket', 'restrict_owner')
+                restrict_owner = self.config.getbool('ticket', 'restrict_owner')
                 if req.path_info.rstrip() == '/newticket':
                     add_script(req, 'autocomplete/js/autocomplete_newticket_cc.js')
                     if not restrict_owner:
@@ -125,18 +123,19 @@ class AutocompleteUsers(Component):
         # user names, email addresses, full names
         users = []
         for user_data in self.env.get_known_users():
-            user_data = [user is not None and Chrome(self.env).format_author(req, user) or ''
+            user_data = [user is not None
+                         and Chrome(self.env).format_author(req, user) or ''
                          for user in user_data]
-            for index, field in enumerate((USER, EMAIL, NAME)): # ordered by how they appear
+            for index, field in enumerate((USER, EMAIL, NAME)):  # ordered by how they appear
                 value = user_data[field].lower()
 
                 if value.startswith(query):
-                    users.append((2 - index, user_data)) # 2-index is the sort key
+                    users.append((2 - index, user_data))  # 2-index is the sort key
                     break
                 if field == NAME:
                     lastnames = value.split()[1:]
                     if sum(name.startswith(query) for name in lastnames):
-                        users.append((2 - index, user_data)) # 2-index is the sort key
+                        users.append((2 - index, user_data))  # 2-index is the sort key
                         break
 
         return sorted(users)
