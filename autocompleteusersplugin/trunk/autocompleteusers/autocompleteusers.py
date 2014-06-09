@@ -37,7 +37,7 @@ class AutocompleteUsers(Component):
         if req.args.get('users', '1') == '1':
             users = self._get_users(req)
             subjects = ['%s|%s|%s' % (user[USER],
-                                      user[EMAIL] and '&lt;%s&gt; ' % user[EMAIL] or '',
+                                      user[EMAIL] and '<%s> ' % user[EMAIL] or '',
                                       user[NAME])
                         for value, user in users]  # value unused (placeholder needed for sorting)
 
