@@ -1,0 +1,13 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:py="http://genshi.edgewall.org/">
+ <head>
+	 <title>
+		 Job in Jenkins
+	</title>
+ </head>
+ <body>
+	<ul>
+		<li py:for="jobs in jobdata"><a href="${href('jenkins/job',job=jobs['job'])}">${jobs['job']}</a> ${jobs['lastbuild']} <b>${jobs['buildresult']}</b> <a href="${href('jenkins/invoke',job=jobs['job'])}">Invoke</a> <a href="${href('jenkins/removejob',job=jobs['job'])}">REMOVE</a></li>
+	</ul>
+ </body>
+ </html>

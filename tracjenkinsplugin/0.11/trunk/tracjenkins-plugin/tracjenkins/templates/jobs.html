@@ -1,0 +1,14 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:py="http://genshi.edgewall.org/">
+ <head>
+	 <title>
+		 Job in Jenkins
+	</title>
+ </head>
+ <body>
+	<ul>
+		<li py:for="build in builds"><a href="${href('jenkins/job/build',buildnr=build['buildnr'],current_job=currentjob)}">${build['name']}</a> ${build['time']} <b>${build['result']}</b></li>
+	</ul>
+	<a href="${href('jenkins/job/invoke',job=currentjob)}">INVOKE</a>
+ </body>
+ </html>
