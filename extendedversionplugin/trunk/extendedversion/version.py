@@ -35,6 +35,8 @@ from trac.web.chrome import (
 )
 from trac.wiki import IWikiSyntaxProvider
 
+from extendedversion.compat import user_time
+
 
 def milestone_stats_data(env, req, stat, name, grouped_by='component',
                          group=None):
@@ -269,8 +271,8 @@ class VisibleVersion(Component):
             warn(_('You must provide a name for the version.'))
 
         # -- check completed date
-        if 'time' in req.args:
-            time = time and parse_date(time, req.tz) or None
+        if time:
+            time = user_time(req, parse_date, time, hint='datetime')
         else:
             time = None
         version.time = time
