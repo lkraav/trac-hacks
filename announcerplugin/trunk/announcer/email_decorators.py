@@ -4,7 +4,7 @@
 
 import re
 
-from email.utils import parseaddr
+from email.Utils import parseaddr
 from genshi.template import NewTextTemplate, TemplateError
 
 from trac import __version__ as trac_version

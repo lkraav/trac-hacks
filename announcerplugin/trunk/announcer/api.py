@@ -308,7 +308,7 @@ class SubscriptionResolver(Component):
         Only users highest priority rule is used and all others are skipped.
         """
         # sort by dist, sid, authenticated, priority
-        ordered_subs = sorted(subscriptions, key=itemgetter(1,2,3,6))
+        subscriptions.sort(key=lambda i:(i[1],i[2],i[3],i[6]))
 
         resolved_subs = []
 
@@ -316,7 +316,7 @@ class SubscriptionResolver(Component):
         state = {
             'last': None
         }
-        for s in ordered_subs:
+        for s in subscriptions:
             if (s[1], s[2], s[3]) == state['last']:
                 continue
             if s[-1] == 'always':
