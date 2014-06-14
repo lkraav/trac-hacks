@@ -18,9 +18,7 @@ from trac.ticket.roadmap import RoadmapModule
 from trac.util.datefmt import utc
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
-from trac.web.chrome import(
-    INavigationContributor, add_stylesheet
-)
+from trac.web.chrome import INavigationContributor, add_stylesheet
 
 
 class ReleasesModule(Component):

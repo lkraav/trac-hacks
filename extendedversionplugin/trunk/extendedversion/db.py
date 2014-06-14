@@ -14,6 +14,7 @@ from trac.env import IEnvironmentSetupParticipant
 from trac.util.translation import _
 
 db_version = 1
+name = 'extended_version_plugin'
 
 schema = [
     Table('milestone_version', key='milestone')[
@@ -35,8 +36,8 @@ def create_tables(env, db):
         for stmt in to_sql(env, table):
             cursor.execute(stmt)
     cursor.execute("""
-        INSERT into system values ('extended_version_plugin', %s)
-        """, str(db_version))
+        INSERT into system values (%s, %s)
+        """, (name, db_version))
 
 
 class ExtendedVersionsSetup(Component):
@@ -54,9 +55,10 @@ class ExtendedVersionsSetup(Component):
         if current_version == db_version:
             return False
         elif current_version > db_version:
-            raise TracError(_("Database newer than ExtendedVersionPlugin version"))
-        self.log.info("ExtendedVersionPlugin schema version is %d, should be %d",
-                      current_version, db_version)
+            raise TracError(_("Database newer than ExtendedVersionPlugin"
+                              " version"))
+        self.log.info("ExtendedVersionPlugin schema version is %d, should"
+                      " be %d", current_version, db_version)
         return True
 
     def upgrade_environment(self, db):
@@ -72,7 +74,9 @@ class ExtendedVersionsSetup(Component):
     def _get_version(self, db):
         cursor = db.cursor()
         try:
-            cursor.execute("SELECT value FROM system WHERE name='extended_version_plugin'")
+            cursor.execute(
+                """SELECT value FROM system
+                   WHERE name='%s'""" % name)
             row = cursor.fetchone()
             if row:
                 return int(row[0])

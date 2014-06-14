@@ -69,7 +69,7 @@ def version_interval_hrefs(env, req, stat, milestones):
 
 
 # TODO: rename this to VersionModule, but beware that on upgrade, if the user
-# hasn't used a wilcard to specify the components to be enabled, they will
+# hasn't used a wildcard to specify the components to be enabled, they will
 # need to modify the components section of trac.ini:
 #   extendedversion.version.visibleversion = enabled ->
 #   extendedversion.version.versionmodule = enabled
@@ -86,8 +86,9 @@ class VisibleVersion(Component):
         'show_milestone_description', False,
         """whether to display milestone descriptions on version page.""")
 
-    version_stats_provider = ExtensionOption('extended_version', 'version_stats_provider',
-        ITicketGroupStatsProvider, 'DefaultTicketGroupStatsProvider',
+    version_stats_provider = ExtensionOption('extended_version',
+        'version_stats_provider', ITicketGroupStatsProvider,
+        'DefaultTicketGroupStatsProvider',
         """Name of the component implementing `ITicketGroupStatsProvider`,
            which is used to collect statistics on all version tickets.""")
 
@@ -201,7 +202,8 @@ class VisibleVersion(Component):
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
-        return [('extendedversion', resource_filename('extendedversion', 'htdocs'))]
+        return [('extendedversion',
+                 resource_filename('extendedversion', 'htdocs'))]
 
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
@@ -285,8 +287,9 @@ class VisibleVersion(Component):
             if version.name != version._old_name:
                 # Update tickets
                 cursor = db.cursor()
-                cursor.execute("UPDATE milestone_version SET version=%s WHERE version=%s",
-                               (version.name, version._old_name))
+                cursor.execute("""
+                    UPDATE milestone_version SET version=%s WHERE version=%s
+                    """, (version.name, version._old_name))
             version.update(db)
         else:
             version.insert(db)
@@ -354,12 +357,12 @@ class VisibleVersion(Component):
     def _render_view(self, req, db, version):
 
         db = self.env.get_db_cnx()
-        sql = "SELECT name FROM milestone " \
-              "INNER JOIN milestone_version ON (name = milestone) " \
-              "WHERE version = %s " \
-              "ORDER BY due"
         cursor = db.cursor()
-        cursor.execute(sql, (version.name,))
+        cursor.execute("""
+            SELECT name FROM milestone
+              INNER JOIN milestone_version ON (name = milestone)
+            WHERE version = %s
+            ORDER BY due""", (version.name,))
 
         milestones = []
         tickets = []
@@ -374,22 +377,26 @@ class VisibleVersion(Component):
             mtickets = apply_ticket_permissions(self.env, req, mtickets)
             tickets += mtickets
             stat = get_ticket_stats(self.milestone_stats_provider, mtickets)
-            milestone_stats.append(milestone_stats_data(self.env, req, stat, milestone.name))
+            milestone_stats.append(milestone_stats_data(self.env, req, stat,
+                                                        milestone.name))
 
         stats = get_ticket_stats(self.version_stats_provider, tickets)
         interval_hrefs = version_interval_hrefs(self.env, req, stats,
-                                                [milestone.name for milestone in milestones])
+                                                [milestone.name
+                                                 for milestone in milestones])
 
         version.resource = Resource('version', version.name)
         context = Context.from_request(req, version.resource)
 
-        version.is_released = version.time and version.time < datetime.now(utc)
+        version.is_released = version.time \
+            and version.time < datetime.now(utc)
         version.stats = stats
         version.interval_hrefs = interval_hrefs
         version.stats_href = []  # Not implemented yet, see th:#10349
         data = {
             'version': version,
-            'attachments': AttachmentModule(self.env).attachment_data(context),
+            'attachments': AttachmentModule(self.env)
+                           .attachment_data(context),
             'milestones': milestones,
             'milestone_stats': milestone_stats,
             'show_milestone_description': self.show_milestone_description  # Not implemented yet

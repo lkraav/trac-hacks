@@ -24,7 +24,9 @@ setup(
     license='BSD 3-Clause',
     packages=find_packages(exclude=['*.tests']),
     include_package_data=True,
-    package_data={'extendedversion': ['templates/*.html', 'htdocs/css/*.css']},
+    package_data={
+        'extendedversion': ['templates/*.html', 'htdocs/css/*.css']
+    },
     zip_safe=False,
     entry_points="""
       [trac.plugins]

@@ -11,10 +11,12 @@
 from genshi.builder import tag
 from genshi.filters.transform import StreamBuffer, Transformer
 from trac.core import Component, implements
+from trac.mimeview.api import Context
+from trac.resource import Resource
 from trac.util.datefmt import to_timestamp
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import INavigationContributor
-from trac.wiki.formatter import wiki_to_oneliner
+from trac.wiki.formatter import format_to_oneliner
 
 
 class MilestoneVersion(Component):
@@ -63,14 +65,17 @@ class MilestoneVersion(Component):
     def filter_stream(self, req, method, filename, stream, data):
         # Allow setting version for milestone
         if filename == 'milestone_edit.html':
-            filter = Transformer('//fieldset[1]')
-            return stream | filter.before(self._version_edit(data))
+            xformer = Transformer('//fieldset[1]')
+            return stream | xformer.before(self._version_edit(data))
 
         # Display version for milestone
         elif filename == 'milestone_view.html':
             milestone = data.get('milestone').name
-            filter = Transformer('//div[@class="info"]/p[@class="date"]')
-            return stream | filter.append(self._version_display(req, milestone))
+            xformer = Transformer('//div[@id="content" and '
+                                  '      @class="milestone"]'
+                                  '/div/p[@class="date"]')
+            return stream | xformer.append(self._version_display(req,
+                                                                 milestone))
         elif filename == 'roadmap.html':
             return self._milestone_versions(stream, req)
 
@@ -80,7 +85,9 @@ class MilestoneVersion(Component):
 
     def _delete_milestone_version(self, db, milestone):
         cursor = db.cursor()
-        cursor.execute("DELETE FROM milestone_version WHERE milestone=%s", (milestone,))
+        cursor.execute("""
+            DELETE FROM milestone_version WHERE milestone=%s
+            """, (milestone,))
 
     def _insert_milestone_version(self, db, milestone, version):
         cursor = db.cursor()
@@ -103,13 +110,18 @@ class MilestoneVersion(Component):
     def _version_display(self, req, milestone):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.execute("SELECT version FROM milestone_version WHERE milestone=%s", (milestone,))
+        cursor.execute("""
+            SELECT version FROM milestone_version
+            WHERE milestone=%s""", (milestone,))
         row = cursor.fetchone()
 
         if row:
+            context = Context.from_request(req,
+                                           Resource('milestone', milestone))
             return tag.span(
                 "; ",
-                wiki_to_oneliner("For version:'%s'" % (row[0],), self.env, req=req),
+                format_to_oneliner(self.env, context,
+                                   "For version:%s" % (row[0],)),
                 class_="date")
         else:
             return []
@@ -118,13 +130,16 @@ class MilestoneVersion(Component):
         milestone = data.get('milestone').name
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.execute("SELECT version FROM milestone_version WHERE milestone=%s", (milestone,))
+        cursor.execute("""
+            SELECT version FROM milestone_version
+            WHERE milestone=%s""", (milestone,))
         row = cursor.fetchone()
         value = row and row[0]
 
-        cursor.execute("SELECT name FROM version WHERE time IS NULL OR time = 0 OR time>%s "
-                       "OR name = %s ORDER BY name",
-                       (to_timestamp(None), value))
+        cursor.execute("""
+            SELECT name FROM version
+            WHERE time IS NULL OR time = 0 OR time>%s OR name = %s
+            ORDER BY name""", (to_timestamp(None), value))
 
         return tag.div(
             tag.label(
@@ -132,6 +147,7 @@ class MilestoneVersion(Component):
                 tag.br(),
                 tag.select(
                     tag.option(),
-                    [tag.option(row[0], selected=(value == row[0] or None)) for row in cursor],
+                    [tag.option(row[0], selected=(value == row[0] or None))
+                     for row in cursor],
                     name="version")),
             class_="field")
