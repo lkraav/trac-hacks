@@ -40,5 +40,6 @@ setup(
                         'htdocs/css/images/*.png',
                         'htdocs/js/*.js']
 
-    }
+    },
+    install_requires=['jenkinsapi'],
 )
