@@ -1,11 +1,21 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2014 Daniel Hambraeus
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 from trac.core import *
 from trac.util.html import html
 from trac.web import IRequestHandler
 from trac.web.chrome import INavigationContributor
 from trac.web.chrome import ITemplateProvider
+
 import jenkinsapi
 from jenkinsapi.jenkins import Jenkins
-from jenkinsapi.custom_exceptions import (NoBuildData)
+from jenkinsapi.custom_exceptions import NoBuildData
 
 
 class TracJenkinsPlugin(Component):
