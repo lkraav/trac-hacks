@@ -49,6 +49,11 @@ class VcsReleaseInfoMacro(WikiMacroBase):
 
         # insert trunk info
         node = repo.get_node(path + "/trunk", rev)
+        # get last commit id
+        history = node.get_history(1)
+        change = history.next()
+        node = repo.get_node(path + "/trunk", change[1])
+
         releases.insert(0, {
             'version' : node.get_name(),
             'time' : node.get_last_modified(),
