@@ -7,7 +7,7 @@ from trac.wiki.model import WikiPage
 from trac.util import format_datetime, to_unicode
 from StringIO import StringIO
 from operator import itemgetter, attrgetter
-from trac.versioncontrol import Node
+from trac.versioncontrol import Changeset, Node
 from trac.versioncontrol.api import RepositoryManager
 
 # NOTE to self: debug: self.env.log.debug('woot');
@@ -32,15 +32,31 @@ class VcsReleaseInfoMacro(WikiMacroBase):
         releases = []
         # http://trac.edgewall.org/wiki/TracDev/VersionControlApi
         # http://trac.edgewall.org/browser/trunk/trac/versioncontrol/api.py#latest
+        # http://www.edgewall.org/docs/tags-trac-1.0/html/api/trac_versioncontrol_svn_fs.html
         for node in tagsnode.get_entries():
             if node.kind != Node.DIRECTORY:
                 continue
+
+            # default to node created rev
+            # peek history to grab actual rev was created
+            lrev = frev = None
+            history = node.get_history(3)
+            change = history.next()
+            if change[2] == Changeset.COPY:
+                change = history.next()
+                lrev = change[1]
+                frev = repo.next_rev(lrev, path + "/trunk")
 
             cs = repo.get_changeset(node.created_rev)
             releases.append({
                 'version' : node.get_name(),
                 'time' : node.get_last_modified(),
+                # revision when tag node created
                 'rev' : node.created_rev,
+                # last revision included in the tag
+                'lrev' : lrev,
+                # first revision included in the tag
+                'frev' : frev,
                 'author' : cs.author or 'anonymous',
                 'message' : cs.message,
                 'props' : cs.get_properties(),
@@ -154,24 +170,29 @@ class VcsReleaseInfoMacro(WikiMacroBase):
                 % {
                     'reponame' : reponame,
                     'path': path,
-                    'rev': cur['rev'],
+                    'rev': cur['rev']
                 })
             elif prev == None:
                 # first entry = trunk
+                # cur=trunk
+                # next=last release tag
+
+                # next=trunk
+                # cur=last release tag
                 items.append(
                     " * "
                     " [/browser%(path)s/trunk trunk]"
                     " @[changeset:%(rev)s/%(reponame)s %(rev)s]"
                     " ("
-                    "[/log%(path)s/trunk?revs=%(stop_rev)s-%(rev)s changes]"
+                    "[/log%(path)s/trunk?revs=%(frev)s-%(rev)s changes]"
                     " [/changeset?old_path=%(path)s/tags/%(old_tag)s&new_path=%(path)s/trunk diffs]"
                     ")"
                 % {
                     'reponame' : reponame,
                     'path': path,
                     'rev' : cur['rev'],
+                    'frev' : next['frev'],
                     'old_tag' : next['version'],
-                    'stop_rev' : next['rev'],
                 })
             elif next != None:
                 # regular releases
@@ -188,7 +209,7 @@ class VcsReleaseInfoMacro(WikiMacroBase):
                     " @[changeset:%(rev)s/%(reponame)s %(rev)s]"
                     " by %(author)s"
                     " ("
-                    "[/log%(path)s/trunk?revs=%(stop_rev)s-%(rev)s changes]"
+                    "[/log%(path)s/trunk?revs=%(frev)s-%(lrev)s changes]"
                     " [/changeset?old_path=%(path)s/tags/%(old_tag)s&new_path=%(path)s/tags/%(new_tag)s diffs]"
                     "%(release_link)s"
                     ")"
@@ -197,7 +218,8 @@ class VcsReleaseInfoMacro(WikiMacroBase):
                     'path': path,
                     'date': cur['time'].strftime('%Y-%m-%d'),
                     'rev' : cur['rev'],
-                    'stop_rev' : next['rev'],
+                    'lrev' : cur['lrev'],
+                    'frev' : next['frev'],
                     'old_tag' : next['version'],
                     'new_tag' : cur['version'],
                     'author': cur['author'],
