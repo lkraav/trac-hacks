@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2010-2014 Elan Ruusamäe <glen@pld-linux.org>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 from trac.core import *
 from trac.util import escape, Markup
 from trac.wiki.api import parse_args
@@ -9,6 +17,14 @@ from StringIO import StringIO
 from operator import itemgetter, attrgetter
 from trac.versioncontrol import Changeset, Node
 from trac.versioncontrol.api import RepositoryManager
+
+revision = "$Rev$"
+url = "http://trac-hacks.org/wiki/VcsReleaseInfoMacro"
+license = "3-Clause BSD"
+author = "Elan Ruusamäe"
+author_email = "glen@pld-linux.org"
+maintainer = "Elan Ruusamäe"
+maintainer_email = "glen@pld-linux.org"
 
 # NOTE to self: debug: self.env.log.debug('woot');
 
