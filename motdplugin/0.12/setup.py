@@ -21,4 +21,3 @@ setup(
     entry_points = {'trac.plugins': ['tracmotd.motd = tracmotd.motd',
                                      'tracmotd.admin = tracmotd.admin']}
 )
-

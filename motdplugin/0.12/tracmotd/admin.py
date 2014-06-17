@@ -75,4 +75,3 @@ class MessageOfTheDayAdmin(Component):
         data['frame_height'] = self.env.config.get('motd', 'frame_height')
 
         return 'admin_motd.html', data
-
