@@ -24,8 +24,8 @@ from trac.util import arity
 from trac.util.compat import md5, any
 from trac.util.text import to_unicode, exception_to_unicode
 from trac.util.translation import dgettext, domain_functions
-from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script, \
-                            add_script_data
+from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
+                            add_script, add_script_data
 
 
 _, N_, add_domain = domain_functions('tracworkflowadmin',
@@ -138,10 +138,9 @@ class TracWorkflowAdminModule(Component):
         action, status = self._conf_to_inner_format(self.config)
         operations = self.operations
         permissions = self._get_permissions(req)
-        add_stylesheet(req, 'tracworkflowadmin/themes/base/jquery-ui.css')
         add_stylesheet(req, 'tracworkflowadmin/css/tracworkflowadmin.css')
+        self._add_jquery_ui(req)
         add_stylesheet(req, 'tracworkflowadmin/css/jquery.multiselect.css')
-        add_script(req, 'tracworkflowadmin/scripts/jquery-ui.js')
         add_script(req, 'tracworkflowadmin/scripts/jquery.json-2.2.js')
         add_script(req, 'tracworkflowadmin/scripts/jquery.multiselect.js')
         add_script(req, 'tracworkflowadmin/scripts/main.js')
@@ -157,6 +156,14 @@ class TracWorkflowAdminModule(Component):
             'text': self._conf_to_str(self.config)
         }
         return 'tracworkflowadmin.html', data
+
+    if hasattr(Chrome, 'add_jquery_ui'):
+        def _add_jquery_ui(self, req):
+            Chrome(self.env).add_jquery_ui(req)
+    else:
+        def _add_jquery_ui(self, req):
+            add_stylesheet(req, 'tracworkflowadmin/themes/base/jquery-ui.css')
+            add_script(req, 'tracworkflowadmin/scripts/jquery-ui.js')
 
     def _conf_to_inner_format(self, conf):
         statuses = []
