@@ -4,7 +4,7 @@
 # Copyright (c) 2012, Steffen Hoffmann
 # Copyright (c) 2012, Ryan J Ollos
 # Copyright (c) 2012, Steffen Hoffmann
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
@@ -27,7 +27,7 @@ from announcer.producers import TicketChangeEvent
 class FormatterTestCase(unittest.TestCase):
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'announcer.formatters.*'])
-        self.env.path = tempfile.mkdtemp() 
+        self.env.path = tempfile.mkdtemp()
 
     def tearDown(self):
         shutil.rmtree(self.env.path)

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2010, Robert Corsaro
 # Copyright (c) 2010,2012, Steffen Hoffmann
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
@@ -15,7 +15,7 @@ from trac.perm import PermissionCache
 from trac.web.chrome import Chrome
 
 from announcer.api import AnnouncementEvent, AnnouncementSystem
-from announcer.api import IAnnouncementDefaultSubscriber 
+from announcer.api import IAnnouncementDefaultSubscriber
 from announcer.api import IAnnouncementFormatter, IAnnouncementSubscriber
 from announcer.api import IAnnouncementSubscriptionFilter
 from announcer.api import _
@@ -178,10 +178,10 @@ class AccountManagerAnnouncement(Component):
 
     def _format_plaintext(self, event):
         acct_templates = {
-            'created': 'acct_mgr_user_change_plaintext.txt', 
-            'change': 'acct_mgr_user_change_plaintext.txt', 
-            'delete': 'acct_mgr_user_change_plaintext.txt', 
-            'reset': 'acct_mgr_reset_password_plaintext.txt', 
+            'created': 'acct_mgr_user_change_plaintext.txt',
+            'change': 'acct_mgr_user_change_plaintext.txt',
+            'delete': 'acct_mgr_user_change_plaintext.txt',
+            'reset': 'acct_mgr_reset_password_plaintext.txt',
             'verify': 'acct_mgr_verify_plaintext.txt',
             'approve': 'acct_mgr_approve_plaintext.txt'
         }
@@ -210,7 +210,7 @@ class AccountManagerAnnouncement(Component):
         for provider in chrome.template_providers:
             dirs += provider.get_templates_dirs()
         templates = TemplateLoader(dirs, variable_lookup='lenient')
-        template = templates.load(acct_templates[event.category], 
+        template = templates.load(acct_templates[event.category],
                                   cls=NewTextTemplate)
         if template:
             stream = template.generate(**data)

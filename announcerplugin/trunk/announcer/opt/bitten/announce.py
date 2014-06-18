@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2010, Robert Corsaro
 # Copyright (c) 2010, Steffen Hoffmann
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
@@ -93,7 +93,7 @@ class BittenAnnouncement(Component):
             build_link = self._build_link(event.target)
             subject = '[%s Build] %s [%s] %s' % (
                 self.readable_states.get(
-                    event.target.status, 
+                    event.target.status,
                     event.target.status
                 ),
                 self.env.project_name,
@@ -102,7 +102,7 @@ class BittenAnnouncement(Component):
             )
             set_header(message, 'X-Trac-Build-ID', build_id)
             set_header(message, 'X-Trac-Build-URL', build_link)
-            set_header(message, 'Subject', subject) 
+            set_header(message, 'Subject', subject)
         return next_decorator(event, message, decorates)
 
     # IAnnouncementPreferenceProvider interface
@@ -115,7 +115,7 @@ class BittenAnnouncement(Component):
         settings = self._settings()
         if req.method == "POST":
             for k, setting in settings.items():
-                setting.set_user_setting(req.session, 
+                setting.set_user_setting(req.session,
                     value=req.args.get('bitten_%s_subscription'%k), save=False)
             req.session.save()
         data = {}
@@ -158,7 +158,7 @@ class BittenAnnouncement(Component):
                     'name': step.name,
                     'description': step.description,
                     'errors': step.errors,
-                    'log_messages': 
+                    'log_messages':
                        self._get_all_log_messages_for_step(event.target, step),
                 } for step in failed_steps],
             },
@@ -178,7 +178,7 @@ class BittenAnnouncement(Component):
         for provider in chrome.template_providers:
             dirs += provider.get_templates_dirs()
         templates = TemplateLoader(dirs, variable_lookup='lenient')
-        template = templates.load('bitten_plaintext.txt', 
+        template = templates.load('bitten_plaintext.txt',
                 cls=NewTextTemplate)
         if template:
             stream = template.generate(**data)
@@ -197,4 +197,3 @@ class BittenAnnouncement(Component):
 
     def _get_changeset(self, build):
         return self.env.get_repository().get_changeset(build.rev)
-

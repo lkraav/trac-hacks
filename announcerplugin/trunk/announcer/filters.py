@@ -71,6 +71,6 @@ class DefaultPermissionFilter(Component):
                 yield subscription
             else:
                 self.log.debug(
-                    "Filtering %s because of %s rule" 
+                    "Filtering %s because of %s rule"
                     % (sid, self.__class__.__name__)
                 )

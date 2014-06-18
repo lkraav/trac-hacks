@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2010, Robert Corsaro
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
@@ -21,7 +21,7 @@ def decode(v):
 
 class SubscriptionSetting(object):
     """Encapsulate user text subscription and filter settings.
-    
+
     Subscription settings have default values, usually trac properties,
     and user session attribute settings.  If the user setting is unset,
     then the default value will be returned.
@@ -59,17 +59,17 @@ class SubscriptionSetting(object):
             pair = (self.default['dists'], self.default['value'])
             authenticated = False
 
-        # We use None here so that Genshi templates check their checkboxes 
+        # We use None here so that Genshi templates check their checkboxes
         # properly and without confusion.
         return pair + (authenticated,)
 
     def get_subscriptions(self, match):
-        """Generates tuples of (distributor, sid, authenticated, email).  
+        """Generates tuples of (distributor, sid, authenticated, email).
 
         `match` should is passed the string value of the setting and should
         return true or false depending on whether the subscription matches.
 
-        Tuples are suitable for yielding from IAnnouncementSubscriber's 
+        Tuples are suitable for yielding from IAnnouncementSubscriber's
         subscriptions method.
         """
         db = self.env.get_db_cnx()
@@ -92,7 +92,7 @@ class SubscriptionSetting(object):
 
 class BoolSubscriptionSetting(object):
     """Encapsulate boolean user subscription and filter settings.
-    
+
     Subscription settings have default values, usually trac properties,
     and user session attribute settings.  If the user setting is unset,
     then the default value will be returned.
@@ -116,7 +116,7 @@ class BoolSubscriptionSetting(object):
             session.save()
 
     def get_user_setting(self, sid):
-        """Returns tuple of (value, authenticated).  
+        """Returns tuple of (value, authenticated).
 
         Value is always True or None.  This will work with Genshi template
         checkbox logic.
@@ -139,14 +139,14 @@ class BoolSubscriptionSetting(object):
             value = istrue(self.default['value'])
             authenticated = False
 
-        # We use None here so that Genshi templates check their checkboxes 
+        # We use None here so that Genshi templates check their checkboxes
         # properly and without confusion.
         return (dists, value and True or None, authenticated)
 
     def get_subscriptions(self):
-        """Generates tuples of (distributor, sid, authenticated, email).  
+        """Generates tuples of (distributor, sid, authenticated, email).
 
-        Tuples are suitable for yielding from IAnnouncementSubscriber's 
+        Tuples are suitable for yielding from IAnnouncementSubscriber's
         subscriptions method.
         """
         db = self.env.get_db_cnx()
@@ -165,4 +165,3 @@ class BoolSubscriptionSetting(object):
 
     def _attr_name(self):
         return "sub_%s"%(self.name)
-

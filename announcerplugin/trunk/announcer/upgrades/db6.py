@@ -5,7 +5,7 @@ from datetime import datetime
 from trac.util.datefmt import utc
 
 from announcer.compat import to_utimestamp
- 
+
 
 def do_upgrade(env, ver, cursor):
     """Convert time stamp data and register announcer db schema in

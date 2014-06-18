@@ -412,4 +412,3 @@ class FullBlogAnnouncement(Component):
             stream = template.generate(**data)
             output = stream.render('text')
         return output
-

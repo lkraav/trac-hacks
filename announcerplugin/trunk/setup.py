@@ -3,7 +3,7 @@
 # Copyright (c) 2008, Stephen Hansen
 # Copyright (c) 2009, Robert Corsaro
 # Copyright (c) 2010-2012 Steffen Hoffmann
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #

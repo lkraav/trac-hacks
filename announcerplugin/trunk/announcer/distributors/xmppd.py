@@ -259,4 +259,3 @@ class DeliveryThread(Thread):
         while 1:
             sendfrom, recipients, message = self._queue.get()
             self._sender(sendfrom, recipients, message)
-
