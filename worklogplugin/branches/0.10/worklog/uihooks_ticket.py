@@ -11,13 +11,13 @@ from util import pretty_timedelta
 
 class WorkLogTicketAddon(Component):
     implements(INavigationContributor)
-    
+
     def __init__(self):
         pass
-    
+
      # INavigationContributor methods
     def get_active_navigation_item(self, req):
-    
+
         if re.search('ticket', req.path_info):
             return 'ticket-worklog-addon'
         else:
@@ -70,38 +70,38 @@ class WorkLogTicketAddon(Component):
   f.setAttribute('method', 'POST');
   f.setAttribute('action', '""" + req.href.worklog() + """')
   f.setAttribute('class', 'inlinebuttons');
-  
+
   var h_url = document.createElement('input');
   h_url.setAttribute('type', 'hidden');
   h_url.setAttribute('name', 'source_url');
   h_url.setAttribute('value', location.pathname);
   f.appendChild(h_url);
-  
+
   var h = document.createElement('input');
   h.setAttribute('type', 'hidden');
   h.setAttribute('name', 'ticket');
   h.setAttribute('value', '""" + str(ticket) + """');
   f.appendChild(h);
-  
+
   var h2 = document.createElement('input');
   h2.setAttribute('type', 'hidden');
   h2.setAttribute('name', '__FORM_TOKEN');
   h2.setAttribute('value', '""" + str(req.incookie['trac_form_token'].value) + """');
   f.appendChild(h2);"""
-  
+
         if stop:
             script += """
   var s_comment_label = document.createElement('span');
   s_comment_label.id = 'worklog_comment';
   s_comment_label.innerHTML = 'Comment: ';
   f.appendChild(s_comment_label);
-  
+
   var s_comment = document.createElement('input');
   s_comment.type = 'text';
   s_comment.size = '50';
   s_comment.name = 'comment';
   f.appendChild(s_comment);"""
-  
+
         script += """
   var s = document.createElement('input');
   s.setAttribute('type', 'submit');"""
@@ -142,14 +142,14 @@ InitWorklog = function()
   """ + button_js + """
   ul = document.createElement('ul');
   d.appendChild(ul);
-  """ + task_js + ticket_js + """  
+  """ + task_js + ticket_js + """
   x.parentNode.insertBefore(d, x);
 }
 wlAddEventListener(window, 'load', InitWorklog)
 </script>
 """
         return Markup(script)
-        
+
     def get_navigation_items(self, req):
         match = re.match(r'/ticket/([0-9]+)$', req.path_info)
         if match:
@@ -171,7 +171,7 @@ wlAddEventListener(window, 'load', InitWorklog)
                     ticket_js = self.get_ticket_js(who, since)
             else:
                 ticket_js = self.get_ticket_js_noone()
-            
+
             button_js = ''
             if req.authname != 'anonymous':
                 if mgr.can_work_on(ticket):

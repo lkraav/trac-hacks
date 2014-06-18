@@ -26,6 +26,5 @@ def pretty_timedelta(time1, time2=None):
             if rv:
                 rv += ', '
             rv += tmp_rv
-        age_s = float(age_s) - (r * float(u)) 
+        age_s = float(age_s) - (r * float(u))
     return rv
-

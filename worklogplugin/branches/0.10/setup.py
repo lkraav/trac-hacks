@@ -27,4 +27,3 @@ setup(name=PACKAGE,
 ## http://colin.guthr.ie/
 ## trac@colin.guthr.ie
 ## trac-hacks user: coling
-

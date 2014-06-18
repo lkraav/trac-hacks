@@ -35,7 +35,7 @@ class WorlLogRPC(Component):
         if mgr.start_work(ticket):
             return 'OK'
         return mgr.get_explanation()
-            
+
     def stopWork(self, req, comment='', stoptime=None):
         """ Stops work. Returns the string 'OK' on success or an explanation on error (requires authentication, stoptime is seconds since epoch) """
         mgr = WorkLogManager(self.env, self.config, req.authname)
@@ -50,7 +50,7 @@ class WorlLogRPC(Component):
         else:
             mgr = WorkLogManager(self.env, self.config, req.authname)
         return mgr.get_latest_task()
-        
+
     def getActiveTask(self, req, username=None):
         """ Returns a structure representing the info about the active task (identical to getLatestTask but does not return anything if the work has stopped). """
         if username:
@@ -58,15 +58,14 @@ class WorlLogRPC(Component):
         else:
             mgr = WorkLogManager(self.env, self.config, req.authname)
         return mgr.get_active_task()
-        
+
     def whoIsWorkingOn(self, req, ticket):
         """ Returns the username of the person currently working on the given ticket """
         mgr = WorkLogManager(self.env, self.config, req.authname)
         (who, when) = mgr.who_is_working_on(ticket)
         return who
-            
+
     def whoLastWorkedOn(self, req, ticket):
         """ Returns the username of the person last worked on the given ticket """
         mgr = WorkLogManager(self.env, self.config, req.authname)
         return mgr.who_last_worked_on(ticket)
-            

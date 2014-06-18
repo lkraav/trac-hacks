@@ -17,7 +17,7 @@ class WorkLogManager:
     authname = None
     explanation = None
     now = None
-    
+
     def __init__(self, env, config, authname='anonymous'):
         self.env = env
         self.config = config
@@ -27,7 +27,7 @@ class WorkLogManager:
 
     def get_explanation(self):
         return self.explanation
-    
+
     def can_work_on(self, ticket):
         # Need to check several things.
         # 1. Is some other user working on this ticket?
@@ -40,7 +40,7 @@ class WorkLogManager:
         if self.authname == 'anonymous':
             self.explanation = 'You need to be logged in to work on tickets.'
             return False
-        
+
         # 1. Other user working on it?
         who,since = self.who_is_working_on(ticket)
         if who:
@@ -57,7 +57,7 @@ class WorkLogManager:
             if active:
                 self.explanation = 'You cannot work on ticket #%s as you are currently working on ticket #%s. You have to chill out.' % (ticket, active['ticket'])
                 return False
-        
+
         # 3. a) Is the autoreassignaccept setting true? or
         #    b) Is the ticket assigned to the user?
         if not self.config.getbool('worklog', 'autoreassignaccept'):
@@ -70,7 +70,7 @@ class WorkLogManager:
         return True
 
     def save_ticket(self, tckt, msg):
-        # determine sequence number... 
+        # determine sequence number...
         cnum = 0
         tm = TicketModule(self.env)
         for change in tm.grouped_changelog_entries(tckt, None):
@@ -90,12 +90,12 @@ class WorkLogManager:
         #    except Exception, e:
         #        self.now += 1
         #        count += 1
-        
+
         tn = TicketNotifyEmail(self.env)
         tn.notify(tckt, newticket=0, modtime=nowdt)
         # We fudge time as it has to be unique
         self.now += 1
-        
+
 
     def start_work(self, ticket):
 
@@ -117,7 +117,7 @@ class WorkLogManager:
             # Reinitialise for next test
             tckt = Ticket(self.env, ticket)
 
-            
+
         if self.authname != tckt['owner']:
             tckt['owner'] = self.authname
             if 'new' == tckt['status']:
@@ -141,7 +141,7 @@ class WorkLogManager:
             # point is if there is no active task... which is the desired scenario :)
             self.stop_work(comment='Stopping work on this ticket to start work on #%s.' % ticket)
             self.explanation = ''
- 
+
         db = self.env.get_db_cnx()
         cursor = db.cursor()
         cursor.execute("""
@@ -149,10 +149,10 @@ class WorkLogManager:
             VALUES (%s, %s, %s, %s, %s)
             """, (self.authname, ticket, self.now, self.now, 0))
         db.commit()
-        
+
         return True
 
-    
+
     def stop_work(self, stoptime=None, comment=''):
         active = self.get_active_task()
         if not active:
@@ -170,7 +170,7 @@ class WorkLogManager:
             stoptime = self.now - 1
 
         stoptime = float(stoptime)
-          
+
         db = self.env.get_db_cnx()
         cursor = db.cursor()
         cursor.execute('UPDATE work_log '
@@ -178,7 +178,7 @@ class WorkLogManager:
                        'WHERE worker=%s AND lastchange=%s AND endtime=0',
                        (stoptime, stoptime, comment, self.authname, active['lastchange']))
         db.commit()
-        
+
         plugtne = self.config.getbool('worklog', 'timingandestimation') and self.config.get('ticket-custom', 'hours')
         plughrs = self.config.getbool('worklog', 'trachoursplugin') and self.config.get('ticket-custom', 'totalhours')
 
@@ -255,9 +255,9 @@ class WorkLogManager:
         row = cursor.fetchone()
         if not row or not row[0]:
             return None
-    
+
         lastchange = row[0]
-    
+
         task = {}
         cursor.execute('SELECT wl.worker, wl.ticket, t.summary, wl.lastchange, wl.starttime, wl.endtime, wl.comment '
                        'FROM work_log wl '
@@ -267,7 +267,7 @@ class WorkLogManager:
         for user,ticket,summary,lastchange,starttime,endtime,comment in cursor:
             if not comment:
                 comment = ''
-            
+
             task['user'] = user
             task['ticket'] = ticket
             task['summary'] = summary
@@ -276,7 +276,7 @@ class WorkLogManager:
             task['endtime'] = float(endtime)
             task['comment'] = comment
         return task
-    
+
     def get_active_task(self):
         task = self.get_latest_task()
         if not task:
@@ -312,18 +312,18 @@ class WorkLogManager:
                            'INNER JOIN ticket t ON wl.ticket=t.id '
                            'LEFT JOIN session_attribute s ON wl.worker=s.sid AND s.name=\'name\' '
                            'ORDER BY wl.lastchange DESC, wl.worker')
-        
+
         rv = []
         for user,name,starttime,endtime,ticket,summary,status,comment  in cursor:
             starttime = float(starttime)
             endtime = float(endtime)
-            
+
             started = datetime.fromtimestamp(starttime)
-            
+
             dispname = user
             if name:
                 dispname = '%s (%s)' % (name, user)
-            
+
             if not endtime == 0:
                 finished = datetime.fromtimestamp(endtime)
                 delta = 'Worked for %s (between %s %s and %s %s)' % \
@@ -346,4 +346,3 @@ class WorkLogManager:
                        'status': status,
                        'comment': comment})
         return rv
-        

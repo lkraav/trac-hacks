@@ -6,8 +6,8 @@ from trac.ticket import ITicketChangeListener, Ticket
 from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor, PermissionSystem
-from webui import * 
-from webadminui import * 
+from webui import *
+from webadminui import *
 from uihooks_ticket import *
 from timeline_hook import *
 from ticket_daemon import *
@@ -16,14 +16,14 @@ try:
 except:
     pass
 
-   
+
 class WorkLogSetupParticipant(Component):
     implements(IEnvironmentSetupParticipant)
 
     db_version_key = None
     db_version = None
     db_installed_version = None
-    
+
     """Extension point interface for components that need to participate in the
     creation and upgrading of Trac environments, for example to create
     additional database tables."""
@@ -45,15 +45,15 @@ class WorkLogSetupParticipant(Component):
             db.commit()
             db.close()
 
-    
+
     def environment_created(self):
         """Called when a new Trac environment is created."""
         if self.environment_needs_upgrade(None):
             self.upgrade_environment(None)
-            
+
     def system_needs_upgrade(self):
         return self.db_installed_version < self.db_version
-        
+
     def do_db_upgrade(self):
         # Legacy support hack (supports upgrades from revisions r2495 or before)
         if self.db_installed_version == 0:
@@ -91,9 +91,9 @@ class WorkLogSetupParticipant(Component):
             #if self.db_installed_version < 3:
             #    print 'Updating work_log table (v3)'
             #    cursor.execute('...')
-            
+
             # Updates complete, set the version
-            cursor.execute("UPDATE system SET value=%s WHERE name=%s", 
+            cursor.execute("UPDATE system SET value=%s WHERE name=%s",
                            (self.db_version, self.db_version_key))
             db.commit()
             db.close()
@@ -102,7 +102,7 @@ class WorkLogSetupParticipant(Component):
             db.rollback()
 
 
-    
+
     def needs_user_man(self):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
@@ -126,20 +126,20 @@ class WorkLogSetupParticipant(Component):
                         '', 0))
         db.commit()
         db.close()
-        
+
     def environment_needs_upgrade(self, db):
         """Called when Trac checks whether the environment needs to be upgraded.
-        
+
         Should return `True` if this participant needs an upgrade to be
         performed, `False` otherwise.
 
         """
         return (self.system_needs_upgrade() \
                 or self.needs_user_man())
-            
+
     def upgrade_environment(self, db):
         """Actually perform an environment upgrade.
-        
+
         Implementations of this method should not commit any database
         transactions. This is done implicitly after all participants have
         performed the upgrades they need without an error being raised.
@@ -155,7 +155,3 @@ class WorkLogSetupParticipant(Component):
             p("Upgrading usermanual")
             self.do_user_man_update()
         print "Done upgrading Worklog"
-
-
-
-

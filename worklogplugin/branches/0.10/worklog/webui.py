@@ -38,33 +38,33 @@ class WorkLogPage(Component):
 
     # Internal Methods
     def worklog_csv(self, req, log):
-      #req.send_header('Content-Type', 'text/plain')
-      req.send_header('Content-Type', 'text/csv;charset=utf-8')
-      req.send_header('Content-Disposition', 'filename=worklog.csv')
-      
-      # Headers
-      fields = ['user',
-                'name',
-                'starttime',
-                'endtime',
-                'ticket',
-                'summary',
-                'comment']
-      sep=','
-      req.write(sep.join(fields) + CRLF)
+        #req.send_header('Content-Type', 'text/plain')
+        req.send_header('Content-Type', 'text/csv;charset=utf-8')
+        req.send_header('Content-Disposition', 'filename=worklog.csv')
 
-      # Rows
-      for row in log:
-        first = True
-        for field in fields:
-          if not first:
-            req.write(sep)
-          first = False
-          req.write(str(row[field])
-                    .replace(sep, '_').replace('\\', '\\\\')
-                    .replace('\n', '\\n').replace('\r', '\\r'))
-        req.write(CRLF)
-        
+        # Headers
+        fields = ['user',
+                  'name',
+                  'starttime',
+                  'endtime',
+                  'ticket',
+                  'summary',
+                  'comment']
+        sep=','
+        req.write(sep.join(fields) + CRLF)
+
+        # Rows
+        for row in log:
+            first = True
+            for field in fields:
+                if not first:
+                    req.write(sep)
+                first = False
+                req.write(str(row[field])
+                          .replace(sep, '_').replace('\\', '\\\\')
+                          .replace('\n', '\\n').replace('\r', '\\r'))
+            req.write(CRLF)
+
     # IRequestHandler methods
     def match_request(self, req):
         if re.search('/worklog', req.path_info):
@@ -80,28 +80,28 @@ class WorkLogPage(Component):
         # General protection (not strictly needed if Trac behaves itself)
         if not re.search('/worklog', req.path_info):
             return None
-        
+
         # Specific pages:
         match = re.search('/worklog/users/(.*)', req.path_info)
         if match:
-          mgr = WorkLogManager(self.env, self.config, match.group(1))
-          if req.args.has_key('format') and req.args['format'] == 'csv':
-            self.worklog_csv(req, mgr.get_work_log('user'))
-            return None
-          
-          req.hdf["worklog"] = {"worklog": mgr.get_work_log('user'),
-                                "ticket_href": req.href.ticket(),
-                                "usermanual_href":req.href.wiki(user_manual_wiki_title),
-                                "usermanual_title":user_manual_title
-                               }
-          add_stylesheet(req, "worklog/worklogplugin.css")
-          return 'worklog_user.cs', None
+            mgr = WorkLogManager(self.env, self.config, match.group(1))
+            if req.args.has_key('format') and req.args['format'] == 'csv':
+                self.worklog_csv(req, mgr.get_work_log('user'))
+                return None
+
+            req.hdf["worklog"] = {"worklog": mgr.get_work_log('user'),
+                                  "ticket_href": req.href.ticket(),
+                                  "usermanual_href":req.href.wiki(user_manual_wiki_title),
+                                  "usermanual_title":user_manual_title
+                                 }
+            add_stylesheet(req, "worklog/worklogplugin.css")
+            return 'worklog_user.cs', None
 
         mgr = WorkLogManager(self.env, self.config, req.authname)
         if req.args.has_key('format') and req.args['format'] == 'csv':
             self.worklog_csv(req, mgr.get_work_log())
             return None
-        
+
         # Not any specific page, so process POST actions here.
         if req.method == 'POST':
             if req.args.has_key('startwork') and req.args.has_key('ticket'):
@@ -109,10 +109,10 @@ class WorkLogPage(Component):
                     addMessage(mgr.get_explanation())
                 else:
                     addMessage('You are now working on ticket #%s.' % (req.args['ticket'],))
-                
+
                 req.redirect(req.args['source_url'])
                 return None
-                
+
             elif req.args.has_key('stopwork'):
                 stoptime = None
                 if req.args.has_key('stoptime'):
@@ -126,10 +126,10 @@ class WorkLogPage(Component):
                     addMessage(mgr.get_explanation())
                 else:
                     addMessage('You have stopped working.')
-                
+
                 req.redirect(req.args['source_url'])
                 return None
-        
+
         # no POST, so they're just wanting a list of the worklog entries
         req.hdf["worklog"] = {"messages": messages,
                               "worklog": mgr.get_work_log('summary'),
@@ -140,8 +140,8 @@ class WorkLogPage(Component):
                              }
         add_stylesheet(req, "worklog/worklogplugin.css")
         return 'worklog.cs', None
-        
-        
+
+
     # ITemplateProvider
     def get_htdocs_dirs(self):
         """Return the absolute path of a directory containing additional
@@ -156,4 +156,3 @@ class WorkLogPage(Component):
         """
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
-    

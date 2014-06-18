@@ -11,7 +11,7 @@ from trac.wiki.formatter import wiki_to_html, wiki_to_oneliner
 
 class WorkLogTimelineAddon(Component):
     implements(ITimelineEventProvider)
-    
+
     # ITimelineEventProvider methods
 
     def get_timeline_filters(self, req):
@@ -30,7 +30,7 @@ class WorkLogTimelineAddon(Component):
 
             cursor.execute("""SELECT wl.user,wl.ticket,wl.time,wl.starttime,wl.comment,wl.kind,wl.humankind,t.summary,t.status
                              FROM (
-                             
+
                              SELECT user, ticket, starttime AS time, starttime, comment, 'workstart' AS kind, 'started' AS humankind
                              FROM work_log
 
@@ -40,8 +40,8 @@ class WorkLogTimelineAddon(Component):
                              FROM work_log
 
                              ) AS wl
-                             INNER JOIN ticket t ON t.id = wl.ticket 
-                                 AND wl.time>=%s AND wl.time<=%s 
+                             INNER JOIN ticket t ON t.id = wl.ticket
+                                 AND wl.time>=%s AND wl.time<=%s
                            ORDER BY wl.time"""
                            % (start, stop))
             previous_update = None
@@ -64,5 +64,3 @@ class WorkLogTimelineAddon(Component):
                     else:
                         message = 'Time spent: %s' % pretty_timedelta(started, finished)
                 yield kind, href.ticket(ticket), title, time, user, message
-
-

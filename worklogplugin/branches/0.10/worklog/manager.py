@@ -12,7 +12,7 @@ class WorkLogManager:
     authname = None
     explanation = None
     now = None
-    
+
     def __init__(self, env, config, authname='anonymous'):
         self.env = env
         self.config = config
@@ -22,7 +22,7 @@ class WorkLogManager:
 
     def get_explanation(self):
         return self.explanation
-    
+
     def can_work_on(self, ticket):
         # Need to check several things.
         # 1. Is some other user working on this ticket?
@@ -35,7 +35,7 @@ class WorkLogManager:
         if self.authname == 'anonymous':
             self.explanation = 'You need to be logged in to work on tickets.'
             return False
-        
+
         # 1. Other user working on it?
         who,since = self.who_is_working_on(ticket)
         if who:
@@ -52,7 +52,7 @@ class WorkLogManager:
             if active:
                 self.explanation = 'You cannot work on ticket #%s as you are currently working on ticket #%s. You have to chill out.' % (ticket, active['ticket'])
                 return False
-        
+
         # 3. a) Is the autoreassignaccept setting true? or
         #    b) Is the ticket assigned to the user?
         if not self.config.getbool('worklog', 'autoreassignaccept'):
@@ -65,7 +65,7 @@ class WorkLogManager:
         return True
 
     def save_ticket(self, tckt, db, msg):
-        # determine sequence number... 
+        # determine sequence number...
         cnum = 0
         tm = TicketModule(self.env)
         for change in tm.grouped_changelog_entries(tckt, db):
@@ -84,12 +84,12 @@ class WorkLogManager:
         #        self.now += 1
         #        count += 1
         db.commit()
-        
+
         tn = TicketNotifyEmail(self.env)
         tn.notify(tckt, newticket=0, modtime=self.now)
         # We fudge time as it has to be unique
         self.now += 1
-        
+
 
     def start_work(self, ticket):
 
@@ -113,7 +113,7 @@ class WorkLogManager:
             db = self.env.get_db_cnx()
             tckt = Ticket(self.env, ticket, db)
 
-            
+
         if self.authname != tckt['owner']:
             tckt['owner'] = self.authname
             if 'new' == tckt['status']:
@@ -138,7 +138,7 @@ class WorkLogManager:
             # point is if there is no active task... which is the desired scenario :)
             self.stop_work()
             self.explanation = ''
- 
+
         cursor = db.cursor()
         cursor.execute('INSERT INTO work_log (user, ticket, lastchange, starttime, endtime) '
                        'VALUES (%s, %s, %s, %s, %s)',
@@ -146,7 +146,7 @@ class WorkLogManager:
         db.commit()
         return True
 
-    
+
     def stop_work(self, stoptime=None, comment=''):
         active = self.get_active_task()
         if not active:
@@ -164,7 +164,7 @@ class WorkLogManager:
             stoptime = self.now - 1
 
         stoptime = float(stoptime)
-        
+
         db = self.env.get_db_cnx();
         cursor = db.cursor()
         cursor.execute('UPDATE work_log '
@@ -185,23 +185,23 @@ class WorkLogManager:
                        format_date(stoptime), format_time(stoptime))
             if comment:
                 message += "\n[[BR]]\n" + comment
-            
+
         if self.config.getbool('worklog', 'timingandestimation') and \
                self.config.get('ticket-custom', 'hours'):
             if not message:
                 message = 'Hours recorded automatically by the worklog plugin.'
 
             round_delta = float(self.config.getint('worklog', 'roundup') or 1)
-            
+
             # Get the delta in minutes
             delta = float(int(stoptime) - int(active['starttime'])) / float(60)
-            
+
             # Round up if needed
             delta = int(round((delta / round_delta) + float(0.5))) * int(round_delta)
-            
+
             db = self.env.get_db_cnx()
             tckt = Ticket(self.env, active['ticket'], db)
-            
+
             # This hideous hack is here because I don't yet know how to do variable-DP rounding in python - sorry!
             # It's meant to round to 2 DP, so please replace it if you know how.  Many thanks, MK.
             tckt['hours'] = str(float(int(100 * float(delta) / 60) / 100.0))
@@ -212,7 +212,7 @@ class WorkLogManager:
             db = self.env.get_db_cnx()
             tckt = Ticket(self.env, active['ticket'], db)
             self.save_ticket(tckt, db, message)
-        
+
         return True
 
 
@@ -240,9 +240,9 @@ class WorkLogManager:
         row = cursor.fetchone()
         if not row or not row[0]:
             return None
-    
+
         lastchange = row[0]
-    
+
         task = {}
         cursor.execute('SELECT wl.user, wl.ticket, t.summary, wl.lastchange, wl.starttime, wl.endtime, wl.comment '
                        'FROM work_log wl '
@@ -252,7 +252,7 @@ class WorkLogManager:
         for user,ticket,summary,lastchange,starttime,endtime,comment in cursor:
             if not comment:
                 comment = ''
-            
+
             task['user'] = user
             task['ticket'] = ticket
             task['summary'] = summary
@@ -261,7 +261,7 @@ class WorkLogManager:
             task['endtime'] = float(endtime)
             task['comment'] = comment
         return task
-    
+
     def get_active_task(self):
         task = self.get_latest_task()
         if not task:
@@ -297,18 +297,18 @@ class WorkLogManager:
                            'INNER JOIN ticket t ON wl.ticket=t.id '
                            'LEFT JOIN session_attribute s ON wl.user=s.sid AND s.name=\'name\' '
                            'ORDER BY wl.lastchange DESC, wl.user')
-        
+
         rv = []
         for user,name,starttime,endtime,ticket,summary,status,comment  in cursor:
             starttime = float(starttime)
             endtime = float(endtime)
-            
+
             started = datetime.fromtimestamp(starttime)
-            
+
             dispname = user
             if name:
                 dispname = '%s (%s)' % (name, user)
-            
+
             if not endtime == 0:
                 finished = datetime.fromtimestamp(endtime)
                 delta = 'Worked for %s (between %s %s and %s %s)' % \
@@ -331,4 +331,3 @@ class WorkLogManager:
                        'status': status,
                        'comment': comment})
         return rv
-        

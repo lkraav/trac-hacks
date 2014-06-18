@@ -23,7 +23,7 @@ class WorklogAdminPage(Component):
 
         bools = [ "timingandestimation", "comment",
                   "autostop", "autostopstart", "autoreassignaccept" ]
-        
+
         if req.method == 'POST' and req.args.has_key('update'):
             for yesno in bools:
                 if req.args.has_key(yesno):
@@ -38,7 +38,7 @@ class WorklogAdminPage(Component):
                     except:
                         pass
                 self.config.set(section, 'roundup', roundup)
-                
+
             self.config.save()
 
         mytrue = Markup('checked="checked"')
