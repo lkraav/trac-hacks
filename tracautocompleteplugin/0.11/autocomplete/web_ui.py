@@ -24,7 +24,7 @@ __all__ = ['AutoComplete']
 
 class AutoComplete(Component):
     implements(ITemplateProvider,
-               IRequestHandler, 
+               IRequestHandler,
                ITemplateStreamFilter,
                )
 
@@ -60,7 +60,7 @@ class AutoComplete(Component):
             self._send_response(req, message)
 
     # ITemplateStreamFilter
-    
+
     def filter_stream(self, req, method, filename, stream, data):
         if req.path_info.startswith("/newticket") or req.path_info.startswith("/ticket"):
 
@@ -85,7 +85,7 @@ class AutoComplete(Component):
             # common js files
             for js_file in js_files:
                 add_script(req, 'autocomplete/' + js_file)
-                
+
         return stream
 
     # internal methods
@@ -98,7 +98,7 @@ class AutoComplete(Component):
 
         # convert to string
         message = "\n".join(result).encode('utf-8')
-        
+
         return message
 
     def _query_user(self, query, limit):
@@ -152,10 +152,10 @@ class AutoComplete(Component):
             email_init_str.decode('ascii')
         except (UnicodeDecodeError , UnicodeEncodeError):
             return []
-        
+
         if len(email_init_str) < 2:
             return None
-            
+
         return_list = []
         f = open(os.path.join(self.env.path, 'conf/username_list.txt'), "r")
         for line in f.readlines():
@@ -166,7 +166,7 @@ class AutoComplete(Component):
                 if email.startswith(email_init_str) or zh_name.lower().strip().startswith(email_init_str):
                     return_list.append({"email": email, "zh_name": zh_name})
         return return_list
-        
+
     def _send_response(self, req, message):
         """
         """
@@ -180,4 +180,3 @@ class AutoComplete(Component):
         if req.method != 'HEAD':
             req.write(message)
         raise RequestDone
-

@@ -5,7 +5,7 @@ setup(
     version = '0.1',
     packages = ['autocomplete'],
     package_data = {
-        'autocomplete': ['*.txt', 
+        'autocomplete': ['*.txt',
                  'htdocs/*.*',
                  'htdocs/images/*.*',
                  'htdocs/jquery-ui/*.*',
@@ -25,6 +25,6 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    
+
     entry_points = {'trac.plugins': ['autocomplete = autocomplete.web_ui']},
 )
