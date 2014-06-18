@@ -9,16 +9,16 @@ def get_solutions(db, args):
     """
     solutions = []
     id = args['id1']
-    
+
     # iterate over the fields in same order every time
     standard = [field for field in args['standard_fields'].keys()]
     custom = [field for field in args['custom_fields'].keys()]
-    
+
     # queue fields are all good, so how's their order?
     old,tickets = _get_rollup_fields(db, args, standard, custom, id)
     if not old or not tickets:
         return '',[] # no rollup tickets!  skip
-    
+
     changes = []
     new = {'ticket':id}
     for field in standard + custom:
@@ -26,7 +26,7 @@ def get_solutions(db, args):
             rollup = args['standard_fields'][field]
         else:
             rollup = args['custom_fields'][field]
-        
+
         # compare old and new values
         old_value = _get_value(old[field], rollup)
         new_value = _get_stat_rollup(field, rollup, tickets)
@@ -37,7 +37,7 @@ def get_solutions(db, args):
             changes.append("%s to %s" % (field,new_value))
     if len(new) == 1:
         return '',[] # no changes
-    
+
     # solution 1: update rollup field changes
     issue = "#%s has rollup field changes." % id
     solutions.append({
@@ -67,7 +67,7 @@ def _get_stat_rollup(field, rollup, tickets):
     else:
         vals = [options.index(ticket[field]) for ticket in tickets \
                 if ticket[field] in options] # guard against bad data
-    
+
     if rollup['stat'] == 'sum':
         return sum(vals)
     if rollup['stat'] == 'min':
@@ -107,9 +107,9 @@ def _get_stat_rollup(field, rollup, tickets):
             return hi_value
         else:
             return options[hi_value]
-    
+
     # assume stat is the pivot field - the pivot algorithm is as follows:
-    # 
+    #
     #  * if all values are < the pivot index, then select their max index
     #  * else if all are > the pivot index, then select their min index
     #  * else select the pivot index
@@ -156,17 +156,17 @@ def _get_rollup_fields(db, args, standard, custom, id):
     recursively."""
     cursor = db.cursor()
     project_type = args['project_type']
-    
+
     # build field selectors
     keys = standard + custom
     fields = ["t."+name for name in standard]
     fields += ["c%d.value" % i for i in range(len(custom))]
-    
+
     # build "from" part of query
     from_  = " FROM ticket t"
     from_ += _get_join(custom)
-        
-    # get this ticket's rollup field values 
+
+    # get this ticket's rollup field values
     sql = "SELECT " + ', '.join(fields) + from_ + "WHERE t.id = %s" % id
     cursor.execute(sql)
     result = cursor.fetchone()
@@ -176,7 +176,7 @@ def _get_rollup_fields(db, args, standard, custom, id):
     for i in range(len(keys)):
         name = keys[i]
         ticket[name] = result[i]
-    
+
     sql = "SELECT t.id, " + ', '.join(fields) + from_ + "WHERE t.id IN"
     sql += " (SELECT source FROM mastertickets WHERE dest = %s)" # % id
     sql += " AND t.status != 'closed' AND t.type != '%s'" % project_type
@@ -201,12 +201,12 @@ def _get_rollup_children(cursor, sql, id, keys, visited, recurse):
             name = keys[i]
             ticket[name] = result[i+1]
         tickets.append(ticket)
-    
+
     # now get children tickets (separate loop to avoid confusing cursor)
     children = []
     if recurse:
         for ticket in tickets:
             id = ticket['id']
             children += _get_rollup_children(cursor,sql,id,keys,visited,recurse)
-    
+
     return tickets + children

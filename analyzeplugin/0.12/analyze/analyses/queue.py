@@ -11,11 +11,11 @@ def get_dependency_solutions(db, args):
     id = args['id1']
     position_field = args['col1_field1']
     position = int(args['col1_value1'])
-    
+
     # iterate over the fields in same order every time
     standard = [field for field in args['standard_fields'].keys()]
     custom = [field for field in args['custom_fields'].keys()]
-    
+
     # first check that the dependent ticket query fields are correct
     if standard or custom:
         issue = "#%s's dependent tickets are not in the correct queue." % id
@@ -35,10 +35,10 @@ def get_dependency_solutions(db, args):
               'data': data,
             })
             return issue,solutions
-    
+
     # queue fields are all good, so how's their order?
     issue = "#%s's dependent tickets are out of order." % id
-    
+
     sql  = "SELECT t.id, c.value FROM ticket t"
     sql += " JOIN ticket_custom c ON t.id = c.ticket"
     sql += " AND c.name = '%s' " % position_field
@@ -54,22 +54,22 @@ def get_dependency_solutions(db, args):
     if not result:
         return '',[] # no dependent tickets!  skip
     ids,positions = zip(*result)
-    
+
     # solution 1: move dependent tickets above position
     tix = ', '.join(["#%s" % tid for tid in ids])
     solutions.append({
       'name': 'Move %s before position %d' % (tix,position),
       'data': [{'ticket':tid,position_field:str(position-1)} for tid in ids],
     })
-    
+
     # solution 2: move this ticket below lowest position
     lowest = max([0] + [int(pos) for pos in positions if pos.strip()])
-    if lowest: 
+    if lowest:
         solutions.append({
           'name': 'Move #%s after position %d' % (id,lowest),
           'data': {'ticket':id,position_field:str(lowest+1)},
         })
-        
+
     return issue,solutions
 
 
@@ -82,11 +82,11 @@ def get_project_solutions(db, args):
     id2 = args['id2']
     position_field = args['col1_field1']
     project_type = args['project_type']
-    
+
     # iterate over the fields in same order every time
     standard = [field for field in args['standard_fields'].keys()]
     custom = [field for field in args['custom_fields'].keys()]
-    
+
     # first check that the dependent ticket query fields are correct
     if standard or custom:
         for tid in (id1,id2):
@@ -106,14 +106,14 @@ def get_project_solutions(db, args):
                   'data': data,
                 })
                 return issue,solutions
-    
+
     # second do a multi-parent analysis - else can cause havoc!
     cursor = db.cursor()
     for tid in (id1,id2):
         # get all (unfiltered) children from this parent
         issue = "#%s's dependent tickets are in multiple %ss." % \
                     (tid,project_type)
-        
+
         # for each child, determine if it has multiple parents
         sql  = "SELECT t.id, b.value FROM ticket t "
         sql += " JOIN ticket_custom b ON t.id=b.ticket AND b.name='blocking'"
@@ -147,7 +147,7 @@ def get_project_solutions(db, args):
 
     # queue fields are all good, so how's their childrens' order?
     issue = "#%s and #%s's dependent tickets are out of order." % (id1,id2)
-    
+
     stats = [{'id':id1,'fn':'max','op':'>','label':'before'},
              {'id':id2,'fn':'min','op':'<','label':'after'}]
     for stat in stats:
@@ -162,7 +162,7 @@ def get_project_solutions(db, args):
         cursor.execute(sql)
         result = cursor.fetchone()
         stat['result'] = result and result[0] and int(result[0]) or -9999
-        
+
     for i in range(len(stats)):
         stat = stats[i]
         j = (i+1)%2 # the other stat
@@ -189,7 +189,7 @@ def get_project_solutions(db, args):
               'name': 'Move %s %s position %d' % (tix,stat['label'],pos),
               'data': [{'ticket':tid,position_field:new_pos} for tid in ids],
             })
-    
+
     return issue,solutions
 
 
@@ -199,7 +199,7 @@ def _is_filter_field(name, standard, custom, args):
     """Evaluates to True if the given name is a filter field."""
     return (name in standard and args['standard_fields'][name] or \
             name in custom and args['custom_fields'][name])
-            
+
 def _get_join(custom, t='t'):
     """Get JOIN sql query part for custom fields."""
     sql = ' '
@@ -233,18 +233,18 @@ def _get_query_field_violators(db, args, standard, custom, id):
     """Return ticket id's queue fields and any children tickets that do
     not have these fields (i.e., are in the wrong queue)."""
     cursor = db.cursor()
-    
+
     # build field selectors
     keys = standard + custom
     fields = ["t."+name for name in standard]
     fields += ["c%d.value" % i for i in range(len(custom))]
-    
+
     # build "from" part of query
     from_  = " FROM ticket t"
     from_ += " LEFT OUTER JOIN milestone m ON t.milestone = m.name "
     from_ += _get_join(custom)
-        
-    # get this ticket's queue field values 
+
+    # get this ticket's queue field values
     sql = "SELECT " + ', '.join(fields) + from_ + "WHERE t.id = %s" % id
     cursor.execute(sql)
     result = cursor.fetchone()
@@ -255,13 +255,13 @@ def _get_query_field_violators(db, args, standard, custom, id):
         name = keys[i]
         if (not _is_filter_field(name, standard, custom, args)):
             ticket[name] = result[i]
-    
+
     # find open dependent tickets that don't match queue fields
     sql = "SELECT t.id " + from_
     sql += " WHERE t.id IN"
     sql += " (SELECT source FROM mastertickets WHERE dest = %s)" % id
     sql += " AND t.status != 'closed'"
-    
+
     # add queue fields
     sql += " AND ("
     or_ = []

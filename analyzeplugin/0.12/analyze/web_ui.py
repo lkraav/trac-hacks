@@ -8,13 +8,13 @@ from analysis import *
 
 class AnalyzeModule(Component):
     """Base component for analyzing tickets."""
-    
+
     implements(IRequestHandler, ITemplateProvider, IRequestFilter,
                IPermissionRequestor)
-    
+
     analyses = ExtensionPoint(IAnalysis)
-    
-    # IPermissionRequestor methods  
+
+    # IPermissionRequestor methods
     def get_permission_actions(self):
         return ['ANALYZE_VIEW']
 
@@ -22,15 +22,15 @@ class AnalyzeModule(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('analyze', resource_filename(__name__, 'htdocs'))]
-    
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
-    
+
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         if self._valid_request(req):
             add_stylesheet(req, 'analyze/analyze.css')
@@ -39,16 +39,16 @@ class AnalyzeModule(Component):
             add_script(req, '/analyze/analyze.html')
             add_script(req, 'analyze/analyze.js')
         return template, data, content_type
-    
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/analyze/')
-    
+
     def process_request(self, req):
         data = {'analyses':self._get_analyses(req, check_referer=True),
                 'report':get_report(req, check_referer=True)}
-        return 'analyze.html', data, 'text/javascript' 
-    
+        return 'analyze.html', data, 'text/javascript'
+
     # private methods
     def _valid_request(self, req):
         """Checks permissions and that report can be analyzed."""
@@ -57,7 +57,7 @@ class AnalyzeModule(Component):
           self._get_analyses(req):
             return True
         return False
-    
+
     def _get_analyses(self, req, check_referer=False):
         """Returns a list of analyses for the given report."""
         report = get_report(req, check_referer)
@@ -71,9 +71,9 @@ class AnalyzeModule(Component):
 class AnalyzeAjaxModule(Component):
     """Ajax handler for suggesting solutions to users and fixing issues."""
     implements(IRequestHandler)
-    
+
     analyses = ExtensionPoint(IAnalysis)
-    
+
     # IRequestHandler methods
     def match_request(self, req):
         if req.path_info.startswith('/analyzeajax/'):
@@ -108,7 +108,7 @@ class AnalyzeAjaxModule(Component):
         req.send_header('Content-Length', len(msg))
         req.end_headers()
         req.write(msg)
-    
+
     def _get_analyses(self, report):
         result = []
         for analysis in self.analyses:
@@ -119,7 +119,7 @@ class AnalyzeAjaxModule(Component):
                     'title': analysis.title,
                 })
         return result
-    
+
     def _get_solutions(self, analysis, db, req, report):
         """Return the solutions with serialized data to use for the fix.
         Ticket references are converted to hrefs."""
@@ -127,19 +127,19 @@ class AnalyzeAjaxModule(Component):
         base = req.base_url+'/ticket/'
         id = re.compile(r"(#([1-9][0-9]*))")
         issue = id.sub(r'<a href="%s\2">\1</a>' % base, issue)
-        
+
         # serialize solution data; convert ticket refs to hrefs
         for solution in solutions:
             solution['disabled'] = not req.perm.has_permission('TICKET_MODIFY')
             solution['data'] = json.dumps(solution['data'])
             name = solution['name']
             solution['name'] = id.sub(r'<a href="%s\2">\1</a>' % base, name)
-        
+
         return {'title': analysis.title, 'label': issue,
                 'exists': len(solutions) > 0, 'solutions': solutions,
                 'refresh': analysis.get_refresh_report() or \
                            get_report(req, check_referer=True)}
-    
+
     def _fix_issue(self, analysis, db, req):
         """Return the result of the fix."""
         data = json.loads(req.args['data'])

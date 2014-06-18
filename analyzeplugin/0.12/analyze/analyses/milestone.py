@@ -6,7 +6,7 @@ def get_dependency_solutions(db, args):
     """
     id = args['id1']
     cursor = db.cursor()
-    
+
     # get the type and due date
     cursor.execute("""
         SELECT t.type, t.milestone, m.due
@@ -19,8 +19,8 @@ def get_dependency_solutions(db, args):
         return '',[]
     type,milestone,due = result
     if not due:
-        return '',[] # this ticket's milestone doesn't have a due date - skip 
-    
+        return '',[] # this ticket's milestone doesn't have a due date - skip
+
     # find all peers that are due too late (or not scheduled at all)
     cursor.execute("""
         SELECT t.id, t.milestone, m.due FROM ticket t
@@ -32,11 +32,11 @@ def get_dependency_solutions(db, args):
     result = zip(*[(t,m,d) for t,m,d in cursor])
     if not result:
         return '',[] # no dependent tickets!  skip
-    
+
     issue = "#%s's dependent tickets are in future (or no) milestones." % id
     ids,milestones,dues = result
     solutions = []
-    
+
     # solution 1: move dependent tickets to this milestone
     tix = ', '.join(["#%s" % tid for tid in ids])
     data = []
@@ -49,7 +49,7 @@ def get_dependency_solutions(db, args):
       'name': 'Move %s up to milestone %s' % (tix,milestone),
       'data': data,
     })
-    
+
     # solution 2: move this ticket to latest dependent milestone
     if any(m for m in milestones) and any(d for d in dues):
         cursor.execute("""
@@ -66,5 +66,5 @@ def get_dependency_solutions(db, args):
               'name': 'Move #%s out to milestone %s' % (id,latest_milestone),
               'data': changes,
             })
-    
+
     return issue,solutions
