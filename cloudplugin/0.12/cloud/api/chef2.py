@@ -147,7 +147,7 @@ class Chef(object):
         def alarm_handler(signum, frame): raise Alarm
         
         cmd = 'export HOME=%s &&' % self.base_path
-        cmd += ' /usr/bin/knife bootstrap %s' % hostname
+        cmd += ' knife bootstrap %s' % hostname
         cmd += ' -c %s' % os.path.join(self.base_path,'.chef','knife.rb')
         cmd += ' -x %s' % self.user
         if self.keypair_pem:
