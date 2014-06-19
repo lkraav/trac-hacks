@@ -186,30 +186,34 @@ class VcsReleaseInfoMacro(WikiMacroBase):
                 % {
                     'reponame' : reponame,
                     'path': path,
-                    'rev': cur['rev']
+                    'rev': cur['rev'],
                 })
             elif prev == None:
                 # first entry = trunk
-                # cur=trunk
-                # next=last release tag
-
                 # next=trunk
                 # cur=last release tag
-                items.append(
-                    " * "
-                    " [/browser%(path)s/trunk trunk]"
-                    " @[changeset:%(rev)s/%(reponame)s %(rev)s]"
-                    " ("
-                    "[/log%(path)s/trunk?revs=%(frev)s-%(rev)s changes]"
-                    " [/changeset?old_path=%(path)s/tags/%(old_tag)s&new_path=%(path)s/trunk diffs]"
-                    ")"
-                % {
+
+                params = {
                     'reponame' : reponame,
                     'path': path,
                     'rev' : cur['rev'],
                     'frev' : next['frev'],
                     'old_tag' : next['version'],
-                })
+                }
+
+                if next['frev']:
+                    params['changes'] = "[/log%(path)s/trunk?revs=%(frev)s-%(rev)s changes]" % params
+                else:
+                    params['changes'] = "changes"
+
+                items.append(
+                    " * "
+                    " [/browser%(path)s/trunk trunk]"
+                    " @[changeset:%(rev)s/%(reponame)s %(rev)s]"
+                    " (%(changes)s"
+                    " [/changeset?old_path=%(path)s/tags/%(old_tag)s&new_path=%(path)s/trunk diffs]"
+                    ")" % params
+                )
             elif next != None:
                 # regular releases
                 release_page = 'release/%s-%s' % (package, cur['version'])
