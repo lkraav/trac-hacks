@@ -40,9 +40,8 @@
   </head>
 
   <body class="yui-skin-sam">
-    <h1 class="chart_title">Ticket Statistics</h1>
-
     <div id="content">
+      <h1 class="chart_title">Ticket Statistics</h1>
       <div id="chart"></div>
 
       <fieldset id="Settings">
@@ -71,6 +70,11 @@
             <option value="__all">All Milestones</option>
             <option py:for="m in milestones" value="$m">$m</option>
           </select>
+          <label for="component">Component: </label>
+          <select name="component" id="component">
+            <option value="__all">All Components</option>
+            <option py:for="c in components" value="$c">$c</option>
+          </select>
 
           <input type="submit" name="Update Chart" value="Update Chart"/>
         </form>
@@ -88,6 +92,7 @@
         return  "&#38;start_date=" + document.getElementById("dt_frm").start_date.value +
             "&#38;end_date=" + document.getElementById("dt_frm").end_date.value +
             "&#38;resolution=" + document.getElementById("dt_frm").resolution.value +
+            "&#38;component=" + document.getElementById("dt_frm").component.value +
             "&#38;milestone=" + document.getElementById("dt_frm").milestone.value;
       }
       function doRequestData() {
@@ -97,13 +102,16 @@
       function updateStaticURL() {
         document.getElementById("static_url").innerHTML = "${baseurl}" + "/ticketstats?content=render" + encodeURI(rqstr());
       }
-      function setProvided(res, mile) {
+      function setProvided(res, mile, comp) {
         if (!res)
           res = ${resolution};
         document.getElementById("resolution").selectedIndex = {1: 0, 7: 1, 14: 2, 30: 3, 60: 4, 90: 5, 180: 6, 360: 7}[res];
         if (!mile)
           mile = ${cmilestone};
         document.getElementById("milestone").selectedIndex = mile;
+        if (!comp)
+          comp = ${ccomponent};
+        document.getElementById("component").selectedIndex = comp;
       }
 
       setProvided();
