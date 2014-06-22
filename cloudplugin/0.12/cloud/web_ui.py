@@ -24,84 +24,84 @@ class CloudModule(Component):
 
     implements(ITemplateProvider, INavigationContributor, IPermissionRequestor,
                IRequestFilter, IRequestHandler)
-    
+
     # trac.ini options
     nav_label = Option('cloud', 'nav_label', _('Cloud'), _("Top nav label."))
-    
+
     aws_key = Option('cloud', 'aws_key', '', _("AWS/S3 access key."))
-    
+
     aws_secret = Option('cloud', 'aws_secret', '', _("AWS/S3 secret."))
-    
+
     aws_keypair = Option('cloud', 'aws_keypair', '', _("AWS/S3 keypair name."))
-    
+
     aws_keypair_pem = Option('cloud', 'aws_keypair_pem', '',
         _("AWS/EC2 keypair file path."))
-    
+
     aws_username = Option('cloud', 'aws_username', 'ubuntu',
         _("AWS/EC2 ssh username."))
-    
+
     aws_security_groups = Option('cloud', 'aws_security_groups', 'default',
         _("AWS/EC2 security groups comma-separated list of strings."))
-    
+
     rds_username = Option('cloud', 'rds_username', '',
         _("AWS/RDS master username."))
-    
+
     rds_password = Option('cloud', 'rds_password', '',
         _("AWS/RDS master username."))
-    
+
     chef_base_path = Option('cloud', 'chef_base_path', '',
         _("Directory where .chef configs can be found."))
-    
+
     chef_boot_run_list = ListOption('cloud', 'chef_boot_run_list', [],
         _("If set, used instead of the role(s) to bootstrap instances."))
-    
+
     chef_boot_sudo = BoolOption('cloud', 'chef_boot_sudo', True,
         _("Whether the chef knife bootstrap should be run as sudo."))
-    
+
     chef_boot_version = Option('cloud', 'chef_boot_version', '',
         _("Version of chef-client to install."))
-    
+
     chef_distro = Option('cloud', 'chef_distro', '',
         _("Distribution template to use for launch."))
-    
+
     jabber_server = Option('cloud', 'jabber_server', '', _("Jabber server."))
-    
+
     jabber_port = Option('cloud', 'jabber_port', '', _("Jabber port."))
-    
+
     jabber_username = Option('cloud', 'jabber_username', '',
         _("Jabber username."))
-    
+
     jabber_password = Option('cloud', 'jabber_password', '',
         _("Jabber password."))
-    
+
     jabber_channel = Option('cloud', 'jabber_channel', '', _("Jabber channel."))
-    
+
     default_resource = Option('cloud', 'default_resource', '',
         _("Name of the AWS resource to show if not provided in url."))
-    
+
     items_per_page = IntOption('cloud', 'items_per_page', 100,
         _("Number of items displayed per page in cloud reports by default"))
-    
+
     items_per_page_rss = IntOption('cloud', 'items_per_page_rss', 0,
         _("Number of items displayed in the rss feeds for cloud reports"))
-    
+
     # NOTE: Each droplet's [cloud.*] config is retrieved during its init.
-    
-    
+
+
     field_handlers = ExtensionPoint(IFieldHandler)
-    
-        
+
+
     # ITemplateProvider methods
-    
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename #@UnresolvedImport
         return [('cloud', resource_filename(__name__, 'htdocs'))]
-    
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename #@UnresolvedImport
         return [resource_filename(__name__, 'templates')]
-    
-    
+
+
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
@@ -111,28 +111,28 @@ class CloudModule(Component):
         if 'CLOUD_VIEW' in req.perm:
             yield ('mainnav', 'cloud',
                    tag.a(self.nav_label, href=req.href.cloud()))
-    
-    
-    # IPermissionRequestor methods  
-    
-    def get_permission_actions(self):  
-        actions = ['CLOUD_CREATE','CLOUD_DELETE','CLOUD_MODIFY','CLOUD_VIEW']  
-        return actions + [('CLOUD_ADMIN',actions)]  
-    
-    
+
+
+    # IPermissionRequestor methods
+
+    def get_permission_actions(self):
+        actions = ['CLOUD_CREATE','CLOUD_DELETE','CLOUD_MODIFY','CLOUD_VIEW']
+        return actions + [('CLOUD_ADMIN',actions)]
+
+
     # IRequestFilter methods
-    
+
     def pre_process_request(self, req, handler):
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         if req.path_info.startswith('/cloud'):
             add_script(req, 'cloud/droplet.js')
         return template, data, content_type
-    
-    
+
+
     # IRequestHandler methods
-    
+
     def match_request(self, req):
         match = re.match(r'/cloud(?:/([^/]+)(?:/([\w.\-]+))?)?$', req.path_info)
         if match:
@@ -144,7 +144,7 @@ class CloudModule(Component):
 
     def process_request(self, req):
         req.perm.require('CLOUD_VIEW')
-        
+
         # setup cloud droplets
         if not hasattr(self, 'droplets'):
             # setup chefapi and cloudapi
@@ -156,7 +156,7 @@ class CloudModule(Component):
                               self.chef_boot_version,
                               self.chef_distro,
                               self.log)
-            
+
             cloudapi = Aws(self.aws_key,
                               self.aws_secret,
                               self.aws_keypair,
@@ -164,7 +164,7 @@ class CloudModule(Component):
                               self.rds_username,
                               self.rds_password,
                               self.log)
-            
+
             # instantiate each droplet (singletons)
             self.droplets = {}
             self.titles = Droplet.titles(self.env)
@@ -172,34 +172,34 @@ class CloudModule(Component):
                 self.droplets[droplet_name] = Droplet.new(self.env,
                     droplet_name, chefapi, cloudapi,
                     self.field_handlers, self.log)
-        
+
         # ensure at least one droplet exists
         if not self.droplets:
             raise ResourceNotFound(
                 _("No cloud resources found in trac.ini."),
                 _('Missing Cloud Resource'))
-        
+
         droplet_name = req.args.get('droplet_name', '')
         id = req.args.get('id', '')
         action = req.args.get('action', 'view')
         file = req.args.get('file', '')
-        
+
         if not droplet_name:
             droplet_name = self.default_resource
             if not droplet_name:
                 _order,droplet_name,_title = self.titles[0]
             req.redirect(req.href.cloud(droplet_name))
-        
+
         # check for valid kind
         if droplet_name not in self.droplets:
             raise ResourceNotFound(
                 _("Cloud resource '%(droplet_name)s' does not exist.",
                   droplet_name=droplet_name),
                 _('Invalid Cloud Resource'))
-            
+
         # retrieve the droplet
         droplet = self.droplets[droplet_name]
-        
+
         # route the request
         if req.method == 'POST':
             if 'cancel' in req.args:
@@ -230,25 +230,25 @@ class CloudModule(Component):
                 template,data,content_type = droplet.render_view(req, id)
                 if content_type: # i.e. alternate format
                     return template,data,content_type
-        
+
         # add contextual nav
         for _order,droplet_name,title in self.titles:
             add_ctxtnav(req, title, href=req.href.cloud(droplet_name))
-        
+
         add_stylesheet(req, 'common/css/report.css') # reuse css
         return template, data, None
 
 
 class CloudFileAjaxModule(Component):
     implements(IRequestHandler)
-    
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/cloudajax/file')
 
     def process_request(self, req):
         """Process AJAX request.  Args are:
-        
+
           path - contents should be returned as JSON
           set_time - 0 (default) or 1 sets 'now' in contents to current epoch
         """

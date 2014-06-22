@@ -17,15 +17,15 @@ class Droplet(object):
     """Generic class for a cloud resource that I'm calling a 'droplet'
     to distinguish it from Trac resources.  Droplets are controllers
     that coordinate trac, chef, and cloud behaviors."""
-    
+
     @classmethod
     def new(cls, env, name, chefapi, cloudapi, field_handlers, log):
         """Return a new droplet instance based on the class name defined
         in the droplet's trac.ini config section - e.g.,
-        
+
           [cloud.instance]
           class = Ec2Instance
-        
+
         where the name param = 'instance'.  Default options for the
         droplet are overridden by those in the trac.ini file.
         """
@@ -35,11 +35,11 @@ class Droplet(object):
         from cloud.droplet.eip_address import EipAddress #@UnusedImport
         from cloud.droplet.command import Command #@UnusedImport
         from cloud.droplet.environment import Environment #@UnusedImport
-        
+
         options = cls.options(env).get(name)
         cls = locals()[options['class']]
         return cls(name, chefapi, cloudapi, field_handlers, log, options)
-    
+
     @classmethod
     def titles(cls, env):
         """Return a list of tuples of order, droplet name, and its title."""
@@ -49,7 +49,7 @@ class Droplet(object):
             title = opts.get('title',droplet_name)
             titles.append( (order,droplet_name,title) )
         return sorted(titles)
-    
+
     @classmethod
     def options(cls, env):
         """Return a dict of all droplet options - keys are droplet names
@@ -66,25 +66,25 @@ class Droplet(object):
             opts.update(env.config.options(section))            # overrides
             options[section.replace('cloud.','',1)] = opts
         return options
-    
+
     def __init__(self, name, chefapi, cloudapi, field_handlers, log, options):
         """Parses the droplet's config file section in trac.ini.  Here's
         an example trac.ini droplet section:
-        
+
           [cloud.instance]
           class = Ec2Instance
           title = EC2 Instances
           order = 1
           label = Instance
           description = AWS EC2 instances.
-        
+
         The 'instance' in '[cloud.instance]' is the droplet name which is
         used to uniquely identify the class of cloud resources including in
         the trac url structure (e.g., /cloud/instance).
-        
+
         The 'class' value must exactly match the python class name for the
         corresponding droplet.
-        
+
         The 'title' and 'order' options are used for contextual navigation.
         The 'order' should start with 1.  If 'order' is omitted then the
         droplet will not be returned as a contextual navigation element
@@ -92,7 +92,7 @@ class Droplet(object):
         displayed in various buttons and forms for the name of a single
         droplet item.  The 'description' option is displayed in the grid
         view (much like a report description).
-        
+
         The remaining fields (not shown above) are for querying chef and
         are parsed by the Fields class.
         """
@@ -101,11 +101,11 @@ class Droplet(object):
         self.cloudapi = cloudapi
         self.log = log
         self.log.debug('Instantiating droplet %s' % name)
-        
+
         prefix = 'field.'
         self.fields = Fields(options, field_handlers, chefapi, cloudapi,
                              log, prefix)
-        
+
         for k,v in options.items():
             if k.startswith(prefix):
                 continue # handled by Fields class above
@@ -114,13 +114,13 @@ class Droplet(object):
                 continue
             setattr(self, k, v)
         self.log.info('Instantiated droplet %s' % name)
-    
+
     def render_grid(self, req):
         """Retrieve the droplets and pre-process them for rendering."""
         self.log.debug('Rendering grid..')
         index = self.grid_index
         columns = self.fields.get_list('grid_columns')
-        
+
         format = req.args.get('format')
         resource = Resource('cloud', self.name)
         context = Context.from_request(req, resource)
@@ -135,12 +135,12 @@ class Droplet(object):
         groupby_fields = [(field.label,field.name) for field in columns]
         limit = as_int(max, default_max, min=0) # explicit max takes precedence
         offset = (page - 1) * limit
-        
+
         # explicit sort takes precedence over config
         sort = groupby or req.args.get('sort', self.grid_sort)
         asc = req.args.get('asc', self.grid_asc)
         asc = bool(int(asc)) # string '0' or '1' to int/boolean
-        
+
         def droplet_href(**kwargs):
             """Generate links to this cloud droplet preserving user
             variables, and sorting and paging variables.
@@ -156,9 +156,9 @@ class Droplet(object):
             if groupby:
                 params['groupby'] = groupby
             params.update(kwargs)
-            params['asc'] = params.get('asc', asc) and '1' or '0'            
+            params['asc'] = params.get('asc', asc) and '1' or '0'
             return req.href.cloud(self.name, params)
-        
+
         data = {'action': 'view',
                 'buttons': [],
                 'resource': resource,
@@ -176,7 +176,7 @@ class Droplet(object):
                 'paginator': None,
                 'droplet_href': droplet_href,
                 }
-        
+
         try:
             self.log.debug('About to search chef..')
             sort_ = sort.strip('_') # handle dynamic attributes
@@ -190,7 +190,7 @@ class Droplet(object):
             data['message'] = _(to_unicode(msg))
             self.log.debug(data['message'])
             return 'droplet_grid.html', data, None
-        
+
         paginator = None
         if limit > 0:
             paginator = Paginator(rows, page - 1, limit, total)
@@ -201,7 +201,7 @@ class Droplet(object):
             if paginator.has_previous_page:
                 add_link(req, 'prev', droplet_href(page=page - 1),
                          _('Previous Page'))
-            
+
             pagedata = []
             shown_pages = paginator.get_shown_pages(21)
             for p in shown_pages:
@@ -213,11 +213,11 @@ class Droplet(object):
                                     'string': str(paginator.page + 1),
                                     'title': None}
             numrows = paginator.num_items
-        
+
         # Place retrieved columns in groups, according to naming conventions
         #  * _col_ means fullrow, i.e. a group with one header
         #  * col_ means finish the current group and start a new one
-        
+
         header_groups = [[]]
         for field in columns:
             header = {
@@ -232,12 +232,12 @@ class Droplet(object):
 
             header_group = header_groups[-1]
             header_group.append(header)
-        
+
         # Structure the rows and cells:
         #  - group rows according to __group__ value, if defined
         #  - group cells the same way headers are grouped
         row_groups = []
-        authorized_results = [] 
+        authorized_results = []
         prev_group_value = None
         for row_idx, item in enumerate(rows):
             col_idx = 0
@@ -272,12 +272,12 @@ class Droplet(object):
                 row_group = []
                 row_groups = [(None, row_group)]
             row_group.append(row)
-        
+
         data.update({'header_groups': header_groups,
                      'row_groups': row_groups,
                      'numrows': numrows,
                      'sorting_enabled': len(row_groups) == 1})
-# FIXME: implement formats        
+# FIXME: implement formats
 #        if format == 'rss':
 #            data['email_map'] = Chrome(self.env).get_email_map()
 #            data['context'] = Context.from_request(req, report_resource,
@@ -303,12 +303,12 @@ class Droplet(object):
 
         self.log.debug('Rendered grid')
         return 'droplet_grid.html', data, None
-    
+
     def render_view(self, req, id):
         self.log.debug('Rendering view..')
         req.perm.require('CLOUD_VIEW')
         item = self.chefapi.resource(self.crud_resource, id, self.name)
-        
+
         data = {
             'title': _('%(label)s %(id)s', label=self.label, id=id),
             'buttons': [],
@@ -321,17 +321,17 @@ class Droplet(object):
             'item': item,
             'req': req,
             'message': req.args.get('message')}
-        
+
         self.log.debug('Rendered view')
         return 'droplet_view.html', data, None
-    
+
     def render_edit(self, req, id):
         self.log.debug('Rendering edit/new..')
         if id:
             item = self.chefapi.resource(self.crud_resource, id, self.name)
         else:
             item = None
-        
+
         data = {
             'droplet_name': self.name,
             'id': id,
@@ -339,7 +339,7 @@ class Droplet(object):
             'item': item,
             'req': req,
             'error': req.args.get('error')}
-        
+
         # check if creating or editing
         if id:
             req.perm.require('CLOUD_MODIFY')
@@ -355,10 +355,10 @@ class Droplet(object):
                 'buttons': [('new',_('Create %(label)s', label=self.label))],
                 'action': 'new',
                 'fields': self.fields.get_list('crud_new')})
-        
+
         self.log.debug('Rendered edit/new')
         return 'droplet_edit.html', data, None
-    
+
     def render_delete(self, req, id):
         self.log.debug('Rendering delete..')
         req.perm.require('CLOUD_DELETE')
@@ -370,11 +370,11 @@ class Droplet(object):
             'label': self.label}
         self.log.debug('Rendered delete')
         return 'droplet_delete.html', data, None
-    
+
     def render_progress(self, req, file):
         self.log.debug('Rendering progress..')
         req.perm.require('CLOUD_MODIFY')
-        
+
         data = {
             'title': self.title,
             'label': self.label,
@@ -383,10 +383,10 @@ class Droplet(object):
             'droplet_name': self.name,
             'req': req,
             'error': req.args.get('error')}
-        
+
         self.log.debug('Rendered progress')
         return 'droplet_progress.html', data, None
-    
+
     def create(self, req):
         req.perm.require('CLOUD_CREATE')
         id = req.args.get('name')
@@ -396,7 +396,7 @@ class Droplet(object):
         add_notice(req, _('%(label)s %(id)s has been created.',
                           label=self.label, id=id))
         req.redirect(req.href.cloud(self.name, id))
-    
+
     def save(self, req, id, fields=None, redirect=True):
         req.perm.require('CLOUD_MODIFY')
         bag = self.chefapi.resource('data', name=self.name)
@@ -410,7 +410,7 @@ class Droplet(object):
             add_notice(req, _('%(label)s %(id)s has been saved.',
                               label=self.label, id=id))
             req.redirect(req.href.cloud(self.name, id))
-        
+
     def delete(self, req, id):
         req.perm.require('CLOUD_DELETE')
         self.log.debug('Deleting data bag item %s/%s..' % (self.name,id))
@@ -421,15 +421,15 @@ class Droplet(object):
         add_notice(req, _('%(label)s %(id)s has been deleted.',
                           label=self.label, id=id))
         req.redirect(req.href.cloud(self.name))
-        
+
     def audit(self, req, id=None, redirect=True):
         req.redirect(req.href.cloud(self.name))
-    
+
     def _spawn(self, req, exe, launch_data, attributes, progress_file=None):
         """Helper function to spawn processes with progress tracking."""
         if not progress_file:
             progress_file = Progress.get_file()
-        
+
         # create the command
         cmd = [
            '/usr/bin/python', exe, '--daemonize',
@@ -466,7 +466,7 @@ class Droplet(object):
         if self.chefapi.distro:
             cmd += ['--chef-distro="%s"' % self.chefapi.distro]
         cmd = ' '.join(cmd)
-        
+
         # Spawn command as daemon to launch and bootstrap instance in background
         self.log.debug('Daemonizing command: %s' % cmd)
         if subprocess.call(cmd, shell=True):
@@ -474,4 +474,3 @@ class Droplet(object):
             req.redirect(req.href.cloud(self.name))
         req.redirect(req.href.cloud(self.name, action='progress',
                                                file=progress_file))
-    

@@ -9,7 +9,7 @@ import subprocess
 class Progress(object):
     """Manages status information in a (JSON) file.  An example JSON file
     format:
-    
+
       {'title': 'Progress',
        'description': 'Progress on task blah',
        'started_by': 'rob',
@@ -20,16 +20,16 @@ class Progress(object):
        'errored_at': nil,
        'command': 'python blah blah',
        'pidfile': '/tmp/pidfile'}
-    
+
     The 'progress' attribute is a list if start and end times of the
     completed steps and the current step (which only has a start time).
     The 'id' is the id used for viewing the item.  The 'pidfile' is of
     the remote process."""
-    
+
     @staticmethod
     def get_file(prefix='progress-'):
         dir = tempfile.gettempdir()
-        
+
         # delete old progress files
         for file in os.listdir(dir):
             if file.startswith(prefix):
@@ -37,11 +37,11 @@ class Progress(object):
                 mtime = os.stat(path).st_mtime
                 if (time.time() - mtime) > 60 * 60 * 24: # 24+ hours old
                     os.remove(path)
-        
+
         # prepare the command
         f = tempfile.NamedTemporaryFile(dir=dir, prefix=prefix, delete=False)
         return f.name
-    
+
     def __init__(self, file, pidfile=None, steps=None, title=None,
                  description=None, status=None, id=None, started_by=None,
                  command=None):
@@ -60,55 +60,55 @@ class Progress(object):
                     }
         if not os.path.exists(file) or os.path.getsize(file) == 0:
             self.set(progress)
-    
+
     def pidfile(self, pidfile):
         progress = self.get()
         progress['pidfile'] = pidfile
         self.set(progress)
-    
+
     def title(self, title):
         progress = self.get()
         progress['title'] = title
         self.set(progress)
-        
+
     def description(self, description):
         progress = self.get()
         progress['description'] = description
         self.set(progress)
-        
+
     def started_by(self, started_by):
         progress = self.get()
         progress['started_by'] = started_by
         self.set(progress)
-        
+
     def steps(self, steps):
         progress = self.get()
         progress['steps'] = steps
         self.set(progress)
-        
+
     def id(self, id):
         progress = self.get()
         progress['id'] = id
         self.set(progress)
-        
+
     def error(self, msg):
         progress = self.get()
         progress['error'] = msg
         progress['errored_at'] = time.time()
         self.set(progress)
-        
+
     def command(self, command):
         progress = self.get()
         progress['command'] = command
         self.set(progress)
-        
+
     def start(self, step, start_time=None):
         """0-indexed steps."""
         step = str(step)
         progress = self.get()
         progress['status'][step] = (start_time or time.time(),None)
         self.set(progress)
-        
+
     def done(self, step, end_time=None):
         """0-indexed steps."""
         step = str(step)
@@ -116,7 +116,7 @@ class Progress(object):
         start_time = progress['status'][step][0]
         progress['status'][step] = (start_time,end_time or time.time())
         self.set(progress)
-    
+
     def is_done(self, step=None):
         """0-indexed steps."""
         progress = self.get()
@@ -128,7 +128,7 @@ class Progress(object):
         if step not in progress['status']:
             return False
         return progress['status'][step][1] and True or False
-    
+
     def kill(self, sig=signal.SIGTERM):
         """Stop/kill the daemon."""
         progress = self.get()
@@ -136,14 +136,14 @@ class Progress(object):
         pid = int(f.read().strip())
         f.close()
         os.kill(pid, sig)
-    
+
     def restart(self):
         """Restarts daemon which is expected to continue where it left off."""
         progress = self.get()
         cmd = progress['command']
         if subprocess.call(cmd):
             raise Exception("Error restarting command: %s" % cmd)
-    
+
     def lock(self, attempt=1):
         # does lock file exist and contain an active pid?
         if os.path.exists(self.lockfile):
@@ -159,16 +159,16 @@ class Progress(object):
                     time.sleep(0.2 * attempt)
                     return self.lock(attempt+1)
                 raise Exception("File still locked after %d attempts" % attempt)
-        
+
         # write pid to lock file
         pid = str(os.getpid())
         open(self.lockfile,'w').write("%s\n" % pid)
         return self.lockfile
-    
+
     def unlock(self):
         if os.path.exists(self.lockfile):
             os.remove(self.lockfile)
-    
+
     def set(self, progress):
         # lock out other concurrent writes
         self.lock()
@@ -183,7 +183,7 @@ class Progress(object):
         except:
             raise
         self.unlock()
-        
+
     def get(self, attempt=1):
         try:
             f = open(self.file, 'r')

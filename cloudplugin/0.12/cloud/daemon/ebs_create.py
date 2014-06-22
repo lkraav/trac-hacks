@@ -7,16 +7,16 @@ from cloud.daemon import Daemon
 
 class EbsCreator(Daemon):
     """Creates an ebs volume in a separate process."""
-    
+
     STEPS = [
         'Creating the ebs volume',
         'Starting up the ebs volume',
         'Applying the chef roles and attributes',
     ]
-    
+
     def __init__(self):
         Daemon.__init__(self, self.STEPS, "Create Progress")
-        
+
     def run(self, sysexit=True):
         # Step 1. Launching the ebs volume
         step = 0
@@ -27,7 +27,7 @@ class EbsCreator(Daemon):
             zone = self.launch_data['zone'],
             snapshot = self.launch_data['snapshot'])
         self.progress.done(step)
-        
+
         # update step 1 with id
         id = volume.id
         self.log.debug('Adding id %s to progress' % id)
@@ -35,7 +35,7 @@ class EbsCreator(Daemon):
         progress['id'] = id
         progress['steps'][step] += ' (%s)' % id
         self.progress.set(progress)
-        
+
         # Step 2. Starting up the ebs volume
         step += 1
         self.log.debug('Starting up the ebs volume..')
@@ -50,7 +50,7 @@ class EbsCreator(Daemon):
             self.progress.error(msg)
             sys.exit(1)
         self.progress.done(step)
-        
+
         # Step 3. Applying the chef roles and attributes
         step += 1
         self.log.debug('Applying chef roles and attributes..')
@@ -58,20 +58,20 @@ class EbsCreator(Daemon):
         self.log.debug('Saving data bag item %s/%s..' % (self.databag,id))
         bag = self.chefapi.resource('data', name=self.databag)
         item = self.chefapi.databagitem(bag, id)
-        
+
         # copy all volume's string attributes
         for field,value in volume.__dict__.items():
             if isinstance(value,unicode) or isinstance(value,str):
                 item[field.lower()] = value
-        
+
         # set the passed in attributes
         for field,value in self.attributes.items():
             item[field] = value
-            
+
         item.save()
         self.log.info('Saved data bag item %s/%s..' % (self.databag,id))
         self.progress.done(step)
-            
+
         if sysexit:
             sys.exit(0) # success
 
@@ -84,9 +84,9 @@ if __name__ == "__main__":
         else:
             daemon.run()
     except Exception, e:
-            import traceback
-            msg = "Oops.. " + traceback.format_exc()+"\n"
-            daemon.progress.error(msg)
-            daemon.log.error(msg)
-            daemon.handler.flush()
-            sys.exit(1)
+        import traceback
+        msg = "Oops.. " + traceback.format_exc()+"\n"
+        daemon.progress.error(msg)
+        daemon.log.error(msg)
+        daemon.handler.flush()
+        sys.exit(1)

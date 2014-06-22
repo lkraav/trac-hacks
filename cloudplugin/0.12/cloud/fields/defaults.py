@@ -29,7 +29,7 @@ droplet_defaults = {
     'order': 1, # order in contextual nav from left to right
     'id_field': 'name',
     'notify_jabber': '',
-    
+
     # field definitions
     'field.name': 'text',
     'field.name.label': 'Name',
@@ -73,13 +73,13 @@ droplet_defaults = {
     'field.disable_api_termination': 'checkbox',
     'field.disable_api_termination.label': 'Disable API Termination',
     'field.disable_api_termination.handler': 'BooleanHandler',
-    
+
     # create, read, update, delete views (CRUD) - chef resource name and fields
     'crud_resource': 'nodes',
     'crud_new': 'run_list, created_by, created_at, ec2.instance_type, ec2.ami_id, ec2.placement_availability_zone, cmd_volume, cmd_device, disable_api_termination',
     'crud_edit': 'run_list, created_by, created_at*, ec2.instance_type*, ec2.ami_id*, ec2.placement_availability_zone*, disable_api_termination',
     'crud_view': 'name, ec2.instance_id, run_list, created_by, created_at, ohai_time, ec2.instance_type, ec2.hostname, ec2.public_hostname, ec2.placement_availability_zone, ec2.ami_id, disable_api_termination',
-    
+
     # grid view - chef search index and fields
     'grid_index': 'node',
     'grid_columns': 'name, run_list, created_by, created_at, ohai_time, ec2.instance_type, ec2.public_hostname, ec2.placement_availability_zone, ec2.ami_id',
@@ -95,7 +95,7 @@ droplet_defaults = {
     'order': 2, # order in contextual nav from left to right
     'id_field': 'id',
     'notify_jabber': '',
-    
+
     # field definitions
     'field.id': 'text',
     'field.id.label': 'ID',
@@ -124,13 +124,13 @@ droplet_defaults = {
     'field.created_at': 'text',
     'field.created_at.label': 'Created At',
     'field.created_at.handler': 'EpochHandler',
-    
+
     # create, read, update, delete views (CRUD) - chef resource name and fields
     'crud_resource': 'data',
     'crud_new': 'name, description, zone, size, snapshot, created_by, created_at',
     'crud_edit': 'id*, name, description, zone*, size*, snapshot*, status*, instance_id, device, created_by, created_at*',
     'crud_view': 'id, name, description, zone, size, snapshot, status, instance_id, device, created_by, created_at',
-    
+
     # grid view - chef search index and fields
     'grid_index': 'ebs', # data bag name, must match droplet name
     'grid_columns': 'id, name, zone, size, status, instance_id, device, created_by, created_at',
@@ -146,7 +146,7 @@ droplet_defaults = {
     'order': 3, # order in contextual nav from left to right
     'id_field': 'id',
     'notify_jabber': '',
-    
+
     # field definitions
     'field.id': 'text',
     'field.id.label': 'ID',
@@ -165,13 +165,13 @@ droplet_defaults = {
     'field.created_at': 'text',
     'field.created_at.label': 'Created At',
     'field.created_at.handler': 'EpochHandler',
-    
+
     # create, read, update, delete views (CRUD) - chef resource name and fields
     'crud_resource': 'data',
     'crud_new': 'name, description, instance_id, created_by, created_at',
     'crud_edit': 'public_ip*, name, description, instance_id, created_by, created_at*',
     'crud_view': 'public_ip, name, description, instance_id, created_by, created_at',
-    
+
     # grid view - chef search index and fields
     'grid_index': 'eip', # data bag name, must match droplet name
     'grid_columns': 'id, public_ip, name, description, instance_id, created_by, created_at',
@@ -187,7 +187,7 @@ droplet_defaults = {
     'order': 4, # order in contextual nav from left to right
     'id_field': 'id',
     'notify_jabber': '',
-    
+
     # field definitions
     'field.id': 'text',
     'field.id.label': 'ID',
@@ -216,13 +216,13 @@ droplet_defaults = {
     'field.endpoint_port.label': 'Endpoint Port',
     'field.cmd_apply_now': 'checkbox',
     'field.cmd_apply_now.label': 'Apply Immediately',
-    
+
     # create, read, update, delete views (CRUD) - chef resource name and fields
     'crud_resource': 'data',
     'crud_new': 'id, dbname, created_by, created_at, availability_zone, multi_az, instance_class, allocated_storage',
     'crud_edit': 'id*, dbname*, created_by, created_at*, availability_zone*, multi_az, instance_class, allocated_storage, cmd_apply_now',
     'crud_view': 'id, dbname, created_by, created_at, availability_zone, multi_az, instance_class, allocated_storage, endpoint',
-    
+
     # grid view - chef search index and fields
     'grid_index': 'rds', # data bag name, must match droplet name
     'grid_columns': 'id, dbname, created_by, created_at, availability_zone, multi_az, instance_class, allocated_storage, endpoint',
@@ -239,7 +239,7 @@ droplet_defaults = {
     'id_field': 'name',
     'node_ref_field': 'alias',
     'notify_jabber': '',
-    
+
     # field definitions
     'field.name': 'text',
     'field.name.label': 'ID',
@@ -255,13 +255,13 @@ droplet_defaults = {
     'field.cmd_roles.label': 'Execute for Roles',
     'field.cmd_roles.index': 'role',
     'field.cmd_roles.handler': 'ListHandler',
-    
+
     # create, read, update, delete views (CRUD) - chef resource name and fields
     'crud_resource': 'data',
     'crud_new': 'name, description, command',
     'crud_edit': 'name*, description,  command',
     'crud_view': 'name, description, command, cmd_envs, cmd_roles',
-    
+
     # grid view - chef search index and fields
     'grid_index': 'command', # data bag name, must match droplet name
     'grid_columns': 'name, description',
@@ -278,7 +278,7 @@ droplet_defaults = {
     'id_field': 'name',
     'node_ref_field': 'alias',
     'notify_jabber': '',
-    
+
     # field definitions
     'field.order': 'text',
     'field.order.label': 'Order',
@@ -294,13 +294,13 @@ droplet_defaults = {
     'field.cmd_roles.label': 'Deploy to/Audit Roles',
     'field.cmd_roles.index': 'role',
     'field.cmd_roles.handler': 'ListHandler',
-    
+
     # create, read, update, delete views (CRUD) - chef resource name and fields
     'crud_resource': 'data',
     'crud_new': 'order, name, description, branch, rev',
     'crud_edit': 'order, name, description, branch, rev',
     'crud_view': 'order, name, description, branch, rev, cmd_roles',
-    
+
     # grid view - chef search index and fields
     'grid_index': 'env', # data bag name, must match droplet name
     'grid_columns': 'order, name, description, branch, rev',

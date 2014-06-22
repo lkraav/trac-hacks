@@ -9,14 +9,14 @@ from cloud.timer import Timer
 
 class Chef(object):
     """Wraps pychef with several conveniences including:
-    
+
       * search params and result conversion
       * data bag item ordering
       * generalized resource querying
       * generalized resource creation
       * ec2 instance bootstrapping
     """
-    
+
     def __init__(self, base_path, keypair_pem, user,
                  run_list, boot_sudo, boot_version, distro, log):
         self.base_path = os.path.abspath(base_path)
@@ -28,12 +28,12 @@ class Chef(object):
         self.distro = distro
         self.log = log
         self.chef = chef.autoconfigure(self.base_path)
-    
+
     def search(self, index, sort=None, asc=1, limit=1000, offset=0, q='*:*'):
         """Search the chefserver and return a list of dict items.  Since
         sorting only partially worked in chef 0.9 and doesn't work at all
         in chef 0.10, we do sorting here on the client."""
-        
+
         def get_value(item):
             if sort == 'name':
                 return item.name
@@ -45,7 +45,7 @@ class Chef(object):
                 return item[sort]
             except KeyError:
                 return ''
-        
+
         # convert rows to resource objects (e.g., nodes)
         timer = Timer(60.0)
         while True:
@@ -66,7 +66,7 @@ class Chef(object):
                 time.sleep(1.0)
             except chef.exceptions.ChefServerNotFoundError:
                 return [], 0
-    
+
     def resource(self, resource, id=None, name=None):
         """Query chef for a resource and return the result as a dict (or
         dict-like) record.  A dict-like record is returned for 'nodes'
@@ -94,7 +94,7 @@ class Chef(object):
                 return chef.client.Client(id, self.chef)
             return chef.client.Client.list(self.chef)
         raise Exception("Unknown resource '%s'" % resource)
-    
+
     def create(self, resource, id=None, name=None):
         """Creates the given chef resource."""
         if resource == 'nodes':
@@ -111,7 +111,7 @@ class Chef(object):
         if resource == 'clients':
             return chef.client.Client.create(id, self.chef)
         raise Exception("Unknown resource '%s'" % resource)
-    
+
     def databagitem(self, bag, id, create=False, timeout=45.0):
         """Returns the named data bag item from the provided data bag."""
         timer = Timer(timeout)
@@ -130,12 +130,12 @@ class Chef(object):
                 time.sleep(1.0)
         self.log.debug("Timeout on data bag item %s/%s" % (bag.name,id))
         return None
-    
+
     def bootstrap(self, id, hostname, run_list, timeout=900):
         """Bootstraps an ec2 instance by calling out to "knife bootstrap".
         The result should be that the ec2 instance connects with the
         chefserver.
-        
+
         This routine handles the race condition when the bootstrap tries
         to connect to the chefserver after the instance's chef-client
         starts but before it creates the client.pem file causing the
@@ -145,7 +145,7 @@ class Chef(object):
         """
         class Alarm(Exception): pass
         def alarm_handler(signum, frame): raise Alarm
-        
+
         cmd = 'export HOME=%s &&' % self.base_path
         cmd += ' knife bootstrap %s' % hostname
         cmd += ' -c %s' % os.path.join(self.base_path,'.chef','knife.rb')
@@ -162,7 +162,7 @@ class Chef(object):
             cmd += ' --bootstrap-version %s' % self.boot_version
         if self.distro:
             cmd += ' --distro %s' % self.distro
-            
+
         expected_transient_errors = [
             "409 Conflict: Client already exists",
             "409 Conflict: Node already exists",
@@ -171,7 +171,7 @@ class Chef(object):
             "Connection timed out - connect(2)",
             "Failed to authenticate",
         ]
-        
+
         attempt = 1
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(timeout)
@@ -180,13 +180,13 @@ class Chef(object):
             self.log.debug('Bootstrapping %s with command: %s' % (id,cmd))
             p = Popen(cmd, shell=True, stderr=STDOUT, stdout=PIPE)
             out = ''
-            
+
             try:
                 out = unicode(p.communicate()[0], 'utf-8', 'ignore')
                 signal.alarm(0) # clear the alarm
             except Alarm:
                 p.kill()
-            
+
             for error in expected_transient_errors:
                 if error in out:
                     self.log.info('Retrying due to transient error %s' % error)
@@ -209,10 +209,10 @@ class Chef(object):
             # timer ran out after the last (possibly only) bootstrap attempt
             self.log.info('Timed out bootstrapping %s with:\n%s' % (id,out))
             return None
-        
+
         if p.returncode != 0 or 'ERROR: Exception handlers complete' in out:
             self.log.info('Error bootstrapping %s:\n%s' % (id,out))
             return None
-        
+
         self.log.info('Bootstrapped %s (id=%s):\n%s' % (hostname,id,out))
         return chef.node.Node(id, self.chef)

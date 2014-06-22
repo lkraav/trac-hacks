@@ -16,7 +16,7 @@ class CommandError(CalledProcessError):
 
 class Ec2Commander(Daemon):
     """Executes commands for each node specified by environments and roles."""
-    
+
     def __init__(self):
         steps = ['Determining instances..']
         Daemon.__init__(self, steps, "Execution Progress", can_continue=True)
@@ -24,11 +24,11 @@ class Ec2Commander(Daemon):
             self.progress.title("Deployment Progress")
         elif self.launch_data['command_id'] == 'audit':
             self.progress.title("Auditing Progress")
-        
+
     def run(self, sysexit=True):
         self.progress.description("Executing: %s" % self.attributes['command'])
         ref_field = self.launch_data['node_ref_field']
-        
+
         # build the query
         queries = []
         envs = self.launch_data['cmd_envs']
@@ -44,7 +44,7 @@ class Ec2Commander(Daemon):
         query = '('+' OR '.join(['role:%s' % r for r in roles])+')'
         queries.append(query)
         q = ' AND '.join(queries) or '*:*'
-        
+
         self.log.debug('Querying for nodes with query %s' % q)
         nodes,_ = self.chefapi.search('node', sort=ref_field, q=q)
         if len(nodes)> 0:
@@ -66,7 +66,7 @@ class Ec2Commander(Daemon):
         else:
             self.progress.error("No nodes found for query '%s'" % q)
             sys.exit(1)
-        
+
         # send starting jabber message
         if self.launch_data['command_id'] == 'deploy':
             resource = 'env'
@@ -82,7 +82,7 @@ class Ec2Commander(Daemon):
                     (self.options.started_by,self.launch_data['command_id'],
                      len(nodes),', '.join(envs))
         self._notify_jabber(msg, resource)
-        
+
         # Execute for each instance
         step = 0
         for node in nodes:
@@ -92,7 +92,7 @@ class Ec2Commander(Daemon):
                 continue
             self.progress.start(step)
             host = node['ec2']['public_hostname']
-            
+
             # prepare the command
             self.attributes['host'] = host
             try:
@@ -101,10 +101,10 @@ class Ec2Commander(Daemon):
                 self.attributes['roles_on_host'] = self._extract_roles(node)
             self.attributes['keypair_pem'] = self.chefapi.keypair_pem
             cmd = self.attributes['command'] % self.attributes
-            
+
             # execute the command
             out = self._execute(cmd).strip()
-            
+
             # check to update step
             lastline = out.split('\n')[-1] # skips any warnings, etc.
             try:
@@ -115,25 +115,25 @@ class Ec2Commander(Daemon):
                     self.progress.set(progress)
             except:
                 pass
-            
+
             self.progress.done(step)
             step += 1
-        
+
         # send ending jabber message
         msg = "%s's %s was successfully completed" % \
                 (self.options.started_by,self.launch_data['command_id'])
         self._notify_jabber(msg, resource)
-        
+
         if sysexit:
             sys.exit(0) # success
-            
+
     def _extract_roles(self, node):
         """Extract roles from run_list"""
         roles = []
         for role in node.run_list:
             roles.append(role[5:-1])
         return ','.join(roles)
-    
+
     def _execute(self, cmd, attempt=1, max=5):
         retry_returncode = int(self.launch_data.get('retry_returncode',0))
         self.log.debug("Running: %s" % cmd)
@@ -148,7 +148,7 @@ class Ec2Commander(Daemon):
         else:
             self.log.info("%s\nSuccessfully ran: %s" % (out,cmd))
             return out
-        
+
     def _notify_jabber(self, msg, resource='command'):
         if self.launch_data['command_id'] not in self.options.notify_jabber:
             return
@@ -163,11 +163,11 @@ if __name__ == "__main__":
         else:
             daemon.run()
     except Exception, e:
-            import traceback
-            msg = "Oops.. " + traceback.format_exc()+"\n"
-            daemon.progress.error(msg)
-            daemon.log.error(msg)
-            daemon.handler.flush()
-            msg = "%s's execution errored" % daemon.options.started_by
-            daemon._notify_jabber(msg)
-            sys.exit(1)
+        import traceback
+        msg = "Oops.. " + traceback.format_exc()+"\n"
+        daemon.progress.error(msg)
+        daemon.log.error(msg)
+        daemon.handler.flush()
+        msg = "%s's execution errored" % daemon.options.started_by
+        daemon._notify_jabber(msg)
+        sys.exit(1)

@@ -2,7 +2,7 @@
 # http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 
 import sys, os, time, atexit
-from signal import SIGTERM 
+from signal import SIGTERM
 import json
 import tempfile
 import logging
@@ -21,7 +21,7 @@ class Daemon(object):
     """
     A generic daemon class with added support for chef/cloud apis and
     communicating with other processes via a progress file.
-    
+
     Usage: subclass the Daemon class and override the run() method
     """
     def __init__(self, steps, title, description='', can_continue=False):
@@ -56,7 +56,7 @@ class Daemon(object):
         parser.add_option("--jabber-password")
         parser.add_option("--jabber-channel")
         (self.options, _args) = parser.parse_args()
-        
+
         # setup logging (presumes something else will rotate it)
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.setLevel(self.options.log_level)
@@ -65,7 +65,7 @@ class Daemon(object):
         format = "%(asctime)s %(name)s[%(process)d] %(levelname)s: %(message)s"
         self.handler.setFormatter(logging.Formatter(format))
         self.log.addHandler(self.handler)
-        
+
         # setup apis
         self.chefapi = Chef(self.options.chef_base_path,
                                self.options.aws_keypair_pem,
@@ -75,7 +75,7 @@ class Daemon(object):
                                self.options.chef_boot_version,
                                self.options.chef_distro,
                                self.log)
-        
+
         self.cloudapi = Aws(self.options.aws_key,
                                self.options.aws_secret,
                                self.options.aws_keypair,
@@ -83,12 +83,12 @@ class Daemon(object):
                                self.options.rds_username,
                                self.options.rds_password,
                                self.log)
-        
+
         # prepare the data
         self.databag = self.options.databag
         self.launch_data = json.loads(self.options.launch_data)
         self.attributes = json.loads(self.options.attributes)
-        
+
         # prepare progress
         command = ''
         if can_continue:
@@ -100,43 +100,43 @@ class Daemon(object):
                                  started_by=self.options.started_by,
                                  command=command)
         self.progress.pidfile(self.pidfile) # in case this is a restart
-        
-    
+
+
     def daemonize(self):
         """
-        do the UNIX double-fork magic, see Stevens' "Advanced 
+        do the UNIX double-fork magic, see Stevens' "Advanced
         Programming in the UNIX Environment" for details (ISBN 0201563177)
         http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
         """
-        try: 
-            pid = os.fork() 
+        try:
+            pid = os.fork()
             if pid > 0:
                 # exit first parent
                 sys.exit(0)
-        except OSError, e: 
+        except OSError, e:
             self.log.critical("fork 1 failed: %d (%s)\n" %(e.errno, e.strerror))
             sys.exit(1)
-    
+
         # decouple from parent environment
-        os.chdir("/") 
-        os.setsid() 
-        os.umask(0) 
-    
+        os.chdir("/")
+        os.setsid()
+        os.umask(0)
+
         # do second fork
-        try: 
-            pid = os.fork() 
+        try:
+            pid = os.fork()
             if pid > 0:
                 # exit from second parent
-                sys.exit(0) 
-        except OSError, e: 
+                sys.exit(0)
+        except OSError, e:
             self.log.critical("fork 2 failed: %d (%s)\n" %(e.errno, e.strerror))
-            sys.exit(1) 
-        
+            sys.exit(1)
+
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
         file(self.pidfile,'w+').write("%s\n" % pid)
-    
+
     def delpid(self):
         os.remove(self.pidfile)
 
@@ -151,12 +151,12 @@ class Daemon(object):
             pf.close()
         except (IOError, ValueError):
             pid = None
-    
+
         if pid:
             message = "pidfile %s already exist. Daemon already running?\n"
             self.log.critical(message % self.pidfile)
             sys.exit(1)
-        
+
         # Start the daemon
         self.daemonize()
         self.run()
@@ -172,13 +172,13 @@ class Daemon(object):
             pf.close()
         except IOError:
             pid = None
-    
+
         if not pid:
             message = "pidfile %s does not exist. Daemon not running?\n"
             self.log.critical(message % self.pidfile)
             return # not an error in a restart
 
-        # Try killing the daemon process    
+        # Try killing the daemon process
         try:
             while 1:
                 os.kill(pid, SIGTERM)
@@ -204,12 +204,12 @@ class Daemon(object):
         You should override this method when you subclass Daemon. It will be
         called after the process has been daemonized by start() or restart().
         """
-        
+
     def notify_jabber(self, message, resource='command', ignore_errors=True):
         """Sends a message to a jabber channel."""
         if not self.options.notify_jabber:
             return
-        
+
         # append progress url to message
         if not self.options.trac_base_url.endswith('/'):
             self.options.trac_base_url += '/'
@@ -217,21 +217,21 @@ class Daemon(object):
                 'cloud/%s?action=progress&file=%s' % \
                 (resource,self.options.progress_file)
         message += ': %s' % url
-        
+
         try:
             # send message
             jid = xmpp.protocol.JID(self.options.jabber_username)
             cl = xmpp.Client(jid.getDomain(), debug=[])
-            
+
             server = (self.options.jabber_server,int(self.options.jabber_port))
             if not cl.connect(server=server, use_srv=False):
                 raise Exception("Could not connect to jabber server %s:%s" % \
                                     server)
-                
+
             if not cl.auth(jid.getNode(), self.options.jabber_password):
                 raise Exception("Could not authenticate jabber user '%s'" % \
                                     self.options.jabber_username)
-            
+
             user = self.options.jabber_username.split('@')[0]
             cl.send(xmpp.Presence('%s/%s' % (self.options.jabber_channel,user)))
             #cl.sendInitPresence(requestRoster=0)
