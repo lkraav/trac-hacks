@@ -17,7 +17,7 @@ setup(
     name=PACKAGE, version=VERSION,
     description='Analyzes tickets for dependency and other problems',
     author="Rob Guttman", author_email="guttman@alum.mit.edu",
-    license='3-Clause BSD', url='http://trac-hacks.org/wiki/TracAnalyzePlugin',
+    license='3-Clause BSD', url='http://trac-hacks.org/wiki/AnalyzePlugin',
     packages = ['analyze'],
     package_data = {'analyze':['analyses/*.py','templates/*.html',
                                'htdocs/*.css','htdocs/*.js']},
