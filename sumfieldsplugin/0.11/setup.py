@@ -18,7 +18,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    
+
     install_requires = [],
 
     entry_points = {

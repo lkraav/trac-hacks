@@ -31,7 +31,7 @@ class QuietEmailDistributor(EmailDistributor):
         if hasattr(event, 'author') and self._is_quiet_mode(event.author):
             return
         EmailDistributor.distribute(self, transport, recipients, event)
-    
+
     def _is_quiet_mode(self, user):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
@@ -45,19 +45,19 @@ class QuietEmailDistributor(EmailDistributor):
         if not result:
             return False
         return result[0] == '1'
-        
+
 
 class QuietBase(object):
     """Shared class for common methods."""
-    
+
     enter_label = Option('quiet', 'enter_label', _('Enter Quiet Mode'))
     leave_label = Option('quiet', 'leave_label', _('Leave Quiet Mode'))
-    
+
     def _get_label(self, req, is_quiet=None):
         if is_quiet is None:
             is_quiet = self._is_quiet(req)
         return is_quiet and _(self.leave_label) or _(self.enter_label)
-    
+
     def _set_quiet_action(self, req, action):
         if action == 'toggle':
             return self._set_quiet(req, not self._is_quiet(req))
@@ -65,12 +65,12 @@ class QuietBase(object):
             return self._set_quiet(req, action == 'enter')
         else:
             return self._is_quiet(req)
-    
+
     def _is_quiet(self, req):
         """Returns true if the user requested quiet mode."""
         val = req.session.get(MODE, '0')
         return val == '1'
-    
+
     def _set_quiet(self, req, yes):
         """Set or unset quiet mode for the user."""
         val = yes and '1' or '0'
@@ -81,8 +81,8 @@ class QuietBase(object):
 
 class QuietModule(Component, QuietBase):
     implements(IRequestFilter, ITemplateProvider, IPermissionRequestor)
-        
-    # IPermissionRequestor methods  
+
+    # IPermissionRequestor methods
     def get_permission_actions(self):
         return ['QUIET_MODE']
 
@@ -97,7 +97,7 @@ class QuietModule(Component, QuietBase):
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         if req.perm.has_permission('QUIET_MODE') and \
                 (req.path_info.startswith('/ticket') or
@@ -117,11 +117,11 @@ class QuietModule(Component, QuietBase):
 
 class QuietAjaxModule(Component, QuietBase):
     implements(IRequestHandler)
-    
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/' + MODE)
-    
+
     def process_request(self, req):
         try:
             action = req.path_info[req.path_info.rfind('/') + 1:]
@@ -135,18 +135,18 @@ class QuietAjaxModule(Component, QuietBase):
 
 class QuietListenerAjaxModule(Component):
     implements(IRequestHandler)
-    
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/' + LISTEN)
-    
+
     def process_request(self, req):
         try:
             data = self._get_listeners(req)
             process_json(req, data)
         except Exception:
             process_error(req)
-    
+
     def _get_listeners(self, req):
         listeners = []
         for key, action in self.env.config.options('quiet'):
