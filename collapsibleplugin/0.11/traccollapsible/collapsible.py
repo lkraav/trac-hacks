@@ -14,17 +14,9 @@
 
 __author__ = 'Matthew Noyes'
 
-from genshi.builder import tag
-
 from trac.core import *
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
-from StringIO import StringIO
-from trac.wiki.formatter import format_to_html
-from trac.util import TracError
-from trac.util.text import to_unicode
-from trac.wiki.model import WikiPage
-from trac.wiki.web_ui import WikiModule
 
 __all__ = ['CollapsiblePlugin']
 
@@ -48,6 +40,7 @@ class CollapsibleStartMacro(WikiMacroBase):
         return("<div> " +
                "<h3 class=\"foldable\">" + title + "</h3>" +
                "<div>")
+
 
 class CollapsibleEndMacro(WikiMacroBase):
     r"""CollapsibleEndMacro marks the end of a collapsible list

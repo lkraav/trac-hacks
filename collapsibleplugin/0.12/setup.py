@@ -63,7 +63,7 @@ if version < '2.2.3':
     DistributionMetadata.download_url = None
 
 DIST_NM = 'TracCollapsiblePlugin'
-PKG_INFO = {'traccollapsible' : ('traccollapsible',                     # Package dir
+PKG_INFO = {'traccollapsible' : ('traccollapsible',  # Package dir
                                  # Package data
                                  ['../CHANGES', '../TODO', '../COPYRIGHT', 
                                   '../NOTICE', '../README'],
