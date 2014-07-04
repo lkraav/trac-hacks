@@ -223,17 +223,7 @@ class VcsReleaseInfoMacro(WikiMacroBase):
                 else:
                     release_link = ""
 
-                items.append(
-                    " * '''%(date)s'''"
-                    " [/log%(path)s/tags/%(new_tag)s %(new_tag)s] "
-                    " @[changeset:%(rev)s/%(reponame)s %(rev)s]"
-                    " by %(author)s"
-                    " ("
-                    "[/log%(path)s/trunk?revs=%(frev)s-%(lrev)s changes]"
-                    " [/changeset?old_path=%(path)s/tags/%(old_tag)s&new_path=%(path)s/tags/%(new_tag)s diffs]"
-                    "%(release_link)s"
-                    ")"
-                % {
+                params = {
                     'reponame' : reponame,
                     'path': path,
                     'date': cur['time'].strftime('%Y-%m-%d'),
@@ -244,8 +234,25 @@ class VcsReleaseInfoMacro(WikiMacroBase):
                     'new_tag' : cur['version'],
                     'author': cur['author'],
                     'release_link' : release_link,
+                }
 
-                })
+                if next['frev']:
+                    params['changes'] = "[/log%(path)s/trunk?revs=%(frev)s-%(rev)s changes]" % params
+                else:
+                    params['changes'] = "changes"
+
+                items.append(
+                    " * '''%(date)s'''"
+                    " [/log%(path)s/tags/%(new_tag)s %(new_tag)s] "
+                    " @[changeset:%(rev)s/%(reponame)s %(rev)s]"
+                    " by %(author)s"
+                    " ("
+                    "%(changes)s"
+                    " [/changeset?old_path=%(path)s/tags/%(old_tag)s&new_path=%(path)s/tags/%(new_tag)s diffs]"
+                    "%(release_link)s"
+                    ")" % params
+                )
+
                 url = self.specurl_annotate(cur);
                 if url != None:
                     annotate = " spec: [%s annotate]" % url
