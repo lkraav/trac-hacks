@@ -157,8 +157,9 @@ class SmpRoadmapProject(Component):
 
             div_milestone = ''
             
-            if can_show and len(projects[project_name]) > 0:
-                if has_access:
+            if has_access:            
+                if can_show and len(projects[project_name]) > 0:
+
                     for milestone in projects[project_name]:
                         mi = '<em>%s</em>' % milestone
                         for i in range(len(div_milestones_array)):
