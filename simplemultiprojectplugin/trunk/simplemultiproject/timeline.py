@@ -62,7 +62,8 @@ class SmpTimelineProjectFilter(Component):
                                     event['render'] = self._render_ticket_event
                                 #add to the list of displayed events
                                 filtered_events.append(event)
-                        
+                        elif resource.realm == "wiki":
+                            filtered_events.append(event)
                     else:
                         filtered_events.append(event)
     
