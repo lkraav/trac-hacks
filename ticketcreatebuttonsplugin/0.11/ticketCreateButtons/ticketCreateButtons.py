@@ -16,10 +16,10 @@ class TicketCreateButtons(Component):
     ticket.  The plugin handles all *.tag values in that section.  The
     values are as follows:
 
-    tag : An argument to genshi.filters.Transfomer used to find the
+    tag : An argument to genshi.filters.Transformer used to find the
       ticket form element to which the button will be prepended.
       Typically this is a custom field name.  For example,
-      .//td[@headers="h_blockedby"] for the MasterTickets blockedBy
+      `.//td[@headers="h_blockedby"]` for the !MasterTickets blockedBy
       field.
     label : The label for the button (e.g., "Create")
     title : The HTML title element used as a tool tip for the button
@@ -42,6 +42,7 @@ class TicketCreateButtons(Component):
 
     Example:
 
+    {{{#!ini
     [ticket-create-buttons]
     blocking.tag = .//td[@headers="h_blocking"]
     blocking.label = Create
@@ -49,6 +50,7 @@ class TicketCreateButtons(Component):
     blocking.inherit = type, owner, reporter, milestone, component
     blocking.link = blockedby:id
     blocking.set = keywords:Foo
+    }}}
     """
        
     implements(ITemplateStreamFilter)
