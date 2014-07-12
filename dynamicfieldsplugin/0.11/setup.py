@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2010-2013 Rob Guttman <guttman@alum.mit.edu>
+# Copyright (C) 2010-2014 Rob Guttman <guttman@alum.mit.edu>
+# All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
@@ -17,7 +18,7 @@ setup(
     description='Dynamically hide, default, copy, clear,' +\
                 ' validate, set ticket fields',
     author="Rob Guttman", author_email="guttman@alum.mit.edu",
-    license='GPL', url='http://trac-hacks.org/wiki/DynamicFieldsPlugin',
+    license='3-Clause BSD', url='http://trac-hacks.org/wiki/DynamicFieldsPlugin',
     packages = ['dynfields'],
     package_data = {'dynfields':['templates/*.html',
                                  'htdocs/*.js','htdocs/*.css']},
