@@ -17,7 +17,7 @@ setup(
     name=PACKAGE, version=VERSION,
     description='Orchestrates AWS cloud resources via Chef',
     author="Rob Guttman", author_email="guttman@alum.mit.edu",
-    license='GPL', url='http://trac-hacks.org/wiki/CloudPlugin',
+    license='3-Clause BSD', url='http://trac-hacks.org/wiki/CloudPlugin',
     packages = ['cloud'],
     package_data = {'cloud':['api/*.py',
                              'daemon/*.py',
