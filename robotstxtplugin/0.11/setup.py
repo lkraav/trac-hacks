@@ -1,5 +1,13 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006-2009 Noah Kantrowitz <noah@coderanger.net>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 import os
 
 from setuptools import setup
@@ -13,7 +21,7 @@ setup(
     author_email = 'noah@coderanger.net',
     description = 'Serve a robots.txt file from Trac.',
     long_description = open(os.path.join(os.path.dirname(__file__), 'README')).read(),
-    license = 'BSD',
+    license = '3-Clause BSD',
     keywords = 'trac plugin robots',
     url = 'http://trac-hacks.org/wiki/RobotsTxtPlugin',
     download_url = 'http://trac-hacks.org/svn/robotstxtplugin/0.11#egg=TracRobotsTxt-dev',
