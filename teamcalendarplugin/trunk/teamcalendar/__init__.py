@@ -1,0 +1,1 @@
+from teamcalendarplugin.trunk.teamcalendar import calendar
