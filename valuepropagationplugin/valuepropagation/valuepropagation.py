@@ -1,21 +1,10 @@
-# Copyright 2010 SIXNET, LLC.
+# -*- coding: utf-8 -*-
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 3
-# of the License, or (at your option) any later version.
+# Copyright (C) 2010 Chris Nelson <Chris.Nelson@SIXNET.com>
+# All rights reserved.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the
-# Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor,
-# Boston, MA  02110-1301
-# USA
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 """
 ValuePropagation Plugin
@@ -112,8 +101,8 @@ class ValuePropagationPlugin(Component):
 
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.execute("SELECT name," + 
-                       db.cast('value', 'int') + 
+        cursor.execute("SELECT name," +
+                       db.cast('value', 'int') +
                        " FROM enum WHERE type=%s", ('priority',))
         for name, value in cursor:
             self.p_values[name] = value
@@ -176,7 +165,7 @@ class ValuePropagationPlugin(Component):
                     dft = other[field]
                     self.env.log.debug("dft set to %s" % dft)
             return dft
-                
+
         # When my value changes, replace my old value at the end of
         # other's value.
         def _method_suffix(ticket, old_values, f, t, oldOther, newOther, options):
@@ -314,7 +303,7 @@ class ValuePropagationPlugin(Component):
                         old_values[f] = self.p_values[old_values[self.enums[f]]]
 
                 # Call the method for the propagated field
-                method=self.config.get('value_propagation','%s.method.%s' % 
+                method=self.config.get('value_propagation','%s.method.%s' %
                                        (relation, f))
                 if method in self.methods:
                     options = self.config.options('value_propagation')
@@ -353,7 +342,6 @@ class ValuePropagationPlugin(Component):
             if newOther != oldOther:
                 _update_ticket(oldOther)
 
-
     # ITicketChangeListener methods
 
     def ticket_created(self, ticket):
@@ -374,6 +362,6 @@ class ValuePropagationPlugin(Component):
                 else:
                     self.env.log.debug("%s has an unknown type '%s'" % (n, v))
 
-        
+
     def ticket_deleted(self, ticket):
         self.env.log.debug("valuePropagation noted ticket %d deleted", ticket.id)
