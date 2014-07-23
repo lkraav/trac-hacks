@@ -1,16 +1,22 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2010 Chris Nelson
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 from trac.core import *
 from trac.web.api import ITemplateStreamFilter
 
 from genshi.builder import tag
 from genshi.filters import Transformer
 
-revision = "$Rev$"
-url = "$URL$"
 
 class TicketCreateButtons(Component):
     """Add a buttons to the ticket box to create related tickets which
     inherit some values from the current ticket.
-    
+
     The [tickets-create-buttons] section of trac.ini can be used to
     add buttons which create a new ticket based on the current
     ticket.  The plugin handles all *.tag values in that section.  The
@@ -28,7 +34,7 @@ class TicketCreateButtons(Component):
       inherited from the current ticket.  If not present, all fields
       are inherited.  if present but blank, no fields are inherited.
       Otherwise, the listed fields are inherited.
-    
+
     link : A comma-separated list of pairs of fields used to link the
       two tickets.  Each element is in the form newfield:currentfield.
       For example, blockedby:id sets the new ticket's blockedby field
@@ -52,7 +58,7 @@ class TicketCreateButtons(Component):
     blocking.set = keywords:Foo
     }}}
     """
-       
+
     implements(ITemplateStreamFilter)
 
     # ITemplateStreamFilter methods
@@ -89,7 +95,7 @@ class TicketCreateButtons(Component):
         # Values inherited from the current ticket
         # No setting: all, blank setting: none, Otherwise: the fields listed
         inherit=self.config.getlist('ticket-create-buttons',
-                                    '%s.inherit' % b, 
+                                    '%s.inherit' % b,
                                     default=data.keys())
         for f in inherit:
             fields[f]=ticket[f]
@@ -119,6 +125,6 @@ class TicketCreateButtons(Component):
                 [tag.input(type="hidden", name=n, value=v) for n, v in
                  fields.items()],
                 class_="inlinebuttons"),
-            # With "post" here instead of "get" the ticket is previewed and 
+            # With "post" here instead of "get" the ticket is previewed and
             # we get a warning about the missing summary.
             method="get", action=req.href.newticket())
