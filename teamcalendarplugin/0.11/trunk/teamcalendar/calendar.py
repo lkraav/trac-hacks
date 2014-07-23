@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2008 Martin Aspeli <optilude@gmail.com>
+# Copyright (C) 2012 Chris Nelson <Chris.Nelson@SIXNET.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 import time
 import re
 from datetime import date, timedelta
@@ -10,6 +19,7 @@ from trac.perm import PermissionSystem, IPermissionRequestor
 from trac.core import Component, implements
 from trac.web import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet
+
 
 class TeamCalendar(Component):
     implements(INavigationContributor, IRequestHandler, IPermissionRequestor, ITemplateProvider)
@@ -66,10 +76,10 @@ class TeamCalendar(Component):
                                  'FROM %s '
                                  'WHERE ondate >= %%s AND ondate <= %%s '
                                  'GROUP BY ondate, username, availability' % \
-                                     self.table_name, 
-                                      (from_date.isoformat(), 
+                                     self.table_name,
+                                      (from_date.isoformat(),
                                       to_date.isoformat(),))
-        
+
         empty_day = dict([(p, 0.0) for p in people])
         full_day = dict([(p, 1.0) for p in people])
 
@@ -85,15 +95,15 @@ class TeamCalendar(Component):
             else:
                 timetable[current_date] = empty_day.copy()
             current_date += timedelta(1)
-            
+
         for row in timetable_cursor:
             timetable[row[0]][row[1]] = row[2]
-            
+
         return timetable
-        
+
     # tuples is a list of arrays.
     # each array is (datetime, user, true/false).  For example:
-    #  [(datetime.date(2011, 11, 28), u'admin', False), 
+    #  [(datetime.date(2011, 11, 28), u'admin', False),
     #   (datetime.date(2011, 11, 28), u'chrisn', True),
     #   (datetime.date(2011, 11, 29), u'admin', False),
     #   (datetime.date(2011, 11, 29), u'chrisn', True)]
@@ -178,29 +188,29 @@ class TeamCalendar(Component):
 
         if len(inserts) or len(updates):
             db.commit()
-    
+
     def string_to_date(self, date_str, fallback=None):
         try:
             date_tuple = time.strptime(date_str, '%Y-%m-%d')
             return date(date_tuple[0], date_tuple[1], date_tuple[2])
         except ValueError:
             return fallback
-    
+
     def find_default_start(self):
         today = date.today()
         offset = (today.isoweekday() - 1) + (7 * int(self.weeks_prior))
         return today - timedelta(offset)
-        
+
     def find_default_end(self):
         today = date.today()
         offset = (7 - today.isoweekday()) + (7 * int(self.weeks_after))
         return today + timedelta(offset)
-    
+
     def process_request(self, req):
         req.perm.require('TEAMCALENDAR_VIEW')
-        
+
         data = {}
-                
+
         from_date = self.string_to_date(req.args.get('from_date', ''), self.find_default_start())
         to_date = self.string_to_date(req.args.get('to_date', ''), self.find_default_end())
 
@@ -220,14 +230,14 @@ class TeamCalendar(Component):
         data['today'] = date.today()
         data['from_date'] = from_date
         data['to_date'] = to_date
-        
+
         # Get all people
         data['people'] = people = self.get_people()
-        
+
         # Update timetable if required
         if 'update_calendar' in req.args:
             req.perm.require('TEAMCALENDAR_UPDATE_OWN')
-            
+
             # deliberately override dates: want to show result of update
             from_date = current_date = self.string_to_date(req.args['orig_from_date'])
             to_date = self.string_to_date(req.args['orig_to_date'])
@@ -244,15 +254,15 @@ class TeamCalendar(Component):
 
             self.update_timetable(tuples)
             data['message'] = "Updated database."
-        
+
         # Get the current timetable
         timetable = self.get_timetable(from_date, to_date, people)
-        
+
         data['timetable'] = []
         current_date = from_date
         while current_date <= to_date:
             data['timetable'].append(dict(date=current_date, people=timetable[current_date]))
             current_date += timedelta(1)
-        
+
         add_stylesheet(req, 'teamcalendar/css/calendar.css')
         return 'teamcalendar.html', data, None
