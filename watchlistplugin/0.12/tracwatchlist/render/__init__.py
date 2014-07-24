@@ -134,7 +134,7 @@ try:
                 old = obfuscate_email_address(old)
                 new = obfuscate_email_address(new)
         # Added by MS
-        # The `wtag_` is the `tag_` from tracwatchlist.translation, e.g. 
+        # The `wtag_` is the `tag_` from tracwatchlist.translation, e.g.
         # using its translation domain.
         if field == 'attachment':
             rendered = wtag_("%(value)s added", value=tag.em(new))

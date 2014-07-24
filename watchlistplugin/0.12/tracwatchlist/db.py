@@ -69,9 +69,9 @@ class WatchlistDataBaseUpgrader(Component):
 
     def environment_needs_upgrade(self, db):
         """Tests if watchlist tables must be upgraded."""
-        if not self.watchlist_table_exists(db):
+        if not self.table_exists('watchlist', db):
             return True
-        if not self.settings_table_exists(db):
+        if not self.table_exists('watchlist_settings', db):
             return True
         version = self.get_version(db)
         if version < self.latest_version:
@@ -96,7 +96,7 @@ class WatchlistDataBaseUpgrader(Component):
         """Upgrades watchlist table to current version."""
         self.log.info("Attempting upgrade of watchlist table from v%i to v%i" % (old_version,new_version))
         db = db or self.env.get_db_cnx()
-        if not self.watchlist_table_exists(db):
+        if not self.table_exists('watchlist', db):
             self.create_watchlist_table(db)
             return
         if old_version == new_version:
@@ -115,7 +115,7 @@ class WatchlistDataBaseUpgrader(Component):
         self.log.info("Attempting upgrade of watchlist table from v%i to v%i" % (old_version,new_version))
         db = db or self.env.get_db_cnx()
 
-        if not self.settings_table_exists(db):
+        if not self.table_exists('watchlist_settings', db):
             self.create_settings_table(db)
             return
 
@@ -179,7 +179,7 @@ class WatchlistDataBaseUpgrader(Component):
                 DELETE
                 FROM system
                 WHERE name='watchlist_version'
-            """);
+            """)
         except Exception as e:
             db.rollback()
             self.log.warn(unicode(e))
@@ -188,7 +188,7 @@ class WatchlistDataBaseUpgrader(Component):
                 INSERT
                 INTO system (name,value)
                 VALUES ('watchlist_version',%s)
-            """, (unicode(version),) );
+            """, (unicode(version),) )
         except Exception as e:
             db.rollback()
             self.log.error("Could not set watchlist_version: " + unicode(e))
@@ -220,30 +220,14 @@ class WatchlistDataBaseUpgrader(Component):
         db.commit()
         return
 
-
-    def watchlist_table_exists(self, db=None):
+    def table_exists(self, table, db=None):
+        dburi = self.config.get('trac', 'database')
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
-        try:
-            cursor.execute("SELECT count(*) FROM watchlist")
+        tables = self._get_tables(dburi, cursor)
+        if table in tables:
             return True
-        except:
-            db.rollback()
-            self.log.info("No previous watchlist table found")
-            return False
-
-
-    def settings_table_exists(self, db=None):
-        db = db or self.env.get_db_cnx()
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT count(*) FROM watchlist_settings")
-            return True
-        except:
-            db.rollback()
-            self.log.info("No previous watchlist_settings table found")
-            return False
-
+        return False  # This is a new installation.
 
     def upgrade_watchlist_table_from_v0_to_v4(self, db=None):
         self.upgrade_watchlist_table_to_v4('*', db)
@@ -366,5 +350,28 @@ class WatchlistDataBaseUpgrader(Component):
         db.commit()
         self.log.info("Upgraded 'watchlist_settings' table to version 4")
         return
+
+    def _get_tables(self, dburi, cursor):
+        """Code from TracMigratePlugin by Jun Omae (see tracmigrate.admin)."""
+        if dburi.startswith('sqlite:'):
+            sql = """
+                SELECT name
+                  FROM sqlite_master
+                 WHERE type='table'
+                   AND NOT name='sqlite_sequence'
+            """
+        elif dburi.startswith('postgres:'):
+            sql = """
+                SELECT tablename
+                  FROM pg_tables
+                 WHERE schemaname = ANY (current_schemas(false))
+            """
+        elif dburi.startswith('mysql:'):
+            sql = "SHOW TABLES"
+        else:
+            raise TracError('Unsupported database type "%s"'
+                            % dburi.split(':')[0])
+        cursor.execute(sql)
+        return sorted([row[0] for row in cursor])
 
 # EOF
