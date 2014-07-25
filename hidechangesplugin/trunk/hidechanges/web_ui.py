@@ -1,7 +1,17 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2011 Rob Guttman <guttman@alum.mit.edu>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
+from trac.config import Option
 from trac.core import *
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
-from trac.config import Option
+from trac.web.chrome import ITemplateProvider, add_script
+
 
 class HideChangesModule(Component):
     """Hides/shows ticket changes using JS based on configurable rules."""
