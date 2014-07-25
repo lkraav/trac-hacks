@@ -1,3 +1,10 @@
+<!--!
+  Copyright (C) 2011-2012 Rob Guttman <guttman@alum.mit.edu>
+  All rights reserved.
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+-->
 <script type="text/javascript" xmlns="http://www.w3.org/1999/xhtml"
       xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:py="http://genshi.edgewall.org/" py:strip="">
@@ -5,24 +12,24 @@
 jQuery(document).ready(function(){
     // "convert" prefs text inputs (if any) to a select dropdown
     <py:for each="var,options in data.vars.items()">
-	if (${len(options)} != 0){
-	    var input = jQuery('#prefs input[name=${var}]');
-	    if (input.length != 0){
-	        var html = '<select id="${var}">'
-	                      <py:for each="option in options" py:with="opt = option.replace('\'','\\\'')">
-	                  +'  <option value="${opt}">${opt}</option>'
-	                      </py:for>
-	                  +'</select>';
-	        input.after(html).hide();
-	        jQuery('#${var}').val(input.val()).change(function(){
-				var select = jQuery(this);
-				var name = select.attr('id');
-				var input = jQuery('#prefs input[name='+name+']');
-	            input.val(select.val()); // set hidden text input
-	            input.parents('form:first').submit();
-	        });
-	    }
-	}
+  if (${len(options)} != 0){
+      var input = jQuery('#prefs input[name=${var}]');
+      if (input.length != 0){
+          var html = '<select id="${var}">'
+                        <py:for each="option in options" py:with="opt = option.replace('\'','\\\'')">
+                    +'  <option value="${opt}">${opt}</option>'
+                        </py:for>
+                    +'</select>';
+          input.after(html).hide();
+          jQuery('#${var}').val(input.val()).change(function(){
+        var select = jQuery(this);
+        var name = select.attr('id');
+        var input = jQuery('#prefs input[name='+name+']');
+              input.val(select.val()); // set hidden text input
+              input.parents('form:first').submit();
+          });
+      }
+  }
     </py:for>
 });
 </script>
