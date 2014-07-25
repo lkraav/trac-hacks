@@ -1,7 +1,17 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2010-2013 Rob Guttman <guttman@alum.mit.edu>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
+from trac.config import ListOption
 from trac.core import *
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
-from trac.config import ListOption
+from trac.web.chrome import ITemplateProvider, add_script
+
 
 class SumFieldsModule(Component):
     """A module that sums fields/columns using JS/jQuery."""
