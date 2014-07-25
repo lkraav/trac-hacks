@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2011-2013 Rob Guttman <guttman@alum.mit.edu>
+# Copyright (C) 2011-2012 Rob Guttman <guttman@alum.mit.edu>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
+#
 
 from setuptools import setup, find_packages
 
@@ -18,7 +19,7 @@ setup(
     description='Toggles quiet (no email) mode for Announcer plugin',
     author="Rob Guttman",
     author_email="guttman@alum.mit.edu",
-    license='GPL',
+    license='3-Clause BSD',
     url='http://trac-hacks.org/wiki/TracQuietPlugin',
     packages=['quiet'],
     package_data={'quiet': ['htdocs/*.js', 'htdocs/*.css', 'htdocs/*.png']},
