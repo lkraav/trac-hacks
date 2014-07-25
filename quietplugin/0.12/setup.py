@@ -20,7 +20,7 @@ setup(
     author="Rob Guttman",
     author_email="guttman@alum.mit.edu",
     license='3-Clause BSD',
-    url='http://trac-hacks.org/wiki/TracQuietPlugin',
+    url='http://trac-hacks.org/wiki/QuietPlugin',
     packages=['quiet'],
     package_data={'quiet': ['htdocs/*.js', 'htdocs/*.css', 'htdocs/*.png']},
     entry_points={'trac.plugins': ['quiet.web_ui = quiet.web_ui']}
