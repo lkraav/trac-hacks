@@ -18,7 +18,7 @@ setup(
     description='Graphs tables and other data using Google Visualization API',
     author="Rob Guttman", author_email="guttman@alum.mit.edu",
     license='3-Clause BSD',
-    url='http://trac-hacks.org/wiki/TracVisualizationPlugin',
+    url='http://trac-hacks.org/wiki/VisualizationPlugin',
     packages = ['viz'],
     package_data = {'viz':['templates/*.html','htdocs/*.css','htdocs/*.js']},
     entry_points = {'trac.plugins':['viz.web_ui = viz.web_ui']}
