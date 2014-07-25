@@ -1,8 +1,12 @@
 #! /usr/bin/python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Sample sync utility for sqlite3 dbs and git repos that updates the
-# codereviewer_map table.
+# Copyright (C) 2012 Rob Guttman <guttman@alum.mit.edu>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 import os
 import re
