@@ -66,7 +66,7 @@ class CodeExample(Component):
 
     will be rendered as:
 
-    [[Image(//chrome/ce/img/example1.png)]]
+    [[Image(/chrome/ce/img/example1.png)]]
 
     The incorrect example:
     {{{
@@ -80,7 +80,7 @@ class CodeExample(Component):
 
     will be rendered as:
 
-    [[Image(//chrome/ce/img/example2.png)]]
+    [[Image(/chrome/ce/img/example2.png)]]
 
     The correct example:
     {{{
@@ -94,7 +94,7 @@ class CodeExample(Component):
 
     will be rendered as:
 
-    [[Image(//chrome/ce/img/example3.png)]]
+    [[Image(/chrome/ce/img/example3.png)]]
 
     There is also support for getting sources from the repository:
     {{{
@@ -109,7 +109,7 @@ class CodeExample(Component):
 
     will be rendered as:
 
-    [[Image(//chrome/ce/img/example4.png)]]
+    [[Image(/chrome/ce/img/example4.png)]]
 
     Parameters:
         * '''type''' - (optional) a type of the example: simple (default),
