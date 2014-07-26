@@ -5,12 +5,14 @@ import unittest
 import os.path
 import mocker
 from mocker import MockerTestCase
+
+from trac.core import TracError
+from trac.mimeview.api import Context
 from trac.test import EnvironmentStub, Mock
 from trac.versioncontrol.api import NoSuchNode
 from trac.web.href import Href
-from trac.mimeview.api import Context
 from trac.wiki.formatter import Formatter
-from trac.core import TracError
+
 from codeexample import CodeExample
 
 

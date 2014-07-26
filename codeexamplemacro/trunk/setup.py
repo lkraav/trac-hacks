@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 from setuptools import find_packages, setup
 
 setup(
@@ -14,6 +15,7 @@ setup(
         codeexample = codeexample
     """,
     test_suite='codeexample.tests.suite',
+    tests_require=['mocker'],
     package_data={'codeexample': ['templates/*.html', 'htdocs/css/*.css',
                                   'htdocs/js/*.js']},
 )

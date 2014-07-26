@@ -18,17 +18,18 @@
 
 """ Code example processor module. """
 
-import re
-import inspect
 import copy
+import inspect
 import os.path
+import re
+
+from trac.config import Option
 from trac.wiki.macros import IWikiMacroProvider
 from trac.core import implements, Component, TracError
 from trac.util.text import to_unicode
 from trac.versioncontrol.api import NoSuchNode, RepositoryManager
-from trac.web.chrome import ITemplateProvider, add_stylesheet, Chrome, \
-    Markup, add_script
-from trac.config import Option
+from trac.web.chrome import Chrome, ITemplateProvider, Markup, \
+                            add_script, add_stylesheet
 
 try:
     __import__('pygments', {}, {}, [])
@@ -214,7 +215,7 @@ class CodeExample(Component):
         """ Parse source path. """
         self._path = None, None, None, None
         path_match = self.extract_match(
-            '^\s*##\s*path\s*=\s*(?P<path>.+?)(?P<rev>@\w+)?' \
+            '^\s*##\s*path\s*=\s*(?P<path>.+?)(?P<rev>@\w+)?'
             '(?P<lines>:\d+(-\d+)?(,\d+(-\d+)?)*)?(?P<focus>#L\d+)?\s*$')
         if path_match:
             path = path_match.group('path')
@@ -259,7 +260,7 @@ class CodeExample(Component):
                     self._link = self.env.href.browser(node.path)
                     stream = node.get_content()
                     src = self.get_quote(to_unicode(stream.read()), src, lines,
-                                     focus_line)
+                                         focus_line)
                 except NoSuchNode, exception:
                     self._render_exceptions.append(exception)
             else:
@@ -276,7 +277,7 @@ class CodeExample(Component):
 
     def pygmentize_args(self, args, have_pygments):
         """ Process args via Pygments. """
-        is_path = self._path[0] != None
+        is_path = self._path[0] is not None
         if have_pygments:
             args += '\n'  # fix pigmentation issues
             match = re.match('^#!(.+?)\s+((.*\s*)*)$', args, re.MULTILINE)
@@ -363,6 +364,7 @@ class CodeExample(Component):
         data.update({'index': self._index})
         data.update({'link': self._link})
         data.update({'title': self._title})
-        req = formatter.req
-        return Chrome(self.env).render_template(req, 'codeexample.html', data,
-            None, fragment=True).render(strip_whitespace=False)
+        return Chrome(self.env).render_template(formatter.req,
+                                                'codeexample.html', data,
+                                                None, fragment=True) \
+                               .render(strip_whitespace=False)
