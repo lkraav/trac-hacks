@@ -257,7 +257,8 @@ class CodeExample(Component):
             if repos and path:
                 try:
                     node = repos.get_node(path, rev)
-                    self._link = self.env.href.browser(node.path)
+                    self._link = self.env.href.browser(self._repo + '/' +
+                                                       node.path)
                     stream = node.get_content()
                     src = self.get_quote(to_unicode(stream.read()), src, lines,
                                          focus_line)
