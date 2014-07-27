@@ -146,7 +146,8 @@ Website: http://trac-hacks.org/wiki/MindMapMacro
     def _set_cache(self, hash, content):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.execute("INSERT INTO mindmapcache VALUES ('%s','%s')" % (hash,content) )
+        cursor.execute("INSERT INTO mindmapcache VALUES (%s,%s)",
+                       (hash, unicode(content)))
         db.commit()
 
     def _get_cache(self, hash, default=None):
