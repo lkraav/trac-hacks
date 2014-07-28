@@ -1,0 +1,178 @@
+# Translations template for WikiGanttChartPlugin.
+# Copyright (C) 2014 ORGANIZATION
+# This file is distributed under the same license as the
+# WikiGanttChartPlugin project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: WikiGanttChartPlugin 0.12.0.1\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2014-07-24 16:59+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:63
+msgid "New task"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:64
+msgid "Update task"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:65
+msgid "Status"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:66
+msgid "Ticket"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:67
+msgid "Subject"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:68
+msgid "Date"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:69
+msgid "This Month"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:70
+#: wikiganttchart/htdocs/js/rmgantt.js:567
+msgid "Start Date"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:71
+#: wikiganttchart/htdocs/js/rmgantt.js:567
+msgid "Due Date"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:72
+msgid "Owner"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:73
+msgid "Create"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:74
+msgid "Update"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:75
+msgid "Cancel"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:76
+msgid "Go"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:77
+msgid "monthes"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:78
+msgid "Color"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:79
+msgid "Style"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:80
+msgid "Progress"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:81
+msgid " is not valid format for date."
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:82
+msgid "blue"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:83
+msgid "green"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:84
+msgid "yellow"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:85
+msgid "red"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:86
+msgid "purple"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:87
+msgid "white"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:410
+msgid "MMMM, yyyy"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:564
+msgid "Subject is needed."
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:574
+msgid "Start Date must be before due date"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:577
+msgid "Progress must be number between 0 and 100."
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:698
+msgid "Insert"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:714
+msgid "Edit task"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:722
+msgid "Delete task"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:732
+msgid "Insert task"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:740
+msgid "Insert subtask"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:749
+msgid "Up"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:760
+msgid "Down"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:772
+msgid "Level up"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:785
+msgid "Level down"
+msgstr ""
+
+#: wikiganttchart/htdocs/js/rmgantt.js:800
+msgid "Create ticket"
+msgstr ""
+

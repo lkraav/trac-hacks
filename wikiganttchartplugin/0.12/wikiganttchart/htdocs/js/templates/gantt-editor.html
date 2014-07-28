@@ -1,0 +1,56 @@
+<div id="{{>elemId}}-editor" class="rmgantt gantt-editor">
+    {{if isnew}}
+    <h3 class="new">{{>regional.newTitle}}</h3>
+    {{else}}
+    <div class="title">
+        <h3 class="edit">{{>regional.updateTitle}}</h3>
+        <div>
+            {{if task.data.ticket}}
+                {{:task.data.linkToTicket}}
+            {{/if}}
+        </div>
+    </div>
+    {{/if}}
+    <form action="" method="post" onsubmit="return false;">
+        <div>
+            <table>
+              <tbody>
+                <tr>
+                  <th><label>{{>regional.subject}}: </label></th>
+                  <td class="fullrow" colspan="2">
+                    <input type="text" name="subjectName" {{if !isnew}}value="{{>task.data.subjectName}}"{{/if}} />
+                  </td>
+                </tr>
+                <tr>
+                  <th class="col1"><label>{{>regional.owner}}: </label></th>
+                  <td class="col1" colspan="2"><input type="text" name="owner" {{if !isnew}}value="{{>task.data.owner}}"{{/if}} /></td>
+                </tr>
+                <tr>
+                  <th class="col1"><label>{{>regional.date}}: </label></th>
+                  <td class="col1"><input type="text" name="startDate"  class="date datepick" type="text" {{if !isnew}}value="{{>task.savedStartDate}}"{{/if}} /></td>
+                  <td class="col2"><input type="text" name="dueDate" class="date datepick" type="text" {{if !isnew}}value="{{>task.savedDueDate}}"{{/if}} /></td>
+                </tr>
+                <tr>
+                  <th class="col1"><label>{{>regional.progress}}: </label></th>
+                  <td class="col1" colspan="2"><input type="number" max="100" min="0" name="ratio" class="ratio" {{if !isnew}}value="{{>task.ratio}}"{{/if}} />%</td>
+                </tr>
+                <tr>
+                  <th class="col1"><label>{{>regional.ticket}}: </label></th>
+                  <td class="col1" colspan="2"><span class="input-implant" data-implant="#"><input type="text" name="ticket" class="ticket" {{if !isnew}}value="{{>task.data.ticket}}"{{/if}} /></span></td>
+                </tr>
+                <tr>
+                  <td colspan="3" div class="buttons">
+                    {{if isnew}}
+                    <input type="submit" value="{{>regional.create}}" name="submit" />
+                    {{else}}
+                    <input type="submit" value="{{>regional.update}}" name="submit" />
+                    {{/if}}
+                    <input type="button" value="{{>regional.cancel}}" name="cancel" class="cancel" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+    </form>
+</div>
+

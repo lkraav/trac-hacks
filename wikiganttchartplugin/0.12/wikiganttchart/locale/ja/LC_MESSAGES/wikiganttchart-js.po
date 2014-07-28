@@ -1,0 +1,177 @@
+# Japanese translations for WikiGanttChartPlugin.
+# Copyright (C) 2014 OpenGroove,Inc.
+# This file is distributed under the same license as the
+# WikiGanttChartPlugin project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: WikiGanttChartPlugin 0.12.0.1\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2014-07-24 16:59+0900\n"
+"PO-Revision-Date: 2014-03-15 23:29+0900\n"
+"Last-Translator: Jun Omae <jun66j5@gmail.com>\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:63
+msgid "New task"
+msgstr "タスクの新規作成"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:64
+msgid "Update task"
+msgstr "タスクの編集"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:65
+msgid "Status"
+msgstr "ステータス"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:66
+msgid "Ticket"
+msgstr "チケット"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:67
+msgid "Subject"
+msgstr "タイトル"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:68
+msgid "Date"
+msgstr "日付"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:69
+msgid "This Month"
+msgstr "今月"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:70
+#: wikiganttchart/htdocs/js/rmgantt.js:567
+msgid "Start Date"
+msgstr "開始日"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:71
+#: wikiganttchart/htdocs/js/rmgantt.js:567
+msgid "Due Date"
+msgstr "期限日"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:72
+msgid "Owner"
+msgstr "担当者"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:73
+msgid "Create"
+msgstr "作成"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:74
+msgid "Update"
+msgstr "更新"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:75
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:76
+msgid "Go"
+msgstr "移動"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:77
+msgid "monthes"
+msgstr "ヶ月分"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:78
+msgid "Color"
+msgstr "色"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:79
+msgid "Style"
+msgstr "スタイル"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:80
+msgid "Progress"
+msgstr "進捗"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:81
+msgid " is not valid format for date."
+msgstr "は日付のフォーマットとして正しくありません"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:82
+msgid "blue"
+msgstr "青"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:83
+msgid "green"
+msgstr "緑"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:84
+msgid "yellow"
+msgstr "黄"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:85
+msgid "red"
+msgstr "赤"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:86
+msgid "purple"
+msgstr "紫"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:87
+msgid "white"
+msgstr "白"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:410
+msgid "MMMM, yyyy"
+msgstr "yyyy年 M月"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:564
+msgid "Subject is needed."
+msgstr "タイトルは必須項目です"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:574
+msgid "Start Date must be before due date"
+msgstr "開始日は期限日よりも前の日付にして下さい"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:577
+msgid "Progress must be number between 0 and 100."
+msgstr "進捗は0から100までの数値を入力して下さい"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:698
+msgid "Insert"
+msgstr "タスクの挿入"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:714
+msgid "Edit task"
+msgstr "タスクの編集"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:722
+msgid "Delete task"
+msgstr "タスクの削除"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:732
+msgid "Insert task"
+msgstr "タスクの挿入"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:740
+msgid "Insert subtask"
+msgstr "サブタスクの挿入"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:749
+msgid "Up"
+msgstr "上へ移動"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:760
+msgid "Down"
+msgstr "下へ移動"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:772
+msgid "Level up"
+msgstr "レベルを上げる"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:785
+msgid "Level down"
+msgstr "レベルを下げる"
+
+#: wikiganttchart/htdocs/js/rmgantt.js:800
+msgid "Create ticket"
+msgstr "チケットの作成"
+

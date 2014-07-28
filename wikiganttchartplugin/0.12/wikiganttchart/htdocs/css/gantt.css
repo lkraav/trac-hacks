@@ -1,0 +1,324 @@
+.wikiganttchartmacro { clear: both }
+.rmgantt { margin: 20px auto; width: 100% }
+.rmgantt .header {
+ display: table;
+ width: 100%;
+ font-size: 140%;
+}
+.rmgantt .header > * {
+ display: table-cell;
+ vertical-align: center;
+}
+.rmgantt .header h3 {
+ padding-left: 1em;
+ display: inline-block;
+ margin: 0;
+ font-weight: bold;
+ color: #284962;
+ font-size: inherit;
+}
+.rmgantt .nav {
+ text-align: right;
+ vertical-align: middle;
+}
+.rmgantt .nav .buttons {
+ display: inline-block;
+ font-weight: normal;
+ margin: 0 0.5em 0.3em 0.5em;
+ font-size: 80%;
+}
+.rmgantt .nav .buttons > a {
+ background-color: #F7F7F7;
+ border: 1px solid #AAAAAA;
+ display: inline-block;
+ height: 1.5em;
+ line-height: 1.5em;
+ margin: 0;
+ padding: 0.1em 0.7em;
+ vertical-align: middle;
+ color: inherit;
+}
+.rmgantt .nav .buttons > a:hover {
+ background-color: #FFFFFF;
+}
+.rmgantt .nav .buttons > a:nth-child(1) {
+ border-right: none;
+ border-bottom-left-radius: 0.4em;
+ border-top-left-radius: 0.4em;
+}
+.rmgantt .nav .buttons > a:nth-child(3) {
+ border-left: none;
+ border-bottom-right-radius: 0.4em;
+ border-top-right-radius: 0.4em;
+}
+.rmgantt .header span,
+.rmgantt .header input {
+ font-size: 80%;
+}
+.rmgantt .header select {
+ position: relative;
+ top: 2px;
+ margin: 0 0 2px;
+ height: 2em;
+ font-size: 80%;
+ color: #29303B;
+}
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+ .rmgantt .header select {
+ -webkit-appearance: menulist-button;
+ border: 1px solid #AAAAAA;
+ height: 1.8em;
+ background-color: #F7F7F7;
+ }
+ .rmgantt .header select:hover {
+ background-color: #FFFFFF;
+ }
+}
+.rmgantt .date-selector { display: inline-block }
+.rmgantt .date-selector input[name=months] { width: 2em }
+.rmgantt > .chart {
+ font-size: 80%;
+ -moz-box-sizing: border-box;
+ box-sizing: border-box;
+ border: 14px solid #ccc9c7;
+ border-radius: 6px;
+ width: 100%;
+}
+.rmgantt > .chart > table {
+ position: relative;
+ width: 100%;
+ border-collapse: collapse;
+ overflow: hidden;
+}
+.rmgantt .gantt_line {
+ overflow: hidden;
+ position: absolute;
+ z-index: 1000;
+}
+.rmgantt .gantt_hdr {
+ border-right: 1px solid #C0C0C0;
+ height: 16px;
+ overflow: hidden;
+ position: absolute;
+ text-align: center;
+ top: 0;
+ z-index: 10;
+}
+.rmgantt .gantt_hdr.header {
+ background-color: #F1EEEB;
+ z-index: 0;
+}
+.rmgantt .gantt_hdr.bottom { border-bottom: 1px solid #C0C0C0 }
+.rmgantt .gantt_hdr.nwday { color: #29303B }
+.rmgantt .gantt_today {
+ border-left: 2px dashed red;
+ z-index: 100;
+}
+.rmgantt .gantt_subjects { font-size: 0.8em }
+.rmgantt .gantt_subjects div {
+ height: 16px;
+ line-height: 16px;
+ text-overflow: auto;
+ white-space: nowrap;
+}
+.rmgantt .subjects { background-color: #F1EEEB }
+.rmgantt .subjects table { border-collapse: collapse }
+.rmgantt .subjects table .issue-subject {
+ overflow: hidden;
+ white-space: nowrap;
+}
+.rmgantt .subjects table th,
+.rmgantt .subjects table td {
+ font-size: 80%;
+}
+.rmgantt .subjects table th.hidden,
+.rmgantt .subjects table td.hidden {
+ display: none;
+}
+.rmgantt .subjects table thead th { border-bottom: 1px solid #d3d3d3 }
+.rmgantt .subjects table tbody td { border-left: 1px solid #d3d3d3 }
+.rmgantt .subjects table tbody td:first-child { border-left: none }
+.rmgantt .subjects table .subject-index,
+.rmgantt .subjects table .subject-name,
+.rmgantt .subjects table .start-date,
+.rmgantt .subjects table .due-date,
+.rmgantt .subjects table .owner {
+ padding: 0 3px;
+}
+.rmgantt .subjects table > thead .delete-btn {
+ background: #F1EEEB url(images/rmgantt-close.png) no-repeat;
+ background-position: center center;
+ cursor: pointer;
+}
+.rmgantt .subjects table .subject-index {
+ text-align: right;
+ color: #515d6f;
+}
+.rmgantt .subjects table .subject-name {
+ max-width: 30em;
+ overflow: hidden;
+ text-overflow:ellipsis;
+}
+.rmgantt .subjects table .col-list { text-align: right }
+.rmgantt .subjects table .start-date,
+.rmgantt .subjects table .due-date {
+ text-align: center;
+}
+.rmgantt .subjects table .owner { text-align: center }
+.rmgantt .subjects table .owner-icon {
+ padding: 0 1em;
+ margin: 0 0.3em;
+ background-color: #CCC9C7;
+ border: 1px solid #D3D3D3;
+ color: #29303B;
+ font-weight: normal;
+ font-size: 0.9em;
+ vertical-align: middle;
+ display: inline-block;
+ border-radius: 4px 4px 4px 4px;
+ vertical-align: middle;
+}
+.rmgantt .task {
+ color: #29303B;
+ font-size: 0.8em;
+ height: 8px;
+ line-height: 16px;
+ margin: 0;
+ padding: 0;
+ position: absolute;
+ white-space: nowrap;
+ text-overflow: ellipsis;
+ text-shadow: 1px 1px 0px white,
+              -1px 1px 0px white,
+              1px -1px 0px white,
+              -1px -1px 0px white;
+ z-index: 50;
+}
+.rmgantt .task.label {
+ width: 100%;
+ text-align: center;
+ height: 2em;
+ max-width: 30em;
+ overflow: hidden;
+ text-overflow:ellipsis;
+}
+.rmgantt .task.label.project,
+.task.label.version {
+ font-weight: bold;
+}
+.rmgantt .task-line.hover {
+ background-color: #E6E6FF;
+ background-color: rgba(230, 230, 255, 0.5);
+}
+.rmgantt .task_todo {
+ height: 15px;
+ border-radius: 3px;
+}
+.rmgantt .task_todo.parent { height: 3px }
+.rmgantt.gantt-editor {
+ margin: 0.5em;
+ max-width: 100%;
+ border: none;
+}
+.rmgantt.gantt-editor .title {
+ display: table;
+ width: 35em;
+}
+.rmgantt.gantt-editor .title > * { display: table-cell }
+.rmgantt.gantt-editor .title > *:nth-child(2) { text-align: right }
+.rmgantt.gantt-editor table {
+ margin: 0.2em;
+ width: 35em;
+}
+.rmgantt.gantt-editor table th {
+ padding: 0.2em 0.4em;
+ width: 20%;
+}
+.rmgantt.gantt-editor table td {
+ vertical-align: middle;
+ width: 30%;
+ margin: 0;
+ padding: 0;
+}
+.rmgantt.gantt-editor table input[type=text],
+.rmgantt.gantt-editor table input[type=number] {
+ -moz-box-sizing: border-box;
+ box-sizing: border-box;
+ margin: 0;
+ width: 100%;
+}
+.rmgantt.gantt-editor table td.col2 { text-align: right }
+.rmgantt.gantt-editor table input.ratio,
+.rmgantt.gantt-editor table input.ticket {
+ width: 30%;
+}
+.rmgantt.gantt-editor table input.ticket { padding-left: 1em }
+.rmgantt.gantt-editor table span.input-implant { position: relative }
+.rmgantt.gantt-editor table span.input-implant:before {
+ position: absolute;
+ display: block;
+ content: attr(data-implant);
+ color: gray;
+ top: 0;
+ padding-top: inherit;
+ padding-right: 2px;
+ padding-bottom: inherit;
+ padding-left: 2px;
+}
+.rmgantt-tooltip {
+ display: none;
+ position: absolute;
+ min-width: 16em;
+ z-index: 99999;
+ padding: 3px;
+ background: #fff;
+ color: #000000;
+ border: 1px solid #aaaaaa;
+ margin: 0px;
+ -webkit-box-shadow: 0px 0px 5px 0px rgba(164, 164, 164, 1);
+ box-shadow: 0px 0px 5px 0px rgba(164, 164, 164, 1);
+}
+.rmgantt-tooltip h5,
+.rmgantt-tooltip dl {
+ margin: 0.5em;
+ padding: 0;
+}
+.rmgantt-tooltip dt {
+ clear: left;
+ float: left;
+ width: 4.5em;
+ font-weight: bold;
+ line-height: 1.2em;
+}
+.rmgantt-tooltip dt:after { content: ":" }
+.rmgantt-tooltip dd {
+ margin-left: 4.5em;
+ line-height: 1.2em;
+}
+.icon:before {
+ content: '-';
+ display: inline-block;
+ width: 1.2em;
+ height: 1.2em;
+ left: 0.15em;
+ top: 0.35em;
+ background-repeat: no-repeat;
+ background-size: contain;
+ background-position: center;
+ text-indent: 100%;
+ white-space: nowrap;
+ overflow: hidden;
+ position: absolute;
+}
+.icon.icon-task:before {
+ background-image: url(images/i-task.png);
+}
+.disabled .icon.icon-task:before {
+ background-image: url(images/i-task-d.png);
+}
+.icon.icon-subtask:before {
+ background-image: url(images/i-subtask.png);
+}
+.disabled .icon.icon-subtask:before {
+ background-image: url(images/i-subtask-d.png);
+}

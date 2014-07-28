@@ -1,0 +1,11 @@
+{{if coords.barStart !== undefined && coords.barEnd !== undefined}}
+<div style="top:{{>top}}px; left:{{>coords.barStart}}px; width:{{>width}}px; background-color:{{>color}};" class="task_todo {{>class_}}">
+</div>
+{{if ratio}}
+<div style="top:{{>ratioTop}}px; left:{{>coords.barStart}}px; width:{{>ratioWidth}}px; background-color:{{>ratioColor}};" class="task_todo ratio {{>class_}}">
+</div>
+{{/if}}
+<div style="top:{{>top}}px; left:{{>coords.barStart}}px; width:{{>width}}px;" class="label {{>class_}}">
+    {{>data.subjectName}}{{if ratio}}({{>ratio}}%){{/if}}
+</div>
+{{/if}}

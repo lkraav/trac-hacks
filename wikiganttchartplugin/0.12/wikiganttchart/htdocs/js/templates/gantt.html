@@ -1,0 +1,110 @@
+<div id="{{>elemId}}" class="{{>classes}} rmgantt">
+  <div class="header">
+    <div>
+    <h3>{{>current}}</h3>
+    <form action="#{{>elemId}}" class="date-selector">
+      <select class="" name="year">
+        {{for selectYear}}
+        <option value="{{>year}}"{{if selected}} selected="selected"{{/if}}>{{>year}}</option>
+        {{/for}}
+     </select> 
+     <select class="" name="month">
+        {{for selectMonth}}
+         <option value="{{>month}}"{{if selected}} selected="selected"{{/if}}>{{>month}}</option>
+        {{/for}}
+     </select>
+     <input type="number" name="months" value="{{>viewMonths}}" size="2" />
+     <span>{{> regional.months }}</span>
+     <input class="" type="submit" value="{{>regional.go}}" />
+    </form>
+    </div>
+    <div class="nav">
+      <span class="buttons">
+        <a href="#" class="to-prev">&#9664;</a><a href="#" class="to-this-month">{{>regional.thisMonth}}</a><a href="#" class="to-next">&#9654;</a>
+      </span>
+      &nbsp;
+      {{if writable}}
+      <select class="select-style">
+          {{for styleSelect}}
+          <option{{if selected}} selected="selected"{{/if}} style="background-color: {{>color}};" value="{{>style}}">{{>name}}</option>
+          {{/for}}
+      </select>
+    {{/if}}
+    </div>
+  </div>
+  <div class="chart">
+  <table>
+    <tr>
+      <td style="position:relative;" class="subjects">
+        <table style="position:absolute; top:{{>tableTop}}px; left: 0px;">
+            <!--div style="position:regional; height: {{>tHeight + 1}}px; width: {{>subjectWidth + 1}}px;"-->
+          <thead>
+            <tr>
+              <th style="height: {{>lineHeight}}px;" class="col-list" colspan="5">
+                <select class="colmun-selecter">
+                  <option></option>
+                  <option value="start-date">{{>regional.startDate}}</option>
+                  <option value="due-date">{{>regional.dueDate}}</option>
+                  <option value="owner">{{>regional.owner}}</option>
+                </select>
+              </th>
+            </tr>
+            <tr>
+              <th style="height: {{>lineHeight}}px;" class="subject-index" data-colname="subject-name"> </th>
+              <th style="height: {{>lineHeight}}px;" class="subject-name" data-colname="subject-name"> </th>
+              <th style="height: {{>lineHeight}}px;" class="start-date hidden delete-btn" data-colname="start-date"> </th>
+              <th style="height: {{>lineHeight}}px;" class="due-date hidden delete-btn" data-colname="due-date"> </th>
+              <th style="height: {{>lineHeight}}px;" class="owner delete-btn" data-colname="owner"> </th>
+            </tr>
+          </thead>
+          <tbody>
+              {{for subjects tmpl="gantt-subjects" /}}
+          </tbody>
+      </table>
+      </td>
+      <td>
+        <div style="position:relative; height: {{>tHeight + 1}}px; overflow:auto;" id="gantt_area">
+          <div style="width: {{>gWidth - 1}}px; height: {{>headersHeight}}px;" class="gantt_hdr header"> </div>
+          {{!-- ###### Months headers ###### --}}
+          {{for months}}
+          <div style="left:{{>left}}px; width:{{>width}}px; height:{{>height}}px;" class="gantt_hdr bottom">
+            {{>month}}
+          </div>
+          {{/for}}
+
+          {{!-- ###### Days headers ###### --}}
+          {{for days}}
+          <div style="left:{{>left}}px; top:{{>top}}px; width:{{>width}}px; height:{{>height}}px;" class="{{>class_}} bottom">
+            {{>day[0]}}
+          </div>
+          {{/for}}
+          {{for days}}
+          <div style="left:{{>left}}px; top:{{>top*2}}px; width:{{>width}}px; height:{{>height}}px;" class="{{>class_}} bottom">
+            {{>day[1]}}
+          </div>
+          {{/for}}
+          {{for days}}
+          <div style="left:{{>left}}px; top:{{>top*3}}px; width:{{>width}}px; height:{{>gHeight}}px;" class="{{>class_}}">
+          </div>
+          {{/for}}
+          {{for lines}}
+          <div style="left:0px; top:{{>line_top}}px; height:{{>lineHeight}}px; width: {{>gWidth}}px;" class="gantt_line task-line" data-gantt-idx="{{>no}}">
+              {{include tmpl="gantt-popup" /}}
+          </div>
+          {{/for}}
+
+          {{!-- ###### Today's line ##### --}}
+          {{if today}}
+          <div style="position:absolute; height:{{>gHeight + 1}}px; top:{{>headersHeight-1}}px; left:{{>today.todayLeft}}px; width:10px;" class="gantt_today">
+          </div>
+          {{/if}}
+
+          <div id="gantt_draw_area" style="position:absolute; height:{{>gHeight}}px; top:{{>headersHeight + 1}}px; left:0px; width:{{>gWidth - 1}}px;">
+            {{for lines tmpl="gantt-lines" /}}
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+  </div>
+</div>

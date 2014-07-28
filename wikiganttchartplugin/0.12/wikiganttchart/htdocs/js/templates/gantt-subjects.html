@@ -1,0 +1,27 @@
+<tr id="{{>elemId}}-{{>no}}" class="issue-subject task-line" data-gantt-idx="{{>no}}">
+  <td class="subject-index" style="height: {{>lineHeight}}px;">
+    {{>no+1}}
+  </td>
+  <td class="subject-name" style="height: {{>lineHeight}}px;" title="{{>data.subjectName}}">
+      {{: indent}}
+      {{if data.linkToTicket}}
+        {{: data.linkToTicket}}
+      {{else}}
+      <!--<a href="{{:hrefToCreateTicket}}" class="create-ticket">Create Ticket</a>-->
+      {{/if}}
+      {{>data.subjectName}}
+  </td>
+  <td class="start-date hidden" style="height: {{>lineHeight}}px;">
+      {{>task.startDatePrintable}}
+  </td>
+  <td class="due-date hidden" style="height: {{>lineHeight}}px;">
+      {{>task.dueDatePrintable}}
+  </td>
+  <td class="owner" style="height: {{>lineHeight}}px;">
+      {{if data.owner}}
+      <span class="owner-icon">
+        {{>data.owner.join(',')}}
+      </span>
+      {{/if}}
+  </td>
+</tr>

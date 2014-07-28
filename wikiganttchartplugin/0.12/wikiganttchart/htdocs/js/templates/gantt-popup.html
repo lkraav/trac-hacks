@@ -1,0 +1,23 @@
+<div class="rmgantt-tooltip">
+    <h5>{{if task.data.ticket}}{{:task.data.linkToTicket}} {{/if}}{{>task.data.subjectName}}</h5>
+    <dl>
+        <dt>{{>regional.owner}}</dt>
+        <dd>
+            {{if data.owner}}
+                {{>data.owner.join(',')}}
+            {{/if}}
+        </dd>
+        <dt>{{>regional.date}}</dt>
+        <dd>
+            {{if task.startDate || task.dueDate}}
+                {{>task.startDatePrintableLong}} ~ {{>task.dueDatePrintableLong}}
+            {{/if}}
+        </dd>
+        <dt>{{>regional.progress}}</dt>
+        <dd>
+            {{if task.ratio}}
+                {{>task.ratio}} %
+            {{/if}}
+        </dd>
+    </dl>
+</div>
