@@ -10,12 +10,12 @@
 import os
 import posixpath
 
+from genshi.builder import tag
 from trac.core import *
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_script
 from trac.web.api import IRequestFilter
 from trac.web.main import open_environment
-from trac.util.html import html as tag
 
 
 class ProjectMenuModule(Component):
