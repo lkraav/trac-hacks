@@ -40,8 +40,10 @@ class ProjectMenuModule(Component):
                 proj_elm = tag.option(proj_env.project_name,
                                       value=posixpath.join(base_url, project))
                 projects.append((proj_elm, proj_env.project_name))
+        projects.append((tag.option(self.env.project_name,
+                                    selected=True, value=''),
+                         self.env.project_name,))
         projects.sort(lambda a,b: cmp(a[1],b[1])) # Sort on the project names
-        projects.insert(0, (tag.option(self.env.project_name, value=''), None))
         
         yield ('metanav', 'projectmenu',
                tag.select([e for e,_ in projects], name='projectmenu',
