@@ -1,10 +1,20 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2007-2008 Noah Kantrowitz <noah@coderanger.net>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
+import os
+import posixpath
+
 from trac.core import *
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_script
 from trac.web.main import _open_environment
 from trac.util.html import html as tag
 
-import os
-import posixpath
 
 class ProjectMenuModule(Component):
     
