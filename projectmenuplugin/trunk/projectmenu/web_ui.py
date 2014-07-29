@@ -31,7 +31,8 @@ class ProjectMenuModule(Component):
         
         for project in os.listdir(search_path):
             if project != this_project:
-                proj_env = open_environment(os.path.join(search_path, project))
+                proj_env = open_environment(os.path.join(search_path, project),
+                                            use_cache=True)
                 
                 proj_elm = tag.option(proj_env.project_name,
                                       value=posixpath.join(base_url, project))
