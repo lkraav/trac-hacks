@@ -13,13 +13,14 @@ import posixpath
 from trac.core import *
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_script
+from trac.web.api import IRequestFilter
 from trac.web.main import open_environment
 from trac.util.html import html as tag
 
 
 class ProjectMenuModule(Component):
     
-    implements(INavigationContributor, ITemplateProvider)
+    implements(INavigationContributor, ITemplateProvider, IRequestFilter)
     
     # INavigationProvider methods
 
@@ -39,7 +40,6 @@ class ProjectMenuModule(Component):
         projects.sort(lambda a,b: cmp(a[1],b[1])) # Sort on the project names
         projects.insert(0, (tag.option(self.env.project_name, value=''), None))
         
-        add_script(req, 'projectmenu/projectmenu.js')
         yield ('metanav', 'projectmenu',
                tag.select([e for e,_ in projects], name='projectmenu',
                           id='projectmenu',
@@ -47,7 +47,7 @@ class ProjectMenuModule(Component):
 
     def get_active_navigation_item(self, req):
         return ''
-        
+
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
@@ -56,3 +56,12 @@ class ProjectMenuModule(Component):
         
     def get_templates_dirs(self):
         return []
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        add_script(req, 'projectmenu/projectmenu.js')
+        return handler
+
+    def post_process_request(self, req, template, content_type):
+        return template, content_type
