@@ -31,12 +31,14 @@ class ProjectMenuModule(Component):
         
         for project in os.listdir(search_path):
             if project != this_project:
-                proj_env = open_environment(os.path.join(search_path, project),
-                                            use_cache=True)
-                
+                proj_path = os.path.join(search_path, project)
+                try:
+                    proj_env = open_environment(proj_path, use_cache=True)
+                except TracError:
+                    continue
+
                 proj_elm = tag.option(proj_env.project_name,
                                       value=posixpath.join(base_url, project))
-                
                 projects.append((proj_elm, proj_env.project_name))
         projects.sort(lambda a,b: cmp(a[1],b[1])) # Sort on the project names
         projects.insert(0, (tag.option(self.env.project_name, value=''), None))
