@@ -1,3 +1,4 @@
+import sys
 from setuptools import find_packages, setup
 
 extra = {}
@@ -19,7 +20,7 @@ except ImportError:
 
 setup(
     name = 'TracReportInplaceEditPlugin',
-    version = "0.1",
+    version = "0.2",
     description = "Edit tickets in reports by inplace editor",
     author = "Richard Liao",
     author_email = "richard.liao.i@gmail.com",
@@ -34,7 +35,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    install_requires = [],
+    install_requires = ['simplejson'] if sys.version_info < (2,6) else [],
     entry_points = """
     [trac.plugins]
     ripe = ripe.web_ui

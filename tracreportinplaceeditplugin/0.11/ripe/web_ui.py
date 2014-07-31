@@ -34,7 +34,10 @@ from trac.web.api import ITemplateStreamFilter
 
 # third party modules
 from pkg_resources import resource_filename
-import simplejson
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 # import plugins module
 from model import schema, schema_version, RipeStore
@@ -90,7 +93,7 @@ class RipeModule(Component):
             result = {}
             result["status"] = "1"
             result["field_infos"] = self._handle_ripe_query(req)
-            jsonstr = simplejson.dumps(result)
+            jsonstr = json.dumps(result)
             self._send_response(req, jsonstr)
         elif req.path_info.startswith('/ripe/save'):
             value = self._handle_ripe_save(req)
