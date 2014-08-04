@@ -42,30 +42,37 @@ def new_csv_export(self, req, query, sep=',', mimetype='text/plain'):
             #               (field, perm, (not req.perm.has_permission(perm) or perm == "ALWAYS")))
             if (not req.perm.has_permission(perm) or perm == "ALWAYS") and denial.lower() in ["remove","hide"]:
                 hidden_fields.append(field)
+
     ## END find the columns that should be hidden
-    
+
+    ### !!!    BEGIN COPIED CONTENT - from trac1.0/trac/ticket/query.py
     content = StringIO()
+    content.write('\xef\xbb\xbf')   # BOM
     cols = query.get_columns()
-    writer = csv.writer(content, delimiter=sep)
+    ### !!!    T&E patch
+    cols = [i for i in cols if col not in hidden_fields] 
+    ### !!!END T&E patch
     writer = csv.writer(content, delimiter=sep, quoting=csv.QUOTE_MINIMAL)
-    writer.writerow([unicode(c).encode('utf-8') for c in cols if c not in hidden_fields])
-    
-    context = Context.from_request(req)
-    results = query.execute(req, self.env.get_read_db())
-    self.log.debug('QueryModule.csv_export: hidding columns %s' %  hidden_fields)
+    writer.writerow([unicode(c).encode('utf-8') for c in cols])
+
+    context = web_context(req)
+    results = query.execute(req)
     for result in results:
         ticket = Resource('ticket', result['id'])
         if 'TICKET_VIEW' in req.perm(ticket):
             values = []
             for col in cols:
-                if col not in hidden_fields:
-                    value = result[col]
-                    if col in ('cc', 'reporter'):
-                        value = Chrome(self.env).format_emails(context(ticket),
-                                                               value)
-                    values.append(unicode(value).encode('utf-8'))
+                value = result[col]
+                if col in ('cc', 'owner', 'reporter'):
+                    value = Chrome(self.env).format_emails(
+                                context.child(ticket), value)
+                elif col in query.time_fields:
+                    value = format_datetime(value, '%Y-%m-%d %H:%M:%S',
+                                            tzinfo=req.tz)
+                values.append(unicode(value).encode('utf-8'))
             writer.writerow(values)
     return (content.getvalue(), '%s;charset=utf-8' % mimetype)
+
 
 QueryModule.export_csv = new_csv_export
 
