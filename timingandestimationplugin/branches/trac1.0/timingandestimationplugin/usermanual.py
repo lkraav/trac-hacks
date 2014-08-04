@@ -1,8 +1,7 @@
 user_manual_title = "Timing and Estimation Plugin User Manual"
-user_manual_version = 14
+user_manual_version = 12
 user_manual_wiki_title = "TimingAndEstimationPluginUserManual"
 user_manual_content = """
-
 [[PageOutline]]
 = Timing and Estimation Plugin User Manual =
 [http://trac-hacks.org/wiki/TimingAndEstimationPlugin TimingAndEstimationPlugin on TracHacks] | [http://trac-hacks.org/report/9?COMPONENT=TimingAndEstimationPlugin Open Tickets] | [http://trac-hacks.org/newticket?component=TimingAndEstimationPlugin&owner=bobbysmith007 New Ticket]  | 
@@ -23,25 +22,29 @@ In adhering to our design goal, rather than creating a new ticket interface, I c
 === Future Fields ===
  * '''Ticket Rate''' The ability to attach a cost per hour or total amount to an individual ticket
 
-== Billing / Management Page / Time Reports ==
+== Management Page ==
 This page provide a small interface for querying the tickets and adding a bill date at the current time.  
 This interface mostly just gives you links that match the interface to open any of the give reports,
 providing it the correct set of input parameters
 
-The direct url is '/Billing'.
-
-=== No Permissions Branch ===
 The 'Management' button should be in the main title bar.  It is possible that if you are viewing at a low resolution, it was pushed off the edge of the screen.  Also if you are not logged in with report_view permissions, it will not show that button.
 
-=== Permissions Branch ===
-The 'Time Reports' button should be in the main title bar.  Whether or not you see this will be based on whether your user has TIME_VIEW permissions.
-
-
+The direct url is '/billing'.
 
 
 === Set Bill Date ===
 
-This button will add now as a bill date.  This is mostly to make it easier to select the last time you billed. 
+This button will add now as a bill date.  This is mostly to make it easier to select the last time you billed.
+
+=== Configuration ===
+==== TimingAndEstimation ====
+{{{
+#!ini
+[timingandestimation]
+#change what permission is required to view the billing/management screen
+# default is REPORT_VIEW
+billing_permission=TRAC_ADMIN
+}}}
 
 == Reports ==
 === Report Types ===
@@ -77,57 +80,7 @@ Remember to fill in the @reportID of the report you want to modify.
 === TAKE NOTE ===
  '''The reports can only be called from the Management Page. They will not work from the Trac View Tickets page. (Due to the custom variables that need values).'''
 
-== Permissions Branch ==
-Recently a branch of this plugin was sponsored by [http://www.obsidiansoft.com/ Obsidian Software] so that it would support per field permissions.  
-
-This is accomplished with Genshi 5 stream filters in trac 11.  This code draws from the [http://trac-hacks.org/wiki/BlackMagicTicketTweaksPlugin BlackMagicTicketTweaksPlugin]
-{{{
-#!html
-<br />
-<a href="http://www.obsidiansoft.com/" >
-<img src="http://trac-hacks.org/attachment/wiki/TimeEstimationUserManual/obsidian-logo.gif?format=raw" />
-</a>
-}}}
-
-=== Configuration ===
-There is a new trac.ini configuration section which is filled in by default as follows.
-{{{
-#!ini
-[field settings] # per field permissions
-
-# a list of all the fields to apply permissions to
-fields = billable, totalhours, hours, estimatedhours, internal
-
-# a bunch of:
-# field.permission = PERMISSION:consequence
-#
-#  If PERMISSION=ALWAYS, then the consequence always occurs
-#    eg: billable.permission = ALWAYS:hide 
-#        will always result in billable being hidden, irrespective of user permissions    
-#
-# where consequence is one of: hide, remove, disable
-#    hide - replaces with hidden input
-#    remove - removes element
-#    disable - removes input in favor of text
-billable.permission = TIME_VIEW:hide, TIME_RECORD:disable
-totalhours.permission = TIME_VIEW:remove, TIME_RECORD:disable
-hours.permission = TIME_VIEW:remove, TIME_RECORD:disable
-estimatedhours.permission = TIME_RECORD:disable
-internal.permission = TIME_RECORD:hide
-}}}
-
-It also adds an "Internal" checkbox which allows you to set a ticket as internal.  For this policy to work correctly you need to add a line to the trac section of the config telling it which permission policies to use.  (The setup will attempt to put this line of configuration in place. )  The permission that looks at currently is 'TIME_ADMIN'.  To change that group set the internalgroup of the ticket section in the trac.ini as follows:
-
-{{{
-#!ini
-[ticket]
-internalgroup = TRAC_ADMIN #or whatever group / permission you want
-
-[trac]
-permission_policies = InternalTicketsPolicy, DefaultPermissionPolicy, LegacyAttachmentPolicy
-}}}
-
 == Future Improvements ==
- * [http://trac-hacks.org/report/9?COMPONENT=TimingAndEstimationPlugin See tickets] at the [http://trac-hacks.org/wiki/TimingAndEstimationPlugin project trac]
+ * [http://trac-hacks.org/wiki/TimingAndEstimationPlugin See tickets] at the [http://trac-hacks.org/wiki/TimingAndEstimationPlugin project trac]
 
 """
