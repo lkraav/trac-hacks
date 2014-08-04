@@ -21,69 +21,129 @@ MACRO_TEST_CASE = u"""
 [[WantedPages]]
 ------------------------------
 <p>
-<ul><li><a class="missing wiki" href="/wiki/NoSpaces" rel="nofollow">NoSpaces?</a>
-</li><li><a class="missing wiki" href="/wiki/ParentWiki/SubWiki" rel="nofollow">ParentWiki/SubWiki?</a>
-</li><li><a class="missing wiki" href="/wiki/TimLeo" rel="nofollow">TimLeo?</a>
-</li><li><a class="missing wiki" href="/wiki/TimLowe" rel="nofollow">TimLowe?</a>
-</li><li><a class="missing wiki" href="/wiki/TimLowe6" rel="nofollow">TimLowe6?</a>
-</li><li><a class="missing wiki" href="/wiki/TimLowe7" rel="nofollow">TimLowe7?</a>
-</li><li><a class="missing wiki" href="/wiki/WikiProcessors" rel="nofollow">WikiProcessors?</a>
-</li><li><a class="missing wiki" href="/wiki/page2" rel="nofollow">page2?</a>
-</li><li><a class="missing wiki" href="/wiki/pagename" rel="nofollow">pagename?</a>
-</li></ul>
+</p><table class="wiki">
+<tr><td>Missing link
+</td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe" rel="nofollow">TimLowe?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe#Bio" rel="nofollow">TimLowe#Bio?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki/ChildWiki" rel="nofollow">ParentWiki/ChildWiki?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki" rel="nofollow">ParentWiki?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki" rel="nofollow">WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/TubWiki/TubberWiki" rel="nofollow">WantedLinksTestPage/TubWiki/TubberWiki?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/VubWiki" rel="nofollow">WantedLinksTestPage/VubWiki?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki" rel="nofollow">WantedLinksTestPage/SubWiki?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki/SubberWiki" rel="nofollow">WantedLinksTestPage/SubWiki/SubberWiki?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Wiki_page" rel="nofollow">Wiki_page?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Wiki_page2" rel="nofollow">Wiki_page2?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ISO9000" rel="nofollow">ISO9000?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ISO9001" rel="nofollow">ISO9001?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Matters" rel="nofollow">Space Matters?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Flatters" rel="nofollow">Space Flatters?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WikiPageName" rel="nofollow">WikiPageName?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?format=txt" rel="nofollow">XantedLinksTestPage?format=txt?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?version=1" rel="nofollow">XantedLinksTestPage?version=1?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WikiCreole%20link%20style" rel="nofollow">WikiCreole link style?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro" rel="nofollow">NonExistingMacro?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro(MyMacroParam)" rel="nofollow">NonExistingMacro(MyMacroParam)?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage" rel="nofollow">XantedLinksTestPage?</a>
+</td></tr></table>
+<p>
 </p>
 ------------------------------
 """
 
 
 CONTENT = """
-== Positive test cases
- TimLowe
- TimLeo#Bio
- ParentWiki/SubWiki
-NoSpaces
- [wiki:TimLowe6]
- [wiki:TimLowe7 Click here for more info]
- [wiki:pagename]
- [wiki:page2]
+== Key for test cases
+== WP:report as Wanted Page; IL: Ignore Link (good link or not a wiki link)
 
-== Negative test cases
- TimLowe5
- !TimLewo
- {{{Timlow}}}
-`TimLee`
-3TimLoo
-[[MyMacro]]
-ParentWiki/SubWiki
-[http://external external link]
-http://ExternalLink
-http://ExternalTrac/wiki/TomFool
+== Camelcase test cases
+WP TimLowe               missing page
+WP TimLowe#Bio           anchor on missing page
+IL TimLowe5              not Camelcase because of number
+IL !TimLowe              ignore links starting with !
+IL {{{TimLowe}}}         inline block
+IL `TimLee`              inline block
+IL 3TimLowe              not Camelcase because of number
+WP ParentWiki/ChildWiki    missing sub page AND missing parent page
+IL ParentWiki/ChildWiki1   not Camelcase because of number
+IL ParentWiki1/ChildWiki   not Camelcase because of number
+IL ParentWiki1/ChildWiki1  not Camelcase because of number
+IL ParentWiki/Child2Wiki   not Camelcase because of number
+IL ParentWiki/Child_Wiki   not Camelcase because of underscore
+WP ./SubWiki/SubberWiki/SubbestWiki    missing relative page
+WP ./TubWiki/TubberWiki                missing relative page
+WP ./VubWiki                           missing relative page
+IL ./SubWiki7/SubberWiki/SubbestWiki   not Camelcase because of number
+IL ./SubWiki/SubberWiki7/SubbestWiki   not Camelcase because of number
+IL ./SubWiki/SubberWiki/SubbestWiki7   not Camelcase because of number
+
+== Wiki syntax test cases for non-existing pages
+WP [wiki:Wiki_page]                    explicit reference
+WP [wiki:Wiki_page2]                   explicit reference, despite number
+WP [wiki:ISO9000]                      explicit reference
+WP [wiki:ISO9001 ISO 9001 standard]    explicit reference
+WP [wiki:"Space Matters"]              explicit reference
+WP [wiki:"Space Flatters" all about white space]  explicit reference
+WP ["WikiPageName"]                    implicit reference
+WP [WikiPageName]                      implicit reference
+IL [WikiPageName2]                     not Camelcase because of number
+IL [wikipagename]                      not Camelcase
+== Also check some existing pages:
+IL wiki:WantedLinksTestPage?format=txt existing page
+WP wiki:XantedLinksTestPage?format=txt non-existing page
+IL wiki:WantedLinksTestPage?version=1  existing page
+WP wiki:XantedLinksTestPage?version=1  non-existing page
+
+== Wiki Creole syntax test cases:
+WP [[WikiCreole link style]]
+WP [[WikiCreole link style|WikiCreole style links]]
+WP [[NonExistingMacro]]                 interpreted as Creole link
+WP [[NonExistingMacro(MyMacroParam)]]   interpreted as Creole link
+
+== External Pages, ignore all:
+IL [[trac:any_page_in_trac]] ignore external pages
+IL [trac:any_page_in_trac]
+IL trac:any_page_in_trac
+IL [[http://external external link]]
+IL [http://external external link]
+IL http://external external link
+IL http://ExternalLink
+IL http://ExternalTrac/wiki/TomFool
+IL [[https://external external link]]
+IL [https://external external link]
+IL https://external external link
+IL https://ExternalLink
+IL https://ExternalTrac/wiki/TomFool
+IL http://c2.com/cgi/wiki?WikiHistory   ignore Camelcase parameter
+
+== Ignore Camelcase display names:
+IL/IL [wiki:WantedLinksTestPage WantedLinksTestPage] existing page
+WP/IL [wiki:XantedLinksTestPage XantedLinksTestPage] non-existing page
+
+== Ignore everything inside (nested) blocks:
 {{{
 <IfModule mod_fastcgi.c>
    AddHandler fastcgi-script .fcgi
    FastCgiIpcDir /var/lib/apache2/fastcgi
 </IfModule>
-}}}
-{{{
-  if (MyClass)  { return null };
-}}}
-[wiki:WikiProcessors TracWikiProcessor] (don't pickup the display  name even though it is camel case)
-{{{
-  PythonPath "sys.path + ['/path/to/trac']"
-}}}
-{{{
-{{{
-}}}
-NestedBlocks
-}}}
-http://c2.com/cgi/wiki?WikiHistory
-"""
 
+if (MyClass)  { return null };
+
+PythonPath "sys.path + ['/path/to/trac']"
+
+CamelCaseInBlockIgnored
+
+{{{
+CamelCaseInNestedBlockIgnored
+}}}
+
+}}}
+"""
 
 def setUp(tc):
     tc.env = EnvironmentStub(enable=['trac.*', 'wantedpages.*'])
     page = WikiPage(tc.env)
-    page.name = 'DanglingLinks'
+    page.name = 'WantedLinksTestPage'
     page.text = CONTENT
     page.save('joe', 'first edit', '::1')
 
