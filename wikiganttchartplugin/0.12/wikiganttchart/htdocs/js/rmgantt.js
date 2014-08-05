@@ -793,7 +793,7 @@
                                     , isEnabled: function() {
                                         return tasks.get(idx).level != 1;
                                     }
-                                    , icon: 'fa-indent'
+                                    , icon: 'fa-outdent'
                                 }
                                 , {
                                     label: _('Level down')
@@ -807,7 +807,7 @@
                                         return !tasks.isOldest(idx) &&
                                             tasks.get(idx).level != self.maxLevel;
                                     }
-                                    , icon: 'fa-outdent'
+                                    , icon: 'fa-indent'
                                     , separation: true
                                 }
                                 , {
