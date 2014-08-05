@@ -656,7 +656,7 @@ class WikiGanttChartModule(Component):
         except WikiGanttChartError, e:
             return tag.div(
                 tag.div(tag.strong('Error: Macro WikiGanttChart failed'),
-                        tag.pre(unicode(e), class_='system-message')),
+                        tag.pre(to_unicode(e), class_='system-message')),
                 class_='system-message')
 
         params.update({
