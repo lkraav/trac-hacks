@@ -367,7 +367,7 @@ class WikiGanttChart(object):
                     d = iso8601_parse_date(task[key])
                 except ValueError:
                     raise WikiGanttChartError(_("Invalid date format in line "
-                                                "%(lineno): \"%(value)s\"",
+                                                "%(lineno)d: \"%(value)s\"",
                                                 lineno=lineno, value=value))
                 else:
                     ntask[key] = iso8601_format_date(d)

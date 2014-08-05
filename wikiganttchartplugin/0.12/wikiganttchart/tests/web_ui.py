@@ -25,7 +25,8 @@ from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
 from trac.wiki.web_ui import WikiModule
 
-from wikiganttchart.web_ui import WikiGanttChart, WikiGanttChartModule
+from wikiganttchart.web_ui import WikiGanttChart, WikiGanttChartError, \
+                                  WikiGanttChartModule
 
 
 def _norm_newline(text):
@@ -692,6 +693,21 @@ Summary 4
         exported = gantt.export()
         self.assertEquals('deadbeef', exported['id'])
         self.assertEquals(False, exported['writable'])
+
+    def test_invalid_date(self):
+        page = WikiPage(self.env, 'NewPage')
+        req = _create_req(page=page)
+        gantt = WikiGanttChart(self.mod, req, page)
+        body = """\
+Summary 1, ,      2014-07-02, 2014-07-21,
+Summary 2, admin, 2014-07-32, 2014-07-22,
+"""
+        try:
+            gantt.parse_macro(id='deadbeef', body=body)
+            self.fail('WikiGanttChartError not raised')
+        except WikiGanttChartError, e:
+            self.assertEquals('Invalid date format in line 2: "2014-07-32"',
+                              unicode(e))
 
 
 def suite():

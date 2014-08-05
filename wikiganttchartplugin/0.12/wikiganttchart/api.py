@@ -8,6 +8,7 @@
 
 from datetime import date, datetime
 
+from trac.core import TracError
 from trac.config import ChoiceOption, IntOption, Option
 from trac.util import arity
 from trac.util.datefmt import parse_date, utc
@@ -47,7 +48,10 @@ Option = _option_with_tx(Option)
 
 
 def iso8601_parse_date(text, tzinfo=utc):
-    return parse_date(text, tzinfo=tzinfo)
+    try:
+        return parse_date(text, tzinfo=tzinfo)
+    except TracError, e:
+        raise ValueError(e)
 
 
 def iso8601_format_date(t):

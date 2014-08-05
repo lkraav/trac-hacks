@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WikiGanttChartPlugin 0.12.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-29 02:30+0900\n"
+"POT-Creation-Date: 2014-08-05 14:16+0000\n"
 "PO-Revision-Date: 2014-07-29 02:34+0900\n"
 "Last-Translator: Genie <386@mail.com>\n"
 "Language-Team: ko <LL@li.org>\n"
@@ -35,7 +35,7 @@ msgstr "%(lineno)d 행: 들여쓰기가 잘못되었습니다."
 
 #: wikiganttchart/web_ui.py:369
 #, python-format
-msgid "Invalid date format in line %(lineno): \"%(value)s\""
+msgid "Invalid date format in line %(lineno)d: \"%(value)s\""
 msgstr "%(lineno)d 행: \"%(value)s\" 은 잘못된 날짜 형식입니다."
 
 #: wikiganttchart/web_ui.py:382
@@ -67,7 +67,9 @@ msgstr "새 티켓을 만들 때 사용할 `티켓 종류(type)`의 기본값을
 msgid ""
 "Seconds in the short-time updating. If the short-term updating, it "
 "wouldn't create a new version of wiki page."
-msgstr "short-term 업데이트 시간을 초 단위로 설정합니다. short-term 업데이트일 경우 위키 페이지의 새 버전을 만들지 않습니다."
+msgstr ""
+"short-term 업데이트 시간을 초 단위로 설정합니다. short-term 업데이트일 경우 위키 페이지의 새 버전을 만들지 "
+"않습니다."
 
 #: wikiganttchart/web_ui.py:620
 msgid "`[[Gantt]]` displays gantt editor in milestone and Trac wiki.\n"
