@@ -1,10 +1,10 @@
 .wikiganttchartmacro { clear: both }
 
 .rmgantt { margin: 20px auto; width: 100% }
+.rmgantt table { font-size: 100% }
 .rmgantt .header {
  display: table;
  width: 100%;
- font-size: 140%;
 }
 .rmgantt .header > * {
  display: table-cell;
@@ -26,7 +26,6 @@
  display: inline-block;
  font-weight: normal;
  margin: 0 0.5em 0.3em 0.5em;
- font-size: 80%;
 }
 .rmgantt .nav .buttons > a {
  background-color: #F7F7F7;
@@ -52,16 +51,11 @@
  border-bottom-right-radius: 0.4em;
  border-top-right-radius: 0.4em;
 }
-.rmgantt .header span,
-.rmgantt .header input {
- font-size: 80%;
-}
 .rmgantt .header select {
  position: relative;
  top: 2px;
  margin: 0 0 2px;
  height: 2em;
- font-size: 80%;
  color: #29303B;
 }
 @media screen and (-webkit-min-device-pixel-ratio:0) {
@@ -78,7 +72,6 @@
 .rmgantt .date-selector { display: inline-block }
 .rmgantt .date-selector input[name=months] { width: 2em }
 .rmgantt > .chart {
- font-size: 80%;
  -moz-box-sizing: border-box;
  box-sizing: border-box;
  border: 14px solid #ccc9c7;
@@ -115,7 +108,6 @@
  border-left: 2px dashed red;
  z-index: 100;
 }
-.rmgantt .gantt_subjects { font-size: 0.8em }
 .rmgantt .gantt_subjects div {
  height: 16px;
  line-height: 16px;
@@ -127,10 +119,6 @@
 .rmgantt .subjects table .issue-subject {
  overflow: hidden;
  white-space: nowrap;
-}
-.rmgantt .subjects table th,
-.rmgantt .subjects table td {
- font-size: 80%;
 }
 .rmgantt .subjects table th.hidden,
 .rmgantt .subjects table td.hidden {
@@ -173,7 +161,6 @@
  border: 1px solid #D3D3D3;
  color: #29303B;
  font-weight: normal;
- font-size: 0.9em;
  vertical-align: middle;
  display: inline-block;
  border-radius: 4px 4px 4px 4px;
@@ -181,7 +168,6 @@
 }
 .rmgantt .task {
  color: #29303B;
- font-size: 0.8em;
  height: 8px;
  line-height: 16px;
  margin: 0;
