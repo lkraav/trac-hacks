@@ -140,7 +140,11 @@ class WikiGanttChart(object):
         return self._id
 
     def export(self):
-        tasks = [task.to_dict() for task in self.tasks]
+        def fn(task):
+            if task == {}:
+                return {}
+            return task.to_dict()
+        tasks = map(fn, self.tasks)
         return {'id': self._id, 'tasks': tasks, 'writable': self.writable,
                 'style': self.style, 'zoom': 4,
                 'ticketCreatable': self.ticket_creatable}
@@ -190,9 +194,11 @@ class WikiGanttChart(object):
             return text
 
         def make_task(task):
+            if task == {}:
+                return ''
+
             indent = int(task.get('level')) or 1
             data = task.get('data') or {}
-
             subject = data.get('subjectName')
             ticket_id = data.get('ticket')
             ticket = None
@@ -266,8 +272,11 @@ class WikiGanttChart(object):
         self._conv_task_list(tasks)
 
     def _parse_line(self, line, i):
+        if not line.strip(', \t'):
+            return None
+
         task = {}
-        task['level'] = self._get_level(line, i)
+        level = self._get_level(line, i)
         itr = self._get_cv(line.strip(), i)
 
         try:
@@ -295,6 +304,10 @@ class WikiGanttChart(object):
             task['ratio'] = ratio
         except StopIteration:
             pass
+
+        if not task:
+            return None
+        task['level'] = level
         return task
 
     def _get_cv(self, line, idx):
@@ -344,6 +357,9 @@ class WikiGanttChart(object):
         prev_lv = 0
         for idx, task in enumerate(tlist):
             lineno = idx + 1
+            if task is None:
+                continue
+
             ntask = WikiGanttTask()
             if task['level'] == 1:
                 ntask['parent'] = None
@@ -376,7 +392,7 @@ class WikiGanttChart(object):
                 ntask['ratio'] = int(task['ratio'])
 
             data = {}
-            if 'name' in task:
+            if task.get('name'):
                 data['subjectName'] = task['name']
             else:
                 raise WikiGanttChartError(_("Task name is missing in line "
@@ -399,6 +415,8 @@ class WikiGanttChart(object):
     def _append_formatted_value(self):
         locale = self.locale or locale_en
         for task in self.tasks:
+            if task == {}:
+                continue
             for key in ('startDate', 'dueDate'):
                 d = task.get(key)
                 if not d:

@@ -515,16 +515,15 @@ Summary 5, admin,         ,           2014-07-24, 101%
         gantt = WikiGanttChart(self.mod, req, page)
         body = """\
 Summary 1,,,,
-,,,,
-"",,,,
+, , , ,
 
 Summary 2,,,,
 """
         gantt.parse_macro(id='deadbeef', body=body)
         tasks = gantt.tasks
-        self.assertEquals(5, len(tasks))
+        self.assertEquals(2, len(tasks))
         _check_task(self, tasks[0], summary='Summary 1')
-        _check_task(self, tasks[4], summary='Summary 2')
+        _check_task(self, tasks[1], summary='Summary 2')
 
     def test_parse_summary(self):
         page = WikiPage(self.env, 'NewPage')
@@ -693,6 +692,20 @@ Summary 4
         exported = gantt.export()
         self.assertEquals('deadbeef', exported['id'])
         self.assertEquals(False, exported['writable'])
+
+    def test_empty_summary(self):
+        page = WikiPage(self.env, 'NewPage')
+        req = _create_req(page=page)
+        gantt = WikiGanttChart(self.mod, req, page)
+        body = """\
+Summary 1, ,      2014-07-02, 2014-07-21,
+         , admin, 2014-07-14, 2014-07-22,
+"""
+        try:
+            gantt.parse_macro(id='deadbeef', body=body)
+            self.fail('WikiGanttChartError not raised')
+        except WikiGanttChartError, e:
+            self.assertEquals('Task name is missing in line 2', unicode(e))
 
     def test_invalid_date(self):
         page = WikiPage(self.env, 'NewPage')
