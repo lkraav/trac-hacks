@@ -7,7 +7,7 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-import time
+import time, re
 from StringIO import StringIO
 from HTMLParser import HTMLParser
 from genshi.core import Markup
@@ -16,6 +16,7 @@ from trac.wiki.formatter import OneLinerFormatter
 from trac.wiki.formatter import InlineHtmlFormatter
 from trac.wiki.parser import WikiParser
 from trac.wiki.macros import WikiMacroBase
+from trac.wiki.api import parse_args
 from genshi.core import escape
 from collections import OrderedDict
 
@@ -89,14 +90,15 @@ class WantedPagesFormatter(OneLinerFormatter):
         return ''
 
     def handle_match(self, fullmatch):
-        #self.first = 'ITYPE'
         for itype, match in fullmatch.groupdict().items():
             if match:
                 # ignore non-wiki references
                 if (itype in ['lns', 'sns']) and (match != 'wiki'):
                     return ''
-                # ignore inter-trac references and references to tickets, changesets, etc.
-                if (itype.startswith( 'it_')) or (itype in ['i3', 'i4', 'i5', 'i6']):
+                # ignore Inter-Trac references and
+                # references to tickets, changesets, etc.
+                if (itype.startswith( 'it_')) or
+                    (itype in ['i3', 'i4', 'i5', 'i6']):
                     return ''
             if match and not itype in self.wikiparser.helper_patterns:
                 # Check for preceding escape character '!'
@@ -165,9 +167,12 @@ class WantedPagesMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content, args=None):
         _start_time = time.time() # save start time
-        _show_referrers = content and 'show_referrers' in content.strip()
+        _largs, _kwargs = parse_args(content)
+        _show_referrers = _largs and 'show_referrers' in _largs
+        _ignored_referrers = _kwargs.get('ignored_referrers', None)
         # get all wiki page names and their content
-        self.page_names, self.page_texts = self.get_wiki_pages()
+        self.page_names, self.page_texts =
+            self.get_wiki_pages(_ignored_referrers)
         _ml_parser = MissingLinksHTMLParser()
         _missing_links = OrderedDict()
 
@@ -211,7 +216,7 @@ class WantedPagesMacro(WikiMacroBase):
                        (_missing_link_count, (time.time() - _start_time)))
         return format_to_html(self.env, formatter.context, _data)
 
-    def get_wiki_pages(self):
+    def get_wiki_pages(self, ignored_referrers = None):
         page_texts = [] # list of referrer link, wiki-able text tuples
         page_names = [] # list of wikiPages seen
         db = self.env.get_db_cnx()
@@ -219,6 +224,8 @@ class WantedPagesMacro(WikiMacroBase):
         # query is ordered by latest version first
         # so it's easy to extract the latest pages
         for name, text in exec_wiki_sql(db):
+            if ignored_referrers and re.search(ignored_referrers, name):
+                continue # skip matching names
             if name not in page_names:
                 page_names.append(name)
                 page_texts.append(text)
