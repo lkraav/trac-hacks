@@ -111,13 +111,15 @@ jQuery(document).ready(function ($) {
     });
   }
 
+  var field_type = $('#field-type');
+  var ticket_type = field_type.val();
   if (mode == 'view') {
-    set_header_type($('#field-type').val());
+    set_header_type(ticket_type);
   }
+  set_type(ticket_type);
 
-  set_type($('#field-type').val());
-
-  $('#field-type').change(function () {
-    set_type($(this).val());
+  field_type.change(function () {
+    var ticket_type = $(this).val();
+    set_type(ticket_type);
   })
 });
