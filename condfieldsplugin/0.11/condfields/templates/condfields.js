@@ -112,9 +112,7 @@ jQuery(document).ready(function ($) {
   }
 
   if (mode == 'view') {
-    var status_re = /\(\w+ ([^:]+)(: \w+)?\)/;
-    var re_results = status_re.exec($('span.status').text());
-    set_header_type(re_results[1]);
+    set_header_type($('#field-type').val());
   }
 
   set_type($('#field-type').val());
