@@ -5,11 +5,11 @@ from setuptools import find_packages, setup
 # use package name as entry_points
 setup(
     name='Budgeting Plugin', 
-    version='0.6.4',
+    version='0.6.5',
     author = 'Gefasoft AG, Franz Mayer',
     author_email = 'franz.mayer@gefasoft.de', 
-    description = 'Adds Budgeting Informations to Tickets',
-    url = 'http://www.gefasoft-muenchen.de',
+    description = 'Possibility to add budgeting information (estimation, cost, user) to tickets',
+    url = 'http://trac-hacks.org/wiki/BudgetingPlugin',
     download_url = 'https://trac-hacks.org/wiki/BudgetingPlugin',
     packages=find_packages(exclude=['*.tests*']),
     entry_points = """

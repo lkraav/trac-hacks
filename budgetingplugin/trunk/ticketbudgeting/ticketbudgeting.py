@@ -240,29 +240,29 @@ class TicketBudgetingView(Component):
 
 
     BUDGET_REPORTS = [(BUDGET_REPORT_ALL_ID, 'report_title_90', 'report_description_90',
-    u"""SELECT t.id, t.summary, t.milestone AS __group__, '../milestone/' || t.milestone AS __grouplink__, 
+    u"""SELECT t.id, t.summary, t.milestone AS __group__, ''../milestone/'' || t.milestone AS __grouplink__, 
     t.owner, t.reporter, t.status, t.type, t.priority, t.component,
     count(b.ticket) AS Anz, sum(b.cost) AS Aufwand, sum(b.estimation) AS Schaetzung,
-    floor(avg(b.status)) || '%' AS "Status", 
+    floor(avg(b.status)) || ''%'' AS "Status", 
     (CASE t.status 
-      WHEN 'closed' THEN 'color: #777; background: #ddd; border-color: #ccc;'
+      WHEN ''closed'' THEN ''color: #777; background: #ddd; border-color: #ccc;''
       ELSE 
-        (CASE sum(b.cost) > sum(b.estimation) WHEN true THEN 'font-weight: bold; background: orange;' END)
+        (CASE sum(b.cost) > sum(b.estimation) WHEN true THEN ''font-weight: bold; background: orange;'' END)
     END) AS __style__
     from ticket t
     left join budgeting b ON b.ticket = t.id
     where t.milestone like 
     (CASE $MILESTONE
-              WHEN '' THEN '%' 
+              WHEN '''' THEN ''%'' 
               ELSE $MILESTONE END) and
     (t.component like (CASE $COMPONENT
-              WHEN '' THEN '%' 
+              WHEN '''' THEN ''%'' 
               ELSE $COMPONENT END) or t.component is null) and 
     (t.owner like (CASE $OWNER
-              WHEN '' THEN $USER 
+              WHEN '''' THEN $USER 
               ELSE $OWNER END) or t.owner is null or 
      b.username like (CASE $OWNER
-              WHEN '' THEN $USER 
+              WHEN '''' THEN $USER 
               ELSE $OWNER END) )
     group by t.id, t.type, t.priority, t.summary, t.owner, t.reporter, t.component, t.status, t.milestone
     having count(b.ticket) > 0
@@ -272,13 +272,30 @@ class TicketBudgetingView(Component):
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
         add_domain(self.env.path, locale_dir)
+        
+        try:
+            self.env.db_query("SELECT ticket FROM %s where ticket is null" %
+                              BUDGETING_TABLE.name)
+            self.log.debug ("[TicketBudgetingView.__init__] table '%s' " \
+                            "already exists" % BUDGETING_TABLE.name)
+        except Exception:
+            self.log.debug ("[TicketBudgetingView.__init__] table '%s' " \
+                            "does not exists" % BUDGETING_TABLE.name)
+            try:
+                self.create_table()
+                self.log.info("[__init__] table '%s' successfully created" 
+                              % BUDGETING_TABLE.name)
+                self.create_reports()
+                self.log.info("[__init__] report '%s' successfully created" 
+                              % BUDGET_REPORT_ALL_ID)
+            except Exception, e:
+                self.log.error("[__init__] ERROR when creating table" \
+                               " or report: %s" % e )
+
 
     def filter_stream(self, req, method, filename, stream, data):
         """ overloaded from ITemplateStreamFilter """
         if filename == 'ticket.html' and data:
-            if self._check_init() == False:
-                self.create_table()
-                self.log.info("table successfully initialized")
             tkt = data['ticket']
             if tkt and tkt.id:
                 self._load_budget(tkt.id)
@@ -594,26 +611,6 @@ class TicketBudgetingView(Component):
                 preview_html += '</tr>'
         return input_html, preview_html
 
-    def _check_init(self):
-        """First setup or initentities deleted
-            check initialization, like db setup etc."""
-        if (self.config.get(self._CONFIG_SECTION, 'version')):
-            self.log.debug ("have local ini, so everything is set")
-            return True
-        else:
-            self.log.debug ("check database")
-            try:
-                self.env.db_query("SELECT ticket FROM %s" %
-                                  BUDGETING_TABLE.name)
-                self.config.set(self._CONFIG_SECTION, 'version', '1')
-                self.config.save()
-                self.log.info ("created local ini entries with name budgeting")
-                return True
-            except Exception:
-                self.log.warn ("[_check_init] error while checking database;"
-                               " table 'budgeting' is probably not present")
-
-        return False
 
     #===============================================================================
     # ITemplateProvider methods
@@ -714,35 +711,35 @@ class TicketBudgetingView(Component):
                             stmt = re.sub(r'CREATE TABLE ', 'CREATE TABLE "'
                                           + db.schema + '".', stmt)
                     except Exception, e:
-                        self.log.warn('[INIT table] substitutung schema throws error: %s' % e)
+                        self.log.warn('[INIT table] substituting schema throws error: %s' % e)
                     stmt = re.sub(r'(?i)bigint', 'NUMERIC(10,2)', stmt)
-#                    stmt += ";"
                     self.log.info("[INIT table] executing sql: %s" % stmt)
                     db(stmt)
                     self.log.info("[INIT table] successfully created table %s"
                                    % BUDGETING_TABLE.name)
         except Exception, e:
             self.log.error("[INIT table] Error executing SQL Statement \n %s" % e)
-        self.create_reports()
 
     def create_reports(self):
-#        print "[INIT report] create_reports: %s" % self.BUDGET_REPORTS
         for report in self.BUDGET_REPORTS:
             try:
-                self.log.info("having myCursor")
                 descr = _(report[2])
-                self.log.info("descr: %s" % descr)
                 descr = re.sub(r"'", "''", descr)
-                self.log.info("report[3]: %s" % report[3])
-                self.log.info(" VALUES: %s, '%s', '%s'" % (report[0], _(report[1]), report[3]))
-                sql = "INSERT INTO report (id, author, title, query, description) "
-                sql += " VALUES(%s, null, '%s', '%s', '%s');" % (report[0], _(report[1]), report[3], descr)
-                self.log.info("[INIT reports] executing sql: %s" % sql)
+                title = _(report[1])
+                self.log.debug("report description (translated): %s" % descr)
+                self.log.debug( "report - id, title (translated):  %s, '%s'" %
+                                (report[0], title) )
+                
+                sql = "INSERT INTO report " \
+                      "(id, author, title, query, description)" \
+                      " VALUES(%s, null, '%s', '%s', '%s');" \
+                      % (report[0], title, report[3], descr)
+                self.log.debug("[INIT reports] executing sql: %s" % sql)
                 self.env.db_transaction(sql)
                 self.log.info("[INIT reports] successfully created report with id %s" % report[0])
             except Exception, e:
                 self.log.error("[INIT reports] Error executing SQL Statement \n %s" % e)
-#                raise e
+
 
     def get_col_list(self, ignore_cols=None):
         """ return col list as string; usable for selecting all cols 
