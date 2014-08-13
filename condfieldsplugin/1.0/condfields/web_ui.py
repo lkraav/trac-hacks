@@ -1,31 +1,25 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2007-2009 Noah Kantrowitz <noah@coderanger.net>
+# Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-import urllib
-
-from trac.core import Component, TracError, implements
-from trac.config import ListOption, BoolOption
-from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import ITemplateProvider, add_script
-from trac.ticket.model import Type
+from trac.config import BoolOption, ListOption
+from trac.core import Component, implements
 from trac.ticket.api import TicketSystem
-from trac.util.compat import sorted, set
+from trac.ticket.model import Type
+from trac.web.api import IRequestFilter
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 
 
 class CondFieldsModule(Component):
     """A filter to implement conditional fields on the ticket page."""
 
-    implements(IRequestFilter, IRequestHandler, ITemplateProvider)
+    implements(IRequestFilter, ITemplateProvider)
 
     include_std = BoolOption('condfields', 'include_standard', default='true',
                              doc="Include the standard fields for all types.")
@@ -45,18 +39,33 @@ class CondFieldsModule(Component):
                                        doc='Fields to hide for type "%s"' % t)
             setattr(self.__class__, '%s_fields' % t, hidden_fields)
 
-    ### IRequestHandler methods
+    ### IRequestFilter methods
 
-    def match_request(self, req):
-        return req.path_info.startswith('/condfields')
+    def pre_process_request(self, req, handler):
+        return handler
 
-    def process_request(self, req):
-        data = {}
+    def post_process_request(self, req, template, data, content_type):
+        if req.path_info.startswith('/newticket') or \
+                req.path_info.startswith('/ticket/'):
+            add_script_data(req, self._get_script_data(req))
+            add_script(req, '/chrome/condfields/condfields.js')
+        return template, data, content_type
+
+    ### ITemplateProvider methods
+
+    def get_htdocs_dirs(self):
+        from pkg_resources import resource_filename
+        return [('condfields', resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        from pkg_resources import resource_filename
+        return [resource_filename(__name__, 'templates')]
+
+    ### Private methods
+
+    def _get_script_data(self, req):
         ticket_types = {}
         field_types = {}
-        mode = req.path_info[12:-3]
-        if mode != 'new' and mode != 'view':
-            raise TracError('Invalid condfields view')
         all_fields = []
         standard_fields = set()
         for f in TicketSystem(self.env).get_ticket_fields():
@@ -79,7 +88,7 @@ class CondFieldsModule(Component):
 
         for t in self.types:
             if not self.show_default:
-                hiddenfields = set(getattr(self, t+'_fields'))
+                hiddenfields = set(getattr(self, t + '_fields'))
                 fields = set(all_fields)
                 fields.difference_update(hiddenfields)
             else:
@@ -91,34 +100,10 @@ class CondFieldsModule(Component):
                 (f, f in fields) for f in all_fields
             ])
 
-        self.log.debug(all_fields)
-        self.log.info(standard_fields)
-
-        data['mode'] = mode
-        data['types'] = json.dumps(ticket_types)
-        data['field_types'] = json.dumps(field_types)
-        data['required_fields'] = json.dumps(list(self.forced_fields))
-
-        return 'condfields.js', {'condfields': data}, 'text/plain'
-
-    ### IRequestFilter methods
-
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith('/newticket') or \
-                req.path_info.startswith('/ticket/'):
-            add_script(req, '/condfields/%s.js' %
-                            (req.path_info.startswith('/newticket') and 'new' or 'view'))
-        return template, data, content_type
-
-    ### ITemplateProvider methods
-
-    def get_htdocs_dirs(self):
-        return []
-
-    def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
+        return {
+            'mode': 'new' if req.path_info.startswith('/newticket')
+                          else 'view',
+            'condfields': ticket_types,
+            'field_types': field_types,
+            'required_fields': list(self.forced_fields)
+        }

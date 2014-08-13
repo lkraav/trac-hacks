@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2007-2009 Noah Kantrowitz <noah@coderanger.net>
+# Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -12,21 +13,20 @@ from setuptools import setup
 
 setup(
     name='TracCondFields',
-    version='2.0',
+    version='3.0',
     packages=['condfields'],
-    package_data={'condfields': ['templates/*']},
+    package_data={'condfields': ['templates/*.html', 'htdocs/*.js']},
 
     author='Noah Kantrowitz',
     author_email='noah@coderanger.net',
     description='Support for conditional fields in different ticket types.',
-    license='BSD 3-Clause',
+    license='3-Clause BSD',
     keywords='trac plugin ticket conditional fields',
     url='http://trac-hacks.org/wiki/CondFieldsPlugin',
     classifiers=[
         'Framework :: Trac',
     ],
 
-    install_requires=['Trac>=0.11'],
     extras_require={'customfieldadmin': 'TracCustomFieldAdmin'},
 
     entry_points={

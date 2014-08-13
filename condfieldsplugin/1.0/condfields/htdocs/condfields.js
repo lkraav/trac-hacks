@@ -1,9 +1,4 @@
-var condfields = $condfields.types;
-var field_types = $condfields.field_types;
-var required_fields = $condfields.required_fields;
-
 jQuery(document).ready(function ($) {
-  var mode = '$condfields.mode';
   var all_fields = [];
   $('#properties tbody').find('label[for]').each(function (i, e) {
     var field = e.getAttribute('for') ? e.getAttribute('for').substr(6) : e.getAttribute('htmlFor').substr(6);
@@ -17,8 +12,6 @@ jQuery(document).ready(function ($) {
       input: $('#field-' + field).parents('td')
     }
   }
-  //console.info(field_data);
-  //console.info(mode);
 
   function set_type(t) {
 
@@ -111,14 +104,14 @@ jQuery(document).ready(function ($) {
     });
   }
 
-  var field_type = $('#field-type');
-  var ticket_type = field_type.val();
+  var $field_type = $('#field-type');
+  var ticket_type = $field_type.val();
   if (mode == 'view') {
     set_header_type(ticket_type);
   }
   set_type(ticket_type);
 
-  field_type.change(function () {
+  $field_type.change(function () {
     var ticket_type = $(this).val();
     set_header_type(ticket_type);
     set_type(ticket_type);
