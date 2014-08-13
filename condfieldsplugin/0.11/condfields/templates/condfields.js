@@ -120,6 +120,7 @@ jQuery(document).ready(function ($) {
 
   field_type.change(function () {
     var ticket_type = $(this).val();
+    set_header_type(ticket_type);
     set_type(ticket_type);
   })
 });
