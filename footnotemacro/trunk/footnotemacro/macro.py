@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2005-2006 Alex Thomas
 # Copyright (C) 2007-2008 Noah Kantrowitz <noah@coderanger.net>
-# Copyright (C) 2010-2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2010-2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -17,6 +17,7 @@ from trac.util.text import shorten_line
 
 from genshi.builder import tag
 from pkg_resources import resource_filename
+
 
 class FootNoteMacro(WikiMacroBase):
     """Collates and generates foot-notes. Call the macro with the
@@ -83,7 +84,8 @@ class FootNoteMacro(WikiMacroBase):
                         break
 
                 # Format markup
-                markup = format_to_oneliner(self.env, formatter.context, content)
+                markup = format_to_oneliner(self.env, formatter.context,
+                                            content)
 
                 # Adding a new footnote
                 if not output_id:
@@ -94,15 +96,16 @@ class FootNoteMacro(WikiMacroBase):
                 tag.a(
                     output_id,
                     title=shorten_line(content, 50),
-                    id='FootNoteRef%s'%output_id,
-                    href='#FootNote%s'%output_id,
+                    id='FootNoteRef%s' % output_id,
+                    href='#FootNote%s' % output_id,
                 ),
                 class_='footnote',
             )
         else:
             # Dump all accumulated notes
             footnotes = context._footnotes[:]
-            context._footnotes = [(content, None) for content, markup in footnotes]
+            context._footnotes = [(content, None)
+                                  for content, markup in footnotes]
             if context._footnotes:
                 return tag.div(
                     tag.hr(),
@@ -115,8 +118,9 @@ class FootNoteMacro(WikiMacroBase):
                             ),
                             ' ',
                             markup,
-                            id='FootNote%s'%(i+1),
-                        ) for i, (content, markup) in enumerate(footnotes) if markup],
+                            id='FootNote%s' % (i+1),
+                        ) for i, (content, markup) in enumerate(footnotes)
+                                                   if markup],
                     ),
                     class_='footnotes',
                 )
@@ -124,9 +128,9 @@ class FootNoteMacro(WikiMacroBase):
                 return []
 
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         return [('footnote', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
         return []
-
