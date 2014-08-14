@@ -97,7 +97,7 @@ class WantedPagesFormatter(OneLinerFormatter):
                     return ''
                 # ignore Inter-Trac references and
                 # references to tickets, changesets, etc.
-                if (itype.startswith( 'it_')) or
+                if (itype.startswith( 'it_')) or \
                     (itype in ['i3', 'i4', 'i5', 'i6']):
                     return ''
             if match and not itype in self.wikiparser.helper_patterns:
@@ -171,7 +171,7 @@ class WantedPagesMacro(WikiMacroBase):
         _show_referrers = _largs and 'show_referrers' in _largs
         _ignored_referrers = _kwargs.get('ignored_referrers', None)
         # get all wiki page names and their content
-        self.page_names, self.page_texts =
+        self.page_names, self.page_texts = \
             self.get_wiki_pages(_ignored_referrers)
         _ml_parser = MissingLinksHTMLParser()
         _missing_links = OrderedDict()
