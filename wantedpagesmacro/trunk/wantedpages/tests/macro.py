@@ -25,6 +25,7 @@ MACRO_TEST_CASE = u"""
 <tr><td>Missing link
 </td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe" rel="nofollow">TimLowe?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe#Bio" rel="nofollow">TimLowe#Bio?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/UpgradeEnvironment" rel="nofollow">UpgradeEnvironment?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki/ChildWiki" rel="nofollow">ParentWiki/ChildWiki?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki" rel="nofollow">ParentWiki?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki" rel="nofollow">WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki?</a>
@@ -39,6 +40,12 @@ MACRO_TEST_CASE = u"""
 </td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Matters" rel="nofollow">Space Matters?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Flatters" rel="nofollow">Space Flatters?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/WikiPageName" rel="nofollow">WikiPageName?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%201" rel="nofollow">some page 1?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%202" rel="nofollow">some page 2?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/alsoAWikiPage" rel="nofollow">alsoAWikiPage?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/also-a-wiki-page" rel="nofollow">also-a-wiki-page?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%203" rel="nofollow">some page 3?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%204" rel="nofollow">some page 4?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?format=txt" rel="nofollow">XantedLinksTestPage?format=txt?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?version=1" rel="nofollow">XantedLinksTestPage?version=1?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/WikiCreole%20link%20style" rel="nofollow">WikiCreole link style?</a>
@@ -59,6 +66,7 @@ CONTENT = """
 == Camelcase test cases
 WP TimLowe               missing page
 WP TimLowe#Bio           anchor on missing page
+WP = Upgrade Environment = #UpgradeEnvironment    missing anchor
 IL TimLowe5              not Camelcase because of number
 IL !TimLowe              ignore links starting with !
 IL {{{TimLowe}}}         inline block
@@ -88,6 +96,15 @@ WP ["WikiPageName"]                    implicit reference
 WP [WikiPageName]                      implicit reference
 IL [WikiPageName2]                     not Camelcase because of number
 IL [wikipagename]                      not Camelcase
+
+== Wiki syntax, checking quotes and no square brackets
+WP wiki:'some page 1'
+WP wiki:"some page 2"
+WP wiki:alsoAWikiPage
+WP wiki:also-a-wiki-page
+WP [wiki:'some page 3']
+WP [wiki:"some page 4"]
+
 == Also check some existing pages:
 IL wiki:WantedLinksTestPage?format=txt existing page
 WP wiki:XantedLinksTestPage?format=txt non-existing page

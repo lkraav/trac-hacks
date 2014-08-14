@@ -1,5 +1,5 @@
 == Install
-You must have setuptools installed. 
+You must have setuptools installed.
 
 Run the following commands in the source directory:
 {{{#!sh
@@ -22,6 +22,11 @@ To run the tests, run `python tests.py` in the wanted_pages subdirectory of the
 root of the WantedPages source distribution. The tests parse this file and then
 checks the positive and negative test cases listed below.
 
+== 0.5 changelog
+ * major changes: now using the same formatter of Trac
+   this will fix most issues wher pages were missing pages were not found
+   or exisitng pages labelled as missing pages
+
 == 0.4 Changelog
  * The Component is now enabled as `wantedpages.* = enabled`
 
@@ -30,9 +35,9 @@ checks the positive and negative test cases listed below.
 
 == 0.2 Changelog
 
- * Improved link detection, fixing many bugs not even reported 
+ * Improved link detection, fixing many bugs not even reported
  * Fixed [wiki:link] not being picked up
  * No longer need spaces around a wiki link for it to show up
  * Fixed {{{ CodeSegments }}} being picked up
- 
+
 EndOfFile
