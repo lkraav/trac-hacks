@@ -23,5 +23,6 @@ setup(
     zip_safe=True,
     packages=[PACKAGE],
     package_data={PACKAGE: ['templates/*.html']},
+    test_suite='talm_importer.test.suite',
     entry_points={'trac.plugins': 'TicketImport = %s' % (PACKAGE)}
     )

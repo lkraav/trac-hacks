@@ -13,7 +13,9 @@ import unittest
 import pprint
 import difflib
 from genshi.core import Markup
+from pkg_resources import parse_version
 
+from trac import __version__ as VERSION
 from trac.web.api import Request
 from trac.env import Environment
 from trac.core import TracError
@@ -21,16 +23,21 @@ from trac.core import TracError
 
 from talm_importer.importer import ImportModule
 
-import trac
-if trac.__version__.startswith('0.12'):
+
+if parse_version(VERSION) >= parse_version('0.12'):
     CTL_EXT = '-0.12.ctl'
 else:
     CTL_EXT = '.ctl'
 
 
-def _exec(cursor, sql, args = None): cursor.execute(sql, args)
+TESTDIR = 'test'
 
-def _printme(something): pass # print something
+
+def _exec(cursor, sql, args = None):
+    cursor.execute(sql, args)
+
+def _printme(something):
+    pass  # print something
 
 
 class PrinterMarkupWrapper(object):
@@ -132,11 +139,10 @@ class ImporterTestCase(unittest.TestCase):
         return eval(contents), contents
 
     def _do_test(self, env, filename, testfun):
-        from os.path import join, dirname
-        testdir = join(dirname(dirname(dirname(testfolder))), 'test')
-        outfilename = join(testdir, filename + '.' + testfun.__name__ + '.out')
-        ctlfilename = join(testdir, filename + '.' + testfun.__name__ + CTL_EXT)
-        self._writefile(outfilename, testfun(env, join(testdir, filename)))
+        from os.path import join
+        outfilename = join(TESTDIR, filename + '.' + testfun.__name__ + '.out')
+        ctlfilename = join(TESTDIR, filename + '.' + testfun.__name__ + CTL_EXT)
+        self._writefile(outfilename, testfun(env, join(TESTDIR, filename)))
         outdata, outprint = self._evalfile(outfilename)
         ctldata, ctlprint = self._evalfile(ctlfilename)
         try:
@@ -283,7 +289,7 @@ class ImporterTestCase(unittest.TestCase):
         self.assertEquals(self._do_test_with_exception(env, 'test-detect-duplicate-summary-in-spreadsheet.csv', self._test_import), 'Summary "test & integration" is duplicated in the spreadsheet. Ticket reconciliation by summary can not be done. Please modify the summaries in the spreadsheet to ensure that they are unique.')
 
     def test_import_7(self):
-        if trac.__version__.startswith('0.12'):
+        if parse_version(VERSION) >= parse_version('0.12'):
             # Not working on 0.12, because of configuration reasons...
             return
 
@@ -296,7 +302,7 @@ class ImporterTestCase(unittest.TestCase):
         _dbfile = os.path.join(os.path.join(instancedir, 'db'), 'trac.db')
         env = Environment(instancedir, create=True)
         os.remove(_dbfile)
-        shutil.copyfile(os.path.join(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(testfolder))), 'test'), 'tickets.db'), _dbfile)
+        shutil.copyfile(os.path.join(TESTDIR, 'tickets.db'), _dbfile)
         open(os.path.join(os.path.join(instancedir, 'conf'), 'trac.ini'), 'a').write('\n[ticket-custom]\ndomain = text\ndomain.label = Domain\nstage = text\nstage.label = Stage\nusers = text\nusers.label = Users\n')
         env = Environment(instancedir)
         self._do_test(env, 'ticket-13.xls', self._test_import)
@@ -439,7 +445,7 @@ datetime_format=%Y-%m-%d %H:%M
         self._do_test_diffs(env, 'ticketrefs_missing_case.csv', self._test_preview) 
 
     def test_ticket_bug_10188(self): #FAILING
-        if trac.__version__.startswith('0.11'):
+        if parse_version(VERSION) < parse_version('0.12'):
             # TicketMasterPlugin doesn't work on 0.11
             return
 
@@ -449,7 +455,7 @@ datetime_format=%Y-%m-%d %H:%M
         self._do_test_diffs(env, 'test_10188.xls', self._test_import) 
 
     def test_10188(self): # FAILING
-        if trac.__version__.startswith('0.11'):
+        if parse_version(VERSION) < parse_version('0.12'):
             # TicketMasterPlugin doesn't work on 0.11
             return
 
@@ -476,9 +482,10 @@ datetime_format=%Y-%m-%d %H:%M
                               ' newline inside string',
                               unicode(e))
 
+
 def suite():
     return unittest.makeSuite(ImporterTestCase, 'test')
-if __name__ == '__main__':
-    testfolder = __file__
-    unittest.main(defaultTest='suite')
 
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')
