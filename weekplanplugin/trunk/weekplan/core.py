@@ -20,7 +20,7 @@ from weekplan.model import SCHEMA, WeekPlanEvent
 
 
 PLUGIN_NAME = 'WeekPlanPlugin'
-PLUGIN_VERSION = 1
+PLUGIN_VERSION = 2
 
 
 class WeekPlanModule(Component):
@@ -70,6 +70,12 @@ class WeekPlanModule(Component):
                 plan_id = req.args.get('plan')
                 events = WeekPlanEvent.select_by_plan(self.env, plan_id)
                 self._render_ics(req, plan_id, events)
+            elif format == 'json':
+                plan_ids = req.args.get('plan', '').split('|')
+                start = parse_date(req.args.get('start'))
+                end = parse_date(req.args.get('end'))
+                events = WeekPlanEvent.select_by_plans_and_time(self.env, plan_ids, start, end)
+                self._send_events(req, events)
         raise TracError()
 
     def _parse_event(self, req):
@@ -77,12 +83,16 @@ class WeekPlanModule(Component):
             req.args.get('id'),
             req.args.get('plan'),
             req.args.get('title'),
-            parse_date(req.args.get('start')),
-            parse_date(req.args.get('end')))
+            parse_date(req.args.get('start'), utc),
+            parse_date(req.args.get('end'), utc))
 
     def _send_event(self, req, event):
         context = web_context(req, 'weekplan')
         self._send_json(req, event.serialized(self.env, context))
+        
+    def _send_events(self, req, events):
+        context = web_context(req, 'weekplan')
+        self._send_json(req, [e.serialized(self.env, context) for e in events])
 
     def _send_json(self, req, data):
         content = JSONEncoder().encode(data).encode('utf-8')
@@ -167,10 +177,7 @@ class WeekPlanModule(Component):
                 """, (PLUGIN_NAME, PLUGIN_VERSION)) 
 
     def environment_needs_upgrade(self, db):
-        rows = self.env.db_query("""
-                SELECT value FROM system WHERE name='%s'
-                """ % PLUGIN_NAME)
-        dbver = int(rows[0][0]) if rows else 0
+        dbver = self.get_db_version()
         if dbver == PLUGIN_VERSION:
             return False
         elif dbver > PLUGIN_VERSION:
@@ -181,13 +188,37 @@ class WeekPlanModule(Component):
     def upgrade_environment(self, db):
         db_connector, _ = DatabaseManager(self.env).get_connector() 
         cursor = db.cursor()
-        for table in SCHEMA:
-            for stmt in db_connector.to_sql(table): 
-                cursor.execute(stmt) 
-        cursor.execute(""" 
-            INSERT INTO system (name, value) 
-            VALUES (%s, %s) 
-            """, (PLUGIN_NAME, PLUGIN_VERSION))
+        dbver = self.get_db_version()
+        if dbver == 0:
+            self.env.log.info("Initialize %s database schema to version %s",
+                         PLUGIN_NAME, PLUGIN_VERSION)
+            for table in SCHEMA:
+                for stmt in db_connector.to_sql(table):
+                    cursor.execute(stmt)
+            cursor.execute("""
+                INSERT INTO system (name, value)
+                VALUES (%s, %s)
+                """, (PLUGIN_NAME, PLUGIN_VERSION))
+        else:
+            while dbver != PLUGIN_VERSION:
+                dbver = dbver + 1
+                self.env.log.info("Upgrade %s database schema to version %s",
+                         PLUGIN_NAME, dbver)
+                modulename = 'db%i' % dbver
+                upgrades = __import__('weekplan.upgrades', globals(), locals(), [modulename])
+                script = getattr(upgrades, modulename)
+                script.do_upgrade(self.env, dbver, cursor)
+            cursor.execute("""
+                UPDATE system
+                SET value=%s
+                WHERE name=%s
+                """, (PLUGIN_VERSION, PLUGIN_NAME))
+
+    def get_db_version(self):
+        rows = self.env.db_query("""
+                SELECT value FROM system WHERE name='%s'
+                """ % PLUGIN_NAME)
+        return int(rows[0][0]) if rows else 0
 
     # ITemplateProvider methods
     

@@ -1,10 +1,51 @@
 (function($){
-    function deserialize_event(event) {
-        event.start = new Date(event.start);
-        event.end = new Date(event.end);
-        event.allDay = true; // (changes meaning of "end" date!)
-    }
+
+    // Custom FullCalendar view rendering of multiple weeks:
+    $.fullCalendar.views.multiWeek = MultiWeekView;
+    function MultiWeekView(element, calendar) {
+        var t = this;
+        
+        // exports
+        t.incrementDate = incrementDate;
+        t.render = render;
+        
+        // imports
+        $.fullCalendar.BasicView.call(t, element, calendar, 'multiWeek');
+        var opt = t.opt;
+        var renderBasic = t.renderBasic;
+        var skipHiddenDays = t.skipHiddenDays;
+        var getCellsPerWeek = t.getCellsPerWeek;
+        var formatRange = calendar.formatRange;
+        
+        function incrementDate(date, delta) {
+            return date.clone().stripTime().add('days', delta * 7);
+        }
     
+        function render(date) {
+            var weeks = opt('weeks');
+            var start = date.clone().stripTime().subtract('days', (date.day() - opt('firstDay') + 7) % 7);
+            var end = start.clone().add('days', weeks * 7);
+
+            t.intervalStart = start;
+            t.intervalEnd = end;
+            
+            t.start = t.skipHiddenDays(t.intervalStart);
+            t.end = t.skipHiddenDays(t.intervalEnd, -1, true);
+
+            var colCnt = getCellsPerWeek();
+            var rowCnt = weeks;
+
+            t.title = formatRange(
+                t.start,
+                t.end.clone().subtract(1), // make inclusive by subtracting 1 ms
+                opt('titleFormat'),
+                ' \u2014 ' // emphasized dash
+            );
+            
+            renderBasic(rowCnt, colCnt, 'multiWeek');
+        }
+    }
+
     function serialized_post_data(event, action, plan_data) {
         return {
                 "__FORM_TOKEN": plan_data.form_token,
@@ -28,12 +69,18 @@
         }
     });
     
-    $(document).ready(function() {
+    $(window).load(function() {
         $('.trac-weekplan').each(function (index) {
             var plan_data = window['weekplan_' + this.id.slice(-12)];
             var calendar_data = plan_data.calendar_data;
+            
+            calendar_data.defaultDate = moment(calendar_data.defaultDate);
+            calendar_data.allDayDefault = true;
 
-            $.each(calendar_data.events, function(i, e) { deserialize_event(e); });
+            calendar_data.eventDataTransform = function(event) {
+                event.color = plan_data.colors[event.plan];
+                return event;
+            };
 
             calendar_data.eventRender = function(event, element, view) {
                 $(element).children(".fc-event-inner").html(event.title_html);
@@ -67,10 +114,8 @@
                             var post_data = serialized_post_data(proposed_event, 'add_event', plan_data);
                             var current_dialog = $(this);
                             $.post(plan_data.api_url, post_data, function(added_event) {
-                                deserialize_event(added_event);
                                 added_event.color = plan_data.colors[added_event.plan];
-                                calendar.fullCalendar('renderEvent', added_event,
-                                    true); // make the event "stick"
+                                calendar.fullCalendar('renderEvent', added_event);
                                 current_dialog.dialog("close");
                               }, 'json');
                         },
@@ -149,8 +194,8 @@
                 });
             };
 
-            var calendar = $(this).empty().removeClass('system-message').fullCalendar(calendar_data);
-
+            var calendar = $(this).empty().removeClass('system-message');
+            calendar.fullCalendar(calendar_data);
         });
     });
  })(jQuery);

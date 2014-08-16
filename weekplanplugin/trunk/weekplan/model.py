@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, tzinfo
-
 from trac.db import Table, Column, Index
-from trac.resource import Resource
-from trac.util.datefmt import from_utimestamp, to_utimestamp, utc
+from trac.util.datefmt import from_utimestamp, to_utimestamp
 from trac.wiki.formatter import format_to_html
 
 SCHEMA = [
@@ -14,7 +11,7 @@ SCHEMA = [
         Column('title'),
         Column('start', type='int64'),
         Column('end', type='int64'),
-        Index(['plan']),
+        Index(['plan', 'start', 'end']),
     ],
 ]
 
@@ -33,8 +30,8 @@ class WeekPlanEvent(object):
             'id': self.id,
             'title': self.title, 
             'title_html': format_to_html(env, context, self.title),
-            'start': self.start.isoformat(),
-            'end': self.end.isoformat(),
+            'start': self.start.date().isoformat(),
+            'end': self.end.date().isoformat(),
             'plan': self.plan, # Custom field
         }
 
@@ -77,11 +74,11 @@ class WeekPlanEvent(object):
         return [WeekPlanEvent(id, plan, title, from_utimestamp(start), from_utimestamp(end)) for id, plan, title, start, end in rows]
 
     @classmethod
-    def select_by_plans(cls, env, plans):
+    def select_by_plans_and_time(cls, env, plans, start, end):
         plan_sql = ','.join(["'%s'" % plan for plan in plans])
         rows = env.db_query("""
                 SELECT id, plan, title, start, end
                 FROM weekplan
-                WHERE plan in (%s)
-                """ % plan_sql)
+                WHERE plan in (%s) AND start < %%s AND end > %%s
+                """ % plan_sql, (to_utimestamp(end), to_utimestamp(start)))
         return [WeekPlanEvent(id, plan, title, from_utimestamp(start), from_utimestamp(end)) for id, plan, title, start, end in rows]
