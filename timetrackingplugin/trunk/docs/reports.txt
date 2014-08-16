@@ -1,0 +1,331 @@
+== TimeTracking Project Overview 2014
+
+Description:
+{{{
+Legend:
+* **Estimated Hours**: Sum of the estimated (i.e. allocated) hours.
+* **Logged Hours**: Sum of logged (i.e. spent) hours.
+* **Difference: Estimated - Logged**: Difference between estimated hours and logged hours = Remaining hours.
+
+* **Estimated Bygone Hours**: Estimated hours proportional to current date in year.
+* **Difference: Logged - Bygone**: By how much are we over the proportional estimate?
+
+See also [report:24 Category Overview], [report:25 Estimate Details]
+}}}
+
+{{{#!sql
+
+SELECT
+  row.category AS __group__,
+  row.project AS Project,
+  row.estimated_hours AS "Estimated Hours",
+  row.logged_hours AS "Logged Hours",
+  row.estimated_hours - row.logged_hours  AS "Remaining Hours",
+
+  ROUND(row.estimated_hours * factors.bygone, 1)
+  AS "Estimated Bygone Hours",
+
+  ROUND(row.logged_hours - (row.estimated_hours * factors.bygone), 1)
+  AS "Difference: Logged - Bygone",
+
+  (CASE WHEN row.estimated_hours - row.logged_hours < 0 THEN 1 ELSE 0 END)
+  AS __color__
+FROM (
+  SELECT
+    t.category as category,
+    t.project as project,
+    SUM(t.estimated_hours) AS estimated_hours,
+    SUM(COALESCE(s.spent_hours, 0)) as logged_hours
+  FROM timetrackingtasks t
+  LEFT OUTER JOIN (
+    SELECT 
+      SUM(e.spent_hours) as spent_hours,
+      e.task_id as task_id
+    FROM timetrackinglogs e
+    GROUP BY e.task_id
+  ) s ON t.id == s.task_id
+  WHERE t.year == 2014
+  GROUP BY t.category, t.project
+) row, (
+  SELECT
+    (days.now - days.start) / (days.end - days.start) AS bygone
+  FROM (
+    SELECT
+      julianday('2014-01-01') AS start,
+      julianday('2014-12-31') AS end,
+      julianday('now') AS now
+    ) days
+) factors
+
+}}}
+
+== TimeTracking Users Overview 2014
+
+Description:
+{{{
+Scanco Target:
+* 1.8 FTE
+* 1.8 * 160 hours per month * 12 monts = 3456 hours total
+* 3456 / 3 = 1152 hours per person
+}}}
+
+{{{#!sql
+
+SELECT
+  total.user AS "User",
+  total.hours AS "Total Logged Hours",
+  scanco.hours AS "Logged Scanco Hours",
+  1152 - scanco.hours AS "Remaining Scanco hours",
+  (1152 - scanco.hours) / 8 AS "Remaining Scanco days"
+FROM (
+  SELECT
+    l.user as user,
+    SUM(l.spent_hours) as hours
+  FROM timetrackinglogs l
+  JOIN timetrackingtasks t ON t.id == l.task_id
+  WHERE t.year == 2014
+  GROUP BY l.user
+) total
+JOIN (
+  SELECT
+    l.user as user,
+    SUM(l.spent_hours) as hours
+  FROM timetrackinglogs l
+  JOIN timetrackingtasks t ON t.id == l.task_id
+  WHERE t.year == 2014 AND
+        t.category == 'Scanco'
+  GROUP BY l.user
+) scanco ON total.user == scanco.user
+
+
+}}}
+
+== TimeTracking Missing Tasks 
+
+Description:
+{{{
+Deleting time tracking tasks can lead to orphaned log entries.
+There should be no such entries.
+}}}
+
+{{{#!sql
+
+SELECT
+  e.user as "User",
+  e.task_id as "Deleted task id",
+  e.date as date,
+  e.comment as "Comment",
+  1 AS __color__
+FROM timetrackinglogs e
+LEFT OUTER JOIN timetrackingtasks t ON t.id == e.task_id
+WHERE t.id IS NULL
+
+}}}
+
+== TimeTracking Logged Hours != 8 
+
+Description:
+{{{
+Each week day is supposed to be logged with 8 hours.
+}}}
+
+{{{#!sql
+
+SELECT
+  d.user as "User",
+  d.date as date,
+  d.spent_hours "Logged hours != 8",
+  1 AS __color__
+FROM (
+  SELECT
+    e.user as user,
+    e.date as date,
+    SUM(e.spent_hours) as spent_hours
+  FROM timetrackinglogs e
+  GROUP BY e.date, e.user
+) d
+WHERE d.spent_hours != 8
+
+}}}
+
+== TimeTracking Missing Logged Days 
+
+Description:
+{{{
+Each week day is supposed to be logged by all users. Here are the dates that only some users logged:
+}}}
+
+{{{#!sql
+
+SELECT a.user as  __group__, b.date
+FROM (SELECT DISTINCT user FROM timetrackinglogs) a
+CROSS JOIN (SELECT DISTINCT date FROM timetrackinglogs) b
+WHERE NOT EXISTS (
+  SELECT NULL
+  FROM timetrackinglogs i
+  WHERE i.user = a.user AND i.date = b.date
+)
+
+}}}
+
+== TimeTracking Unplanned 2014 
+
+Description:
+{{{
+Scanco Target:
+* 1.8 FTE
+* 1.8 * 160 hours per month * 12 months = 3456 hours total
+
+Year:
+* 3.0 FTE
+* (3.0 * 160 hours per month * 12 months  = 5760 hours total, without vacations etc.)
+* 3.0 * 365 days * 5/7 weekdays * 8 hours per day ~= 6257 hours total
+* minus days between old and new year (via Excel NETWORKDAYS) = 6072 hours total
+}}}
+
+{{{#!sql
+
+SELECT
+  row.label AS "Category",
+  row.total AS "Total",
+  row.planned AS "Planned",
+  row.total - row.planned AS "Unplanned"
+FROM (
+  SELECT
+      (CASE WHEN t.category == 'Scanco' THEN 'Scanco'
+                                        ELSE 'Other' END) AS label,
+
+      (CASE WHEN t.category == 'Scanco' THEN 3456 
+                                        ELSE (6072 - 3456) END) AS total,
+
+      SUM(t.estimated_hours) AS planned
+  FROM timetrackingtasks t
+  WHERE t.year == 2014
+  GROUP BY t.category == 'Scanco'
+) row
+ORDER BY row.label DESC
+
+}}}
+
+== TimeTracking Category Overview 2014 
+
+Description:
+{{{
+Legend:
+* **Estimated Hours**: Sum of the estimated (i.e. allocated) hours.
+* **Logged Hours**: Sum of logged (i.e. spent) hours.
+* **Difference: Estimated - Logged**: Difference between estimated hours and logged hours = Remaining hours.
+
+* **Estimated Bygone Hours**: Estimated hours proportional to current date in year.
+* **Difference: Logged - Bygone**: By how much are we over the proportional estimate?
+
+See also [report:17 Project Overview], [report:25 Estimate Details]
+}}}
+
+{{{#!sql
+
+SELECT
+  row.category AS Category,
+  row.estimated_hours AS "Estimated Hours",
+  row.logged_hours AS "Logged Hours",
+  row.estimated_hours - row.logged_hours  AS "Remaining Hours",
+
+  ROUND(row.estimated_hours * factors.bygone, 1)
+  AS "Estimated Bygone Hours",
+
+  ROUND(row.logged_hours - (row.estimated_hours * factors.bygone), 1)
+  AS "Difference: Logged - Bygone",
+
+  (CASE WHEN row.estimated_hours - row.logged_hours < 0 THEN 1 ELSE 0 END)
+  AS __color__
+FROM (
+  SELECT
+    t.category as category,
+    SUM(t.estimated_hours) AS estimated_hours,
+    SUM(COALESCE(s.spent_hours, 0)) as logged_hours
+  FROM timetrackingtasks t
+  LEFT OUTER JOIN (
+    SELECT 
+      SUM(e.spent_hours) as spent_hours,
+      e.task_id as task_id
+    FROM timetrackinglogs e
+    GROUP BY e.task_id
+  ) s ON t.id == s.task_id
+  WHERE t.year == 2014
+  GROUP BY t.category
+) row, (
+  SELECT
+    (days.now - days.start) / (days.end - days.start) AS bygone
+  FROM (
+    SELECT
+      julianday('2014-01-01') AS start,
+      julianday('2014-12-31') AS end,
+      julianday('now') AS now
+    ) days
+) factors
+
+}}}
+
+== TimeTracking Task Estimates 2014 
+
+Description:
+{{{
+Legend:
+* **Estimated Hours**: Estimated (i.e. allocated) hours.
+* **Logged Hours**: Sum of logged (i.e. spent) hours.
+* **Difference: Estimated - Logged**: Difference between estimated hours and logged hours = Remaining hours.
+
+* **Estimated Bygone Hours**: Estimated hours proportional to current date in year.
+* **Difference: Logged - Bygone**: By how much are we over the proportional estimate?
+
+See also [report:17 Project Overview], [report:24 Category Overview]
+}}}
+
+{{{#!sql
+
+SELECT
+  row.category AS __group__,
+  row.project AS Project,
+  row.task AS Task,
+  row.estimated_hours AS "Estimated Hours",
+  row.logged_hours AS "Logged Hours",
+  row.estimated_hours - row.logged_hours  AS "Remaining Hours",
+
+  ROUND(row.estimated_hours * factors.bygone, 1)
+  AS "Estimated Bygone Hours",
+
+  ROUND(row.logged_hours - (row.estimated_hours * factors.bygone), 1)
+  AS "Difference: Logged - Bygone",
+
+  (CASE WHEN row.estimated_hours - row.logged_hours < 0 THEN 1 ELSE 0 END)
+  AS __color__
+FROM (
+  SELECT
+    t.category as category,
+    t.project as project,
+    t.name as task,
+    t.estimated_hours AS estimated_hours,
+    SUM(COALESCE(s.spent_hours, 0)) as logged_hours
+  FROM timetrackingtasks t
+  LEFT OUTER JOIN (
+    SELECT 
+      SUM(e.spent_hours) as spent_hours,
+      e.task_id as task_id
+    FROM timetrackinglogs e
+    GROUP BY e.task_id
+  ) s ON t.id == s.task_id
+  WHERE t.year == 2014
+  GROUP BY t.id
+  ORDER BY t.category, t.project
+) row, (
+  SELECT
+    (days.now - days.start) / (days.end - days.start) AS bygone
+  FROM (
+    SELECT
+      julianday('2014-01-01') AS start,
+      julianday('2014-12-31') AS end,
+      julianday('now') AS now
+    ) days
+) factors
+
+}}}
