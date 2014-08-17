@@ -302,11 +302,18 @@ class ImporterTestCase(unittest.TestCase):
 
         env = self._setup()
         _dbfile = os.path.join(env.path, 'db', 'trac.db')
-        env = Environment(env.path, create=True)
         os.remove(_dbfile)
         shutil.copyfile(os.path.join(TESTDIR, 'tickets.db'), _dbfile)
-        open(os.path.join(os.path.join(self.env_path, 'conf'), 'trac.ini'), 'a').write('\n[ticket-custom]\ndomain = text\ndomain.label = Domain\nstage = text\nstage.label = Stage\nusers = text\nusers.label = Users\n')
-        self.env = Environment(env.path)
+        env.config.remove('ticket-custom', 'mycustomfield')
+        env.config.set('ticket-custom', 'domain', 'text')
+        env.config.set('ticket-custom', 'domain.label', 'Domain')
+        env.config.set('ticket-custom', 'stage', 'text')
+        env.config.set('ticket-custom', 'stage.label', 'Stage')
+        env.config.set('ticket-custom', 'users', 'text')
+        env.config.set('ticket-custom', 'users.label', 'Users')
+        env.config.set('ticket', 'default_type', 'defect')
+        env.config.save()
+        env.config.parse_if_needed()
         self._do_test(env, 'ticket-13.xls', self._test_import)
 
     def test_import_with_ticket_types(self):
