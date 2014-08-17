@@ -16,10 +16,9 @@ from genshi.core import Markup
 from pkg_resources import parse_version
 
 from trac import __version__ as VERSION
-from trac.web.api import Request
-from trac.env import Environment
 from trac.core import TracError
-#from trac.web.clearsilver import HDFWrapper
+from trac.env import Environment
+from trac.web.api import Request
 
 from talm_importer.importer import ImportModule
 
@@ -66,6 +65,14 @@ class PrettyPrinter(pprint.PrettyPrinter):
 
 
 class ImporterTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = None
+
+    def tearDown(self):
+        if self.env and self.env.path:
+            shutil.rmtree(self.env.path)
+
     def _pformat(self, data):
         return PrettyPrinter(indent=4).pformat(data)
 
@@ -169,31 +176,31 @@ class ImporterTestCase(unittest.TestCase):
            self._do_test(env, filename, testfun)
         except TracError, e:
            return str(e)
-    index = [0]
+
     def _setup(self, configuration = None, plugin_dir=None):
         configuration = configuration or '[ticket-custom]\nmycustomfield = text\nmycustomfield.label = My Custom Field\nmycustomfield.order = 1\n'
 
         configuration += '\n[ticket]\ndefault_type = task\n'
 
-
-        instancedir = os.path.join(tempfile.gettempdir(), 'test-importer._preview_%d' % self.index[0])
-        self.index[0] += 1
-        if os.path.exists(instancedir):
-           shutil.rmtree(instancedir, False)
-        env = Environment(instancedir, create=True)
+        env_path = tempfile.mkdtemp(prefix='ticketimportplugin-')
+        env = Environment(env_path, create=True)
         if plugin_dir:
             for file in os.listdir(plugin_dir):
                 if file[0] == '.':
                     continue
-                shutil.copyfile(os.path.join(plugin_dir, file), os.path.join(instancedir, 'plugins', file))
+                shutil.copyfile(os.path.join(plugin_dir, file), os.path.join(env_path, 'plugins', file))
 
-        open(os.path.join(os.path.join(instancedir, 'conf'), 'trac.ini'), 'a').write('\n' + configuration + '\n')
+        open(os.path.join(os.path.join(env_path, 'conf'), 'trac.ini'), 'a').write('\n' + configuration + '\n')
         db = env.get_db_cnx()
-        _exec(db.cursor(), "INSERT INTO permission VALUES ('anonymous', 'REPORT_ADMIN')        ")
-        _exec(db.cursor(), "INSERT INTO permission VALUES ('anonymous', 'IMPORT_EXECUTE')        ")
+        cursor = db.cursor()
+        _exec(cursor, "INSERT INTO permission VALUES ('anonymous', 'REPORT_ADMIN')")
+        _exec(cursor, "INSERT INTO permission VALUES ('anonymous', 'IMPORT_EXECUTE')")
         db.commit()
+        db = None
+        env.shutdown()
         ImporterTestCase.TICKET_TIME = 1190909220
-        return Environment(instancedir)
+        self.env = Environment(env_path)
+        return self.env
 
     def _insert_one_ticket(self, env):
         db = env.get_db_cnx()
@@ -294,17 +301,12 @@ class ImporterTestCase(unittest.TestCase):
             return
 
         env = self._setup()
-        #print dir(env)
-        instancedir = os.path.join(tempfile.gettempdir(), 'test-importer._preview_%d' % self.index[0])
-        self.index[0] += 1
-        if os.path.exists(instancedir):
-           shutil.rmtree(instancedir, False)
-        _dbfile = os.path.join(os.path.join(instancedir, 'db'), 'trac.db')
-        env = Environment(instancedir, create=True)
+        _dbfile = os.path.join(env.path, 'db', 'trac.db')
+        env = Environment(env.path, create=True)
         os.remove(_dbfile)
         shutil.copyfile(os.path.join(TESTDIR, 'tickets.db'), _dbfile)
-        open(os.path.join(os.path.join(instancedir, 'conf'), 'trac.ini'), 'a').write('\n[ticket-custom]\ndomain = text\ndomain.label = Domain\nstage = text\nstage.label = Stage\nusers = text\nusers.label = Users\n')
-        env = Environment(instancedir)
+        open(os.path.join(os.path.join(self.env_path, 'conf'), 'trac.ini'), 'a').write('\n[ticket-custom]\ndomain = text\ndomain.label = Domain\nstage = text\nstage.label = Stage\nusers = text\nusers.label = Users\n')
+        self.env = Environment(env.path)
         self._do_test(env, 'ticket-13.xls', self._test_import)
 
     def test_import_with_ticket_types(self):
@@ -462,14 +464,14 @@ datetime_format=%Y-%m-%d %H:%M
         from os.path import join, abspath, dirname
         env = self._setup(plugin_dir=join(abspath(dirname(dirname(__file__))), 'test', 'eggs_10188'))
         env.upgrade()
+        env.config.set('ticket-custom', 'blocking', 'text')
+        env.config.set('ticket-custom', 'blockedby', 'text')
         from trac.ticket.web_ui import Ticket
-        from datetime import datetime
-        from trac.util.datefmt import utc
         ticket = Ticket(env)
         ticket['summary'] = 'summary'
         ticket.insert()
         ticket['blockedby'] = str(ticket.id)
-        ticket.save_changes('someone','Some comments', when=datetime.now(utc))
+        ticket.save_changes('someone','Some comments')
 
     def test_handling_csv_error(self):
         env = self._setup()
