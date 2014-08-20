@@ -9,11 +9,12 @@
 import re
 from pkg_resources import resource_filename
 
-from genshi.builder import tag
+from genshi.builder import Fragment, tag
 
 from trac import __version__ as VERSION
 from trac.core import Component, TracError, implements
 from trac.config import BoolOption, ChoiceOption
+from trac.ticket.web_ui import TicketModule
 from trac.util.compat import partial
 from trac.util.text import obfuscate_email_address
 from trac.web.api import IRequestFilter
@@ -97,7 +98,9 @@ option.""")
                 add_script(req, 'usernamedecorate/base.js')
             authorinfo = partial(self._authorinfo, req)
             data['authorinfo'] = authorinfo
-            if template == 'timeline.html':
+            if template == 'ticket.html':
+                self._set_ticketbox_links(req, data)
+            elif template == 'timeline.html':
                 data['format_author'] = authorinfo
         return template, data, content_type
 
@@ -110,6 +113,19 @@ option.""")
         return ()
 
     # Internal methods
+
+    def _set_ticketbox_links(self, req, data):
+        ticket = data['ticket']
+        chrome = Chrome(self.env)
+        tktmod = TicketModule(self.env)
+        for name in ('reporter', 'owner'):
+            prop = ticket[name]
+            key = '%s_link' % name
+            value = data.get(key)
+            if isinstance(value, Fragment) and \
+                    chrome.format_author(req, prop) == prop:
+                label = self._authorinfo(req, prop)
+                data[key] = tktmod._query_link(req, name, label)
 
     def _authorinfo(self, req, author, email_map=None):
         try:
