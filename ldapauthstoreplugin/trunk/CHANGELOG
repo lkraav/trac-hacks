@@ -12,4 +12,7 @@
 - used #1600_ldap-auth-store.patch as base
 - merged in the session cache from #1147
 
+* 0.3.1 Immo Goltz <immo.goltz@gmail.com>
+- fixed indentation using reindent.py (rjollos)
+- merged in https://trac-hacks.org/ticket/11558#comment:22 (rjollos)
 

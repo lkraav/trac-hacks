@@ -34,13 +34,13 @@ user_rdn = ou=people
 # Relative DN for group of names (defaults to none)
 group_rdn = ou=groups
 # objectclass for groups
-groupname = groupOfNames
+groupname = group
 # dn entry in a groupname
 groupmember = member
 # attribute name for a group
 groupattr = cn
 # attribute name for a user
-uidattr = uid
+uidattr = sAMAccountName
 # attribute name to store trac permission
 permattr = tracperm
 # filter to search for dn with 'permattr' attributes
@@ -72,11 +72,13 @@ groupmemberisdn = yes
 #basedn_filter = objectClass=inetOrgPerson
 #---
 # default: name = name
-name = cn
+name = displayName
 # default: email = email
 email = mail
 #--- from #1600, not present in #1147
 # users must be in this group to use trac
 allusers_group = tracusers
 #---
+# Subtree search scope: 0=Base, 1=OneLevel, 2=Subtree
+scope = 2
 
