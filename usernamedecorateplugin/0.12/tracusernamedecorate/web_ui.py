@@ -119,13 +119,12 @@ option.""")
         chrome = Chrome(self.env)
         tktmod = TicketModule(self.env)
         for name in ('reporter', 'owner'):
-            prop = ticket[name]
+            value = ticket[name]
             key = '%s_link' % name
-            value = data.get(key)
-            if isinstance(value, Fragment) and \
-                    chrome.format_author(req, prop) == prop:
-                label = self._authorinfo(req, prop)
-                data[key] = tktmod._query_link(req, name, label)
+            if isinstance(data.get(key), Fragment) and \
+                    chrome.format_author(req, value) == value:
+                label = self._authorinfo(req, value)
+                data[key] = tktmod._query_link(req, name, value, label)
 
     def _authorinfo(self, req, author, email_map=None):
         try:
