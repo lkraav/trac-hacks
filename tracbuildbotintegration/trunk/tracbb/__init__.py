@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # Copyright (C) 2008 Etienne PIERRE <e.ti.n.pierre_AT_gmail.com>
 #
 # TracBuildbot is free software; you can redistribute it and/or
@@ -15,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 # Author: Etienne PIERRE <e.ti.n.pierre_AT_gmail.com>
+
 from tracbb import *
 
 __version__ = "0.1.3"
