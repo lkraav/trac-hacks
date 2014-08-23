@@ -33,6 +33,8 @@ setup(name='TracAutocompleteUsersPlugin',
       license='BSD 3-Clause',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
       include_package_data=True,
+      install_requires=['Trac >= 0.11'],
+      tests_require=['tox'],
       package_data={'autocompleteusers': ['htdocs/css/*.css', 'htdocs/css/*.gif', 'htdocs/js/*.js']},
       zip_safe=False,
       classifiers=[
