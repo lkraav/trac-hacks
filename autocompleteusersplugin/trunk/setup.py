@@ -12,9 +12,18 @@ from setuptools import find_packages, setup
 
 version = '0.4.2'
 
-setup(name='AutocompleteUsers',
+try:
+    long_description = "".join([
+        open("README.md").read(),
+        open("changelog").read(),
+    ])
+except:
+    long_description = ""
+
+setup(name='TracAutocompleteUsersPlugin',
       version=version,
       description="complete the known trac users, AJAX style",
+      long_description=long_description,
       author='Jeff Hammel',
       author_email='jhammel@openplans.org',
       maintainer='Ryan J Ollos',
@@ -26,6 +35,16 @@ setup(name='AutocompleteUsers',
       include_package_data=True,
       package_data={'autocompleteusers': ['htdocs/css/*.css', 'htdocs/css/*.gif', 'htdocs/js/*.js']},
       zip_safe=False,
+      classifiers=[
+          "Framework :: Trac",
+          "Development Status :: 4 - Beta",
+          "Environment :: Web Environment",
+          "License :: OSI Approved :: Apache Software License",
+          "Intended Audience :: Developers",
+          "Operating System :: OS Independent",
+          "Programming Language :: Python",
+          "Topic :: Software Development",
+      ],
       entry_points="""
       [trac.plugins]
       autocompleteusers = autocompleteusers.autocompleteusers

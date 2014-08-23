@@ -1,7 +1,15 @@
-AutocompleteUsers (0.4.2) (not yet released) - trunk
- resolved issues:  
+
+ChangeLog
+=========
+
+0.4.2 (2014-08-23)
+------------------
+
+* resolved issues:
+
+  - #11759 Escape HTML when formatting entries for autocompletion.
+  - #6427 When configuring a different workflow, autocomplete doesn't work on reassign.
  
- new features:
- * #6444: Reporter field on the ticket page is autocompleted.
- * #7324: Users and groups on the admin permissions page are autocompleted.
- * #10155: Reporter, owner and CC fields on the query page are autocompleted.
+* new features:
+
+  - #7324: Users and groups on the admin permissions page are autocompleted.
