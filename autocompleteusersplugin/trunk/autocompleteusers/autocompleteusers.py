@@ -11,8 +11,8 @@ import fnmatch
 from trac.config import ListOption
 from trac.core import Component, implements
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import Chrome, ITemplateProvider, \
-                            ITemplateStreamFilter, add_script, add_stylesheet
+from trac.web.chrome import Chrome, ITemplateProvider, ITemplateStreamFilter
+from trac.web.chrome import add_script, add_stylesheet
 
 USER = 0
 NAME = 1
@@ -23,7 +23,8 @@ class AutocompleteUsers(Component):
     implements(IRequestFilter, IRequestHandler,
                ITemplateProvider, ITemplateStreamFilter)
 
-    selectfields = ListOption('autocomplete', 'fields', default='',
+    selectfields = ListOption(
+        'autocomplete', 'fields', default='',
         doc="select fields to transform to autocomplete text boxes")
 
     # IRequestHandler methods
