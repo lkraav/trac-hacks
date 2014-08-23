@@ -70,15 +70,10 @@ class AutocompleteUsers(Component):
             add_script(req, 'autocomplete/js/autocomplete.js')
             add_script(req, 'autocomplete/js/format_item.js')
             if template == 'ticket.html':
-                restrict_owner = self.config.getbool('ticket', 'restrict_owner')
                 if req.path_info.rstrip() == '/newticket':
-                    add_script(req, 'autocomplete/js/autocomplete_newticket_cc.js')
-                    if not restrict_owner:
-                        add_script(req, 'autocomplete/js/autocomplete_newticket.js')
+                    add_script(req, 'autocomplete/js/autocomplete_newticket.js')
                 else:
-                    add_script(req, 'autocomplete/js/autocomplete_ticket_cc.js')
-                    if not restrict_owner:
-                        add_script(req, 'autocomplete/js/autocomplete_ticket.js')
+                    add_script(req, 'autocomplete/js/autocomplete_ticket.js')
             elif template == 'admin_perms.html':
                 add_script(req, 'autocomplete/js/autocomplete_perms.js')
             elif template == 'query.html':

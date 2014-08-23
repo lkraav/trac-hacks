@@ -34,9 +34,16 @@
       // if the formatMatch option is not specified, then use formatItem for backwards compatibility
       options.formatMatch = options.formatMatch || options.formatItem;
 
-      return this.each(function () {
-        new $.Autocompleter(this, options);
-      });
+      if (this.is("input")) {
+        return this.each(function() {
+          new $.Autocompleter(this, options);
+        });
+      } else if (this.is("select")) {
+        return this.change(function(event) {
+          $(".ac_results").hide()
+          new $.Autocompleter(this, options);
+        });
+      }
     },
     result: function (handler) {
       return this.bind("result", handler);
@@ -93,117 +100,127 @@
       }
     });
 
-    // only opera doesn't trigger keydown multiple times while pressed, others don't work with keypress at all
-    $input.bind(($.browser.opera ? "keypress" : "keydown") + ".autocomplete",function (event) {
-      // track last key pressed
-      lastKeyPressCode = event.keyCode;
-      switch (event.keyCode) {
+    if ($input.is("input")) {
 
-        case KEY.UP:
-          event.preventDefault();
-          if (select.visible()) {
-            select.prev();
-          } else {
-            onChange(0, true);
-          }
-          break;
+      // only opera doesn't trigger keydown multiple times while pressed, others don't work with keypress at all
+      $input.bind(($.browser.opera ? "keypress" : "keydown") + ".autocomplete",function (event) {
+        // track last key pressed
+        lastKeyPressCode = event.keyCode;
+        switch (event.keyCode) {
 
-        case KEY.DOWN:
-          event.preventDefault();
-          if (select.visible()) {
-            select.next();
-          } else {
-            onChange(0, true);
-          }
-          break;
-
-        case KEY.PAGEUP:
-          event.preventDefault();
-          if (select.visible()) {
-            select.pageUp();
-          } else {
-            onChange(0, true);
-          }
-          break;
-
-        case KEY.PAGEDOWN:
-          event.preventDefault();
-          if (select.visible()) {
-            select.pageDown();
-          } else {
-            onChange(0, true);
-          }
-          break;
-
-        // matches also semicolon
-        case options.multiple && $.trim(options.multipleSeparator) == "," && KEY.COMMA:
-        case KEY.TAB:
-        case KEY.RETURN:
-          if (selectCurrent()) {
-            // stop default to prevent a form submit, Opera needs special handling
+          case KEY.UP:
             event.preventDefault();
-            blockSubmit = true;
-            return false;
+            if (select.visible()) {
+              select.prev();
+            } else {
+              onChange(0, true);
+            }
+            break;
+
+          case KEY.DOWN:
+            event.preventDefault();
+            if (select.visible()) {
+              select.next();
+            } else {
+              onChange(0, true);
+            }
+            break;
+
+          case KEY.PAGEUP:
+            event.preventDefault();
+            if (select.visible()) {
+              select.pageUp();
+            } else {
+              onChange(0, true);
+            }
+            break;
+
+          case KEY.PAGEDOWN:
+            event.preventDefault();
+            if (select.visible()) {
+              select.pageDown();
+            } else {
+              onChange(0, true);
+            }
+            break;
+
+          // matches also semicolon
+          case options.multiple && $.trim(options.multipleSeparator) == "," && KEY.COMMA:
+          case KEY.TAB:
+          case KEY.RETURN:
+            if (selectCurrent()) {
+              // stop default to prevent a form submit, Opera needs special handling
+              event.preventDefault();
+              blockSubmit = true;
+              return false;
+            }
+            break;
+
+          case KEY.ESC:
+            select.hide();
+            break;
+
+          default:
+            clearTimeout(timeout);
+            timeout = setTimeout(onChange, options.delay);
+            break;
+        }
+      }).focus(function () {
+          // track whether the field has focus, we shouldn't process any
+          // results if the field no longer has focus
+          hasFocus++;
+        }).blur(function () {
+          hasFocus = 0;
+          if (!config.mouseDownOnSelect) {
+            hideResults();
           }
-          break;
+        }).click(function () {
+          // show select when clicking in a focused field
+          if (hasFocus++ > 1 && !select.visible()) {
+            onChange(0, true);
+          }
+        }).bind("search",function () {
+          // TODO why not just specifying both arguments?
+          var fn = (arguments.length > 1) ? arguments[1] : null;
 
-        case KEY.ESC:
-          select.hide();
-          break;
-
-        default:
-          clearTimeout(timeout);
-          timeout = setTimeout(onChange, options.delay);
-          break;
-      }
-    }).focus(function () {
-        // track whether the field has focus, we shouldn't process any
-        // results if the field no longer has focus
-        hasFocus++;
-      }).blur(function () {
-        hasFocus = 0;
-        if (!config.mouseDownOnSelect) {
-          hideResults();
-        }
-      }).click(function () {
-        // show select when clicking in a focused field
-        if (hasFocus++ > 1 && !select.visible()) {
-          onChange(0, true);
-        }
-      }).bind("search",function () {
-        // TODO why not just specifying both arguments?
-        var fn = (arguments.length > 1) ? arguments[1] : null;
-
-        function findValueCallback(q, data) {
-          var result;
-          if (data && data.length) {
-            for (var i = 0; i < data.length; i++) {
-              if (data[i].result.toLowerCase() == q.toLowerCase()) {
-                result = data[i];
-                break;
+          function findValueCallback(q, data) {
+            var result;
+            if (data && data.length) {
+              for (var i = 0; i < data.length; i++) {
+                if (data[i].result.toLowerCase() == q.toLowerCase()) {
+                  result = data[i];
+                  break;
+                }
               }
             }
+            if (typeof fn == "function") fn(result);
+            else $input.trigger("result", result && [result.data, result.value]);
           }
-          if (typeof fn == "function") fn(result);
-          else $input.trigger("result", result && [result.data, result.value]);
-        }
 
-        $.each(trimWords($input.val()), function (i, value) {
-          request(value, findValueCallback, findValueCallback);
+          $.each(trimWords($input.val()), function (i, value) {
+            request(value, findValueCallback, findValueCallback);
+          });
+        }).bind("flushCache",function () {
+          cache.flush();
+        }).bind("setOptions",function () {
+          $.extend(options, arguments[1]);
+          // if we've updated the data, repopulate
+          if ("data" in arguments[1])
+            cache.populate();
+        }).bind("unautocomplete", function () {
+          select.unbind();
+          $input.unbind();
+          $(input.form).unbind(".autocomplete");
         });
-      }).bind("flushCache",function () {
-        cache.flush();
-      }).bind("setOptions",function () {
-        $.extend(options, arguments[1]);
-        // if we've updated the data, repopulate
-        if ("data" in arguments[1])
-          cache.populate();
-      }).bind("unautocomplete", function () {
-        select.unbind();
-        $input.unbind();
-        $(input.form).unbind(".autocomplete");
-      });
 
+    } else if ($input.is("select")) {
+      $input.blur(function () {
+        hasFocus = 0;
+        hideResults();
+      });
+      hasFocus = 1;
+      onChange(0, true);
+    }
 
     function selectCurrent() {
       var selected = select.selected();
@@ -312,7 +329,7 @@
           }
         );
       }
-      if (wasVisible)
+      if (wasVisible && !$(input).is("select"))
       // position cursor at end of input field
         $.Autocompleter.Selection(input, input.value.length, input.value.length);
     };
