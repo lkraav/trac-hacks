@@ -10,7 +10,7 @@
 
 from setuptools import find_packages, setup
 
-version = '0.4.2'
+version = '0.4.3'
 
 try:
     long_description = "".join([
