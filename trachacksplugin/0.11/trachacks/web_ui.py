@@ -421,6 +421,10 @@ class TracHacksHandler(Component):
             data['form_context'] = None
             data['type'] = 'plugin'
             data['release'] = ['0.11']
+            data['installation'] = \
+                "General instructions on installing Trac plugins can be " \
+                "found on the [TracPlugins#InstallingaTracplugin " \
+                "TracPlugins] page."
 
         return 'hacks_new.html', data, None
 
