@@ -1,4 +1,4 @@
-adminenumlistplugin 2.0 (Not yet released)
+adminenumlistplugin 2.0 (25-Aug-2014)
  resolved issues
  * #10655: Use jQuery UI bundled in the Trac core when available.
  * #10664: Check for existence of onselectstart function was not compatible
