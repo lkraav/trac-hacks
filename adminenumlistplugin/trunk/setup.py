@@ -12,7 +12,7 @@
 
 from setuptools import find_packages, setup
 
-setup(name='AdminEnumListPlugin',
+setup(name='TracAdminEnumListPlugin',
       version='2.0',
       description="Adds drag-and-drop reordering to admin panel enum lists.",
       author='Stepan Riha',
