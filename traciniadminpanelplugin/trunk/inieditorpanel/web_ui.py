@@ -383,13 +383,14 @@ class TracIniAdminPanel(Component):
              'modifiable_options': modifiable_options,
              'readonly_options': readonly_options,
              'hidden_options': hidden_options,
-             '_': _
+             '_': _,
+             '_fix': self._fixname,
            }
 
     section_counters = {}
     settings_stored_values = {}
     for section_name, section in sections.iteritems():
-        escaped = section_name.replace(':', '_')
+        escaped = self._fixname(section_name)
         section_counters[escaped] = {'option_count': len(section)}
         settings_stored_values[escaped] = dict(
             (name, option['stored_value'])
@@ -408,6 +409,11 @@ class TracIniAdminPanel(Component):
     add_stylesheet(req, 'inieditorpanel/main.css')
     add_script(req, 'inieditorpanel/editor.js')
     return 'admin_tracini.html', data
+
+  'also change inieditorpanel/htdocs/editor.js when changing this'
+  @staticmethod
+  def _fixname(name):
+    return re.sub('[:.]', '_', name);
     
   def _get_session_value(self, req, section_name, option_name):
     """ Returns the value for an unsaved option stored in the current session,
