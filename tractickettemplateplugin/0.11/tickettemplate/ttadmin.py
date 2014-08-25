@@ -357,6 +357,7 @@ class TicketTemplateModule(Component):
             add_script(req, 'tt/json2.js')
 
             stream = stream | Transformer('body').append(
+                tag.script("preview = %s;" % ('true' if 'preview' in req.args else 'false')) +
                 tag.script(type='text/javascript',
                 src=req.href('tt', 'tt_newticket.js'))()
             )

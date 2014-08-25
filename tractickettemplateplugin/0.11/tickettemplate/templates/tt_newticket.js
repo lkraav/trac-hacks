@@ -117,15 +117,8 @@ jQuery(document).ready(function($) {
         $("#field-type").change();
       }
 
-      if (result["warning"] == "1") {
-        // reset isLoad
-        isLoad = false;
-      } else {
-        // reset isLoad
-        isLoad = false;
-      }
-
-      initTypeChanged();
+      var reapplyTemplate = result["warning"] != "1" && !preview;
+      initTypeChanged(reapplyTemplate);
     }
   }
 
@@ -330,7 +323,7 @@ jQuery(document).ready(function($) {
 
   }
 
-  function initTypeChanged() {
+  function initTypeChanged(reapplyTemplate) {
     // reset isLoad
     isLoad = false;
 
@@ -347,18 +340,20 @@ jQuery(document).ready(function($) {
       return;
     }
 
-    var ticketType = queryResult.field_value_mapping[tt_name];
-    if (!ticketType) {
-      ticketType = queryResult.field_value_mapping['default'];
+    if (reapplyTemplate) {
+      var ticketType = queryResult.field_value_mapping[tt_name];
+      if (!ticketType) {
+        ticketType = queryResult.field_value_mapping['default'];
+      }
+      _updateTargetElem(ticketType);
     }
-    _updateTargetElem(ticketType);
   }
 
   $("#field-type").change(onTypeChanged);
 
   // requery
   if ($("#warning").get(0)) {
-    $.getJSON("tt/query" + location.search + "warning=1", handleResponseQuery);
+    $.getJSON("tt/query" + location.search, {warning: "1"}, handleResponseQuery);
   } else {
     $.getJSON("tt/query" + location.search, handleResponseQuery);
   }
