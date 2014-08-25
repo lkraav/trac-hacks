@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
-# Name:         model.py
-# Purpose:      The ticket template Trac plugin db model module
 #
-# Author:       Richard Liao <richard.liao.i@gmail.com>
+# Copyright (C) 2008-2013 Richard Liao <richard.liao.i@gmail.com>
+# All rights reserved.
 #
-#----------------------------------------------------------------------------
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 """Model classes for objects persisted in the database."""
 
@@ -36,7 +36,7 @@ class TT_Template(object):
         self.env = env
 
     exists = property(fget=lambda self: self.id is not None,
-                      doc='Whether this tt exists in the database')
+                      doc="Whether this tt exists in the database")
 
     def deleteCustom(cls, env, data):
         """Remove the tt from the database."""
@@ -46,7 +46,7 @@ class TT_Template(object):
                         WHERE tt_user=%s
                         AND tt_name=%s
                     """
-        cursor.execute(sqlString, (data["tt_user"], data["tt_name"], ))
+        cursor.execute(sqlString, (data['tt_user'], data['tt_name'], ))
 
         db.commit()
     deleteCustom = classmethod(deleteCustom)
@@ -76,7 +76,7 @@ class TT_Template(object):
                             FROM ticket_template_store
                             WHERE tt_name=%s)
                     """
-        cursor.execute(sqlString, (data["tt_user"], data["tt_name"], ))
+        cursor.execute(sqlString, (data['tt_user'], data['tt_name'], ))
 
         field_value_mapping = {}
         for tt_field, tt_value in cursor.fetchall():
@@ -112,8 +112,8 @@ class TT_Template(object):
 
         cursor = db.cursor()
 
-        real_user = data.get("tt_user")
-        req_args = data.get("req_args")
+        real_user = data.get('tt_user')
+        req_args = data.get('req_args')
 
         field_value_mapping = {}
         field_value_mapping_custom = {}
@@ -124,7 +124,7 @@ class TT_Template(object):
                         WHERE tt_user = %s
                     """
 
-        cursor.execute(sqlString, (data["tt_user"], ))
+        cursor.execute(sqlString, (data['tt_user'], ))
 
         for tt_name, tt_field, tt_value in cursor.fetchall():
             if tt_name not in field_value_mapping_custom:
@@ -143,9 +143,9 @@ class TT_Template(object):
 
         tt_name_list = [row[0] for row in cursor.fetchall()]
 
-        data["tt_user"] = SYSTEM_USER
+        data['tt_user'] = SYSTEM_USER
         for tt_name in tt_name_list:
-            data["tt_name"] = tt_name
+            data['tt_name'] = tt_name
 
             sqlString = """SELECT tt_field, tt_value
                             FROM ticket_template_store
@@ -155,8 +155,8 @@ class TT_Template(object):
                                 FROM ticket_template_store
                                 WHERE tt_name = %s)
                         """
-            cursor.execute(sqlString,(data["tt_user"], data["tt_name"],
-                                       data["tt_name"]))
+            cursor.execute(sqlString,(data['tt_user'], data['tt_name'],
+                                       data['tt_name']))
 
             for tt_field, tt_value in cursor.fetchall():
                 if tt_name not in field_value_mapping:
@@ -166,8 +166,10 @@ class TT_Template(object):
                                            req_args)
                     field_value_mapping[tt_name][tt_field] = tt_value
 
-        result = {"field_value_mapping": field_value_mapping,
-                  "field_value_mapping_custom": field_value_mapping_custom}
+        result = {
+            'field_value_mapping': field_value_mapping,
+            'field_value_mapping_custom': field_value_mapping_custom
+        }
         return result
 
     fetchAll = classmethod(fetchAll)

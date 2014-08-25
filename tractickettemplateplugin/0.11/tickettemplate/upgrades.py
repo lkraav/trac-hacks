@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
-# Name:         upgrades.py
-# Purpose:      The ticket template Trac plugin upgrade module
 #
-# Author:       Richard Liao <richard.liao.i@gmail.com>
+# Copyright (C) 2008-2013 Richard Liao <richard.liao.i@gmail.com>
+# All rights reserved.
 #
-#----------------------------------------------------------------------------
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 
 """Automated upgrades for the tt database tables, and other data stored
@@ -42,7 +42,7 @@ def add_tt_table(env, db):
         modi_time = _getMTimeBase64(tt_name)
 
         from tickettemplate.model import TT_Template
-        tt_name = base64.decodestring(tt_name).decode("utf-8")
+        tt_name = base64.decodestring(tt_name).decode('utf-8')
         TT_Template.insert(env, tt_name, tt_text, modi_time)
 
 
@@ -87,15 +87,15 @@ def _findAllTmpls(env):
     """
     allTmpls = []
 
-    basePath = os.path.join(env.path, "templates")
+    basePath = os.path.join(env.path, 'templates')
     files = os.listdir(basePath)
     for file in files:
-        if file.startswith("description_") and file.endswith(".tmpl"):
-            tt_name_base64 = file.split("description_",1)[1] \
-                             .rsplit(".tmpl", 1)[0]
+        if file.startswith('description_') and file.endswith('.tmpl'):
+            tt_name_base64 = file.split('description_',1)[1] \
+                                 .rsplit('.tmpl', 1)[0]
             # if tt_name can't decode by base64, then it's normal name
             try:
-                base64.decodestring(tt_name_base64).decode("utf-8")
+                base64.decodestring(tt_name_base64).decode('utf-8')
                 # skip this file
                 continue
             except:
@@ -109,7 +109,7 @@ def _findAllTmplsBase64(env):
     """
     allTmplsBase64 = []
 
-    basePath = os.path.join(env.path, "templates")
+    basePath = os.path.join(env.path, 'templates')
     files = os.listdir(basePath)
     for file in files:
         if file.startswith('description_') and file.endswith('.tmpl'):
@@ -127,8 +127,8 @@ def _findAllTmplsBase64(env):
 def _getTTFilePath(env, tt_name):
     """ get ticket template file path
     """
-    tt_file_name = "description_%s.tmpl" % tt_name
-    tt_file = os.path.join(env.path, "templates", tt_file_name)
+    tt_file_name = 'description_%s.tmpl' % tt_name
+    tt_file = os.path.join(env.path, 'templates', tt_file_name)
     return tt_file
 
 

@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
-# Name:         utils.py
-# Purpose:      The utils module
 #
-# Author:       Richard Liao <richard.liao.i@gmail.com>
+# Copyright (C) 2008-2013 Richard Liao <richard.liao.i@gmail.com>
+# All rights reserved.
 #
-#----------------------------------------------------------------------------
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 import calendar
 import time
 
-from trac.web.chrome import *
 
 calendar.setfirstweekday(calendar.MONDAY)
 
-SECPERDAY = 60 * 60 * 24
-SECPERWEEK = 60 * 60 * 24 * 7
+SEC_PER_DAY = 60 * 60 * 24
+SEC_PER_WEEK = 60 * 60 * 24 * 7
 
 SYSTEM_USER = "SYSTEM"
 
@@ -36,10 +35,10 @@ def formatField(config, tt_value, user, req_args):
 
     t = int(time.time())
     for k, v in DEFAULT_FORMAT.items():
-        format = config.get("tickettemplate", k + "_format", v)
+        format = config.get('tickettemplate', k + '_format', v)
         mapping[k] = time.strftime(format, time.localtime(t))
 
-    mapping["user"] = user
+    mapping['user'] = user
 
     mapping.update(req_args)
 
