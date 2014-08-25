@@ -1,0 +1,5 @@
+exclude setup.cfg
+include changelog
+include COPYING
+include adminenumlistplugin/htdocs/*.js
+include adminenumlistplugin/htdocs/*/*.js
