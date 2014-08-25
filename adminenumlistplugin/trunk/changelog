@@ -19,6 +19,7 @@ adminenumlistplugin 2.0 (Not yet released)
            'Remove selected items' button is enabled only when a checkbox has
            been selected for at least one of the items. The 'Revert changes'
            button is now enabled when a radio button has been selected.
+ * #10732: Sortable widget from jQuery UI is utilized.
  
 adminenumlistplugin 1.0 (09-Nov-2009)
  Initial release

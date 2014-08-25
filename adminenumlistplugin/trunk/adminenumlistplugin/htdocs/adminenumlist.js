@@ -1,5 +1,5 @@
 /*
-(C) Stepan Riha, 2009; Ryan J Ollos, 2012; Jun Omae, 2012
+(C) Stepan Riha, 2009; Ryan J Ollos, 2012-2014; Jun Omae, 2012-2014
 
 This software is licensed as described in the file COPYING, which
 you should have received as part of this distribution.
@@ -14,25 +14,27 @@ jQuery(document).ready(function ($) {
     // The prop function doesn't exist before jQuery 1.6
     if(!$.isFunction($.fn.prop)) $.fn.prop = $.fn.attr;
 
-    if (window.hide_selects === undefined) hide_selects = false;
+    if (window.hide_selects === undefined) window.hide_selects = false;
 
     var unsaved_changes = false;
-    var $remove_checkboxes = $('#enumtable tbody input:checkbox');
-    var $remove_button = $('#enumtable input[name="remove"]');
-    var $apply_button = $('#enumtable input[name="apply"]');
+    var $enumtable = $('#enumtable');
+    var $enumlist = $('#enumlist');
+    var $remove_checkboxes = $enumtable.find('tbody input:checkbox');
+    var $remove_button = $enumtable.find('input[name="remove"]');
+    var $apply_button = $enumtable.find('input[name="apply"]');
 
     // Insert 'Revert changes' button after the 'Apply changes' button
     var $revert_button = $('<input type="submit" name="revert" value="Revert changes" disabled="disabled"/>').insertAfter($apply_button);
 
     // Disable the 'Apply changes' button until there is a change
     $apply_button.prop('disabled', true);
-    $('#enumtable tbody tr input:radio').click(function() {
+    $enumtable.find('tbody tr input:radio').click(function() {
         $apply_button.prop('disabled', false);
         $revert_button.prop('disabled', false);
     });
 
     // Add a checkbox for toggling the entire column of checkboxes
-    var $group_checkbox = $('#enumtable thead th.sel').html('<input type="checkbox" />').children();
+    var $group_checkbox = $enumtable.find('thead th.sel').html('<input type="checkbox" />').children();
     $group_checkbox.click(function() {
         $remove_checkboxes.prop('checked', this.checked);
         $remove_button.prop('disabled', !this.checked);
@@ -40,7 +42,7 @@ jQuery(document).ready(function ($) {
 
     // Disable the 'Remove selected items' button until a checkbox is selected
     $remove_button.prop('disabled', true);
-    $('#enumtable tbody input:checkbox').click(function() {
+    $enumtable.find('tbody input:checkbox').click(function() {
         var num_checked = $remove_checkboxes.filter(':checked').length;
         if (num_checked === $remove_checkboxes.length) {
             $group_checkbox.prop('checked', true).prop('indeterminate', false);
@@ -59,12 +61,12 @@ jQuery(document).ready(function ($) {
     // Hide the select boxes if the trac.ini option is true
     if (hide_selects) {
         var order_column = -1;
-        $('#enumtable td:has(select)').hide().each(function() {
+        $enumtable.find('td:has(select)').hide().each(function() {
             order_column = $(this).parent().children().index(this);
             return false;
         });
         if (order_column !== -1) {
-            $('#enumtable thead tr').each(function() {
+            $enumtable.find('thead tr').each(function() {
                 $($(this).children()[order_column]).hide();
             });
         }
@@ -90,11 +92,11 @@ jQuery(document).ready(function ($) {
 
     // Don't prompt with a dialog if the 'Apply/Revert changes' button is pressed
     var button_pressed;
-    $('#enumtable div.buttons input').click(function() {
+    $enumtable.find('div.buttons input').click(function() {
         button_pressed = $(this).attr('name');
-    })
+    });
 
-    $('#enumtable').submit(function(){
+    $enumtable.submit(function(){
         if (button_pressed === 'apply' || button_pressed === 'revert') {
             if (supports_beforeunload)
                 $(window).unbind('beforeunload');
@@ -109,7 +111,7 @@ jQuery(document).ready(function ($) {
     });
 
     // Initialize items as sortable
-    $('#enumlist tbody').css('cursor', 'move').sortable({
+    $enumlist.find('tbody').css('cursor', 'move').sortable({
         axis: 'y',
         start: function(event, ui) {
             // Set the width of header to the dragging item for each column
@@ -127,25 +129,25 @@ jQuery(document).ready(function ($) {
     });
     // Prevents the event bubbling in order to be able to select the select
     // widgets in `order` column on Firefox with jQuery UI 1.6
-    $('#enumlist tbody').find('input, select')
-                        .bind('mousedown click', function(event) {
+    $enumlist.find('tbody').find('input, select')
+                           .bind('mousedown click', function(event) {
         event.stopPropagation();
     });
 
     // When user changes a select value, reorder rows
-    $('#enumlist select').change(function (e) {
+    $enumlist.find('select').change(function (e) {
         // Move ($this) in the right position
         var tr = $(this).parents('tr')[0];
         // select.val() does not work on IE8 with Trac 0.11.7 (#10693)
         var val = $(':selected', this).val();
         if (val == 1) {
-            $('#enumlist tbody').prepend(tr);
+            $enumlist.find('tbody').prepend(tr);
         } else {
             var rowIndex = 0;
             var sib = tr.previousSibling;
             while (sib != null) { rowIndex++; sib = sib.previousSibling; }
             var newIndex = val > rowIndex ? val - 1 : val - 2;
-            var trBefore = $($('#enumlist tbody tr')[newIndex]);
+            var trBefore = $($enumlist.find('tbody tr')[newIndex]);
             trBefore.after(tr);
         }
         updateValues(tr);
@@ -155,7 +157,7 @@ jQuery(document).ready(function ($) {
     function updateValues(tr) {
         var position = 1;
         var trSelect = $('select', $(tr));
-        $('#enumlist tbody select').each(function () {
+        $enumlist.find('tbody select').each(function () {
             var select = $(this);
             // select.val() does not work on IE8 with Trac 0.11.7 (#10693)
             if ($(':selected', select).val() != position) {
