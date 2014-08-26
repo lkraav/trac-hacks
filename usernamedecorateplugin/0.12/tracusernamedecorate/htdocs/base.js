@@ -5,5 +5,5 @@
 // you should have received as part of this distribution.
 
 jQuery(document).ready(function($) {
-    $('#content .trac-author[title]').tipsy();
+    $('#content .usernamedecorate[title]').tipsy();
 });

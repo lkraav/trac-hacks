@@ -1,0 +1,17 @@
+/*
+ * Copyright (C) 2014 Jun Omae
+ * All rights reserved.
+ *
+ * This software is licensed as described in the file COPYING, which
+ * you should have received as part of this distribution.
+ */
+
+.usernamedecorate-gravatar { position: relative; padding-left: 17px }
+.usernamedecorate-gravatar > img {
+ content: "";
+ position: absolute;
+ left: 0;
+ bottom: 0;
+ width: 16px;
+ height: 16px;
+}
