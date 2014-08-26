@@ -88,7 +88,7 @@ class Budget:
             else:
                 self._values[fld] = value
 
-    def do_action(self, env, ticket_id, position):
+    def do_action(self, env, ticket_id, position, def_cost=0):
         if not self._action:
             env.log.warn('no action defined!')
             return
@@ -106,6 +106,8 @@ class Budget:
             for key, value in self._values.iteritems():
                 if key in ('username', 'type', 'comment'):
                     value = value.encode("utf-8")
+                elif key == 'cost' and def_cost == -1:
+                    value = 0
 
                 setAttrs += ",%s" % key
                 setValsSpace += ",%s"
@@ -119,7 +121,6 @@ class Budget:
             env.db_transaction(sql, setVals)
             env.log.debug("Added Budgeting-row at positon %s to ticket %s:"
                           "\n%s" % (position, ticket_id, self._toStr()))
-            return
 
         elif self._action == "Update":
 
@@ -135,7 +136,9 @@ class Budget:
                 value = self.get_value(attrnr + 1)
                 key = _VALUE_NAMES_LIST[attrnr]
 
-                if key in ('username', 'type', 'comment'):
+                if key == 'cost' and def_cost == -1:
+                    continue
+                elif key in ('username', 'type', 'comment'):
                     value = value.encode("utf-8")
                 elif key in ('estimation', 'cost', 'status'):
                     value = 0 if value == '' or get_float(value) == 0 else value
@@ -162,8 +165,6 @@ class Budget:
                               " at positon %s:\n%s" %
                               (ticket_id, position, self._toStr()))
 
-            return
-
         elif self._action == "Delete":
             self._diff[''] = ('', self._toStr())
 
@@ -174,9 +175,9 @@ class Budget:
             env.log.debug("Deleted Budgeting-row for ticket %s"
                           " at positon %s:\n%s" %
                           (ticket_id, position, self._toStr()))
-            return
+        else:
+            env.log.error('no appropriate action found! _action is: %s' % self._action)
 
-        env.log.error('no appropriate action found! _action is: %s' % self._action)
 
     def get_values(self):
         return self._values
@@ -652,7 +653,7 @@ class TicketBudgetingView(Component):
             user = self._changed_by_author
             self._changed_by_author = None
             for pos, budget in self._budgets.iteritems():
-                budget.do_action(self.env, tkt.id, int(pos))
+                budget.do_action(self.env, tkt.id, int(pos), self._def_cost)
                 self.log.debug("saved budget of position: %s" % pos)
             self._log_changes(tkt, user)
             self._budgets = None
