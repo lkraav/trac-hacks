@@ -158,11 +158,29 @@ option.""")
                     chrome.format_author(req, value) == value:
                 label = self._authorinfo(req, value)
                 data[key] = tktmod._query_link(req, name, value, label)
+        for field in data.get('fields') or ():
+            name = field['name']
+            value = ticket[name] or ''
+            if name == 'cc':
+                rendered = tag()
+                for idx, word in enumerate(re.split(r'([;,\s]+)', value)):
+                    if idx % 2:
+                        rendered(word)
+                        continue
+                    if not word:
+                        continue
+                    label = chrome.format_emails(req, word)
+                    if label != word:
+                        rendered(label)
+                        continue
+                    link = tktmod._query_link(req, name, '~' + word,
+                                              self._authorinfo(req, word))
+                    rendered(link)
+                field['rendered'] = rendered
+                continue
 
     def _authorinfo(self, req, author, email_map=None):
         cache_key = author = (author or '').strip()
-        if email_map and '@' in author and author in email_map:
-            author = email_map[author]
         users_cache = req._users_cache
         if cache_key in users_cache:
             cache = users_cache[cache_key]
@@ -176,12 +194,15 @@ option.""")
             known_user = False
             users_cache[cache_key] = {'args': args}
 
+        if email_map and '@' in author and author in email_map:
+            author = email_map[author]
         chrome = Chrome(self.env)
         label = chrome.format_author(req, author)
         if not author or author == 'anonymous' or not known_user or \
                 label != author:
             title = None
             class_ = 'usernamedecorate-anonymous'
+            print author, label
         else:
             email_view = chrome.show_email_addresses or \
                          'EMAIL_VIEW' in req.perm
