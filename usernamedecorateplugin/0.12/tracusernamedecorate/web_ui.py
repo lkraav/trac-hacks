@@ -160,10 +160,12 @@ option.""")
                 data[key] = tktmod._query_link(req, name, value, label)
 
     def _authorinfo(self, req, author, email_map=None):
-        author = (author or '').strip()
+        cache_key = author = (author or '').strip()
+        if email_map and '@' in author and author in email_map:
+            author = email_map[author]
         users_cache = req._users_cache
-        if author in users_cache:
-            cache = users_cache[author]
+        if cache_key in users_cache:
+            cache = users_cache[cache_key]
             info = cache.get('info')
             if info is not None:
                 return info
@@ -172,7 +174,7 @@ option.""")
         else:
             args = {'username': author}
             known_user = False
-            users_cache[author] = {'args': args}
+            users_cache[cache_key] = {'args': args}
 
         chrome = Chrome(self.env)
         label = chrome.format_author(req, author)
