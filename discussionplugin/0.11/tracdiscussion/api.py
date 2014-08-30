@@ -312,7 +312,7 @@ class DiscussionApi(DiscussionDb):
 
         # Determine template name.
         context.template = self._get_template(context, actions)
-        self.log.debug('Discussion emplate: %s data: %s'
+        self.log.debug('Discussion template: %s data: %s'
                        % (context.template, context.data))
         return context.template, {'discussion' : context.data}
 
@@ -593,6 +593,8 @@ class DiscussionApi(DiscussionDb):
                     return ['forum-set-display', 'topic-list']
                 elif action == 'subscriptions-post-edit':
                     return ['forum-subscriptions-post-edit']
+                elif action == 'topic-last':
+                    return ['topic-last']
                 else:
                     return ['topic-list']
         elif context.group:
@@ -994,6 +996,19 @@ class DiscussionApi(DiscussionDb):
 
                 # Redirect request to prevent re-submit.
                 context.redirect_url = (context.req.path_info, '#subscriptions')
+
+            elif action == 'topic-last':
+                columns = ('id',)
+                forum_id = context.forum['id']
+                href = Href('discussion')
+                topic = self._get_items(context, 'topic', columns,
+                                        'forum=%s', (forum_id,),
+                                        'time', True, limit=1)
+                if topic:
+                    context.redirect_url = (href('topic', topic[0]['id']), '')
+                else:
+                    # On empty forum redirect to forum's topic list.
+                    context.redirect_url = (href('forum', forum_id), '')
 
             elif action == 'topic-list':
                 context.req.perm.assert_permission('DISCUSSION_VIEW',

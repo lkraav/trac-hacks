@@ -84,6 +84,15 @@ class DiscussionCore(Component):
         else:
             # Try to match request pattern to request URL.
             match = re.match(
+                r'''/discussion/forum/(\d+)/latest-topic(?:\?|$)''',
+                req.path_info
+                )
+            if match:
+                req.args.update({'discussion_action': 'topic-last',
+                                 'forum': match.group(1)})
+                return True
+
+            match = re.match(
                 r'''/discussion(?:/?$|/(forum|topic|message)/(\d+)(?:/?$))''',
                 req.path_info
                 )

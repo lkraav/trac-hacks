@@ -5,6 +5,7 @@
   xmlns:py="http://genshi.edgewall.org/">
   <!--!
     Copyright (C) 2009-2011 Radek Bartoň <blackhex@post.cz>
+    Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
 
     This software is licensed as described in the file COPYING, which
     you should have received as part of this distribution.
@@ -42,13 +43,17 @@
             href="topic-list-compact.html"/>
         </py:choose>
 
-        <div py:if="len(discussion.topics)" class="set-display">
+        <div py:if="len(discussion.topics)" class="set-display"
+             py:with="href_forum = href.discussion('forum',
+                                                   discussion.forum.id)">
           <a py:strip="discussion.display == 'classic'"
-            href="${href.discussion('forum', discussion.forum.id)}?discussion_action=set-display;display=classic">
-            Classic View</a>
+             href="${href_forum
+             }?discussion_action=set-display;display=classic">Classic View</a>
           <a py:strip="discussion.display == 'compact'"
-            href="${href.discussion('forum', discussion.forum.id)}?discussion_action=set-display;display=compact">
-            Compact View</a>
+             href="${href_forum
+             }?discussion_action=set-display;display=compact">Compact View</a>
+          <a href="${href_forum}/latest-topic"
+             title="Permalink to latest topic">Latest topic</a>
         </div>
 
         <xi:include py:with="paginator = discussion.paginator"
