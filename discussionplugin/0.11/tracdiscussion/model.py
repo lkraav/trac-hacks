@@ -237,8 +237,9 @@ class DiscussionDb(Component):
 
         cursor = context.db.cursor()
         cursor.execute(sql, values)
+        idx_status = list(columns).index('status')
         return [dict(zip(columns, row),
-                     status=topic_status_to_list(row['status']))
+                     status=topic_status_to_list(row[idx_status]))
                 for row in cursor]
 
     def get_recent_topics(self, context, forum_id, limit):

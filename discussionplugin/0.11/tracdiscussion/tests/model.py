@@ -10,13 +10,13 @@ import shutil
 import tempfile
 import unittest
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from trac.mimeview import Context
 from trac.perm import PermissionCache, PermissionSystem
 from trac.resource import Resource
 from trac.test import EnvironmentStub, Mock
-from trac.util.datefmt import to_datetime, utc
+from trac.util.datefmt import to_datetime, to_timestamp, utc
 
 from tracdiscussion.init import DiscussionInit
 from tracdiscussion.model import DiscussionDb
@@ -62,10 +62,12 @@ class DiscussionDbTestCase(unittest.TestCase):
              ])
         cursor.executemany("""
             INSERT INTO topic
-                   (forum, subject, body)
-            VALUES (%s,%s,%s)
-        """, [(1, 'top1', 'topic-desc1'),
-              (1, 'top2', 'topic-desc2'),
+                   (forum, time, subject, body)
+            VALUES (%s,%s,%s,%s)
+        """, [(1, to_timestamp(datetime(2014, 8, 1, tzinfo=utc)),
+               'top1', 'topic-desc1'),
+              (1, to_timestamp(datetime(2014, 8, 2, tzinfo=utc)),
+               'top2', 'topic-desc2'),
              ])
         cursor.executemany("""
             INSERT INTO message
@@ -123,15 +125,20 @@ class DiscussionDbTestCase(unittest.TestCase):
 
     def test_get_changed_topics(self):
         context = self._prepare_context(self.req)
-        start = to_datetime(None, tzinfo=utc)
-        stop = start - timedelta(seconds=1)
+        start = datetime(2014, 7, 31, 12, 0, 0, tzinfo=utc)
+        stop = datetime(2014, 8, 1, 12, 0, 0, tzinfo=utc)
         self.assertEqual(
-            [], list(self.ddb.get_changed_topics(context, start, stop)))
+            [{'id': 1, 'forum': 1, 'forum_name': 'forum1',
+              'time': to_timestamp(datetime(2014, 8, 1, tzinfo=utc)),
+              'author': None, 'subject': 'top1',
+              'status': set(['unsolved'])}],
+            list(self.ddb.get_changed_topics(context, start, stop)))
 
     def test_get_recent_topics(self):
         context = self._prepare_context(self.req)
+        ts = to_timestamp(datetime(2014, 8, 2, tzinfo=utc))
         self.assertEqual(
-            [dict(forum=1, time=None, topic=1)],
+            [dict(forum=1, time=ts, topic=2)],
             self.ddb.get_recent_topics(context, 1, 1))
 
     def test_get_messages(self):
