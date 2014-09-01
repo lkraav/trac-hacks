@@ -236,14 +236,16 @@ class CkIntegrationModule(Component):
             # Inject a script that adds the tracwiki plugin as an external plugin to CKEditor
             # @todo: Perform init with a dedicated loader script
             # @todo: Use the init to modify the CKEditor toolbar
-            ck_plugin_init = '<script type="text/javascript">CKEDITOR.plugins.addExternal("tracwiki", ck_tracwiki_path, "tracwiki.js");\n'
-            ck_plugin_init += 'CKEDITOR.plugins.addExternal("pastecode", ck_tracwiki_path, "pastecode.js");</script>'
+            ck_plugin_init = u"""<script type="text/javascript">
+                CKEDITOR.plugins.addExternal("tracwiki", ck_tracwiki_path, "tracwiki.js");
+                CKEDITOR.plugins.addExternal("pastecode", ck_tracwiki_path, "pastecode.js");
+            </script>"""
             stream |= Transformer('.//body').prepend(HTML(ck_plugin_init))
             #add_script(req, 'ckintegration/ckloader.js')
             # Replace all relevant textarea fields in the template with CKEditor instances
             for field_name in self.template_fields[lower(filename)]:
                 self.log.debug('Replacing textarea "%s" with CKEditor instance' % (field_name))
-                add_editor = '''<script type="text/javascript">
+                add_editor = u'''<script type="text/javascript">
                     CKEDITOR.replace("%s", { extraPlugins : "tracwiki,pastecode" });
                 </script>''' % (field_name)
                 #self.log.debug ("add_editor is %s" % add_editor)
