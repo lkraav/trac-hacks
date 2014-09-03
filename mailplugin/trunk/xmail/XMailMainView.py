@@ -55,6 +55,7 @@ class XMailMainView(Component):
         # bind the 'traccsubtickets' catalog to the locale directory 
         locale_dir = pkg_resources.resource_filename(__name__, 'locale') 
         add_domain(self.env.path, locale_dir)
+        self.__check_init()
          
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -73,11 +74,7 @@ class XMailMainView(Component):
     
     def process_request(self, req):
         if XMailPermissions.checkPermissions(self,req):
-            if ( req.path_info == "/xmail" ):
-                if self._check_init() == False:
-                    create_table(self.env)
-                    self.log.info("table successfully initialized")
-                       
+            if ( req.path_info == "/xmail" ):                       
                 #deleting one filter
                 act = None
                 try: 
@@ -123,15 +120,14 @@ class XMailMainView(Component):
                         filter.save(self.env)
                         return self.print_main_view(req)
                     except Exception, e:
-                        #warning
+                        self.log.error( "error while saving: %s", e )
+
                         if type(e)==Warning:
                             w = Warning("Illegal value for field 'whereClause'.",e)
                             return self.print_edit_view(req, filter=filter,warning=w)
                         else:
                             e = Exception("Warning occurred until saving Data",e)
                             return self.print_edit_view(req, filter=filter,error=e)
-                    except Warning, w:
-                        print "warning"
                         
                 elif req.environ.get('REQUEST_METHOD') == 'POST':
                     w = Warning("Fields not set","Empty fields: %s"%', '.join(filter.getEmptyFields()))
@@ -165,30 +161,33 @@ class XMailMainView(Component):
 #    internal methods
 #    ******************************
     
-    def _check_init(self):
-        """First setup or initentities deleted
-            check initialization, like db setup etc.
+    def __check_init(self):
+        """Check initialization, like db setup etc.
             copied from DbModul.py of ticketbudgeting-plugin
         """
-        if ( self.config.get(self._CONFIG_SECTION, 'name') ):
-            self.log.debug ( "have local ini, so everything is set" )
-            return True
-        else:
-            self.log.debug ( "check database" )
-            sql = "select id from xmail;"
-            with self.env.db_query as db:
-                myCursor = db.cursor()
-                try:
-                    myCursor.execute(sql)
-                    self.config.set(self._CONFIG_SECTION, 'name', 'xmail')
-                    self.log.debug ( "created local ini entries with name xmail" )
-                    return True
-                except Exception:
-                    self.log.warn ( "[_check_init] error while checking database; table 'xmail' is probably not present" )
-                finally:
-                    db.close()
+        self.log.debug ( "check initialization of MailPlugin" )
+        init_ok = False
 
-        return False
+        try:
+            self.env.db_query('SELECT id from xmail where id is null')
+            if not self.config.get(self._CONFIG_SECTION, 'name'):
+                self.config.set(self._CONFIG_SECTION, 'name', 'xmail')
+            self.log.debug ( "[check init]  Everything set for MailPlugin" )
+            init_ok = True
+        except Exception, e:
+            self.log.debug ( "[check init] Error checking" \
+                             " table 'xmail': %s" %e )
+        
+        if not init_ok:
+            try:
+                create_table(self.env)
+                self.log.info ( "[check init] Successfully created table for MailPlugin" )
+                init_ok = True
+            except Exception, e:
+                self.log.error ( "[check init] Error while creating database: %s" % e)
+                
+        return init_ok
+    
     
     #===========================================================================
     # print methods

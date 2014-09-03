@@ -42,22 +42,31 @@ def create_table(env):
     '''
     conn, dummyArgs = DatabaseManager(env).get_connector()
     db = env.get_read_db()
-    cursor = db.cursor()
+#    cursor = db.cursor()
+    schema = None
+    
+    with env.db_transaction as db:
+        try:
+            schema = db.schema
+        except:
+            env.log.warn( "could not find any schema, " \
+                          "creating table without schema" )
+    
+        for stmt in conn.to_sql(XMAIL_TABLE):
+            if schema:
+                stmt = re.sub(r'CREATE TABLE ','CREATE TABLE "' 
+                              + schema + '".', stmt)
+    
+            db(stmt)
+            env.log.info( "successfully created table '%s'" % XMAIL_TABLE.name)
 
-    for stmt in conn.to_sql(XMAIL_TABLE):
-        if db.schema:
-            stmt = re.sub(r'CREATE TABLE ','CREATE TABLE "' 
-                          + db.schema + '".', stmt) 
-        env.log.info( "result of execution: %s" % cursor.execute(stmt) )
-    db.commit()
-    db.close()
 
 #===============================================================================
 # Escaping
 #===============================================================================
 def encode_sql(sql_string):
     if sql_string:
-        sql_string = sql_string.replace("'", "\\'")
+        sql_string = sql_string.replace("'", "''")
         sql_string = sql_string.replace("\n", " ")
         sql_string = sql_string.replace("\t", " ")
         sql_string = sql_string.replace("\r", " ")
@@ -343,7 +352,7 @@ class FilterObject(object):
                     filter_sql = self.get_filter_select(sel_fields, where_clause)
                     cursor.execute(filter_sql)
             with env.db_transaction as db:
-                db.cursor().execute(sql)
+                db(sql)
         except Exception, e:
             raise Warning(filter_sql, e)
         

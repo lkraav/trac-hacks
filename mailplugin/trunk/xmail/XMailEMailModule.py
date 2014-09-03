@@ -152,7 +152,7 @@ class XMailEventHandler(Component):
                              'sys_desc': sys_desc})
             notifyer.notify(resid=None, subject=subject)
             self._set_next_exe(filter, self._get_current_time())
-            self.log.info( "[XMail._sendAllMails] -----> sent email with %r tickets by XMailTicketNotify" % len(tickets) )
+            self.log.info( "[XMail._sendAllMails] XMailTicketNotify: sent email with %r tickets for user %s" % (len(tickets), username) )
         return
     
     def get_system_info(self):
