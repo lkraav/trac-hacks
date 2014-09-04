@@ -26,7 +26,7 @@ from trac.ticket.model import Milestone, Ticket
 from trac.util import hex_entropy
 from trac.util.compat import any
 from trac.util.datefmt import localtz, to_datetime, to_utimestamp, utc
-from trac.util.text import expandtabs, to_unicode
+from trac.util.text import expandtabs, exception_to_unicode, to_unicode
 from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
 from trac.web.chrome import (
     Chrome, ITemplateProvider, add_script, add_script_data, add_stylesheet,
@@ -204,11 +204,16 @@ class WikiGanttChart(object):
             ticket = None
             if ticket_id:
                 try:
-                    ticket = Ticket(self.env, int(ticket_id))
+                    ticket_id = int(ticket_id)
+                except:
+                    ticket_id = None
+            if ticket_id:
+                try:
+                    ticket = Ticket(self.env, ticket_id)
                 except ResourceNotFound:
-                    self.req.perm.require('TICKET_CREATE')
-                    ticket = self.create_new_ticket_with_task(task)
-                subject = "#%s %s" % (ticket.id, subject)
+                    pass
+                else:
+                    subject = "#%s %s" % (ticket.id, subject)
             date = {}
             for key in ("startDate", "dueDate"):
                 value = task.get(key) or None
@@ -413,6 +418,7 @@ class WikiGanttChart(object):
         self._append_formatted_value()
 
     def _append_formatted_value(self):
+        tktsys = TicketSystem(self.env)
         locale = self.locale or locale_en
         for task in self.tasks:
             if task == {}:
@@ -434,13 +440,22 @@ class WikiGanttChart(object):
             tktid = data.get('ticket')
             if tktid:
                 try:
-                    ticket = Ticket(self.env, int(tktid))
+                    tktid = int(tktid)
+                except:
+                    tktid = None
+            if tktid:
+                try:
+                    ticket = Ticket(self.env, tktid)
+                except ResourceNotFound:
+                    pass
+                else:
+                    title = tktsys.format_summary(
+                            ticket['summary'], ticket['status'],
+                            ticket['resolution'], ticket['type'])
                     data['ticket'] = tktid = ticket.id
                     data['linkToTicket'] = unicode(tag.a(
                         '#%d' % tktid, href=self.req.href('ticket', tktid),
-                        class_=ticket['status']))
-                except ResourceNotFound:
-                    pass
+                        class_=ticket['status'], title=title))
 
     def _create_new_ticket(self, summary, owner, start_date, due_date,
                            **kwargs):

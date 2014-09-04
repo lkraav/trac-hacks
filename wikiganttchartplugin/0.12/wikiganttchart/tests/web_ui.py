@@ -17,6 +17,7 @@ except ImportError:
 from trac.mimeview.api import Context
 from trac.perm import PermissionCache, PermissionSystem
 from trac.test import EnvironmentStub, Mock, MockPerm
+from trac.ticket.model import Ticket
 from trac.util.compat import any, all
 from trac.util.datefmt import utc
 from trac.web.api import Request, RequestDone
@@ -60,6 +61,15 @@ def _create_req(path_info='/', page=None, **kwargs):
         if name == 'args':
             req.arg_list = list(value.iteritems())
     return req
+
+
+def _insert_ticket(env, **kwargs):
+    ticket = Ticket(env)
+    ticket['status'] = 'new'
+    for name, value in kwargs.iteritems():
+        ticket[name] = value
+    ticket.insert()
+    return ticket
 
 
 def _check_task(self, task, **kwargs):
@@ -453,6 +463,41 @@ Blah blah blah...
 {{{#!Gantt id="*+abc){x}(" style="red"
 }}}
 """)
+        self.assertEquals(expected, page.text)
+
+    def test_update_tasks_with_ticket_id(self):
+        page = WikiPage(self.env, 'NewPage')
+        self.assertEquals(False, page.exists)
+        page.text = _norm_newline("""\
+{{{#!Gantt id="deadbeef"
+}}}
+""")
+        page.save('anonymous', '', '::1')
+        self.assertEquals(1, page.version)
+        tickets = [_insert_ticket(self.env, summary='Ticket 1'),
+                   _insert_ticket(self.env, summary='Ticket 2')]
+        tasks = [
+            {'level':1, 'parent': None,
+             'data': {'subjectName': 'Summary 1', 'ticket': tickets[1].id}},
+            {'level':1, 'parent': None,
+             'data': {'subjectName': 'Summary 2', 'ticket': tickets[0].id}},
+            {'level':1, 'parent': None,
+             'data': {'subjectName': 'Summary 3', 'ticket': '1,#2'}},
+            ]
+        req = self._test_update_tasks(page, tasks)
+        result = self._json_from_req(req)
+        version = page.version + 1
+        self.assertEquals(True, result['valid'])
+        self.assertEquals(version, result['version'])
+        page = WikiPage(self.env, page.name)
+        self.assertEquals(version, page.version)
+        expected = _norm_newline(
+r"""{{{#!Gantt id="deadbeef" style="red"
+#%(t1)d Summary 1, , , , 
+#%(t2)d Summary 2, , , , 
+Summary 3, , , , 
+}}}
+""" % {'t1': tickets[1].id, 't2': tickets[0].id})
         self.assertEquals(expected, page.text)
 
 
