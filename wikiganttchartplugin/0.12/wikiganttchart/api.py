@@ -10,6 +10,7 @@ from datetime import date, datetime
 
 from trac.core import TracError
 from trac.config import ChoiceOption, IntOption, Option
+from trac.env import Environment
 from trac.util import arity
 from trac.util.datefmt import parse_date, utc
 from trac.util.translation import domain_functions, dgettext
@@ -45,6 +46,24 @@ else:
 ChoiceOption = _option_with_tx(ChoiceOption)
 IntOption = _option_with_tx(IntOption)
 Option = _option_with_tx(Option)
+
+
+if hasattr(Environment, 'db_exc'):
+    def db_exc(env):
+        return env.db_exc
+else:
+    def db_exc(env):
+        database = env.config.get('trac', 'database')
+        if database.startswith('sqlite:'):
+            from trac.db.sqlite_backend import sqlite
+            return sqlite
+        if database.startswith('postgres:'):
+            from trac.db.postgres_backend import psycopg
+            return psycopg
+        if database.startswith('mysql:'):
+            from trac.db.mysql_backend import MySQLdb
+            return MySQLdb
+        raise AssertionError('[trac] database is invalid: %r' % database)
 
 
 def iso8601_parse_date(text, tzinfo=utc):

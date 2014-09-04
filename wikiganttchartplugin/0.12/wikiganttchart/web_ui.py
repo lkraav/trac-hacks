@@ -43,9 +43,9 @@ except ImportError:
     web_context = Context.from_request
 
 from wikiganttchart.api import (
-    _, N_, ChoiceOption, IntOption, Option, TEXTDOMAIN, add_domain, gettext,
-    iso8601_parse_date, iso8601_format_date, locale_en, l10n_format_datetime,
-    tag_,
+    _, N_, ChoiceOption, IntOption, Option, TEXTDOMAIN, add_domain, db_exc,
+    gettext, iso8601_parse_date, iso8601_format_date, locale_en,
+    l10n_format_datetime, tag_,
 )
 
 
@@ -1011,7 +1011,12 @@ class WikiGanttChartModule(Component):
                          model.name, model.version))
             else:
                 model.text = text
-                model.save(req.authname, self._comment(), req.remote_addr)
+                try:
+                    model.save(req.authname, self._comment(), req.remote_addr)
+                except db_exc(self.env).IntegrityError, e:
+                    self.log.warn('Exception caught while saving wiki page: '
+                                  '%s', exception_to_unicode(e))
+                    req.send('Integrity error', status=500)
             return model.version
 
         if realm == 'milestone':
