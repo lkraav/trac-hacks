@@ -24,20 +24,20 @@
 {
     display: block;
     min-height: 10px;
+
+    /* Fix firefox scroll offset issue during dragging */
+    overflow: auto; 
 }
 .trac-card-slot
  {
-    display: inline-block;
-    vertical-align: top;
-    clear: both;
-    width: 100%;
+    display: block;
     margin: 1px;
 }
 
 .trac-card
  {
     display: block;
-
+    
     margin: 5px;
     padding: 10px;
     border-radius: 5px 5px 5px 5px;
@@ -47,16 +47,12 @@
 
 .trac-card-placeholder 
 {
-    display: inline-block;
-    vertical-align: top;
-    
-    width: 100%;
+    display: block;
+
     height: 55px;
     margin: 0;
     border: 1px dotted black;
-    visibility: visible !important;
     border-radius: 0;
     box-shadow: 0 0 0 0;
     background: #ffffff;
 }
-

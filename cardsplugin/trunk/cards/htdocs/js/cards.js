@@ -28,7 +28,10 @@ jQuery(document).ready(function($) {
         cursor: "pointer",
         tolerance: "pointer",
         placeholder: "trac-card-placeholder",
-
+        start: function (event, ui) {
+            ui.placeholder.html("<div>&nbsp;</div>")
+        },
+        
         // Move
         update: function(event, ui) {
             if (ui.sender) return; // update is called twice when switching stack
@@ -77,6 +80,8 @@ jQuery(document).ready(function($) {
                         $(card_element).html(card.title_html);
 
                         current_dialog.dialog("close");
+                    }).fail(function (xhr, textStatus, errorThrown) {
+                        alert(errorThrown);
                     });
                 },
                 "Delete!": function() {

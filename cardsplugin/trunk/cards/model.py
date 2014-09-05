@@ -36,7 +36,7 @@ class Card(object):
         with env.db_transaction as db:
             cursor = db.cursor()
             cursor.execute("""
-                SELECT MAX(rank) + 1
+                SELECT COALESCE(MAX(rank) + 1, 0)
                 FROM cards
                 WHERE stack = %s
             """, (card.stack,))
