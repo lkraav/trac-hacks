@@ -1,0 +1,48 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+
+      <xi:include href="admin.html" />	
+  <head>
+    <title>Log Files</title>
+  </head>
+
+  <body>
+    <h1>Log Files</h1>
+    <p>&nbsp;<br /></p>
+    
+    <div class="wiki-toc">
+    	<ol>
+    		<li py:for="entry in log_list">
+    			<a href="#${entry}">${entry}</a>
+    		</li>
+    	</ol>
+    </div>
+    <p>&nbsp;<br /></p>
+    
+	<div py:for="entry in log_list">
+		<h2 id="${entry}">${entry}</h2>
+		
+		<table py:if="len(log_list[entry])>0" class="listing" style="margin-left: 10px">
+			<thead>
+				<tr>
+					<th><a href="logwatcher?sort_by=0">File name</a></th>
+					<th><a href="logwatcher?sort_by=1">Size</a></th>
+					<th><a href="logwatcher?sort_by=2">Last modified</a></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr py:for="file in log_list[entry]">
+					<td><a href="logwatcher?log_file=${entry}/${file[0]}">${file[0]}</a></td>
+					<td align="right">${file[1]}</td>
+					<td>${file[2]}</td>
+				</tr>
+			</tbody>
+		</table>
+		<br />
+	</div>
+  </body>
+</html>
