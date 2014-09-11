@@ -41,7 +41,7 @@ class TicketlogModule(Component):
     max_message_length = IntOption('ticketlog', 'log_message_maxlength',
         doc="""Maximum length of log message to display.""")
 
-    log_pattern = Option('ticketlog', 'log_pattern', '\s*#%s\s+.*',
+    log_pattern = Option('ticketlog', 'log_pattern', '\s*#%s[:\s]+.*',
         "Regex to determine which changesets reference the ticket.")
 
     def __init__(self):
