@@ -2,31 +2,35 @@
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
+	xmlns:xi="http://www.w3.org/2001/XInclude"
+	xmlns:py="http://genshi.edgewall.org/">
 
-      <xi:include href="admin.html" />	
-  <head>
-    <title>Log Files</title>
-  </head>
+<xi:include href="admin.html" />
+<head>
+<title>Log Files</title>
+</head>
 
-  <body>
-    <h1>Log Files</h1>
-    <p>&nbsp;<br /></p>
-    
-    <div class="wiki-toc">
-    	<ol>
-    		<li py:for="entry in log_list">
-    			<a href="#${entry}">${entry}</a>
-    		</li>
-    	</ol>
-    </div>
-    <p>&nbsp;<br /></p>
-    
+<body>
+	<h1>Log Files</h1>
+	<p>
+		&nbsp;<br />
+	</p>
+
+	<div class="wiki-toc">
+		<ol>
+			<li py:for="entry in log_list"><a href="#${entry}">${entry}</a>
+			</li>
+		</ol>
+	</div>
+	<p>
+		&nbsp;<br />
+	</p>
+
 	<div py:for="entry in log_list">
 		<h2 id="${entry}">${entry}</h2>
-		
-		<table py:if="len(log_list[entry])>0" class="listing" style="margin-left: 10px">
+
+		<table py:if="len(log_list[entry])>0" class="listing"
+			style="margin-left: 10px">
 			<thead>
 				<tr>
 					<th><a href="logwatcher?sort_by=0">File name</a></th>
@@ -44,5 +48,5 @@
 		</table>
 		<br />
 	</div>
-  </body>
+</body>
 </html>

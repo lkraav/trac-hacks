@@ -2,33 +2,33 @@
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
+	xmlns:xi="http://www.w3.org/2001/XInclude"
+	xmlns:py="http://genshi.edgewall.org/">
 
-      <xi:include href="admin.html" />	
-  <head>
-    <title>App Versions</title>
-  </head>
+<xi:include href="admin.html" />
+<head>
+<title>App Versions</title>
+</head>
 
-  <body>
-    <h2>Application Versions</h2>
-    
-    <div py:for="app in apps">
-   		<h3>${app['title']}</h3>
-   		<table>
-   			<tr>
-   				<td>Pfad:</td>
-   				<td>${app['path']}</td>
-   			</tr>
-   			<tr>
-   				<td>Version:</td>
-   				<td>${app['version']}</td>
-   			</tr>
-   			<tr py:if="'ps_info' in app.keys()">
-   				<td>Kommandozeile:</td>
-   				<td>${app['ps_info']}</td>
-   			</tr>
-   		</table>
-    </div>
-  </body>
+<body>
+	<h2>Application Versions</h2>
+
+	<div py:for="app in apps">
+		<h3>${app['title']}</h3>
+		<table>
+			<tr>
+				<td>Pfad:</td>
+				<td>${app['path']}</td>
+			</tr>
+			<tr>
+				<td>Version:</td>
+				<td>${app['version']}</td>
+			</tr>
+			<tr py:if="'ps_info' in app.keys()">
+				<td>Kommandozeile:</td>
+				<td>${app['ps_info']}</td>
+			</tr>
+		</table>
+	</div>
+</body>
 </html>
