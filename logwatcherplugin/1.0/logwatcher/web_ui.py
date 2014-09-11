@@ -51,6 +51,7 @@ class LogViewerPage(Component):
         doc='Preset for the Tail input (restrict query to the last N lines of the'
             ' logfile to load). This must be a number (integer), and by default is'
             ' empty (not set)')
+    _defaultextlines = Option('logwatcher,','defaultextlines','0')
     _log_destinations = ListOption('logwatcher', 'log_destinations',
         doc="List of directories or files in which log file resides")
     _log_levels = ListOption('logwatcher', 'log_level_names',
@@ -117,6 +118,7 @@ class LogViewerPage(Component):
               data['has_log_list'] = 1
 #          if req.method == "POST":
           if not autoload:
+            params['extlines'] = req.args.get('extlines')
             params['level'] = req.args.get('level') or self._defaultlevel
             params['up'] = req.args.get('up')
             params['invert'] = req.args.get('invertsearch')
@@ -125,6 +127,7 @@ class LogViewerPage(Component):
             params['filter'] = req.args.get('filter')
             if logfile:
                 self._do_process(params, logfile)
+            data['extlines'] = int(req.args.get('extlines')or self._defaultextlines)    
             data['level'] = int(req.args.get('level') or self._defaultlevel)
             data['up'] = int(req.args.get('up') or 0)
             data['invert'] = int(req.args.get('invertsearch') or 0)

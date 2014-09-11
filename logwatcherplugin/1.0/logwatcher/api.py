@@ -140,18 +140,25 @@ class LogViewerApi(Component):
      @param req
      @return array [0..n] of {level,line}
      """
+     
      up = params['up']
      invert = params['invert']
      regexp = params['regexp']
 
-     levels = self.get_log_level_names(logname)
+     levels = ("")
      level = int(params['level'] or 0)
      tfilter = params['filter']
      tail = int(params['tail'] or 0)
+     extlines = int (params['extlines'] or 0)
+     params['clinesnext'] = extlines
+     params['clinesprev'] = extlines
+     clinesnext = int(params['clinesnext'])       #Anzahl der nachfolgenden lines
+     clinesprev = int(params['clinesprev'])        #Anzahl der nachfolgenden lines
      
      classes = ['', 'log_crit', 'log_err', 'log_warn', 'log_info', 'log_debug']
      log = []
      logline = {}
+     
      try:
        f = open(logname, 'r')
        try:
@@ -162,38 +169,96 @@ class LogViewerApi(Component):
        if tail and linecount - tail > 0: start = linecount - tail
        else: start = 0
        
-       for i in range(start,linecount):
+       
+       lineprev=""
+       lineprev=""
+       for i in range(start, linecount):
+         prevlines=[]
+         nextlines=[]
+         
+         if clinesprev == 0:
+            prevlines=""
+         else:
+            for ibev in range (clinesprev+1,0,-1):
+                if (i-(ibev-1))>=0:
+                    lineprev = lines[i-(ibev-1)].decode('utf-8', 'replace')
+                    prevlines.append(lineprev)                      
+            prevlines.pop()   
+         if clinesnext == 0:
+             nextlines=""
+         else:
+             for ine in range (0,clinesnext):
+                 if i+(ine+1)< linecount:
+                     linenext = lines[i+(ine+1)].decode('utf-8', 'replace')
+                     nextlines.append(linenext)
+                 elif i+clinesnext>=linecount:
+                    for inr in range(clinesnext,0,-1):
+                        linenext =lines[linecount-inr]
+                   
+            
+         
+         
          line = lines[i].decode('utf-8', 'replace')
+        
          if tfilter:
            if regexp:
-             if not invert and not re.search(tfilter,line): continue
-             if invert and re.search(tfilter,line): continue
+             if not invert and not re.search(tfilter, line): continue
+             if invert and re.search(tfilter, line): continue
            else:
-             if not invert and line.find(tfilter)==-1: continue
-             if invert and not line.find(tfilter)==-1: continue
+             if not invert and line.find(tfilter) == -1: continue
+             if invert and not line.find(tfilter) == -1: continue
          logline = {}
+         dictprevlines = {}
+         dictnextlines = {}
+         
          if level == 0:
-           logline['level'] = classes[level+1]
+           logline['level'] = classes[level + 1]
+           dictprevlines['level'] = classes[level + 1]
+           dictnextlines['level'] = classes[level + 1]
+           dictprevlines['line'] = prevlines
            logline['line']  = line
+           dictnextlines['line'] = nextlines
+           log.append(dictprevlines)
            log.append(logline)
-         elif line.find(levels[level])!=-1:
+           log.append(dictnextlines)
+         
+         elif line.find(levels[level]) != -1:
            logline['level'] = classes[level]
+           dictnextlines['level'] = classes[level]
+           dictprevlines['level'] = classes[level]
+           dictprevlines['line'] = prevlines
            logline['line']  = line
+           dictnextlines['line'] = nextlines
+           log.append(dictprevlines)
            log.append(logline)
+           log.append(dictnextlines)
          elif up:
            i = level
            found = False
            while i > 0:
-             if line.find(levels[i])!=-1:
+             if line.find(levels[i]) != -1:
                logline['level'] = classes[i]
+               dictprevlines['level'] = classes[i]
+               dictnextlines['level'] = classes[i]
+               dictprevlines['line'] = prevlines
                logline['line']  = line
+               dictnextlines['line'] = nextlines
+               log.append(dictprevlines)
                log.append(logline)
+               log.append(dictnextlines)
                found = True
              i -= 1
-           if not found and re.search('^[^0-9]+',line):
+           if not found and re.search('^[^0-9]+', line):
              logline['level'] = 'log_other'
+             dictprevlines['level'] = 'log_other'
+             dictnextlines['level'] = 'log_other'
+             dictprevlines['line'] = prevlines
              logline['line']  = line
+             dictnextlines['line'] = nextlines
+             log.append(dictprevlines)
              log.append(logline)
+             log.append(dictnextlines)
      except IOError:
        self.env.log.debug('Could not read from logfile!')
      return log
+

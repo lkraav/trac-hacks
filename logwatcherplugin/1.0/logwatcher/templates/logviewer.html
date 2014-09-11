@@ -44,7 +44,11 @@
 				</fieldset></li><li id="li_tail"><fieldset id="fieldset_tail">
 					<legend>Tail</legend>
 					<span title="Display only this many lines. Default: display all"><input type="text" name="tail" style="width:35px;" value="${tail}"/> lines</span>
-				</fieldset></li></ul>
+				</fieldset></li>
+				<li id="li_extlines"><fieldset id="fieldset_extlines">
+					<legend>Adding x previous and following lines</legend>
+					<span title="Extend x lines prev and following. Default: 0"><input type="text" name="extlines" value="${extlines}"/> lines</span>
+				</fieldset></li></ul>	
 			</fieldset>
 			<div class="actions">
 				<input type="submit" name="view_log" value="Display / Refresh"/>
