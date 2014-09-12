@@ -185,7 +185,7 @@ class XMailEventHandler(Component):
     #===========================================================================
     def _get_all_relevant_filters(self):
         sqlQuery = ( "select id, username from xmail" \
-                    " where nextexe <= %s and active is not null"
+                    " where nextexe <= %s and active = 1"
                     % self._get_current_time() )
         self.log.debug( "_get_all_relevant_filters: sqlQuery: %s" % sqlQuery )
         
