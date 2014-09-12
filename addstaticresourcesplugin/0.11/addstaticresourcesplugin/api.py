@@ -29,10 +29,13 @@ class AddStaticResourcesComponent (Component):
       if re.search(regex, req.path_info, re.IGNORECASE):
         paths = c.getlist(srkey, regex)
         for p in paths:
+          if not (p.startswith('//') or p.startswith('http://') \
+                  or p.startswith('https://')):
+              p=urljoin(srkey, p)
           if p.endswith("js"):
-            add_script(req,urljoin(srkey, p))
+              add_script(req, p )
           elif p.endswith("css"):
-            add_stylesheet(req, urljoin(srkey, p))
+              add_stylesheet(req, p)
 
     return handler
 
