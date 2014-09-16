@@ -3,7 +3,9 @@ jQuery(document).ready(function($) {
     var base_url = $("#search").attr("action").replace(/\/search$/g, "");
 
     var onQueryError = function(msg) {
-        error_html = "<table class='listing'><tbody><tr style='background-color: yellow;'><td>Error in querying changelogs.</td><tr></tbody></table>";
+        error_html = "<table class='listing'><tbody><tr " +
+                     "style='background-color: yellow;'><td>" +
+                     result.msg_query_err + "</td><tr></tbody></table>";
         $("#ticket").after(error_html);
     };
 
@@ -16,12 +18,18 @@ jQuery(document).ready(function($) {
         var header_width = result.data.header_width;
         var revisions = result.data.revisions;
 
-        var table_html = "<h2 id='ticket_revisions_head' style='cursor:pointer; background: url(../chrome/common/expanded.png) no-repeat 0px 50%; padding-left: 16px;'>Changelogs</h2><table id='ticket_revisions' class='listing'><tbody><tr>";
+        var table_html = "<h2 id='ticket_revisions_head' " + 
+                         "style='cursor:pointer; background: " +
+                         "url(../chrome/common/expanded.png) no-repeat " +
+                         "0px 50%; padding-left: 16px;'>" +
+                         result.msg_tkt_rev_head + "</h2><table " +
+                         "id='ticket_revisions' class='listing'><tbody><tr>";
         for (var i = 0; i < headers.length; i++) {
             var header = headers[i];
             var width = header_width[i];
 
-            table_html += "<th style='width: " + width + "'>" + header + "</th>";
+            table_html += "<th style='width: " + width + "'>" + header +
+                          "</th>";
         }
         table_html += "<tr></tbody></table>";
 
@@ -32,7 +40,11 @@ jQuery(document).ready(function($) {
         // 生成表格
         for (var i = 0; i < revisions.length; i++) {
             var revision = revisions[i];
-            var tr_html = "<tr><td><a target='_blank' href='../changeset/" + revision.link + "'>[" + revision.rev + "]</a></td><td>" + revision.author + "</td><td>" + revision.time + "</td><td>" + revision.message + "</td></tr>";
+            var tr_html = "<tr><td><a target='_blank' href='../changeset/" +
+                          revision.link + "'>[" + revision.rev +
+                          "]</a></td><td>" + revision.author + "</td><td>" +
+                          revision.time + "</td><td>" + revision.message +
+                          "</td></tr>";
             $("#ticket_revisions").append(tr_html);
         }
 
@@ -40,9 +52,13 @@ jQuery(document).ready(function($) {
         $("#ticket_revisions_head").click(function() {
             $("#ticket_revisions").toggle();
             if ($("#ticket_revisions:visible").length) {
-                $("#ticket_revisions_head").css("background-image", "url(../chrome/common/expanded.png)");
+                $("#ticket_revisions_head")
+                    .css("background-image",
+                         "url(../chrome/common/expanded.png)");
             } else {
-                $("#ticket_revisions_head").css("background-image", "url(../chrome/common/collapsed.png)");
+                $("#ticket_revisions_head")
+                    .css("background-image",
+                         "url(../chrome/common/collapsed.png)");
             }
         });
     };

@@ -73,8 +73,10 @@ class TicketlogModule(Component):
         if req.path_info.startswith('/ticketlog/query'):
             # query revisions of ticket
             result = {
+                'msg_query_err': _("Error in querying changelogs."),
+                'msg_tkt_rev_head': _("Commit History"),
+                'data': self._handle_ticketlog_query(req),
                 'status': '1',
-                'data': self._handle_ticketlog_query(req)
             }
             self._send_response(req, json.dumps(result))
 
