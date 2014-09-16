@@ -13,7 +13,7 @@ python setup.py extract_messages
 This will generate catalogs in ticketlog/locale/*_*/LC_MESSAGES/ticketlog.po.
 For example:
   {{{
-python setup.py init_catalog -f zh_CN
+python setup.py init_catalog -l zh_CN
 }}}
 
 == Translate languages ==
