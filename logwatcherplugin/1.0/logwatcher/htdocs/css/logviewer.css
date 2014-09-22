@@ -58,7 +58,7 @@ ul.fieldset li {
 	margin-top: 0;
 }
 
-#li_levels, #li_search, #li_tail {
+#li_levels, #li_search, #li_tail, #li_extlines {
 	display: inline;
 	margin-bottom: 0;
 	margin-left: 0.5em;
@@ -69,7 +69,7 @@ ul.fieldset li {
 	float: left;
 }
 
-#li_tail, #li_search {
+#li_tail, #li_search, #li_extlines {
 	float: right;
 }
 
@@ -97,7 +97,7 @@ div.log_files {
  * Log messages
  */
 div.log_crit, div.log_err, div.log_warn, div.log_info, div.log_debug,
-	div.log_other {
+	div.log_other, div.log_addlines,div.log_stripline{
 	white-space: pre;
 }
 
@@ -123,4 +123,14 @@ div.log_debug {
 
 div.log_other {
 	background-color: rgba(255, 0, 0, 0.05);
+}
+div.log_addlines{
+	color: #2602DA;
+	
+}
+div.log_stripline{
+	color: #000000;
+	border-bottom-width:1px;
+  	border-bottom-style:solid;
+
 }

@@ -48,13 +48,16 @@
 						</fieldset></li>
 					<li id="li_search"><fieldset id="fieldset_search">
 							<legend>Search</legend>
-							<span title="show only lines (not) containing this search term">Lines
+							<span title="show only lines (not) containing this search term"><label>Lines
 								(<input type="checkbox" name="invertsearch" value="1"
-								py:attrs="{'checked': invert==1 or None}" /> not) including <input
+								py:attrs="{'checked': invert==1 or None}" /> not) including</label><input
 								type="text" name="filter" value="${filter}" />
-							</span> <span title="search term is a regular expression"><input
+							</span><label><span title="search term is a regular expression"><input
 								type="checkbox" name="regexp" value="1"
-								py:attrs="{'checked': regexp==1 or None}" /> RegExp</span>
+								py:attrs="{'checked': regexp==1 or None}" /> RegExp</span></label>
+							<label><span title="check if sensitive"><input
+								type="checkbox" name="sensitive" value="1"
+								py:attrs="{'checked':sensitive ==1 or None}" />case-sensitive</span></label>
 						</fieldset></li>
 					<li id="li_tail"><fieldset id="fieldset_tail">
 							<legend>Tail</legend>

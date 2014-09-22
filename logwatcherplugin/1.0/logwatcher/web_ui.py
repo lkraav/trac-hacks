@@ -9,7 +9,7 @@
 #
 
 from trac.admin.api import IAdminPanelProvider
-from trac.web.chrome import add_stylesheet, ITemplateProvider
+from trac.web.chrome import add_stylesheet, ITemplateProvider, add_warning
 from trac.util.translation import _
 
 from logwatcher.api import LogViewerApi
@@ -51,8 +51,9 @@ class LogViewerPage(Component):
     _defaulttail = Option('logwatcher', 'defaulttail', '100',
                           doc='Preset for the Tail input (restrict query to the last N lines of the'
                           ' logfile to load). This must be a number (integer), and by default is'
-                          ' empty (not set)')
+                          ' empty (0)')
     _defaultextlines = Option('logwatcher,', 'defaultextlines', '0')
+    _defaultsensitive = Option('logwatcher', 'defaultsensitive', '0')
     _log_destinations = ListOption('logwatcher', 'log_destinations',
                                    doc="List of directories or files in which log file resides")
     _log_levels = ListOption('logwatcher', 'log_level_names',
@@ -124,25 +125,47 @@ class LogViewerPage(Component):
                 data['has_log_list'] = 1
 #          if req.method == "POST":
             if not autoload:
-                params['extlines'] = req.args.get('extlines')
+                params['extlines'] = int(req.args.get('extlines')
+                                         or self._defaultextlines)
+                if params['extlines'] >= 10:
+                    params['extlines'] = 10
+                if params['extlines'] <= 0:
+                    params['extlines'] = 0
+                params['sensitive'] = req.args.get('sensitive')
                 params['level'] = req.args.get('level') or self._defaultlevel
                 params['up'] = req.args.get('up')
                 params['invert'] = req.args.get('invertsearch')
                 params['regexp'] = req.args.get('regexp')
-                params['tail'] = int(req.args.get('tail') or self._defaulttail)
+                if req.args.get('tail') == "":
+                    params['tail'] = 0
+                else:
+                    params['tail'] = req.args.get('tail') or self._defaulttail
                 params['filter'] = req.args.get('filter')
                 if logfile:
-                    self._do_process(params, logfile)
-                data['extlines'] = int(
-                    req.args.get('extlines')or self._defaultextlines)
-                data['level'] = int(
-                    req.args.get('level') or self._defaultlevel)
+                    try:
+                        self._do_process(params, logfile)
+                    except Exception:
+                        add_warning(req, "Wrong Regexp!")
+
+                data['extlines'] = int(req.args.get('extlines')
+                                       or self._defaultextlines)
+                if data['extlines'] >= 10:
+                    data['extlines'] = 10
+                elif data['extlines'] <= 0:
+                    data['extlines'] = 0
+                data['sensitive'] = int(req.args.get('sensitive') or 0)
+                data['level'] = int(req.args.get('level')
+                                    or self._defaultlevel)
                 data['up'] = int(req.args.get('up') or 0)
                 data['invert'] = int(req.args.get('invertsearch') or 0)
                 data['regexp'] = int(req.args.get('regexp') or 0)
                 data['filter'] = req.args.get('filter') or ''
-                data['tail'] = req.args.get('tail') or self._defaulttail
+                if req.args.get('tail') == "":
+                    data['tail'] = 0
+                else:
+                    data['tail'] = req.args.get('tail') or self._defaulttail
             elif autoload:
+                data['sensitive'] = 0
                 data['level'] = int(
                     self.env.config.get('logwatcher', 'autolevel') or 3)
                 data['up'] = int(
@@ -158,6 +181,7 @@ class LogViewerPage(Component):
                     self.env.config.get('logwatcher', 'defaultlevel') or 3)
                 data['up'] = int(
                     self.env.config.getbool('logwatcher', 'defaultup') or True)
+                data['sensitive'] = 0
                 data['invert'] = 0
                 data['regexp'] = 0
                 data['filter'] = ''
@@ -195,7 +219,6 @@ class LogViewerPage(Component):
         @param params  : config parameters
         @param logfile : logfile name
         """
-        print "PROCESS logfile %s" % logfile
         self.env.log.debug('Processing form data')
         log = self.api.get_log(logfile, params)
         self.data['log'] = log
