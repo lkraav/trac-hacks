@@ -33,10 +33,10 @@
             <label>Spent hours:<br /><input type="text" name="spent_hours" value="$entry.spent_hours" /></label>
           </div>
           <div class="field">
-            <label>Date:<br /><input type="text" name="date" class="trac-datepicker" value="${format_date(entry.date)}" /></label>
+            <label>Date:<br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(entry.date)}" /></label>
           </div>
-          <div class="field">
-            <label>Location:<br /><input type="text" name="location" value="$entry.location" /></label>
+          <div py:if="show_location" class="field">
+            <label>$label_location:<br /><input type="text" name="location" value="$entry.location" /></label>
           </div>
           <div class="field">
             <fieldset>
@@ -57,14 +57,14 @@
       <py:otherwise>
         <form id="prefs" method="get" action="">
           <fieldset>
-            <div class="field">
+            <div py:if="allow_user_switching" class="field">
               <label>User:
                 <select name="user">
                     <option py:for="user in users" value="$user" selected="${'selected' if selected_user == user else None}">$user</option>
                 </select>
               </label>
             </div>
-            <div class="field">
+            <div py:if="use_year" class="field">
               <label>Year:
                 <select name="year">
                     <option py:for="year in years" value="$year" selected="${'selected' if selected_year == year else None}">$year</option>
@@ -97,10 +97,10 @@
               <label>Spent hours: <input type="text" name="spent_hours" /></label>
             </div>
             <div class="field">
-              <label>Date: <br /><input type="text" name="date" class="trac-datepicker" value="${format_date(datetime.now())}"/></label>
+              <label>Date: <br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(datetime.utcnow())}"/></label>
             </div>
-            <div class="field">
-              <label>Location: <br /><input type="text" name="location" value=""/></label>
+            <div py:if="show_location" class="field">
+              <label>$label_location: <br /><input type="text" name="location" value=""/></label>
             </div>
             <div class="field">
               <label>Comment: <input type="text" name="comment" /></label>
@@ -116,7 +116,7 @@
           <table class="listing">
             <thead>
               <tr><th class="sel">&nbsp;</th>
-                <th>Task</th><th>Spent hours</th><th>Date</th><th>Location</th><th>Comment</th>
+                <th>Task</th><th>Spent hours</th><th>Date</th><th py:if="show_location">$label_location</th><th>Comment</th>
               </tr>
             </thead>
             <tbody>
@@ -127,8 +127,8 @@
                 </td>
                 <td py:with="task = tasks_by_id.get(entry.task_id)"><a href="${panel_href(entry.id)}">${"%s: %s: %s" % (task.category, task.project, task.name) if task else '?'}</a></td>
                 <td>$entry.spent_hours</td>
-                <td>${format_date(entry.date)}</td>
-                <td>$entry.location</td>
+                <td>${format_date_utc(entry.date)}</td>
+                <td py:if="show_location">$entry.location</td>
                 <td>${wiki_to_html(context, entry.comment)}</td>
               </tr>
             </tbody>

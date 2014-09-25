@@ -12,7 +12,7 @@ from timetracking.model import SCHEMA
 
 
 PLUGIN_NAME = 'TimeTrackingPlugin'
-PLUGIN_VERSION = 2
+PLUGIN_VERSION = 3
 
 
 class TimeTrackingModule(Component):
@@ -23,7 +23,8 @@ class TimeTrackingModule(Component):
     # IPermissionRequestor methods
     
     def get_permission_actions(self):
-        return ['TIME_TRACKING']
+        actions = ['TIME_TRACKING']
+        return actions + [('TIME_TRACKING_ADMIN', actions)]
 
     # IEnvironmentSetupParticipant
 

@@ -5,33 +5,56 @@ from datetime import datetime
 from genshi.builder import tag
 
 from trac.admin import *
+from trac.config import BoolOption, Option
 from trac.core import *
-from trac.util.datefmt import parse_date
+from trac.util.datefmt import format_date, parse_date, utc
 from trac.util.presentation import Paginator
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet, add_notice, add_warning
 
 from timetracking.model import LogEntry, Task
 
+
 class LogEntryAdminPanel(Component):
 
     implements(IAdminPanelProvider)
+    
+    unused_year = None
+
+    use_year = BoolOption('timetracking', 'year', 'True',
+        """Use a year selector.""")
+
+    show_location = BoolOption('timetracking', 'location', 'True',
+        """Show the location field.""")
+
+    label_location = Option('timetracking', 'location.label', 'Location',
+        """Label for the location field.""")
+
+    label_category = Option('timetracking', 'category.label', 'Category',
+        """Label for the category field.""")
+
+    label_project = Option('timetracking', 'project.label', 'Project',
+        """Label for the project field.""")
 
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
         if 'TIME_TRACKING' in req.perm:
             yield ('timetracking', "Time Tracking", 'log', "Log")
+        if 'TIME_TRACKING_ADMIN' in req.perm:
             yield ('timetracking', "Time Tracking", 'tasks', "Tasks")
 
     def render_admin_panel(self, req, category, panel, path_info):
-        req.perm.require('TIME_TRACKING')
-
         if panel == 'log':
+            req.perm.require('TIME_TRACKING')
             return self.render_log_panel(req, category, panel, path_info)
         if panel == 'tasks':
+            req.perm.require('TIME_TRACKING_ADMIN')
             return self.render_tasks_panel(req, category, panel, path_info)
 
     def render_log_panel(self, req, category, panel, path_info):
+        def format_date_utc(t):
+            return format_date(t, tzinfo=utc, locale=getattr(req, 'lc_time', None))
+
         # Detail view?
         if path_info:
             id = path_info
@@ -40,7 +63,7 @@ class LogEntryAdminPanel(Component):
                 raise TracError("Log entry does not exist!")
             if req.method == 'POST':
                 if req.args.get('save'):
-                    logentry.date = parse_date(req.args.get('date'))
+                    logentry.date = parse_date(req.args.get('date'), utc)
                     logentry.location = req.args.get('location')
                     logentry.spent_hours = int(req.args.get('spent_hours'))
                     logentry.task_id = int(req.args.get('task_id'))
@@ -50,13 +73,15 @@ class LogEntryAdminPanel(Component):
                     task = Task.select_by_id(self.env, logentry.task_id)
                     if task is None:
                         add_warning(req, 'Task does not exist!')
-                    elif logentry.date.year != task.year:
+                    elif self.use_year and logentry.date.year != task.year:
                         add_warning(req, 'Inconsistent date (%s) and task year (%s)!' % (logentry.date.year, task.year))
                     req.redirect(req.href.admin(category, panel))
                 elif req.args.get('cancel'):
                     req.redirect(req.href.admin(category, panel))
 
-            tasks = Task.select_by_year(self.env, logentry.date.year)
+            year = logentry.date.year if self.use_year else self.unused_year
+            
+            tasks = Task.select_by_year(self.env, year) if self.use_year else Task.select_all(self.env)
             tasks_by_id = dict((task.id, task) for task in tasks)
 
             if logentry.task_id not in tasks_by_id:
@@ -66,24 +91,34 @@ class LogEntryAdminPanel(Component):
                 else:
                     tasks.append(task)
                     tasks_by_id[task.id] = task
-                    add_warning(req, 'Inconsistent date (%s) and task year (%s)!' % (logentry.date.year, task.year))
+                    add_warning(req, 'Inconsistent date (%s) and task year (%s)!' % (year, task.year))
 
             Chrome(self.env).add_wiki_toolbars(req)
             data = {'view': 'detail',
                     'entry': logentry,
                     'tasks': tasks,
-                    'tasks_by_id': tasks_by_id,
+                    'tasks_by_id': tasks_by_id,                    
+                    'use_year': self.use_year,
+                    'show_location': self.show_location,
+                    'label_location': self.label_location,
+                    'format_date_utc': format_date_utc,
             }
 
         else:
             user = req.args.get('user', req.authname)
-            year = int(req.args.get('year', datetime.now().year))
+            if user != req.authname:
+                req.perm.require('TIME_TRACKING_ADMIN')
+
+            allow_user_switching = 'TIME_TRACKING_ADMIN' in req.perm
+
+            year = int(req.args.get('year', datetime.now().year)) if self.use_year else self.unused_year
+
             if req.method == 'POST':
                 if req.args.get('add'):
                     # Add Entry
                     logentry = LogEntry(None, None, None, None, None, None, None)
                     logentry.user = user
-                    logentry.date = parse_date(req.args.get('date'))
+                    logentry.date = parse_date(req.args.get('date'), utc)
                     logentry.location = req.args.get('location')
                     logentry.spent_hours = int(req.args.get('spent_hours'))
                     logentry.task_id = int(req.args.get('task_id'))
@@ -93,7 +128,7 @@ class LogEntryAdminPanel(Component):
                     task = Task.select_by_id(self.env, logentry.task_id)
                     if task is None:
                         add_warning(req, 'Task does not exist!')
-                    elif logentry.date.year != task.year:
+                    elif self.use_year and logentry.date.year != task.year:
                         add_warning(req, 'Inconsistent date (%s) and task year (%s)!' % (logentry.date.year, task.year))
                     req.redirect(req.href.admin(category, panel, user=user, year=year))
                 elif req.args.get('remove'):
@@ -107,15 +142,18 @@ class LogEntryAdminPanel(Component):
                     add_notice(req, 'The entries have been removed.')
                     req.redirect(req.href.admin(category, panel, user=user, year=year))
 
-            users = sorted(username for username, name, email in self.env.get_known_users())
-            if users and user not in users:
-                user = users[0]
+            if allow_user_switching:
+                users = sorted(username for username, name, email in self.env.get_known_users())
+                if users and user not in users:
+                    user = users[0]
+            else:
+                users = [user]
 
-            years = Task.get_known_years(self.env)
+            years = Task.get_known_years(self.env) if self.use_year else [self.unused_year]
             if year not in years:
                 years.append(year)
 
-            tasks = Task.select_by_year(self.env, year)
+            tasks = Task.select_by_year(self.env, year) if self.use_year else Task.select_all(self.env)
             tasks_by_id = dict((task.id, task) for task in tasks)
 
             #Pagination
@@ -153,6 +191,11 @@ class LogEntryAdminPanel(Component):
                     'years': years,
                     'tasks': tasks,
                     'tasks_by_id': tasks_by_id,
+                    'use_year': self.use_year,
+                    'show_location': self.show_location,
+                    'label_location': self.label_location,
+                    'allow_user_switching': allow_user_switching,
+                    'format_date_utc': format_date_utc,
             }
 
         Chrome(self.env).add_jquery_ui(req)
@@ -173,7 +216,7 @@ class LogEntryAdminPanel(Component):
                     task.description = req.args.get('description')
                     task.project = req.args.get('project')
                     task.category = req.args.get('category')
-                    task.year = int(req.args.get('year'))
+                    task.year = int(req.args.get('year')) if self.use_year else self.unused_year
                     task.estimated_hours = int(req.args.get('estimated_hours'))
                     Task.update(self.env, task)
                     add_notice(req, 'Your changes have been saved.')
@@ -181,9 +224,14 @@ class LogEntryAdminPanel(Component):
                 elif req.args.get('cancel'):
                     req.redirect(req.href.admin(category, panel))
             Chrome(self.env).add_wiki_toolbars(req)
-            data = {'view': 'detail', 'task': task}
+            data = {'view': 'detail',
+                    'task': task,
+                    'use_year': self.use_year,
+                    'label_category': self.label_category,
+                    'label_project': self.label_project,
+            }
         else:
-            year = int(req.args.get('year', datetime.now().year))
+            year = int(req.args.get('year', datetime.now().year)) if self.use_year else self.unused_year
             if req.method == 'POST':
                 if req.args.get('add'):
                     # Add Task
@@ -211,16 +259,19 @@ class LogEntryAdminPanel(Component):
                         add_warning(req, tag('Orphaned log entries: ', tag.ul(tag.li(tag.a("log:%s" % e.id, href=req.href.admin('timetracking', 'log', e.id))) for e in orphaned_entries)))
                     req.redirect(req.href.admin(category, panel, year=year))
 
-            years = Task.get_known_years(self.env)
+            years = Task.get_known_years(self.env) if self.use_year else [self.unused_year]
             if year not in years:
                 years.append(year)
 
-            tasks = Task.select_by_year(self.env, year)
+            tasks = Task.select_by_year(self.env, year) if self.use_year else Task.select_all(self.env)
 
             data = {'view': 'list',
                     'tasks': tasks,
                     'selected_year': year,
                     'years': years,
+                    'use_year': self.use_year,
+                    'label_category': self.label_category,
+                    'label_project': self.label_project,
             }
 
         add_script(req, 'timetracking/chosen/chosen.jquery.js')

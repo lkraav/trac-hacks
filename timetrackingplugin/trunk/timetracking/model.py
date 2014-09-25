@@ -83,6 +83,17 @@ class Task(object):
         return Task(id, name, description, project, category, year, estimated_hours)
 
     @classmethod
+    def select_by_ids(cls, env, ids):
+        ids_sql = ','.join(["'%s'" % id for id in ids])
+        rows = env.db_query("""
+                SELECT id, name, description, project, category, year, estimated_hours
+                FROM timetrackingtasks
+                WHERE id in (%s)
+                """ % ids_sql)
+        return dict((id, Task(id, name, description, project, category, year, estimated_hours))
+                    for id, name, description, project, category, year, estimated_hours in rows)
+
+    @classmethod
     def select_by_year(cls, env, year):
         rows = env.db_query("""
                 SELECT id, name, description, project, category, estimated_hours
@@ -92,6 +103,16 @@ class Task(object):
                 """, (year,))
         return [Task(id, name, description, project, category, year, estimated_hours)
                 for id, name, description, project, category, estimated_hours in rows]
+
+    @classmethod
+    def select_all(cls, env):
+        rows = env.db_query("""
+                SELECT id, name, description, project, category, year, estimated_hours
+                FROM timetrackingtasks
+                ORDER BY category ASC, project ASC, name ASC
+                """)
+        return [Task(id, name, description, project, category, year, estimated_hours)
+                for id, name, description, project, category, year, estimated_hours in rows]
 
     @classmethod
     def get_known_years(cls, env):
@@ -178,8 +199,6 @@ class LogEntry(object):
 
     @classmethod
     def select_by_user_paginated(cls, env, user, page, max_per_page):
-        print page, type(page)
-        print max_per_page, type(max_per_page)
         rows = env.db_query("""
                 SELECT id, user, date, location, spent_hours, task_id, comment
                 FROM timetrackinglogs
@@ -198,3 +217,12 @@ class LogEntry(object):
                     WHERE user=%s
                     """, (user,))[0][0]
 
+    @classmethod
+    def select_by_users_and_date(cls, env, users, start, end):
+        users_sql = ','.join(["'%s'" % user for user in users])
+        rows = env.db_query("""
+                SELECT id, user, date, location, spent_hours, task_id, comment
+                FROM timetrackinglogs
+                WHERE user in (%s) and date>= %%s and date <= %%s
+                """ % users_sql, (to_utimestamp(start), to_utimestamp(end)))
+        return [LogEntry(id, user, from_utimestamp(date), location, spent_hours, task_id, comment) for id, user, date, location, spent_hours, task_id, comment in rows]

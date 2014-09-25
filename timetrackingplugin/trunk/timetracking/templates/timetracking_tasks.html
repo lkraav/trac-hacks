@@ -22,12 +22,12 @@
         <fieldset>
           <legend>Modify Log Task:</legend>
           <div class="field">
-            <label>Category:<br /><input type="text" name="category" value="$task.category" /></label>
+            <label>$label_category:<br /><input type="text" name="category" value="$task.category" /></label>
           </div>
           <div class="field">
-            <label>Project:<br /><input type="text" name="project" value="$task.project" /></label>
+            <label>$label_project:<br /><input type="text" name="project" value="$task.project" /></label>
           </div>
-          <div class="field">
+          <div py:if="use_year" class="field">
             <label>Year:<br /><input type="text" name="year" value="$task.year" /></label>
           </div>
           <div class="field">
@@ -53,7 +53,7 @@
       </form>
 
       <py:otherwise>
-        <form id="prefs" method="get" action="">
+        <form  py:if="use_year" id="prefs" method="get" action="">
           <fieldset>
             <div class="field">
               <label>Year:
@@ -72,10 +72,10 @@
             <legend>Add Task:</legend>
             <input type="hidden" name="year" value="$selected_year" />
             <div class="field">
-              <label>Category: <input type="text" name="category" /></label>
+              <label>$label_category: <input type="text" name="category" /></label>
             </div>
             <div class="field">
-              <label>Project: <input type="text" name="project" /></label>
+              <label>$label_project: <input type="text" name="project" /></label>
             </div>
             <div class="field">
               <label>Name: <input type="text" name="name" /></label>
@@ -96,7 +96,7 @@
           <table class="listing">
             <thead>
               <tr><th class="sel">&nbsp;</th>
-                <th>Category</th><th>Project</th><th>Name</th><th>Estimated hours</th><th>Description</th>
+                <th>$label_category</th><th>$label_project</th><th>Name</th><th>Estimated hours</th><th>Description</th>
               </tr>
             </thead>
             <tbody>
