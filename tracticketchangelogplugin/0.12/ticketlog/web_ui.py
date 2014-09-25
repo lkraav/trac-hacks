@@ -29,6 +29,13 @@ try:
     from trac.util.datefmt import from_utimestamp as from_timestamp
 except ImportError:
     from trac.util.datefmt import from_timestamp
+try:
+    from trac.util.datefmt import user_time
+except ImportError:
+    def user_time(req, func, *args, **kwargs):
+        if 'tzinfo' not in kwargs:
+            kwargs['tzinfo'] = getattr(req, 'tz', None)
+        return func(*args, **kwargs)
 
 from i18n_domain import _, N_, add_domain, gettext, tag_
 
@@ -181,8 +188,8 @@ class TicketlogModule(Component):
             revision = {
                 'rev': rev,
                 'author': Chrome(self.env).format_author(req, author),
-                'time': format_datetime(from_timestamp(timestamp),
-                                        tzinfo=req.tz)
+                'time': user_time(req, format_datetime,
+                                  from_timestamp(timestamp)),
             }
             if self.max_message_length \
                     and len(message) > self.max_message_length:
