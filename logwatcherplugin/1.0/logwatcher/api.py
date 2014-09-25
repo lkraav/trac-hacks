@@ -247,9 +247,11 @@ class LogViewerApi(Component):
                     dictprevlines['line'] = prevlines
                     logline['line'] = line
                     dictnextlines['line'] = nextlines
-                    log.append(dictprevlines)
+                    if dictprevlines['line'] != "":
+                        log.append(dictprevlines)
                     log.append(logline)
-                    log.append(dictnextlines)
+                    if dictnextlines['line'] != "":
+                        log.append(dictnextlines)
                     if dictnextlines['line'] != "":
                         log.append(stripline)
 
@@ -260,9 +262,11 @@ class LogViewerApi(Component):
                     dictprevlines['line'] = prevlines
                     logline['line'] = line
                     dictnextlines['line'] = nextlines
-                    log.append(dictprevlines)
+                    if dictprevlines['line'] != "":
+                        log.append(dictprevlines)
                     log.append(logline)
-                    log.append(dictnextlines)
+                    if dictnextlines['line'] != "":
+                        log.append(dictnextlines)
                     if dictnextlines['line'] != "":
                         log.append(stripline)
                 elif up:
@@ -276,9 +280,11 @@ class LogViewerApi(Component):
                             dictprevlines['line'] = prevlines
                             logline['line'] = line
                             dictnextlines['line'] = nextlines
-                            log.append(dictprevlines)
+                            if dictprevlines['line'] != "":
+                                log.append(dictprevlines)
                             log.append(logline)
-                            log.append(dictnextlines)
+                            if dictnextlines['line'] != "":
+                                log.append(dictnextlines)
                             if dictnextlines['line'] != "":
                                 log.append(stripline)
                             found = True
@@ -290,9 +296,11 @@ class LogViewerApi(Component):
                         dictprevlines['line'] = prevlines
                         logline['line'] = line
                         dictnextlines['line'] = nextlines
-                        log.append(dictprevlines)
+                        if dictprevlines['line'] != "":
+                            log.append(dictprevlines)
                         log.append(logline)
-                        log.append(dictnextlines)
+                        if dictnextlines['line'] != "":
+                            log.append(dictnextlines)
                         if dictnextlines['line'] != "":
                             log.append(stripline)
         except IOError:
