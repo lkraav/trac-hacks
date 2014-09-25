@@ -60,7 +60,7 @@
 
     // Fix jQuery UI Dialogs. Pressing enter should "click the first button", not submit the form (with GET and a page refresh!)
     // See http://stackoverflow.com/questions/868889/submit-jquery-ui-dialog-on-enter
-    $(document).delegate('.ui-dialog', 'keydown', function(e) {
+    $(document).delegate('.trac-weekplan-dialog', 'keydown', function(e) {
         var tagName = e.target.tagName.toLowerCase();
         tagName = (tagName === 'input' && e.target.type === 'button') ? 'button' : tagName;
         if (e.which === $.ui.keyCode.ENTER && tagName !== 'textarea' && tagName !== 'select' && tagName !== 'button') {
@@ -90,48 +90,57 @@
             };
 
             // Create event
-            var createDialog = $("<div title='Create event'><form><label>Title: <input type='text' name='title' /></label><br/><label>Plan: <select name='plan' /></label></form></div>");
-            var ctrlCreateTitle = createDialog.find("input[name='title']");
-            var ctrlCreatePlan = createDialog.find("select[name='plan']");
-            $.each(plan_data.plans, function(i, plan) {
-                    $('<option/>', { 'value': plan }).text(plan_data.labels[plan]).css('background-color', plan_data.colors[plan]).appendTo(ctrlCreatePlan);
-                });
+            if (plan_data.plans_with_add_event.length > 0) {
+                var createDialog = $("<div title='Create event'><form><label>Title: <input type='text' name='title' /></label><br/><label>Plan: <select name='plan' /></label></form></div>");
+                var ctrlCreateTitle = createDialog.find("input[name='title']");
+                var ctrlCreatePlan = createDialog.find("select[name='plan']");
+                $.each(plan_data.plans_with_add_event, function(i, plan) {
+                        $('<option/>', { 'value': plan }).text(plan_data.labels[plan]).css('background-color', plan_data.colors[plan]).appendTo(ctrlCreatePlan);
+                    });
 
-            calendar_data.selectable = true;
-            calendar_data.selectHelper = true;
-            calendar_data.select = function(start, end, allDay) {
-                ctrlCreateTitle.val('');
-                createDialog.dialog({
-                    modal: true,
-                    buttons: {
-                        "Create": function() {
-                            var proposed_event = {
-                                title: ctrlCreateTitle.val(),
-                                plan: ctrlCreatePlan.find("option:selected").val(),
-                                start: start,
-                                end: end
-                            };
-                            var post_data = serialized_post_data(proposed_event, 'add_event', plan_data);
-                            var current_dialog = $(this);
-                            $.post(plan_data.api_url, post_data, function(added_event) {
-                                added_event.color = plan_data.colors[added_event.plan];
-                                calendar.fullCalendar('renderEvent', added_event);
-                                current_dialog.dialog("close");
-                              }, 'json');
-                        },
-                        "Cancel": function() {
-                            $(this).dialog("close");
+                calendar_data.selectable = true;
+                calendar_data.selectHelper = true;
+                calendar_data.select = function(start, end, allDay) {
+                    ctrlCreateTitle.val('');
+                    createDialog.dialog({
+                        modal: true,
+                        dialogClass: "trac-weekplan-dialog",
+                        buttons: {
+                            "Create": function() {
+                                var proposed_event = {
+                                    title: ctrlCreateTitle.val(),
+                                    plan: ctrlCreatePlan.find("option:selected").val(),
+                                    start: start,
+                                    end: end
+                                };
+                                var post_data = serialized_post_data(proposed_event, 'add_event', plan_data);
+                                var current_dialog = $(this);
+                                $.post(plan_data.api_url, post_data, function(added_event) {
+                                    added_event.color = plan_data.colors[added_event.plan];
+                                    calendar.fullCalendar('renderEvent', added_event);
+                                    current_dialog.dialog("close");
+                                  }, 'json');
+                            },
+                            "Cancel": function() {
+                                $(this).dialog("close");
+                            }
                         }
-                    }
-                });
-                calendar.fullCalendar('unselect');
-            };
-            
+                    });
+                    calendar.fullCalendar('unselect');
+                };
+            }
+
             // Drag/drop/resize event
             calendar_data.editable = true;
             calendar_data.eventStartEditable = true;
             calendar_data.eventDurationEditable = true;
-            calendar_data.eventDrop = function(event, dayDelta, minuteDelta, allDay, revertFunc, jsEvent, ui, view ) {
+            calendar_data.eventDrop = function(event, delta, revertFunc, jsEvent, ui, view) {
+                if ($.inArray(event.plan, plan_data.plans_with_update_event) == -1)
+                {
+                    revertFunc();
+                    return;
+                }
+
                 var post_data = serialized_post_data(event, 'update_event', plan_data);
                 $.ajax({
                     type: "POST",
@@ -140,7 +149,13 @@
                     error: revertFunc
                 });
             };
-            calendar_data.eventResize = function(event, dayDelta, minuteDelta, revertFunc, jsEvent, ui, view) {
+            calendar_data.eventResize = function(event, delta, revertFunc, jsEvent, ui, view) {
+                if ($.inArray(event.plan, plan_data.plans_with_update_event) == -1)
+                {
+                    revertFunc();
+                    return;
+                }
+
                 var post_data = serialized_post_data(event, 'update_event', plan_data);
                 $.ajax({
                     type: "POST",
@@ -154,43 +169,52 @@
             var eventEditDialog = $("<div title='Edit event'><form><label>Title: <input type='text' name='title' /></label><br/><label>Plan: <select name='plan' /></label></form></div>");
             var ctrlEditTitle = eventEditDialog.find("input[name='title']");
             var ctrlEditPlan = eventEditDialog.find("select[name='plan']");
-            $.each(plan_data.plans, function(i, plan) {
+            $.each(plan_data.plans_with_update_event, function(i, plan) {
                     $('<option/>', { 'value': plan }).text(plan_data.labels[plan]).css('background-color', plan_data.colors[plan]).appendTo(ctrlEditPlan);
                 });
 
             calendar_data.eventClick = function(edited_event) {
+                if ($.inArray(edited_event.plan, plan_data.plans_with_update_event) == -1) return;
+
+                var buttons = {
+                    "Edit": function() {
+                        var post_data = serialized_post_data(edited_event, 'update_event', plan_data);
+                        post_data.title = ctrlEditTitle.val();
+                        post_data.plan = ctrlEditPlan.find("option:selected").val();
+                        var current_dialog = $(this);
+                        $.post( plan_data.api_url, post_data, function(updated_event) {
+                            
+                            edited_event.title_html = updated_event.title_html;
+                            edited_event.title = updated_event.title;
+                            edited_event.plan = updated_event.plan;
+                            edited_event.color = plan_data.colors[updated_event.plan];
+                            calendar.fullCalendar('updateEvent', edited_event);
+                            current_dialog.dialog("close");
+                        });
+                    },
+                    "Delete!": function() {
+                        var post_data = serialized_post_data(edited_event, 'delete_event', plan_data);
+                        var current_dialog = $(this);
+                        $.post( plan_data.api_url, post_data, function(data) {
+                            calendar.fullCalendar('removeEvents', edited_event.id);
+                            current_dialog.dialog("close");
+                        });
+                    },
+                    "Cancel": function() {
+                        $(this).dialog("close");
+                    }
+                };
+                if ($.inArray(edited_event.plan, plan_data.plans_with_delete_event) == -1)
+                {
+                    delete buttons["Delete!"];
+                }
+
                 ctrlEditTitle.val(edited_event.title);
                 ctrlEditPlan.val(edited_event.plan).prop('selected',true);
                 eventEditDialog.dialog({
                     modal: true,
-                    buttons: {
-                        "Edit": function() {
-                            var post_data = serialized_post_data(edited_event, 'update_event', plan_data);
-                            post_data.title = ctrlEditTitle.val();
-                            post_data.plan = ctrlEditPlan.find("option:selected").val();
-                            var current_dialog = $(this);
-                            $.post( plan_data.api_url, post_data, function(updated_event) {
-                                
-                                edited_event.title_html = updated_event.title_html;
-                                edited_event.title = updated_event.title;
-                                edited_event.plan = updated_event.plan;
-                                edited_event.color = plan_data.colors[updated_event.plan];
-                                calendar.fullCalendar('updateEvent', edited_event);
-                                current_dialog.dialog("close");
-                            });
-                        },
-                        "Delete!": function() {
-                            var post_data = serialized_post_data(edited_event, 'delete_event', plan_data);
-                            var current_dialog = $(this);
-                            $.post( plan_data.api_url, post_data, function(data) {
-                                calendar.fullCalendar('removeEvents', edited_event.id);
-                                current_dialog.dialog("close");
-                            });
-                        },
-                        "Cancel": function() {
-                            $(this).dialog("close");
-                        }
-                    }
+                    dialogClass: "trac-weekplan-dialog",
+                    buttons: buttons,
                 });
             };
 

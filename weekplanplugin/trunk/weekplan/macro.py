@@ -11,6 +11,8 @@ from trac.web.chrome import (Chrome, add_script, add_script_data,
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
 
+from weekplan.core import WeekPlanModule
+
 
 class WeekPlanMacro(WikiMacroBase):
     """Show a week-by-week calendar and allow planning events.
@@ -42,7 +44,7 @@ class WeekPlanMacro(WikiMacroBase):
         if not plan_ids:
             raise TracError('Missing plan id')
 
-        colors = kw.get('color', '#3A87AD|#39AC60|#D7A388|#88BDD7|#9939AC|#AC9939').split('|')
+        colors = kw.get('color', '#38A|#4B6|#DA8|#9CD|#CAD|#CC7').split('|')
         colors = dict(zip(plan_ids, colors*((len(plan_ids)-1)/len(colors)+1)))
 
         labels = [label for label in kw.get('label', '').split('|') if label]
@@ -60,11 +62,15 @@ class WeekPlanMacro(WikiMacroBase):
 
         req = formatter.req
         context = formatter.context
+        core = WeekPlanModule(self.env)
 
         plan_data = {
             'form_token': req.form_token,
             'api_url': formatter.href('weekplan'),
             'plans': plan_ids,
+            'plans_with_add_event': [plan_id for plan_id in plan_ids if core.can_plan_add_event(plan_id)],
+            'plans_with_update_event': [plan_id for plan_id in plan_ids if core.can_plan_update_event(plan_id)],
+            'plans_with_delete_event': [plan_id for plan_id in plan_ids if core.can_plan_delete_event(plan_id)],
             'colors': colors,
             'labels': labels,
             'calendar_data': {
