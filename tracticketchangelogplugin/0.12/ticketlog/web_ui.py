@@ -19,11 +19,13 @@ except ImportError:
 import trac
 from trac.config import IntOption, Option
 from trac.core import *
+from trac.mimeview.api import Context
 from trac.perm import IPermissionRequestor
 from trac.versioncontrol.api import RepositoryManager
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
 from trac.web.chrome import (Chrome, ITemplateProvider, add_script,
                              add_stylesheet)
+from trac.wiki.formatter import format_to_oneliner
 from trac.util.datefmt import format_datetime
 try:
     from trac.util.datefmt import from_utimestamp as from_timestamp
@@ -195,7 +197,8 @@ class TicketlogModule(Component):
                     and len(message) > self.max_message_length:
                 message = message[:self.max_message_length] + ' (...)'
             message = cgi.escape(message)
-            revision['message'] = message
+            ctxt = Context.from_request(req)
+            revision['message'] = format_to_oneliner(self.env, ctxt, message)
             revision['link'] = intermediate[key]
             revisions.append(revision)
 
