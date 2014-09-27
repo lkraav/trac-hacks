@@ -27,6 +27,7 @@ from trac.web.chrome import (Chrome, ITemplateProvider, add_script,
                              add_stylesheet)
 from trac.wiki.formatter import format_to_oneliner
 from trac.util.datefmt import format_datetime
+from trac.util.text import shorten_line
 try:
     from trac.util.datefmt import from_utimestamp as from_timestamp
 except ImportError:
@@ -195,7 +196,7 @@ class TicketlogModule(Component):
             }
             if self.max_message_length \
                     and len(message) > self.max_message_length:
-                message = message[:self.max_message_length] + ' (...)'
+                message = shorten_line(message, self.max_message_length)
             message = cgi.escape(message)
             ctxt = Context.from_request(req)
             revision['message'] = format_to_oneliner(self.env, ctxt, message)
