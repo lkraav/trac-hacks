@@ -33,8 +33,6 @@ jQuery(document).ready(function($) {
         }
         table_html += "<tr></tbody></table>";
 
-        $("#ticket_revisions").append(tr_html);
-
         $("#ticket").after(table_html);
 
         // 生成表格
