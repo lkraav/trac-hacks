@@ -1,0 +1,58 @@
+# German (Germany) translations for TracTicketChangelogPlugin.
+# Copyright (C) 2014
+# This file is distributed under the same license as the
+# TracTicketChangelogPlugin project.
+# Steffen Hoffmann <hoff.st@web.de>, 2014.
+# Torge Riedel <t.riedel@cenit.de>, 2014.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TracTicketChangelogPlugin 0.2\n"
+"Report-Msgid-Bugs-To: richard.liao.i@gmmail.com\n"
+"POT-Creation-Date: 2014-09-16 22:24+0200\n"
+"PO-Revision-Date: 2014-09-16 09:33+0200\n"
+"Last-Translator: Steffen Hoffmann <hoff.st@web.de>\n"
+"Language-Team: de_DE <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: ticketlog/web_ui.py:76
+msgid "Error in querying changelogs."
+msgstr "Fehler beim Durchsuchen der Änderungshistorie."
+
+#: ticketlog/web_ui.py:77
+msgid "Commit History"
+msgstr "Code-Änderungshistorie"
+
+#: ticketlog/web_ui.py:114
+msgid "Changeset"
+msgstr "Änderung"
+
+#: ticketlog/web_ui.py:115
+msgid "Author"
+msgstr "Autor"
+
+#: ticketlog/web_ui.py:116
+msgid "Time"
+msgstr "Zeitpunkt"
+
+#: ticketlog/web_ui.py:117
+msgid "ChangeLog"
+msgstr "Notiz"
+
+#: ticketlog/templates/ticketlog.html:12
+#: ticketlog/templates/ticketlog_admin.html:12
+msgid "TracTicketChangelogPlugin"
+msgstr "TracTicketChangelogPlugin"
+
+#: ticketlog/templates/ticketlog.html:15
+msgid "TracTicketChangelogPlugin List"
+msgstr ""
+
+#: ticketlog/templates/ticketlog_admin.html:14
+msgid "TracTicketChangelogPlugin: Admin"
+msgstr ""
+
