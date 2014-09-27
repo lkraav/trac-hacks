@@ -11,11 +11,6 @@
 import sys
 from setuptools import find_packages, setup
 
-min_python = (2, 4)
-if sys.version_info < min_python:
-    print("TracTicketTemplate requires Python %d.%d or later" % min_python)
-    sys.exit(1)
-
 extra = {}
 
 try:
@@ -36,7 +31,7 @@ else:
 
 setup(
     name='TracTicketChangelogPlugin',
-    version="0.2",
+    version="1.0",
     description="Show changelogs in trac ticket",
     author="Richard Liao",
     author_email="richard.liao.i@gmail.com",
