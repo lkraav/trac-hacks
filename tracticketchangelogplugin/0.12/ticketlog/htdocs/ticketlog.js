@@ -18,9 +18,11 @@ jQuery(document).ready(function($) {
         var header_width = result.data.header_width;
         var revisions = result.data.revisions;
 
-        var table_html = "<div id='ticket_log'>" +
-                         "<h3 class='foldable'>" +
-                         result.msg_tkt_rev_head + "</h3><table " +
+        var table_html = "<h2 id='ticket_revisions_head' " + 
+                         "style='cursor:pointer; background: " +
+                         "url(../chrome/common/expanded.png) no-repeat " +
+                         "0px 50%; padding-left: 16px;'>" +
+                         result.msg_tkt_rev_head + "</h2><table " +
                          "id='ticket_revisions' class='listing'><tbody><tr>";
         for (var i = 0; i < headers.length; i++) {
             var header = headers[i];
@@ -29,7 +31,7 @@ jQuery(document).ready(function($) {
             table_html += "<th style='width: " + width + "'>" + header +
                           "</th>";
         }
-        table_html += "<tr></tbody></table></div>";
+        table_html += "<tr></tbody></table>";
 
         $("#ticket").after(table_html);
 
@@ -43,6 +45,20 @@ jQuery(document).ready(function($) {
                           "</td></tr>";
             $("#ticket_revisions").append(tr_html);
         }
+
+        // 处理折叠展开
+        $("#ticket_revisions_head").click(function() {
+            $("#ticket_revisions").toggle();
+            if ($("#ticket_revisions:visible").length) {
+                $("#ticket_revisions_head")
+                    .css("background-image",
+                         "url(../chrome/common/expanded.png)");
+            } else {
+                $("#ticket_revisions_head")
+                    .css("background-image",
+                         "url(../chrome/common/collapsed.png)");
+            }
+        });
     };
 
     var ticket_id = location.pathname.replace(base_url + "/ticket/", "");
