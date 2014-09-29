@@ -245,7 +245,7 @@ jQuery(document).ready(function(){
                 function(result) {
                     if (!result['result']) {
                         $('#tabcontent .system-message').remove();
-                        var src = result.image_url + '?' + (new Date().valueOf().toString(36));
+                        var src = result.image_url;
                         $('#image-area').html('');
                         $('#image-area').append($('<img>').attr('src', src));
                         uiEnabled();
