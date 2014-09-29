@@ -1,18 +1,23 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
-      xmlns:i18n="http://genshi.edgewall.org/i18n"
       xmlns:xi="http://www.w3.org/2001/XInclude"
-      i18n:domain="ticketlog">
-
-    <xi:include href="layout.html" />
-
-    <head><title>TracTicketChangelogPlugin</title></head>
-    <body>
-        <div class="list" id="content" >
-            <h1>TracTicketChangelogPlugin List</h1>
-        </div>
-    </body>
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="ticketlog"
+      py:strip="">
+  <script type="text/javascript">
+    jQuery(document).ready(function($) {
+      $("#ticket_log").toggleClass("collapsed");
+    });
+  </script>
+  <div id="ticket_log">
+    <h3 class="foldable">Commit History</h3>
+    <table id="ticket_revisions" class="listing">
+      <thead>
+        <tr><th class="rev">Changeset</th><th class="author">Author</th><th class="time">Time</th><th class="summary">ChangeLog</th></tr>
+      </thead>
+      <tbody py:for="entry in revisions">
+        <tr><td>${entry['rev']}</td><td>${entry['author']}</td><td>${entry['time']}</td><td>${entry['message']}</td></tr>
+      </tbody>
+    </table>
+  </div>
 </html>
