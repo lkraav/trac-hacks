@@ -10,13 +10,12 @@
 import cgi
 import re
 import urllib
-from pkg_resources import parse_version, resource_filename
+from pkg_resources import resource_filename
 try:
     import json
 except ImportError:
     import simplejson as json
 
-import trac
 from trac.config import IntOption, Option
 from trac.core import *
 from trac.mimeview.api import Context
@@ -26,19 +25,8 @@ from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
 from trac.web.chrome import (Chrome, ITemplateProvider, add_script,
                              add_stylesheet)
 from trac.wiki.formatter import format_to_oneliner
-from trac.util.datefmt import format_datetime
+from trac.util.datefmt import format_datetime, from_utimestamp, user_time
 from trac.util.text import shorten_line
-try:
-    from trac.util.datefmt import from_utimestamp as from_timestamp
-except ImportError:
-    from trac.util.datefmt import from_timestamp
-try:
-    from trac.util.datefmt import user_time
-except ImportError:
-    def user_time(req, func, *args, **kwargs):
-        if 'tzinfo' not in kwargs:
-            kwargs['tzinfo'] = getattr(req, 'tz', None)
-        return func(*args, **kwargs)
 
 from i18n_domain import _, N_, add_domain, gettext, tag_
 
@@ -57,7 +45,6 @@ class TicketlogModule(Component):
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
         add_domain(self.env.path, locale_dir)
-        self.supports_multirepos = parse_version(trac.__version__) >= (0, 12)
 
     # IPermissionRequestor methods
 
@@ -145,20 +132,13 @@ class TicketlogModule(Component):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
 
-        if self.supports_multirepos:
-            cursor.execute("""
-                SELECT p.value, v.rev, v.author, v.time, v.message
-                  FROM revision v
-                  LEFT JOIN repository p
-                    ON v.repos = p.id AND p.name='name'
-                  WHERE message LIKE %s
-            """, ('%#' + ticket_id + '%',))
-        else:
-            cursor.execute("""
-                SELECT rev, author, time, message
-                  FROM revision
-                  WHERE message LIKE %s
-            """, ('%#' + ticket_id + '%',))
+        cursor.execute("""
+            SELECT p.value, v.rev, v.author, v.time, v.message
+              FROM revision v
+              LEFT JOIN repository p
+                ON v.repos = p.id AND p.name='name'
+              WHERE message LIKE %s
+        """, ('%#' + ticket_id + '%',))
             
         rows = cursor.fetchall()
 
@@ -166,25 +146,18 @@ class TicketlogModule(Component):
 
         intermediate = {}
         for row in rows:
-            if self.supports_multirepos:
-                repos_name, rev, author, timestamp, message = row
-                repos = RepositoryManager(self.env).get_repository(repos_name)
-                rev = repos.normalize_rev(rev)
-            else:
-                repos_name = None
-                rev, author, timestamp, message = row
+            repos_name, rev, author, timestamp, message = row
+            repos = RepositoryManager(self.env).get_repository(repos_name)
+            rev = repos.normalize_rev(rev)
 
             if not p.match(message):
                 continue
 
-            if self.supports_multirepos:
-                link = '%s/%s' % (rev, repos_name)
-                # Using (rev, author, time, message) as the key 
-                # If branches from the same repo are under Trac system
-                # Only one changeset will be in the ticket changelog
-                intermediate[(rev, author, timestamp, message)] = link
-            else:
-                intermediate[(rev, author, timestamp, message)] = rev
+            link = '%s/%s' % (rev, repos_name)
+            # Using (rev, author, time, message) as the key
+            # If branches from the same repo are under Trac system
+            # Only one changeset will be in the ticket changelog
+            intermediate[(rev, author, timestamp, message)] = link
 
         for key in intermediate:
             rev, author, timestamp, message = key
@@ -192,7 +165,7 @@ class TicketlogModule(Component):
                 'rev': rev,
                 'author': Chrome(self.env).format_author(req, author),
                 'time': user_time(req, format_datetime,
-                                  from_timestamp(timestamp)),
+                                  from_utimestamp(timestamp)),
             }
             if self.max_message_length \
                     and len(message) > self.max_message_length:
