@@ -435,12 +435,15 @@ class TracWorkflowAdminModule(Component):
         return os.path.join(self.env.get_htdocs_dir(), 'tracworkflowadmin', basename)
 
     def _image_tmp_url(self, req, basename, timestamp):
-        return req.href.chrome('site/tracworkflowadmin/%s' % basename,
-                               _=str(timestamp))
+        kwargs = {}
+        if timestamp is not None:
+            kwargs['_'] = str(timestamp)
+        return req.href.chrome('site/tracworkflowadmin', basename, **kwargs)
 
     def _update_diagram(self, req, params):
         _, errors = self._validate_workflow(req, params)
-        basename = 'error.png'
+        data = {'result': (1, 0)[len(errors) == 0],     # 0 if cond else 1
+                'errors': errors}
         if len(errors) == 0:
             script = self._create_dot_script(params)
             self._image_path_setup(req)
@@ -450,9 +453,7 @@ class TracWorkflowAdminModule(Component):
             if not self.diagram_cache or not os.path.isfile(path):
                 self._create_diagram_image(path, dir, script, errors)
             timestamp = int(os.path.getmtime(path))
-        data = {'result': (1, 0)[len(errors) == 0],     # 0 if cond else 1
-                'errors': errors,
-                'image_url': self._image_tmp_url(req, basename, timestamp)}
+            data['image_url'] = self._image_tmp_url(req, basename, timestamp)
         req.send(json.dumps(data))
         # NOTREACHED
 
