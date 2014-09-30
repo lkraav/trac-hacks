@@ -243,24 +243,23 @@ jQuery(document).ready(function(){
             data     : {'editor_mode': $('#editor-mode').val(), 'params': jsonstr, '__FORM_TOKEN': $('#main-form [name="__FORM_TOKEN"]').val()},
             success  : (
                 function(result) {
+                    var msg = $('#tabcontent .system-message');
+                    msg.hide().empty();
                     if (!result['result']) {
-                        $('#tabcontent .system-message').remove();
                         var src = result.image_url;
-                        $('#image-area').html('');
+                        $('#image-area').empty();
                         $('#image-area').append($('<img>').attr('src', src));
                         uiEnabled();
                         $('#image-area').show();
                     } else {
                         uiEnabled();
-                        $('#tabcontent .system-message').remove();
-                        var msg = $('<div>')
-                            .addClass('system-message')
-                            .append($('<p>').text(_("There was an error.")))
-                            .append($('<ul>'));
-                        for (var i = 0; i < result['errors'].length; i++) {
-                            $('ul', msg).append($('<li>').text(result['errors'][i]));
-                        }
-                        $('#tabcontent #dummy-form').after(msg);
+                        var errors = $('<ul>');
+                        $.each(result.errors, function(idx, val) {
+                            errors.append($('<li>').text(val));
+                        });
+                        msg.append($('<p>').text(_("There was an error.")),
+                                   errors);
+                        msg.show();
                     }
                 }
             ),
@@ -308,20 +307,18 @@ jQuery(document).ready(function(){
     }
 
     function saveSucceeded(result) {
+        var msg = $('#tabcontent .system-message');
+        msg.hide().empty();
         if (!result['result']) {
             resetDirtyFlag();
             alert(_("Your changes has been saved."));
-            $('#tabcontent .system-message').remove();
         } else {
-            $('#tabcontent .system-message').remove();
-            var msg = $('<div>')
-                .addClass('system-message')
-                .append($('<p>').text(_("There was an error.")))
-                .append($('<ul>'));
-            for (var i = 0; i < result['errors'].length; i++) {
-                $('ul', msg).append($('<li>').text(result['errors'][i]));
-            }
-            $('#tabcontent #dummy-form').after(msg);
+            var errors = $('<ul>');
+            $.each(result.errors, function(idx, val) {
+                errors.append($('<li>').text(val));
+            });
+            msg.append($('<p>').text(_("There was an error.")), errors);
+            msg.show();
             alert(_("There was an error."));
         }
     }
