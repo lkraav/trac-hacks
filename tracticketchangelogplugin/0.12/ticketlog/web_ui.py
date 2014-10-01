@@ -57,7 +57,8 @@ class TicketlogModule(Component):
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
         add_domain(self.env.path, locale_dir)
-        self.supports_multirepos = parse_version(trac.__version__) >= (0, 12)
+        self.supports_multirepos = parse_version(trac.__version__) >= \
+                                   parse_version('0.12')
 
     # IPermissionRequestor methods
 
