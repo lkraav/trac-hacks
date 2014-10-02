@@ -114,12 +114,13 @@ class TicketlogModule(Component):
                 'link': intermediate[key],
                 'rev': format_to_oneliner(self.env, ctxt, rev_link),
                 'author': Chrome(self.env).format_author(req, author),
+                'timestamp': timestamp,
                 'time': user_time(req, format_datetime,
                                   from_utimestamp(timestamp)),
                 'message': format_to_oneliner(self.env, ctxt, message),
             }
             revisions.append(revision)
 
-        revisions.sort(key=lambda r: r['time'], reverse=True)
+        revisions.sort(key=lambda r: r['timestamp'], reverse=True)
 
         return revisions
