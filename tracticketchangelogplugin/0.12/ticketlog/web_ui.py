@@ -192,6 +192,7 @@ class TicketlogModule(Component):
             revision = {
                 'rev': rev,
                 'author': Chrome(self.env).format_author(req, author),
+                'timestamp': timestamp,
                 'time': user_time(req, format_datetime,
                                   from_timestamp(timestamp)),
             }
@@ -204,7 +205,7 @@ class TicketlogModule(Component):
             revision['link'] = intermediate[key]
             revisions.append(revision)
 
-        revisions.sort(key=lambda r: r['time'], reverse=True)
+        revisions.sort(key=lambda r: r['timestamp'], reverse=True)
 
         return revisions
 
