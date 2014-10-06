@@ -11,7 +11,7 @@
   </script>
   <div id="ticket_log">
     <h3 class="foldable">Commit History <span class="trac-count">(${len(revisions)})</span></h3>
-    <table id="ticket_revisions" class="listing">
+    <table py:if="revisions" id="ticket_revisions" class="listing">
       <thead>
         <tr><th class="rev">Changeset</th><th class="author">Author</th><th class="time">Time</th><th class="summary">ChangeLog</th></tr>
       </thead>
@@ -19,5 +19,8 @@
         <tr><td>${entry['rev']}</td><td>${entry['author']}</td><td>${entry['time']}</td><td>${entry['message']}</td></tr>
       </tbody>
     </table>
+    <div py:if="not revisions">
+      <p class="hint">(No commits)</p>
+    </div>
   </div>
 </html>
