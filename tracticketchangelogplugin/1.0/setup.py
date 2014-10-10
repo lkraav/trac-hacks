@@ -31,7 +31,7 @@ else:
 
 setup(
     name='TracTicketChangelogPlugin',
-    version="1.0",
+    version="1.0.0",
     description="Show changelogs in trac ticket",
     author="Richard Liao",
     author_email="richard.liao.i@gmail.com",
