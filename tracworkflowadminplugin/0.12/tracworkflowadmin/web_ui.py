@@ -2,6 +2,7 @@
 
 import ConfigParser
 import glob
+import inspect
 import os
 import re
 import time
@@ -20,7 +21,6 @@ from trac.config import Configuration, Option, BoolOption, ListOption, \
                         FloatOption, ChoiceOption
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import PermissionSystem
-from trac.util import arity
 from trac.util.compat import md5, any
 from trac.util.text import to_unicode, exception_to_unicode
 from trac.util.translation import dgettext, domain_functions
@@ -32,7 +32,7 @@ _, N_, add_domain = domain_functions('tracworkflowadmin',
                                      '_', 'N_', 'add_domain')
 
 
-if arity(Option.__init__) <= 5:
+if 'doc_domain' not in inspect.getargspec(Option.__init__)[0]:
     def _option_with_tx(Base): # Trac 0.12.x
         class Option(Base):
             def __getattribute__(self, name):
