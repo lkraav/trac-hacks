@@ -126,12 +126,13 @@ class TracWorkflowAdminModule(Component):
 
     # IAdminPanelProvider methods
     def get_admin_panels(self, req):
-        if 'TRAC_ADMIN' in req.perm:
+        if 'TRAC_ADMIN' in req.perm('admin', 'ticket/workflowadmin'):
             yield ('ticket', dgettext("messages", ("Ticket System")),
                    'workflowadmin', _("Workflow Admin"))
 
     def render_admin_panel(self, req, cat, page, path_info):
-        req.perm.assert_permission('TRAC_ADMIN')
+        req.perm('admin', 'ticket/workflowadmin').require('TRAC_ADMIN')
+
         if req.method == 'POST':
             self._parse_request(req)
 
