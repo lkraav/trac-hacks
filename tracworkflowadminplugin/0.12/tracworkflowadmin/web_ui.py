@@ -461,12 +461,15 @@ class TracWorkflowAdminModule(Component):
         fd, tmp = mkstemp(suffix='.png', dir=dir)
         os.close(fd)
         try:
+            args = [self.dot_path, '-Tpng', '-o', tmp]
             try:
-                proc = Popen([self.dot_path, '-Tpng', '-o', tmp], stdin=PIPE)
+                proc = Popen(args, stdin=PIPE)
             except OSError, e:
+                message = exception_to_unicode(e)
+                self.log.warn('Cannot execute dot: %s: %r', message, args)
                 errors.append(_(
                     "The dot command '%(path)s' is not available: %(e)s",
-                    path=self.dot_path, e=exception_to_unicode(e)))
+                    path=self.dot_path, e=message))
                 os.remove(tmp)
                 return
             try:
@@ -671,9 +674,11 @@ class TracWorkflowAdminModule(Component):
                     self.config.set('ticket-workflow', key, val)
                 self.config.save()
             except Exception, e:
+                self.log.error('Exception caught while saving trac.ini%s',
+                               exception_to_unicode(e, traceback=True))
                 self.config.parse_if_needed(force=True)
                 out['result'] = 1
-                out['errors'] = [e.message]
+                out['errors'] = [exception_to_unicode(e)]
         req.send(json.dumps(out)) # not return
 
     def _parse_request(self, req):
