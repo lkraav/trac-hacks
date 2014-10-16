@@ -40,7 +40,7 @@
         });
       } else if (this.is("select")) {
         return this.change(function(event) {
-          $(".ac_results").hide()
+          $(".ac_results").hide();
           new $.Autocompleter(this, options);
         });
       }

@@ -14,18 +14,31 @@ from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import Chrome, ITemplateProvider, ITemplateStreamFilter
 from trac.web.chrome import add_script, add_stylesheet
 
+
+try:
+    from trac.web.chrome import add_script_data
+except ImportError:
+    # for Trac-0.11 compatibility
+    add_script_data = None
+    from compat import to_json
+
+
 USER = 0
 NAME = 1
 EMAIL = 2  # indices
+
+SECTION_NAME = 'autocomplete'
+FIELDS_OPTION = 'fields'
+SCRIPT_FIELD_NAME = 'autocomplete_fields'
 
 
 class AutocompleteUsers(Component):
     implements(IRequestFilter, IRequestHandler,
                ITemplateProvider, ITemplateStreamFilter)
 
-    selectfields = ListOption(
-        'autocomplete', 'fields', default='',
-        doc="select fields to transform to autocomplete text boxes")
+    complement_fields = ListOption(
+        SECTION_NAME, FIELDS_OPTION, default='',
+        doc="select fields to autocomplement")
 
     # IRequestHandler methods
 
@@ -69,6 +82,13 @@ class AutocompleteUsers(Component):
             add_stylesheet(req, 'autocomplete/css/autocomplete.css')
             add_script(req, 'autocomplete/js/autocomplete.js')
             add_script(req, 'autocomplete/js/format_item.js')
+
+            custom_fields = self.config.getlist(SECTION_NAME, FIELDS_OPTION)
+            if add_script_data:
+                add_script_data(req, {SCRIPT_FIELD_NAME: custom_fields})
+            else:
+                setattr(req, SCRIPT_FIELD_NAME, custom_fields)
+
             if template == 'ticket.html':
                 if req.path_info.rstrip() == '/newticket':
                     add_script(req, 'autocomplete/js/autocomplete_newticket.js')
@@ -84,11 +104,21 @@ class AutocompleteUsers(Component):
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
+        if not add_script_data and method == 'xhtml' and filename and \
+           data and hasattr(req, SCRIPT_FIELD_NAME):
+            def script():
+                from genshi.builder import tag
+                data = getattr(req, SCRIPT_FIELD_NAME)
+                text = 'var %s = %s;' % (SCRIPT_FIELD_NAME, to_json(data))
+                return tag.script(text, type='text/javascript')
+            from genshi.filters.transform import Transformer
+            stream |= Transformer('//head').append(script)
+
         if filename == 'ticket.html':
             fields = [field['name'] for field in data['ticket'].fields
                       if field['type'] == 'select']
             fields = set(sum([fnmatch.filter(fields, pattern)
-                              for pattern in self.selectfields], []))
+                              for pattern in self.complement_fields], []))
 
         return stream
 
