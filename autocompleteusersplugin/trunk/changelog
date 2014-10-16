@@ -2,6 +2,14 @@
 ChangeLog
 =========
 
+0.4.3 (2014-10-16)
+------------------
+
+* new features:
+
+  - #11415 Enable auto complete function for drop down list (restrict_owner=true)
+  - #8477 Add support for custom fields
+
 0.4.2 (2014-08-23)
 ------------------
 
@@ -12,4 +20,4 @@ ChangeLog
  
 * new features:
 
-  - #7324: Users and groups on the admin permissions page are autocompleted.
+  - #7324 Users and groups on the admin permissions page are autocompleted.
