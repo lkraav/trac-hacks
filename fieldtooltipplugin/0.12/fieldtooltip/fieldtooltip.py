@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2011-2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2011-2014 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -45,6 +45,9 @@ class FieldTooltip(Component):
                       'reassign': '-',
                       'accept': '-',
                       'reopen': '-',
+                      # default
+                      '../nohint': '//,,(sorry, no hint is presented... click icon above to add),,//',
+                      '../nohint-readonly': '//,,(sorry, no hint is presented.),,//',
                       }
     # for locale=ja
     _default_pages.update({
@@ -68,6 +71,9 @@ class FieldTooltip(Component):
                       'reassign.ja': u'割り当てを変える。',
                       'accept.ja': u'引き受ける。',
                       'reopen.ja': u'再び扱う。',
+                      # default
+                      '../nohint.ja': u'//,,(説明はありません ... 追加するにはアイコンをクリック),,//',
+                      '../nohint-readonly.ja': u'//,,(説明はありません.),,//',
                       })
     # blocking, blockedby for MasterTicketsPlugin, TicketRelationsPlugin
     # position for QueuesPlugin
@@ -92,7 +98,8 @@ class FieldTooltip(Component):
         prefix_len = len(FieldTooltip._wiki_prefix)
         wiki_pages = WikiSystem(self.env).get_pages(FieldTooltip._wiki_prefix)
         for page in wiki_pages:
-            pages[page[prefix_len:]] = WikiPage(self.env, page, db=db).text
+            text = WikiPage(self.env, page, db=db).text
+            pages[page[prefix_len:]] = text[0:text.find('----')]
         return pages
 
     # ITemplateProvider methods
@@ -214,10 +221,16 @@ class FieldTooltipFilter(object):
         if element.localname == tagname and attr_value and attr_value.startswith(prefix):
             attr_value = attr_value[len(prefix):]
             attr_value_locale = "%s.%s" % (attr_value, self.locale)
+            modifiable = 'WIKI_MODIFY' in self.context.perm('wiki', '/wiki/%s%s' % (FieldTooltip._wiki_prefix, attr_value))
+            default_attr = modifiable and '../nohint' or '../nohint-readonly'
+            default_attr_locale = (modifiable and '../nohint.%s' or '../nohint-readonly.%s') % self.locale
             text = self.parent.pages.get(attr_value_locale,
                    self.parent.pages.get(attr_value,
                    FieldTooltip._default_pages.get(attr_value_locale,
-                   FieldTooltip._default_pages.get(attr_value))))
+                   FieldTooltip._default_pages.get(attr_value,
+                   FieldTooltip._default_pages.get(default_attr_locale,
+                   FieldTooltip._default_pages.get(default_attr,
+                   ))))))
             if text:
                 attrs |= [(QName('title'), attr_value + ' | ' + text)]
                 attrs |= [(QName('rel'), '#tooltip-' + attr_value)]
