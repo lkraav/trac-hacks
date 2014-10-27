@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2009-2010 Brian Lynch <blynch1@gmail.com>
+# Copyright (C) 2009-2010 Brian Lynch
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -16,7 +16,6 @@ VERSION = '0.1'
 setup(name=PACKAGE,
       version=VERSION,
       author='Brian Lynch',
-      author_email='blynch1@gmail.com',
       license='3-Clause BSD',
       packages=['filelist'],
       package_dir={'filelist': 'filelist'},

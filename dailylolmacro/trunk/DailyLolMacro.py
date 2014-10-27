@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2009-2010 Brian Lynch <blynch1@gmail.com>
+# Copyright (C) 2009-2010 Brian Lynch
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
