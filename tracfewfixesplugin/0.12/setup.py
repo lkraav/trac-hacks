@@ -10,7 +10,7 @@ extra = {}
 
 setup(
     name='TracFewFixesPlugin',
-    version='0.1',
+    version='0.12.0.1',
     description='Provide fixes for no longer fixed or delayed tickets',
     license='BSD',  # the same as Trac
     url='http://trac-hacks.org/wiki/TracFewFixesPlugin',
