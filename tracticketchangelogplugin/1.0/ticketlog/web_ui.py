@@ -18,6 +18,7 @@ from genshi.filters.transform import Transformer
 from trac.config import IntOption, Option
 from trac.core import *
 from trac.mimeview.api import Context
+from trac.resource import Resource
 from trac.versioncontrol.api import RepositoryManager
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
@@ -54,14 +55,15 @@ class TicketlogModule(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html' \
-                and req.path_info.startswith('/ticket/') \
-                and 'LOG_VIEW' in req.perm:
-            add_stylesheet(req, 'ticketlog/ticketlog.css')
+                and req.path_info.startswith('/ticket/'):
             ticket_id = req.args.get('id')
-            revisions = self._get_ticket_revisions(req, ticket_id)
-            template = Chrome(self.env).load_template('ticketlog.html') \
-                                       .generate(revisions=revisions)
-            stream |= Transformer('//div[@id="ticket"]').after(template)
+            resource = Resource('ticket', ticket_id)
+            if 'LOG_VIEW' in req.perm(resource):
+                add_stylesheet(req, 'ticketlog/ticketlog.css')
+                revisions = self._get_ticket_revisions(req, ticket_id)
+                template = Chrome(self.env).load_template('ticketlog.html') \
+                                           .generate(revisions=revisions)
+                stream |= Transformer('//div[@id="ticket"]').after(template)
         return stream
 
     # Internal methods
