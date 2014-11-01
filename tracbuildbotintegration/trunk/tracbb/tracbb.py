@@ -19,11 +19,13 @@
 import re
 import xmlrpclib
 
+from genshi.builder import tag
+from trac.config import IntOption, Option
 from trac.core import *
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_ctxtnav
 from trac.web.main import IRequestHandler
-from trac.util import Markup, TracError
+from trac.util import TracError, pathjoin
 
 
 class BuildBotPlugin(Component):
@@ -31,39 +33,33 @@ class BuildBotPlugin(Component):
     """
     implements(INavigationContributor, IRequestHandler, ITemplateProvider)
 
-    def get_buildbot_url(self):
-        url = self.config.get('buildbot', 'url')
-        return url.strip('/')
+    buildbot_url = Option('buildbot', 'url',
+        doc="""URL of the BuildBot instance.""")
 
-    def get_num_builds_display(self):
-        num = self.config.get('buildbot', 'numbuilds')
-        if num:
-            try:
-                return int(num)
-            except ValueError:
-                return 5
-        else:
-            return 5
+    num_builds_display = IntOption('buildbot', 'numbuilds', 5,
+        doc="""Number of builds to display.""")
 
-    def get_xmlrpc_url(self):
-        return self.get_buildbot_url() + '/xmlrpc'
+    @property
+    def xmlrpc_url(self):
+        return pathjoin(self.buildbot_url, 'xmlrpc')
 
     def get_builder_url(self, builder_name):
-        return self.get_buildbot_url() + '/builders/' + builder_name
+        return pathjoin(self.buildbot_url, 'builders', builder_name)
 
     def get_build_url(self, builder_name, build_number):
-        return "%s/builds/%d" % (self.get_builder_url(builder_name),
-                                 build_number)
+        return pathjoin(self.get_builder_url(builder_name), build_number)
 
     def get_server(self):
-        return xmlrpclib.ServerProxy(self.get_xmlrpc_url())
+        return xmlrpclib.ServerProxy(self.xmlrpc_url)
+
+    # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
         return 'buildbot'
 
     def get_navigation_items(self, req):
         yield ('mainnav', 'buildbot',
-               Markup('<a href="%s">BuildBot</a>' % self.env.href.buildbot()))
+               tag.a('BuildBot', href=req.href.buildbot()))
 
     # ITemplateProvider methods
 
@@ -93,28 +89,27 @@ class BuildBotPlugin(Component):
             builders = server.getAllBuilders()
         except:
             raise TracError("Can't get access to buildbot at %s"
-                            % self.get_xmlrpc_url())
+                            % self.xmlrpc_url)
         ret = []
         for builder in builders:
-            lastbuilds = server.getLastBuilds(builder,1)
-            lastnumber = 0
+            lastbuilds = server.getLastBuilds(builder, 1)
             if len(lastbuilds) > 0:
-                lastbuild = lastbuilds[0]
-                lastnumber = lastbuild[1]
-                laststatus = lastbuild[5]
-                lastbranch = lastbuild[3]
+                last_build = lastbuilds[0]
+                last_number = last_build[1]
+                last_status = last_build[5]
+                last_branch = last_build[3]
                 build = {
                     'name': builder,
-                    'status': laststatus,
+                    'status': last_status,
                     'url': req.href.buildbot(builder),
-                    'lastbuild': lastnumber,
-                    'lastbuildurl': self.get_build_url(builder, lastnumber),
-                    'lastbranch': lastbranch
+                    'lastbuild': last_number,
+                    'lastbuildurl': self.get_build_url(builder, last_number),
+                    'lastbranch': last_branch
                 }
             else:
                 build = {
                     'name': builder,
-                    'status': "missing",
+                    'status': 'missing',
                     'url': req.href.buildbot(builder),
                     'lastbuild': None,
                     'lastbuildurl': None,
@@ -128,11 +123,10 @@ class BuildBotPlugin(Component):
     def get_last_builds(self, builder):
         try:
             server = self.get_server()
-            builds = server.getLastBuilds(builder,
-                                          self.get_num_builds_display())
+            builds = server.getLastBuilds(builder, self.num_builds_display)
         except:
             raise TracError("Can't get builder %s on url %s"
-                            % (builder, self.get_xmlrpc_url()))
+                            % (builder, self.xmlrpc_url))
         #last build first
         builds.reverse()
         ret = []
@@ -147,27 +141,25 @@ class BuildBotPlugin(Component):
 
         return ret
 
-    def _ctxt_nav(self, req):
-        add_ctxtnav(req, 'Buildbot Server',
-                    self.get_buildbot_url())
-        add_ctxtnav(req, 'Waterfall display',
-                    self.get_buildbot_url() + '/waterfall')
-        add_ctxtnav(req, 'Grid display',
-                    self.get_buildbot_url() + '/grid')
-        add_ctxtnav(req, 'Latest Build',
-                    self.get_buildbot_url() + '/one_box_per_builder')
-
     def process_request(self, req):
-        self._ctxt_nav(req)
-        data = {'buildbot_url': self.get_buildbot_url()}
+        add_ctxtnav(req, 'Buildbot Server',
+                    self.buildbot_url)
+        add_ctxtnav(req, 'Waterfall display',
+                    pathjoin(self.buildbot_url, 'waterfall'))
+        add_ctxtnav(req, 'Grid display',
+                    pathjoin(self.buildbot_url, 'grid'))
+        add_ctxtnav(req, 'Latest Build',
+                    pathjoin(self.buildbot_url, 'one_box_per_builder'))
+        data = {'buildbot_url': self.buildbot_url}
         if 'builder' not in req.args:
             data['title'] = 'BuildBot'
             data['bb_builders'] = self.get_builders(req)
-            return 'tracbb_overview.html', data, None
+            template = 'tracbb_overview.html'
         else:
             builder = req.args['builder']
             builds = self.get_last_builds(builder)
             data['title'] = 'Builder ' + builder
             data['bb_builder'] = builder
             data['bb_builds'] = builds
-            return 'tracbb_builder.html', data, None
+            template = 'tracbb_builder.html'
+        return template, data, None

@@ -1,4 +1,4 @@
-#! /bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2008 Etienne PIERRE <e.ti.n.pierre_AT_gmail.com>
@@ -19,16 +19,18 @@
 
 from setuptools import setup
 
-from tracbb import __version__ as VERSION
-
 setup(
-  name='TracBuildbot',
-  version=VERSION,
-  packages=['tracbb'],
-  package_data={'tracbb' : ['htdocs/*.css', 'htdocs/*.png', 'templates/*.html']},
-  author = 'Etienne PIERRE',
-  description = 'A plugin to integrate Buildbot into Trac',
-  url = 'http://trac-hacks.org/wiki/TracBuildbotIntegration',
-  license = 'GPL',
-  entry_points={'trac.plugins': 'tracbb = tracbb'}
+    name='TracBuildbot',
+    version='0.2.0',
+    packages=['tracbb'],
+    package_data={'tracbb': [
+        'htdocs/*.css',
+        'htdocs/*.png',
+        'templates/*.html'
+    ]},
+    author='Etienne PIERRE',
+    description='A plugin to integrate Buildbot into Trac',
+    url='http://trac-hacks.org/wiki/TracBuildbotIntegration',
+    license='GPL',
+    entry_points={'trac.plugins': 'tracbb = tracbb.tracbb'}
 )
