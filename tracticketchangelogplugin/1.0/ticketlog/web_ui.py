@@ -18,7 +18,6 @@ from genshi.filters.transform import Transformer
 from trac.config import IntOption, Option
 from trac.core import *
 from trac.mimeview.api import Context
-from trac.perm import IPermissionRequestor
 from trac.versioncontrol.api import RepositoryManager
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
@@ -31,7 +30,7 @@ from i18n_domain import add_domain
 
 class TicketlogModule(Component):
 
-    implements(IPermissionRequestor, ITemplateProvider, ITemplateStreamFilter)
+    implements(ITemplateProvider, ITemplateStreamFilter)
 
     max_message_length = IntOption('ticketlog', 'log_message_maxlength',
         doc="""Maximum length of log message to display.""")
@@ -42,11 +41,6 @@ class TicketlogModule(Component):
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
         add_domain(self.env.path, locale_dir)
-
-    # IPermissionRequestor methods
-
-    def get_permission_actions(self):
-        return ['TICKETLOG_VIEW', 'TICKETLOG_EDIT', 'TICKETLOG_ADMIN']
 
     # ITemplateProvider methods
 
@@ -61,7 +55,7 @@ class TicketlogModule(Component):
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html' \
                 and req.path_info.startswith('/ticket/') \
-                and 'TICKETLOG_VIEW' in req.perm:
+                and 'LOG_VIEW' in req.perm:
             add_stylesheet(req, 'ticketlog/ticketlog.css')
             ticket_id = req.args.get('id')
             revisions = self._get_ticket_revisions(req, ticket_id)
