@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from os.path import join as pathjoin
 
 
 def string_keys(d):
@@ -62,3 +63,54 @@ def xform_query(query):
         return '&'.join(['%s=%s' % (k, v) for k, v in query.items()])
     else:
         return _xform_to_dict(query, '&', '=')
+
+
+def set_default_parameters(param, default, **kwargs):
+    """
+    >>> param = {'width': '320', 'test': '1'}
+    >>> default = {'width': '640', 'height': '360', 'test': '0', 'p': None}
+    >>> set_default_parameters(param, default, test='2')
+    >>> sorted(param.items())
+    [('height', '360'), ('test', '2'), ('width', '320')]
+    """
+    for key, value in default.items():
+        if param.get(key) is None:
+            if value is not None:
+                param[key] = value
+    if kwargs:
+        for key, value in kwargs.items():
+            param[key] = value
+
+
+def parse_imagemacro_style(url, path_info):
+    """
+    >>> parse_imagemacro_style(u'file.ext', u'/ticket/1')
+    (u'ticket', u'1', u'file.ext')
+    >>> parse_imagemacro_style(u'ticket:1:file.ext', u'/ticket/1')
+    (u'ticket', u'1', u'file.ext')
+    >>> parse_imagemacro_style(u'file.ext', u'/wiki/start')
+    (u'wiki', u'start', u'file.ext')
+    >>> parse_imagemacro_style(u'file.ext', u'/wiki/start/sub/deep')
+    (u'wiki', u'start', u'sub/deep/file.ext')
+    >>> url = u'wiki:start/sub/deep/file.ext'
+    >>> parse_imagemacro_style(url, u'/wiki/start/sub/deep')
+    (u'wiki', u'start', u'sub/deep/file.ext')
+    >>> parse_imagemacro_style(u'wiki:start/file.ext', u'/wiki/start')
+    (u'wiki', u'start', u'file.ext')
+    """
+    _path, netloc = '', ''
+    _path_info = filter(None, path_info.split('/'))
+    scheme = _path_info[0]
+    if len(_path_info) > 1:
+        netloc = _path_info[1]
+        _path = '/'.join(_path_info[2:])
+
+    _url = url.split(':')
+    path = _url[-1]
+    if scheme != 'ticket':
+        if len(_url) == 1:
+            path = pathjoin(_path, path)
+        else:
+            path = path.split('/', 1)[-1]
+
+    return scheme, netloc, path
