@@ -400,6 +400,7 @@ class TracIniAdminPanel(Component):
     add_script_data(req, {
         'section_count': len(sections),
         'section_names': sorted(section_counters),
+        'switch_text' : _('You have unsaved changes in this section. Do you still want to change the section?'),
         'section_counters': section_counters,
         'settings_stored_values': settings_stored_values,
         'info_format': _("Modified: %(mod)d | Defaults: %(def)d | Options "

@@ -210,7 +210,7 @@ $(document).ready(function(){
       return false;
     }
 
-    if (check_for_changes() && !confirm('You have unsaved changes in this section. Do you still want to change the section?')) {
+    if (check_for_changes() && !confirm(switch_text)) {
       $(this)[0].reset(); // restore current section
       return false;
     }
@@ -221,7 +221,7 @@ $(document).ready(function(){
 
   // New section form handling
   $('#new_section_form form').submit(function() {
-    if (check_for_changes() && !confirm('You have unsaved changes in this section. Do you still want to change the section?')) {
+    if (check_for_changes() && !confirm(switch_text)) {
       return false;
     }
 

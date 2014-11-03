@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-02-17 19:10+0100\n"
+"POT-Creation-Date: 2014-11-03 23:42+0100\n"
 "PO-Revision-Date: 2013-04-07 13:27+0000\n"
 "Last-Translator: Dirk Stöcker <launchpad@dstoecker.de>\n"
 "Language-Team: de <LL@li.org>\n"
@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 0.9.6\n"
+"Generated-By: Babel 1.3\n"
 
 #: inieditorpanel/default_manager.py:65
 msgid ""
@@ -160,20 +160,28 @@ msgstr "Die neuen Felder wurden zum Abschnitt %s hinzugefügt."
 msgid "No new fields have been added."
 msgstr "Es wurden keine neuen Felder hinzugefügt."
 
-#: inieditorpanel/web_ui.py:404
+#: inieditorpanel/web_ui.py:403
+msgid ""
+"You have unsaved changes in this section. Do you still want to change the"
+" section?"
+msgstr ""
+"Es existieren ungespeicherte Änderungen in dieser Sektion. Wollen Sie die"
+" Sektion wirklich wechseln?"
+
+#: inieditorpanel/web_ui.py:406
 #, python-format
 msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
 msgstr "Geändert: %(mod)d | Standard:  %(def)d | Optionsanzahl: %(opt)d"
 
-#: inieditorpanel/web_ui.py:539 inieditorpanel/web_ui.py:542
+#: inieditorpanel/web_ui.py:546 inieditorpanel/web_ui.py:549
 msgid "text"
 msgstr "Text"
 
-#: inieditorpanel/web_ui.py:546
+#: inieditorpanel/web_ui.py:553
 msgid "password"
 msgstr "Passwort"
 
-#: inieditorpanel/web_ui.py:602
+#: inieditorpanel/web_ui.py:609
 #, python-format
 msgid ""
 "The default value for option \"%s\" in section \"%s\" is invalid. Reason:"
@@ -182,7 +190,7 @@ msgstr ""
 "Der Standardwert für Option \"%s\" in Abschnitt \"%s\" ist ungültig. "
 "Grund: %s"
 
-#: inieditorpanel/web_ui.py:631
+#: inieditorpanel/web_ui.py:638
 #, python-format
 msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
 msgstr "Der Wert für Option \"%s\" in Abschnitt \"%s\" ist ungültig. Grund: %s"
