@@ -13,6 +13,7 @@ __all__ = ("add_styles",)
 style_name_re = re.compile('style:name="([^"]+)"') 
 need_font_re = re.compile('font-name="([^"]+)"')
 
+
 def _build_style_lib(template_dirs):
     """build a library of available styles"""
     template_files = _build_templates_list(template_dirs)
@@ -27,6 +28,7 @@ def _build_style_lib(template_dirs):
         style_lib[style["name"]] = style
     return style_lib
 
+
 def _build_templates_list(template_dirs):
     """select the preferred template (used-defined or default)"""
     template_files = {}
@@ -36,6 +38,7 @@ def _build_templates_list(template_dirs):
             if basename not in template_files:
                 template_files[basename] = style_file
     return template_files
+
 
 def _build_style(style_xml):
     style_name_mo = style_name_re.search(style_xml)
@@ -54,14 +57,14 @@ def _build_style(style_xml):
 
 
 def add_styles(template_dirs, content_xml, import_style_callback,
-        import_font_callback):
+               import_font_callback):
     """
     Add the missing styles using callbacks
     """
     style_lib = _build_style_lib(template_dirs)
     for stylename in style_lib:
         if content_xml.count('style-name="%s"' % stylename) == 0:
-            continue # style is not used
+            continue  # style is not used
         style_xml = style_lib[stylename]["xml"]
         is_mainstyle = style_lib[stylename]["mainstyle"]
         import_style_callback(style_xml, is_mainstyle)
@@ -69,4 +72,3 @@ def add_styles(template_dirs, content_xml, import_style_callback,
             font_name = style_lib[stylename]["need_font"]
             font_xml = style_lib[font_name]["xml"]
             import_font_callback(font_xml)
-
