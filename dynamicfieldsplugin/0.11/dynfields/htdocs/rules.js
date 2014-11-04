@@ -319,15 +319,15 @@ setrule.setup = function(input, spec){
     // ensure trigger field's new value is in spec's list
     if (jQuery.inArray(input.val(), spec.trigger_value.split('|')) == -1) // supports list of trigger values
         return;
-    
+
     var field = jQuery(get_selector(spec.target));
     if (spec.overwrite.toLowerCase() == 'false' && field.val() != '')
         return;
-    
+
     var set_to = spec.set_to;
     if (set_to == 'invalid_value')
         set_to = spec.value; // only use pref if set_to not set in trac.ini
-    
+
     // only do effect if value is changing (i.e., is a select option)
     var doit = false;
     if (field.get(0).tagName.toLowerCase() == 'select'){
@@ -343,12 +343,16 @@ setrule.setup = function(input, spec){
     } else {
         doit = true;
     }
-    
-    if (doit && field.val() != set_to){
-        if (spec.target == 'owner' && !jQuery('#field-owner').length)
-            jQuery('#action_reassign').click();
-        field.hide().removeAttr('disabled');
-        field.val(set_to).change();
-        field.fadeIn('slow');
+
+    if (doit) {
+        if (field.is(':checkbox')) {
+            field.prop('checked', set_to);
+        } else if (field.val() != set_to) {
+            if (spec.target == 'owner' && !jQuery('#field-owner').length)
+                jQuery('#action_reassign').click();
+            field.hide().removeAttr('disabled');
+            field.val(set_to).change();
+            field.fadeIn('slow');
+        }
     }
 };

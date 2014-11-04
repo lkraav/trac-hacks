@@ -377,6 +377,10 @@ class SetRule(Component, Rule):
         if not match:
             return
         spec['set_to'] = match.groupdict()['to']
+        if spec['set_to'].lower() in ('1', 'true'):
+            spec['set_to'] = 'true'
+        elif spec['set_to'].lower() in ('0', 'false'):
+            spec['set_to'] = 'false'
         spec['trigger_value'], spec['overwrite'] = \
             self._extract_overwrite(target, key, opts)
 
