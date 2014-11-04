@@ -6,7 +6,10 @@ from trac.config import Option
 from trac.wiki.api import IWikiMacroProvider
 from trac.wiki.formatter import wiki_to_html
 
-from pymills.db import Connection
+try:
+    from pymills.db import Connection
+except ImportError:
+    from pymills.dbapi import Connection
 from pymills.datatypes import OrderedDict
 from pymills.table import Table, Header, Row, Cell
 
