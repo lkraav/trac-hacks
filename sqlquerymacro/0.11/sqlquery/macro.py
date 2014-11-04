@@ -5,7 +5,6 @@ from trac.core import *
 from trac.config import Option
 from trac.wiki.api import IWikiMacroProvider
 from trac.wiki.formatter import wiki_to_html
-from trac.web.chrome import ITemplateProvider
 
 from pymills.db import Connection
 from pymills.datatypes import OrderedDict
@@ -24,7 +23,7 @@ class SqlQueryMacro(Component):
     }}}
     """
 
-    implements(IWikiMacroProvider, ITemplateProvider)
+    implements(IWikiMacroProvider)
 
     uri = Option("sqlquery", "uri", "sqlite://:memory:",
         """Database URI to connect to and use for SQL Queries""")
@@ -94,10 +93,3 @@ class SqlQueryMacro(Component):
             return wiki_to_html(v, self.env, formatter.req)
         else:
             return "No results"
-
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        return []
-
-    def get_htdocs_dirs(self):
-        return []
