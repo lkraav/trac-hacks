@@ -20,5 +20,6 @@ setup(
         "trac.plugins": [
             "sqlquery.macro = sqlquery.macro"
         ]
-    }
+    },
+    install_requires = ['pymills']
 )
