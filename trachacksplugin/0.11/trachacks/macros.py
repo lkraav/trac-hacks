@@ -305,8 +305,10 @@ class MaintainerMacro(WikiMacroBase):
             else:
                 maintainer = component.owner
                 if not maintainer:
-                    return builder.em(_("none (needsadoption)"))
+                    return format_to_oneliner(self.env, formatter.context,
+                                              "//none// ([tag:needsadoption])")
         else:
             raise TracError(_("Hack name must be specified as argument when "
                               "the context realm is not 'wiki'"))
-        return format_to_oneliner(self.env, formatter.context, maintainer)
+        return format_to_oneliner(self.env, formatter.context,
+                                  "[wiki:%s]" % maintainer)

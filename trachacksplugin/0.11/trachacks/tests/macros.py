@@ -10,6 +10,7 @@ import unittest
 
 from trac.test import EnvironmentStub
 from trac.ticket.model import Component, Ticket
+from trac.wiki.model import WikiPage
 from trac.wiki.tests import formatter
 
 import trachacks.macros
@@ -20,21 +21,21 @@ MAINTAINER_MACRO_WIKI_TEST_CASE = u"""
 [[Maintainer]]
 ------------------------------
 <p>
-mrenzmann
+<a class="missing wiki" href="/wiki/mrenzmann" rel="nofollow">mrenzmann?</a>
 </p>
 ------------------------------
 ==============================
 [[Maintainer(TracHacksPlugin)]]
 ------------------------------
 <p>
-mrenzmann
+<a class="missing wiki" href="/wiki/mrenzmann" rel="nofollow">mrenzmann?</a>
 </p>
 ------------------------------
 ==============================
 [[Maintainer(FullBlogPlugin)]]
 ------------------------------
 <p>
-osimons
+<a class="wiki" href="/wiki/osimons">osimons</a>
 </p>
 ------------------------------
 ==============================
@@ -48,7 +49,7 @@ osimons
 [[Maintainer(MilestoneMacro)]]
 ------------------------------
 <p>
-<em>none (needsadoption)</em>
+<em>none</em> ([tag:needsadoption])
 </p>
 ------------------------------
 ==============================
@@ -73,14 +74,14 @@ MAINTAINER_MACRO_TICKET_TEST_CASE = u"""
 [[Maintainer(TracHacksPlugin)]]
 ------------------------------
 <p>
-mrenzmann
+<a class="missing wiki" href="/wiki/mrenzmann" rel="nofollow">mrenzmann?</a>
 </p>
 ------------------------------
 ==============================
 [[Maintainer(FullBlogPlugin)]]
 ------------------------------
 <p>
-osimons
+<a class="wiki" href="/wiki/osimons">osimons</a>
 </p>
 ------------------------------
 ==============================
@@ -110,6 +111,9 @@ def setup(tc):
     ticket['summary'] = 'Ticket summary'
     ticket['reporter'] = 'hasienda'
     ticket.insert()
+    page = WikiPage(tc.env, 'osimons')
+    page.text = 'osimons'
+    page.save('osimons', '', '127.0.0.1')
 
 
 def teardown(tc):
