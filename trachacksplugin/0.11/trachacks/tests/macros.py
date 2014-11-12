@@ -49,7 +49,7 @@ MAINTAINER_MACRO_WIKI_TEST_CASE = u"""
 [[Maintainer(MilestoneMacro)]]
 ------------------------------
 <p>
-<em>none</em> ([tag:needsadoption])
+<em>none ([tag:needsadoption])</em>
 </p>
 ------------------------------
 ==============================
