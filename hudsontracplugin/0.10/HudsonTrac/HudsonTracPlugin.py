@@ -250,9 +250,10 @@ class HudsonTracPlugin(Component):
 
     def get_navigation_items(self, req):
         if self.nav_url and req.perm.has_permission('BUILD_VIEW'):
+            print self.disp_tab
             yield ('mainnav', 'builds',
                    tag.a('Builds', href=self.nav_url,
-                         target='hudson' if self.disp_tab else ''))
+                         target='hudson' if self.disp_tab else None))
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
