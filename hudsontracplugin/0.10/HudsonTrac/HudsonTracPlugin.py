@@ -15,6 +15,8 @@ import time
 import urllib2
 import base64
 from datetime import datetime
+
+from genshi.builder import tag
 from trac.core import *
 from trac.config import Option, BoolOption, ListOption
 from trac.perm import IPermissionRequestor
@@ -248,8 +250,9 @@ class HudsonTracPlugin(Component):
 
     def get_navigation_items(self, req):
         if self.nav_url and req.perm.has_permission('BUILD_VIEW'):
-            yield 'mainnav', 'builds', Markup('<a href="%s"%s>Builds</a>' % \
-                    (self.nav_url, self.disp_tab and ' target="hudson"' or ''))
+            yield ('mainnav', 'builds',
+                   tag.a('Builds', href=self.nav_url,
+                         target='hudson' if self.disp_tab else ''))
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
