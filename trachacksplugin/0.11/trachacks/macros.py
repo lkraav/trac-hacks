@@ -11,6 +11,7 @@
 import re
 
 from genshi.builder import tag as builder
+from trac.config import ListOption
 from trac.core import TracError
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.util.translation import _
@@ -54,6 +55,12 @@ class ListHacksMacro(WikiMacroBase):
     [[ListHacks(integration plugin 0.12)]]
     }}}
     """
+
+    releases_filter_default = ListOption('trachacks',
+                                         'releases_filter_default', '1.0',
+        doc="""Default selections in the release filter form displayed by
+               the `ListHacksMacro`.""")
+
     title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
     self_extract = re.compile(r'\[\[ListHacks[^\]]*\]\]\s?\n?',
                               re.MULTILINE | re.UNICODE)
@@ -99,13 +106,16 @@ class ListHacksMacro(WikiMacroBase):
             releases = all_releases
 
         if 'update_th_filter' in req.args:
-            show_releases = req.args.get('release', ['0.11'])
+            show_releases = req.args.get('release',
+                                         self.releases_filter_default)
             if isinstance(show_releases, basestring):
                 show_releases = [show_releases]
             req.session['th_release_filter'] = ','.join(show_releases)
         else:
-            show_releases = \
-                req.session.get('th_release_filter', '0.11').split(',')
+            th_releases_filter = req.session.get('th_release_filter')
+            show_releases = th_releases_filter.split(',') \
+                            if th_releases_filter is not None \
+                            else self.releases_filter_default
 
         output = builder.tag()
         if not hide_release_picker:
