@@ -718,7 +718,17 @@ class TracHacksHtPasswdStore(HtPasswdStore):
         pass
 
     def user_deleted(self, user):
-        pass
+        page = WikiPage(self.env, user)
+        page_v1 = WikiPage(self.env, user, 1)
+        if page.exists:
+            if page_v1.author == user:
+                page.delete()
+            else:
+                self.log.info("Skipped deleting page '%s' because it wasn't "
+                              "created by user '%s'", user, user)
+        else:
+            self.log.info("Tried to delete page '%s' but it doesn't exist",
+                          user)
 
     def user_password_reset(self, user, email, password):
         pass
