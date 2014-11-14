@@ -157,6 +157,10 @@ class TracHacksHandler(Component):
         "Name of wiki page that serves as template for new hacks.")
     lock_file = Option('trachacks', 'lock_file', '/var/tmp/newhack.lock',
         "Path and name of lock file to secure new hack creation")
+    latest_major_release = Option('trachacks', 'latest_major_release', '1.0',
+        doc="""The latest major Trac release, used as the default selection
+            in the release filter form displayed by the `ListHacksMacro`
+            and on the `NewHack` form.""")
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
     title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
@@ -420,7 +424,7 @@ class TracHacksHandler(Component):
         else:
             data['form_context'] = None
             data['type'] = 'plugin'
-            data['release'] = ['0.11']
+            data['release'] = [self.latest_major_release]
             data['installation'] = \
                 "General instructions on installing Trac plugins can be " \
                 "found on the [TracPlugins#InstallingaTracplugin " \
