@@ -30,12 +30,12 @@ class CustomFieldAdminPage(Component):
     # IAdminPanelProvider methods
     
     def get_admin_panels(self, req):
-        if 'TICKET_ADMIN' in req.perm:
+        if 'TICKET_ADMIN' in req.perm('admin', 'ticket/customfields'):
             yield ('ticket', _("Ticket System"),
                    'customfields', _("Custom Fields")) 
 
     def render_admin_panel(self, req, cat, page, customfield):
-        req.perm.require('TICKET_ADMIN')
+        req.perm('admin', 'ticket/customfields').require('TICKET_ADMIN')
         
         add_script(req, 'customfieldadmin/js/customfieldadmin.js')
 
