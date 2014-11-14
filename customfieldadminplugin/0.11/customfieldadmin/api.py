@@ -76,7 +76,8 @@ class CustomFields(Component):
         items = TicketSystem(self.env).get_custom_fields()
         for item in items:
             if item['type'] == 'textarea':
-                item['cols'] = item.pop('width')
+                if 'width' in item:
+                    item['cols'] = item.pop('width')
                 item['rows'] = item.pop('height')
             if cfield and item['name'] == cfield['name']:
                 return item  # only return specific item with cfname
