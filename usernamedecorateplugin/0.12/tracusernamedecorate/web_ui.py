@@ -202,7 +202,6 @@ option.""")
                 label != author:
             title = None
             class_ = 'usernamedecorate-anonymous'
-            print author, label
         else:
             email_view = chrome.show_email_addresses or \
                          'EMAIL_VIEW' in req.perm
