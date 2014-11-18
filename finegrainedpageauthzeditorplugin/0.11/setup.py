@@ -11,24 +11,23 @@
 from setuptools import setup
 
 setup(
-    name = 'PageAuthzPolicyEditor',
-    version = '0.12',
-    author = 'Robert Martin',
-    author_email = 'robert.martin@arqiva.com',
-    maintainer = 'Ryan J Ollos',
-    maintainer_email = 'ryan.j.ollos@gmail.com',
-    url = '',
-    description = 'Page Authz File management plugin for Trac',
-    license = '3-Clause BSD',
+    name='PageAuthzPolicyEditor',
+    version='0.12.1',
+    author='Robert Martin',
+    author_email='robert.martin@arqiva.com',
+    maintainer='Ryan J Ollos',
+    maintainer_email='ryan.j.ollos@gmail.com',
+    url='http://trac-hacks.org/wiki/FineGrainedPageAuthzEditorPlugin',
+    description='Page Authz File management plugin for Trac',
+    license='3-Clause BSD',
 
     zip_safe=True,
     packages=['page_authz_policy_editor'],
     package_data={'page_authz_policy_editor': ['templates/*.html']},
-    entry_points = {
+    entry_points={
         'trac.plugins': [
             'page_authz_policy_editor.admin = page_authz_policy_editor.pape_admin',
         ]
     },
-     install_requires = ['Trac >=0.11', 'configobj'],
+    install_requires=['configobj', 'TracAccountManager'],
 )
-

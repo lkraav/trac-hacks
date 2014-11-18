@@ -2,31 +2,32 @@
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="admin.html" />
   <head>
-    <title>Pages Authz</title>
+    <title>Authz Editor</title>
   </head>
 
   <body>
-    <h2>Authz Page Permissions</h2>
+    <h2>Authz Permissions</h2>
 
-    <form class="mod" id="modbasic" method="post">
+    <form class="mod" id="modbasic" method="post" action="">
       <fieldset>
-        <legend>File ${pages_authz.file_name}</legend>
+        <legend>File $pages_authz.file_name</legend>
         <div class="field">
           <label>
             Contents:
             <br />
-            <textarea name="authz_file_contents" rows="20" cols="80" wrap="off">${pages_authz.contents}</textarea>
+            <textarea name="authz_file_contents" rows="20" cols="80">
+$pages_authz.contents</textarea>
           </label>
         </div>
       </fieldset>
       <fieldset>
         <legend>Available Permission Types</legend>
         <div class="field">See the  
-          <a class="wiki" href="../../wiki/TracPermissions">
+          <a class="wiki" href="${href.wiki('TracPermissions')}">
             Wiki Trac Permissions Page
           </a>
           for a listing and description
@@ -34,7 +35,7 @@
       </fieldset>
       <fieldset>
         <legend>Current Project Users</legend>
-        <div class="field">${pages_authz.users}</div>
+        <div class="field">$pages_authz.users</div>
       </fieldset>
       <p>
         Project Groups are specified with a leading '@'
