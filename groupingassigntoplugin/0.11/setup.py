@@ -10,4 +10,5 @@ setup(name='GroupingAssignToPlugin',
       url='https://trac-hacks.org/wiki/GroupingAssignToPlugin',
       license='GPLv2',
       entry_points={'trac.plugins': ['groupingassignto = groupingassignto']},
+      install_requires=['FlexibleAssignTo'],
 )
