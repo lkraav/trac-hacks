@@ -24,6 +24,7 @@ setup(
     entry_points={
         'trac.plugins': [
             'tracfewfixes.wiki = tracfewfixes.wiki',
+            'tracfewfixes.web_ui = tracfewfixes.web_ui',
         ],
     },
     **extra)
