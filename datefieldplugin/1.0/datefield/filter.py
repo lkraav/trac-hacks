@@ -33,10 +33,6 @@ class DateFieldModule(Component):
         doc='Number of months visible in datepicker')
     match_req = ListOption('datefield', 'match_request', default='',
         doc='Additional request paths to match (use input class="datepick")')
-    use_milestone = BoolOption('datefield', 'milestone', default='false',
-        doc="""Use datepicker for milestone due/completed fields? 
-        If you turn this on, you must use MM/DD/YYYY for the date format.
-        Set format to mdy and separator to / (default=Off)""")
 
     implements(IRequestFilter, ITemplateProvider, \
             ITicketManipulator, ITemplateStreamFilter)
@@ -51,12 +47,6 @@ class DateFieldModule(Component):
                 stream = stream | Transformer(
                     '//input[@name="field_' + field + '"]'
                 ).attr('class', attr_callback)
-        elif self.use_milestone and filename in ('milestone_edit.html', 
-                'admin_milestones.html'):
-            for field in ('duedate', 'completeddate'):
-                stream = stream | Transformer(
-                    '//input[@name="' + field + '"]'
-                ).attr('class', attr_callback)
         return stream
     
     
@@ -66,9 +56,6 @@ class DateFieldModule(Component):
             
     def post_process_request(self, req, template, data, content_type):
         mine = ['/newticket', '/ticket', '/simpleticket']
-        if self.use_milestone:
-            mine.append('/milestone')
-            mine.append('/admin/ticket/milestones')
 
         match = False
         for target in mine + self.match_req:
