@@ -7,4 +7,4 @@ jQuery(document).ready(function($) {
       $('#date_empty_option').hide();
     }
   });
-})
+});

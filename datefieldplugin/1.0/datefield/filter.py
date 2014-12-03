@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2007-2008 Noah Kantrowitz <noah@coderanger.net>
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
@@ -11,6 +20,7 @@ from genshi.filters.transform import Transformer
 import time
 from traceback import format_exc
 import re
+
 
 class DateFieldModule(Component):
     """A module providing a JS date picker for custom fields."""
@@ -34,8 +44,8 @@ class DateFieldModule(Component):
     match_req = ListOption('datefield', 'match_request', default='',
         doc='Additional request paths to match (use input class="datepick")')
 
-    implements(IRequestFilter, ITemplateProvider, \
-            ITicketManipulator, ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter,
+               ITicketManipulator)
 
     # ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
@@ -49,17 +59,19 @@ class DateFieldModule(Component):
                 ).attr('class', attr_callback)
         return stream
     
-    
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
             
     def post_process_request(self, req, template, data, content_type):
         if template == 'ticket.html':
-            format = {'dmy': 'dd%smm%syy',
-                      'mdy': 'mm%sdd%syy',
-                      'ymd': 'yy%smm%sdd' 
-                      }.get(self.date_format, 'dd%smm%syy') % (self.date_sep, self.date_sep)
+            format = {
+                'dmy': 'dd%smm%syy',
+                'mdy': 'mm%sdd%syy',
+                'ymd': 'yy%smm%sdd',
+            }.get(self.date_format, 'dd%smm%syy')
+            format %= (self.date_sep, self.date_sep)
             add_script_data(req, {'datefield': {
                 'calendar': req.href.chrome('common', 'ics.png'),
                 'format': format,
@@ -69,12 +81,13 @@ class DateFieldModule(Component):
                 'num_months': self.num_months,                
                 'change_month': self.change_month,
                 'change_year': self.change_year
-                }})
+            }})
             add_script(req, 'datefield/js/datefield.js')
             Chrome(self.env).add_jquery_ui(req)
         return template, data, content_type
         
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('datefield', resource_filename(__name__, 'htdocs'))]
@@ -83,19 +96,22 @@ class DateFieldModule(Component):
         return []
         
     # ITicketManipulator methods
+
     def prepare_ticket(self, req, ticket, fields, actions):
         pass
 
-    def validate_ticket(self, req, ticket): # dmy mdy ymd
+    def validate_ticket(self, req, ticket):  # dmy mdy ymd
         for field in self._date_fields():
             try:
                 val = (ticket[field] or u'').strip()
-                
-                if not val and self.config['ticket-custom'].getbool(field+'.date_empty', default=False):
+
+                date_empty = self.config['ticket-custom'] \
+                                 .getbool(field + '.date_empty')
+                if not val and date_empty:
                     continue
                 if self.date_sep and len(self.date_sep.strip()) > 0:
                     if len(val.split(self.date_sep)) != 3:
-                        raise Exception # Token exception to force failure
+                        raise Exception  # Token exception to force failure
                 else:
                     if re.match('.*[^\d].*', val.strip()):
                         raise Exception
@@ -106,34 +122,44 @@ class DateFieldModule(Component):
                 except ValueError:
                     time.strptime(val, format.replace('y', 'Y'))
             except Exception:
-                self.log.warn('DateFieldModule: Got an exception, assuming it is a validation failure.\n'+format_exc())
-                yield field, 'Field %s does not seem to look like a date. The correct format is %s.' % \
-                             (field, self.date_sep.join([c.upper()*(c=='y' and 4 or 2) for c in self.date_format]))
-                
-                
-        
+                self.log.warn("DateFieldModule: Got an exception, assuming "
+                              "it is a validation failure.\n%s", format_exc())
+                yield field, 'Field %s does not seem to look like a date. ' \
+                             'The correct format is %s.' % \
+                             (field, self.date_sep.join([c.upper()*(c == 'y' and 4 or 2)
+                                                         for c in self.date_format]))
+
     # Internal methods
+
     def _date_fields(self):
         # XXX: Will this work when there is no ticket-custom section? <NPK>
         for key, value in self.config['ticket-custom'].options():
             if key.endswith('.date') and value == "true":
                 yield key.split('.', 1)[0]
-    
 
 
 class CustomFieldAdminTweak(Component):
     implements(ITemplateStreamFilter, IRequestFilter)
 
+    # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
-        if req.method == "POST" and req.href.endswith(u"/admin/ticket/customfields"):
+        if req.method == "POST" and \
+                req.href.endswith(u'/admin/ticket/customfields'):
             if req.args.get('type') == 'date':
                 req.args['type'] = 'text'
-                self.config.set('ticket-custom', '%s.date'%(req.args.get('name')), 'true')
-                self.config.set('ticket-custom', '%s.date_empty'%(req.args.get('name')), req.args.get('date_empty', 'false'))
+                self.config.set('ticket-custom',
+                                '%s.date' % req.args.get('name'),
+                                'true')
+                self.config.set('ticket-custom',
+                                '%s.date_empty' % req.args.get('name'),
+                                req.args.get('date_empty', 'false'))
         return handler
 
     def post_process_request(self, template, content_type):
-        return (template, content_type)
+        return template, content_type
+
+    # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == "customfieldadmin.html":
