@@ -55,15 +55,7 @@ class DateFieldModule(Component):
         return handler
             
     def post_process_request(self, req, template, data, content_type):
-        mine = ['/newticket', '/ticket', '/simpleticket']
-
-        match = False
-        for target in mine + self.match_req:
-            if req.path_info.startswith(target):
-                match = True
-                break
-
-        if match:
+        if template == 'ticket.html':
             format = {'dmy': 'dd%smm%syy',
                       'mdy': 'mm%sdd%syy',
                       'ymd': 'yy%smm%sdd' 
