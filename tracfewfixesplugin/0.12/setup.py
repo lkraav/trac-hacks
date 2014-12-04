@@ -17,7 +17,9 @@ setup(
     author='Jun Omae',
     author_email='jun66j5@gmail.com',
     packages=find_packages(exclude=['*.tests*']),
-    package_data={},
+    package_data={
+        'tracfewfixes': ['htdocs/*.js'],
+    },
     test_suite='tracfewfixes.tests.suite',
     zip_safe=True,
     install_requires=['Trac'],
