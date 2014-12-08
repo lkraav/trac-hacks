@@ -300,6 +300,7 @@ class TracHacksHandler(Component):
                 else:
                     self.env.log.warn('No wiki page for component "%s"'
                                       % component)
+        add_stylesheet(req, 'trachacks/htdocs/css/style.css')
         return template, data, content_type
 
     # INavigationContributor methods
