@@ -21,7 +21,7 @@ from genshi.builder import tag
 
 from trac.config import BoolOption, IntOption
 from trac.core import implements, Component
-from trac.web.api import IRequestFilter
+from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_stylesheet
 from trac.wiki import IWikiMacroProvider, format_to_html, parse_args
 
@@ -65,7 +65,8 @@ class Boxes(Component):
     uses the icon library.
     """
 
-    implements(IRequestFilter, ITemplateProvider, IWikiMacroProvider)
+    implements(IRequestFilter, IRequestHandler, ITemplateProvider,
+               IWikiMacroProvider)
 
     rbox_width = IntOption('wikiextras', 'rbox_width', 300,
                            "Width of right aligned boxes.")
@@ -108,30 +109,6 @@ class Boxes(Component):
             for synonym in data[2]:
                 self.word2type[synonym] = name
 
-        # Create width-dependable css files.
-        #     (The width option in trac.ini defines outer width, style widths
-        #     assigned below are therefore compensated for padding so that
-        #     actual width of a box is according to trac.ini.)
-        # 1: width for style .wikiextras.box (compensated for padding)
-        css_file = resource_filename(__name__, os.path.join(
-                'htdocs', 'css', 'boxes-%d.css' % self.rbox_width))
-        if not os.path.isfile(css_file):
-            fd = open(css_file, 'w')
-            #noinspection PyStringFormat
-            fd.write('.wikiextras.box.right { width: %dpx; }\n'
-                     '.wikiextras.box.icon.center, '
-                     '.wikiextras.box.icon.right { width: %dpx; }' %
-                     (self.rbox_width - 22, self.rbox_width - 57))
-            fd.close()
-        # 2: width for style .wiki-toc (compensated for padding)
-        css_file = resource_filename(__name__, os.path.join(
-                'htdocs', 'css', 'boxes-%d-toc.css' % self.rbox_width))
-        if not os.path.isfile(css_file):
-            fd = open(css_file, 'w')
-            fd.write('.wiki-toc { width: %dpx !important; }' %
-                     (self.rbox_width - 22))
-            fd.close()
-
     # IRequestFilter methods
 
     #noinspection PyUnusedLocal
@@ -140,15 +117,30 @@ class Boxes(Component):
 
     def post_process_request(self, req, template, data, content_type):
         add_stylesheet(req, 'wikiextras/css/boxes.css')
-        add_stylesheet(req, 'wikiextras/css/boxes-%d.css' % self.rbox_width)
-        if self.wide_toc:
-            add_stylesheet(req, 'wikiextras/css/boxes-%d-toc.css' %
-                                self.rbox_width)
-        else:
-            add_stylesheet(req, 'wikiextras/css/boxes-narrow-toc.css')
+        add_stylesheet(req, '/wikiextras/dynamicboxes.css')
         if self.shadowless:
             add_stylesheet(req, 'wikiextras/css/boxes-shadowless.css')
         return template, data, content_type
+
+    # IRequestHandler methods
+
+    def match_request(self, req):
+        return req.path_info == '/wikiextras/dynamicboxes.css'
+
+    def process_request(self, req):
+        csstext = ('.wikiextras.box.right { width: %dpx; }\n'
+                  '.wikiextras.box.icon.center, '
+                  '.wikiextras.box.icon.right { width: %dpx; }\n' %
+                  (self.rbox_width - 22, self.rbox_width - 57))
+        if self.wide_toc:
+            csstext += ('.wiki-toc { width: %dpx !important; }\n' %
+                         (self.rbox_width - 22))
+        else:
+            csstext += '.wiki-toc { width: auto !important; }\n'
+
+        req.send(csstext, 'text/css', status=200)
+
+        return None
 
     # ITemplateProvider methods
 
