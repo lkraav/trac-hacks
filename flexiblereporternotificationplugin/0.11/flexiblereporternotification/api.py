@@ -17,11 +17,11 @@ class FlexibleReporterNotifyEmail(Component):
 
     implements(IEnvironmentSetupParticipant)
 
-    notify_states = ListOption('notification','reporter_states', [],
+    notify_states = ListOption('notification', 'reporter_states', [],
         doc="Ticket states in which the reporter should be notified.")
 
     def environment_created(self):
-      pass
+        pass
 
     def environment_needs_upgrade(self, db):
         get_recipients_base = notification.TicketNotifyEmail.get_recipients
@@ -39,4 +39,4 @@ class FlexibleReporterNotifyEmail(Component):
         notification.TicketNotifyEmail.get_recipients = get_recipients
 
     def upgrade_environment(self, db):
-      pass
+        pass

@@ -10,15 +10,15 @@
 from setuptools import setup
 
 
-setup(name='FlexibleReporterNotification',
-      version='0.1',
-      author='Ryan J Ollos',
-      author_email='ryan.j.ollos@gmail.com',
-      license='3-Clause BSD',
-      packages=['flexiblereporternotification'],
-      url='http://trac-hacks.org/wiki/FlexibleReporterNotificationPlugin',
-      author='Satyam',
-      entry_points={
-          'trac.plugins': 'flexiblereporternotification=flexiblereporternotification.api'
-      }
+setup(
+    name='FlexibleReporterNotification',
+    version='0.1',
+    author='Ryan J Ollos',
+    author_email='ryan.j.ollos@gmail.com',
+    license='3-Clause BSD',
+    url='http://trac-hacks.org/wiki/FlexibleReporterNotificationPlugin',
+    packages=['flexiblereporternotification'],
+    entry_points={
+        'trac.plugins': 'flexiblereporternotification=flexiblereporternotification.api'
+    }
 )
