@@ -73,7 +73,6 @@ setup(
     packages = find_packages(exclude=['*.tests']),
     package_data={
         'tracwikiextras': ['doc/*',
-                           'htdocs/css/boxes-narrow-toc.css',
                            'htdocs/css/boxes-shadowless.css',
                            'htdocs/css/boxes.css',
                            'htdocs/css/phrases.css',
