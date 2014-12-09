@@ -13,14 +13,13 @@
 """
 import os
 
-from inspect import cleandoc
-
 from pkg_resources import resource_filename
 
 from genshi.builder import tag
 
 from trac.config import BoolOption, IntOption
 from trac.core import implements, Component
+from trac.util.compat import cleandoc
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_stylesheet
 from trac.wiki import IWikiMacroProvider, format_to_html, parse_args

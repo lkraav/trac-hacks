@@ -20,8 +20,6 @@ phrase highlighted without the colon (`:`) which would not look natural.
 Activate this component to highlight this: FIXME
 """
 
-from inspect import cleandoc
-
 from pkg_resources import resource_filename
 
 from genshi.builder import tag
@@ -29,6 +27,7 @@ from genshi.core import Markup
 
 from trac.config import ListOption
 from trac.core import implements, Component
+from trac.util.compat import cleandoc
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_stylesheet
 from trac.wiki import IWikiSyntaxProvider, IWikiMacroProvider, format_to_html

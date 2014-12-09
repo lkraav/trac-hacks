@@ -46,14 +46,13 @@ import fnmatch
 import os
 import re
 
-from inspect import cleandoc
-
 from pkg_resources import resource_filename
 
 from genshi.builder import tag
 
 from trac.config import BoolOption, ConfigSection, IntOption, ListOption
 from trac.core import implements, Component
+from trac.util.compat import cleandoc
 from trac.web.chrome import ITemplateProvider
 from trac.wiki import IWikiMacroProvider, IWikiSyntaxProvider, format_to_html
 
