@@ -25,6 +25,7 @@ from trac.web.chrome import ITemplateProvider, add_stylesheet
 from trac.wiki import IWikiMacroProvider, format_to_html, parse_args
 
 from tracwikiextras.icons import Icons
+from tracwikiextras.util import sanitize_attrib
 
 
 # Urgency levels
@@ -404,8 +405,9 @@ class Boxes(Component):
         html = format_to_html(self.env, formatter.context, content)
         class_ = ' '.join(class_list)
         style = ';'.join(style_list)
-
-        return tag.div(html, class_=class_, style=style)
+        div = sanitize_attrib(self.env, tag.div(class_=class_, style=style))
+        div(html)
+        return div
 
 
 class AboutWikiBoxes(Component):

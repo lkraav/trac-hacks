@@ -19,6 +19,8 @@ from trac.core import implements, Component
 from trac.util.compat import cleandoc
 from trac.wiki import IWikiMacroProvider, format_to_html, format_to_oneliner
 
+from tracwikiextras.util import sanitize_attrib
+
 
 class Color(Component):
     """Macro for coloring wiki text.
@@ -112,4 +114,7 @@ class Color(Component):
             style_values['font-size'] = '%s%%' % style_values['font-size']
         style = ';'.join('%s:%s' % (k, v) for (k, v) in
                          style_values.iteritems() if v)
-        return tag.span(space_start, html, space_end, style=style)
+
+        span = sanitize_attrib(self.env, tag.span(style=style))
+        span(space_start, html, space_end)
+        return span

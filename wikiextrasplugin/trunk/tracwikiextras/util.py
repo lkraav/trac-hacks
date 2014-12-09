@@ -17,9 +17,11 @@ import re
 import string
 
 from genshi.builder import tag
-from genshi.core import Markup
+from genshi.core import Markup, Stream
 
 from trac.util.compat import sorted
+from trac.util.html import TracHTMLSanitizer
+from trac.wiki.api import WikiSystem
 
 
 def prepare_regexp(d):
@@ -252,3 +254,13 @@ def reduce_names(names, keep=40):
     while size_of(tree) > keep:
         remove_one(tree)
     return get_names(tree)
+
+
+def sanitize_attrib(env, element):
+    if not WikiSystem(env).render_unsafe_content:
+        sanitized = getattr(tag, element.tag.localname)
+        for k, data, pos in (Stream(element) | TracHTMLSanitizer()):
+            sanitized.attrib = data[1]
+            break  # only look at START
+        element = sanitized
+    return element
