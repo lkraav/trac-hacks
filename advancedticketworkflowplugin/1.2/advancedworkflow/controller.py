@@ -208,16 +208,11 @@ class TicketWorkflowOpOwnerPrevious(TicketWorkflowOpBase):
 
     def _new_owner(self, ticket):
         """Determines the new owner"""
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("SELECT oldvalue FROM ticket_change WHERE ticket=%s "
-                       "AND field='owner' ORDER BY -time", (ticket.id, ))
-        row = cursor.fetchone()
-        if row:
-            owner = row[0]
-        else:  # The owner has never changed.
-            owner = ticket['owner']
-        return owner
+        row = self.env.db_query("""
+          SELECT oldvalue FROM ticket_change WHERE ticket=%s
+          AND field='owner' ORDER BY -time
+          """, (ticket.id, ))
+        return row[0][0] if row else ticket['owner']
 
 
 class TicketWorkflowOpStatusPrevious(TicketWorkflowOpBase):
@@ -256,16 +251,11 @@ class TicketWorkflowOpStatusPrevious(TicketWorkflowOpBase):
 
     def _new_status(self, ticket):
         """Determines the new status"""
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("SELECT oldvalue FROM ticket_change WHERE ticket=%s "
-                       "AND field='status' ORDER BY -time", (ticket.id, ))
-        row = cursor.fetchone()
-        if row:
-            status = row[0]
-        else:  # The status has never changed.
-            status = 'new'
-        return status
+        row = self.env.db_query("""
+          SELECT oldvalue FROM ticket_change WHERE ticket=%s
+          AND field='status' ORDER BY -time
+          """, (ticket.id, ))
+        return row[0][0] if row else 'new'
 
 
 class TicketWorkflowOpRunExternal(TicketWorkflowOpBase):
