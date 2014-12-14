@@ -54,7 +54,7 @@ except ImportError:
 
 setup(
     name = 'TracWatchlistPlugin',
-    version = '1.0',
+    version = '1.0.1',
     description = "Watchlist Plugin for Trac 0.11/0.12",
     keywords = 'trac watchlist wiki plugin',
     author = 'Martin Scharrer',

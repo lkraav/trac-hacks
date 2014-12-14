@@ -592,11 +592,11 @@ class WatchlistPlugin(Component):
             wldict['show_messages'] = options['show_messages_on_watchlist_page']
 
         wldict['perm']   = req.perm
-        offset = req.tz.utcoffset(datetime.now(req.tz))
+        offset = datetime.now(req.tz).utcoffset()
         if offset is None:
             offset = 0
         else:
-            offset = offset.seconds / 60
+            offset = offset.days * 24 * 60 + offset.seconds / 60
         wldict['tzoffset'] = offset
         wldict['i18n'] = i18n_enabled
         wldict['realms'] = [ r for r in settings['listoptions']['realm_order'] if r in self.realms ]
