@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2006-2008 Noah Kantrowitz <noah@coderanger.net>
+# Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -14,10 +15,10 @@ setup(
     name='TracSelfDelete',
     version='2.0',
     packages=['selfdelete'],
-    author="Noah Kantrowitz",
-    author_email="noah@coderanger.net",
-    description="Remove Trac wiki pages and attachments that you created.",
-    long_description="Allows users to delete wiki pages and attachments that they created..",
+    author="Ryan J Ollos",
+    author_email="ryan.j.ollos@gmail.com",
+    description="Permissions policy that allows users to delete wiki pages "
+                "and attachments that they created.",
     license="BSD",
     keywords="trac plugin wiki attachment delete",
     url="http://trac-hacks.org/wiki/SelfDeletePlugin",
@@ -26,7 +27,7 @@ setup(
     ],
     entry_points={
         'trac.plugins': [
-            'selfdelete.filter = selfdelete.filter',
+            'selfdelete.policy = selfdelete.policy',
         ]
     }
 )
