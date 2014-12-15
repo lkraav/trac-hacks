@@ -81,6 +81,7 @@ class DateFieldModule(Component):
                 'mdy': 'mm%sdd%sy',
                 'ymd': 'y%smm%sdd',
             }.get(self.date_format, 'dd%smm%syy')
+            format %= (self.date_sep, self.date_sep)
             add_script_data(req, {'datefield': {
                 'calendar': req.href.chrome('common', 'ics.png'),
                 'format': format,
