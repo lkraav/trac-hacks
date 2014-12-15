@@ -1,8 +1,8 @@
 jQuery(document).ready(function($) {
-  $('.datepick').datepicker({
+  var $field = $('.datepick');
+  $field.datepicker({
     firstDay: datefield['first_day'],
     dateFormat: datefield['format'],
-    defaultDate: 0,
     showOn: "both",
     weekHeader: 'W',
     showWeek: datefield['show_week'],
@@ -13,4 +13,7 @@ jQuery(document).ready(function($) {
     buttonImage: datefield['calendar'],
     buttonImageOnly: true
   });
+  if ($field.val() == "<now>") {
+    $field.datepicker('setDate', '-0d');
+  }
 });
