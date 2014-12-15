@@ -76,10 +76,11 @@ class DateFieldModule(Component):
                 break
 
         if match:
-            format = {'dmy': 'dd%smm%syy',
-                      'mdy': 'mm%sdd%syy',
-                      'ymd': 'yy%smm%sdd' 
-                      }.get(self.date_format, 'dd%smm%syy') % (self.date_sep, self.date_sep)
+            format = {
+                'dmy': 'dd%smm%sy',
+                'mdy': 'mm%sdd%sy',
+                'ymd': 'y%smm%sdd',
+            }.get(self.date_format, 'dd%smm%syy')
             add_script_data(req, {'datefield': {
                 'calendar': req.href.chrome('common', 'ics.png'),
                 'format': format,
