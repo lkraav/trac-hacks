@@ -13,7 +13,6 @@ from trac.web.chrome import add_script, add_notice
 from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.ticket import model
 from operator import itemgetter
-from trac.config import Option
 
 try:
     from trac.web.chrome import add_script_data
@@ -33,9 +32,6 @@ except ImportError:
 class SmpTicketProject(Component):
     
     implements(IRequestFilter, ITemplateStreamFilter)
-
-    Option("ticket-custom", "project", "select", doc="Ticket custom field needed for SimpleMultiProject plugin. This must be of type select.")
-    Option("ticket-custom", "project.label", "Project", doc="Label for ticket custom field used by SimpleMultiProject plugin.")
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
