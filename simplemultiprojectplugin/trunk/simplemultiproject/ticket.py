@@ -13,6 +13,7 @@ from trac.web.chrome import add_script, add_notice
 from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.ticket import model
 from operator import itemgetter
+from trac.config import Option
 
 try:
     from trac.web.chrome import add_script_data
@@ -32,7 +33,10 @@ except ImportError:
 class SmpTicketProject(Component):
     
     implements(IRequestFilter, ITemplateStreamFilter)
-    
+
+    Option("ticket-custom", "project", "select", doc="Ticket custom field needed for SimpleMultiProject plugin. This must be of type select.")
+    Option("ticket-custom", "project.label", "Project", doc="Label for ticket custom field used by SimpleMultiProject plugin.")
+
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
 
@@ -88,20 +92,14 @@ class SmpTicketProject(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == "ticket.html":
-            # replace "project" text input (lineedit) for ticket editing with a selection field
-            filter = Transformer('//input[@id="field-project"]')
+            add_script(req, "simplemultiproject/filter_milestones.js")
+            # replace "project" selection field for ticket with a filtered selection field
+            filter = Transformer('//select[@id="field-project"]')
             ticket_data = data['ticket']
 
-            script_filter = Transformer('//div[@id="banner"]')
-
             stream = stream | filter.replace(self._projects_field_ticket_input(req, ticket_data))
-            stream = stream | script_filter.before(self._update_milestones_script(req))
 
         return stream
-
-    def _update_milestones_script(self, req):
-        script = tag.script(type="text/javascript", src=req.href.chrome("simplemultiproject", "filter_milestones.js"))
-        return script
 
     def _add_milestones_maps(self, req, ticket_data):
 
