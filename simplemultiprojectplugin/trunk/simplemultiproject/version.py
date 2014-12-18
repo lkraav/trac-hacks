@@ -99,7 +99,10 @@ class SmpVersionProject(Component):
         version_id = req.args.get('id')
         version_project = req.args.get('project', '')
 
-        db = self.env.get_db_cnx() # TODO: db can be removed
+        if VERSION < '0.12':
+            db = self.env.get_db_cnx()
+        else:
+            db = self.env.get_read_db()
         action = req.args.get('action', 'view')
         try:
             version = Version(self.env, version_id, db)
@@ -449,9 +452,14 @@ class SmpVersionProject(Component):
             
     def _versions_and_stats(self, req, filter_projects):
         req.perm.require('MILESTONE_VIEW')
-        db = self.env.get_db_cnx()
         
-        versions = Version.select(self.env, db)
+        if VERSION <= '0.12':
+            db = self.env.get_db_cnx()
+            versions = Version.select(self.env, db)
+            db = self.env.get_db_cnx()
+        else:
+            versions = Version.select(self.env)
+            db = self.env.get_read_db()
     
         filtered_versions = []
         stats = []
