@@ -172,7 +172,7 @@ class WikiWatchlist(BasicWatchlist):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
         user = req.authname
-        locale = getattr( req, 'locale', LC_TIME)
+        locale = getattr(req, 'locale', None) or LC_TIME
         context = Context.from_request(req)
         wikilist = []
         extradict = {}

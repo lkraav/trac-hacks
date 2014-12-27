@@ -608,7 +608,7 @@ class WatchlistPlugin(Component):
         wldict['listoptions_doc'] = settings['listoptions_doc']
         wldict['listoptions_order'] = settings['listoptions_order']
         wldict['wlgettext'] = gettext
-        locale = getattr( req, 'locale', LC_TIME)
+        locale = getattr(req, 'locale', None) or LC_TIME
         wldict['datetime_format'] = datetime_format(locale=locale)
         wldict['_'] = _
         wldict['t_'] = t_

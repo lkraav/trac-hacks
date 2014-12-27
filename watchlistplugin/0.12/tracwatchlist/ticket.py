@@ -174,7 +174,7 @@ class TicketWatchlist(BasicWatchlist):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
         context = Context.from_request(req)
-        locale = getattr( req, 'locale', LC_TIME)
+        locale = getattr(req, 'locale', None) or LC_TIME
 
         ticketlist = []
         extradict = {}
