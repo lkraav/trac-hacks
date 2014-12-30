@@ -52,10 +52,6 @@ class SmpModel(Component):
     # needed in self.is_not_in_restricted_users()
     group_providers = ExtensionPoint(IPermissionGroupProvider)
 
-    def __init__(self):
-        # Make sure we have initial data for the ticket-custom field 'project'.
-        self.get_all_projects()
-
     # DB Methods
     def __start_transaction(self, db):
         if VERSION < '0.12':
@@ -100,12 +96,7 @@ class SmpModel(Component):
             db = self.env.get_read_db()
         cursor = db.cursor()
         cursor.execute(query)
-
-        l = list(cursor.fetchall())
-        all_projects = [project[1] for project in sorted(l, key=lambda k: k[1])]
-        #Set the list of current projects. This way the dropdown on the query page will be properly populated.
-        self.env.config.set("ticket-custom", "project.options", "|".join(all_projects) )
-        return l
+        return  cursor.fetchall()
 
     def get_all_projects_filtered_by_conditions(self, req):
         all_projects = self.get_all_projects()
@@ -228,10 +219,6 @@ class SmpModel(Component):
                 cursor = db.cursor()
                 cursor.execute(query, [name, summary, description, closed, restrict])
 
-        # Keep internal list of values for ticket-custom field 'project' updated. This list is used for the dropdown
-        # on the query page
-        self.get_all_projects()
-
     def delete_project(self, ids_projects):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
@@ -247,10 +234,6 @@ class SmpModel(Component):
                 for id in ids_projects:
                     query = """DELETE FROM smp_project WHERE id_project=%s"""
                     cursor.execute(query, [id])
-
-        # Keep internal list of values for ticket-custom field 'project' updated. This list is used for the dropdown
-        # on the query page
-        self.get_all_projects()
 
     def update_project(self, id, name, summary, description, closed, restrict):
         if VERSION < '0.12':
@@ -479,7 +462,7 @@ class SmpModel(Component):
                         p.id_project = m.id_project"""
 
         cursor.execute(query, [project])
-        return sorted(cursor.fetchall())
+        return cursor.fetchall()
 
     def get_versions_for_projectid(self,projectid):
         if VERSION < '0.12':
@@ -532,6 +515,20 @@ class SmpModel(Component):
 
         cursor.execute(query, [version])
         return cursor.fetchone()
+
+    def get_all_versions_with_id_project(self):
+        if VERSION < '0.12':
+            db = self.env.get_db_cnx()
+        else:
+            db = self.env.get_read_db()
+        cursor = db.cursor()
+        query = """SELECT
+                        version, id_project
+                   FROM
+                        smp_version_project;"""
+
+        cursor.execute(query)
+        return cursor.fetchall()
 
     def delete_version_project(self,version):
         query = """DELETE FROM
