@@ -226,13 +226,26 @@ class SmpModel(Component):
             for id in ids_projects:
                 query = """DELETE FROM smp_project WHERE id_project=%s"""
                 cursor.execute(query, [id])
+                query = """DELETE FROM smp_milestone_project WHERE id_project=%s;"""
+                cursor.execute(query, [id])
+                query = """DELETE FROM smp_version_project WHERE id_project=%s;"""
+                cursor.execute(query, [id])
+                query = """DELETE FROM smp_component_project WHERE id_project=%s;"""
+                cursor.execute(query, [id])
             self.__start_transaction(db)
+
         else:
             @with_transaction(self.env)
             def execute_sql_statement(db):
                 cursor = db.cursor()
                 for id in ids_projects:
                     query = """DELETE FROM smp_project WHERE id_project=%s"""
+                    cursor.execute(query, [id])
+                    query = """DELETE FROM smp_milestone_project WHERE id_project=%s;"""
+                    cursor.execute(query, [id])
+                    query = """DELETE FROM smp_version_project WHERE id_project=%s;"""
+                    cursor.execute(query, [id])
+                    query = """DELETE FROM smp_component_project WHERE id_project=%s;"""
                     cursor.execute(query, [id])
 
     def update_project(self, id, name, summary, description, closed, restrict):
