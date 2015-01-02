@@ -6,15 +6,16 @@
 # you should have received as part of this distribution.
 #
 
-from trac.ticket import TicketSystem
+from trac.ticket.api import TicketSystem
 
 PREFIX = 'dynfields.'
-PREF_DEFAULTS = {'(pref)': '1',
-                 '(pref:enable)': '1',
-                 '(pref:enabled)': '1',
-                 '(pref:disable)': '0',
-                 '(pref:disabled)': '0',
-                 }
+PREF_DEFAULTS = {
+    '(pref)': '1',
+    '(pref:enable)': '1',
+    '(pref:enabled)': '1',
+    '(pref:disable)': '0',
+    '(pref:disabled)': '0',
+}
 
 
 class Options(dict):
@@ -30,6 +31,7 @@ class Options(dict):
         """Fills self with ticket-custom options with '(pref)' stripped
         from values.  Maintains which options/rules have been configured
         for user preference."""
+        super(Options, self).__init__()
         self.env = env
         self._pref_defaults = {}
         for key, val in self.env.config['ticket-custom'].options():
@@ -84,14 +86,15 @@ class Options(dict):
           value (saved preference or default value)
         """
         value, options = self.get_value_and_options(req, target, key)
-        return {'id': PREFIX + key,
-                'label': '%s = %s' % (key, self[key]),
-                'enabled': req.session.get(PREFIX + key,
-                                           self._pref_defaults[key]),
-                'type': 'none',
-                'options': options,
-                'value': value,
-                }
+        return {
+            'id': PREFIX + key,
+            'label': '%s = %s' % (key, self[key]),
+            'enabled': req.session.get(PREFIX + key,
+                                       self._pref_defaults[key]),
+            'type': 'none',
+            'options': options,
+            'value': value,
+        }
 
     def set_prefs(self, req):
         """Saves the user's preferences."""

@@ -12,7 +12,7 @@ var Rule = function(name) {
     if (window.dynfields_rules == undefined)
         window.dynfields_rules = new Object();
     window.dynfields_rules[name] = this;
-}
+};
 
 
 /*

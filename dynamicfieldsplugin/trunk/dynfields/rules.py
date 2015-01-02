@@ -7,6 +7,7 @@
 #
 
 import re
+
 from trac.core import *
 from trac.perm import IPermissionGroupProvider, PermissionSystem
 
@@ -20,7 +21,7 @@ except ImportError:
     from genshi.builder import tag as tag_
     from trac.util.translation import gettext
     _ = gettext
-    def add_domain(a,b,c=None):
+    def add_domain(a, b, c=None):
         pass
 
 
@@ -293,7 +294,7 @@ class HideRule(Component, Rule):
 
         # try finding hide_always rule
         if key == "%s.hide_always" % target:
-            return 'type' # requires that 'type' field is enabled
+            return 'type'  # requires that 'type' field is enabled
         return None
 
     def update_spec(self, req, key, opts, spec):
@@ -308,7 +309,7 @@ class HideRule(Component, Rule):
             spec['trigger_value'] = opts[key]
             spec['hide_always'] = \
                 str(self._is_always_hidden(req, key, opts, spec)).lower()
-        else: # assume 'hide_always' or group rule
+        else:  # assume 'hide_always' or group rule
             spec['op'] = 'show'
             spec['trigger_value'] = 'invalid_value'
             spec['hide_always'] = 'true'
@@ -437,7 +438,7 @@ class SetRule(Component, Rule):
         return None
 
     def update_spec(self, req, key, opts, spec):
-        target,trigger = spec['target'], spec['trigger']
+        target, trigger = spec['target'], spec['trigger']
         spec_re = re.compile(r"%s.set_to_(?P<to>.*)_when_%s"
                              % (target, trigger))
         match = spec_re.match(key)

@@ -20,7 +20,7 @@ var Layout = function(name) {
     this.needs_own_row = function(field) {
         var fld = jQuery('#field-'+field);
         if (fld.length)
-            return (fld.get(0).tagName == 'TEXTAREA')
+            return (fld.get(0).tagName == 'TEXTAREA');
         return false;
     };
     

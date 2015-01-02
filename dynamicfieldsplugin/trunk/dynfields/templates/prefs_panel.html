@@ -39,11 +39,10 @@
           </label>
           <select py:if="pref['type'] == 'select'" name="${pref['id']}.value">
             <option py:for="option in pref['options']" value="${option}"
-                    selected="${(option==pref['value'] and 'selected') or None}">
-              $option
-            </option>
+                    selected="${(option==pref['value'] and 'selected') or None}">$option</option>
           </select>
-          <input py:if="pref['type'] == 'text'" type="text" name="${pref['id']}.value" value="${pref['value']}" size="20"/>
+          <input py:if="pref['type'] == 'text'" type="text" name="${pref['id']}.value"
+                 value="${pref['value']}" size="20" />
         </py:for>
       </div>
     </fieldset>
