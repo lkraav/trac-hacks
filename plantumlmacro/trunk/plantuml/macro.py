@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2010 Polar Technologies - www.polartech.es
 # Copyright (C) 2010 Alvaro J Iradier
-# Copyright (C) 2012 Ryan J Ollos
+# Copyright (C) 2012-2015 Ryan J Ollos
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -11,7 +11,7 @@
 import hashlib
 import os
 import re
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 from genshi.builder import tag
 from trac.config import Option
@@ -20,7 +20,7 @@ from trac.util.html import Markup
 from trac.util.translation import _
 from trac.versioncontrol.api import RepositoryManager
 from trac.web import IRequestHandler
-from trac.wiki.formatter import format_to_html, system_message
+from trac.wiki.formatter import system_message
 from trac.wiki.macros import WikiMacroBase
 
 img_dir = 'cache/plantuml'
@@ -90,7 +90,7 @@ class PlantUmlMacro(WikiMacroBase):
             args = None
 
         path = None
-        if not 'path' in args:  # Could be WikiProcessor or WikiMacro call
+        if 'path' not in args:  # Could be WikiProcessor or WikiMacro call
             if content.strip().startswith("@startuml"):
                 path = None
             else:
