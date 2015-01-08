@@ -80,7 +80,7 @@ class PlantUmlMacro(WikiMacroBase):
                                     "found at '%(path)s'",
                                     path=self.plantuml_jar))
         filename = os.path.basename(self.plantuml_jar)
-        if not os.path.splitext(filename)[1] == 'jar':
+        if not os.path.splitext(filename)[1] == '.jar':
             return system_message(_("'%(path)s' is not the path of a JAR "
                                     "file.", path=self.plantuml_jar))
         
