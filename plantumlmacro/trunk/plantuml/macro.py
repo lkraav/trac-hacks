@@ -79,6 +79,10 @@ class PlantUmlMacro(WikiMacroBase):
             return system_message(_("Installation error: plantuml.jar not "
                                     "found at '%(path)s'",
                                     path=self.plantuml_jar))
+        filename = os.path.basename(self.plantuml_jar)
+        if not os.path.splitext(filename)[1] == 'jar':
+            return system_message(_("'%(path)s' is not the path of a JAR "
+                                    "file.", path=self.plantuml_jar))
         
         # Trac 0.12 supports expand_macro(self, formatter, name, content,
         # args) which allows us to readily differentiate between a WikiProcess
