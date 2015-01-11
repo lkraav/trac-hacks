@@ -6,7 +6,7 @@
 # Copyright (C) 2007 Mike Comb <mcomb@mac.com>
 # Copyright (C) 2008 JaeWook Choi <http://trac-hacks.org/wiki/butterflow>
 # Copyright (C) 2008, 2009 W. Martin Borgert <debacle@debian.org>
-# Copyright (C) 2010-2014 Steffen Hoffmann <hoff.st@web.de>
+# Copyright (C) 2010-2015 Steffen Hoffmann <hoff.st@web.de>
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
@@ -40,6 +40,13 @@ try:
     from babel.dates import format_datetime, get_day_names
 except ImportError:
     has_babel = False
+    from trac.util import datefmt
+
+    def format_datetime(datetime=None, format='iso8601', tzinfo=None,
+                        locale=None):
+        return datefmt.format_datetime(datetime, format, tzinfo)
+
+
     def get_day_names(*args):
         """Cheap replacement for the identically named Babel function."""
         names = dict()
