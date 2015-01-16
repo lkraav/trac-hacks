@@ -16,7 +16,7 @@ class FewFixesWebModule(Component):
 
     def pre_process_request(self, req, handler):
         if isinstance(handler, QueryModule):
-            for name in ('order', 'max', 'report'):
+            for name in ('order', 'max', 'report', 'group'):
                 value = req.args.get(name)
                 if isinstance(value, (list, tuple)):
                     if len(value) > 0:
