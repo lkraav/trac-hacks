@@ -170,7 +170,7 @@ class TicketlogModule(Component):
             if self.supports_multirepos:
                 repos_name, rev, author, timestamp, message = row
                 repos = RepositoryManager(self.env).get_repository(repos_name)
-                rev = repos.normalize_rev(rev)
+                rev = repos.display_rev(rev)
             else:
                 repos_name = None
                 rev, author, timestamp, message = row
