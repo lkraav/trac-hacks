@@ -90,7 +90,7 @@ class TicketlogModule(Component):
                 continue
 
             repos = RepositoryManager(self.env).get_repository(repos_name)
-            rev = repos.normalize_rev(rev)
+            rev = repos.display_rev(rev)
             link = str(rev)
             if repos_name:
                 link += '/%s' % repos_name
