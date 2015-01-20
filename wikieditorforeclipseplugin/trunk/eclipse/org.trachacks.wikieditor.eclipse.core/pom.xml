@@ -4,7 +4,7 @@
   <parent>
     <artifactId>wikieditor4eclipse</artifactId>
     <groupId>org.trachacks.wikieditor</groupId>
-    <version>${project.version}</version>
+    <version>0.1.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -42,7 +42,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>wikieditor-core</artifactId>
             <version>${project.version}</version>
-            <!-- <version>0.1.0-SNAPSHOT</version> -->
+            <!-- <version>0.1.1-SNAPSHOT</version> -->
             </dependency>
     </dependencies>	  
 </project>

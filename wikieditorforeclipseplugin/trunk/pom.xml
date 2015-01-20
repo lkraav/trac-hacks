@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.trachacks.wikieditor</groupId>
 	<artifactId>wikieditor</artifactId>
-	<version>${project.version}</version>
+	<version>0.1.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Trac WikiEditor 4 Eclipse</name>
 	<url>http://trac-hacks.org/wiki/WikiEditorForEclipsePlugin</url>
@@ -23,8 +23,7 @@
 	</modules>
 
 	<properties>
-		<plugin.version>0.1.0</plugin.version>
-		<project.version>${plugin.version}-SNAPSHOT</project.version>
+        <plugin.version>0.1.1</plugin.version>
 		<project.svn.url>http://trac-hacks.org/svn/wikieditorforeclipseplugin</project.svn.url>
 		<project.svn.tag>trunk</project.svn.tag>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
