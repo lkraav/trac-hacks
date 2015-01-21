@@ -15,21 +15,7 @@ class RequiredFieldValidator(Component):
     """Basic ticket validator for required fields"""
     
     implements(ITicketManipulator)
-    
-    def _is_empty(self, value):
-        """Check if 'value' is empty.
-        
-        :param value: the value to check
-        :type value: object"""
-        
-        if value is None:
-            return True
-        
-        if len(value) == 0:
-            return True
-        
-        return False
-    
+
     def prepare_ticket(self, req, ticket, fields, actions):
         """Not currently called, but should be provided for future
         compatibility."""
@@ -45,7 +31,7 @@ class RequiredFieldValidator(Component):
         
         errors = [(field_name, '%s is required' % field_name) 
                   for field_name in required_fields 
-                  if self._is_empty(ticket[field_name])]
+                  if not ticket[field_name]]
         
         return errors
     
