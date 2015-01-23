@@ -12,15 +12,18 @@ from trac.core import Component, implements
 from trac.util.translation import _
 from trac.web.chrome import ITemplateProvider
 
+
 class TicketValidatorAdminPanelProvider(Component):
     """Provides an admin page for modifying validator settings."""
      
     implements(IAdminPanelProvider, ITemplateProvider)
 
     # IAdminPanelProvider methods
+
     def get_admin_panels(self, req):
         if req.perm.has_permission('TICKET_ADMIN'):
-            yield ('ticket', _('Ticket System'), 'validation', _('Ticket Validation'))
+            yield ('ticket', _("Ticket System"), 'validation',
+                   _("Ticket Validation"))
 
     def render_admin_panel(self, req, category, page, path_info):
         
@@ -55,7 +58,8 @@ class TicketValidatorAdminPanelProvider(Component):
         
         :param:req the request
         :type:req Request
-        :return: a list containing validator rules"""
+        :return: a list containing validator rules
+        """
         
         tmp = {}
         to_remove = []
@@ -110,7 +114,7 @@ class TicketValidatorAdminPanelProvider(Component):
         rules = self._get_rules(req)
         
         for rule in rules:
-            self.config.set('ticketvalidator', rule['name'] + '.required', rule['fields'])
+            self.config.set('ticketvalidator', rule['name'] + '.required',
+                            rule['fields'])
             
         self.config.save()
-

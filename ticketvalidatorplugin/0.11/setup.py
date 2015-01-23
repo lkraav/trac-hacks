@@ -11,22 +11,22 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = 'TicketValidator',
-    version = '0.2',
-    description = 'Ticket Validation',
-    author = 'Max Stewart',
-    author_email = 'max.e.stewart@gmail.com',
-    license = '3-Clause BSD',
-    url = 'http://trac-hacks.org/wiki/TicketValidatorPlugin',
+    name='TicketValidator',
+    version='0.2',
+    description='Ticket Validation',
+    author='Max Stewart',
+    author_email='max.e.stewart@gmail.com',
+    license='3-Clause BSD',
+    url='http://trac-hacks.org/wiki/TicketValidatorPlugin',
 
-    zip_safe = False,
+    zip_safe=False,
 
-    packages = find_packages(exclude=['*.tests*']),
-    package_data = {
+    packages=find_packages(exclude=['*.tests*']),
+    package_data={
         'ticketvalidator': ['templates/*.html']
     },
-    
-    entry_points = {
+
+    entry_points={
         'trac.plugins': [
             'ticketvalidator.admin = ticketvalidator.admin',
             'ticketvalidator.core = ticketvalidator.core',

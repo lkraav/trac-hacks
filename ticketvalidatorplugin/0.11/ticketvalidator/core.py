@@ -8,8 +8,8 @@
 #
 
 from trac.core import *
-from trac.ticket import ITicketManipulator
-from trac.ticket import TicketSystem
+from trac.ticket import ITicketManipulator, TicketSystem
+
 
 class RequiredFieldValidator(Component):
     """Basic ticket validator for required fields"""
@@ -45,15 +45,16 @@ class RequiredFieldValidator(Component):
         action_changes = {}
         
         for controller in self._get_action_controllers(req, ticket, action):
-            action_changes.update(controller.get_ticket_changes(req, ticket, action))
+            action_changes.update(controller.get_ticket_changes(req, ticket,
+                                                                action))
         
-        return 'status' in action_changes and action_changes['status'] or ticket['status']
+        return 'status' in action_changes \
+                and action_changes['status'] or ticket['status']
         
     def _get_action_controllers(self, req, ticket, action):
         
         for controller in TicketSystem(self.env).action_controllers:
-            actions = [action for weight, action in
-                       controller.get_ticket_actions(req, ticket)]
+            actions = [action for weight, action
+                       in controller.get_ticket_actions(req, ticket)]
             if action in actions:
                 yield controller
-
