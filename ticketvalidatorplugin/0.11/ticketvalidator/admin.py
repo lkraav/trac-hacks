@@ -23,7 +23,7 @@ class TicketValidatorAdminPanelProvider(Component):
     def get_admin_panels(self, req):
         if req.perm.has_permission('TICKET_ADMIN'):
             yield ('ticket', _("Ticket System"), 'validation',
-                   _("Ticket Validation"))
+                   _("Validation Rules"))
 
     def render_admin_panel(self, req, category, page, path_info):
         
