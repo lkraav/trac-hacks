@@ -22,7 +22,7 @@ class Checkbox(Component):
 
     #ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
-        if(filename == 'query.html'):
+        if filename == 'query.html':
             add_script(req, 'querystatushelper/js/enabler.js')
         return stream
 
