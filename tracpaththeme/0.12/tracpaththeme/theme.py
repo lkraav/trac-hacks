@@ -15,7 +15,10 @@ from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
                             add_stylesheet
 
-from themeengine.api import IThemeProvider
+try:
+    from themeengine.api import IThemeProvider
+except ImportError:
+    IThemeProvider = None
 
 
 __all__ = ['TracpathTheme']
@@ -33,7 +36,10 @@ else:
 
 class TracpathTheme(Component):
 
-    implements(IRequestFilter, ITemplateProvider, IThemeProvider)
+    if IThemeProvider:
+        implements(IRequestFilter, ITemplateProvider, IThemeProvider)
+    else:
+        implements(IRequestFilter, ITemplateProvider)
 
     css = False
     htdocs = True
