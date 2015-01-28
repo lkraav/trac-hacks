@@ -21,7 +21,7 @@
   function binder() {
     var $filters = $("#filters");
     $filters.on('dblclick', 'label', flip);
-    $filters.on('dblclick', ':checkbox', selectone);
+    $filters.on('dblclick', ':checkbox, :checkbox + label', selectone);
   }
 
   $(document).ready(function() { binder() })
