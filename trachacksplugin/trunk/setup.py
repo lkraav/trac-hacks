@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2005-2008 Alec Thomas
-# Copyright (C) 2009-2010 Michael Renzmann
+# Copyright (C) 2009-2015 Michael Renzmann <mrenzmann@otaku42.de>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -18,7 +18,7 @@ setup(
     maintainer='Michael Renzmann',
     maintainer_email='mrenzmann@otaku42.de',
     description='Customizations of the trac-hacks site.',
-    license='BSD 3-Clause',
+    license='3-Clause BSD',
     url='http://trac-hacks.org/wiki/TracHacksPlugin',
     packages=['trachacks'],
     package_data={
@@ -28,10 +28,10 @@ setup(
             ]
         },
     dependency_links=[
-        'http://trac-hacks.org/svn/tagsplugin/trunk#egg=TracTags-0.6',
-        'http://trac-hacks.org/svn/accountmanagerplugin/trunk#egg=TracAccountManager',
-        'http://trac-hacks.org/svn/voteplugin/0.11#egg=TracVote-0.1',
-        'http://trac-hacks.org:81/browser/svnauthzadminplugin/0.11#egg=SvnAuthzAdminPlugin',
+        'http://trac-hacks.org/svn/tagsplugin/trunk#egg=TracTags-0.7',
+        'http://trac-hacks.org/svn/accountmanagerplugin/trunk#egg=TracAccountManager-0.5dev',
+        'http://trac-hacks.org/svn/voteplugin/trunk#egg=TracVote-0.3dev',
+        'http://trac-hacks.org/svn/svnauthzadminplugin/0.12#egg=SvnAuthzAdminPlugin',
         ],
     entry_points={
         'trac.plugins': [
@@ -42,7 +42,7 @@ setup(
     install_requires=[
         'TracAccountManager',
         'TracTags >= 0.7',
-        'TracVote >= 0.1',
+        'TracVote >= 0.2',
         'SvnAuthzAdminPlugin',
         ],
     test_suite='trachacks.tests.test_suite',
