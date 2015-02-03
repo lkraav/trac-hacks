@@ -91,29 +91,31 @@ class TimeTrackingTicketObserver(Component):
     def __init__(self):
         pass
 
-    def watch_hours(self, ticket):
+    def watch_hours(self, ticket, author=None):
         ticket_id = ticket.id
         hours = convertfloat(ticket['hours'])
         change_time = ticket['changetime']
         # no hours, changed
         if hours == 0:
             return
-        self.log.debug("Checking permissions")
-        perm = PermissionCache(self.env, author)
-        if not perm or not perm.has_permission("TIME_RECORD"):
-            self.log.debug("Skipping recording because no permission to affect time")
 
-            
-            tup = (ticket_id, change_time, "hours")
-            self.log.debug("deleting ticket change %s %s %s %s" % tup)
-            try:
-                delete_ticket_change(self, ticket_id, change_time, "hours")
-            except Exception, e:
-                self.log.exception("FAIL: %s" % e)
-            self.log.debug("hours change deleted")
-            return
-        self.log.debug("passed permissions check")
-
+        # if we dont have an author just skip permissions check
+        # its probably not important as this is generated data
+        # and it was probably caused by someone with ticket admin modifying history
+        if author:
+            self.log.debug("Checking permissions")        
+            perm = PermissionCache(self.env, author)
+            if not perm or not perm.has_permission("TIME_RECORD"):
+                self.log.debug("Skipping recording because no permission to affect time")
+                tup = (ticket_id, change_time, "hours")
+                self.log.debug("deleting ticket change %s %s %s %s" % tup)
+                try:
+                    delete_ticket_change(self, ticket_id, change_time, "hours")
+                except Exception, e:
+                    self.log.exception("FAIL: %s" % e)
+                self.log.debug("hours change deleted")
+                return
+            self.log.debug("passed permissions check")
         @self.env.with_transaction()
         def fn(db):
             save_custom_field_value( db, ticket_id, "hours", '0')
@@ -122,8 +124,7 @@ class TimeTrackingTicketObserver(Component):
 
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
-        self.watch_hours(ticket)
-                               
+        self.watch_hours(ticket, ticket['reporter'])
 
     def ticket_changed(self, ticket, comment, author, old_values):
         """Called when a ticket is modified.
@@ -131,6 +132,10 @@ class TimeTrackingTicketObserver(Component):
         `old_values` is a dictionary containing the previous values of the
         fields that have changed.
         """
+        self.watch_hours(ticket, author)
+
+    def ticket_change_deleted(ticket, cdate, changes):
+        """called when a ticket change is deleted"""
         self.watch_hours(ticket)
 
     def ticket_deleted(self, ticket):
