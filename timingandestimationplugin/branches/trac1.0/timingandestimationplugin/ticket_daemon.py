@@ -47,7 +47,6 @@ def update_totalhours_custom( db, ticket_id):
                        (ticket_id,ticket_id))
 
 def insert_totalhours_changes( db, ticket_id):
-    cursor = db.cursor()
     sumSql = """
        INSERT INTO ticket_change (ticket, author, time, field, oldvalue, newvalue)
        SELECT ticket, author, time, 'totalhours',  
@@ -72,7 +71,8 @@ def insert_totalhours_changes( db, ticket_id):
                               AND guts.time=ticket_change.time
                               AND field='totalhours')
     """
-        cursor.execute(sql, (ticket_id))
+    cursor = db.cursor()
+    cursor.execute(sql, (ticket_id,))
 
 
 class TimeTrackingTicketObserver(Component):
@@ -87,7 +87,6 @@ class TimeTrackingTicketObserver(Component):
             save_custom_field_value( db, ticket_id, "hours", '0')
             insert_totalhours_changes( db, ticket_id )
             update_totalhours_custom ( db, ticket_id )
-
 
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
