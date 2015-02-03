@@ -47,7 +47,7 @@ def update_totalhours_custom( db, ticket_id):
                        (ticket_id,ticket_id))
 
 def insert_totalhours_changes( db, ticket_id):
-    sumSql = """
+    sql = """
        INSERT INTO ticket_change (ticket, author, time, field, oldvalue, newvalue)
        SELECT ticket, author, time, 'totalhours',  
                (SELECT SUM( CASE WHEN newvalue = '' OR newvalue IS NULL THEN 0
