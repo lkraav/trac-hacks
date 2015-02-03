@@ -93,6 +93,8 @@ class TimeTrackingTicketObserver(Component):
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
         hours = convertfloat(ticket['hours'])
+        self.watch_hours(ticket) # clears the hours
+        #makes the hours a ticket change like all the other hours records
         if hours > 0:
             ticket['hours']=str(hours);
             ticket.save_changes(ticket['reporter'])

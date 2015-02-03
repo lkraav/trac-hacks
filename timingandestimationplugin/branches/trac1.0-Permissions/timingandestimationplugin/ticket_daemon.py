@@ -124,7 +124,11 @@ class TimeTrackingTicketObserver(Component):
 
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
-        self.watch_hours(ticket, ticket['reporter'])
+        hours = convertfloat(ticket['hours'])
+        self.watch_hours(ticket, ticket['reporter']) # clears the hours
+        if hours > 0:
+            ticket['hours']=str(hours);
+            ticket.save_changes(ticket['reporter'])
 
     def ticket_changed(self, ticket, comment, author, old_values):
         """Called when a ticket is modified.
