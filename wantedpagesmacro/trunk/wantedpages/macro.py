@@ -219,7 +219,11 @@ class WantedPagesMacro(WikiMacroBase):
     def get_wiki_pages(self, ignored_referrers = None):
         page_texts = [] # list of referrer link, wiki-able text tuples
         page_names = [] # list of wikiPages seen
-        db = self.env.get_db_cnx()
+        # get_db_cnx is only available up to Trac 0.12
+        try:
+            db = self.env.get_db_cnx()
+        except AttributeError:
+            db = self.env.get_read_db()
 
         # query is ordered by latest version first
         # so it's easy to extract the latest pages
