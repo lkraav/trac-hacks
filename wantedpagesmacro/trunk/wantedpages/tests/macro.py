@@ -52,6 +52,7 @@ MACRO_TEST_CASE = u"""
 </td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro" rel="nofollow">NonExistingMacro?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro(MyMacroParam)" rel="nofollow">NonExistingMacro(MyMacroParam)?</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage" rel="nofollow">XantedLinksTestPage?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/CoinCoin" rel="nofollow">CoinCoin?</a>
 </td></tr></table>
 <p>
 </p>
@@ -136,6 +137,15 @@ IL http://c2.com/cgi/wiki?WikiHistory   ignore Camelcase parameter
 == Ignore Camelcase display names:
 IL/IL [wiki:WantedLinksTestPage WantedLinksTestPage] existing page
 WP/IL [wiki:XantedLinksTestPage XantedLinksTestPage] non-existing page
+
+== Ignore !InterMapText and !InterTrac syntax ==
+IL CoinCoin:wiki     !InterMapText
+WP CoinCoin          not !InterMapText
+IL #T234             !InterTrac
+IL [trac 1508]       !InterTrac
+
+== Complex paths ==
+WP this/is/a/valid/wiki/link
 
 == Ignore everything inside (nested) blocks:
 {{{
