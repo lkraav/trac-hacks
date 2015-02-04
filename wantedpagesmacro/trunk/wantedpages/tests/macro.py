@@ -106,6 +106,9 @@ WP wiki:also-a-wiki-page
 WP [wiki:'some page 3']
 WP [wiki:"some page 4"]
 
+== Ignore (wiki page) attachments ==
+IL attachment:wiki:MyPage:the_file.txt
+
 == Also check some existing pages:
 IL wiki:WantedLinksTestPage?format=txt existing page
 WP wiki:XantedLinksTestPage?format=txt non-existing page
