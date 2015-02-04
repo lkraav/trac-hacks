@@ -174,7 +174,11 @@ class WantedPagesMacro(WikiMacroBase):
         self.page_names, self.page_texts = \
             self.get_wiki_pages(_ignored_referrers)
         _ml_parser = MissingLinksHTMLParser()
-        _missing_links = OrderedDict()
+        # only need OrderedDict for test cases, but was added in Python 2.7
+        try:
+            _missing_links = OrderedDict()
+        except:
+            _missing_links = dict()
 
         for _name, _text in zip(self.page_names, self.page_texts):
             # set up context for relative links
