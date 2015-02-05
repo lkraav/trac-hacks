@@ -64,19 +64,24 @@ sudo apt-get install python-svn
     __double = []
 
     # Configuration options
-    _repository = Option("translationmanager", "SVN-repository", "/Legato")
+    # Subversion options
+    _repository = Option("translationmanager", "svn_repository", "/Legato")
     _checkout = Option(
-        "translationmanager", "Checkout_origin", "http://av-devdata-test/svn")
-    _prop_dest = ListOption("translationmanager", "properties_origin", [
-                            "/WebApp/trunk/web/uploads/reports/birt", "/WebApp/trunk/src/de/gefasoft/legato/webapp"])
-    _dest_desc = ListOption(
-        "translationmanager", "destination_description", ["birt", "webapp"])
-    _checkout_folder = ListOption("translationmanager", "checkout_folder", [
-                                  "/var/local/transman/checkout_birt", "/var/local/transman/checkout"])
-    _svn_register = Option("translationmanager", "SVN-username", "barstr")
-    _svn_password = Option("translationmanager", "SVN-password", "bar#str")
-    _comment = Option(
-        "translationmanager", "auto-comment", "{function} von Trac Translationmanager")
+        "translationmanager", "svn_url", "http://av-devdata-test/svn")
+    _svn_register = Option("translationmanager", "svn_username", "barstr")
+    _svn_password = Option("translationmanager", "svn_password", "bar#str")
+    _comment = Option("translationmanager", "default_comment",
+                      "{function} von Trac Translationmanager")
+
+    # options for translation file destination
+    _prop_dest = ListOption("translationmanager", "destination_folders",
+                            "/WebApp/trunk/web/uploads/reports/birt, \
+                            /WebApp/trunk/src/de/gefasoft/legato/webapp")
+    _dest_desc = ListOption("translationmanager", "destination_descriptions",
+                            "Birt, Webapp")
+    _checkout_folder = ListOption("translationmanager", "checkout_folder",
+                                  "/var/local/transman/checkout_birt, \
+                                  /var/local/transman/checkout")
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -113,7 +118,9 @@ sudo apt-get install python-svn
         self.log.info("up: %s" % self.__up)
 
         # Hintergrund bleibt, Import_dialog wird ausgefuehrt
-        if req.args.has_key("Datei") and req.path_info != "/transmgr/import-export.html" and req.path_info != "/transmgr/extra.html":
+        if req.args.has_key("Datei")\
+                and req.path_info != "/transmgr/import-export.html" \
+                and req.path_info != "/transmgr/extra.html":
             upload = req.args["Datei"]
             upload_content = []
             try:
@@ -148,6 +155,7 @@ sudo apt-get install python-svn
             whole_dest.append(self._prop_dest[a])
             whole_dest.append(self._checkout_folder[a])
             whole_dest.append(self._repository)
+            # TODO: refactor, since it is not loaded when changed
             self.__dest_dict[self._dest_desc[a]] = whole_dest
 
         if req.path_info == "/transmgr":
@@ -316,10 +324,6 @@ sudo apt-get install python-svn
                                     # da komplett mit erster Zeile eingelesen
                                     # -> erste zeile gelöscht
                                     del dict_help["Key"]
-        #                         dict_help_help = {}
-        #                         for a in dict_help:
-        # if a not in dict_help_help:                     #drin lassen? Evtl wichtig für Herkunftsort, wohin es geschrieben werden soll...
-        # dict_help_help[a] = dict_help[a]#.decode("utf8")
                                 # bleibt noch drinnen für double, darf deswegen
                                 # nicht umbenannt werden
                                 if zeilen[i][0] == "dups":
@@ -357,13 +361,6 @@ sudo apt-get install python-svn
                         # svn
                         self.__propdict = self.update_with_svn(
                             self.__propdict_import, nodes, Sprachen_im)
-#                         self.__keys, propdict_svn = self.readout_all_info(nodes, Sprachen_im)
-#                         for a in self.__propdict_import:
-#                             if a in propdict_svn:
-# propdict_svn[a].update(self.__propdict_import[a])                                     # ist none -> nicht mit = mit etwas verbinden
-#                             else:
-#                                 propdict_svn.update(self.__propdict_import)
-#                         self.__propdict = propdict_svn
                         keys_exist = []
                         keys_new = []
                         keys_no_value = []
@@ -404,8 +401,8 @@ sudo apt-get install python-svn
 
                         # Speicherort:
                         for a in range(1, len(zeilen[0])):
-                            #                         origin = re.search("(\w+\..*$)", zeilen[0][a])
-                            #                         Herkunft[zeilen[index_key][a]] = origin.group()
+                            # origin = re.search("(\w+\..*$)", zeilen[0][a])
+                            # Herkunft[zeilen[index_key][a]] = origin.group()
                             help_zeile = zeilen[0][a]
                             Herkunft[zeilen[index_key][a]] = help_zeile
 
@@ -523,11 +520,6 @@ sudo apt-get install python-svn
                     # Schreiben in dem Zielordner haben..
                     self.__target_folder = self.__dest_dict[path][1]
 
-    #                 if os.path.exists(self.__target_folder):
-    #                     client.update(self.__target_folder)
-    #                 else:
-    #                     client.checkout(path, self.__target_folder)
-
                     if Permissions.checkPermissionsView(self, req):
                         # von tm-start kommend
                         if req.args.has_key("start_to_main"):
@@ -539,16 +531,6 @@ sudo apt-get install python-svn
                                 Sprache.append(req.args["Sprache"])
                             else:
                                 Sprache = req.args["Sprache"]
-
-#                             if "double" in req.args["see"]:
-#                                 if isinstance(req.args["double"], basestring):
-#                                     if req.args["double"] not in Sprache:
-#                                         Sprache.append(req.args["double"])
-#                                 else:
-#                                     for a in req.args["double"]:
-#                                         if a not in Sprache:
-#                                             Sprache.append(a)
-#                             req.session["Sprache"] = Sprache
 
                             # keys von allen in nodes, propdict nur für Sprache
                             self.__keys, self.__propdict = self.readout_all_info(
@@ -968,10 +950,6 @@ sudo apt-get install python-svn
         for a in range(0, len(content)):
             if isinstance(seperator, basestring):
                 dict_all[a] = re.split(seperator, content[a])
-#             else:
-#                 for i in seperator:
-#                     seperatoren.append(seperator[i])
-#                     dict_all[a] = re.split("["seperator[i]"]", content[a])
         dict_all_neu = {}
         for a in dict_all:  # a ist Zahl, value ist liste
             new_list = []
