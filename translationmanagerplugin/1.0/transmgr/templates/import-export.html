@@ -1,0 +1,82 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain = "transmgr">
+  <xi:include href="layout.html" />
+<!--   <meta charset="UTF-8"></meta> -->
+		<div id="wait">
+			<p style="font-size:175%; margin:auto; vertical-align:middle; text-align: center">Bitte Warten</p>
+		</div>
+		<div id="durchsuchen">
+			<form action="" method="post" enctype="multipart/form-data" >
+				W&auml;hlen Sie die Datei, die importiert werden soll:<br/>
+					<input type="file" name="Datei" id="Datei"/><br/>
+				Wählen Sie den Herkunftsort Ihrer Übersetzungen:<br/>
+				<input py:for="a in dest_dict" type="radio" id="${dest_dict[a]}" name="ort" value="${a}" checked="${a == 'Birt-Report' or None}"> 
+				<label for="${dest_dict[a]}">${a}</label>
+				</input>
+			</form>
+		</div>
+		
+		<div id="import_dialog" title="Import Dialog" style="white-space:nowrap; overflow:hidden">
+		<form action="" method="get">
+		<input type="hidden" id="up" value="${up}"/>
+		<p>Ursprungskodierung:
+			<select name="coding" size="1">
+				<option> Unicode (UTF8) </option>
+			</select>
+		<input type="hidden" name="start_import" value="1"></input>
+		<br/>
+		Trennzeichen:
+<!-- 			<input id="seperator" name="seperator" value="	" type="checkbox" /> Tabstopp -->
+			<input id="seperator;" name="seperator" value=";" type="radio" checked="checked"/><label for="seperator;">Semikolon</label> 
+			<input id="seperator," name="seperator" value="," type="radio" /> <label for="seperator,">Komma</label>
+			<input id="seperator" name="seperator" value=" " type="radio" /> <label for="seperator">Leerzeichen</label>
+			<input id="seperator-tabstopp" name="seperator" value="\t" type="radio" /> <label for="seperator-tabstopp">Tabstopp</label>
+		<br/>
+		Textqualifizierer:
+			<input id="hochkomma" name="qualifier" value="hochkomma" type="radio" /><label for="hochkomma"> Hochkomma</label>
+			<input id="double" name="qualifier" value="double" type="radio" /> <label for="double">doppeltes Hochkomma</label>
+			<input id="no" name="qualifier" value="no" type="radio" checked="checked"/><label for="no"> keine</label>
+		<br/>
+		Anzeigen nach Import:
+			<input id="all" name="showing" value="all" type="radio" /> <label for="all">Alle anzeigen</label>
+			<input id="new" name="showing" value="new" type="radio" checked="checked"/><label for="new"> Nur neu importierte</label>
+		</p>
+		</form>
+		<div>
+			Datenvorschau:
+			<py:if test="len(upload_content) >= 2">
+			<div style="outline-width:thin; outline-style:solid; padding:5px; width:95%; overflow:hidden">
+			<span py:if="up=='durchsuchen'" py:for="a in range(0,3)">${upload_content[a]} <br/></span>
+			</div>
+			</py:if>
+		</div>
+		</div>
+		
+		<div id="import_dialog2" title="Import Assistent">
+		<input type="hidden" id="up" value="${up}"/>
+		<form action="${href.transmgr('tm-main.html')}" method="post">
+			<input type="hidden" name="ready" value="upload_ready"/>
+			<input type="hidden" name="lang" value="dups" />
+			<p>Wenn alles richtig dargestellt wird, dr&uuml;cken Sie auf "Import". Wenn nicht, auf "Zur&uuml;ck".<br/>
+			Welche Spalten sollen dargestellt/importiert werden?
+			<fieldset style="margin:0; padding:0">
+			<legend>Datenvorschau</legend>
+			<table class="listing tickets" style="width:98%; margin:auto">
+				<tr py:if="0 in dict_all_neu">
+					<th py:for="i in range(len(dict_all_neu[0]))"><input py:if="i > 1" type="radio" name="lang" value="${dict_all_neu[0][i]}"></input></th>
+				</tr>
+				<tr py:for="a in dict_all_neu">
+					<td py:for="i in dict_all_neu[a]">${i}</td>
+				</tr>
+			</table>
+			</fieldset>
+			</p>
+		</form>
+		</div>
+</html>

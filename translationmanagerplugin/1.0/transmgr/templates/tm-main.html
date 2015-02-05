@@ -1,0 +1,89 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain = "transmgr">
+  <xi:include href="layout.html" />
+  <head>
+<!--   <meta charset="UTF-8"></meta> -->
+    <title>Translationmanager-Plugin</title>
+  </head>
+  <body>
+  <h1>Translationmanager</h1>
+  <h2>Herkunft der Übersetzungen: ${origin}</h2>
+	<div>
+		<input py:if="'import' in perm" type="button" id="import-button" name="Import" value="Import"/>
+		<input py:if="'export' in perm" type="button" id="export-button" name="Export" value="Export"/>
+	</div>
+	<br></br>
+	<div id="Einchecken">
+	<form action="${href.transmgr('tm-main.html')}" method="post">
+	<input type="hidden" id="comment_form" name="comment" value=""/>
+		<div>
+			<input type="button" id="add_lang" value="Sprache hinzufügen" disabled="${main == 'Import' or None}"/>
+			<input type="button" id="del_lang" value="Sprache löschen" disabled="${main == 'Import' or None}"/>
+			<input type="button" id="add_filter" value="Filter hinzufügen" disabled="${main == 'Import' or None}"/>
+			<input type="button" id="searching" value="Suchen" disabled="${main == 'Import' or None}"/>
+			<input type="button" id="checkin" name="main_to_main" value="Einchecken" disabled="${main != 'Import' or None}"/>
+			<input type="hidden" name="main_to_main" value="Einchecken"></input>
+			<div>
+			<table class="listing tickets">
+				<thead>
+					<tr id="head">
+						<th width="${percent}%">keys</th>
+<!-- 						<py:if test="isinstance(Sprache, basestring)">
+							<th>${lang_dict[Sprache]}</th>
+						</py:if> -->
+						<th width="${percent}%" py:for="i in propdict" id="${i}">${lang_dict[i]}</th>
+						<th py:if="len(double) != 0" title="Double: Übereinstimmung der Sprachen untereinander">d</th>
+						<th py:if="len(fuzzy) != 0" title="Fuzzy: Deutsch wurde geändert, entsprechende Sprachen nicht">f</th>
+						<th py:if="len(read) != 0" title="Read only: Nicht editierbar!">r</th>
+<!-- 						<th>Info</th> -->
+					</tr>
+				</thead>
+				<tbody>
+					<tr py:for="a in sorted(key_list)">
+						<td>${a}</td>
+						<py:if test="(main != 'Import')">
+							<py:if test="(not req.args.has_key('ready')) and (a not in read)">
+								<py:if test="('edit' in perm)">
+									<td py:for="i in propdict" style="padding-top:0; padding-bottom:0;">
+									<input type="text" value="${propdict[i][a]}" style="width:94%; margin-top:0; margin-bottom:0; border:none;" id="input_values" onchange="namen(this, '${a}')"/>
+									</td>
+								</py:if>
+							</py:if>
+						</py:if>
+						<py:if test="((main == 'Import') or req.args.has_key('ready')) and (a not in read)">
+							<td py:for="i in propdict">
+							<input type="hidden" name="${a}_from_${i}" value="${propdict[i][a]}"/>
+							${propdict[i][a]}
+							</td>
+						</py:if>
+						<py:if test="(len(perm) == 1 and 'view' in perm) or (a in read)">
+							<td py:for="i in propdict">
+							${propdict[i][a]}
+							</td>
+						</py:if>
+						<td py:if="len(double) != 0" title="Double: Übereinstimmung der Sprachen untereinander"><py:if test="a in double">d</py:if></td>
+<!-- 						<td py:if="len(double) != 0" title="Double: Übereinstimmung der Sprachen untereinander"><input type="checkbox" checked="${a in double or None}" disabled="${'edit' not in perm or None}"/></td> -->
+						<td py:if="len(fuzzy) != 0" title="Fuzzy: Deutsch wurde geändert, entsprechende Sprachen nicht"><py:if test="a in fuzzy">f</py:if></td>
+						<td py:if="len(read) != 0" title="Read only: Nicht editierbar!"><py:if test="a in read">r</py:if></td>
+<!-- 						<td py:if="len(read) != 0" title="Read only: Nicht editierbar!"><input type="checkbox" checked="${a in read or None}" disabled="disabled"/></td> -->
+					</tr>
+
+				</tbody>
+			</table>
+			</div>		
+		</div>
+	</form>
+	</div>
+		<div id="import">
+		</div>
+		<div id="extra">
+		</div>
+	<br></br>
+  </body>
+</html>

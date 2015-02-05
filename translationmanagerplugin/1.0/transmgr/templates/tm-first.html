@@ -1,0 +1,35 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+  <xi:include href="layout.html" />
+  <head>
+    <title>Translationmanager-Plugin</title>
+  </head>
+  <body>
+  <h1>Translationmanager</h1>
+ 
+	<div>
+		<input py:if="'import' in perm" type="button" id="import-button" name="Import" value="Import"/>
+<!-- 		<input type="button" id="export-button" name="Export" value="Export"/> -->
+	</div>
+	<a href="bsp.gif" type="image/gif"></a>
+	<br></br>
+	<form action="${href.transmgr('tm-start.html')}" method="post">
+	<div style="outline-width:medium; outline-style:solid; padding:10px; width:350px" >
+			Wählen Sie den Herkunftsort Ihrer Übersetzungen: <p></p>			
+				<input py:for="a in dest_dict" type="radio" id="${dest_dict[a]}" name="ort" value="${a}" checked="${a == 'Birt-Report' or None}"> 
+				<label for="${dest_dict[a]}">${a}</label>
+				</input>
+	
+	<div align="right"><input type="submit" name="first_to_start" value="Weiter" /></div>
+	</div>
+	</form>
+	<br></br>
+	<div id="import">
+	</div>
+  </body>
+</html>

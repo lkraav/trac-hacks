@@ -1,0 +1,223 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain = "transmgr">
+  <xi:include href="layout.html" />
+  <meta charset="UTF-8"></meta>
+		<div id="export_dialog" title="Export Assistent">
+		<form action="">
+		<input type="hidden" name="download" value="export"></input>
+			Alles was Ihnen im Hintergrund angezeigt wird, wird auch exportiert! <br/>
+			Wollen Sie wirklich exportieren?
+			<!-- Ihre ausgewählten Sprachen zum exportieren:
+			<table border="1" border-collapse="collapse" border-spacing="0">
+				<tr>
+					<th py:for="i in propdict">
+						${lang_dict[i]}
+					</th>
+				</tr>
+				<tr py:for="a in keys_short">
+					<td py:for="i in propdict">
+						${propdict[i][a]}
+					</td>
+				</tr>
+			</table> -->
+		</form>
+		</div>
+	<br></br>
+		<div id="add">
+			<form action="${href.transmgr('tm-main.html')}" method="post">
+			<input  type="hidden" name="add_lang" value="add_lang"/>
+				Welche Sprachen wollen Sie hinzufügen?
+				<br></br>
+				<span>
+				<span>
+					<select name="Sprache" size="1">
+						<option py:for="key, a in sorted(lang_dict.iteritems(), key=lambda(k,v):(v,k))" 
+						py:if="key not in Sprachen" value="${key}" selected="${a == 'Deutsch' or None}">
+							${a}
+						</option>
+					</select>
+				</span>
+					<input type="button" name="add" value="+" onclick="addingLang(this); quantity();"></input>
+					<input type="button" name="del" value="-" onclick="delLang(this); quantity();" disabled="disabled"></input>
+				</span>
+			</form>
+		</div>
+		<br></br>
+		<div id="delete" py:if="len(Sprachen) > 0">
+		Welche Sprachen wollen Sie entfernen?
+			<form action="${href.transmgr('tm-main.html')}" method="post">
+			<input  type="hidden" name="del_lang" value="del_lang"/>
+			<span>
+				<span>
+					<select name="Sprache" size="1">
+						<option py:for="key, a in sorted(lang_dict.iteritems(), key=lambda(k,v):(v,k))" 
+						py:if="key in Sprachen" value="${key}" selected="${a == 'Deutsch' or None}">
+							${a}
+						</option>
+					</select>
+				</span>
+				<input type="button" name="add" value="+" onclick="addingLang(this); quantity();"></input>
+				<input type="button" name="del" value="-" onclick="delLang(this); quantity();" disabled="disabled"></input>
+			</span>
+			</form>
+		</div>
+	<br></br>
+		<div id="filter" title="Filtereinstellungen">
+			<form action="${href.transmgr('tm-main.html')}" method="post">
+			Alle Optionen werden nur auf die schon angezeigten Keys angewendet. <br />
+			<input type="hidden" name="filter" value="filter"></input>
+				<input id="filter_all" type="radio" name="see" value="all" tabindex="3"/><label for="filter_all"> Alle Einträge der ausgewählten Sprachen anzeigen</label><br />
+				<input id="translate" type="radio" name="see" value="translate" checked="checked" tabindex="1"/><label for="translate"> Nur Einträge anzeigen, die übersetzt werden müssen(editierbar und leer oder mehrfach)</label><br/>
+				<input id="own" type="radio" name="see" value="own" tabindex="2"/><label for="own">Eigene Einstellungen:</label>
+				<div id="own_setting" style="margin-left:30px" >
+					<li>Einträge bei denen die Übersetzung mit Übersetzungen anderer Sprachen übereinstimmt: <br />
+						<input id="often_ignore" type="radio" name="often" value="ignore"/><label for="often_ignore">Ignorieren </label>
+						<input id="often_show" type="radio" name="often" value="show" checked="checked"/><label for="often_show">Anzeigen</label><br />
+						<!-- Vergleich untereinander und mit folgenden Sprachen: <br></br>
+						<span>
+						<span>
+							<select name="compare_Sprache" size="1">
+								<option py:for="key, a in sorted(lang_dict.iteritems(), key=lambda(k,v):(v,k))" 
+								value="${key}" selected="${a == 'Deutsch' or None}">
+									${a}
+								</option>
+							</select>
+						</span>
+							<input type="button" name="add" value="+" onclick="addingLang(this); quantity();"></input>
+							<input type="button" id="filter_del" name="del" value="-" onclick="delLang(this); quantity()" disabled="disabled"></input>
+						</span> -->
+					</li>
+					<li>Keys ohne Value:
+						<input id="without_ignore" type="radio" name="without" value="ignore"/><label for="without_ignore">Ignorieren</label>
+						<input id="without_show" type="radio" name="without" value="show" checked="checked"/><label for="without_show">Anzeigen</label>
+					</li>
+					<li>Nicht editierbare Einträge:
+						<input id="not_edit_ignore" type="radio" name="not_edit" value="ignore" checked="checked"/><label for="not_edit_ignore">Ignorieren</label>
+						<input id="not_edit_show" type="radio" name="not_edit" value="show" /><label for="not_edit_show"> Anzeigen</label>
+					</li>
+				</div>
+			</form>
+		</div>
+	<br></br>
+		<div id="search1" title="Suchen">
+			<form action="${href.transmgr('tm-main.html')}" method="post">
+			<input type="hidden" name="search" value="search"></input>
+				<input type="text" size="40" name="search_field" value="Suchfeld" style="color:gray" onclick="if(this.value=='Suchfeld') this.value=''; this.style.color='black'"></input> <br/>
+				Nach was soll gesucht werden: <br/>
+				<input type="checkbox" id="Value" name="what" value="Value" checked="checked"><label for="Value">Value</label></input>
+				<input type="checkbox" id="Key" name="what" value="Key"><label for="Key">Key</label></input>
+<!-- 				<input type="checkbox" id="Description" name="what" value="Description"><label for="Description">Description</label></input>  --><br/>
+				<input type="radio" id="whole" name="much" value="whole" checked="checked"><label for="whole">ganzes Wort</label></input>
+				<input type="radio" id="part" name="much" value="part"><label for="part">Wortteil</label></input><br/>
+				<input type="checkbox" id="case_sensitive" name="case_sensitive" value="True"><label for="case_sensitive">Groß- und Kleinschreibung beachten</label></input>
+			</form>
+			
+		</div>
+	<br></br>
+		<div id="check-in" title="Einchecken">
+		<form action="" method="post">
+			<input type="hidden" id="user_name" name="user" value="(${user})"></input>
+			Eingecheckt werden nur die Sprachen mit Änderung
+				<fieldset style="margin:0; padding:0">
+				<legend>AutoComment:</legend>
+				<textarea name="comment" rows="2" cols="40" id="comment_check" style="width:98%; height:50px">${comment}</textarea>
+				</fieldset>
+		</form>
+		</div>
+	<br></br>
+		<div id="warning_exist" title="Warnung">
+			<form action="" method="post">
+				<input type="hidden" name="warning" value="warning_exist" />
+				<input type="hidden" name="warning_exist" value="warning_exist" />
+				<input type="hidden" id="error_exist" value="${error}" />
+				<input type="hidden" name="exist" value="first" />
+				Sie wollen Keys importieren, die in einer oder mehreren Sprachen schon einen Wert zugewiesen haben. <br/>
+				Für ausgewählte Keys werden die alten Werte überschrieben!
+				<fieldset style="margin:0; padding:0">
+					<legend>Liste der Keys</legend>
+					<div style="overflow:auto; height:130px">
+					<table class="listing tickets" style="width:98%; margin:auto">
+						<thead>
+							<th><input id="all_checked" type="checkbox">Key</input></th>
+							<th>neuer Wert</th>
+							<th>alter Wert</th>
+						</thead>
+						<tbody>
+							<tr py:for="a in error_dict['warning_exist']">
+								<td width="33%">
+									<input type="checkbox" name="warning_exist" value="${a}">${a}</input>
+								</td>
+								<td width="33%">${propdict[Sprachen[0]][a]}</td>
+								<td width="33%">${prop_svn[Sprachen[0]][a]}</td>
+							</tr>
+						</tbody>
+					</table>
+					</div>
+				</fieldset>
+			</form>
+		</div>
+	<br></br>
+		<div id="warning_new" title="Warnung: neue Keys importieren?">
+			<form action="" method="post">
+				<input type="hidden" name="warning" value="warning_new" />
+				<input type="hidden" name="warning_new" value="warning_new" />
+				<input type="hidden" id="error_new" value="${error}" />
+				<input type="hidden" name="exist" value="second" />
+				Sie wollen Keys importieren, die in einer oder mehreren Sprachen noch keinen Wert zugewiesen haben. <br/>
+				Für ausgewählte Keys werden die alten Werte überschrieben!
+				<fieldset style="margin:0; padding:0">
+					<legend>Liste der Keys</legend>
+					<div style="overflow:auto; height:130px">
+					<table class="listing tickets" style="width:98%; margin:auto">
+						<thead>
+							<th><input id="all_checked" type="checkbox">Key</input></th>
+							<th>Wert</th>
+						</thead>
+						<tbody>
+							<tr py:for="a in error_dict['warning_new']">
+								<td>
+									<input type="checkbox" name="warning_new" value="${a}">${a}</input>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					</div>
+				</fieldset>
+			</form>
+		</div>
+	<br></br>
+		<div id="warning_no_value" title="Warnung: Keys ohne Wert importieren?">
+			<form action="" method="post">
+				<input type="hidden" name="warning" value="warning_no_value" />
+				<input type="hidden" name="warning_no_value" value="warning_no_value" />
+				<input type="hidden" id="error_no_value" value="${error}" />
+				<input type="hidden" name="exist" value="third" />
+				Sie wollen Keys importieren, die in einer oder mehreren Sprachen noch keinen Wert zugewiesen haben. <br/>
+				Für ausgewählte Keys werden die alten Werte überschrieben!
+				<fieldset style="margin:0; padding:0">
+					<legend>Liste der Keys</legend>
+					<div style="overflow:auto; height:130px">
+					<table class="listing tickets" style="width:98%; margin:auto">
+						<thead>
+							<th><input id="all_checked" type="checkbox">Key</input></th>
+							<th>Wert</th>
+						</thead>
+						<tbody>
+							<tr py:for="a in error_dict['warning_no_value']">
+								<td>
+									<input type="checkbox" name="warning_no_value" value="${a}">${a}</input>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					</div>
+				</fieldset>
+			</form>
+		</div>
+</html>

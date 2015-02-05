@@ -1,0 +1,47 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain = "transmgr">
+  <xi:include href="layout.html" />
+  <head>
+    <title>Translationmanager-Plugin</title>
+  </head>
+  <body>
+  <h1>Translationmanager</h1>
+	<div>
+		<input py:if="'import' in perm" type="button" id="import-button" name="Import" value="Import"/>
+<!-- 		<input type="button" id="export-button" name="Export" value="Export"/> -->
+	</div>
+	<br></br>
+	<form action="${href.transmgr('tm-main.html')}" method="post">
+	<div style="outline-width:medium; outline-style:solid; padding:10px; width:700px" >
+		Ohne eine Auswahl werden Ihnen alle existierenden Keys mit zugehörigem deutschen Value angezeigt.<br/>
+			Angezeigte Sprachen:
+				<span>
+				<span>
+					<select name="Sprache" size="1">
+						<option py:for="key, a in sorted(lang_dict.iteritems(), key=lambda(k,v):(v,k))" value="${key}" selected="${a == 'Deutsch' or None}">
+							${a}
+						</option>
+					</select>
+				</span>
+				<input type="button" name="add" value="+" onclick="addingLang(this); quantity();"></input>
+				<input type="button" name="del" value="-" onclick="delLang(this); quantity();" disabled="disabled"></input>
+				</span>
+				<br />
+			Einstellungen welche Einträge angezeigt werden sollen (Kann jederzeit unter Filter geändert werden):<br />
+				<input type="checkbox" name="see" id="all" value="all" checked="checked" onclick="allCheck()"/><label for="all">Alle Einträge anzeigen</label><br/>
+				<input type="checkbox" name="see" id="no_value" value="no_value" onclick="check()"/><label for="no_value">Einträge anzeigen, die in einer der ausgewählten Sprachen kein Value besitzt</label><br/>
+				<input type="checkbox" name="see" id="own" value="double" onclick="check()"/><label for="own">Einträge anzeigen, deren Values untereinander übereinstimmen:</label> <br />
+	<div align="right"><input type="submit" name="start_to_main" value="Speichern" /></div>
+	</div>
+	</form>
+	<br></br>
+	<div id="import">
+	</div>
+  </body>
+</html>
