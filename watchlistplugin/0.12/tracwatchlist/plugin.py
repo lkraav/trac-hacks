@@ -88,8 +88,12 @@ class WatchlistPlugin(Component):
 
     def __init__(self):
         # bind the 'watchlist' catalog to the specified locale directory
-        locale_dir = resource_filename(__name__, 'locale')
-        add_domain(self.env.path, locale_dir)
+        try:
+            locale_dir = resource_filename(__name__, 'locale')
+        except KeyError:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
 
         #
         self.realms = []
