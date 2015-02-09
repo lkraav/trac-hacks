@@ -33,6 +33,17 @@ def save_custom_field_value( db, ticket_id, field, value ):
         cursor.execute("INSERT INTO ticket_custom (ticket,name, "
                        "value) VALUES(%s,%s,%s)", (ticket_id, field, value))
 
+def update_hours_to_floats(db, ticket_id):
+    cursor db.cursor()
+    cursor.execute("SELECT time, newvalue FROM ticket_change"
+                   " WHERE newvalue like '%,%' AND  ticket=%s AND field='hours'", 
+                   ticket_id)
+    data = list(cur.fetchall())
+    for (time, newvalue) in data:
+        cursor.execute("UPDATE ticket_change SET newvalue=%s "
+                       "WHERE ticket=%s AND time=%s AND field='hours'",
+                       (str(convertfloat(newvalue)), ticket_id, time))
+
 def update_totalhours_custom( db, ticket_id):
     cursor = db.cursor()
     sumSql = """
@@ -86,6 +97,7 @@ class TimeTrackingTicketObserver(Component):
         ticket_id = ticket.id
         @self.env.with_transaction()
         def fn(db):
+            update_hours_to_floats(db, ticket_id)
             save_custom_field_value( db, ticket_id, "hours", '0')
             insert_totalhours_changes( db, ticket_id )
             update_totalhours_custom ( db, ticket_id )
@@ -93,10 +105,10 @@ class TimeTrackingTicketObserver(Component):
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
         hours = convertfloat(ticket['hours'])
-        self.watch_hours(ticket) # clears the hours
         # makes the hours a ticket change like all the other hours records
-        t = Ticket (self.env, ticket.id)
         if hours > 0:
+            self.watch_hours(ticket) # clears the hours
+            t = Ticket (self.env, ticket.id)
             t['hours']=str(hours);
             t.save_changes(ticket['reporter'])
 
