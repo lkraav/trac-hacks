@@ -34,6 +34,17 @@ def save_custom_field_value( db, ticket_id, field, value ):
         cursor.execute("INSERT INTO ticket_custom (ticket,name, "
                        "value) VALUES(%s,%s,%s)",
                        (ticket_id, field, value))
+
+def update_hours_to_floats(db, ticket_id):
+    cursor = db.cursor()
+    cursor.execute("SELECT time, newvalue FROM ticket_change"
+                   " WHERE newvalue like '%,%' AND  ticket=%s AND field='hours'", 
+                   (ticket_id,))
+    data = list(cursor.fetchall())
+    for (time, newvalue) in data:
+        cursor.execute("UPDATE ticket_change SET newvalue=%s "
+                       "WHERE ticket=%s AND time=%s AND field='hours'",
+                       (str(convertfloat(newvalue)), ticket_id, time))
     
 def update_totalhours_custom( db, ticket_id):
     cursor = db.cursor()
@@ -118,6 +129,7 @@ class TimeTrackingTicketObserver(Component):
             self.log.debug("passed permissions check")
         @self.env.with_transaction()
         def fn(db):
+            update_hours_to_floats(db, ticket_id)
             save_custom_field_value( db, ticket_id, "hours", '0')
             insert_totalhours_changes( db, ticket_id )
             update_totalhours_custom ( db, ticket_id )
