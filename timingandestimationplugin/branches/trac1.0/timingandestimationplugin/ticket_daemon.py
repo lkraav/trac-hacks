@@ -34,7 +34,7 @@ def save_custom_field_value( db, ticket_id, field, value ):
                        "value) VALUES(%s,%s,%s)", (ticket_id, field, value))
 
 def update_hours_to_floats(db, ticket_id):
-    cursor db.cursor()
+    cursor = db.cursor()
     cursor.execute("SELECT time, newvalue FROM ticket_change"
                    " WHERE newvalue like '%,%' AND  ticket=%s AND field='hours'", 
                    ticket_id)
