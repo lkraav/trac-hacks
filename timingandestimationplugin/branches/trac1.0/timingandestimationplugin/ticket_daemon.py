@@ -37,8 +37,8 @@ def update_hours_to_floats(db, ticket_id):
     cursor = db.cursor()
     cursor.execute("SELECT time, newvalue FROM ticket_change"
                    " WHERE newvalue like '%,%' AND  ticket=%s AND field='hours'", 
-                   ticket_id)
-    data = list(cur.fetchall())
+                   (ticket_id,))
+    data = list(cursor.fetchall())
     for (time, newvalue) in data:
         cursor.execute("UPDATE ticket_change SET newvalue=%s "
                        "WHERE ticket=%s AND time=%s AND field='hours'",
