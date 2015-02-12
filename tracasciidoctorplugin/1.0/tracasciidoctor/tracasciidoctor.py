@@ -20,11 +20,11 @@
 from trac.core import *
 from trac.mimeview.api import IHTMLPreviewRenderer, content_to_unicode
 from trac.util import NaivePopen
-from trac.web.chrome import add_stylesheet
+from trac.web.chrome import add_stylesheet, ITemplateProvider
 
 class AsciidocRenderer(Component):
     """Renders Asciidoc text as HTML using Asciidoctor"""
-    implements(IHTMLPreviewRenderer)
+    implements(IHTMLPreviewRenderer, ITemplateProvider)
 
     def get_quality_ratio(self, mimetype):
         if mimetype in ['text/asciidoc','text/x-asciidoc']:
@@ -47,3 +47,11 @@ class AsciidocRenderer(Component):
             raise Exception, err
         add_stylesheet(req, 'tracasciidoctor/css/asciidoc.css')
         return np.out
+
+    # ITemplateProvider methods
+    def get_templates_dirs(self):
+        return []
+
+    def get_htdocs_dirs(self):
+        from pkg_resources import resource_filename
+        return [resource_filename(__name__, 'htdocs')]
