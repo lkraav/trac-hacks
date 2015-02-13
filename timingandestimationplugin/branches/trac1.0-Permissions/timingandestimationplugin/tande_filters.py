@@ -50,7 +50,7 @@ def new_csv_export(self, req, query, sep=',', mimetype='text/plain'):
     content.write('\xef\xbb\xbf')   # BOM
     cols = query.get_columns()
     ### !!!    T&E patch
-    cols = [i for i in cols if col not in hidden_fields] 
+    cols = [col for col in cols if col not in hidden_fields]
     ### !!!END T&E patch
     writer = csv.writer(content, delimiter=sep, quoting=csv.QUOTE_MINIMAL)
     writer.writerow([unicode(c).encode('utf-8') for c in cols])
