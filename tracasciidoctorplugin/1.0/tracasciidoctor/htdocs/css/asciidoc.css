@@ -1,92 +1,126 @@
+/**
+ * File downloaded from:
+ *
+ *   https://asciidoc.googlecode.com/hg/stylesheets/asciidoc.css
+ *
+ * --*-- BEGIN: Asciidoc COPYRIGHT file --*--
+ * 
+ * Copyright (C) 2000-2007 Stuart Rackham
+ * 
+ * Email: srackham@gmail.com
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or (at
+ * your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
+ * USA.
+ * 
+ * --*-- END: Asciidoc COPYRIGHT file --*--
+ *
+ * Modifications (C) 2015 by Sergio Talens-Oliag <sto@iti.es>
+ *
+ * 2015/02/13 Edited file to use the #preview div id prefix for the styles
+ *            on this CSS to avoid mixing settings with the Trac styles.
+ **/
+  
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
-
+  
 /* Default font. */
-body {
+#preview body {
   font-family: Georgia,serif;
 }
-
+  
 /* Title font. */
-h1, h2, h3, h4, h5, h6,
-div.title, caption.title,
-thead, p.table.header,
+#preview h1, #preview h2, #preview h3, #preview h4, #preview h5, #preview h6,
+#preview div.title, #preview caption.title,
+#preview thead, #preview p.table.header,
 #toctitle,
 #author, #revnumber, #revdate, #revremark,
 #footer {
   font-family: Arial,Helvetica,sans-serif;
 }
 
-body {
+#preview body {
   margin: 1em 5% 1em 5%;
 }
 
-a {
+#preview a {
   color: blue;
   text-decoration: underline;
 }
-a:visited {
+#preview a:visited {
   color: fuchsia;
 }
 
-em {
+#preview em {
   font-style: italic;
   color: navy;
 }
 
-strong {
+#preview strong {
   font-weight: bold;
   color: #083194;
 }
 
-h1, h2, h3, h4, h5, h6 {
+#preview h1, #preview h2, #preview h3, #preview h4, #preview h5, #preview h6 {
   color: #527bbd;
   margin-top: 1.2em;
   margin-bottom: 0.5em;
   line-height: 1.3;
 }
 
-h1, h2, h3 {
+#preview h1, #preview h2, #preview h3 {
   border-bottom: 2px solid silver;
 }
-h2 {
+#preview h2 {
   padding-top: 0.5em;
 }
-h3 {
+#preview h3 {
   float: left;
 }
-h3 + * {
+#preview h3 + * {
   clear: left;
 }
-h5 {
+#preview h5 {
   font-size: 1.0em;
 }
 
-div.sectionbody {
+#preview div.sectionbody {
   margin-left: 0;
 }
 
-hr {
+#preview hr {
   border: 1px solid silver;
 }
 
-p {
+#preview p {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
 
-ul, ol, li > p {
+#preview ul, #preview ol, #preview li > p {
   margin-top: 0;
 }
-ul > li     { color: #aaa; }
-ul > li > * { color: black; }
+#preview ul > li     { color: #aaa; }
+#preview ul > li > * { color: black; }
 
-.monospaced, code, pre {
+#preview .monospaced, #preview code, #preview pre {
   font-family: "Courier New", Courier, monospace;
   font-size: inherit;
   color: navy;
   padding: 0;
   margin: 0;
 }
-pre {
+#preview pre {
   white-space: pre-wrap;
 }
 
@@ -119,60 +153,62 @@ pre {
   margin-top: 1.5em;
   margin-bottom: 1.5em;
 }
-div.imageblock, div.exampleblock, div.verseblock,
-div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
-div.admonitionblock {
+
+#preview div.imageblock, #preview div.exampleblock, #preview div.verseblock,
+#preview div.quoteblock, #preview div.literalblock, #preview div.listingblock,
+#preview div.sidebarblock, #preview div.admonitionblock {
   margin-top: 1.0em;
   margin-bottom: 1.5em;
 }
-div.admonitionblock {
+
+#preview div.admonitionblock {
   margin-top: 2.0em;
   margin-bottom: 2.0em;
   margin-right: 10%;
   color: #606060;
 }
 
-div.content { /* Block element content. */
+#preview div.content { /* Block element content. */
   padding: 0;
 }
 
 /* Block element titles. */
-div.title, caption.title {
+#preview div.title, #preview caption.title {
   color: #527bbd;
   font-weight: bold;
   text-align: left;
   margin-top: 1.0em;
   margin-bottom: 0.5em;
 }
-div.title + * {
+#preview div.title + * {
   margin-top: 0;
 }
 
-td div.title:first-child {
+#preview td div.title:first-child {
   margin-top: 0.0em;
 }
-div.content div.title:first-child {
+#preview div.content div.title:first-child {
   margin-top: 0.0em;
 }
-div.content + div.title {
+#preview div.content + div.title {
   margin-top: 0.0em;
 }
 
-div.sidebarblock > div.content {
+#preview div.sidebarblock > div.content {
   background: #ffffee;
   border: 1px solid #dddddd;
   border-left: 4px solid #f0f0f0;
   padding: 0.5em;
 }
 
-div.listingblock > div.content {
+#preview div.listingblock > div.content {
   border: 1px solid #dddddd;
   border-left: 5px solid #f0f0f0;
   background: #f8f8f8;
   padding: 0.5em;
 }
 
-div.quoteblock, div.verseblock {
+#preview div.quoteblock, #preview div.verseblock {
   padding-left: 1.0em;
   margin-left: 1.0em;
   margin-right: 10%;
@@ -180,25 +216,25 @@ div.quoteblock, div.verseblock {
   color: #888;
 }
 
-div.quoteblock > div.attribution {
+#preview div.quoteblock > div.attribution {
   padding-top: 0.5em;
   text-align: right;
 }
 
-div.verseblock > pre.content {
+#preview div.verseblock > pre.content {
   font-family: inherit;
   font-size: inherit;
 }
-div.verseblock > div.attribution {
+#preview div.verseblock > div.attribution {
   padding-top: 0.75em;
   text-align: left;
 }
 /* DEPRECATED: Pre version 8.2.7 verse style literal block. */
-div.verseblock + div.attribution {
+#preview div.verseblock + div.attribution {
   text-align: left;
 }
 
-div.admonitionblock .icon {
+#preview div.admonitionblock .icon {
   vertical-align: top;
   font-size: 1.1em;
   font-weight: bold;
@@ -206,100 +242,100 @@ div.admonitionblock .icon {
   color: #527bbd;
   padding-right: 0.5em;
 }
-div.admonitionblock td.content {
+#preview div.admonitionblock td.content {
   padding-left: 0.5em;
   border-left: 3px solid #dddddd;
 }
 
-div.exampleblock > div.content {
+#preview div.exampleblock > div.content {
   border-left: 3px solid #dddddd;
   padding-left: 0.5em;
 }
 
-div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; vertical-align: text-bottom; }
-a.image:visited { color: white; }
+#preview div.imageblock div.content { padding-left: 0; }
+#preview span.image img { border-style: none; vertical-align: text-bottom; }
+#preview a.image:visited { color: white; }
 
-dl {
+#preview dl {
   margin-top: 0.8em;
   margin-bottom: 0.8em;
 }
-dt {
+#preview dt {
   margin-top: 0.5em;
   margin-bottom: 0;
   font-style: normal;
   color: navy;
 }
-dd > *:first-child {
+#preview dd > *:first-child {
   margin-top: 0.1em;
 }
 
-ul, ol {
+#preview ul, #preview ol {
     list-style-position: outside;
 }
-ol.arabic {
+#preview ol.arabic {
   list-style-type: decimal;
 }
-ol.loweralpha {
+#preview ol.loweralpha {
   list-style-type: lower-alpha;
 }
-ol.upperalpha {
+#preview ol.upperalpha {
   list-style-type: upper-alpha;
 }
-ol.lowerroman {
+#preview ol.lowerroman {
   list-style-type: lower-roman;
 }
-ol.upperroman {
+#preview ol.upperroman {
   list-style-type: upper-roman;
 }
 
-div.compact ul, div.compact ol,
-div.compact p, div.compact p,
-div.compact div, div.compact div {
+#preview div.compact ul, #preview div.compact ol,
+#preview div.compact p, #preview div.compact p,
+#preview div.compact div, #preview div.compact div {
   margin-top: 0.1em;
   margin-bottom: 0.1em;
 }
 
-tfoot {
+#preview tfoot {
   font-weight: bold;
 }
-td > div.verse {
+#preview td > div.verse {
   white-space: pre;
 }
 
-div.hdlist {
+#preview div.hdlist {
   margin-top: 0.8em;
   margin-bottom: 0.8em;
 }
-div.hdlist tr {
+#preview div.hdlist tr {
   padding-bottom: 15px;
 }
-dt.hdlist1.strong, td.hdlist1.strong {
+#preview dt.hdlist1.strong, #preview td.hdlist1.strong {
   font-weight: bold;
 }
-td.hdlist1 {
+#preview td.hdlist1 {
   vertical-align: top;
   font-style: normal;
   padding-right: 0.8em;
   color: navy;
 }
-td.hdlist2 {
+#preview td.hdlist2 {
   vertical-align: top;
 }
-div.hdlist.compact tr {
+#preview div.hdlist.compact tr {
   margin: 0;
   padding-bottom: 0;
 }
 
-.comment {
+#preview .comment {
   background: yellow;
 }
 
-.footnote, .footnoteref {
+#preview .footnote, #preview .footnoteref {
   font-size: 0.8em;
 }
 
-span.footnote, span.footnoteref {
+#preview span.footnote, #preview span.footnoteref {
   vertical-align: super;
 }
 
@@ -322,12 +358,12 @@ span.footnote, span.footnoteref {
   min-width: 100px;
 }
 
-div.colist td {
+#preview div.colist td {
   padding-right: 0.5em;
   padding-bottom: 0.3em;
   vertical-align: top;
 }
-div.colist td img {
+#preview div.colist td img {
   margin-top: 0.3em;
 }
 
@@ -347,65 +383,66 @@ div.colist td img {
   margin-bottom: 0.1em;
 }
 
-div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+#preview div.toclevel0, #preview div.toclevel1, #preview div.toclevel2,
+#preview div.toclevel3, #preview div.toclevel4 {
   margin-top: 0;
   margin-bottom: 0;
 }
-div.toclevel2 {
+#preview div.toclevel2 {
   margin-left: 2em;
   font-size: 0.9em;
 }
-div.toclevel3 {
+#preview div.toclevel3 {
   margin-left: 4em;
   font-size: 0.9em;
 }
-div.toclevel4 {
+#preview div.toclevel4 {
   margin-left: 6em;
   font-size: 0.9em;
 }
 
-span.aqua { color: aqua; }
-span.black { color: black; }
-span.blue { color: blue; }
-span.fuchsia { color: fuchsia; }
-span.gray { color: gray; }
-span.green { color: green; }
-span.lime { color: lime; }
-span.maroon { color: maroon; }
-span.navy { color: navy; }
-span.olive { color: olive; }
-span.purple { color: purple; }
-span.red { color: red; }
-span.silver { color: silver; }
-span.teal { color: teal; }
-span.white { color: white; }
-span.yellow { color: yellow; }
+#preview span.aqua { color: aqua; }
+#preview span.black { color: black; }
+#preview span.blue { color: blue; }
+#preview span.fuchsia { color: fuchsia; }
+#preview span.gray { color: gray; }
+#preview span.green { color: green; }
+#preview span.lime { color: lime; }
+#preview span.maroon { color: maroon; }
+#preview span.navy { color: navy; }
+#preview span.olive { color: olive; }
+#preview span.purple { color: purple; }
+#preview span.red { color: red; }
+#preview span.silver { color: silver; }
+#preview span.teal { color: teal; }
+#preview span.white { color: white; }
+#preview span.yellow { color: yellow; }
 
-span.aqua-background { background: aqua; }
-span.black-background { background: black; }
-span.blue-background { background: blue; }
-span.fuchsia-background { background: fuchsia; }
-span.gray-background { background: gray; }
-span.green-background { background: green; }
-span.lime-background { background: lime; }
-span.maroon-background { background: maroon; }
-span.navy-background { background: navy; }
-span.olive-background { background: olive; }
-span.purple-background { background: purple; }
-span.red-background { background: red; }
-span.silver-background { background: silver; }
-span.teal-background { background: teal; }
-span.white-background { background: white; }
-span.yellow-background { background: yellow; }
+#preview span.aqua-background { background: aqua; }
+#preview span.black-background { background: black; }
+#preview span.blue-background { background: blue; }
+#preview span.fuchsia-background { background: fuchsia; }
+#preview span.gray-background { background: gray; }
+#preview span.green-background { background: green; }
+#preview span.lime-background { background: lime; }
+#preview span.maroon-background { background: maroon; }
+#preview span.navy-background { background: navy; }
+#preview span.olive-background { background: olive; }
+#preview span.purple-background { background: purple; }
+#preview span.red-background { background: red; }
+#preview span.silver-background { background: silver; }
+#preview span.teal-background { background: teal; }
+#preview span.white-background { background: white; }
+#preview span.yellow-background { background: yellow; }
 
-span.big { font-size: 2em; }
-span.small { font-size: 0.6em; }
+#preview span.big { font-size: 2em; }
+#preview span.small { font-size: 0.6em; }
 
-span.underline { text-decoration: underline; }
-span.overline { text-decoration: overline; }
-span.line-through { text-decoration: line-through; }
+#preview span.underline { text-decoration: underline; }
+#preview span.overline { text-decoration: overline; }
+#preview span.line-through { text-decoration: line-through; }
 
-div.unbreakable { page-break-inside: avoid; }
+#preview div.unbreakable { page-break-inside: avoid; }
 
 
 /*
@@ -413,29 +450,29 @@ div.unbreakable { page-break-inside: avoid; }
  *
  * */
 
-div.tableblock {
+#preview div.tableblock {
   margin-top: 1.0em;
   margin-bottom: 1.5em;
 }
-div.tableblock > table {
+#preview div.tableblock > table {
   border: 3px solid #527bbd;
 }
-thead, p.table.header {
+#preview thead, #preview p.table.header {
   font-weight: bold;
   color: #527bbd;
 }
-p.table {
+#preview p.table {
   margin-top: 0;
 }
 /* Because the table frame attribute is overriden by CSS in most browsers. */
-div.tableblock > table[frame="void"] {
+#preview div.tableblock > table[frame="void"] {
   border-style: none;
 }
-div.tableblock > table[frame="hsides"] {
+#preview div.tableblock > table[frame="hsides"] {
   border-left-style: none;
   border-right-style: none;
 }
-div.tableblock > table[frame="vsides"] {
+#preview div.tableblock > table[frame="vsides"] {
   border-top-style: none;
   border-bottom-style: none;
 }
@@ -446,60 +483,60 @@ div.tableblock > table[frame="vsides"] {
  *
  * */
 
-table.tableblock {
+#preview table.tableblock {
   margin-top: 1.0em;
   margin-bottom: 1.5em;
 }
-thead, p.tableblock.header {
+#preview thead, #preview p.tableblock.header {
   font-weight: bold;
   color: #527bbd;
 }
-p.tableblock {
+#preview p.tableblock {
   margin-top: 0;
 }
-table.tableblock {
+#preview table.tableblock {
   border-width: 3px;
   border-spacing: 0px;
   border-style: solid;
   border-color: #527bbd;
   border-collapse: collapse;
 }
-th.tableblock, td.tableblock {
+#preview th.tableblock, #preview td.tableblock {
   border-width: 1px;
   padding: 4px;
   border-style: solid;
   border-color: #527bbd;
 }
 
-table.tableblock.frame-topbot {
+#preview table.tableblock.frame-topbot {
   border-left-style: hidden;
   border-right-style: hidden;
 }
-table.tableblock.frame-sides {
+#preview table.tableblock.frame-sides {
   border-top-style: hidden;
   border-bottom-style: hidden;
 }
-table.tableblock.frame-none {
+#preview table.tableblock.frame-none {
   border-style: hidden;
 }
 
-th.tableblock.halign-left, td.tableblock.halign-left {
+#preview th.tableblock.halign-left, #preview td.tableblock.halign-left {
   text-align: left;
 }
-th.tableblock.halign-center, td.tableblock.halign-center {
+#preview th.tableblock.halign-center, #preview td.tableblock.halign-center {
   text-align: center;
 }
-th.tableblock.halign-right, td.tableblock.halign-right {
+#preview th.tableblock.halign-right, #preview td.tableblock.halign-right {
   text-align: right;
 }
 
-th.tableblock.valign-top, td.tableblock.valign-top {
+#preview th.tableblock.valign-top, #preview td.tableblock.valign-top {
   vertical-align: top;
 }
-th.tableblock.valign-middle, td.tableblock.valign-middle {
+#preview th.tableblock.valign-middle, #preview td.tableblock.valign-middle {
   vertical-align: middle;
 }
-th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+#preview th.tableblock.valign-bottom, #preview td.tableblock.valign-bottom {
   vertical-align: bottom;
 }
 
@@ -509,16 +546,16 @@ th.tableblock.valign-bottom, td.tableblock.valign-bottom {
  *
  * */
 
-body.manpage h1 {
+#preview body.manpage h1 {
   padding-top: 0.5em;
   padding-bottom: 0.5em;
   border-top: 2px solid silver;
   border-bottom: 2px solid silver;
 }
-body.manpage h2 {
+#preview body.manpage h2 {
   border-style: none;
 }
-body.manpage div.sectionbody {
+#preview body.manpage div.sectionbody {
   margin-left: 3em;
 }
 
