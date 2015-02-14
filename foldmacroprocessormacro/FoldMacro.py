@@ -1,7 +1,7 @@
 from genshi.builder import tag
 from trac.core import *
 from trac.wiki.macros import WikiMacroBase
-from trac.wiki.formatter import format_to_html
+from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 
 class FoldMacro(WikiMacroBase):
@@ -27,9 +27,11 @@ class FoldMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content, args):
         title_text = args.get('title', 'Use {{{#!Fold title="Your title"}}}')
+        title_oneliner = format_to_oneliner(self.env, formatter.context,
+                                        title_text)
         title_tag = args.get('tag', 'span')
         title_tag_function = getattr(tag, title_tag)
-        title_html = title_tag_function(title_text, class_="foldable")
+        title_html = title_tag_function(title_oneliner, class_="foldable")
         content_html = format_to_html(self.env, formatter.context, content)
         return tag.div(
                   tag(title_html,
