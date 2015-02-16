@@ -67,26 +67,25 @@ class CustomReportManager:
     return dbhelper.get_scalar(self.env, "SELECT MAX(ordering) FROM custom_report WHERE maingroup=%s AND subgroup=%s",
                            0, maingroup, subgroup) or 0
   
-  def _insert_report (self, next_id, title, author, description, query,
+  def _insert_report (self, title, author, description, query,
                       uuid, maingroup, subgroup, version, ordering):
     """ Adds a row the custom_report_table """
     self.log.debug("Inserting new report '%s' with uuid '%s'" % (title,uuid))
-    dbhelper.execute_in_trans(
-      self.env,
-      ("DELETE FROM custom_report WHERE uuid=%s", (uuid,)), 
-      ("INSERT INTO report (id, title, author, description, query) " \
-         "VALUES (%s, %s, %s, %s, %s)",
-       (next_id, title, author, description, query)),
-      ("INSERT INTO custom_report (id, uuid, maingroup, subgroup, version, ordering) " \
-         "VALUES (%s, %s, %s, %s, %s, %s)",
-       (next_id, uuid, maingroup, subgroup, version, ordering)))
-    if type(self.env.get_read_db().cnx) == trac.db.postgres_backend.PostgreSQLConnection:
-      self.log.debug("Attempting to increment sequence (only works in postgres)")
-      try:
-        dbhelper.execute_in_nested_trans(self.env, "update_seq", ("SELECT nextval('report_id_seq');",[]));
-        self.log.debug("Sequence updated");
-      except:
-        self.log.debug("Sequence failed to update, perhaps you are not running postgres?");
+    new_id = []
+    @self.env.with_transaction()
+    def fn(db):
+        cur = db.cursor()
+        cur.execute("DELETE FROM custom_report WHERE uuid=%s", (uuid,))
+        cur.execute("INSERT INTO report (title, author, description, query) "
+                    "VALUES (%s, %s, %s, %s)",
+                    (title, author, description, query))
+        new_id.append(db.get_last_id(cur,'report'));
+        cur.execute("INSERT INTO custom_report "
+                    "(id, uuid, maingroup, subgroup, version, ordering) "
+                    "VALUES (%s, %s, %s, %s, %s, %s)",
+                    (new_id[0], uuid, maingroup, subgroup, version, ordering))
+    return new_id[0]
+    
 
   def _update_report (self, id, title, author, description, query,
                       maingroup, subgroup, version):
@@ -110,10 +109,9 @@ class CustomReportManager:
     self.log.debug("add_report %s (ver:%s) | id: %s currentversion: %s" % (uuid , version, id, currentversion))
     try:
       if not id:
-        next_id = self.get_new_report_id()
         ordering = self.get_max_ordering(maingroup, subgroup) + 1
-        self._insert_report(next_id, title, author, description, query,
-                      uuid, maingroup, subgroup, version, ordering)
+        next_id = self._insert_report(title, author, description, query, 
+                            uuid, maingroup, subgroup, version, ordering)
         return True
       if currentversion < version or force:
         self._update_report(id, title, author, description, query,
