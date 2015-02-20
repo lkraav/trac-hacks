@@ -42,7 +42,7 @@ jQuery(document).ready(function($){
     $(".column_tickets").bind("sortreceive", function(event, ui){
         var ticket = /(ticket_box_)(\d+)/.exec(ui.item.attr("id"))[2];
         var from = ui.sender.context.id;
-        var to = event.target.id;
+        var to = event.currentTarget.id;
 
         //Check if this ticket has already been moved, to thus, store only the
         //new status.
