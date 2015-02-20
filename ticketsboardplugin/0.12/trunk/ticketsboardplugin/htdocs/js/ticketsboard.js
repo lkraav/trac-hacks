@@ -70,6 +70,8 @@ jQuery(document).ready(function($){
      * once user has changed the input form for each ticket field.
      * Note that the input form id has the following format :
      * owner_ticketid or reviewer_ticketid
+     * Warning: As '$' is used to split changes, this character is forbidden
+     * for owner or reviewer values. It will be replaced by 'S'.
      */
     $("#tickets_form").change(function(event){
         //The event.target corresponds to the input form id.
@@ -79,10 +81,12 @@ jQuery(document).ready(function($){
         for(var i = 0; i < actions.length; i++){
             if(actions[i].ticket == elt_info[1]){
                 if(elt_info[0] == "owner"){
-                    actions[i].owner = elt.value ? elt.value : "NIL";
+                    actions[i].owner = elt.value ?
+                                       elt.value.replace(/\$/g, "S") : "NIL";
                 }
                 if(elt_info[0] == "reviewer"){
-                    actions[i].reviewer = elt.value ? elt.value : "NIL";
+                    actions[i].reviewer = elt.value ?
+                                          elt.value.replace(/\$/g, "S") : "NIL";
                 }
                 break;
             }
@@ -92,13 +96,15 @@ jQuery(document).ready(function($){
             if(elt_info[0] == "owner"){
                 actions.push({
                     "ticket": elt_info[1],
-                    "owner": elt.value ? elt.value : "NIL"
+                    "owner": elt.value ?
+                             elt.value.replace(/\$/g, "S") : "NIL"
                 });
             }
             if(elt_info[0] == "reviewer"){
                 actions.push({
                     "ticket": elt_info[1],
-                    "reviewer": elt.value ? elt.value : "NIL"
+                    "reviewer": elt.value ?
+                                elt.value.replace(/\$/g, "S") : "NIL"
                 });
             }
         }
@@ -115,10 +121,10 @@ jQuery(document).ready(function($){
             var changesValue = "";
 
             //Set changes with the following format:
-            //'ticket_id:owner=val&reviewer=val&status=val&+ticket_id:...'
+            //'ticket_id:owner=val&reviewer=val&status=val&$ticket_id:...'
             //Store only tickets that have really changed.
             for(var i = 0; i < actions.length; i++){
-                changesValue += actions[i].ticket + ":"
+                changesValue += actions[i].ticket + ":";
                 if(actions[i].owner){
                     changesValue += "owner=" + actions[i].owner + "&";
                 }
@@ -133,7 +139,7 @@ jQuery(document).ready(function($){
                 if(changesValue[changesValue.length - 1] == "&"){
                     changesValue = changesValue.slice(0, - 1);
                 }
-                changesValue += "\n"
+                changesValue += "$"
             }
 
             //No ticket change, so do not call html form action
@@ -141,8 +147,8 @@ jQuery(document).ready(function($){
                 return false;
             }
             else{
-                //Remove the trailing character: +
-                if(changesValue[changesValue.length - 1] == "\n"){
+                //Remove the trailing character: $
+                if(changesValue[changesValue.length - 1] == "$"){
                     changesValue = changesValue.slice(0, - 1);
                 }
                 $("#ticketsboard_changes").val(changesValue);

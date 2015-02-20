@@ -331,7 +331,7 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
     # Parse all changes on tickets
     # changes format given by the hmtl and JS is as following:
     # 'ticket_id:owner=val&reviewer=val&status=val+ticket_id:...'
-    for change in changes_value.split('\n'):
+    for change in changes_value.split('$'):
 
         [ticket_id, fields] = change.split(':')
         values = {}
