@@ -186,6 +186,9 @@ class TicketsboardPage(Component):
         # Message to print for illegal operations made on the ticketsboard
         # (new tickets status not allowed...)
         error_msg = ""
+        # Show only tickets impacted by user
+        filter_user_current = ''
+        filter_user_switch = req.authname
 
         # Interaction and style needed for the ticketsboard.html page
         # (JQuery-ui is for drag/drop functionality)
@@ -203,14 +206,33 @@ class TicketsboardPage(Component):
                                                 self.have_reviewer_plugin,
                                                 self.states_actions)
 
+        # User wants to filter his request to show only his tickets.
+        if req.args.get('user'):
+            self.log.debug("Ticketsboard POST/GET with user param: %s" % req.args)
+            filter_user_current = req.args.get('user')
+            filter_user_switch = ''
+
         # Retrieve tickets corresponding to each wanted status
         for status in self.status_list:
             # Ask for each status the corresponding tickets.
             # Specifying the wanted tickets fields needed and restrictions.
             # As there may be a lot of tickets for each status we add filters.
-            conditions = [('status', status)]
-            conditions.extend(self.filters)
-            query_string = _set_query_string([conditions], self.wanted_fields,
+            if filter_user_current:
+                # We would like tickets only owned or in review by a specific
+                # user.
+                owner_conditions = [('status', status),
+                                    ('owner', filter_user_current)]
+                owner_conditions.extend(self.filters)
+                reviewer_conditions = [('status', status),
+                                       ('reviewer', filter_user_current)]
+                reviewer_conditions.extend(self.filters)
+                conditions = [owner_conditions, reviewer_conditions]
+            else:
+                condition = [('status', status)]
+                condition.extend(self.filters)
+                conditions = [condition]
+
+            query_string = _set_query_string(conditions, self.wanted_fields,
                                              'summary')
             # Execute the query
             tickets[status] = _execute_query(self.env, req, query_string)
@@ -227,6 +249,18 @@ class TicketsboardPage(Component):
         data['status_list'] = self.status_list
         data['tickets'] = tickets
         data['add_fields'] = self.additionnal_fields
+        if filter_user_switch:
+            data['filter_user_current'] = filter_user_current
+            data['filter_user_current_url'] = "ticketsboard"
+            data['filter_user_switch_url'] = "ticketsboard?user=%s" % \
+                                             filter_user_switch
+            data['filter_user_switch_url_msg'] = "Show only my tickets"
+        else:
+            data['filter_user_current'] = filter_user_current
+            data['filter_user_current_url'] = "ticketsboard?user=%s" % \
+                                              filter_user_current
+            data['filter_user_switch_url'] = "ticketsboard"
+            data['filter_user_switch_url_msg'] = "Show all tickets"
 
         # Return the wanted page to print with the variables to substitute
         return ('%s.html' % PAGE_NAME, data, None)

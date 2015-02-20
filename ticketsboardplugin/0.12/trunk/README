@@ -27,6 +27,8 @@ But, default fields to print on a ticket box are as following:
 As the amount of tickets could be significant, the ticketsboard shows only
 tickets where the ticket checkbox 'On Ticketsboard' is checked. This checkbox is
 created by the plug-in.
+In addition, on the top right you have a link to filter only tickets where you
+are owner or reviewer.
 
 To have a quick view of all printed tickets they have different colors
 according to there types:

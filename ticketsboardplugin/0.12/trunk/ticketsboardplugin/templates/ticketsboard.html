@@ -33,6 +33,9 @@
   </head>
   <body>
     <h1>Whiteboard vision of ongoing tickets</h1>
+    <ul class="filter_user">
+      <a href="${filter_user_switch_url}">${filter_user_switch_url_msg}</a>
+    </ul>
     <py:if test="error_msg">
       <div id="warning" class="system-message">
         <strong>Cannot apply changes</strong>
@@ -42,12 +45,13 @@
     <!-- When user pushed the ticketsboard submit button the action is to reload
     the page, thus, process_request trac function could access to the several
     input forms -->
-    <form id="ticketsboard_form" action="ticketsboard" method="post">
+    <form id="ticketsboard_form" action="${filter_user_current_url}" method="post">
       <div class="page_forms">
-        <input type="hidden" id="ticketsboard_changes" name="ticketsboard_changes" value=""/>
         <span>Owner : </span><input type="text" name="owner"/>
         <span>Reviewer : </span><input type="text" name="reviewer"/>
         <input type="submit" id="ticketsboard_submit" name="ticketsboard_submit" value="Save Changes"/>
+        <input type="hidden" id="ticketsboard_changes" name="ticketsboard_changes" value=""/>
+        <input type="hidden" name="user" value="${filter_user_current}"/>
       </div>
       <div class="ticketsboard">
         <table>

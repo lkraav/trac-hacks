@@ -125,3 +125,13 @@ li.task { background: #e7eeff; border-color: #cde }
     height: 60px;
     list-style-type: none;
 }
+
+
+/*********************************
+ * Filter users through url link *
+ *********************************/
+
+ul.filter_user {
+    font-size: 10px;
+    text-align: right;
+}
