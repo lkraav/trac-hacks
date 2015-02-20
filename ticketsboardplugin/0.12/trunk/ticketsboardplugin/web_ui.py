@@ -47,7 +47,7 @@ DEFAULT_SORTED_STATUS_LIST = ['new','assigned','reviewing','closed']
 
 # Fields that will be printed and needed for ticketsboard (except 'id' that is
 # always present)
-WANTED_COLUMNS = ['summary','status','type','owner','reviewer', CHECKBOX_NAME]
+NEEDED_FIELDS = ['summary','status','type','owner','reviewer', CHECKBOX_NAME]
 
 
 
@@ -60,9 +60,11 @@ class TicketsboardPage(Component):
     Each ticket is inside a box that is 'drag&droppable' to change the ticket
     status.
 
-    This plugin integrates a configuration that can be managed in the
+    This plugin integrates several configurations that can be managed in the
     trac.ini config file through a section [ticketsboard]:
     - statuses: contains the list of status printed on the ticketsboard.
+    - fields: contains a list of additional tickets fields that user wants
+      to see in the ticketsboard.
 
     Do not forget to add `ticketsboard` to the mainnav option in [trac].
     """
@@ -86,6 +88,18 @@ class TicketsboardPage(Component):
                                            "statuses").strip(',').split(',')
         if self.status_list == ['']:
             self.status_list = DEFAULT_SORTED_STATUS_LIST
+
+        # Retrieve additional wanted fields from trac.ini config file
+        user_fields = self.config.get("ticketsboard",
+                                      "fields").strip(',').split(',')
+        if '' in user_fields:
+            user_fields.remove('')
+        self.wanted_fields = []
+        self.wanted_fields.extend(NEEDED_FIELDS)
+        self.wanted_fields.extend(user_fields)
+        self.wanted_fields = list(set(self.wanted_fields))
+        self.additionnal_fields = list(set(self.wanted_fields) -
+                set(NEEDED_FIELDS))
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
@@ -193,7 +207,7 @@ class TicketsboardPage(Component):
             # As there may be a lot of tickets for each status we add a filter
             # which is a checkbox ticket custom field.
             query_string = _set_query_string(status, (CHECKBOX_NAME, '1'),
-                                             WANTED_COLUMNS)
+                                             self.wanted_fields)
             # Execute the query
             tickets[status] = _execute_query(self.env, req, query_string)
 
@@ -208,6 +222,7 @@ class TicketsboardPage(Component):
         data['error_msg'] = error_msg
         data['status_list'] = self.status_list
         data['tickets'] = tickets
+        data['add_fields'] = self.additionnal_fields
 
         # Return the wanted page to print with the variables to substitute
         return ('%s.html' % PAGE_NAME, data, None)

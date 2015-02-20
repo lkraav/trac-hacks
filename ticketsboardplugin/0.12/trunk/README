@@ -17,6 +17,13 @@ But, default states to print are predefined and are as following:
  - Reviewing: used for tickets that are being reviewed by reviewers
  - Closed: used for tickets that have been don
 
+Inside each 'ticket box' several fields could be printed. Custom fields have
+to be filled in the trac.ini config file on section [ticketsboard] with key
+'fields'.
+But, default fields to print on a ticket box are as following:
+ - owner: ticket's owner
+ - reviewer ticket's reviewer
+
 As the amount of tickets could be significant, the ticketsboard shows only
 tickets where the ticket checkbox 'On Ticketsboard' is checked. This checkbox is
 created by the plug-in.

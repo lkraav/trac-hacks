@@ -68,6 +68,10 @@
                         <dd>${t['owner']}&nbsp;</dd>
                         <dt>Reviewer</dt>
                         <dd>${t['reviewer']}&nbsp;</dd>
+                        <py:for each="field in add_fields">
+                          <dt>${field}</dt>
+                          <dd>${t[field]}&nbsp;</dd>
+                        </py:for>
                       </dl>
                     </li>
                   </py:for>
