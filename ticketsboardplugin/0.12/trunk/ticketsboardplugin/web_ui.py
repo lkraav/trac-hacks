@@ -65,9 +65,6 @@ class TicketsboardPage(Component):
     implements(IEnvironmentSetupParticipant, INavigationContributor,
                IRequestHandler, ITemplateProvider)
 
-    # For assignReviewer part plugin
-    have_reviewer_plugin = False
-
     def __init__(self):
         # Check activation of assignReviewer part
         self.have_reviewer_plugin = self.env.is_component_enabled(
