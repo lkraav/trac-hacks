@@ -196,8 +196,8 @@ class TicketsboardPage(Component):
         add_script(req, '%s/js/ticketsboard.js' % SCRIPTS_PATH)
         add_stylesheet(req, "%s/css/ticketsboard.css" % SCRIPTS_PATH)
 
-        # User wants to save changes on ticket status. So we have to update
-        # tickets changes inside the db
+        # User wants to save changes on tickets. So we have to update tickets
+        # changes inside the db
         # We use the input form named 'ticketsboard_submit' in the html page to
         # interact with user to apply change request
         if req.method == 'POST' and req.args.get('ticketsboard_submit'):
@@ -305,8 +305,7 @@ def _execute_query(env, req, query_string):
     return query.execute(req)
 
 def _update_tickets_changes(env, req, assign_reviewer, states_actions):
-    """Change ticket status according to user request given through the html
-    page.
+    """Change tickets according to user request given through the html page.
 
     But be careful, there are restrictions for some status according to
     operations in the ticket workflow.
@@ -326,58 +325,58 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
 
     # Retrieve informations from html page:
     # We use the input form named:
-    # 'ticketsboard_changes' for changes on tickets status
-    # 'reviewer' for changes on reviewer field
-    # 'owner' for changes on owner field
+    # 'ticketsboard_changes' for changes on tickets
     changes_value = req.args.get('ticketsboard_changes')
-    new_owner = req.args.get('owner').strip()
-    new_reviewer = req.args.get('reviewer').strip()
 
-    # Parse all changes on ticket status
+    # Parse all changes on tickets
     # changes format given by the hmtl and JS is as following:
-    # 'ticket_id:new_status,ticket_id:new_status,...'
-    for change in changes_value.rstrip(',').split(','):
+    # 'ticket_id:owner=val&reviewer=val&status=val+ticket_id:...'
+    for change in changes_value.split('\n'):
 
-        [ticket_id, status] = change.split(':')
+        [ticket_id, fields] = change.split(':')
         values = {}
         t = Ticket(env, int(ticket_id))
         current_error_msg = ''
 
         # Prepare fields to update
-        values['status'] = status
-        if new_owner != "":
-            values['owner'] = new_owner
-        if new_reviewer != "":
-            values['reviewer'] = new_reviewer
+        for field in fields.split('&'):
+            [field_name, field_val] = field.split('=')
+            values[field_name] = field_val if field_val != "NIL" else ""
+
+        # Retrieve status (actual or new one)
+        status = t['status']
+        if 'status' in values:
+            status = values['status']
 
         # For some status you have restrictions to check
         for operation in states_actions[status]['operations']:
             if operation == 'set_reviewer' and assign_reviewer:
-                # To put a ticket in this state the reviewer field has to be set
-                # (if assignReviewer part is enable)
+                # To have a ticket in this state the reviewer field has to be
+                # set (if assignReviewer part is enable)
                 # if this field is empty use the one given by html input text
                 # form
-                if new_reviewer == "" and t['reviewer'] in ["", "--"]:
-                    current_error_msg += ('You cannot push ticket #%s in \"%s\"'
-                                          ' without adding a reviewer. ' %
+                if not 'reviewer' in values and t['reviewer'] in ["", "--"]:
+                    current_error_msg += ('You cannot have ticket #%s in \"%s\"'
+                                          ' without a reviewer. ' %
                                           (ticket_id, status))
 
             elif operation == 'set_owner':
-                # To put a ticket in this state the owner field has to be set
+                # To have a ticket in this state the owner field has to be set
                 # if this field is empty use the one given by html input text
                 # form
-                if new_owner == "" and t['owner'] in ["", "somebody"]:
-                    current_error_msg += ('You cannot push ticket #%s in \"%s\"'
-                                          ' without adding an owner. ' %
+                if not 'owner' in values and t['owner'] in ["", "somebody"]:
+                    current_error_msg += ('You cannot have ticket #%s in \"%s\"'
+                                          ' without an owner. ' %
                                           (ticket_id, status))
 
             elif operation == 'del_reviewer':
-                # To put a ticket in this state the reviewer field has to be
+                # To have a ticket in this state the reviewer field has to be
                 # empty
                 values['reviewer'] = ""
 
             elif operation == 'del_owner':
-                # To put a ticket in this state the owner field has to be empty
+                # To have a ticket in this state the owner field has to be
+                # empty
                 values['owner'] = ""
 
         # Do not update ticket when there is an error in restrictions

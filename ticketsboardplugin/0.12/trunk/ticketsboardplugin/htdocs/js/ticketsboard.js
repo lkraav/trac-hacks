@@ -33,8 +33,8 @@ jQuery(document).ready(function($){
         placeholder: 'ticket_placeholder'
     })
 
-    /* We have to store tickets changes (id, old status and new status) once
-     * the drop is done.
+    /* We have to store tickets status changes (id, old status and new status)
+     * once the drop is done.
      * To retrieve informations we used id fields of html tags.
      * For ticket id: we use the "ticket_box" id which content ticket id.
      * For status: we use "column_tickets" id which is the status name.
@@ -63,6 +63,41 @@ jQuery(document).ready(function($){
         }
     });
 
+    /* We have to store tickets fields changes (id, field name and field value)
+     * once user has changed the input form for each ticket field.
+     */
+    $("#tickets_form").change(function(event){
+        var elt = event.target;
+        var elt_info = elt.id.split(/_/);
+
+        for(var i=0; i<actions.length; i++){
+            if(actions[i].ticket == elt_info[1]){
+                if(elt_info[0] == 'owner'){
+                    actions[i].owner = elt.value?elt.value:"NIL";
+                }
+                if(elt_info[0] == 'reviewer'){
+                    actions[i].reviewer = elt.value?elt.value:"NIL";
+                }
+                break;
+            }
+        }
+
+        if(i == actions.length){
+            if(elt_info[0] == 'owner'){
+                actions.push({
+                    "ticket": elt_info[1],
+                    "owner": elt.value?elt.value:"NIL"
+                });
+            }
+            if(elt_info[0] == 'reviewer'){
+                actions.push({
+                    "ticket": elt_info[1],
+                    "reviewer": elt.value?elt.value:"NIL"
+                });
+            }
+        }
+    });
+
     /* User has pushed the submit button to save changes.
      * We have to store collected informations about ticket changes during the
      * drag/drop in the variable "ticketsboard_changes". Thus this variable
@@ -74,13 +109,25 @@ jQuery(document).ready(function($){
             var changesValue = "";
 
             //Set changes with the following format:
-            //'ticket_id:new_status,ticket_id:new_status,...'
+            //'ticket_id:owner=val&reviewer=val&status=val&+ticket_id:...'
             //Store only tickets that have really changed.
             for(var i=0; i<actions.length; i++){
-                if(actions[i].from != actions[i].to){
-                    changesValue += actions[i].ticket + ":" +
-                                    actions[i].to + ",";
+                changesValue += actions[i].ticket + ":"
+                if(actions[i].owner){
+                    changesValue += "owner=" + actions[i].owner + "&";
                 }
+                if(actions[i].reviewer){
+                    changesValue += "reviewer=" + actions[i].reviewer + "&";
+                }
+                if(actions[i].from && actions[i].to &&
+                   actions[i].from != actions[i].to){
+                    changesValue += "status=" + actions[i].to + "&";
+                }
+                //Remove the trailing character: &
+                if(changesValue[changesValue.length - 1] == "&"){
+                    changesValue = changesValue.slice(0, - 1);
+                }
+                changesValue += "\n"
             }
 
             //No ticket change, so do not call html form action
@@ -88,6 +135,10 @@ jQuery(document).ready(function($){
                 return false;
             }
             else{
+                //Remove the trailing character: +
+                if(changesValue[changesValue.length - 1] == "\n"){
+                    changesValue = changesValue.slice(0, - 1);
+                }
                 $("#ticketsboard_changes").val(changesValue);
             }
             return true;

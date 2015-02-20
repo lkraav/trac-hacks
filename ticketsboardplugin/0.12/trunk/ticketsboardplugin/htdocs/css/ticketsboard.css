@@ -111,6 +111,13 @@ li.ticket_box dd {
     padding-left: .2em;
 }
 
+li.ticket_box input {
+    padding: 0em;
+    width: 100px;
+    border: 0px none;
+    background: none;
+}
+
 li.defect { background: #fdc; border-color: #e88 }
 li.enhancement { background: #ffb; border-color: #eea }
 li.task { background: #e7eeff; border-color: #cde }

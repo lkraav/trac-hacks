@@ -47,12 +47,12 @@
     input forms -->
     <form id="ticketsboard_form" action="${filter_user_current_url}" method="post">
       <div class="page_forms">
-        <span>Owner : </span><input type="text" name="owner"/>
-        <span>Reviewer : </span><input type="text" name="reviewer"/>
         <input type="submit" id="ticketsboard_submit" name="ticketsboard_submit" value="Save Changes"/>
         <input type="hidden" id="ticketsboard_changes" name="ticketsboard_changes" value=""/>
         <input type="hidden" name="user" value="${filter_user_current}"/>
       </div>
+    </form>
+    <form id="tickets_form">
       <div class="ticketsboard">
         <table>
           <tr>
@@ -69,9 +69,9 @@
                       <h3><a href="ticket/${t['id']}">#${t['id']}: ${t['summary']}</a></h3>
                       <dl>
                         <dt>Owner</dt>
-                        <dd>${t['owner']}&nbsp;</dd>
+                        <dd><input type="text" id="owner_${t['id']}" value="${t['owner']}"/></dd>
                         <dt>Reviewer</dt>
-                        <dd>${t['reviewer']}&nbsp;</dd>
+                        <dd><input type="text" id="reviewer_${t['id']}" value="${t['reviewer']}"/></dd>
                         <py:for each="field in add_fields">
                           <dt>${field}</dt>
                           <dd>${t[field]}&nbsp;</dd>

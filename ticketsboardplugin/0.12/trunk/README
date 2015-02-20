@@ -23,6 +23,7 @@ to be filled in the trac.ini config file on section [ticketsboard] with key
 But, default fields to print on a ticket box are as following:
  - owner: ticket's owner
  - reviewer ticket's reviewer
+These 2 fields are directly editable.
 
 As the amount of tickets could be significant, the ticketsboard shows only
 tickets where the ticket checkbox 'On Ticketsboard' is checked. This checkbox is
