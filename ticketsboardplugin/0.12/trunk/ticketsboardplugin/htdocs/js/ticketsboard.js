@@ -49,6 +49,9 @@ jQuery(document).ready(function($){
         for(var i = 0; i < actions.length; i++){
             if(actions[i].ticket == ticket){
                 actions[i].to = to;
+                if(!actions[i].from){
+                    actions[i].from = from;
+                }
                 break;
             }
         }
