@@ -101,6 +101,9 @@ class TicketsboardPage(Component):
         self.additionnal_fields = list(set(self.wanted_fields) -
                 set(NEEDED_FIELDS))
 
+        # Filters to add to the ticket query
+        self.filters = [(CHECKBOX_NAME, '1')]
+
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
         """Called when a new Trac environment is created."""
@@ -203,11 +206,12 @@ class TicketsboardPage(Component):
         # Retrieve tickets corresponding to each wanted status
         for status in self.status_list:
             # Ask for each status the corresponding tickets.
-            # Specifying the wanted tickets fields needed and a restriction.
-            # As there may be a lot of tickets for each status we add a filter
-            # which is a checkbox ticket custom field.
-            query_string = _set_query_string(status, (CHECKBOX_NAME, '1'),
-                                             self.wanted_fields)
+            # Specifying the wanted tickets fields needed and restrictions.
+            # As there may be a lot of tickets for each status we add filters.
+            conditions = [('status', status)]
+            conditions.extend(self.filters)
+            query_string = _set_query_string(conditions, self.wanted_fields,
+                                             'summary')
             # Execute the query
             tickets[status] = _execute_query(self.env, req, query_string)
 
@@ -243,16 +247,16 @@ class TicketsboardPage(Component):
 
 
 # Internal functions
-def _set_query_string(status, filter_, wanted_columns):
+def _set_query_string(conditions, wanted_columns, order):
     """Set a query string with following options:
-    `status`: ask only tickets with the corresponding status
-    `filter_`: add a filter in addition of status
+    `conditions`: filter request with several conditions (status...)
     `wanted_columns`: tickets fields that we wanted to retrieve
+    `order`: how to sort the result (summary, ticket_id...)
     """
-    option = '%s=%s' % filter_
+    options = ['%s=%s' % cond for cond in conditions]
     columns = ['col=%s' % column for column in wanted_columns]
-    status = 'status=%s' % status
-    return '&'.join([status, option, 'order=summary'] + columns)
+    order = 'order=%s' % order
+    return '&'.join(options + columns + [order])
 
 def _execute_query(env, req, query_string):
     """Execute a query corresponding to the given string"""
