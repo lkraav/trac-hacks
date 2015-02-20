@@ -1,0 +1,82 @@
+<!--
+# Copyright (c) 2013 Jean-Philippe Save
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+-->
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n">
+  <xi:include href="layout.html" />
+  <head>
+    <title>Ticketsboard</title>
+  </head>
+  <body>
+    <h1>Whiteboard vision of ongoing tickets</h1>
+    <py:if test="error_msg">
+      <div id="warning" class="system-message">
+        <strong>Cannot apply changes</strong>
+        <pre>${error_msg}</pre>
+      </div>
+    </py:if>
+    <!-- When user pushed the ticketsboard submit button the action is to reload
+    the page, thus, process_request trac function could access to the several
+    input forms -->
+    <form id="ticketsboard_form" action="ticketsboard" method="post">
+      <div class="page_forms">
+        <input type="hidden" id="ticketsboard_changes" name="ticketsboard_changes" value=""/>
+        <span>Owner : </span><input type="text" name="owner"/>
+        <span>Reviewer : </span><input type="text" name="reviewer"/>
+        <input type="submit" id="ticketsboard_submit" name="ticketsboard_submit" value="Save Changes"/>
+      </div>
+      <div class="ticketsboard">
+        <table>
+          <tr>
+            <py:for each="status in status_list">
+              <th>${status}</th>
+            </py:for>
+          </tr>
+          <tr>
+            <py:for each="status in status_list">
+              <td>
+                <ul id="${status}" class="column_tickets">
+                  <py:for each="t in tickets[status]">
+                    <li id="ticket_box_${t['id']}" class="ticket_box ${t['type']}">
+                      <h3><a href="ticket/${t['id']}">#${t['id']}: ${t['summary']}</a></h3>
+                      <dl>
+                        <dt>Owner</dt>
+                        <dd>${t['owner']}&nbsp;</dd>
+                        <dt>Reviewer</dt>
+                        <dd>${t['reviewer']}&nbsp;</dd>
+                      </dl>
+                    </li>
+                  </py:for>
+                </ul>
+              </td>
+            </py:for>
+          </tr>
+        </table>
+      </div>
+    </form>
+  </body>
+</html>

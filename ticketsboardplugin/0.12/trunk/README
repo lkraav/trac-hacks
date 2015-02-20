@@ -1,0 +1,60 @@
+About TicketsBoardPlugin
+======================
+
+TicketsBoardPlugin is a trac plug-in that adds a virtual whiteboard view of
+active tickets.
+
+This virtual whiteboard ('Ticketsboard') is a table divided in ticket states.
+Inside these states, each ticket is shown as a sticky note.
+You can drag&drop a sticky note to another column to change ticket state.
+
+But, these states are predefined and are as following:
+ - New: default state when you create a ticket, used for tickets on which we do
+   not work on
+ - Assigned: used for tickets on which we work on but not currently
+ - In Progress: used for tickets on which we are currently working on
+ - Wait review: used to inform developers that the development is ended and
+   owners are waiting for a reviewer
+ - Reviewing: used for tickets that are being reviewed by reviewers
+ - Integrating: used for tickets that are reviewed and ready to be pushed on the
+   base
+ - Validating: used for tickets that are in base and waiting for agreement of
+   the validation team
+ - Suspended: used for tickets that are expecting information, works... of
+   another team
+
+In addition, some states manage ticket fields:
+ - New: deletes the owner and reviewer fields
+ - Assigned: sets the owner field
+ - Reviewing: sets the reviewer field
+
+As the amount of tickets could be significant, the ticketsboard shows only
+tickets where the ticket checkbox 'On Ticketsboard' is checked. This checkbox is
+created by the plug-in.
+
+To have a quick view of all printed tickets they have different colors
+according to there types:
+ - red: for defects
+ - yellow: for enhancements
+ - blue: for tasks
+
+
+This plug-in is divided in two parts:
+
+1/ Reviewer field
+As we said before, the plug-in forces the ticket states and one state is the
+review of the work done for a ticket. So, for that, we need to assign a
+reviewer.
+This part adds, in tickets, a new textbox field 'reviewer' that will contain the
+name of the reviewer.
+This new field could also be managed in the ticket-workflow. So, each change
+on ticket state can be combined with a control on the reviewer field
+(set_reviewer, del_reviewer).
+
+2/ Virtual whiteboard ('Ticketsboard')
+It adds a new tab in the mainnav bar.
+This tab shows a dedicated html page that represents the virtual whiteboard.
+A user can change tickets states through a drag and drop system. As there are
+restrictions on some states (see first section), changes could be rejected.
+This part adds the checkbox 'On Ticketsboard' and checks that the ticket-workflow
+contains the needed states.
