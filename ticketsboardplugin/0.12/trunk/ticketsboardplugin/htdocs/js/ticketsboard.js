@@ -40,7 +40,7 @@ jQuery(document).ready(function($){
      * For status: we use "column_tickets" id which is the status name.
      */
     $(".column_tickets").bind("sortreceive", function(event, ui){
-        var ticket = /(ticket_box_)(\d)/.exec(ui.item.attr("id"))[2];
+        var ticket = /(ticket_box_)(\d+)/.exec(ui.item.attr("id"))[2];
         var from = ui.sender.context.id;
         var to = event.target.id;
 
