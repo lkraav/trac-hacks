@@ -224,7 +224,7 @@ def _set_query_string(status, filter_, wanted_columns):
     option = '%s=%s' % filter_
     columns = ['col=%s' % column for column in wanted_columns]
     status = 'status=%s' % status
-    return '&'.join([status, option] + columns)
+    return '&'.join([status, option, 'order=summary'] + columns)
 
 def _execute_query(env, req, query_string):
     """Execute a query corresponding to the given string"""
