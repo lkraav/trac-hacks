@@ -29,8 +29,8 @@ jQuery(document).ready(function($){
      * another. So, we will be able to change "graphically" a ticket status.
      */
     $(".column_tickets").sortable({
-        connectWith: '.column_tickets',
-        placeholder: 'ticket_placeholder'
+        connectWith: ".column_tickets",
+        placeholder: "ticket_placeholder"
     })
 
     /* We have to store tickets status changes (id, old status and new status)
@@ -46,7 +46,7 @@ jQuery(document).ready(function($){
 
         //Check if this ticket has already been moved, to thus, store only the
         //new status.
-        for(var i=0; i<actions.length; i++){
+        for(var i = 0; i < actions.length; i++){
             if(actions[i].ticket == ticket){
                 actions[i].to = to;
                 break;
@@ -65,34 +65,37 @@ jQuery(document).ready(function($){
 
     /* We have to store tickets fields changes (id, field name and field value)
      * once user has changed the input form for each ticket field.
+     * Note that the input form id has the following format :
+     * owner_ticketid or reviewer_ticketid
      */
     $("#tickets_form").change(function(event){
+        //The event.target corresponds to the input form id.
         var elt = event.target;
         var elt_info = elt.id.split(/_/);
 
-        for(var i=0; i<actions.length; i++){
+        for(var i = 0; i < actions.length; i++){
             if(actions[i].ticket == elt_info[1]){
-                if(elt_info[0] == 'owner'){
-                    actions[i].owner = elt.value?elt.value:"NIL";
+                if(elt_info[0] == "owner"){
+                    actions[i].owner = elt.value ? elt.value : "NIL";
                 }
-                if(elt_info[0] == 'reviewer'){
-                    actions[i].reviewer = elt.value?elt.value:"NIL";
+                if(elt_info[0] == "reviewer"){
+                    actions[i].reviewer = elt.value ? elt.value : "NIL";
                 }
                 break;
             }
         }
 
         if(i == actions.length){
-            if(elt_info[0] == 'owner'){
+            if(elt_info[0] == "owner"){
                 actions.push({
                     "ticket": elt_info[1],
-                    "owner": elt.value?elt.value:"NIL"
+                    "owner": elt.value ? elt.value : "NIL"
                 });
             }
-            if(elt_info[0] == 'reviewer'){
+            if(elt_info[0] == "reviewer"){
                 actions.push({
                     "ticket": elt_info[1],
-                    "reviewer": elt.value?elt.value:"NIL"
+                    "reviewer": elt.value ? elt.value : "NIL"
                 });
             }
         }
@@ -111,7 +114,7 @@ jQuery(document).ready(function($){
             //Set changes with the following format:
             //'ticket_id:owner=val&reviewer=val&status=val&+ticket_id:...'
             //Store only tickets that have really changed.
-            for(var i=0; i<actions.length; i++){
+            for(var i = 0; i < actions.length; i++){
                 changesValue += actions[i].ticket + ":"
                 if(actions[i].owner){
                     changesValue += "owner=" + actions[i].owner + "&";

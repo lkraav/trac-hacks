@@ -74,24 +74,24 @@ class TicketsboardPage(Component):
     def __init__(self):
         # Check activation of assignReviewer part
         self.have_reviewer_plugin = self.env.is_component_enabled(
-                "ticketsboardplugin.assignreviewer.assignrevieweroperation")
+                'ticketsboardplugin.assignreviewer.assignrevieweroperation')
 
-        self.log.debug("Ticketsboard: assignReviewer plugin part is%spresent" %
-                       " " if self.have_reviewer_plugin else " not ")
+        self.log.debug('Ticketsboard: assignReviewer plugin part is%spresent' %
+                       ' ' if self.have_reviewer_plugin else ' not ')
 
         # Retrieve actions on status from custom ticket workflow section of
         # trac.ini config file
         self.states_actions = get_workflow_config(self.config)
 
         # Retrieve status list from trac.ini config file
-        self.status_list = self.config.get("ticketsboard",
-                                           "statuses").strip(',').split(',')
+        self.status_list = self.config.get('ticketsboard',
+                                           'statuses').strip(',').split(',')
         if self.status_list == ['']:
             self.status_list = DEFAULT_SORTED_STATUS_LIST
 
         # Retrieve additional wanted fields from trac.ini config file
-        user_fields = self.config.get("ticketsboard",
-                                      "fields").strip(',').split(',')
+        user_fields = self.config.get('ticketsboard',
+                                      'fields').strip(',').split(',')
         if '' in user_fields:
             user_fields.remove('')
         self.wanted_fields = []
@@ -117,7 +117,7 @@ class TicketsboardPage(Component):
         missing_data = _trac_needs_upgrade(self.env, self.config,
                                            CHECKBOX_NAME,
                                            self.status_list)
-        self.log.debug("Ticketsboard: Upgrade needed: %s" % any(missing_data))
+        self.log.debug('Ticketsboard: Upgrade needed: %s' % any(missing_data))
         return any(missing_data)
 
     def upgrade_environment(self, db):
@@ -129,25 +129,25 @@ class TicketsboardPage(Component):
                                            self.status_list)
 
         if any(missing_data):
-            print "Ticketsboard plugin needs an upgrade"
+            print 'Ticketsboard plugin needs an upgrade'
             missing_checkbox, missing_status = missing_data
             if missing_checkbox:
-                self.config.set("ticket-custom", CHECKBOX_NAME, "checkbox")
-                self.config.set("ticket-custom", CHECKBOX_NAME + ".label",
+                self.config.set('ticket-custom', CHECKBOX_NAME, 'checkbox')
+                self.config.set('ticket-custom', CHECKBOX_NAME + '.label',
                                 CHECKBOX_LABEL)
-                self.config.set("ticket-custom", CHECKBOX_NAME + ".value",
-                                "false")
+                self.config.set('ticket-custom', CHECKBOX_NAME + '.value',
+                                'false')
                 self.config.save()
-                print "  A \"%s\" ticket field has been added." % \
+                print '  A "%s" ticket field has been added.' % \
                     CHECKBOX_LABEL
 
             if missing_status:
-                print "  Some ticket-workflow states are missing"
+                print '  Some ticket-workflow states are missing'
                 for status in missing_status:
-                    print "   - %s" % status
-                print "  Please, synchronise your ticket-workflow states " + \
-                      "with the statuses field of [ticketsboard] section " + \
-                      "inside trac.ini config file."
+                    print '   - %s' % status
+                print '  Please, synchronise your ticket-workflow states ' + \
+                      'with the statuses field of [ticketsboard] section ' + \
+                      'inside trac.ini config file.'
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -163,7 +163,7 @@ class TicketsboardPage(Component):
         url = req.href.ticketsboard()
         # Ticketsboard navigation item could be seen only if TICKET_VIEW
         # permission is allowed
-        if req.perm.has_permission("TICKET_VIEW"):
+        if req.perm.has_permission('TICKET_VIEW'):
             yield ('mainnav', PAGE_NAME,
                    Markup('<a href="%s">%s</a>' % (url,
                        PAGE_NAME.capitalize())))
@@ -173,7 +173,7 @@ class TicketsboardPage(Component):
         """Return whether the handler wants to process the given request.
         So for us, only the ticketsboard requests.
         """
-        return req.path_info == "/%s" % PAGE_NAME
+        return req.path_info == '/%s' % PAGE_NAME
 
     def process_request(self, req):
         """Returns the ticketsboard html template page and the data to
@@ -185,7 +185,7 @@ class TicketsboardPage(Component):
         tickets = {}
         # Message to print for illegal operations made on the ticketsboard
         # (new tickets status not allowed...)
-        error_msg = ""
+        error_msg = ''
         # Show only tickets impacted by user
         filter_user_current = ''
         filter_user_switch = req.authname
@@ -201,14 +201,14 @@ class TicketsboardPage(Component):
         # We use the input form named 'ticketsboard_submit' in the html page to
         # interact with user to apply change request
         if req.method == 'POST' and req.args.get('ticketsboard_submit'):
-            self.log.debug("Ticketsboard POST: %s" % req.args)
+            self.log.debug('Ticketsboard POST: %s' % req.args)
             error_msg = _update_tickets_changes(self.env, req,
                                                 self.have_reviewer_plugin,
                                                 self.states_actions)
 
         # User wants to filter his request to show only his tickets.
         if req.args.get('user'):
-            self.log.debug("Ticketsboard POST/GET with user param: %s" % req.args)
+            self.log.debug('Ticketsboard POST/GET with user param: %s' % req.args)
             filter_user_current = req.args.get('user')
             filter_user_switch = ''
 
@@ -251,16 +251,16 @@ class TicketsboardPage(Component):
         data['add_fields'] = self.additionnal_fields
         if filter_user_switch:
             data['filter_user_current'] = filter_user_current
-            data['filter_user_current_url'] = "ticketsboard"
-            data['filter_user_switch_url'] = "ticketsboard?user=%s" % \
+            data['filter_user_current_url'] = 'ticketsboard'
+            data['filter_user_switch_url'] = 'ticketsboard?user=%s' % \
                                              filter_user_switch
-            data['filter_user_switch_url_msg'] = "Show only my tickets"
+            data['filter_user_switch_url_msg'] = 'Show only my tickets'
         else:
             data['filter_user_current'] = filter_user_current
-            data['filter_user_current_url'] = "ticketsboard?user=%s" % \
+            data['filter_user_current_url'] = 'ticketsboard?user=%s' % \
                                               filter_user_current
-            data['filter_user_switch_url'] = "ticketsboard"
-            data['filter_user_switch_url_msg'] = "Show all tickets"
+            data['filter_user_switch_url'] = 'ticketsboard'
+            data['filter_user_switch_url_msg'] = 'Show all tickets'
 
         # Return the wanted page to print with the variables to substitute
         return ('%s.html' % PAGE_NAME, data, None)
@@ -317,11 +317,11 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
     """
 
     # Error message to return
-    error_msg = ""
+    error_msg = ''
 
     # Tickets can be updated only if 'TICKET_MODIFY' permission is allowed
-    if not req.perm.has_permission("TICKET_MODIFY"):
-        return 'You need \"TICKET_MODIFY\" permission to save changes'
+    if not req.perm.has_permission('TICKET_MODIFY'):
+        return 'You need "TICKET_MODIFY" permission to save changes'
 
     # Retrieve informations from html page:
     # We use the input form named:
@@ -341,7 +341,7 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
         # Prepare fields to update
         for field in fields.split('&'):
             [field_name, field_val] = field.split('=')
-            values[field_name] = field_val if field_val != "NIL" else ""
+            values[field_name] = field_val if field_val != 'NIL' else ''
 
         # Retrieve status (actual or new one)
         status = t['status']
@@ -355,8 +355,8 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
                 # set (if assignReviewer part is enable)
                 # if this field is empty use the one given by html input text
                 # form
-                if not 'reviewer' in values and t['reviewer'] in ["", "--"]:
-                    current_error_msg += ('You cannot have ticket #%s in \"%s\"'
+                if not 'reviewer' in values and t['reviewer'] in ['', '--']:
+                    current_error_msg += ('You cannot have ticket #%s in "%s"'
                                           ' without a reviewer. ' %
                                           (ticket_id, status))
 
@@ -364,20 +364,20 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
                 # To have a ticket in this state the owner field has to be set
                 # if this field is empty use the one given by html input text
                 # form
-                if not 'owner' in values and t['owner'] in ["", "somebody"]:
-                    current_error_msg += ('You cannot have ticket #%s in \"%s\"'
+                if not 'owner' in values and t['owner'] in ['', 'somebody']:
+                    current_error_msg += ('You cannot have ticket #%s in "%s"'
                                           ' without an owner. ' %
                                           (ticket_id, status))
 
             elif operation == 'del_reviewer':
                 # To have a ticket in this state the reviewer field has to be
                 # empty
-                values['reviewer'] = ""
+                values['reviewer'] = ''
 
             elif operation == 'del_owner':
                 # To have a ticket in this state the owner field has to be
                 # empty
-                values['owner'] = ""
+                values['owner'] = ''
 
         # Do not update ticket when there is an error in restrictions
         if current_error_msg != '':
@@ -401,7 +401,7 @@ def _trac_needs_upgrade(env, config, wb_checkbox, wanted_status):
     missing_status = set(wanted_status) - set(all_status)
 
     # Check that the checkbox is present
-    missing_checkbox = not config.get("ticket-custom", wb_checkbox)
+    missing_checkbox = not config.get('ticket-custom', wb_checkbox)
 
     # Return:
     #  if the checkbox is missing
