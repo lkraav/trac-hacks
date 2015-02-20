@@ -210,7 +210,7 @@ class TicketsboardPage(Component):
             # As there may be a lot of tickets for each status we add filters.
             conditions = [('status', status)]
             conditions.extend(self.filters)
-            query_string = _set_query_string(conditions, self.wanted_fields,
+            query_string = _set_query_string([conditions], self.wanted_fields,
                                              'summary')
             # Execute the query
             tickets[status] = _execute_query(self.env, req, query_string)
@@ -249,14 +249,21 @@ class TicketsboardPage(Component):
 # Internal functions
 def _set_query_string(conditions, wanted_columns, order):
     """Set a query string with following options:
-    `conditions`: filter request with several conditions (status...)
+    `conditions`: filter request with several conditions (status...) conditions
+    is a double list of 'or' conditions of 'and' conditions:
+    [[and_conditions],[and_conditions],...]
+    Reminder, trac query allows only to have 'and conditions' inside 'or
+    conditions' and not the opposite.
     `wanted_columns`: tickets fields that we wanted to retrieve
     `order`: how to sort the result (summary, ticket_id...)
     """
-    options = ['%s=%s' % cond for cond in conditions]
+    and_cond = []
+    for or_cond in conditions:
+        and_cond.append('&'.join(['%s=%s' % cond for cond in or_cond]))
+    options = '&or&'.join(and_cond)
     columns = ['col=%s' % column for column in wanted_columns]
     order = 'order=%s' % order
-    return '&'.join(options + columns + [order])
+    return '&'.join([options] + columns + [order])
 
 def _execute_query(env, req, query_string):
     """Execute a query corresponding to the given string"""
