@@ -29,6 +29,7 @@ from trac.web.chrome import add_stylesheet, add_script, \
 from trac.ticket.query import *
 from trac.ticket.api import TicketSystem
 from trac.ticket import Ticket
+from trac.ticket.default_workflow import get_workflow_config
 
 
 # Define a name for additional scripts path
@@ -72,6 +73,10 @@ class TicketsboardPage(Component):
 
         self.log.debug("Ticketsboard: assignReviewer plugin part is%spresent" %
                        " " if self.have_reviewer_plugin else " not ")
+
+        # Retrieve actions on status from custom ticket workflow section of
+        # trac.ini
+        self.states_actions = get_workflow_config(self.config)
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
@@ -168,7 +173,8 @@ class TicketsboardPage(Component):
         if req.method == 'POST' and req.args.get('ticketsboard_submit'):
             self.log.debug("Ticketsboard POST: %s" % req.args)
             error_msg = _update_tickets_changes(self.env, req,
-                                                self.have_reviewer_plugin)
+                                                self.have_reviewer_plugin,
+                                                self.states_actions)
 
         # Retrieve tickets corresponding to each wanted status
         for status in SORTED_STATUS_LIST:
@@ -228,15 +234,17 @@ def _execute_query(env, req, query_string):
     query = Query.from_string(env, query_string)
     return query.execute(req)
 
-def _update_tickets_changes(env, req, assign_reviewer):
+def _update_tickets_changes(env, req, assign_reviewer, states_actions):
     """Change ticket status according to user request given through the html
     page.
 
-    But be careful, there are restrictions for some status:
-    - new state: will clear owner and reviewer fields
-    - assigned state: will set owner field
-    - inprogress state: will set owner field
-    - reviewing state: will set reviewer field
+    But be careful, there are restrictions for some status according to
+    operations in the ticket workflow.
+    For example:
+    - new state: can clear owner and reviewer fields
+    - assigned state: can set owner field
+    - inprogress state: can set owner field
+    - reviewing state: can set reviewer field
     """
 
     # Error message to return
@@ -263,6 +271,7 @@ def _update_tickets_changes(env, req, assign_reviewer):
         [ticket_id, status] = change.split(':')
         values = {}
         t = Ticket(env, int(ticket_id))
+        current_error_msg = ''
 
         # Prepare fields to update
         values['status'] = status
@@ -271,29 +280,40 @@ def _update_tickets_changes(env, req, assign_reviewer):
         if new_reviewer != "":
             values['reviewer'] = new_reviewer
 
-        # For some status you need more informations
-        if status == "reviewing" and assign_reviewer:
-            # To put a ticket in 'reviewing' state the reviewer field has to be
-            # set (if assignReviewer part is enable)
-            # if this field is empty use the one given by html input text form
-            if new_reviewer == "" and t['reviewer'] in ["", "--"]:
-                error_msg += ('You cannot push ticket #%s in \"reviewing\" '
-                              'without adding a reviewer. ' % ticket_id)
-                continue
+        # For some status you have restrictions to check
+        for operation in states_actions[status]['operations']:
+            if operation == 'set_reviewer' and assign_reviewer:
+                # To put a ticket in this state the reviewer field has to be set
+                # (if assignReviewer part is enable)
+                # if this field is empty use the one given by html input text
+                # form
+                if new_reviewer == "" and t['reviewer'] in ["", "--"]:
+                    current_error_msg += ('You cannot push ticket #%s in \"%s\"'
+                                          ' without adding a reviewer. ' %
+                                          (ticket_id, status))
 
-        elif status == "assigned":
-            # To put a ticket in 'assigned' states the owner field has to be set
-            # if this field is empty use the one given by html input text form
-            if new_owner == "" and t['owner'] in ["", "somebody"]:
-                error_msg += ('You cannot push ticket #%s in \"%s\" without '
-                              'adding an owner. ' % (ticket_id, status))
-                continue
+            elif operation == 'set_owner':
+                # To put a ticket in this state the owner field has to be set
+                # if this field is empty use the one given by html input text
+                # form
+                if new_owner == "" and t['owner'] in ["", "somebody"]:
+                    current_error_msg += ('You cannot push ticket #%s in \"%s\"'
+                                          ' without adding an owner. ' %
+                                          (ticket_id, status))
 
-        elif status == "new":
-            # To put a ticket in 'new' state the reviewer and owner fields have
-            # to be empty
-            values['owner'] = ""
-            values['reviewer'] = ""
+            elif operation == 'del_reviewer':
+                # To put a ticket in this state the reviewer field has to be
+                # empty
+                values['reviewer'] = ""
+
+            elif operation == 'del_owner':
+                # To put a ticket in this state the owner field has to be empty
+                values['owner'] = ""
+
+        # Do not update ticket when there is an error in restrictions
+        if current_error_msg != '':
+            error_msg += current_error_msg
+            continue
 
         # Update ticket
         t.populate(values)

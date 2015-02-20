@@ -23,11 +23,6 @@ But, these states are predefined and are as following:
  - Suspended: used for tickets that are expecting information, works... of
    another team
 
-In addition, some states manage ticket fields:
- - New: deletes the owner and reviewer fields
- - Assigned: sets the owner field
- - Reviewing: sets the reviewer field
-
 As the amount of tickets could be significant, the ticketsboard shows only
 tickets where the ticket checkbox 'On Ticketsboard' is checked. This checkbox is
 created by the plug-in.
@@ -42,9 +37,6 @@ according to there types:
 This plug-in is divided in two parts:
 
 1/ Reviewer field
-As we said before, the plug-in forces the ticket states and one state is the
-review of the work done for a ticket. So, for that, we need to assign a
-reviewer.
 This part adds, in tickets, a new textbox field 'reviewer' that will contain the
 name of the reviewer.
 This new field could also be managed in the ticket-workflow. So, each change
@@ -55,6 +47,6 @@ on ticket state can be combined with a control on the reviewer field
 It adds a new tab in the mainnav bar.
 This tab shows a dedicated html page that represents the virtual whiteboard.
 A user can change tickets states through a drag and drop system. As there are
-restrictions on some states (see first section), changes could be rejected.
+restrictions on some states (set_owner, set_reviewer...), changes could be rejected.
 This part adds the checkbox 'On Ticketsboard' and checks that the ticket-workflow
 contains the needed states.
