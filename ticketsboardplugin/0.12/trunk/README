@@ -8,20 +8,14 @@ This virtual whiteboard ('Ticketsboard') is a table divided in ticket states.
 Inside these states, each ticket is shown as a sticky note.
 You can drag&drop a sticky note to another column to change ticket state.
 
-But, these states are predefined and are as following:
+The ticket states have to be filled in the trac.ini config file on section
+[ticketsboard] with key 'statuses'.
+But, default states to print are predefined and are as following:
  - New: default state when you create a ticket, used for tickets on which we do
    not work on
- - Assigned: used for tickets on which we work on but not currently
- - In Progress: used for tickets on which we are currently working on
- - Wait review: used to inform developers that the development is ended and
-   owners are waiting for a reviewer
+ - Assigned: used for tickets on which we work on
  - Reviewing: used for tickets that are being reviewed by reviewers
- - Integrating: used for tickets that are reviewed and ready to be pushed on the
-   base
- - Validating: used for tickets that are in base and waiting for agreement of
-   the validation team
- - Suspended: used for tickets that are expecting information, works... of
-   another team
+ - Closed: used for tickets that have been don
 
 As the amount of tickets could be significant, the ticketsboard shows only
 tickets where the ticket checkbox 'On Ticketsboard' is checked. This checkbox is

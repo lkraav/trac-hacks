@@ -42,9 +42,8 @@ PAGE_NAME = 'ticketsboard'
 CHECKBOX_NAME = 'ticketsboard'
 CHECKBOX_LABEL = 'On Ticketsboard'
 
-# Sorted list of status to print on ticketsboard
-SORTED_STATUS_LIST = ['new','assigned','inprogress','waitreview',
-                      'reviewing','integrating','validating','suspended']
+# Default sorted list of status to print on ticketsboard
+DEFAULT_SORTED_STATUS_LIST = ['new','assigned','reviewing','closed']
 
 # Fields that will be printed and needed for ticketsboard (except 'id' that is
 # always present)
@@ -61,6 +60,10 @@ class TicketsboardPage(Component):
     Each ticket is inside a box that is 'drag&droppable' to change the ticket
     status.
 
+    This plugin integrates a configuration that can be managed in the
+    trac.ini config file through a section [ticketsboard]:
+    - statuses: contains the list of status printed on the ticketsboard.
+
     Do not forget to add `ticketsboard` to the mainnav option in [trac].
     """
     implements(IEnvironmentSetupParticipant, INavigationContributor,
@@ -75,8 +78,14 @@ class TicketsboardPage(Component):
                        " " if self.have_reviewer_plugin else " not ")
 
         # Retrieve actions on status from custom ticket workflow section of
-        # trac.ini
+        # trac.ini config file
         self.states_actions = get_workflow_config(self.config)
+
+        # Retrieve status list from trac.ini config file
+        self.status_list = self.config.get("ticketsboard",
+                                           "statuses").strip(',').split(',')
+        if self.status_list == ['']:
+            self.status_list = DEFAULT_SORTED_STATUS_LIST
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
@@ -90,7 +99,7 @@ class TicketsboardPage(Component):
         """
         missing_data = _trac_needs_upgrade(self.env, self.config,
                                            CHECKBOX_NAME,
-                                           SORTED_STATUS_LIST)
+                                           self.status_list)
         self.log.debug("Ticketsboard: Upgrade needed: %s" % any(missing_data))
         return any(missing_data)
 
@@ -100,7 +109,7 @@ class TicketsboardPage(Component):
         """
         missing_data = _trac_needs_upgrade(self.env, self.config,
                                            CHECKBOX_NAME,
-                                           SORTED_STATUS_LIST)
+                                           self.status_list)
 
         if any(missing_data):
             print "Ticketsboard plugin needs an upgrade"
@@ -119,8 +128,9 @@ class TicketsboardPage(Component):
                 print "  Some ticket-workflow states are missing"
                 for status in missing_status:
                     print "   - %s" % status
-                print "  Ticket-workflow is too linked to your needs."
-                print "  So, please do this modification manually."
+                print "  Please, synchronise your ticket-workflow states " + \
+                      "with the statuses field of [ticketsboard] section " + \
+                      "inside trac.ini config file."
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -177,7 +187,7 @@ class TicketsboardPage(Component):
                                                 self.states_actions)
 
         # Retrieve tickets corresponding to each wanted status
-        for status in SORTED_STATUS_LIST:
+        for status in self.status_list:
             # Ask for each status the corresponding tickets.
             # Specifying the wanted tickets fields needed and a restriction.
             # As there may be a lot of tickets for each status we add a filter
@@ -196,7 +206,7 @@ class TicketsboardPage(Component):
 
         # Store the collected informations needed to fill the template html page
         data['error_msg'] = error_msg
-        data['status_list'] = SORTED_STATUS_LIST
+        data['status_list'] = self.status_list
         data['tickets'] = tickets
 
         # Return the wanted page to print with the variables to substitute
