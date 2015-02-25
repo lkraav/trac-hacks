@@ -731,3 +731,13 @@ class SmpModel(Component):
             def execute_sql_statement(db):
                 cursor = db.cursor()
                 cursor.execute(query, [new_component, old_component])
+
+    def is_milestone_completed(self, milestone_name):
+        db = self.env.get_db_cnx()
+        cursor = db.cursor()
+        query = """SELECT completed FROM milestone WHERE name=%s;"""
+        cursor.execute(query, [milestone_name])
+        msCompletedDate = cursor.fetchone()
+        if msCompletedDate and msCompletedDate[0]>0:
+            return True
+        return False
