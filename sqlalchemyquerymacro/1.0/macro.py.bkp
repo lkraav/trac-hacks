@@ -1,0 +1,104 @@
+import inspect
+from StringIO import StringIO
+
+from trac.core import *
+from trac.config import Option
+from trac.wiki.api import IWikiMacroProvider
+from trac.wiki.formatter import wiki_to_html
+from trac.web.chrome import ITemplateProvider
+
+from sqlalchemy import create_engine
+
+
+__all__ = ["SqlAlchemyQueryMacro"]
+
+
+
+class SqlAlchemyQueryMacro(Component):
+	"""
+	A macro to execute an SQL query against a
+	configured database and render the results
+	in a table.
+
+	Example:
+	{{{
+	[[SQL(SELECT foo FROM bar)]]
+	}}}
+	"""
+
+	
+	implements(IWikiMacroProvider, ITemplateProvider)
+
+	uri = Option("sqlalchemyquery", "uri", "sqlite://:memory:", """Database URI to connect to and use for SQL Queries""")
+
+
+	# IWikiMacroProvider methods
+	def get_macros(self):
+		yield "SQL"
+		
+	def get_macro_description(self, name):
+		return inspect.getdoc(self.__class__)
+
+	def expand_macro(self, formatter, name, args, uri):
+		if args is None:
+			return "No query defined!"
+
+		sql = str(args).strip()
+
+
+        	engine = create_engine( self.uri , echo=True )
+
+		db = engine.connect()
+		r = db.execute(sql)
+		records = r.fetchall()
+                headers = r.keys()
+                db.close()
+
+		if records:
+			print "results"
+	        else:
+			return "No results"
+
+                s = StringIO()
+                s.write("{{{\n")
+		s.write("#!html\n")
+		s.write('<script type="text/javascript" src="/TRAC_PATH_REPLACE/chrome/site/sorttable.js" >')
+		s.write("</script>")
+                s.write('<table class="sortable" TABLE_BORDER_REPLACE >')
+		s.write("<thead><tr>")
+                for h in headers:
+			s.write("<th>")
+			s.write(h)
+			s.write("</th>")
+		s.write("</tr></thead>")
+		s.write("<tbody>")
+		count_rows=0
+	        for row in records:
+			if count_rows == MAX_ROW_COUNT_REPLACE:
+				break
+			count_rows=count_rows+1
+                	size = len(row)
+			s.write("<tr><td>")
+			i=0
+			for cell in row:
+			        i=i+1
+				s.write(cell)
+			        if ( i < size ):
+					s.write("</td><td>")
+			        else:
+					s.write("</td></tr>")
+		s.write("</tbody>")
+		s.write("</table>")
+		s.write("\n}}}\n")
+		v = s.getvalue()
+	        s.close()
+	        return wiki_to_html(v, self.env, formatter.req)
+
+	# ITemplateProvider methods
+	def get_templates_dirs(self):
+		return []
+		
+	def get_htdocs_dirs(self):
+		return []
+	
+
