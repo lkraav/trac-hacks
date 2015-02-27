@@ -62,7 +62,7 @@ class SqlAlchemyQueryMacro(Component):
                 s = StringIO()
                 s.write("{{{\n")
 		s.write("#!html\n")
-		s.write('<script type="text/javascript" src="/TRAC_PATH_REPLACE/chrome/site/sorttable.js" >')
+		s.write('<script type="text/javascript" src="TRAC_PATH_REPLACE/chrome/site/sorttable.js" >')
 		s.write("</script>")
                 s.write('<table class="sortable" TABLE_BORDER_REPLACE >')
 		s.write("<thead><tr>")

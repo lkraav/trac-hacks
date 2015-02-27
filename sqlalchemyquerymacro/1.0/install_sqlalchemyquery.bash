@@ -27,7 +27,7 @@ unzip SqlAlchemyQuery-0.1-py2.7.egg
 rm SqlAlchemyQuery-0.1-py2.7.egg
 cd sqlalchemyquery
 cp ../../macro.py.bkp macro.py
-sed -i "s/TRAC_PATH_REPLACE/$TRAC_PATH_REPLACE/g" macro.py
+sed -i "s#TRAC_PATH_REPLACE#$TRAC_PATH_REPLACE#g" macro.py
 sed -i "s/MAX_ROW_COUNT_REPLACE/$MAX_ROW_COUNT_REPLACE/g" macro.py
 sed -i "s/TABLE_BORDER_REPLACE/$TABLE_BORDER_REPLACE/g" macro.py
 cd ..
