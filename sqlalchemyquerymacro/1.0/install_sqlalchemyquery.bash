@@ -1,10 +1,24 @@
 #!/bin/bash
 # install python egg SqlAlchemyQuery
-TRAC_PATH_REPLACE="trac-currencytrader"
-USER="dbo_rsa"
+TRAC_PATH_REPLACE="/path/to/your-trac-environment"
 MAX_ROW_COUNT_REPLACE="1000"
 TABLE_BORDER_REPLACE="border=\"1\""
-cp sorttable.js /home/$USER/$TRAC_PATH_REPLACE/htdocs
+
+if [ -d /$TRAC_PATH_REPLACE ]; then
+	echo "Path exists continuing"
+else
+	echo "Path:\" " $TRAC_PATH_REPLACE " \" does not exists. Please edit this file and retry."
+	exit
+fi
+
+if [ -d /$TRAC_PATH_REPLACE/htdocs ]; then
+	echo "Path exists continuing"
+else
+	echo "Path:\" " $TRAC_PATH_REPLACE/htdocs " \" does not exists. Please check your trac installation, edit this file and retry."
+	exit
+fi
+
+cp sorttable.js /$TRAC_PATH_REPLACE/htdocs
 mkdir tmp
 mkdir dist
 cp SqlAlchemyQuery-0.1-py2.7.egg tmp
@@ -19,7 +33,7 @@ sed -i "s/TABLE_BORDER_REPLACE/$TABLE_BORDER_REPLACE/g" macro.py
 cd ..
 zip -r  SqlAlchemyQuery-0.1-py2.7.zip *
 mv SqlAlchemyQuery-0.1-py2.7.zip  SqlAlchemyQuery-0.1-py2.7.egg
-cp SqlAlchemyQuery-0.1-py2.7.egg /home/$USER/$TRAC_PATH_REPLACE/plugins
+cp SqlAlchemyQuery-0.1-py2.7.egg /$TRAC_PATH_REPLACE/plugins
 mv SqlAlchemyQuery-0.1-py2.7.egg ../dist
 rm -r *
 cd ..
