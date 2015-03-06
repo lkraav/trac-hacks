@@ -14,7 +14,7 @@
 # Author: Vic Vijayakumar
 # Modified by Federico Ch. Tomasczik
 #
-SOFFICE_PATH="/usr/lib/libreoffice/program/soffice.bin"
+SOFFICE_PATH="/opt/libreoffice4.4/program/soffice.bin"
 PIDFILE=/var/run/openoffice-server.pid
 
 case "$1" in
@@ -25,7 +25,7 @@ case "$1" in
       exit
     fi
       echo "Starting OpenOffice headless server"
-      $SOFFICE_PATH --headless --nologo --nofirststartwizard --nodefault --accept="socket,host=localhost,port=8100;urp;StarOffice.ComponentContext" & > /dev/null 2>&1
+      $SOFFICE_PATH --headless --nologo --nofirststartwizard --nodefault "--accept=socket,host=localhost,port=8100;urp;StarOffice.ComponentContext" & > /dev/null 2>&1
       echo $! > $PIDFILE
     ;;
     stop)

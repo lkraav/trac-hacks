@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import getopt, sys
+import getopt
+import shutil
+import sys
 import uno
 
 from unohelper import Base, systemPathToFileUrl, absolutize
@@ -9,6 +11,7 @@ from os.path import splitext
 from com.sun.star.beans import PropertyValue
 from com.sun.star.uno import Exception as UnoException
 from com.sun.star.io import IOException, XOutputStream
+
 
 class OutputStream( Base, XOutputStream ):
     def __init__( self ):
@@ -19,6 +22,7 @@ class OutputStream( Base, XOutputStream ):
         sys.stdout.write( seq.value )
     def flush( self ):
         pass
+
 
 def main():
     retVal = 0
@@ -48,9 +52,11 @@ def main():
                     filterName = "HTML (StarCalc)"
                 if a == "doc":
                     filterName = "HTML (StarWriter)"
-	    if o == "--stdout":
-	    	stdout = True
-                
+                if a == "ppt":
+                    filterName = "impress_html_Export"
+            if o == "--stdout":
+                stdout = True
+
         if not len( args ):
             usage()
             sys.exit()
@@ -67,12 +73,11 @@ def main():
 
         cwd = systemPathToFileUrl( getcwd() )
         outProps = (
-            PropertyValue( "FilterName" , 0, filterName , 0 ),
-	    PropertyValue( "Overwrite" , 0, True , 0 ),
-            PropertyValue( "OutputStream", 0, OutputStream(), 0)
-	)
-	    
-        inProps = PropertyValue( "Hidden" , 0 , True, 0 ),
+            PropertyValue("FilterName", 0, filterName, 0),
+            PropertyValue("Overwrite", 0, True, 0),
+            PropertyValue( "OutputStream", 0, OutputStream(), 0))
+
+        inProps = PropertyValue("Hidden", 0, True, 0),
         for path in args:
             try:
                 fileUrl = absolutize( cwd, systemPathToFileUrl(path) )
@@ -81,14 +86,17 @@ def main():
                 if not doc:
                     raise UnoException( "Couldn't open stream for unknown reason", None )
 
-		if not stdout:
-                    (dest, ext) = splitext(path)
-                    dest = dest + "." + extension
-                    destUrl = absolutize( cwd, systemPathToFileUrl(dest) )
-                    sys.stderr.write(destUrl + "\n")
-                    doc.storeToURL(destUrl, outProps)
-		else:
-		    doc.storeToURL("private:stream",outProps)
+                dest, ext = splitext(path)
+                dest = dest + "." + extension
+                destUrl = absolutize(cwd, systemPathToFileUrl(dest))
+                sys.stderr.write("output url %s \n" % destUrl)
+                doc.storeToURL(destUrl, outProps)
+                if stdout:
+                    fn = destUrl[7:]
+                    sys.stderr.write("output file %s \n" % fn)
+                    f = open(fn, 'rb')
+                    shutil.copyfileobj(f, sys.stdout.buffer)
+                    f.close()
             except IOException, e:
                 sys.stderr.write( "Error during conversion: " + e.Message + "\n" )
                 retVal = 1
@@ -99,30 +107,31 @@ def main():
                 doc.dispose()
 
     except UnoException, e:
-        sys.stderr.write( "Error ("+repr(e.__class__)+") :" + e.Message + "\n" )
+        sys.stderr.write("Error ("+repr(e.__class__)+") :" + e.Message + "\n" )
         retVal = 1
-    except getopt.GetoptError,e:
+    except getopt.GetoptError, e:
         sys.stderr.write( str(e) + "\n" )
         usage()
         retVal = 1
 
     sys.exit(retVal)
-    
+
+
 def usage():
     sys.stderr.write( "usage: ooextract.py --help | --stdout\n"+
                   "       [-c <connection-string> | --connection-string=<connection-string>\n"+
-		  "       [--html|--pdf]\n"+
-		  "       [--stdout]\n"+
+          "       [--html|--pdf]\n"+
+          "       [--stdout]\n"+
                   "       file1 file2 ...\n"+
                   "\n" +
                   "Extracts plain text from documents and prints it to a file (unless --stdout is specified).\n" +
                   "Requires an OpenOffice.org instance to be running. The script and the\n"+
                   "running OpenOffice.org instance must be able to access the file with\n"+
                   "by the same system path. [ To have a listening OpenOffice.org instance, just run:\n"+
-		  "openoffice \"-accept=socket,host=localhost,port=2002;urp;\" \n"
+          "openoffice \"-accept=socket,host=localhost,port=2002;urp;\" \n"
                   "\n"+
-		  "--stdout \n" +
-		  "         Redirect output to stdout. Avoids writing to a file directly\n" + 
+          "--stdout \n" +
+          "         Redirect output to stdout. Avoids writing to a file directly\n" +
                   "-c <connection-string> | --connection-string=<connection-string>\n" +
                   "        The connection-string part of a uno url to where the\n" +
                   "        the script should connect to in order to do the conversion.\n" +
@@ -130,7 +139,6 @@ def usage():
                   "--html \n"
                   "        Instead of the text filter, the writer html filter is used\n"
                   "--pdf \n"
-                  "        Instead of the text filter, the pdf filter is used\n"
-                  )
+                  "        Instead of the text filter, the pdf filter is used\n")
 
 main()    
