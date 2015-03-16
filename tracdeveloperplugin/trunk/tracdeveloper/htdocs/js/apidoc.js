@@ -16,7 +16,7 @@ jQuery.fn.showDocs = function(uri) {
       div.fadeOut("fast", function() { div.remove(); });
       $(document).unbind("keypress");
     }
-    div.load(uri, {}, function(response, status, xhr) {
+    div.load(uri, function(response, status, xhr) {  // use GET request
       if (status == "error") return;
       $("<button>Close</button>").click(hideDocs).prependTo(div.find(".title"));
       div.css({top: offset.top + "px", left: offset.left + "px"});

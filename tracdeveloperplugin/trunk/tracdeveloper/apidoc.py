@@ -2,10 +2,10 @@
 
 import inspect
 import re
+import sys
 
 from trac.core import *
 from trac.web import HTTPNotFound, IRequestHandler
-from trac.web.chrome import Chrome
 from trac.mimeview import Mimeview, Context
 
 from tracdeveloper.util import linebreaks
@@ -29,11 +29,12 @@ class APIDocumentation(Component):
             return True
 
     def process_request(self, req):
+        req.perm.require('TRAC_DEVELOP')
         modname, attrname = str(req.args['name']).split(':')
         try:
-            module = __import__(modname, {}, {}, filter(None, [attrname]))
+            module = sys.modules[modname]
             obj = getattr(module, attrname)
-        except (ImportError, AttributeError), e:
+        except (KeyError, AttributeError), e:
             raise HTTPNotFound(e)
 
         formatter = self._get_formatter(module)
@@ -44,9 +45,7 @@ class APIDocumentation(Component):
             'doc': formatter(req, inspect.getdoc(obj)),
             'methods': self._get_methods(req, formatter, obj)
         }
-        output = Chrome(self.env).render_template(req, 'developer/apidoc.html',
-                                                  data, fragment=True)
-        req.send(output.render('xhtml'), 'text/html')
+        return 'developer/apidoc.html', data, 'text/html'
 
     # Internal methods
     def _get_formatter(self, module):

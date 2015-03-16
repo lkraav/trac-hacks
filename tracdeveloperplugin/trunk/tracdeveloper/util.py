@@ -2,7 +2,7 @@
 
 import re
 
-from genshi import HTML
+from genshi.builder import tag
 
 def linebreaks(value):
     """Converts newlines in strings into <p> and <br />s."""
@@ -10,5 +10,5 @@ def linebreaks(value):
         return ''
     value = re.sub(r'\r\n|\r|\n', '\n', value) # normalize newlines
     paras = re.split('\n{2,}', value)
-    paras = ['<p>%s</p>' % p.strip().replace('\n', '<br />') for p in paras]
-    return HTML(''.join(paras))
+    return tag(tag.p((line, tag.br) for line in para.splitlines())
+               for para in paras)
