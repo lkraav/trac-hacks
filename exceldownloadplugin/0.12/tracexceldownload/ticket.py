@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import types
 from datetime import datetime
 from itertools import chain, groupby
 from xlwt import Workbook, Formula
@@ -180,8 +179,7 @@ class ExcelTicketModule(Component):
         # prevent "SELECT COUNT(*)" query
         saved_count_prop = query._count
         try:
-            query._count = types.MethodType(lambda self, sql, args, db=None: 0,
-                                            query, query.__class__)
+            query._count = lambda self, sql, args, db=None: 0
             tickets = query.execute(req, db)
             query.num_items = len(tickets)
         finally:
@@ -224,20 +222,39 @@ class ExcelTicketModule(Component):
             tickets[id][name] = value
 
     def _create_sheet_query(self, req, context, data, book):
-        sheet = book.add_sheet(dgettext('messages', 'Custom Query'))
-        writer = WorksheetWriter(sheet, req)
+        def write_headers(writer, query):
+            writer.write_row([(
+                u'%s (%s)' % (dgettext('messages', 'Custom Query'),
+                              dngettext('messages', '%(num)s match',
+                                        '%(num)s matches', query.num_items)),
+                'header', -1, -1)])
+
         query = data['query']
         groups = data['groups']
         fields = data['fields']
         headers = data['headers']
 
-        writer.write_row([(
-            u'%s (%s)' % (dgettext('messages', 'Custom Query'),
-                          dngettext('messages', '%(num)s match',
-                                    '%(num)s matches', query.num_items)),
-            'header', -1, -1)])
+        sheet_count = 1
+        sheet_name = dgettext("messages", "Custom Query")
+        sheet = book.add_sheet(sheet_name)
+        writer = WorksheetWriter(sheet, req)
+        write_headers(writer, query)
+
         for groupname, results in groups:
+            results = [result for result in results
+                              if 'TICKET_VIEW' in req.perm(
+                                 context('ticket', result['id']).resource)]
+            if not results:
+                continue
+
+            if writer.row_idx + len(results) + 3 > writer.MAX_ROWS:
+                sheet_count += 1
+                sheet = book.add_sheet('%s (%d)' % (sheet_name, sheet_count))
+                writer = WorksheetWriter(sheet, req)
+                write_headers(writer, query)
+
             if groupname:
+                writer.move_row()
                 cell = fields[query.group]['label'] + ' '
                 if query.group in ('owner', 'reporter'):
                     cell += Chrome(self.env).format_author(req, groupname)
@@ -247,14 +264,11 @@ class ExcelTicketModule(Component):
                                             '%(num)s matches', len(results))
                 writer.write_row([(cell, 'header2', -1, -1)])
 
-            writer.write_row(
-                (header['label'], 'thead', None, None)
-                for idx, header in enumerate(headers))
+            writer.write_row((header['label'], 'thead', None, None)
+                             for idx, header in enumerate(headers))
 
             for result in results:
                 ticket_context = context('ticket', result['id'])
-                if 'TICKET_VIEW' not in req.perm(ticket_context.resource):
-                    continue
                 cells = []
                 for idx, header in enumerate(headers):
                     name = header['name']
@@ -262,13 +276,13 @@ class ExcelTicketModule(Component):
                         name, result.get(name), req, ticket_context, writer)
                     cells.append((value, style, width, line))
                 writer.write_row(cells)
-            writer.move_row()
 
         writer.set_col_widths()
 
     def _create_sheet_history(self, req, context, data, book):
-        sheet = book.add_sheet(dgettext("messages", "Change History"))
-        writer = WorksheetWriter(sheet, req)
+        def write_headers(writer, headers):
+            writer.write_row((header['label'], 'thead', None, None)
+                             for idx, header in enumerate(headers))
 
         groups = data['groups']
         headers = [header for header in data['headers']
@@ -280,9 +294,11 @@ class ExcelTicketModule(Component):
             {'name': 'comment', 'label': dgettext("messages", "Comment")},
         ]
 
-        writer.write_row(
-            (header['label'], 'thead', None, None)
-            for idx, header in enumerate(headers))
+        sheet_name = dgettext("messages", "Change History")
+        sheet = book.add_sheet(sheet_name)
+        sheet_count = 1
+        writer = WorksheetWriter(sheet, req)
+        write_headers(writer, headers)
 
         tkt_ids = [result['id']
                    for result in chain(*[results for groupname, results
@@ -312,6 +328,12 @@ class ExcelTicketModule(Component):
                              'values': values, 'cnum': None,
                              'comment': '', 'author': ticket['reporter']}]
 
+            if writer.row_idx + len(changes) >= writer.MAX_ROWS:
+                sheet_count += 1
+                sheet = book.add_sheet('%s (%d)' % (sheet_name, sheet_count))
+                writer = WorksheetWriter(sheet, req)
+                write_headers(writer, headers)
+
             for change in changes:
                 cells = []
                 for idx, header in enumerate(headers):
@@ -324,6 +346,7 @@ class ExcelTicketModule(Component):
                         value = change.get('comment', '')
                     elif name == 'author':
                         value = change.get('author', '')
+                        value = Chrome(self.env).format_author(req, value)
                     else:
                         value = change['values'].get(name, '')
                     value, style, width, line = \

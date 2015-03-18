@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
 
-import os
 import re
+from cStringIO import StringIO
 from datetime import datetime
 from decimal import Decimal
-from tempfile import mkstemp
 from unicodedata import east_asian_width
 from xlwt import XFStyle, Style, Alignment, Borders, Pattern, Font
 
+from trac.core import TracError
 from trac.util.text import to_unicode
+
+from tracexceldownload.translation import _
+
+
+class WorksheetWriterError(TracError): pass
 
 
 class WorksheetWriter(object):
+
+    MAX_ROWS = 65536
 
     def __init__(self, sheet, req):
         self.sheet = sheet
@@ -31,6 +38,10 @@ class WorksheetWriter(object):
 
     def move_row(self):
         self.row_idx += 1
+        if self.row_idx >= self.MAX_ROWS:
+            raise WorksheetWriterError(_(
+                "Number of rows in the Excel sheet exceeded the limit of "
+                "65536 rows"))
         self._flush_row()
 
     def write_row(self, cells):
@@ -214,18 +225,9 @@ class WorksheetWriter(object):
 
 
 def get_workbook_content(book):
-    f = None
-    fd, path = mkstemp()
-    try:
-        book.save(path)
-        f = os.fdopen(fd)
-        return f.read()
-    finally:
-        if f is None:
-            os.close(fd)
-        else:
-            f.close()
-        os.unlink(path)
+    out = StringIO()
+    book.save(out)
+    return out.getvalue()
 
 
 def get_literal(text):
