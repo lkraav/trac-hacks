@@ -65,9 +65,9 @@ class ListHacksMacro(WikiMacroBase):
         tag_system = TagSystem(self.env)
 
         all_releases = natural_sort(
-            [r.id for r, _ in tag_system.query(req, 'realm:wiki release')])
+            r.id for r, _ in tag_system.query(req, 'realm:wiki release-filter'))
         all_categories = sorted(
-            [r.id for r, _ in tag_system.query(req, 'realm:wiki type')])
+            r.id for r, _ in tag_system.query(req, 'realm:wiki type'))
 
         hide_release_picker = False
         hide_fieldset_legend = False

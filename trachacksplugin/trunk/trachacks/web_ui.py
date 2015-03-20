@@ -235,8 +235,9 @@ class TracHacksHandler(Component):
             types.append((category, title))
 
         # Trac releases
-        releases = natural_sort([r.id for r, _ in
-                                 tag_system.query(req, 'realm:wiki release')])
+        releases = natural_sort(r.id for r, _ in
+                                tag_system.query(req, 
+                                                 'realm:wiki release-filter'))
 
         data['types'] = types
         data['releases'] = releases
