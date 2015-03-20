@@ -24,8 +24,7 @@ setup(
     package_data={
         'trachacks': [
             'templates/*.html', 'htdocs/js/*.js',
-            'htdocs/css/*.css', 'htdocs/*.gif',
-            'htdocs/png/*.png',
+            'htdocs/css/*.css', 'htdocs/png/*.png',
             ]
         },
     dependency_links=[
