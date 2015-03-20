@@ -120,11 +120,11 @@ class ListHacksMacro(WikiMacroBase):
             span = builder.span("Show hacks for releases:", style=style)
 
             for version in releases:
-                inp = builder.input(version, type_="checkbox", name="release",
+                inp = builder.input(type_="checkbox", name="release",
                                     value=version)
                 if version in show_releases:
                     inp(checked="checked")
-                span(inp, '\n')
+                span(builder.label(inp, version), '\n')
 
             style = "font-size:xx-small; padding:0; border:solid 1px black;"
             span(builder.input(name="update_th_filter", type_="submit",
