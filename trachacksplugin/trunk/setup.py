@@ -28,10 +28,10 @@ setup(
         ]
     },
     dependency_links=[
-        'http://trac-hacks.org/svn/tagsplugin/trunk#egg=TracTags-0.7',
-        'http://trac-hacks.org/svn/accountmanagerplugin/trunk#egg=TracAccountManager-0.5dev',
-        'http://trac-hacks.org/svn/voteplugin/trunk#egg=TracVote-0.3dev',
-        'http://trac-hacks.org/svn/svnauthzadminplugin/0.12#egg=SvnAuthzAdminPlugin',
+        'http://trac-hacks.org/svn/voteplugin/trunk'
+        '#egg=TracVote-0.3dev',
+        'http://trac-hacks.org/svn/svnauthzadminplugin/1.0'
+        '#egg=SvnAuthzAdminPlugin-1.0dev',
     ],
     entry_points={
         'trac.plugins': [
