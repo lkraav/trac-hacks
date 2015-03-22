@@ -1,42 +1,42 @@
 # -*- coding: utf-8 -*-
 
-import os
-from model import *
-
-class AuthzFileReader:
-    def __init__(self):
-        pass
-
-    def read(self, filename):
-        fp = open(filename, "r")
-        parser = AuthzFileParser(filename, fp)
-        return parser.parse()
-
-
-class AuthzFileWriter:
-    def __init__(self):
-        pass
-
-    def write(self, filename, model):
-        fp = open(filename, "r")
-        orig = fp.read()
-        fp.close()
-        new = model.serialize()
-        if (orig != new):
-            fp = open(filename, "w")
-            fp.write(new)
-            fp.close()
-
-
-
+from model import AuthModel, Group, Path, PathAcl, User
 
 PARSE_NORMAL = 0
 PARSE_GROUPS = 1
 PARSE_PATH_ACL = 2
 
 
-class AuthzFileParser:
+class AuthzFileReader:
 
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def read(filename):
+        fp = open(filename, 'r')
+        parser = AuthzFileParser(filename, fp)
+        return parser.parse()
+
+
+class AuthzFileWriter:
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def write(filename, model):
+        fp = open(filename, 'r')
+        orig = fp.read()
+        fp.close()
+        new = model.serialize()
+        if orig != new:
+            fp = open(filename, 'w')
+            fp.write(new)
+            fp.close()
+
+
+class AuthzFileParser:
 
     def __init__(self, filename, fp):
         self.filename = filename
@@ -52,23 +52,22 @@ class AuthzFileParser:
         finally:
             self.fp.close()
 
-
     def _parse_root(self, m):
         while True:
             line = self.fp.readline()
-            if (line == ""):
+            if line == '':
                 break
             line = line.strip()
-            if line.startswith("#"):
+            if line.startswith('#'):
                 # Ignore comments
                 continue
-            if (len(line) == 0):
+            if not line:
                 continue
-            if line == "[groups]":
+            if line == '[groups]':
                 self.state = PARSE_GROUPS
                 continue
             else:
-                if line.startswith("["):
+                if line.startswith('['):
                     self._parse_path(m, line)
                     self.state = PARSE_PATH_ACL
                     continue
@@ -78,37 +77,37 @@ class AuthzFileParser:
                 if self.state == PARSE_PATH_ACL:
                     self._parse_path_acl(m, line)
 
-    def _parse_group(self, m, line):
-        groupname, memberstr = line.split("=")
-        groupname = groupname.strip()
-        g = m.find_group(groupname)
-        if g == None:
-            g = Group(groupname, [])
+    @staticmethod
+    def _parse_group(m, line):
+        group_name, member_name = line.split('=')
+        group_name = group_name.strip()
+        g = m.find_group(group_name)
+        if g is None:
+            g = Group(group_name, [])
             m.add_group(g)
 
-        memberstr = memberstr.strip()
-        if len(memberstr) == 0:
+        member_name = member_name.strip()
+        if not member_name:
             return
-        if "," in memberstr:
-            members = memberstr.split(",")
+        if ',' in member_name:
+            members = member_name.split(',')
         else:
-            members = [memberstr]
+            members = [member_name]
         for me in members:
             me = me.strip()
-            if me.startswith("@"):
-
-                memberg = m.find_group(me.lstrip("@"))
-                if memberg == None:
-                    memberg = Group(me.lstrip("@"), [])
-                    m.add_group(memberg)
-                g.append(memberg)
+            if me.startswith('@'):
+                member_group = m.find_group(me.lstrip('@'))
+                if member_group is None:
+                    member_group = Group(me.lstrip('@'), [])
+                    m.add_group(member_group)
+                g.append(member_group)
             else:
                 g.append(User(me))
 
     def _parse_path(self, m, line):
-        line = line.lstrip("[").rstrip("]")
-        if ":" in line:
-            repo, path = line.split(":")
+        line = line.lstrip('[').rstrip(']')
+        if ':' in line:
+            repo, path = line.split(':')
             repo = repo.strip()
             path = path.strip()
         else:
@@ -119,19 +118,19 @@ class AuthzFileParser:
         m.add_path(self.current_path)
 
     def _parse_path_acl(self, m, line):
-        subjectstr, aclstr = line.split("=")
+        subject, acl = line.split('=')
         acl = [False, False]
-        if (aclstr != None):
-            if "r" in aclstr:
+        if acl is not None:
+            if 'r' in acl:
                 acl[0] = True
-            if "w" in aclstr:
+            if 'w' in acl:
                 acl[1] = True
-        subjectstr = subjectstr.strip()
-        assert (len(subjectstr) > 0)
-        if subjectstr.startswith("@"):
-            assert (len(subjectstr) > 1)
-            subject = m.find_group(subjectstr.lstrip("@"), True)
-            assert (subject != None)
+        subject = subject.strip()
+        assert subject
+        if subject.startswith('@'):
+            assert subject
+            subject = m.find_group(subject.lstrip('@'), True)
+            assert subject is not None
         else:
-            subject = User(subjectstr)
+            subject = User(subject)
         self.current_path.append(PathAcl(subject, *acl))

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import itertools
 import types
 
+
 class Member:
-    def __init__(self, name=""):
-        assert (name and name.strip() != "")
+    def __init__(self, name=''):
+        assert name and name.strip() != ''
         self.name = name
 
     def get_name(self):
@@ -19,13 +21,15 @@ class Member:
     def serialize(self):
         return self.name
 
+
 class User(Member):
     def __init__(self, name):
         Member.__init__(self, name)
 
+
 class UniqueList(list):
     def __init__(self, initial=None, uniqop=None):
-        list.__init__(self)
+        super(list, self).__init__()
         self.uniqop = uniqop
         if initial and isinstance(initial, list):
             self.extend(initial)
@@ -35,7 +39,7 @@ class UniqueList(list):
             self.append(x)
 
     def __add__(self, obj):
-        if not obj in self:
+        if obj not in self:
             list.__add__(self, obj)
 
     def __contains__(self, obj):
@@ -44,40 +48,40 @@ class UniqueList(list):
         return self.uniqop(self, obj)
 
     def append(self, obj):
-        if not obj in self:
+        if obj not in self:
             list.append(self, obj)
 
 
 class Group(Member, UniqueList):
     def __init__(self, name, members=None):
         Member.__init__(self, name)
-        if (not members):
+        if not members:
             members = []
         else:
-            assert(isinstance(members, list))
+            assert isinstance(members, list)
         for member in members:
-            assert(isinstance(member, Member))
+            assert isinstance(member, Member)
         UniqueList.__init__(self, members)
 
     def __eq__(self, obj):
-        if (Member.__eq__(self, obj)):
+        if Member == obj:
             if len(self) != len(obj):
                 return False
-            import itertools
-            for v in itertools.imap(Member.__eq__,self,obj):
-                if (not v):
+            for v in itertools.imap(Member == obj):
+                if not v:
                     return False
             return True
         return False
 
     def __str__(self):
-        return "@" + self.name
+        return '@' + self.name
 
     def serialize(self):
-        ret = self.name + " = "
+        ret = self.name + ' = '
         for elem in self:
-            ret += elem.__str__() + ","
+            ret += str(elem) + ','
         return ret[0:-1]
+
 
 class Path(UniqueList):
     def __init__(self, path, acls=None, repo=None):
@@ -98,21 +102,24 @@ class Path(UniqueList):
         return None
 
     def serialize(self):
-        ret = "["
+        ret = '['
         if self.repo:
-            ret += self.repo + ":"
-        ret += self.path + "]\n"
+            ret += self.repo + ':'
+        ret += self.path + ']\n'
         for acl in self:
             ret += acl.serialize()
-            ret +="\n"
+            ret += '\n'
         return ret
+
 
 class PathAcl:
     def __init__(self, member, r, w):
-        assert (isinstance(member, Member))
+        assert isinstance(member, Member)
         self.member = member
         self.set_read(r)
         self.set_write(w)
+        self.r = None
+        self.w = None
 
     def get_member(self):
         return self.member
@@ -124,20 +131,21 @@ class PathAcl:
         return self.w
 
     def set_read(self, r):
-        assert (r == True or r == False)
+        assert r is True or r is False
         self.r = r
 
     def set_write(self, w):
-        assert (w == True or w == False)
+        assert w is True or w is False
         self.w = w
 
     def serialize(self):
-        ret=""+ self.member.__str__() + " = "
-        if (self.r):
-            ret +="r"
-        if (self.w):
-            ret +="w"
+        ret = '' + self.member.__str__() + ' = '
+        if self.r:
+            ret += 'r'
+        if self.w:
+            ret += 'w'
         return ret
+
 
 class AuthModel:
     def __init__(self, filename, groups=None, paths=None):
@@ -171,14 +179,13 @@ class AuthModel:
         if isinstance(p, Path):
             self.paths.append(p)
 
-    def del_path(self, p, repo = None):
+    def del_path(self, p, repo=None):
         if isinstance(p, Path):
             self.paths.remove(p)
         elif isinstance(p, types.StringTypes):
             rp = self.find_path(p, repo)
             if isinstance(rp, Path):
                 self.paths.remove(rp)
-
 
     def add_group(self, g):
         if isinstance(g, Group):
@@ -187,7 +194,7 @@ class AuthModel:
     def del_group(self, g):
         if isinstance(g, types.StringTypes):
             g = self.find_group(g)
-        assert (isinstance(g, Group))
+        assert isinstance(g, Group)
         self.groups.remove(g)
         for og in self.groups:
             if g in og:
@@ -198,32 +205,34 @@ class AuthModel:
                     p.remove(pacl)
 
     def serialize(self):
-        ret = "\n[groups]\n"
+        ret = '\n[groups]\n'
         for group in self.groups:
-            ret += group.serialize() + "\n"
-        ret +="\n"
+            ret += group.serialize() + '\n'
+        ret += '\n'
         for path in self.paths:
-            ret+=path.serialize() + "\n"
+            ret += path.serialize() + '\n'
         return ret
 
 
-def unique_group_name(list, elem):
-    assert (isinstance(elem, Group))
-    for x in list:
+def unique_group_name(list_, elem):
+    assert isinstance(elem, Group)
+    for x in list_:
         if x.get_name() == elem.get_name():
             return True
     return False
 
-def unique_path_name(list, elem):
-    assert (isinstance(elem, Path))
-    for x in list:
+
+def unique_path_name(list_, elem):
+    assert isinstance(elem, Path)
+    for x in list_:
         if x.get_path() == elem.get_path() and x.get_repo() == elem.get_repo():
             return True
     return False
 
-def unique_acl_member(list, elem):
-    assert (isinstance(elem, PathAcl))
-    for x in list:
+
+def unique_acl_member(list_, elem):
+    assert isinstance(elem, PathAcl)
+    for x in list_:
         if x.get_member() == elem.get_member():
             return True
     return False
