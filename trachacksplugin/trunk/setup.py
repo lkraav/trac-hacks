@@ -15,8 +15,8 @@ setup(
     name='TracHacks',
     version='3.0',
     author='Alex Thomas',
-    maintainer='Michael Renzmann',
-    maintainer_email='mrenzmann@otaku42.de',
+    maintainer='Ryan J Ollos',
+    maintainer_email='ryan.j.ollos@gmail.com',
     description='Customizations of the trac-hacks site.',
     license='3-Clause BSD',
     url='http://trac-hacks.org/wiki/TracHacksPlugin',
@@ -25,25 +25,25 @@ setup(
         'trachacks': [
             'templates/*.html', 'htdocs/js/*.js',
             'htdocs/css/*.css', 'htdocs/png/*.png',
-            ]
-        },
+        ]
+    },
     dependency_links=[
         'http://trac-hacks.org/svn/tagsplugin/trunk#egg=TracTags-0.7',
         'http://trac-hacks.org/svn/accountmanagerplugin/trunk#egg=TracAccountManager-0.5dev',
         'http://trac-hacks.org/svn/voteplugin/trunk#egg=TracVote-0.3dev',
         'http://trac-hacks.org/svn/svnauthzadminplugin/0.12#egg=SvnAuthzAdminPlugin',
-        ],
+    ],
     entry_points={
         'trac.plugins': [
             'trachacks.macros = trachacks.macros',
             'trachacks.web_ui = trachacks.web_ui',
-            ]
-        },
+        ]
+    },
     install_requires=[
         'TracAccountManager',
         'TracTags >= 0.7',
         'TracVote >= 0.2',
         'SvnAuthzAdminPlugin',
-        ],
+    ],
     test_suite='trachacks.tests.test_suite',
-    )
+)
