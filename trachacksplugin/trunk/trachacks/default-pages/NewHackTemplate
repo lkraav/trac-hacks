@@ -1,0 +1,37 @@
+[[PageOutline(2-5,Contents,pullout)]]
+
+= ${TITLE}
+
+== Description
+
+${DESCRIPTION}
+
+== !Bugs/Feature Requests
+
+Existing bugs and feature requests for ${WIKINAME} are
+[report:9?COMPONENT=${WIKINAME} here].
+
+If you have any issues, create a
+[http://trac-hacks.org/newticket?component=${WIKINAME} new ticket].
+
+== Download
+
+Download the zipped source from [export:${LCNAME} here].
+
+== Source
+
+You can check out ${WIKINAME} from [${SOURCEURL} here] using Subversion, or [source:${LCNAME} browse the source] with Trac.
+
+== Installation
+
+${INSTALLATION}
+
+== Recent Changes
+
+[[ChangeLog(${LCNAME}, 3)]]
+
+== !Author/Contributors
+
+**Author:** [wiki:${OWNER}] [[BR]]
+**Maintainer:** [[Maintainer]] [[BR]]
+**Contributors:**
