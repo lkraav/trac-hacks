@@ -10,28 +10,29 @@
 # Author: John Hampton <pacopablo@pacopablo.com>
 # Extended: Branson Matheson <branson.matheson@nasa.gov>
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 PACKAGE = 'TracActiveDirectoryAuth'
-VERSION = '0.4.2'
+VERSION = '0.5.0'
 
-setup(  name=PACKAGE, version=VERSION,
-        author = 'John Hampton',
-        author_email = 'pacopablo@pacopablo.com',
-        maintainer = 'Branson Matheson',
-        maintainer_email = 'branson.matheson@nasa.gov',
-        description = 'Trac Authentication against Active Directory ',
-        url = 'http://trac-hacks.org/wiki/ActiveDirectoryAuthPlugin',
-        license='BSD',
-        zip_safe = True,
-        packages = ['tracext', 'tracext.adauth'],
-        entry_points = {
-            'trac.plugins': [
-                'adauth.db = tracext.adauth.db',
-                'adauth = tracext.adauth',
-                'adauth.permissionstore = tracext.adauth.api:UserExtensiblePermissionStore',
-            ],
-        },
-        namespace_packages=['tracext'],
-        install_requires = ['Trac >=0.11', 'TracAccountManager', 'python-ldap'],
-)
+setup(name=PACKAGE, version=VERSION,
+      author='John Hampton',
+      author_email='pacopablo@pacopablo.com',
+      maintainer='Branson Matheson',
+      maintainer_email='branson.matheson@nasa.gov',
+      description='Trac Authentication against Active Directory ',
+      url='http://trac-hacks.org/wiki/DirectoryAuthPlugin',
+      license='BSD',
+      zip_safe=True,
+      packages=['tracext', 'tracext.adauth'],
+      entry_points={
+          'trac.plugins': [
+              'adauth.db = tracext.adauth.db',
+              'adauth = tracext.adauth',
+              'adauth.permissionstore = '
+              'tracext.adauth.api:UserExtensiblePermissionStore',
+          ],
+      },
+      namespace_packages=['tracext'],
+      install_requires=['Trac >=1.0', 'TracAccountManager', 'python-ldap'],
+      )

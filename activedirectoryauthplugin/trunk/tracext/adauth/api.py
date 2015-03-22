@@ -8,10 +8,11 @@
 #
 # Author: John Hampton <pacopablo@pacopablo.com>
 
-from trac.core import implements, ExtensionPoint, Component, Interface
+from trac.core import ExtensionPoint, Interface
 from trac.perm import DefaultPermissionStore
 
 __all__ = ['IPermissionUserProvider', 'UserExtensiblePermissionStore']
+
 
 class IPermissionUserProvider(Interface):
     """ Provide permission actions for users """
@@ -34,14 +35,13 @@ class UserExtensiblePermissionStore(DefaultPermissionStore):
         the action column: such a record represents a group and not an actual
         permission, and declares that the user is part of that group.
 
-        Plugins implmenting the IPermissionUserProvider can return permission
+        Plugins implementing the IPermissionUserProvider can return permission
         actions based on user.  For example, return TRAC_ADMIN if a user is in
         a given LDAP group
         """
         subjects = set([username])
         for provider in self.group_providers:
             subjects.update(provider.get_permission_groups(username))
-
 
         actions = set([])
         for provider in self.user_providers:
