@@ -8,10 +8,11 @@
 #
 # Author: John Hampton <pacopablo@pacopablo.com>
 
-from trac.core import implements, ExtensionPoint, Component, Interface
+from trac.core import Component, ExtensionPoint, Interface, implements
 from trac.perm import IPermissionStore, IPermissionPolicy
 
 __all__ = ['IPermissionUserProvider', 'UserExtensiblePermissionStore']
+
 
 class IPermissionUserProvider(Interface):
     """ Provide permission actions for users """
@@ -19,21 +20,24 @@ class IPermissionUserProvider(Interface):
     def get_permission_action(username):
         """ Return a list of the actions for the given username """
 
+
 class UserExtensiblePermissionStore(Component):
     """ Default Permission Store extended user permission providers """
+
     implements(IPermissionStore, IPermissionPolicy)
+
     user_providers = ExtensionPoint(IPermissionUserProvider)
-    # group_providers = ExtensionPoint(IPermissionGroupProvider)
     
     def check_permission(self, action, username, resource, perm):
-      self.log.debug("perm: checking user perms for %s to have %s on %s" % [username, action, resource])
-      subjects = []
-      for provider in self.group_providers:
-          subjects.update(provider.get_permission_groups(username))
-      if action in subjects:
-        return True
-      else:
-        return False
+        self.log.debug("perm: checking user perms for %s to have %s on %s",
+                       (username, action, resource))
+        subjects = []
+        for provider in self.group_providers:
+            subjects.update(provider.get_permission_groups(username))
+        if action in subjects:
+            return True
+        else:
+            return False
 
     def get_user_permissions(self, username):
         """Retrieve the permissions for the given user and return them in a
@@ -44,7 +48,7 @@ class UserExtensiblePermissionStore(Component):
         the action column: such a record represents a group and not an actual
         permission, and declares that the user is part of that group.
 
-        Plugins implmenting the IPermissionUserProvider can return permission
+        Plugins implementing the IPermissionUserProvider can return permission
         actions based on user.  For example, return TRAC_ADMIN if a user is in
         a given LDAP group
         """        
@@ -76,4 +80,3 @@ class UserExtensiblePermissionStore(Component):
                 break
               
         return list(actions)
-      
