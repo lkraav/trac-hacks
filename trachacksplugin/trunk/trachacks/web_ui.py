@@ -417,8 +417,8 @@ class TracHacksHandler(Component):
             elif 'preview' in req.args and not context.errors:
                 page = WikiPage(self.env, self.template)
                 if not page.exists:
-                    raise TracError('New hack template %s does not exist.' %
-                                    self.template)
+                    raise TracError(_("New hack template '%(page)s' does not "
+                                      "exist.", page=self.template))
                 template = Template(page.text).substitute(vars)
                 template = re.sub(r'\[\[ChangeLog[^\]]*\]\]',
                                   'No changes yet', template)
@@ -486,6 +486,9 @@ class TracHacksHandler(Component):
 
                 # Step 4: Create wiki page
                 template_page = WikiPage(self.env, self.template)
+                if not template_page.exists:
+                    raise TracError(_("New hack template '%(page)s' does not "
+                                      "exist.", page=self.template))
                 page = WikiPage(self.env, page_name)
                 page.text = Template(template_page.text).substitute(vars)
                 page.save(req.authname, 'New hack %s, created by %s'
