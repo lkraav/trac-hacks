@@ -515,7 +515,8 @@ class TracHacksHandler(Component):
                         authz_file = self.env.config.getpath('trac',
                                                              'authz_file')
                         authz = AuthzFileReader().read(authz_file)
-                        authz.del_path(Path("/%s" % hack_path))
+                        if authz.find_path(hack_path):
+                            authz.del_path(Path('/%s' % hack_path))
                         AuthzFileWriter().write(authz_file, authz)
                     # TODO: rollback subversion path creation
                     fcntl.flock(lock_file, fcntl.LOCK_UN)
