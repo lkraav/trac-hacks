@@ -113,7 +113,8 @@ class ReleasesExist(Aspect):
         if selected:
             tags = TagSystem(self.env)
             req = FakeRequest(self.env)
-            releases = [r.id for r, _ in tags.query(req, 'realm:wiki release')]
+            releases = [r.id for r, _
+                             in tags.query(req, 'realm:wiki release-filter')]
             if isinstance(selected, (basestring, unicode)):
                 selected = [selected]
             for s in selected:
@@ -124,7 +125,7 @@ class ReleasesExist(Aspect):
                         "Invalid release %s selected for new hack %s"
                         % (s, hack)
                     )
-                    raise ValidationError('Selected release "%s" invalid?!'
+                    raise ValidationError('Selected release "%s" invalid.'
                                           % str(s))
         return selected
 
