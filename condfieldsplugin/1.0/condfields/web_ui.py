@@ -70,11 +70,9 @@ class CondFieldsModule(Component):
         standard_fields = set()
         for f in TicketSystem(self.env).get_ticket_fields():
             all_fields.append(f['name'])
-
-        field_types[f['name']] = f['type']
-
-        if not f.get('custom'):
-            standard_fields.add(f['name'])
+            field_types[f['name']] = f['type']
+            if not f.get('custom'):
+                standard_fields.add(f['name'])
 
         if 'owner' in all_fields:
             curr_idx = all_fields.index('owner')
