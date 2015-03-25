@@ -96,13 +96,13 @@ class ViewTicketChangesets(Component):
     def _render(self, req, ticket, exists):
         if exists:
             message = self.changesets.format()
-            return tag.div(tag.h2(_("Repository Changesets"),
+            return tag.div(tag.h3(_("Repository Changesets"),
                                   class_='foldable'),
                            tag.div(message, id='changelog'),
                            class_=self.collapsed and 'collapsed')
         else:
             message = _("(none)")
-            return tag.div(tag.h2(_("Repository Changesets"), ' ', message,
+            return tag.div(tag.h3(_("Repository Changesets"), ' ', message,
                                   class_='foldable'))
 
 
