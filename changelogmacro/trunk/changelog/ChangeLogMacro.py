@@ -12,11 +12,13 @@ import re
 
 from trac.core import *
 from trac.mimeview import *
-from trac.util import escape, format_datetime, Markup
+from trac.util import format_datetime, Markup
+from trac.util.translation import _
+from trac.versioncontrol.api import NoSuchNode
 from trac.web.chrome import web_context
-from trac.wiki.api import parse_args
-from trac.wiki.macros import WikiMacroBase
-from trac.wiki.formatter import format_to_html, wiki_to_oneliner
+from trac.wiki.formatter import format_to_html, system_message, \
+                                wiki_to_oneliner
+from trac.wiki.macros import WikiMacroBase, parse_args
 from StringIO import StringIO
 
 class ChangeLogMacro(WikiMacroBase):
@@ -119,7 +121,10 @@ class ChangeLogMacro(WikiMacroBase):
             limit = 5
         else:
             limit = int(limit)
-        node = repo.get_node(path, rev)
+        try:
+            node = repo.get_node(path, rev)
+        except NoSuchNode, e:
+            return system_message(_("ChangeLog macro failed"), e)
         out = StringIO()
         out.write('</p>') # close surrounding paragraph 
         out.write('\n<div class="changelog">\n<dl class="wiki">')

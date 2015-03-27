@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name = 'ChangeLogMacro',
-    version = '0.2',
+    version = '0.3',
     packages = ['changelog'],
     author = 'Alec Thomas',
     maintainer = 'Ryan Ollos',
