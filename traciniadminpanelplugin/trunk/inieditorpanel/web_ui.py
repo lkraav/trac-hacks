@@ -6,10 +6,11 @@ import copy
 from pkg_resources import resource_filename
 
 from trac.core import *
-from trac.config import ConfigSection, Option, ListOption, ExtensionOption, _TRUE_VALUES
+from trac.config import ConfigSection, Option, ListOption, ExtensionOption
 from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script, \
                             add_script_data, add_notice, add_warning
 from trac.admin.api import IAdminPanelProvider
+from trac.util import as_bool
 from trac.util.translation import dgettext, domain_functions
 
 from inieditorpanel.api import *
@@ -520,7 +521,7 @@ class TracIniAdminPanel(Component):
     if option is not None:
       option_type = option.__class__.__name__
       if option_type == 'BoolOption':
-        if str(value).lower() in _TRUE_VALUES:
+        if as_bool(str(value)):
           return 'true'
         else:
           return 'false'
