@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name='TracTocMacro',
-    version='11.0.0.4',
+    version='11.0.0.5',
     packages=['tractoc'],
     author="Alec Thomas",
     maintainer="Christian Boos",

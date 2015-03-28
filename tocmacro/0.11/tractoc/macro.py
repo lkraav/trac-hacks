@@ -125,7 +125,7 @@ class TOCMacro(WikiMacroBase):
                'macro_no_float' in formatter.properties:
             return ''
         
-        current_page = resource.id
+        current_page = unicode(resource.id)
          
         # Split the args
         args, kw = parse_args(args)
