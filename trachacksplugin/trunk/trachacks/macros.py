@@ -106,7 +106,7 @@ class ListHacksMacro(WikiMacroBase):
                 show_releases = [show_releases]
             req.session['th_release_filter'] = ','.join(show_releases)
         else:
-            th_releases_filter = req.session.get('th_release_filter')
+            th_releases_filter = req.session.get('th_release_filter', latest_major_release)
             show_releases = th_releases_filter.split(',') \
                             if th_releases_filter is not None \
                             else latest_major_release
