@@ -8,11 +8,11 @@ ${DESCRIPTION}
 
 == !Bugs/Feature Requests
 
-Existing bugs and feature requests for ${WIKINAME} are
+Existing bugs and feature requests for ${WIKINAME} are 
 [report:9?COMPONENT=${WIKINAME} here].
 
-If you have any issues, create a
-[http://trac-hacks.org/newticket?component=${WIKINAME} new ticket].
+If you have any issues, create a 
+[/newticket?component=${WIKINAME} new ticket].
 
 == Download
 
