@@ -14,9 +14,8 @@ setup(
     license='GPL',
     package_dir={
         'svnauthz': 'svnauthz',
-        'svnauthz_test': 'svnauthz_test',
     },
-    packages=['svnauthz', 'svnauthz_test'],
+    packages=['svnauthz'],
     package_data={
         'svnauthz': [
             'templates/*',
