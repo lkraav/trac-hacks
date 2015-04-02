@@ -21,7 +21,7 @@ class TicketValidatorAdminPanelProvider(Component):
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
-        if req.perm.has_permission('TICKET_ADMIN'):
+        if 'TICKET_ADMIN' in req.perm:
             yield ('ticket', _("Ticket System"), 'validation',
                    _("Validation Rules"))
 
@@ -30,7 +30,7 @@ class TicketValidatorAdminPanelProvider(Component):
         if req.method == 'POST':
             
             if 'apply' not in req.args:
-                return self._handle_add_remove(req, category, page, path_info)
+                return self._render(req, self._get_rules(req))
             
             self._update_config(req)
         
@@ -45,6 +45,7 @@ class TicketValidatorAdminPanelProvider(Component):
         return self._render(req, rules)
 
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         return []
 
@@ -53,6 +54,7 @@ class TicketValidatorAdminPanelProvider(Component):
         return [resource_filename(__name__, 'templates')]
 
     # Private methods
+
     def _get_rules(self, req):
         """Get the list of rules from the request.
         
@@ -85,9 +87,6 @@ class TicketValidatorAdminPanelProvider(Component):
                 rules.append(tmp[key])
                 
         return rules
-
-    def _handle_add_remove(self, req, category, page, path_info):
-        return self._render(req, self._get_rules(req))
 
     def _splitname(self, name):
         

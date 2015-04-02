@@ -19,6 +19,7 @@ class RequiredFieldValidator(Component):
     def prepare_ticket(self, req, ticket, fields, actions):
         """Not currently called, but should be provided for future
         compatibility."""
+        pass
 
     def validate_ticket(self, req, ticket):
         """Make sure required fields for the next state have been 
