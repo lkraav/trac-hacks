@@ -295,6 +295,8 @@ validaterule.setup = function(input, spec){
                         msg = spec.target+" must not "+e;
                     }
                     alert(msg);
+                    // Allow form to be submitted again.
+                    form.removeClass('trac-submit-is-disabled');
                     field.focus();
                 }
                 return valid;
