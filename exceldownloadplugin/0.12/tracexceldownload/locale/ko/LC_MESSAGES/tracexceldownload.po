@@ -20,7 +20,7 @@ msgstr ""
 
 #: tracexceldownload/api.py:42
 msgid "Number of rows in the Excel sheet exceeded the limit of 65536 rows"
-msgstr "엑설 시트의 행 수가 65,536 행 범위를 초과하였습니다."
+msgstr "엑셀 시트의 행 수가 65,536 행 범위를 초과하였습니다."
 
 #: tracexceldownload/ticket.py:141 tracexceldownload/ticket.py:519
 msgid "Excel"
