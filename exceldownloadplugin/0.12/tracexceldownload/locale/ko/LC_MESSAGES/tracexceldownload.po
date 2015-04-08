@@ -2,15 +2,15 @@
 # Copyright (C) 2012
 # This file is distributed under the same license as the
 # ExcelDownloadPlugin project.
-# Genie, 2012.
+# Genie <386@mail.com>, 2012-2015.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: ExcelDownloadPlugin 0.12.0.1\n"
 "Report-Msgid-Bugs-To: jun66j5@gmail.com\n"
-"POT-Creation-Date: 2012-05-21 03:47+0900\n"
+"POT-Creation-Date: 2015-03-18 16:11+0900\n"
 "PO-Revision-Date: 2012-05-21 03:55+0900\n"
-"Last-Translator: Genie\n"
+"Last-Translator: Genie <386@mail.com>\n"
 "Language-Team: ko <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
 "MIME-Version: 1.0\n"
@@ -18,11 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: tracexceldownload/ticket.py:38 tracexceldownload/ticket.py:352
+#: tracexceldownload/api.py:42
+msgid "Number of rows in the Excel sheet exceeded the limit of 65536 rows"
+msgstr "엑설 시트의 행 수가 65,536 행 범위를 초과하였습니다."
+
+#: tracexceldownload/ticket.py:141 tracexceldownload/ticket.py:519
 msgid "Excel"
 msgstr "Excel"
 
-#: tracexceldownload/ticket.py:40 tracexceldownload/ticket.py:42
+#: tracexceldownload/ticket.py:143 tracexceldownload/ticket.py:145
 msgid "Excel including history"
 msgstr "Excel (변경 이력 포함)"
 
