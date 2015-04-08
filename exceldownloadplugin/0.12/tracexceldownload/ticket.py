@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import types
 from datetime import datetime
 from itertools import chain, groupby
 from xlwt import Workbook, Formula
@@ -179,7 +180,8 @@ class ExcelTicketModule(Component):
         # prevent "SELECT COUNT(*)" query
         saved_count_prop = query._count
         try:
-            query._count = lambda self, sql, args, db=None: 0
+            query._count = types.MethodType(lambda self, sql, args, db=None: 0,
+                                            query, query.__class__)
             tickets = query.execute(req, db)
             query.num_items = len(tickets)
         finally:
