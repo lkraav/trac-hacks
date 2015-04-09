@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2008 Martin Aspeli <optilude@gmail.com>
-# Copyright (C) 2012-2013 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2012-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
 
-from StringIO import StringIO
+from genshi.builder import tag
 
 from trac.core import implements
+from trac.db.api import get_column_names
 from trac.web.chrome import ITemplateProvider, add_stylesheet
-from trac.wiki.formatter import system_message, format_to_html
+from trac.wiki.formatter import format_to_oneliner, system_message
 from trac.wiki.macros import WikiMacroBase
-from trac.util.html import Markup
 from trac.util.text import exception_to_unicode, to_unicode
 from trac.util.translation import _
+
 
 class SQLTable(WikiMacroBase):
     """Draw a table from a SQL query in a wiki page.
@@ -34,6 +35,7 @@ class SQLTable(WikiMacroBase):
     implements(ITemplateProvider)
 
     # ITemplateProvider methods
+
     def get_templates_dirs(self):
         return []
 
@@ -42,42 +44,28 @@ class SQLTable(WikiMacroBase):
         return [('wikitable', resource_filename(__name__, 'htdocs'))]
 
     # IWikiMacroBase methods
+
     def expand_macro(self, formatter, name, content):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
+        def format(item):
+            if item is None:
+                item = "//(NULL)//"
+            elif item in (True, False):
+                item = str(item).upper()
+            elif not isinstance(item, basestring):
+                item = to_unicode(item)
+            return format_to_oneliner(self.env, formatter.context, item)
+
         try:
-            cursor.execute(content)
-        except Exception, e:
+            with self.env.db_query as db:
+                cursor = db.cursor() 
+                rows = cursor.execute(content).fetchall()
+                cols = get_column_names(cursor)
+        except self.env.db_exc.DatabaseError, e:
             return system_message(_("Invalid SQL"), exception_to_unicode(e))
 
-        out = StringIO()
-        print >> out, "<table class='listing wikitable'>"
-        print >> out, " <thead>"
-        print >> out, "  <tr>"
-        for desc in cursor.description:
-            print >> out, "<th>%s</th>" % desc[0]
-        print >> out, "  </tr>"
-        print >> out, " </thead>"
-        print >> out, " <tbody>"
-
-        for idx, row in enumerate(cursor):
-            css_class = (idx % 2 == 0) and 'odd' or 'even'
-            print >> out, "  <tr class='%s'>" % css_class
-            for col in row:
-                if col is None:
-                    col = "''(NULL)''"
-                elif col is True:
-                    col = 'TRUE'
-                elif col is False:
-                    col = 'FALSE'
-                elif not isinstance(col, basestring):
-                    col = to_unicode(col)
-                print >> out, "<td>%s</td>" % \
-                    format_to_html(self.env, formatter.context, col)
-            print >> out, "  </tr>"
-
-        print >> out, " </tbody>"
-        print >> out, "</table>"
-
         add_stylesheet(formatter.req, 'wikitable/css/wikitable.css')
-        return Markup(out.getvalue())
+        return tag.table(tag.thead(tag.tr(tag.th(c) for c in cols)),
+                         tag.tbody(tag.tr((tag.td(format(c)) for c in row),
+                                          class_='even' if idx % 2 else 'odd')
+                                          for idx, row in enumerate(rows)),
+                         class_='listing wikitable')
