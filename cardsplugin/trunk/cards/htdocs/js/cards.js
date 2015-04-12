@@ -2,7 +2,7 @@ jQuery(document).ready(function($) {
 
     // Fix jQuery UI Dialogs. Pressing enter should "click the first button", not submit the form (with GET and a page refresh!)
     // See http://stackoverflow.com/questions/868889/submit-jquery-ui-dialog-on-enter
-    $(document).delegate('.ui-dialog', 'keydown', function(e) {
+    $(document).delegate('.trac-cards-dialog', 'keydown', function(e) {
         var tagName = e.target.tagName.toLowerCase();
         tagName = (tagName === 'input' && e.target.type === 'button') ? 'button' : tagName;
         if (e.which === $.ui.keyCode.ENTER && tagName !== 'textarea' && tagName !== 'select' && tagName !== 'button') {
@@ -56,8 +56,8 @@ jQuery(document).ready(function($) {
     });
     
     // Edit / delete
-    var editCardDialog = $("<div title='Edit card'><form><label>Title: <input type='text' name='title' /></label><br/></form></div>");
-    var ctrlEditTitle = editCardDialog.find("input[name='title']");
+    var editCardDialog = $("<div title='Edit card'><form><label for='title'>Title:</label><br /><textarea name='title' rows='5' cols='30'></textarea></form></div>");
+    var ctrlEditTitle = editCardDialog.find("textarea[name='title']");
     function showEditCardDialog() {
     
         var board_element = $(this).parents('.trac-cards-board');
@@ -69,6 +69,7 @@ jQuery(document).ready(function($) {
         ctrlEditTitle.val(card.title);
         editCardDialog.dialog({
             modal: true,
+            dialogClass: "trac-cards-dialog",
             buttons: {
                 "Edit": function() {
                     var post_data = serialized_post_data(card, 'update_card', board_data);
@@ -116,6 +117,7 @@ jQuery(document).ready(function($) {
         ctrlCreateTitle.val('');
         createDialog.dialog({
             modal: true,
+            dialogClass: "trac-cards-dialog",
             buttons: {
                 "Create": function() {
                     var proposed_card = {
