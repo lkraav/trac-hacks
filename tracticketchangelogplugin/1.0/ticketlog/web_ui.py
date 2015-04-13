@@ -22,7 +22,7 @@ from trac.resource import Resource
 from trac.versioncontrol.api import RepositoryManager
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
-from trac.wiki.formatter import format_to_oneliner
+from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.util.datefmt import format_datetime, from_utimestamp, user_time
 from trac.util.text import shorten_line
 
@@ -113,7 +113,7 @@ class TicketlogModule(Component):
                 'timestamp': timestamp,
                 'time': user_time(req, format_datetime,
                                   from_utimestamp(timestamp)),
-                'message': format_to_oneliner(self.env, ctxt, message),
+                'message': format_to_html(self.env, ctxt, message),
             }
             revisions.append(revision)
 
