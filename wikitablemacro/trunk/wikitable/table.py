@@ -58,7 +58,8 @@ class SQLTable(WikiMacroBase):
         try:
             with self.env.db_query as db:
                 cursor = db.cursor() 
-                rows = cursor.execute(content).fetchall()
+                cursor.execute(content)
+                rows = cursor.fetchall()
                 cols = get_column_names(cursor)
         except self.env.db_exc.DatabaseError, e:
             return system_message(_("Invalid SQL"), exception_to_unicode(e))
