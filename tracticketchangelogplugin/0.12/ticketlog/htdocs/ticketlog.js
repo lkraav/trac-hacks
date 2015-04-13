@@ -80,9 +80,10 @@ jQuery(document).ready(function($) {
         data: JSON.stringify(data),
         contentType: "application/json",
         cache: false,
-        async: false,
+        async: true,
         dataType: 'json',
         success: onQuerySuccess,
         error: onQueryError
     });
 });
+
