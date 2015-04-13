@@ -1,0 +1,26 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+  <head>
+  </head>
+  <body>
+     <form method="get" action="detailedView">
+       <div>
+<!--         <input type="hidden" name="action" value="${query.to_string()}" />-->
+    <?python 
+    t = []
+    for ts in tickets:
+        t.append(ts['id'])
+        t.append(',') ?>
+         <input type="hidden" name="ids" value="$t" />
+         <input type="submit" value="${_('Detailed View')}"
+                title="${_('View the results of this query as entire tickets')}" />
+       </div>
+     </form>
+
+  </body>
+</html>

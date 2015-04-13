@@ -1,0 +1,2 @@
+# module
+from detailedView import *

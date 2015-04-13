@@ -1,0 +1,105 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+  <xi:include href="layout.html" />
+  <head>
+  </head>
+  <body>
+
+    <div py:if="tkt == None">
+    No query results. To use this plugin, perform a query then press the "Detailed View" button
+    </div>
+
+    <div py:if="detailed">
+      <div py:for="ticket in detailed"> 
+       <hr></hr>
+        <h1>Ticket #$ticket.id ($ticket.status $ticket.type<span py:if="ticket.resolution">: $ticket.resolution</span>)</h1>
+        <div id="ticket" class="trac-content"
+          style="background-color:#FBF5D5">
+          <div class="date">
+           <div style="width:70%;float:left"><h1 style="color:#990000">$ticket.summary </h1></div>
+           <div>
+            <p align="right" i18n:msg="created" py:if="ticket.exists" >Opened ${pretty_dateinfo(ticket.time)} </p>
+            <p align="right" i18n:msg="closed" py:if="closetime">Closed ${pretty_dateinfo(closetime)}</p>
+            <p align="right" i18n:msg="modified" py:if="ticket.changetime != ticket.time and ticket.changetime != closetime">
+      Last modified ${pretty_dateinfo(ticket.changetime)}</p>
+           </div>
+          </div>
+          <div style="clear:both"></div>
+          <hr></hr>
+
+           <div py:for="field, label, type in sortedFields">
+            <span style="width:50%;float:left">$label : 
+             <py:if test="field">
+               <py:choose test="">
+                 <py:when test="(field == 'baseline')"><b>${ticket[field]}</b></py:when>
+                 <py:when test="(type == 'checkbox') and (ticket[field] == '1')"><span style="color:LimeGreen;font-style:italic;">yes</span></py:when>
+                 <py:when test="(type == 'checkbox')"><span style="color:red;font-style:italic;">no</span></py:when>
+                 <py:when test="(type == 'text')"><span style="color:blue">${ticket[field]}</span></py:when>
+                 <py:when test="(type == 'select')"><span style="color:Navy">${ticket[field]}</span></py:when>
+                 <py:otherwise>${ticket[field]}</py:otherwise>
+               </py:choose>
+              </py:if>
+            </span>
+           </div>
+          <div style="clear:both"></div>
+
+          <div py:for="field, label in textAreas">
+            <hr></hr>
+            $label: <b>${ticket[field]}</b>
+          </div>
+         </div>
+        <div py:if="cloneTable">
+          <h2>Clone Table</h2>
+          <table border="1">
+           <tr>
+            <td width="48"><b><center>Cloned From</center></b></td>
+            <td><b><center>Ticket</center></b></td>
+            <td width="48"><b><center>Cloned In</center></b></td>
+            <td><b><center>Summary</center></b></td>
+            <td><b><center>Baseline</center></b></td>
+            <td><b><center>Milestone</center></b></td>
+            <td><b><center>Status</center></b></td>
+            <td><b><center>Resolution</center></b></td>
+           </tr>
+           <tr py:for="id, tkt, clonedfrom, clonedin, summary, baseline, milestone, status, resolution in cloneTable"
+           py:if="int(id)==int(ticket.id)">
+            <td><center>$clonedfrom</center></td>
+            <td><center><a href="ticket/$tkt">$tkt</a></center></td>
+            <td><center>$clonedin</center></td>
+            <td>$summary</td>
+            <td><center><b>$baseline</b></center></td>
+            <td><center>$milestone</center></td>
+            <td><center>$status</center></td>
+            <td><center>$resolution</center></td>
+           </tr>
+          </table>
+        </div>
+
+        <div py:if="changes">
+         <h3>Change History </h3>
+          <div id="changelog">
+           <div py:for="comment in changes">
+            <ul>
+              <div py:for="id, time, user, field, oldvalue, newvalue in comment" py:if="int(id)==int(ticket.id)">
+                <span py:if="field=='comment'"><hr></hr><span style="color:grey">Comment:$oldvalue made ${pretty_dateinfo(time)} by $user</span></span>
+                <div py:if="field!='comment'"> <li><b>$field</b>
+                  <span py:if="field=='description'">modified</span>
+                  <span py:if="oldvalue==None">set to <i>$newvalue</i></span>
+                  <span py:if="oldvalue!=None and field!='description'">changed from <i>$oldvalue</i> to <i>$newvalue</i></span></li>
+                </div>
+                <div py:if="field=='comment' and newvalue!=None">$newvalue</div>
+              </div>
+            </ul>
+           </div>
+          </div>
+        </div>
+      </div>
+    </div>  
+  </body>
+</html>
+
