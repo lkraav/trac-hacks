@@ -1,3 +1,11 @@
+<!--!
+  Copyright (C) 2015 Jay Thomas
+  All rights reserved.
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+-->
+
 <!DOCTYPE html
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -11,7 +19,7 @@
      <form method="get" action="detailedView">
        <div>
 <!--         <input type="hidden" name="action" value="${query.to_string()}" />-->
-    <?python 
+    <?python
     t = []
     for ts in tickets:
         t.append(ts['id'])

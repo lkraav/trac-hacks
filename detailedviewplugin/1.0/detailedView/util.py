@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 Jay Thomas
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 from trac.ticket.model import Ticket
 import re
 
@@ -11,8 +19,8 @@ def sortFields(fields):
     field_name_sort = [
     "reporter", "owner",
     "baseline", "priority" ,
-    "milestone", "perfective" , 
-    "version", "blocking" , 
+    "milestone", "perfective" ,
+    "version", "blocking" ,
     "component", "blockedby" ,
     "tpr" , "clonedfrom" ,
     "testsite", "clonedin",

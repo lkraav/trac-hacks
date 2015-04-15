@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 Jay Thomas
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 import re
 
 from genshi.builder import tag
@@ -18,7 +26,7 @@ class DetailedView(Component):
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         return 'detailedView'
-    
+
     def get_navigation_items(self, req):
         if 'TICKET_VIEW' in req.perm:
             yield ('mainnav', 'detailedView',
@@ -27,7 +35,7 @@ class DetailedView(Component):
     # IRequestHandler methods
     def match_request(self, req):
         return re.match(r'/detailedView(?:_trac)?(?:/.*)?$', req.path_info)
-    
+
     def process_request(self, req):
 
         tickets = req.args.get('ids', 'view')
@@ -38,7 +46,7 @@ class DetailedView(Component):
         changes = []
         comment = []
         tkt = None
- 
+
         for id in ticketIDs:
             try:
                 tkt = Ticket(self.env,id)
@@ -49,7 +57,7 @@ class DetailedView(Component):
                 cloneList = []
                 cloneList = findClones(self,id,id,[],[])
                 if cloneList:
-                    cloneTable = cloneTable + cloneList 
+                    cloneTable = cloneTable + cloneList
                 for result in self.env.db_query("SELECT * FROM ticket_change WHERE ticket = %s " % (id)):
                     if result[3] == 'description':
                         comment.append([result[0], result[1], result[2], result[3],'modified',''])
@@ -75,7 +83,7 @@ class DetailedView(Component):
         return 'detailedView.html', data, None
 
     # ITemplateProvider methods
-    # Used to add the plugin's templates and htdocs 
+    # Used to add the plugin's templates and htdocs
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
