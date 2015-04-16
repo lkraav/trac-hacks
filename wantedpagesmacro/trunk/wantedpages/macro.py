@@ -170,11 +170,16 @@ class WantedPagesMacro(WikiMacroBase):
         _largs, _kwargs = parse_args(content)
         _show_referrers = _largs and 'show_referrers' in _largs
         _ignored_referrers = _kwargs.get('ignored_referrers', None)
+        # 'filter' is an alias for option 'ignored_referrers'
+        if not _ignored_referrers:
+            _ignored_referrers = _kwargs.get('filter', None)
+        # default option is 'exclusive' for backward compatibility
+        _filtertype = _kwargs.get('filtertype', 'exclusive')
         # get all wiki page names and their content
         self.page_names, self.page_texts = \
-            self.get_wiki_pages(_ignored_referrers)
+            self.get_wiki_pages(_ignored_referrers, _filtertype)
         _ml_parser = MissingLinksHTMLParser()
-        # only need OrderedDict for test cases, but was added in Python 2.7
+        # OrderedDict is needed to run test cases, but was only added in Python 2.7
         try:
             _missing_links = OrderedDict()
         except:
@@ -220,7 +225,7 @@ class WantedPagesMacro(WikiMacroBase):
                        (_missing_link_count, (time.time() - _start_time)))
         return format_to_html(self.env, formatter.context, _data)
 
-    def get_wiki_pages(self, ignored_referrers = None):
+    def get_wiki_pages(self, ignored_referrers=None, filter='exclusive'):
         page_texts = [] # list of referrer link, wiki-able text tuples
         page_names = [] # list of wikiPages seen
         # get_db_cnx is only available up to Trac 0.12
@@ -232,8 +237,16 @@ class WantedPagesMacro(WikiMacroBase):
         # query is ordered by latest version first
         # so it's easy to extract the latest pages
         for name, text in exec_wiki_sql(db):
-            if ignored_referrers and re.search(ignored_referrers, name):
-                continue # skip matching names
+            if filter == 'exclusive':
+                if ignored_referrers and re.search(ignored_referrers, name):
+                    continue  # skip matching names
+                else:
+                    pass  # include non-matching names
+            if filter == 'inclusive':
+                if ignored_referrers and re.search(ignored_referrers, name):
+                    pass  # include matching names
+                else:
+                    continue  # skip non-matching names
             if name not in page_names:
                 page_names.append(name)
                 page_texts.append(text)

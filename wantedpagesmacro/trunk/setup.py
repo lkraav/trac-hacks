@@ -11,7 +11,7 @@ from setuptools import setup
 
 setup(
     name="WantedPages", 
-    version="0.4",
+    version="0.5.1",
     author='Justin Francis',
     author_email='jfrancis@justinfrancis.org',
     maintainer='Geert Linders',
