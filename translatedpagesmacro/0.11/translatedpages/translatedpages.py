@@ -65,7 +65,12 @@ The Macro accepts arguments as well:
         """Page name template of translated pages""")
     base_lang = Option('translatedpages', 'base_language', u'En',
         """Base language to be used without prefix/suffix""")
-    langcode_re = Option('translatedpages', 'regexp', u'([A-Z][a-z]{1,2}(?:_[A-Z]{2})?)',
+    # Language forms:
+    # De:
+    # De_DE:
+    # Ca-Valencia:
+    # Use - instead of @ for dialects (i.e. Ca-Valencia instead of Ca@Valencia), as @ is not supported in page names
+    langcode_re = Option('translatedpages', 'regexp', u'([A-Z][a-z]{1,2}(?:_[A-Z]{2}|-[A-Z][a-z]+)?)',
         """Regular expression to match a language code""")
 
     outdated_tx = "<p style=\"background-color:rgb(253,255,221);padding: 10pt; border-color:rgb(128,128,128);border-style: solid; border-width: 1px;\">%s</p>\n"
