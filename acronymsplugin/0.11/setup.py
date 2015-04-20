@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='TracAcronyms',
-      version='0.2dev',
+      version='0.2',
       packages=['tracacronyms'],
       author='Alec Thomas',
       description='Auto-generated acronyms from a table in a Wiki page.',
