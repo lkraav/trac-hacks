@@ -113,6 +113,10 @@ class CustomFields(Component):
         # (if modify it should already be deleted)
         if create and self.config.get('ticket-custom', cfield['name']):
             raise TracError(_("Can not create as field already exists."))
+        if [f for f in TicketSystem(self.env).fields
+              if f['name'] == cfield['name']]:
+                raise TracError(_("Can't create a custom field with the "
+                                  "same name as a built-in field."))
 
     def create_custom_field(self, cfield):
         """ Create the new custom fields (that may just have been deleted as
