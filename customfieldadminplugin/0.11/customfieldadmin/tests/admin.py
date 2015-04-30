@@ -116,6 +116,33 @@ class CustomFieldAdminPageTestCase(unittest.TestCase):
                      (u'test.options', u'|one|two'), (u'test.order', u'2'),
                      (u'test.value', u'')])
 
+    def test_edit_optional_select(self):
+        self.test_add_optional_select()
+        self.assertEquals('select',
+                            self.env.config.get('ticket-custom', 'test'))
+        _redirect_url = ''
+        def redirect(url):
+            _redirect_url = url
+            raise RequestDone
+        req = Mock(perm=PermissionCache(self.env, 'admin'),
+                   authname='admin',
+                   chrome={},
+                   href=Href('/'),
+                   redirect=redirect,
+                   method='POST',
+                   args={'save': True, 'name': u'test', 'label': u'testing',
+                         'type': u'select', 'value': u'',
+                         'options': u'\r\none\r\ntwo'})
+        try:
+            self.plugin.render_admin_panel(req, 'ticket', 'customfields',
+                                           'test')
+        except RequestDone, e:
+            self.assertEquals(
+                    sorted(list(self.env.config.options('ticket-custom'))),
+                    [(u'test', u'select'), (u'test.label', u'testing'),
+                     (u'test.options', u'|one|two'), (u'test.order', u'2'),
+                     (u'test.value', u'')])
+
     def test_order_with_mismatched_keys(self):
         # http://trac-hacks.org/ticket/11540
         self.api.create_custom_field({'name': u'one', 'format': 'plain',

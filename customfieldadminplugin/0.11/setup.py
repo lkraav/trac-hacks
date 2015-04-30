@@ -18,7 +18,7 @@ if cmdclass:
     }
 
 setup(name='TracCustomFieldAdmin',
-      version='0.2.10',
+      version='0.2.11',
       packages=['customfieldadmin'],
       author='CodeResort.com & Optaros.com',
       description='Admin panel for managing Trac ticket custom fields.',

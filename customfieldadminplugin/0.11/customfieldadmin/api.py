@@ -130,7 +130,7 @@ class CustomFields(Component):
             self.config.set('ticket-custom', cfield['name'] + '.value',
                                                         cfield['value'])
         if 'options' in cfield:
-            if cfield.get('optional', False):
+            if cfield.get('optional', False) and '' not in cfield['options']:
                 self.config.set('ticket-custom', cfield['name'] + '.options',
                                 '|' + '|'.join(cfield['options']))
             else:
