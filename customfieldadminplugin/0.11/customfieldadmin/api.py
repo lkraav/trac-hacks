@@ -35,7 +35,7 @@ class CustomFields(Component):
     Adds update_custom_field and delete_custom_field methods.
     (The get_custom_fields is already part of the API - just redirect here,
      and add option to only get one named field back.)
-    
+
     Input to methods is a 'cfield' dict supporting these keys:
         name = name of field (ascii alphanumeric only)
         type = text|checkbox|select|radio|textarea
@@ -48,12 +48,12 @@ class CustomFields(Component):
         order = specify sort order for field
         format = text|wiki (for text and textarea)
     """
-    
+
     implements()
-    
+
     config_options = ['label', 'value', 'options', 'cols', 'rows',
                          'order', 'format']
-    
+
     def __init__(self):
         # bind the 'customfieldadmin' catalog to the specified locale directory
         try:
@@ -68,7 +68,7 @@ class CustomFields(Component):
         except ImportError:
             from customfieldadmin import __version__
             self.env.systeminfo.append(('CustomFieldAdmin', __version__))
-        
+
     def get_custom_fields(self, cfield=None):
         """ Returns the custom fields from TicketSystem component.
         Use a cfdict with 'name' key set to find a specific custom field only.
@@ -113,7 +113,7 @@ class CustomFields(Component):
         # (if modify it should already be deleted)
         if create and self.config.get('ticket-custom', cfield['name']):
             raise TracError(_("Can not create as field already exists."))
-    
+
     def create_custom_field(self, cfield):
         """ Create the new custom fields (that may just have been deleted as
         part of 'modify'). In `cfield`, 'name' and 'type' keys are required.
@@ -135,7 +135,7 @@ class CustomFields(Component):
                                 '|' + '|'.join(cfield['options']))
             else:
                 self.config.set('ticket-custom', cfield['name'] + '.options',
-                               '|'.join(cfield['options'])) 
+                               '|'.join(cfield['options']))
         if 'format' in cfield and cfield['type'] in ('text', 'textarea'):
             self.config.set('ticket-custom', cfield['name'] + '.format',
                                                         cfield['format'])
@@ -166,7 +166,7 @@ class CustomFields(Component):
         self.verify_custom_field(cfield, create=False)
         self.delete_custom_field(cfield, modify=True)
         self.create_custom_field(cfield)
-    
+
     def delete_custom_field(self, cfield, modify=False):
         """ Deletes a custom field. Input is a dictionary
         (see update_custom_field), but only ['name'] is required.

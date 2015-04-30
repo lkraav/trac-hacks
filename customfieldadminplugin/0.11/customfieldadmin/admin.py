@@ -19,7 +19,7 @@ from customfieldadmin.api import CustomFields, _
 
 
 class CustomFieldAdminPage(Component):
-    
+
     implements(ITemplateProvider, IAdminPanelProvider)
 
     def __init__(self):
@@ -28,15 +28,15 @@ class CustomFieldAdminPage(Component):
         CustomFields(self.env)
 
     # IAdminPanelProvider methods
-    
+
     def get_admin_panels(self, req):
         if 'TICKET_ADMIN' in req.perm('admin', 'ticket/customfields'):
             yield ('ticket', _("Ticket System"),
-                   'customfields', _("Custom Fields")) 
+                   'customfields', _("Custom Fields"))
 
     def render_admin_panel(self, req, cat, page, customfield):
         req.perm('admin', 'ticket/customfields').require('TICKET_ADMIN')
-        
+
         add_script(req, 'customfieldadmin/js/customfieldadmin.js')
 
         def _customfield_from_req(self, req):
@@ -51,10 +51,10 @@ class CustomFieldAdminPage(Component):
                       'order': req.args.get('order', '').encode('utf-8'),
                       'format': req.args.get('format', '').encode('utf-8')}
             return cfield
-        
+
         cf_api = CustomFields(self.env)
         cf_admin = {} # Return values for template rendering
-        
+
         # Detail view?
         if customfield:
             cfield = None
@@ -67,7 +67,7 @@ class CustomFieldAdminPage(Component):
                                             name=customfield))
             if req.method == 'POST':
                 if req.args.get('save'):
-                    cfield.update(_customfield_from_req(self, req)) 
+                    cfield.update(_customfield_from_req(self, req))
                     cf_api.update_custom_field(cfield)
                     req.redirect(req.href.admin(cat, page))
                 elif req.args.get('cancel'):
@@ -86,7 +86,7 @@ class CustomFieldAdminPage(Component):
                     cfield = _customfield_from_req(self, req)
                     cf_api.update_custom_field(cfield, create=True)
                     req.redirect(req.href.admin(cat, page))
-                         
+
                 # Remove Custom Field
                 elif req.args.get('remove') and req.args.get('sel'):
                     sel = req.args.get('sel')
@@ -115,7 +115,7 @@ class CustomFieldAdminPage(Component):
             orders_in_use = []
             for item in cf_api.get_custom_fields():
                 item['href'] = req.href.admin(cat, page, item['name'])
-                item['registry'] = ('ticket-custom', 
+                item['registry'] = ('ticket-custom',
                                             item['name']) in Option.registry
                 cfields.append(item)
                 orders_in_use.append(int(item.get('order')))
@@ -126,7 +126,7 @@ class CustomFieldAdminPage(Component):
                          "This may affect appearance when viewing tickets."))
 
         return ('customfieldadmin.html', cf_admin)
-        
+
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
