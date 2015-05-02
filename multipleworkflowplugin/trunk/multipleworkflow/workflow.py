@@ -194,9 +194,20 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
         """Return a list of all states described by the configuration.
         """
         all_status = set()
-        for action_name, action_info in self.actions.items():
+        # Default workflow
+        default_actions=get_workflow_config_default(self.config)
+        for action_name, action_info in default_actions.items():
             all_status.update(action_info['oldstates'])
             all_status.add(action_info['newstate'])
+
+        # for all ticket types do
+        for t in [enum.name for enum in model.Type.select(self.env)]:
+            actions = get_workflow_config_by_type(self.config, t)
+            if len(actions) < 1:
+                actions = default_actions
+            for action_name, action_info in actions.items():
+                all_status.update(action_info['oldstates'])
+                all_status.add(action_info['newstate'])
         all_status.discard('*')
         return all_status
 
