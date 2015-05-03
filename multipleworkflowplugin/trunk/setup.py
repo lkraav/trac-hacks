@@ -11,7 +11,7 @@ from setuptools import find_packages, setup
 setup(
     name='MultipleWorkflowPlugin',
     description='Ticket workflows based on ticket type.',
-    version='1.0',
+    version='1.0.1',
     url='http://trac-hacks.org/wiki/MultipleWorkflowPlugin',
     license="New BSD",
     author='ermal',

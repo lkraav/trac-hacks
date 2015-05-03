@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2009 ???
+# Copyright (C) 2009-2015
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -71,6 +71,14 @@ def get_workflow_config_default(config):
     """return the [ticket-workflow] session """
     raw_actions = list(config.options('ticket-workflow')) 
     actions = parse_workflow_config(raw_actions)
+    if '_reset' not in actions:
+        actions['_reset'] = {
+            'default': 0,
+            'name': 'reset',
+            'newstate': 'new',
+            'oldstates': [],  # Will not be invoked unless needed
+            'operations': ['reset_workflow'],
+            'permissions': []}
     return actions
 
 
@@ -78,6 +86,14 @@ def get_workflow_config_by_type(config, tipo_ticket):
     """return the [ticket-workflow-type] session"""
     raw_actions = list(config.options('ticket-workflow-%s' % tipo_ticket))
     actions = parse_workflow_config(raw_actions)
+    if actions and '_reset' not in actions:
+        actions['_reset'] = {
+            'default': 0,
+            'name': 'reset',
+            'newstate': 'new',
+            'oldstates': [],  # Will not be invoked unless needed
+            'operations': ['reset_workflow'],
+            'permissions': []}
     return actions
 
 
@@ -93,25 +109,59 @@ def load_workflow_config_snippet(config, filename):
 
 
 class MultipleWorkflowPlugin(Component):
-    """Ticket action controller which provides actions according to a
-    workflow defined in the TracIni configuration file, inside the
-    [ticket-workflow-type] session.It manages multiple workflows base
-    on ticket type.If a session doesn't exist it returns the default
-    workflow session[ticket-workflow]
+    """Ticket action controller providing actions according to the ticket type.
+
+    == ==
+    The [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] replaces the
+    [TracWorkflow ConfigurableTicketWorkflow] used by Trac to control what actions can be performed on a ticket.
+    The actions are specified in the {{{[ticket-workflow]}}} section of the TracIni file.
+
+    With [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] Trac can read the workflow based
+    on the type of a ticket. If a section for that ticket type doesn't exist, then it uses the default workflow.
+
+    == Example ==
+    To define a different workflow for a ticket with type {{{Requirement}}} create a section in ''trac.ini'' called
+    {{{[ticket-workflow-Requirement]}}} and add your workflow items:
+    {{{
+    [ticket-workflow-Requirement]
+    leave = * -> *
+    leave.default = 1
+    leave.operations = leave_status
+
+    approve = new, reopened -> approved
+    approve.operations = del_resolution
+    approve.permissions = TICKET_MODIFY
+
+    reopen_verified = closed -> reopened
+    reopen_verified.name= Reopen
+    reopen_verified.operations = set_resolution
+    reopen_verified.set_resolution=from verified
+    reopen_verified.permissions = TICKET_MODIFY
+
+    reopen_approved = approved -> reopened
+    reopen_approved.name = Reopen
+    reopen_approved.operations = set_resolution
+    reopen_approved.set_resolution=from approved
+    reopen_approved.permissions = TICKET_CREATE
+
+    remove = new, reopened, approved, closed -> removed
+    remove.name=Remove this Requirement permanently
+    remove.operations = set_resolution
+    remove.set_resolution= removed
+    remove.permissions = TICKET_MODIFY
+
+    verify = approved -> closed
+    verify.name=Verifiy the Requirement and mark
+    verify.operations = set_resolution
+    verify.set_resolution=verified
+    verify.permissions = TICKET_MODIFY
+    }}}
     """
     implements(ITicketActionController, IEnvironmentSetupParticipant)
 
     def __init__(self, *args, **kwargs):
         Component.__init__(self, *args, **kwargs)
         self.actions = get_workflow_config_default(self.config)
-        if not '_reset' in self.actions:
-            self.actions['_reset'] = {
-                'default': 0,
-                'name': 'reset',
-                'newstate': 'new',
-                'oldstates': [],  # Will not be invoked unless needed
-                'operations': ['reset_workflow'],
-                'permissions': []}
         self.log.debug('Workflow default actions at initialization: %s\n' %
                        str(self.actions))
 
@@ -162,12 +212,12 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
 
         #it doesn't exist the requested session it returns the default workflow
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        self.actions = get_workflow_config_by_type(self.config, tipo_ticket)
-        if len(self.actions) < 1:
-            self.actions = get_workflow_config_default(self.config)
+        actions = get_workflow_config_by_type(self.config, tipo_ticket)
+        if not actions:
+            actions = self.actions
 
         allowed_actions = []
-        for action_name, action_info in self.actions.items():
+        for action_name, action_info in actions.items():
             oldstates = action_info['oldstates']
             if oldstates == ['*'] or status in oldstates:
                 # This action is valid in this state.  Check permissions.
@@ -188,38 +238,55 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
                 and 'TICKET_ADMIN' in req.perm(ticket.resource):
             # State no longer exists - add a 'reset' action if admin.
             allowed_actions.append((0, '_reset'))
+
+        # Check if the state is valid for the current ticket type. If not offer the action to reset it.
+        type_status = self.get_all_status_for_type(tipo_ticket)
+        if not type_status:
+            type_status = self._calc_status(self.actions)
+        if status not in type_status and (0, '_reset') not in allowed_actions:
+                allowed_actions.append((0, '_reset'))
         return allowed_actions
+
+
+    def _calc_status(self, actions):
+        """Calculate all states from the given list of actions.
+
+        :return a list of states like 'new', 'closed' etc.
+        """
+        all_status = set()
+        for action_name, action_info in actions.items():
+            all_status.update(action_info['oldstates'])
+            all_status.add(action_info['newstate'])
+        all_status.discard('*')
+        return all_status
+
+
+    def get_all_status_for_type(self, t_type):
+        actions = get_workflow_config_by_type(self.config, t_type)
+        return self._calc_status(actions)
+
 
     def get_all_status(self):
         """Return a list of all states described by the configuration.
         """
-        all_status = set()
         # Default workflow
-        default_actions=get_workflow_config_default(self.config)
-        for action_name, action_info in default_actions.items():
-            all_status.update(action_info['oldstates'])
-            all_status.add(action_info['newstate'])
+        all_status = self._calc_status(self.actions)
 
         # for all ticket types do
         for t in [enum.name for enum in model.Type.select(self.env)]:
-            actions = get_workflow_config_by_type(self.config, t)
-            if len(actions) < 1:
-                actions = default_actions
-            for action_name, action_info in actions.items():
-                all_status.update(action_info['oldstates'])
-                all_status.add(action_info['newstate'])
-        all_status.discard('*')
+            all_status.update(self.get_all_status_for_type(t))
         return all_status
+
 
     def render_ticket_action_control(self, req, ticket, action):
         self.log.debug('render_ticket_action_control: action "%s"' % action)
 
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        self.actions = get_workflow_config_by_type(self.config,tipo_ticket)
-        if len(self.actions) < 1:
-            self.actions = get_workflow_config_default(self.config)
+        actions = get_workflow_config_by_type(self.config, tipo_ticket)
+        if not actions:
+            actions = self.actions
 
-        this_action = self.actions[action]
+        this_action = actions[action]
         status = this_action['newstate']
         operations = this_action['operations']
         current_owner = ticket._old.get('owner', ticket['owner'] or '(none)')
@@ -303,13 +370,14 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
                 hints.append(_("Next status will be '%s'") % status)
         return this_action['name'], tag(*control), '. '.join(hints)
 
+
     def get_ticket_changes(self, req, ticket, action):
 
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        self.actions = get_workflow_config_by_type(self.config,tipo_ticket)
-        if len(self.actions) < 1:
-            self.actions = get_workflow_config_default(self.config)
-        this_action = self.actions[action]
+        actions = get_workflow_config_by_type(self.config, tipo_ticket)
+        if not actions:
+            actions = self.actions
+        this_action = actions[action]
 
         # Enforce permissions
         if not self._has_perms_for_action(req, this_action, ticket.resource):
@@ -350,8 +418,10 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
             # leave_status is just a no-op here, so we don't look for it.
         return updated
 
+
     def apply_action_side_effects(self, req, ticket, action):
         pass
+
 
     def _has_perms_for_action(self, req, action, resource):
         required_perms = action['permissions']
@@ -370,13 +440,15 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
         """Return a list of all actions with a given operation
         (for use in the controller's get_all_status())
         """
-        tipo_ticket = ticket._old.get('type', ticket['type'])
-        self.actions = get_workflow_config_by_type(self.config, tipo_ticket)
-        if len(self.actions) < 1:
-            self.actions = get_workflow_config_default(self.config)
+        all_actions = {}
+        # Default workflow
+        all_actions.update(self.actions)
+        # for all ticket types do
+        for t in [enum.name for enum in model.Type.select(self.env)]:
+            all_actions.update(get_workflow_config_by_type(self.config, t))
 
         actions = [(info['default'], action) for action, info
-                   in self.actions.items()
+                   in all_actions.items()
                    if operation in info['operations']]
         return actions
 
@@ -388,14 +460,14 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
         returned.
         """
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        self.actions = get_workflow_config_by_type(self.config,tipo_ticket)
-        if len(self.actions)<1:
-            self.actions = get_workflow_config_default(self.config)
+        actions = get_workflow_config_by_type(self.config,tipo_ticket)
+        if not actions:
+            actions = self.actions
 
         # Be sure to look at the original status.
         status = ticket._old.get('status', ticket['status'])
         actions = [(info['default'], action) for action, info
-                   in self.actions.items()
+                   in actions.items()
                    if operation in info['operations'] and
                       ('*' in info['oldstates'] or
                        status in info['oldstates']) and
