@@ -45,6 +45,9 @@ from tracvote import VoteSystem
 _SVN_CONFIG_DIR = os.environ.get('TRACHACKS_SVN_CONFIG_DIR',
                                  '/var/www/trac-hacks.org/trac/.subversion')
 
+# Default component that serves as a placeholder for the field.
+_default_component = "SELECT A HACK"
+
 
 def pluralise(n, word):
     """Return a (naively) pluralised phrase from a count and a singular
@@ -237,7 +240,7 @@ class TracHacksHandler(Component):
 
         # Trac releases
         releases = natural_sort(r.id for r, _ in
-                                tag_system.query(req, 
+                                tag_system.query(req,
                                                  'realm:wiki release-filter'))
 
         data['types'] = types
@@ -299,7 +302,7 @@ class TracHacksHandler(Component):
                 if resource_exists(self.env, wiki_resource):
                     add_ctxtnav(req, component, req.href.wiki(component),
                                 _("Go to Project's Wiki Page"))
-                else:
+                elif component != _default_component:
                     self.env.log.warn('No wiki page for component "%s"'
                                       % component)
         add_stylesheet(req, 'hacks/css/style.css')
