@@ -64,7 +64,7 @@
 						</py:if>
 						<py:if test="(len(perm) == 1 and 'view' in perm) or (a in read)">
 							<td py:for="i in propdict">
-							${propdict[i][a]}
+							 ${propdict[i][a]}
 							</td>
 						</py:if>
 						<td py:if="len(double) != 0" title="Double: Übereinstimmung der Sprachen untereinander"><py:if test="a in double">d</py:if></td>

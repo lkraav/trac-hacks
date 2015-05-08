@@ -11,25 +11,28 @@
   </head>
   <body>
   <h1>Translationmanager</h1>
- 
-	<div>
-		<input py:if="'import' in perm" type="button" id="import-button" name="Import" value="Import"/>
-<!-- 		<input type="button" id="export-button" name="Export" value="Export"/> -->
+	<br/>
+	
+	<div style = "padding-bottom: 15px">
+		<!-- <input py:if="'import' in perm" type="button" id="import-button" name="Import" value="Import" /> -->
 	</div>
 	<a href="bsp.gif" type="image/gif"></a>
-	<br></br>
+	
 	<form action="${href.transmgr('tm-start.html')}" method="post">
 	<div style="outline-width:medium; outline-style:solid; padding:10px; width:350px" >
 			Wählen Sie den Herkunftsort Ihrer Übersetzungen: <p></p>			
-				<input py:for="a in dest_dict" type="radio" id="${dest_dict[a]}" name="ort" value="${a}" checked="${a == 'Birt-Report' or None}"> 
-				<label for="${dest_dict[a]}">${a}</label>
-				</input>
-	
+				<label py:for="a in dest_desc" style="padding-right: 5px">
+				<input  type="radio" id="${dest_desc[a]}" name="ort" value="${a}" checked="${a == 'Birt' or None}"/> 
+				${a}</label>
+				
 	<div align="right"><input type="submit" name="first_to_start" value="Weiter" /></div>
 	</div>
+	
 	</form>
-	<br></br>
+	<br/>
 	<div id="import">
 	</div>
+	<div id="import-export"></div>
+	
   </body>
 </html>

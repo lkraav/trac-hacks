@@ -13,8 +13,8 @@
   <body>
   <h1>Translationmanager</h1>
 	<div>
-		<input py:if="'import' in perm" type="button" id="import-button" name="Import" value="Import"/>
-<!-- 		<input type="button" id="export-button" name="Export" value="Export"/> -->
+<!-- 		<input py:if="'import' in perm" type="button" id="import-button" name="Import" value="Import"/>
+		<input type="button" id="export-button" name="Export" value="Export"/> -->
 	</div>
 	<br></br>
 	<form action="${href.transmgr('tm-main.html')}" method="post">
@@ -23,7 +23,7 @@
 			Angezeigte Sprachen:
 				<span>
 				<span>
-					<select name="Sprache" size="1">
+					<select name="Sprache" size="1" id="Sprache">
 						<option py:for="key, a in sorted(lang_dict.iteritems(), key=lambda(k,v):(v,k))" value="${key}" selected="${a == 'Deutsch' or None}">
 							${a}
 						</option>
@@ -43,5 +43,6 @@
 	<br></br>
 	<div id="import">
 	</div>
+	<div id="extra"></div>
   </body>
 </html>

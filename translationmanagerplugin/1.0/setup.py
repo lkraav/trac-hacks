@@ -14,7 +14,7 @@ from setuptools import find_packages, setup
 # use package name as entry_points
 setup(
     name='Transmanager',
-    version='0.1.1',
+    version='0.1.2',
     author='Gefasoft AG, Barbara Streppel, Franz Mayer',
     description='Plugin for managing translation files',
     url='http://www.gefasoft-muenchen.de',
