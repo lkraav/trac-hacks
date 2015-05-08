@@ -7,7 +7,6 @@ from trac.admin.api import IAdminPanelProvider
 from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.perm import PermissionSystem
-from trac.util import sorted
 from trac.util.translation import _
 from trac.versioncontrol import RepositoryManager
 from trac.web.chrome import ITemplateProvider, add_notice, add_warning
