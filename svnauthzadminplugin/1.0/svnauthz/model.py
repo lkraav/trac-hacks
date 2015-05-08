@@ -116,10 +116,10 @@ class PathAcl:
     def __init__(self, member, r, w):
         assert isinstance(member, Member)
         self.member = member
-        self.set_read(r)
-        self.set_write(w)
         self.r = None
         self.w = None
+        self.set_read(r)
+        self.set_write(w)
 
     def get_member(self):
         return self.member
