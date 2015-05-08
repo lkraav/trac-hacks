@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import itertools
-import types
 
 
 class Member:
@@ -182,7 +181,7 @@ class AuthModel:
     def del_path(self, p, repo=None):
         if isinstance(p, Path):
             self.paths.remove(p)
-        elif isinstance(p, types.StringTypes):
+        elif isinstance(p, basestr):
             rp = self.find_path(p, repo)
             if isinstance(rp, Path):
                 self.paths.remove(rp)
@@ -192,7 +191,7 @@ class AuthModel:
             self.groups.append(g)
 
     def del_group(self, g):
-        if isinstance(g, types.StringTypes):
+        if isinstance(g, basestr):
             g = self.find_group(g)
         assert isinstance(g, Group)
         self.groups.remove(g)

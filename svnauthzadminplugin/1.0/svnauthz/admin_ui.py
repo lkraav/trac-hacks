@@ -2,6 +2,7 @@
 
 import os
 import types
+import urllib
 
 from trac.admin.api import IAdminPanelProvider
 from trac.config import BoolOption
@@ -13,7 +14,6 @@ from trac.web.chrome import ITemplateProvider, add_notice, add_warning
 
 from io import AuthzFile
 from model import Group, Path, PathAcl, User
-from urllib import pathname2url, url2pathname
 
 # Mode constants
 EDIT_NORMAL = 0
@@ -107,7 +107,7 @@ class SvnAuthzAdminPage(Component):
                 # unless show_all_repos is true
                 continue
             path_disp = self._get_disp_path_name(repository, path)
-            path_disp_url = pathname2url(path_disp)
+            path_disp_url = urllib.pathname2url(path_disp)
             if editpath and editpath == path_disp_url:
                 path_disp_href = req.href.admin('versioncontrol', 'svnauthz')
             else:
@@ -124,7 +124,7 @@ class SvnAuthzAdminPage(Component):
 
         groups_disp = []
         for group_disp in sorted(g.get_name() for g in self.authz.get_groups()):
-            group_disp_url = pathname2url(group_disp)
+            group_disp_url = urllib.pathname2url(group_disp)
             if editgroup and editgroup == group_disp_url:
                 group_disp_href = req.href.admin('versioncontrol', 'svnauthz')
             else:
@@ -158,10 +158,10 @@ class SvnAuthzAdminPage(Component):
         groups_to_del = req.args.get('selgroup')
         try:
             if isinstance(groups_to_del, types.StringTypes):
-                self.authz.del_group(url2pathname(groups_to_del))
+                self.authz.del_group(urllib.url2pathname(groups_to_del))
             elif isinstance(groups_to_del, types.ListType):
                 for group in groups_to_del:
-                    self.authz.del_group(url2pathname(group))
+                    self.authz.del_group(urllib.url2pathname(group))
             else:
                 return {'delgroup_error': "Invalid type of group selection"}
         except Exception, e:
@@ -175,7 +175,8 @@ class SvnAuthzAdminPage(Component):
             if isinstance(paths_to_del, types.StringTypes):
                 paths_to_del = [paths_to_del]
             for urlpath in paths_to_del:
-                validpath = self._get_valid_path(paths, url2pathname(urlpath))
+                validpath = \
+                    self._get_valid_path(paths, urllib.url2pathname(urlpath))
                 if validpath:
                     self.authz.del_path(validpath[1], validpath[0])
         except Exception, e:
@@ -203,7 +204,7 @@ class SvnAuthzAdminPage(Component):
             return {'addpath_error':  e}
 
     def _add_group_member(self, req):
-        editgroup = url2pathname(req.args.get('editgroup'))
+        editgroup = urllib.url2pathname(req.args.get('editgroup'))
         subject = req.args.get('subject')
         if subject == '':
             subject = req.args.get('subject2')
@@ -223,7 +224,7 @@ class SvnAuthzAdminPage(Component):
         return {}
 
     def _add_path_member(self, req):
-        editpath = url2pathname(req.args.get('editpath'))
+        editpath = urllib.url2pathname(req.args.get('editpath'))
         subject = req.args.get('subject')
         if subject == '':
             subject = req.args.get('subject2')
@@ -264,7 +265,7 @@ class SvnAuthzAdminPage(Component):
         return {}
 
     def _del_group_member(self, req):
-        editgroup = url2pathname(req.args.get('editgroup'))
+        editgroup = urllib.url2pathname(req.args.get('editgroup'))
         members_to_del = req.args.get('selgroupmember')
         group = self.authz.find_group(editgroup)
         if not group:
@@ -286,7 +287,7 @@ class SvnAuthzAdminPage(Component):
         return {}
 
     def _change_path_members(self, req):
-        editpath = url2pathname(req.args.get('editpath'))
+        editpath = urllib.url2pathname(req.args.get('editpath'))
         paths = [(p.get_repo(), p.get_path()) for p in self.authz.get_paths()]
         validpath = self._get_valid_path(paths, editpath)
         if not validpath:
@@ -350,11 +351,11 @@ class SvnAuthzAdminPage(Component):
         """
         data = {}
         index = path_info.index('/')+1
-        edit_group = url2pathname(path_info[index:len(path_info)])
+        edit_group = urllib.url2pathname(path_info[index:len(path_info)])
         group = self.authz.find_group(edit_group)
         if group is not None:
             data['editgroup_name'] = edit_group
-            data['editgroup_url'] = pathname2url(edit_group)
+            data['editgroup_url'] = urllib.pathname2url(edit_group)
             data['editgroup_members'] = \
                 sorted((str(m) for m in group),
                        key=lambda member: member.lower())
@@ -411,12 +412,12 @@ class SvnAuthzAdminPage(Component):
         """
         data = {}
         index = path_info.index('/') + 1
-        edit_path = url2pathname(path_info[index:len(path_info)])
+        edit_path = urllib.url2pathname(path_info[index:len(path_info)])
         paths = [(p.get_repo(), p.get_path()) for p in self.authz.get_paths()]
         valid_path = self._get_valid_path(paths, edit_path)
         if valid_path:
             data['editpath_name'] = edit_path
-            data['editpath_url'] = pathname2url(edit_path)
+            data['editpath_url'] = urllib.pathname2url(edit_path)
             path_members = self.authz.find_path(valid_path[1], valid_path[0])
             edit_path_members = []
             for member in path_members:
