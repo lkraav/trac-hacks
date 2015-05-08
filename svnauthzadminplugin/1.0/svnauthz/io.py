@@ -7,33 +7,23 @@ PARSE_GROUPS = 1
 PARSE_PATH_ACL = 2
 
 
-class AuthzFileReader:
+class AuthzFile:
 
-    def __init__(self):
-        pass
+    def __init__(self, filename):
+        self.filename = filename
 
-    @staticmethod
-    def read(filename):
-        fp = open(filename, 'r')
-        parser = AuthzFileParser(filename, fp)
-        return parser.parse()
+    def read(self):
+        with open(self.filename, 'r') as fp:
+            parser = AuthzFileParser(self.filename, fp)
+            return parser.parse()
 
-
-class AuthzFileWriter:
-
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def write(filename, model):
-        fp = open(filename, 'r')
-        orig = fp.read()
-        fp.close()
+    def write(self, model):
+        with open(self.filename, 'r') as fp:
+            orig = fp.read()
         new = model.serialize()
         if orig != new:
-            fp = open(filename, 'w')
-            fp.write(new)
-            fp.close()
+            with open(self.filename, 'w') as fp:
+                fp.write(new)
 
 
 class AuthzFileParser:

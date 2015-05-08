@@ -12,7 +12,7 @@ from trac.util.translation import _
 from trac.versioncontrol import RepositoryManager
 from trac.web.chrome import ITemplateProvider, add_warning
 
-from io import AuthzFileReader, AuthzFileWriter
+from io import AuthzFile
 from model import Group, Path, PathAcl, User
 from urllib import pathname2url, url2pathname
 
@@ -385,7 +385,7 @@ class SvnAuthzAdminPage(Component):
 
     def _get_authz(self, req):
         if self.authz_file and os.path.exists(self.authz_file):
-            return AuthzFileReader().read(self.authz_file)
+            return AuthzFile(self.authz_file).read()
         elif self.authz_file:
             add_warning(req, _("Authz file not found at %(file)s",
                                file=self.authz_file))
@@ -456,7 +456,7 @@ class SvnAuthzAdminPage(Component):
             return '%s:%s' % (repository, path)
 
     def _persist_model(self, m):
-        AuthzFileWriter().write(self.authz_file, m)
+        AuthzFile(self.authz_file).write(m)
 
     def _get_member(self, id_, create_group=False):
         if id_.startswith('@'):
