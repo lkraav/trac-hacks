@@ -34,12 +34,11 @@ class SvnAuthzAdminPage(Component):
         """Enabling this option will prevent the Trac project from
         changing the contents of the SVN trac|authz_file.""")
 
-    authz_file = ''
     project_repos = []
 
     def __init__(self):
         # Retrieve info for all repositories associated with this project
-        self.authz_file = self.config.get('trac', 'authz_file')
+        self.authz_file = self.config.getpath('trac', 'authz_file')
         rm = RepositoryManager(self.env)
         all_repos = rm.get_all_repositories()
         for (reponame, info) in all_repos.iteritems():
