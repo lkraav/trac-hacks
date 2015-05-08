@@ -64,7 +64,7 @@ class Group(Member, UniqueList):
         UniqueList.__init__(self, members)
 
     def __eq__(self, obj):
-        if Member == obj:
+        if Member.__eq__(self, obj):
             if len(self) != len(obj):
                 return False
             for v in itertools.imap(Member == obj):
