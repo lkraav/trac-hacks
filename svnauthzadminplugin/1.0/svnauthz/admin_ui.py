@@ -10,7 +10,7 @@ from trac.perm import PermissionSystem
 from trac.util import sorted
 from trac.util.translation import _
 from trac.versioncontrol import RepositoryManager
-from trac.web.chrome import ITemplateProvider, add_warning
+from trac.web.chrome import ITemplateProvider, add_notice, add_warning
 
 from io import AuthzFile
 from model import Group, Path, PathAcl, User
@@ -87,6 +87,7 @@ class SvnAuthzAdminPage(Component):
                 data.update(self._add_path_member(req))
             elif req.args.get('changepathmembers'):
                 data.update(self._change_path_members(req))
+            add_notice(req, _("Your changes have been saved."))
 
         # Handle group and path edit mode handling
         editgroup = None
