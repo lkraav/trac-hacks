@@ -181,7 +181,7 @@ class AuthModel:
     def del_path(self, p, repo=None):
         if isinstance(p, Path):
             self.paths.remove(p)
-        elif isinstance(p, basestr):
+        elif isinstance(p, basestring):
             rp = self.find_path(p, repo)
             if isinstance(rp, Path):
                 self.paths.remove(rp)
@@ -191,7 +191,7 @@ class AuthModel:
             self.groups.append(g)
 
     def del_group(self, g):
-        if isinstance(g, basestr):
+        if isinstance(g, basestring):
             g = self.find_group(g)
         assert isinstance(g, Group)
         self.groups.remove(g)
