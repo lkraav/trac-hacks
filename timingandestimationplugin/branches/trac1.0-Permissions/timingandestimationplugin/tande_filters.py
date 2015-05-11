@@ -1,23 +1,18 @@
 from trac.web.api import ITemplateStreamFilter
-from trac.perm import IPermissionRequestor
 from trac.core import *
-from genshi.core import *
 import genshi
+from genshi.core import *
 from genshi.builder import tag
-
 from genshi.filters.transform import Transformer
 from blackmagic import *
-from trac.ticket.query import QueryModule
-
 from StringIO import StringIO
 import csv
-from trac.mimeview.api import Context
+from trac.mimeview.api import (IContentConverter)
 from trac.resource import Resource
-from trac.web.chrome import  Chrome
+from trac.web.chrome import (Chrome, web_context)
+from trac.util.translation import _
+import re
 
-import sys, re
-if sys.version_info < (2, 4, 0): 
-    from sets import Set as set
 
 # also in blackmagic ... not sure how to guarantee that one of them 
 # will be run in time other than to do it in both places
@@ -25,56 +20,80 @@ def textOf(self, **keys):
     return self.render('text', None, **keys)
 Stream.textOf = textOf
 
-## MONKEY PATCH THE QUERY MODULE CSV EXPORT FN TO ENFORCE PERMISSIONS
-def new_csv_export(self, req, query, sep=',', mimetype='text/plain'):
-    self.log.debug("T&E plugin has overridden QueryModule.csv_export so to enforce field permissions")
 
-    ## find the columns that should be hidden
-    hidden_fields = []
-    fields = self.config.getlist(csection, 'fields', [])
-    self.log.debug('QueryModule.csv_export: found : %s' % fields)
+def denied_fields(comp, req):
+    fields = comp.config.getlist(csection, 'fields', [])
     for field in fields:
-        perms = self.config.getlist(csection, '%s.permission' % field, [])
-        #self.log.debug('QueryModule.csv_export: read permission config: %s has %s' % (field, perms))
-        for (perm, denial) in [s.split(":") for s in perms] :
+        comp.log.debug('found : %s' % field)
+        perms = comp.config.getlist(csection, '%s.permission' % field, [])
+        #comp.log.debug('read permission config: %s has %s' % (field, perms))
+        for (perm, denial) in [s.split(":") for s in perms]:
             perm = perm.upper()
-            #self.log.debug('QueryModule.csv_export: testing permission: %s:%s should act= %s' %
-            #               (field, perm, (not req.perm.has_permission(perm) or perm == "ALWAYS")))
-            if (not req.perm.has_permission(perm) or perm == "ALWAYS") and denial.lower() in ["remove","hide"]:
-                hidden_fields.append(field)
-
-    ## END find the columns that should be hidden
-
-    ### !!!    BEGIN COPIED CONTENT - from trac1.0/trac/ticket/query.py
-    content = StringIO()
-    content.write('\xef\xbb\xbf')   # BOM
-    cols = query.get_columns()
-    ### !!!    T&E patch
-    cols = [col for col in cols if col not in hidden_fields]
-    ### !!!END T&E patch
-    writer = csv.writer(content, delimiter=sep, quoting=csv.QUOTE_MINIMAL)
-    writer.writerow([unicode(c).encode('utf-8') for c in cols])
-
-    context = web_context(req)
-    results = query.execute(req)
-    for result in results:
-        ticket = Resource('ticket', result['id'])
-        if 'TICKET_VIEW' in req.perm(ticket):
-            values = []
-            for col in cols:
-                value = result[col]
-                if col in ('cc', 'owner', 'reporter'):
-                    value = Chrome(self.env).format_emails(
-                                context.child(ticket), value)
-                elif col in query.time_fields:
-                    value = format_datetime(value, '%Y-%m-%d %H:%M:%S',
-                                            tzinfo=req.tz)
-                values.append(unicode(value).encode('utf-8'))
-            writer.writerow(values)
-    return (content.getvalue(), '%s;charset=utf-8' % mimetype)
+            comp.log.debug('testing permission: %s:%s should act= %s' %
+                           (field, perm, (not req.perm.has_permission(perm)
+                                          or perm == "ALWAYS")))
+            if (not req.perm.has_permission(perm) or perm == "ALWAYS") \
+                    and denial.lower() in ["remove", "hide"]:
+                label = comp.env.config.get(
+                    'ticket-custom', field + '.label', field).lower().strip()
+                yield (field, label)
 
 
-QueryModule.export_csv = new_csv_export
+# Basically overwriting QueryModule.export_csv = new_csv_export
+class TandEFilteredQueryConversions(Component):
+    implements(IContentConverter)
+
+    # IContentConverter methods
+    def get_supported_conversions(self):
+        yield ('csv', _('Comma-delimited Text'), 'csv',
+               'trac.ticket.Query', 'text/csv', 9)  # higher than QueryModule
+        yield ('tab', _('Tab-delimited Text'), 'tsv',
+               'trac.ticket.Query', 'text/tab-separated-values', 9)
+
+    def convert_content(self, req, mimetype, query, key):
+        if key == 'csv':
+            return self._export_csv(req, query, mimetype='text/csv')
+        elif key == 'tab':
+            return self._export_csv(req, query, '\t',
+                                    mimetype='text/tab-separated-values')
+
+    # Internal methods
+    def _filtered_columns(self, req, cols):
+        # find the columns that should be hidden
+        denied = [field for (field, label) in denied_fields(self, req)]
+        return [c for c in cols if c not in denied]
+
+    def _export_csv(self, req, query, sep=',', mimetype='text/plain'):
+        self.log.debug("T&E plugin has overridden QueryModule.csv_export"
+                       " so to enforce field permissions")
+        # !!!    BEGIN COPIED CONTENT - from trac1.0/trac/ticket/query.py
+        content = StringIO()
+        content.write('\xef\xbb\xbf')   # BOM
+        cols = query.get_columns()
+        # !!!    T&E patch
+        cols = self._filtered_columns(req, cols)
+        # !!!END T&E patch
+        writer = csv.writer(content, delimiter=sep, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow([unicode(c).encode('utf-8') for c in cols])
+
+        context = web_context(req)
+        results = query.execute(req)
+        for result in results:
+            ticket = Resource('ticket', result['id'])
+            if 'TICKET_VIEW' in req.perm(ticket):
+                values = []
+                for col in cols:
+                    value = result[col]
+                    if col in ('cc', 'owner', 'reporter'):
+                        value = Chrome(self.env).format_emails(
+                            context.child(ticket), value)
+                    elif col in query.time_fields:
+                        value = format_datetime(value, '%Y-%m-%d %H:%M:%S',
+                                                tzinfo=req.tz)
+                    values.append(unicode(value).encode('utf-8'))
+                writer.writerow(values)
+        return (content.getvalue(), '%s;charset=utf-8' % mimetype)
+
 
 class TicketFormatFilter(Component):
     """Filtering the streams to alter the base format of the ticket"""
@@ -90,21 +109,6 @@ class TicketFormatFilter(Component):
         stream = disable_field(stream, "totalhours")
         stream = remove_header(stream, "hours")
         return stream 
-
-def denied_fields(comp, req):
-    fields = comp.config.getlist(csection, 'fields', [])
-    for field in fields:
-        comp.log.debug('found : %s' % field)
-        perms = comp.config.getlist(csection, '%s.permission' % field, [])
-        comp.log.debug('read permission config: %s has %s' % (field, perms))
-        for (perm, denial) in [s.split(":") for s in perms] :
-            perm = perm.upper()
-            comp.log.debug('testing permission: %s:%s should act= %s' %
-                           (field, perm, (not req.perm.has_permission(perm) or perm == "ALWAYS")))
-            if (not req.perm.has_permission(perm) or perm == "ALWAYS") \
-                    and denial.lower() in ["remove","hide"]:
-                label = comp.env.config.get('ticket-custom',field+'.label', field).lower().strip()
-                yield (field, label)
 
 class QueryColumnPermissionFilter(Component):
     """ Filtering the stream to remove """
