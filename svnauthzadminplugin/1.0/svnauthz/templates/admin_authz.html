@@ -24,7 +24,7 @@
           <input type="hidden" name="editgroup" value="${editgroup_url}"/>
           <fieldset>
             <py:if test="addgroupmember_error">
-              <div class="system-message"><p>${addgroupmember_error}</p></div>
+              <div class="system-message"><p>$addgroupmember_error</p></div>
             </py:if>
 
             <legend>Add Group Member to ${editgroup_name}</legend>
@@ -54,7 +54,7 @@
           <input type="hidden" name="editpath" value="${editpath_url}"/>
           <fieldset>
             <py:if test="addpathmember_error">
-              <div class="system-message"><p>${addpathmember_error}</p></div>
+              <div class="system-message"><p>$addpathmember_error</p></div>
             </py:if>
 
             <legend>Add Path Member to $editpath_name</legend>
@@ -91,9 +91,9 @@
     <py:if test="not(read_only_display)">
       <form id="addgroup" class="addnew" method="post">
         <fieldset>
-          <py:if test="addgroup and addgroup.error">
-            <div class="system-message"><p>$addgroup.error</p></div>
-          </py:if>
+          <div py:if="addgroup_error" class="system-message">
+            $addgroup_error
+          </div>
 
           <legend>Add Group:</legend>
           <div class="field">
@@ -216,7 +216,7 @@
             <td><a href="${path.href}">${path.name}</a>
               <py:if test="path and editpath_url == path.url">
                 <py:if test="changepathmember_error">
-                  <div class="system-message"><p>${changepathmember_error}</p></div>
+                  <div class="system-message"><p>$changepathmember_error</p></div>
                 </py:if>
 
                 <input type="hidden" name="editpath" value="${editpath_url}"/>
