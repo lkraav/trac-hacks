@@ -69,7 +69,7 @@ class AuthzFileParser:
 
     @staticmethod
     def _parse_group(m, line):
-        group_name, member_name = line.split('=')
+        group_name, member_name = line.split('=', 1)
         group_name = group_name.strip()
         g = m.find_group(group_name)
         if g is None:
@@ -108,7 +108,7 @@ class AuthzFileParser:
         m.add_path(self.current_path)
 
     def _parse_path_acl(self, m, line):
-        subject, acl = line.split('=')
+        subject, acl = line.split('=', 1)
         acl = [False, False]
         if acl is not None:
             if 'r' in acl:
