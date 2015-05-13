@@ -10,6 +10,7 @@ import ldap, ldap.filter
 
 GROUP_PREFIX = '@'
 
+
 class LdapAuthStore(Component):
     """A trac authentication provider using LDAP.
 
@@ -18,18 +19,28 @@ class LdapAuthStore(Component):
     """
     implements(IPasswordStore, IPermissionGroupProvider)
 
-    ldap_basedn = Option('ldap', 'basedn', None, 'Base DN for account searches')
-    ldap_scope = IntOption('ldap', 'scope', 1, 'Subtree search scope: 0=Base, 1=OneLevel, 2=Subtree')
-    ldap_user_attr = Option('ldap', 'uidattr', 'sAMAccountName', 'Attribute of the user account/id in the directory')
-    ldap_user_filter = Option('ldap', 'user_filter', '(objectClass=person)', 'Filter for user searches')
-    ldap_validusers = Option('ldap', 'allusers_group', None, 'DN of group containing valid users. If None, any user is valid')
-    ldap_member_attr = Option('ldap', 'groupmember', 'member', 'Attribute of user in a group')
-    ldap_member_is_dn = BoolOption('ldap', 'groupmemberisdn', True, 'Attribute of user in a group is users DN')
-    ldap_group_attr = Option('ldap', 'groupattr', 'cn', 'Attribute of the group name in the directory')
-    ldap_group_filter = Option('ldap', 'group_filter', '(objectClass=group)', 'Filter for group searches')
-    ldap_email_attr = Option('ldap', 'email', 'mail', 'Attribute of the users email')
-    ldap_name_attr = Option('ldap', 'name', 'displayName', 'Attribute of the users name')
-
+    ldap_basedn = Option('ldap', 'basedn', None,
+        'Base DN for account searches')
+    ldap_scope = IntOption('ldap', 'scope', 1,
+        'Subtree search scope: 0=Base, 1=OneLevel, 2=Subtree')
+    ldap_user_attr = Option('ldap', 'uidattr', 'sAMAccountName',
+        'Attribute of the user account/id in the directory')
+    ldap_user_filter = Option('ldap', 'user_filter', '(objectClass=person)',
+        'Filter for user searches')
+    ldap_validusers = Option('ldap', 'allusers_group', None,
+        'DN of group containing valid users. If None, any user is valid')
+    ldap_member_attr = Option('ldap', 'groupmember', 'member',
+        'Attribute of user in a group')
+    ldap_member_is_dn = BoolOption('ldap', 'groupmemberisdn', True,
+        'Attribute of user in a group is users DN')
+    ldap_group_attr = Option('ldap', 'groupattr', 'cn',
+        'Attribute of the group name in the directory')
+    ldap_group_filter = Option('ldap', 'group_filter', '(objectClass=group)',
+        'Filter for group searches')
+    ldap_email_attr = Option('ldap', 'email', 'mail',
+        'Attribute of the users email')
+    ldap_name_attr = Option('ldap', 'name', 'displayName',
+        'Attribute of the users name')
 
     def __init__(self, ldap=None):
         # looks for groups only if LDAP support is enabled
@@ -53,12 +64,12 @@ class LdapAuthStore(Component):
         self._cache_size = min(25, int(self.config.get('ldap', 'cache_size', '100')))
         self.log.debug('LdapAuthStore: Initiated')
 
+    # IPermissionGroupProvider methods
 
-    # IPermissionGroupProvider
     def get_permission_groups(self, user):
         """Return a list of names of the groups that the user with the
         specified name is a member of.
-"""
+        """
         groups = []
         user_dn = self._get_user_dn(user)
 
@@ -88,7 +99,6 @@ class LdapAuthStore(Component):
         self.log.debug('user %s has groups %s', user, ', '.join(groups))
         return sorted(groups)
 
-
     def _get_user_dn(self, user):
         """Search and return DN of user
         """
@@ -107,7 +117,6 @@ class LdapAuthStore(Component):
         self.log.debug('User %s has dn %s' % (user, dn.decode('iso-8859-15')))
         return dn
 
-
     def _get_group_dn(self, group):
         """Search and return DN of group
         """
@@ -124,7 +133,6 @@ class LdapAuthStore(Component):
         dn = result[0][0]
         self.log.debug('Group %s has dn %s' % (group, dn.decode('iso-8859-15')))
         return dn
-
 
     def get_users(self):
         """Returns an iterable of the known usernames.
@@ -160,7 +168,6 @@ class LdapAuthStore(Component):
                 pass
         return sorted(user_list)
 
-
     def has_user(self, user):
         """Returns whether the user account exists.
         THIS SEEMS NOT TO BE CALLED!
@@ -179,7 +186,6 @@ class LdapAuthStore(Component):
         self._openldap()
         #should be search for group with dn and user (in case member attr is memberuid)
         return self._ldap._compare(gdn, self.ldap_member_attr, dn.decode('iso-8859-15'))
-
 
     def check_password(self, user, password):
         """Checks if the password is valid for the user.
@@ -261,7 +267,6 @@ class LdapAuthStore(Component):
                 db.commit()
         return True
 
-
     def _bind_as_user(self, dn, password):
         """Returns an ldapplugin.LdapConnection for this user.
 
@@ -287,7 +292,6 @@ class LdapAuthStore(Component):
             except:
                 pass
         return None
-
 
     def _openldap(self):
         """Ensure self._ldap is set to a privileged LDAP connection.
