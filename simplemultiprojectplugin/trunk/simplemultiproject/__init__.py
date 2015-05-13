@@ -6,6 +6,7 @@
 from model import *
 from environmentSetup import *
 from admin import *
+from admin_command import SmpAdminCommands
 from admin_component import *
 from admin_filter import *
 from milestone import *
