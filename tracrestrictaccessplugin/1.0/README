@@ -1,0 +1,41 @@
+= Restrict to some user the access to Trac 
+
+== Description
+
+The goal of TracRestrictAccessPlugin is to restrict the access to Trac to the users with {{{TRAC_RESTRICT_ACCESS}}} permission.
+
+This mean that the restricted users can:
+- only view wiki pages under the directory {{{/trac/wiki/SharedPages/}}}
+- only view tickets that concern themselves. (ie: they are {{{reporter}}} or {{{owner}}} or {{{cc}}}).
+
+
+
+Thanks to the author of PrivateTicketsPlugin where I took the idea to restrict the view of tickets.
+
+See also: PrivateTicketsPlugin, PrivateWikiPlugin, TracFineGrainedPermissions
+
+
+== Installation
+
+General instructions on installing Trac plugins can be found on the [TracPlugins#InstallingaTracplugin TracPlugins] page.
+
+You must enabled it ({{{restrictaccess.* = enabled}}}) and also add {{{RestrictAccessPolicy}}} to your {{{permission_policies}}} setting in {{{trac.ini}}}. It must be before the {{{DefaultPermissionPolicy}}}. See below for an example if you don't have any other policies.
+
+Then to limit access to some users simply give them the permission 
+{{{TRAC_RESTRICT_ACCESS}}}
+
+
+== Example
+
+Example of {{{trac.ini}}}:
+{{{
+[components]
+...
+restrictaccess.* = enabled
+...
+
+[trac]
+...
+permission_policies = RestrictAccessPolicy, DefaultPermissionPolicy, LegacyAttachmentPolicy
+}}}
+
