@@ -17,7 +17,7 @@ from fnmatch import fnmatchcase
 
 
 class RestrictAccessPolicy(Component):
-    """Central tasks for the PrivateTickets plugin."""
+    """This plugin restrict access to the environment to some users"""
     
     implements(IPermissionRequestor, IPermissionPolicy)
     
