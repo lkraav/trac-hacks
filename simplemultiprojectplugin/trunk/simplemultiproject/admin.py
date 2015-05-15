@@ -30,7 +30,7 @@ except ImportError:
 
 # Trac Administration Panel
 class SmpAdminPanel(Component):
-    """Modifies Trac UI for editing Projects"""
+    """Admin panel for editing project settings."""
 
     implements(IPermissionRequestor, IAdminPanelProvider, ITemplateProvider)
 

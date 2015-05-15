@@ -28,7 +28,7 @@ from operator import itemgetter
 import re
 
 class SmpComponentAdminPanel(Component):
-    """Allows to specify project dependent components"""
+    """Admin panel allowing to link components with specific projects."""
 
     implements(IAdminPanelProvider, ITemplateProvider, ITemplateStreamFilter, IRequestFilter)
     def __init__(self):

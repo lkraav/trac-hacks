@@ -154,7 +154,20 @@ class SmpTicketProject(Component):
         return select
 
 class ProjectTicketsPolicy(Component):
+    """Permission policy provider for restricting access to projects to certain users.
 
+    === ===
+    Activate this component and add the following to your ''trac.ini'':
+    {{{
+    [trac]
+    permission_policies = ProjectTicketsPolicy, ... any other ...
+    }}}
+    Define a comma-separated list of users or groups in ''Admin''->''Manage Projects''->''Projects''->''<project name>''
+    ->''Retrict to users'' to limit the access to certain projects (milestones, versions, tickets).
+    For example, set
+    * {{{john, mary, group1, authenticated}}} to restrict to this set of users
+    * {{{!, bob, anonymous, group2}}} to exclude from the project.
+    """
     implements(IPermissionPolicy, IPermissionRequestor)
 
     def __init__(self):
