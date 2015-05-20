@@ -1,0 +1,59 @@
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+
+<xi:include href="admin.html"/>
+
+<head>
+    <title>Workflow Admin</title>
+    <script type="text/javascript">
+        jQuery(document).ready(function(){
+            $('#tkt-types').change(function()
+            {
+                document.getElementById('wf-submit').disabled=true;
+                window.location = '${href.admin()}'+'$panel_path' + "?type=" + $('#tkt-types').val();
+            });
+
+            $("#workflow-actions").autoPreviewWorkflow("${href()}/multipleworkflow/workflow_render", "", function(textarea, text, rendered) {
+                if (rendered){
+                    document.getElementById('wf-submit').disabled=false;
+                    $('#workflow-graph').html(rendered['html']);
+                    var graphdiv = $('.multiple-workflow-graph');
+                    var data = rendered['graph_data'];
+                    window.drawWorkflows(data, graphdiv);
+                }
+            });
+            $('#wf-submit').disabled = true;
+            document.getElementById('wf-submit').disabled=true;
+        });
+    </script>
+</head>
+<body>
+    <h2>Workflow Admin</h2>
+
+    <form action="${panel_href()}" method="post">
+        <select name="type" id="tkt-types" style="margin-left: 1em;">
+            <option value="default">Default workflow</option>
+            <option py:for="type in types" value="$type" selected="${type==selected and 'selected' or None}">$type</option>
+        </select>
+        <div class="field">
+            <textarea id="workflow-actions" name="workflow-actions"
+                      class="wikitext trac-resizable" rows="10" cols="78">$workflow</textarea>
+        </div>
+        <div class="buttons">
+            <input type="submit" id="wf-submit" name="wf-save" value="Save changes"/>
+        </div>
+    </form>
+    <hr />
+
+    <h3>Workflow Graph</h3>
+
+    <div id="workflow-graph">
+        $workflowgraph
+    </div>
+    </body>
+</html>
+
