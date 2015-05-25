@@ -698,6 +698,20 @@ class SmpModel(Component):
         cursor.execute(query, [component])
         return cursor.fetchall()
 
+    def get_all_components_with_id_project(self):
+        if VERSION < '0.12':
+            db = self.env.get_db_cnx()
+        else:
+            db = self.env.get_read_db()
+        cursor = db.cursor()
+        query = """SELECT
+                        component, id_project
+                   FROM
+                        smp_component_project;"""
+
+        cursor.execute(query)
+        return cursor.fetchall()
+
     def delete_component_projects(self,component):
         query = """DELETE FROM
                         smp_component_project

@@ -2,16 +2,16 @@
 #
 # Copyright (C) 2014 Cinc
 #
+# License: BSD
+#
 
 # Trac extension point imports
 from trac.core import *
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.util.translation import _
 from trac.config import BoolOption
-# genshi
 from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
-
 from operator import itemgetter
 
 # Model Class
@@ -21,11 +21,11 @@ __author__ = 'Cinc'
 
 
 class InsertProjectTd(InjectorTransformation):
-    """Transformation to insert the project column into the milestone table"""
+    """Transformation to insert the project column into the milestone and version tables"""
     _value = None
 
     def __init__(self, content, all_proj):
-        self._all_ms_proj = all_proj
+        self._all_proj = all_proj
         super(InsertProjectTd, self).__init__(content)
 
     def __call__(self, stream):
@@ -34,11 +34,11 @@ class InsertProjectTd(InjectorTransformation):
             mark, (kind, data, pos) = event
 
             if self._value:
-                yield event # Yield the event so the column is closed
+                yield event  # Yield the event so the column is closed
                 if mark == 'INSIDE' and kind == 'END' and data == '{http://www.w3.org/1999/xhtml}td':
                     # The end of a table column, tag: </td>
                     try:
-                        self.content = tag.td(self._all_ms_proj[self._value])
+                        self.content = tag.td(self._all_proj[self._value])
                     except KeyError:
                         # We end up here when the milestone has no project yet
                         self.content = tag.td()
@@ -48,9 +48,10 @@ class InsertProjectTd(InjectorTransformation):
                         yield 'INSIDE', ev
             else:
                 if mark == 'INSIDE' and kind == 'START' and data[0].localname == 'input':
-                    if data[1].get('type') ==u"checkbox":
+                    if data[1].get('type') == u"checkbox":
                         self._value = data[1].get('value')
                 yield event
+
 
 def _create_script_tag():
     """Create javascript tag which holds code to enable/disable 'add' button for milestones.
@@ -74,6 +75,7 @@ def _create_script_tag():
     });
     """
     return tag.script(script, type='text/javascript')
+
 
 def create_projects_select_ctrl(smp_model, req, for_add=True, is_ver=False):
     """Create a select control for admin panels holding valid projects (means not closed).
@@ -120,6 +122,15 @@ def create_projects_select_ctrl(smp_model, req, for_add=True, is_ver=False):
     div = tag.div(tag.label(_("Project")+':', tag.br, select), class_="field")
     return div
 
+
+def _allow_no_project(self):
+    """Check config if user enabled milestone creation without prior selection of a project.
+
+    @return: True if milestones may be created without a project
+    """
+    return self.env.config.getbool("simple-multi-project", "allow_no_project", False)
+
+
 class SmpFilterDefaultMilestonePanels(Component):
     """Modify default Trac admin panels for milestones to include a project selection control.
 
@@ -157,7 +168,6 @@ class SmpFilterDefaultMilestonePanels(Component):
                     else:
                         # If there is no project id this milestone doesn't live in the smp_milestone_project table yet
                         self.__SmpModel.insert_milestone_project(req.args['path_info'], req.args['project_id'])
-
         return handler
 
     def _is_valid_request(self, req):
@@ -176,14 +186,12 @@ class SmpFilterDefaultMilestonePanels(Component):
 
         if filename == "admin_milestones.html":
             if not req.args['path_info']:
-                # Add project column to main milestone table
-                stream = stream | Transformer('//table[@id="millist"]//th[@class="sel"]').after(tag.th(_("Project")))
 
-                all_proj={}
+                all_proj = {}
                 for dat in self.__SmpModel.get_all_projects():
                     all_proj[dat[0]] = dat[1]
 
-                all_ms_proj={}
+                all_ms_proj = {}
                 for ms, p_id in self.__SmpModel.get_all_milestones_with_id_project():
                     try:
                         all_ms_proj[ms] = all_proj[p_id]
@@ -191,23 +199,25 @@ class SmpFilterDefaultMilestonePanels(Component):
                         # A milestone without a project
                         all_ms_proj[ms] = ""
 
+                # Add project column to main milestone table
+                stream = stream | Transformer('//table[@id="millist"]//th[@class="sel"]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
 
                 # The 'add milestone' part of the page
-                if not self._allow_no_project():
+                if not _allow_no_project(self):
                     stream = stream | Transformer('//head').append(_create_script_tag())\
                                     | Transformer('//form[@id="addmilestone"]//input[@name="add"]'
-                                                ).attr('id', 'smp-btn-id') # Add id for use from javascript
+                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
 
                 # Insert project selection control
                 filter_form = Transformer('//form[@id="addmilestone"]//div[@class="field"][1]')
                 stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req))
             else:
                 # 'Modify Milestone' panel
-                if not self._allow_no_project():
+                if not _allow_no_project(self):
                     stream = stream | Transformer('//head').append(_create_script_tag()) \
                                     | Transformer('//form[@id="modifymilestone"]//input[@name="save"]'
-                                                ).attr('id', 'smp-btn-id') # Add id for use from javascript
+                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
 
                 # Insert project selection control
                 filter_form = Transformer('//form[@id="modifymilestone"]//div[@class="field"][1]')
@@ -215,12 +225,6 @@ class SmpFilterDefaultMilestonePanels(Component):
 
         return stream
 
-    def _allow_no_project(self):
-        """Check config if user enabled milestone creation without prior selection of a project.
-
-        @return: True if milestones may be created without a project
-        """
-        return self.env.config.getbool("simple-multi-project", "allow_no_project", False)
 
 class SmpFilterDefaultVersionPanels(Component):
     """Modify default Trac admin panels for versions to include project selection."""
@@ -263,14 +267,12 @@ class SmpFilterDefaultVersionPanels(Component):
 
         if filename == "admin_versions.html":
             if not req.args['path_info']:
-                # Add project column to main version table
-                stream = stream | Transformer('//table[@id="verlist"]//th[@class="sel"]').after(tag.th(_("Project")))
 
-                all_proj={}
+                all_proj = {}
                 for dat in self.__SmpModel.get_all_projects():
                     all_proj[dat[0]] = dat[1]
 
-                all_ver_proj={}
+                all_ver_proj = {}
                 for ver, p_id in self.__SmpModel.get_all_versions_with_id_project():
                     try:
                         all_ver_proj[ver] = all_proj[p_id]
@@ -278,13 +280,15 @@ class SmpFilterDefaultVersionPanels(Component):
                         # A version without a project
                         all_ver_proj[ver] = ""
 
+                # Add project column to main version table
+                stream = stream | Transformer('//table[@id="verlist"]//th[@class="sel"]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="verlist"]//tr').apply(InsertProjectTd("", all_ver_proj))
 
                 # The 'add version' part of the page
-                if not self._allow_no_project():
+                if not _allow_no_project(self):
                     stream = stream | Transformer('//head').append(_create_script_tag())\
                                     | Transformer('//form[@id="addversion"]//input[@name="add"]'
-                                                ).attr('id', 'smp-btn-id') # Add id for use from javascript
+                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
 
                 # Insert project selection control
                 filter_form = Transformer('//form[@id="addversion"]//div[@class="field"][1]')
@@ -299,9 +303,36 @@ class SmpFilterDefaultVersionPanels(Component):
 
         return stream
 
-    def _allow_no_project(self):
-        """Check config if user enabled milestone creation without prior selection of a project.
 
-        @return: True if milestones may be created without a project
-        """
-        return self.env.config.getbool("simple-multi-project", "allow_no_project", False)
+class SmpFilterDefaultComponentPanels(Component):
+    """Modify default Trac admin panels for components to include project selection."""
+
+    implements(ITemplateStreamFilter)
+
+    def __init__(self):
+        self.__SmpModel = SmpModel(self.env)
+
+    # ITemplateStreamFilter methods
+
+    def filter_stream(self, req, method, filename, stream, data):
+
+        if filename == "admin_components.html":
+            if not req.args['path_info']:
+
+                all_proj = {}
+                for dat in self.__SmpModel.get_all_projects():
+                    all_proj[dat[0]] = dat[1]
+
+                all_comp_proj = {}  # key is component name, value is a list of projects
+                for comp, p_id in self.__SmpModel.get_all_components_with_id_project():
+                    try:
+                        all_comp_proj[comp] += u", "+all_proj[p_id]
+                    except KeyError:
+                        # Component is not in dict 'all_comp_proj' yet
+                        all_comp_proj[comp] = all_proj[p_id]
+
+                # Add project column to component table
+                stream = stream | Transformer('//table[@id="complist"]//th[@class="sel"]').after(tag.th(_("Project")))
+                stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
+
+        return stream
