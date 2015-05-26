@@ -10,8 +10,11 @@ from trac.core import *
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.util.translation import _
 from trac.config import BoolOption
+from trac.resource import ResourceNotFound
+from trac.ticket.model import Component as TicketComponent
 from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
+from genshi.template.markup import MarkupTemplate
 from operator import itemgetter
 
 # Model Class
@@ -38,11 +41,15 @@ class InsertProjectTd(InjectorTransformation):
                 if mark == 'INSIDE' and kind == 'END' and data == '{http://www.w3.org/1999/xhtml}td':
                     # The end of a table column, tag: </td>
                     try:
-                        self.content = tag.td(self._all_proj[self._value])
+                        # Special handling for components. A component may have several projects
+                        if isinstance(self._all_proj[self._value], list):
+                            self.content = tag.td(((tag.span(item), tag.br) for item in self._all_proj[self._value]))
+                        else:
+                            self.content = tag.td(self._all_proj[self._value])
                     except KeyError:
                         # We end up here when the milestone has no project yet
+                        # self.content = tag.td(tag.span("(all projects)", style="color:lightgrey"))
                         self.content = tag.td()
-
                     self._value = None
                     for n, ev in self._inject():
                         yield 'INSIDE', ev
@@ -63,7 +70,6 @@ def _create_script_tag():
         if($('#project_id').val()=='0'){
                 $('#smp-btn-id').attr('disabled', 'disabled');
             };
-
         $('#project_id').change(function() {
             if($('#project_id').val()=='0'){
                 $('#smp-btn-id').attr('disabled', 'disabled');
@@ -170,14 +176,14 @@ class SmpFilterDefaultMilestonePanels(Component):
                         self.__SmpModel.insert_milestone_project(req.args['path_info'], req.args['project_id'])
         return handler
 
-    def _is_valid_request(self, req):
+    @staticmethod
+    def _is_valid_request(req):
         """Check request for correct path and valid form token"""
         if req.path_info.startswith('/admin/ticket/milestones') and req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 
     def post_process_request(self, req, template, data, content_type):
-
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -222,7 +228,6 @@ class SmpFilterDefaultMilestonePanels(Component):
                 # Insert project selection control
                 filter_form = Transformer('//form[@id="modifymilestone"]//div[@class="field"][1]')
                 stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req))
-
         return stream
 
 
@@ -248,17 +253,16 @@ class SmpFilterDefaultVersionPanels(Component):
                     else:
                         # If there is no project id this milestone doesn't live in the smp_milestone_project table yet
                         self.__SmpModel.insert_version_project(req.args['path_info'], req.args['project_id'])
-
         return handler
 
-    def _is_valid_request(self, req):
-        """Check request fir cirrect path and valid form token"""
+    @staticmethod
+    def _is_valid_request(req):
+        """Check request for correct path and valid form token"""
         if req.path_info.startswith('/admin/ticket/versions') and req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 
     def post_process_request(self, req, template, data, content_type):
-
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -303,22 +307,115 @@ class SmpFilterDefaultVersionPanels(Component):
 
         return stream
 
+table_tmpl="""
+<div xmlns:py="http://genshi.edgewall.org/">
+<p class="help">Please select the projects for which this component will be visible. Selecting nothing leaves
+ this component visible for all projects.</p>
+<table id="projectlist" class="listing" style="width: auto;">
+    <thead>
+        <tr><th></th><th>Project</th></tr>
+    </thead>
+    <tbody>
+    <tr py:for="prj in all_projects">
+        <td class="name">
+            <input name="sel" value="${prj[0]}"
+                   py:attrs="{'checked': 'foo'} if prj[1] in comp_prj else {}" type="checkbox" />
+        </td>
+        <td>${prj[1]}</td>
+    </tr>
+    </tbody>
+</table>
+</div>
+"""
+
+def create_projects_table(smp_model, req, for_add=True):
+    """Create a select control for admin panels holding valid projects (means not closed).
+
+    @param smp_model: SmpModel object
+    @param req      : Trac request object
+
+    @return DIV tag holding a project select control with label
+    """
+    all_projects = [[project[0], project[1]] for project in sorted(smp_model.get_all_projects(),
+                                                                      key=itemgetter(1))]
+    all_project_names = [name for p_id, name in all_projects]
+
+    # no closed projects
+    for project_name in all_project_names:
+        project_info = smp_model.get_project_info(project_name)
+        smp_model.filter_project_by_conditions(all_project_names, project_name, project_info, req)
+
+    filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects
+                         if project_name in all_project_names]
+
+    comp_prj = [ prj[0] for prj in smp_model.get_projects_component(req.args.get('path_info', ""))]
+    tbl = MarkupTemplate(table_tmpl)
+    return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj)
+
+
+def get_component(env, name):
+    try:
+        return TicketComponent(env, name)
+    except ResourceNotFound:
+        return None
+
 
 class SmpFilterDefaultComponentPanels(Component):
-    """Modify default Trac admin panels for components to include project selection."""
+    """Modify default Trac admin panels for components to include project selection.
 
-    implements(ITemplateStreamFilter)
+    You need ''TICKET_ADMIN'' rights so the component panel is visible in the ''Ticket System'' section.
+
+    After enabling this component you may disable the component panel in the ''Manage Projects'' section by
+    adding the following to ''trac.ini'':
+    {{{
+    [components]
+    simplemultiproject.admin_component.* = disabled
+    }}}
+    """
+    implements(ITemplateStreamFilter, IRequestFilter)
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
 
+    # IRequestFilter methods
+    def pre_process_request(self, req, handler):
+
+        if self._is_valid_request(req) and req.method == "POST":
+            if req.path_info.startswith('/admin/ticket/components'):
+                if 'add' in req.args:
+                    # 'Add' button on main component panel
+                    # Check if we already have this component. Trac will show an error later.
+                    # Don't change the db for smp.
+                    p_ids=req.args.get('sel')
+                    if not get_component(self.env, req.args.get('name')) and p_ids:
+                        self.__SmpModel.insert_component_projects(req.args.get('name'), p_ids)
+                elif 'remove' in req.args:
+                    # 'Remove' button on main component panel
+                    for item in req.args.get('sel'):
+                        self.__SmpModel.delete_component_projects(item)
+                elif 'save' in req.args or 'add' in req.args:
+                    # 'Save' button on 'Manage Component' panel
+                    p_ids=req.args.get('sel')
+                    self.__SmpModel.delete_component_projects(req.args.get('name'))
+                    self.__SmpModel.insert_component_projects(req.args.get('name'), p_ids)
+        return handler
+
+    @staticmethod
+    def _is_valid_request(req):
+        """Check request for correct path and valid form token"""
+        if req.path_info.startswith('/admin/ticket/components') and req.args.get('__FORM_TOKEN') == req.form_token:
+            return True
+        return False
+
+    def post_process_request(self, req, template, data, content_type):
+        return template, data, content_type
+
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-
         if filename == "admin_components.html":
             if not req.args['path_info']:
-
+                # Main components page
                 all_proj = {}
                 for dat in self.__SmpModel.get_all_projects():
                     all_proj[dat[0]] = dat[1]
@@ -326,13 +423,22 @@ class SmpFilterDefaultComponentPanels(Component):
                 all_comp_proj = {}  # key is component name, value is a list of projects
                 for comp, p_id in self.__SmpModel.get_all_components_with_id_project():
                     try:
-                        all_comp_proj[comp] += u", "+all_proj[p_id]
+                        # all_comp_proj[comp] += u", "+all_proj[p_id]
+                        all_comp_proj[comp].append(all_proj[p_id])
                     except KeyError:
                         # Component is not in dict 'all_comp_proj' yet
-                        all_comp_proj[comp] = all_proj[p_id]
+                        # all_comp_proj[comp] = all_proj[p_id]
+                        all_comp_proj[comp] = [all_proj[p_id]]
+
+                # The 'Add component' part of the page
+                filter_form = Transformer('//form[@id="addcomponent"]//div[@class="field"][2]')
+                stream = stream | filter_form.after(create_projects_table(self.__SmpModel, req))
 
                 # Add project column to component table
                 stream = stream | Transformer('//table[@id="complist"]//th[@class="sel"]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
-
+            else:
+                # 'Manage Component' panel
+                filter_form = Transformer('//form[@id="modcomp"]//div[@class="field"][1]')
+                stream = stream | filter_form.after(create_projects_table(self.__SmpModel, req))
         return stream
