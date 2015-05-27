@@ -249,7 +249,4 @@ class CodeReview(object):
         if not self.req:
             return message
         ctx = Context.from_request(self.req)
-        html = format_to_html(self.env, ctx, message, escape_newlines=True)
-        return html.replace("'", "\\'") \
-                   .replace('"', '\\"') \
-                   .replace('\n', '\\n')
+        return format_to_html(self.env, ctx, message, escape_newlines=True)

@@ -13,8 +13,9 @@ from subprocess import Popen, STDOUT, PIPE
 
 from trac.core import *
 from trac.config import ListOption, Option
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
-from trac.web.main import IRequestFilter, IRequestHandler
+from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
+    add_stylesheet)
+from trac.web.main import IRequestFilter
 from trac.ticket.model import Ticket
 
 from genshi.builder import tag
@@ -31,7 +32,7 @@ from model import CodeReview
 class CodeReviewerModule(Component):
     """Base component for reviewing changesets."""
 
-    implements(IRequestHandler, ITemplateProvider, IRequestFilter)
+    implements(ITemplateProvider, IRequestFilter)
 
     # config options
     statuses = ListOption('codereviewer', 'status_choices',
@@ -51,8 +52,7 @@ class CodeReviewerModule(Component):
         return [('coderev', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return []
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -68,26 +68,23 @@ class CodeReviewerModule(Component):
                     url = req.href(req.path_info, {'ticket': tickets})
                     req.send_header('Cache-Control', 'no-cache')
                     req.redirect(url+'#reviewbutton')
+            repo, changeset = get_repo_changeset(req, check_referer=True)
+            review = CodeReview(self.env, repo, changeset, req)
             add_stylesheet(req, 'coderev/coderev.css')
             add_script(req, 'coderev/coderev.js')
-            add_script(req, '/coderev/coderev.html')
+            add_script_data(req, {
+                'review': {
+                    'status': review.status,
+                    'encoded_status': review.encode(review.status),
+                    'summaries': review.summaries,
+                },
+                'tickets': get_tickets(req),
+                'statuses': self.statuses,
+                'form_token': self._get_form_token(req),
+            })
         elif req.path_info.startswith('/ticket/'):
             add_stylesheet(req, 'coderev/coderev.css')
         return template, data, content_type
-
-    # IRequestHandler methods
-    def match_request(self, req):
-        return req.path_info.startswith('/coderev/')
-
-    def process_request(self, req):
-        repo, changeset = get_repo_changeset(req, check_referer=True)
-        review = CodeReview(self.env, repo, changeset, req)
-        data = {'review': review,
-                'tickets': get_tickets(req),
-                'statuses': self.statuses,
-                'form_token': self._get_form_token(req)}
-        req.send_header('Cache-Control', 'no-cache')
-        return 'coderev.html', data, 'text/javascript'
 
     # private methods
     def _valid_request(self, req):
