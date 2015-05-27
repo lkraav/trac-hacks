@@ -11,9 +11,6 @@ import re
 import time
 
 from trac.resource import ResourceNotFound
-from trac.util.datefmt import pretty_timedelta
-from trac.web.chrome import web_context
-from trac.wiki.formatter import format_to_html
 from trac.ticket.model import Ticket
 
 
@@ -30,13 +27,10 @@ class CodeReview(object):
     db_name = 'coderev'
     db_version = 2 # see upgrades dir
 
-    def __init__(self, env, repo, changeset, req=None):
-        """The summary field will only get converted to html format in
-        a html_summary field if a req object is provided."""
+    def __init__(self, env, repo, changeset):
         self.env = env
         self.repo = repo
         self.changeset = changeset
-        self.req = req
         self.db = self.env.get_db_cnx()
         self.statuses = self.env.config.get('codereviewer', 'status_choices')
         if not isinstance(self.statuses, list):
@@ -125,7 +119,7 @@ class CodeReview(object):
         return status
 
     @staticmethod
-    def get_reviews(env, ticket, req=None):
+    def get_reviews(env, ticket):
         """Return all reviews for the given ticket in changeset order."""
         reviews = []
         cursor = env.get_db_cnx().cursor()
@@ -136,7 +130,7 @@ class CodeReview(object):
             ORDER BY time ASC
             """ % ticket)
         for repo, changeset in cursor:
-            review = CodeReview(env, repo, changeset, req)
+            review = CodeReview(env, repo, changeset)
             reviews.append(review)
         return reviews
 
@@ -214,19 +208,13 @@ class CodeReview(object):
                 ORDER BY time ASC
                 """, (self.changeset,))
         for status, reviewer, summary, when in cursor.fetchall():
-            pretty_when = time.strftime('%Y-%m-%d %H:%M',
-                                        time.localtime(long(when) /
-                                                       self.EPOCH_MULTIPLIER))
-            pretty_when += ' (%s ago)' % pretty_timedelta(when)
             summaries.append({
                 'repo': self.repo,
                 'changeset': self.changeset,
                 'status': self.decode(status) or '',
                 'reviewer': reviewer,
                 'summary': summary,
-                'html_summary': self._wiki_to_html(summary),
                 'when': when,
-                'pretty_when': pretty_when,
             })
         self._summaries = summaries
 
@@ -244,9 +232,3 @@ class CodeReview(object):
             if ticket:
                 self._tickets.append(ticket)
             self._changeset_when = when
-
-    def _wiki_to_html(self, message):
-        if not self.req:
-            return message
-        ctx = web_context(self.req)
-        return format_to_html(self.env, ctx, message, escape_newlines=True)

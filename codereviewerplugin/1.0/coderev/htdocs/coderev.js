@@ -34,7 +34,7 @@ jQuery(document).ready(function ($) {
       html += ' set to ' + summary.status;
     else
       html += ' commented';
-    html += ' on ' + summary.pretty_when + '</h3>' + decode(summary.html_summary) + '<br/></dd>';
+    html += ' on ' + summary.pretty_when + ' (' + summary.pretty_timedelta + ' ago)</h3>' + decode(summary.html_summary) + '<br/></dd>';
   });
 
   // link to tickets if just saved comments

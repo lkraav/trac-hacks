@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import functools
 import re
 import time
 from subprocess import Popen, STDOUT, PIPE
@@ -14,12 +15,13 @@ from subprocess import Popen, STDOUT, PIPE
 from trac.core import *
 from trac.config import ListOption, Option
 from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
-    add_stylesheet)
+    add_stylesheet, pretty_timedelta, web_context)
 from trac.web.main import IRequestFilter
 from trac.ticket.model import Ticket
 
 from genshi.builder import tag
 from trac.resource import Resource
+from trac.util.datefmt import format_datetime, user_time
 from trac.versioncontrol import IRepositoryChangeListener, RepositoryManager
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.formatter import format_to_html
@@ -62,14 +64,24 @@ class CodeReviewerModule(Component):
         if self._valid_request(req):
             if req.method == 'POST':
                 repo, changeset = get_repo_changeset(req)
-                review = CodeReview(self.env, repo, changeset, req)
+                review = CodeReview(self.env, repo, changeset)
                 if review.save(reviewer=req.authname, **req.args):
                     tickets = self._update_tickets(req, review)
                     url = req.href(req.path_info, {'ticket': tickets})
                     req.send_header('Cache-Control', 'no-cache')
                     req.redirect(url+'#reviewbutton')
             repo, changeset = get_repo_changeset(req, check_referer=True)
-            review = CodeReview(self.env, repo, changeset, req)
+            review = CodeReview(self.env, repo, changeset)
+            ctx = web_context(req)
+            format_summary = functools.partial(format_to_html, self.env, ctx,
+                                               escape_newlines=True)
+            format_time = functools.partial(user_time, req, format_datetime)
+            for summary in review.summaries:
+                summary.update({
+                    'html_summary': format_summary(summary['summary']),
+                    'pretty_when': format_time(summary['when']),
+                    'pretty_timedelta': pretty_timedelta(summary['when']),
+                })
             add_stylesheet(req, 'coderev/coderev.css')
             add_script(req, 'coderev/coderev.js')
             add_script_data(req, {
