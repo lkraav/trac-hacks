@@ -199,13 +199,21 @@ class CodeReview(object):
         """Returns all summary records for the given changeset."""
         summaries = []
         cursor = self.db.cursor()
-        cursor.execute("""
-            SELECT status, reviewer, summary, time
-            FROM codereviewer
-            WHERE repo='%s' AND changeset='%s'
-            ORDER BY time ASC
-            """ % (self.repo, self.changeset))
-        for status, reviewer, summary, when in cursor:
+        if self.repo:
+            cursor.execute("""
+                SELECT status, reviewer, summary, time
+                FROM codereviewer
+                WHERE repo=%s AND changeset=%s
+                ORDER BY time ASC
+                """, (self.repo, self.changeset))
+        else:
+            cursor.execute("""
+                SELECT status, reviewer, summary, time
+                FROM codereviewer
+                WHERE repo IS NULL AND changeset=%s
+                ORDER BY time ASC
+                """, (self.changeset,))
+        for status, reviewer, summary, when in cursor.fetchall():
             pretty_when = time.strftime('%Y-%m-%d %H:%M',
                                         time.localtime(long(when) /
                                                        self.EPOCH_MULTIPLIER))

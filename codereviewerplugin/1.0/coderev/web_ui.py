@@ -93,7 +93,7 @@ class CodeReviewerModule(Component):
     def _valid_request(self, req):
         """Checks for changeset page and permissions."""
         if req.perm.has_permission('CHANGESET_VIEW'):
-            return bool(get_repo_changeset(req)[0]) # found changeset in url?
+            return bool(get_repo_changeset(req)[1]) # found changeset in url?
         return False
 
     def _get_form_token(self, req):
