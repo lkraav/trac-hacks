@@ -10,9 +10,9 @@
 import re
 import time
 
-from trac.mimeview import Context
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import pretty_timedelta
+from trac.web.chrome import web_context
 from trac.wiki.formatter import format_to_html
 from trac.ticket.model import Ticket
 
@@ -248,5 +248,5 @@ class CodeReview(object):
     def _wiki_to_html(self, message):
         if not self.req:
             return message
-        ctx = Context.from_request(self.req)
+        ctx = web_context(self.req)
         return format_to_html(self.env, ctx, message, escape_newlines=True)
