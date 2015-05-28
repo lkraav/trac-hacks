@@ -286,7 +286,7 @@ class CommitTicketReferenceMacro(WikiMacroBase):
 
 class ChangesetTicketMapper(Component):
     """Maintains a mapping of changesets to tickets in a codereviewer_map
-    table.  Gets invoked for each changeset addition or modification."""
+    table. Invoked for each changeset addition or modification."""
 
     implements(IRepositoryChangeListener)
 
@@ -298,34 +298,31 @@ class ChangesetTicketMapper(Component):
     def changeset_modified(self, repos, changeset, old_changeset):
         self._map(repos.reponame, changeset, update=True)
 
+    # Internal methods
+
     def _map(self, reponame, changeset, update=False):
         # extract tickets from changeset message
         ticket_re = CommitTicketUpdater.ticket_re
         tickets = ticket_re.findall(changeset.message)
         when = to_utimestamp(changeset.date)
 
-        # insert into db
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        if update:
-            cursor.execute("""
-                DELETE FROM codereviewer_map
-                WHERE repo=%s and changeset=%s
-                """, (reponame, changeset. rev))
-        if not tickets:
-            tickets = ['']  # we still want merges inserted
-        for ticket in tickets:
-            try:
-                cursor.execute("""
-                    INSERT INTO codereviewer_map
-                           (repo,changeset,ticket,time)
-                    VALUES (%s,%s,%s,%s)
-                    """, (reponame, changeset.rev, ticket, when))
-            except Exception, e:
-                self.log.warning("Unable to insert changeset " +
-                                 "%s/%s and ticket %s into db: %s"
-                                 % (changeset.rev, reponame, ticket, str(e)))
-        db.commit()
+        with self.env.db_transaction as db:
+            if update:
+                db("""DELETE FROM codereviewer_map
+                   WHERE repo=%s and changeset=%s
+                   """, (reponame, changeset. rev))
+            if not tickets:
+                tickets = ['']  # we still want merges inserted
+            for ticket in tickets:
+                try:
+                    db("""INSERT INTO codereviewer_map
+                        (repo,changeset,ticket,time)
+                       VALUES (%s,%s,%s,%s)
+                       """, (reponame, changeset.rev, ticket, when))
+                except Exception, e:
+                    self.log.warning("Unable to insert changeset "
+                                     "%s/%s and ticket %s into db: %s",
+                                     changeset.rev, reponame, ticket, e)
 
 
 def get_repo_changeset(req, check_referer=False):

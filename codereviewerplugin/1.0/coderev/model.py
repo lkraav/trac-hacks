@@ -24,15 +24,10 @@ class CodeReview(object):
     DEFAULT_STATUS = STATUSES[1]
     NOT_PASSED = "(not %s)" % STATUSES[2]
 
-    # db schema
-    db_name = 'coderev'
-    db_version = 2  # see upgrades dir
-
     def __init__(self, env, repo, changeset):
         self.env = env
         self.repo = repo
         self.changeset = changeset
-        self.db = self.env.get_db_cnx()
         self.statuses = self.env.config.get('codereviewer', 'status_choices')
         if not isinstance(self.statuses, list):
             self.statuses = self.statuses.split(',')
@@ -89,13 +84,11 @@ class CodeReview(object):
             status = ''  # only save status when changed
         if not status and not summary:
             return False  # bah - nothing worthwhile to save
-        cursor = self.db.cursor()
-        cursor.execute("""
+        self.env.db_transaction("""
             INSERT INTO codereviewer
-                   (repo,changeset,status,reviewer,summary,time)
-            VALUES (%s,%s,%s,%s,%s,%s);
+             (repo,changeset,status,reviewer,summary,time)
+            VALUES (%s,%s,%s,%s,%s,%s)
             """, (self.repo, self.changeset, status, reviewer, summary, when))
-        self.db.commit()
         self._clear()
         return True
 
@@ -123,14 +116,10 @@ class CodeReview(object):
     def get_reviews(env, ticket):
         """Return all reviews for the given ticket in changeset order."""
         reviews = []
-        cursor = env.get_db_cnx().cursor()
-        cursor.execute("""
-            SELECT repo, changeset
-            FROM codereviewer_map
-            WHERE ticket='%s'
-            ORDER BY time ASC
-            """ % ticket)
-        for repo, changeset in cursor:
+        for repo, changeset in env.db_query("""
+                SELECT repo, changeset FROM codereviewer_map
+                WHERE ticket=%s ORDER BY time ASC
+                """, (ticket,)):
             review = CodeReview(env, repo, changeset)
             reviews.append(review)
         return reviews
@@ -179,36 +168,31 @@ class CodeReview(object):
     def _populate(self):
         """Populate this object from the database."""
         # get the last status change ('' status indicates no change)
-        cursor = self.db.cursor()
-        cursor.execute("""
-            SELECT status, reviewer, time
-            FROM codereviewer
-            WHERE repo='%s' AND changeset='%s' AND status != ''
-            ORDER BY time DESC LIMIT 1;
-            """ % (self.repo, self.changeset))
-        row = cursor.fetchone() or (self.DEFAULT_STATUS, '', 0)
-        status, self._reviewer, self._when = row
+        for row in self.env.db_query("""
+                SELECT status, reviewer, time FROM codereviewer
+                WHERE repo=%s AND changeset=%s AND status != ''
+                ORDER BY time DESC LIMIT 1
+                """, (self.repo, self.changeset)):
+            status, self._reviewer, self._when = row
+            break
+        else:
+            status, self._reviewer, self._when = self.DEFAULT_STATUS, '', 0
         self._status = self.decode(status)
 
     def _populate_summaries(self):
         """Returns all summary records for the given changeset."""
         summaries = []
-        cursor = self.db.cursor()
         if self.repo:
-            cursor.execute("""
-                SELECT status, reviewer, summary, time
-                FROM codereviewer
-                WHERE repo=%s AND changeset=%s
-                ORDER BY time ASC
+            query = self.env.db_query("""
+                SELECT status, reviewer, summary, time FROM codereviewer
+                WHERE repo=%s AND changeset=%s ORDER BY time ASC
                 """, (self.repo, self.changeset))
         else:
-            cursor.execute("""
-                SELECT status, reviewer, summary, time
-                FROM codereviewer
-                WHERE repo IS NULL AND changeset=%s
-                ORDER BY time ASC
+            query = self.env.db_query("""
+                SELECT status, reviewer, summary, time FROM codereviewer
+                WHERE repo IS NULL AND changeset=%s ORDER BY time ASC
                 """, (self.changeset,))
-        for status, reviewer, summary, when in cursor.fetchall():
+        for status, reviewer, summary, when in query:
             summaries.append({
                 'repo': self.repo,
                 'changeset': self.changeset,
@@ -221,15 +205,13 @@ class CodeReview(object):
 
     def _populate_tickets(self):
         """Populate this object's tickets from the database."""
-        cursor = self.db.cursor()
-        cursor.execute("""
-            SELECT ticket, time
-            FROM codereviewer_map
-            WHERE repo='%s' AND changeset='%s'
-            """ % (self.repo, self.changeset))
         self._tickets = []
         self._changeset_when = 0
-        for ticket, when in cursor:
+        for ticket, when in self.env.db_query("""
+                SELECT ticket, time
+                FROM codereviewer_map
+                WHERE repo=%s AND changeset=%s
+                """, (self.repo, self.changeset)):
             if ticket:
                 self._tickets.append(ticket)
             self._changeset_when = when
