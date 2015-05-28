@@ -153,7 +153,7 @@ class SmpVersionProject(Component):
         return handler
         
     def post_process_request(self, req, template, data, content_type):
-        if data and 'version' in data and req.path_info.startswith('/version'):
+        if data and 'is_SMP' in data and req.path_info.startswith('/version'):
             version = data['version']
             if version and (type(version) is Version):
                 project_name = self.__SmpModel.get_project_version(version.name)
@@ -393,7 +393,8 @@ class SmpVersionProject(Component):
             'available_groups': available_groups, 
             'grouped_by': by,
             'groups': version_groups,
-            'infodivclass': infodivclass
+            'infodivclass': infodivclass,
+            'is_SMP' : True
             }
         data.update(any_stats_data(self.env, req, stat, 'version', version.name))
 
