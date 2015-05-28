@@ -18,6 +18,8 @@ from trac.resource import ResourceNotFound
 
 from coderev.model import CodeReview
 
+EPOCH_MULTIPLIER = 1000000.0
+
 
 class Reviewer(object):
     """Returns the latest changeset in a given repo whose Trac tickets have
@@ -101,7 +103,7 @@ class Reviewer(object):
         """Extract changesets in order from current to target ref."""
         current_ref = self.get_current_changeset()
         review = self.get_review(current_ref)
-        when = int(review.changeset_when / CodeReview.EPOCH_MULTIPLIER)
+        when = int(review.changeset_when / EPOCH_MULTIPLIER)
         cmds = ['cd %s' % self.repo_dir,
                 'git rev-list --reverse --since=%s HEAD' % when]
         changesets = self._execute(' && '.join(cmds)).splitlines()

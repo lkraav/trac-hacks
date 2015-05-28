@@ -8,11 +8,12 @@
 # you should have received as part of this distribution.
 #
 
+import datetime
 import re
-import time
 
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Ticket
+from trac.util.datefmt import to_utimestamp, utc
 
 
 class CodeReview(object):
@@ -22,7 +23,6 @@ class CodeReview(object):
     STATUSES = ['FAILED', 'PENDING', 'PASSED']
     DEFAULT_STATUS = STATUSES[1]
     NOT_PASSED = "(not %s)" % STATUSES[2]
-    EPOCH_MULTIPLIER = 1000000.0
 
     # db schema
     db_name = 'coderev'
@@ -84,7 +84,7 @@ class CodeReview(object):
 
     def save(self, status, reviewer, summary, **kw):
         status = self.encode(status)
-        when = int(time.time() * self.EPOCH_MULTIPLIER)
+        when = to_utimestamp(datetime.datetime.now(utc))
         if status == self.status and self._when != 0:  # initial is special
             status = ''  # only save status when changed
         if not status and not summary:

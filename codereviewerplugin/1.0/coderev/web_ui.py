@@ -10,14 +10,13 @@
 
 import functools
 import re
-import time
 from subprocess import Popen, STDOUT, PIPE
 
 from genshi.builder import tag
 from trac.core import *
 from trac.config import ListOption, Option
 from trac.resource import Resource
-from trac.util.datefmt import format_datetime, user_time
+from trac.util.datefmt import format_datetime, to_utimestamp, user_time
 from trac.versioncontrol.api import IRepositoryChangeListener, RepositoryManager
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
@@ -303,8 +302,7 @@ class ChangesetTicketMapper(Component):
         # extract tickets from changeset message
         ticket_re = CommitTicketUpdater.ticket_re
         tickets = ticket_re.findall(changeset.message)
-        epoch = time.mktime(changeset.date.utctimetuple())
-        when = int(epoch * CodeReview.EPOCH_MULTIPLIER)
+        when = to_utimestamp(changeset.date)
 
         # insert into db
         db = self.env.get_db_cnx()
