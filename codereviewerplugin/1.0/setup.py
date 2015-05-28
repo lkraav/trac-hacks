@@ -29,4 +29,5 @@ setup(
     entry_points={'trac.plugins': ['coderev.api = coderev.api',
                                    'coderev.web_ui = coderev.web_ui',]},
     install_requires=['Trac'],
+    test_suite='coderev.tests',
 )

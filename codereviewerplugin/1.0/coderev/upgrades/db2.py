@@ -7,11 +7,14 @@
 # you should have received as part of this distribution.
 #
 
-from trac.db import Table, Column, Index, DatabaseManager
+from trac.db import Table, Column
 
-def do_upgrade(env, cursor):
+from coderev.compat import DatabaseManager
 
-    db_tables = [
+
+def do_upgrade(env, ver, cursor):
+
+    schema = [
         Table('codereviewer_map', key=['repo', 'changeset', 'ticket'])[
             Column('repo', type='text'),
             Column('changeset', type='text'),
@@ -20,8 +23,4 @@ def do_upgrade(env, cursor):
         ],
     ]
 
-    # create the map table
-    db_connector = DatabaseManager(env).get_connector()[0]
-    for table in db_tables:
-        for sql in db_connector.to_sql(table):
-            cursor.execute(sql)
+    DatabaseManager(env).create_tables(schema)
