@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2012 Rob Guttman <guttman@alum.mit.edu>
+# Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -35,7 +36,7 @@ def sync(db_path, repo_dir):
     # insert a row per ticket in commit message
     for changeset_line in changeset_lines:
         print '.',
-        rev,when,msg = changeset_line.split('|',2)
+        rev, when, msg = changeset_line.split('|', 2)
         when = long(when) * EPOCH_MULTIPLIER
         ticket_re = re.compile('#([0-9]+)')
         for ticket in ticket_re.findall(msg):
@@ -44,10 +45,11 @@ def sync(db_path, repo_dir):
                     INSERT INTO codereviewer_map
                         (repo,changeset,ticket,time)
                     VALUES ('%s','%s','%s',%s);
-                    """ % (reponame,rev,ticket,when))
+                    """ % (reponame, rev, ticket, when))
             except sqlite3.IntegrityError:
-                print "\nduplicate %s, %s, #%s" % (reponame,rev,ticket)
+                print "\nduplicate %s, %s, #%s" % (reponame, rev, ticket)
     db.commit()
+
 
 def get_changeset_lines(repo_dir):
     """Return all changesets including their commit time and message
@@ -55,11 +57,12 @@ def get_changeset_lines(repo_dir):
     cmds = ['cd %s' % repo_dir, 'git log --reverse --format="%H|%ct|%s"']
     return execute(' && '.join(cmds)).splitlines()
 
+
 def execute(cmd):
     p = Popen(cmd, shell=True, stderr=STDOUT, stdout=PIPE)
     out = p.communicate()[0]
     if p.returncode != 0:
-        raise Exception('cmd: %s\n%s' % (cmd,out))
+        raise Exception('cmd: %s\n%s' % (cmd, out))
     return out
 
 
@@ -72,4 +75,4 @@ if __name__ == "__main__":
     # sync
     db_path = sys.argv[1]
     repo_dir = sys.argv[2]
-    sync(db_path,repo_dir)
+    sync(db_path, repo_dir)

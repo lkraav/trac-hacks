@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2012 Rob Guttman <guttman@alum.mit.edu>
+# Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -12,20 +13,19 @@ import re
 import time
 from subprocess import Popen, STDOUT, PIPE
 
+from genshi.builder import tag
 from trac.core import *
 from trac.config import ListOption, Option
+from trac.resource import Resource
+from trac.util.datefmt import format_datetime, user_time
+from trac.versioncontrol.api import IRepositoryChangeListener, RepositoryManager
+from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
     add_stylesheet, pretty_timedelta, web_context)
 from trac.web.main import IRequestFilter
-from trac.ticket.model import Ticket
-
-from genshi.builder import tag
-from trac.resource import Resource
-from trac.util.datefmt import format_datetime, user_time
-from trac.versioncontrol import IRepositoryChangeListener, RepositoryManager
-from trac.wiki.macros import WikiMacroBase
 from trac.wiki.formatter import format_to_html
-from trac.versioncontrol.web_ui.changeset import ChangesetModule
+from trac.wiki.macros import WikiMacroBase
+from trac.ticket.model import Ticket
 from tracopt.ticket.commit_updater import CommitTicketUpdater
 
 from model import CodeReview
@@ -39,16 +39,21 @@ class CodeReviewerModule(Component):
     # config options
     statuses = ListOption('codereviewer', 'status_choices',
         default=CodeReview.STATUSES, doc="Review status choices.")
+
     passed = ListOption('codereviewer', 'passed',
         default=[], doc="Ticket field changes on a PASSED submit.")
+
     failed = ListOption('codereviewer', 'failed',
         default=[], doc="Ticket field changes on a FAILED submit.")
+
     completeness = ListOption('codereviewer', 'completeness',
         default=[], doc="Ticket field values that enable ticket completeness.")
+
     command = Option('codereviewer', 'command',
         default='', doc="Command to execute upon ticket completeness.")
 
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('coderev', resource_filename(__name__, 'htdocs'))]
@@ -57,6 +62,7 @@ class CodeReviewerModule(Component):
         return []
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -102,7 +108,7 @@ class CodeReviewerModule(Component):
     def _valid_request(self, req):
         """Checks for changeset page and permissions."""
         if req.perm.has_permission('CHANGESET_VIEW'):
-            return bool(get_repo_changeset(req)[1]) # found changeset in url?
+            return bool(get_repo_changeset(req)[1])  # found changeset in url?
         return False
 
     def _get_form_token(self, req):
@@ -213,7 +219,7 @@ class CodeReviewerModule(Component):
             if value.startswith('{'):
                 value = tkt[value.strip('{}')]
             if tkt[field] == value:
-                break # no more changes once ticket already has target value
+                break  # no more changes once ticket already has target value
             changes[field] = value
         return changes
 
@@ -309,7 +315,7 @@ class ChangesetTicketMapper(Component):
                 WHERE repo=%s and changeset=%s
                 """, (reponame, changeset. rev))
         if not tickets:
-            tickets = [''] # we still want merges inserted
+            tickets = ['']  # we still want merges inserted
         for ticket in tickets:
             try:
                 cursor.execute("""
@@ -324,7 +330,6 @@ class ChangesetTicketMapper(Component):
         db.commit()
 
 
-# common functions
 def get_repo_changeset(req, check_referer=False):
     """Returns the changeset and repo as a tuple."""
     path = req.environ.get('HTTP_REFERER', '') if check_referer \

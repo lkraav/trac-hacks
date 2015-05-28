@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2012 Rob Guttman <guttman@alum.mit.edu>
+# Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -25,7 +26,7 @@ class CodeReview(object):
 
     # db schema
     db_name = 'coderev'
-    db_version = 2 # see upgrades dir
+    db_version = 2  # see upgrades dir
 
     def __init__(self, env, repo, changeset):
         self.env = env
@@ -84,10 +85,10 @@ class CodeReview(object):
     def save(self, status, reviewer, summary, **kw):
         status = self.encode(status)
         when = int(time.time() * self.EPOCH_MULTIPLIER)
-        if status == self.status and self._when != 0: # initial is special
-            status = '' # only save status when changed
+        if status == self.status and self._when != 0:  # initial is special
+            status = ''  # only save status when changed
         if not status and not summary:
-            return False # bah - nothing worthwhile to save
+            return False  # bah - nothing worthwhile to save
         cursor = self.db.cursor()
         cursor.execute("""
             INSERT INTO codereviewer
@@ -158,7 +159,7 @@ class CodeReview(object):
                         return "Ticket #%s field %s=%s which violates rule " \
                                "%s" % (tkt.id, field, value, rule)
         except ResourceNotFound:
-            pass # e.g., incorrect ticket reference
+            pass  # e.g., incorrect ticket reference
 
         # check review status
         reviews = CodeReview.get_reviews(self.env, ticket)

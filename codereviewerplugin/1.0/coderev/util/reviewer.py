@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2012 Rob Guttman <guttman@alum.mit.edu>
+# Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
 
-import re
 import os
 import json
-import sqlite3
 from subprocess import Popen, STDOUT, PIPE
 
-from coderev.model import CodeReview
 from trac.env import Environment
 from trac.ticket.model import Ticket
 from trac.resource import ResourceNotFound
+
+from coderev.model import CodeReview
+
 
 class Reviewer(object):
     """Returns the latest changeset in a given repo whose Trac tickets have
@@ -34,14 +35,14 @@ class Reviewer(object):
     def get_next_changeset(self, save=True):
         """Return the next reviewed changeset and save it as the current
         changeset when save is True."""
-        next = self.get_current_changeset()
+        next_ = self.get_current_changeset()
         for changeset in self.get_changesets():
             if self.verbose:
                 print '.',
             if not self.is_complete(changeset):
-                return self.set_current_changeset(next, save)
-            next = changeset
-        return self.set_current_changeset(next, save)
+                return self.set_current_changeset(next_, save)
+            next_ = changeset
+        return self.set_current_changeset(next_, save)
 
     def get_blocking_changeset(self, changesets=None):
         """Return the next blocking changeset."""
@@ -56,7 +57,7 @@ class Reviewer(object):
         """Return all tickets of blocking changesets in order of them
         getting unblocked."""
         tickets = []
-        tickets_visited = set(['']) # merge changesets have empty ticket values
+        tickets_visited = set([''])  # merge changesets have empty ticket values
 
         # restrict changesets to only those not completed
         changesets = self.get_changesets()
@@ -81,7 +82,7 @@ class Reviewer(object):
                     for review in self.get_reviews(ticket):
                         if review.changeset in changesets and \
                            review.changeset_when >= blocking_when:
-                            return review # changeset exists on path
+                            return review  # changeset exists on path
                     raise ResourceNotFound("Not found for #%s" % ticket)
 
                 # the ticket's oldest *remaining* changeset determines blockage
@@ -91,9 +92,9 @@ class Reviewer(object):
                     tkt = Ticket(self.env, ticket)
                     tkt.first_changeset = first.changeset
                     tkt.first_changeset_when = first.changeset_when
-                    tickets.append( tkt )
+                    tickets.append(tkt)
                 except ResourceNotFound:
-                    pass # e.g., incorrect ticket reference
+                    pass  # e.g., incorrect ticket reference
         return sorted(tickets, key=lambda t: t.first_changeset_when)
 
     def get_changesets(self):
@@ -106,9 +107,9 @@ class Reviewer(object):
         changesets = self._execute(' && '.join(cmds)).splitlines()
         if self.verbose:
             print "\n%d changesets from current %s to target %s" % \
-                    (len(changesets),current_ref,self.target_ref)
+                  (len(changesets), current_ref, self.target_ref)
         if current_ref not in changesets:
-            changesets.insert(0,current_ref)
+            changesets.insert(0, current_ref)
         return changesets
 
     def get_reviews(self, ticket):
@@ -135,7 +136,7 @@ class Reviewer(object):
         p = Popen(cmd, shell=True, stderr=STDOUT, stdout=PIPE)
         out = p.communicate()[0]
         if p.returncode != 0:
-            raise Exception('cmd: %s\n%s' % (cmd,out))
+            raise Exception('cmd: %s\n%s' % (cmd, out))
         return out
 
     def get_current_changeset(self):
@@ -156,7 +157,7 @@ class Reviewer(object):
 
     def _get_data(self):
         if os.path.exists(self.data_file):
-            data = json.loads(open(self.data_file,'r').read())
+            data = json.loads(open(self.data_file, 'r').read())
         else:
             # grab the latest rev as the changeset
             cmds = ['cd %s' % self.repo_dir,
@@ -167,6 +168,6 @@ class Reviewer(object):
         return data
 
     def _set_data(self, data):
-        f = open(self.data_file,'w')
+        f = open(self.data_file, 'w')
         f.write(json.dumps(data))
         f.close()
