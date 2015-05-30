@@ -6,6 +6,7 @@
 #
 
 # Trac extension point imports
+from trac import __version__ as trac_version
 from trac.core import *
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.util.translation import _
@@ -16,8 +17,8 @@ from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
 from operator import itemgetter
-
 # Model Class
+#from smp_model import SmpComponent
 from model import SmpModel
 
 __author__ = 'Cinc'
@@ -319,7 +320,7 @@ table_tmpl="""
     <tr py:for="prj in all_projects">
         <td class="name">
             <input name="sel" value="${prj[0]}"
-                   py:attrs="{'checked': 'foo'} if prj[1] in comp_prj else {}" type="checkbox" />
+                   py:attrs="{'checked': 'checked'} if prj[1] in comp_prj else {}" type="checkbox" />
         </td>
         <td>${prj[1]}</td>
     </tr>
@@ -329,7 +330,7 @@ table_tmpl="""
 """
 
 def create_projects_table(smp_model, req, for_add=True):
-    """Create a select control for admin panels holding valid projects (means not closed).
+    """Create a table for admin panels holding valid projects (means not closed).
 
     @param smp_model: SmpModel object
     @param req      : Trac request object
@@ -376,6 +377,7 @@ class SmpFilterDefaultComponentPanels(Component):
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
+        # self.smp_comp = SmpComponent(self.env)
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -396,8 +398,13 @@ class SmpFilterDefaultComponentPanels(Component):
                 elif 'save' in req.args or 'add' in req.args:
                     # 'Save' button on 'Manage Component' panel
                     p_ids=req.args.get('sel')
-                    self.__SmpModel.delete_component_projects(req.args.get('name'))
-                    self.__SmpModel.insert_component_projects(req.args.get('name'), p_ids)
+                    if trac_version < '0.12':
+                        self.__SmpModel.delete_component_projects(req.args.get('name'))
+                    else:
+                        self.__SmpModel.delete_component_projects(req.args.get('name'))
+                        #self.smp_comp.delete(req.args.get('name'))
+                    if p_ids:
+                        self.__SmpModel.insert_component_projects(req.args.get('name'), p_ids)
         return handler
 
     @staticmethod
@@ -434,8 +441,10 @@ class SmpFilterDefaultComponentPanels(Component):
                 filter_form = Transformer('//form[@id="addcomponent"]//div[@class="field"][2]')
                 stream = stream | filter_form.after(create_projects_table(self.__SmpModel, req))
 
+                stream = stream | Transformer('//table[@id="complist"]').before(
+                    tag.p(_("A component is visible for all projects when not associated with any project."), class_="help"))
                 # Add project column to component table
-                stream = stream | Transformer('//table[@id="complist"]//th[@class="sel"]').after(tag.th(_("Project")))
+                stream = stream | Transformer('//table[@id="complist"]//th[@class="sel"]').after(tag.th(_("Restricted to Project")))
                 stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
             else:
                 # 'Manage Component' panel

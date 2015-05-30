@@ -612,6 +612,9 @@ class SmpModel(Component):
 
     # ComponentProject Methods
     def insert_component_projects(self, component, id_projects):
+        if not id_projects:
+            return
+
         if type(id_projects) is not list:
             id_projects = [id_projects]
 
