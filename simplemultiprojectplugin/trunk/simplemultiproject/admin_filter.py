@@ -18,7 +18,7 @@ from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
 from operator import itemgetter
 # Model Class
-#from smp_model import SmpComponent
+from smp_model import SmpComponent, SmpProject
 from model import SmpModel
 
 __author__ = 'Cinc'
@@ -354,7 +354,7 @@ def create_projects_table(smp_model, req, for_add=True):
     return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj)
 
 
-def get_component(env, name):
+def get_component_from_trac(env, name):
     try:
         return TicketComponent(env, name)
     except ResourceNotFound:
@@ -377,7 +377,8 @@ class SmpFilterDefaultComponentPanels(Component):
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
-        # self.smp_comp = SmpComponent(self.env)
+        self.smp_comp = SmpComponent(self.env)
+        self.smp_project = SmpProject(self.env)
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -389,22 +390,16 @@ class SmpFilterDefaultComponentPanels(Component):
                     # Check if we already have this component. Trac will show an error later.
                     # Don't change the db for smp.
                     p_ids=req.args.get('sel')
-                    if not get_component(self.env, req.args.get('name')) and p_ids:
-                        self.__SmpModel.insert_component_projects(req.args.get('name'), p_ids)
+                    if not get_component_from_trac(self.env, req.args.get('name')) and p_ids:
+                        self.smp_comp.add(req.args.get('name'), p_ids)
                 elif 'remove' in req.args:
                     # 'Remove' button on main component panel
                     for item in req.args.get('sel'):
-                        self.__SmpModel.delete_component_projects(item)
+                        self.smp_comp.delete(item)
                 elif 'save' in req.args or 'add' in req.args:
                     # 'Save' button on 'Manage Component' panel
                     p_ids=req.args.get('sel')
-                    if trac_version < '0.12':
-                        self.__SmpModel.delete_component_projects(req.args.get('name'))
-                    else:
-                        self.__SmpModel.delete_component_projects(req.args.get('name'))
-                        #self.smp_comp.delete(req.args.get('name'))
-                    if p_ids:
-                        self.__SmpModel.insert_component_projects(req.args.get('name'), p_ids)
+                    self.smp_comp.add_after_delete(req.args.get('name'), p_ids)
         return handler
 
     @staticmethod
@@ -424,11 +419,10 @@ class SmpFilterDefaultComponentPanels(Component):
             if not req.args['path_info']:
                 # Main components page
                 all_proj = {}
-                for dat in self.__SmpModel.get_all_projects():
-                    all_proj[dat[0]] = dat[1]
-
+                for name, p_id in self.smp_project.get_name_and_id():
+                    all_proj[p_id] = name
                 all_comp_proj = {}  # key is component name, value is a list of projects
-                for comp, p_id in self.__SmpModel.get_all_components_with_id_project():
+                for comp, p_id in self.smp_comp.all_components_and_id_project():
                     try:
                         # all_comp_proj[comp] += u", "+all_proj[p_id]
                         all_comp_proj[comp].append(all_proj[p_id])
