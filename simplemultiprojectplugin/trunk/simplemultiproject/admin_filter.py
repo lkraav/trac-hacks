@@ -18,7 +18,7 @@ from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
 from operator import itemgetter
 # Model Class
-from smp_model import SmpComponent, SmpProject
+from smp_model import SmpComponent, SmpProject, SmpVersion
 from model import SmpModel
 
 __author__ = 'Cinc'
@@ -239,6 +239,8 @@ class SmpFilterDefaultVersionPanels(Component):
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
+        self.smp_project = SmpProject(self.env)
+        self.smp_version = SmpVersion(self.env)
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -246,14 +248,15 @@ class SmpFilterDefaultVersionPanels(Component):
         if self._is_valid_request(req) and req.method == "POST":
             if 'project_id' in req.args and req.args['project_id'] != u"0" and req.args['name']:
                 if 'add' in req.args:
-                    self.__SmpModel.insert_version_project(req.args['name'], req.args['project_id'])
+                    self.smp_version.add(req.args['name'], req.args['project_id'])
                 elif 'save' in req.args:
                     if self.__SmpModel.get_id_project_version(req.args['path_info']):
-                        # req.args['path_info'] holds the old name. req.args['name'] holds the modified name.
-                        self.__SmpModel.update_version_project(req.args['path_info'], req.args['project_id'])
+                        # req.args['path_info'] holds the version name.
+                        self.smp_version.update_project_id_for_version(req.args['path_info'], req.args['project_id'])
+                        pass
                     else:
-                        # If there is no project id this milestone doesn't live in the smp_milestone_project table yet
-                        self.__SmpModel.insert_version_project(req.args['path_info'], req.args['project_id'])
+                        # If there is no project id this version doesn't live in the smp_version_project table yet
+                        self.smp_version.add(req.args['path_info'], req.args['project_id'])
         return handler
 
     @staticmethod
@@ -274,11 +277,12 @@ class SmpFilterDefaultVersionPanels(Component):
             if not req.args['path_info']:
 
                 all_proj = {}
-                for dat in self.__SmpModel.get_all_projects():
-                    all_proj[dat[0]] = dat[1]
+                for name, p_id in self.smp_project.get_name_and_id():
+                    all_proj[p_id] = name
 
                 all_ver_proj = {}
-                for ver, p_id in self.__SmpModel.get_all_versions_with_id_project():
+                # for ver, p_id in self.__SmpModel.get_all_versions_with_id_project():
+                for ver, p_id in self.smp_version.all_versions_and_id_project():
                     try:
                         all_ver_proj[ver] = all_proj[p_id]
                     except KeyError:
