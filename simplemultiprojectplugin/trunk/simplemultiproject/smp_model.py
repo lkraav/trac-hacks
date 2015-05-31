@@ -43,7 +43,7 @@ class SmpBaseModel(object):
         def execute_sql_statement(db):
             cursor = db.cursor()
             for id_proj in id_projects:
-                cursor.execute(sql, [name, id_proj])
+                cursor.execute(sql, [name, unicode(id_proj)])
 
     def _all_names_and_id_project(self, resource_name):
         if trac_version < '0.12':
