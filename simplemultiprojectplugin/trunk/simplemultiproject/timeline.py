@@ -8,6 +8,7 @@ from genshi.filters.transform import Transformer
 from trac.ticket.model import Ticket
 from simplemultiproject.model import *
 from trac.util.text import to_unicode
+from trac.util.html import Markup, unescape
 from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from operator import itemgetter
@@ -98,7 +99,10 @@ class SmpTimelineProjectFilter(Component):
                 ticket_no = splitted_output[0].split('>')
                 if len(tooltip) == 3: #it's a ticket
                     #now rebuild the puzzle by inserting the name
-                    output = tag('Ticket' + ' ', tag.em(ticket_no[1], title=tooltip[1]), ' ', tag.span(self._current_project[self._read_idx], style="background-color: #ffffd0;"), splitted_output[1])
+                    ticket_summary = unescape(Markup(tooltip[1]))
+                    msg_text = unescape(Markup(splitted_output[1]))
+                    proj = self._current_project[self._read_idx]
+                    output = tag('Ticket' + ' ', tag.em(ticket_no[1], title=ticket_summary), ' ', tag.span(proj, style="background-color: #ffffd0;"), msg_text)
                 elif len(tooltip) == 1 and len(splitted_output) == 3: #it's an attachment
                     output += tag(' ', tag.span(self._current_project[self._read_idx], style="background-color: #ffffd0;"))
             return output
