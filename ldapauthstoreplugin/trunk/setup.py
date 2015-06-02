@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 PACKAGE = 'LdapAuthStorePlugin'
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 
 setup(
     name=PACKAGE,

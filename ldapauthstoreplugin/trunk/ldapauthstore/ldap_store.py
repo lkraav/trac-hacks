@@ -1,8 +1,8 @@
 from trac.core import *
 from trac.config import Option, IntOption, BoolOption
+from trac.perm import IPermissionGroupProvider
 
 from acct_mgr.api import IPasswordStore
-from trac.perm import IPermissionGroupProvider
 
 from ldapplugin.api import *
 
@@ -235,7 +235,7 @@ class LdapAuthStore(Component):
                 self.log.info('User %s not in group %s' % (user_attr, self.ldap_validusers))
                 return None
 
-        attrs = {}
+        attrs = {'name': '', 'email': ''}
         try:
             attrs['name'] = result[0][1][self.ldap_name_attr][0]
         except:
