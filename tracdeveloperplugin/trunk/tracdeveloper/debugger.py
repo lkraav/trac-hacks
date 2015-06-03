@@ -28,7 +28,7 @@ class TemplateDebugger(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if 'debug' not in req.args:
+        if 'debug' not in req.args or 'TRAC_DEVELOP' not in req.perm:
             return template, data, content_type
 
         # Purge outdated debug info from cache
@@ -67,10 +67,11 @@ class TemplateDebugger(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        match = re.match(r'/developer/debug(?:/(.*))?$', req.path_info)
-        if match:
-            req.args['path'] = match.group(1)
-            return True
+        if 'TRAC_DEVELOP' in req.perm:
+            match = re.match(r'/developer/debug(?:/(.*))?$', req.path_info)
+            if match:
+                req.args['path'] = match.group(1)
+                return True
 
     def process_request(self, req):
         header = req.get_header('X-Requested-With')
