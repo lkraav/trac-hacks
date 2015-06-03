@@ -86,12 +86,10 @@ class TemplateDebugger(Component):
         key = token + ':' + path.split(':', 1)[0]
         data = self._cache.get(key)
         if not data:
-            raise HTTPNotFound()
+            raise HTTPNotFound("Not found '%s'" % path)
         node = data.lookup(path)
         data = {'node': node, 'drillable': self._is_drillable(req)}
-        output = Chrome(self.env).render_template(req, 'developer/debug_node.html',
-                                                  data, fragment=True)
-        req.send(output.render('xhtml'), 'text/html')
+        return 'developer/debug_node.html', data, None
 
     # Internal methods
 
