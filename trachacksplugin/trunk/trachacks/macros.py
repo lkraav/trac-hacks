@@ -11,11 +11,11 @@
 import re
 
 from genshi.builder import tag as builder
-from trac.core import TracError
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
-from trac.wiki.formatter import format_to_oneliner, format_to_html
+from trac.wiki.formatter import format_to_html, format_to_oneliner, \
+                                system_message
 from trac.wiki.macros import WikiMacroBase, parse_args
 from trac.wiki.model import WikiPage
 
@@ -286,7 +286,7 @@ class MaintainerMacro(WikiMacroBase):
     def expand_macro(self, formatter, name, args):
         largs = parse_args(args)[0]
         if len(largs) > 1:
-            raise TracError(_("Invalid number of arguments"))
+            raise system_message(_("Invalid number of arguments"))
         resource = formatter.context.resource
         if resource.realm == 'wiki' or largs and largs[0]:
             id = largs[0] if largs and largs[0] else resource.id
@@ -302,7 +302,7 @@ class MaintainerMacro(WikiMacroBase):
                     return format_to_oneliner(self.env, formatter.context,
                                               "//none ([tag:needsadoption])//")
         else:
-            raise TracError(_("Hack name must be specified as argument when "
-                              "the context realm is not 'wiki'"))
+            raise system_message(_("Hack name must be specified as argument "
+                                   "when the context realm is not 'wiki'"))
         return format_to_oneliner(self.env, formatter.context,
                                   "[wiki:%s]" % maintainer)
