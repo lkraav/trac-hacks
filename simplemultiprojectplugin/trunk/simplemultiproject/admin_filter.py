@@ -9,6 +9,7 @@
 from trac import __version__ as trac_version
 from trac.core import *
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
+from trac.web.chrome import add_stylesheet
 from trac.util.translation import _
 from trac.config import BoolOption
 from trac.resource import ResourceNotFound
@@ -313,10 +314,11 @@ class SmpFilterDefaultVersionPanels(Component):
         return stream
 
 table_tmpl="""
-<div xmlns:py="http://genshi.edgewall.org/">
+<div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
 <p class="help">Please select the projects for which this component will be visible. Selecting nothing leaves
  this component visible for all projects.</p>
-<table id="projectlist" class="listing" style="width: auto;">
+<div class="admin-smp-proj-tbl-div">
+<table id="projectlist" class="listing admin-smp-project-table">
     <thead>
         <tr><th></th><th>Project</th></tr>
     </thead>
@@ -324,12 +326,14 @@ table_tmpl="""
     <tr py:for="prj in all_projects">
         <td class="name">
             <input name="sel" value="${prj[0]}"
-                   py:attrs="{'checked': 'checked'} if prj[1] in comp_prj else {}" type="checkbox" />
+                   py:attrs="{'checked': 'foo'} if prj[1] in comp_prj else {}" type="checkbox" />
         </td>
         <td>${prj[1]}</td>
     </tr>
     </tbody>
 </table>
+</div>
+<div></div>
 </div>
 """
 
@@ -420,6 +424,8 @@ class SmpFilterDefaultComponentPanels(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == "admin_components.html":
+            # ITemplateProvider is implemented in anothe component
+            add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
             if not req.args['path_info']:
                 # Main components page
                 all_proj = {}
