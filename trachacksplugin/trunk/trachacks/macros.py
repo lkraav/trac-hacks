@@ -286,7 +286,7 @@ class MaintainerMacro(WikiMacroBase):
     def expand_macro(self, formatter, name, args):
         largs = parse_args(args)[0]
         if len(largs) > 1:
-            raise system_message(_("Invalid number of arguments"))
+            return system_message(_("Invalid number of arguments"))
         resource = formatter.context.resource
         if resource.realm == 'wiki' or largs and largs[0]:
             id = largs[0] if largs and largs[0] else resource.id
@@ -302,7 +302,7 @@ class MaintainerMacro(WikiMacroBase):
                     return format_to_oneliner(self.env, formatter.context,
                                               "//none ([tag:needsadoption])//")
         else:
-            raise system_message(_("Hack name must be specified as argument "
-                                   "when the context realm is not 'wiki'"))
+            return system_message(_("Hack name must be specified as argument "
+                                    "when the context realm is not 'wiki'"))
         return format_to_oneliner(self.env, formatter.context,
                                   "[wiki:%s]" % maintainer)
