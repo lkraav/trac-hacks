@@ -12,7 +12,7 @@ setup(
     },
     author = 'thomasd',
     author_email='tdoering@baumer.com',
-	maintainer = 'falkb'
+    maintainer = 'falkb'
     license = "BSD 3-Clause",
     url='http://trac-hacks.org/wiki/ComponentHierarchyPlugin',
     description='ComponentHierarchy',
