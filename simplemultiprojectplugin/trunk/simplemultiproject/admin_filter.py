@@ -52,14 +52,14 @@ class InsertProjectTd(InjectorTransformation):
                     except KeyError:
                         # We end up here when the milestone has no project yet
                         # self.content = tag.td(tag.span("(all projects)", style="color:lightgrey"))
-                        self.content = tag.td()
+                        self.content = tag.td(class_="project")
                     self._value = None
                     for n, ev in self._inject():
                         yield 'INSIDE', ev
             else:
                 if mark == 'INSIDE' and kind == 'START' and data[0].localname == 'input':
                     if data[1].get('type') == u"checkbox":
-                        self._value = data[1].get('value')
+                        self._value = data[1].get('value') or data[1].get('name')
                 yield event
 
 
