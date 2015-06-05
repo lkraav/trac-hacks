@@ -27,6 +27,7 @@ __author__ = 'Cinc'
 class InsertProjectTd(InjectorTransformation):
     """Transformation to insert the project column into the milestone and version tables"""
     _value = None
+    _td = 0
 
     def __init__(self, content, all_proj):
         self._all_proj = all_proj
@@ -42,24 +43,28 @@ class InsertProjectTd(InjectorTransformation):
                 # Depending on the stream data may be '{http://www.w3.org/1999/xhtml}td' or just 'td'
                 if mark == 'INSIDE' and kind == 'END' and data.endswith('td'):
                     # The end of a table column, tag: </td>
-                    try:
-                        # Special handling for components. A component may have several projects
-                        if isinstance(self._all_proj[self._value], list):
-                            self.content = tag.td(((tag.span(item), tag.br) for item in self._all_proj[self._value]),
-                                                  class_="project")
-                        else:
-                            self.content = tag.td(self._all_proj[self._value], class_="project")
-                    except KeyError:
-                        # We end up here when the milestone has no project yet
-                        # self.content = tag.td(tag.span("(all projects)", style="color:lightgrey"))
-                        self.content = tag.td(class_="project")
-                    self._value = None
-                    for n, ev in self._inject():
-                        yield 'INSIDE', ev
+                    self._td += 1
+                    if self._td == 2:
+                        try:
+                            # Special handling for components. A component may have several projects
+                            if isinstance(self._all_proj[self._value], list):
+                                self.content = tag.td(((tag.span(item), tag.br) for item in self._all_proj[self._value]),
+                                                      class_="project")
+                            else:
+                                self.content = tag.td(self._all_proj[self._value], class_="project")
+                        except KeyError:
+                            # We end up here when the milestone has no project yet
+                            # self.content = tag.td(tag.span("(all projects)", style="color:lightgrey"))
+                            self.content = tag.td(class_="project")
+                        self._value = None
+                        self._td = 0
+                        for n, ev in self._inject():
+                            yield 'INSIDE', ev
             else:
                 if mark == 'INSIDE' and kind == 'START' and data[0].localname == 'input':
                     if data[1].get('type') == u"checkbox":
                         self._value = data[1].get('value') or data[1].get('name')
+                        self._td = 0
                 yield event
 
 
@@ -209,7 +214,7 @@ class SmpFilterDefaultMilestonePanels(Component):
                         all_ms_proj[ms] = ""
 
                 # Add project column to main milestone table
-                stream = stream | Transformer('//table[@id="millist"]//th[@class="sel"]').after(tag.th(_("Project")))
+                stream = stream | Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
 
                 # The 'add milestone' part of the page
@@ -292,7 +297,7 @@ class SmpFilterDefaultVersionPanels(Component):
                         all_ver_proj[ver] = ""
 
                 # Add project column to main version table
-                stream = stream | Transformer('//table[@id="verlist"]//th[@class="sel"]').after(tag.th(_("Project")))
+                stream = stream | Transformer('//table[@id="verlist"]//th[2]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="verlist"]//tr').apply(InsertProjectTd("", all_ver_proj))
 
                 # The 'add version' part of the page
@@ -451,7 +456,7 @@ class SmpFilterDefaultComponentPanels(Component):
                     tag.p(_("A component is visible for all projects when not associated with any project."),
                           class_="help"))
                 # Add project column to component table
-                stream = stream | Transformer('//table[@id="complist"]//th[@class="sel"]').after(tag.th(_("Restricted to Project")))
+                stream = stream | Transformer('//table[@id="complist"]//th[2]').after(tag.th(_("Restricted to Project")))
                 stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
             else:
                 # 'Manage Component' panel
