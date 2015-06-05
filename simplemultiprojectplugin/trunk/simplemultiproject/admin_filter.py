@@ -321,8 +321,10 @@ class SmpFilterDefaultVersionPanels(Component):
 
 table_tmpl = """
 <div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
+<div id="project-help-div">
 <p class="help">Please select the projects for which this component will be visible. Selecting nothing leaves
  this component visible for all projects.</p>
+</div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
     <thead>

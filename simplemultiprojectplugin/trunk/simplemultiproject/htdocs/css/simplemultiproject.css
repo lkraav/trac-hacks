@@ -9,3 +9,7 @@ table.admin-smp-project-table {
     float: left;
     margin: 10px;
 }
+
+#project-help-div {
+    clear:both;
+}
