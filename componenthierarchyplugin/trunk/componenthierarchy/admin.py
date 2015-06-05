@@ -3,7 +3,7 @@
 # Copyright (C) 2012 Thomas Doering, falkb
 #
 from genshi.builder import tag
-from genshi.filters.transform import Transformer
+from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.input import HTML
 from trac.util.text import to_unicode
 from trac.core import *
@@ -15,6 +15,42 @@ from operator import itemgetter
 import re
 
 from componenthierarchy.model import *
+
+class InsertParentTd(InjectorTransformation):
+    """Transformation to insert the parent column into the component table"""
+    _value = None
+    _td = 0
+
+    def __init__(self, content, all_comp):
+        self._all_comp = all_comp
+        super(InsertParentTd, self).__init__(content)
+
+    def __call__(self, stream):
+
+        for event in stream:
+            mark, (kind, data, pos) = event
+            if self._value:
+                yield event  # Yield the event so the column is closed
+                # Depending on the stream data may be '{http://www.w3.org/1999/xhtml}td' or just 'td'
+                if mark == 'INSIDE' and kind == 'END' and data.endswith('td'):
+                    # The end of a table column, tag: </td>
+                    self._td += 1
+                    if self._td ==3:
+                        try:
+                            self.content = tag.td(self._all_comp[self._value], class_="parent")
+                        except KeyError:
+                            self.content = tag.td(class_="parent")
+                        self._value = None
+                        self._td = 0
+                        for n, ev in self._inject():
+                            yield 'INSIDE', ev
+            else:
+                if mark == 'INSIDE' and kind == 'START' and data[0].localname == 'input':
+                    if data[1].get('type') == u"checkbox":
+                        self._value = data[1].get('value') or data[1].get('name')
+                        self._td = 0
+                yield event
+
 
 class ComponentHierarchyAdminPanelFilter(Component):
     """Provides a selection box for a parent component on the component admin panel."""
@@ -60,32 +96,15 @@ class ComponentHierarchyAdminPanelFilter(Component):
             # add a "parent component" column to the components table
             stream = stream | Transformer('//table[@id="complist"]/thead/tr/th[3]').after(tag.th("Parent"))
 
-            html_stream = HTML(stream)
-            html_comp_list = HTML(html_stream.select('//table[@id="complist"]/tbody'))
-            
-            return html_stream | Transformer('//table[@id="complist"]/tbody').replace(self._insert_parent_column(html_comp_list))
-                            
+            all_comp = {}
+            for comp in [comp.name for comp in model.Component.select(self.env)]:
+                parent_component = self._ChModel.get_parent_component(comp)
+                if parent_component == None:
+                    parent_component = ""
+                all_comp[comp] = parent_component
+            stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertParentTd("", all_comp))
+
         return stream
-
-    def _insert_parent_column(self, html_comp_list):
-        list_str = to_unicode(str(html_comp_list))
-
-        tag_to_find = '<input type="checkbox" name="sel" value="%s"'
-        tag_owner   = '<td class="default">'
-
-        all_components = [comp.name for comp in model.Component.select(self.env)]
-        for comp in all_components:
-            parent_component = self._ChModel.get_parent_component(comp)
-            if parent_component == None:
-                parent_component = ""
-
-            tag_idx = list_str.find(tag_to_find % to_unicode(comp))
-            if tag_idx > 0:
-                tag_owner_idx = list_str.find(tag_owner, tag_idx)
-                new_tag = '<td class="name" for="%s">%s</td>' % (comp, parent_component)
-                list_str = list_str[:tag_owner_idx] + new_tag + list_str[tag_owner_idx:]
-                
-        return HTML(list_str)
 
     def _parent_component_select(self, req, data):
         match = re.match(r'/admin/ticket/components/(.+)$', req.path_info)
