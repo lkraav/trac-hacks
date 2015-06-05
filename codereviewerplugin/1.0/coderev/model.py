@@ -26,7 +26,7 @@ class CodeReview(object):
 
     def __init__(self, env, repo, changeset):
         self.env = env
-        self.repo = repo
+        self.repo = repo or None
         self.changeset = changeset
         self.statuses = self.env.config.get('codereviewer', 'status_choices')
         if not isinstance(self.statuses, list):

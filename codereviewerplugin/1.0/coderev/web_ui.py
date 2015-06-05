@@ -66,49 +66,48 @@ class CodeReviewerModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if self._valid_request(req):
+        if req.path_info.startswith('/changeset'):
+            changeset = data['changeset']
+            repos, rev = changeset.repos.reponame, changeset.rev
+            review = CodeReview(self.env, repos, rev)
             if req.method == 'POST':
-                repo, changeset = get_repo_changeset(req)
-                review = CodeReview(self.env, repo, changeset)
                 if review.save(reviewer=req.authname, **req.args):
+                    review = CodeReview(self.env, repos, rev)
+                    self._add_review(req, review)
                     tickets = self._update_tickets(req, review)
                     url = req.href(req.path_info, {'ticket': tickets})
-                    req.send_header('Cache-Control', 'no-cache')
-                    req.redirect(url+'#reviewbutton')
-            repo, changeset = get_repo_changeset(req, check_referer=True)
-            review = CodeReview(self.env, repo, changeset)
-            ctx = web_context(req)
-            format_summary = functools.partial(format_to_html, self.env, ctx,
-                                               escape_newlines=True)
-            format_time = functools.partial(user_time, req, format_datetime)
-            for summary in review.summaries:
-                summary.update({
-                    'html_summary': format_summary(summary['summary']),
-                    'pretty_when': format_time(summary['when']),
-                    'pretty_timedelta': pretty_timedelta(summary['when']),
-                })
-            add_stylesheet(req, 'coderev/coderev.css')
-            add_script(req, 'coderev/coderev.js')
-            add_script_data(req, {
-                'review': {
-                    'status': review.status,
-                    'encoded_status': review.encode(review.status),
-                    'summaries': review.summaries,
-                },
-                'tickets': get_tickets(req),
-                'statuses': self.statuses,
-                'form_token': self._get_form_token(req),
-            })
+                    req.add_header('Cache-Control', 'no-cache')
+                    req.redirect(url + '#reviewbutton')
+            self._add_review(req, review)
         elif req.path_info.startswith('/ticket/'):
             add_stylesheet(req, 'coderev/coderev.css')
         return template, data, content_type
 
-    # private methods
-    def _valid_request(self, req):
-        """Checks for changeset page and permissions."""
-        if req.perm.has_permission('CHANGESET_VIEW'):
-            return bool(get_repo_changeset(req)[1])  # found changeset in url?
-        return False
+    # Private methods
+
+    def _add_review(self, req, review):
+        ctx = web_context(req)
+        format_summary = functools.partial(format_to_html, self.env, ctx,
+                                           escape_newlines=True)
+        format_time = functools.partial(user_time, req, format_datetime)
+        for summary in review.summaries:
+            summary.update({
+                'html_summary': format_summary(summary['summary']),
+                'pretty_when': format_time(summary['when']),
+                'pretty_timedelta': pretty_timedelta(summary['when']),
+            })
+        add_stylesheet(req, 'coderev/coderev.css')
+        add_script(req, 'coderev/coderev.js')
+        add_script_data(req, {
+            'review': {
+                'status': review.status,
+                'encoded_status': review.encode(review.status),
+                'summaries': review.summaries,
+            },
+            'tickets': get_tickets(req),
+            'statuses': self.statuses,
+            'form_token': self._get_form_token(req),
+        })
 
     def _get_form_token(self, req):
         """Ajax POST requests require a __FORM_TOKEN param from the cookie."""
@@ -323,17 +322,6 @@ class ChangesetTicketMapper(Component):
                     self.log.warning("Unable to insert changeset "
                                      "%s/%s and ticket %s into db: %s",
                                      changeset.rev, reponame, ticket, e)
-
-
-def get_repo_changeset(req, check_referer=False):
-    """Returns the changeset and repo as a tuple."""
-    path = req.environ.get('HTTP_REFERER', '') if check_referer \
-                                               else req.path_info
-    pattern = r'/changeset/(?P<rev>[a-f0-9]+)(/(?P<repo>[^/?#]+))?'
-    match = re.compile(pattern).search(path)
-    if match:
-        return match.groupdict()['repo'], match.groupdict().get('rev', '')
-    return None, None
 
 
 def get_tickets(req):
