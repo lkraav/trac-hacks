@@ -7,21 +7,19 @@ import time
 from StringIO import StringIO
 from types import FrameType, ModuleType
 
-from pkg_resources import resource_filename
 # 
 # import Image
 # import ImageDraw
 
 from trac.core import *
 from trac.web.api import IRequestHandler, HTTPNotFound, HTTPForbidden
-from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script
+from trac.web.chrome import add_stylesheet, add_script
 
 from genshi.core import Markup
 from genshi.builder import tag
 
 # from paste import fileapp
 # from paste import urlparser
-# from pkg_resources import resource_filename
 # from webob import Request, Response
 # from webob import exc
 
@@ -65,12 +63,13 @@ class Dozer(Component):
     period = 5
     maxhistory = 300
     
-    implements(IRequestHandler, ITemplateProvider)
+    implements(IRequestHandler)
     
     def __init__(self):
         self.history = {}
         self.samples = 0
         self.runthread = threading.Thread(target=self.start)
+        self.runthread.setDaemon(True)
         self.runthread.start()
     
     # IRequestHandler methods
@@ -92,14 +91,6 @@ class Dozer(Component):
             raise HTTPForbidden('Access to %s is forbidden' % path_info)
         add_stylesheet(req, 'dozer/main.css')
         return method(req)
-    
-    # ITemplateProvider methods
-    def get_htdocs_dirs(self):
-        yield 'dozer', resource_filename(__name__, 'htdocs')
-            
-    def get_templates_dirs(self):
-        self.log.debug('templates=%s', resource_filename(__name__, 'templates'))
-        yield resource_filename(__name__, 'templates')
     
     # Internal methods
     def start(self):

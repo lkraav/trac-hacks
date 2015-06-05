@@ -43,11 +43,13 @@ class DeveloperPlugin(Component):
 
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return [resource_filename('tracdeveloper', 'templates'),
+                resource_filename('tracdeveloper.dozer', 'templates')]
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
-        return [('developer', resource_filename(__name__, 'htdocs'))]
+        return [('developer', resource_filename('tracdeveloper', 'htdocs')),
+                ('dozer', resource_filename('tracdeveloper.dozer', 'htdocs'))]
 
     # IPreferencePanelProvider methods
     def get_preference_panels(self, req):
