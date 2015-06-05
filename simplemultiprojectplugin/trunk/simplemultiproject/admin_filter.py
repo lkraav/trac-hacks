@@ -8,8 +8,8 @@
 # Trac extension point imports
 from trac import __version__ as trac_version
 from trac.core import *
-from trac.web.api import ITemplateStreamFilter, IRequestFilter
-from trac.web.chrome import add_stylesheet
+from trac.web.api import IRequestFilter
+from trac.web.chrome import add_stylesheet, ITemplateStreamFilter
 from trac.util.translation import _
 from trac.config import BoolOption
 from trac.resource import ResourceNotFound
@@ -18,7 +18,6 @@ from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
 from operator import itemgetter
-# Model Class
 from smp_model import SmpComponent, SmpProject, SmpVersion
 from model import SmpModel
 
@@ -40,14 +39,16 @@ class InsertProjectTd(InjectorTransformation):
 
             if self._value:
                 yield event  # Yield the event so the column is closed
-                if mark == 'INSIDE' and kind == 'END' and data == '{http://www.w3.org/1999/xhtml}td':
+                # Depending on the stream data may be '{http://www.w3.org/1999/xhtml}td' or just 'td'
+                if mark == 'INSIDE' and kind == 'END' and data.endswith('td'):
                     # The end of a table column, tag: </td>
                     try:
                         # Special handling for components. A component may have several projects
                         if isinstance(self._all_proj[self._value], list):
-                            self.content = tag.td(((tag.span(item), tag.br) for item in self._all_proj[self._value]))
+                            self.content = tag.td(((tag.span(item), tag.br) for item in self._all_proj[self._value]),
+                                                  class_="project")
                         else:
-                            self.content = tag.td(self._all_proj[self._value])
+                            self.content = tag.td(self._all_proj[self._value], class_="project")
                     except KeyError:
                         # We end up here when the milestone has no project yet
                         # self.content = tag.td(tag.span("(all projects)", style="color:lightgrey"))
@@ -313,7 +314,7 @@ class SmpFilterDefaultVersionPanels(Component):
 
         return stream
 
-table_tmpl="""
+table_tmpl = """
 <div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
 <p class="help">Please select the projects for which this component will be visible. Selecting nothing leaves
  this component visible for all projects.</p>
@@ -337,6 +338,7 @@ table_tmpl="""
 </div>
 """
 
+
 def create_projects_table(smp_model, req, for_add=True):
     """Create a table for admin panels holding valid projects (means not closed).
 
@@ -357,7 +359,7 @@ def create_projects_table(smp_model, req, for_add=True):
     filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects
                          if project_name in all_project_names]
 
-    comp_prj = [ prj[0] for prj in smp_model.get_projects_component(req.args.get('path_info', ""))]
+    comp_prj = [prj[0] for prj in smp_model.get_projects_component(req.args.get('path_info', ""))]
     tbl = MarkupTemplate(table_tmpl)
     return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj)
 
@@ -406,7 +408,7 @@ class SmpFilterDefaultComponentPanels(Component):
                         self.smp_comp.delete(item)
                 elif 'save' in req.args or 'add' in req.args:
                     # 'Save' button on 'Manage Component' panel
-                    p_ids=req.args.get('sel')
+                    p_ids = req.args.get('sel')
                     self.smp_comp.add_after_delete(req.args.get('name'), p_ids)
         return handler
 
@@ -424,7 +426,7 @@ class SmpFilterDefaultComponentPanels(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == "admin_components.html":
-            # ITemplateProvider is implemented in anothe component
+            # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
             if not req.args['path_info']:
                 # Main components page
@@ -446,7 +448,8 @@ class SmpFilterDefaultComponentPanels(Component):
                 stream = stream | filter_form.after(create_projects_table(self.__SmpModel, req))
 
                 stream = stream | Transformer('//table[@id="complist"]').before(
-                    tag.p(_("A component is visible for all projects when not associated with any project."), class_="help"))
+                    tag.p(_("A component is visible for all projects when not associated with any project."),
+                          class_="help"))
                 # Add project column to component table
                 stream = stream | Transformer('//table[@id="complist"]//th[@class="sel"]').after(tag.th(_("Restricted to Project")))
                 stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
