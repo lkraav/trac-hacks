@@ -308,20 +308,6 @@ class SmpModel(Component):
         
 
     # MilestoneProject Methods
-    def insert_milestone_project(self, milestone, id_project):
-        query = """INSERT INTO
-                        smp_milestone_project(milestone, id_project)
-                    VALUES (%s, %s)"""
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-            cursor.execute(query, [milestone, str(id_project)])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [milestone, str(id_project)])
 
     def get_milestones_of_project(self,project):
         if VERSION < '0.12':
@@ -340,24 +326,6 @@ class SmpModel(Component):
 
         cursor.execute(query, [project])
         return cursor.fetchall()
-
-    def get_milestones_for_projectid(self,projectid):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        milestone
-                   FROM
-                        smp_milestone_project
-                   WHERE
-                        id_project = %s"""
-
-        cursor.execute(query, [projectid])
-        return cursor.fetchall()
-
-        
 
     def get_project_milestone(self,milestone):
         if VERSION < '0.12':
@@ -392,71 +360,6 @@ class SmpModel(Component):
 
         cursor.execute(query, [milestone])
         return cursor.fetchone()
-
-    def get_all_milestones_with_id_project(self):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        milestone, id_project
-                   FROM
-                        smp_milestone_project;"""
-
-        cursor.execute(query)
-        return cursor.fetchall()
-
-    def delete_milestone_project(self, milestone):
-        query = """DELETE FROM
-                        smp_milestone_project
-                   WHERE
-                        milestone=%s;"""
-
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-            cursor.execute(query, [milestone])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [milestone])
-
-    def update_milestone_project(self,milestone,project):
-        query = """UPDATE
-                        smp_milestone_project
-                   SET
-                        id_project=%s WHERE milestone=%s;"""
-
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-            cursor.execute(query, [str(project), milestone])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [str(project), milestone])
-
-    def rename_milestone_project(self,old_milestone,new_milestone):
-        query = """UPDATE
-                        smp_milestone_project
-                   SET
-                        milestone=%s WHERE milestone=%s;"""
-
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-            cursor.execute(query, [new_milestone, old_milestone])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [new_milestone, old_milestone])
 
     # VersionProject Methods
     def insert_version_project(self, version, id_project):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 Cinc
+# Copyright (C) 2014-2015 Cinc
 #
 # License: BSD
 #
@@ -10,6 +10,7 @@ __author__ = 'Cinc'
 from trac.core import Component, implements
 from trac.admin import IAdminCommandProvider
 from trac.util.text import printout, _
+from smp_model import SmpMilestone, SmpVersion, SmpComponent
 # Model Class
 from model import SmpModel
 
@@ -51,13 +52,14 @@ class SmpAdminCommands(Component):
       Change summary of project.
 
      project unassign <component|milestone|version> <item>::
-      Remove component|milestone|version named <item> from project.
+      Remove component|milestone|version named <item> from all projects.
     """
 
     implements(IAdminCommandProvider)
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
+        self.smp_milestone =SmpMilestone(self.env)
 
     def get_admin_commands(self):
         yield ('project add', '<project> [summary]',
@@ -91,7 +93,7 @@ class SmpAdminCommands(Component):
                'Change summary of project.',
                None, self._change_summary)
         yield ('project unassign', '<component|milestone|version> <item>',
-               'Remove component|milestone|version named <item> from project.',
+               'Remove component|milestone|version named <item> from all projects.',
                None, self._unassign_project)
 
     def _print_no_project(self):
@@ -185,9 +187,9 @@ class SmpAdminCommands(Component):
         else:
             self.__SmpModel.update_project(dat[0], dat[1], dat[2], dat[3], 0, dat[5])
 
-    def _assign_project(self, what, name, item):
+    def _assign_project(self, what, prj_name, item):
 
-        dat = self.__SmpModel.get_project_info(name)
+        dat = self.__SmpModel.get_project_info(prj_name)
 
         if not dat:
             self._print_no_project()
@@ -195,7 +197,7 @@ class SmpAdminCommands(Component):
             if what == 'component':
                 self.__SmpModel.insert_component_projects(item, dat[0])
             elif what == 'milestone':
-                self.__SmpModel.insert_milestone_project(item, dat[0])
+                self.smp_milestone.add(item, dat[0])
             elif what == 'version':
                 self.__SmpModel.insert_version_project(item, dat[0])
 
@@ -203,7 +205,7 @@ class SmpAdminCommands(Component):
         if what == 'component':
             self.__SmpModel.delete_component_projects(item)
         elif what == 'milestone':
-            self.__SmpModel.delete_milestone_project(item)
+            self.smp_milestone.delete(item)
         elif what == 'version':
             self.__SmpModel.delete_version_project(item)
         else:
