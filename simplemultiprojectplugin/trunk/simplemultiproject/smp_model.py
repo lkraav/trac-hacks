@@ -140,10 +140,10 @@ class SmpMilestone(SmpBaseModel):
         self.add(milestone_name, id_projects)
 
     def all_milestones_and_id_project(self):
-        """Get all components with associated project ids
+        """Get all milestones with associated project ids
 
-        Note that a component may have several project ids and thus will be several times in the tuple.
-        :return a list of tuples (component_name, project_id)
+        Note that a milestone may have several project ids and thus will be several times in the tuple.
+        :return a list of tuples (milestone_name, project_id)
         """
         return self._all_names_and_id_project('milestone')
 

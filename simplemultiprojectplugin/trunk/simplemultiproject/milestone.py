@@ -1,145 +1,122 @@
-from genshi.builder import tag
-from genshi.filters.transform import Transformer
-from simplemultiproject.model import *
-from trac.core import *
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 Cinc
+#
+# License: BSD
+#
+
+from trac.ticket.api import IMilestoneChangeListener
 from trac.web.api import IRequestFilter
-from trac.web.api import ITemplateStreamFilter
-from trac.wiki.formatter import wiki_to_oneliner
-from operator import itemgetter
-import re
+from trac.web.chrome import ITemplateStreamFilter, add_stylesheet
+from genshi.filters import Transformer
+from genshi.template.markup import MarkupTemplate
+from simplemultiproject.model import *
+from smp_model import SmpProject, SmpMilestone
+from admin_filter import get_milestone_from_trac, create_projects_table
+
+
+cur_projects_tmpl = """
+<div xmlns:py="http://genshi.edgewall.org/" py:if="all_projects" style="overflow:hidden;">
+<div id="project-help-div">
+<p class="help">This milestone is connected to the following projects.</p>
+</div>
+<div class="admin-smp-proj-tbl-div">
+<table id="projectlist" class="listing admin-smp-project-table">
+    <thead>
+        <tr><th>Project</th></tr>
+    </thead>
+    <tbody>
+    <tr py:for="prj in all_projects">
+        <td>${prj}</td>
+    </tr>
+    </tbody>
+</table>
+</div>
+<div></div>
+</div>
+"""
+
+
+def create_cur_projects_table(smp_model, name):
+    """Create a table holding projects for this milestone.
+
+    @param smp_model: milestone model instance
+    @param name: name of the milestone
+
+    @return <div> tag holding a project select control with label
+    """
+    ms_projects =  smp_model.get_project_names_for_item(name)
+    print(ms_projects)
+    tbl = MarkupTemplate(cur_projects_tmpl)
+    return tbl.generate(all_projects=ms_projects)
+
 
 class SmpMilestoneProject(Component):
-    """Add a 'Project' attribute to milestones.
-    """
-    implements(IRequestFilter, ITemplateStreamFilter)
+    """Connect milestones to projects from the roadmap page."""
+
+    implements(IRequestFilter, ITemplateStreamFilter, IMilestoneChangeListener)
 
     # Init
     def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
-
+        self._SmpModel = SmpModel(self.env)
+        self.smp_model = SmpMilestone(self.env)
+        self.smp_project = SmpProject(self.env)
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
-        action = req.args.get('action', 'view')
-
-        if req.path_info.startswith('/milestone'):
-            if req.method == 'POST':
-                milestone = req.args.get('name')
-                milestone_id = req.args.get('id')
-                id_project = req.args.get('project')
-
-                if action == 'edit':
-                    if milestone_id != milestone:
-                        self.__SmpModel.rename_milestone_project(milestone_id, milestone)
-                        
-                    id_project_milestone = self.__SmpModel.get_id_project_milestone(milestone)
-                    
-                    if id_project:
-                        if id_project_milestone == None:
-                            self.__SmpModel.insert_milestone_project(milestone, id_project)
-                        else:
-                            if id_project_milestone[0] != id_project:
-                                self.__SmpModel.update_milestone_project(milestone, id_project)
-                    else:
-                        self.__SmpModel.delete_milestone_project(milestone)
-
-                elif action == 'new':
-                    if id_project:
-                        self.__SmpModel.insert_milestone_project(milestone, id_project)
-                            
-                elif action == 'delete':
-                    self.__SmpModel.delete_milestone_project(milestone_id)
-        elif req.path_info.startswith('/admin/ticket/milestones'):
-            if req.method == 'POST':
-                milestones = req.args.get('sel')
-                remove = req.args.get('remove')
-                save = req.args.get('save')
-                if not remove is None and not milestones is None:
-                    if type(milestones) is list:
-                        for ms in milestones:
-                            self.__SmpModel.delete_milestone_project(ms)
-                    else:
-                        self.__SmpModel.delete_milestone_project(milestones) 
-                elif not save is None:
-                    match = re.match(r'/admin/ticket/milestones/(.+)$', req.path_info)
-                    if match and match.group(1) != req.args.get('name'):                    
-                        self.__SmpModel.rename_milestone_project(match.group(1), req.args.get('name'))
-
+        if self._is_valid_request(req) and not req.args.get('cancel'):
+            action = req.args.get('action', 'view')
+            # Note deletion of milestones is handled in IMilestoneChangeListener
+            if action == 'edit':
+                # This one may be a new one or editing of an existing milestone
+                ms_id = req.args.get('id')  # holds the old name if there was a name change, empty if new
+                p_ids=req.args.get('sel')
+                if not ms_id:
+                    self.smp_model.add(req.args.get('name'), p_ids)
+                else:
+                    self.smp_model.delete(ms_id)
+                    self.smp_model.add(req.args.get('name'), p_ids)
         return handler
-        
+
+    @staticmethod
+    def _is_valid_request(req):
+        """Check request for correct path and valid form token"""
+        if req.path_info.startswith('/milestone') and req.args.get('__FORM_TOKEN') == req.form_token:
+            return True
+        return False
+
     def post_process_request(self, req, template, data, content_type):
-        if data and req.path_info.startswith('/milestone'):
-            milestone = data['milestone']
-            if milestone:
-                project_name = self.__SmpModel.get_project_milestone(milestone.name)
-                if project_name and project_name[0]:
-                    self.__SmpModel.check_project_permission(req, project_name[0])
+
+        if self._is_valid_request(req) and not req.args.get('cancel'):
+            print("-----  in post_process: %s" % data.get('milestone').name)
 
         return template, data, content_type
 
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-        action = req.args.get('action', 'view')
 
-        # Allow setting project for milestone
         if filename == 'milestone_edit.html':
-            if action == 'new':
-                filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__new_project(req))
-            elif action == 'edit':
-                filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__edit_project(data, req))
-        # Display project for milestone
+            # ITemplateProvider is implemented in another component
+            add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            filter_form = Transformer('//form[@id="edit"]//div[@class="field"][1]')
+            stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                                      item_name=data.get('milestone').name))
         elif filename == 'milestone_view.html':
-            milestone = data.get('milestone').name
-            filter = Transformer('//div[@class="info"]/p[@class="date"]')
-            return stream | filter.before(self.__project_display(req, milestone))
+            add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            filter_form = Transformer('//div[@class="info"]')
+            stream = stream | filter_form.after(create_cur_projects_table(self.smp_model,
+                                                                          data.get('milestone').name))
         return stream
 
-    # internal methods
+    # IMilestoneChangeListener methods
 
-    def __project_display(self, req, milestone):
-        row = self.__SmpModel.get_project_milestone(milestone)
-        
-        if row:
-            return tag.span(
-                            tag.h3(wiki_to_oneliner("Project: %s" % (row[0],), self.env, req=req))
-                            )
-        else:
-            return []
-    
-    def __edit_project(self, data, req):
-        milestone = data.get('milestone').name
-        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
-        id_project_milestone = self.__SmpModel.get_id_project_milestone(milestone)
+    def milestone_created(self, milestone):
+        pass
 
-        if id_project_milestone != None:
-            id_project_selected = id_project_milestone[0]
-        else:
-            id_project_selected = None
+    def milestone_changed(self, milestone, old_values):
+        pass
 
-        return tag.div(
-                       tag.label(
-                       'Project:',
-                       tag.br(),
-                       tag.select(
-                       tag.option(),
-                       [tag.option(row[1], selected=(id_project_selected == row[0] or None), value=row[0]) for row in sorted(all_projects, key=itemgetter(1))],
-                       name="project")
-                       ),
-                       class_="field")
-
-    def __new_project(self, req):
-        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
-
-        return tag.div(
-                       tag.label(
-                       'Project:',
-                       tag.br(),
-                       tag.select(
-                       tag.option(),
-                       [tag.option(row[1], value=row[0]) for row in sorted(all_projects, key=itemgetter(1))],
-                       name="project")
-                       ),
-                       class_="field")
+    def milestone_deleted(self, milestone):
+        self.smp_model.delete(milestone.name)

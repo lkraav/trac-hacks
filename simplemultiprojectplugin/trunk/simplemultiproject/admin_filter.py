@@ -371,7 +371,7 @@ table_tmpl = """
 """
 
 
-def create_projects_table(self, _SmpModel, req):
+def create_projects_table(self, _SmpModel, req, item_name=""):
     """Create a table for admin panels holding valid projects (means not closed).
 
     @param self: Component instance filtering an admin page
@@ -392,7 +392,10 @@ def create_projects_table(self, _SmpModel, req):
     filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects
                          if project_name in all_project_names]
 
-    comp_prj = self.smp_model.get_project_names_for_item(req.args.get('path_info', ""))
+    item = req.args.get('path_info', "")
+    if not item:
+        item = item_name
+    comp_prj = self.smp_model.get_project_names_for_item(item)
     tbl = MarkupTemplate(table_tmpl)
     return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj)
 
