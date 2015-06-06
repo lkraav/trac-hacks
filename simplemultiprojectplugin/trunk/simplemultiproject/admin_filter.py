@@ -6,7 +6,6 @@
 #
 
 # Trac extension point imports
-from trac import __version__ as trac_version
 from trac.core import *
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_stylesheet, ITemplateStreamFilter
@@ -14,11 +13,12 @@ from trac.util.translation import _
 from trac.config import BoolOption
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Component as TicketComponent
+from trac.ticket.model import Milestone as TracMilestone
 from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
 from operator import itemgetter
-from smp_model import SmpComponent, SmpProject, SmpVersion
+from smp_model import SmpComponent, SmpProject, SmpVersion, SmpMilestone
 from model import SmpModel
 
 __author__ = 'Cinc'
@@ -145,11 +145,18 @@ def _allow_no_project(self):
     return self.env.config.getbool("simple-multi-project", "allow_no_project", False)
 
 
+def get_milestone_from_trac(env, name):
+    try:
+        return TracMilestone(env, name)
+    except ResourceNotFound:
+        return None
+
+
 class SmpFilterDefaultMilestonePanels(Component):
-    """Modify default Trac admin panels for milestones to include a project selection control.
+    """Modify default Trac admin panels for milestones to include project selection.
 
     [[br]]
-    Using this component you may associate a milestone with a project using the default Trac admin panels.
+    Using this component you may associate a milestone with one or more projects using the default Trac admin panels.
 
     Creation of milestones is only possible when a project is chosen. You may disable this behaviour by setting the
     following in ''trac.ini'':
@@ -166,22 +173,31 @@ class SmpFilterDefaultMilestonePanels(Component):
     implements(ITemplateStreamFilter, IRequestFilter)
 
     def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
+        self._SmpModel = SmpModel(self.env)
+        self.smp_model = SmpMilestone(self.env)
+        self.smp_project = SmpProject(self.env)
 
     # IRequestFilter methods
-    def pre_process_request(self, req, handler):
 
+    def pre_process_request(self, req, handler):
         if self._is_valid_request(req) and req.method == "POST":
-            if 'project_id' in req.args and req.args['project_id'] != u"0" and req.args['name']:
+            if req.path_info.startswith('/admin/ticket/milestones'):
                 if 'add' in req.args:
-                    self.__SmpModel.insert_milestone_project(req.args['name'], req.args['project_id'])
-                elif 'save' in req.args:
-                    if self.__SmpModel.get_id_project_milestone(req.args['path_info']):
-                        # req.args['path_info'] holds the old name. req.args['name'] holds the modified name.
-                        self.__SmpModel.update_milestone_project(req.args['path_info'], req.args['project_id'])
-                    else:
-                        # If there is no project id this milestone doesn't live in the smp_milestone_project table yet
-                        self.__SmpModel.insert_milestone_project(req.args['path_info'], req.args['project_id'])
+                    # 'Add' button on main milestone panel
+                    # Check if we already have this milestone. Trac will show an error later if so.
+                    # Don't change the db for smp if already exists.
+                    p_ids=req.args.get('sel')
+                    if not get_milestone_from_trac(self.env, req.args.get('name')) and p_ids:
+                        self.smp_model.add(req.args.get('name'), p_ids)
+                elif 'remove' in req.args:
+                    # 'Remove' button on main component panel
+                    for item in req.args.get('sel'):
+                        self.smp_model.delete(item)
+                elif 'save' in req.args or 'add' in req.args:
+                    # 'Save' button on 'Manage milestone' panel
+                    p_ids = req.args.get('sel')
+                    self.smp_model.delete(req.args.get('path_info'))
+                    self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler
 
     @staticmethod
@@ -199,19 +215,26 @@ class SmpFilterDefaultMilestonePanels(Component):
     def filter_stream(self, req, method, filename, stream, data):
 
         if filename == "admin_milestones.html":
+            # ITemplateProvider is implemented in another component
+            add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
             if not req.args['path_info']:
 
                 all_proj = {}
-                for dat in self.__SmpModel.get_all_projects():
-                    all_proj[dat[0]] = dat[1]
+                for name, p_id in self.smp_project.get_name_and_id():
+                    all_proj[p_id] = name
 
                 all_ms_proj = {}
-                for ms, p_id in self.__SmpModel.get_all_milestones_with_id_project():
+                for ms, p_id in self.smp_model.all_milestones_and_id_project():
                     try:
-                        all_ms_proj[ms] = all_proj[p_id]
+                        all_ms_proj[ms].append(all_proj[p_id])
                     except KeyError:
-                        # A milestone without a project
-                        all_ms_proj[ms] = ""
+                        if p_id:
+                            all_ms_proj[ms] = [all_proj[p_id]]
+                        else:
+                            # A milestone without a project
+                            # For historical reasons these milestones may have a project id of '0' instead of
+                            # missing from the SMP milestone table
+                            all_ms_proj[ms] = [""]
 
                 # Add project column to main milestone table
                 stream = stream | Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
@@ -223,9 +246,10 @@ class SmpFilterDefaultMilestonePanels(Component):
                                     | Transformer('//form[@id="addmilestone"]//input[@name="add"]'
                                                   ).attr('id', 'smp-btn-id')  # Add id for use from javascript
 
-                # Insert project selection control
+                # The 'Add milestone' part of the page
                 filter_form = Transformer('//form[@id="addmilestone"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req))
+                #stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
             else:
                 # 'Modify Milestone' panel
                 if not _allow_no_project(self):
@@ -233,9 +257,10 @@ class SmpFilterDefaultMilestonePanels(Component):
                                     | Transformer('//form[@id="modifymilestone"]//input[@name="save"]'
                                                   ).attr('id', 'smp-btn-id')  # Add id for use from javascript
 
-                # Insert project selection control
+                # 'Manage Component' panel
                 filter_form = Transformer('//form[@id="modifymilestone"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req))
+                # stream = stream | filter_form.after(create_projects_select_ctrl(self._SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
 
 
@@ -334,7 +359,7 @@ table_tmpl = """
     <tr py:for="prj in all_projects">
         <td class="name">
             <input name="sel" value="${prj[0]}"
-                   py:attrs="{'checked': 'foo'} if prj[1] in comp_prj else {}" type="checkbox" />
+                   py:attrs="{'checked': 'checked'} if prj[1] in comp_prj else {}" type="checkbox" />
         </td>
         <td>${prj[1]}</td>
     </tr>
@@ -346,27 +371,28 @@ table_tmpl = """
 """
 
 
-def create_projects_table(smp_model, req, for_add=True):
+def create_projects_table(self, _SmpModel, req):
     """Create a table for admin panels holding valid projects (means not closed).
 
-    @param smp_model: SmpModel object
+    @param self: Component instance filtering an admin page
+    @param _SmpModel: SmpModel object
     @param req      : Trac request object
 
     @return DIV tag holding a project select control with label
     """
-    all_projects = [[project[0], project[1]] for project in sorted(smp_model.get_all_projects(),
-                                                                      key=itemgetter(1))]
+    # project[0] is the id, project[1] the name
+    all_projects = [[project[0], project[1]] for project in self.smp_project.get_all_projects()]
     all_project_names = [name for p_id, name in all_projects]
 
     # no closed projects
     for project_name in all_project_names:
-        project_info = smp_model.get_project_info(project_name)
-        smp_model.filter_project_by_conditions(all_project_names, project_name, project_info, req)
+        project_info = _SmpModel.get_project_info(project_name)
+        _SmpModel.filter_project_by_conditions(all_project_names, project_name, project_info, req)
 
     filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects
                          if project_name in all_project_names]
 
-    comp_prj = [prj[0] for prj in smp_model.get_projects_component(req.args.get('path_info', ""))]
+    comp_prj = self.smp_model.get_project_names_for_item(req.args.get('path_info', ""))
     tbl = MarkupTemplate(table_tmpl)
     return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj)
 
@@ -393,8 +419,8 @@ class SmpFilterDefaultComponentPanels(Component):
     implements(ITemplateStreamFilter, IRequestFilter)
 
     def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
-        self.smp_comp = SmpComponent(self.env)
+        self._SmpModel = SmpModel(self.env)
+        self.smp_model = SmpComponent(self.env)
         self.smp_project = SmpProject(self.env)
 
     # IRequestFilter methods
@@ -404,19 +430,20 @@ class SmpFilterDefaultComponentPanels(Component):
             if req.path_info.startswith('/admin/ticket/components'):
                 if 'add' in req.args:
                     # 'Add' button on main component panel
-                    # Check if we already have this component. Trac will show an error later.
+                    # Check if we already have this component. Trac will show an error later if so.
                     # Don't change the db for smp.
                     p_ids=req.args.get('sel')
                     if not get_component_from_trac(self.env, req.args.get('name')) and p_ids:
-                        self.smp_comp.add(req.args.get('name'), p_ids)
+                        self.smp_model.add(req.args.get('name'), p_ids)
                 elif 'remove' in req.args:
                     # 'Remove' button on main component panel
                     for item in req.args.get('sel'):
-                        self.smp_comp.delete(item)
+                        self.smp_model.delete(item)
                 elif 'save' in req.args or 'add' in req.args:
                     # 'Save' button on 'Manage Component' panel
                     p_ids = req.args.get('sel')
-                    self.smp_comp.add_after_delete(req.args.get('name'), p_ids)
+                    # TODO: this only works because in admin_component.py the old component name is already removed
+                    self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler
 
     @staticmethod
@@ -441,9 +468,8 @@ class SmpFilterDefaultComponentPanels(Component):
                 for name, p_id in self.smp_project.get_name_and_id():
                     all_proj[p_id] = name
                 all_comp_proj = {}  # key is component name, value is a list of projects
-                for comp, p_id in self.smp_comp.all_components_and_id_project():
+                for comp, p_id in self.smp_model.all_components_and_id_project():
                     try:
-                        # all_comp_proj[comp] += u", "+all_proj[p_id]
                         all_comp_proj[comp].append(all_proj[p_id])
                     except KeyError:
                         # Component is not in dict 'all_comp_proj' yet
@@ -452,16 +478,17 @@ class SmpFilterDefaultComponentPanels(Component):
 
                 # The 'Add component' part of the page
                 filter_form = Transformer('//form[@id="addcomponent"]//div[@class="field"][2]')
-                stream = stream | filter_form.after(create_projects_table(self.__SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
 
                 stream = stream | Transformer('//table[@id="complist"]').before(
                     tag.p(_("A component is visible for all projects when not associated with any project."),
                           class_="help"))
                 # Add project column to component table
-                stream = stream | Transformer('//table[@id="complist"]//th[2]').after(tag.th(_("Restricted to Project")))
+                stream = stream | Transformer('//table[@id="complist"]//th[2]').\
+                    after(tag.th(_("Restricted to Project")))
                 stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
             else:
                 # 'Manage Component' panel
                 filter_form = Transformer('//form[@id="modcomp"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self.__SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
