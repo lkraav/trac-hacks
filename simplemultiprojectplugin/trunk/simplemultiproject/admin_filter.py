@@ -75,11 +75,21 @@ def _create_script_tag():
     """
     script = """
     jQuery(document).ready(function($) {
-        if($('#project_id').val()=='0'){
-                $('#smp-btn-id').attr('disabled', 'disabled');
-            };
-        $('#project_id').change(function() {
-            if($('#project_id').val()=='0'){
+        function anyChecked(){
+            var any = false;
+            $('#projectlist input:checkbox').each(function(){
+                if (this.checked) {
+                    any = true;
+                };
+            });
+            return any;
+        };
+        if(!anyChecked())
+        {
+            $('#smp-btn-id').attr('disabled', 'disabled');
+        };
+        $('#projectlist input:checkbox').change(function() {
+            if(!anyChecked()){
                 $('#smp-btn-id').attr('disabled', 'disabled');
             }
             else{
@@ -248,7 +258,6 @@ class SmpFilterDefaultMilestonePanels(Component):
 
                 # The 'Add milestone' part of the page
                 filter_form = Transformer('//form[@id="addmilestone"]//div[@class="field"][1]')
-                #stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req))
                 stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
             else:
                 # 'Modify Milestone' panel
@@ -259,7 +268,6 @@ class SmpFilterDefaultMilestonePanels(Component):
 
                 # 'Manage Component' panel
                 filter_form = Transformer('//form[@id="modifymilestone"]//div[@class="field"][1]')
-                # stream = stream | filter_form.after(create_projects_select_ctrl(self._SmpModel, req))
                 stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
 
