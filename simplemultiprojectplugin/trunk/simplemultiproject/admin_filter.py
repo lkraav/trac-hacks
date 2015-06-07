@@ -12,8 +12,8 @@ from trac.web.chrome import add_stylesheet, ITemplateStreamFilter
 from trac.util.translation import _
 from trac.config import BoolOption
 from trac.resource import ResourceNotFound
-from trac.ticket.model import Component as TicketComponent
-from trac.ticket.model import Milestone as TracMilestone
+from trac.ticket.model import Component as TicketComponent  # Make sure no to confuse with Component for plugins
+from trac.ticket.model import Milestone, Version
 from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
@@ -101,52 +101,6 @@ def _create_script_tag():
     return tag.script(script, type='text/javascript')
 
 
-def create_projects_select_ctrl(smp_model, req, for_add=True, is_ver=False):
-    """Create a select control for admin panels holding valid projects (means not closed).
-
-    @param smp_model: SmpModel object
-    @param req      : Trac request object
-    @param is_ver   : Control is used while modifying/adding a version
-
-    @return DIV tag holding a project select control with label
-    """
-    all_projects_id = [[project[0], project[1]] for project in sorted(smp_model.get_all_projects(),
-                                                                      key=itemgetter(1))]
-    all_projects = [name for p_id, name in all_projects_id]
-
-    # no closed projects
-    for project_name in all_projects:
-        project_info = smp_model.get_project_info(project_name)
-        smp_model.filter_project_by_conditions(all_projects, project_name, project_info, req)
-
-    filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects_id
-                         if project_name in all_projects]
-
-    cur_project = 0
-    select = tag.select(name="project_id", id="project_id", style="margin-bottom:10px;")
-
-    # Note that 'path_info' is not None only when modifying projects
-    if is_ver:
-        id_project = smp_model.get_id_project_version(req.args['path_info'])
-    else:
-        id_project = smp_model.get_id_project_milestone(req.args['path_info'])
-
-    if id_project:
-        cur_project = id_project[0]
-
-    if not cur_project:
-        select.append(tag.option(_("Please, choose a project"), value=0))
-
-    for project_id, project_name in filtered_projects:
-        if cur_project and project_id == cur_project:
-            select.append(tag.option(project_name, value=project_id, selected="selected"))
-        else:
-            select.append(tag.option(project_name, value=project_id))
-
-    div = tag.div(tag.label(_("Project")+':', tag.br, select), class_="field")
-    return div
-
-
 def _allow_no_project(self):
     """Check config if user enabled milestone creation without prior selection of a project.
 
@@ -157,7 +111,7 @@ def _allow_no_project(self):
 
 def get_milestone_from_trac(env, name):
     try:
-        return TracMilestone(env, name)
+        return Milestone(env, name)
     except ResourceNotFound:
         return None
 
@@ -200,7 +154,7 @@ class SmpFilterDefaultMilestonePanels(Component):
                     if not get_milestone_from_trac(self.env, req.args.get('name')) and p_ids:
                         self.smp_model.add(req.args.get('name'), p_ids)
                 elif 'remove' in req.args:
-                    # 'Remove' button on main component panel
+                    # 'Remove' button on main milestone panel
                     for item in req.args.get('sel'):
                         self.smp_model.delete(item)
                 elif 'save' in req.args or 'add' in req.args:
@@ -272,31 +226,44 @@ class SmpFilterDefaultMilestonePanels(Component):
         return stream
 
 
+def get_version_from_trac(env, name):
+    try:
+        return Version(env, name)
+    except ResourceNotFound:
+        return None
+
+
 class SmpFilterDefaultVersionPanels(Component):
     """Modify default Trac admin panels for versions to include project selection."""
 
     implements(ITemplateStreamFilter, IRequestFilter)
 
     def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
+        self._SmpModel = SmpModel(self.env)
         self.smp_project = SmpProject(self.env)
-        self.smp_version = SmpVersion(self.env)
+        self.smp_model = SmpVersion(self.env)
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
 
         if self._is_valid_request(req) and req.method == "POST":
-            if 'project_id' in req.args and req.args['project_id'] != u"0" and req.args['name']:
+            if req.path_info.startswith('/admin/ticket/versions'):
                 if 'add' in req.args:
-                    self.smp_version.add(req.args['name'], req.args['project_id'])
-                elif 'save' in req.args:
-                    if self.__SmpModel.get_id_project_version(req.args['path_info']):
-                        # req.args['path_info'] holds the version name.
-                        self.smp_version.update_project_id_for_version(req.args['path_info'], req.args['project_id'])
-                        pass
-                    else:
-                        # If there is no project id this version doesn't live in the smp_version_project table yet
-                        self.smp_version.add(req.args['path_info'], req.args['project_id'])
+                    # 'Add' button on main milestone panel
+                    # Check if we already have this milestone. Trac will show an error later if so.
+                    # Don't change the db for smp if already exists.
+                    p_ids=req.args.get('sel')
+                    if not get_version_from_trac(self.env, req.args.get('name')) and p_ids:
+                        self.smp_model.add(req.args.get('name'), p_ids)
+                elif 'remove' in req.args:
+                    # 'Remove' button on main version panel
+                    for item in req.args.get('sel'):
+                        self.smp_model.delete(item)
+                elif 'save' in req.args or 'add' in req.args:
+                    # 'Save' button on 'Manage milestone' panel
+                    p_ids = req.args.get('sel')
+                    self.smp_model.delete(req.args.get('path_info'))
+                    self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler
 
     @staticmethod
@@ -314,20 +281,20 @@ class SmpFilterDefaultVersionPanels(Component):
     def filter_stream(self, req, method, filename, stream, data):
 
         if filename == "admin_versions.html":
+            # ITemplateProvider is implemented in another component
+            add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
             if not req.args['path_info']:
-
                 all_proj = {}
                 for name, p_id in self.smp_project.get_name_and_id():
                     all_proj[p_id] = name
 
                 all_ver_proj = {}
-                # for ver, p_id in self.__SmpModel.get_all_versions_with_id_project():
-                for ver, p_id in self.smp_version.all_versions_and_id_project():
+                for ver, p_id in self.smp_model.all_versions_and_id_project():
                     try:
-                        all_ver_proj[ver] = all_proj[p_id]
+                        all_ver_proj[ver].append(all_proj[p_id])
                     except KeyError:
                         # A version without a project
-                        all_ver_proj[ver] = ""
+                        all_ver_proj[ver] = [all_proj[p_id]]
 
                 # Add project column to main version table
                 stream = stream | Transformer('//table[@id="verlist"]//th[2]').after(tag.th(_("Project")))
@@ -341,22 +308,22 @@ class SmpFilterDefaultVersionPanels(Component):
 
                 # Insert project selection control
                 filter_form = Transformer('//form[@id="addversion"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
+
                 # Remove current date/time as release date otherwise the version will be filtered on the roadmap.
                 # User probably forgets to change it on creation and would be surprised not finding it.
                 stream = stream | Transformer('//form[@id="addversion"]//input[@id="releaseddate"]').attr("value", '')
             else:
                 # 'Modify versions' panel
                 filter_form = Transformer('//form[@id="modifyversion"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_select_ctrl(self.__SmpModel, req, is_ver=True))
-
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
 
 table_tmpl = """
 <div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please select the projects for which this component will be visible. Selecting nothing leaves
- this component visible for all projects.</p>
+<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
+ restrictions are imposed.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">

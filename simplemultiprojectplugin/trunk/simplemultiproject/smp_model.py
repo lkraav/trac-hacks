@@ -13,7 +13,7 @@ __author__ = 'Cinc'
 __all__ = ['SmpMilestone', 'SmpComponent', 'SmpProject', 'SmpVersion']
 
 class SmpBaseModel(object):
-
+    """Base class for models providing the database access"""
     def __init__(self, env):
         self.env = env
         self.SmpModel = SmpModel(env)
@@ -78,6 +78,7 @@ class SmpBaseModel(object):
 
 
 class SmpComponent(SmpBaseModel):
+    """Model for SMP components"""
     def __init__(self, env):
         super(SmpComponent, self).__init__(env)
 
@@ -132,9 +133,9 @@ class SmpMilestone(SmpBaseModel):
         self._insert('milestone', milestone_name, id_projects)
 
     def add_after_delete(self, milestone_name, id_projects):
-        """Delete a component from the SMP database and add it again for the given projects.
+        """Delete a milestone from the SMP database and add it again for the given projects.
 
-        This method is used when the set of projects a component is associated with has changed.
+        This method is used when the set of projects a milestone is associated with has changed.
         """
         self.delete(milestone_name)
         self.add(milestone_name, id_projects)
@@ -184,16 +185,25 @@ class SmpVersion(SmpBaseModel):
     def __init__(self, env):
         super(SmpVersion, self).__init__(env)
 
+    def delete(self, version_name):
+        """Delete a component from the projects database."""
+        self._delete_from_db('version', version_name)
+
     def add(self, version_name, id_project):
         """Add version to a project.
 
         :param version_name: name of the component
         :param id_project: a single project id or a list of project ids
         """
-        if type(id_project) is list:
-            raise ValueError("A version can only be associated with exactly one project.")
+        self._insert('version', version_name, id_project)
 
-        self._insert('version', version_name, [id_project])
+    def add_after_delete(self, version_name, id_projects):
+        """Delete a version from the SMP database and add it again for the given projects.
+
+        This method is used when the set of projects a version is associated with has changed.
+        """
+        self.delete(version_name)
+        self.add(version_name, id_projects)
 
     def all_versions_and_id_project(self):
         """Get all versions with associated project id
@@ -205,3 +215,7 @@ class SmpVersion(SmpBaseModel):
     def update_project_id_for_version(self, version_name, id_project):
         """TODO: get rid of old model"""
         self._update('version', version_name, id_project)
+
+    def get_project_names_for_item(self, version):
+        """Get a list of all project names the milestone is associated with"""
+        return self.get_project_names_for_resource_item('version', version)
