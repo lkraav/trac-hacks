@@ -122,7 +122,7 @@ class CodeReviewerModule(Component):
             comment = "Code review set to %(status)s" % summary
         else:
             comment = "Code review comment"
-        summary['_ref'] = review.changeset
+        summary['_ref'] = str(review.changeset)
         if review.repo:
             summary['_ref'] += '/' + review.repo
         comment += " for [%(_ref)s]:\n\n%(summary)s" % summary
