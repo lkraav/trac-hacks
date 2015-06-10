@@ -76,7 +76,7 @@ class CodeReviewerModule(Component):
                     self._add_review(req, review)
                     tickets = self._update_tickets(req, review)
                     url = req.href(req.path_info, {'ticket': tickets})
-                    req.add_header('Cache-Control', 'no-cache')
+                    req.send_header('Cache-Control', 'no-cache')
                     req.redirect(url + '#reviewbutton')
             self._add_review(req, review)
         elif req.path_info.startswith('/ticket/'):
