@@ -106,23 +106,8 @@ class CodeReviewerModule(Component):
             },
             'tickets': get_tickets(req),
             'statuses': self.statuses,
-            'form_token': self._get_form_token(req),
+            'form_token': req.form_token,
         })
-
-    def _get_form_token(self, req):
-        """Ajax POST requests require a __FORM_TOKEN param from the cookie."""
-        # first search for req attribute
-        if hasattr(req, 'form_token') and req.form_token:
-            return req.form_token
-
-        # next look for token in the cookie
-        if hasattr(req, 'environ'):
-            cookie = req.environ.get('HTTP_COOKIE', '')
-            token_re = re.compile(r"trac_form_token=(?P<token>[a-z0-9]*)")
-            match = token_re.search(cookie)
-            if match:
-                return match.groupdict()['token']
-        return ''
 
     def _update_tickets(self, req, review):
         """Updates the tickets referenced by the given review's changeset
