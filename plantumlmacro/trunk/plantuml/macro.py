@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010 Polar Technologies - www.polartech.es
-# Copyright (C) 2010 Alvaro J Iradier
-# Copyright (C) 2012-2015 Ryan J Ollos
+# Copyright (C) 2010 Alvaro J Iradier <alvaro.iradier@polartech.es>
+# Copyright (C) 2012-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -61,6 +61,7 @@ class PlantUmlMacro(WikiMacroBase):
     plantuml_jar = Option('plantuml', 'plantuml_jar', '',
         """Path to PlantUML jar file. The jar file can be downloaded from the
           [http://plantuml.sourceforge.net/download.html PlantUML] site.""")
+    
     java_bin = Option('plantuml', 'java_bin', 'java',
         """Path to the Java binary file. The default is `java`, which and
            assumes that the Java binary is on the search path.""")
@@ -70,6 +71,8 @@ class PlantUmlMacro(WikiMacroBase):
                                         img_dir)
         if not os.path.isdir(self.abs_img_dir):
             os.makedirs(self.abs_img_dir)
+
+    # WikiMacroBase methods
 
     def expand_macro(self, formatter, name, content):
         if not self.plantuml_jar:
@@ -137,7 +140,8 @@ class PlantUmlMacro(WikiMacroBase):
         yield 'PlantUml'  # WikiMacros syntax
         yield 'PlantUML'  # deprecated, retained for backward compatibility
 
-    # IRequestHandler
+    # IRequestHandler methods
+
     def match_request(self, req):
         return re.match(r'/plantuml?$', req.path_info)
     
@@ -146,7 +150,8 @@ class PlantUmlMacro(WikiMacroBase):
         img_data = self._read_img_from_file(img_id)
         req.send(img_data, 'image/png', status=200)
 
-    # Internal
+    # Internal methods
+
     def _get_markup_path(self, img_id):
         img_path = os.path.join(self.abs_img_dir, img_id)
         img_path += '.txt'
