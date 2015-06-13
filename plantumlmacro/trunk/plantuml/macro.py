@@ -136,8 +136,8 @@ class PlantUmlMacro(WikiMacroBase):
         return Markup(cmap) + tag.img(src=img_link, usemap=img_id + '_map')
 
     def get_macros(self):
-        yield 'plantuml'  # WikiProcessor syntax
         yield 'PlantUml'  # WikiMacros syntax
+        yield 'plantuml'  # WikiProcessor syntax
         yield 'PlantUML'  # deprecated, retained for backward compatibility
 
     # IRequestHandler methods
