@@ -188,7 +188,7 @@ class SmpFilterDefaultMilestonePanels(Component):
                     all_proj[p_id] = name
 
                 all_ms_proj = {}
-                for ms, p_id in self.smp_model.all_milestones_and_id_project():
+                for ms, p_id in self.smp_model.get_all_milestones_and_id_project_id():
                     try:
                         all_ms_proj[ms].append(all_proj[p_id])
                     except KeyError:
@@ -289,7 +289,7 @@ class SmpFilterDefaultVersionPanels(Component):
                     all_proj[p_id] = name
 
                 all_ver_proj = {}
-                for ver, p_id in self.smp_model.all_versions_and_id_project():
+                for ver, p_id in self.smp_model.get_all_versions_and_project_id():
                     try:
                         all_ver_proj[ver].append(all_proj[p_id])
                     except KeyError:
@@ -446,7 +446,7 @@ class SmpFilterDefaultComponentPanels(Component):
                 for name, p_id in self.smp_project.get_name_and_id():
                     all_proj[p_id] = name
                 all_comp_proj = {}  # key is component name, value is a list of projects
-                for comp, p_id in self.smp_model.all_components_and_id_project():
+                for comp, p_id in self.smp_model.get_all_components_and_project_id():
                     try:
                         all_comp_proj[comp].append(all_proj[p_id])
                     except KeyError:

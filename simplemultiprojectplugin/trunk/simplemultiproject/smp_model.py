@@ -46,7 +46,7 @@ class SmpBaseModel(object):
             for id_proj in id_projects:
                 cursor.execute(sql, [name, unicode(id_proj)])
 
-    def _all_names_and_id_project(self, resource_name):
+    def _get_all_names_and_project_id_for_resource(self, resource_name):
         db = self.env.get_read_db()
         cursor = db.cursor()
         sql = """SELECT %s, id_project FROM smp_%s_project;""" % (resource_name, resource_name)
@@ -74,7 +74,21 @@ class SmpBaseModel(object):
         sql = "SELECT name FROM smp_project AS p, smp_%s_project AS res WHERE p.id_project = res.id_project " \
               "AND res.%s = %%s" % (resource_name, resource_name)
         cursor.execute(sql, [name])
-        return [ proj[0] for proj in cursor]  # Convert list of tuples to list of project names
+        return [proj[0] for proj in cursor]  # Convert list of tuples to list of project names
+
+    def get_resource_items_for_project_id(self, resource_name, id_project):
+        """Get all items associated with the given project id for a resource.
+
+        :param resource_name: one of component, milestone, version
+        :param id_project: a project id
+        :return: a list of one or more items
+        """
+        db = self.env.get_read_db()
+        cursor = db.cursor()
+        sql = """SELECT %s FROM smp_%s_project WHERE id_project = %%s ORDER BY id_project;""" %\
+              (resource_name, resource_name)
+        cursor.execute(sql, [id_project])
+        return [item[0] for item in cursor]  # Convert tuples to list items
 
 
 class SmpComponent(SmpBaseModel):
@@ -102,18 +116,26 @@ class SmpComponent(SmpBaseModel):
         self.delete(component_name)
         self.add(component_name, id_projects)
 
-    def all_components_and_id_project(self):
+    def get_all_components_and_project_id(self):
         """Get all components with associated project ids
 
         Note that a component may have several project ids and thus will be several times in the tuple.
 
         :return a list of tuples (component_name, project_id)
         """
-        return self._all_names_and_id_project('component')
+        return self._get_all_names_and_project_id_for_resource('component')
 
     def get_project_names_for_item(self, component):
         """Get a list of all project names the component is associated with"""
         return self.get_project_names_for_resource_item('component', component)
+
+    def get_components_for_project_id(self, id_project):
+        """Get components for the given project id.
+
+        :param id_project: a project id
+        :return: ordered list of components associated with the given project id. May be empty.
+        """
+        return self.get_resource_items_for_project_id('component', id_project)
 
 
 class SmpMilestone(SmpBaseModel):
@@ -140,17 +162,25 @@ class SmpMilestone(SmpBaseModel):
         self.delete(milestone_name)
         self.add(milestone_name, id_projects)
 
-    def all_milestones_and_id_project(self):
+    def get_all_milestones_and_id_project_id(self):
         """Get all milestones with associated project ids
 
         Note that a milestone may have several project ids and thus will be several times in the tuple.
         :return a list of tuples (milestone_name, project_id)
         """
-        return self._all_names_and_id_project('milestone')
+        return self._get_all_names_and_project_id_for_resource('milestone')
 
     def get_project_names_for_item(self, milestone):
         """Get a list of all project names the milestone is associated with"""
         return self.get_project_names_for_resource_item('milestone', milestone)
+
+    def get_milestones_for_project_id(self, id_project):
+        """Get milestones for the given project id.
+
+        :param id_project: a project id
+        :return: ordered list of milestones associated with the given project id. May be empty.
+        """
+        return self.get_resource_items_for_project_id('milestone', id_project)
 
 
 class SmpProject(SmpBaseModel):
@@ -205,12 +235,12 @@ class SmpVersion(SmpBaseModel):
         self.delete(version_name)
         self.add(version_name, id_projects)
 
-    def all_versions_and_id_project(self):
+    def get_all_versions_and_project_id(self):
         """Get all versions with associated project id
 
         :return a list of tuples (version_name, project_id)
         """
-        return self._all_names_and_id_project('version')
+        return self._get_all_names_and_project_id_for_resource('version')
 
     def update_project_id_for_version(self, version_name, id_project):
         """TODO: get rid of old model"""
@@ -219,3 +249,11 @@ class SmpVersion(SmpBaseModel):
     def get_project_names_for_item(self, version):
         """Get a list of all project names the milestone is associated with"""
         return self.get_project_names_for_resource_item('version', version)
+
+    def get_versions_for_project_id(self, id_project):
+        """Get versions for the given project id.
+
+        :param id_project: a project id
+        :return: ordered list of versions associated with the given project id. May be empty.
+        """
+        return self.get_resource_items_for_project_id('version', id_project)
