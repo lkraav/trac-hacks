@@ -9,6 +9,7 @@ from trac.util.text import to_unicode
 from trac.web.chrome import add_warning, add_notice
 from trac.perm import PermissionSystem, IPermissionGroupProvider
 from trac.db import with_transaction
+from environmentSetup import db_version_key, db_version
 
 def smp_settings(req, context, kind, name=None):
     
@@ -53,8 +54,22 @@ class SmpModel(Component):
     group_providers = ExtensionPoint(IPermissionGroupProvider)
 
     def __init__(self):
-        # Make sure we have initial data for the ticket-custom field 'project'.
-        self.get_all_projects()
+        # Fix for #12393: check for upgraded database before calling self.get_all_projects()
+        db = self.env.get_read_db()
+        cursor = db.cursor()
+        sql = "SELECT value FROM system WHERE name = %s"
+        try:
+            cursor.execute(sql, [db_version_key])
+            # Make sure we have initial data for the ticket-custom field 'project'.
+            if int(cursor.fetchone()[0]) == db_version:
+                self.get_all_projects()
+        except:
+            # We catch all and everything here because different database backends
+            # may throw different errors (or none at all which means we would get a
+            # TypeError for fetchone()[0], e.g. SQlite)
+
+            # We are just installed and the environment isn't upgraded yet
+            pass
 
     # DB Methods
     def __start_transaction(self, db):
