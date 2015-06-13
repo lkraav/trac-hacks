@@ -20,9 +20,9 @@ setup(
     maintainer = "Ryan J Ollos",
     maintainer_email = 'ryan.j.ollos@gmail.com',
     description = "A macro to include diagrams from PlantUML",
-    license = "BSD 3-Clause",
+    license = "3-Clause BSD",
     keywords = "trac macro uml plantuml embed include",
-    url = "http://trac-hacks.org/wiki/PlantUmlMacro",
+    url = "https://trac-hacks.org/wiki/PlantUmlMacro",
     entry_points = {
         "trac.plugins": [
             "plantuml.macro = plantuml.macro"
