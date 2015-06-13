@@ -10,8 +10,8 @@
 
 import hashlib
 import os
+import subprocess
 import re
-from subprocess import Popen
 
 from genshi.builder import tag
 from trac.config import Option
@@ -61,7 +61,7 @@ class PlantUmlMacro(WikiMacroBase):
     plantuml_jar = Option('plantuml', 'plantuml_jar', '',
         """Path to PlantUML jar file. The jar file can be downloaded from the
           [http://plantuml.sourceforge.net/download.html PlantUML] site.""")
-    
+
     java_bin = Option('plantuml', 'java_bin', 'java',
         """Path to the Java binary file. The default is `java`, which and
            assumes that the Java binary is on the search path.""")
@@ -125,7 +125,7 @@ class PlantUmlMacro(WikiMacroBase):
             cmd = '%s -jar -Djava.awt.headless=true "%s" ' \
                   '-charset UTF-8 "%s"' % (self.java_bin, self.plantuml_jar,
                                            self._get_markup_path(img_id))
-            p = Popen(cmd, shell=True)
+            p = subprocess.Popen(cmd, shell=True)
             stderr = p.wait()
             if p.returncode != 0:
                 return system_message(_("Error running plantuml: '%(error)s'",
