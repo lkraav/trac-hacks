@@ -17,6 +17,7 @@ class SmpBaseModel(object):
     def __init__(self, env):
         self.env = env
         self.SmpModel = SmpModel(env)
+        self.resource_name = "base"
 
     def _delete_from_db(self, resource_name, name):
         sql = """DELETE FROM smp_%s_project WHERE %s=%%s;""" % (resource_name, resource_name)
@@ -76,6 +77,20 @@ class SmpBaseModel(object):
         cursor.execute(sql, [name])
         return [proj[0] for proj in cursor]  # Convert list of tuples to list of project names
 
+    def get_project_ids_for_resource_item(self, resource_name, name):
+        """Get a list of project ids the item of type resource_name is associated with.
+
+        @param resource_name: may be any of component, version, milestone.
+        @param name: name of the item e.g. a component name
+        @return: a list of project ids
+        """
+        db = self.env.get_read_db()
+        cursor = db.cursor()
+        sql = "SELECT id_project FROM smp_%s_project WHERE "\
+              "%s = %%s" % (resource_name, resource_name)
+        cursor.execute(sql, [name])
+        return [proj[0] for proj in cursor]  # Convert list of tuples to list of project names
+
     def get_resource_items_for_project_id(self, resource_name, id_project):
         """Get all items associated with the given project id for a resource.
 
@@ -95,6 +110,7 @@ class SmpComponent(SmpBaseModel):
     """Model for SMP components"""
     def __init__(self, env):
         super(SmpComponent, self).__init__(env)
+        self.resource_name = "component"
 
     def delete(self, component_name):
         """Delete a component from the projects database."""
@@ -141,6 +157,7 @@ class SmpComponent(SmpBaseModel):
 class SmpMilestone(SmpBaseModel):
     def __init__(self, env):
         super(SmpMilestone, self).__init__(env)
+        self.resource_name = "milestone"
 
     def delete(self, milestone_name):
         """Delete a component from the projects database."""
@@ -186,6 +203,8 @@ class SmpMilestone(SmpBaseModel):
 class SmpProject(SmpBaseModel):
     def __init__(self, env):
         super(SmpProject, self).__init__(env)
+        # TODO: a call to get_all_projects is missing to fill the custom ticket field.
+        # Make sure to look at #12393 when implementing
 
     def get_name_and_id(self):
         db = self.env.get_read_db()
@@ -214,6 +233,7 @@ class SmpVersion(SmpBaseModel):
 
     def __init__(self, env):
         super(SmpVersion, self).__init__(env)
+        self.resource_name = "version"
 
     def delete(self, version_name):
         """Delete a component from the projects database."""

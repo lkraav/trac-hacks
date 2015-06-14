@@ -15,6 +15,9 @@ from trac.wiki.formatter import wiki_to_html
 from simplemultiproject.model import *
 from simplemultiproject.model import smp_filter_settings, smp_settings
 from trac import __version__ as VERSION
+from simplemultiproject.smp_model import SmpProject, SmpMilestone
+
+__all__ = ['SmpRoadmapProject', 'SmpRoadmapProjectFilter']
 
 class SmpRoadmapProjectFilter(Component):
     """Allows for filtering by 'Project'
@@ -219,3 +222,32 @@ class SmpRoadmapProject(Component):
 
     def post_process_request(self, req, template, data, content_type):
         return template, data, content_type  
+
+
+class SmpRoadmapPlugin(Component):
+
+    implements(IRequestFilter)
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+
+        if req.path_info.startswith('/roadmap-disabled'):
+            if data:
+                # Some debug printing to be removed
+                for item in data:
+                    print repr(item)
+                print
+                smp_milestone = SmpMilestone(self.env)
+                for item in data.get('milestones'):
+                    print repr(item.name)
+                    item.id_project = smp_milestone.get_project_ids_for_resource_item('milestone', item.name)
+
+                # add project information for template
+                smp_project = SmpProject(self.env)
+                data['projects'] = smp_project.get_all_projects()
+
+            return "smp_roadmap.html", data, content_type
+
+        return template, data, content_type
