@@ -294,7 +294,7 @@ class ChangesetTicketMapper(Component):
             if update:
                 db("""DELETE FROM codereviewer_map
                    WHERE repo=%s and changeset=%s
-                   """, (reponame, changeset. rev))
+                   """, (reponame, changeset.rev))
             if not tickets:
                 tickets = ['']  # we still want merges inserted
             for ticket in tickets:
