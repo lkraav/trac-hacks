@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2012-2015 Franz Mayer Gefasoft AG
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
 from genshi import HTML
 from genshi.builder import tag
 from genshi.filters import Transformer
