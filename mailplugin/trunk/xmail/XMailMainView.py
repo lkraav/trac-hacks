@@ -1,14 +1,11 @@
-"""
-Extented Mail Plugin
-
-XMail provides extensive user specific mail options, including cycled mail
-deliveries.
-
-Basically there are two different kind of filtered mail delivery:
- 1. cycled mails (e.g. daily, weekly, etc.)
- 1. immediate mail, but with a user-specific filter (e.g. only high-prio
-tickets)
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2012-2015 Franz Mayer Gefasoft AG
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import re
 from pkg_resources import resource_filename  # @UnresolvedImport
@@ -39,7 +36,17 @@ INTERVAL_LIST = {0: _('immediately'), 86400: _('daily'), 604800: _('weekly')}
 # since there could be checked, if this plugin needs an upgrade
 # =========================================================================
 
+"""
+Extented Mail Plugin
 
+XMail provides extensive user specific mail options, including cycled mail
+deliveries.
+
+Basically there are two different kind of filtered mail delivery:
+ 1. cycled mails (e.g. daily, weekly, etc.)
+ 1. immediate mail, but with a user-specific filter (e.g. only high-prio
+tickets)
+"""
 class XMailMainView(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider)
 
