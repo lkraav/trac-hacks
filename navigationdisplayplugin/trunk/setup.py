@@ -1,14 +1,11 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012 Franz Mayer <franz.mayer@gefasoft.de>
+# Copyright (C) 2012-2015 Franz Mayer Gefasoft AG
+# All rights reserved.
 #
-# "THE BEER-WARE LICENSE" (Revision 42):
-# <franz.mayer@gefasoft.de> wrote this file.  As long as you retain this 
-# notice you can do whatever you want with this stuff. If we meet some day, 
-# and you think this stuff is worth it, you can buy me a beer in return. 
-# Franz Mayer
-#
-# Author: Franz Mayer <franz.mayer@gefasoft.de>
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from setuptools import find_packages, setup
 
@@ -21,6 +18,7 @@ setup(
     author = 'Franz Mayer, Gefasoft AG',
     author_email = 'franz.mayer@gefasoft.de', 
     description = 'Adds user option for displaying navigation menu as fixed menu or other navigation options.',
+	license = "BSD 3-Clause",
     url = 'http://www.gefasoft-muenchen.de',
     download_url = 'http://trac-hacks.org/wiki/NavigationPlugin',
     packages=find_packages(exclude=['*.tests*']),
