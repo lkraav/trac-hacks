@@ -1,0 +1,19 @@
+Author: Alvaro J. Iradier <alvaro.iradier@polartech.es>
+Maintainer: Ryan J Ollos <ryan.j.ollos@gmail.com>
+
+PlantUML-2.0 (15-June-2015) (3-Clause BSD License)
+
+Resolved Issues
+* #9955: Correctly render a PlantUML diagrams containing commas.
+* #12132: Check that `plantuml_jar` is the path of a file ending
+          in `.jar`
+
+New Features
+* #7053: Files can be rendered from the repository.
+* #9770: Store images on disk rather than session data.
+* #9906: `PlantUml` and `plantuml` are allowed as a macro name
+         in addition to `PlantUML`.
+* #10998: Added support for PlantUML image maps.
+
+
+PlantUML-1.0 (2010-04-13)  - Initial Release (GPL License)
