@@ -19,6 +19,7 @@ setup(
     description='Extented Mail Plugin (XMail)',
     long_description="""XMail plugin allows to send user-specific,
     timed (periodically executed) notifications of new / changed tickets """,
+	license = "BSD 3-Clause",
     url='http://www.gefasoft-muenchen.de',
     download_url='http://trac-hacks.org/wiki/MailPlugin',
     packages=find_packages(exclude=['*.tests*']),
