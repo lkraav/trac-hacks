@@ -72,7 +72,8 @@ class CodeReviewerModule(Component):
             tickets = None
             if req.method == 'POST':
                 if review.save(reviewer=req.authname, **req.args):
-                    tickets = self._update_tickets(req, review)
+                    self._update_tickets(review)
+                    tickets = review.tickets
                     req.send_header('Cache-Control', 'no-cache')
             ctx = web_context(req)
             format_summary = functools.partial(format_to_html, self.env, ctx,
@@ -103,7 +104,7 @@ class CodeReviewerModule(Component):
 
     # Private methods
 
-    def _update_tickets(self, req, review):
+    def _update_tickets(self, review):
         """Updates the tickets referenced by the given review's changeset
         with a comment of field changes.  Field changes and command execution
         may occur if specified in trac.ini and the review's changeset is the
@@ -121,21 +122,8 @@ class CodeReviewerModule(Component):
             summary['_ref'] += '/' + review.repo
         comment += " for [%(_ref)s]:\n\n%(summary)s" % summary
 
-        # find and update tickets
-        rm = RepositoryManager(self.env)
-        path = req.args.get('new_path')
-        reponame = req.args.get('reponame')
-        if reponame:
-            repo = rm.get_repository(reponame)
-        else:
-            repo = rm.get_repository_by_path(path)[1]
-
-        changeset = repo.get_changeset(review.changeset)
-        ctu = CommitTicketUpdater(self.env)
-        tickets = set(ctu._parse_message(changeset.message))
-
         invoked = False
-        for ticket in tickets:
+        for ticket in review.tickets:
             tkt = Ticket(self.env, ticket)
 
             # determine ticket changes
@@ -153,8 +141,6 @@ class CodeReviewerModule(Component):
             if not invoked and self._is_complete(ticket, tkt, review):
                 self._execute_command(status)
                 invoked = True
-
-        return tickets
 
     def _is_complete(self, ticket, tkt, review, failed_ok=False):
         """Returns True if the ticket is complete (or only the last review
