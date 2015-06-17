@@ -9,12 +9,10 @@
 #
 
 import datetime
-import re
 
 from trac.resource import ResourceNotFound
-from trac.ticket.model import Ticket
 from trac.util.datefmt import to_utimestamp, utc
-
+from trac.util.translation import _
 
 class CodeReview(object):
     """A review for a single changeset."""
@@ -24,72 +22,69 @@ class CodeReview(object):
     DEFAULT_STATUS = STATUSES[1]
     NOT_PASSED = "(not %s)" % STATUSES[2]
 
-    def __init__(self, env, repo, changeset):
+    def __init__(self, env, repo, changeset, time=None):
         self.env = env
         self.repo = repo or ''
         self.changeset = changeset
-        self.statuses = self.env.config.get('codereviewer', 'status_choices')
-        if not isinstance(self.statuses, list):
-            self.statuses = self.statuses.split(',')
-        self._clear()
+        self.status = self.decode(self.DEFAULT_STATUS)
+        self.reviewer, self.when, self.summary = '', 0, ''
+        if time is None:
+            for status, in self.env.db_query("""
+                    SELECT status FROM codereviewer
+                    WHERE repo=%s AND changeset=%s AND status IS NOT NULL
+                    ORDER BY time DESC LIMIT 1
+                    """, (self.repo, self.changeset)):
+                self.status = self.decode(status)
+        else:
+            for status, review, time, summary in self.env.db_query("""
+                    SELECT status, reviewer, time, summary FROM codereviewer
+                    WHERE repo=%s AND changeset=%s
+                    ORDER BY time DESC LIMIT 1
+                    """, (self.repo, self.changeset)):
+                self.status = self.decode(status)
+                self.review = review
+                self.when = time
+                self.summary = summary
+                break
+            else:
+                raise ResourceNotFound(
+                    _("CodeReview for changeset %(changeset) does not exist.",
+                      changeset=changeset))
 
-    def _clear(self):
-        self._status = None    # updated to latest status
-        self._reviewer = None  # updated to reviewer who made latest status
-        self._when = None      # updated to when status changed last
-        self._tickets = None   # updated from commit message on save
-        self._summaries = None
-        self._changeset_when = None
+        self.tickets = []
+        self.changeset_when = 0
+        for ticket, when in self.env.db_query("""
+                SELECT ticket, time
+                FROM codereviewer_map
+                WHERE repo=%s AND changeset=%s
+                """, (self.repo, self.changeset)):
+            if ticket:
+                self.tickets.append(ticket)
+            self.changeset_when = when
 
-    @property
-    def status(self):
-        if self._status is None:
-            self._populate()
-        return self._status
-
-    @property
-    def reviewer(self):
-        if self._reviewer is None:
-            self._populate()
-        return self._reviewer
-
-    @property
-    def when(self):
-        if self._when is None:
-            self._populate()
-        return self._when
-
-    @property
-    def summaries(self):
-        if self._summaries is None:
-            self._populate_summaries()
-        return self._summaries
-
-    @property
-    def changeset_when(self):
-        if self._changeset_when is None:
-            self._populate_tickets()
-        return self._changeset_when
+    def __getitem__(self, name):
+        return getattr(self, name)
 
     @property
-    def tickets(self):
-        if self._tickets is None:
-            self._populate_tickets()
-        return self._tickets
+    def statuses(self):
+        return self.env.config.getlist('codereviewer', 'status_choices')
 
-    def save(self, status, reviewer, summary, **kw):
+    def save(self, reviewer, status, summary):
         status = self.encode(status)
         when = to_utimestamp(datetime.datetime.now(utc))
-        if status == self.status and self._when != 0:  # initial is special
-            status = ''  # only save status when changed
-        if not status and not summary:
-            return False  # bah - nothing worthwhile to save
+        if status == self.status:
+            status = None  # Status saved only if changed.
+        if not (status or summary):
+            return False  # Nothing worthwhile to save.
         self.env.db_transaction("""
             INSERT INTO codereviewer
              (repo,changeset,status,reviewer,summary,time)
             VALUES (%s,%s,%s,%s,%s,%s)
             """, (self.repo, self.changeset, status, reviewer, summary, when))
-        self._clear()
+        if status:
+            self.status = status
+        self.summary = summary
+        self.when = when
         return True
 
     def decode(self, status):
@@ -112,90 +107,21 @@ class CodeReview(object):
                 pass
         return status
 
-    def is_incomplete(self, ticket):
-        """Returns False if the ticket is complete - meaning:
-
-         * the ticket satisfies its completeness criteria
-         * no reviews are PENDING for this ticket
-         * this ticket's last review PASSED
-
-        If the ticket is incomplete, then a string is returned that explains
-        the reason.
-        """
-        # check completeness criteria
-        try:
-            tkt = Ticket(self.env, ticket)
-            completeness = self.env.config.get('codereviewer', 'completeness',
-                                               '')
-            if completeness:
-                for criteria in completeness.split(','):
-                    field, rule = criteria.split('=', 1)
-                    value = tkt[field]
-                    rule_re = re.compile(rule)
-                    if not rule_re.search(value):
-                        return "Ticket #%s field %s=%s which violates rule " \
-                               "%s" % (tkt.id, field, value, rule)
-        except ResourceNotFound:
-            pass  # e.g., incorrect ticket reference
-
-        # check review status
-        reviews = get_reviews_for_ticket(self.env, ticket)
-        if not reviews:
-            return "Ticket #%s has no reviews." % ticket
-        for review in reviews:
-            if review.encode(review.status) == 'PENDING':
-                return "Ticket #%s has a %s review for changeset %s" \
-                       % (ticket, review. status, review. changeset)
-        if review.encode(review.status) != 'PASSED':
-            return "Ticket #%s's last changeset %s = %s %s" \
-                   % (ticket, review. changeset, review. status,
-                      self.NOT_PASSED)
-
-        return False
-
-    def _populate(self):
-        """Populate this object from the database."""
-        # get the last status change ('' status indicates no change)
-        for row in self.env.db_query("""
-                SELECT status, reviewer, time FROM codereviewer
-                WHERE repo=%s AND changeset=%s AND status != ''
-                ORDER BY time DESC LIMIT 1
-                """, (self.repo, self.changeset)):
-            status, self._reviewer, self._when = row
-            break
-        else:
-            status, self._reviewer, self._when = self.DEFAULT_STATUS, '', 0
-        self._status = self.decode(status)
-
-    def _populate_summaries(self):
-        """Returns all summary records for the given changeset."""
-        summaries = []
-        for status, reviewer, summary, when in self.env.db_query("""
+    @classmethod
+    def select(cls, env, repo, changeset):
+        """Returns all review for the given changeset."""
+        reviews = []
+        for status, reviewer, summary, when in env.db_query("""
                 SELECT status, reviewer, summary, time FROM codereviewer
                 WHERE repo=%s AND changeset=%s ORDER BY time ASC
-                """, (self.repo, self.changeset)):
-            summaries.append({
-                'repo': self.repo,
-                'changeset': self.changeset,
-                'status': self.decode(status) or '',
-                'reviewer': reviewer,
-                'summary': summary,
-                'when': when,
-            })
-        self._summaries = summaries
-
-    def _populate_tickets(self):
-        """Populate this object's tickets from the database."""
-        self._tickets = []
-        self._changeset_when = 0
-        for ticket, when in self.env.db_query("""
-                SELECT ticket, time
-                FROM codereviewer_map
-                WHERE repo=%s AND changeset=%s
-                """, (self.repo, self.changeset)):
-            if ticket:
-                self._tickets.append(ticket)
-            self._changeset_when = when
+                """, (repo, changeset)):
+            review = CodeReview(env, repo, changeset)
+            review.status = review.decode(status) or ''
+            review.reviewer = reviewer
+            review.summary = summary
+            review.when = when
+            reviews.append(review)
+        return reviews
 
 
 def get_reviews_for_ticket(env, ticket_id):

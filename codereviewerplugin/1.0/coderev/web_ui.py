@@ -27,7 +27,7 @@ from trac.ticket.model import Ticket
 from tracopt.ticket.commit_updater import CommitTicketUpdater
 
 from model import CodeReview
-
+from api import is_incomplete
 
 class CodeReviewerModule(Component):
     """Base component for reviewing changesets."""
@@ -71,20 +71,18 @@ class CodeReviewerModule(Component):
             review = CodeReview(self.env, repos, rev)
             tickets = None
             if req.method == 'POST':
-                if review.save(reviewer=req.authname, **req.args):
-                    self._update_tickets(review)
+                status_changed = \
+                    review.encode(req.args['status']) != review.status
+                print status_changed
+                if review.save(req.authname, req.args['status'],
+                               req.args['summary']):
+                    self._update_tickets(review, status_changed)
                     tickets = review.tickets
                     req.send_header('Cache-Control', 'no-cache')
             ctx = web_context(req)
             format_summary = functools.partial(format_to_html, self.env, ctx,
                                                escape_newlines=True)
             format_time = functools.partial(user_time, req, format_datetime)
-            for summary in review.summaries:
-                summary.update({
-                    'html_summary': format_summary(summary['summary']),
-                    'pretty_when': format_time(summary['when']),
-                    'pretty_timedelta': pretty_timedelta(summary['when']),
-                })
 
             add_stylesheet(req, 'coderev/coderev.css')
             add_script(req, 'coderev/coderev.js')
@@ -92,7 +90,15 @@ class CodeReviewerModule(Component):
                 'review': {
                     'status': review.status,
                     'encoded_status': review.encode(review.status),
-                    'summaries': review.summaries,
+                    'summaries': [
+                        dict([
+                            ('html_summary', format_summary(r['summary'])),
+                            ('pretty_when', format_time(r['when'])),
+                            ('pretty_timedelta', pretty_timedelta(r['when'])),
+                            ('reviewer', r['reviewer']),
+                            ('status', r['status'])
+                        ]) for r in CodeReview.select(self.env, repos, rev)
+                    ],
                 },
                 'tickets': list(tickets) if tickets is not None else [],
                 'statuses': self.statuses,
@@ -104,23 +110,26 @@ class CodeReviewerModule(Component):
 
     # Private methods
 
-    def _update_tickets(self, review):
+    def _update_tickets(self, review, status_changed):
         """Updates the tickets referenced by the given review's changeset
         with a comment of field changes.  Field changes and command execution
         may occur if specified in trac.ini and the review's changeset is the
         last one of the ticket."""
         status = review.encode(review.status).lower()
-        summary = review.summaries[-1]
 
         # build comment
-        if summary['status']:
-            comment = "Code review set to %(status)s" % summary
-        else:
-            comment = "Code review comment"
-        summary['_ref'] = str(review.changeset)
-        if review.repo:
-            summary['_ref'] += '/' + review.repo
-        comment += " for [%(_ref)s]:\n\n%(summary)s" % summary
+        comment = None
+        if status_changed or review['summary']:
+            if status_changed:
+                comment = "Code review set to %s" % review['status']
+            else:
+                comment = "Code review comment"
+            ref = str(review.changeset)
+            if review.repo:
+                ref += '/' + review.repo
+            comment += " for [%s]" % ref
+            if review['summary']:
+                comment += ":\n\n%s" % review['summary']
 
         invoked = False
         for ticket in review.tickets:
@@ -132,14 +141,14 @@ class CodeReviewerModule(Component):
                 changes = self._get_ticket_changes(tkt, status)
 
             # update ticket if there's a review summary or ticket changes
-            if summary['summary'] or changes:
+            if comment or changes:
                 for field, value in changes.items():
                     tkt[field] = value
-                tkt.save_changes(summary['reviewer'], comment)
+                tkt.save_changes(review['reviewer'], comment)
 
             # check to invoke command
             if not invoked and self._is_complete(ticket, review):
-                self._execute_command(status)
+                self._execute_command()
                 invoked = True
 
     def _is_complete(self, ticket, review, failed_ok=False):
@@ -161,7 +170,7 @@ class CodeReviewerModule(Component):
         is really ready to be fully tested and released.
         """
         # check review's completeness
-        reason = review.is_incomplete(ticket)
+        reason = is_incomplete(self.env, review, ticket)
         if failed_ok and reason and CodeReview.NOT_PASSED in reason:
             return True
         return not reason
@@ -186,7 +195,7 @@ class CodeReviewerModule(Component):
             changes[field] = value
         return changes
 
-    def _execute_command(self, status):
+    def _execute_command(self):
         if not self.command:
             return
         p = Popen(self.command, shell=True, stderr=STDOUT, stdout=PIPE)

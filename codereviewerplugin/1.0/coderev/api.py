@@ -8,12 +8,17 @@
 # you should have received as part of this distribution.
 #
 
+import re
+
 from trac.core import Component, implements
 from trac.db import Column, Index, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor
+from trac.resource import ResourceNotFound
+from trac.ticket.model import Ticket
 
 from coderev.compat import DatabaseManager
+from coderev.model import get_reviews_for_ticket
 
 DB_NAME = 'coderev'
 DB_VERSION = 3
@@ -62,3 +67,43 @@ class CodeReviewerSystem(Component):
 
     def get_permission_actions(self):
         return ['CODEREVIEWER_MODIFY']
+
+
+def is_incomplete(env, review, ticket):
+    """Returns False if the ticket is complete - meaning:
+
+     * the ticket satisfies its completeness criteria
+     * no reviews are PENDING for this ticket
+     * this ticket's last review PASSED
+
+    If the ticket is incomplete, then a string is returned that explains
+    the reason.
+    """
+    # check completeness criteria
+    try:
+        tkt = Ticket(env, ticket)
+    except ResourceNotFound:
+        pass  # e.g., incorrect ticket reference
+    else:
+        for criteria in env.config.getlist('codereviewer', 'completeness'):
+            field, rule = criteria.split('=', 1)
+            value = tkt[field]
+            rule_re = re.compile(rule)
+            if not rule_re.search(value):
+                return "Ticket #%s field %s=%s which violates rule " \
+                       "%s" % (tkt.id, field, value, rule)
+
+    # check review status
+    reviews = get_reviews_for_ticket(env, ticket)
+    if not reviews:
+        return "Ticket #%s has no reviews." % ticket
+    for review in reviews:
+        if review.encode(review.status) == 'PENDING':
+            return "Ticket #%s has a %s review for changeset %s" \
+                   % (ticket, review. status, review. changeset)
+    if review.encode(review.status) != 'PASSED':
+        return "Ticket #%s's last changeset %s = %s %s" \
+               % (ticket, review. changeset, review. status,
+                  review.NOT_PASSED)
+
+    return False

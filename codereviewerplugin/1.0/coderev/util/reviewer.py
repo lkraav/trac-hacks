@@ -16,6 +16,7 @@ from trac.env import Environment
 from trac.ticket.model import Ticket
 from trac.resource import ResourceNotFound
 
+from coderev.api import is_incomplete
 from coderev.model import CodeReview, get_reviews_for_ticket
 
 EPOCH_MULTIPLIER = 1000000.0
@@ -127,7 +128,7 @@ class Reviewer(object):
         is satisfied."""
         review = self.get_review(changeset)
         for ticket in review.tickets:
-            reason = review.is_incomplete(ticket)
+            reason = is_incomplete(self.env, review, ticket)
             if reason:
                 if self.verbose:
                     print '\n' + reason
