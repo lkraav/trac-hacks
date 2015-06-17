@@ -128,21 +128,21 @@ class CodeReviewerModule(Component):
 
             # determine ticket changes
             changes = {}
-            if self._is_complete(ticket, tkt, review, failed_ok=True):
+            if self._is_complete(ticket, review, failed_ok=True):
                 changes = self._get_ticket_changes(tkt, status)
 
             # update ticket if there's a review summary or ticket changes
             if summary['summary'] or changes:
                 for field, value in changes.items():
                     tkt[field] = value
-                tkt.save_changes(author=summary['reviewer'], comment=comment)
+                tkt.save_changes(summary['reviewer'], comment)
 
             # check to invoke command
-            if not invoked and self._is_complete(ticket, tkt, review):
+            if not invoked and self._is_complete(ticket, review):
                 self._execute_command(status)
                 invoked = True
 
-    def _is_complete(self, ticket, tkt, review, failed_ok=False):
+    def _is_complete(self, ticket, review, failed_ok=False):
         """Returns True if the ticket is complete (or only the last review
         failed if ok_failed is True) and therefore actions (e.g., ticket
         changes and executing commands) should be taken.
