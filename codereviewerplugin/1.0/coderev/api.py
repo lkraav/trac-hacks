@@ -9,6 +9,7 @@
 #
 
 from trac.core import Component, implements
+from trac.db import Column, Index, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor
 
@@ -16,6 +17,24 @@ from coderev.compat import DatabaseManager
 
 DB_NAME = 'coderev'
 DB_VERSION = 3
+
+schema = [
+    Table('codereviewer')[
+        Column('repo', type='text'),
+        Column('changeset', type='text'),
+        Column('status', type='text'),
+        Column('reviewer', type='text'),
+        Column('summary', type='text'),
+        Column('time', type='int64'),
+        Index(['repo', 'changeset', 'time']),
+    ],
+    Table('codereviewer_map', key=['repo', 'changeset', 'ticket'])[
+        Column('repo', type='text'),
+        Column('changeset', type='text'),
+        Column('ticket', type='text'),
+        Column('time', type='int64'),
+    ],
+]
 
 
 class CodeReviewerSystem(Component):
@@ -26,14 +45,18 @@ class CodeReviewerSystem(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        self.upgrade_environment()
+        pass
 
     def environment_needs_upgrade(self, db=None):
         return DatabaseManager(self.env).needs_upgrade(DB_VERSION, DB_NAME)
 
     def upgrade_environment(self, db=None):
-        DatabaseManager(self.env).upgrade(DB_VERSION, DB_NAME,
-                                          'coderev.upgrades')
+        dbm = DatabaseManager(self.env)
+        if dbm.get_database_version(DB_NAME) is False:
+            dbm.create_tables(schema)
+            dbm.set_database_version(DB_VERSION, DB_NAME)
+        else:
+            dbm.upgrade(DB_VERSION, DB_NAME, 'coderev.upgrades')
 
     # IPermissionRequestor methods
 

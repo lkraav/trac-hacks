@@ -14,6 +14,7 @@ from trac.test import EnvironmentStub
 from coderev import api
 from coderev.api import DB_NAME, DB_VERSION, CodeReviewerSystem
 from coderev.compat import DatabaseManager
+from coderev.upgrades import db1
 
 
 class CodeReviewerSystemTestCase(unittest.TestCase):
@@ -31,21 +32,29 @@ class CodeReviewerSystemTestCase(unittest.TestCase):
             db("DROP TABLE IF EXISTS codereviewer_map")
             db("DELETE FROM system WHERE name='coderev'")
 
-    def test_create_environment(self):
-        db_init_ver = DatabaseManager(self.env).get_database_version(DB_NAME)
-        CodeReviewerSystem(self.env).environment_created()
-        db_ver = DatabaseManager(self.env).get_database_version(DB_NAME)
+    def test_upgrade_environment_create(self):
+        """Tables created in environment with no codereview installed."""
+        dbm = DatabaseManager(self.env)
+        db_init_ver = dbm.get_database_version(DB_NAME)
+
+        CodeReviewerSystem(self.env).upgrade_environment()
+        db_ver = dbm.get_database_version(DB_NAME)
 
         self.assertFalse(db_init_ver)
         self.assertEqual(DB_VERSION, db_ver)
 
-    def test_upgrade_environment(self):
-        api.DB_VERSION = 1
+    def test_upgrade_environment_upgrade(self):
+        """Tables upgraded in environment with codereview installed at
+        database version 1.
+        """
+        dbm = DatabaseManager(self.env)
+        with self.env.db_transaction as db:
+            db1.do_upgrade(self.env, 1, None)
+            dbm.set_database_version(1, api.DB_NAME)
+
+        db_init_ver = dbm.get_database_version(DB_NAME)
         CodeReviewerSystem(self.env).upgrade_environment()
-        db_init_ver = DatabaseManager(self.env).get_database_version(DB_NAME)
-        api.DB_VERSION = DB_VERSION
-        CodeReviewerSystem(self.env).upgrade_environment()
-        db_ver = DatabaseManager(self.env).get_database_version(DB_NAME)
+        db_ver = dbm.get_database_version(DB_NAME)
 
         self.assertEqual(1, db_init_ver)
         self.assertEqual(DB_VERSION, db_ver)
