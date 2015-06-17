@@ -108,19 +108,19 @@ class AuthzFileParser:
         m.add_path(self.current_path)
 
     def _parse_path_acl(self, m, line):
-        subject, acl = line.split('=', 1)
+        subjectstr, aclstr = line.split("=")
         acl = [False, False]
-        if acl is not None:
-            if 'r' in acl:
+        if aclstr is not None:
+            if 'r' in aclstr:
                 acl[0] = True
-            if 'w' in acl:
+            if 'w' in aclstr:
                 acl[1] = True
-        subject = subject.strip()
-        assert subject
-        if subject.startswith('@'):
-            assert subject
-            subject = m.find_group(subject.lstrip('@'), True)
+        subjectstr = subjectstr.strip()
+        assert subjectstr
+        if subjectstr.startswith('@'):
+            assert len(subjectstr) > 1
+            subject = m.find_group(subjectstr.lstrip('@'), True)
             assert subject is not None
         else:
-            subject = User(subject)
+            subject = User(subjectstr)
         self.current_path.append(PathAcl(subject, *acl))
