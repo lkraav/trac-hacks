@@ -137,8 +137,8 @@ class CodeReviewerModule(Component):
             repo = rm.get_repository_by_path(path)[1]
 
         changeset = repo.get_changeset(review.changeset)
-        ticket_re = CommitTicketUpdater.ticket_re
-        tickets = ticket_re.findall(changeset.message)
+        ctu = CommitTicketUpdater(self.env)
+        tickets = set(ctu._parse_message(changeset.message))
 
         invoked = False
         for ticket in tickets:
@@ -285,9 +285,9 @@ class ChangesetTicketMapper(Component):
     # Internal methods
 
     def _map(self, reponame, changeset, update=False):
-        # extract tickets from changeset message
-        ticket_re = CommitTicketUpdater.ticket_re
-        tickets = set(ticket_re.findall(changeset.message))
+        # Extract tickets from changeset message.
+        ctu = CommitTicketUpdater(self.env)
+        tickets = set(ctu._parse_message(changeset.message))
         when = to_utimestamp(changeset.date)
 
         with self.env.db_transaction as db:
