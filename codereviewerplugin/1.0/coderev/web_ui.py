@@ -287,7 +287,7 @@ class ChangesetTicketMapper(Component):
     def _map(self, reponame, changeset, update=False):
         # extract tickets from changeset message
         ticket_re = CommitTicketUpdater.ticket_re
-        tickets = ticket_re.findall(changeset.message)
+        tickets = set(ticket_re.findall(changeset.message))
         when = to_utimestamp(changeset.date)
 
         with self.env.db_transaction as db:
