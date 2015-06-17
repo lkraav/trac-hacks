@@ -16,7 +16,7 @@ from trac.env import Environment
 from trac.ticket.model import Ticket
 from trac.resource import ResourceNotFound
 
-from coderev.model import CodeReview
+from coderev.model import CodeReview, get_reviews_for_ticket
 
 EPOCH_MULTIPLIER = 1000000.0
 
@@ -115,7 +115,7 @@ class Reviewer(object):
         return changesets
 
     def get_reviews(self, ticket):
-        return CodeReview.get_reviews(self.env, ticket)
+        return get_reviews_for_ticket(self.env, ticket)
 
     def get_review(self, changeset):
         return CodeReview(self.env, self.reponame, changeset)

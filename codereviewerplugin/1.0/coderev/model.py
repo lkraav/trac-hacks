@@ -112,18 +112,6 @@ class CodeReview(object):
                 pass
         return status
 
-    @staticmethod
-    def get_reviews(env, ticket):
-        """Return all reviews for the given ticket in changeset order."""
-        reviews = []
-        for repo, changeset in env.db_query("""
-                SELECT repo, changeset FROM codereviewer_map
-                WHERE ticket=%s ORDER BY time ASC
-                """, (ticket,)):
-            review = CodeReview(env, repo, changeset)
-            reviews.append(review)
-        return reviews
-
     def is_incomplete(self, ticket):
         """Returns False if the ticket is complete - meaning:
 
@@ -151,7 +139,7 @@ class CodeReview(object):
             pass  # e.g., incorrect ticket reference
 
         # check review status
-        reviews = CodeReview.get_reviews(self.env, ticket)
+        reviews = get_reviews_for_ticket(self.env, ticket)
         if not reviews:
             return "Ticket #%s has no reviews." % ticket
         for review in reviews:
@@ -208,3 +196,14 @@ class CodeReview(object):
             if ticket:
                 self._tickets.append(ticket)
             self._changeset_when = when
+
+
+def get_reviews_for_ticket(env, ticket_id):
+    """Returns all reviews for the specified ticket, in changeset order."""
+    reviews = []
+    for repo, changeset in env.db_query("""
+            SELECT repo, changeset FROM codereviewer_map
+            WHERE ticket=%s ORDER BY time ASC
+            """, (ticket_id,)):
+        reviews.append(CodeReview(env, repo, changeset))
+    return reviews
