@@ -12,6 +12,13 @@ jQuery(document).ready(function ($) {
       + text + '</a>';
   };
 
+  function scrollIntoView (eleID) {
+     var e = document.getElementById(eleID);
+     if (!!e && e.scrollIntoView) {
+         e.scrollIntoView();
+     }
+  }
+
   // add a "warning" to the page
   var html = '<div class="codereviewstatus" id="message">'
     + '<div class="system-message ' + review.encoded_status.toLowerCase() + '" id="message">'
@@ -40,13 +47,14 @@ jQuery(document).ready(function ($) {
   // link to tickets if just saved comments
   if (tickets.length) {
     var s = tickets.length == 1 ? '' : 's';
-    html += '<dd><div class="system-message notice">Saved status - see ticket' + s + ' ';
+    html += '<dd><div id="status-saved" class="system-message notice">' +
+            'Status saved. See ticket' + s + ' ';
     $(tickets).each(function (i, ticket) {
       html += '<a href="' + get_url() + '/ticket/' + ticket + '">#' + ticket + '</a>';
       if (i < tickets.length - 1)
         html += ', ';
     });
-    html += '</div></dd>';
+    html += '.</div></dd>';
   }
 
   // add new summary fields and finish form
@@ -67,4 +75,5 @@ jQuery(document).ready(function ($) {
     + '</form>';
   $('#content').append(html);
   $('#codereviewform').after($('#help')); // move help after form
+  scrollIntoView('status-saved');
 });

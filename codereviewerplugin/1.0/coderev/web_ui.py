@@ -9,7 +9,6 @@
 #
 
 import functools
-import re
 from subprocess import Popen, STDOUT, PIPE
 
 from genshi.builder import tag
@@ -70,44 +69,39 @@ class CodeReviewerModule(Component):
             changeset = data['changeset']
             repos, rev = changeset.repos.reponame, changeset.rev
             review = CodeReview(self.env, repos, rev)
+            tickets = None
             if req.method == 'POST':
                 if review.save(reviewer=req.authname, **req.args):
-                    review = CodeReview(self.env, repos, rev)
-                    self._add_review(req, review)
                     tickets = self._update_tickets(req, review)
-                    url = req.href(req.path_info, {'ticket': tickets})
                     req.send_header('Cache-Control', 'no-cache')
-                    req.redirect(url + '#reviewbutton')
-            self._add_review(req, review)
+            ctx = web_context(req)
+            format_summary = functools.partial(format_to_html, self.env, ctx,
+                                               escape_newlines=True)
+            format_time = functools.partial(user_time, req, format_datetime)
+            for summary in review.summaries:
+                summary.update({
+                    'html_summary': format_summary(summary['summary']),
+                    'pretty_when': format_time(summary['when']),
+                    'pretty_timedelta': pretty_timedelta(summary['when']),
+                })
+
+            add_stylesheet(req, 'coderev/coderev.css')
+            add_script(req, 'coderev/coderev.js')
+            add_script_data(req, {
+                'review': {
+                    'status': review.status,
+                    'encoded_status': review.encode(review.status),
+                    'summaries': review.summaries,
+                },
+                'tickets': list(tickets) if tickets is not None else [],
+                'statuses': self.statuses,
+                'form_token': req.form_token,
+            })
         elif req.path_info.startswith('/ticket/'):
             add_stylesheet(req, 'coderev/coderev.css')
         return template, data, content_type
 
     # Private methods
-
-    def _add_review(self, req, review):
-        ctx = web_context(req)
-        format_summary = functools.partial(format_to_html, self.env, ctx,
-                                           escape_newlines=True)
-        format_time = functools.partial(user_time, req, format_datetime)
-        for summary in review.summaries:
-            summary.update({
-                'html_summary': format_summary(summary['summary']),
-                'pretty_when': format_time(summary['when']),
-                'pretty_timedelta': pretty_timedelta(summary['when']),
-            })
-        add_stylesheet(req, 'coderev/coderev.css')
-        add_script(req, 'coderev/coderev.js')
-        add_script_data(req, {
-            'review': {
-                'status': review.status,
-                'encoded_status': review.encode(review.status),
-                'summaries': review.summaries,
-            },
-            'tickets': get_tickets(req),
-            'statuses': self.statuses,
-            'form_token': req.form_token,
-        })
 
     def _update_tickets(self, req, review):
         """Updates the tickets referenced by the given review's changeset
@@ -302,14 +296,9 @@ class ChangesetTicketMapper(Component):
                     db("""INSERT INTO codereviewer_map
                         (repo,changeset,ticket,time)
                        VALUES (%s,%s,%s,%s)
-                       """, (reponame, changeset.rev, ticket, when))
+                       """, (reponame or '', changeset.rev, ticket, when))
                 except Exception, e:
                     self.log.warning("Unable to insert changeset "
                                      "%s/%s and ticket %s into db: %s",
-                                     changeset.rev or '', reponame, ticket, e)
-
-
-def get_tickets(req):
-    ticket_re = re.compile(r"ticket=(?P<id>[0-9]+)")
-    path = req.environ.get('HTTP_REFERER', '')
-    return ticket_re.findall(path)
+                                     changeset.rev, reponame or '',
+                                     ticket, e)
