@@ -26,7 +26,7 @@ class CodeReview(object):
 
     def __init__(self, env, repo, changeset):
         self.env = env
-        self.repo = repo or None
+        self.repo = repo or ''
         self.changeset = changeset
         self.statuses = self.env.config.get('codereviewer', 'status_choices')
         if not isinstance(self.statuses, list):
@@ -182,17 +182,10 @@ class CodeReview(object):
     def _populate_summaries(self):
         """Returns all summary records for the given changeset."""
         summaries = []
-        if self.repo:
-            query = self.env.db_query("""
+        for status, reviewer, summary, when in self.env.db_query("""
                 SELECT status, reviewer, summary, time FROM codereviewer
                 WHERE repo=%s AND changeset=%s ORDER BY time ASC
-                """, (self.repo, self.changeset))
-        else:
-            query = self.env.db_query("""
-                SELECT status, reviewer, summary, time FROM codereviewer
-                WHERE repo IS NULL AND changeset=%s ORDER BY time ASC
-                """, (self.changeset,))
-        for status, reviewer, summary, when in query:
+                """, (self.repo, self.changeset)):
             summaries.append({
                 'repo': self.repo,
                 'changeset': self.changeset,

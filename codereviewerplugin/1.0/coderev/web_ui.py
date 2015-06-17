@@ -294,7 +294,7 @@ class ChangesetTicketMapper(Component):
             if update:
                 db("""DELETE FROM codereviewer_map
                    WHERE repo=%s and changeset=%s
-                   """, (reponame, changeset.rev))
+                   """, (reponame or '', changeset.rev))
             if not tickets:
                 tickets = ['']  # we still want merges inserted
             for ticket in tickets:
@@ -306,7 +306,7 @@ class ChangesetTicketMapper(Component):
                 except Exception, e:
                     self.log.warning("Unable to insert changeset "
                                      "%s/%s and ticket %s into db: %s",
-                                     changeset.rev, reponame, ticket, e)
+                                     changeset.rev or '', reponame, ticket, e)
 
 
 def get_tickets(req):
