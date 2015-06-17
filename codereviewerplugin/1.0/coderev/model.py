@@ -25,7 +25,7 @@ class CodeReview(object):
     def __init__(self, env, repo, changeset, time=None):
         self.env = env
         self.repo = repo or ''
-        self.changeset = changeset
+        self.changeset = str(changeset)
         self.status = self.decode(self.DEFAULT_STATUS)
         self.reviewer, self.when, self.summary = '', 0, ''
         if time is None:
@@ -111,6 +111,7 @@ class CodeReview(object):
     def select(cls, env, repo, changeset):
         """Returns all review for the given changeset."""
         reviews = []
+        changeset = str(changeset)
         for status, reviewer, summary, when in env.db_query("""
                 SELECT status, reviewer, summary, time FROM codereviewer
                 WHERE repo=%s AND changeset=%s ORDER BY time ASC
