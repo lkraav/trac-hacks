@@ -86,6 +86,22 @@ if not hasattr(DatabaseManager, 'set_database_version'):
     DatabaseManager.set_database_version = set_database_version
 
 
+if not hasattr(DatabaseManager, 'get_table_names'):
+    def get_table_names(self):
+        dburi = self.config.get('trac', 'database')
+        if dburi.startswith('sqlite:'):
+            query = "SELECT name FROM sqlite_master" \
+                    " WHERE type='table' AND NOT name='sqlite_sequence'"
+        elif dburi.startswith('postgres:'):
+            query = "SELECT tablename FROM pg_tables" \
+                    " WHERE schemaname = ANY (current_schemas(false))"
+        elif dburi.startswith('mysql:'):
+            query = "SHOW TABLES"
+        else:
+            raise TracError('Unsupported %s database' % dburi.split(':')[0])
+        return sorted(row[0] for row in self.env.db_transaction(query))
+
+
 if not hasattr(DatabaseManager, 'needs_upgrade'):
     def needs_upgrade(self, version, name='database_version'):
         """Checks the database version to determine if an upgrade is needed.
