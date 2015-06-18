@@ -7,7 +7,7 @@ setup(
 	name = 'TracTicketDepgraph',
 	version = '0.11',
 	packages = ['depgraph'],
-	package_data = { 'depgraph': ['htdocs/css/*.css', 'templates/*.html', ] },
+	package_data = { 'depgraph': ['templates/*.html', ] },
 
 	author = "Felix Tiede",
 	author_email = "felix.tiede@eyec.de",

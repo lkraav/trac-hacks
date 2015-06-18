@@ -37,7 +37,7 @@ from pkg_resources import resource_filename
 from trac.core import *
 from trac.mimeview.api import Context
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_stylesheet, add_script
+from trac.web.chrome import ITemplateProvider, add_ctxtnav
 from trac.wiki.formatter import Formatter
 from trac.util.html import html, Markup
 
@@ -155,4 +155,4 @@ class DepGraphModule(Component):
 		return [resource_filename(__name__, 'templates')]
 
 	def get_htdocs_dirs(self):
-		return [('depgraph', resource_filename(__name__, 'htdocs'))]
+		return []
