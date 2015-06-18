@@ -59,7 +59,7 @@ class DepGraphModule(Component):
 
 	def post_process_request(self, req, template, data, content_type):
 		from mastertickets.model import TicketLinks
-		if req.path_info.startswith('/ticket'):
+		if req.path_info.startswith('/ticket/'):
 			ticket_id = req.path_info[8:]
 			links = TicketLinks(self.env, ticket_id)
 			if len(links.blocked_by) > 0:
@@ -106,7 +106,7 @@ class DepGraphModule(Component):
 				raise TracError('Need integer ticket id.')
 
 			sql = ("SELECT 1 FROM ticket WHERE id=%s" %ticket)
-		
+
 			db = self.env.get_db_cnx()
 			cursor = db.cursor()
 			cursor.execute(sql)
@@ -137,7 +137,7 @@ class DepGraphModule(Component):
 			title = 'Ticket query Dependency Graph'
 			headline = 'Dependency Graph for Query'
 			add_ctxtnav(req, 'Back to query', req.href('query', **req.args))
-		
+
 		data = {}
 
 		context = Context.from_request(req, '')
@@ -149,10 +149,10 @@ class DepGraphModule(Component):
 		data['depgraph'] = Markup(graph)
 
 		return 'depgraph.html', data, None
-		
+
 	# ITemplateProvider methods
 	def get_templates_dirs(self):
 		return [resource_filename(__name__, 'templates')]
-		
+
 	def get_htdocs_dirs(self):
 		return [('depgraph', resource_filename(__name__, 'htdocs'))]
