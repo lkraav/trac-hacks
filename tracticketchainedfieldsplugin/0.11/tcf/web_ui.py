@@ -174,7 +174,9 @@ class TracTicketChainedFieldsModule(Component):
             result["status"] = "1"
             result["hide_empty_fields"] = hide_empty_fields
 
-            trigger = req.args.get("trigger", "").lstrip("field-")
+            trigger = req.args.get("trigger", "")
+            if trigger.startswith('field-'):
+                trigger = trigger[len('field-'):]
             trigger_value = req.args.get("field-" + trigger, "")
             if not trigger:
                 result["status"] = "0"
