@@ -4,7 +4,6 @@
 # Purpose:      The TracTicketChainedFields Trac plugin db model module
 #
 # Author:       Richard Liao <richard.liao.i@gmail.com>
-#
 #----------------------------------------------------------------------------
 
 """Model classes for objects persisted in the database."""
@@ -12,6 +11,7 @@
 import time
 
 from trac.db import Table, Column, Index
+
 
 class TracTicketChainedFields_List(object):
     """Represents a table."""

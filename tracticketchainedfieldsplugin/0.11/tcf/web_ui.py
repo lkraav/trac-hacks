@@ -4,7 +4,6 @@
 # Purpose:      The TracTicketChainedFields Trac plugin handler module
 #
 # Author:       Richard Liao <richard.liao.i@gmail.com>
-#
 #----------------------------------------------------------------------------
 
 from trac.core import *
@@ -25,8 +24,8 @@ from pkg_resources import resource_filename
 
 import os
 import inspect
-import time
 import textwrap
+import time
 try:
     import json
 except ImportError:
@@ -36,6 +35,7 @@ except ImportError:
 from model import schema, schema_version, TracTicketChainedFields_List
 
 __all__ = ['TracTicketChainedFieldsModule']
+
 
 class TracTicketChainedFieldsModule(Component):
 
@@ -96,8 +96,7 @@ class TracTicketChainedFieldsModule(Component):
         self.log.info('Upgraded TracTicketChainedFields tables from version %d to %d',
                       current_version, schema_version)
 
-
-    # ITemplateProvider
+    # ITemplateProvider methods
 
     def get_templates_dirs(self):
         return [resource_filename(__name__, 'templates')]
@@ -105,7 +104,7 @@ class TracTicketChainedFieldsModule(Component):
     def get_htdocs_dirs(self):
         return [('tcf', resource_filename(__name__, 'htdocs'))]
 
-    # ITemplateStreamFilter
+    # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == "ticket.html":
@@ -117,7 +116,7 @@ class TracTicketChainedFieldsModule(Component):
 
     def get_admin_panels(self, req):
         if 'TCF_ADMIN' in req.perm:
-            yield ('ticket', 'Ticket System', 'tcf_admin', u'Chained Fields')
+            yield 'ticket', 'Ticket System', 'tcf_admin', u'Chained Fields'
 
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('TCF_ADMIN')
@@ -129,7 +128,7 @@ class TracTicketChainedFieldsModule(Component):
                 tcf_define_json = req.args.get("tcf_define", "").strip()
 
                 try:
-                    tcf_define = json.loads(tcf_define_json)
+                    json.loads(tcf_define_json)
                 except:
                     raise TracError(u"Format error, which should be JSON. Please back to last page and check the configuration.")
 
@@ -145,7 +144,6 @@ class TracTicketChainedFieldsModule(Component):
 
     def match_request(self, req):
         return req.path_info.startswith('/tcf')
-
 
     def process_request(self, req):
         hide_empty_fields = self.config.getbool("tcf", "hide_empty_fields", False)
@@ -164,10 +162,10 @@ class TracTicketChainedFieldsModule(Component):
             except:
                 pass
 
-            if req.args.has_key("warning"):
+            if 'warning' in req.args:
                 result["warning"] = "1"
             jsonstr = json.dumps(result)
-            self._sendResponse(req, jsonstr)
+            self._send_response(req, jsonstr)
 
         elif req.path_info.startswith('/tcf/query_field_change'):
             result = {}
@@ -208,7 +206,7 @@ class TracTicketChainedFieldsModule(Component):
                 for k, v in trigger_values.items():
                     target_field = k
                     target_options = [target_option for target_option in v.keys() if target_option]
-                    target_options.sort(cmp=lambda x,y: cmp(x.lower(), y.lower()))
+                    target_options.sort(cmp=lambda x, y: cmp(x.lower(), y.lower()))
 
                     targets.append({
                         "target_field": target_field,
@@ -217,13 +215,14 @@ class TracTicketChainedFieldsModule(Component):
 
             result["targets"] = targets
 
-            if req.args.has_key("warning"):
+            if 'warning' in req.args:
                 result["warning"] = "1"
             jsonstr = json.dumps(result)
-            self._sendResponse(req, jsonstr)
+            self._send_response(req, jsonstr)
 
-    # internal methods
-    def _sendResponse(self, req, message):
+    # Internal methods
+
+    def _send_response(self, req, message):
         """ send response and stop request handling
         """
         req.send_response(200)
