@@ -95,7 +95,7 @@ class DirAuthStore(Component):
                                    300,
                                    "warning message for cache pruning in "
                                    "seconds")
-    
+
     def __init__(self, ldap=None):
         self._ldap = ldap
         self._cache = {}
@@ -111,7 +111,7 @@ class DirAuthStore(Component):
         all_users = self._cache_get('allusers')
         if all_users:
             return all_users
-      
+
         # Cache miss. Go to session table.
         all_users = []
         known_users = self.env.get_known_users()
@@ -123,19 +123,19 @@ class DirAuthStore(Component):
 
         self._cache_set('allusers', all_users)
         return sorted(all_users)
-    
+
     def has_user(self, user):
         users = self.get_users()
         if user in users:
             return True
         else:
             return False
-    
+
     def check_password(self, user, password):
         """Checks the password against LDAP."""
         success = None
         msg = "User Login: %s" % user
-        
+
         user_dn = self._get_user_dn(user, NOCACHE)
         if user_dn:
             success = self._bind_dir(user_dn, password) or False
@@ -149,7 +149,7 @@ class DirAuthStore(Component):
             msg += " does not exist, deferring authentication"
             self.log.info(msg)
             return success
-          
+
         # Check the user is part of the right group, we don't use the cache
         # Here as this is part of 'authentication' vs 'authorization'
         if self.group_validusers:
@@ -158,23 +158,23 @@ class DirAuthStore(Component):
                 msg += " but user is not in %s" % self.group_validusers
                 self.log.info(msg)
                 return False
-             
+
         # Update the session data at each login,
         # Note the use of NoCache to force the update(s)
         attrs = [self.user_attr, 'mail', 'proxyAddress', 'displayName']
         lfilter = '(&(%s=%s)(objectClass=person))' % (self.user_attr, user)
         users = self._dir_search(self.dir_basedn, self.dir_scope,
                                  lfilter, attrs, NOCACHE)
-        
+
         if not users:
             raise TracError(_("Authenticated, but didn't find the user with "
                               "filter: %(filter)s (%(users)s)",
                               filter=filter, users=users))
-        
+
         # Update the session table to make this a valid user.
         user_info = self._get_userinfo(users[0][1])
         self._populate_user_session(user_info)
-        
+
         # Update the users by doing a search w/o cache
         self.get_users()
 
@@ -188,10 +188,10 @@ class DirAuthStore(Component):
 
     def get_permission_action(self, user):
         """Return TRAC_ADMIN if user is in the self.group_tracadmin."""
-        
+
         self.log.debug("perm: testing for to see if %s is in %",
                        user, self.group_tracadmin)
-        
+
         if self.group_tracadmin:
             user_groups = self._expand_user_groups(user)
             if self.group_tracadmin in user_groups:
@@ -199,34 +199,34 @@ class DirAuthStore(Component):
                                user, self.group_tracadmin)
                 return ['TRAC_ADMIN']
         return []
-      
+
     # IPermissionUserProvider methods
 
     def get_user_groups(self, user):
         """Returns all groups for a user."""
         return self._expand_user_groups(user)
-    
+
     # IPermissionGroupProvider methods
 
     def get_permission_groups(self, username):
-        """Return a list of names of the groups that the user with the 
+        """Return a list of names of the groups that the user with the
         specified name is a member of."""
         return self._expand_user_groups(username)
-      
+
     # Internal methods
 
     def _bind_dir(self, user_dn=None, passwd=None):
 
         if not self.dir_uri:
             raise TracError(_("The dir_uri ini option must be set."))
-          
+
         if not self.dir_uri.lower().startswith('ldap'):
             raise TracError(_("The dir_uri URI must start with ldaps."))
 
         if user_dn and passwd:
             user_ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri, 0,
                                                             '', 0, 2, 1)
-        
+
             self.log.debug("_bind_dir: attempting specific bind to %s as %s",
                            self.dir_uri, unicode(user_dn, 'utf8'))
             try:
@@ -235,7 +235,7 @@ class DirAuthStore(Component):
                 self.log.error("_bind_dir: binding failed. %s", e)
                 return None
             return 1
-            
+
         # Return cached handle for default use.
         if self._ldap:
             return self._ldap
@@ -243,35 +243,35 @@ class DirAuthStore(Component):
         self._ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri,
                                                          retry_max=5,
                                                          retry_delay=1)
-        
+
         if self.dir_binddn:
             self.log.debug("_bind_dir: attempting general bind to %s as %s",
                            self.dir_uri, self.dir_binddn)
-        else: 
+        else:
             self.log.debug("_bind_dir: attempting general bind to %s "
                            "anonymously", self.dir_uri)
-          
+
         try:
             self._ldap.simple_bind_s(self.dir_binddn, self.dir_bindpw)
         except ldap.LDAPError, e:
             raise TracError("cannot bind to %s: %s" % (self.dir_uri, e))
-        
+
         self.log.info("Bound to %s correctly.", self.dir_uri)
 
         # Allow restarting.
         self._ldap.set_option(ldap.OPT_RESTART, 1)
         self._ldap.set_option(ldap.OPT_TIMEOUT, self.dir_timeout)
-        
+
         return self._ldap
-   
+
     # ## searches
     def _get_user_dn(self, user, cache=1):
         """Get users dn."""
-          
+
         dn = self._cache_get('dn: %s' % user)
         if dn:
             return dn
-            
+
         u = self._dir_search(self.dir_basedn, self.dir_scope,
                              "(&(%s=%s)(objectClass=person))"
                              % (self.user_attr, user),
@@ -290,19 +290,19 @@ class DirAuthStore(Component):
         """Get a list of all groups this user belongs to. This recurses up
         to make sure we get them all.
         """
-      
+
         if use_cache:
             groups = self._cache_get('usergroups:%s' % user)
             if groups:
                 return groups
-      
+
         groups = []
         user_dn = self._get_user_dn(user)
-      
+
         if not user_dn:
             self.log.debug("username: %s has no dn.", user)
             return []
-      
+
         basedn = self.group_basedn or self.dir_basedn
         group_filter = '(&(objectClass=group)(member=%s))' % user_dn
         user_groups = self._dir_search(basedn, self.dir_scope,
@@ -314,7 +314,7 @@ class DirAuthStore(Component):
             groups.append(group)  # dn
             if group not in groups:
                 groups.append(self._get_parent_groups(groups, groupdn))
-                                                             
+
         self._cache_set('usergroups:%s' % user, groups)
         if groups:
             self.log.debug("username %s has groups %s", user, ', '.join(groups))
@@ -322,7 +322,7 @@ class DirAuthStore(Component):
         else:
             self.log.info("username: %s has no groups.", user)
             return []
-      
+
     def _get_parent_groups(self, groups, group_dn):
         group_filter = '(&(objectClass=group)(member=%s)' % group_dn
         basedn = self.group_basedn or self.dir_basedn
@@ -337,7 +337,7 @@ class DirAuthStore(Component):
                     groups.append(group)
                     groups.append(self._get_parent_groups(groups, groupdn))
         return groups
-    
+
     def _get_userinfo(self, attrs):
         """Extract the userinfo tuple from the LDAP search result."""
         user_name = attrs[self.user_attr][0].lower()
@@ -360,7 +360,7 @@ class DirAuthStore(Component):
         # email address session attribute.  If it fails, don't worry, it's
         # already there.
         uname, displayname, email = userinfo
-        
+
         db = self.env.get_db_cnx()
         cur = db.cursor()
         try:
@@ -370,7 +370,7 @@ class DirAuthStore(Component):
                 VALUES (%s, 1, %s)""", (uname, 0))
         except:
             self.log.debug("Session for %s exists.", uname)
-            
+
         # Assume enabled if we get this far self.env.get_known_users()
         # needs this..
         # TODO need to have it updated by the get_dn stuff long term so the
@@ -380,7 +380,7 @@ class DirAuthStore(Component):
             cur.execute("""
                 INSERT INTO session_attribute
                   (sid, authenticated, name, value)
-                VALUES ('%s', 1, 'enabled', '1')
+                VALUES (%s, 1, 'enabled', '1')
                 """, (uname,))
         except:
             self.log.debug("Session for %s exists.", uname)
@@ -390,47 +390,47 @@ class DirAuthStore(Component):
             cur.execute("""
                 INSERT OR REPLACE INTO session_attribute
                   (sid, authenticated, name, value)
-                VALUES ('%s', 1, 'email', '%s')
+                VALUES (%s, 1, 'email', %s)
                 """, (uname, to_unicode(email)))
             self.log.info("updating user session email info for %s (%s)",
                           uname, to_unicode(email))
-            
+
         if displayname:
             cur = db.cursor()
             cur.execute("""
                 INSERT OR REPLACE INTO session_attribute
                   (sid, authenticated, name, value)
-                VALUES ('%s', 1, 'name', '%s')
+                VALUES (%s, 1, 'name', %s)
                 """, (uname, to_unicode(displayname)))
             self.log.info("updating user session displayname info for %s (%s)",
                           uname, to_unicode(displayname))
         db.commit()
         return db.close()
-        
+
     def _cache_get(self, key=None, ttl=None):
         """Get an item from memory cache"""
         cache_ttl = ttl or self.cache_ttl
         if not self.cache_memsize:
             return None
-        
+
         now = time.time()
-            
+
         if key in self._cache:
-            lut, data = self._cache[key]            
+            lut, data = self._cache[key]
             if lut + cache_ttl >= now:
                 self.log.debug("memcache hit for %s", key)
                 return data
-            else: 
+            else:
                 del self._cache[key]
         return None
-    
+
     def _cache_set(self, key=None, data=None, cache_time=None):
         if not self.cache_memsize:
             return None
         now = time.time()
         if not cache_time:
             cache_time = now
-         
+
         # Prune if we need to.
         if self._cache > self.cache_memsize:
             # Warn if too frequent.
@@ -440,7 +440,7 @@ class DirAuthStore(Component):
                     self.log.info("pruning memcache in less than %d seconds, "
                                   "you might increase cache_memsize.",
                                   self.cache_memsize_warn)
-                
+
         self.log.debug("pruning memcache by %d: (current: %d > max: %d )",
                        self.cache_memprune, len(self._cache),
                        self.cache_memsize)
@@ -453,34 +453,34 @@ class DirAuthStore(Component):
         for k in old_keys:
             del self._cache[k]
         self._cache['last_prune'] = [now, []]
-            
+
         self._cache[key] = [cache_time, data]
         return data
-    
+
     def _dir_search(self, basedn, scope, lfilter, attrs=None, check_cache=1):
         current_time = time.time()
-      
+
         attrs = self._decode_list(attrs or [])
 
         if not basedn:
             raise TracError(_("basedn not defined!"))
         if not lfilter:
             raise TracError(_("filter not defined!"))
-      
+
         # Create unique key from the filter and the attributes.
         keystr = ','.join([basedn, str(scope), lfilter, ':'.join(attrs)])
         key = hashlib.md5(keystr).hexdigest()
         self.log.debug("_dir_search: searching %s for %s(%s)",
                        basedn, lfilter, key)
-      
+
         db = self.env.get_db_cnx()
-      
+
         # Check mem cache.
         if check_cache:
             ret = self._cache_get(key)
             if ret:
                 return ret
-      
+
             # --  Check database
             cur = db.cursor()
             cur.execute("""
@@ -489,7 +489,7 @@ class DirAuthStore(Component):
             row = cur.fetchone()
             if row:
                 lut, data = row
-         
+
                 if current_time < lut + self.cache_ttl:
                     self.log.debug("dbcache hit for %s", lfilter)
                     ret = cPickle.loads(str(data))
@@ -508,7 +508,7 @@ class DirAuthStore(Component):
         d = self._bind_dir()
         self.log.debug("_dir_search: starting LDAP search of %s %s using %s "
                        "for %s", self.dir_uri, basedn, lfilter, attrs)
-      
+
         res = []
         try:
             res = d.search_s(basedn.encode(self.dir_charset), scope,
@@ -524,7 +524,7 @@ class DirAuthStore(Component):
 
         if not check_cache:
             return res
-        
+
         # Set the db cache for the next search, even if results are empty.
         res_str = cPickle.dumps(res, 0)
         try:
@@ -539,7 +539,7 @@ class DirAuthStore(Component):
             self.log.warn("_dir_search: db cache update failed. %s" % e)
 
         self._cache_set(key, res)
-            
+
         return res
 
     @staticmethod
