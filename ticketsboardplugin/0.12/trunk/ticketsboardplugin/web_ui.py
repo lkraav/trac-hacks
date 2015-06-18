@@ -23,6 +23,7 @@
 from pkg_resources import resource_filename
 
 from trac.env import IEnvironmentSetupParticipant
+from trac.config import ListOption
 from trac.core import implements, Component
 from trac.util import Markup
 from trac.web import IRequestHandler
@@ -43,9 +44,6 @@ PAGE_NAME = 'ticketsboard'
 # Defines for checkbox ticket custom field to filter tickets to print
 CHECKBOX_NAME = 'ticketsboard'
 CHECKBOX_LABEL = 'On Ticketsboard'
-
-# Default sorted list of status to print on ticketsboard
-DEFAULT_SORTED_STATUS_LIST = ['new','assigned','reviewing','closed']
 
 # Fields that will be printed and needed for ticketsboard (except 'id' that is
 # always present)
@@ -73,6 +71,14 @@ class TicketsboardPage(Component):
     implements(IEnvironmentSetupParticipant, INavigationContributor,
                IRequestHandler, ITemplateProvider)
 
+    status_list = ListOption('ticketsboard', 'statuses',
+        'new,assigned,reviewing,closed',
+        doc="""Ticket states that are shown on the whiteboard.""")
+
+    user_fields = ListOption('ticketsboard', 'fields',
+        'owner,reviewer',
+        doc="""Fields to show on whiteboard sticky note.""")
+
     def __init__(self):
         # Check activation of assignReviewer part
         self.have_reviewer_plugin = self.env.is_component_enabled(
@@ -85,20 +91,9 @@ class TicketsboardPage(Component):
         # trac.ini config file
         self.states_actions = get_workflow_config(self.config)
 
-        # Retrieve status list from trac.ini config file
-        self.status_list = self.config.get('ticketsboard',
-                                           'statuses').strip(',').split(',')
-        if self.status_list == ['']:
-            self.status_list = DEFAULT_SORTED_STATUS_LIST
-
-        # Retrieve additional wanted fields from trac.ini config file
-        user_fields = self.config.get('ticketsboard',
-                                      'fields').strip(',').split(',')
-        if '' in user_fields:
-            user_fields.remove('')
         self.wanted_fields = []
         self.wanted_fields.extend(NEEDED_FIELDS)
-        self.wanted_fields.extend(user_fields)
+        self.wanted_fields.extend(self.user_fields)
         self.wanted_fields = list(set(self.wanted_fields))
         self.additionnal_fields = list(set(self.wanted_fields) -
                 set(NEEDED_FIELDS))
