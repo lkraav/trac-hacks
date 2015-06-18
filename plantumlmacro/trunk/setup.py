@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name = "PlantUML",
-    version = 2.0,
+    version = 2.1,
     packages = ['plantuml'],
     author = "Alvaro J. Iradier",
     author_email = "alvaro.iradier@polartech.es",
