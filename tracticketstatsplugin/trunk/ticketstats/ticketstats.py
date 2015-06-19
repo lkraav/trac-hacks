@@ -53,7 +53,7 @@ class TicketStatsPlugin(Component):
         return 'ticketstats'
 
     def get_navigation_items(self, req):
-        if req.perm.has_permission('REPORT_VIEW'):
+        if 'TICKET_VIEW' in req.perm:
             yield ('mainnav', 'ticketstats',
                    tag.a('Ticket Stats', href=req.href.ticketstats()))
 
@@ -63,7 +63,7 @@ class TicketStatsPlugin(Component):
         return re.match(r'/ticketstats(?:_trac)?(?:/.*)?$', req.path_info)
 
     def process_request(self, req):
-        req.perm.require('REPORT_VIEW')
+        req.perm.require('TICKET_VIEW')
         req_content = req.args.get('content')
         milestone = None
         component = None
