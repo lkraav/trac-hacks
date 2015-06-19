@@ -1,9 +1,20 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006-2009 Alec Thomas
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 import re
+import urlparse
+
 from trac.core import *
 from trac.util import escape, Markup, reversed, sorted
 from trac.wiki.api import IWikiChangeListener, IWikiSyntaxProvider
 from trac.wiki.model import WikiPage
-from urlparse import urlparse
+
 
 class Acronyms(Component):
     """ Automatically generates HTML acronyms from definitions in tables in a
@@ -27,7 +38,7 @@ class Acronyms(Component):
             return
         for line in page.text.splitlines():
             line = line.rstrip()
-            if line.startswith('||') and line.endswith('||') and line[3] != "'":               
+            if line.startswith('||') and line.endswith('||') and line[3] != "'":
                 try:
                     a, d, u, s = ([i.strip() for i in line.strip('||').split('||')] + ['', ''])[0:4]
                     assert self.valid_acronym.match(a), "Invalid acronym %s" % a
@@ -57,12 +68,12 @@ class Acronyms(Component):
                 acronym += ' ' + selector
             else:
                 suffix = selector
-        
+
         # if parsing the href string doesn't return a protocol string,
-        # assume the href string is a reference to a wiki page        
-        if href and not urlparse(href).scheme:
-            href = self.env.href.wiki(href)            
-                
+        # assume the href string is a reference to a wiki page
+        if href and not urlparse.urlparse(href).scheme:
+            href = self.env.href.wiki(href)
+
         if href:
             return Markup('<a class="acronym" href="%s"><acronym title="%s">%s</acronym></a>%s'
                           % (href, title, acronym, suffix))
@@ -70,6 +81,7 @@ class Acronyms(Component):
             return Markup('<acronym title="%s">%s</acronym>%s' % (title, acronym, suffix))
 
     # IWikiSyntaxProvider methods
+
     def get_wiki_syntax(self):
         if self.compiled_acronyms:
             yield (self.compiled_acronyms, self._acronym_formatter)
@@ -78,6 +90,7 @@ class Acronyms(Component):
         return []
 
     # IWikiChangeListener methods
+
     def wiki_page_added(self, page):
         if page.name == self.acronym_page:
             self._update_acronyms()

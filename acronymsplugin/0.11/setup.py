@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006-2009 Alec Thomas
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 from setuptools import setup
 
 setup(name='TracAcronyms',
@@ -5,7 +15,7 @@ setup(name='TracAcronyms',
       packages=['tracacronyms'],
       author='Alec Thomas',
       description='Auto-generated acronyms from a table in a Wiki page.',
-      url='http://trac-hacks.org/wiki/AcronymsPlugin',
-      license='BSD',
+      url='https://trac-hacks.org/wiki/AcronymsPlugin',
+      license='3-Clause BSD',
       entry_points = {'trac.plugins': ['tracacronyms = tracacronyms']},
-      install_requires = ['Trac >= 0.11'])
+      install_requires = ['Trac'])
