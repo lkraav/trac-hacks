@@ -142,7 +142,7 @@ def _get_args_defaults(env, args):
 
 class TicketStatsMacro(WikiMacroBase):
     yui_base_url = Option('ticketstats', 'yui_base_url',
-                          default='http://yui.yahooapis.com/2.9.0',
+                          default='//cdnjs.cloudflare.com/ajax/libs/yui/2.9.0',
                           doc='Location of YUI API')
 
     # ==[ Helper functions ]==
@@ -294,7 +294,7 @@ class TicketStatsMacro(WikiMacroBase):
             'height': args['height'],
             'column_width': args['column_width'],
             'id': random.randint(1, 9999999),
-            'yui_base_url': self.yui_base_url
+            'yui_base_url': self.yui_base_url.rstrip('/')
         }
 
         template = Chrome(self.env).load_template('ticketstats_macro.html')

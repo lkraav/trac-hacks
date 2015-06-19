@@ -35,7 +35,7 @@ class TicketStatsPlugin(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider)
 
     yui_base_url = Option('ticketstats', 'yui_base_url',
-                          default='http://yui.yahooapis.com/2.9.0',
+                          default='//cdnjs.cloudflare.com/ajax/libs/yui/2.9.0',
                           doc='Location of YUI API')
 
     default_days_back = IntOption('ticketstats', 'default_days_back',
@@ -183,7 +183,7 @@ class TicketStatsPlugin(Component):
                 'milestones': milestone_list,
                 'cmilestone': milestone_num,
                 'ccomponent': component_num,
-                'yui_base_url': self.yui_base_url,
+                'yui_base_url': self.yui_base_url.rstrip('/'),
                 'debug': 'debug' in req.args
             }
 
@@ -210,7 +210,7 @@ def get_num_closed_tix(db, from_date, at_date, milestone, component):
 
     args = [to_timestamp(from_date), to_timestamp(at_date)]
     milestone_str = ''
-    
+
     if milestone:
         args.append(milestone)
         milestone_str += 'AND t.milestone = %s'
