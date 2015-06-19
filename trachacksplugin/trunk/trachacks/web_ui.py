@@ -96,7 +96,7 @@ class HackDoesntExist(Aspect):
             )
 
         authz_file = self.env.config.getpath('trac', 'authz_file')
-        authz = AuthzFile().read(authz_file)
+        authz = AuthzFile(authz_file).read()
         authz_paths = [p.get_path() for p in authz.get_paths()]
         for ap in authz_paths:
             if ap.startswith(path):
@@ -473,11 +473,11 @@ class TracHacksHandler(Component):
                 from svnauthz.model import User, Path, PathAcl
 
                 authz_file = self.config.getpath('trac', 'authz_file')
-                authz = AuthzFile().read(authz_file)
+                authz = AuthzFile(authz_file).read()
 
                 svn_path_acl = PathAcl(User(req.authname), r=True, w=True)
                 authz.add_path(Path("/%s" % hack_path, acls=[svn_path_acl, ]))
-                AuthzFile().write(authz_file, authz)
+                AuthzFile(authz_file).write(authz)
                 steps_done.append('permissions')
 
                 # Step 3: Add component
@@ -520,10 +520,10 @@ class TracHacksHandler(Component):
                     if 'permissions' in steps_done:
                         authz_file = self.env.config.getpath('trac',
                                                              'authz_file')
-                        authz = AuthzFile().read(authz_file)
+                        authz = AuthzFile(authz_file).read()
                         if authz.find_path(hack_path):
                             authz.del_path(Path('/%s' % hack_path))
-                        AuthzFile().write(authz_file, authz)
+                        AuthzFile(authz_file).write(authz)
                     # TODO: rollback subversion path creation
                     fcntl.flock(lock_file, fcntl.LOCK_UN)
                 except:
