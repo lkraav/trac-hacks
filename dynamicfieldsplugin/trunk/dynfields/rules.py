@@ -137,7 +137,7 @@ class ClearRule(Component, Rule):
     def desc(self):
         desc = _("Clears one field when another changes.")
         return desc
- 
+
     def get_trigger(self, req, target, key, opts):
         if key == '%s.clear_on_change_of' % target:
             return opts[key]
@@ -173,7 +173,7 @@ class CopyRule(Component, Rule):
     """
 
     implements(IRule)
-    
+
     @property
     def title(self):
         title = _("Copy Rules")
@@ -184,7 +184,7 @@ class CopyRule(Component, Rule):
         desc = _("Copies field content (when changed) to another field "
                  "(if empty and visible).")
         return desc
- 
+
     def get_trigger(self, req, target, key, opts):
         if key == '%s.copy_from' % target:
             return self._extract_overwrite(target, key, opts)[0]
@@ -216,7 +216,7 @@ class DefaultRule(Component, Rule):
     """
 
     implements(IRule)
-    
+
     @property
     def title(self):
         title = _("Default Value Rules")
@@ -226,7 +226,7 @@ class DefaultRule(Component, Rule):
     def desc(self):
         desc = _("Defaults a field to a user-specified value.")
         return desc
- 
+
     def get_trigger(self, req, target, key, opts):
         if key == '%s.default_value' % target:
             return target
@@ -263,7 +263,7 @@ class HideRule(Component, Rule):
 
     implements(IRule)
     group_providers = ExtensionPoint(IPermissionGroupProvider)
-    
+
     @property
     def title(self):
         title = _("Hide Rules")
@@ -273,7 +273,7 @@ class HideRule(Component, Rule):
     def desc(self):
         desc = _("Hides a field based on another field's value (or always).")
         return desc
- 
+
     def get_trigger(self, req, target, key, opts):
         rule_re = re.compile(r"%s.(?P<op>(show|hide))_when_(?P<trigger>.*)"
                              % target)
