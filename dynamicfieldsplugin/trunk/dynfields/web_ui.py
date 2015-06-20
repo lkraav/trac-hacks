@@ -11,8 +11,9 @@ from pkg_resources import resource_filename
 
 from trac.core import *
 from trac.prefs.api import IPreferencePanelProvider
-from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
+from trac.web.api import IRequestFilter
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data, \
+                            add_stylesheet
 
 from dynfields.options import Options
 from dynfields.rules import add_domain, _, IRule
@@ -22,8 +23,7 @@ class DynamicFieldsModule(Component):
     """A module that dynamically alters ticket fields based an extensible
     set of rules.  Uses jQuery for full implementation."""
 
-    implements(IRequestFilter, IRequestHandler, ITemplateProvider,
-               IPreferencePanelProvider)
+    implements(IPreferencePanelProvider, IRequestFilter, ITemplateProvider)
 
     rules = ExtensionPoint(IRule)
 
@@ -33,6 +33,7 @@ class DynamicFieldsModule(Component):
         add_domain(self.env.path, locale_dir)
 
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         return [('dynfields', resource_filename(__name__, 'htdocs'))]
 
@@ -40,6 +41,7 @@ class DynamicFieldsModule(Component):
         return [resource_filename(__name__, 'templates')]
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -51,45 +53,15 @@ class DynamicFieldsModule(Component):
               req.perm.has_permission('TICKET_CREATE')) \
           or (req.path_info.startswith('/query') and
               req.perm.has_permission('REPORT_VIEW')):
-            add_script(req, '/dynfields/dynfields.html')
+            add_script_data(req, {'triggers': self._get_triggers(req)})
+            add_script(req, 'dynfields/dynfields.js')
             add_script(req, 'dynfields/rules.js')
             add_script(req, 'dynfields/layout.js')
             add_stylesheet(req, 'dynfields/layout.css')
         return template, data, content_type
 
-    # IRequestHandler methods
-    def match_request(self, req):
-        return req.path_info.startswith('/dynfields')
-
-    def process_request(self, req):
-        data = {'triggers': self._get_triggers(req)}
-        return 'dynfields.html', {'data': data}, 'text/javascript'
-
-    def _get_triggers(self, req):
-        """Converts trac.ini config to dict of triggers with rule specs."""
-        triggers = {}
-        opts = Options(self.env)
-        for key in opts:
-            # extract the target field
-            target_re = re.compile(r"(?P<target>[^.]+).*")
-            target = target_re.match(key).groupdict()['target']
-
-            # extract rule specifications from configs
-            for rule in self.rules:
-                trigger = rule.get_trigger(req, target, key, opts)
-                if not trigger:
-                    continue
-                if not opts.is_enabled(req, key):
-                    continue
-                value, _ = opts.get_value_and_options(req, target, key)
-                spec = {'rule_name': rule.name, 'trigger': trigger,
-                        'target': target, 'value': value}
-                rule.update_spec(req, key, opts, spec)
-                triggers.setdefault(trigger, []).append(spec)
-
-        return triggers
-
     # IPreferencePanelProvider methods
+
     def get_preference_panels(self, req):
         if self._get_prefs_data(req):  # only show if there are preferences
             # TRANSLATOR: the preferences tab label
@@ -102,6 +74,8 @@ class DynamicFieldsModule(Component):
         data = self._get_prefs_data(req, opts)
         return 'prefs_panel.html', {'data': data,
                                     'saved': req.method == 'POST'}
+
+    # Internal methods
 
     def _get_prefs_data(self, req, opts=None):
         """Returns the pref data, a dict of rule class titles whose values
@@ -133,3 +107,27 @@ class DynamicFieldsModule(Component):
                 data.setdefault(rule.title, {'desc': rule.desc, 'prefs': []})
                 data[rule.title]['prefs'].append(pref)
         return data
+
+    def _get_triggers(self, req):
+        """Converts trac.ini config to dict of triggers with rule specs."""
+        triggers = {}
+        opts = Options(self.env)
+        for key in opts:
+            # extract the target field
+            target_re = re.compile(r"(?P<target>[^.]+).*")
+            target = target_re.match(key).groupdict()['target']
+
+            # extract rule specifications from configs
+            for rule in self.rules:
+                trigger = rule.get_trigger(req, target, key, opts)
+                if not trigger:
+                    continue
+                if not opts.is_enabled(req, key):
+                    continue
+                value, _ = opts.get_value_and_options(req, target, key)
+                spec = {'rule_name': rule.name, 'trigger': trigger,
+                        'target': target, 'value': value}
+                rule.update_spec(req, key, opts, spec)
+                triggers.setdefault(trigger, []).append(spec)
+
+        return triggers

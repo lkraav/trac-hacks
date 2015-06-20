@@ -7,7 +7,7 @@ var Rule = function(name) {
     this.apply    = noop;
     this.complete = noop;
     this.query    = function(spec){}; // for query page
-    
+
     // register this rule by adding to global variable
     if (window.dynfields_rules == undefined)
         window.dynfields_rules = new Object();
@@ -26,7 +26,7 @@ clearrule.apply = function(input, spec){
 
     if (spec.clear_on_change == undefined)
         return;
-    
+
     var field = jQuery('#field-'+target);
     if (field.hasClass('clearable')){
         // only cascade rules if value changes
@@ -49,11 +49,11 @@ var copyrule = new Rule('CopyRule'); // must match python class name exactly
 copyrule.apply = function(input, spec){
     if (spec.value == undefined)
         return;
-    
+
     var field = jQuery(get_selector(spec.target));
     if (spec.overwrite.toLowerCase() == 'false' && field.val() != '')
         return;
-    
+
     if (field.hasClass('copyable')){
         // only do effect if value is changing
         var doit = true;
@@ -87,16 +87,16 @@ var defaultrule = new Rule('DefaultRule'); // must match python class name exact
 // apply
 defaultrule.apply = function(input, spec){
     var field = jQuery(get_selector(spec.target));
-    
+
     if (!field.hasClass('defaulted')){
         field.addClass('defaulted');
         var doit = true;
         var value = spec.value;
-        
+
         // skip if field is hidden
         if (field.is(":hidden"))
             return;
-            
+
         // ensure default value is in list of select options
         if (field.get(0).tagName.toLowerCase() == 'select'){
             var opts = new Array();
@@ -106,7 +106,7 @@ defaultrule.apply = function(input, spec){
             if (jQuery.inArray(value, opts) == -1)
                 doit = false;
         }
-        
+
         // ensure an 'empty' option value for existing tickets (unless appending)
         if (field.val().length > 1 &&
            window.location.pathname.indexOf('/ticket') > -1){
@@ -127,7 +127,7 @@ defaultrule.apply = function(input, spec){
                 value = values.join(', ');
             }
         }
-        
+
         if (doit)
             field.val(value).change(); // cascade rules
     }
@@ -155,7 +155,7 @@ hiderule.setup = function(input, spec){
 hiderule.apply = function(input, spec){
     var trigger = spec.trigger;
     var target = spec.target;
-    
+
     // process hide rule
     if (input.attr('type') == 'checkbox')
         var v = (input.is(':checked')) ? "1" : "0";
@@ -164,7 +164,7 @@ hiderule.apply = function(input, spec){
     var l = spec.trigger_value.split('|'); // supports list of trigger values
     if ((jQuery.inArray(v,l) != -1 && spec.op == 'hide') ||
         (jQuery.inArray(v,l) == -1 && spec.op == 'show')){
-        
+
         // we want to hide the input fields's td and related th
         var field = jQuery('#field-'+target+',input[name="field_'+target+'"]');
         var td = field.parents('td:first');
@@ -174,7 +174,7 @@ hiderule.apply = function(input, spec){
             cls += ' dynfields-link';
         td.addClass(cls);
         th.addClass(cls);
-        
+
         // let's also clear out the field's value to avoid confusion
         if (spec.clear_on_hide.toLowerCase() == 'true' &&
             field.val() && field.val().length){ // Chrome fix - see #8654
@@ -190,7 +190,7 @@ hiderule.apply = function(input, spec){
                     field.change(); // cascade rules
             }
         }
-        
+
         // hide field in the header if cleared or always hidden
         if (spec.clear_on_hide.toLowerCase() == 'true' ||
             spec.hide_always.toLowerCase() == 'true'){
@@ -199,17 +199,17 @@ hiderule.apply = function(input, spec){
             td.addClass('dynfields-hide dynfields-'+trigger);
             th.addClass('dynfields-hide dynfields-'+trigger);
         }
-    }        
+    }
 };
 
 // complete
 hiderule.complete = function(input, spec){
     jQuery('.dynfields-hide').hide();
-    
+
     // update layout (see layout.js)
     inputs_layout.update(spec);
     header_layout.update(spec);
-    
+
     // add link to show hidden fields (that are enabled to be shown)
     if (spec.link_to_show.toLowerCase() == 'true'){
         if (jQuery('#dynfields-show-link').length == 0){
@@ -251,7 +251,7 @@ validaterule.setup = function(input, spec){
     var field = jQuery('#field-'+spec.target);
     var submit = jQuery('input[name=submit]');
     var form = submit.parents('form');
-    
+
     // reset "alert only once per form submission"
     submit.click(function(){
         if (jQuery(".validated").length){
@@ -261,16 +261,16 @@ validaterule.setup = function(input, spec){
             if (div.hasClass('collapsed'))
                 a.click();
         }
-     });        
-    
-    // 'owner' field is special case 
+     });
+
+    // 'owner' field is special case
     if (spec.target == 'owner' &&
         input.attr('id').indexOf('assign_reassign_owner') != -1)
         field = jQuery(input);
-    
+
     // proceed only if input field matches the spec's target field
     if (input.attr('id') == field.attr('id')){
-        
+
         // listen for form submission
         form.submit(function(){
             if (field.is(":hidden"))
@@ -278,19 +278,19 @@ validaterule.setup = function(input, spec){
             if ((spec.value == "" && input.val() == "") ||
                 (spec.value != "" && RegExp(spec.value).test(input.val()))){
                 var valid = false;
-                
+
                 // only invalid when ..?
                 if (spec.when.length && jQuery(spec.when).length == 0)
                     valid = true;
-                
+
                 // alert only once per form submission
                 if (!valid && !form.hasClass('validated')){
                     form.addClass('validated');
                     var msg = spec.msg;
                     if (!msg.length) {
-                        if (spec.value == '') 
+                        if (spec.value == '')
                             var e = 'be empty';
-                        else 
+                        else
                             var e = 'equal ' + spec.value;
                         msg = spec.target+" must not "+e;
                     }
@@ -317,7 +317,7 @@ var setrule = new Rule('SetRule'); // must match python class name exactly
 setrule.setup = function(input, spec){
     if (spec.value == undefined)
         return;
-    
+
     // ensure trigger field's new value is in spec's list
     if (jQuery.inArray(input.val(), spec.trigger_value.split('|')) == -1) // supports list of trigger values
         return;
