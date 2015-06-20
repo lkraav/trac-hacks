@@ -49,7 +49,7 @@ setup(
                                    'dynfields.web_ui = dynfields.web_ui']},
     test_suite='dynfields.tests.test_suite',
     tests_require=[],
-    install_requires=['Trac >= 0.12'],
+    install_requires=['Trac'],
     extras_require={'Babel': 'Babel>= 0.9.5'},
     **extra
 )
