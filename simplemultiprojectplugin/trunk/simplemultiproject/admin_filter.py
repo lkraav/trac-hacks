@@ -68,16 +68,17 @@ class InsertProjectTd(InjectorTransformation):
                 yield event
 
 
-def _create_script_tag():
+def create_script_tag(input_type="checkbox"):
     """Create javascript tag which holds code to enable/disable 'add' button for milestones.
 
+    :param input_type:
     :return: javascript tag (Genshi)
     """
     script = """
     jQuery(document).ready(function($) {
         function anyChecked(){
             var any = false;
-            $('#projectlist input:checkbox').each(function(){
+            $('#projectlist input:%s').each(function(){
                 if (this.checked) {
                     any = true;
                 };
@@ -88,7 +89,7 @@ def _create_script_tag():
         {
             $('#smp-btn-id').attr('disabled', 'disabled');
         };
-        $('#projectlist input:checkbox').change(function() {
+        $('#projectlist input:%s').change(function() {
             if(!anyChecked()){
                 $('#smp-btn-id').attr('disabled', 'disabled');
             }
@@ -98,7 +99,7 @@ def _create_script_tag():
         });
     });
     """
-    return tag.script(script, type='text/javascript')
+    return tag.script(script % (input_type, input_type), type='text/javascript')
 
 
 def _allow_no_project(self):
@@ -119,7 +120,6 @@ def get_milestone_from_trac(env, name):
 class SmpFilterDefaultMilestonePanels(Component):
     """Modify default Trac admin panels for milestones to include project selection.
 
-    [[br]]
     Using this component you may associate a milestone with one or more projects using the default Trac admin panels.
 
     Creation of milestones is only possible when a project is chosen. You may disable this behaviour by setting the
@@ -127,13 +127,23 @@ class SmpFilterDefaultMilestonePanels(Component):
 
     {{{
     [simple-multi-project]
-    allow_no_project = True
+    milestone_without_project = True
+    }}}
+
+    To ensure only a single project is associated with each milestone set the following in ''trac.ini'':
+    {{{
+    [simple-multi-project]
+    single_project_milestones = True
     }}}
     """
 
-    BoolOption("simple-multi-project", "allow_no_project", False, doc="Set this option to {{{True}}} if you want to "
-                                                                      "create milestones without associated projects. "
-                                                                      "The default value is {{{False}}}.")
+    allow_no_project = BoolOption("simple-multi-project", "milestone_without_project", False,
+                                  doc="Set this option to {{{True}}} if you want to create milestones without "
+                                      "associated projects. The default value is {{{False}}}.")
+    single_project = BoolOption("simple-multi-project", "single_project_milestones", False,
+                                doc="If set to {{{True}}} only a single project can be associated with a milestone. "
+                                    "The default value is {{{False}}}.")
+
     implements(ITemplateStreamFilter, IRequestFilter)
 
     def __init__(self):
@@ -181,6 +191,10 @@ class SmpFilterDefaultMilestonePanels(Component):
         if filename == "admin_milestones.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            if self.single_project:
+                input_type = 'radio'
+            else:
+                input_type = "checkbox"  # Default input type for project selection.
             if not req.args['path_info']:
 
                 all_proj = {}
@@ -205,24 +219,24 @@ class SmpFilterDefaultMilestonePanels(Component):
                 stream = stream | Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
 
                 # The 'add milestone' part of the page
-                if not _allow_no_project(self):
-                    stream = stream | Transformer('//head').append(_create_script_tag())\
+                if not self.allow_no_project:
+                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
                                     | Transformer('//form[@id="addmilestone"]//input[@name="add"]'
                                                   ).attr('id', 'smp-btn-id')  # Add id for use from javascript
 
                 # The 'Add milestone' part of the page
                 filter_form = Transformer('//form[@id="addmilestone"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                                          input_type=input_type))
             else:
                 # 'Modify Milestone' panel
-                if not _allow_no_project(self):
-                    stream = stream | Transformer('//head').append(_create_script_tag()) \
+                if not self.allow_no_project:
+                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type)) \
                                     | Transformer('//form[@id="modifymilestone"]//input[@name="save"]'
                                                   ).attr('id', 'smp-btn-id')  # Add id for use from javascript
-
-                # 'Manage Component' panel
                 filter_form = Transformer('//form[@id="modifymilestone"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                                          input_type=input_type))
         return stream
 
 
@@ -234,9 +248,31 @@ def get_version_from_trac(env, name):
 
 
 class SmpFilterDefaultVersionPanels(Component):
-    """Modify default Trac admin panels for versions to include project selection."""
+    """Modify default Trac admin panels for versions to include project selection.
+
+    Creation of versions is only possible when a project is chosen. You may disable this behaviour by setting the
+    following in ''trac.ini'':
+
+    {{{
+    [simple-multi-project]
+    version_without_project = True
+    }}}
+
+    To ensure only a single project is associated with each version set the following in ''trac.ini'':
+    {{{
+    [simple-multi-project]
+    single_project_versions = True
+    }}}
+    """
 
     implements(ITemplateStreamFilter, IRequestFilter)
+
+    allow_no_project = BoolOption("simple-multi-project", "version_without_project", False,
+                                  doc="Set this option to {{{True}}} if you want to create versions without "
+                                      "associated projects. The default value is {{{False}}}.")
+    single_project = BoolOption("simple-multi-project", "single_project_versions", False,
+                                doc="If set to {{{True}}} only a single project can be associated with a version. "
+                                                                      "The default value is {{{False}}}.")
 
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
@@ -283,6 +319,10 @@ class SmpFilterDefaultVersionPanels(Component):
         if filename == "admin_versions.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            if self.single_project:
+                input_type = 'radio'
+            else:
+                input_type = "checkbox"  # Default input type for project selection.
             if not req.args['path_info']:
                 all_proj = {}
                 for name, p_id in self.smp_project.get_name_and_id():
@@ -301,22 +341,27 @@ class SmpFilterDefaultVersionPanels(Component):
                 stream = stream | Transformer('//table[@id="verlist"]//tr').apply(InsertProjectTd("", all_ver_proj))
 
                 # The 'add version' part of the page
-                if not _allow_no_project(self):
-                    stream = stream | Transformer('//head').append(_create_script_tag())\
+                if not self.allow_no_project:
+                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
                                     | Transformer('//form[@id="addversion"]//input[@name="add"]'
                                                   ).attr('id', 'smp-btn-id')  # Add id for use from javascript
-
                 # Insert project selection control
                 filter_form = Transformer('//form[@id="addversion"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                                          input_type=input_type))
 
                 # Remove current date/time as release date otherwise the version will be filtered on the roadmap.
                 # User probably forgets to change it on creation and would be surprised not finding it.
                 stream = stream | Transformer('//form[@id="addversion"]//input[@id="releaseddate"]').attr("value", '')
             else:
                 # 'Modify versions' panel
+                if not self.allow_no_project:
+                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
+                                    | Transformer('//form[@id="modifyversion"]//input[@name="save"]'
+                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
                 filter_form = Transformer('//form[@id="modifyversion"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
+                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                                          input_type=input_type))
         return stream
 
 table_tmpl = """
@@ -334,7 +379,7 @@ table_tmpl = """
     <tr py:for="prj in all_projects">
         <td class="name">
             <input name="sel" value="${prj[0]}"
-                   py:attrs="{'checked': 'checked'} if prj[1] in comp_prj else {}" type="checkbox" />
+                   py:attrs="{'checked': 'checked'} if prj[1] in comp_prj else {}" type="$input_type" />
         </td>
         <td>${prj[1]}</td>
     </tr>
@@ -346,7 +391,7 @@ table_tmpl = """
 """
 
 
-def create_projects_table(self, _SmpModel, req, item_name=""):
+def create_projects_table(self, _SmpModel, req, input_type="checkbox", item_name=""):
     """Create a table for admin panels holding valid projects (means not closed).
 
     @param self: Component instance filtering an admin page
@@ -372,7 +417,7 @@ def create_projects_table(self, _SmpModel, req, item_name=""):
         item = item_name
     comp_prj = self.smp_model.get_project_names_for_item(item)
     tbl = MarkupTemplate(table_tmpl)
-    return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj)
+    return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj, input_type=input_type)
 
 
 def get_component_from_trac(env, name):

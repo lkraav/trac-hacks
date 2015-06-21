@@ -5,6 +5,7 @@
 # License: BSD
 #
 
+from trac.config import BoolOption
 from trac.ticket.api import IMilestoneChangeListener
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateStreamFilter, add_stylesheet
@@ -12,7 +13,7 @@ from genshi.filters import Transformer
 from genshi.template.markup import MarkupTemplate
 from simplemultiproject.model import *
 from smp_model import SmpProject, SmpMilestone
-from admin_filter import get_milestone_from_trac, create_projects_table
+from admin_filter import create_projects_table, create_script_tag
 
 
 cur_projects_tmpl = """
@@ -56,6 +57,13 @@ class SmpMilestoneProject(Component):
 
     implements(IRequestFilter, ITemplateStreamFilter, IMilestoneChangeListener)
 
+    single_project = BoolOption("simple-multi-project", "single_project_milestones", False,
+                                doc="If set to {{{True}}} only a single project can be associated with a milestone. "
+                                    "The default value is {{{False}}}.")
+    allow_no_project = BoolOption("simple-multi-project", "milestone_without_project", False,
+                                  doc="Set this option to {{{True}}} if you want to create milestones without "
+                                      "associated projects. The default value is {{{False}}}.")
+
     # Init
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
@@ -87,10 +95,6 @@ class SmpMilestoneProject(Component):
         return False
 
     def post_process_request(self, req, template, data, content_type):
-
-        if self._is_valid_request(req) and not req.args.get('cancel'):
-            print("-----  in post_process: %s" % data.get('milestone').name)
-
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -100,8 +104,18 @@ class SmpMilestoneProject(Component):
         if filename == 'milestone_edit.html':
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            if self.single_project:
+                input_type = 'radio'
+            else:
+                input_type = "checkbox"  # Default input type for project selection.
+
+            if not self.allow_no_project:
+                stream =  stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
+                                 | Transformer('//form[@id="edit"]//div[@class="buttons"]/input[not(@name)]'
+                                              ).attr('id', 'smp-btn-id')  # Add id for use from javascript
             filter_form = Transformer('//form[@id="edit"]//div[@class="field"][1]')
             stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                                      input_type=input_type,
                                                                       item_name=data.get('milestone').name))
         elif filename == 'milestone_view.html':
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
