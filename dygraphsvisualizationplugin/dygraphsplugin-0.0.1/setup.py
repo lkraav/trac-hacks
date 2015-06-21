@@ -21,7 +21,7 @@ setup(
     description='Graphs tables and other data using Dygraphs Visualization API',
     author="Jon Ashley", author_email="trac@zelatrix.plus.com",
     license='3-Clause BSD',
-    url='https://trac-hacks.org/wiki/DygraphVisualizationPlugin',
+    url='https://trac-hacks.org/wiki/DygraphsVisualizationPlugin',
     packages = ['dyviz'],
     package_data = {'dyviz':['templates/*.html','htdocs/*.css','htdocs/*.js']},
     entry_points = {'trac.plugins':['dyviz.web_ui = dyviz.web_ui']}
