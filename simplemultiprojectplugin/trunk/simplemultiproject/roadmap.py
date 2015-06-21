@@ -9,9 +9,9 @@ from genshi.input import HTML
 from trac.util.text import to_unicode
 from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
+from trac.web.chrome import add_stylesheet
 from operator import itemgetter
 from trac.wiki.formatter import wiki_to_html
-
 from simplemultiproject.model import *
 from simplemultiproject.model import smp_filter_settings, smp_settings
 from trac import __version__ as VERSION
@@ -235,18 +235,37 @@ class SmpRoadmapPlugin(Component):
 
         if req.path_info.startswith('/roadmap-disabled'):
             if data:
+                # ITemplateProvider is implemented in another component
+                add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
                 # Some debug printing to be removed
-                for item in data:
-                    print repr(item)
-                print
+                # for item in data:
+                #     print repr(item)
+                # print
                 smp_milestone = SmpMilestone(self.env)
                 for item in data.get('milestones'):
-                    print repr(item.name)
                     item.id_project = smp_milestone.get_project_ids_for_resource_item('milestone', item.name)
+                    # print "Milestone: ", repr(item.name)
+                    # print "   id_project: ", item.id_project
 
                 # add project information for template
                 smp_project = SmpProject(self.env)
-                data['projects'] = smp_project.get_all_projects()
+                # The following list holds some duplicate project ids
+                all_id_project = [id_p for ms, id_p in smp_milestone.get_all_milestones_and_id_project_id()]
+                if 'emptyprojects' in req.args.get('hide', []):
+                    # Remove all projects without a milestone
+                    all_proj = [ proj for proj in smp_project.get_all_projects() if proj[0] in all_id_project]
+                else:
+                    all_proj = smp_project.get_all_projects()
+
+                data.update({'projects': all_proj,
+                            'hide': req.args.get('hide', []),
+                            'show': req.args.get('show', []),
+                            'projects_with_ms': all_id_project})
+
+                if req.args.get('smp-grouping'):
+                    data['grouping'] = req.args.get('smp-grouping')
+                else:
+                    data['grouping'] = 'group-no'
 
             return "smp_roadmap.html", data, content_type
 
