@@ -33,13 +33,13 @@ class Contact(object):
 
     def save(self):
         self.clean()
-        if self.id: 
+        if self.id:
             self.update()
-        else: 
+        else:
             self.insert()
 
     def clean(self):
-        import re 
+        import re
         p = re.compile(r'<.*?>')
         self.first = p.sub('', self.first)
         self.last = p.sub('', self.last)
@@ -74,15 +74,29 @@ class Contact(object):
         self.email = req.args.get('email')
         self.phone = req.args.get('phone')
 
+
+_COLS = set(('id', 'first', 'last', 'position', 'email', 'phone'))
+
+
 def ContactIterator(env, order_by = None):
     if not order_by:
         order_by = ('last', 'first')
+    for name in order_by:
+        if name not in _COLS:
+            raise ValueError("Must be one of %r: %r" % (_COLS, name))
+
     db = env.get_db_cnx()
+    if hasattr(db, 'quote'):
+        quote = db.quote
+    else:
+        quote = lambda name: name
     cursor = db.cursor()
-    #   Using the prepared db statement won't work if we have more than one entry in order_by
+
     cursor.execute("""
         SELECT id, first, last, position, email, phone
-        FROM contact ORDER BY %s""" % ','.join(['%s']*len(order_by)), order_by)
+        FROM contact ORDER BY %s
+        """ % ','.join(quote(v) for v in order_by))
+
     for id, first, last, position, email, phone in cursor:
         contact = Contact(env)
         contact.id = id
@@ -92,4 +106,3 @@ def ContactIterator(env, order_by = None):
         contact.email = email
         contact.phone = phone
         yield contact
-        
