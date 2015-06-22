@@ -13,10 +13,8 @@ import inspect
 import textwrap
 import time
 import urllib
-from pkg_resources import resource_filename
+from pkg_resources import resource_exists, resource_filename
 
-from genshi.builder import tag
-from genshi.filters.transform import Transformer
 from trac.admin.api import IAdminCommandProvider, IAdminPanelProvider
 from trac.core import *
 from trac.config import BoolOption, ListOption, Option
@@ -25,7 +23,8 @@ from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor
 from trac.ticket import Ticket, Type as TicketType
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
-from trac.web.chrome import Chrome, ITemplateProvider, add_script
+from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
+                            add_script_data
 
 try:
     import json
@@ -323,40 +322,19 @@ class TicketTemplateModule(Component):
                       'new_template': custom_template}
             json_str = json.dumps(result)
             self._sendResponse(req, json_str)
-        elif req.path_info.startswith('/tt/tt_newticket.js'):
-            filename = resource_filename(__name__,
-                                         'templates/tt_newticket.js')
-            chrome = Chrome(self.env)
-            message = \
-                chrome.render_template(req, filename, data, 'text/plain')
 
-            req.send_response(200)
-            req.send_header('Cache-control', 'no-cache')
-            req.send_header('Expires', 'Fri, 01 Jan 1999 00:00:00 GMT')
-            req.send_header('Content-Type', 'text/x-javascript')
-            req.send_header('Content-Length',
-                            len(isinstance(message, unicode)
-                            and message.encode("utf-8") or message))
-            req.end_headers()
-
-            if req.method != 'HEAD':
-                req.write(message)
-            raise RequestDone
-
-    # ITemplateStreamFilter
+    # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html' \
                 and req.path_info.startswith('/newticket'):
-            # common js files
+            add_script_data(req, {'preview': 'preview' in req.args})
+            add_script(req, 'tt/tt_newticket.js')
             add_script(req, 'tt/json2.js')
-
-            stream = stream | Transformer('body').append(
-                tag.script("preview = %s;" % ('true' if 'preview' in req.args else 'false')) +
-                tag.script(type='text/javascript',
-                src=req.href('tt', 'tt_newticket.js'))()
-            )
-
+            if req.locale and \
+                    resource_exists('tickettemplate',
+                                    'htdocs/%s.js' % req.locale):
+                add_script(req, 'tt/%s.js' % req.locale)
         return stream
 
     # Internal methods

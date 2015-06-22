@@ -16,7 +16,7 @@ jQuery(document).ready(function($) {
     _('')
   ];
 
-  var myTemplateHtml = "<div id='tt_custom' style='position:absolute; right: -160pt; margin: 3em 0pt 4em; clear: right; float: right; width: 200px;'><fieldset><legend>" + "${_('My Template')}" + "</legend><select id='tt_custom_select' name='tt_custom_select' style='width: 10em;'></select><br/><input type='button' name='tt_custom_save' value='" + "${_('Create')}" + "' id='tt_custom_save'/><input type='button' name='tt_custom_delete' value='" + "${_('Delete')}" + "' id='tt_custom_delete'/></fieldset><div id='tt_custom_tip' name='tt_custom_tip' style='color: rgb(0, 255, 0); width: 10em;'/></div>";
+  var myTemplateHtml = "<div id='tt_custom' style='position:absolute; right: -160pt; margin: 3em 0pt 4em; clear: right; float: right; width: 200px;'><fieldset><legend>" + _("My Template") + "</legend><select id='tt_custom_select' name='tt_custom_select' style='width: 10em;'></select><br/><input type='button' name='tt_custom_save' value='" + _("Create") + "' id='tt_custom_save'/><input type='button' name='tt_custom_delete' value='" + _("Delete") + "' id='tt_custom_delete'/></fieldset><div id='tt_custom_tip' name='tt_custom_tip' style='color: rgb(0, 255, 0); width: 10em;'/></div>";
   var rel_url = "tt/";
   var queryResult = null;
   var isLoad = true;
@@ -143,7 +143,7 @@ jQuery(document).ready(function($) {
 
     var tt_custom_tip = $('#tt_custom_tip');
     tt_custom_tip.empty();
-    tt_custom_tip.append("${_('Save template success: ')}" + tt_name);
+    tt_custom_tip.append(_("Save template success: ") + tt_name);
   }
 
   function handleResponseDelete(jsonStr) {
@@ -163,7 +163,7 @@ jQuery(document).ready(function($) {
 
     var tt_custom_tip = $('#tt_custom_tip');
     tt_custom_tip.empty();
-    tt_custom_tip.append("${_('Delete template success: ')}" + tt_name);
+    tt_custom_tip.append(_("Delete template success: ") + tt_name);
 
   }
 
@@ -174,7 +174,7 @@ jQuery(document).ready(function($) {
     }
 
     if (evt.type == "change") {
-      var answer = confirm("${_('Replace ticket content with template?')}");
+      var answer = confirm(_("Replace ticket content with template?"));
       if (!answer) {
         return;
       }
@@ -190,7 +190,7 @@ jQuery(document).ready(function($) {
   }
 
   function onCustomSave(evt) {
-    var tt_name = prompt("${_('Please input template name (overwriting existing one with equal name).')}");
+    var tt_name = prompt(_("Please input template name (overwriting existing one with equal name)."));
     if (!tt_name) {
       return;
     }
@@ -279,7 +279,7 @@ jQuery(document).ready(function($) {
   }
 
   function loadEditBuffer(evt) {
-    var answer = confirm("${_('Sure to restore the last edited content?')}");
+    var answer = confirm(_("Sure to restore the last edited content?"));
     if (!answer) {
       return;
     }
@@ -309,7 +309,7 @@ jQuery(document).ready(function($) {
     }
 
     if (evt.type == "change" && isLoad == false) {
-      var answer = confirm("${_('Replace ticket content with template?')}");
+      var answer = confirm(_("Replace ticket content with template?"));
       if (!answer) {
         return;
       }

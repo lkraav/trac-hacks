@@ -20,13 +20,14 @@ extra = {}
 
 try:
     import babel
+    from trac.util.dist import get_l10n_js_cmdclass
 except ImportError:
     babel = None
 else:
+    extra['cmdclass'] = get_l10n_js_cmdclass()
     extractors = [
         ('**.py', 'python', None),
         ('**/templates/**.html', 'genshi', None),
-        ('**/templates/**.js', 'javascript', None),
         ('**/templates/**.txt', 'genshi',
          {'template_class': 'genshi.template:NewTextTemplate'}),
     ]
