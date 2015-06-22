@@ -11,8 +11,6 @@ setup(name='mail2trac',
       keywords='trac plugin email',
       license="GPLv3",
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
-      include_package_data=True,
-      package_data={ 'mail2trac': ['templates/*', 'htdocs/*'] },
       zip_safe=False,
 
       entry_points = """
