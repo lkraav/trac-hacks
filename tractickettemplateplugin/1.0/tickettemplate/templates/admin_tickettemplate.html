@@ -1,0 +1,50 @@
+<!--!
+ Copyright (C) 2008-2013 Richard Liao <richard.liao.i@gmail.com>
+ All rights reserved.
+
+ This software is licensed as described in the file COPYING, which
+ you should have received as part of this distribution.
+-->
+
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      i18n:domain="tickettemplate">
+
+  <xi:include href="admin.html" />
+
+  <head><title>Available Projects</title></head>
+
+  <body>
+    <h2>Ticket: Template</h2>
+    <form id="savetickettemplate" action="${href.admin('ticket/tickettemplate')}" method="post">
+      <div class="field">
+        <label for="type">Type:</label>
+        <p>
+        <select size="1" id="type" name="type">
+          <option py:for="option in options"
+                  selected="${option==type or None}">${option}</option>
+          <option py:if="type and type not in options"
+                  selected="selected">${type}</option>
+        </select>
+        <input type="submit" name="loadtickettemplate" value="${_('Load')}" />
+        <input type="submit" name="savetickettemplate" value="${_('Apply change')}" />
+        <input type="reset" value="${_('Reset')}" />
+        </p>
+      </div>
+      <div class="field">
+        <label for="description">Description:</label>
+        <p>
+          <textarea id="description" name="description"
+                    class="wikitext" rows="10" cols="68"
+                    py:content="tt_text"></textarea>
+        </p>
+      </div>
+    </form>
+  </body>
+
+</html>
