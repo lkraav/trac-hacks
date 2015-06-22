@@ -13,7 +13,7 @@ from genshi.builder import tag
 from trac.core import implements
 from trac.db.api import get_column_names
 from trac.web.chrome import ITemplateProvider, add_stylesheet
-from trac.wiki.formatter import format_to_oneliner, system_message
+from trac.wiki.formatter import format_to_html, system_message
 from trac.wiki.macros import WikiMacroBase
 from trac.util.text import exception_to_unicode, to_unicode
 from trac.util.translation import _
@@ -53,11 +53,11 @@ class SQLTable(WikiMacroBase):
                 item = str(item).upper()
             elif not isinstance(item, basestring):
                 item = to_unicode(item)
-            return format_to_oneliner(self.env, formatter.context, item)
+            return format_to_html(self.env, formatter.context, item)
 
         try:
             with self.env.db_query as db:
-                cursor = db.cursor() 
+                cursor = db.cursor()
                 cursor.execute(content)
                 rows = cursor.fetchall()
                 cols = get_column_names(cursor)
