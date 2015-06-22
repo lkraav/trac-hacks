@@ -23,7 +23,7 @@ from trac.config import BoolOption, ListOption, Option
 from trac.db import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor
-from trac.ticket import Ticket
+from trac.ticket import Ticket, Type as TicketType
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
 from trac.web.chrome import Chrome, ITemplateProvider, add_script
 
@@ -75,17 +75,14 @@ class TicketTemplateModule(Component):
 
     def environment_created(self):
         # Create the required tables
-        db = self.env.get_db_cnx()
         connector, _ = DatabaseManager(self.env)._get_connector()
-        cursor = db.cursor()
-        for table in schema:
-            for stmt in connector.to_sql(table):
-                cursor.execute(stmt)
-
-        # Insert a global version flag
-        cursor.execute("INSERT INTO system (name,value) "
-                       "VALUES ('tt_version',%s)", (schema_version,))
-        db.commit()
+        with self.env.db_transaction as db:
+            for table in schema:
+                for stmt in connector.to_sql(table):
+                    db(stmt)
+            db("""INSERT INTO system (name,value)
+                  VALUES ('tt_version', %s)
+               """, (schema_version,))
 
         # Create some default templates
 
@@ -95,22 +92,22 @@ class TicketTemplateModule(Component):
         else:
             self.ticket_template_import(self.json_template_file)
 
-    def environment_needs_upgrade(self, db):
-        cursor = db.cursor()
-        cursor.execute("SELECT value FROM system WHERE name='tt_version'")
-        row = cursor.fetchone()
-        if not row or int(row[0]) < schema_version:
-            return True
+    def environment_needs_upgrade(self, db=None):
+        for value, in self.env.db_query("""
+                SELECT value FROM system WHERE name='tt_version'
+                """):
+            return int(value) < schema_version
+        return True
 
-    def upgrade_environment(self, db):
-        cursor = db.cursor()
-        cursor.execute("SELECT value FROM system WHERE name='tt_version'")
-        row = cursor.fetchone()
-        if not row:
+    def upgrade_environment(self, db=None):
+        for value, in self.env.db_query("""
+                SELECT value FROM system WHERE name='tt_version'
+                """):
+            current_version = int(value)
+            break
+        else:
             self.environment_created()
             current_version = 0
-        else:
-            current_version = int(row[0])
 
         from tickettemplate import upgrades
         for version in range(current_version + 1, schema_version + 1):
@@ -118,9 +115,9 @@ class TicketTemplateModule(Component):
                 print textwrap.fill(inspect.getdoc(function))
                 function(self.env, db)
                 print 'Done.'
-        cursor = db.cursor()
-        cursor.execute("UPDATE system SET value=%s WHERE "
-                       "name='tt_version'", (schema_version,))
+        self.env.db_transaction("""
+            UPDATE system SET value=%s WHERE name='tt_version'
+            """, (schema_version,))
         self.log.info("Upgraded tt tables from version %d to %d",
                       current_version, schema_version)
 
@@ -129,7 +126,6 @@ class TicketTemplateModule(Component):
         accept list of tuples called templates and insert into database.
         example: templates = [('tt_name','tt_value'),]
         """
-        db = self.env.get_db_cnx()
         now = int(time.time())
         for tt_name, tt_value in templates:
             record = [
@@ -142,8 +138,6 @@ class TicketTemplateModule(Component):
             TT_Template.insert(self.env, record)
             # increment timestamp; other code expects it to be unique
             now += 1
-
-        db.commit()
 
     # IAdminCommandProvider methods
 
@@ -211,7 +205,8 @@ class TicketTemplateModule(Component):
             'N_': N_,
         }
 
-        data['options'] = self._getTicketTypeNames()
+        data['options'] = [t.name for t in TicketType.select(self.env)] + \
+                          [_("default")]
         data['type'] = req.args.get('type')
 
         if 'id' in req.args:

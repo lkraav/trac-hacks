@@ -165,10 +165,6 @@ def add_tt_custom(env, db):
     from trac.db import DatabaseManager
 
     connector, _ = DatabaseManager(env)._get_connector()
-    # cursor = db.cursor()
-    # table = schema[0]
-    # for stmt in connector.to_sql(table):
-        # cursor.execute(stmt)
 
 map = {
     1: [],
