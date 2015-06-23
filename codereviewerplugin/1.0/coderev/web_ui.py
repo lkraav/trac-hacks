@@ -73,7 +73,6 @@ class CodeReviewerModule(Component):
             if req.method == 'POST':
                 status_changed = \
                     review.encode(req.args['status']) != review.status
-                print status_changed
                 if review.save(req.authname, req.args['status'],
                                req.args['summary']):
                     self._update_tickets(review, status_changed)
