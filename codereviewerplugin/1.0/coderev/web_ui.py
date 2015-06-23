@@ -216,11 +216,13 @@ class CommitTicketReferenceMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content, args={}):
         reponame = args.get('repository') or ''
-        rev = args.get('revision')
+        rev_str = args.get('revision')
         repos = RepositoryManager(self.env).get_repository(reponame)
         try:
-            changeset = repos.get_changeset(rev)
+            changeset = repos.get_changeset(rev_str)
             message = changeset.message
+            rev = changeset.rev
+            resource = repos.resource
 
             # add review status to commit message (
             review = CodeReview(self.env, reponame, rev)
@@ -235,8 +237,6 @@ class CommitTicketReferenceMacro(WikiMacroBase):
             message += '</div>'
             message += '\n}}}'
 
-            rev = changeset.rev
-            resource = repos.resource
         except Exception:
             message = content
             resource = Resource('repository', reponame)
