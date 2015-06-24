@@ -2,14 +2,9 @@
 
 from datetime import datetime
 
-from trac.ticket import ITicketChangeListener, Ticket
 from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
-from trac.util.datefmt import utc
-try:
-    from trac.util.datefmt import to_timestamp
-except ImportError:
-    from trac.util.datefmt import to_utimestamp as to_timestamp
+from trac.util.datefmt import to_utimestamp, utc
 
 from usermanual import *
 try:
@@ -25,9 +20,6 @@ class WorkLogSetupParticipant(Component):
     db_version = None
     db_installed_version = None
 
-    """Extension point interface for components that need to participate in the
-    creation and upgrading of Trac environments, for example to create
-    additional database tables."""
     def __init__(self):
         self.db_version_key = 'WorklogPlugin_Db_Version'
         self.db_version = 3
@@ -36,21 +28,22 @@ class WorkLogSetupParticipant(Component):
         # Initialise database schema version tracking.
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.execute("SELECT value FROM system WHERE name=%s", (self.db_version_key,))
+        cursor.execute("SELECT value FROM system WHERE name=%s",
+                       (self.db_version_key,))
         try:
             self.db_installed_version = int(cursor.fetchone()[0])
         except:
             self.db_installed_version = 0
             try:
-                cursor.execute("INSERT INTO system (name,value) VALUES(%s,%s)",
-                               (self.db_version_key, self.db_installed_version))
+                cursor.execute(
+                    "INSERT INTO system (name,value) VALUES(%s,%s)",
+                    (self.db_version_key, self.db_installed_version))
                 db.commit()
             except Exception, e:
                 db.rollback()
                 raise e
 
     def environment_created(self):
-        """Called when a new Trac environment is created."""
         @self.env.with_transaction()
         def tx(db):
             self.upgrade_environment(db)
@@ -59,7 +52,7 @@ class WorkLogSetupParticipant(Component):
         return self.db_installed_version < self.db_version
 
     def do_db_upgrade(self, db):
-        # Legacy support hack (supports upgrades from revisions r2495 or before)
+        # Legacy support hack (supports upgrades from revisions <= r2495)
         if self.db_installed_version == 0:
             try:
 
@@ -100,11 +93,12 @@ class WorkLogSetupParticipant(Component):
             if self.db_installed_version < 3:
                 print 'Updating work_log table (v3)'
                 if not skip:
-                    # This whole section is just to rename the "user" column to "worker"
-                    # This column used to be created in step 1 above, but we
-                    # can no longer do this in order to support pgsql.
-                    # This step is skipped if step 1 was also run (e.g. new installs)
-                    # The below seems to be the only way to rename (or drop) a column on sqlite *sigh*
+                    # This whole section is just to rename the "user" column
+                    # to "worker". This column used to be created in step 1
+                    # above, but we can no longer do this in order to support
+                    # pgsql. This step is skipped if step 1 was also run
+                    # (e.g. new installs). The below seems to be the only way
+                    # to rename (or drop) a column on sqlite *sigh*
                     cursor.execute('CREATE TABLE work_log_tmp ('
                                    'worker     TEXT,'
                                    'ticket     INTEGER,'
@@ -113,21 +107,23 @@ class WorkLogSetupParticipant(Component):
                                    'endtime    INTEGER,'
                                    'comment    TEXT'
                                    ')')
-                    cursor.execute('INSERT INTO work_log_tmp (worker, ticket, lastchange, starttime, endtime, comment) '
-                                   'SELECT user, ticket, lastchange, starttime, endtime, comment FROM work_log')
+                    cursor.execute("""
+                        INSERT INTO work_log_tmp
+                          (worker,ticket,lastchange,starttime,endtime,comment)
+                        SELECT user,ticket,lastchange,starttime,endtime,comment
+                        FROM work_log
+                        """)
                     cursor.execute('DROP TABLE work_log')
-                    cursor.execute('ALTER TABLE work_log_tmp RENAME TO work_log')
-
-            #if self.db_installed_version < 4:
-            #    print 'Updating work_log table (v4)'
-            #    cursor.execute('...')
+                    cursor.execute("""
+                        ALTER TABLE work_log_tmp RENAME TO work_log
+                        """)
 
             # Updates complete, set the version
             cursor.execute("UPDATE system SET value=%s WHERE name=%s",
                            (self.db_version, self.db_version_key))
             db.commit()
         except Exception, e:
-            self.log.error("WorklogPlugin Exception: %s" % (e,));
+            self.log.error("WorklogPlugin Exception: %s" % (e,))
             db.rollback()
             raise e
 
@@ -135,7 +131,9 @@ class WorkLogSetupParticipant(Component):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
         try:
-            cursor.execute('SELECT MAX(version) FROM wiki WHERE name=%s', (user_manual_wiki_title,))
+            cursor.execute(
+                'SELECT MAX(version) FROM wiki WHERE name=%s',
+                (user_manual_wiki_title,))
             maxversion = int(cursor.fetchone()[0])
         except:
             db.rollback()
@@ -146,34 +144,24 @@ class WorkLogSetupParticipant(Component):
     def do_user_man_update(self, db):
         cursor = db.cursor()
         try:
-            when = to_timestamp(datetime.now(utc))
-            cursor.execute('INSERT INTO wiki (name,version,time,author,ipnr,text,comment,readonly) '
-                           'VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
-                           (user_manual_wiki_title, user_manual_version, when,
-                            'WorkLog Plugin', '127.0.0.1', user_manual_content,
-                            '', 0))
+            when = to_utimestamp(datetime.now(utc))
+            cursor.execute("""
+                INSERT INTO wiki
+                  (name,version,time,author,ipnr,text,comment,readonly)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (user_manual_wiki_title, user_manual_version,
+                      when, 'WorkLog Plugin', '127.0.0.1',
+                      user_manual_content, '', 0))
             db.commit()
         except Exception, e:
             db.rollback()
             self.log.error("WorklogPlugin Exception: %s" % (e,))
 
     def environment_needs_upgrade(self, db):
-        """Called when Trac checks whether the environment needs to be upgraded.
-
-        Should return `True` if this participant needs an upgrade to be
-        performed, `False` otherwise.
-
-        """
         return (self.system_needs_upgrade()
                 or self.needs_user_man())
 
     def upgrade_environment(self, db):
-        """Actually perform an environment upgrade.
-
-        Implementations of this method should not commit any database
-        transactions. This is done implicitly after all participants have
-        performed the upgrades they need without an error being raised.
-        """
         print "Worklog needs an upgrade"
         if self.system_needs_upgrade():
             print " * Upgrading Database"

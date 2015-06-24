@@ -593,8 +593,8 @@ ORDER BY __milestone__, _ord ASC, ticket
 ]
 
 all_reports = [
-    {"title":"Billing Reports",
-     "reports":billing_reports},
-    {"title":"Ticket/Hour Reports",
+    {"title": "Billing Reports",
+     "reports": billing_reports},
+    {"title": "Ticket/Hour Reports",
      "reports": ticket_hours_reports}
-    ]
+]

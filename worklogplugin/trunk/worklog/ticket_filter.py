@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import datetime
+
 from genshi import XML
 from genshi.filters.transform import Transformer
 from trac.core import Component, implements
+from trac.util.datefmt import pretty_timedelta
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import Chrome, add_stylesheet, add_script
 from trac.wiki.formatter import wiki_to_oneliner
 
 from manager import WorkLogManager
-from util import pretty_timedelta
-
-from datetime import datetime
 
 
 class WorkLogTicketAddon(Component):
@@ -27,19 +27,22 @@ class WorkLogTicketAddon(Component):
         ticket_text = 'ticket #' + str(task['ticket'])
         if task['ticket'] == ticket:
             ticket_text = 'this ticket'
-        timedelta = pretty_timedelta(datetime.fromtimestamp(task['starttime']), None);
+        dt = datetime.fromtimestamp(task['starttime'])
+        timedelta = pretty_timedelta(dt, None)
 
-        return '<li>%s</li>' % wiki_to_oneliner('You have been working on %s for %s' % (ticket_text, timedelta), self.env, req=req)
-
+        return '<li>%s</li>' \
+               % wiki_to_oneliner('You have been working on %s for %s'
+                                  % (ticket_text, timedelta),
+                                  self.env, req=req)
 
     def get_ticket_markup(self, who, since):
-        timedelta = pretty_timedelta(datetime.fromtimestamp(since), None);
-        return '<li>%s has been working on this ticket for %s</li>' % (who, timedelta)
-
+        dt = datetime.fromtimestamp(since)
+        timedelta = pretty_timedelta(dt, None)
+        return '<li>%s has been working on this ticket for %s</li>' \
+               % (who, timedelta)
 
     def get_ticket_markup_noone(self):
         return '<li>Nobody is working on this ticket</li>'
-
 
     def get_button_markup(self, req, ticket, stop=False):
         if stop:
@@ -96,8 +99,8 @@ class WorkLogTicketAddon(Component):
                    ticket,
                    action, label)
 
-
     # ITemplateStreamFilter methods
+
     def filter_stream(self, req, method, filename, stream, data):
         match = re.match(r'/ticket/([0-9]+)$', req.path_info)
         if match and req.perm.has_permission('WORK_LOG'):
@@ -121,10 +124,10 @@ class WorkLogTicketAddon(Component):
                 if task:
                     task_markup = self.get_task_markup(req, ticket, task)
 
-            who,since = mgr.who_is_working_on(ticket)
+            who, since = mgr.who_is_working_on(ticket)
             ticket_markup = ''
             if who:
-                # If who == req.authname then we will have some text from above.
+                # If who == req.authname then we will have text from above.
                 if who != req.authname:
                     ticket_markup = self.get_ticket_markup(who, since)
             else:
@@ -136,7 +139,7 @@ class WorkLogTicketAddon(Component):
                     # Display a "Work on Link" button.
                     button_markup = self.get_button_markup(req, ticket)
                 elif task and task['ticket'] == ticket:
-                    # We are currently working on this, so display the stop button...
+                    # We are currently working on this, display stop button
                     button_markup = self.get_button_markup(req, ticket, True)
 
             # User's current task information

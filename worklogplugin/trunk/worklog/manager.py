@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from trac.ticket.notification import TicketNotifyEmail
-from trac.ticket import Ticket
-from trac.ticket.web_ui import TicketModule
-from trac.util.datefmt import format_date, format_time, to_datetime
-
-from util import pretty_timedelta
-
 from datetime import datetime
 from time import time
+
+from trac.ticket.notification import TicketNotifyEmail
+from trac.ticket import Ticket
+from trac.util.datefmt import format_date, format_time, pretty_timedelta, \
+                              to_datetime
 
 
 class WorkLogManager:
@@ -42,7 +40,7 @@ class WorkLogManager:
             return False
 
         # 1. Other user working on it?
-        who,since = self.who_is_working_on(ticket)
+        who, since = self.who_is_working_on(ticket)
         if who:
             if who != self.authname:
                 self.explanation = 'Another user (%s) has been working on ticket #%s since %s' % (who, ticket, since)
@@ -89,7 +87,6 @@ class WorkLogManager:
         # We fudge time as it has to be unique
         self.now += 1
 
-
     def start_work(self, ticket):
 
         if not self.can_work_on(ticket):
@@ -110,7 +107,6 @@ class WorkLogManager:
             # Reinitialise for next test
             tckt = Ticket(self.env, ticket)
 
-
         if self.authname != tckt['owner']:
             tckt['owner'] = self.authname
             if 'new' == tckt['status']:
@@ -121,7 +117,6 @@ class WorkLogManager:
 
             # Reinitialise for next test
             tckt = Ticket(self.env, ticket)
-
 
         if 'accepted' != tckt['status']:
             tckt['status'] = 'accepted'
@@ -144,7 +139,6 @@ class WorkLogManager:
         db.commit()
 
         return True
-
 
     def stop_work(self, stoptime=None, comment=''):
         active = self.get_active_task()
@@ -199,12 +193,11 @@ class WorkLogManager:
             started = datetime.fromtimestamp(active['starttime'])
             finished = datetime.fromtimestamp(stoptime)
             message = '%s worked on this ticket for %s between %s %s and %s %s.' % \
-                      (self.authname, pretty_timedelta(started, finished), \
-                       format_date(active['starttime']), format_time(active['starttime']), \
+                      (self.authname, pretty_timedelta(started, finished),
+                       format_date(active['starttime']), format_time(active['starttime']),
                        format_date(stoptime), format_time(stoptime))
         if comment:
             message += "\n[[BR]]\n" + comment
-
 
         if plugtne or plughrs:
             if not message:
@@ -222,7 +215,6 @@ class WorkLogManager:
             self.save_ticket(tckt, message)
 
         return True
-
 
     def who_is_working_on(self, ticket):
         db = self.env.get_db_cnx()
@@ -255,9 +247,10 @@ class WorkLogManager:
         cursor.execute('SELECT wl.worker, wl.ticket, t.summary, wl.lastchange, wl.starttime, wl.endtime, wl.comment '
                        'FROM work_log wl '
                        'LEFT JOIN ticket t ON wl.ticket=t.id '
-                       'WHERE wl.worker=%s AND wl.lastchange=%s', (self.authname, lastchange))
+                       'WHERE wl.worker=%s AND wl.lastchange=%s',
+                       (self.authname, lastchange))
 
-        for user,ticket,summary,lastchange,starttime,endtime,comment in cursor:
+        for user, ticket, summary, lastchange, starttime, endtime, comment in cursor:
             if not comment:
                 comment = ''
 
@@ -307,7 +300,7 @@ class WorkLogManager:
                            'ORDER BY wl.lastchange DESC, wl.worker')
 
         rv = []
-        for user,name,starttime,endtime,ticket,summary,status,comment  in cursor:
+        for user, name, starttime, endtime, ticket, summary, status, comment in cursor:
             starttime = float(starttime)
             endtime = float(endtime)
 

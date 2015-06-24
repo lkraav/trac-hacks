@@ -9,7 +9,7 @@ from trac.util.translation import _
 class WorklogAdminPanel(Component):
     implements(IAdminPanelProvider)
 
-    ### IAdminPanelProvider methods
+    # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
         if 'WORK_ADMIN' in req.perm:

@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 from genshi.builder import tag
 from trac.core import Component, implements
 from trac.resource import Resource
 from trac.ticket.api import TicketSystem
 from trac.timeline.api import ITimelineEventProvider
-from trac.util.datefmt import to_timestamp, utc
+from trac.util.datefmt import pretty_timedelta, to_timestamp, utc
 from trac.util.text import shorten_line
 from trac.web.chrome import add_stylesheet
 from trac.wiki.formatter import format_to_oneliner
-
-from util import pretty_timedelta
-
-from datetime import datetime
 
 
 class WorklogTimelineEventProvider(Component):
@@ -55,27 +53,32 @@ class WorklogTimelineEventProvider(Component):
                                  AND wl.time>=%s AND wl.time<=%s
                            ORDER BY wl.time"""
                            % (ts_start, ts_stop))
-            previous_update = None
-            for worker,tid,ts,ts_start,comment,kind,summary,status,resolution,type in cursor:
+            for worker, tid, ts, ts_start, comment, kind, summary, status, resolution, type in cursor:
                 ticket = ticket_realm(id=tid)
                 time = datetime.fromtimestamp(ts, utc)
                 started = None
                 if kind == 'start':
                     if not show_starts:
                         continue
-                    yield ('workstart', time, worker, (ticket,summary,status,resolution,type, started, ""))
+                    yield ('workstart', time, worker,
+                           (ticket, summary, status, resolution,
+                            type, started, ""))
                 else:
                     if not show_stops:
                         continue
                     started = datetime.fromtimestamp(ts_start, utc)
                     if comment:
-                        comment = "(Time spent: %s)[[BR]]%s" % (pretty_timedelta(started, time), comment)
+                        comment = "(Time spent: %s)[[BR]]%s" \
+                                  % (pretty_timedelta(started, time), comment)
                     else:
-                        comment = '(Time spent: %s)' % pretty_timedelta(started, time)
-                    yield ('workstop', time, worker, (ticket,summary,status,resolution,type, started, comment))
+                        comment = '(Time spent: %s)' \
+                                  % pretty_timedelta(started, time)
+                    yield ('workstop', time, worker,
+                           (ticket, summary, status, resolution,
+                            type, started, comment))
 
     def render_timeline_event(self, context, field, event):
-        ticket,summary,status,resolution,type, started, comment = event[3]
+        ticket, summary, status, resolution, type, started, comment = event[3]
         if field == 'url':
             return context.href.ticket(ticket.id)
         elif field == 'title':

@@ -12,19 +12,20 @@ from setuptools import find_packages, setup
 from pkg_resources import parse_version
 
 name = 'WorkLog'
-version = '0.4'
+version = '1.0'
 min_trac = '1.0'
 try:
     import trac
+except ImportError:
+    pass
+else:
     if parse_version(trac.__version__) < parse_version(min_trac):
         print("%s %s requires Trac >= %s" % (name, version, min_trac))
         sys.exit(1)
-except ImportError:
-    pass
 
 setup(
     name=name,
-    description='Plugin to manage the which tickets users are currently working on',
+    description='Plugin to track tickets users are working',
     keywords='trac plugin ticket working',
     version=version,
     url='http://trac-hacks.org/wiki/WorklogPlugin',
@@ -54,5 +55,5 @@ setup(
             'worklog.webui = worklog.webui'
         ]
     },
-    extras_require = {'xmlrpc': 'TracXMLRPC >= 1.1'}
+    extras_require={'xmlrpc': 'TracXMLRPC >= 1.1'},
 )

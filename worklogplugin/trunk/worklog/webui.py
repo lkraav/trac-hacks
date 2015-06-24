@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import csv
+import re
+from StringIO import StringIO
+
 from trac.core import *
 from trac.perm import IPermissionRequestor
 from trac.util import Markup
@@ -11,22 +15,20 @@ from trac.web.chrome import (
 from manager import WorkLogManager
 from usermanual import *
 
-import csv
-import re
-from StringIO import StringIO
-
 
 class WorkLogPage(Component):
-    implements(IPermissionRequestor, INavigationContributor, IRequestHandler, ITemplateProvider)
 
-    def __init__(self):
-        pass
+    implements(IPermissionRequestor, INavigationContributor,
+               IRequestHandler, ITemplateProvider)
 
     # IPermissionRequestor methods
+
     def get_permission_actions(self):
-        return ['WORK_LOG', ('WORK_VIEW', ['WORK_LOG']), ('WORK_ADMIN', ['WORK_VIEW'])]
+        return ['WORK_LOG', ('WORK_VIEW', ['WORK_LOG']),
+                ('WORK_ADMIN', ['WORK_VIEW'])]
 
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         return 'worklog'
 
@@ -34,12 +36,12 @@ class WorkLogPage(Component):
         url = req.href.worklog()
         if req.perm.has_permission("WORK_VIEW"):
             yield 'mainnav', "worklog", \
-                  Markup('<a href="%s">%s</a>' % \
-                         (url , "Work Log"))
+                  Markup('<a href="%s">%s</a>'
+                         % (url, "Work Log"))
 
     # Internal Methods
+
     def worklog_csv(self, req, log):
-        #req.send_header('Content-Type', 'text/plain')
         req.send_header('Content-Type', 'text/csv;charset=utf-8')
         req.send_header('Content-Disposition', 'filename=worklog.csv')
 
@@ -51,7 +53,7 @@ class WorkLogPage(Component):
                   'ticket',
                   'summary',
                   'comment']
-        sep=','
+        sep = ','
 
         content = StringIO()
         writer = csv.writer(content, delimiter=sep, quoting=csv.QUOTE_MINIMAL)
@@ -59,7 +61,7 @@ class WorkLogPage(Component):
 
         # Rows
         for row in log:
-            values=[]
+            values = []
             for field in fields:
                 values.append(unicode(row[field]).encode('utf-8'))
             writer.writerow(values)
@@ -68,6 +70,7 @@ class WorkLogPage(Component):
         req.write(content.getvalue())
 
     # IRequestHandler methods
+
     def match_request(self, req):
         if re.search('^/worklog', req.path_info):
             return True
@@ -79,7 +82,7 @@ class WorkLogPage(Component):
         messages = []
 
         def addMessage(s):
-            messages.extend([s]);
+            messages.extend([s])
 
         # General protection (not strictly needed if Trac behaves itself)
         if not re.search('/worklog', req.path_info):
@@ -91,15 +94,16 @@ class WorkLogPage(Component):
         match = re.search('/worklog/users/(.*)', req.path_info)
         if match:
             mgr = WorkLogManager(self.env, self.config, match.group(1))
-            if req.args.has_key('format') and req.args['format'] == 'csv':
+            if 'format' in req.args and req.args['format'] == 'csv':
                 self.worklog_csv(req, mgr.get_work_log('user'))
                 return None
 
-            data = {"worklog": mgr.get_work_log('user'),
-                    "ticket_href": req.href.ticket(),
-                    "usermanual_href":req.href.wiki(user_manual_wiki_title),
-                    "usermanual_title":user_manual_title
-                    }
+            data = {
+                'worklog': mgr.get_work_log('user'),
+                'ticket_href': req.href.ticket(),
+                'usermanual_href': req.href.wiki(user_manual_wiki_title),
+                'usermanual_title': user_manual_title
+            }
             return 'worklog_user.html', data, None
 
         match = re.search('/worklog/stop/([0-9]+)', req.path_info)
@@ -116,28 +120,28 @@ class WorkLogPage(Component):
             return 'worklog_stop.html', data, None
 
         mgr = WorkLogManager(self.env, self.config, req.authname)
-        if req.args.has_key('format') and req.args['format'] == 'csv':
+        if 'format' in req.args and req.args['format'] == 'csv':
             self.worklog_csv(req, mgr.get_work_log())
             return None
 
         # Not any specific page, so process POST actions here.
         if req.method == 'POST':
-            if req.args.has_key('startwork') and req.args.has_key('ticket'):
+            if 'startwork' in req.args and 'ticket' in req.args:
                 if not mgr.start_work(req.args['ticket']):
                     addMessage(mgr.get_explanation())
                 else:
-                    addMessage('You are now working on ticket #%s.' % (req.args['ticket'],))
+                    addMessage('You are now working on ticket #%s.'
+                               % (req.args['ticket'],))
 
                 req.redirect(req.args['source_url'])
                 return None
-
-            elif req.args.has_key('stopwork'):
+            elif 'stopwork' in req.args:
                 stoptime = None
-                if req.args.has_key('stoptime') and req.args['stoptime']:
+                if 'stoptime' in req.args and req.args['stoptime']:
                     stoptime = int(req.args['stoptime'])
 
                 comment = ''
-                if req.args.has_key('comment'):
+                if 'comment' in req.args:
                     comment = req.args['comment']
 
                 if not mgr.stop_work(stoptime, comment):
@@ -158,8 +162,7 @@ class WorkLogPage(Component):
                 }
         return 'worklog.html', data, None
 
-
-    ### ITemplateProvider methods
+    # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
