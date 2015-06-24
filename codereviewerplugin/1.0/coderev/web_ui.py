@@ -123,10 +123,13 @@ class CodeReviewerModule(Component):
                 comment = "Code review set to %s" % review['status']
             else:
                 comment = "Code review comment"
-            ref = str(review.changeset)
+            repos = RepositoryManager(self.env).get_repository(review.repo)
+            ref = review.changeset
+            disp_ref = repos.short_rev(review.changeset)
             if review.repo:
                 ref += '/' + review.repo
-            comment += " for [%s]" % ref
+                disp_ref += '/' + review.repo
+            comment += ' for [changeset:"%s" %s]' % (ref, disp_ref)
             if review['summary']:
                 comment += ":\n\n%s" % review['summary']
 
