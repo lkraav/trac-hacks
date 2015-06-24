@@ -222,7 +222,7 @@ class CommitTicketReferenceMacro(WikiMacroBase):
         rev_str = args.get('revision')
         repos = RepositoryManager(self.env).get_repository(reponame)
         try:
-            changeset = repos.get_changeset(rev_str)
+            changeset = repos.get_changeset(repos.normalize_rev(rev_str))
             message = changeset.message
             rev = changeset.rev
             resource = repos.resource
