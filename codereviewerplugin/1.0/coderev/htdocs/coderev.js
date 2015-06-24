@@ -48,6 +48,8 @@ jQuery(document).ready(function ($) {
   if (tickets.length) {
     var s = tickets.length == 1 ? '' : 's';
     html += '<dd><div id="status-saved" class="system-message notice">' +
+            '<a class="trac-close-msg" href="#" title="Hide this notice">' +
+            '<span>close</span></a>' +
             'Status saved. See ticket' + s + ' ';
     $(tickets).each(function (i, ticket) {
       html += '<a href="' + get_url() + '/ticket/' + ticket + '">#' + ticket + '</a>';

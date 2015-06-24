@@ -20,6 +20,7 @@ from trac.versioncontrol.api import IRepositoryChangeListener, RepositoryManager
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
     add_stylesheet, pretty_timedelta, web_context)
+from trac.web.href import Href
 from trac.web.main import IRequestFilter
 from trac.wiki.formatter import format_to_html
 from trac.wiki.macros import WikiMacroBase
@@ -69,7 +70,7 @@ class CodeReviewerModule(Component):
             changeset = data['changeset']
             repos, rev = changeset.repos.reponame, changeset.rev
             review = CodeReview(self.env, repos, rev)
-            tickets = None
+            tickets = req.args.getlist('tickets')
             if req.method == 'POST':
                 status_changed = \
                     review.encode(req.args['status']) != review.status
@@ -77,7 +78,8 @@ class CodeReviewerModule(Component):
                                req.args['summary']):
                     self._update_tickets(review, status_changed)
                     tickets = review.tickets
-                    req.send_header('Cache-Control', 'no-cache')
+                href = Href(req.path_info)
+                req.redirect(href(tickets=tickets))
             ctx = web_context(req)
             format_summary = functools.partial(format_to_html, self.env, ctx,
                                                escape_newlines=True)
@@ -103,6 +105,7 @@ class CodeReviewerModule(Component):
                 'statuses': self.statuses,
                 'form_token': req.form_token,
             })
+            req.send_header('Cache-Control', 'no-cache')
         elif req.path_info.startswith('/ticket/'):
             add_stylesheet(req, 'coderev/coderev.css')
         return template, data, content_type
