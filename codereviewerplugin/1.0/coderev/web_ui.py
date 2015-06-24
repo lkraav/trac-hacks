@@ -101,7 +101,7 @@ class CodeReviewerModule(Component):
                         ]) for r in CodeReview.select(self.env, repos, rev)
                     ],
                 },
-                'tickets': list(tickets) if tickets is not None else [],
+                'tickets': tickets,
                 'statuses': self.statuses,
                 'form_token': req.form_token,
             })
