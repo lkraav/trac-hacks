@@ -10,6 +10,7 @@
 import re
 import urlparse
 
+from trac.config import Option
 from trac.core import *
 from trac.util import escape, Markup, reversed, sorted
 from trac.wiki.api import IWikiChangeListener, IWikiSyntaxProvider
@@ -22,11 +23,13 @@ class Acronyms(Component):
 
     implements(IWikiSyntaxProvider, IWikiChangeListener)
 
+    acronym_page = Option('acronym', 'page', 'AcronymDefinitions',
+        """Page containing the acronym definitions.""")
+
     acronyms = {}
     compiled_acronyms = None
     valid_acronym = re.compile(r'^\S+$', re.UNICODE)
-    acronym_page = property(lambda self: self.env.config.get('acronym', 'page',
-                                                             'AcronymDefinitions'))
+
     def __init__(self):
         self._update_acronyms()
 
