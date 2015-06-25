@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2006-2007 Alec Thomas
-# Copyright (C) 2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2012-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2012-2015 Jun Omae <jun66j5@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -13,7 +14,8 @@ from genshi.builder import tag
 from trac.config import IntOption, ListOption
 from trac.core import Component, implements
 from trac.util.compat import set
-from trac.wiki.api import IWikiChangeListener, IWikiSyntaxProvider, WikiParser, WikiSystem
+from trac.wiki.api import IWikiChangeListener, IWikiSyntaxProvider, \
+                          WikiParser, WikiSystem
 
 
 def _get_breakable_pattern():

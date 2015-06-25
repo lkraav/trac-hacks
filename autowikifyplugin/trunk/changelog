@@ -1,8 +1,9 @@
-AutoWikify (0.2) (not yet released) - trunk
+AutoWikify (0.2) (2015-06-25) - trunk
  resolved issues:
   * #10198: Does not track page renames.
-  * #6835: Does not track page adds and deletes.  
- 
+  * #6835: Does not track page adds and deletes.
+  * #2252: Autowikify works with CJK wiki name
+
  new features:
   * #2104: Allow autowikified words to be escaped.
 
