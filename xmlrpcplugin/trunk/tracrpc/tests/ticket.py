@@ -38,7 +38,10 @@ class RpcTicketTestCase(TracRpcTestCase):
 
     def test_getActions(self):
         tid = self.admin.ticket.create("ticket_getActions", "kjsald", {})
-        actions = self.admin.ticket.getActions(tid)
+        try:
+            actions = self.admin.ticket.getActions(tid)
+        finally:
+            self.admin.ticket.delete(tid)
         default = [['leave', 'leave', '.', []], ['resolve', 'resolve',
                     "The resolution will be set. Next status will be 'closed'.",
                    [['action_resolve_resolve_resolution', 'fixed',
@@ -60,36 +63,40 @@ class RpcTicketTestCase(TracRpcTestCase):
         if actions[0][2] != '.':
             default[0][2] = 'The ticket will remain with no owner.'
         self.assertEquals(actions, default)
-        self.admin.ticket.delete(tid)
 
     def test_getAvailableActions_DeleteTicket(self):
         # http://trac-hacks.org/ticket/5387
         tid = self.admin.ticket.create('abc', 'def', {})
-        self.assertEquals(False,
-                'delete' in self.admin.ticket.getAvailableActions(tid))
-        env = rpc_testenv.get_trac_environment()
-        delete_plugin = os.path.join(rpc_testenv.tracdir,
-                                    'plugins', 'DeleteTicket.py')
-        shutil.copy(os.path.join(
-            rpc_testenv.trac_src, 'sample-plugins', 'workflow', 'DeleteTicket.py'),
-                    delete_plugin)
-        env.config.set('ticket', 'workflow',
-                'ConfigurableTicketWorkflow,DeleteTicketActionController')
-        env.config.save()
-        self.assertEquals(True,
-                'delete' in self.admin.ticket.getAvailableActions(tid))
-        self.assertEquals(False,
-                'delete' in self.user.ticket.getAvailableActions(tid))
-        env.config.set('ticket', 'workflow',
-                'ConfigurableTicketWorkflow')
-        env.config.save()
-        rpc_testenv.restart()
-        self.assertEquals(False,
-                'delete' in self.admin.ticket.getAvailableActions(tid))
-        # Clean up
-        os.unlink(delete_plugin)
-        rpc_testenv.restart()
-        self.assertEquals(0, self.admin.ticket.delete(tid))
+        try:
+            self.assertEquals(False,
+                    'delete' in self.admin.ticket.getAvailableActions(tid))
+            env = rpc_testenv.get_trac_environment()
+            delete_plugin = os.path.join(rpc_testenv.tracdir,
+                                        'plugins', 'DeleteTicket.py')
+            shutil.copy(os.path.join(
+                rpc_testenv.trac_src, 'sample-plugins', 'workflow',
+                        'DeleteTicket.py'), delete_plugin)
+            env.config.set('ticket', 'workflow',
+                    'ConfigurableTicketWorkflow,DeleteTicketActionController')
+            env.config.save()
+            self.assertEquals(True,
+                    'delete' in self.admin.ticket.getAvailableActions(tid))
+            self.assertEquals(False,
+                    'delete' in self.user.ticket.getAvailableActions(tid))
+            env.config.set('ticket', 'workflow',
+                    'ConfigurableTicketWorkflow')
+            env.config.save()
+            rpc_testenv.restart()
+            self.assertEquals(False,
+                    'delete' in self.admin.ticket.getAvailableActions(tid))
+        finally:
+            # Clean up
+            try:
+                os.unlink(delete_plugin)
+            except:
+                pass
+            rpc_testenv.restart()
+            self.assertEquals(0, self.admin.ticket.delete(tid))
 
     def test_FineGrainedSecurity(self):
         self.assertEquals(1, self.admin.ticket.create('abc', '123', {}))
@@ -139,9 +146,9 @@ class RpcTicketTestCase(TracRpcTestCase):
         tid1 = self.admin.ticket.create("ticket_getRecentChanges", "one", {})
         time.sleep(1)
         tid2 = self.admin.ticket.create("ticket_getRecentChanges", "two", {})
-        _id, created, modified, attributes = self.admin.ticket.get(tid2)
-        changes = self.admin.ticket.getRecentChanges(created)
         try:
+            _id, created, modified, attributes = self.admin.ticket.get(tid2)
+            changes = self.admin.ticket.getRecentChanges(created)
             self.assertEquals(changes, [tid2])
         finally:
             self.admin.ticket.delete(tid1)
