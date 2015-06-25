@@ -22,6 +22,7 @@ from trac.ticket.notification import TicketNotifyEmail
 from trac.ticket.web_ui import TicketModule
 from trac.web.chrome import add_warning
 from trac.util.datefmt import to_datetime, utc
+from trac.util.text import to_unicode
 
 from tracrpc.api import IXMLRPCHandler, expose_rpc, Binary
 from tracrpc.util import StringIO, to_utimestamp, from_utimestamp
@@ -124,7 +125,7 @@ class TicketRPC(Component):
                     label, widget, hint = \
                         controller.render_ticket_action_control(req, t, action)
                     fragment += widget
-                    hints.append(hint.rstrip('.') + '.')
+                    hints.append(to_unicode(hint).rstrip('.') + '.')
                     first_label = first_label == None and label or first_label
             controls = []
             for elem in fragment.children:

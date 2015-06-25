@@ -62,6 +62,14 @@ class RpcTicketTestCase(TracRpcTestCase):
         # Adjust for trac:changeset:11778
         if actions[0][2] != '.':
             default[0][2] = 'The ticket will remain with no owner.'
+        # Adjust for trac:changeset:13203
+        if '<span class=' in actions[2][2]:
+            default[2][2] = default[2][2].replace(' (none)',
+                    ' <span class="trac-author-none">(none)</span>')
+            default[3][2] = default[3][2].replace(' (none)',
+                    ' <span class="trac-author-none">(none)</span>')
+            default[3][2] = default[3][2].replace(' admin',
+                    ' <span class="trac-author">admin</span>')
         self.assertEquals(actions, default)
 
     def test_getAvailableActions_DeleteTicket(self):
