@@ -18,4 +18,6 @@ setup(name='TracAcronyms',
       url='https://trac-hacks.org/wiki/AcronymsPlugin',
       license='3-Clause BSD',
       entry_points = {'trac.plugins': ['tracacronyms = tracacronyms']},
-      install_requires = ['Trac'])
+      install_requires = ['Trac'],
+      test_suite='tracacronyms.tests'
+)
