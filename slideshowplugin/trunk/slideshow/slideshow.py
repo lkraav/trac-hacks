@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2007 Alec Thomas
+# Copyright (C) 2010-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from trac.config import BoolOption, Option
 from trac.core import Component, implements
@@ -22,7 +29,7 @@ i18n, pixel, and yatil.
 """
 
 class SlideShowRenderer(Component):
-    
+
     implements(IContentConverter, IRequestHandler,
                ITemplateProvider, IWikiMacroProvider)
 
@@ -34,7 +41,7 @@ class SlideShowRenderer(Component):
     fixup_images_re = re.compile(r'\[\[Image\(([^:]*?)\)\]\]')
 
     # IRequestHandler methods
-    
+
     def match_request(self, req):
         match = re.match('^/slideshow/(.*)', req.path_info)
         if match:
@@ -60,7 +67,7 @@ class SlideShowRenderer(Component):
         slides = []
 
         context = Context.from_request(req, page.resource)
-        
+
         for line in page_text.splitlines():
             match = self.heading_re.match(line)
             if match:
@@ -93,7 +100,7 @@ class SlideShowRenderer(Component):
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/diff.css')
-        
+
         data = {
             'html_title': html_title,
             'location': location,
@@ -106,7 +113,7 @@ class SlideShowRenderer(Component):
         return 'slideshow.html', data, 'text/html'
 
     # ITemplateProvider methods
-    
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
@@ -116,12 +123,12 @@ class SlideShowRenderer(Component):
         return [('slideshow', resource_filename(__name__, 'htdocs'))]
 
     # IWikiMacroProvider methods
-    
+
     def get_macros(self):
         yield 'SlideShow'
 
     def get_macro_description(self, name):
-        return macro_doc 
+        return macro_doc
 
     def expand_macro(self, formatter, name, content):
         match = re.match(r'/wiki(?:/(.+))?$', formatter.req.path_info)
@@ -134,7 +141,7 @@ class SlideShowRenderer(Component):
                       formatter.href('chrome', 'slideshow')))
 
     # IContentConverter methods
-    
+
     def get_supported_conversions(self):
         if self.show_content_conversion:
             yield ('slideshow', 'Slideshow', 'slideshow',

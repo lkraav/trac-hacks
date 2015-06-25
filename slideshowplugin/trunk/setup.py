@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2007 Alec Thomas
+# Copyright (C) 2010-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from setuptools import setup
 
@@ -15,9 +22,9 @@ setup(name='SlideShow',
       maintainer = 'Ryan J Ollos',
       maintainer_email = 'ryan.j.ollos@gmail.com',
       url='http://trac-hacks.org/wiki/SlideShowPlugin',
-      license='Public Domain',
+      license='3-Clause BSD',
       zip_safe = False,
-      install_requires = ['trac >= 0.11'], 
+      install_requires = ['trac >= 0.11'],
       entry_points = {'trac.plugins': ['slideshow = slideshow.slideshow']},
       package_data={'slideshow' : data}
       )
