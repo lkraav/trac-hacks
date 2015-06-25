@@ -86,13 +86,17 @@ class TicketRPC(Component):
     def getRecentChanges(self, req, since):
         """Returns a list of IDs of tickets that have changed since timestamp."""
         since = to_utimestamp(since)
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute('SELECT id FROM ticket'
-                       ' WHERE changetime >= %s', (since,))
+        query = 'SELECT id FROM ticket WHERE changetime >= %s'
+        if hasattr(self.env, 'db_query'):
+            generator = self.env.db_query(query, (since,))
+        else:
+            db = self.env.get_db_cnx()
+            cursor = db.cursor()
+            cursor.execute(query, (since,))
+            generator = cursor        
         result = []
         ticket_realm = Resource('ticket')
-        for row in cursor:
+        for row in generator:
             tid = int(row[0])
             if 'TICKET_VIEW' in req.perm(ticket_realm(id=tid)):
                 result.append(tid)

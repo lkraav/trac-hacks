@@ -78,17 +78,22 @@ class WikiRPC(Component):
         """ Get list of changed pages since timestamp """
         since = to_utimestamp(since)
         wiki_realm = Resource('wiki')
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute('SELECT name, time, author, version, comment '
-                       'FROM wiki w1 '
-                       'WHERE time >= %s '
-                       'AND version = (SELECT MAX(version) '
-                       '               FROM wiki w2 '
-                       '               WHERE w2.name=w1.name) '
-                       'ORDER BY time DESC', (since,))
+        query = ('SELECT name, time, author, version, comment '
+                 'FROM wiki w1 '
+                 'WHERE time >= %s '
+                 'AND version = (SELECT MAX(version) '
+                 '               FROM wiki w2 '
+                 '               WHERE w2.name=w1.name) '
+                 'ORDER BY time DESC')
+        if hasattr(self.env, 'db_query'):
+            generator = self.env.db_query(query, (since,))
+        else:
+            db = self.env.get_db_cnx()
+            cursor = db.cursor()
+            cursor.execute(query, (since,))
+            generator = cursor
         result = []
-        for name, when, author, version, comment in cursor:
+        for name, when, author, version, comment in generator:
             if 'WIKI_VIEW' in req.perm(wiki_realm(id=name, version=version)):
                 result.append(
                     self._page_info(name, from_utimestamp(when),
