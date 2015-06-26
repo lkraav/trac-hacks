@@ -27,8 +27,8 @@ from trac.web.api import (
     IRequestFilter, IRequestHandler, ITemplateStreamFilter, RequestDone
 )
 from trac.web.chrome import (
-    INavigationContributor, ITemplateProvider, add_ctxtnav, add_notice,
-    add_script, add_stylesheet, add_warning
+    Chrome, INavigationContributor, ITemplateProvider, add_ctxtnav,
+    add_notice, add_script, add_stylesheet, add_warning
 )
 
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
@@ -199,6 +199,13 @@ class TracHacksHandler(Component):
         context = data.get('form_context')
         if context and context.errors and req.path_info == '/newhack':
             stream |= context.inject_errors()
+        if req.path_info.startswith('/newticket') and \
+                'preview' not in req.args:
+            fragment = Chrome(self.env).load_template('newticket_notice.html')
+            print fragment.generate()
+            stream |= Transformer("//div[@id='content' and @class='ticket']"
+                                  "/form[@id='propertyform']") \
+                      .before(fragment.generate())
         return stream
 
     # IRequestHandler methods
@@ -273,7 +280,7 @@ class TracHacksHandler(Component):
         #    else:
         #        return self.render_cloud(req, data, hacks)
 
-    # IRequestHandler methods
+    # IRequestFilter methods
     def pre_process_request(self, req, handler):
         from trac.wiki.web_ui import WikiModule
         if isinstance(handler, WikiModule):
