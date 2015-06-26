@@ -18,8 +18,8 @@ from trac.util import format_datetime, Markup
 from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchNode
 from trac.web.chrome import web_context
-from trac.wiki.formatter import format_to_html, system_message, \
-                                wiki_to_oneliner
+from trac.wiki.formatter import format_to_html, format_to_oneliner, \
+                                system_message
 from trac.wiki.macros import WikiMacroBase, parse_args
 
 
@@ -139,12 +139,14 @@ class ChangeLogMacro(WikiMacroBase):
             change = repo.get_changeset(nrev)
             datetime = format_datetime(change.date, '%Y-%m-%d %H:%M:%S',
                                        req.tz)
+            drev = repo.display_rev(nrev)
             if not reponame:
-                cset = str(nrev)
+                sargs = nrev, drev
             else:
-                cset = '%s/%s' % (nrev, reponame)
-            header = wiki_to_oneliner("[%s] by %s on %s" %
-                (cset, change.author, datetime), self.env, req=req)
+                sargs = '%s/%s' % (nrev, reponame), '%s/%s' % (drev, reponame)
+            cset = '[changeset:%s %s]' % sargs
+            header = format_to_oneliner(self.env, context,
+                "%s by %s on %s" % (cset, change.author, datetime))
             out.write('\n<dt id="changelog-changeset-%s">\n%s\n</dt>' %
                 (cset, header))
             message = _remove_p(format_to_html(self.env, context,
