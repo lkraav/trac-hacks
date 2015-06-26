@@ -202,7 +202,6 @@ class TracHacksHandler(Component):
         if req.path_info.startswith('/newticket') and \
                 'preview' not in req.args:
             fragment = Chrome(self.env).load_template('newticket_notice.html')
-            print fragment.generate()
             stream |= Transformer("//div[@id='content' and @class='ticket']"
                                   "/form[@id='propertyform']") \
                       .before(fragment.generate())
