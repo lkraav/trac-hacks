@@ -16,6 +16,8 @@ from trac.wiki.admin import WikiAdmin
 PLUGIN_NAME = 'trachacks_version'
 PLUGIN_VERSION = 1
 
+RELEASES = ['0.11', '0.12', '1.0', '1.2']
+
 
 class EnvironmentSetup(Component):
 
@@ -25,6 +27,8 @@ class EnvironmentSetup(Component):
         pass
 
     def environment_needs_upgrade(self, db):
+        if 'release' not in self.env.config['ticket-custom']:
+            return True
         version = self._get_version()
         if version == PLUGIN_VERSION:
             return False
@@ -41,6 +45,12 @@ class EnvironmentSetup(Component):
                                                         'default-pages')
             WikiAdmin(self.env).load_pages(pages_dir)
             self._set_version(PLUGIN_VERSION)
+        if 'release' not in self.env.config['ticket-custom']:
+            section = self.env.config['ticket-custom']
+            section.set('release', 'select')
+            section.set('release.label', 'Trac Release')
+            section.set('release.options', '|'.join([''] + RELEASES))
+            self.env.config.save()
 
     def _get_version(self):
         version = self.env.db_query("""
