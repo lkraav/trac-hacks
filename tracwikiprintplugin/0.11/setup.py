@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
     name='TracWikiPrintPlugin',
-    version='1.9.3',
+    version='1.9.4',
     packages=['wikiprint'],
     package_data={'wikiprint': ['templates/*', 'htdocs/js/*']},
     author="Alvaro J. Iradier",
@@ -28,6 +28,6 @@ setup(
         ],
     },
 
-    install_requires=['pisa', 'PIL', 'html5lib', 'reportlab>=2.2'],
+    install_requires=['xhtml2pdf', 'Trac'],
 
 )
