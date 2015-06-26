@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2006-2008 Alec Thomas
-# Copyright (C) 2010-2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2010-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -9,6 +9,7 @@
 #
 
 import re
+from StringIO import StringIO
 
 from trac.core import *
 from trac.mimeview import *
@@ -19,7 +20,7 @@ from trac.web.chrome import web_context
 from trac.wiki.formatter import format_to_html, system_message, \
                                 wiki_to_oneliner
 from trac.wiki.macros import WikiMacroBase, parse_args
-from StringIO import StringIO
+
 
 class ChangeLogMacro(WikiMacroBase):
     """Write repository change log to output.
@@ -126,13 +127,13 @@ class ChangeLogMacro(WikiMacroBase):
         except NoSuchNode, e:
             return system_message(_("ChangeLog macro failed"), e)
         out = StringIO()
-        out.write('</p>') # close surrounding paragraph 
+        out.write('</p>') # close surrounding paragraph
         out.write('\n<div class="changelog">\n<dl class="wiki">')
         for npath, nrev, nlog in node.get_history(limit):
             if nrev < revstart:
                 break
             change = repo.get_changeset(nrev)
-            datetime = format_datetime(change.date, '%Y-%m-%d %H:%M:%S', 
+            datetime = format_datetime(change.date, '%Y-%m-%d %H:%M:%S',
                                        req.tz)
             if not reponame:
                 cset = str(nrev)
@@ -160,4 +161,4 @@ def _remove_p(html):
         return f[0]
     else:
         return html
-    
+
