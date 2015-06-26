@@ -86,6 +86,9 @@ class ChangeLogMacro(WikiMacroBase):
 
         context = web_context(req)
         args, kwargs = parse_args(content)
+        if len(args) == 0:
+          return system_message(_("ChangeLog macro error"),
+                                _("Repository path is required."))
         args += [None, None]
         path, limit, rev = args[:3]
         limit = kwargs.pop('limit', limit)
