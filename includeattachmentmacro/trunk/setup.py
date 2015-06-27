@@ -7,6 +7,7 @@ VERSION = '0.1'
 
 setup(name=PACKAGE,
       version=VERSION,
+      license="BSD 3-Clause",
       packages=['includeattachment'],
       entry_points={'trac.plugins': '%s = includeattachment' % PACKAGE},
 )
