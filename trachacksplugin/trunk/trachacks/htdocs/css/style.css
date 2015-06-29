@@ -1,6 +1,6 @@
 /* vim: syntax=css
 */
-form, input, body {
+body {
  background-image: url("/chrome/hacks/png/trachacks_bg.png");
  background-position: 64px 64px;
 }
