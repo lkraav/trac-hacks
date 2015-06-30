@@ -12,6 +12,7 @@ import re
 
 from genshi.builder import tag as builder
 from trac.resource import Resource, ResourceNotFound, render_resource_link
+from trac.ticket.model import Component
 from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
 from trac.wiki.formatter import format_to_html, format_to_oneliner, \
@@ -21,6 +22,7 @@ from trac.wiki.model import WikiPage
 
 from trachacks.util import natural_sort
 from tractags.api import TagSystem
+from tractags.model import resource_tags
 
 
 class ListHacksMacro(WikiMacroBase):
@@ -286,11 +288,12 @@ class MaintainerMacro(WikiMacroBase):
     def expand_macro(self, formatter, name, args):
         largs = parse_args(args)[0]
         if len(largs) > 1:
-            return system_message(_("Invalid number of arguments"))
-        resource = formatter.context.resource
+            return system_message(_("Maintainer macro error"),
+                                  _("Invalid number of arguments"))
+        context = formatter.context
+        resource = context.resource
         if resource.realm == 'wiki' or largs and largs[0]:
             id = largs[0] if largs and largs[0] else resource.id
-            from trac.ticket.model import Component
             try:
                 component = Component(self.env, id)
             except ResourceNotFound:
@@ -299,10 +302,13 @@ class MaintainerMacro(WikiMacroBase):
             else:
                 maintainer = component.owner
                 if not maintainer:
-                    return format_to_oneliner(self.env, formatter.context,
-                                              "//none ([tag:needsadoption])//")
+                    tags = resource_tags(self.env, Resource('wiki', id))
+                    line = "//none ([tag:%s])//" \
+                           % ('deprecated' if 'deprecated' in tags \
+                                           else 'needsadoption')
+                    return format_to_oneliner(self.env, context, line)
         else:
-            return system_message(_("Hack name must be specified as argument "
+            return system_message(_("Maintainer macro error"),
+                                  _("Hack name must be specified as argument "
                                     "when the context realm is not 'wiki'"))
-        return format_to_oneliner(self.env, formatter.context,
-                                  "[wiki:%s]" % maintainer)
+        return format_to_oneliner(self.env, context, "[wiki:%s]" % maintainer)
