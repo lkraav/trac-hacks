@@ -27,19 +27,27 @@ def query_chart_data(env, kw):
     years = kwlist('year')
 
     where_clauses = []
+    where_params = []
     xaxis_where_clauses = []
+    xaxis_where_params = []
     if users:
-        where_clauses.append('l.user in (%s)' % ','.join(["'%s'" % x for x in users]))
+        where_clauses.append('l.user in (%s)' % ','.join(['%s'] * len(users)))
+        where_params.extend(users)
     if categories:
-        where_clauses.append('t.category in (%s)' % ','.join(["'%s'" % x for x in categories]))
+        where_clauses.append('t.category in (%s)' % ','.join(['%s'] * len(categories)))
+        where_params.extend(categories)
     if projects:
-        where_clauses.append('t.project in (%s)' % ','.join(["'%s'" % x for x in projects]))
+        where_clauses.append('t.project in (%s)' % ','.join(['%s'] * len(projects)))
+        where_params.extend(projects)
     if tasks:
-        where_clauses.append('t.name in (%s)' % ','.join(["'%s'" % x for x in tasks]))
+        where_clauses.append('t.name in (%s)' % ','.join(['%s'] * len(tasks)))
+        where_params.extend(tasks)
     if years:
-        year_clause = 't.year in (%s)' % ','.join(["'%s'" % x for x in years])
+        year_clause = 't.year in (%s)' % ','.join(['%s'] * len(years))
         where_clauses.append(year_clause)
+        where_params.extend(years)
         xaxis_where_clauses.append(year_clause)
+        xaxis_where_params.extend(years)
 
     if where_clauses:
         where_clause = 'WHERE ' + ' AND '.join(where_clauses)
@@ -72,7 +80,7 @@ def query_chart_data(env, kw):
             ) cumulative ON xaxis.date %s cumulative.date
             GROUP BY xaxis.date
             ORDER BY xaxis.date
-            """ % (xaxis_where_clause, where_clause, join_operator))
+            """ % (xaxis_where_clause, where_clause, join_operator), where_params + xaxis_where_params)
     ld = [(format_date(date), cumulative_spent_hours) for date, cumulative_spent_hours in rows]
     return ([label for label, value in ld],
             [value for label, value in ld])

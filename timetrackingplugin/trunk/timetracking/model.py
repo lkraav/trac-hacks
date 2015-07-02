@@ -53,12 +53,14 @@ class Task(object):
 
     @classmethod
     def delete_by_ids(cls, env, ids):
-        ids_sql = ','.join(["'%s'" % id for id in ids])
+        if not ids:
+            return
+        id_holder = ','.join(['%s'] * len(ids))
         with env.db_transaction as db:
             db("""
                 DELETE FROM timetrackingtasks
                 WHERE id in (%s)
-            """ % ids_sql)
+            """ % id_holder, list(ids))
 
     @classmethod
     def update(cls, env, task):
@@ -84,12 +86,14 @@ class Task(object):
 
     @classmethod
     def select_by_ids(cls, env, ids):
-        ids_sql = ','.join(["'%s'" % id for id in ids])
+        if not ids:
+            return []
+        id_holder = ','.join(['%s'] * len(ids))
         rows = env.db_query("""
                 SELECT id, name, description, project, category, year, estimated_hours
                 FROM timetrackingtasks
                 WHERE id in (%s)
-                """ % ids_sql)
+                """ % id_holder, list(ids))
         return dict((id, Task(id, name, description, project, category, year, estimated_hours))
                     for id, name, description, project, category, year, estimated_hours in rows)
 
@@ -148,12 +152,14 @@ class LogEntry(object):
 
     @classmethod
     def delete_by_ids(cls, env, ids):
-        ids_sql = ','.join(["'%s'" % id for id in ids])
+        if not ids:
+            return
+        id_holder = ','.join(['%s'] * len(ids))
         with env.db_transaction as db:
             db("""
                 DELETE FROM timetrackinglogs
                 WHERE id in (%s)
-            """ % ids_sql)
+            """ % id_holder, list(ids))
 
     @classmethod
     def update(cls, env, entry):
@@ -179,12 +185,14 @@ class LogEntry(object):
 
     @classmethod
     def select_by_task_ids(cls, env, task_ids):
-        task_ids_sql = ','.join(["'%s'" % id for id in task_ids])
+        if not task_ids:
+            return []
+        task_ids_holder = ','.join(['%s'] * len(task_ids))
         rows = env.db_query("""
                 SELECT id, user, date, location, spent_hours, task_id, comment
                 FROM timetrackinglogs
                 WHERE task_id in (%s)
-                """ % task_ids_sql)
+                """ % task_ids_holder, task_ids)
         return [LogEntry(id, user, from_utimestamp(date), location, spent_hours, task_id, comment) for id, user, date, location, spent_hours, task_id, comment in rows]
 
     @classmethod
@@ -219,10 +227,12 @@ class LogEntry(object):
 
     @classmethod
     def select_by_users_and_date(cls, env, users, start, end):
-        users_sql = ','.join(["'%s'" % user for user in users])
+        if not users:
+            return []
+        users_holder = ','.join(['%s'] * len(users))
         rows = env.db_query("""
                 SELECT id, user, date, location, spent_hours, task_id, comment
                 FROM timetrackinglogs
                 WHERE user in (%s) and date>= %%s and date <= %%s
-                """ % users_sql, (to_utimestamp(start), to_utimestamp(end)))
+                """ % users_holder, list(users) + [to_utimestamp(start), to_utimestamp(end)])
         return [LogEntry(id, user, from_utimestamp(date), location, spent_hours, task_id, comment) for id, user, date, location, spent_hours, task_id, comment in rows]

@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = 'TimeTracking',
-    version = '1.0',
+    version = '1.1',
     author = 'Peter Suter',
     author_email = 'peter@lucid.ch',
     description = 'Track time by planning estimates and logging spent hours',
