@@ -41,9 +41,9 @@ class WeekPlanEvent(object):
             cursor = db.cursor()
             cursor.execute("""
             INSERT INTO weekplan
-                        (plan, title, start, end)
-                 VALUES (%s, %s, %s, %s)
-            """, (event.plan, event.title, to_utimestamp(event.start), to_utimestamp(event.end)))
+                        (plan, title, start, %s)
+                 VALUES (%%s, %%s, %%s, %%s)
+            """ % db.quote('end'), (event.plan, event.title, to_utimestamp(event.start), to_utimestamp(event.end)))
             event.id = db.get_last_id(cursor, 'weekplan')
 
     @classmethod
@@ -52,9 +52,9 @@ class WeekPlanEvent(object):
             cursor = db.cursor()
             cursor.execute("""
                 UPDATE weekplan
-                SET plan=%s, title=%s, start=%s, end=%s
-                WHERE id=%s
-            """, (event.plan, event.title, to_utimestamp(event.start), to_utimestamp(event.end), event.id))
+                SET plan=%%s, title=%%s, start=%%s, %s=%%s
+                WHERE id=%%s
+            """ % db.quote('end'), (event.plan, event.title, to_utimestamp(event.start), to_utimestamp(event.end), event.id))
 
     @classmethod
     def delete_by_id(cls, env, event_id):
@@ -66,19 +66,24 @@ class WeekPlanEvent(object):
 
     @classmethod
     def select_by_plan(cls, env, plan):
-        rows = env.db_query("""
-                SELECT id, plan, title, start, end
-                FROM weekplan
-                WHERE plan=%s
-                """, (plan,))
-        return [WeekPlanEvent(id, plan, title, from_utimestamp(start), from_utimestamp(end)) for id, plan, title, start, end in rows]
+        with env.db_query as db:
+            rows = db("""
+                    SELECT id, plan, title, start, %s
+                    FROM weekplan
+                    WHERE plan=%%s
+                    """ % db.quote('end'), (plan,))
+            return [WeekPlanEvent(id, plan, title, from_utimestamp(start), from_utimestamp(end)) for id, plan, title, start, end in rows]
 
     @classmethod
     def select_by_plans_and_time(cls, env, plans, start, end):
-        plan_sql = ','.join(["'%s'" % plan for plan in plans])
-        rows = env.db_query("""
-                SELECT id, plan, title, start, end
-                FROM weekplan
-                WHERE plan in (%s) AND start < %%s AND end > %%s
-                """ % plan_sql, (to_utimestamp(end), to_utimestamp(start)))
-        return [WeekPlanEvent(id, plan, title, from_utimestamp(start), from_utimestamp(end)) for id, plan, title, start, end in rows]
+        if not plans:
+            return []
+        with env.db_query as db:
+            plan_holder = ','.join(['%s'] * len(plans))
+            rows = db("""
+                    SELECT id, plan, title, start, %s
+                    FROM weekplan
+                    WHERE plan IN (%s) AND start < %%s AND %s > %%s
+                    """ % (db.quote('end'), plan_holder, db.quote('end')),
+                    list(plans) + [to_utimestamp(end), to_utimestamp(start)])
+            return [WeekPlanEvent(id, plan, title, from_utimestamp(start), from_utimestamp(end)) for id, plan, title, start, end in rows]
