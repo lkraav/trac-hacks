@@ -122,11 +122,13 @@ class Card(object):
 
     @classmethod
     def select_by_stacks(cls, env, stacks):
-        stack_sql = ','.join(["'%s'" % stack for stack in stacks])
+        if not stacks:
+            return []
+        stack_holder = ','.join(['%s'] * len(stacks))
         rows = env.db_query("""
                 SELECT id, stack, rank, title
                 FROM cards
                 WHERE stack in (%s)
                 ORDER BY stack, rank
-                """ % stack_sql)
+                """ % stack_holder, list(stacks))
         return [Card(id, stack, rank, title) for id, stack, rank, title in rows]
