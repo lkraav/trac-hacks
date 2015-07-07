@@ -24,7 +24,7 @@ Arguments:
         py:with="fullrow = len(row) == 1">
         <py:for each="idx, field in enumerate(row)">
           <th py:if="idx == 0 or not fullrow"
-              id="${field and 'h_' + field.name or None}" style="width:100%;">
+              id="${field and 'h_' + field.name or None}">
             <py:if test="field"><i18n:msg params="field">${field.label or field.name}:</i18n:msg></py:if>
           </th>
           <td py:if="idx == 0 or not fullrow"

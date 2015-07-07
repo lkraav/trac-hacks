@@ -29,10 +29,10 @@ Arguments:
                 </th>
               </tr>
               <tr py:with="value = ticket.get_value_or_default(field.name)">
-                <th colspan="4" class="fullrow" style="text-align:left;padding:0;">
+                <th colspan="4" class="fullrow" style="text-align:left;">
                   <textarea id="field-${field.name}" name="field_${field.name}" 
-                            wrap="off" cols="999" rows="1" class=""
-                            style="resize:vertical;overflow:auto;width:99%;max-width:99%;margin:0;">
+                            wrap="off" cols="999" rows="1" class="wikitext ticket"
+                            style="resize:none;min-width:100%;max-width:100%;margin:0px;">
 ${value}</textarea>
                 </th>
               </tr>

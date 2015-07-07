@@ -12,7 +12,7 @@ from setuptools.command import sdist
 del sdist.finders[:]
 
 PACKAGE = 'FieldGroups'
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 setup(
     name = PACKAGE,
