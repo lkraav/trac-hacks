@@ -17,12 +17,14 @@ class DjangoAuthPlugin(Component):
     # IAuthenticator methods
     def authenticate(self, req):
         authname = None
-        if req.remote_user:
+        if req.remote_user and (req.remote_user != "anonymous"):
             authname = req.remote_user
         elif req.incookie.has_key('sessionid'):
             cookie = req.incookie['sessionid']
             sid = cookie.OutputString()[10:-1]
             authname = self._get_name_from_django(sid)
+        else:
+            authname = req.remote_user
 
         if authname and self.config.getbool('trac', 'ignore_auth_case'):
             authname = authname.lower()
@@ -46,18 +48,11 @@ class DjangoAuthPlugin(Component):
     def _get_name_from_django(self, sessionid):
         settings = self.config.get('djangoauth', 'django_settings_module')
         
-        try:
-            os.environ['DJANGO_SETTINGS_MODULE'] = settings
-            from django.contrib.sessions.models import Session
-            from django.contrib.auth.models import User
-        except:
-            return None 
-
-        try:
-            session = Session.objects.get(pk=sessionid)
-        except Session.DoesNotExist:
-            return None 
-
+        os.environ['DJANGO_SETTINGS_MODULE'] = settings
+        from django.contrib.sessions.models import Session
+        from django.contrib.auth.models import User
+        session = Session.objects.get(pk=sessionid)
+     
         # Check for stale session
         if session.expire_date > datetime.datetime.now():
             data = session.get_decoded()
