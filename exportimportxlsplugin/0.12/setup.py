@@ -7,7 +7,7 @@ PACKAGE = 'importexportxls'
 setup(name='ImportExportXLS',
       description='Plugin to export and import tickets via XLS',
       keywords='ticket excel import export',
-      version='0.1.8',
+      version='0.1.9',
       url='',
       license='http://www.opensource.org/licenses/mit-license.php',
       author='ben.12',
@@ -15,4 +15,6 @@ setup(name='ImportExportXLS',
       long_description="",
       packages=[PACKAGE],
       package_data={PACKAGE : ['templates/*.cs', 'templates/*.html', 'htdocs/*.css', 'htdocs/*.png', 'htdocs/*.js']},
-      entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)})
+      entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)},
+      install_requires=['xlwt', 'xlrd'],
+)
