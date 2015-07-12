@@ -2,6 +2,8 @@
 #
 # Copyright (C) 2007 Armin Ronacher <armin.ronacher@active-4.com>
 # Copyright (C) 2008 Michael Renzmann <mrenzmann@otaku42.de>
+# Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
@@ -14,14 +16,13 @@ TracPastePlugin: entity model for pastes, including:
 
 from datetime import datetime
 
-from trac.mimeview.api import Context, Mimeview
+from trac.core import TracError
 from trac.resource import Resource, ResourceNotFound
 from trac.util.datefmt import to_timestamp, utc
 from trac.util.translation import _
 
 
-def get_pastes(env, number=None, offset=None, from_dt=None, to_dt=None,
-               db=None):
+def get_pastes(env, number=None, offset=None, from_dt=None, to_dt=None):
     """Returns a list of pastes as dicts without data.
 
     One or more filters need to be set:
@@ -35,9 +36,6 @@ def get_pastes(env, number=None, offset=None, from_dt=None, to_dt=None,
     where time is in UTC.
 
     To get the paste data, use id to instantiate a Paste object."""
-
-    db = db or env.get_db_cnx()
-    cursor = db.cursor()
 
     sql = "SELECT id, title, author, time FROM pastes"
     order_clause = " ORDER BY id DESC"
@@ -58,16 +56,13 @@ def get_pastes(env, number=None, offset=None, from_dt=None, to_dt=None,
 
     sql += where_clause + order_clause + limit_clause
 
-    env.log.debug("get_pastes() SQL: %r (%r)" % (sql, where_values))
-    cursor.execute(sql, where_values)
-
     result = []
-    for row in cursor:
+    for row in env.db_query(sql, where_values):
         result.append({
-            'id':           row[0],
-            'title':        row[1],
-            'author':       row[2],
-            'time':         datetime.fromtimestamp(row[3], utc)
+            'id': row[0],
+            'title': row[1],
+            'author': row[2],
+            'time': datetime.fromtimestamp(row[3], utc)
         })
     return result
 
@@ -91,18 +86,18 @@ class Paste(object):
         self.resource = Resource('pastebin', self.id)
 
         if id is not None and self.id_is_valid(id):
-            db = env.get_db_cnx()
-            cursor = db.cursor()
-            cursor.execute('SELECT title, author, mimetype, data, time '
-                           'FROM pastes WHERE id = %s', (id,))
-            row = cursor.fetchone()
-            if row:
+            for row in self.env.db_query("""
+                    SELECT title, author, mimetype, data, time
+                    FROM pastes WHERE id=%s
+                    """, (id,)):
                 self.id = id
                 self.title, self.author, self.mimetype, self.data, time = row
                 self.time = datetime.fromtimestamp(time, utc)
+                break
             else:
-                raise ResourceNotFound(_('Paste %s does not exist.' % id),
-                                       _('Invalid Paste Number'))
+                raise ResourceNotFound(
+                    _("Paste %(id)s does not exist.", id=id),
+                    _("Invalid Paste Number"))
 
     def __repr__(self):
         return '<%s %r: %s>' % (
@@ -116,54 +111,38 @@ class Paste(object):
 
     exists = property(__nonzero__)
 
-    def delete(self, db=None):
-        """Delete a paste"""
-        if db:
-            handle_ta = False
-        else:
-            handle_ta = True
-            db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
+    def delete(self):
+        """Delete a paste."""
         if self.id is None:
-            raise ValueError('cannot delete not existing paste')
-        cursor.execute('DELETE FROM pastes WHERE id = %s', (self.id,))
+            raise TracError(_("Cannot delete non-existent paste"))
+        self.env.db_transaction('DELETE FROM pastes WHERE id=%s', (self.id,))
 
-        if handle_ta:
-            db.commit()
-
-    def save(self, db=None):
+    def save(self):
         """Save changes or add a new paste."""
-        if db:
-            handle_ta = False
-        else:
-            handle_ta = True
-            db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
         if self.time is None:
             self.time = datetime.now(utc)
 
-        if self.id is None:
-            cursor.execute('INSERT INTO pastes (title, author, mimetype, '
-                           'data, time) VALUES (%s, %s, %s, %s, %s)',
-                           (self.title, self.author, self.mimetype, self.data,
-                            to_timestamp(self.time)))
-            self.id = db.get_last_id(cursor, 'pastes')
-        else:
-            cursor.execute("""
-                UPDATE pastes SET title=%s, author=%s, mimetype=%s, data=%s,
-                  time=%s
-                WHERE id = %s
-                """, (self.title, self.author, self.mimetype, self.data,
-                      to_timestamp(self.time), self.id))
-
-        if handle_ta:
-            db.commit()
+        with self.env.db_transaction as db:
+            if self.id is None:
+                cursor = db.cursor()
+                cursor.execute("""
+                    INSERT INTO pastes (title, author, mimetype, data, time)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """, (self.title, self.author, self.mimetype,
+                          self.data, to_timestamp(self.time)))
+                self.id = db.get_last_id(cursor, 'pastes')
+            else:
+                db("""UPDATE pastes
+                   SET title=%s, author=%s, mimetype=%s, data=%s, time=%s
+                   WHERE id=%s
+                   """, (self.title, self.author, self.mimetype, self.data,
+                         to_timestamp(self.time), self.id))
 
     def render(self, req):
         """Render the data."""
-        context = Context.from_request(req)
+        from trac.mimeview.api import Mimeview
+        from trac.web.chrome import web_context
+        context = web_context(req)
         mimeview = Mimeview(self.env)
         return mimeview.render(context, self.mimetype, self.data,
                                annotations=['lineno'])

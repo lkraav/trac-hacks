@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2011 Odd Simon Simonsen <oddsimons@gmail.com>
-# Copyright (C) 2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2012-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
@@ -9,7 +10,6 @@
 import shutil
 import tempfile
 import unittest
-
 
 from trac.perm import PermissionSystem, PermissionCache
 from trac.test import EnvironmentStub, Mock
@@ -53,13 +53,13 @@ class TracpastePluginTestCase(unittest.TestCase):
         return req
 
     def setUp(self):
-        self.env = EnvironmentStub(
-                enable=['trac.*', 'tracpaste.*'])
+        self.env = EnvironmentStub(enable=['trac.*', 'tracpaste.*'])
         self.env.path = tempfile.mkdtemp()
-        self.db = self.env.get_db_cnx()
+        self.env.config.set('trac', 'permission_policies',
+                            'DefaultPermissionPolicy, LegacyAttachmentPolicy')
 
         setup = TracpasteSetup(self.env)
-        setup.upgrade_environment(self.db)
+        setup.upgrade_environment()
 
         self.href = Href('/trac')
 
@@ -70,7 +70,6 @@ class TracpastePluginTestCase(unittest.TestCase):
         self.backend = TracpastePlugin(self.env)
 
     def tearDown(self):
-        self.db.close()
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
@@ -137,6 +136,7 @@ def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TracpastePluginTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

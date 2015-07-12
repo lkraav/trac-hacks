@@ -18,7 +18,7 @@ from trac.resource import IResourceManager, Resource
 from trac.search import ISearchSource, search_to_sql, shorten_result
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import http_date, to_datetime
-from trac.util.translation import _
+from trac.util.translation import _, tag_
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_link, add_stylesheet
@@ -149,7 +149,7 @@ class TracpastePlugin(Component):
                 'author': author,
                 'error': error,
                 'data': data,
-                'recent': get_pastes(env=self.env, number=self.max_recent)
+                'recent': get_pastes(self.env, self.max_recent)
             }
 
         # show post
@@ -226,7 +226,7 @@ class TracpastePlugin(Component):
             if 'PASTEBIN_VIEW' not in req.perm(pb_realm):
                 return
             add_stylesheet(req, 'pastebin/css/timeline.css')
-            pastes = get_pastes(env=self.env, from_dt=start, to_dt=stop)
+            pastes = get_pastes(self.env, from_dt=start, to_dt=stop)
             for p in pastes:
                 if 'PASTEBIN_VIEW' in req.perm(pb_realm(id=p["id"])):
                     yield ('pastebin', p["time"], p["author"], (p["id"],
@@ -238,11 +238,11 @@ class TracpastePlugin(Component):
         if field == 'url':
             return context.href.pastebin(p_id)
         elif field == 'title':
-            return tag(_("Pastebin: "), tag.em(p_title), _(" pasted"))
+            return tag_("Pastebin: %(title)s pasted", title=tag.em(p_title))
 
     # IResourceManager methods
 
-    def get_resource_realm(self):
+    def get_resource_realms(self):
         yield 'pastebin'
 
     def get_resource_url(self, resource, href, **kwargs):
@@ -252,10 +252,10 @@ class TracpastePlugin(Component):
                                  **kwargs):
         p = Paste(self.env, resource.id)
         if context:
-            return tag.a(_("Pastebin: ") + p.title,
+            return tag.a(_("Pastebin: %(title)s", title=p.title),
                          href=context.href.pastebin(resource.id))
         else:
-            return _("Pastebin: ") + p.title
+            return _("Pastebin: %(title)s", title=p.title)
     
     # IWikiSyntaxProvider methods
 
@@ -275,21 +275,18 @@ class TracpastePlugin(Component):
         if 'pastebin' not in filters:
             return
 
-        db = self.env.get_db_cnx()
-        sql, args = search_to_sql(db, ['title', 'mimetype', 'data'], query)
-        cursor = db.cursor()
-        cursor.execute(self.query % sql, args)
-        for id, author, time, title, mimetype, data in cursor:
-            pb_realm = Resource('pastebin')
-            if 'PASTEBIN_VIEW' in req.perm(pb_realm(id=id)):
-                yield (self.env.href.pastebin(id),
-                       '%s (paste type: %s)' % (title, mimetype),
-                       to_datetime(time), author,
-                       shorten_result(data, query))
-    
-    query = """SELECT id, author, time, title, mimetype, data
-               FROM pastes WHERE %s
-               """
+        with self.env.db_query as db:
+            sql, args = search_to_sql(db, ['title', 'mimetype', 'data'], query)
+            for id, author, time, title, mimetype, data in db("""
+                    SELECT id, author, time, title, mimetype, data
+                    FROM pastes WHERE %s
+                    """ % sql, args):
+                pb_realm = Resource('pastebin')
+                if 'PASTEBIN_VIEW' in req.perm(pb_realm(id=id)):
+                    yield (self.env.href.pastebin(id),
+                           '%s (paste type: %s)' % (title, mimetype),
+                           to_datetime(time), author,
+                           shorten_result(data, query))
 
     # Internal methods
 

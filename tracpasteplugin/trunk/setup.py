@@ -37,7 +37,7 @@ setup(
         'tracpaste.model = tracpaste.model',
         'tracpaste.web_ui = tracpaste.web_ui'],
     },
-    install_requires=['Pygments'],
-    test_suite='tracpaste.tests.test_suite',
+    install_requires=['Trac', 'Pygments'],
+    test_suite='tracpaste.tests',
     tests_require=[]
 )
