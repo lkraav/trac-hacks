@@ -6,17 +6,16 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-import tempfile
-import unittest
 import shutil
 import tempfile
-from trac.perm import PermissionSystem, PermissionCache, PermissionError
+import unittest
+
+
+from trac.perm import PermissionSystem, PermissionCache
 from trac.test import EnvironmentStub, Mock
 from trac.web.href import Href
-from trac.wiki.tests import formatter
 
 from tracpaste.db import TracpasteSetup
-from tracpaste.model import Paste
 from tracpaste.web_ui import TracpastePlugin
 
 
@@ -92,7 +91,7 @@ class TracpastePluginTestCase(unittest.TestCase):
                                title="My first paste title")
 
         self.assertEquals(True, self.backend.match_request(req))
-        resp = self.backend.process_request(req)
+        self.backend.process_request(req)
         self.assertIsNotNone(req._redirect_url)
         self.assertRegexpMatches(req._redirect_url, '/pastebin/\d+$')
 
@@ -102,7 +101,7 @@ class TracpastePluginTestCase(unittest.TestCase):
                                format="raw")
         self.assertEquals(True, self.backend.match_request(req))
 
-        resp = self.backend.process_request(req)
+        self.backend.process_request(req)
         self.assertEquals(200, req._status_code)
         self.assertEquals('This is my first paste!', req._response_body)
         self.assertEquals('text/plain; charset=UTF-8', 
@@ -115,7 +114,7 @@ class TracpastePluginTestCase(unittest.TestCase):
                                title="My unicode paste title")
 
         self.assertEquals(True, self.backend.match_request(req))
-        resp = self.backend.process_request(req)
+        self.backend.process_request(req)
         self.assertIsNotNone(req._redirect_url)
         self.assertRegexpMatches(req._redirect_url, '/pastebin/\d+$')
 
@@ -125,13 +124,14 @@ class TracpastePluginTestCase(unittest.TestCase):
                                format="raw")
         self.assertEquals(True, self.backend.match_request(req))
 
-        resp = self.backend.process_request(req)
+        self.backend.process_request(req)
         self.assertEquals(200, req._status_code)
         self.assertEquals(u"漢字仮名交じり文".encode("utf-8"), req._response_body)
         self.assertEquals('text/plain; charset=UTF-8',
                           req._response_headers.get("Content-Type"))
         self.assertEquals(len(req._response_body),
                           req._response_headers.get("Content-Length"))
+
 
 def test_suite():
     suite = unittest.TestSuite()

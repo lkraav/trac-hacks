@@ -8,66 +8,74 @@
 # you should have received as part of this distribution.
 
 import re
+
 from genshi.builder import tag
-from trac.core import *
-from trac.perm import IPermissionRequestor
-from trac.resource import Resource, IResourceManager
-from trac.search import ISearchSource, search_to_sql, shorten_result
 from trac.config import BoolOption, IntOption, ListOption
-from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_stylesheet, add_link, Chrome
-from trac.wiki.api import IWikiSyntaxProvider
+from trac.core import *
+from trac.mimeview.pygments import get_all_lexers
+from trac.perm import IPermissionRequestor
+from trac.resource import IResourceManager, Resource
+from trac.search import ISearchSource, search_to_sql, shorten_result
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import http_date, to_datetime
 from trac.util.translation import _
-from trac.mimeview.pygments import get_all_lexers
+from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+                            add_link, add_stylesheet
+from trac.wiki.api import IWikiSyntaxProvider
 
-# import modules from this package
 from tracpaste.model import Paste, get_pastes
 
 
 class TracpastePlugin(Component):
-    implements(INavigationContributor, ITemplateProvider, IRequestHandler,
-               IPermissionRequestor, ITimelineEventProvider, IWikiSyntaxProvider,
-               ISearchSource)
+
+    implements(INavigationContributor, IPermissionRequestor, IRequestHandler,
+               IResourceManager, ISearchSource, ITemplateProvider,
+               ITimelineEventProvider, IWikiSyntaxProvider)
 
     _url_re = re.compile(r'^/pastebin(?:/(\d+))?/?$')
 
     max_recent = IntOption('pastebin', 'max_recent', '10',
-        """The maximum number of recent pastes to display on the
-           index page. Default is 10.""")
+        """The maximum number of recent pastes to display on the index page.
+        Default is 10.
+        """)
 
-    enable_other_formats = BoolOption('pastebin', 'enable_other_formats', 'true',
+    enable_other_formats = BoolOption('pastebin', 'enable_other_formats',
+        'true',
         """Whether pastes should be made available via the \"Download in
-        other formats\" functionality. Enabled by default.""")
+        other formats\" functionality. Enabled by default.
+        """)
 
     filter_other_formats = ListOption('pastebin', 'filter_other_formats', '',
         """List of MIME types for which the \"Download in other formats\"
         functionality is disabled. Leave this option empty to allow
         download for all MIME types, otherwise set it to a comma-separated
         list of MIME types to filter (these are glob patterns, i.e. \"*\"
-        can be used as a wild card).""")
+        can be used as a wild card).
+        """)
 
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         return 'pastebin'
 
     def get_navigation_items(self, req):
-        if req.perm('pastebin').has_permission('PASTEBIN_VIEW'):
+        if 'PASTEBIN_VIEW' in req.perm('pastebin'):
             yield ('mainnav', 'pastebin',
-                  tag.a(_('Pastebin'), href=req.href.pastebin()) )
+                   tag.a(_("Pastebin"), href=req.href.pastebin()))
 
     # IPermissionRequestor methods
+
     def get_permission_actions(self):
         """ Permissions supported by the plugin. """
         return ['PASTEBIN_VIEW',
                 ('PASTEBIN_CREATE', ['PASTEBIN_VIEW']),
                 ('PASTEBIN_DELETE', ['PASTEBIN_VIEW']),
                 ('PASTEBIN_ADMIN', ['PASTEBIN_CREATE', 'PASTEBIN_DELETE']),
-               ]
+                ]
 
     # IRequestHandler methods
+
     def match_request(self, req):
         m = self._url_re.search(req.path_info)
         if m is None:
@@ -82,11 +90,11 @@ class TracpastePlugin(Component):
         return True
 
     def process_request(self, req):
-        req.perm('pastebin').assert_permission('PASTEBIN_VIEW')
+        req.perm('pastebin').require('PASTEBIN_VIEW')
         add_stylesheet(req, 'pastebin/css/pastebin.css')
         add_stylesheet(req, 'common/css/code.css')
 
-        if (not req.args):
+        if not req.args:
             req.redirect(req.href.pastebin())
         
         # new post
@@ -111,7 +119,7 @@ class TracpastePlugin(Component):
                 replyto = '0'
 
             if 'delete' in req.args and req.args['delete'].isdigit():
-                req.perm('pastebin').assert_permission('PASTEBIN_DELETE')
+                req.perm('pastebin').require('PASTEBIN_DELETE')
                 delete = req.args['delete']
                 paste = Paste(self.env, id=delete)
                 if paste:
@@ -123,39 +131,36 @@ class TracpastePlugin(Component):
                     return 'pastebin.html', data, None
 
             if req.method == 'POST':
-                req.perm('pastebin').assert_permission('PASTEBIN_CREATE')
+                req.perm('pastebin').require('PASTEBIN_CREATE')
                 if not data.strip():
                     error = True
                 else:
-                    paste = Paste(self.env,
-                        title=title,
-                        author=author,
-                        mimetype=mimetype,
-                        data=data
-                    )
+                    paste = Paste(self.env, title=title, author=author,
+                                  mimetype=mimetype, data=data)
                     paste.save()
                     req.redirect(req.href.pastebin(paste.id))
 
             data = {
-                'mode':             'new',
-                'replyto':          replyto,
-                'mimetypes':        self._get_mimetypes(),
-                'mimetype':         mimetype,
-                'title':            title,
-                'author':           author,
-                'error':            error,
-                'data':             data,
-                'recent':           get_pastes(env=self.env, number=self.max_recent)
+                'mode': 'new',
+                'replyto': replyto,
+                'mimetypes': self._get_mimetypes(),
+                'mimetype': mimetype,
+                'title': title,
+                'author': author,
+                'error': error,
+                'data': data,
+                'recent': get_pastes(env=self.env, number=self.max_recent)
             }
 
         # show post
         else:
-            req.perm('pastebin').assert_permission('PASTEBIN_VIEW')
+            req.perm('pastebin').require('PASTEBIN_VIEW')
 
             paste = Paste(self.env, req.args['paste_id'])
 
             # text format
-            if req.args.get('format') in ('txt', 'raw') and self.enable_other_formats:
+            if req.args.get('format') in ('txt', 'raw') and \
+                    self.enable_other_formats:
                 if req.args['format'] == 'txt':
                     mimetype = 'text/plain'
                 else:
@@ -187,16 +192,20 @@ class TracpastePlugin(Component):
                 if self._download_allowed(paste.mimetype):
                     # add link for original format
                     raw_href = req.href.pastebin(paste.id, format='raw')
-                    add_link(req, 'alternate', raw_href, _('Original Format'), paste.mimetype)
+                    add_link(req, 'alternate', raw_href, _("Original Format"),
+                             paste.mimetype)
 
-                if paste.mimetype != 'text/plain' and self._download_allowed('text/plain'):
+                if paste.mimetype != 'text/plain' and \
+                        self._download_allowed('text/plain'):
                     # add link for text format
                     plain_href = req.href.pastebin(paste.id, format='txt')
-                    add_link(req, 'alternate', plain_href, _('Plain Text'), 'text/plain')
+                    add_link(req, 'alternate', plain_href, _("Plain Text"),
+                             'text/plain')
 
         return 'pastebin.html', data, None
 
     # ITemplateProvider methods
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
@@ -206,21 +215,22 @@ class TracpastePlugin(Component):
         return [('pastebin', resource_filename(__name__, 'htdocs'))]
 
     # ITimelineEventProvider methods
+
     def get_timeline_filters(self, req):
-        if req.perm('pastebin').has_permission('PASTEBIN_VIEW'):
-            yield('pastebin', _('Pastebin changes'))
+        if 'PASTEBIN_VIEW' in req.perm('pastebin'):
+            yield 'pastebin', _("Pastebin changes")
 
     def get_timeline_events(self, req, start, stop, filters):
         if 'pastebin' in filters:
             pb_realm = Resource('pastebin')
-            if not req.perm(pb_realm).has_permission('PASTEBIN_VIEW'):
+            if 'PASTEBIN_VIEW' not in req.perm(pb_realm):
                 return
             add_stylesheet(req, 'pastebin/css/timeline.css')
             pastes = get_pastes(env=self.env, from_dt=start, to_dt=stop)
             for p in pastes:
-                if req.perm(pb_realm(id=p["id"])).has_permission('PASTEBIN_VIEW'):
-                    yield('pastebin', p["time"], p["author"], (p["id"],
-                          p["title"]))
+                if 'PASTEBIN_VIEW' in req.perm(pb_realm(id=p["id"])):
+                    yield ('pastebin', p["time"], p["author"], (p["id"],
+                           p["title"]))
         return
 
     def render_timeline_event(self, context, field, event):
@@ -228,9 +238,10 @@ class TracpastePlugin(Component):
         if field == 'url':
             return context.href.pastebin(p_id)
         elif field == 'title':
-            return tag(_('Pastebin: '), tag.em(p_title), _(' pasted'))
+            return tag(_("Pastebin: "), tag.em(p_title), _(" pasted"))
 
-    # IResourceManager
+    # IResourceManager methods
+
     def get_resource_realm(self):
         yield 'pastebin'
 
@@ -241,22 +252,24 @@ class TracpastePlugin(Component):
                                  **kwargs):
         p = Paste(self.env, resource.id)
         if context:
-            return tag.a(_('Pastebin: ') + p.title,
+            return tag.a(_("Pastebin: ") + p.title,
                          href=context.href.pastebin(resource.id))
         else:
-            return _('Pastebin: ') + p.title
+            return _("Pastebin: ") + p.title
     
-    # IWikiSyntaxProvider
+    # IWikiSyntaxProvider methods
+
     def get_wiki_syntax(self):
         return []
 
     def get_link_resolvers(self):
-        yield('paste', self._format_link)
+        yield 'paste', self._format_link
     
     # ISearchsource methods
+
     def get_search_filters(self, req):
         if 'PASTEBIN_VIEW' in req.perm:
-            yield ('pastebin', 'Pastebin', 1)
+            yield 'pastebin', _("Pastebin"), 1
 
     def get_search_results(self, req, query, filters):
         if 'pastebin' not in filters:
@@ -268,21 +281,25 @@ class TracpastePlugin(Component):
         cursor.execute(self.query % sql, args)
         for id, author, time, title, mimetype, data in cursor:
             pb_realm = Resource('pastebin')
-            if req.perm(pb_realm(id=id)).has_permission('PASTEBIN_VIEW'):
+            if 'PASTEBIN_VIEW' in req.perm(pb_realm(id=id)):
                 yield (self.env.href.pastebin(id),
                        '%s (paste type: %s)' % (title, mimetype),
                        to_datetime(time), author,
                        shorten_result(data, query))
     
-    query = """SELECT id, author, time, title, mimetype, data FROM pastes WHERE %s"""
+    query = """SELECT id, author, time, title, mimetype, data
+               FROM pastes WHERE %s
+               """
 
-    # private methods
+    # Internal methods
+
     def _format_link(self, formatter, ns, target, label, match=None):
         try:
             paste = Paste(self.env, id=target)
             return tag.a(label, title=paste.title,
-                         href=formatter.href.pastebin(paste.id), class_='paste')
-        except Exception, e:
+                         href=formatter.href.pastebin(paste.id),
+                         class_='paste')
+        except Exception:
             return tag.a(label, class_='missing paste')
     
     def _get_mimetypes(self):
@@ -295,13 +312,13 @@ class TracpastePlugin(Component):
 
     def _get_highlighter(self, mimetype):
         if not mimetype:
-            return _('unknown')
+            return _("unknown")
 
         mimetypes = self._get_mimetypes()
         for m, name in mimetypes:
             if m == mimetype:
                 return name
-        return _('unknown')
+        return _("unknown")
 
     def _download_allowed(self, mimetype):
         from fnmatch import fnmatchcase
@@ -317,6 +334,7 @@ class TracpastePlugin(Component):
             return False
         else:
             return True
+
 
 class BloodhoundPaste(Component):
     """
@@ -351,7 +369,8 @@ class BloodhoundPaste(Component):
                         is_active = active_theme['name'] == this_theme_name
                     return is_active
 
-                bhtheme.theme.BloodhoundTheme.is_active_theme = property(is_active_theme)
+                bhtheme.theme.BloodhoundTheme.is_active_theme = \
+                    property(is_active_theme)
 
             self.bhtheme = self.env[bhtheme.theme.BloodhoundTheme]
 
@@ -366,4 +385,3 @@ class BloodhoundPaste(Component):
             return 'bh_pastebin.html', data, content_type
         else:
             return template, data, content_type
-

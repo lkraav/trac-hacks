@@ -6,20 +6,20 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-"""
-TracPastePlugin: code to manage database setup and upgrades
-"""
+import inspect
+import textwrap
 
-import inspect, textwrap
 from trac.core import *
-from trac.db import Table, Column, Index
+from trac.db import Column, Index, Table
 from trac.env import IEnvironmentSetupParticipant
 
 __all__ = ['TracpasteSetup']
 
 schema_version = 3
 
+
 class TracpasteSetup(Component):
+
     implements(IEnvironmentSetupParticipant)
 
     # IEnvironmentSetupParticipant
@@ -48,9 +48,9 @@ class TracpasteSetup(Component):
         procedure instead. """
         current_version = self._get_version(db)
         for version in range(current_version + 1, schema_version + 1):
-            self.env.log.debug("version=%d", version)
+            self.log.debug("version=%d", version)
             for function in version_map.get(version, []):
-                self.env.log.debug("function=%s", function)
+                self.log.debug("function=%s", function)
                 self.log.info(textwrap.fill(inspect.getdoc(function)))
                 function(self.env, db)
                 self.log.info('Done.')
@@ -71,7 +71,7 @@ class TracpasteSetup(Component):
                               ' version %d to %d',
                               current_version, schema_version)
         except Exception, e:
-            self.env.log.error(e, exc_info=1)
+            self.log.error(e, exc_info=1)
             raise TracError(str(e))
 
     # private methods
@@ -94,7 +94,7 @@ class TracpasteSetup(Component):
 
         stmt = "SELECT count(*) FROM pastes"
         try:
-            self.env.log.debug(stmt)
+            self.log.debug(stmt)
             cursor.execute(stmt)
             row = cursor.fetchone()
             return row and 1 or 0
@@ -108,21 +108,20 @@ class TracpasteSetup(Component):
 
         stmt = "SELECT count(*) FROM permission WHERE action='PASTEBIN_USE'"
         try:
-            self.env.log.debug(stmt)
+            self.log.debug(stmt)
             cursor.execute(stmt)
             row = cursor.fetchone()
             return row[0] > 0
         except:
             return False
 
-        return False
-
 
 # Helpers
 def _to_sql(env, table):
     from trac.db import DatabaseManager
-    connector, _ = DatabaseManager(env)._get_connector()
+    connector = DatabaseManager(env)._get_connector()[0]
     return connector.to_sql(table)
+
 
 # Update procedures
 def add_paste_table(env, db):
@@ -145,8 +144,9 @@ def add_paste_table(env, db):
         env.log.error(e, exc_info=1)
         raise TracError(str(e))
 
+
 def add_database_version(env, db):
-    """ Add tracpaste_version to system table. """
+    """Add tracpaste_version to system table."""
     cursor = db.cursor()
     try:
         cursor.execute("INSERT INTO system VALUES "
@@ -155,24 +155,34 @@ def add_database_version(env, db):
         env.log.error(e, exc_info=1)
         raise TracError(str(e))
 
+
 def convert_use_permissions(env, db):
-    """ Convert permission PASTEBIN_USE to PASTEBIN_VIEW and PASTEBIN_CREATE. """
+    """Convert permission PASTEBIN_USE to PASTEBIN_VIEW and PASTEBIN_CREATE.
+    """
     # XXX: This should probably be handled using PermissionSystem instead
     cursor = db.cursor()
     try:
-        cursor.execute("SELECT username FROM permission "
-                       "WHERE action='PASTEBIN_USE'")
+        cursor.execute("""
+            SELECT username FROM permission
+            WHERE action='PASTEBIN_USE'
+            """)
         users = []
         for row in cursor:
             users.append(row[0])
         for user in users:
-            cursor.execute("INSERT INTO permission (username, action) "
-                               "VALUES (%s, 'PASTEBIN_VIEW')", (user,))
-            cursor.execute("INSERT INTO permission (username, action) "
-                               "VALUES (%s, 'PASTEBIN_CREATE')", (user,))
-            cursor.execute("DELETE FROM permission WHERE "
-                           "username=%s AND action='PASTEBIN_USE'", (user,))
-            env.log.debug("Pastebin permissions converted for %s ", user)
+            cursor.execute("""
+                INSERT INTO permission (username, action)
+                VALUES (%s, 'PASTEBIN_VIEW')
+            """, (user,))
+            cursor.execute("""
+                INSERT INTO permission (username, action)
+                VALUES (%s, 'PASTEBIN_CREATE')
+                """, (user,))
+            cursor.execute("""
+                DELETE FROM permission
+                WHERE username=%s AND action='PASTEBIN_USE'
+                """, (user,))
+            env.log.debug("Pastebin permissions converted for %s", user)
     except Exception, e:
         env.log.error(e, exc_info=1)
         raise TracError(str(e))
@@ -187,8 +197,8 @@ def add_indexes(env, db):
         Column('mimetype'),
         Column('data'),
         Column('time', type='int'),
-        Index(['id',]),
-        Index(['time',])
+        Index(['id']),
+        Index(['time'])
     ]
 
     cursor = db.cursor()
@@ -201,13 +211,15 @@ def add_indexes(env, db):
             env.log.debug(stmt)
             cursor.execute(stmt)
 
-        cursor.execute("INSERT INTO pastes (id,title,author,mimetype,data,time) "
-                       "SELECT id,title,author,mimetype,data,time "
-                       "FROM pastes_old")
+        cursor.execute("""
+            INSERT INTO pastes (id,title,author,mimetype,data,time)
+            SELECT id,title,author,mimetype,data,time
+            FROM pastes_old
+            """)
         cursor.execute("DROP TABLE pastes_old")
     except Exception, e:
         env.log.error(e, exc_info=1)
-        raise TracError(str(e))
+        raise TracError(e)
 
 
 version_map = {
@@ -215,4 +227,3 @@ version_map = {
     2: [add_database_version],
     3: [convert_use_permissions, add_indexes],
 }
-

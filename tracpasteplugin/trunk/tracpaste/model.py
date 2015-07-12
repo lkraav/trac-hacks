@@ -12,15 +12,16 @@ TracPastePlugin: entity model for pastes, including:
  * various helpers to retrieve pastes
 """
 
-from trac.core import *
-from trac.resource import Resource, ResourceNotFound
-from trac.mimeview.api import Mimeview, Context
-from trac.util.datefmt import utc, to_timestamp
-from trac.util.translation import _
 from datetime import datetime
 
+from trac.mimeview.api import Context, Mimeview
+from trac.resource import Resource, ResourceNotFound
+from trac.util.datefmt import to_timestamp, utc
+from trac.util.translation import _
 
-def get_pastes(env, number=None, offset=None, from_dt=None, to_dt=None, db=None):
+
+def get_pastes(env, number=None, offset=None, from_dt=None, to_dt=None,
+               db=None):
     """Returns a list of pastes as dicts without data.
 
     One or more filters need to be set:
@@ -90,7 +91,6 @@ class Paste(object):
         self.resource = Resource('pastebin', self.id)
 
         if id is not None and self.id_is_valid(id):
-            row = None
             db = env.get_db_cnx()
             cursor = db.cursor()
             cursor.execute('SELECT title, author, mimetype, data, time '
@@ -151,11 +151,12 @@ class Paste(object):
                             to_timestamp(self.time)))
             self.id = db.get_last_id(cursor, 'pastes')
         else:
-            cursor.execute('UPDATE pastes SET title=%s, author=%s, mimetype=%s,'
-                           'data=%s, time=%s WHERE id = %s', (
-                self.title, self.author, self.mimetype, self.data,
-                to_timestamp(self.time), self.id
-            ))
+            cursor.execute("""
+                UPDATE pastes SET title=%s, author=%s, mimetype=%s, data=%s,
+                  time=%s
+                WHERE id = %s
+                """, (self.title, self.author, self.mimetype, self.data,
+                      to_timestamp(self.time), self.id))
 
         if handle_ta:
             db.commit()
