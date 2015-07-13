@@ -40,19 +40,19 @@ class TracpasteSetup(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        self.upgrade_environment()
+        self.dbm.create_tables(schema)
+        self.dbm.set_database_version(schema_version, schema_version_name)
 
     def environment_needs_upgrade(self, db=None):
         return self.dbm.needs_upgrade(schema_version, schema_version_name)
 
     def upgrade_environment(self, db=None):
-        if self.dbm.get_database_version(schema_version_name) is False and \
+        if not self.dbm.get_database_version(schema_version_name) and \
                 'pastes' in self.dbm.get_table_names():
             self.dbm.set_database_version(1, schema_version_name)
 
-        if self.dbm.get_database_version(schema_version_name) is False:
-            self.dbm.create_tables(schema)
-            self.dbm.set_database_version(schema_version, schema_version_name)
+        if not self.dbm.get_database_version(schema_version_name):
+            self.environment_created()
         else:
             self.dbm.upgrade(schema_version, schema_version_name,
                              'tracpaste.upgrades')
