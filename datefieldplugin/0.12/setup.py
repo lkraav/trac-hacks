@@ -17,8 +17,6 @@ setup(
     license='3-Clause BSD',
     keywords='trac plugin ticket',
     url='https://trac-hacks.org/wiki/DateFieldPlugin',
-    keywords = 'trac plugin ticket',
-    url = 'http://trac-hacks.org/wiki/DateFieldPlugin',
     classifiers = [
         'Framework :: Trac',
     ],
