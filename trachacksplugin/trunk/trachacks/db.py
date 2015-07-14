@@ -26,7 +26,7 @@ class EnvironmentSetup(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, db=None):
         if 'release' not in self.env.config['ticket-custom']:
             return True
         version = self._get_version()
@@ -39,7 +39,7 @@ class EnvironmentSetup(Component):
                       % (version, PLUGIN_VERSION))
         return True
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         if self._get_version() == 0:
             pages_dir = pkg_resources.resource_filename('trachacks',
                                                         'default-pages')

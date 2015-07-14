@@ -138,6 +138,7 @@ def setup(tc):
     page3.text = 'The plugin is deprecated'
     page3.save('the-departed', '', '127.0.0.1')
 
+
 def teardown(tc):
     tc.env.reset_db()
     with tc.env.db_transaction as db:

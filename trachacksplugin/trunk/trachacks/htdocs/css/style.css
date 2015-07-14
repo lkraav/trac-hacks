@@ -1,8 +1,7 @@
 /* vim: syntax=css
 */
 body {
- background-image: url("/chrome/hacks/png/trachacks_bg.png");
- background-position: 64px 64px;
+ background: url("/chrome/hacks/png/trachacks_bg.png") 64px 64px;
 }
 
 #ticket form {
@@ -19,7 +18,7 @@ pre, tt {
 
 .ext-link {
  background-image: none;
- padding-left: 0px;
+ padding-left: 0;
  border-bottom: solid 1px;
 }
 
@@ -45,15 +44,14 @@ pre, tt {
  float: right;
  background: #dfd;
  font-size: 0.8em;
- margin: 0em;
- margin-left: 1em;
+ margin: 0 0 0 1em;
  padding: 0.5em 1em 0.5em 1em;
 }
 
 #newsflash h1 {
  font-size: 1.2em;
- padding: 0em;
- margin: 0em;
+ padding: 0;
+ margin: 0;
 }
 
 #newsflash .post hr {

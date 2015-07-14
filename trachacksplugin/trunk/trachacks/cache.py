@@ -25,6 +25,7 @@ class Borg(object):
     """
     _state = {}
     _lock = threading.RLock()
+
     def __new__(cls, *p, **k):
         self = object.__new__(cls, *p, **k)
         self.__dict__ = cls._state
@@ -39,13 +40,16 @@ class CacheObject(object):
     name = None
     title = None
 
-    def __init__(self, name, env, req, tag_system, get_desc = False, get_tags = False):
+    def __init__(self, name, env, req, tag_system,
+                 get_desc=False, get_tags=False):
         self.name = name
         self._env = env
         self._req = req
         self._tag_system = tag_system
         self._get_description = get_desc
         self._get_tags = get_tags
+        self.description = None
+        self.tags = None
 
         self.update()
 
@@ -125,7 +129,7 @@ class HacksCache(Borg):
         self._update_types()
         self._update_releases()
 
-        query  = 'realm:wiki (%s) (%s)' % \
+        query = 'realm:wiki (%s) (%s)' % \
             (' or '.join(self._types), ' or '.join(self._releases))
         for h in self._query_tags(query):
             self._update_hack(h, False, False)
@@ -135,7 +139,7 @@ class HacksCache(Borg):
 
     def _query_tags(self, query):
         """ Helper to perform queries on cached tags system """
-        return [ r.id for r, _ in self._tag_system.query(self._req, query) ]
+        return [r.id for r, _ in self._tag_system.query(self._req, query)]
 
     def _update_types(self):
         """ Get/update list of hack types """
@@ -160,14 +164,15 @@ class HacksCache(Borg):
         # add releases that have been added since last update
         for r in releases:
             if r not in keys:
-                self._releases[r] = Tag(r, self._env, self._req, self._tag_system)
+                self._releases[r] = Tag(r, self._env, self._req,
+                                        self._tag_system)
 
         # remove releases that no longer exist
         for k in keys:
             if k not in releases:
                 del self._releases[k]
 
-    def _update_hack(self, name, full_update = True, check_delete = True):
+    def _update_hack(self, name, full_update=True, check_delete=True):
         """ Get/update/delete hack properties """
         if full_update:
             self._update_types()
@@ -178,7 +183,8 @@ class HacksCache(Borg):
             page = WikiPage(self._env, name)
             if page.exists:
                 tags = set(self._tag_system.get_tags(self._req, page.resource))
-                if not (tags.intersection(self._types) and tags.intersection(self._releases)):
+                if not (tags.intersection(self._types) and
+                        tags.intersection(self._releases)):
                     delete = True
             else:
                 delete = True
@@ -194,7 +200,8 @@ class HacksCache(Borg):
                 self._hacks[name].update()
                 self._log('updated hack %s' % name)
             except:
-                self._hacks[name] = Hack(name, self._env, self._req, self._tag_system)
+                self._hacks[name] = Hack(name, self._env, self._req,
+                                         self._tag_system)
                 self._log('learned hack %s' % name)
 
     def _get(self, where, what):
@@ -203,7 +210,7 @@ class HacksCache(Borg):
         except:
             return None
 
-    def _get_all(self, where, sorted = False):
+    def _get_all(self, where, sorted=False):
         v = where.values()
         if sorted:
             return natural_sort(v)
@@ -211,7 +218,7 @@ class HacksCache(Borg):
             return v
 
     # Public API
-    def update(self, hack = None):
+    def update(self, hack=None):
         """ Update cache for all or just the given hack """
         if hack:
             self._update_hack(hack, True, True)
@@ -223,17 +230,17 @@ class HacksCache(Borg):
     def get_type(self, name):
         return self._get(self._types, name)
 
-    def get_all_types(self, sorted = False):
+    def get_all_types(self, sorted=False):
         return self._get_all(self._types, sorted)
 
     def get_release(self, name):
         return self._get(self._releases, name)
 
-    def get_all_releases(self, sorted = False):
+    def get_all_releases(self, sorted=False):
         return self._get_all(self._releases, sorted)
 
     def get_hack(self, name):
         return self._get(self._hacks, name)
 
-    def get_all_hacks(self, sorted = False):
+    def get_all_hacks(self, sorted=False):
         return self._get_all(self._hacks, sorted)

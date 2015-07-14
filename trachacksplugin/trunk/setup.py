@@ -19,7 +19,7 @@ setup(
     maintainer_email='ryan.j.ollos@gmail.com',
     description='Customizations of the trac-hacks site.',
     license='3-Clause BSD',
-    url='http://trac-hacks.org/wiki/TracHacksPlugin',
+    url='https://trac-hacks.org/wiki/TracHacksPlugin',
     packages=['trachacks'],
     package_data={
         'trachacks': [
@@ -42,9 +42,10 @@ setup(
         ]
     },
     install_requires=[
+        'Trac',
         'TracAccountManager',
         'TracTags >= 0.7',
-        'TracVote >= 0.2',
+        'TracVote >= 0.3',
         'SvnAuthzAdminPlugin',
     ],
     test_suite='trachacks.tests.test_suite',

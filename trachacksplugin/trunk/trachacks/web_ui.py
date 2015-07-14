@@ -109,6 +109,7 @@ class HackDoesntExist(Aspect):
 
 class ReleasesExist(Aspect):
     """Validate that any of the selected releases exist."""
+
     def __init__(self, env):
         self.env = env
 
@@ -195,6 +196,7 @@ class TracHacksHandler(Component):
         self.form = form
 
     # ITemplateStreamFilter methods
+
     def filter_stream(self, req, method, filename, stream, data):
         context = data.get('form_context')
         if context and context.errors and req.path_info == '/newhack':
@@ -208,6 +210,7 @@ class TracHacksHandler(Component):
         return stream
 
     # IRequestHandler methods
+
     def match_request(self, req):
         #return self.path_match.match(req.path_info)
         return req.path_info == '/newhack'
@@ -280,6 +283,7 @@ class TracHacksHandler(Component):
         #        return self.render_cloud(req, data, hacks)
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         from trac.wiki.web_ui import WikiModule
         if isinstance(handler, WikiModule):
@@ -290,7 +294,7 @@ class TracHacksHandler(Component):
                 self.env.log.debug('Hacks: no notice: no GET request')
             elif not (path.startswith('/wiki/') or path == '/wiki'):
                 self.env.log.debug('Hacks: no notice: not a wiki path')
-            elif not 'hack' in args:
+            elif 'hack' not in args:
                 self.env.log.debug('Hacks: no notice: hack= missing')
             elif args['hack'] != 'created':
                 self.env.log.debug('Hacks: no notice: hack=%s' % args['hack'])
@@ -315,6 +319,7 @@ class TracHacksHandler(Component):
         return template, data, content_type
 
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         #if req.path_info == '/newhack':
         return 'newhack'
@@ -329,6 +334,7 @@ class TracHacksHandler(Component):
                    builder.a('New Hack', href=req.href.newhack()))
 
     # ITemplateProvider methods
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
@@ -339,10 +345,12 @@ class TracHacksHandler(Component):
         return [('hacks', htdocs), ('newhack', htdocs)]
 
     # IPermissionRequestor methods
+
     def get_permission_actions(self):
         return ['HACK_CREATE']
 
     # Internal methods
+
     def render_new(self, req, data, hacks):
         req.perm.require('HACK_CREATE')
 
@@ -400,12 +408,12 @@ class TracHacksHandler(Component):
 
             repos = self.env.get_repository()
 
-            vars = {}
-            vars['OWNER'] = req.authname
-            vars['WIKINAME'] = get_page_name(data['name'],
-                                             data.get('type', ''))
-            vars['TYPE'] = data.setdefault('type', 'plugin')
-            vars['TITLE'] = data.setdefault('title', 'No title available')
+            vars = {
+                'OWNER': req.authname,
+                'WIKINAME': get_page_name(data['name'], data.get('type', '')),
+                'TYPE': data.setdefault('type', 'plugin'),
+                'TITLE': data.setdefault('title', 'No title available'),
+            }
             vars['LCNAME'] = vars['WIKINAME'].lower()
             vars['SOURCEURL'] = repos.get_path_url(vars['LCNAME'], None) or \
                                 'http://localhost/svn/' + vars['LCNAME']

@@ -101,14 +101,16 @@ class ListHacksMacro(WikiMacroBase):
             categories = all_categories
             releases = all_releases
 
-        latest_major_release = self.env.config.get('trachacks', 'latest_major_release')
+        latest_major_release = self.env.config.get('trachacks',
+                                                   'latest_major_release')
         if 'update_th_filter' in req.args:
             show_releases = req.args.get('release', latest_major_release)
             if isinstance(show_releases, basestring):
                 show_releases = [show_releases]
             req.session['th_release_filter'] = ','.join(show_releases)
         else:
-            th_releases_filter = req.session.get('th_release_filter', latest_major_release)
+            th_releases_filter = req.session.get('th_release_filter',
+                                                 latest_major_release)
             show_releases = th_releases_filter.split(',') \
                             if th_releases_filter is not None \
                             else latest_major_release
@@ -149,7 +151,8 @@ class ListHacksMacro(WikiMacroBase):
                 cat_body = page.text
             cat_body = self.self_extract.sub('', cat_body).strip()
 
-            style = 'padding:1em; margin:0em 5em 2em 5em; border:1px solid #999;'
+            style = 'padding:1em; margin:0em 5em 2em 5em; ' \
+                    'border:1px solid #999;'
             fieldset = builder.fieldset('\n', style=style)
             if not hide_fieldset_legend:
                 legend = builder.legend(style="color: #999;")
@@ -193,7 +196,7 @@ class ListHacksMacro(WikiMacroBase):
 
                     span = builder.span(style="font-size:xx-small;")
                     span(' (tags: ', rendered_tags[0],
-                       [(', ', tag) for tag in rendered_tags[1:]], ')')
+                         [(', ', tag) for tag in rendered_tags[1:]], ')')
                     li(span)
                 ul(li, '\n')
 
@@ -304,7 +307,7 @@ class MaintainerMacro(WikiMacroBase):
                 if not maintainer:
                     tags = resource_tags(self.env, Resource('wiki', id))
                     line = "//none ([tag:%s])//" \
-                           % ('deprecated' if 'deprecated' in tags \
+                           % ('deprecated' if 'deprecated' in tags
                                            else 'needsadoption')
                     return format_to_oneliner(self.env, context, line)
         else:
