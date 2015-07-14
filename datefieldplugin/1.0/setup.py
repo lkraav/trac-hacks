@@ -17,9 +17,9 @@ setup(
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
     description='Add custom date fields to Trac tickets.',
-    license='BSD',
+    license='3-Clause BSD',
     keywords='trac plugin ticket',
-    url='http://trac-hacks.org/wiki/DateFieldPlugin',
+    url='https://trac-hacks.org/wiki/DateFieldPlugin',
     packages=['datefield'],
     package_data={'datefield': [
         'htdocs/css/*.css',
