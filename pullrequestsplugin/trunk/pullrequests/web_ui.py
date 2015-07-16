@@ -11,6 +11,7 @@ from trac.config import ListOption
 from trac.core import *
 from trac.resource import Resource
 from trac.ticket.api import ITicketManipulator
+from trac.util import get_reporter_id
 from trac.util.datefmt import format_datetime, utc
 from trac.util.presentation import Paginator
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet, add_notice, add_warning, web_context
@@ -109,7 +110,7 @@ class PullRequestsModule(Component):
 
     # ITicketManipulator methods
 
-    command_pr_url = r'(?P<command>[A-Za-z]+) PR: (?P<wikilink>[A-Za-z0-9_/:]+)'
+    command_pr_url = r'(?P<command>[A-Za-z]+) PR: (?P<wikilink>\S+)'
     command_pr_id = r'(?P<command>[A-Za-z]+) PR:(?P<id>[0-9]+)'
 
     command_pr_url_re = re.compile(command_pr_url)
@@ -119,9 +120,13 @@ class PullRequestsModule(Component):
         pass
 
     def validate_ticket(self, req, ticket):
+        if 'preview' in req.args:
+            # During preview: Do nothing
+            return []
+
         if 'PULL_REQUEST' in req.perm:
             comment = req.args.get('comment')
-            author = req.args.get('author')
+            author = get_reporter_id(req, 'author')
             if comment:
                 req.args['comment'] = self._handle_comment(req, ticket, comment, author)
         return []
@@ -135,7 +140,7 @@ class PullRequestsModule(Component):
                 status = command
                 reviewers = ''
                 opened = modified = datetime.now(utc)
-                comment_number = ticket.get_comment_number(ticket['changetime']) + 1
+                comment_number = (ticket.get_comment_number(ticket['changetime']) or 0) + 1
                 pr = PullRequest(id, status, author, reviewers, opened, modified, ticket.id, comment_number, wikilink)
                 PullRequest.add(self.env, pr)
                 add_notice(req, 'A new pull request has been created.')
