@@ -11,7 +11,9 @@ from trac.wiki.api import parse_args
 from trac.wiki.formatter import format_to_html
 from trac.wiki.macros import WikiMacroBase
 
-from cards.model import Card
+from cards.model import Card, CardStack
+from cards.core import serialized_cards_by_id, serialized_stacks_by_name
+
 
 class CardsMacro(WikiMacroBase):
     """Show kanban-style stacks of cards.
@@ -30,15 +32,16 @@ class CardsMacro(WikiMacroBase):
         args, kw = parse_args(content)
         args = [arg.strip() for arg in args]
 
-        stack_ids = kw.get('stack', '').split('|')
-        if not stack_ids:
+        stack_names = kw.get('stack', '').split('|')
+        if not stack_names:
             raise TracError('Missing stack names')
 
-        cards = Card.select_by_stacks(self.env, stack_ids)
-        cards_by_stack = dict((stack, list(cards)) for stack, cards in groupby(cards, lambda c: c.stack))
+        stacks = CardStack.select_by_names(self.env, stack_names)
+
+        cards = Card.select_by_stacks(self.env, stack_names)
 
         labels = [label for label in kw.get('label', '').split('|') if label]
-        labels = dict(zip(stack_ids, labels + stack_ids[len(labels):]))
+        labels = dict(zip(stack_names, labels + stack_names[len(labels):]))
 
         width = int(kw.get('width', 400))
 
@@ -48,7 +51,8 @@ class CardsMacro(WikiMacroBase):
         board_data = {
             'form_token': req.form_token,
             'api_url': formatter.href('card'),
-            'cards_by_id': dict((card.id, card.serialized(self.env, context)) for card in cards)
+            'cards_by_id': serialized_cards_by_id(cards, self.env, context),
+            'stacks_by_name': serialized_stacks_by_name(stacks, stack_names),
         }
         board_data_id = '%012x' % id(board_data)
         
@@ -58,29 +62,10 @@ class CardsMacro(WikiMacroBase):
         add_script_data(req, {'cards_%s' % board_data_id: board_data})
         add_script(req, 'cards/js/cards.js')
 
-        def format_cards(stack):
-            return [(card, format_to_html(self.env, context, card.title))
-                    for card in cards_by_stack.get(stack, [])]
-        
         data = {
             'board_data_id': board_data_id,
-            'stack_ids': stack_ids,
-            'cards_by_stack': cards_by_stack,
+            'stack_names': stack_names,
             'labels': labels,
             'width': width,
-            'format_cards': format_cards,
         }
         return chrome.render_template(req, 'cards_macro.html', data, 'text/html', True)
-        #return tag.div(class_='trac-cards-board',
-        #               id='trac-cards-%s' % board_data_id,
-        #               style='width:%spx' % width)(
-        #        tag.div(class_='trac-cards-stack-titles')(
-        #            tag.h2(labels[stack]) for stack in stack_ids
-        #        ),
-        #        tag.div(class_='trac-cards-stacks')(
-        #            [tag.div(class_='trac-cards-stack')(
-        #                [tag.div(class_='trac-card-slot')(
-        #                    tag.div(class_='trac-card')(
-        #                    format_to_html(self.env, context, card.title)))
-        #                 for card in cards_by_stack.get(stack, [])])
-        #         for stack in stack_ids]))

@@ -14,11 +14,22 @@ from trac.perm import IPermissionRequestor
 from trac.web import IRequestHandler
 from trac.web.chrome import ITemplateProvider, web_context
 
-from cards.model import SCHEMA, Card
+from cards.model import SCHEMA, Card, CardStack
 
 
 PLUGIN_NAME = 'CardsPlugin'
-PLUGIN_VERSION = 1
+PLUGIN_VERSION = 2
+
+
+def serialized_stacks_by_name(stacks, stack_names):
+    stacks_by_name = dict((stack.name, stack.serialized()) for stack in stacks)
+    for name in stack_names:
+        stacks_by_name.setdefault(name, CardStack(name, 0).serialized())
+    return stacks_by_name
+
+
+def serialized_cards_by_id(cards, env, context):
+    return dict((card.id, card.serialized(env, context)) for card in cards)
 
 
 class CardsModule(Component):
@@ -50,25 +61,33 @@ class CardsModule(Component):
         if 'POST' == req.method:
             if action == 'add_card':
                 card = self._parse_card(req)
-                Card.add(self.env, card)
+                stack = self._parse_stack(req)
+                if not Card.add(self.env, card, stack):
+                    self._send_conflict(req)
                 self._send_card(req, card)
 
             elif action == 'update_card':
                 card = self._parse_card(req)
-                Card.update(self.env, card)
+                new_stack = self._parse_stack(req)
+                old_stack = self._parse_stack(req, True)
+                if not Card.update(self.env, card, new_stack, old_stack):
+                    self._send_conflict(req)
                 self._send_card(req, card)
 
             elif action == 'delete_card':
-                card_id = req.args.get('id')
-                Card.delete_by_id(self.env, card_id)
+                card = self._parse_card(req)
+                stack = self._parse_stack(req)
+                if not Card.delete_by_id(self.env, card.id, stack):
+                    self._send_conflict(req)
                 req.send_no_content()
         elif 'GET' == req.method:
             format = req.args.get('format')
             if format == 'json':
-                stack_ids = req.args.get('stack', '').split('|')
-                cards = Card.select_by_stacks(self.env, stack_ids)
-                self._send_cards(req, cards)
-        raise TracError()
+                stack_names = req.args.get('stack', '').split('|')
+                cards = Card.select_by_stacks(self.env, stack_names)
+                stacks = CardStack.select_by_names(self.env, stack_names)
+                self._send_cards_and_stacks(req, cards, stacks, stack_names)
+        self._send_error(req, 'Bad request', 400)
 
     def _parse_card(self, req):
         return Card(
@@ -77,17 +96,32 @@ class CardsModule(Component):
             int(req.args.get('rank')),
             req.args.get('title'))
 
+    def _parse_stack(self, req, old=False):
+        return CardStack(
+            req.args.get('old_stack_name' if old else 'stack'),
+            int(req.args.get('old_stack_version' if old else 'stack_version')))
+
     def _send_card(self, req, card):
         context = web_context(req, 'cards')
         self._send_json(req, card.serialized(self.env, context))
         
-    def _send_cards(self, req, cards):
+    def _send_cards_and_stacks(self, req, cards, stacks, stack_names):
         context = web_context(req, 'cards')
-        self._send_json(req, [c.serialized(self.env, context) for c in cards])
+        data = {
+            'cards_by_id': serialized_cards_by_id(cards, self.env, context),
+            'stacks_by_name': serialized_stacks_by_name(stacks, stack_names),
+        }
+        self._send_json(req, data)
 
-    def _send_json(self, req, data):
+    def _send_json(self, req, data, status=200):
         content = JSONEncoder().encode(data).encode('utf-8')
-        req.send(content, 'application/json')
+        req.send(content, 'application/json', status)
+        
+    def _send_error(self, req, message, status):
+        self._send_json(req, {'message': message}, status)
+
+    def _send_conflict(self, req):
+        self._send_error(req, 'Conflicting version. Please refresh', 409)
 
     # IEnvironmentSetupParticipant
 

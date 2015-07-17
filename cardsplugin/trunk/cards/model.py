@@ -11,6 +11,10 @@ SCHEMA = [
         Column('title'),
         Index(['stack', 'rank']),
     ],
+    Table('cards_stacks', key='name')[
+        Column('name'),
+        Column('version', type='int64'),
+    ],
 ]
 
 
@@ -32,9 +36,11 @@ class Card(object):
         }
 
     @classmethod
-    def add(cls, env, card):
+    def add(cls, env, card, client_stack):
         with env.db_transaction as db:
             cursor = db.cursor()
+            if not CardStack.check_and_bump_versions(env, [client_stack]):
+                return False
             cursor.execute("""
                 SELECT COALESCE(MAX(rank) + 1, 0)
                 FROM cards
@@ -47,9 +53,10 @@ class Card(object):
                  VALUES (%s, %s, %s)
             """, (card.stack, card.rank, card.title))
             card.id = db.get_last_id(cursor, 'cards')
+            return True
 
     @classmethod
-    def update(cls, env, card):
+    def update(cls, env, card, new_client_stack, old_client_stack):
         with env.db_transaction as db:
             cursor = db.cursor()
 
@@ -60,6 +67,8 @@ class Card(object):
             """, (card.id,))
             old_stack, old_rank = cursor.fetchone()
             if card.stack == old_stack:
+                if not CardStack.check_and_bump_versions(env, [new_client_stack]):
+                    return False
                 if card.rank < old_rank:
                     cursor.execute("""
                         UPDATE cards
@@ -73,6 +82,8 @@ class Card(object):
                         WHERE stack=%s AND rank > %s AND rank <= %s
                     """, (card.stack, old_rank, card.rank))
             else:
+                if old_stack != old_client_stack.name or not CardStack.check_and_bump_versions(env, [new_client_stack, old_client_stack]):
+                    return False
                 cursor.execute("""
                     UPDATE cards
                     SET rank = rank - 1
@@ -89,11 +100,14 @@ class Card(object):
                 SET stack=%s, rank=%s, title=%s
                 WHERE id=%s
             """, (card.stack, card.rank, card.title, card.id))
+            return True
 
     @classmethod
-    def delete_by_id(cls, env, card_id):
+    def delete_by_id(cls, env, card_id, client_stack):
         with env.db_transaction as db:
             cursor = db.cursor()
+            if not CardStack.check_and_bump_versions(env, [client_stack]):
+                return False
             cursor.execute("""
                 SELECT stack, rank
                 FROM cards
@@ -109,6 +123,7 @@ class Card(object):
                 DELETE FROM cards
                 WHERE id=%s
             """, (card_id,))
+            return True
 
     @classmethod
     def select_by_stack(cls, env, stack):
@@ -132,3 +147,58 @@ class Card(object):
                 ORDER BY stack, rank
                 """ % stack_holder, list(stacks))
         return [Card(id, stack, rank, title) for id, stack, rank, title in rows]
+
+
+class CardStack(object):
+
+    def __init__(self, name, version):
+        self.name = name
+        self.version = version
+
+    def serialized(self):
+        return {
+            'name': self.name,
+            'version': self.version,
+        }
+
+    @classmethod
+    def check_and_bump_versions(cls, env, stacks):
+        with env.db_transaction as db:
+            cursor = db.cursor()
+            existing = cls.select_by_names(env, [s.name for s in stacks])
+            current_version_by_name = dict((stack.name, stack.version) for stack in existing)
+
+            # Check
+            for stack in stacks:
+                current_version = current_version_by_name.get(stack.name, 0)
+                if stack.version != current_version:
+                    return False
+
+            # bump:
+            for stack in stacks:
+                if stack.name in current_version_by_name:
+                    cursor.execute("""
+                        UPDATE cards_stacks
+                        SET version = version + 1
+                        WHERE name=%s
+                        """, (stack.name,))
+                else:
+                    cursor.execute("""
+                        INSERT INTO cards_stacks (name, version)
+                        VALUES (%s, %s)
+                        """, (stack.name, 1))
+
+            return True
+
+    @classmethod
+    def select_by_names(cls, env, names):
+        if not names:
+            return []
+        names_holder = ','.join(['%s'] * len(names))
+        rows = env.db_query("""
+                SELECT name, version
+                FROM cards_stacks
+                WHERE name in (%s)
+                ORDER BY name
+                """ % names_holder, list(names))
+        return [CardStack(name, version) for name, version in rows]
