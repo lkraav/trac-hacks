@@ -228,12 +228,12 @@ class TracHacksHandler(Component):
         if not authz_file:
             raise ConfigurationError(
                 tag_("The configuration option %(option)s is empty or "
-                     "missing.", option=builder.tt("[trac] authz_file")))
+                     "missing.", option=builder.code("[trac] authz_file")))
 
         if not os.path.exists(authz_file):
             raise ConfigurationError(
                 tag_("The authz file is not found at %(path)s.",
-                     path=builder.tt(authz_file)))
+                     path=builder.code(authz_file)))
 
         # Hack types and their description
         types = []
