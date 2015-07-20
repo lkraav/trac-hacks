@@ -187,7 +187,7 @@ class DirAuthStore(Component):
 
         user_dn = self._get_user_dn(user, NOCACHE)
         if user_dn:
-            success = self._bind_dir(user_dn, password) or False
+            success = self._bind_dir(user_dn, password.encode(self.dir_charset)) or False
             if success:
                 msg += " Password Verified"
                 success = True
