@@ -23,6 +23,7 @@ from trac.util.translation import _
 from acct_mgr.api import IPasswordStore
 from tracext.dirauth.api import IPermissionUserProvider
 
+GROUP_PREFIX = '@'
 NOCACHE = 0
 
 __all__ = ['DirAuthStore']
@@ -360,7 +361,7 @@ class DirAuthStore(Component):
         for entry in user_groups:
             groupdn = entry[0]
             group = entry[1]['cn'][0]
-            group = group.replace(' ', '_').lower()
+            group = '%s%s' % (GROUP_PREFIX, group.replace(' ', '_').lower())
             groups.append(group)  # dn
             if group not in groups:
                 groups.append(self._get_parent_groups(groups, groupdn))
@@ -502,7 +503,7 @@ class DirAuthStore(Component):
             # Warn if too frequent.
             if 'last_prune' in self._cache:
                 last_prune, data = self._cache['last_prune']
-                if last_prune + int(self.cache_memsize_warn) > now:
+                if last_prune + self.cache_memsize_warn > now:
                     self.log.info("pruning memcache in less than %d seconds, "
                                   "you might increase cache_memsize.",
                                   self.cache_memsize_warn)
@@ -514,7 +515,7 @@ class DirAuthStore(Component):
             cache_keys.sort(lambda x, y: cmp(self._cache[x][0],
                                              self._cache[y][0]))
             # Discards the 10% oldest.
-            upper = int(self.cache_memprune) * int(self.cache_memsize) / 100
+            upper = self.cache_memprune * self.cache_memsize / 100
             old_keys = cache_keys[:upper]
             for k in old_keys:
                 del self._cache[k]
