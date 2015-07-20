@@ -27,7 +27,7 @@ setup(
         ]
     },
     zip_safe=False,
-    install_requires=['Trac>=1.0'],
+    install_requires=['Trac'],
     keywords="trac plugin subversion svn authz",
     classifiers=['Framework :: Trac'],
 )
