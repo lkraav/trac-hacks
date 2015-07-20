@@ -22,9 +22,19 @@ schema = [
     Table('dir_cache', key='id')[
         Column('id', type='varchar(32)'),
         Column('lut', type='int'),
-        Column('data'),
+        Column('data', type='blob'),
         Index(['id'])],
 ]
+
+schemaPostgres = [
+    # Blog posts
+    Table('dir_cache', key='id')[
+        Column('id', type='varchar(32)'),
+        Column('lut', type='int'),
+        Column('data', type='bytea'),
+        Index(['id'])],
+]
+
 
 upgrade_map = {}
 
@@ -40,7 +50,10 @@ def create_tables(env, db):
     """ Creates the basic tables as defined by schema.
     using the active database connector. """
     cursor = db.cursor()
-    for table in schema:
+    usedSchema = schema
+    if env.config.get('trac', 'database').startswith('postgres'):
+        usedSchema = schemaPostgres
+    for table in usedSchema:
         for stmt in to_sql(env, table):
             cursor.execute(stmt)
     cursor.execute("INSERT into system values ('dirauthplugin_version', %s)",
