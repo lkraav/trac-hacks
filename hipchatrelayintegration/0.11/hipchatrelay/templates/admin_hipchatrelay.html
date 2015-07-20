@@ -1,0 +1,68 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include href="admin.html" />
+    <head>
+        <title> HipChat Relay Settings </title>
+    </head>
+    <body>
+        <h2>Hipchat Relays</h2>
+        <form class="mod" id="modbasic" method="post" action="">
+            <div style="float: left; width: 30%; margin-right: 10px;">
+                <fieldset>
+                    <legend>General Options</legend>
+                    <div class="field">
+                        <label>API token:<br />
+                            <input type="text" name="token" value="${token}" />
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>From:<br />
+                            <input type="text" name="botname" value="${botname}" />
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>Default Channel:<br />
+                            <input type="text" name="defaultchannel" value="${defaultchannel}" />
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>Color:<br />
+                            <select name="color">
+                                <py:for each="item in ('random', 'red', 'yellow', 'green', 'purple')">
+                                    <py:choose test="item">
+                                        <py:when test="color">
+                                            <option value="${item}" selected="selected">${item}</option>
+                                        </py:when>
+                                        <py:otherwise>
+                                            <option value="${item}">${item}</option>
+                                        </py:otherwise>
+                                    </py:choose>
+                                </py:for>
+                            </select>
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="buttons">
+                    <input type="submit" value="${_('Apply changes')}" />
+                </div>
+            </div>
+            <fieldset style="float: left; width: 65%;">
+                <legend>Mappings!</legend>
+                <div class="field">
+                        <py:for each="pos in range(len(project_map))">
+                            <label style="float: left;">
+                            <py:with vars="proj = project_map[pos][0]; prettyproj = proj.replace('_', ' '); projvalue = project_map[pos][1]">${prettyproj}:<br />
+                                <input type="text" name="${proj}" value="${projvalue}" /><br />
+                            </py:with>
+                            </label>
+                        </py:for>
+                </div>
+            </fieldset>
+            <div style="clear: both; margin-bottom: 10px"> </div>
+        </form>
+    </body>
+</html>

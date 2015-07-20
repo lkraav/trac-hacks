@@ -1,0 +1,8 @@
+# Author: Nicholas Wheeler
+# Status: Works for me! Your mileage may vary.
+# Warranty: None, use at your own risk.
+
+# Create egg to install:
+
+python setup.py bdist_egg
+
