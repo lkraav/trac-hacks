@@ -497,7 +497,7 @@ class DirAuthStore(Component):
             cache_time = now
 
         # Prune if we need to.
-        if self._cache > self.cache_memsize:
+        if len(self._cache) > self.cache_memsize:
             # Warn if too frequent.
             if 'last_prune' in self._cache:
                 last_prune, data = self._cache['last_prune']
@@ -506,18 +506,18 @@ class DirAuthStore(Component):
                                   "you might increase cache_memsize.",
                                   self.cache_memsize_warn)
 
-        self.log.debug("pruning memcache by %d: (current: %d > max: %d )",
+            self.log.debug("pruning memcache by %d: (current: %d > max: %d )",
                        self.cache_memprune, len(self._cache),
                        self.cache_memsize)
-        cache_keys = self._cache.keys()
-        cache_keys.sort(lambda x, y: cmp(self._cache[x][0],
+            cache_keys = self._cache.keys()
+            cache_keys.sort(lambda x, y: cmp(self._cache[x][0],
                                          self._cache[y][0]))
-        # Discards the 10% oldest.
-        upper = int(self.cache_memprune) * int(self.cache_memsize) / 100
-        old_keys = cache_keys[:upper]
-        for k in old_keys:
-            del self._cache[k]
-        self._cache['last_prune'] = [now, []]
+            # Discards the 10% oldest.
+            upper = int(self.cache_memprune) * int(self.cache_memsize) / 100
+            old_keys = cache_keys[:upper]
+            for k in old_keys:
+                del self._cache[k]
+                self._cache['last_prune'] = [now, []]
 
         self._cache[key] = [cache_time, data]
         return data
