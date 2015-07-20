@@ -61,7 +61,7 @@ def create_tables(env, db):
 
 
 class DirectoryAuthPluginSetup(Component):
-    
+
     implements(IEnvironmentSetupParticipant)
 
     def environment_created(self):

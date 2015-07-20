@@ -24,7 +24,7 @@ setup(
     maintainer='Branson Matheson',
     maintainer_email='branson.matheson@nasa.gov',
     description='Trac Authentication against LDAP or AD ',
-    url='http://trac-hacks.org/wiki/DirectoryAuthPlugin',
+    url='https://trac-hacks.org/wiki/DirectoryAuthPlugin',
     license='BSD',
     zip_safe=True,
     packages=['tracext', 'tracext.dirauth'],

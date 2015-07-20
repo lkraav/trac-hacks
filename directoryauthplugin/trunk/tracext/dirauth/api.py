@@ -27,7 +27,7 @@ class UserExtensiblePermissionStore(Component):
     implements(IPermissionStore, IPermissionPolicy)
 
     user_providers = ExtensionPoint(IPermissionUserProvider)
-    
+
     def check_permission(self, action, username, resource, perm):
         self.log.debug("perm: checking user perms for %s to have %s on %s",
                        (username, action, resource))
@@ -51,9 +51,9 @@ class UserExtensiblePermissionStore(Component):
         Plugins implementing the IPermissionUserProvider can return permission
         actions based on user.  For example, return TRAC_ADMIN if a user is in
         a given LDAP group
-        """        
+        """
         self.log.debug("perm: getting user perms")
-        
+
         subjects = set([username])
         for provider in self.group_providers:
             subjects.update(provider.get_permission_groups(username))
@@ -78,5 +78,5 @@ class UserExtensiblePermissionStore(Component):
                         subjects.add(action)
             if num_users == len(subjects) and num_actions == len(actions):
                 break
-              
+
         return list(actions)

@@ -70,10 +70,10 @@ class DirAuthStore(Component):
                         "Attribute of the users proxyAddress in the directory")
 
     member_attr = Option('account-manager', 'member_attr', 'member',
-			 "Attribute to determine members of a group")
+                         "Attribute to determine members of a group")
 
     group_class_attr = Option('account-manager', 'group_class_attr', 'group',
-			      "Attribute of the group class")
+                              "Attribute of the group class")
 
     group_basedn = Option('account-manager', 'group_basedn', None,
                           "Base DN used for group searches")
@@ -140,10 +140,11 @@ class DirAuthStore(Component):
         """Given a group name, enumerate all members"""
         if group.startswith('@'):
             group = group[1:]
-            self.log.debug("search groups cn=%s,%s" % (group, self.group_basedn))
+            self.log.debug("search groups cn=%s,%s"
+                           % (group, self.group_basedn))
         g = cnx.search_s("cn=%s,%s" % (group, self.group_basedn), ldap.SCOPE_BASE, attrlist=[str(self.member_attr)])
         self.log.debug(g)
-        if g and g[0][1].has_key(str(self.member_attr)):
+        if g and self.member_attr in g[0][1]:
             users = []
             for m in g[0][1][str(self.member_attr)]:
                 self.log.debug("group expand: " + m)
@@ -431,8 +432,8 @@ class DirAuthStore(Component):
         cur = db.cursor()
         try:
             cur.execute("""
-                DELETE FROM session_attribute 
-                  WHERE sid=%s AND authenticated=1 AND name='enabled' 
+                DELETE FROM session_attribute
+                  WHERE sid=%s AND authenticated=1 AND name='enabled'
                 """, (uname,))
             cur.execute("""
                 INSERT INTO session_attribute
@@ -445,8 +446,8 @@ class DirAuthStore(Component):
         if email:
             cur = db.cursor()
             cur.execute("""
-                DELETE FROM session_attribute 
-                  WHERE sid=%s AND authenticated=1 AND name='email' 
+                DELETE FROM session_attribute
+                  WHERE sid=%s AND authenticated=1 AND name='email'
                 """, (uname,))
             cur.execute("""
                 INSERT INTO session_attribute
@@ -459,8 +460,8 @@ class DirAuthStore(Component):
         if displayname:
             cur = db.cursor()
             cur.execute("""
-                DELETE FROM session_attribute 
-                  WHERE sid=%s AND authenticated=1 AND name='name' 
+                DELETE FROM session_attribute
+                  WHERE sid=%s AND authenticated=1 AND name='name'
                 """, (uname,))
             cur.execute("""
                 INSERT INTO session_attribute
@@ -507,11 +508,11 @@ class DirAuthStore(Component):
                                   self.cache_memsize_warn)
 
             self.log.debug("pruning memcache by %d: (current: %d > max: %d )",
-                       self.cache_memprune, len(self._cache),
-                       self.cache_memsize)
+                           self.cache_memprune, len(self._cache),
+                           self.cache_memsize)
             cache_keys = self._cache.keys()
             cache_keys.sort(lambda x, y: cmp(self._cache[x][0],
-                                         self._cache[y][0]))
+                                             self._cache[y][0]))
             # Discards the 10% oldest.
             upper = int(self.cache_memprune) * int(self.cache_memsize) / 100
             old_keys = cache_keys[:upper]
@@ -595,9 +596,10 @@ class DirAuthStore(Component):
         try:
             cur = db.cursor()
             cur.execute("""
-                DELETE FROM dir_cache WHERE id=%s 
+                DELETE FROM dir_cache WHERE id=%s
                 """, (key,))
-            self.log.debug("INSERT VALUES (%s, %s, %s)" % (key, current_time, buffer(res_str)))
+            self.log.debug("INSERT VALUES (%s, %s, %s)"
+                           % (key, current_time, buffer(res_str)))
             cur.execute("""
                 INSERT INTO dir_cache (id, lut, data)
                 VALUES (%s, %s, %s)
