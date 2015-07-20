@@ -21,7 +21,6 @@ from trac.util.text import to_unicode
 from trac.util.translation import _
 
 from acct_mgr.api import IPasswordStore
-from tracext.dirauth.api import IPermissionUserProvider
 
 GROUP_PREFIX = '@'
 NOCACHE = 0
@@ -31,8 +30,7 @@ __all__ = ['DirAuthStore']
 
 class DirAuthStore(Component):
     """Directory Password Store for Account Manager """
-    implements(IPasswordStore, IPermissionGroupProvider,
-               IPermissionUserProvider)
+    implements(IPasswordStore, IPermissionGroupProvider)
 
     dir_uri = Option('account-manager', 'dir_uri', 'ldap://localhost',
                      "URI of the LDAP or Active Directory Server")
@@ -235,29 +233,9 @@ class DirAuthStore(Component):
         """Can't delete from LDAP."""
         raise NotImplementedError(_("Deleting users is not supported."))
 
-    # IPermissionUserProvider methods
-
-    def get_permission_action(self, user):
-        """Return TRAC_ADMIN if user is in the self.group_tracadmin."""
-
-        self.log.debug("perm: testing for to see if %s is in %",
-                       user, self.group_tracadmin)
-
-        if self.group_tracadmin:
-            user_groups = self._expand_user_groups(user)
-            if self.group_tracadmin in user_groups:
-                self.log.debug("perm: % is in %, granting TRAC_ADMIN",
-                               user, self.group_tracadmin)
-                return ['TRAC_ADMIN']
-        return []
-
-    # IPermissionUserProvider methods
-
     def get_user_groups(self, user):
         """Returns all groups for a user."""
         return self._expand_user_groups(user)
-
-    # IPermissionGroupProvider methods
 
     def get_permission_groups(self, username):
         """Return a list of names of the groups that the user with the
@@ -613,6 +591,30 @@ class DirAuthStore(Component):
         self._cache_set(key, res)
 
         return res
+
+    # helper method for UserExtensiblePermissionStore
+    def get_all_groups(self):
+        """Get all groups. Returns an array containing arrays [dn, cn]
+        """
+
+        basedn = self.group_basedn or self.dir_basedn
+        group_filter = ('(objectClass=%s)') % self.group_class_attr
+        all_groups = self._dir_search(basedn, self.dir_scope, group_filter, ['cn'])
+
+        self.log.debug("all groups: %s" % all_groups)
+        return all_groups
+
+    def get_group_users(self, groupdn):
+        """Grab a list of users from the session store."""
+
+        lcnx = self._bind_dir()
+        self.log.info('get users')
+        if lcnx:
+                userinfo = self.expand_group_users(lcnx, groupdn)
+        else:
+            raise TracError('Unable to bind to Active Directory')
+        self.log.debug('get users: ' + str(userinfo))
+        return [u[0] for u in userinfo]
 
     @staticmethod
     def _decode_list(l=None):
