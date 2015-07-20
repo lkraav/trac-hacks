@@ -27,5 +27,6 @@ setup(name='TracAutoWikify',
           'trac.plugins': [
               'tracautowikify = tracautowikify.autowikify'
           ]
-      }
+      },
+      install_requires=['Trac'],
 )
