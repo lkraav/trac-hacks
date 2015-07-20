@@ -9,4 +9,6 @@ setup(name='TracPoll',
       maintainer_email = 'ryano@physiosonics.com',
       url='http://trac-hacks.org/wiki/PollMacro',
       license='BSD',
-      package_data={'tracpoll' : ['htdocs/css/*.css']})
+      package_data={'tracpoll' : ['htdocs/css/*.css']},
+      install_requires=['Trac'],
+      )
