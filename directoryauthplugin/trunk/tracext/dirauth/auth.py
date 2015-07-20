@@ -210,7 +210,7 @@ class DirAuthStore(Component):
 
         # Update the session data at each login,
         # Note the use of NoCache to force the update(s)
-        attrs = [self.user_attr, 'mail', 'proxyAddress', 'displayName']
+        attrs = [self.user_attr, self.email_attr, self.proxy_attr, self.name_attr]
         lfilter = '(&(%s=%s)(objectClass=person))' % (self.user_attr, user)
         users = self._dir_search(self.dir_basedn, self.dir_scope,
                                  lfilter, attrs, NOCACHE)
