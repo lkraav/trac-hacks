@@ -15,7 +15,7 @@ import ldap
 import time
 
 from trac.config import IntOption, Option
-from trac.core import *
+from trac.core import Component, TracError, implements
 from trac.perm import IPermissionGroupProvider
 from trac.util.text import to_unicode
 from trac.util.translation import _
@@ -23,7 +23,6 @@ from trac.util.translation import _
 from acct_mgr.api import IPasswordStore
 from tracext.dirauth.api import IPermissionUserProvider
 
-GROUP_PREFIX = '@'
 NOCACHE = 0
 
 __all__ = ['DirAuthStore']
@@ -31,7 +30,6 @@ __all__ = ['DirAuthStore']
 
 class DirAuthStore(Component):
     """Directory Password Store for Account Manager """
-
     implements(IPasswordStore, IPermissionGroupProvider,
                IPermissionUserProvider)
 
@@ -67,6 +65,15 @@ class DirAuthStore(Component):
 
     email_attr = Option('account-manager', 'email_attr', 'mail',
                         "Attribute of the users email in the directory")
+
+    proxy_attr = Option('account-manager', 'proxy_attr', 'proxyAddress',
+                        "Attribute of the users proxyAddress in the directory")
+
+    member_attr = Option('account-manager', 'member_attr', 'member',
+			 "Attribute to determine members of a group")
+
+    group_class_attr = Option('account-manager', 'group_class_attr', 'group',
+			      "Attribute of the group class")
 
     group_basedn = Option('account-manager', 'group_basedn', None,
                           "Base DN used for group searches")
@@ -112,17 +119,54 @@ class DirAuthStore(Component):
         if all_users:
             return all_users
 
-        # Cache miss. Go to session table.
-        all_users = []
-        known_users = self.env.get_known_users()
-        for user in known_users:
-            all_users.append(user[0])
+        # Cache miss
+        lcnx = self._bind_dir()
+        self.log.info('get users')
+        if lcnx:
+            if self.group_validusers:
+                userinfo = self.expand_group_users(lcnx, self.group_validusers)
+            else:
+                users = lcnx.search_s(self.base_dn, ldap.SCOPE_SUBTREE,
+                                      "objectClass=person",
+                                      [self.user_attr, self.email_attr,
+                                       self.proxy_attr, self.name_attr])
+                userinfo = [self._get_userinfo(u[1]) for u in users]
+        else:
+            raise TracError('Unable to bind to Active Directory')
+        self.log.info('get users: ' + str(userinfo))
+        return [u[0] for u in userinfo]
 
-        if all_users:
-            self.log.debug("userlist: %s ", ",".join(all_users))
-
-        self._cache_set('allusers', all_users)
-        return sorted(all_users)
+    def expand_group_users(self, cnx, group):
+        """Given a group name, enumerate all members"""
+        if group.startswith('@'):
+            group = group[1:]
+            self.log.debug("search groups cn=%s,%s" % (group, self.group_basedn))
+        g = cnx.search_s("cn=%s,%s" % (group, self.group_basedn), ldap.SCOPE_BASE, attrlist=[str(self.member_attr)])
+        self.log.debug(g)
+        if g and g[0][1].has_key(str(self.member_attr)):
+            users = []
+            for m in g[0][1][str(self.member_attr)]:
+                self.log.debug("group expand: " + m)
+                try:
+                    e = cnx.search_s(m, ldap.SCOPE_BASE)
+                    if e:
+                        if 'person' in e[0][1]['objectClass']:
+                            users.append(self._get_userinfo(e[0][1]))
+                        elif str(self.group_class_attr) in e[0][1]['objectClass']:
+                            users.extend(self.expand_group_users(cnx, e[0][0]))
+                        else:
+                            self.log.debug('The group member (%s) is neither a group nor a person' % e[0][0])
+                    else:
+                        self.log.debug('Unable to find user listed in group: %s' % str(m))
+                        self.log.debug('This is very strange and you should probably check '
+                                       'the consistency of your LDAP directory.' % str(m))
+                except Exception:
+                    self.log.debug('Unable to find ldap user listed in group: %s' % str(m))
+#                    users.append(m)
+            return users
+        else:
+            self.log.debug('Unable to find any members of the group %s' % group)
+            return []
 
     def has_user(self, user):
         users = self.get_users()
@@ -135,6 +179,11 @@ class DirAuthStore(Component):
         """Checks the password against LDAP."""
         success = None
         msg = "User Login: %s" % user
+
+        if not user or not password:
+            msg += " username or password can't be empty!"
+            self.log.info(msg)
+            return success
 
         user_dn = self._get_user_dn(user, NOCACHE)
         if user_dn:
@@ -304,13 +353,13 @@ class DirAuthStore(Component):
             return []
 
         basedn = self.group_basedn or self.dir_basedn
-        group_filter = '(&(objectClass=group)(member=%s))' % user_dn
+        group_filter = ('(&(objectClass=%s)(%s=%s))') % (self.group_class_attr, self.member_attr, user_dn)
         user_groups = self._dir_search(basedn, self.dir_scope,
                                        group_filter, ['cn'])
         for entry in user_groups:
             groupdn = entry[0]
             group = entry[1]['cn'][0]
-            group = '%s%s' % (GROUP_PREFIX, group.replace(' ', '_').lower())
+            group = group.replace(' ', '_').lower()
             groups.append(group)  # dn
             if group not in groups:
                 groups.append(self._get_parent_groups(groups, groupdn))
@@ -324,7 +373,7 @@ class DirAuthStore(Component):
             return []
 
     def _get_parent_groups(self, groups, group_dn):
-        group_filter = '(&(objectClass=group)(member=%s)' % group_dn
+        group_filter = '(&(objectClass=%s)(%s=%s)' % (self.group_class_attr, self.member_attr, group_dn)
         basedn = self.group_basedn or self.dir_basedn
         ldap_groups = self._dir_search(basedn, self.dir_scope,
                                        group_filter, ['cn'])
@@ -365,6 +414,10 @@ class DirAuthStore(Component):
         cur = db.cursor()
         try:
             cur.execute("""
+                DELETE FROM session
+                  WHERE sid=%s AND authenticated=1 
+                """, (uname,))
+            cur.execute("""
                 INSERT INTO session
                   (sid, authenticated, last_visit)
                 VALUES (%s, 1, %s)""", (uname, 0))
@@ -378,6 +431,10 @@ class DirAuthStore(Component):
         cur = db.cursor()
         try:
             cur.execute("""
+                DELETE FROM session_attribute 
+                  WHERE sid=%s AND authenticated=1 AND name='enabled' 
+                """, (uname,))
+            cur.execute("""
                 INSERT INTO session_attribute
                   (sid, authenticated, name, value)
                 VALUES (%s, 1, 'enabled', '1')
@@ -388,7 +445,11 @@ class DirAuthStore(Component):
         if email:
             cur = db.cursor()
             cur.execute("""
-                INSERT OR REPLACE INTO session_attribute
+                DELETE FROM session_attribute 
+                  WHERE sid=%s AND authenticated=1 AND name='email' 
+                """, (uname,))
+            cur.execute("""
+                INSERT INTO session_attribute
                   (sid, authenticated, name, value)
                 VALUES (%s, 1, 'email', %s)
                 """, (uname, to_unicode(email)))
@@ -398,7 +459,11 @@ class DirAuthStore(Component):
         if displayname:
             cur = db.cursor()
             cur.execute("""
-                INSERT OR REPLACE INTO session_attribute
+                DELETE FROM session_attribute 
+                  WHERE sid=%s AND authenticated=1 AND name='name' 
+                """, (uname,))
+            cur.execute("""
+                INSERT INTO session_attribute
                   (sid, authenticated, name, value)
                 VALUES (%s, 1, 'name', %s)
                 """, (uname, to_unicode(displayname)))
@@ -436,7 +501,7 @@ class DirAuthStore(Component):
             # Warn if too frequent.
             if 'last_prune' in self._cache:
                 last_prune, data = self._cache['last_prune']
-                if last_prune + self.cache_memsize_warn > now:
+                if last_prune + int(self.cache_memsize_warn) > now:
                     self.log.info("pruning memcache in less than %d seconds, "
                                   "you might increase cache_memsize.",
                                   self.cache_memsize_warn)
@@ -530,7 +595,11 @@ class DirAuthStore(Component):
         try:
             cur = db.cursor()
             cur.execute("""
-                INSERT OR REPLACE INTO dir_cache (id, lut, data)
+                DELETE FROM dir_cache WHERE id=%s 
+                """, (key,))
+            self.log.debug("INSERT VALUES (%s, %s, %s)" % (key, current_time, buffer(res_str)))
+            cur.execute("""
+                INSERT INTO dir_cache (id, lut, data)
                 VALUES (%s, %s, %s)
                 """, (key, current_time, buffer(res_str)))
             db.commit()

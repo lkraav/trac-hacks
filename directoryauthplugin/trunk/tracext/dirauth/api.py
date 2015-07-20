@@ -17,7 +17,7 @@ __all__ = ['IPermissionUserProvider', 'UserExtensiblePermissionStore']
 class IPermissionUserProvider(Interface):
     """ Provide permission actions for users """
 
-    def get_permission_action(username):
+    def get_permission_action(self, username):
         """ Return a list of the actions for the given username """
 
 

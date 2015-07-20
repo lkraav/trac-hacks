@@ -9,11 +9,12 @@
 #
 # Author: John Hampton <pacopablo@pacopablo.com>
 # Extended: Branson Matheson <branson.matheson@nasa.gov>
+# Fixed: Stefan "Bebbo" Franke <bebbo@bejy.net>
 
 from setuptools import setup
 
 PACKAGE = 'TracDirectoryAuth'
-VERSION = '2.0.0'
+VERSION = '2.0.1'
 
 setup(
     name=PACKAGE,
