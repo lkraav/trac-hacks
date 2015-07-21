@@ -41,7 +41,11 @@ jQuery(document).ready(function($) {
     function add_card_elements($stacks_element, data) {
         var $sorters = $stacks_element.find(".trac-cards-stack-sorter");
         $sorters.empty();
-        $.each(data.cards_by_id, function(id, card) {
+
+        var sorted_cards = $.map(data.cards_by_id, function(card, id) { return card; });
+        sorted_cards.sort(function(a, b) { return a.rank - b.rank; });
+
+        $.each(sorted_cards, function(index, card) {
             var $stack_sorter = $stacks_element.find('#trac-card-stack-' + card.stack).children('.trac-cards-stack-sorter');
             add_card_element($stack_sorter, card);
         });
@@ -90,9 +94,12 @@ jQuery(document).ready(function($) {
 
     // Auto-Refresh
     $(".trac-cards-reload").map(function() {
-        var PERIOD = 10 * 1000;
         var element = this;
-        var stacks_element = $(element).parents('.trac-cards-board').children('.trac-cards-stacks').get(0);
+        var $element = $(this);
+        var $stacks_element = $element.parents('.trac-cards-board').children('.trac-cards-stacks');
+        var stacks_element = $stacks_element.get(0);
+        var board_data = get_board_data($element);
+        var period = board_data.auto_refresh_interval * 1000;
         function autoRefresh() {
             reloadCards.call(element);
         }
@@ -100,16 +107,23 @@ jQuery(document).ready(function($) {
             var rect = el.getBoundingClientRect();
             return rect.top <= $(window).height() && rect.left <= $(window).width() && rect.bottom >= 0 && rect.right >= 0;
         }
-        function visibilityChanged() {
-            clearInterval(timer);
-            if (isElementPartiallyInViewport(stacks_element) && !document.hidden) {
-                timer = setInterval(autoRefresh, PERIOD);
+        board_data.reset_timer = function() {
+            if (board_data.timer) {
+                clearInterval(board_data.timer);
+                if (isElementPartiallyInViewport(stacks_element) && !document.hidden) {
+                    board_data.timer = setInterval(autoRefresh, period);
+                }
             }
         }
-        var timer = setInterval(autoRefresh, PERIOD);
-        $(document).on('DOMContentLoaded load resize scroll visibilitychange', visibilityChanged);
-        
-        // TODO: opening an edit dialog should maybe stop the auto-refresh-timer as well...
+        board_data.pause_timer = function() {
+            if (board_data.timer) {
+                clearInterval(board_data.timer);
+            }
+        }
+        if (board_data.auto_refresh) {
+            board_data.timer = setInterval(autoRefresh, period);
+            $(document).on('DOMContentLoaded load resize scroll visibilitychange', board_data.reset_timer);
+        }
     });
 
     // Use jQuery UI Sortable to drag-and-drop cards in and between stacks
@@ -120,6 +134,10 @@ jQuery(document).ready(function($) {
         placeholder: "trac-card-placeholder",
         start: function (event, ui) {
             ui.placeholder.html("<div>&nbsp;</div>")
+            
+            var $card_element = ui.item.children();
+            var board_data = get_board_data($card_element);
+            board_data.pause_timer();
         },
         
         // Move
@@ -136,9 +154,19 @@ jQuery(document).ready(function($) {
             var card = board_data.cards_by_id[card_id];
 
             var old_stack_name = card.stack;
+            var old_stack_rank = card.rank;
 
             card.stack = stack_name;
             card.rank = ui.item.index();
+            
+            $.each(board_data.cards_by_id, function(id, c) {
+                if (c != card && c.stack == old_stack_name && c.rank >= old_stack_rank) {
+                    c.rank -= 1;
+                }
+                if (c != card && c.stack == card.stack && c.rank >= card.rank) {
+                    c.rank += 1;
+                }
+            });
 
             var post_data = serialized_post_data(card, 'update_card', board_data);
             post_data.old_stack_name = old_stack_name;
@@ -150,7 +178,7 @@ jQuery(document).ready(function($) {
                         board_data.stacks_by_name[old_stack_name].version += 1;
                     }
                 })
-                .fail(show_error);
+                .fail(show_error).always(board_data.reset_timer);
         }
     });
     
@@ -160,7 +188,8 @@ jQuery(document).ready(function($) {
     function showEditCardDialog() {
     
         var board_data = get_board_data($(this));
-
+        board_data.pause_timer();
+        
         var $card_element = $(this);
         var card_id = get_card_id($card_element);
         var card = board_data.cards_by_id[card_id];
@@ -181,7 +210,7 @@ jQuery(document).ready(function($) {
                         current_dialog.dialog("close");
                     }).done(function() {
                         board_data.stacks_by_name[card.stack].version += 1;
-                    }).fail(show_error);
+                    }).fail(show_error).always(board_data.reset_timer);
                 },
                 "Delete!": function() {
                     var post_data = serialized_post_data(card, 'delete_card', board_data);
@@ -191,10 +220,11 @@ jQuery(document).ready(function($) {
                         current_dialog.dialog("close");
                     }).done(function() {
                         board_data.stacks_by_name[card.stack].version += 1;
-                    }).fail(show_error);
+                    }).fail(show_error).always(board_data.reset_timer);
                 },
                 "Cancel": function() {
                     $(this).dialog("close");
+                    board_data.reset_timer();
                 }
             }
         });
@@ -209,7 +239,7 @@ jQuery(document).ready(function($) {
         var stack_id = get_stack_name($element);
         var $stack_element = $element.parents('.trac-cards-stack');
         var $stack_sorter = $stack_element.children('.trac-cards-stack-sorter');
-
+        board_data.pause_timer();
         ctrlCreateTitle.val('');
         createDialog.dialog({
             modal: true,
@@ -231,10 +261,11 @@ jQuery(document).ready(function($) {
                         add_card_element($stack_sorter, added_card);
 
                         current_dialog.dialog("close");
-                      }, 'json').fail(show_error);
+                      }, 'json').fail(show_error).always(board_data.reset_timer);
                 },
                 "Cancel": function() {
                     $(this).dialog("close");
+                    board_data.reset_timer();
                 }
             }
         });

@@ -4,6 +4,7 @@ from itertools import groupby
 
 from genshi.builder import tag
 
+from trac.config import BoolOption, IntOption
 from trac.core import *
 from trac.web.chrome import (Chrome, add_script, add_script_data,
                              add_stylesheet, ITemplateProvider)
@@ -27,6 +28,14 @@ class CardsMacro(WikiMacroBase):
         [[Cards(stack=todo|active|done)]]
     }}}
     """
+
+
+    auto_refresh = BoolOption('cards', 'auto_refresh', 'True',
+        """Automatically poll the server to refresh all cards periodically.""")
+
+    auto_refresh_interval = IntOption('cards', 'auto_refresh_interval', 10,
+        """Interval between automatic refresh requests in seconds.""")
+
 
     def expand_macro(self, formatter, name, content):
         args, kw = parse_args(content)
@@ -53,6 +62,8 @@ class CardsMacro(WikiMacroBase):
             'api_url': formatter.href('card'),
             'cards_by_id': serialized_cards_by_id(cards, self.env, context),
             'stacks_by_name': serialized_stacks_by_name(stacks, stack_names),
+            'auto_refresh': self.auto_refresh,
+            'auto_refresh_interval': self.auto_refresh_interval,
         }
         board_data_id = '%012x' % id(board_data)
         
