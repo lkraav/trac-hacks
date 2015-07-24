@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2010-2015 Chris Wolf <cw10025@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 """
 Maintain synchronization of Trac tickets in Salesforce.  Trac tickets are
 reflected by the Salesforce custom object, Ticket__c and Comment__c.  
