@@ -19,16 +19,17 @@ class TracchildticketsModule(Component):
 
 
     @cached
-    def childtickets(self,db):
-        # NOTE: Ignore the above 'db' arg that is supplied to '@cached' decorated functions - I think I read somewhere that
-        # this is no longer supported. (But I'm keeping it here for compatibility!)
-        db = self.env.get_db_cnx() 
-        cursor = db.cursor() 
-        cursor.execute("SELECT ticket,value FROM ticket_custom WHERE name='parent'")
+    def childtickets(self):
+        # NOTE: Ignore the above 'db' arg that is supplied to '@cached' decorated functions - should this be removed now?
+
         x = {}    # { parent -> children } - 1:n
-        for child,parent in cursor.fetchall():
-            if parent and re.match('#\d+',parent):
-                x.setdefault( int(parent.lstrip('#')), [] ).append(child)
+
+        with self.env.db_transaction as db:
+            cursor = db.cursor() 
+            cursor.execute("SELECT ticket,value FROM ticket_custom WHERE name='parent'")
+            for child,parent in cursor.fetchall():
+                if parent and re.match('#\d+',parent):
+                    x.setdefault( int(parent.lstrip('#')), [] ).append(child)
         return x
 
 
@@ -112,7 +113,7 @@ class TracchildticketsModule(Component):
                 if parent['status'] == 'closed':
                     yield 'parent', "The parent ticket (#%s) is not an active ticket (status: %s)." % (pid,parent['status'])
 
-                # self.env.log.debug("TracchildticketsModule : parent.ticket.type: %s" % parent['type'])
+                self.env.log.debug("TracchildticketsModule : parent.ticket.type: %s" % parent['type'])
 
     
     # ITemplateStreamFilter methods
