@@ -53,10 +53,9 @@ setup(
             'templates/*.txt'
         ]
     },
-    install_requires = ['Genshi >= 0.5', 'Trac >= 0.11'],
+    install_requires = ['Trac'],
     extras_require={
         'Babel': 'Babel>= 0.9.5',
-        'Trac': 'Trac >= 0.12',
         'acct_mgr': 'TracAccountManager',
         'bitten': 'Bitten',
         'fullblog': 'TracFullBlogPlugin',

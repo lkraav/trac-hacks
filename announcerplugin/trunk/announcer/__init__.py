@@ -7,4 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import pkg_resources
+pkg_resouces.require('Trac >= 1.0')
+
 __version__ = __import__('pkg_resources').get_distribution('TracAnnouncer').version
