@@ -463,3 +463,10 @@ class SubscriptionAttribute(object):
                 attrs.append(attr)
 
         return attrs
+
+    @classmethod
+    def change_target(cls, env, klass, realm, target, new_target):
+        env.db_transaction("""
+            UPDATE subscription_attribute SET target=%s
+            WHERE class=%s AND realm=%s AND target=%s
+            """, (new_target, klass, realm, target))
