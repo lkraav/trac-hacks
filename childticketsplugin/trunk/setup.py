@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 # use package name as entry_points
 setup(
     name = 'Tracchildtickets',
-    version = 'dev',
+    version = '2.5.3',
     packages = find_packages(),
     author = 'Mark Ryan',
     author_email = 'fatrascal@bigfoot.com@gmail.com',
