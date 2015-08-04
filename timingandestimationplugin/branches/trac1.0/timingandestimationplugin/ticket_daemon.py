@@ -29,10 +29,16 @@ def save_custom_field_value( db, ticket_id, field, value ):
     cursor.execute("UPDATE ticket_custom SET value=%s "
                    "WHERE ticket=%s AND name=%s", (value, ticket_id, field))
 
-    if cursor.rowcount==0:
-        cursor.execute("INSERT INTO ticket_custom (ticket,name, "
-                       "value) VALUES(%s,%s,%s)", (ticket_id, field, value))
+    try:
+        if cursor.rowcount == 0:
+            cursor.execute("INSERT INTO ticket_custom (ticket,name, "
+                           "value) VALUES(%s,%s,%s)",
+                           (ticket_id, field, value))
+    # MySQLdb is not returning the correct rowcount?
+    except:
+        pass
 
+    
 def update_hours_to_floats(db, ticket_id):
     cursor = db.cursor()
     cursor.execute("SELECT time, newvalue FROM ticket_change"
@@ -54,10 +60,14 @@ def update_totalhours_custom( db, ticket_id):
     cursor.execute("UPDATE ticket_custom SET value="+sumSql+
                    "WHERE ticket=%s AND name='totalhours'",
                (ticket_id,ticket_id))
-    if cursor.rowcount==0:
-        cursor.execute("INSERT INTO ticket_custom (name, value, ticket) "+
-                       "VALUES('totalhours',"+sumSql+",%s)",
-                       (ticket_id,ticket_id))
+    try:
+        if cursor.rowcount==0:
+            cursor.execute("INSERT INTO ticket_custom (name, value, ticket) "+
+                           "VALUES('totalhours',"+sumSql+",%s)",
+                           (ticket_id,ticket_id))
+    # MySQLdb is not returning the correct rowcount?
+    except:
+        pass
 
 def insert_totalhours_changes( db, ticket_id):
     sql = """
