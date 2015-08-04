@@ -112,8 +112,8 @@ class WatchlistPlugin(Component):
                 self.log.debug("WS: WatchSubscriber found in announcerplugin")
         except Exception, e:
             try:
-                # Import fallback methods for AnnouncerPlugin's dev version
-                from  announcer.subscribers.watchers  import  WatchSubscriber
+                # Import fallback methods for AnnouncerPlugin 1.0
+                from announcer.opt.subscribers import WatchSubscriber
                 self.wsub = self.env[WatchSubscriber]
                 if self.wsub:
                     self.log.debug("WS: WatchSubscriber found in announcer")
