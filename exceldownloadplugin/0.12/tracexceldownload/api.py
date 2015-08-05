@@ -19,6 +19,8 @@ class WorksheetWriterError(TracError): pass
 class WorksheetWriter(object):
 
     MAX_ROWS = 65536
+    MAX_COLS = 255
+    MAX_CHARS = 32767
 
     def __init__(self, sheet, req):
         self.sheet = sheet
@@ -34,8 +36,6 @@ class WorksheetWriter(object):
         self._metrics_cache = {}
         self._cells_count = 0
 
-    _normalize_newline = re.compile(r'\r\n?').sub
-
     def move_row(self):
         self.row_idx += 1
         if self.row_idx >= self.MAX_ROWS:
@@ -47,7 +47,6 @@ class WorksheetWriter(object):
     def write_row(self, cells):
         _get_style = self._get_style
         _set_col_width = self._set_col_width
-        _normalize_newline = self._normalize_newline
         get_metrics = self.get_metrics
         tz = self.tz
         has_tz_normalize = hasattr(tz, 'normalize')  # pytz
@@ -59,9 +58,9 @@ class WorksheetWriter(object):
             if isinstance(value, basestring):
                 if isinstance(value, str):
                     value = to_unicode(value)
-                value = value.rstrip()
-                if '\r' in value:
-                    value = _normalize_newline('\n', value)
+                value = '\n'.join(line.rstrip() for line in value.splitlines())
+                if len(value) > self.MAX_CHARS:
+                    value = value[:self.MAX_CHARS - 1] + u'\u2026'
             elif isinstance(value, datetime):
                 value = value.astimezone(tz)
                 if has_tz_normalize: # pytz
