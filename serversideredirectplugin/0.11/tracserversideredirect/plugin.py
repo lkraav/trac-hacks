@@ -6,29 +6,31 @@
     $Id$
 """
 
-__url__      = ur"$URL$"[6:-2]
-__author__   = ur"$Author$"[9:-2]
+__url__ = ur"$URL$"[6:-2]
+__author__ = ur"$Author$"[9:-2]
 __revision__ = ur"$Rev$"[6:-2]
-__date__     = ur"$Date$"[7:-2]
+__date__ = ur"$Date$"[7:-2]
 
-from  trac.core          import  *
-from  trac.web.api       import  IRequestHandler, IRequestFilter, RequestDone
-from  trac.wiki.api      import  IWikiMacroProvider
-from  trac.mimeview.api  import  Context
-from  trac.wiki.model    import  WikiPage
-from  genshi.builder     import  tag
 import re
 
-from  tracextracturl.extracturl import  extract_url
+from genshi.builder import tag
+from trac.core import *
+from trac.mimeview.api import Context
+from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
+from trac.wiki.api import IWikiMacroProvider
+from trac.wiki.model import WikiPage
+
+from tracextracturl.extracturl import extract_url
 
 MACRO = re.compile(r'.*\[\[[rR]edirect\((.*)\)\]\]')
 
+
 class ServerSideRedirectPlugin(Component):
     """This Trac plug-in implements a server sided redirect functionality.
-The user interface is the wiki macro `Redirect` (alternativly `redirect`).
+The user interface is the wiki macro `Redirect` (alternatively `redirect`).
 
 == Description ==
-Website: http://trac-hacks.org/wiki/ServerSideRedirectPlugin
+Website: https://trac-hacks.org/wiki/ServerSideRedirectPlugin
 
 `$Id$`
 
@@ -73,7 +75,7 @@ Any other [TracLinks TracLink] can be used:
 [[Redirect(http://www.example.com/)]]
 }}}
     """
-    implements ( IRequestHandler, IRequestFilter, IWikiMacroProvider )
+    implements(IRequestHandler, IRequestFilter, IWikiMacroProvider)
 
     redirect_target = ''
 
@@ -82,47 +84,38 @@ Any other [TracLinks TracLink] can be used:
 
         target = extract_url(self.env, formatter.context, content)
         if not target:
-          target = formatter.context.req.href.wiki(content)
+            target = formatter.context.req.href.wiki(content)
 
         return tag.div(
-                  tag.strong('This page redirects to: '),
-                  tag.a(content, href=target),
-                  class_ = 'system-message',
-                  id = 'notice'
-               )
+            tag.strong('This page redirects to: '),
+            tag.a(content, href=target),
+            class_='system-message',
+            id='notice'
+        )
 
     def get_macros(self):
         """Provide but do not redefine the 'redirect' macro."""
         get = self.env.config.get
-        if get('components','redirect.*') == 'enabled' or \
-           get('components','redirect.redirect.*') == 'enabled' or \
-           get('components','redirect.redirect.tracredirect') == 'enabled':
-            return ['Redirect',]
+        if get('components', 'redirect.*') == 'enabled' or \
+                get('components', 'redirect.redirect.*') == 'enabled' or \
+                get('components',
+                    'redirect.redirect.tracredirect') == 'enabled':
+            return ['Redirect']
         else:
-            return ['redirect','Redirect']
+            return ['redirect', 'Redirect']
 
-    def get_macro_description(self,name):
+    def get_macro_description(self, name):
         if name == 'Redirect':
-          return self.__doc__
+            return self.__doc__
         else:
-          return "See macro `Redirect`."
+            return "See macro `Redirect`."
+
+    # IRequestHandler methods
 
     def match_request(self, req):
         """Only handle request when selected from `pre_process_request`."""
         return False
 
-    def split_link(self, target):
-        """Split a target along "?" and "#" in `(path, query, fragment)`."""
-        query = fragment = ''
-        idx = target.find('#')
-        if idx >= 0:
-            target, fragment = target[:idx], target[idx:]
-        idx = target.find('?')
-        if idx >= 0:
-            target, query = target[:idx], target[idx:]
-        return (target, query, fragment)
-
-   # IRequestHandler methods
     def process_request(self, req):
         """Redirect to pre-selected target."""
         if self.redirect_target or self._check_redirect(req):
@@ -131,40 +124,47 @@ Any other [TracLinks TracLink] can be used:
             # Check for self-redirect:
             if target and target == req.href(req.path_info):
                 message = tag.div('Please ',
-                     tag.a( "change the redirect target",
-                            href = target + "?action=edit" ),
-                     ' to another page.',
-                     class_ = "system-message")
-                data = { 'title':"Page redirects to itself!",
-                         'message':message,
-                         'type':'TracError',
-                       }
-                req.send_error(data['title'], status=409, env=self.env, data=data)
+                                  tag.a("change the redirect target",
+                                        href=target + "?action=edit"),
+                                  ' to another page.',
+                                  class_="system-message")
+                data = {
+                    'title': "Page redirects to itself!",
+                    'message': message,
+                    'type': 'TracError'
+                }
+                req.send_error(data['title'], status=409,
+                               env=self.env, data=data)
                 raise RequestDone
 
             # Check for redirect pair, i.e. A->B, B->A
-            if target and target == req.href.wiki(req.args.get('redirectedfrom','')):
-                message = tag.div('Please change the redirect target from either ',
-                     tag.a( "this page", href = req.href(req.path_info, action="edit")),
-                     ' or ',
-                     tag.a( "the redirecting page", href = target + "?action=edit" ),
-                     '.',
-                     class_ = "system-message")
-                data = { 'title':"Redirect target redirects back to this page!",
-                         'message':message,
-                         'type':'TracError',
-                       }
-                req.send_error(data['title'], status=409, env=self.env, data=data)
+            redirected_from = req.args.get('redirectedfrom', '')
+            if target and target == req.href.wiki(redirected_from):
+                message = tag.div(
+                    'Please change the redirect target from either ',
+                    tag.a("this page",
+                          href=req.href(req.path_info, action="edit")),
+                    ' or ',
+                    tag.a("the redirecting page",
+                          href=target + "?action=edit"),
+                    '.', class_="system-message")
+                data = {
+                    'title': "Redirect target redirects back to this page!",
+                    'message': message,
+                    'type': 'TracError'
+                }
+                req.send_error(data['title'], status=409,
+                               env=self.env, data=data)
                 raise RequestDone
 
             # Add back link information for internal links:
             if target and target[0] == '/':
-                redirectfrom =  "redirectedfrom=" + req.path_info[6:]
+                redirectfrom = "redirectedfrom=" + req.path_info[6:]
                 # anchor should be the last in url
                 # according to http://trac.edgewall.org/ticket/8072
-                tgt, query, anchor= self.split_link(target)
+                tgt, query, anchor = self.split_link(target)
                 if not query:
-                    query  = "?" + redirectfrom
+                    query = "?" + redirectfrom
                 else:
                     query += "&" + redirectfrom
                 target = tgt + query + anchor
@@ -175,11 +175,11 @@ Any other [TracLinks TracLink] can be used:
     def _check_redirect(self, req):
         """Checks if the request should be redirected."""
         if req.path_info == '/' or req.path_info == '/wiki':
-          wiki = 'WikiStart'
+            wiki = 'WikiStart'
         elif not req.path_info.startswith('/wiki/'):
-          return False
+            return False
         else:
-          wiki = req.path_info[6:]
+            wiki = req.path_info[6:]
 
         wp = WikiPage(self.env, wiki, req.args.get('version'))
 
@@ -191,51 +191,58 @@ Any other [TracLinks TracLink] can be used:
         if not m:
             return False
         wikitarget = m.groups()[0]
-        self.redirect_target = extract_url(self.env, Context.from_request(req), wikitarget)
+        ctxt = Context.from_request(req)
+        self.redirect_target = extract_url(self.env, ctxt, wikitarget)
         if not self.redirect_target:
-          self.redirect_target = req.href.wiki(wikitarget)
+            self.redirect_target = req.href.wiki(wikitarget)
         return True
 
-
-   # IRequestFilter methods
-    """Extension point interface for components that want to filter HTTP
-    requests, before and/or after they are processed by the main handler."""
+    # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        """Called after initial handler selection, and can be used to change
-        the selected handler or redirect request.
-
-        Always returns the request handler, even if unchanged.
-        """
         from trac.wiki.web_ui import WikiModule
         args = req.args
 
         if not isinstance(handler, WikiModule):
-           return handler
-        if not req.path_info.startswith('/wiki/') and not req.path_info == '/wiki' and not req.path_info == '/':
-           self.env.log.debug("SSR: no redirect: Path is not a wiki path")
-           return handler
+            return handler
+        if not req.path_info.startswith('/wiki/') and \
+                not req.path_info == '/wiki' and not req.path_info == '/':
+            self.log.debug("SSR: no redirect: Path is not a wiki path")
+            return handler
         if req.method != 'GET':
-           self.env.log.debug("SSR: no redirect: No GET request")
-           return handler
+            self.log.debug("SSR: no redirect: No GET request")
+            return handler
         if 'action' in args:
-           self.env.log.debug("SSR: no redirect: action=" + args['action'])
-           return handler
-        if args.has_key('version'):
-           self.env.log.debug("SSR: no redirect: version=...")
-           return handler
-        if args.has_key('redirect') and args['redirect'].lower() == 'no':
-           self.env.log.debug("SSR: no redirect: redirect=no")
-           return handler
-        if req.environ.get('HTTP_REFERER','').find('action=edit') != -1:
-           self.env.log.debug("SSR: no redirect: HTTP_REFERER includes action=edit")
-           return handler
+            self.log.debug("SSR: no redirect: action=" + args['action'])
+            return handler
+        if 'version' in args:
+            self.log.debug("SSR: no redirect: version=...")
+            return handler
+        if 'redirect' in args and args['redirect'].lower() == 'no':
+            self.log.debug("SSR: no redirect: redirect=no")
+            return handler
+        if req.environ.get('HTTP_REFERER', '').find('action=edit') != -1:
+            self.log.debug("SSR: no redirect: HTTP_REFERER includes "
+                           "action=edit")
+            return handler
         if self._check_redirect(req):
-           self.env.log.debug("SSR: redirect!")
-           return self
-        self.env.log.debug("SSR: no redirect: No redirect macro found.")
+            self.log.debug("SSR: redirect!")
+            return self
+        self.log.debug("SSR: no redirect: No redirect macro found.")
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        return (template, data, content_type)
+        return template, data, content_type
 
+    # Internal methods
+
+    def split_link(self, target):
+        """Split a target along "?" and "#" in `(path, query, fragment)`."""
+        query = fragment = ''
+        idx = target.find('#')
+        if idx >= 0:
+            target, fragment = target[:idx], target[idx:]
+        idx = target.find('?')
+        if idx >= 0:
+            target, query = target[:idx], target[idx:]
+        return target, query, fragment
