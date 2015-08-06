@@ -20,8 +20,8 @@
   // bind "flip" above to labels in page.
   function binder() {
     var $filters = $("#filters");
-    $filters.on('dblclick', 'label', flip);
-    $filters.on('dblclick', ':checkbox, :checkbox + label', selectone);
+    $filters.on('dblclick', 'th label', flip);
+    $filters.on('dblclick', 'td :checkbox, td :checkbox + label', selectone);
   }
 
   $(document).ready(function() { binder() })
