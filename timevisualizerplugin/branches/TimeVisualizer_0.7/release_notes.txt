@@ -66,6 +66,16 @@ out from right side (but not from left). For example 2008 is same as
 Timedelta shall be passed in form xxYxxMxDTxxHxxMxxS. Any component is allowed,
 e.g. 4 days and 5 seconds period is `4DT5S`.
 
+Version 0.7
+--------------------------------------------------------------------------------
+
+- Added support for specifying multiple lines separated by a comma in the calc_fields string.
+- Made it possible to specify the line color and with in the calc_fields string
+  in the following format: expression[:color[:width]].
+  For example estimatedhours-totalhours:green:3
+- Made it possible specify the grid color and width using the gridcolor and
+  gridwidth options. Also changed the default values.
+
 Version 0.6
 --------------------------------------------------------------------------------
 

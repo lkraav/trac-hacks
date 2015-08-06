@@ -19,6 +19,8 @@ import time
 import sys
 import StringIO
 import datetime
+import re
+import itertools
 
 #http://en.wikipedia.org/wiki/ISO_8601
 #http://wiki.python.org/moin/WorkingWithTime
@@ -80,6 +82,64 @@ def trac_parse_date(obj):
         result = timegm(result.timetuple())
     return result
 
+def tofloat(obj):
+    """Converts object to float. Accepts bot dot and comma as decimal separator. If object is None or empty string, 0.0 is returned."""
+    if isinstance(obj,float):
+        return obj
+    if not obj: # None or empty string
+        return 0.0
+    if isinstance(obj,str) or isinstance(obj,unicode):
+        return float(obj.replace(",","."))
+    return float(obj) #fallback
+
+def parse_fields(fields):
+    """Parse the calc_fields string. The format of the string is EXPRESSION[:COLOR[:WIDTH]],...
+    Supported operations in the expression are + and -. The return value is a list of dicts.
+    
+    For example: "estimatedhours:blue:3,estimatedhours-totalhours:green" ->
+    [
+        {'expression': 'estimatedhours', 'color': 'blue', 'width': 3},
+        {'expression': 'estimatedhours-totalhours', 'color': 'green', 'width': 2}
+    ]
+    """
+    default_colors = itertools.cycle(['red', 'green', 'blue', 'orange'])
+    
+    ret = []
+    for field in fields.split(','):
+        parts = field.split(':')
+        ret.append({
+            'expression': parts[0],
+            'color': parts[1] if len(parts) > 1 else default_colors.next(),
+            'width': int(parts[2]) if len(parts) > 2 else 2,
+        })
+    
+    return ret
+
+def get_expression_variables(expression):
+    """Returns a set of vaiable names used in an expression"""
+    return set(re.split('[+-]', expression))
+
+def eval_expression(expression, variables):
+    """Evaluate an expression"""
+    
+    # Find the next operator
+    pos = max(expression.rfind('+'), expression.rfind('-'))
+    
+    # If no operator found the expression have to be a variable name
+    if pos == -1:
+        return tofloat(variables[expression])
+    
+    # Eval the expression on both sides of the operator
+    left = eval_expression(expression[:pos], variables)
+    right = eval_expression(expression[pos + 1:], variables)
+    
+    # Do the operation
+    if expression[pos] == '+':
+        return left + right
+    if expression[pos] == '-':
+        return left - right
+    raise ValueError('Invalid operator: %s' % expression[pos])
+
 # ==============================================================================
 def build_svg(db, options):
     """trac db instance (usually taken from environment) is mandatory."""
@@ -98,8 +158,9 @@ def build_svg(db, options):
     dateend=options.get('dateend', None)
     hidedates=options.get('hidedates')
     hidehours=options.get('hidehours')
-    calc_fields_str = options.get('calc_fields')
-    calc_fields = calc_fields_str.split('-')
+    gridcolor=options.get('gridcolor', 'rgb(192, 192, 192)')
+    gridwidth=strtotype(options.get('gridwidth', 1), int)
+    calc_fields = parse_fields(options.get('calc_fields'))
 
     print "********************** serving ***********************"
     format_datetime = trac.util.format_datetime
@@ -129,27 +190,18 @@ def build_svg(db, options):
     # this dict stores tickets. Tickets are updated on each 'revision' visited - so this contains snapshot of tickets at certain time
     tickets = {}
 
-    def tofloat(obj):
-        """Converts object to float. Accepts bot dot and comma as decimal separator. If object is None or empty string, 0.0 is returned."""
-        if isinstance(obj,float):
-            return obj
-        if not obj: # None or empty string
-            return 0.0
-        if isinstance(obj,str) or isinstance(obj,unicode):
-            return float(obj.replace(",","."))
-        return float(obj) #fallback
-
     def calc_hours(tickets):
-        """Calculates totalhours of tickets on current tickets state taking filters in the account."""
-        result = 0.0
-        for ticket in tickets.values():
-            if targetmilestone and ticket['milestone'] != targetmilestone: continue
-            if targetticket and ticket['id'] != targetticket: continue
-            if targetcomponent and ticket['component'] != targetcomponent: continue
-            if len(calc_fields) == 2:
-                result += tofloat(ticket[calc_fields[0]]) - tofloat(ticket[calc_fields[1]])
-            else:
-                result += tofloat(ticket[calc_fields[0]])
+        """Calculates calc_fields of tickets on current tickets state taking filters in the account."""
+        result = []
+        for calc_field in calc_fields:
+            hours = 0.0
+            for ticket in tickets.values():
+                if targetmilestone and ticket['milestone'] != targetmilestone: continue
+                if targetticket and ticket['id'] != targetticket: continue
+                if targetcomponent and ticket['component'] != targetcomponent: continue
+                hours += eval_expression(calc_field['expression'], ticket)
+            
+            result.append(hours)
         return result
 
     cursor = db.cursor()
@@ -179,7 +231,10 @@ def build_svg(db, options):
         )
 
     # todo: fetch from db/env
-    custom_ticket_fields = calc_fields
+    custom_ticket_fields = set()
+    for calc_field in calc_fields:
+        custom_ticket_fields.update(get_expression_variables(calc_field['expression']))
+    custom_ticket_fields = list(custom_ticket_fields)
 
     sql = StringIO.StringIO()
     sql.write('SELECT \n')
@@ -326,8 +381,8 @@ def build_svg(db, options):
 
     maxhours = 0.1; # there was division by zero if all hours are zero (should not happen anymore though)
     for i in range(0, len(result),2):
-        if result[i+1] > maxhours:
-            maxhours = result[i+1]
+        for value in result[i+1]:
+            maxhours = max(maxhours, value)
 
     # todo: margin as percents
     #margin = 2
@@ -344,8 +399,8 @@ def build_svg(db, options):
 """
     # draw time interval
     for i in range(largesttime, 0, -time_interval):
-        svg += """<line x1="%f%%" y1="0%%" x2="%f%%" y2="100%%" style="stroke:rgb(150,255,255);stroke-width:3"/>\n""" % \
-            (i * fx, i*fx)
+        svg += """<line x1="%f%%" y1="0%%" x2="%f%%" y2="100%%" style="stroke:%s;stroke-width:%d"/>\n""" % \
+            (i * fx, i*fx, gridcolor, gridwidth)
 
     if not hidehours:
         hourlines=5
@@ -354,19 +409,20 @@ def build_svg(db, options):
         i=0.0
         while(i < maxhours):
             y = 100 - i * fy
-            svg += '<line x1="0" y1="%f%%" x2="100%%" y2="%f%%" style="stroke:rgb(150,255,255);stroke-width:3"/>\n' % (y,y)
+            svg += '<line x1="0" y1="%f%%" x2="100%%" y2="%f%%" style="stroke:%s;stroke-width:%d"/>\n' % (y,y, gridcolor, gridwidth)
             if i > 0:
                 svg += '<text x="0" y="%f%%" text-anchor="start" style="font-family:verdana;">%s</text>\n' %  (y, str(i))
             i += step
 
-    #result= [1581,5,     0,2,     0,0]
-    #result= [1581,5,     700,2,     300,4,  0,0]
+    #result= [1581,[5,3],     0,[2,6],     0,[0,9]]
+    #result= [1581,[5,3],     700,[2,6],     300,[4,9],  0,[0,12]]
     for i in range(0, len(result)-2, 2):
-        svg += """<line x1="%f%%" y1="%f%%" x2="%f%%" y2="%f%%" style="stroke:rgb(0,200,0);stroke-width:3"/>\n""" % \
-            (result[i] * fx, 100 - result[i+1] * fy, result[i] * fx, 100 - result[i+3] * fy)
+        for j in xrange(len(result[i+1])):
+            svg += """<line x1="%f%%" y1="%f%%" x2="%f%%" y2="%f%%" style="stroke:%s;stroke-width:%d"/>\n""" % \
+                (result[i] * fx, 100 - result[i+1][j] * fy, result[i] * fx, 100 - result[i+3][j] * fy, calc_fields[j]['color'], calc_fields[j]['width'])
 
-        svg += """<line x1="%f%%" y1="%f%%" x2="%f%%" y2="%f%%" style="stroke:rgb(0,200,0);stroke-width:3"/>\n""" % \
-            (result[i] * fx, 100 - result[i+3] * fy, result[i+2] * fx, 100 - result[i+3] * fy)
+            svg += """<line x1="%f%%" y1="%f%%" x2="%f%%" y2="%f%%" style="stroke:%s;stroke-width:%d"/>\n""" % \
+                (result[i] * fx, 100 - result[i+3][j] * fy, result[i+2] * fx, 100 - result[i+3][j] * fy, calc_fields[j]['color'], calc_fields[j]['width'])
 
     if not hidedates:
         # draw graph start & end dates

@@ -4,9 +4,9 @@ from tractimevisualizerplugin import *
 
 DEVELOPER_MODE=False
 
-__version__ = '0.6'
+__version__ = '0.7'
 __url__ = 'http://trac-hacks.org/wiki/TimeVisualizerPlugin'
-__author__ = 'Markus Pelkonen'
+__author__ = 'Markus Pelkonen, Fredrik Kers'
 __copyright__ = 'Copyright (C) 2008 Markus Pelkonen'
 __license__ = 'BSD'
 __license_long__ = __copyright__ + """
