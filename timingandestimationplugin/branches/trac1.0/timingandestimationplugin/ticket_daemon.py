@@ -126,7 +126,7 @@ class TimeTrackingTicketObserver(Component):
         """Called when a ticket is modified."""
         self.watch_hours(ticket)
 
-    def ticket_change_deleted(ticket, cdate, changes):
+    def ticket_change_deleted(self, ticket, cdate, changes):
         """called when a ticket change is deleted"""
         self.watch_hours(ticket)
 

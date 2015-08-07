@@ -152,7 +152,7 @@ class TimeTrackingTicketObserver(Component):
         """
         self.watch_hours(ticket, author)
 
-    def ticket_change_deleted(ticket, cdate, changes):
+    def ticket_change_deleted(self, ticket, cdate, changes):
         """called when a ticket change is deleted"""
         self.watch_hours(ticket)
 
