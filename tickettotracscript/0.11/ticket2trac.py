@@ -45,7 +45,8 @@ import sys
 
 from trac.env import open_environment
 from trac.ticket import Ticket
-
+from trac.ticket.api import TicketSystem
+from trac.ticket.notification import TicketNotifyEmail
 
 class Ticket2Trac():
     """ A Class for adding a ticket to trac """
@@ -55,9 +56,10 @@ class Ticket2Trac():
         options, remaining_args = self.parse(args)
         trac_env = self.getProjectEnv(remaining_args[0])
         ticket_fields = self.getTicketFields(options)
-        ticket_number = self.createTicket(ticket_fields, trac_env)
+        ticket, ticket_number = self.createTicket(ticket_fields, trac_env)
         
         if ticket_number:    
+            self.postCreate(ticket,trac_env)
             print "Ticket number #%d created" % ticket_number
             sys.exit(0)
         else:
@@ -101,6 +103,9 @@ class Ticket2Trac():
 
         parser.add_option('-o', '--owner', dest='owner',
                           help='Principal person responsible for handling the issue.')
+        
+        parser.add_option('-x', '--cc', dest='cc',
+                          help='Email carbon copies to this users or email-addresses.')
         
         parser.add_option('-s', '--status', dest='status', default = 'new',
                           help='What is the current status? One of new, assigned, closed, reopened. default is "new"')
@@ -161,8 +166,8 @@ class Ticket2Trac():
         
         try:
             env = open_environment(path)
-        except:
-            print "First argument must be a valid trac path. The directory where you installed trac"
+        except Exception, e:
+            print "First argument must be a valid trac path. The directory where you installed trac.", e
             sys.exit(1)
 
         return env
@@ -187,8 +192,18 @@ class Ticket2Trac():
         # Don't write to ticket.values[] unless you know what you are doing
         ticket.populate(ticket_fields)
         
+        
         # create the ticket
-        return ticket.insert()
+        ticket_number = ticket.insert()
+
+        return ticket, ticket_number
+
+    def postCreate(self, ticket, env):
+        """ Does things after creating a ticket """
+
+        # Send notify emails
+        tn = TicketNotifyEmail(env)
+        tn.notify(ticket)
 
 
 if __name__ == '__main__':
