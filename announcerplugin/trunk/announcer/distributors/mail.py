@@ -478,7 +478,7 @@ class EmailDistributor(Component):
             rootMessage.attach(parentMessage)
 
             alt_msg_format = 'html' in alternate_style and 'html' or 'plain'
-            if isinstance(alternative_output, unicode):
+            if isinstance(alternate_output, unicode):
                 alternate_output = alternate_output.encode('utf-8')
             msgText = MIMEText(alternate_output, alt_msg_format)
             msgText.set_charset(self._charset)
