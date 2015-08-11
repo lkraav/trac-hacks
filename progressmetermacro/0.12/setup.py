@@ -15,7 +15,7 @@ setup(
     url = 'http://trac-hacks.org/wiki/ProgressMeterMacro',
     license = 'BSD',
 
-    install_requires = ['Python >= 2.5', 'Trac >= 0.12'],
+    install_requires = ['Trac >= 0.12'],
     classifiers = [
         'Framework :: Trac',
     ],
