@@ -55,11 +55,11 @@ class linkLoader:
 
     """
     Helper to load page from an URL and load corresponding
-    files to temporary files. If getFileName is called it 
+    files to temporary files. If getFileName is called it
     returns the temporary filename and takes care to delete
-    it when linkLoader is unloaded. 
+    it when linkLoader is unloaded.
     """
-    
+
     def __init__(self, env, req, auth_cookie=None, allow_local=False):
         self.tfileList = []
         self.env = env
@@ -67,15 +67,15 @@ class linkLoader:
         self.req = req
         self.allow_local = allow_local
         self.env.log.debug('WikiPrint.linkLoader => Initializing')
-    
+
     def __del__(self):
         for path in self.tfileList:
             self.env.log.debug("WikiPrint.linkLoader => deleting %s", path)
             os.remove(path)
-            
+
     def getFileName(self, name, relative=''):
         try:
-                
+
             if name.startswith('http://') or name.startswith('https://'):
                 self.env.log.debug(
                     "WikiPrint.linkLoader => Resolving URL: %s" % name)
@@ -93,7 +93,7 @@ class linkLoader:
                     "WikiPrint.linkLoader => Relative path %s to %s", name,
                     urlparse.urljoin(self.req.abs_href(), name))
                 url = urlparse.urljoin(self.req.abs_href(), name)
-                
+
             path = urlparse.urlsplit(url)[2]
             self.env.log.debug("WikiPrint.linkLoader => path: %s" % path)
             suffix = ''
@@ -103,7 +103,7 @@ class linkLoader:
                                   '.ttc'):
                     suffix = new_suffix
             path = tempfile.mktemp(prefix='pisa-', suffix=suffix)
-            
+
             # Allow wikiprint to authenticate using user and password,
             # Basic HTTP Auth or Digest
             if self.env.config.get('wikiprint', 'httpauth_user'):
@@ -114,10 +114,10 @@ class linkLoader:
                     self.env.config.get('wikiprint', 'httpauth_password'))
                 auth_handler = urllib2.HTTPBasicAuthHandler(pwmgr)
                 auth_handler2 = urllib2.HTTPDigestAuthHandler(pwmgr)
-            
+
                 opener = urllib2.build_opener(auth_handler, auth_handler2)
                 urllib2.install_opener(opener)
-            
+
             # Prepare the request with the auth cookie
             request = urllib2.Request(url)
             self.env.log.debug(
@@ -125,7 +125,7 @@ class linkLoader:
                 self.auth_cookie)
             request.add_header(
                 "Cookie", "pdfgenerator_cookie=%s" % self.auth_cookie)
-            
+
             # Make the request and download the file
             ufile = urllib2.urlopen(request)
             tfile = file(path, 'wb')
@@ -166,19 +166,14 @@ class WikiPrint(Component):
     omit_macros = ListOption('wikiprint', 'omit_macros')
     rebase_links = Option('wikiprint', 'rebase_links')
     default_charset = Option('trac', 'default_charset', 'utf-8')
-    
+
     implements(IAuthenticator)
-    
+
     def _get_name_for_cookie(self, cookie):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT name FROM auth_cookie WHERE cookie=%s""", (cookie.value,))
-        row = cursor.fetchone()
-        if not row:
-            return None
-        self.env.log.debug("Cookie for user: %s", row[0])
-        return row[0]
+        for name, in self.env.db_query("""
+                SELECT name FROM auth_cookie WHERE cookie=%s
+                """, (cookie.value,)):
+            return name
 
     ### IAuthenticator methods
 
@@ -190,7 +185,7 @@ class WikiPrint(Component):
                                req.incookie['pdfgenerator_cookie'].value)
             authname = \
                 self._get_name_for_cookie(req.incookie['pdfgenerator_cookie'])
-        
+
         return authname
 
     ### Public methods
@@ -205,7 +200,7 @@ class WikiPrint(Component):
         #Remove exclude expressions
         for r in EXCLUDE_RES:
             text = r.sub('', text)
-        
+
         #Escape [[PageOutline]], to avoid wiki processing
         for r in [re.compile(r'\[\[TOC(\(.*\))?\]\]'),
                   re.compile(r'\[\[PageOutline(\(.*\))?\]\]')]:
@@ -219,7 +214,7 @@ class WikiPrint(Component):
             text = r.sub('', text)
 
         link_format = req.args.get('link_format', None)
-            
+
         if self.omit_links:
             r1 = re.compile(r'\[wiki:(.*?) (.*?)\]')
             text = r1.sub('[\g<2>]', text)
@@ -236,15 +231,15 @@ class WikiPrint(Component):
             text = r.sub('[%s/wiki/\g<1>]' % self.rebase_links, text)
 
         self.env.log.debug('WikiPrint => Wiki input for WikiPrint: %r' % text)
-        
+
         #First create a Context object from the wiki page
         context = Context(Resource('wiki', page_name), req.abs_href, req.perm)
         context.req = req
-        
+
         #Now convert in that context
         page = format_to_html(self.env, context, text)
         self.env.log.debug('WikiPrint => Wiki to HTML output: %r' % page)
-        
+
         self.env.log.debug('WikiPrint => HTML output for WikiPrint is: %r'
                            % page)
         self.env.log.debug('WikiPrint => Finish function wikipage_to_html')
@@ -253,11 +248,11 @@ class WikiPrint(Component):
 
     def html_to_pdf(self, req, html_pages, book=True, title='', subject='',
                     version='', date=''):
-        
+
         self.env.log.debug('WikiPrint => Start function html_to_pdf')
 
         page = Markup('\n<div><pdf:nextpage /></div>'.join(html_pages))
-        
+
         # Replace PageOutline macro with Table of Contents
         if book:
             #If book, remove [[TOC]], and add at beginning
@@ -279,23 +274,20 @@ class WikiPrint(Component):
         # Temporary authentication
         self.env.log.debug("Storing temporary auth cookie %s for user %s",
                            auth_cookie, req.authname)
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
+        self.env.db_transaction("""
             INSERT INTO auth_cookie (cookie, name, ipnr, time)
             VALUES (%s, %s, %s, %s)
             """, (auth_cookie, req.authname, '127.0.0.1', int(time.time())))
-        db.commit()        
-        
+
         pdf = pisa.CreatePDF(page, pdf_file, show_errors_as_pdf=True,
                              default_css=css_data,
                              link_callback=loader.getFileName)
         out = pdf_file.getvalue()
         pdf_file.close()
-        
-        cursor.execute("""
-            DELETE FROM auth_cookie WHERE cookie=%s""", (auth_cookie,))
-        db.commit()
+
+        self.env.db_transaction("""
+            DELETE FROM auth_cookie WHERE cookie=%s
+            """, (auth_cookie,))
 
         self.env.log.debug('WikiPrint => Finish function html_to_pdf')
 
@@ -303,23 +295,23 @@ class WikiPrint(Component):
 
     def html_to_printhtml(self, req, html_pages, title='', subject='',
                           version='', date='', ):
-        
+
         self.env.log.debug('WikiPrint => Start function html_to_printhtml')
 
         page = Markup('<hr>'.join(html_pages))
-        
+
         #TO-DO: Make a nice TOC for HTML printable output
         page = page.replace('[[pdf-toc]]', '')
-        
+
         css_data = '<style type="text/css">%s</style>' % self.get_css(req)
         page = self.add_headers(req, page, book=False, title=title,
                                 subject=subject, version=version, date=date,
                                 extra_headers=css_data)
 
         page = page.encode(self.default_charset, 'replace')
-        
+
         return page
-        
+
     def add_headers(self, req, page, book=False, title='', subject='',
                     version='', date='', extra_headers=''):
         """Add HTML standard begin and end tags, and header tags and styles.
@@ -343,7 +335,7 @@ class WikiPrint(Component):
             style = Markup(self.get_book_css(req))
         else:
             style = Markup(self.get_article_css(req))
-        
+
         # Get pygments style
         if pigments_loaded:
             try:
@@ -369,12 +361,12 @@ class WikiPrint(Component):
             Markup('</head><body>%s' % extra_content) + \
             Markup(page) + \
             Markup('</body></html>')
-            
+
         return page
-        
+
     def get_file_or_default(self, req, file_or_url, default):
         loader = linkLoader(self.env, req, allow_local=True)
-        if file_or_url: 
+        if file_or_url:
             file_or_url = loader.getFileName(file_or_url)
             self.env.log.debug("wikiprint => Loading URL: %s" % file_or_url)
             try:
@@ -385,7 +377,7 @@ class WikiPrint(Component):
                 data = default
         else:
             data = default
-        
+
         return to_unicode(data)
 
     def get_css(self, req):
@@ -413,7 +405,7 @@ class WikiPrint(Component):
                       % self.toc_title)
 
 
-class WikiToPDFPage(Component):    
+class WikiToPDFPage(Component):
     """Add an option in wiki pages to export to PDF using PISA"""
 
     implements(IContentConverter)
@@ -429,11 +421,11 @@ class WikiToPDFPage(Component):
     def convert_content(self, req, input_type, text, output_type):
         page_name = req.args.get('page', 'WikiStart')
         wikipage = WikiPage(self.env, page_name)
-        
+
         wikiprint = WikiPrint(self.env)
-        
+
         page = wikiprint.wikipage_to_html(text, page_name, req)
-        
+
         #Get page title from first header in outline
         out = StringIO.StringIO()
         context = Context(Resource('wiki', page_name), req.abs_href, req.perm)
@@ -441,7 +433,7 @@ class WikiToPDFPage(Component):
 
         outline = OutlineFormatter(self.env, context)
         outline.format(text, out, 1, 1)
-        
+
         title = wikipage.name
         for depth, anchor, text in outline.outline:
             if depth == 1:
@@ -462,7 +454,7 @@ class WikiToHtmlPage(WikiPrint):
     """Add an option in wiki pages to export to printable HTML"""
 
     implements(IContentConverter)
-        
+
     ### IContentConverter methods
 
     def get_supported_conversions(self):
