@@ -14,6 +14,67 @@ table.listing tbody tr.important:hover
   background: #fa9 !important;
 }
 
+div[class$="-list"] {
+  border: 1px solid #e4e4e4;
+  border-radius: 0.5em;
+  box-shadow: 0.2em 0.3em 1.5em #eeeeee;
+  overflow-x: auto;
+  padding: 1em;
+  margin: 1em;
+}
+
+div.forum-list div.group {
+  margin: -1em -1em 1em -1em;
+  padding: 0.5em 0 0.5em 1em;
+  background-color: #f8f8ff;
+  border-bottom: 1px solid #f0f0ff;
+}
+
+div.forum-list div.group div.name {
+  font-weight: bold;
+}
+
+div.message-list div.topic, .message-list div.topic.new {
+  margin-bottom: 2em;
+  border: none;
+}
+
+div.message-list div.topic div.subject {
+  margin-bottom: 1em;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  box-shadow: 2px 2px 6px 0px #eeeeee;
+}
+
+div.message-list div.replies, .message-list div.replies.new {
+  border: none;
+}
+
+div.message-list div.replies div.body, .message-list div.replies li.new div.body {
+  margin: 0 2em 0 1em;
+  border: 1px solid #d7d7d7;
+}
+
+div.message-list div.message {
+  border: 1px solid #eeeeee;
+  border-radius: 6px;
+  box-shadow: 2px 2px 6px 0px #eeeeee;
+  padding: 0 0 0 0.5em;
+  margin-bottom: 1em;
+}
+
+div.message-list div.set-display {
+  border-top: 1px solid #d7d7d7;
+  border-bottom: 1px solid #d7d7d7;
+}
+div.message-list div.set-display :link {
+  border: none;
+}
+
+div.message-list div.replies ul.reply li:empty {
+  display: none;
+}
+
 /* General plugin styles. */
 div.discussion#content
 {

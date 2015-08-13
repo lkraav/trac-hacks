@@ -20,14 +20,12 @@
   ?>
 
   <py:def function="display_group(group, forums)">
+    <div py:if="group and group.id != 0" class="group">
+      <div class="name">${format_to_oneliner(discussion.env, context, group.name)}</div>
+      <div class="description">${format_to_oneliner(discussion.env, context, group.description)}</div>
+    </div>
     <table class="listing">
       <thead>
-        <tr py:if="group and group.id != 0">
-          <th class="group" colspan="11">
-            <div class="name">${wiki_to_oneliner(context, group.name)}</div>
-            <div class="description">${wiki_to_oneliner(context, group.description)}</div>
-          </th>
-        </tr>
         <tr>
           ${sortable_th(discussion.order, discussion.desc, 'id', 'ID', href.discussion())}
           ${sortable_th(discussion.order, discussion.desc, 'subject', 'Forum', href.discussion())}
@@ -146,29 +144,31 @@
     <xi:include href="discussion-header.html"/>
 
     <div id="content" class="discussion">
-      <div id="${discussion.mode}" class="${discussion.mode}">
 
+      <div class="title">
         <h1>Forum List</h1>
-
-        <py:choose>
-          <py:for py:when="len(discussion.forums)" each="group in discussion.groups">
-            <py:if test="group.forums">
-              ${display_group(group, discussion.forums)}
-            </py:if>
-          </py:for>
-          <p py:otherwise="" class="help">There are no forums created.</p>
-        </py:choose>
-
-        <div py:if="'DISCUSSION_ADMIN' in perm" class="buttons">
-          <form method="post" action="${href.discussion()}">
-            <div>
-              <input type="submit" name="newforum" value="New forum"/>
-              <input type="hidden" name="discussion_action" value="add"/>
-            </div>
-          </form>
-        </div>
-
       </div>
+
+      <py:choose>
+        <py:for py:when="len(discussion.forums)" each="group in discussion.groups">
+          <py:if test="group.forums">
+            <div id="${discussion.mode}" class="${discussion.mode}">
+              ${display_group(group, discussion.forums)}
+            </div>
+          </py:if>
+        </py:for>
+        <p py:otherwise="" class="help">There are no forums created.</p>
+      </py:choose>
+
+      <div py:if="'DISCUSSION_ADMIN' in perm" class="buttons">
+        <form method="post" action="${href.discussion()}">
+          <div>
+            <input type="submit" name="newforum" value="New forum"/>
+            <input type="hidden" name="discussion_action" value="add"/>
+          </div>
+        </form>
+      </div>
+
     </div>
 
     <xi:include href="discussion-footer.html"/>

@@ -35,49 +35,47 @@
           <py:when test="is_topic_edit">
             <a name="preview"></a>
             <div class="subject">
-              ${wiki_to_oneliner(context, req.args.subject) \
-              or '&nbsp;'}
-            </div>
-            <div class="body">
-              ${wiki_to_html(context, req.args.body) or \
-              '&nbsp;'}
+              ${wiki_to_oneliner(context, req.args.subject) or '&nbsp;'}
             </div>
           </py:when>
-          <py:otherwise>
-            <div class="subject">
-              ${wiki_to_oneliner(context, discussion.topic.subject) or '&nbsp;'}
-              ${display_topic_status(discussion.topic.status)}
-            </div>
-            <div class="body">
-              ${wiki_to_html(context, discussion.topic.body) \
-              or '&nbsp;'}
-            </div>
-          </py:otherwise>
-        </div>
-
-        <div class="controls">
-          <py:if test="'DISCUSSION_APPEND' in perm">
-            <a style="${'locked' in discussion.topic.status and 'display: none;'
-              or ''}" class="reply"
-              href="${href}?discussion_action=add;#reply">Reply</a>
-            <a style="${'locked' in discussion.topic.status and 'display: none;'
-              or ''}" class="quote"
-              href="${href}?discussion_action=quote;#reply">Quote</a>
-            <a py:if="discussion.moderator or ((discussion.authname ==
-              discussion.topic.author) and (not 'locked' in
-              discussion.topic.status) and (discussion.authname != 'anonymous'))"
-              href="${href}?discussion_action=edit;#topic">Edit</a>
-          </py:if>
-        </div>
-
-        <div class="footer">
-          <div class="author">
-            ${format_to_oneliner_no_links(discussion.env, context,
-            format_author(discussion.topic.author))}
+          <div py:otherwise="" class="subject">
+            ${wiki_to_oneliner(context, discussion.topic.subject) or '&nbsp;'}
+            ${display_topic_status(discussion.topic.status)}
           </div>
-          <div class="time">
-            ${format_datetime(discussion.topic.time)} (${pretty_timedelta(
-              discussion.topic.time)} ago)
+        </div>
+
+        <div class="message" py:choose="">
+          <div py:when="is_topic_edit" class="body">
+            ${wiki_to_html(discussion.env, context, req.args.body) or '&nbsp;'}
+          </div>
+          <div py:otherwise="" class="body">
+            ${wiki_to_html(context, discussion.topic.body) or '&nbsp;'}
+          </div>
+
+          <div class="controls">
+            <py:if test="'DISCUSSION_APPEND' in perm">
+              <a style="${'locked' in discussion.topic.status and 'display: none;'
+                or ''}" class="reply"
+                href="${href}?discussion_action=add;#reply">Reply</a>
+              <a style="${'locked' in discussion.topic.status and 'display: none;'
+                or ''}" class="quote"
+                href="${href}?discussion_action=quote;#reply">Quote</a>
+              <a py:if="discussion.moderator or ((discussion.authname ==
+                discussion.topic.author) and (not 'locked' in
+                discussion.topic.status) and (discussion.authname != 'anonymous'))"
+                href="${href}?discussion_action=edit;#topic">Edit</a>
+            </py:if>
+          </div>
+
+          <div class="footer">
+            <div class="author">
+              ${format_to_oneliner_no_links(discussion.env, context,
+                                            format_author(discussion.topic.author))}
+            </div>
+            <div class="time">
+              ${format_datetime(discussion.topic.time)}
+              (${pretty_timedelta(discussion.topic.time)} ago)
+            </div>
           </div>
         </div>
 
@@ -93,15 +91,13 @@
         ${display_set_display(href)}
 
         <ul class="reply">
-          <py:if test="len(discussion.messages)">
-            ${display_messages(href, discussion.messages)}
-          </py:if>
-
           <py:if test="is_topic_add">
             ${display_preview()}
-            <li>
-              ${display_form(href, 'Reply:', 'add_form', 'post-add')}
-            </li>
+            ${display_form(href, 'Reply:', 'add_form', 'post-add')}
+          </py:if>
+
+          <py:if test="len(discussion.messages)">
+            ${display_messages(href, discussion.messages)}
           </py:if>
           <li></li>
         </ul>
@@ -315,6 +311,7 @@
 
   <py:def function="display_preview()">
     <li py:if="req.args.preview" class="preview">
+     <div class="message">
       <div class="id">
         Message #??
       </div>
@@ -330,6 +327,7 @@
             discussion.time)} ago)
         </div>
       </div>
+     </div>
     </li>
   </py:def>
 
@@ -353,6 +351,7 @@
       <py:with vars="is_message_edit = (str(req.args.message) == str(
         message.id)) and (req.args.discussion_action in ('edit', 'post-edit'))
         and not req.args.submit;">
+       <div class="message">
         <a name="message_${message.id}"></a>
         <div class="id">
           Message #${message.id}
@@ -403,6 +402,7 @@
               pretty_timedelta(message.time)} ago)
           </div>
         </div>
+       </div>
       </py:with>
 
       <ul class="reply">
