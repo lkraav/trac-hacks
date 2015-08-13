@@ -12,12 +12,12 @@ from datetime import timedelta
 from genshi.builder import tag
 from genshi.core import Markup
 
-from trac.mimeview import Context
 from trac.perm import PermissionCache
 from trac.resource import Resource
 from trac.test import Mock
 from trac.util.datefmt import to_datetime, utc
 from trac.web.href import Href
+from trac.web.chrome import web_context
 
 from tracdiscussion.api import DiscussionApi
 from tracdiscussion.tests.test import DiscussionBaseTestCase
@@ -49,7 +49,7 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
     # Helpers
 
     def _prepare_context(self, req):
-        context = Context.from_request(req)
+        context = web_context(req)
         return context
 
     # Tests

@@ -14,13 +14,13 @@ from pkg_resources import resource_filename
 
 from trac.core import Component, implements
 from trac.config import Option
-from trac.mimeview.api import Context, IContentConverter, Mimeview
+from trac.mimeview.api import IContentConverter, Mimeview
 from trac.resource import Resource, get_resource_url
 from trac.search import ISearchSource
 from trac.util.html import html
 from trac.util.translation import _, N_
 from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.web.chrome import add_link
+from trac.web.chrome import add_link, web_context
 from trac.web.main import IRequestHandler
 
 from tracdiscussion.api import DiscussionApi
@@ -53,8 +53,7 @@ class DiscussionCore(Component):
             return self._export_rss(req, resource)
 
     def _export_rss(self, req, resource):
-        # Create request context.
-        context = Context.from_request(req)
+        context = web_context(req)
         context.realm = 'discussion-core'
         context.resource = resource
 
@@ -108,8 +107,7 @@ class DiscussionCore(Component):
             return match
 
     def process_request(self, req):
-        # Create request context.
-        context = Context.from_request(req)
+        context = web_context(req)
         context.realm = 'discussion-core'
 
         # Redirect to content converter if requested.

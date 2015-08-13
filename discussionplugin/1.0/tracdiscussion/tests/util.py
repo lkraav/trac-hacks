@@ -12,9 +12,9 @@ import unittest
 
 from genshi.builder import tag
 
-from trac.mimeview import Context
 from trac.perm import PermissionCache, PermissionSystem
 from trac.test import EnvironmentStub, Mock
+from trac.web.chrome import web_context
 
 from tracdiscussion.util import as_list, format_to_oneliner_no_links
 from tracdiscussion.util import prepare_topic, topic_status_from_list
@@ -22,7 +22,7 @@ from tracdiscussion.util import topic_status_to_list
 
 
 class _BaseTestCase(unittest.TestCase):
-	
+
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', 'tracdiscussion.*'])
@@ -37,7 +37,7 @@ class _BaseTestCase(unittest.TestCase):
         )
         self.req.perm = PermissionCache(self.env, 'user')
 
-        self.context = Context.from_request(self.req)
+        self.context = web_context(self.req)
 
     def tearDown(self):
         self.env.shutdown()

@@ -11,10 +11,9 @@
 from genshi.builder import tag
 
 from trac.core import Component, implements
-from trac.mimeview import Context
 from trac.resource import Resource, get_resource_url
 from trac.timeline import ITimelineEventProvider
-from trac.web.chrome import add_stylesheet
+from trac.web.chrome import add_stylesheet, web_context
 from trac.wiki.formatter import format_to_oneliner
 from trac.util.datefmt import to_datetime, utc
 
@@ -43,7 +42,7 @@ class DiscussionTimeline(Component):
             # Get Trac db access and plugin API component.
             api = DiscussionApi(env)
 
-            context = Context.from_request(req)
+            context = web_context(req)
             context.realm = 'discussion-core'
 
             add_stylesheet(context.req, 'discussion/css/discussion.css')

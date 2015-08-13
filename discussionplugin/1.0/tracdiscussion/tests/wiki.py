@@ -21,10 +21,10 @@ except ImportError:
 
 from trac.attachment import Attachment
 from trac.db.api import DatabaseManager
-from trac.mimeview import Context
 from trac.resource import ResourceNotFound
 from trac.test import EnvironmentStub, Mock, MockPerm
 from trac.util.datefmt import utc
+from trac.web.chrome import web_context
 from trac.web.href import Href
 from trac.wiki.formatter import format_to_html
 
@@ -146,7 +146,7 @@ class DiscussionWikiTestCase(unittest.TestCase):
         req = Mock(href=Href('/'), abs_href=Href('http://www.example.com/'),
                    authname='anonymous', perm=MockPerm(), tz=utc, args={},
                    locale=locale_en)
-        context = Context.from_request(req)
+        context = web_context(req)
         self.assertRaises(ResourceNotFound, format_to_html, self.env,
                           context, 'topic-attachment:foo.txt')
 
@@ -171,7 +171,7 @@ def wiki_setup(tc):
                locale=locale_en)
     tc.env.href = req.href
     tc.env.abs_href = req.abs_href
-    tc.context = Context.from_request(req)
+    tc.context = web_context(req)
     # Enable big diff output.
     tc.maxDiff = None
 

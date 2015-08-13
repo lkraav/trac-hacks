@@ -12,11 +12,11 @@ import unittest
 
 from datetime import datetime, timedelta
 
-from trac.mimeview import Context
 from trac.perm import PermissionCache, PermissionSystem
 from trac.resource import Resource
 from trac.test import EnvironmentStub, Mock
 from trac.util.datefmt import to_datetime, to_timestamp, utc
+from trac.web.chrome import web_context
 
 from tracdiscussion.init import DiscussionInit
 from tracdiscussion.model import DiscussionDb
@@ -89,7 +89,7 @@ class DiscussionDbTestCase(unittest.TestCase):
     # Helpers
 
     def _prepare_context(self, req):
-        context = Context.from_request(req)
+        context = web_context(req)
         return context
 
     # Tests

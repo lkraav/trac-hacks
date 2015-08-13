@@ -14,10 +14,8 @@ import re
 from genshi.builder import tag
 
 from trac.core import Component, TracError, implements
-from trac.mimeview.api import Context
 from trac.resource import Resource, ResourceNotFound
 from trac.web.chrome import Chrome, add_stylesheet
-from trac.web.href import Href
 from trac.web.main import IRequestFilter
 from trac.wiki import IWikiSyntaxProvider
 from trac.wiki.api import IWikiMacroProvider, parse_args
@@ -26,6 +24,7 @@ from trac.wiki.web_ui import WikiModule
 from trac.util import format_date, format_datetime
 from trac.util.text import to_unicode
 from trac.util.translation import _
+from trac.web.chrome import web_context
 
 from tracdiscussion.api import DiscussionApi
 
@@ -111,7 +110,7 @@ class DiscussionWiki(Component):
         subject = content or page_name
 
         # Prepare context including db access.
-        context = Context.from_request(formatter.req)
+        context = web_context(formatter.req)
         context.realm = 'discussion-wiki'
 
         try:
@@ -151,8 +150,7 @@ class DiscussionWiki(Component):
                                                'text/html', True))
 
     def _recent_topics(self, formatter, content):
-        # Prepare context including db access.
-        context = Context.from_request(formatter.req)
+        context = web_context(formatter.req)
         context.realm = 'discussion-wiki'
         context.users = self.api.get_users(context)
         # Don't care for tags here.
@@ -196,8 +194,7 @@ class DiscussionWiki(Component):
                for date, entries in entries_per_date)
 
     def _discussion_link(self, formatter, namespace, params, label):
-        # Prepare context including db access.
-        context = Context.from_request(formatter.req)
+        context = web_context(formatter.req)
         context.realm = 'discussion-wiki'
 
         href = formatter.href
@@ -277,8 +274,7 @@ class DiscussionWiki(Component):
                          title=title, class_='missing')
 
     def _discussion_attachment_link(self, fmt, namespace, params, label):
-        # Prepare context.
-        context = Context.from_request(fmt.req)
+        context = web_context(fmt.req)
         context.realm = 'discussion-wiki'
 
         try:

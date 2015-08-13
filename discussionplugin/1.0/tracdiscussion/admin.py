@@ -13,6 +13,7 @@ from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.mimeview import Context
 from trac.perm import IPermissionRequestor
+from trac.web.chrome import web_context
 
 from tracdiscussion.api import DiscussionApi
 
@@ -42,7 +43,7 @@ class DiscussionWebAdmin(Component):
                 req.args['group'] = path_info
 
         # Create context with additional arguments prepared before.
-        context = Context.from_request(req)
+        context = web_context(req)
         context.realm = 'discussion-admin'
 
         # Process admin panel request.

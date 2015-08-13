@@ -9,8 +9,8 @@
 import re
 
 from trac.core import Component, implements
-from trac.mimeview import Context
 from trac.web.main import IRequestHandler
+from trac.web.chrome import web_context
 
 from tracdiscussion.api import DiscussionApi
 
@@ -40,7 +40,7 @@ class DiscussionAjax(Component):
 
     def process_request(self, req):
         # Create request context.
-        context = Context.from_request(req)
+        context = web_context(req)
         context.realm = 'discussion-ajax'
 
         # Process request and return content.
