@@ -1,0 +1,6 @@
+tracdiscussion-0.9 (not yet released)
+ resolved issues
+ * #11902: Got an error on the Timeline Page
+
+ new features
+ * #8232: Last topic request handler for last topic bookmarking
