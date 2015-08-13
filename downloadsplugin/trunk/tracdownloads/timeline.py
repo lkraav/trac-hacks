@@ -42,8 +42,8 @@ class DownloadsTimeline(Component):
             # Get message events
             for download in api.get_new_downloads(context, to_timestamp(start),
               to_timestamp(stop)):
-                yield ('newticket', download['time'], download['author'],
-                  download['id'])
+                yield ('newticket', to_datetime(download['time'], utc),
+                       download['author'], download['id'])
 
     def render_timeline_event(self, context, field, event):
         # Decompose event data.
