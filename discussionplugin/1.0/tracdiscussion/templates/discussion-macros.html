@@ -252,11 +252,14 @@
           <py:when test="not len(discussion.attachments.attachments)">
             <h3>Attachments</h3>
             <p>No attachments created.</p>
-            ${attach_file_form(discussion.attachments)}
+            <xi:include href="attach_file_form.html"
+                        py:with="alist = discussion.attachments" />
           </py:when>
           <py:otherwise>
-            ${list_of_attachments(discussion.attachments, compact = True)}
-            ${attach_file_form(discussion.attachments)}
+            <xi:include href="list_of_attachments.html"
+                        py:with="alist = discussion.attachments; compact = True" />
+            <xi:include href="attach_file_form.html"
+                        py:with="alist = discussion.attachments" />
           </py:otherwise>
         </py:choose>
       </div>

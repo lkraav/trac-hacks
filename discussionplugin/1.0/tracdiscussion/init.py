@@ -26,9 +26,8 @@ class DiscussionInit(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db):
-        # Provide a db handle. A prepared cursor could get out-of-scope.
-        schema_ver = self._get_schema_version(db)
+    def environment_needs_upgrade(self):
+        schema_ver = self._get_schema_version()
         if schema_ver == schema_version:
             return False
         elif schema_ver > schema_version:
@@ -38,40 +37,36 @@ class DiscussionInit(Component):
                       "should be %d"  % (schema_ver, schema_version))
         return True
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self):
         """Each schema version should have its own upgrade module, named
         upgrades/dbN.py, where 'N' is the version number (int).
         """
-        schema_ver = self._get_schema_version(db)
+        schema_ver = self._get_schema_version()
 
-        cursor = db.cursor()
-        # Always perform incremental upgrades.
-        for i in range(schema_ver + 1, schema_version + 1):
-            script_name  = 'db%i' % i
-            try:
-                upgrades = __import__('tracdiscussion.db', globals(),
-                                      locals(), [script_name])
-                script = getattr(upgrades, script_name)
-            except AttributeError:
-                raise TracError("No upgrade module for version %(num)i "
-                                "(%(version)s.py)", num=i, version=name)
-            script.do_upgrade(self.env, cursor)
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            # Always perform incremental upgrades.
+            for i in range(schema_ver + 1, schema_version + 1):
+                script_name = 'db%i' % i
+                try:
+                    upgrades = __import__('tracdiscussion.db', globals(),
+                                          locals(), [script_name])
+                    script = getattr(upgrades, script_name)
+                except AttributeError:
+                    raise TracError("No upgrade module for version %(num)i "
+                                    "(%(version)s.py)", num=i,
+                                    version=script_name)
+                script.do_upgrade(self.env, cursor)
 
-        self.log.info("Upgraded TracDiscussion db schema from version "
-                      "%d to %d" % (schema_ver, schema_version))
-        db.commit()
+            self.log.info("Upgraded TracDiscussion db schema from version "
+                          "%d to %d" % (schema_ver, schema_version))
 
     # Internal methods
 
-    def _get_schema_version(self, db=None):
+    def _get_schema_version(self):
         """Return the current schema version for this plugin."""
-        if not db:
-            db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT value
-              FROM system
-             WHERE name='discussion_version'
-        """)
-        row = cursor.fetchone()
-        return row and int(row[0]) or 0
+        for version, in self.env.db_query("""
+                SELECT value FROM system WHERE name='discussion_version'
+                """):
+            return int(version)
+        return 0

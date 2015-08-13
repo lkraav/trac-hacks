@@ -8,7 +8,6 @@
 # you should have received as part of this distribution.
 #
 
-from copy import deepcopy
 from datetime import datetime
 
 from trac.core import Component
@@ -17,9 +16,8 @@ from trac.resource import Resource
 from trac.search import search_to_sql, shorten_result
 from trac.util import shorten_line
 from trac.util.datefmt import to_datetime, to_timestamp, utc
-from trac.util.text import to_unicode
 
-from tracdiscussion.util import topic_status_from_list, topic_status_to_list
+from tracdiscussion.util import topic_status_to_list
 
 
 class DiscussionDb(Component):
@@ -40,7 +38,6 @@ class DiscussionDb(Component):
         if not context:
             # Prepare generic context for database access.
             context = Context('discussion-core')
-            context.db = self.env.get_db_cnx()
 
         sql_values = {
             'columns': ', '.join(columns),
@@ -51,9 +48,7 @@ class DiscussionDb(Component):
                "  FROM %(table)s"
                " %(where)s" % sql_values
         )
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        for row in cursor:
+        for row in self.env.db_query(sql, values):
             return dict(zip(columns, row))
         return None
 
@@ -68,10 +63,8 @@ class DiscussionDb(Component):
                "  FROM %(table)s"
                " %(where)s" % sql_values
         )
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        for row in cursor:
-            return row[0]
+        for count, in self.env.db_query(sql, values):
+            return count
         return 0
 
     # List getter methods.
@@ -102,9 +95,8 @@ class DiscussionDb(Component):
             values.append(limit)
         if offset:
             values.append(offset)
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        return [dict(zip(columns, row)) for row in cursor]
+        return [dict(zip(columns, row))
+                for row in self.env.db_query(sql, values)]
 
     def get_groups(self, context, order_by='id', desc=False):
         """Return coarse information on forums by forum group."""
@@ -132,9 +124,8 @@ class DiscussionDb(Component):
                "  ON g.id = f.forum_group"
                "  %(order_by)s" % sql_values
         )
-        cursor = context.db.cursor()
-        cursor.execute(sql)
-        return unassigned + [dict(zip(columns, row)) for row in cursor]
+        return unassigned + \
+               [dict(zip(columns, row)) for row in self.env.db_query(sql)]
 
     def _get_forums(self, context, order_by='subject', desc=False):
         """Return detailed information on forums."""
@@ -168,9 +159,8 @@ class DiscussionDb(Component):
                    " GROUP BY forum) ta"
                "  ON f.id = ta.forum"
                "  %(order_by)s" % sql_values)
-        cursor = context.db.cursor()
-        cursor.execute(sql)
-        return [dict(zip(forum_cols + topic_cols, row)) for row in cursor]
+        return [dict(zip(forum_cols + topic_cols, row))
+                for row in self.env.db_query(sql)]
 
     def _get_topics(self, context, forum_id, order_by='time', desc=False,
                     limit=0, offset=0, with_body=True):
@@ -209,9 +199,8 @@ class DiscussionDb(Component):
             values.append(limit)
         if offset:
             values.append(offset)
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        return [dict(zip(topic_cols + message_cols, row)) for row in cursor]
+        return [dict(zip(topic_cols + message_cols, row))
+                for row in self.env.db_query(sql, values)]
 
     def get_changed_topics(self, context, start, stop, order_by='time',
                            desc=False):
@@ -235,12 +224,10 @@ class DiscussionDb(Component):
                " %(order_by)s" % sql_values)
         values = (to_timestamp(start), to_timestamp(stop))
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
         idx_status = list(columns).index('status')
         return [dict(zip(columns, row),
                      status=topic_status_to_list(row[idx_status]))
-                for row in cursor]
+                for row in self.env.db_query(sql, values)]
 
     def get_recent_topics(self, context, forum_id, limit):
         columns = ('forum', 'topic', 'time')
@@ -262,9 +249,7 @@ class DiscussionDb(Component):
             values.append(limit)
         values = tuple(values)
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        return [dict(zip(columns, row)) for row in cursor]
+        return [dict(zip(columns, row)) for row in self.db_query(sql, values)]
 
     def get_messages(self, context, topic_id, order_by='time', desc=False):
         columns = self.msg_cols
@@ -281,11 +266,9 @@ class DiscussionDb(Component):
                " %(order_by)s" % sql_values)
         values = [topic_id]
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
         messagemap = {}
         messages = []
-        for row in cursor:
+        for row in self.env.db_query(sql, values):
             row = dict(zip(columns, row))
             messagemap[row['id']] = row
             # Add top-level messages to the main list, in order of time.
@@ -328,15 +311,11 @@ class DiscussionDb(Component):
                " %(order_by)s" % sql_values)
         values = (to_timestamp(start), to_timestamp(stop))
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        return [dict(zip(columns, row)) for row in cursor]
+        return [dict(zip(columns, row))
+                for row in self.env.db_query(sql, values)]
 
     def get_search_results(self, href, terms):
         """Returns discussion content matching TracSearch terms."""
-
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
 
         # Search in topics.
         query, args = search_to_sql(db, ['author', 'subject', 'body'], terms)
@@ -344,8 +323,8 @@ class DiscussionDb(Component):
         sql = ("SELECT %s"
                "  FROM topic"
                " WHERE %s" % (', '.join(columns), query))
-        cursor.execute(sql, args)
-        for row in cursor:
+
+        for row in self.env.db_query(sql, args):
             # Class references are valid only in sub-class (api).
             row = dict(zip(columns, row))
             resource = Resource(self.realm, 'forum/%s/topic/%s'
@@ -368,8 +347,7 @@ class DiscussionDb(Component):
                "  ON t.id=m.topic"
                " WHERE %s" % ('m.' + ', m.'.join(columns[:-1]), query))
 
-        cursor.execute(sql, args)
-        for row in cursor:
+        for row in self.env.db_query(sql, args):
             # Class references are valid only in sub-class (api).
             row = dict(zip(columns, row))
             parent = Resource(self.realm, 'forum/%s/topic/%s'
@@ -401,10 +379,10 @@ class DiscussionDb(Component):
                    "   (%(fields)s) "
                "VALUES (%(values)s)" % sql_values)
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        context.db.commit()
-        return context.db.get_last_id(cursor, table)
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute(sql, values)
+            return db.get_last_id(cursor, table)
 
     def _delete_item(self, context, table, where='', values=()):
         sql_values = {
@@ -413,9 +391,7 @@ class DiscussionDb(Component):
         }
         sql = ("DELETE FROM %(table)s %(where)s" % sql_values)
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        context.db.commit()
+        self.env.db_transaction(sql, values)
 
     def _edit_item(self, context, table, id, item):
         sql_values = {
@@ -427,9 +403,7 @@ class DiscussionDb(Component):
                "   SET %(fields)s"
                " WHERE id=%(id)s" % sql_values)
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, item.values())
-        context.db.commit()
+        self.env.db_transaction(sql, item.values())
 
     def _set_item(self, context, table, column, value, where='', values=()):
         sql_values = {
@@ -442,6 +416,4 @@ class DiscussionDb(Component):
                " %(where)s" % sql_values)
         values = (value,) + values
 
-        cursor = context.db.cursor()
-        cursor.execute(sql, values)
-        context.db.commit()
+        self.env.db_transaction(sql, values)

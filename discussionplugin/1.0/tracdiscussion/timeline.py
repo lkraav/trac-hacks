@@ -44,7 +44,6 @@ class DiscussionTimeline(Component):
             api = DiscussionApi(env)
 
             context = Context.from_request(req)
-            context.db = env.get_db_cnx()
             context.realm = 'discussion-core'
 
             add_stylesheet(context.req, 'discussion/css/discussion.css')

@@ -18,9 +18,7 @@ from trac.core import implements
 from trac.config import IntOption, Option
 from trac.perm import IPermissionRequestor, PermissionError, PermissionSystem
 from trac.resource import IResourceManager, Resource
-from trac.util.datefmt import format_datetime, pretty_timedelta
 from trac.util.datefmt import to_timestamp, utc
-from trac.util.html import html
 from trac.util.presentation import Paginator
 from trac.util.text import to_unicode
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
@@ -31,7 +29,6 @@ from tracdiscussion.compat import exception_to_unicode, is_enabled
 from tracdiscussion.model import DiscussionDb
 from tracdiscussion.util import as_list, format_to_oneliner_no_links
 from tracdiscussion.util import prepare_topic, topic_status_from_list
-from tracdiscussion.util import topic_status_to_list
 
 try:
     from tractags.api import TagSystem
@@ -248,9 +245,6 @@ class DiscussionApi(DiscussionDb):
 
     def process_discussion(self, context):
         context.req.perm.require('DISCUSSION_VIEW')
-
-        # Get database access.
-        context.db = self.env.get_db_cnx()
 
         # Get request items and actions.
         self._prepare_context(context)

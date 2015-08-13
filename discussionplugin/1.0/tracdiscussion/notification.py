@@ -220,9 +220,6 @@ class DiscussionEmailNotification(Component):
     # ITopicChangeListener methods.
 
     def topic_created(self, context, topic):
-        # Get database access.
-        context.db = self.env.get_db_cnx()
-
         # Get forum of the topic.
         api = self.env[DiscussionApi]
         forum = api.get_forum(context, topic['forum'])
@@ -240,9 +237,6 @@ class DiscussionEmailNotification(Component):
             # We need to use complete topic dictionary.
             old_topic.update(topic)
 
-            # Get database access.
-            context.db = self.env.get_db_cnx()
-
             # Get forum of the topic.
             api = self.env[DiscussionApi]
             forum = api.get_forum(context, old_topic['forum'])
@@ -257,9 +251,6 @@ class DiscussionEmailNotification(Component):
     # IMessageChangeListener methods.
 
     def message_created(self, context, message):
-        # Get database access.
-        context.db = self.env.get_db_cnx()
-
         # Get access to api component.
         api = self.env[DiscussionApi]
         forum = api.get_forum(context, message['forum'])

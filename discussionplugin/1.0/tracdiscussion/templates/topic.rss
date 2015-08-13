@@ -9,7 +9,6 @@
     This software is licensed as described in the file COPYING, which
     you should have received as part of this distribution.
   -->
-  <xi:include href="macros.rss" />
   <channel>
     <title>[${project.name}] Topic #${discussion.topic.id} - ${discussion.topic.subject}</title>
     <link>${abs_href.discussion('topic', discussion.topic.id)}</link>
@@ -22,7 +21,8 @@
     </image>
     <generator>Trac $trac.version - DiscussionPlugin</generator>
     <item>
-      ${author_or_creator(discussion.topic.author)}
+      <xi:include href="author_or_creator.rss"
+                  py:with="author = discussion.topic.author" />
       <pubDate>${http_date(discussion.topic.time)}</pubDate>
       <title>Topic #${discussion.topic.id} - ${discussion.topic.subject}</title>
       <link>${abs_href.discussion('topic', discussion.topic.id)}#topic</link>
@@ -33,7 +33,8 @@
       <category>Topic</category>
     </item>
     <item py:for="message in discussion.messages">
-      ${author_or_creator(message.author)}
+      <xi:include href="author_or_creator.rss"
+                  py:with="author = message.author" />
       <pubDate>${http_date(message.time)}</pubDate>
       <title>Reply #${message.id} to topic #${discussion.topic.id} - ${discussion.topic.subject}</title>
       <link>${abs_href.discussion('message', message.id)}#message_${message.id}</link>

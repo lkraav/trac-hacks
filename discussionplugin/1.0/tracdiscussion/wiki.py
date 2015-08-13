@@ -113,7 +113,6 @@ class DiscussionWiki(Component):
         # Prepare context including db access.
         context = Context.from_request(formatter.req)
         context.realm = 'discussion-wiki'
-        context.db = self.env.get_db_cnx()
 
         try:
             id = int(subject)
@@ -155,7 +154,6 @@ class DiscussionWiki(Component):
         # Prepare context including db access.
         context = Context.from_request(formatter.req)
         context.realm = 'discussion-wiki'
-        context.db = self.env.get_db_cnx()
         context.users = self.api.get_users(context)
         # Don't care for tags here.
         context.has_tags = False
@@ -201,7 +199,6 @@ class DiscussionWiki(Component):
         # Prepare context including db access.
         context = Context.from_request(formatter.req)
         context.realm = 'discussion-wiki'
-        context.db = self.env.get_db_cnx()
 
         href = formatter.href
         title = label.replace('"', '')
