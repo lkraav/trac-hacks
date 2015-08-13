@@ -64,10 +64,9 @@ class DiscussionAjaxTestCase(unittest.TestCase):
         self.assertTrue(self.da.match_request(req))
 
     def test_process_request(self):
-        db = self.env.get_db_cnx()
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(db)
+        setup.upgrade_environment(None)
         template = dict(forum='forum-list.html', topic='topic-list.html')
 
         req = self.req

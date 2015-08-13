@@ -29,15 +29,13 @@ class DiscussionBaseTestCase(unittest.TestCase):
 
         self.realm = 'discussion'
 
-        self.db = self.env.get_db_cnx()
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(self.db)
-        insert_test_data(self.db)
+        setup.upgrade_environment(None)
+        with self.env.db_transaction as db:
+            insert_test_data(db)
 
     def tearDown(self):
-        self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 

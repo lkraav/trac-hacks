@@ -22,13 +22,10 @@ class DiscussionSpamFilterTestCase(unittest.TestCase):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
-        self.db = self.env.get_db_cnx()
 
         self.filter = DiscussionSpamFilter(self.env)
 
     def tearDown(self):
-        self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 

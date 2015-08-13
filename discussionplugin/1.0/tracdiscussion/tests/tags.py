@@ -29,40 +29,40 @@ class DiscussionTagProviderTestCase(unittest.TestCase):
         self.env.path = tempfile.mkdtemp()
         self.perms = PermissionSystem(self.env)
 
-        self.db = self.env.get_db_cnx()
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(self.db)
+        setup.upgrade_environment(None)
 
         # Populate tables with initial test data.
-        cursor = self.db.cursor()
-        cursor.execute("""
-            INSERT INTO forum
-                   (name, subject, description)
-            VALUES (%s,%s,%s)
-        """, ('forum1', 'forum-subject', 'forum-desc1'))
-        cursor.executemany("""
-            INSERT INTO topic
-                   (forum, subject, body)
-            VALUES (%s,%s,%s)
-        """, [(1, 'top1', 'topic-desc1'),
-              (1, 'top2', 'topic-desc2'),
-             ])
-        cursor.executemany("""
-            INSERT INTO message
-                   (forum, topic, body)
-            VALUES (%s,%s,%s)
-        """, [(1, 1, 'msg1'),
-              (1, 2, 'msg2'),
-              (1, 2, 'msg3'),
-              (1, 2, 'msg4'),
-             ])
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                INSERT INTO forum
+                       (name, subject, description)
+                VALUES (%s,%s,%s)
+            """, ('forum1', 'forum-subject', 'forum-desc1'))
+            cursor.executemany("""
+                INSERT INTO topic
+                       (forum, subject, body)
+                VALUES (%s,%s,%s)
+            """, [(1, 'top1', 'topic-desc1'),
+                  (1, 'top2', 'topic-desc2'),
+                 ])
+            cursor.executemany("""
+                INSERT INTO message
+                       (forum, topic, body)
+                VALUES (%s,%s,%s)
+            """, [(1, 1, 'msg1'),
+                  (1, 2, 'msg2'),
+                  (1, 2, 'msg3'),
+                  (1, 2, 'msg4'),
+                 ])
 
         tag_setup = TagSetup(self.env)
         # Current tractags schema is setup with enabled component anyway.
         #   Revert these changes for getting default permissions inserted.
         self._revert_tractags_schema_init()
-        tag_setup.upgrade_environment(self.db)
+        tag_setup.upgrade_environment(None)
 
         # Mock an anonymous request.
         self.anon_req = Mock()
@@ -82,20 +82,19 @@ class DiscussionTagProviderTestCase(unittest.TestCase):
         self.dtp = DiscussionTagProvider(self.env)
 
     def tearDown(self):
-        self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
     # Helpers
 
     def _revert_tractags_schema_init(self):
-        cursor = self.db.cursor()
-        cursor.execute("DROP TABLE IF EXISTS tags")
-        cursor.execute("DROP TABLE IF EXISTS tags_change")
-        cursor.execute("DELETE FROM system WHERE name='tags_version'")
-        cursor.execute("DELETE FROM permission WHERE action %s"
-                       % self.db.like(), ('TAGS_%',))
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("DROP TABLE IF EXISTS tags")
+            cursor.execute("DROP TABLE IF EXISTS tags_change")
+            cursor.execute("DELETE FROM system WHERE name='tags_version'")
+            cursor.execute("DELETE FROM permission WHERE action %s"
+                           % db.like(), ('TAGS_%',))
     # Tests
 
     def test_describe_tagged_resource(self):

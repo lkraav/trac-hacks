@@ -27,10 +27,8 @@ class DiscussionInitTestCase(unittest.TestCase):
         self.env = EnvironmentStub(enable=['trac.*'])
         self.env.path = tempfile.mkdtemp()
         self.db_mgr = DatabaseManager(self.env)
-        self.db = self.env.get_db_cnx()
 
     def tearDown(self):
-        self.db.close()
         # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
@@ -40,44 +38,45 @@ class DiscussionInitTestCase(unittest.TestCase):
     def _check_schema(self):
         """Verify current schema by checking tables and their columns."""
 
-        cursor = self.db.cursor()
         dburi = self.env.config.get('trac', 'database')
-        tables = self._get_tables(dburi, cursor)
-        self.assertTrue('forum_group' in tables)
-        cursor.execute("SELECT * FROM forum_group")
-        self.assertEquals(
-            ['id', 'name', 'description'],
-            [col[0] for col in self._get_cursor_description(cursor)])
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            tables = self._get_tables(dburi, cursor)
+            self.assertTrue('forum_group' in tables)
+            cursor.execute("SELECT * FROM forum_group")
+            self.assertEquals(
+                ['id', 'name', 'description'],
+                [col[0] for col in self._get_cursor_description(cursor)])
 
-        self.assertTrue('forum' in tables)
-        cursor.execute("SELECT * FROM forum")
-        self.assertEquals(
-            ['id', 'name', 'time', 'forum_group', 'author', 'moderators',
-             'subscribers', 'subject', 'description'],
-            [col[0] for col in self._get_cursor_description(cursor)])
+            self.assertTrue('forum' in tables)
+            cursor.execute("SELECT * FROM forum")
+            self.assertEquals(
+                ['id', 'name', 'time', 'forum_group', 'author', 'moderators',
+                 'subscribers', 'subject', 'description'],
+                [col[0] for col in self._get_cursor_description(cursor)])
 
-        self.assertTrue('topic' in tables)
-        cursor.execute("SELECT * FROM topic")
-        self.assertEquals(
-            ['id', 'forum', 'time', 'author', 'subscribers', 'subject',
-             'body', 'status', 'priority'],
-            [col[0] for col in self._get_cursor_description(cursor)])
+            self.assertTrue('topic' in tables)
+            cursor.execute("SELECT * FROM topic")
+            self.assertEquals(
+                ['id', 'forum', 'time', 'author', 'subscribers', 'subject',
+                 'body', 'status', 'priority'],
+                [col[0] for col in self._get_cursor_description(cursor)])
 
-        self.assertTrue('message' in tables)
-        cursor.execute("SELECT * FROM message")
-        messages = cursor.fetchall()
-        self.assertEquals([], messages)
-        self.assertEquals(
-            ['id', 'forum', 'topic', 'replyto', 'time', 'author', 'body'],
-            [col[0] for col in self._get_cursor_description(cursor)])
+            self.assertTrue('message' in tables)
+            cursor.execute("SELECT * FROM message")
+            messages = cursor.fetchall()
+            self.assertEquals([], messages)
+            self.assertEquals(
+                ['id', 'forum', 'topic', 'replyto', 'time', 'author', 'body'],
+                [col[0] for col in self._get_cursor_description(cursor)])
 
-        cursor.execute("""
-            SELECT value
-              FROM system
-             WHERE name='discussion_version'
-        """)
-        version = int(cursor.fetchone()[0])
-        self.assertEquals(schema_version, version)
+            cursor.execute("""
+                SELECT value
+                  FROM system
+                 WHERE name='discussion_version'
+            """)
+            version = int(cursor.fetchone()[0])
+            self.assertEquals(schema_version, version)
 
     def _get_tables(self, dburi, cursor):
         """Code from TracMigratePlugin by Jun Omae (see tracmigrate.admin)."""
@@ -113,11 +112,11 @@ class DiscussionInitTestCase(unittest.TestCase):
 
     def test_new_install(self):
         setup = DiscussionInit(self.env)
-        self.assertEquals(0, setup._get_schema_version(self.db))
-        self.assertTrue(setup.environment_needs_upgrade(self.db))
+        self.assertEquals(0, setup._get_schema_version())
+        self.assertTrue(setup.environment_needs_upgrade(None))
 
-        setup.upgrade_environment(self.db)
-        self.assertFalse(setup.environment_needs_upgrade(self.db))
+        setup.upgrade_environment(None)
+        self.assertFalse(setup.environment_needs_upgrade(None))
         self._check_schema()
 
     def test_upgrade_schema_v1(self):
@@ -150,18 +149,19 @@ class DiscussionInitTestCase(unittest.TestCase):
             ]
         ]
         connector = self.db_mgr._get_connector()[0]
-        cursor = self.db.cursor()
-        for table in schema:
-            for stmt in connector.to_sql(table):
-                cursor.execute(stmt)
-        cursor.execute(INSERT_VERSION_SQL, '1')
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            for table in schema:
+                for stmt in connector.to_sql(table):
+                    cursor.execute(stmt)
+            cursor.execute(INSERT_VERSION_SQL, '1')
 
         setup = DiscussionInit(self.env)
-        self.assertEquals(1, setup._get_schema_version(self.db))
-        self.assertTrue(setup.environment_needs_upgrade(self.db))
+        self.assertEquals(1, setup._get_schema_version())
+        self.assertTrue(setup.environment_needs_upgrade(None))
 
-        setup.upgrade_environment(self.db)
-        self.assertFalse(setup.environment_needs_upgrade(self.db))
+        setup.upgrade_environment(None)
+        self.assertFalse(setup.environment_needs_upgrade(None))
         self._check_schema()
 
     def test_upgrade_schema_v2(self):
@@ -202,18 +202,19 @@ class DiscussionInitTestCase(unittest.TestCase):
             ]
         ]
         connector = self.db_mgr._get_connector()[0]
-        cursor = self.db.cursor()
-        for table in schema:
-            for stmt in connector.to_sql(table):
-                cursor.execute(stmt)
-        cursor.execute(INSERT_VERSION_SQL, '2')
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            for table in schema:
+                for stmt in connector.to_sql(table):
+                    cursor.execute(stmt)
+            cursor.execute(INSERT_VERSION_SQL, '2')
 
         setup = DiscussionInit(self.env)
-        self.assertEquals(2, setup._get_schema_version(self.db))
-        self.assertTrue(setup.environment_needs_upgrade(self.db))
+        self.assertEquals(2, setup._get_schema_version())
+        self.assertTrue(setup.environment_needs_upgrade(None))
 
-        setup.upgrade_environment(self.db)
-        self.assertFalse(setup.environment_needs_upgrade(self.db))
+        setup.upgrade_environment(None)
+        self.assertFalse(setup.environment_needs_upgrade(None))
         self._check_schema()
 
     def test_upgrade_schema_v3(self):
@@ -255,18 +256,19 @@ class DiscussionInitTestCase(unittest.TestCase):
             ]
         ]
         connector = self.db_mgr._get_connector()[0]
-        cursor = self.db.cursor()
-        for table in schema:
-            for stmt in connector.to_sql(table):
-                cursor.execute(stmt)
-        cursor.execute(INSERT_VERSION_SQL, '3')
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            for table in schema:
+                for stmt in connector.to_sql(table):
+                    cursor.execute(stmt)
+            cursor.execute(INSERT_VERSION_SQL, '3')
 
         setup = DiscussionInit(self.env)
-        self.assertEquals(3, setup._get_schema_version(self.db))
-        self.assertTrue(setup.environment_needs_upgrade(self.db))
+        self.assertEquals(3, setup._get_schema_version())
+        self.assertTrue(setup.environment_needs_upgrade(None))
 
-        setup.upgrade_environment(self.db)
-        self.assertFalse(setup.environment_needs_upgrade(self.db))
+        setup.upgrade_environment(None)
+        self.assertFalse(setup.environment_needs_upgrade(None))
         self._check_schema()
 
     def test_upgrade_schema_v4(self):
@@ -311,18 +313,19 @@ class DiscussionInitTestCase(unittest.TestCase):
             ]
         ]
         connector = self.db_mgr._get_connector()[0]
-        cursor = self.db.cursor()
-        for table in schema:
-            for stmt in connector.to_sql(table):
-                cursor.execute(stmt)
-        cursor.execute(INSERT_VERSION_SQL, '4')
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            for table in schema:
+                for stmt in connector.to_sql(table):
+                    cursor.execute(stmt)
+            cursor.execute(INSERT_VERSION_SQL, '4')
 
         setup = DiscussionInit(self.env)
-        self.assertEquals(4, setup._get_schema_version(self.db))
-        self.assertTrue(setup.environment_needs_upgrade(self.db))
+        self.assertEquals(4, setup._get_schema_version())
+        self.assertTrue(setup.environment_needs_upgrade(None))
 
-        setup.upgrade_environment(self.db)
-        self.assertFalse(setup.environment_needs_upgrade(self.db))
+        setup.upgrade_environment(None)
+        self.assertFalse(setup.environment_needs_upgrade(None))
         self._check_schema()
 
 

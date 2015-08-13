@@ -124,17 +124,15 @@ class DiscussionWikiTestCase(unittest.TestCase):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
-        self.db = self.env.get_db_cnx()
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(self.db)
-        insert_test_data(self.db)
+        setup.upgrade_environment(None)
+        with self.env.db_transaction as db:
+            insert_test_data(db)
 
         self.wiki = DiscussionWiki(self.env)
 
     def tearDown(self):
-        self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
@@ -158,12 +156,12 @@ def wiki_setup(tc):
                              enable=['trac.*', 'tracdiscussion.*'])
     tc.env.path = tempfile.mkdtemp()
     tc.db_mgr = DatabaseManager(tc.env)
-    tc.db = tc.env.get_db_cnx()
 
     # Accomplish Discussion db schema setup.
     setup = DiscussionInit(tc.env)
-    setup.upgrade_environment(tc.db)
-    insert_test_data(tc.db)
+    setup.upgrade_environment(None)
+    with tc.env.db_transaction as db:
+        insert_test_data(db)
 
     attachment = Attachment(tc.env, 'discussion', 'topic/3')
     attachment.insert('foo.txt', StringIO(''), 0, 1)
@@ -180,8 +178,6 @@ def wiki_setup(tc):
 
 def wiki_teardown(tc):
     tc.env.reset_db()
-    tc.db.close()
-    # Really close db connections.
     tc.env.shutdown()
     shutil.rmtree(tc.env.path)
 

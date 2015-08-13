@@ -249,7 +249,8 @@ class DiscussionDb(Component):
             values.append(limit)
         values = tuple(values)
 
-        return [dict(zip(columns, row)) for row in self.db_query(sql, values)]
+        return [dict(zip(columns, row))
+                for row in self.env.db_query(sql, values)]
 
     def get_messages(self, context, topic_id, order_by='time', desc=False):
         columns = self.msg_cols
@@ -318,49 +319,53 @@ class DiscussionDb(Component):
         """Returns discussion content matching TracSearch terms."""
 
         # Search in topics.
-        query, args = search_to_sql(db, ['author', 'subject', 'body'], terms)
-        columns = ('id', 'forum', 'time', 'subject', 'body', 'author')
-        sql = ("SELECT %s"
-               "  FROM topic"
-               " WHERE %s" % (', '.join(columns), query))
+        with self.env.db_query as db:
+            query, args = search_to_sql(db, ['author', 'subject', 'body'],
+                                        terms)
+            columns = ('id', 'forum', 'time', 'subject', 'body', 'author')
+            sql = ("SELECT %s"
+                   "  FROM topic"
+                   " WHERE %s" % (', '.join(columns), query))
 
-        for row in self.env.db_query(sql, args):
-            # Class references are valid only in sub-class (api).
-            row = dict(zip(columns, row))
-            resource = Resource(self.realm, 'forum/%s/topic/%s'
-                                            % (row['forum'], row['id']))
-            yield (''.join([self.get_resource_url(resource, href), '#-1']),
-                   "Topic #%d: %s" % (row['id'],
-                                      shorten_line(row['subject'])),
-                   to_datetime(row['time'], utc), row['author'],
-                   shorten_result(row['body'], [query]))
+            for row in db(sql, args):
+                # Class references are valid only in sub-class (api).
+                row = dict(zip(columns, row))
+                resource = Resource(self.realm, 'forum/%s/topic/%s'
+                                                % (row['forum'], row['id']))
+                yield (''.join([self.get_resource_url(resource, href), '#-1']),
+                       "Topic #%d: %s" % (row['id'],
+                                          shorten_line(row['subject'])),
+                       to_datetime(row['time'], utc), row['author'],
+                       shorten_result(row['body'], [query]))
 
-        # Search in messages.
-        query, args = search_to_sql(db, ['m.author', 'm.body', 't.subject'],
-                                    terms)
-        columns = ('id', 'forum', 'topic', 'time', 'author', 'body', 'subject')
-        sql = ("SELECT %s, t.subject"
-               "  FROM message m"
-               "  LEFT JOIN"
-               "  (SELECT subject, id"
-                   " FROM topic) t"
-               "  ON t.id=m.topic"
-               " WHERE %s" % ('m.' + ', m.'.join(columns[:-1]), query))
+            # Search in messages.
+            query, args = search_to_sql(db,
+                                        ['m.author', 'm.body', 't.subject'],
+                                        terms)
+            columns = ('id', 'forum', 'topic', 'time', 'author', 'body',
+                       'subject')
+            sql = ("SELECT %s, t.subject"
+                   "  FROM message m"
+                   "  LEFT JOIN"
+                   "  (SELECT subject, id"
+                       " FROM topic) t"
+                   "  ON t.id=m.topic"
+                   " WHERE %s" % ('m.' + ', m.'.join(columns[:-1]), query))
 
-        for row in self.env.db_query(sql, args):
-            # Class references are valid only in sub-class (api).
-            row = dict(zip(columns, row))
-            parent = Resource(self.realm, 'forum/%s/topic/%s'
-                                           % (row['forum'], row['topic']))
-            resource = Resource(self.realm,
-                                'forum/%s/topic/%s/message/%s'
-                                % (row['forum'], row['topic'], row['id']),
-                                parent=parent)
-            yield (self.get_resource_url(resource, href),
-                   "Message  #%d: %s" % (row['id'],
-                                         shorten_line(row['subject'])),
-                   to_datetime(row['time'], utc), row['author'],
-                   shorten_result(row['body'], [query]))
+            for row in db(sql, args):
+                # Class references are valid only in sub-class (api).
+                row = dict(zip(columns, row))
+                parent = Resource(self.realm, 'forum/%s/topic/%s'
+                                               % (row['forum'], row['topic']))
+                resource = Resource(self.realm,
+                                    'forum/%s/topic/%s/message/%s'
+                                    % (row['forum'], row['topic'], row['id']),
+                                    parent=parent)
+                yield (self.get_resource_url(resource, href),
+                       "Message  #%d: %s" % (row['id'],
+                                             shorten_line(row['subject'])),
+                       to_datetime(row['time'], utc), row['author'],
+                       shorten_result(row['body'], [query]))
 
     # Item manipulation methods.
 

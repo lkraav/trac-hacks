@@ -16,12 +16,12 @@ from trac.test import EnvironmentStub, Mock
 from tracdiscussion.admin import DiscussionWebAdmin
 from tracdiscussion.init import DiscussionInit
 
+
 class DiscussionWebAdminTestCase(unittest.TestCase):
  
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
-        self.db = self.env.get_db_cnx()
         self.perms = PermissionSystem(self.env)
 
         # Create admin user reference in the permission system.
@@ -38,13 +38,11 @@ class DiscussionWebAdminTestCase(unittest.TestCase):
         self.dwa = DiscussionWebAdmin(self.env)
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(self.db)
+        setup.upgrade_environment(None)
         self.panel_template = dict(forum='admin-forum-list.html',
                                    group='admin-group-list.html')
 
     def tearDown(self):
-        self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 

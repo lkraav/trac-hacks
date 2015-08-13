@@ -50,7 +50,6 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
 
     def _prepare_context(self, req):
         context = Context.from_request(req)
-        context.db = self.db
         return context
 
     # Tests
