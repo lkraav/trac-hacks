@@ -4,7 +4,7 @@
 from setuptools import setup
 import sys
 
-min_python = (2, 4)
+min_python = (2, 5)
 if sys.version_info < min_python:
     print "DiscussionPlugin requires Python %d.%d or later" % min_python
     sys.exit(1)
@@ -13,7 +13,7 @@ if sys.version_info >= (3,):
     sys.exit(1)
 
 setup(name='TracDiscussion',
-    version='0.9',
+    version='0.10',
     author='Radek Bartoň',
     author_email='blackhex@post.cz',
     license='''GPL''',
@@ -37,7 +37,7 @@ setup(name='TracDiscussion',
         'TracDiscussion.timeline = tracdiscussion.timeline',
         'TracDiscussion.wiki = tracdiscussion.wiki']
     },
-    install_requires=[],
+    install_requires=['Trac'],
     extras_require={'spamfilter' : ['TracSpamFilter >= 0.2'],
                     'tags' : ['TracTags >= 0.7']},
     test_suite = 'tracdiscussion.tests.test_suite',
