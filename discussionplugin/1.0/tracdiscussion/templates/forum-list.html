@@ -16,8 +16,6 @@
   </head>
 
   <?python
-    from trac.wiki.formatter import format_to_oneliner
-    from trac.util.datefmt import format_datetime, pretty_timedelta
     from tracdiscussion.api import format_to_oneliner_no_links
   ?>
 
@@ -26,8 +24,8 @@
       <thead>
         <tr py:if="group and group.id != 0">
           <th class="group" colspan="11">
-            <div class="name">${format_to_oneliner(discussion.env, context, group.name)}</div>
-            <div class="description">${format_to_oneliner(discussion.env, context, group.description)}</div>
+            <div class="name">${wiki_to_oneliner(context, group.name)}</div>
+            <div class="description">${wiki_to_oneliner(context, group.description)}</div>
           </th>
         </tr>
         <tr>

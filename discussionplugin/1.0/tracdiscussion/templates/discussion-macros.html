@@ -9,8 +9,6 @@
     you should have received as part of this distribution.
   -->
   <?python
-    from trac.wiki.formatter import format_to_oneliner, format_to_html
-    from trac.util.datefmt import format_datetime, pretty_timedelta
     from tracdiscussion.api import format_to_oneliner_no_links
   ?>
 
@@ -37,22 +35,21 @@
           <py:when test="is_topic_edit">
             <a name="preview"></a>
             <div class="subject">
-              ${format_to_oneliner(discussion.env, context, req.args.subject) \
+              ${wiki_to_oneliner(context, req.args.subject) \
               or '&nbsp;'}
             </div>
             <div class="body">
-              ${format_to_html(discussion.env, context, req.args.body) or \
+              ${wiki_to_html(context, req.args.body) or \
               '&nbsp;'}
             </div>
           </py:when>
           <py:otherwise>
             <div class="subject">
-              ${format_to_oneliner(discussion.env, context,
-              discussion.topic.subject) or '&nbsp;'}
+              ${wiki_to_oneliner(context, discussion.topic.subject) or '&nbsp;'}
               ${display_topic_status(discussion.topic.status)}
             </div>
             <div class="body">
-              ${format_to_html(discussion.env, context, discussion.topic.body) \
+              ${wiki_to_html(context, discussion.topic.body) \
               or '&nbsp;'}
             </div>
           </py:otherwise>
@@ -322,7 +319,7 @@
         Message #??
       </div>
       <div class="body">
-        ${format_to_html(discussion.env, context, req.args.body or '&nbsp;')}
+        ${wiki_to_html(context, req.args.body or '&nbsp;')}
       </div>
       <div class="footer">
         <div class="author">
@@ -364,10 +361,10 @@
         <a py:if="is_message_edit" name="preview"></a>
         <div class="body" py:choose="">
           <py:when test="is_message_edit">
-            ${format_to_html(discussion.env, context, req.args.body or '&nbsp;')}
+            ${wiki_to_html(context, req.args.body or '&nbsp;')}
           </py:when>
           <py:otherwise>
-            ${format_to_html(discussion.env, context, message.body or '&nbsp;')}
+            ${wiki_to_html(context, message.body or '&nbsp;')}
           </py:otherwise>
         </div>
 
