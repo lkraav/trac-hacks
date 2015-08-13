@@ -8,7 +8,7 @@ from trac.resource import Resource, get_resource_url, get_resource_name, \
   get_resource_description
 from trac.util.text import pretty_size
 from trac.wiki.formatter import format_to_oneliner
-from trac.util.datefmt import to_timestamp
+from trac.util.datefmt import to_datetime, to_timestamp, utc
 
 from trac.timeline import ITimelineEventProvider
 
