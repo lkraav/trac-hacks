@@ -125,7 +125,7 @@ class DirAuthStore(Component):
             if self.group_validusers:
                 userinfo = self.expand_group_users(lcnx, self.group_validusers)
             else:
-                users = lcnx.search_s(self.base_dn, ldap.SCOPE_SUBTREE,
+                users = lcnx.search_s(self.dir_basedn, ldap.SCOPE_SUBTREE,
                                       "objectClass=person",
                                       [self.user_attr, self.email_attr,
                                        self.proxy_attr, self.name_attr])
@@ -395,7 +395,7 @@ class DirAuthStore(Component):
         try:
             cur.execute("""
                 DELETE FROM session
-                  WHERE sid=%s AND authenticated=1 
+                  WHERE sid=%s AND authenticated=1
                 """, (uname,))
             cur.execute("""
                 INSERT INTO session
