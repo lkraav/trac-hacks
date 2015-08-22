@@ -20,7 +20,6 @@ from trac.versioncontrol.api import IRepositoryChangeListener, RepositoryManager
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
     add_stylesheet, pretty_timedelta, web_context)
-from trac.web.href import Href
 from trac.web.main import IRequestFilter
 from trac.wiki.formatter import format_to_html
 from trac.wiki.macros import WikiMacroBase
@@ -29,6 +28,7 @@ from tracopt.ticket.commit_updater import CommitTicketUpdater
 
 from model import CodeReview
 from api import is_incomplete
+
 
 class CodeReviewerModule(Component):
     """Base component for reviewing changesets."""
@@ -76,10 +76,9 @@ class CodeReviewerModule(Component):
                     review.encode(req.args['status']) != review.status
                 if review.save(req.authname, req.args['status'],
                                req.args['summary']):
-                    self._update_tickets(review, status_changed)
+                    self._update_tickets(changeset, review, status_changed)
                     tickets = review.tickets
-                href = Href(req.path_info)
-                req.redirect(href(tickets=tickets))
+                req.redirect(req.href(req.path_info, tickets=tickets))
             ctx = web_context(req)
             format_summary = functools.partial(format_to_html, self.env, ctx,
                                                escape_newlines=True)
@@ -112,7 +111,7 @@ class CodeReviewerModule(Component):
 
     # Private methods
 
-    def _update_tickets(self, review, status_changed):
+    def _update_tickets(self, changeset, review, status_changed):
         """Updates the tickets referenced by the given review's changeset
         with a comment of field changes.  Field changes and command execution
         may occur if specified in trac.ini and the review's changeset is the
@@ -126,9 +125,9 @@ class CodeReviewerModule(Component):
                 comment = "Code review set to %s" % review['status']
             else:
                 comment = "Code review comment"
-            repos = RepositoryManager(self.env).get_repository(review.repo)
+            repos = changeset.repos
             ref = review.changeset
-            disp_ref = repos.short_rev(review.changeset)
+            disp_ref = str(repos.short_rev(review.changeset))
             if review.repo:
                 ref += '/' + review.repo
                 disp_ref += '/' + review.repo

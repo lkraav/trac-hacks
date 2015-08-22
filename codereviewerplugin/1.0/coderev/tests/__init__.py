@@ -9,12 +9,14 @@
 
 import unittest
 
-from coderev.tests import api
+from coderev.tests import api, model, web_ui
 
 
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(api.suite))
+    suite.addTest(unittest.makeSuite(model.suite))
+    suite.addTest(unittest.makeSuite(web_ui.suite))
     return suite
 
 
