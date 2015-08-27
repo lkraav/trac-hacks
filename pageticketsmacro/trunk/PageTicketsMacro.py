@@ -32,6 +32,8 @@ class PageTicketsMacro(WikiMacroBase):
         page = WikiPage(self.env, pagename)
         tickets = PageTicketsMacro.tickets_re1.findall(page.text)
         tickets += PageTicketsMacro.tickets_re2.findall(page.text)
+        if not tickets:
+            return 'No tickets found'
         args, kw = parse_args(content)
         kw['id'] = '|'.join(tickets)
         kw.setdefault('format', 'table')
