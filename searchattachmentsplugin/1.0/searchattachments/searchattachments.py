@@ -12,8 +12,10 @@ from trac.core import *
 from trac.config import Option, Section , Configuration
 from trac.search import ISearchSource
 from trac.attachment import IAttachmentChangeListener
+from trac.util.datefmt import to_datetime
 
-class AttachmentSearchPlugin(Component): 
+
+class AttachmentSearchPlugin(Component):
 	implements( ISearchSource, IAttachmentChangeListener )
 
         def _absolute_index_dir( self ):
@@ -31,7 +33,7 @@ class AttachmentSearchPlugin(Component):
         #############################
 	# IAttachmentChangeListener #
         #############################
-	
+
 	def attachment_added( self , attachment ):
 
 		if self._create_metafile (attachment):
@@ -79,7 +81,7 @@ class AttachmentSearchPlugin(Component):
 		if not index_file:
 			return
 		index_dir  = self.absolute_index_dir
- 
+
 		cmd = 'cd %s && %s -f %s -w %s' % ( index_dir , self.swish , index_file , query )
 		self.env.log.debug ( 'command % s =' %  cmd)
 		error , output = commands.getstatusoutput( cmd )
@@ -90,7 +92,7 @@ class AttachmentSearchPlugin(Component):
 			return
 
 		# Parse output of the command
-		for line in output.split('\n'): 
+		for line in output.split('\n'):
 			line = line.strip(' ')
 			if line and line[0] != '#' :
 				#sel.env.log.debug ( 'line = %s ' % line )
@@ -114,19 +116,19 @@ class AttachmentSearchPlugin(Component):
 					else:
 						sw_dir = sw_abs_dir
 	                                        file = os.path.join( self.env.path , 'attachments' , sw_dir , sw_filename )
-			
+
 					# Build variables that we'll return for this hit
 					relative_url  = 'attachment/%s/%s'  % ( sw_dir , sw_filename )
 					title         = 'Attachment::%s/%s' % ( sw_dir , urllib.url2pathname(sw_filename) )
-					if os.path.exists (file): 
-	                                        date = os.path.getmtime( file )
+					if os.path.exists (file):
+                        date = to_datetime(os.path.getmtime(file))
 					else:
 						return
-					excerpt	      = self._make_excerpt ( file + '.meta' , keywords )					
+					excerpt	      = self._make_excerpt ( file + '.meta' , keywords )
 
 					# Return the hits
 					yield ( relative_url , title , date , 'SearchAttachments' , excerpt )
- 
+
 
       	####################
 	# Private methods  #
@@ -147,10 +149,10 @@ class AttachmentSearchPlugin(Component):
                         if m:
                         	startline =  m.start(1)
                                	start     =  m.start(2)
-				if start - startline > 100 : 
+				if start - startline > 100 :
 					startline = start - 100
 					begin = '... '
-				else :	
+				else :
 					begin = ''
                                 length  = 500                          # Number of char in the excerpt
                         	if startline:
@@ -164,7 +166,7 @@ class AttachmentSearchPlugin(Component):
 
 		# Cleaning up some unprintable added by catdoc
 		excerpt = multiple_replace( { '\x0a':' ' , '\x0c':' ' }  , excerpt )
- 
+
 		return excerpt
 
 	def  _get_index_file ( self ) :
@@ -179,7 +181,7 @@ class AttachmentSearchPlugin(Component):
                 for item in dircache.listdir( self.absolute_index_dir ) :
                         path = os.path.join ( self.absolute_index_dir , item )
 
-                        prefix_pattern = re.compile('^index\.swish-e\.(.*)$') 
+                        prefix_pattern = re.compile('^index\.swish-e\.(.*)$')
 			prefix = prefix_pattern.match ( item )
                         if prefix :
                                 # Can be index.xxxx or index.xxxx.prop or index.xxxx.temp
@@ -210,7 +212,7 @@ class AttachmentSearchPlugin(Component):
 
 	def _build_index( self , conf_file = 'swish.config' ):
 		"""Build a new index by lauching the build_index script as a background process"""
-	
+
 		self.env.log.info ('Starting index update')
 		cmd = '%s "%s" index -s "%s" -c' % (  self.seat , self.env.path , self.swish )
 		self.env.log.debug ( cmd  )
@@ -233,7 +235,7 @@ class AttachmentSearchPlugin(Component):
 			return False
 
 		self.env.log.debug ('Uploaded file with extension = %s' % extension)
-		
+
 		# Iterate over filter.* in the [attachment] section of the config file
 		# to build a dictionary of extension:command
 	        filters = { 'txt' : 'cp -rf "%s" "%s"' }
@@ -249,7 +251,7 @@ class AttachmentSearchPlugin(Component):
 
 			# Converting to text with the command defined for this extension
 			if os.path.exists( meta_file ):
-				os.remove ( meta_file )		
+				os.remove ( meta_file )
 
 			cmd = filters[extension] % ( attachment.path , meta_file )
 			self.env.log.debug( "Converting to text: %s" % cmd )
@@ -303,7 +305,7 @@ def is_text( content ):
 
  	if "\0" in content:
        		return False
-    
+
 	if not content:  # Empty files are considered text
         	return True
 
@@ -326,13 +328,13 @@ def is_text_file(  filepath , blocksize = 512 ):
 	else:
 		return False
 
-def multiple_replace( dict , text): 
+def multiple_replace( dict , text):
 	""" Replace in 'text', all occurences of keys specified in the input
-  	dictionary with its corresponding value.  Returns the new tring.""" 
+  	dictionary with its corresponding value.  Returns the new tring."""
 
   	# Create a regular expression  from the dictionary keys
   	regex = re.compile("(%s)" % "|".join(map(re.escape, dict.keys())))
 
   	# For each match, look-up corresponding value in dictionary
-	return regex.sub(lambda mo: dict[mo.string[mo.start():mo.end()]], text) 
+	return regex.sub(lambda mo: dict[mo.string[mo.start():mo.end()]], text)
 
