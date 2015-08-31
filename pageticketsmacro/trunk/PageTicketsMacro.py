@@ -21,17 +21,15 @@ class PageTicketsMacro(WikiMacroBase):
     [[PageTickets(status=new,group=milestone)]]
     }}}
     """
-    
-    tickets_re1 = re.compile('#(\d+)')
-    tickets_re2 = re.compile('ticket:(\d+)')
+
+    tickets_re = re.compile('(?:#|(?:ticket:|bug:))(\d+)')
 
     def expand_macro(self, formatter, name, content, args):
         if not formatter.resource or not formatter.resource.realm == 'wiki':
             raise TracError('PageTicketsMacro only works on wiki pages')
         pagename = formatter.resource.id
         page = WikiPage(self.env, pagename)
-        tickets = PageTicketsMacro.tickets_re1.findall(page.text)
-        tickets += PageTicketsMacro.tickets_re2.findall(page.text)
+        tickets = PageTicketsMacro.tickets_re.findall(page.text)
         if not tickets:
             return 'No tickets found'
         args, kw = parse_args(content)
