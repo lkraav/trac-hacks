@@ -115,14 +115,12 @@ inputs_layout.get_field = function(td) {
 // move_field
 inputs_layout.move_field = function(field, i) {
     var td = this.get_tx(field);
-    var th = td.parent('tr')
-               .find('th label[for=field-'+field+']')
-               .parent('th');
+    var th = td.prev('th');
     
     // find correct row (tr) to insert field
     var row = Math.round(i/2 - 0.5); // round down
     var $properties = jQuery('#properties');
-    row += $properties.find('td[class=fullrow]').length; // skip fullrows
+    row += $properties.find('td.fullrow').length; // skip fullrows
     var tr = $properties.find('tr:eq('+row+')');
     
     // find correct column (tx) to insert field
@@ -176,7 +174,7 @@ header_layout.get_field = function(th) {
 // move_field
 header_layout.move_field = function(field, i) {
     var th = this.get_tx(field);
-    var td = th.parent('tr').find('td[headers=h_'+field+']');
+    var td = th.next('td');
     
     // find correct row (tr) to insert field
     var row = Math.round(i/2 - 0.5); // round down

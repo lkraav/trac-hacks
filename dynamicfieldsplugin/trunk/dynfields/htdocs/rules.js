@@ -168,7 +168,7 @@ hiderule.apply = function(input, spec){
 
         // we want to hide the input fields's td and related th
         var field = jQuery('#field-'+target+',input[name="field_'+target+'"]');
-        var td = field.parents('td:first');
+        var td = field.closest('td');
         var th = td.prev('th');
         var cls = 'dynfields-hide dynfields-'+trigger;
         if (spec.link_to_show.toLowerCase() == 'true')
@@ -196,7 +196,7 @@ hiderule.apply = function(input, spec){
         if (spec.clear_on_hide.toLowerCase() == 'true' ||
             spec.hide_always.toLowerCase() == 'true'){
             th = jQuery('#h_'+target);
-            td = th.siblings('td[headers=h_'+target+']');
+            td = th.next('td');
             td.addClass('dynfields-hide dynfields-'+trigger);
             th.addClass('dynfields-hide dynfields-'+trigger);
         }
