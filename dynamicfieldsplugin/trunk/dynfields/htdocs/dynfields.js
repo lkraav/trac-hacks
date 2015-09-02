@@ -14,11 +14,11 @@ var get_selector = function(field_name){
         }
     }
     return selector;
-}
+};
 
 var setup_triggers = function(){
     if (window.dynfields_rules == undefined)
-        window.dynfields_rules = new Object();
+        window.dynfields_rules = {};
 
     for (var prop in triggers) {
         triggers[prop].selector = get_selector(prop);
@@ -27,7 +27,7 @@ var setup_triggers = function(){
             spec.rule = window.dynfields_rules[spec.rule_name];
         }
     }
-}
+};
 
 var apply_rules = function(){
     var input = $(this);
@@ -59,7 +59,7 @@ var apply_rules = function(){
             spec.rule.complete(input, spec);
         });
     });
-}
+};
 
 jQuery(document).ready(function($){
 
@@ -73,7 +73,7 @@ jQuery(document).ready(function($){
             });
         });
     } else {
-        var inputs = new Array();
+        var inputs = [];
 
         // collect all input fields that trigger rules
         jQuery.each(triggers, function(trigger,specs){

@@ -121,8 +121,9 @@ inputs_layout.move_field = function(field, i) {
     
     // find correct row (tr) to insert field
     var row = Math.round(i/2 - 0.5); // round down
-    row += jQuery('#properties td[class=fullrow]').length; // skip fullrows
-    var tr = jQuery('#properties tr:eq('+row+')');
+    var $properties = jQuery('#properties');
+    row += $properties.find('td[class=fullrow]').length; // skip fullrows
+    var tr = $properties.find('tr:eq('+row+')');
     
     // find correct column (tx) to insert field
     var col = 'col'+((i%2)+1);
@@ -179,7 +180,7 @@ header_layout.move_field = function(field, i) {
     
     // find correct row (tr) to insert field
     var row = Math.round(i/2 - 0.5); // round down
-    var tr = jQuery('#ticket .properties tr:eq('+row+')');
+    var tr = jQuery('#ticket').find('.properties tr:eq('+row+')');
     
     // find correct column (tx) to insert field
     if (tr.find('th').length) {

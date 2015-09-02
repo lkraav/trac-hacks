@@ -10,7 +10,7 @@ var Rule = function(name) {
 
     // register this rule by adding to global variable
     if (window.dynfields_rules == undefined)
-        window.dynfields_rules = new Object();
+        window.dynfields_rules = {};
     window.dynfields_rules[name] = this;
 };
 
@@ -58,7 +58,7 @@ copyrule.apply = function(input, spec){
         // only do effect if value is changing
         var doit = true;
         if (field.get(0).tagName.toLowerCase() == 'select'){
-            var opts = new Array();
+            var opts = [];
             field.find('option').each(function(i,e){
                 opts.push(jQuery(e).text());
             });
@@ -99,7 +99,7 @@ defaultrule.apply = function(input, spec){
 
         // ensure default value is in list of select options
         if (field.get(0).tagName.toLowerCase() == 'select'){
-            var opts = new Array();
+            var opts = [];
             field.find('option').each(function(i,e){
                 opts.push(jQuery(e).text());
             });
@@ -113,7 +113,7 @@ defaultrule.apply = function(input, spec){
             doit = spec.append.toLowerCase() == 'true';
             if (doit){
                 // append preference to text field's value
-                var values = new Array();
+                var values = [];
                 jQuery(field.val().split(',')).each(function(i,v){
                     values.push(jQuery.trim(v));
                 });
@@ -157,10 +157,11 @@ hiderule.apply = function(input, spec){
     var target = spec.target;
 
     // process hide rule
+    var v;
     if (input.attr('type') == 'checkbox')
-        var v = (input.is(':checked')) ? "1" : "0";
+        v = (input.is(':checked')) ? "1" : "0";
     else
-        var v = input.val();
+        v = input.val();
     var l = spec.trigger_value.split('|'); // supports list of trigger values
     if ((jQuery.inArray(v,l) != -1 && spec.op == 'hide') ||
         (jQuery.inArray(v,l) == -1 && spec.op == 'show')){
@@ -276,7 +277,7 @@ validaterule.setup = function(input, spec){
             if (field.is(":hidden"))
                 return true;
             if ((spec.value == "" && input.val() == "") ||
-                (spec.value != "" && RegExp(spec.value).test(input.val()))){
+                (spec.value != "" && new RegExp(spec.value).test(input.val()))){
                 var valid = false;
 
                 // only invalid when ..?
@@ -288,10 +289,11 @@ validaterule.setup = function(input, spec){
                     form.addClass('validated');
                     var msg = spec.msg;
                     if (!msg.length) {
+                        var e;
                         if (spec.value == '')
-                            var e = 'be empty';
+                            e = 'be empty';
                         else
-                            var e = 'equal ' + spec.value;
+                            e = 'equal ' + spec.value;
                         msg = spec.target+" must not "+e;
                     }
                     alert(msg);
@@ -339,7 +341,6 @@ setrule.setup = function(input, spec){
                 set_to = option;
             if (option == set_to) {
                 doit = true;
-                return;
             }
         });
     } else {
