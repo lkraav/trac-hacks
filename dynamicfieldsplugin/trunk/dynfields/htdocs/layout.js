@@ -102,7 +102,7 @@ inputs_layout.selector = '#properties td[class!=fullrow]:parent';
 
 // get_tx
 inputs_layout.get_tx = function(field) {
-    return jQuery('#field-'+field).parents('td:first');
+    return jQuery('#field-'+field).closest('td');
 };
 
 // get_field
