@@ -1,6 +1,6 @@
 jQuery(document).ready(function($) {
-  var $field = $('.datepick');
-  $field.datepicker({
+  var $fields = $('.datepick');
+  $fields.datepicker({
     firstDay: datefield['first_day'],
     dateFormat: datefield['format'],
     showOn: "both",
@@ -13,7 +13,10 @@ jQuery(document).ready(function($) {
     buttonImage: datefield['calendar'],
     buttonImageOnly: true
   });
-  if ($field.val() == "<now>") {
-    $field.datepicker('setDate', '-0d');
-  }
+  $fields.each(function() {
+    var $field = $(this);
+    if ($field.val() == "<now>") {
+      $field.datepicker('setDate', '-0d');
+    }
+  })
 });
