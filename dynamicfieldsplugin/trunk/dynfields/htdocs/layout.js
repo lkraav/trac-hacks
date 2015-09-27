@@ -18,9 +18,9 @@ var Layout = function(name) {
     
     // Returns true of the field needs its own row
     this.needs_own_row = function(field) {
-        var fld = jQuery('#field-'+field);
-        if (fld.length)
-            return (fld.get(0).tagName == 'TEXTAREA');
+        var $field = jQuery('#field-'+field);
+        if ($field.length)
+            return $field.is('TEXTAREA');
         return false;
     };
     

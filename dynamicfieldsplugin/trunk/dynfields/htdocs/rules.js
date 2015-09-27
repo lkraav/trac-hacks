@@ -50,31 +50,31 @@ copyrule.apply = function(input, spec){
     if (spec.value == undefined)
         return;
 
-    var field = jQuery(get_selector(spec.target));
-    if (spec.overwrite.toLowerCase() == 'false' && field.val() != '')
+    var $field = jQuery(get_selector(spec.target));
+    if (spec.overwrite.toLowerCase() == 'false' && $field.val() != '')
         return;
 
-    if (field.hasClass('copyable')){
+    if ($field.hasClass('copyable')){
         // only do effect if value is changing
         var doit = true;
-        if (field.get(0).tagName.toLowerCase() == 'select'){
+        if ($field.is('select')) {
             var opts = [];
-            field.find('option').each(function(i,e){
+            $field.find('option').each(function(i,e){
                 opts.push(jQuery(e).text());
             });
             if (jQuery.inArray(input.val(), opts) == -1){
                 doit = false;
             }
         }
-        if (doit && field.val() != input.val()){
+        if (doit && $field.val() != input.val()){
             if (spec.target == 'owner' && !jQuery('#field-owner').length)
                 jQuery('#action_reassign').click();
-            field.hide().removeAttr('disabled');
-            field.val(input.val()).change();
-            field.fadeIn('slow');
+            $field.hide().removeAttr('disabled');
+            $field.val(input.val()).change();
+            $field.fadeIn('slow');
         }
     } else {
-        field.addClass('copyable');
+        $field.addClass('copyable');
     }
 };
 
@@ -86,21 +86,21 @@ var defaultrule = new Rule('DefaultRule'); // must match python class name exact
 
 // apply
 defaultrule.apply = function(input, spec){
-    var field = jQuery(get_selector(spec.target));
+    var $field = jQuery(get_selector(spec.target));
 
-    if (!field.hasClass('defaulted')){
-        field.addClass('defaulted');
+    if (!$field.hasClass('defaulted')){
+        $field.addClass('defaulted');
         var doit = true;
         var value = spec.value;
 
         // skip if field is hidden
-        if (field.is(":hidden"))
+        if ($field.is(":hidden"))
             return;
 
         // ensure default value is in list of select options
-        if (field.get(0).tagName.toLowerCase() == 'select'){
+        if ($field.is('select')) {
             var opts = [];
-            field.find('option').each(function(i,e){
+            $field.find('option').each(function(i,e){
                 opts.push(jQuery(e).text());
             });
             if (jQuery.inArray(value, opts) == -1)
@@ -108,13 +108,13 @@ defaultrule.apply = function(input, spec){
         }
 
         // ensure an 'empty' option value for existing tickets (unless appending)
-        if (field.val().length > 1 &&
+        if ($field.val().length > 1 &&
            window.location.pathname.indexOf('/ticket') > -1){
             doit = spec.append.toLowerCase() == 'true';
             if (doit){
                 // append preference to text field's value
                 var values = [];
-                jQuery(field.val().split(',')).each(function(i,v){
+                jQuery($field.val().split(',')).each(function(i,v){
                     values.push(jQuery.trim(v));
                 });
                 // the preference value could be comma-delimited list itself
@@ -129,7 +129,7 @@ defaultrule.apply = function(input, spec){
         }
 
         if (doit)
-            field.val(value).change(); // cascade rules
+            $field.val(value).change(); // cascade rules
     }
 };
 
@@ -324,8 +324,8 @@ setrule.setup = function(input, spec){
     if (jQuery.inArray(input.val(), spec.trigger_value.split('|')) == -1) // supports list of trigger values
         return;
 
-    var field = jQuery(get_selector(spec.target));
-    if (spec.overwrite.toLowerCase() == 'false' && field.val() != '')
+    var $field = jQuery(get_selector(spec.target));
+    if (spec.overwrite.toLowerCase() == 'false' && $field.val() != '')
         return;
 
     var set_to = spec.set_to;
@@ -334,8 +334,8 @@ setrule.setup = function(input, spec){
 
     // only do effect if value is changing (i.e., is a select option)
     var doit = false;
-    if (field.get(0).tagName.toLowerCase() == 'select'){
-        field.find('option').each(function(i,e){
+    if ($field.is('select')) {
+        $field.find('option').each(function(i,e){
             var option = jQuery(e).text();
             if (set_to == '!' && option.length) // special non-empty rule
                 set_to = option;
@@ -348,14 +348,14 @@ setrule.setup = function(input, spec){
     }
 
     if (doit) {
-        if (field.is(':checkbox')) {
-            field.prop('checked', set_to);
-        } else if (field.val() != set_to) {
+        if ($field.is(':checkbox')) {
+            $field.prop('checked', set_to);
+        } else if ($field.val() != set_to) {
             if (spec.target == 'owner' && !jQuery('#field-owner').length)
                 jQuery('#action_reassign').click();
-            field.hide().removeAttr('disabled');
-            field.val(set_to).change();
-            field.fadeIn('slow');
+            $field.hide().removeAttr('disabled');
+            $field.val(set_to).change();
+            $field.fadeIn('slow');
         }
     }
 };
