@@ -1,6 +1,6 @@
 jQuery(document).ready(function($) {
 
-    var get_selector = function(field_name) {
+    window.get_selector = function(field_name) {
         var selector = '#field-' + field_name;
         if (field_name == 'owner'){
             if ($(selector).length != 1) {
@@ -18,7 +18,7 @@ jQuery(document).ready(function($) {
         return selector;
     };
 
-    var apply_rules = function(){
+    window.apply_rules = function(){
         var input = $(this);
         setup_triggers();
 
@@ -50,7 +50,7 @@ jQuery(document).ready(function($) {
         });
     };
 
-    var setup_triggers = function() {
+    window.setup_triggers = function() {
         if (window.dynfields_rules == undefined)
             window.dynfields_rules = {};
 
