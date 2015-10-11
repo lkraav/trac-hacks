@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 PACKAGE = 'DiaVisViewPlugin'
-VERSION = '0.1'
+VERSION = '0.2'
 
 setup(  name=PACKAGE, version=VERSION,
         author = 'arkemp, Christopher Lenz,  followed by Robert Martin',
