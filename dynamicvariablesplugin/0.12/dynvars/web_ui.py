@@ -8,47 +8,44 @@
 #
 
 import re
+
 from trac.core import *
-from trac.web.chrome import ITemplateProvider, add_script
-from trac.web.main import IRequestFilter, IRequestHandler
 from trac.ticket import TicketSystem, Milestone
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
+from trac.web.main import IRequestFilter
 
 
 class DynamicVariablesModule(Component):
-    implements(IRequestHandler, ITemplateProvider, IRequestFilter)
+
+    implements(IRequestFilter, ITemplateProvider)
 
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
-#        from pkg_resources import resource_filename
-#        return [('dynvars', resource_filename(__name__, 'htdocs'))]
-        return []
+       from pkg_resources import resource_filename
+       return [('dynvars', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return []
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         self._validate_request(req, check_referer=True) # redirect if needed
         return handler
 
     def post_process_request(self, req, template, data, content_type):
         if self._validate_request(req):
-            add_script(req, '/dynvars/dynvars.html')
+            add_script(req, 'dynvars/dynamic_variables.js')
+            dynvars = {}
+            report = self._get_report(req, check_referer=True)
+            for var in self._extract_vars(report):
+                dynvars[var] = self._get_options(var.lower())
+            add_script_data(req, dynvars=dynvars)
         return template, data, content_type
 
-    # IRequestHandler methods
-    def match_request(self, req):
-        return req.path_info.startswith('/dynvars/')
+    # Private methods
 
-    def process_request(self, req):
-        data = {'vars':{}}
-        report = self._get_report(req, check_referer=True)
-        for var in self._extract_vars(report):
-            data['vars'][var] = self._get_options(var.lower())
-        return 'dynvars.html', {'data':data}, 'text/javascript'
-
-    # private methods
     def _validate_request(self, req, check_referer=False):
         """Checks permissions and redirects if args are missing."""
         if not req.perm.has_permission('REPORT_VIEW') or \

@@ -8,18 +8,19 @@
 # you should have received as part of this distribution.
 #
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 PACKAGE = 'TracDynamicVariables'
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 
 setup(
     name=PACKAGE, version=VERSION,
     description='Default and convert report dynamic variables to pulldowns',
-    author="Rob Guttman", author_email="guttman@alum.mit.edu",
+    author="Rob Guttman",
+    author_email="guttman@alum.mit.edu",
     license='3-Clause BSD',
-    url='http://trac-hacks.org/wiki/DynamicVariablesPlugin',
+    url='https://trac-hacks.org/wiki/DynamicVariablesPlugin',
     packages = ['dynvars'],
-    package_data = {'dynvars':['templates/*.html','htdocs/*.js']},
-    entry_points = {'trac.plugins':['dynvars.web_ui = dynvars.web_ui']}
+    package_data = {'dynvars': ['htdocs/*.js']},
+    entry_points = {'trac.plugins': ['dynvars.web_ui = dynvars.web_ui']}
 )
