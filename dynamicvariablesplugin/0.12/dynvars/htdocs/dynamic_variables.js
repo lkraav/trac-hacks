@@ -11,7 +11,6 @@ jQuery(document).ready(function($) {
             $select.append($('<option>').attr('value', this).text(this));
           });
           $input.hide();
-          alert($input.val());
           $select.val($input.val()).change(function() {
             var $select = $(this);
             var $input = $select.prev('input');
