@@ -67,8 +67,8 @@ jQuery(document).ready(function ($) {
 
   function addToDescription(upload) {
     if (upload.length) {
-      //$('#field-description').val(text + '[[Image('+upload+')]]');
-      $('#field-description').insertAtCaret('[[Image(' + upload + ')]]');
+      var name = upload.replace('C:\\fakepath\\', '');
+      $('#field-description').insertAtCaret('[[Image(' + name + ')]]');
     }
   }
 
