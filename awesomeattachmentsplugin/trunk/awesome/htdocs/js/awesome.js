@@ -1,15 +1,16 @@
-jQuery(document).ready(function () {
-  
-  $('#propertyform').attr('enctype', 'multipart/form-data');
-  
+jQuery(document).ready(function ($) {
+
+  var $propertyform = $('#propertyform');
+  $propertyform.attr('enctype', 'multipart/form-data');
+
   var addhref = $('.add-image').attr('href');
   var edithref = $('.edit-image').attr('href');
   var deletehref = $('.delete-image').attr('href');
-  
+
   var upload = '\
     <div class="upload">\
       <span>\
-        <a class="uploadDescription" href="#"><img src="'+edithref+'"></a>\
+        <a class="uploadDescription" href="#"><img src="' + edithref + '"></a>\
         <input class="fileInput" type="file" name="attachment[]" />\
       </span>\
       <div class="field">\
@@ -23,79 +24,82 @@ jQuery(document).ready(function () {
       <legend>Add Files</legend>\
       <div id="uploads" class="uploads">\
       </div>\
-      <a class="addUpload" href="#" style="float:right"><img src="'+addhref+'"></a>\
+      <a class="addUpload" href="#" style="float:right"><img src="' + addhref + '"></a>\
     </fieldset>';
 
   $('#properties').after(uploadContainer);
 
   $('#uploads').append(upload);
-     
-  $('.uploadDescription').click(function(event) {
+
+  $('.uploadDescription').click(function (event) {
     event.preventDefault();
     addToDescription($(this));
   });
-  
-  $('.fileInput').change(function(event) {
-    if($(this).val().match(/.((jpg)|(gif)|(jpeg)|(png))$/i))
-        addToDescription($(this).val());
+
+  $('.fileInput').change(function (event) {
+    if ($(this).val().match(/.((jpg)|(gif)|(jpeg)|(png))$/i))
+      addToDescription($(this).val());
   });
-            
-  $('.addUpload').click(function(event) {
+
+  $('.addUpload').click(function (event) {
     event.preventDefault();
-  
+
     $(this).parent().find('.uploads').append(upload);
     $(this).parent().find('.upload:last').find('.field')
-           .append('<a class="removeUpload" href="#"><img src="'+deletehref+'"></a>');
-  
-    $(this).parent().find('.removeUpload:last').click(function(event) { 
-      event.preventDefault(); 
-      $(this).parent().parent().remove(); 
+      .append('<a class="removeUpload" href="#"><img src="' + deletehref + '"></a>');
+
+    $(this).parent().find('.removeUpload:last').click(function (event) {
+      event.preventDefault();
+      $(this).parent().parent().remove();
     });
-  
-    $(this).parent().find('.uploadDescription:last').click(function (event) { 
-      event.preventDefault(); 
+
+    $(this).parent().find('.uploadDescription:last').click(function (event) {
+      event.preventDefault();
       addToDescription($(this).next().val());
     });
-    
-    $(this).parent().find('.fileInput').change(function(event) {
-      if($(this).val().match(/.((jpg)|(gif)|(jpeg)|(png))$/i))
+
+    $(this).parent().find('.fileInput').change(function (event) {
+      if ($(this).val().match(/.((jpg)|(gif)|(jpeg)|(png))$/i))
         addToDescription($(this).val());
     });
-    
+
   });
 
   function addToDescription(upload) {
-    if(upload.length) {
+    if (upload.length) {
       //$('#field-description').val(text + '[[Image('+upload+')]]');
       $('#field-description').insertAtCaret('[[Image(' + upload + ')]]');
     }
   }
-  
-  $.fn.insertAtCaret = function(myValue) {
+
+  $.fn.insertAtCaret = function (myValue) {
     return this.each(function () {
-        //IE support
-        if (document.selection) {
-                this.focus();
-                sel = document.selection.createRange();
-                sel.text = myValue;
-                this.focus();
-        }
-        //MOZILLA / NETSCAPE support
-        else if (this.selectionStart || this.selectionStart == '0') {
-                var startPos = this.selectionStart;
-                var endPos = this.selectionEnd;
-                var scrollTop = this.scrollTop;
-                this.value = this.value.substring(0, startPos) + myValue +
-                             this.value.substring(endPos,this.value.length);
-                this.focus();
-                this.selectionStart = startPos + myValue.length;
-                this.selectionEnd = startPos + myValue.length;
-                this.scrollTop = scrollTop;
-        } else {
-                this.value += myValue;
-                this.focus();
-        }
+      //IE support
+      if (document.selection) {
+        this.focus();
+        sel = document.selection.createRange();
+        sel.text = myValue;
+        this.focus();
+      }
+      //MOZILLA / NETSCAPE support
+      else if (this.selectionStart || this.selectionStart == '0') {
+        var startPos = this.selectionStart;
+        var endPos = this.selectionEnd;
+        var scrollTop = this.scrollTop;
+        this.value = this.value.substring(0, startPos) + myValue +
+          this.value.substring(endPos, this.value.length);
+        this.focus();
+        this.selectionStart = startPos + myValue.length;
+        this.selectionEnd = startPos + myValue.length;
+        this.scrollTop = scrollTop;
+      } else {
+        this.value += myValue;
+        this.focus();
+      }
     });
   };
+
+  // Hide the "I have files to attach to this ticket" checkbox.
+  $('input[name="attachment"]', $propertyform).closest('p').hide();
 
 });
