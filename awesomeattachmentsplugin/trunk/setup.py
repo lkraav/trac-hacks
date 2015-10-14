@@ -11,7 +11,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='AwesomeAttachmentsPlugin',
-    version='0.3',
+    version='0.4',
     author='Dan Ordille',
     author_email='dordille@gmail.com',
     license='BSD 3-Clause',
