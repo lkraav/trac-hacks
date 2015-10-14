@@ -65,12 +65,11 @@ class AwesomeAttachments(Component):
             attachments = req.args.getlist('attachment[]')
             descriptions = req.args.getlist('description[]')
             for attachment, description in zip(attachments, descriptions):
-                if attachment:
+                if hasattr(attachment, 'filename'):
                     self._create_attachment(req, tid, attachment, description)
 
     def _create_attachment(self, req, tid, upload, description):
-        if hasattr(upload, 'filename'):
-            attachment = Attachment(self.env, 'ticket', tid)
+        attachment = Attachment(self.env, 'ticket', tid)
 
         if hasattr(upload.file, 'fileno'):
             size = os.fstat(upload.file.fileno())[6]
