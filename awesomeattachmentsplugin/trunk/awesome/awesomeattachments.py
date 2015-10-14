@@ -16,6 +16,7 @@ from trac.attachment import Attachment
 from trac.core import Component, TracError, implements
 from trac.ticket.web_ui import TicketModule
 from trac.util import get_reporter_id
+from trac.util.text import stripws
 from trac.util.translation import _, tag_
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_link, add_script
@@ -87,20 +88,36 @@ class AwesomeAttachments(Component):
             raise TracError(_('Maximum attachment size: %(num)s bytes',
                               num=max_size), _("Upload failed"))
 
-        filename = unicodedata.normalize('NFC', unicode(upload.filename,
-                                                        'utf-8'))
-        filename = filename.strip()
-        # Replace backslashes with slashes if filename is Windows full path
-        if filename.startswith('\\') or re.match(r'[A-Za-z]:\\', filename):
-            filename = filename.replace('\\', '/')
-        # We want basename to be delimited by only slashes on all platforms
-        filename = posixpath.basename(filename)
+        filename = _normalized_filename(upload.filename)
         if not filename:
             raise TracError(_("No file uploaded"))
 
         attachment.description = description
-        if 'author' in req.args:
-            attachment.author = get_reporter_id(req, 'author')
-            attachment.ipnr = req.remote_addr
+        attachment.author = get_reporter_id(req, 'author')
+        attachment.ipnr = req.remote_addr
 
         attachment.insert(filename, upload.file, size)
+
+
+_control_codes_re = re.compile(
+    '[' +
+    ''.join(filter(lambda c: unicodedata.category(c) == 'Cc',
+                   map(unichr, xrange(0x10000)))) +
+    ']')
+
+
+def _normalized_filename(filepath):
+    # We try to normalize the filename to unicode NFC if we can.
+    # Files uploaded from OS X might be in NFD.
+    if not isinstance(filepath, unicode):
+        filepath = unicode(filepath, 'utf-8')
+    filepath = unicodedata.normalize('NFC', filepath)
+    # Replace control codes with spaces, e.g. NUL, LF, DEL, U+009F
+    filepath = _control_codes_re.sub(' ', filepath)
+    # Replace backslashes with slashes if filename is Windows full path
+    if filepath.startswith('\\') or re.match(r'[A-Za-z]:\\', filepath):
+        filepath = filepath.replace('\\', '/')
+    # We want basename to be delimited by only slashes on all platforms
+    filename = posixpath.basename(filepath)
+    filename = stripws(filename)
+    return filename
