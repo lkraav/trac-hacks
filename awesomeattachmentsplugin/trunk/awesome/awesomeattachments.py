@@ -10,7 +10,6 @@
 import os
 import unicodedata
 
-from genshi.builder import tag
 from trac.attachment import Attachment
 from trac.core import Component, TracError, implements
 from trac.ticket.web_ui import TicketModule
@@ -18,25 +17,6 @@ from trac.util import get_reporter_id
 from trac.util.translation import _, tag_
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_link, add_script
-try:
-    from trac.util.html import to_fragment
-except ImportError:
-    from genshi.builder import Fragment
-    from trac.util.text import to_unicode
-    try:
-        from babel.support import LazyProxy
-    except ImportError:
-        LazyProxy = None
-
-    def to_fragment(input):
-        """Convert input to a `Fragment` object."""
-        if isinstance(input, TracError):
-            input = input.message
-        if LazyProxy and isinstance(input, LazyProxy):
-            input = input.value
-        if isinstance(input, Fragment):
-            return input
-        return tag(to_unicode(input))
 
 
 class AwesomeAttachments(Component):
