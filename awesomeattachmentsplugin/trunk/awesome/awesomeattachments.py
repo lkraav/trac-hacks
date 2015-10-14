@@ -8,6 +8,8 @@
 #
 
 import os
+import posixpath
+import re
 import unicodedata
 
 from trac.attachment import Attachment
@@ -85,10 +87,14 @@ class AwesomeAttachments(Component):
             raise TracError(_('Maximum attachment size: %(num)s bytes',
                               num=max_size), _("Upload failed"))
 
-        filename = unicodedata.normalize('NFC',
-                                         unicode(upload.filename, 'utf-8'))
-        filename = filename.replace('\\', '/').replace(':', '/')
-        filename = os.path.basename(filename)
+        filename = unicodedata.normalize('NFC', unicode(upload.filename,
+                                                        'utf-8'))
+        filename = filename.strip()
+        # Replace backslashes with slashes if filename is Windows full path
+        if filename.startswith('\\') or re.match(r'[A-Za-z]:\\', filename):
+            filename = filename.replace('\\', '/')
+        # We want basename to be delimited by only slashes on all platforms
+        filename = posixpath.basename(filename)
         if not filename:
             raise TracError(_("No file uploaded"))
 
