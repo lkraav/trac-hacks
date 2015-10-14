@@ -62,7 +62,7 @@ class AwesomeAttachments(Component):
     # Private methods
 
     def _add_attachments(self, req, url, permanent):
-        match = TicketModule.ticket_path_re.match(url)
+        match = TicketModule.ticket_path_re.search(url)
         if match:
             tid = match.group(1)
             attachments = req.args.getlist('attachment[]')
