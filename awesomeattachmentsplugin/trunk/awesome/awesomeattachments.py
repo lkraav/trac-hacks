@@ -64,8 +64,8 @@ class AwesomeAttachments(Component):
             tid = match.group(1)
             attachments = req.args.getlist('attachment[]')
             descriptions = req.args.getlist('description[]')
-            if attachments:
-                for attachment, description in zip(attachments, descriptions):
+            for attachment, description in zip(attachments, descriptions):
+                if attachment:
                     self._create_attachment(req, tid, attachment, description)
 
     def _create_attachment(self, req, tid, upload, description):
