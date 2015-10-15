@@ -28,14 +28,13 @@ class AwesomeAttachments(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        if req.path_info.rstrip() == '/newticket' and 'submit' in req.args:
+        if req.path_info == '/newticket' and 'submit' in req.args:
             req.add_redirect_listener(self._add_attachments)
             req.args.pop('attachment', None)
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if template == 'ticket.html' and \
-                req.path_info.rstrip() == '/newticket':
+        if template == 'ticket.html' and req.path_info == '/newticket':
             add_script(req, 'awesome/js/awesome.js')
             add_link(req, 'image',
                      req.href.chrome('awesome/images/add.png'),
