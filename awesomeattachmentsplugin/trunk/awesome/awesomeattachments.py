@@ -14,10 +14,9 @@ import unicodedata
 
 from trac.attachment import Attachment
 from trac.core import Component, TracError, implements
-from trac.ticket.web_ui import TicketModule
 from trac.util import get_reporter_id
 from trac.util.text import stripws
-from trac.util.translation import _, tag_
+from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_link, add_script
 
@@ -61,8 +60,10 @@ class AwesomeAttachments(Component):
 
     # Private methods
 
+    _ticket_path_re = re.compile(r'/newticket/([0-9]+)$')
+
     def _add_attachments(self, req, url, permanent):
-        match = TicketModule.ticket_path_re.search(url)
+        match = self._ticket_path_re.search(url)
         if match:
             tid = match.group(1)
             attachments = req.args.getlist('attachment[]')
