@@ -8,7 +8,7 @@ from trac.core import Component, implements
 from trac.env import IEnvironmentSetupParticipant
 from trac.timeline.web_ui import TimelineModule
 from trac.util.datefmt import format_datetime
-from trac.util.translation import dgettext
+from trac.util.translation import dgettext, translations
 from trac.web.api import IRequestFilter
 from trac.web.chrome import (
     ITemplateProvider, Chrome, add_script, add_script_data
@@ -133,16 +133,14 @@ class TimeDeltaUpdatorModule(Component):
                                 'absolute': absolute})
         return script_data
 
-    _plural_forms_re = re.compile(r"""
-        Plural-Forms:\s*
-        nplurals\s*=\s*(?P<nplurals>\d+);\s*
-        plural\s*=\s*(?P<plural>[^;]+)""", re.VERBOSE)
+    _plural_forms_re = re.compile(r'nplurals\s*=\s*(\d+)\s*;\s*'
+                                  r'plural\s*=\s*([^;]+)')
 
     def _get_plural_forms(self):
-        for line in dgettext('messages', "").splitlines():
-            match = self._plural_forms_re.match(line)
-            if match:
-                return (int(match.group('nplurals')), match.group('plural'))
+        forms = translations.active.info().get('plural-forms', '')
+        match = self._plural_forms_re.match(forms)
+        if match:
+            return (int(match.group(1)), match.group(2))
         return (2, 'n != 1')
 
     def _get_units(self, n):
