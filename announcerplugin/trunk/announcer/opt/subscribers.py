@@ -415,8 +415,7 @@ class TicketCustomFieldSubscriber(Component):
 
                 # Default subscription
                 for s in self.default_subscriptions():
-                    yield (s[0], s[1], sid, auth, addr, None,
-                            s[3], s[4])
+                    yield (s[0], s[1], sid, auth, addr, None, s[2], s[3])
                 if sid:
                     sids.add((sid,auth))
 
