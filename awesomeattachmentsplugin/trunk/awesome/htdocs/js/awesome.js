@@ -1,6 +1,7 @@
 jQuery(document).ready(function ($) {
 
   var $propertyform = $('#propertyform');
+  var $properties = $('#properties', $propertyform);
   $propertyform.attr('enctype', 'multipart/form-data');
 
   var addhref = $('.add-image').attr('href');
@@ -15,7 +16,9 @@ jQuery(document).ready(function ($) {
       </span>\
       <div class="field">\
         <label>Description of the file (optional):<br />\
-        <input type="text" name="description[]" size="60" /></label>\
+        <input type="text" class="trac-fullwidth" name="description[]" \
+               size="60" />\
+        </label>\
       </div>\
     </div>';
 
@@ -27,48 +30,30 @@ jQuery(document).ready(function ($) {
       <a class="addUpload" href="#" style="float:right"><img src="' + addhref + '"></a>\
     </fieldset>';
 
-  $('#properties').after(uploadContainer);
+  var remove = '<a class="removeUpload" href="#"><img src="' + deletehref + '"></a>'
 
-  $('#uploads').append(upload);
+  var $container = $(uploadContainer);
+  $properties.after($container);
 
-  $('.uploadDescription').click(function (event) {
-    event.preventDefault();
-    addToDescription($(this));
-  });
-
-  $('.fileInput').change(function (event) {
-    if ($(this).val().match(/.((jpg)|(gif)|(jpeg)|(png))$/i))
-      addToDescription($(this).val());
-  });
-
-  $('.addUpload').click(function (event) {
-    event.preventDefault();
-
-    $(this).parent().find('.uploads').append(upload);
-    $(this).parent().find('.upload:last').find('.field')
-      .append('<a class="removeUpload" href="#"><img src="' + deletehref + '"></a>');
-
-    $(this).parent().find('.removeUpload:last').click(function (event) {
-      event.preventDefault();
-      $(this).parent().parent().remove();
-    });
-
-    $(this).parent().find('.uploadDescription:last').click(function (event) {
-      event.preventDefault();
+  function addUpload () {
+    var $upload = $(upload);
+    $container.append($upload);
+    $('.uploadDescription', $upload).click(function () {
       addToDescription($(this).next().val());
+      return false;
     });
-
-    $(this).parent().find('.fileInput').change(function (event) {
-      if ($(this).val().match(/.((jpg)|(gif)|(jpeg)|(png))$/i))
+    $('.fileInput', $upload).change(function () {
+      if ($(this).val().match(/.((jpg)|(gif)|(jpeg)|(png))$/i)) {
         addToDescription($(this).val());
+      }
     });
+    return $upload;
+  }
 
-  });
-
-  function addToDescription(upload) {
+  function addToDescription (upload) {
     if (upload.length) {
       var name = upload.replace('C:\\fakepath\\', '');
-      $('#field-description').insertAtCaret('[[Image(' + name + ')]]');
+      $('#field-description', $properties).insertAtCaret('[[Image(' + name + ')]]');
     }
   }
 
@@ -98,6 +83,19 @@ jQuery(document).ready(function ($) {
       }
     });
   };
+
+  $('.addUpload', $container).click(function () {
+    var $upload = addUpload();
+    var $remove = $(remove);
+    $('.fileInput', $upload).after($remove);
+    $remove.click(function () {
+      $upload.remove();
+      return false;
+    });
+    return false;
+  });
+
+  addUpload();
 
   // Hide the "I have files to attach to this ticket" checkbox.
   $('input[name="attachment"]', $propertyform).closest('p').hide();

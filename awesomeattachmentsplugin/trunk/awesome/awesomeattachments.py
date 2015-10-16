@@ -18,7 +18,8 @@ from trac.util import get_reporter_id
 from trac.util.text import stripws
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_link, add_script
+from trac.web.chrome import ITemplateProvider, add_link, add_script, \
+                            add_stylesheet
 
 
 class AwesomeAttachments(Component):
@@ -36,6 +37,7 @@ class AwesomeAttachments(Component):
     def post_process_request(self, req, template, data, content_type):
         if template == 'ticket.html' and req.path_info == '/newticket':
             add_script(req, 'awesome/js/awesome.js')
+            add_stylesheet(req, 'awesome/css/awesome.css')
             add_link(req, 'image',
                      req.href.chrome('awesome/images/add.png'),
                      'add', 'text/png', 'add-image')

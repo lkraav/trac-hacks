@@ -18,6 +18,7 @@ setup(
     description="Files can be attached to tickets from the New Ticket form.",
     packages=find_packages(exclude=['*.tests']),
     package_data={'awesome': [
+        'htdocs/css/*.css',
         'htdocs/images/*.png',
         'htdocs/js/*.js'
     ]},
