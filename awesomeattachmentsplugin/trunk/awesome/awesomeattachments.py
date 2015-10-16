@@ -59,7 +59,7 @@ class AwesomeAttachments(Component):
 
     # Private methods
 
-    _ticket_path_re = re.compile(r'/newticket/([0-9]+)$')
+    _ticket_path_re = re.compile(r'/ticket/([0-9]+)$')
 
     def _add_attachments(self, req, url, permanent):
         match = self._ticket_path_re.search(url)
