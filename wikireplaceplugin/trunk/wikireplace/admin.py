@@ -7,10 +7,10 @@
 # you should have received as part of this distribution.
 #
 
-import sys
-import os
-import time
 import optparse
+import os
+import sys
+import time
 
 from trac.core import *
 from trac.env import Environment
@@ -43,6 +43,7 @@ def main(*argv):
     env = Environment(envpath)
     wiki_text_replace(env, oldtext, newtext, wikipages, username(),
                       '127.0.0.1', debug=options.debug)
+
 
 def run():
     main(*sys.argv)

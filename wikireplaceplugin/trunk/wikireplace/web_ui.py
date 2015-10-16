@@ -10,13 +10,14 @@
 
 import urllib
 
+from genshi.core import Markup
+
+from trac.admin.api import IAdminPanelProvider
 from trac.core import *
 from trac.perm import IPermissionRequestor
+from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_notice, \
                             add_warning
-from trac.web.api import IRequestFilter
-from trac.admin.web_ui import IAdminPanelProvider
-from genshi.core import Markup
 
 from wikireplace.util import wiki_text_replace
 
@@ -24,20 +25,20 @@ from wikireplace.util import wiki_text_replace
 class WikiReplaceModule(Component):
     """An evil module that adds a replace button to the wiki UI."""
 
-    implements(IPermissionRequestor, IAdminPanelProvider, ITemplateProvider,
-               IRequestFilter)
+    implements(IAdminPanelProvider, IPermissionRequestor, IRequestFilter,
+               ITemplateProvider)
 
     # IPermissionRequestor methods
     def get_permission_actions(self):
-        return ['WIKI_REPLACE']
+        return ['WIKI_REPLACE', ('WIKI_ADMIN', ['WIKI_REPLACE'])]
 
     # IAdminPanelProvider methods
     def get_admin_panels(self, req):
-        perm = req.perm('wiki')
-        if 'WIKI_REPLACE' in perm or 'WIKI_ADMIN' in perm:
-            yield ('general', 'General', 'wikireplace', 'Wiki Replace')
+        if 'WIKI_REPLACE' in req.perm('wiki'):
+            yield 'general', 'General', 'wikireplace', 'Wiki Replace'
 
     def render_admin_panel(self, req, cat, page, path_info):
+        req.perm.require('WIKI_REPLACE')
         wikipages = urllib.unquote_plus(req.args.get('wikipages', ''))
         parts = wikipages.splitlines()
 

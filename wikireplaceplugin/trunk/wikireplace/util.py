@@ -7,11 +7,11 @@
 # you should have received as part of this distribution.
 #
 
-import sys
-import re
-import os
-import time
 import optparse
+import os
+import re
+import sys
+import time
 import urllib
 
 from trac.core import *
