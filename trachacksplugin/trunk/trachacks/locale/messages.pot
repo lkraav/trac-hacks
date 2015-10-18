@@ -1,0 +1,282 @@
+# Translations template for TracHacks.
+# Copyright (C) 2015 ORGANIZATION
+# This file is distributed under the same license as the TracHacks
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: TracHacks 3.0.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2015-10-17 18:36-0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: trachacks/db.py:37
+msgid ""
+"A newer plugin version has been installed before, but downgrading is "
+"unsupported."
+msgstr ""
+
+#: trachacks/macros.py:294 trachacks/macros.py:314
+msgid "Maintainer macro error"
+msgstr ""
+
+#: trachacks/macros.py:295
+msgid "Invalid number of arguments"
+msgstr ""
+
+#: trachacks/macros.py:303
+#, python-format
+msgid "Component \"%(name)s\" does not exist"
+msgstr ""
+
+#: trachacks/macros.py:315
+msgid ""
+"Hack name must be specified as argument when the context realm is not"
+" 'wiki'"
+msgstr ""
+
+#: trachacks/web_ui.py:159
+msgid "Default maximum number of hacks to display."
+msgstr ""
+
+#: trachacks/web_ui.py:161
+msgid "Name of wiki page that serves as template for new hacks."
+msgstr ""
+
+#: trachacks/web_ui.py:163
+msgid "Path and name of lock file to secure new hack creation"
+msgstr ""
+
+#: trachacks/web_ui.py:165
+msgid ""
+"The latest major Trac release, used as the default selection\n"
+"            in the release filter form displayed by the "
+"`ListHacksMacro`\n"
+"            and on the `NewHack` form."
+msgstr ""
+
+#: trachacks/web_ui.py:238
+#, python-format
+msgid "The configuration option %(option)s is empty or missing."
+msgstr ""
+
+#: trachacks/web_ui.py:243
+#, python-format
+msgid "The authz file is not found at %(path)s."
+msgstr ""
+
+#: trachacks/web_ui.py:321
+msgid "Go to Project's Wiki Page"
+msgstr ""
+
+#: trachacks/web_ui.py:444 trachacks/web_ui.py:514
+#, python-format
+msgid "New hack template '%(page)s' does not exist."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:12
+msgid "New Hack"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:17
+msgid "Preview ([1:skip])"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:24
+msgid "Create a new \"hack\" on Trac-Hacks"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:28
+msgid "Basic Information"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:30
+msgid "Name of hack"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:32
+msgid "A [1: CamelCase] name for your hack."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:39
+msgid ""
+"A new Wiki page will be created by concatenating the hack name with "
+"the [1:hack type] you select below."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:43
+msgid ""
+"[1:e.g.] If you enter [2:TracHacks] as the name then select "
+"[3:plugin] as the hack type, the resulting page name will be "
+"[4:TracHacksPlugin]."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:58
+msgid "Title"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:60
+msgid "Descriptive title for your hack. You may use [1:WikiFormatting] here."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:67
+msgid ""
+"This will be the main heading in the Wiki page for your hack. It will"
+" also be displayed in the hack listing, so [1:make it descriptive]."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:81
+msgid "Description"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:83
+msgid "A full description of your hack. You may use [1:WikiFormatting] here."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:90
+msgid ""
+"This is what visitors will read to determine if your hack meets their"
+" needs."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:104
+msgid "Classification"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:107
+msgid "Type"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:109
+msgid "The type that best describes your hack."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:114
+msgid ""
+"The title-cased version of the type will be appended to your hack "
+"name to create your Wiki page."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:136
+msgid "Compatibility"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:138
+msgid "Release(s) of Trac this hack works with."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:142
+msgid "anyrelease"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:142
+msgid "indicates your hack will work"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:143
+msgid "with any Trac release."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:159
+msgid "Optional Extras"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:161
+msgid "Installation instructions"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:163
+msgid ""
+"Describe how to install your hack. (You may use [1:WikiFormatting] "
+"here)"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:169
+msgid ""
+"Please include full instructions on how to install your hack, "
+"including changes that need to be made to the [1:trac.ini]file, in "
+"particular the [2:\\[components\\]] section."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:185
+msgid "Tags"
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:187
+msgid "Space-separated list of tags classifying your hack."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:191
+msgid ""
+"Use any words you like. The more tags you use the easier it will be "
+"for people to find your hack."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:195
+msgid ""
+"The tag cloud shows the top-25 tags plus some more, to give you an "
+"idea. You can also click on any of these tags to toggle them for your"
+" hack."
+msgstr ""
+
+#: trachacks/templates/hacks_new.html:205
+msgid "These are some of the tags used by other hacks:"
+msgstr ""
+
+#: trachacks/templates/hacks_view.html:30
+msgid "Error:"
+msgstr ""
+
+#: trachacks/templates/hacks_view.html:34
+msgid "This is a full-text search of the content of all hack pages."
+msgstr ""
+
+#: trachacks/templates/hacks_view.html:36
+#, python-format
+msgid "Showing [1:%(limit)s] results."
+msgstr ""
+
+#: trachacks/templates/hacks_view.html:39
+msgid "Search help:"
+msgstr ""
+
+#: trachacks/templates/hacks_view.html:40
+msgid ""
+"[1:[2:Use [3:term1 term2] to match [4:all] terms.][5:[6:term1 or "
+"term2] will match [7:any] term.][8:Negate a term with "
+"[9:-term1].][10:Group sub-queries with [11:(term1 or "
+"term2)].][12:Quote strings to include special characters.]][13:eg. "
+"[14:pdf or latex]]"
+msgstr ""
+
+#: trachacks/templates/newticket_notice.html:6
+msgid "Stop!"
+msgstr ""
+
+#: trachacks/templates/newticket_notice.html:8
+msgid ""
+"Be sure to set the [1:component] of your ticket to the name of the "
+"hack you have a grievance with. Most hack pages will have a link "
+"specifically for creating new tickets against them. Use it."
+msgstr ""
+
+#: trachacks/templates/newticket_notice.html:13
+msgid ""
+"If you do not do this it is highly likely that the hack author "
+"[1:will not be aware of your ticket and it will be ignored]."
+msgstr ""
+
+#: trachacks/templates/newticket_notice.html:18
+msgid ""
+"Support and [1:installation] questions should be asked on the "
+"[2:mailinglist] or [3:IRC channel], not filed as tickets."
+msgstr ""
+

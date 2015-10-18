@@ -13,13 +13,13 @@ import re
 from genshi.builder import tag as builder
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.ticket.model import Component
-from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
 from trac.wiki.formatter import format_to_html, format_to_oneliner, \
                                 system_message
 from trac.wiki.macros import WikiMacroBase, parse_args
 from trac.wiki.model import WikiPage
 
+from trachacks import _
 from trachacks.util import natural_sort
 from tractags.api import TagSystem
 from tractags.model import resource_tags

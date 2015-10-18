@@ -10,8 +10,9 @@ import pkg_resources
 
 from trac.core import Component, TracError, implements
 from trac.env import IEnvironmentSetupParticipant
-from trac.util.translation import _
 from trac.wiki.admin import WikiAdmin
+
+from trachacks import _
 
 PLUGIN_NAME = 'trachacks_version'
 PLUGIN_VERSION = 1

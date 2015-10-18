@@ -9,6 +9,7 @@
 #
 
 import os
+import pkg_resources
 import random
 import re
 from string import Template
@@ -21,8 +22,6 @@ from trac.resource import Resource, ResourceNotFound, resource_exists
 from trac.ticket.model import Component as TicketComponent
 from trac.wiki.formatter import wiki_to_html
 from trac.wiki.model import WikiPage
-from trac.util.compat import sorted
-from trac.util.translation import _, tag_
 from trac.web.api import (
     IRequestFilter, IRequestHandler, ITemplateStreamFilter, RequestDone
 )
@@ -34,6 +33,7 @@ from trac.web.chrome import (
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
 from acct_mgr.htfile import HtPasswdStore
 from svnauthz.io import AuthzFile
+from trachacks import _
 from trachacks.validate import *
 from trachacks.util import FakeRequest, natural_sort
 from tractags.api import TagSystem
@@ -194,6 +194,13 @@ class TracHacksHandler(Component):
                  path='//dd[@id="type"]', where='append')
 
         self.form = form
+
+        try:
+            locale_dir = pkg_resources.resource_filename(__name__, 'locale')
+        except KeyError:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
 
     # ITemplateStreamFilter methods
 

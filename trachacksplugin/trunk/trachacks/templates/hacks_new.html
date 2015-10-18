@@ -2,9 +2,10 @@
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude"
-      xml:lang="en">
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="trachacks">
   <xi:include href="layout.html" />
 
   <head>
@@ -13,7 +14,7 @@
 
   <body>
     <fieldset py:if="page_preview" id="preview" py:choose="">
-      <legend>Preview (<a href="#content">skip</a>)</legend>
+      <legend i18n:msg="">Preview (<a href="#content">skip</a>)</legend>
       <div class="wikipage" xml:space="preserve">
         ${page_preview}
       </div>
@@ -28,22 +29,22 @@
           <dl>
             <dt><label for="name">Name of hack</label></dt>
             <dd>
-              <div>
-                A <a href="http://trac.edgewall.org/wiki/CamelCase">
-                CamelCase</a> name for your hack.
+              <div i18n:msg="">
+                A <a href="http://trac.edgewall.org/wiki/CamelCase"> <!--!
+                -->CamelCase</a> name for your hack.
               </div>
 
               <div id="namehint" class="hint" style="display:none">
                 <span class="hint-pointer">&nbsp;</span>
-                <p>
-                  A new Wiki page will be created by concatenating the hack name
-                  with the <a href="#type">hack type</a> you select below.
+                <p i18n:msg="">
+                  A new Wiki page will be created by concatenating the hack name <!--!
+                  -->with the <a href="#type">hack type</a> you select below.
                 </p>
-                <p>
-                  <strong>e.g.</strong>
-                  If you enter <code>TracHacks</code> as the name then select
-                  <code>plugin</code> as the hack type, the resulting page name will
-                  be <code>TracHacksPlugin</code>.
+                <p i18n:msg="">
+                  <strong>e.g.</strong> <!--!
+                  -->If you enter <code>TracHacks</code> as the name then select <!--!
+                  --><code>plugin</code> as the hack type, the resulting page name will <!--!
+                  -->be <code>TracHacksPlugin</code>.
                 </p>
               </div>
 
@@ -56,17 +57,17 @@
             <!-- Title -->
             <dt><label for="title">Title</label></dt>
             <dd>
-              <div>
-                Descriptive title for your hack.
-                You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here.
+              <div i18n:msg="">
+                Descriptive title for your hack. <!--!
+                -->You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here.
               </div>
 
               <div id="titlehint" class="hint" style="display:none">
                 <span class="hint-pointer">&nbsp;</span>
-                <p>
-                  This will be the main heading in the Wiki page for your hack.
-                  It will also be displayed in the hack listing, so <em>make it
-                  descriptive</em>.
+                <p i18n:msg="">
+                  This will be the main heading in the Wiki page for your hack. <!--!
+                  -->It will also be displayed in the hack listing, so <em>make it <!--!
+                  -->descriptive</em>.
                 </p>
               </div>
 
@@ -79,16 +80,16 @@
             <!-- Description -->
             <dt><label for="description">Description</label></dt>
             <dd>
-              <div>
-                A full description of your hack.
-                You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here.
+              <div i18n:msg="">
+                A full description of your hack. <!--!
+                -->You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here.
               </div>
 
               <div id="descriptionhint" class="hint" style="display:none">
                 <span class="hint-pointer">&nbsp;</span>
-                <p>
-                  This is what visitors will read to determine if your hack
-                  meets their needs.
+                <p i18n:msg="">
+                  This is what visitors will read to determine if your hack <!--!
+                  -->meets their needs.
                 </p>
               </div>
 
@@ -110,9 +111,9 @@
                 </div>
 
                 <div id="typehint" class="hint" style="display:none">
-                  <p>
-                    The title-cased version of the type will be appended to your
-                    hack name to create your Wiki page.
+                  <p i18n:msg="">
+                    The title-cased version of the type will be appended to your <!--
+                    -->hack name to create your Wiki page.
                   </p>
                 </div>
 
@@ -137,9 +138,9 @@
                 <div>Release(s) of Trac this hack works with.</div>
 
                 <div id="releasehint" class="hint" style="display:none">
-                  <p>
-                    <strong>anyrelease</strong> indicates your hack will work
-                    with any Trac release.
+                  <p i18n="">
+                    <strong>anyrelease</strong> indicates your hack will work <!--!
+                    -->with any Trac release.
                   </p>
                 </div>
 
@@ -159,19 +160,19 @@
           <dl>
             <dt><label for="installation">Installation instructions</label></dt>
             <dd>
-              <div>
-                Describe how to install your hack.
-              (You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here)
+              <div i18n:msg="">
+                Describe how to install your hack. <!--!
+                -->(You may use <a href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here)
               </div>
 
               <div id="installationhint" class="hint" style="display:none">
-                <p>
-                  Please include full instructions on how to install your hack,
-                  including changes that need to be made to the <a
-                  href="http://trac.edgewall.org/wiki/TracIni">trac.ini</a>
-                  file, in particular the
-                  <a href="http://trac.edgewall.org/wiki/TracIni#components-section">[components]</a>
-                  section.
+                <p i18n:msg="">
+                  Please include full instructions on how to install your hack, <!--!
+                  -->including changes that need to be made to the <!--!
+                  --><a href="http://trac.edgewall.org/wiki/TracIni">trac.ini</a><!--!
+                  -->file, in particular the <!--!
+                  --><a href="http://trac.edgewall.org/wiki/TracIni#components-section"><!--!
+                  -->[components]</a> section.
                 </p>
               </div>
 
@@ -187,13 +188,14 @@
                 Space-separated list of tags classifying your hack.
               </div>
               <div id="tagshint" class="hint" style="display:none">
-                <p>
-                  Use any words you like. The more tags you use the easier it will
-                  be for people to find your hack.
+                <p i18n:msg="">
+                  Use any words you like. The more tags you use the <!--!
+                  -->easier it will be for people to find your hack.
                 </p>
-                <p>
-                  The tag cloud shows the top-25 tags plus some more, to give you an idea.
-                  You can also click on any of these tags to toggle them for your hack.
+                <p i18n:msg="">
+                  The tag cloud shows the top-25 tags plus some more, <!--!
+                  -->to give you an idea. You can also click on any of <!--!
+                  -->these tags to toggle them for your hack.
                 </p>
               </div>
 

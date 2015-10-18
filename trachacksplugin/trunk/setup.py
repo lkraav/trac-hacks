@@ -11,6 +11,22 @@
 
 from setuptools import setup
 
+extra = {}
+try:
+    from trac.util.dist import get_l10n_cmdclass
+    cmdclass = get_l10n_cmdclass()
+    if cmdclass:
+        extra['cmdclass'] = cmdclass
+        extractors = [
+            ('**.py',                'python', None),
+            ('**/templates/**.html', 'genshi', None),
+        ]
+        extra['message_extractors'] = {
+            'trachacks': extractors,
+        }
+except ImportError:
+    pass
+
 setup(
     name='TracHacks',
     version='3.0.0',
@@ -25,7 +41,8 @@ setup(
         'trachacks': [
             'templates/*.html', 'htdocs/js/*.js',
             'htdocs/css/*.css', 'htdocs/png/*.png',
-            'default-pages/*',
+            'default-pages/*', 'locale/.placeholder',
+            'locale/*/LC_MESSAGES/*.mo'
         ]
     },
     dependency_links=[
@@ -49,4 +66,5 @@ setup(
         'SvnAuthzAdminPlugin',
     ],
     test_suite='trachacks.tests.test_suite',
+    **extra
 )
