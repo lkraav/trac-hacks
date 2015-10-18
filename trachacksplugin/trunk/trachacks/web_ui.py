@@ -33,7 +33,7 @@ from trac.web.chrome import (
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
 from acct_mgr.htfile import HtPasswdStore
 from svnauthz.io import AuthzFile
-from trachacks import _
+from trachacks import _, add_domain, tag_
 from trachacks.validate import *
 from trachacks.util import FakeRequest, natural_sort
 from tractags.api import TagSystem
