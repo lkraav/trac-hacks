@@ -505,13 +505,14 @@ class WikiFormsMacro(WikiMacroBase, Component):
 
                         now = datetime.now(utc)
 
+                        req = formatter.req
                         if (entry['field'] is not None):
-                            last_modified = datetime.fromtimestamp(entry['updated_on'], utc)
-                            pretty_delta  = pretty_timedelta(now,last_modified)
-                            timezone_name = formatter.req.session.get('tz')
-                            if (timezone_name == None):
-                                timezone_name = "utc"
-                            time_string   = format_datetime(last_modified,'%a %b %d %T %Y %Z',timezone(timezone_name))
+                            last_modified = \
+                                datetime.fromtimestamp(entry['updated_on'], utc)
+                            pretty_delta = pretty_timedelta(now, last_modified)
+                            time_string = format_datetime(last_modified,
+                                                          '%a %b %d %T %Y %Z',
+                                                          req.tz, req.locale)
                         else:
                             time_string   = self.to_timestring(entry['updated_on'])
                             pretty_delta  = 'unset-time'
