@@ -166,6 +166,8 @@ class TracHacksHandler(Component):
         doc="""The latest major Trac release, used as the default selection
             in the release filter form displayed by the `ListHacksMacro`
             and on the `NewHack` form.""")
+    svn_path = Option('trachacks', 'svn_path', '/usr/bin/svn',
+        "Path to the Subversion client executable.")
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
     title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
@@ -308,6 +310,9 @@ class TracHacksHandler(Component):
             else:
                 self.env.log.debug('Hacks: notice added')
                 add_notice(req, 'Your hack has been created successfully.')
+        elif req.path_info == '/admin/ticket/components' and \
+                req.method == 'POST' and 'remove' in req.args:
+            self._delete_hacks(req)
         return handler
 
     def post_process_request(self, req, template, data, content_type):
@@ -554,22 +559,43 @@ class TracHacksHandler(Component):
                 raise TracError(str(e))
         return created, messages
 
-    def _create_repository_paths(self, req, page_name, hack_path,
-                                 selected_releases):
-        from subprocess import Popen, PIPE
+    def delete_hack(self, req, name, author):
+        hack_path = name.lower()
 
+        # Delete from repository.
+        repos = self.env.get_repository()
+        svn_base_url = ('file://%s' % repos.params['dir']).rstrip('/')
+        svn_url = '%s/%s' % (svn_base_url, hack_path)
+        message = 'Hack %s deleted by %s' % (name, author)
+        args = [self.svn_path, 'del', '-q', '--username', author,
+                '--config-dir', _SVN_CONFIG_DIR, '--non-interactive',
+                '-m', message, '--', svn_url]
+        try:
+            self._run_command(args)
+        except TracError as e:
+            self.log.warning(e)
+            add_warning(req, _("Failed to delete Subversion path "
+                               "'/%(path)s'", path=hack_path))
+
+        # Remove from authz file.
+        authz_file = self.config.getpath('trac', 'authz_file')
+        authz = AuthzFile(authz_file).read()
+        authz.del_path('/%s' % hack_path)
+        AuthzFile(authz_file).write(authz)
+
+        # Delete wiki page.
+        page = WikiPage(self.env, name)
+        try:
+            page.delete()
+        except TracError:
+            self.log.warning("Failed to delete non-existent page '%s'.", name)
+            add_warning(req, _("Failed to delete wiki page '%(name)s'",
+                               name=name))
+
+    def _run_command(self, args):
+        from subprocess import Popen, PIPE
         env = os.environ.copy()
         env['LC_ALL'] = env['LANG'] = 'en_US.UTF-8'
-        repos = self.env.get_repository()
-        svn_path = ('file://%s' % repos.params['dir']).rstrip('/')
-        paths = ['%s/%s' % (svn_path, hack_path)]
-        paths.extend('%s/%s/%s' % (svn_path, hack_path, release)
-                     for release in selected_releases
-                     if release != 'anyrelease')
-        message = 'New hack %s, created by %s' % (page_name, req.authname)
-        args = ['/usr/bin/svn', 'mkdir', '-q', '--username', req.authname,
-                '--config-dir', _SVN_CONFIG_DIR, '--non-interactive',
-                '-m', message, '--'] + paths
         saved_umask = os.umask(002)
         try:
             proc = Popen(args, stdout=PIPE, stderr=PIPE, close_fds=True,
@@ -578,8 +604,26 @@ class TracHacksHandler(Component):
             os.umask(saved_umask)
         stdout, stderr = proc.communicate()
         if proc.returncode != 0:
-            raise Exception('Failed to create Subversion paths:\n%s%s' %
-                            (stdout, stderr))
+            raise TracError("Subversion command failed '%s':\n%s%s" %
+                            (' '.join(args), stdout, stderr))
+
+    def _create_repository_paths(self, req, page_name, hack_path,
+                                 selected_releases):
+        repos = self.env.get_repository()
+        svn_url = ('file://%s' % repos.params['dir']).rstrip('/')
+        paths = ['%s/%s' % (svn_url, hack_path)]
+        paths.extend('%s/%s/%s' % (svn_url, hack_path, release)
+                     for release in selected_releases
+                     if release != 'anyrelease')
+        message = 'New hack %s, created by %s' % (page_name, req.authname)
+        args = [self.svn_path, 'mkdir', '-q', '--username', req.authname,
+                '--config-dir', _SVN_CONFIG_DIR, '--non-interactive',
+                '-m', message, '--'] + paths
+        self._run_command(args)
+
+    def _delete_hacks(self, req):
+        for name in req.args.getlist('sel'):
+            self.delete_hack(req, name, req.authname)
 
     def render_list(self, req, data, hacks):
         ul = builder.ul()
