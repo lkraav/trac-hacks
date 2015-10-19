@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2009 Verigy (Singapore) Pte. Ltd.
@@ -11,18 +12,17 @@ from setuptools import find_packages, setup
 setup(
     name="WikiForms",
     description='Provides forms on any page with a wiki',
-    long_description = """
+    long_description="""
 This plugin provides forms on any page with a wiki.
 Based on ideas from TracFormsPlugin.
 """,
-    version="0.2",
+    version="0.3",
     author='Verigy (Singapore) Pte. Ltd., Klaus.Welch@verigy.com',
     license='BSD',
     packages=['wikiforms'],
-    entry_points = {
-                    'trac.plugins': [
-                                      'wikiforms = wikiforms',
-                                    ]
-                   }
-    )
-
+    entry_points={
+        'trac.plugins': [
+            'wikiforms = wikiforms.wikiforms'
+        ]
+    }
+)
