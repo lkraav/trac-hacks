@@ -138,11 +138,21 @@ class CommitTicketUpdater(Component):
                       r'(?P<ticket>%s(?:(?:[, &]*|[ ]?and[ ]?)%s)*)' %
                       (ticket_reference, ticket_reference))
 
+    name_is_reqd = BoolOption('ticket', 'commit_ticket_update_name_is_required',
+        'false',
+        """When true, the ticket number must be followed by '@<TracProjectName>' """)
+    proj_name = Option('project', 'name')
+    ticket_named = '@(?P<site>[^ ,.\n\t]+)'
+    ticket_command_named = ticket_command + ticket_named
+
     @property
     def command_re(self):
         (begin, end) = (re.escape(self.envelope[0:1]),
                         re.escape(self.envelope[1:2]))
-        return re.compile(begin + self.ticket_command + end)
+        if self.name_is_reqd:
+            return re.compile(begin + self.ticket_command_named + end)
+        else:
+            return re.compile(begin + self.ticket_command + end)
 
     ticket_re = re.compile(ticket_prefix + '([0-9]+)')
 
@@ -186,14 +196,38 @@ class CommitTicketUpdater(Component):
         functions = self._get_functions()
         tickets = {}
         for m in cmd_groups:
-            cmd, tkts = m.group('action', 'ticket')
+            if self.name_is_reqd:
+                cmd, tkts, site = m.group('action', 'ticket', 'site')
+            else:
+                cmd, tkts = m.group('action', 'ticket')
             func = functions.get(cmd.lower())
             if not func and self.commands_refs.strip() == '<ALL>':
                 func = self.cmd_refs
             if func:
+                if self.name_is_reqd and site != self.proj_name:
+                    continue
+
                 for tkt_id in self.ticket_re.findall(tkts):
                     tickets.setdefault(int(tkt_id), []).append(func)
         return tickets
+
+    def invert_links(self, message):
+        """Replace trac links (that are erroneously targeting this site) with
+        explicit links to the other sites"""
+        inversions = dict(self.config.parser.items('commit_ticket_update_inversions'))
+        cmd_groups = self.command_re.finditer(message)
+
+        for m in cmd_groups:
+            cmd, tkt, site = m.group('action', 'ticket', 'site')
+            if site != self.proj_name:
+                tkt_num = self.ticket_re.match(tkt).groups()[0]
+                try:
+                    link_base = inversions[str(site)]
+                except KeyError:
+                    link_base = inversions[str(site).lower()]
+                link = '[[%s%s|%s@%s]]' % (link_base, tkt_num, tkt, site)
+                message = re.sub(tkt + '@' + site, link, message)
+        return message
 
     def make_ticket_comment(self, repos, changeset):
         """Create the ticket comment from the changeset data."""
@@ -203,12 +237,24 @@ class CommitTicketUpdater(Component):
         if repos.reponame:
             revstring += '/' + repos.reponame
             drev += '/' + repos.reponame
-        return """\
+
+        comment = """\
 In [changeset:"%s" %s]:
+""" % (revstring, drev)
+
+        if self.name_is_reqd:
+            comment += """\
+%s
+""" % (self.invert_links(changeset.message.strip()))
+
+        else:
+            comment += """\
 {{{
 #!CommitTicketReference repository="%s" revision="%s"
 %s
-}}}""" % (revstring, drev, repos.reponame, rev, changeset.message.strip())
+}}}""" % (repos.reponame, rev, changeset.message.strip())
+
+        return comment
 
     def _update_tickets(self, tickets, changeset, comment, date):
         """Update the tickets with the given comment."""
