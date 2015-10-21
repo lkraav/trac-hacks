@@ -196,10 +196,10 @@ Any other [TracLinks TracLink] can be used:
 
     def pre_process_request(self, req, handler):
         from trac.wiki.web_ui import WikiModule
-        args = req.args
-
         if not isinstance(handler, WikiModule):
             return handler
+
+        args = req.args
         if not req.path_info.startswith('/wiki/') and \
                 not req.path_info == '/wiki' and not req.path_info == '/':
             self.log.debug("SSR: no redirect: Path is not a wiki path")
