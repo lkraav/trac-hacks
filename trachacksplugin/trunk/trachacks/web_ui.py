@@ -325,8 +325,14 @@ class TracHacksHandler(Component):
                     add_ctxtnav(req, component, req.href.wiki(component),
                                 _("Go to Project's Wiki Page"))
                 elif component != _default_component:
-                    self.env.log.warn('No wiki page for component "%s"'
-                                      % component)
+                    try:
+                        TicketComponent(self.env, component)
+                    except ResourceNotFound:
+                        pass
+                    else:
+                        # Component with no wiki page should be removed.
+                        self.env.log.warn('No wiki page for component "%s"',
+                                          component)
         add_stylesheet(req, 'hacks/css/style.css')
         return template, data, content_type
 
