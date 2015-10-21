@@ -6,11 +6,6 @@
     $Id$
 """
 
-__url__ = ur"$URL$"[6:-2]
-__author__ = ur"$Author$"[9:-2]
-__revision__ = ur"$Rev$"[6:-2]
-__date__ = ur"$Date$"[7:-2]
-
 import re
 
 from genshi.builder import tag
