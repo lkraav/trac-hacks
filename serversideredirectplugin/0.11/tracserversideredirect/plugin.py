@@ -11,6 +11,7 @@ import re
 from genshi.builder import tag
 from trac.core import *
 from trac.mimeview.api import Context
+from trac.util.text import stripws
 from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
 from trac.wiki.api import IWikiMacroProvider
 from trac.wiki.model import WikiPage
@@ -75,6 +76,7 @@ Any other [TracLinks TracLink] can be used:
     def expand_macro(self, formatter, name, content):
         """Print redirect notice after edit."""
 
+        content = stripws(content)
         target = extract_url(self.env, formatter.context, content)
         if not target:
             target = formatter.context.req.href.wiki(content)
@@ -182,7 +184,7 @@ Any other [TracLinks TracLink] can be used:
         m = MACRO.match(wp.text)
         if not m:
             return False
-        wikitarget = m.groups()[0]
+        wikitarget = stripws(m.group(0))
         ctxt = Context.from_request(req)
         redirect_target = extract_url(self.env, ctxt, wikitarget)
         if not redirect_target:
