@@ -72,8 +72,6 @@ Any other [TracLinks TracLink] can be used:
     """
     implements(IRequestHandler, IRequestFilter, IWikiMacroProvider)
 
-    redirect_target = ''
-
     def expand_macro(self, formatter, name, content):
         """Print redirect notice after edit."""
 
@@ -113,9 +111,8 @@ Any other [TracLinks TracLink] can be used:
 
     def process_request(self, req):
         """Redirect to pre-selected target."""
-        if self.redirect_target or self._check_redirect(req):
-            target = self.redirect_target
-
+        target = self._get_redirect(req)
+        if target:
             # Check for self-redirect:
             if target and target == req.href(req.path_info):
                 message = tag.div('Please ',
@@ -167,7 +164,7 @@ Any other [TracLinks TracLink] can be used:
             raise RequestDone
         raise TracError("Invalid redirect target!")
 
-    def _check_redirect(self, req):
+    def _get_redirect(self, req):
         """Checks if the request should be redirected."""
         if req.path_info == '/' or req.path_info == '/wiki':
             wiki = 'WikiStart'
@@ -179,7 +176,7 @@ Any other [TracLinks TracLink] can be used:
         wp = WikiPage(self.env, wiki, req.args.get('version'))
 
         if not wp.exists:
-            return False
+            return None
 
         # Check for redirect "macro":
         m = MACRO.match(wp.text)
@@ -187,10 +184,10 @@ Any other [TracLinks TracLink] can be used:
             return False
         wikitarget = m.groups()[0]
         ctxt = Context.from_request(req)
-        self.redirect_target = extract_url(self.env, ctxt, wikitarget)
-        if not self.redirect_target:
-            self.redirect_target = req.href.wiki(wikitarget)
-        return True
+        redirect_target = extract_url(self.env, ctxt, wikitarget)
+        if not redirect_target:
+            redirect_target = req.href.wiki(wikitarget)
+        return redirect_target
 
     # IRequestFilter methods
 
@@ -220,7 +217,7 @@ Any other [TracLinks TracLink] can be used:
             self.log.debug("SSR: no redirect: HTTP_REFERER includes "
                            "action=edit")
             return handler
-        if self._check_redirect(req):
+        if self._get_redirect(req):
             self.log.debug("SSR: redirect!")
             return self
         self.log.debug("SSR: no redirect: No redirect macro found.")
