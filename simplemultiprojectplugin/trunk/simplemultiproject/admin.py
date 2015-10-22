@@ -39,7 +39,9 @@ class SmpAdminPanel(Component):
     
     def get_permission_actions(self):
         """ Permissions supported by the plugin. """
-        return ['PROJECT_ADMIN', 'PROJECT_SETTINGS_VIEW']
+        action = ['PROJECT_SETTINGS_VIEW', 'PROJECT_ADMIN']
+        return [action[0],
+                (action[1], [action[0]])]
 
 
     def __init__(self):

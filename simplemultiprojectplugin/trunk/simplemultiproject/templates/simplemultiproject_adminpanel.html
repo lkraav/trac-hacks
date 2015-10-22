@@ -63,7 +63,7 @@
                 </fieldset>
             </form>
             <py:otherwise>
-                <form class="addnew" id="simplemultiproject" action="" method="post">
+                <form py:if="'PROJECT_ADMIN' in perm.permissions()" class="addnew" id="simplemultiproject" action="" method="post">
                     <fieldset>
                         <legend>Add Project</legend>
                         <div class="field">
@@ -105,15 +105,22 @@
                             </thead>
                             <tbody>
                                 <tr py:for="project in projects">
-                                    <td><input type="checkbox" name="sel" value="$project.id" /></td>
-                                    <td><a href="${href.admin('projects','simplemultiproject')}/${project.id}" method="post">${project.name}</a></td>
+                                    <td><input py:if="'PROJECT_ADMIN' in perm.permissions()" type="checkbox" name="sel" value="$project.id" /></td>
+                                    <py:choose>
+                                        <td py:when="'PROJECT_ADMIN' in perm.permissions()">
+                                            <a href="${href.admin('projects','simplemultiproject')}/${project.id}" method="post">${project.name}</a>
+                                        </td>
+                                        <td py:otherwise="">
+                                            ${project.name}
+                                        </td>
+                                    </py:choose>
                                     <td>${project.summary}</td>
                                     <td>${project.restrict}</td>
                                     <td>${project.closed or None}</td>
                                 </tr>
                             </tbody>
                         </table>
-                        <div class="buttons">
+                        <div py:if="'PROJECT_ADMIN' in perm.permissions()" class="buttons">
                             <input type="submit" name="remove" value="Remove selected items"/>
                         </div>
                     </form>
