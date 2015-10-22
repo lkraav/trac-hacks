@@ -166,7 +166,7 @@ class TracHacksHandler(Component):
         doc="""The latest major Trac release, used as the default selection
             in the release filter form displayed by the `ListHacksMacro`
             and on the `NewHack` form.""")
-    svn_path = Option('trachacks', 'svn_path', '/usr/bin/svn',
+    svn_path = Option('trachacks', 'svn_path', 'svn',
         "Path to the Subversion client executable.")
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
