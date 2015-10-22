@@ -28,7 +28,14 @@ from operator import itemgetter
 import re
 
 class SmpComponentAdminPanel(Component):
-    """Admin panel allowing to link components with specific projects."""
+    """Deprecated legacy admin panel allowing to link components with specific projects.
+
+    You have to set the following in trac.ini to see the panel:
+    {{{
+    [simple-multi-project]
+    legacy_component_panel = True
+    }}}
+    """
 
     implements(IAdminPanelProvider, ITemplateProvider, ITemplateStreamFilter, IRequestFilter)
     def __init__(self):
@@ -133,7 +140,8 @@ class SmpComponentAdminPanel(Component):
         return 'smp_admin_components.html', data
 
     def get_admin_panels(self, req):
-        if 'PROJECT_SETTINGS_VIEW' in req.perm('projects'):
+        if 'PROJECT_SETTINGS_VIEW' in req.perm('projects') and \
+                self.env.config.getbool("simple-multi-project", "legacy_component_panel", False):
             return (('projects', _('Manage Projects'), 'components', _('Components')),)
 
     # ITemplateProvider
