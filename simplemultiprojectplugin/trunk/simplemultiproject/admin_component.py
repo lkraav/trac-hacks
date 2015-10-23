@@ -36,6 +36,9 @@ class SmpComponentAdminPanel(Component):
     legacy_component_panel = True
     }}}
     """
+    legacy_component_panel = BoolOption('simple-multi-project', 'legacy_component_panel', False,
+                                        "Enable the legacy admin panel, which allows to link "
+                                        "components with specific projects.")
 
     implements(IAdminPanelProvider, ITemplateProvider, ITemplateStreamFilter, IRequestFilter)
     def __init__(self):
@@ -57,7 +60,7 @@ class SmpComponentAdminPanel(Component):
                         self.__SmpModel.delete_component_projects(components)
                 elif not save is None:
                     match = re.match(r'/admin/ticket/components/(.+)$', req.path_info)
-                    if match and match.group(1) != req.args.get('name'):                    
+                    if match and match.group(1) != req.args.get('name'):
                         self.__SmpModel.rename_component_project(match.group(1), req.args.get('name'))
 
         return handler
@@ -102,9 +105,9 @@ class SmpComponentAdminPanel(Component):
             comp = model.Component(self.env, component)
             cprojects = self.__SmpModel.get_projects_component(comp.name)
             cprojects = [cproj[0] for cproj in cprojects]
-            
+
             all_projects = self.__SmpModel.get_all_projects()
-            
+
             if req.method == 'POST':
                 if req.args.get('apply'):
                     req.perm.require('PROJECT_ADMIN')
@@ -112,10 +115,10 @@ class SmpComponentAdminPanel(Component):
                     self.__SmpModel.delete_component_projects(comp.name)
                     if cprojects and 'all' not in cprojects:
                         self.__SmpModel.insert_component_projects(comp.name, cprojects)
-                        
+
                     add_notice(req, _('Your changes have been saved.'))
                     req.redirect(req.href.admin(category, page))
-                    
+
                 elif req.args.get('cancel'):
                     req.redirect(req.href.admin(category, page))
 
@@ -132,16 +135,15 @@ class SmpComponentAdminPanel(Component):
                 comp_name = comp.name
                 cprojects = self.__SmpModel.get_projects_component(comp_name)
                 cprojects = [cproj[0] for cproj in cprojects]
-                                    
+
                 projects[comp_name] = cprojects
-                
+
             data = {'view': 'list', 'components': model.Component.select(self.env), 'projects': projects}
 
         return 'smp_admin_components.html', data
 
     def get_admin_panels(self, req):
-        if 'PROJECT_SETTINGS_VIEW' in req.perm('projects') and \
-                self.env.config.getbool("simple-multi-project", "legacy_component_panel", False):
+        if 'PROJECT_SETTINGS_VIEW' in req.perm('projects') and self.legacy_component_panel:
             return (('projects', _('Manage Projects'), 'components', _('Components')),)
 
     # ITemplateProvider
