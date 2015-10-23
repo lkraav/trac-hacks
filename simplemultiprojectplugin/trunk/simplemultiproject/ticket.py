@@ -13,6 +13,7 @@ from trac.web.chrome import add_script, add_notice
 from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.ticket import model
 from operator import itemgetter
+from smp_model import get_all_versions_without_project
 
 try:
     from trac.web.chrome import add_script_data
@@ -20,17 +21,17 @@ except ImportError:
     # Backported from 0.12
     def add_script_data(req, data={}, **kwargs):
         """Add data to be made available in javascript scripts as global variables.
-    
+
         The keys in `data` and the keyword argument names provide the names of the
         global variables. The values are converted to JSON and assigned to the
         corresponding variables.
         """
-        script_data = req.chrome.setdefault('script_data', {}) 
+        script_data = req.chrome.setdefault('script_data', {})
         script_data.update(data)
-        script_data.update(kwargs) 
+        script_data.update(kwargs)
 
 class SmpTicketProject(Component):
-    
+
     implements(IRequestFilter, ITemplateStreamFilter)
 
     def __init__(self):
@@ -39,7 +40,7 @@ class SmpTicketProject(Component):
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-        
+
     def post_process_request(self, req, template, data, content_type):
         if data and req.path_info.startswith('/ticket'):
             is_newticket = False
@@ -67,8 +68,11 @@ class SmpTicketProject(Component):
             all_projects2 = all_projects
             for project in all_projects2:
                 project_versions[project] = ['']
-                project_versions[project].extend([version[0] for version in self.__SmpModel.get_versions_of_project(project)])
-                
+                project_versions[project].extend([version[0] for version in
+                                                  self.__SmpModel.get_versions_of_project(project)])
+                project_versions[project].extend(get_all_versions_without_project(self.env))  # See #12463
+                project_versions[project].sort()
+
             projects = { 'smp_all_projects': all_projects }
             component_projects = { 'smp_component_projects': component_projects }
             all_components = { 'smp_all_components': components }
@@ -82,7 +86,7 @@ class SmpTicketProject(Component):
             add_script_data(req, def_component)
             add_script_data(req, def_version)
             add_script_data(req, project_versions)
-            
+
             self._add_milestones_maps(req, data['ticket'], is_newticket)
 
         return template, data, content_type
@@ -136,7 +140,7 @@ class SmpTicketProject(Component):
     def _projects_field_ticket_input(self, req, ticket_data):
         all_projects = [project[1] for project in sorted(self.__SmpModel.get_all_projects(), key=itemgetter(1))]
         select = tag.select(name="field_project", id="field-project", onchange="smp_onProjectChange(this.value)")
-        
+
         cur_project = ticket_data.get_value_or_default('project')
 
         # no closed projects

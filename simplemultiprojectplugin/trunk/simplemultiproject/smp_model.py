@@ -7,10 +7,12 @@
 
 from trac.db import with_transaction
 from simplemultiproject.model import SmpModel
+from trac.ticket.model import Version
 
 __author__ = 'Cinc'
 
 __all__ = ['SmpMilestone', 'SmpComponent', 'SmpProject', 'SmpVersion']
+
 
 class SmpBaseModel(object):
     """Base class for models providing the database access"""
@@ -166,7 +168,7 @@ class SmpMilestone(SmpBaseModel):
     def add(self, milestone_name, id_projects):
         """Add component to each given project.
 
-        :param component_name: name of the component
+        :param milestone_name: name of the milestone
         :param id_projects: a single project id or a list of project ids
         """
         self._insert('milestone', milestone_name, id_projects)
@@ -227,6 +229,14 @@ class SmpProject(SmpBaseModel):
         # Set the list of current projects. This way the dropdown on the query page will be properly populated.
         self.env.config.set("ticket-custom", "project.options", "|".join(all_projects))
         return lst
+
+
+def get_all_versions_without_project(env):
+    """Return a list of all known versions (as unicode) not linked to a project."""
+    trac_vers = Version.select(env)
+
+    versions = set(v.name for v in trac_vers) - set(v for v, id_ in SmpVersion(env).get_all_versions_and_project_id())
+    return list(versions)
 
 
 class SmpVersion(SmpBaseModel):
