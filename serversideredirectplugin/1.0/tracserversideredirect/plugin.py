@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-""" ServerSideRedirectPlugin for Trac
-
-    Copyright (c) 2008 Martin Scharrer <martin@scharrer-online.de>
-    This is Free Software under the BSD or GPL v3 or later license.
-    $Id$
-"""
+#
+# Copyright (C) 2008-2010 Martin Scharrer <martin@scharrer-online.de>
+# Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import re
 
@@ -28,8 +29,6 @@ The user interface is the wiki macro `Redirect` (alternatively `redirect`).
 
 == Description ==
 Website: https://trac-hacks.org/wiki/ServerSideRedirectPlugin
-
-`$Id$`
 
 This plug-in allow to place a redirect macro at the start of any wiki
 page which will cause an server side redirect when the wiki page is
