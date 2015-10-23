@@ -10,12 +10,12 @@ import re
 
 from genshi.builder import tag
 from trac.core import *
-from trac.mimeview.api import Context
 from trac.util.text import stripws
 from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
-from trac.wiki.api import IWikiMacroProvider
+from trac.wiki.api import IWikiMacroProvider, web_context
 from trac.wiki.formatter import split_url_into_path_query_fragment
 from trac.wiki.model import WikiPage
+from trac.wiki.web_ui import WikiModule
 
 from tracextracturl.extracturl import extract_url
 
@@ -80,7 +80,7 @@ Any other [TracLinks TracLink] can be used:
         content = stripws(content)
         target = extract_url(self.env, formatter.context, content)
         if not target:
-            target = formatter.context.req.href.wiki(content)
+            target = formatter.req.href.wiki(content)
 
         return tag.div(
             tag.strong('This page redirects to: '),
@@ -169,10 +169,10 @@ Any other [TracLinks TracLink] can be used:
 
     def _get_redirect(self, req):
         """Checks if the request should be redirected."""
-        if req.path_info == '/' or req.path_info == '/wiki':
+        if req.path_info in ('/', '/wiki'):
             wiki = 'WikiStart'
         elif not req.path_info.startswith('/wiki/'):
-            return False
+            return None
         else:
             wiki = req.path_info[6:]
 
@@ -184,9 +184,9 @@ Any other [TracLinks TracLink] can be used:
         # Check for redirect "macro":
         m = MACRO.match(wp.text)
         if not m:
-            return False
+            return None
         wikitarget = stripws(m.group(0))
-        ctxt = Context.from_request(req)
+        ctxt = web_context(req)
         redirect_target = extract_url(self.env, ctxt, wikitarget)
         if not redirect_target:
             redirect_target = req.href.wiki(wikitarget)
@@ -195,7 +195,6 @@ Any other [TracLinks TracLink] can be used:
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        from trac.wiki.web_ui import WikiModule
         if not isinstance(handler, WikiModule):
             return handler
 
