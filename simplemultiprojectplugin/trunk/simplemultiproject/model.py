@@ -12,19 +12,19 @@ from trac.db import with_transaction
 from environmentSetup import db_version_key, db_version
 
 def smp_settings(req, context, kind, name=None):
-    
+
     if name:
-        settings_name       = '%s-%s' % (kind, name)
-        settings_settings   = '%s.%s.%s' % (context, kind, name)
+        settings_name = '%s-%s' % (kind, name)
+        settings_settings = '%s.%s.%s' % (context, kind, name)
     else:
-        settings_name       = '%s' % kind
-        settings_settings   = '%s.%s' % (context, kind)
+        settings_name = '%s' % kind
+        settings_settings = '%s.%s' % (context, kind)
 
     settings = req.args.get(settings_name)
     if type(settings) is list:
         new_settings = u''
         for setting in settings:
-            new_settings = "%s,///,%s" % (setting,new_settings)
+            new_settings = "%s,///,%s" % (setting, new_settings)
 
         settings = new_settings
 
@@ -39,6 +39,7 @@ def smp_settings(req, context, kind, name=None):
         return None
     else:
         return settings.split(",///,")
+
 
 def smp_filter_settings(req, context, name):
     settings = smp_settings(req, context, 'filter', name)
@@ -98,7 +99,7 @@ class SmpModel(Component):
         cursor = db.cursor()
         cursor.execute(query, [unicode(name)])
         return  cursor.fetchone()
-        
+
     def get_all_projects(self):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
@@ -118,8 +119,9 @@ class SmpModel(Component):
 
         l = list(cursor.fetchall())
         all_projects = [project[1] for project in sorted(l, key=lambda k: k[1])]
-        #Set the list of current projects. This way the dropdown on the query page will be properly populated.
-        self.env.config.set("ticket-custom", "project.options", "|".join(all_projects) )
+        # Set the list of current projects. This way the dropdown on the query page will be properly populated.
+        # Note that we don't save the list at all.
+        self.env.config.set("ticket-custom", "project.options", "|".join(all_projects))
         return l
 
     def get_all_projects_filtered_by_conditions(self, req):
@@ -156,7 +158,7 @@ class SmpModel(Component):
             should_invert = False
 
             restricted_list = [users.strip() for users in restricted_users.split(',')]
-            if restricted_list[0] == '!': # if the list starts with "!," (needs comma!), its meaning is inverted
+            if restricted_list[0] == '!':  # if the list starts with "!," (needs comma!), its meaning is inverted
                 should_invert = True
 
             # detect groups of the current user including the user name
@@ -173,8 +175,8 @@ class SmpModel(Component):
                         g.add(action)
                         repeat = True
 
-            g = g.intersection( set(restricted_list) ) # some of the user's groups must be in the restrictions
-            if not (g or len(g)): # current browser user not allowed?
+            g = g.intersection(set(restricted_list))  # some of the user's groups must be in the restrictions
+            if not (g or len(g)):  # current browser user not allowed?
                 allowed = False
             if should_invert:
                 allowed = not allowed
@@ -193,7 +195,7 @@ class SmpModel(Component):
                         smp_project
                    WHERE
                         id_project=%s"""
-        
+
         cursor.execute(query, [str(project_id)])
         result = cursor.fetchone()
 
@@ -221,7 +223,7 @@ class SmpModel(Component):
             def execute_sql_statement(db):
                 cursor = db.cursor()
                 cursor.execute(query, [new_project_name, old_project_name])
-        
+
     # AdminPanel Methods
     def insert_project(self, name, summary, description, closed, restrict):
         if VERSION < '0.12':
@@ -285,7 +287,7 @@ class SmpModel(Component):
         else:
             db = self.env.get_read_db()
 
-        query    = """UPDATE
+        query = """UPDATE
                         smp_project
                       SET
                         name = %s, summary = %s, description = %s, closed = %s, restrict_to = %s
@@ -310,17 +312,16 @@ class SmpModel(Component):
         else:
             db = self.env.get_read_db()
         cursor = db.cursor()
-        query    = """SELECT
-                        value
-                      FROM
+        query = """SELECT value
+                   FROM
                         ticket_custom
-                      WHERE
+                   WHERE
                         name = 'project' AND ticket = %s"""
         cursor.execute(query, [id])
         self.__start_transaction(db)
 
         return cursor.fetchone()
-        
+
 
     # MilestoneProject Methods
 
@@ -342,7 +343,7 @@ class SmpModel(Component):
         cursor.execute(query, [project])
         return cursor.fetchall()
 
-    def get_project_milestone(self,milestone):
+    def get_project_milestone(self, milestone):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
         else:
@@ -356,22 +357,6 @@ class SmpModel(Component):
                    WHERE
                         m.milestone=%s and
                         m.id_project = p.id_project"""
-
-        cursor.execute(query, [milestone])
-        return cursor.fetchone()
-
-    def get_id_project_milestone(self,milestone):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        id_project
-                   FROM
-                        smp_milestone_project
-                   WHERE
-                        milestone=%s;"""
 
         cursor.execute(query, [milestone])
         return cursor.fetchone()
@@ -393,7 +378,7 @@ class SmpModel(Component):
                 cursor = db.cursor()
                 cursor.execute(query, [version, str(id_project)])
 
-    def get_versions_of_project(self,project):
+    def get_versions_of_project(self, project):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
         else:
@@ -411,25 +396,7 @@ class SmpModel(Component):
         cursor.execute(query, [project])
         return sorted(cursor.fetchall())
 
-    def get_versions_for_projectid(self,projectid):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        version
-                   FROM
-                        smp_version_project
-                   WHERE
-                        id_project = %s"""
-
-        cursor.execute(query, [projectid])
-        return cursor.fetchall()
-
-        
-
-    def get_project_version(self,version):
+    def get_project_version(self, version):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
         else:
@@ -447,7 +414,7 @@ class SmpModel(Component):
         cursor.execute(query, [version])
         return cursor.fetchone()
 
-    def get_id_project_version(self,version):
+    def get_id_project_version(self, version):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
         else:
@@ -463,21 +430,7 @@ class SmpModel(Component):
         cursor.execute(query, [version])
         return cursor.fetchone()
 
-    def get_all_versions_with_id_project(self):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        version, id_project
-                   FROM
-                        smp_version_project;"""
-
-        cursor.execute(query)
-        return cursor.fetchall()
-
-    def delete_version_project(self,version):
+    def delete_version_project(self, version):
         query = """DELETE FROM
                         smp_version_project
                    WHERE
@@ -494,7 +447,7 @@ class SmpModel(Component):
                 cursor = db.cursor()
                 cursor.execute(query, [version])
 
-    def update_version_project(self,version,project):
+    def update_version_project(self, version, project):
         query = """UPDATE
                         smp_version_project
                    SET
@@ -511,7 +464,7 @@ class SmpModel(Component):
                 cursor = db.cursor()
                 cursor.execute(query, [str(project), version])
 
-    def rename_version_project(self,old_version,new_version):
+    def rename_version_project(self, old_version, new_version):
         query = """UPDATE
                         smp_version_project
                    SET
@@ -551,41 +504,7 @@ class SmpModel(Component):
                     query = """INSERT INTO smp_component_project(component, id_project) VALUES (%s, %s)"""
                     cursor.execute(query, [component, id_project])
 
-    def get_components_of_project(self,project):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        m.component AS component
-                   FROM
-                        smp_project AS p,
-                        smp_component_project AS m
-                   WHERE
-                        p.name = %s AND
-                        p.id_project = m.id_project"""
-
-        cursor.execute(query, [project])
-        return cursor.fetchall()
-
-    def get_components_for_projectid(self,projectid):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        component
-                   FROM
-                        smp_component_project
-                   WHERE
-                        id_project = %s"""
-
-        cursor.execute(query, [projectid])
-        return cursor.fetchall()
-
-    def get_projects_component(self,component):
+    def get_projects_component(self, component):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
         else:
@@ -603,7 +522,7 @@ class SmpModel(Component):
         cursor.execute(query, [component])
         return cursor.fetchall()
 
-    def get_id_projects_component(self,component):
+    def get_id_projects_component(self, component):
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
         else:
@@ -636,7 +555,7 @@ class SmpModel(Component):
                 cursor = db.cursor()
                 cursor.execute(query, [component])
 
-    def rename_component_project(self,old_component,new_component):
+    def rename_component_project(self, old_component, new_component):
         query = """UPDATE
                         smp_component_project
                    SET
@@ -659,6 +578,6 @@ class SmpModel(Component):
         query = """SELECT completed FROM milestone WHERE name=%s;"""
         cursor.execute(query, [milestone_name])
         msCompletedDate = cursor.fetchone()
-        if msCompletedDate and msCompletedDate[0]>0:
+        if msCompletedDate and msCompletedDate[0] > 0:
             return True
         return False

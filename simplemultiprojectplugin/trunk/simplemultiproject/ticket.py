@@ -30,6 +30,7 @@ except ImportError:
         script_data.update(data)
         script_data.update(kwargs)
 
+
 class SmpTicketProject(Component):
 
     implements(IRequestFilter, ITemplateStreamFilter)
@@ -54,14 +55,16 @@ class SmpTicketProject(Component):
 
         if template == 'ticket.html':
             all_components = model.Component.select(self.env)
-            all_projects   = [project[1] for project in sorted(self.__SmpModel.get_all_projects_filtered_by_conditions(req), key=itemgetter(1))]
+            all_projects = [project[1] for project in
+                            sorted(self.__SmpModel.get_all_projects_filtered_by_conditions(req), key=itemgetter(1))]
             component_projects = {}
             components = []
             project_versions = {}
 
             for comp in all_components:
                 components.append(comp.name)
-                comp_projects = [project[0] for project in sorted(self.__SmpModel.get_projects_component(comp.name), key=itemgetter(0))]
+                comp_projects = [project[0] for project in
+                                 sorted(self.__SmpModel.get_projects_component(comp.name), key=itemgetter(0))]
                 if comp_projects and len(comp_projects) > 0:
                     component_projects[comp.name] = comp_projects
 
@@ -73,12 +76,12 @@ class SmpTicketProject(Component):
                 project_versions[project].extend(get_all_versions_without_project(self.env))  # See #12463
                 project_versions[project].sort()
 
-            projects = { 'smp_all_projects': all_projects }
-            component_projects = { 'smp_component_projects': component_projects }
-            all_components = { 'smp_all_components': components }
-            def_component = { 'smp_default_component': data.get('ticket').get_value_or_default('component') }
-            def_version = { 'smp_default_version': data.get('ticket').get_value_or_default('version') }
-            project_versions = { 'smp_project_versions': project_versions }
+            projects = {'smp_all_projects': all_projects}
+            component_projects = {'smp_component_projects': component_projects}
+            all_components = {'smp_all_components': components}
+            def_component = {'smp_default_component': data.get('ticket').get_value_or_default('component')}
+            def_version = {'smp_default_version': data.get('ticket').get_value_or_default('version')}
+            project_versions = {'smp_project_versions': project_versions}
 
             add_script_data(req, projects)
             add_script_data(req, all_components)
@@ -107,32 +110,32 @@ class SmpTicketProject(Component):
     def _add_milestones_maps(self, req, ticket_data, is_newticket):
 
         milestone = ticket_data.get_value_or_default('milestone')
-        project   = ticket_data.get_value_or_default('project')
+        project = ticket_data.get_value_or_default('project')
 
         allProjects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
-        initialProjectMilestone = [ project, milestone ]
+        initialProjectMilestone = [project, milestone]
         milestonesForProject = {}
-        milestonesForProject[""] = { "Please, select a project!": "" }
+        milestonesForProject[""] = {"Please, select a project!": ""}
 
-        have_ticketadmin   = req.perm.has_permission('TICKET_ADMIN')
+        have_ticketadmin = req.perm.has_permission('TICKET_ADMIN')
         have_ticketchgprop = req.perm.has_permission('TICKET_CHGPROP')
 
         for project in sorted(allProjects, key=itemgetter(1)):
             milestones = self.__SmpModel.get_milestones_of_project(project[1])
-            milestonesForProject[project[1]] = { "": "" }
+            milestonesForProject[project[1]] = {"": ""}
             for milestone in sorted(milestones, key=itemgetter(0)):
                 ms = milestone[0]
-                is_completed   = self.__SmpModel.is_milestone_completed(ms)
+                is_completed = self.__SmpModel.is_milestone_completed(ms)
                 if is_newticket:
                     hide_milestone = is_completed
                 else:
-                    hide_milestone = not (have_ticketadmin or (not is_completed and have_ticketchgprop)) #see #12201
+                    hide_milestone = not (have_ticketadmin or (not is_completed and have_ticketchgprop))  # see #12201
                 if not hide_milestone:
                     milestonesForProject[project[1]][ms] = ms
 
-        smp_milestonesForProject = { 'smp_milestonesForProject' : milestonesForProject }
-        smp_initialProjectMilestone = { 'smp_initialProjectMilestone' : initialProjectMilestone }
+        smp_milestonesForProject = {'smp_milestonesForProject': milestonesForProject}
+        smp_initialProjectMilestone = {'smp_initialProjectMilestone': initialProjectMilestone}
 
         add_script_data(req, smp_initialProjectMilestone)
         add_script_data(req, smp_milestonesForProject)
@@ -156,6 +159,7 @@ class SmpTicketProject(Component):
             else:
                 select.append(tag.option(project, value=project))
         return select
+
 
 class ProjectTicketsPolicy(Component):
     """Permission policy provider for restricting access to projects to certain users.
