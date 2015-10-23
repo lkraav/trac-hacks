@@ -185,7 +185,7 @@ Any other [TracLinks TracLink] can be used:
         m = MACRO.match(wp.text)
         if not m:
             return None
-        wikitarget = stripws(m.group(0))
+        wikitarget = stripws(m.group(1))
         ctxt = web_context(req)
         redirect_target = extract_url(self.env, ctxt, wikitarget)
         if not redirect_target:
