@@ -13,7 +13,8 @@ from genshi.builder import tag
 from trac.core import *
 from trac.util.text import stripws
 from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
-from trac.wiki.api import IWikiMacroProvider, web_context
+from trac.web.chrome import web_context
+from trac.wiki.api import IWikiMacroProvider
 from trac.wiki.formatter import split_url_into_path_query_fragment
 from trac.wiki.model import WikiPage
 from trac.wiki.web_ui import WikiModule
