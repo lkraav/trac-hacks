@@ -14,6 +14,7 @@ from trac.mimeview.api import Context
 from trac.util.text import stripws
 from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
 from trac.wiki.api import IWikiMacroProvider
+from trac.wiki.formatter import split_url_into_path_query_fragment
 from trac.wiki.model import WikiPage
 
 from tracextracturl.extracturl import extract_url
@@ -232,11 +233,4 @@ Any other [TracLinks TracLink] can be used:
 
     def split_link(self, target):
         """Split a target along "?" and "#" in `(path, query, fragment)`."""
-        query = fragment = ''
-        idx = target.find('#')
-        if idx >= 0:
-            target, fragment = target[:idx], target[idx:]
-        idx = target.find('?')
-        if idx >= 0:
-            target, query = target[:idx], target[idx:]
-        return target, query, fragment
+        return split_url_into_path_query_fragment(target)
