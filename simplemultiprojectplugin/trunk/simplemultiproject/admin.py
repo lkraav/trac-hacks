@@ -36,13 +36,12 @@ class SmpAdminPanel(Component):
 
 
     # IPermissionRequestor method
-    
+
     def get_permission_actions(self):
         """ Permissions supported by the plugin. """
         action = ['PROJECT_SETTINGS_VIEW', 'PROJECT_ADMIN']
         return [action[0],
                 (action[1], [action[0]])]
-
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
@@ -51,8 +50,10 @@ class SmpAdminPanel(Component):
         try:
             self.log.info("Simple Multi Project: Adding project %s" % (name))
             self.__SmpModel.insert_project(name, summary, description, closed, restrict)
+            # Make sure the internal list of projects is up to date
+            self.__SmpModel.get_all_projects()  # This sets the data in the config object
+            self.config.save()  # Fixes #12524
             return True
-
         except Exception, e:
             self.log.error("Add Project Error: %s" % (e, ))
             return False
@@ -67,9 +68,10 @@ class SmpAdminPanel(Component):
 
             if old_project_name and old_project_name != name:
                 self.__SmpModel.update_custom_ticket_field(old_project_name, name)
-
+            # Make sure the internal list of projects is up to date
+            self.__SmpModel.get_all_projects()  # This sets the data in the config object
+            self.config.save()  # Fixes #12524
             return True
-        
         except Exception, e:
             self.log.error("Modify Project Error: %s" % (e, ))
             return False
@@ -129,7 +131,7 @@ class SmpAdminPanel(Component):
                         else:
                             add_notice(req, "'The project '%s' has been added." % req.args.get('name'))
                             req.redirect(req.href.admin(category, page))
-                         
+
                     else:
                         raise TracError('No name input')
 
