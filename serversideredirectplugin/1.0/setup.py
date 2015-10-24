@@ -25,7 +25,8 @@ setup(
     dependency_links=[
         'https://trac-hacks.org/svn/extracturlplugin/0.11'
         '#egg=TracExtractUrl-0.3'],
-    install_requires=['TracExtractUrl>=0.3'],
+    install_requires=['TracExtractUrl>=0.3', 'Trac'],
     entry_points={'trac.plugins': [
-        'tracserversideredirect.plugin = tracserversideredirect.plugin']}
+        'tracserversideredirect.plugin = tracserversideredirect.plugin']},
+    test_suite='tracserversideredirect.tests.suite'
 )
