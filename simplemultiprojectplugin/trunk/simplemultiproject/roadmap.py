@@ -22,9 +22,9 @@ __all__ = ['SmpRoadmapProject', 'SmpRoadmapProjectFilter']
 class SmpRoadmapProjectFilter(Component):
     """Allows for filtering by 'Project'
     """
-    
+
     implements(IRequestFilter, ITemplateStreamFilter)
-    
+
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
 
@@ -32,31 +32,31 @@ class SmpRoadmapProjectFilter(Component):
 
     def pre_process_request(self, req, handler):
         return handler
-        
+
     def post_process_request(self, req, template, data, content_type):
         if req.path_info.startswith('/roadmap'):
             filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
-                
+
             if data:
                 if filter_projects and len(filter_projects) > 0:
                     milestones = data.get('milestones')
                     milestones_stats = data.get('milestone_stats')
-                    
+
                     filtered_milestones = []
                     filtered_milestone_stats = []
-            
+
                     if milestones:
                         for idx, milestone in enumerate(milestones):
                             milestone_name = milestone.name
                             project = self.__SmpModel.get_project_milestone(milestone_name)
-        
+
                             if project and project[0] in filter_projects:
                                 filtered_milestones.append(milestone)
                                 filtered_milestone_stats.append(milestones_stats[idx])
-            
+
                         data['milestones'] = filtered_milestones
                         data['milestone_stats'] = filtered_milestone_stats
-                
+
                 if VERSION <= '0.12':
                     data['infodivclass'] = 'info'
                 else:
@@ -69,8 +69,9 @@ class SmpRoadmapProjectFilter(Component):
     def filter_stream(self, req, method, filename, stream, data):
         if filename.startswith("roadmap"):
             filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
-            filter = Transformer('//form[@id="prefs"]/fieldset/div[1]')
-            stream = stream | filter.before(tag.label("Filter Projects:")) | filter.before(tag.br()) | filter.before(self._projects_field_input(req, filter_projects)) | filter.before(tag.br())
+            filter = Transformer('//form[@id="prefs"]/div[1]')
+            stream = stream | filter.before(tag.label("Filter Projects:")) | filter.before(tag.br()) | \
+                     filter.before(self._projects_field_input(req, filter_projects)) | filter.before(tag.br())
 
         return stream
 
@@ -86,7 +87,7 @@ class SmpRoadmapProjectFilter(Component):
 
         select = tag.select(name="filter-projects", id="Filter-Projects", multiple="multiple", size=("%s" % number_displayed_entries), style="overflow:auto;")
         select.append(tag.option("All", value="All"))
-        
+
         for component in sorted_project_names_list:
             project = component[1]
             if selectedcomps and project in selectedcomps:
@@ -99,9 +100,9 @@ class SmpRoadmapProjectFilter(Component):
 class SmpRoadmapProject(Component):
     """Groups milestones by 'Project'
     """
-    
+
     implements(IRequestFilter, ITemplateStreamFilter)
-    
+
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
 
@@ -136,7 +137,7 @@ class SmpRoadmapProject(Component):
             hide_closed = True
 
         div_projects_milestones = ''
-        
+
         for project_name in sorted(projects.keys()):
             has_access = True
             can_show = True
@@ -155,12 +156,12 @@ class SmpRoadmapProject(Component):
                     div_project = div_project + '<div class="description" xml:space="preserve">'
                     if project_info[2]:
                         div_project = div_project + '%s<br/><br/>' % project_info[2]
-                    
+
                     div_project = div_project + '%s</div>' % wiki_to_html(project_info[3], self.env, req)
 
             div_milestone = ''
-            
-            if has_access:            
+
+            if has_access:
                 if can_show and len(projects[project_name]) > 0:
 
                     for milestone in projects[project_name]:
@@ -175,15 +176,15 @@ class SmpRoadmapProject(Component):
 
         stream_div_projects_milestones = HTML(div_projects_milestones)
         return stream_div_projects_milestones
-        
+
     def _map_milestones_to_projects(self, milestones):
         projects = {}
         for milestone in milestones:
             project_name = self.__SmpModel.get_project_milestone(milestone)
-            
+
             if project_name == None:
                 project_name = self.__SmpModel.get_project_version(milestone)
-            
+
             if project_name == None:
                 if projects.has_key("--None Project--"):
                     projects["--None Project--"].append(milestone)
@@ -194,7 +195,7 @@ class SmpRoadmapProject(Component):
                     projects[project_name[0]].append(milestone)
                 else:
                     projects[project_name[0]] = [milestone]
-        
+
         return projects
 
     # ITemplateStreamFilter methods
@@ -203,25 +204,25 @@ class SmpRoadmapProject(Component):
         if filename.startswith("roadmap"):
             stream_roadmap = HTML(to_unicode(stream))
             stream_milestones = HTML(to_unicode(stream_roadmap.select('//div[@class="roadmap"]/div[@class="milestones"]')))
-            
+
             milestones = data.get('milestones')
             milestones = [milestone.name for milestone in milestones]
-            
+
             versions = data.get('versions')
             if versions:
                 for version in versions:
                     milestones.append(version.name)
 
             div_milestones_array = self.__extract_div_milestones_array('<div class="milestone">',stream_milestones)
-            
+
             div_projects_milestones = self.__process_div_projects_milestones(milestones, div_milestones_array, req)
-            
+
             return stream_roadmap | Transformer('//div[@class="roadmap"]/div[@class="milestones"]').replace(div_projects_milestones)
 
         return stream
 
     def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type  
+        return template, data, content_type
 
 
 class SmpRoadmapPlugin(Component):

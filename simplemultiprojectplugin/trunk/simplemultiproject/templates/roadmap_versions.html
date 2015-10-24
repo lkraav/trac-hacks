@@ -14,7 +14,6 @@
     <div id="content" class="roadmap">
       <h1>Roadmap</h1>
       <form id="prefs" method="get" action="">
-        <fieldset>
             <div>
               <input type="hidden" name="hide" id="hideall" value="none" />
               <input type="checkbox" id="hideversions" name="hide" value="versions"
@@ -42,7 +41,6 @@
                      checked="${'noduedate' in show or None}" />
               <label for="hidenoduedate">${_('Hide milestones with no due date')}</label>
             </div>
-        </fieldset>
         <div class="buttons">
           <input type="submit" value="${_('Update')}" />
         </div>
@@ -85,9 +83,9 @@
           </div>
 
         </div>
-        
+
         <!-- Versions -->
-        
+
         <div py:for="idx, version in enumerate(versions)" class="milestone">
           <div class="${infodivclass}" py:with="mstats = version_stats[idx]">
             <h2><a href="${href.version(version.name)}">
