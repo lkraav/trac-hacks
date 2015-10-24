@@ -12,7 +12,7 @@ import re
 from genshi.builder import tag
 from trac.core import *
 from trac.util.text import stripws
-from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
+from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import web_context
 from trac.wiki.api import IWikiMacroProvider
 from trac.wiki.formatter import split_url_into_path_query_fragment
@@ -130,7 +130,6 @@ Any other [TracLinks TracLink] can be used:
                 }
                 req.send_error(data['title'], status=409,
                                env=self.env, data=data)
-                raise RequestDone
 
             # Check for redirect pair, i.e. A->B, B->A
             redirected_from = req.args.get('redirectedfrom', '')
@@ -150,7 +149,6 @@ Any other [TracLinks TracLink] can be used:
                 }
                 req.send_error(data['title'], status=409,
                                env=self.env, data=data)
-                raise RequestDone
 
             # Add back link information for internal links:
             if target and target[0] == '/':
@@ -164,7 +162,6 @@ Any other [TracLinks TracLink] can be used:
                     query += "&" + redirectfrom
                 target = tgt + query + anchor
             req.redirect(target)
-            raise RequestDone
         raise TracError("Invalid redirect target!")
 
     def _get_redirect(self, req):
