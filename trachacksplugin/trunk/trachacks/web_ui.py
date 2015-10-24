@@ -565,7 +565,8 @@ class TracHacksHandler(Component):
                 raise TracError(str(e))
         return created, messages
 
-    def delete_hack(self, req, name, author):
+    def delete_hack(self, name, author):
+        warnings = []
         hack_path = name.lower()
 
         # Delete from repository.
@@ -580,8 +581,8 @@ class TracHacksHandler(Component):
             self._run_command(args)
         except TracError as e:
             self.log.warning(e)
-            add_warning(req, _("Failed to delete Subversion path "
-                               "'/%(path)s'", path=hack_path))
+            warnings.append(_("Failed to delete Subversion path "
+                              "'/%(path)s'", path=hack_path))
 
         # Remove from authz file.
         authz_file = self.config.getpath('trac', 'authz_file')
@@ -595,8 +596,9 @@ class TracHacksHandler(Component):
             page.delete()
         except TracError:
             self.log.warning("Failed to delete non-existent page '%s'.", name)
-            add_warning(req, _("Failed to delete wiki page '%(name)s'",
-                               name=name))
+            warnings.append(_("Failed to delete wiki page '%(name)s'",
+                              name=name))
+        return warnings
 
     def _run_command(self, args):
         from subprocess import Popen, PIPE
@@ -629,7 +631,8 @@ class TracHacksHandler(Component):
 
     def _delete_hacks(self, req):
         for name in req.args.getlist('sel'):
-            self.delete_hack(req, name, req.authname)
+            for warning in self.delete_hack(name, req.authname):
+                add_warning(req, warning)
 
     def render_list(self, req, data, hacks):
         ul = builder.ul()
