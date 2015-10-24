@@ -2,11 +2,10 @@
 #
 # Copyright (C) 2015 Cinc
 #
-# License: BSD
+# License: 3-clause BSD
 #
 
 from trac.db import with_transaction
-from simplemultiproject.model import SmpModel
 from trac.ticket.model import Version
 
 __author__ = 'Cinc'
@@ -18,28 +17,40 @@ class SmpBaseModel(object):
     """Base class for models providing the database access"""
     def __init__(self, env):
         self.env = env
-        self.SmpModel = SmpModel(env)
         self.resource_name = "base"
 
-    def _delete_from_db(self, resource_name, name):
-        sql = """DELETE FROM smp_%s_project WHERE %s=%%s;""" % (resource_name, resource_name)
+    def delete(self, name):
+        """Delete item 'name' from database. Name may be a list or a single item.
+
+        @param name: single name or list of names.
+        """
+        if type(name) is not list:
+            name = [name]
+
+        sql = """DELETE FROM smp_%s_project WHERE %s=%%s;""" % (self.resource_name, self.resource_name)
 
         @with_transaction(self.env)
         def execute_sql_statement(db):
             cursor = db.cursor()
-            cursor.execute(sql, [name])
+            for n in name:
+                self.env.log.debug("Deleting %s '%s'", self.resource_name, n)
+                cursor.execute(sql, [n])
+                if not cursor.rowcount:
+                    self.env.log.debug("Deleting %s '%s' failed. This is not necessarily an error.",
+                                       self.resource_name, n)
 
-    def _insert(self, resource_name, name, id_projects):
-        """For each project id insert a row into the db
+    def add(self, name, id_projects):
+        """Link name with one or more id_project.
 
-        :param resource_name : 'component', 'milestone', 'version'
-        :param id_projects: a single project id or a list of ids
+        :param name: name of the item (version, milestone, component)
+        :param id_projects: a single project id or a list of project ids
 
-        The table name is constructed from the given resource name.
+        For each project id insert a row into the db. The table name is constructed from self.resource_name.
+
         """
         if not id_projects:
             return
-        sql = "INSERT INTO smp_%s_project (%s, id_project) VALUES (%%s, %%s)" % (resource_name, resource_name)
+        sql = "INSERT INTO smp_%s_project (%s, id_project) VALUES (%%s, %%s)" % (self.resource_name, self.resource_name)
         if type(id_projects) is not list:
             id_projects = [id_projects]
 
@@ -48,6 +59,21 @@ class SmpBaseModel(object):
             cursor = db.cursor()
             for id_proj in id_projects:
                 cursor.execute(sql, [name, unicode(id_proj)])
+
+    def add_after_delete(self, name, id_projects):
+        """Update data sets for item 'name' and the list of projects id_projects.
+
+        @param name: the name of them item
+        @param id_projects: single id of a project or list if ids
+
+        Update is done by deleting the item from the SMP database and adding it again for the given projects. For
+        each project a row is added to the table so inplace update won't work.
+
+        This method is used when the set of projects an item (version, milestone, component) is associated with has
+        changed.
+        """
+        self.delete(name)
+        self.add(name, id_projects)
 
     def _get_all_names_and_project_id_for_resource(self, resource_name):
         db = self.env.get_read_db()
@@ -65,17 +91,16 @@ class SmpBaseModel(object):
             cursor = db.cursor()
             cursor.execute(sql, (id_projects, name))
 
-    def get_project_names_for_resource_item(self, resource_name, name):
-        """Get a list of project names the item of type resource_name is associated with.
+    def get_project_names_for_item(self, name):
+        """Get a list of project names the item (version, milestone, component) is associated with.
 
-        @param resource_name: may be any of component, version, milestone.
         @param name: name of the item e.g. a component name
         @return: a list of project names
         """
         db = self.env.get_read_db()
         cursor = db.cursor()
         sql = "SELECT name FROM smp_project AS p, smp_%s_project AS res WHERE p.id_project = res.id_project " \
-              "AND res.%s = %%s" % (resource_name, resource_name)
+              "AND res.%s = %%s" % (self.resource_name, self.resource_name)
         cursor.execute(sql, [name])
         return [proj[0] for proj in cursor]  # Convert list of tuples to list of project names
 
@@ -93,17 +118,16 @@ class SmpBaseModel(object):
         cursor.execute(sql, [name])
         return [proj[0] for proj in cursor]  # Convert list of tuples to list of project names
 
-    def get_resource_items_for_project_id(self, resource_name, id_project):
+    def get_items_for_project_id(self, id_project):
         """Get all items associated with the given project id for a resource.
 
-        :param resource_name: one of component, milestone, version
         :param id_project: a project id
         :return: a list of one or more items
         """
         db = self.env.get_read_db()
         cursor = db.cursor()
         sql = """SELECT %s FROM smp_%s_project WHERE id_project = %%s ORDER BY id_project;""" %\
-              (resource_name, resource_name)
+              (self.resource_name, self.resource_name)
         cursor.execute(sql, [id_project])
         return [item[0] for item in cursor]  # Convert tuples to list items
 
@@ -114,26 +138,6 @@ class SmpComponent(SmpBaseModel):
         super(SmpComponent, self).__init__(env)
         self.resource_name = "component"
 
-    def delete(self, component_name):
-        """Delete a component from the projects database."""
-        self._delete_from_db('component', component_name)
-
-    def add(self, component_name, id_projects):
-        """Add component to each given project.
-
-        :param component_name: name of the component
-        :param id_projects: a single project id or a list of project ids
-        """
-        self._insert('component', component_name, id_projects)
-
-    def add_after_delete(self, component_name, id_projects):
-        """Delete a component from the SMP database and add it again for the given projects.
-
-        This method is used when the set of projects a component is associated with has changed.
-        """
-        self.delete(component_name)
-        self.add(component_name, id_projects)
-
     def get_all_components_and_project_id(self):
         """Get all components with associated project ids
 
@@ -143,43 +147,19 @@ class SmpComponent(SmpBaseModel):
         """
         return self._get_all_names_and_project_id_for_resource('component')
 
-    def get_project_names_for_item(self, component):
-        """Get a list of all project names the component is associated with"""
-        return self.get_project_names_for_resource_item('component', component)
-
     def get_components_for_project_id(self, id_project):
         """Get components for the given project id.
 
         :param id_project: a project id
         :return: ordered list of components associated with the given project id. May be empty.
         """
-        return self.get_resource_items_for_project_id('component', id_project)
+        return self.get_items_for_project_id(id_project)
 
 
 class SmpMilestone(SmpBaseModel):
     def __init__(self, env):
         super(SmpMilestone, self).__init__(env)
         self.resource_name = "milestone"
-
-    def delete(self, milestone_name):
-        """Delete a component from the projects database."""
-        self._delete_from_db('milestone', milestone_name)
-
-    def add(self, milestone_name, id_projects):
-        """Add component to each given project.
-
-        :param milestone_name: name of the milestone
-        :param id_projects: a single project id or a list of project ids
-        """
-        self._insert('milestone', milestone_name, id_projects)
-
-    def add_after_delete(self, milestone_name, id_projects):
-        """Delete a milestone from the SMP database and add it again for the given projects.
-
-        This method is used when the set of projects a milestone is associated with has changed.
-        """
-        self.delete(milestone_name)
-        self.add(milestone_name, id_projects)
 
     def get_all_milestones_and_id_project_id(self):
         """Get all milestones with associated project ids
@@ -189,17 +169,13 @@ class SmpMilestone(SmpBaseModel):
         """
         return self._get_all_names_and_project_id_for_resource('milestone')
 
-    def get_project_names_for_item(self, milestone):
-        """Get a list of all project names the milestone is associated with"""
-        return self.get_project_names_for_resource_item('milestone', milestone)
-
     def get_milestones_for_project_id(self, id_project):
         """Get milestones for the given project id.
 
         :param id_project: a project id
         :return: ordered list of milestones associated with the given project id. May be empty.
         """
-        return self.get_resource_items_for_project_id('milestone', id_project)
+        return self.get_items_for_project_id(id_project)
 
 
 class SmpProject(SmpBaseModel):
@@ -245,26 +221,6 @@ class SmpVersion(SmpBaseModel):
         super(SmpVersion, self).__init__(env)
         self.resource_name = "version"
 
-    def delete(self, version_name):
-        """Delete a component from the projects database."""
-        self._delete_from_db('version', version_name)
-
-    def add(self, version_name, id_project):
-        """Add version to a project.
-
-        :param version_name: name of the component
-        :param id_project: a single project id or a list of project ids
-        """
-        self._insert('version', version_name, id_project)
-
-    def add_after_delete(self, version_name, id_projects):
-        """Delete a version from the SMP database and add it again for the given projects.
-
-        This method is used when the set of projects a version is associated with has changed.
-        """
-        self.delete(version_name)
-        self.add(version_name, id_projects)
-
     def get_all_versions_and_project_id(self):
         """Get all versions with associated project id
 
@@ -276,14 +232,10 @@ class SmpVersion(SmpBaseModel):
         """TODO: get rid of old model"""
         self._update('version', version_name, id_project)
 
-    def get_project_names_for_item(self, version):
-        """Get a list of all project names the milestone is associated with"""
-        return self.get_project_names_for_resource_item('version', version)
-
     def get_versions_for_project_id(self, id_project):
         """Get versions for the given project id.
 
         :param id_project: a project id
         :return: ordered list of versions associated with the given project id. May be empty.
         """
-        return self.get_resource_items_for_project_id('version', id_project)
+        return self.get_items_for_project_id(id_project)

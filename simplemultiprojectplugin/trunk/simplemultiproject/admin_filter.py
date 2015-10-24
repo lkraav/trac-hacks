@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2014 Cinc
 #
-# License: BSD
+# License: 3-clause BSD
 #
 
 # Trac extension point imports
@@ -12,12 +12,12 @@ from trac.web.chrome import add_stylesheet, ITemplateStreamFilter
 from trac.util.translation import _
 from trac.config import BoolOption
 from trac.resource import ResourceNotFound
-from trac.ticket.model import Component as TicketComponent  # Make sure no to confuse with Component for plugins
+from trac.ticket.model import Component as TicketComponent  # Make sure not to confuse with Component for plugins
 from trac.ticket.model import Milestone, Version
+from trac.ticket.api import IMilestoneChangeListener
 from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
-from operator import itemgetter
 from smp_model import SmpComponent, SmpProject, SmpVersion, SmpMilestone
 from model import SmpModel
 
@@ -48,7 +48,8 @@ class InsertProjectTd(InjectorTransformation):
                         try:
                             # Special handling for components. A component may have several projects
                             if isinstance(self._all_proj[self._value], list):
-                                self.content = tag.td(((tag.span(item), tag.br) for item in self._all_proj[self._value]),
+                                self.content = tag.td(((tag.span(item), tag.br) for item in
+                                                       self._all_proj[self._value]),
                                                       class_="project")
                             else:
                                 self.content = tag.td(self._all_proj[self._value], class_="project")
@@ -144,7 +145,7 @@ class SmpFilterDefaultMilestonePanels(Component):
                                 doc="If set to {{{True}}} only a single project can be associated with a milestone. "
                                     "The default value is {{{False}}}.")
 
-    implements(ITemplateStreamFilter, IRequestFilter)
+    implements(ITemplateStreamFilter, IRequestFilter, IMilestoneChangeListener)
 
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
@@ -156,21 +157,20 @@ class SmpFilterDefaultMilestonePanels(Component):
     def pre_process_request(self, req, handler):
         if self._is_valid_request(req) and req.method == "POST":
             if req.path_info.startswith('/admin/ticket/milestones'):
+                # Removal is handled in change listener
                 if 'add' in req.args:
                     # 'Add' button on main milestone panel
                     # Check if we already have this milestone. Trac will show an error later if so.
                     # Don't change the db for smp if already exists.
-                    p_ids=req.args.get('sel')
+                    p_ids = req.args.get('sel')
                     if not get_milestone_from_trac(self.env, req.args.get('name')) and p_ids:
-                        self.smp_model.add(req.args.get('name'), p_ids)
-                elif 'remove' in req.args:
-                    # 'Remove' button on main milestone panel
-                    for item in req.args.get('sel'):
-                        self.smp_model.delete(item)
-                elif 'save' in req.args or 'add' in req.args:
+                        # Note this one handles lists and single ids
+                        self.smp_model.add(req.args.get('name'), p_ids)  # p_ids may be a list here
+                elif 'save' in req.args:
                     # 'Save' button on 'Manage milestone' panel
                     p_ids = req.args.get('sel')
                     self.smp_model.delete(req.args.get('path_info'))
+                    # Note this one handles lists and single ids
                     self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler
 
@@ -239,6 +239,19 @@ class SmpFilterDefaultMilestonePanels(Component):
                                                                           input_type=input_type))
         return stream
 
+    # IMilestoneChangeListener methods
+
+    def milestone_created(self, milestone):
+        self.log.debug("Milestone '%s' created.", milestone.name)
+        pass
+
+    def milestone_changed(self, milestone, old_values):
+        pass
+
+    def milestone_deleted(self, milestone):
+        self.log.debug("Milestone '%s' deleted. About to call SmpMilestone.delete().", milestone.name)
+        self.smp_model.delete(milestone.name)
+
 
 def get_version_from_trac(env, name):
     try:
@@ -280,23 +293,22 @@ class SmpFilterDefaultVersionPanels(Component):
         self.smp_model = SmpVersion(self.env)
 
     # IRequestFilter methods
-    def pre_process_request(self, req, handler):
 
+    def pre_process_request(self, req, handler):
         if self._is_valid_request(req) and req.method == "POST":
             if req.path_info.startswith('/admin/ticket/versions'):
                 if 'add' in req.args:
                     # 'Add' button on main milestone panel
                     # Check if we already have this milestone. Trac will show an error later if so.
                     # Don't change the db for smp if already exists.
-                    p_ids=req.args.get('sel')
+                    p_ids = req.args.get('sel')
                     if not get_version_from_trac(self.env, req.args.get('name')) and p_ids:
                         self.smp_model.add(req.args.get('name'), p_ids)
                 elif 'remove' in req.args:
                     # 'Remove' button on main version panel
-                    for item in req.args.get('sel'):
-                        self.smp_model.delete(item)
-                elif 'save' in req.args or 'add' in req.args:
-                    # 'Save' button on 'Manage milestone' panel
+                    self.smp_model.delete(req.args.get('sel'))
+                elif 'save' in req.args:
+                    # 'Save' button on 'Manage version' panel
                     p_ids = req.args.get('sel')
                     self.smp_model.delete(req.args.get('path_info'))
                     self.smp_model.add_after_delete(req.args.get('name'), p_ids)
@@ -448,24 +460,22 @@ class SmpFilterDefaultComponentPanels(Component):
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
-
         if self._is_valid_request(req) and req.method == "POST":
             if req.path_info.startswith('/admin/ticket/components'):
                 if 'add' in req.args:
                     # 'Add' button on main component panel
                     # Check if we already have this component. Trac will show an error later if so.
                     # Don't change the db for smp.
-                    p_ids=req.args.get('sel')
+                    p_ids = req.args.get('sel')
                     if not get_component_from_trac(self.env, req.args.get('name')) and p_ids:
                         self.smp_model.add(req.args.get('name'), p_ids)
                 elif 'remove' in req.args:
                     # 'Remove' button on main component panel
-                    for item in req.args.get('sel'):
-                        self.smp_model.delete(item)
-                elif 'save' in req.args or 'add' in req.args:
+                    self.smp_model.delete(req.args.get('sel'))
+                elif 'save' in req.args:
                     # 'Save' button on 'Manage Component' panel
                     p_ids = req.args.get('sel')
-                    # TODO: this only works because in admin_component.py the old component name is already removed
+                    self.smp_model.delete(req.args.get('path_info'))
                     self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler
 
