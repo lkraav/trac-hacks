@@ -14,7 +14,6 @@ from tracserversideredirect.tests import plugin
 
 
 def suite():
-    print 'here'
     suite = unittest.TestSuite()
     suite.addTest(plugin.suite())
     return suite
