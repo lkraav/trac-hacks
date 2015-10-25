@@ -6,13 +6,14 @@
 # smp
 from simplemultiproject.model import *
 
-#trac
+# trac
 from trac.attachment import AttachmentModule
 from trac.config import ExtensionOption
 from trac.core import *
 from trac.util.text import to_unicode
 from trac.ticket.model import Version, Ticket, TicketSystem
-from trac.ticket.roadmap import apply_ticket_permissions, get_ticket_stats, ITicketGroupStatsProvider, DefaultTicketGroupStatsProvider
+from trac.ticket.roadmap import apply_ticket_permissions, get_ticket_stats, ITicketGroupStatsProvider, \
+    DefaultTicketGroupStatsProvider
 from trac.ticket.query import QueryModule
 from trac.mimeview import Context
 from trac.timeline.api import ITimelineEventProvider
@@ -20,8 +21,8 @@ from trac import __version__ as VERSION
 
 from trac.util.translation import _, tag_
 from trac.util.datefmt import parse_date, utc, to_utimestamp, \
-                              get_datetime_format_hint, format_date, \
-                              format_datetime, from_utimestamp
+    get_datetime_format_hint, format_date, \
+    format_datetime, from_utimestamp
 
 try:
     from trac.util.datefmt import user_time
@@ -34,7 +35,7 @@ except ImportError:
 
 from trac.web.api import IRequestHandler, IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import add_link, add_notice, add_script, add_stylesheet, \
-                            add_warning, Chrome, INavigationContributor
+    add_warning, Chrome, INavigationContributor
 
 # genshi
 from genshi.builder import tag
@@ -46,47 +47,54 @@ from pkg_resources import resource_filename
 from operator import itemgetter
 import re
 
+
 def get_tickets_for_any(env, db, any_name, any_value, field='component'):
     cursor = db.cursor()
     fields = TicketSystem(env).get_ticket_fields()
     if field in [f['name'] for f in fields if not f.get('custom')]:
-        cursor.execute("""SELECT id,status,%s FROM ticket WHERE %s=%%s ORDER BY %s""" % (field, any_name, field), [any_value])
+        cursor.execute("""SELECT id,status,%s FROM ticket WHERE %s=%%s ORDER BY %s""" %
+                       (field, any_name, field), [any_value])
     else:
-        cursor.execute("""SELECT id,status,value FROM ticket LEFT OUTER JOIN ticket_custom ON (id=ticket AND name=%%s) WHERE %s=%%s ORDER BY value""" % any_name, [field, any_value])
+        cursor.execute("""SELECT id,status,value FROM ticket
+                          LEFT OUTER JOIN ticket_custom ON (id=ticket AND name=%%s)
+                          WHERE %s=%%s ORDER BY value""" % any_name, [field, any_value])
     tickets = []
     for tkt_id, status, fieldval in cursor:
         tickets.append({'id': tkt_id, 'status': status, field: fieldval})
     return tickets
 
-def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component',
-                         group=None):
+
+def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component', group=None):
     has_query = env[QueryModule] is not None
+
     def query_href(extra_args):
         if not has_query:
             return None
         args = {any_name: any_value, grouped_by: group, 'group': 'status'}
         args.update(extra_args)
         return req.href.query(args)
+
     return {'stats': stat,
             'stats_href': query_href(stat.qry_args),
-            'interval_hrefs': [query_href(interval['qry_args'])
-                               for interval in stat.intervals]}
+            'interval_hrefs': [query_href(interval['qry_args']) for interval in stat.intervals]
+            }
+
 
 class SmpVersionProject(Component):
     """Create Project dependent versions"""
 
     implements(IRequestHandler, IRequestFilter, ITemplateStreamFilter)
-    
+
     stats_provider = ExtensionOption('roadmap', 'stats_provider',
                                      ITicketGroupStatsProvider,
                                      'DefaultTicketGroupStatsProvider',
-        """Name of the component implementing `ITicketGroupStatsProvider`, 
+                                     """Name of the component implementing `ITicketGroupStatsProvider`,
         which is used to collect statistics on groups of tickets for display
         in the roadmap views.""")
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
-        
+
     # IRequestHandler methods
     def match_request(self, req):
         match = re.match(r'/version(?:/(.+))?$', req.path_info)
@@ -97,19 +105,15 @@ class SmpVersionProject(Component):
 
     def process_request(self, req):
         version_id = req.args.get('id')
-        version_project = req.args.get('project', '')
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         action = req.args.get('action', 'view')
         try:
-            version = Version(self.env, version_id, db)
+            version = Version(self.env, version_id)
         except:
-            version = Version(self.env, None, db)
+            version = Version(self.env)
             version.name = version_id
-            action = 'edit' # rather than 'new' so that it works for POST/save
+            action = 'edit'  # rather than 'new' so that it works for POST/save
 
         if req.method == 'POST':
             if req.args.has_key('cancel'):
@@ -134,26 +138,10 @@ class SmpVersionProject(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        if req.path_info.startswith('/admin/ticket/versions'):
-            if req.method == 'POST':
-                versions = req.args.get('sel')
-                remove = req.args.get('remove')
-                save = req.args.get('save')
-                if not remove is None and not versions is None:
-                    if type(versions) is list:
-                        for version in versions:
-                            self.__SmpModel.delete_version_project(version)
-                    else:
-                        self.__SmpModel.delete_version_project(versions) 
-                elif not save is None:
-                    match = re.match(r'/admin/ticket/versions/(.+)$', req.path_info)
-                    if match and match.group(1) != req.args.get('name'):                    
-                        self.__SmpModel.rename_version_project(match.group(1), req.args.get('name'))
-
         return handler
-        
+
     def post_process_request(self, req, template, data, content_type):
-        if data and 'is_SMP' in data and req.path_info.startswith('/version'):
+        if data and 'is_SMP' in data and req.path_info.startswith('/version'):  # #12371
             version = data['version']
             if version and (type(version) is Version):
                 project_name = self.__SmpModel.get_project_version(version.name)
@@ -161,38 +149,35 @@ class SmpVersionProject(Component):
                     self.__SmpModel.check_project_permission(req, project_name[0])
 
         elif req.path_info.startswith('/roadmap'):
-            hide            = smp_settings(req, 'roadmap', 'hide', None)
+            hide = smp_settings(req, 'roadmap', 'hide', None)
             filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
-            
+
             if data and hide:
                 data['hide'] = hide
-                
+
             if data and (not hide or 'versions' not in hide):
                 versions, version_stats = self._versions_and_stats(req, filter_projects)
                 data['versions'] = versions
                 data['version_stats'] = version_stats
-            
+
             if data and hide and 'milestones' in hide:
                 data['milestones'] = []
                 data['milestone_stats'] = []
-                
-            return "roadmap_versions.html", data, content_type
-            
-        return template, data, content_type
 
+            return "roadmap_versions.html", data, content_type
+        return template, data, content_type
 
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-        action = req.args.get('action', 'view')
 
         if filename == "version_edit.html":
+            filter_ = Transformer('//form[@id="edit"]/div[1]')
+            action = req.args.get('action', 'view')
             if action == 'new':
-                filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__new_project(req))
+                return stream | filter_.before(self.__new_project(req))
             elif action == 'edit':
-                filter = Transformer('//form[@id="edit"]/div[1]')
-                return stream | filter.before(self.__edit_project(data, req))
+                return stream | filter_.before(self.__edit_project(data, req))
 
         return stream
 
@@ -209,30 +194,31 @@ class SmpVersionProject(Component):
             id_project_selected = None
 
         return tag.div(
-                       tag.label(
-                       'Project:',
-                       tag.br(),
-                       tag.select(
-                       tag.option(),
-                       [tag.option(row[1], selected=(id_project_selected == row[0] or None), value=row[0]) for row in sorted(all_projects, key=itemgetter(1))],
-                       name="project")
-                       ),
-                       class_="field")
+            tag.label(
+                'Project:',
+                tag.br(),
+                tag.select(
+                    tag.option(),
+                    [tag.option(row[1], selected=(id_project_selected == row[0] or None), value=row[0]) for row in
+                     sorted(all_projects, key=itemgetter(1))],
+                    name="project")
+            ),
+            class_="field")
 
     def __new_project(self, req):
         all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
         return tag.div(
-                       tag.label(
-                       'Project:',
-                       tag.br(),
-                       tag.select(
-                       tag.option(),
-                       [tag.option(row[1], value=row[0]) for row in sorted(all_projects, key=itemgetter(1))],
-                       name="project")
-                       ),
-                       class_="field")
-                       
+            tag.label(
+                'Project:',
+                tag.br(),
+                tag.select(
+                    tag.option(),
+                    [tag.option(row[1], value=row[0]) for row in sorted(all_projects, key=itemgetter(1))],
+                    name="project")
+            ),
+            class_="field")
+
     def _do_delete(self, req, version):
         req.perm.require('MILESTONE_DELETE')
         version_name = version.name
@@ -256,7 +242,7 @@ class SmpVersionProject(Component):
 
         old_name = version.name
         new_name = version_name
-        
+
         version.description = req.args.get('description', '')
 
         time = req.args.get('time', '')
@@ -268,6 +254,7 @@ class SmpVersionProject(Component):
         # Instead of raising one single error, check all the constraints and
         # let the user fix them by going back to edit mode showing the warnings
         warnings = []
+
         def warn(msg):
             add_warning(req, msg)
             warnings.append(msg)
@@ -281,7 +268,7 @@ class SmpVersionProject(Component):
         try:
             new_version = Version(self.env, new_name, db)
             if new_version.name == old_name:
-                pass        # Creation or no name change
+                pass  # Creation or no name change
             elif new_version.name:
                 warn(_('Version "%(name)s" already exists, please '
                        'choose another name.', name=new_version.name))
@@ -292,7 +279,7 @@ class SmpVersionProject(Component):
 
         if warnings:
             return self._render_editor(req, db, version)
-        
+
         # -- actually save changes
 
         if version.exists:
@@ -300,18 +287,17 @@ class SmpVersionProject(Component):
 
             if old_name != version.name:
                 self.__SmpModel.rename_version_project(old_name, version.name)
-               
+
             if not version_project:
                 self.__SmpModel.delete_version_project(version.name)
             elif not old_version_project:
-                self.__SmpModel.insert_version_project(version.name, version_project)    
+                self.__SmpModel.insert_version_project(version.name, version_project)
             else:
-                self.__SmpModel.update_version_project(version.name, version_project)    
+                self.__SmpModel.update_version_project(version.name, version_project)
         else:
             version.insert()
             if version_project:
-                self.__SmpModel.insert_version_project(version.name, version_project)    
-
+                self.__SmpModel.insert_version_project(version.name, version_project)
 
         add_notice(req, _('Your changes have been saved.'))
         req.redirect(req.href.version(version.name))
@@ -319,9 +305,9 @@ class SmpVersionProject(Component):
     def _render_confirm(self, req, db, version):
         req.perm.require('MILESTONE_DELETE')
 
-        version = [v for v in Version.select(self.env, db=db)
-                      if v.name != version.name
-                      and 'MILESTONE_VIEW' in req.perm]
+        version = [v for v in Version.select(self.env)
+                   if v.name != version.name
+                   and 'MILESTONE_VIEW' in req.perm]
         data = {
             'version': version
         }
@@ -330,10 +316,10 @@ class SmpVersionProject(Component):
     def _render_editor(self, req, db, version):
         # Suggest a default due time of 18:00 in the user's timezone
         default_time = datetime.now(req.tz).replace(hour=18, minute=0, second=0,
-                                                   microsecond=0)
+                                                    microsecond=0)
         if default_time <= datetime.now(utc):
             default_time += timedelta(days=1)
-        
+
         data = {
             'version': version,
             'datetime_hint': get_datetime_format_hint(),
@@ -342,9 +328,8 @@ class SmpVersionProject(Component):
 
         if version.exists:
             req.perm.require('MILESTONE_MODIFY')
-            versions = [v for v in Version.select(self.env, db=db)
-                          if v.name != version.name
-                          and 'MILESTONE_VIEW' in req.perm]
+            versions = [v for v in Version.select(self.env)
+                        if v.name != version.name and 'MILESTONE_VIEW' in req.perm]
         else:
             req.perm.require('MILESTONE_CREATE')
 
@@ -380,7 +365,6 @@ class SmpVersionProject(Component):
 
         context = Context.from_request(req)
 
-        infodivclass = ''
         if VERSION <= '0.12':
             infodivclass = 'info'
         else:
@@ -390,12 +374,12 @@ class SmpVersionProject(Component):
             'context': context,
             'version': version,
             'attachments': AttachmentModule(self.env).attachment_data(context),
-            'available_groups': available_groups, 
+            'available_groups': available_groups,
             'grouped_by': by,
             'groups': version_groups,
             'infodivclass': infodivclass,
-            'is_SMP' : True
-            }
+            'is_SMP': True
+        }
         data.update(any_stats_data(self.env, req, stat, 'version', version.name))
 
         if by:
@@ -427,11 +411,11 @@ class SmpVersionProject(Component):
                 if gstat.count > max_count:
                     max_count = gstat.count
 
-                group_stats.append(gstat) 
+                group_stats.append(gstat)
 
                 gs_dict = {'name': group}
                 gs_dict.update(any_stats_data(self.env, req, gstat,
-                                                    'version', version.name, by, group))
+                                              'version', version.name, by, group))
                 version_groups.append(gs_dict)
 
             for idx, gstat in enumerate(group_stats):
@@ -445,15 +429,16 @@ class SmpVersionProject(Component):
         add_script(req, 'common/js/folding.js')
         return 'version_view.html', data, None
 
-    def _version_time(self, version):
+    @staticmethod
+    def _version_time(version):
         if version.time:
             return version.time.replace(tzinfo=None).strftime('%Y%m%d%H%M%S')
         else:
-            return datetime(9999,12,31).strftime('%Y%m%d%H%M%S') + version.name
-            
+            return datetime(9999, 12, 31).strftime('%Y%m%d%H%M%S') + version.name
+
     def _versions_and_stats(self, req, filter_projects):
         req.perm.require('MILESTONE_VIEW')
-        
+
         if VERSION <= '0.12':
             db = self.env.get_db_cnx()
             versions = Version.select(self.env, db)
@@ -461,31 +446,113 @@ class SmpVersionProject(Component):
         else:
             versions = Version.select(self.env)
             db = self.env.get_read_db()
-    
+
         filtered_versions = []
         stats = []
-    
+
         show = req.args.getlist('show')
-        
+
         for version in sorted(versions, key=lambda v: self._version_time(v)):
             project = self.__SmpModel.get_project_version(version.name)
-            
+
             if not filter_projects or (project and project[0] in filter_projects):
                 if not version.time or version.time.replace(tzinfo=None) >= datetime.now() or 'completed' in show:
-                    
+
                     if version.time:
                         if version.time.replace(tzinfo=None) >= datetime.now():
                             version.is_due = True;
                         else:
                             version.is_completed = True;
-                        
+
                     filtered_versions.append(version)
                     tickets = get_tickets_for_any(self.env, db, 'version', version.name,
-                                                        'owner')
+                                                  'owner')
                     tickets = apply_ticket_permissions(self.env, req, tickets)
                     stat = get_ticket_stats(self.stats_provider, tickets)
                     stats.append(any_stats_data(self.env, req, stat,
-                                                      'version', version.name))
-    
+                                                'version', version.name))
+
         return filtered_versions, stats
 
+######################################################################################################################
+#     Everything below this point is (c) Cinc
+######################################################################################################################
+
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 Cinc
+#
+# License: 3-clause BSD
+#
+
+from smp_model import SmpVersion
+from genshi import HTML
+from trac.web.chrome import Chrome
+
+
+class SmpVersionModule(Component):
+    """Module to keep version information for projects up to date when SmpFilterDefaultVersionPanel is deactivated."""
+    implements(IRequestFilter, ITemplateStreamFilter)
+
+    def __init__(self):
+        self.smp_model = SmpVersion(self.env)
+        self.version_tmpl = Chrome(self.env).load_template("roadmap_versions_2.html")
+        # CSS class for milestones and versions
+        if VERSION <= '0.12':
+            self.infodivclass = 'info'
+        else:
+            self.infodivclass = 'info trac-progress'
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        if self._is_valid_request(req) and req.method == "POST":
+            # Try to delete only if version page filter is disabled. Deleting is usually done there.
+            if not self.env.is_component_enabled("simplemultiproject.admin_filter.SmpFilterDefaultVersionPanels"):
+                if 'remove' in req.args:
+                    # 'Remove' button on main version panel
+                    self.smp_model.delete(req.args.get('sel'))
+                elif 'save' in req.args:
+                    # 'Save' button on 'Manage version' panel
+                    p_ids = req.args.get('sel')
+                    self.smp_model.delete(req.args.get('path_info'))
+                    self.smp_model.add_after_delete(req.args.get('name'), p_ids)
+        return handler
+
+    @staticmethod
+    def _is_valid_request(req):
+        """Check request for correct path and valid form token"""
+        if req.path_info.startswith('/admin/ticket/versions') and req.args.get('__FORM_TOKEN') == req.form_token:
+            return True
+        return False
+
+    def post_process_request(self, req, template, data, content_type):
+        return template, data, content_type
+
+    # ITemplateStreamFilter methods
+
+
+    def filter_stream(self, req, method, filename, stream, data):
+
+        if filename == 'roadmap.html':
+            # Add button to create new versions
+            filter_ = Transformer('//div[@class="buttons"][2]')
+            stream = stream | filter_.append(HTML('<form action="%s" method="get"><div>'
+                                             '<input type="hidden" value="new" name="action"/>'
+                                             '<input value="Add new Version" type="submit">'
+                                             '</div></form>' % req.href.version()))
+            # Change label to include versions
+            filter_ = Transformer('//label[@for="showcompleted"]')
+            stream = stream | filter_.replace(HTML('<label for="showcompleted">Show completed milestones and '
+                                                   'versions</label>'))
+            # Add additional checkboxes to preferences
+            data['smp_render'] = 'prefs'
+            filter_ = Transformer('//form[@id="prefs"]')
+            stream = stream | filter_.prepend(self.version_tmpl.generate(**data))
+
+            # Add versions to page
+            data['infodivclass'] = self.infodivclass
+            data['smp_render'] = 'versions'  # Specify part of template to be rendered
+            filter_ = Transformer('//div[@class="milestones"]')
+            stream = stream | filter_.after(self.version_tmpl.generate(**data))
+
+        return stream
