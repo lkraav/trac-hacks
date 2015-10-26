@@ -13,3 +13,14 @@ table.admin-smp-project-table {
 #project-help-div {
     clear:both;
 }
+
+.project {
+   margin-bottom: 0.5em;
+}
+
+div.project > h2:after {
+  display: block;
+  content:' ';
+  border:1px solid lightgrey;
+  width: 65%;
+}

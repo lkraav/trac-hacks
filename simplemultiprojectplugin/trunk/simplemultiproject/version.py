@@ -164,7 +164,7 @@ class SmpVersionProject(Component):
                 data['milestones'] = []
                 data['milestone_stats'] = []
 
-            return "roadmap_versions.html", data, content_type
+            #return "roadmap_versions.html", data, content_type
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -439,13 +439,8 @@ class SmpVersionProject(Component):
     def _versions_and_stats(self, req, filter_projects):
         req.perm.require('MILESTONE_VIEW')
 
-        if VERSION <= '0.12':
-            db = self.env.get_db_cnx()
-            versions = Version.select(self.env, db)
-            db = self.env.get_db_cnx()
-        else:
-            versions = Version.select(self.env)
-            db = self.env.get_read_db()
+        versions = Version.select(self.env)
+        db = self.env.get_read_db()
 
         filtered_versions = []
         stats = []
@@ -454,15 +449,15 @@ class SmpVersionProject(Component):
 
         for version in sorted(versions, key=lambda v: self._version_time(v)):
             project = self.__SmpModel.get_project_version(version.name)
-
+            version.due = None
+            version.completed = None
             if not filter_projects or (project and project[0] in filter_projects):
                 if not version.time or version.time.replace(tzinfo=None) >= datetime.now() or 'completed' in show:
-
                     if version.time:
                         if version.time.replace(tzinfo=None) >= datetime.now():
-                            version.is_due = True;
+                            version.due = version.time
                         else:
-                            version.is_completed = True;
+                            version.completed = version.time
 
                     filtered_versions.append(version)
                     tickets = get_tickets_for_any(self.env, db, 'version', version.name,
@@ -488,7 +483,7 @@ class SmpVersionProject(Component):
 from smp_model import SmpVersion
 from genshi import HTML
 from trac.web.chrome import Chrome
-
+from admin_filter import SmpFilterDefaultVersionPanels
 
 class SmpVersionModule(Component):
     """Module to keep version information for projects up to date when SmpFilterDefaultVersionPanel is deactivated."""
@@ -496,18 +491,19 @@ class SmpVersionModule(Component):
 
     def __init__(self):
         self.smp_model = SmpVersion(self.env)
-        self.version_tmpl = Chrome(self.env).load_template("roadmap_versions_2.html")
+        self.version_tmpl = Chrome(self.env).load_template("roadmap_versions.html")
         # CSS class for milestones and versions
         if VERSION <= '0.12':
             self.infodivclass = 'info'
         else:
             self.infodivclass = 'info trac-progress'
+
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
         if self._is_valid_request(req) and req.method == "POST":
             # Try to delete only if version page filter is disabled. Deleting is usually done there.
-            if not self.env.is_component_enabled("simplemultiproject.admin_filter.SmpFilterDefaultVersionPanels"):
+            if not self.env.enabled[SmpFilterDefaultVersionPanels]:
                 if 'remove' in req.args:
                     # 'Remove' button on main version panel
                     self.smp_model.delete(req.args.get('sel'))
@@ -530,16 +526,15 @@ class SmpVersionModule(Component):
 
     # ITemplateStreamFilter methods
 
-
     def filter_stream(self, req, method, filename, stream, data):
 
         if filename == 'roadmap.html':
             # Add button to create new versions
             filter_ = Transformer('//div[@class="buttons"][2]')
             stream = stream | filter_.append(HTML('<form action="%s" method="get"><div>'
-                                             '<input type="hidden" value="new" name="action"/>'
-                                             '<input value="Add new Version" type="submit">'
-                                             '</div></form>' % req.href.version()))
+                                                  '<input type="hidden" value="new" name="action"/>'
+                                                  '<input value="Add new Version" type="submit">'
+                                                  '</div></form>' % req.href.version()))
             # Change label to include versions
             filter_ = Transformer('//label[@for="showcompleted"]')
             stream = stream | filter_.replace(HTML('<label for="showcompleted">Show completed milestones and '
@@ -550,9 +545,10 @@ class SmpVersionModule(Component):
             stream = stream | filter_.prepend(self.version_tmpl.generate(**data))
 
             # Add versions to page
-            data['infodivclass'] = self.infodivclass
-            data['smp_render'] = 'versions'  # Specify part of template to be rendered
-            filter_ = Transformer('//div[@class="milestones"]')
-            stream = stream | filter_.after(self.version_tmpl.generate(**data))
+            if 'group' not in req.args:  # Roadmap group plugin is grouping by project
+                data['infodivclass'] = self.infodivclass
+                data['smp_render'] = 'versions'  # Specify part of template to be rendered
+                filter_ = Transformer('//div[@class="milestones"]')
+                stream = stream | filter_.after(self.version_tmpl.generate(**data))
 
         return stream
