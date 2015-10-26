@@ -22,7 +22,7 @@
 
 from genshi.builder import tag
 
-from trac.core import implements,Component
+from trac.core import implements, Component
 from trac.ticket.api import ITicketActionController
 from trac.env import IEnvironmentSetupParticipant
 from trac.ticket.default_workflow import ConfigurableTicketWorkflow, \
@@ -111,13 +111,13 @@ class AssignReviewerOperation(Component):
         # that the reviewer will change from the current one, add a textbox
         # that contains by default the login name
         elif 'set_reviewer' in operations:
-            id = 'set_reviewer_%s_result' % (action, )
+            id = 'set_reviewer_%s_result' % action
             reviewer = req.args.get(id, req.authname)
             control = tag.input(type='text', value=reviewer, id=id, name=id)
             hints = ('The reviewer will be changed from "%s"' %
                      current_reviewer)
 
-        return (this_action['name'], control, hints)
+        return this_action['name'], control, hints
 
     def get_ticket_changes(self, req, ticket, action):
         """Set or clear the reviewer field according to the requested
@@ -134,7 +134,7 @@ class AssignReviewerOperation(Component):
 
         # For del_reviewer operation: clear the reviewer field
         if 'del_reviewer' in operations:
-            changed_fields = {'reviewer' : ''}
+            changed_fields = {'reviewer': ''}
 
         # For set_reviewer operation: set the reviewer field with by default
         # the login name
@@ -149,10 +149,11 @@ class AssignReviewerOperation(Component):
         """This action controller has no side effects."""
         pass
 
-# Internal functions
+
 def _ticket_field_need_upgrade(config):
     """Check the reviewer field presence"""
     return not config.get("ticket-custom", "reviewer")
+
 
 def _do_ticket_field_upgrade(config):
     """Set the reviewer field"""
