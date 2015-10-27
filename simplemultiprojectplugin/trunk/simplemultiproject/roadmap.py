@@ -247,11 +247,14 @@ class SmpRoadmapProjectFilter(Component):
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
+        path_elms = req.path_info.split('/')
+        if path_elms[1] == 'roadmap':
+            # Add project selection to the roadmap preferences
+            xformer = Transformer('//form[@id="prefs"]')
+            stream = stream | xformer.prepend(create_proj_table(self, self._SmpModel, req))
 
-        # Add project selection to the roadmap preferences
-        xformer = Transformer('//form[@id="prefs"]')
-        stream = stream | xformer.prepend(create_proj_table(self, self._SmpModel, req))
         return stream
+
 
 # Genshi template for creating the project selection
 table_proj = """
