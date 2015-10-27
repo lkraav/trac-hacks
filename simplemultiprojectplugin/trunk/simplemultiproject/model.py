@@ -343,24 +343,6 @@ class SmpModel(Component):
         cursor.execute(query, [project])
         return cursor.fetchall()
 
-    def get_project_milestone(self, milestone):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        name
-                   FROM
-                        smp_project AS p,
-                        smp_milestone_project AS m
-                   WHERE
-                        m.milestone=%s and
-                        m.id_project = p.id_project"""
-
-        cursor.execute(query, [milestone])
-        return cursor.fetchone()
-
     # VersionProject Methods
     def insert_version_project(self, version, id_project):
         query = """INSERT INTO

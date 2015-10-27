@@ -1,120 +1,27 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2011 Christopher Paredes
-#
-
-from genshi.builder import tag
-from genshi.filters.transform import Transformer
-from genshi.input import HTML
-from trac.util.text import to_unicode
-from trac.core import *
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import add_stylesheet
-from operator import itemgetter
-from trac.wiki.formatter import wiki_to_html
-from simplemultiproject.model import *
-from simplemultiproject.model import smp_filter_settings, smp_settings
-from trac import __version__ as VERSION
-from simplemultiproject.smp_model import SmpProject, SmpMilestone
-
-__all__ = ['SmpRoadmapGroup', 'SmpRoadmapProjectFilter']
-
-class SmpRoadmapProjectFilter(Component):
-    """Allows for filtering by 'Project'
-    """
-
-    implements(IRequestFilter, ITemplateStreamFilter)
-
-    def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
-
-    # IRequestFilter methods
-
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith('/roadmap'):
-            filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
-
-            if data:
-                if filter_projects and len(filter_projects) > 0:
-                    milestones = data.get('milestones')
-                    milestones_stats = data.get('milestone_stats')
-
-                    filtered_milestones = []
-                    filtered_milestone_stats = []
-
-                    if milestones:
-                        for idx, milestone in enumerate(milestones):
-                            milestone_name = milestone.name
-                            project = self.__SmpModel.get_project_milestone(milestone_name)
-
-                            if project and project[0] in filter_projects:
-                                filtered_milestones.append(milestone)
-                                filtered_milestone_stats.append(milestones_stats[idx])
-
-                        data['milestones'] = filtered_milestones
-                        data['milestone_stats'] = filtered_milestone_stats
-
-                if VERSION <= '0.12':
-                    data['infodivclass'] = 'info'
-                else:
-                    data['infodivclass'] = 'info trac-progress'
-
-        return template, data, content_type
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename.startswith("roadmap"):
-            filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
-            filter = Transformer('//form[@id="prefs"]/div[1]')
-            stream = stream | filter.before(tag.label("Filter Projects:")) | filter.before(tag.br()) | \
-                     filter.before(self._projects_field_input(req, filter_projects)) | filter.before(tag.br())
-
-        return stream
-
-    # Internal
-
-    def _projects_field_input(self, req, selectedcomps):
-        cursor = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
-
-        sorted_project_names_list = sorted(cursor, key=itemgetter(1))
-        number_displayed_entries = len(sorted_project_names_list)+1     # +1 for special entry 'All'
-        if number_displayed_entries > 15:
-            number_displayed_entries = 15
-
-        select = tag.select(name="filter-projects", id="Filter-Projects", multiple="multiple", size=("%s" % number_displayed_entries), style="overflow:auto;")
-        select.append(tag.option("All", value="All"))
-
-        for component in sorted_project_names_list:
-            project = component[1]
-            if selectedcomps and project in selectedcomps:
-                select.append(tag.option(project, value=project, selected="selected"))
-            else:
-                select.append(tag.option(project, value=project))
-
-        return select
-
-
-######################################################################################################################
-#     Everything below this point is (c) Cinc
-######################################################################################################################
-
-# -*- coding: utf-8 -*-
-#
 # Copyright (C) 2015 Cinc
 #
 # License: 3-clause BSD
 #
-from trac.web.chrome import Chrome
-from smp_model import SmpVersion
+from trac.core import *
+from trac.web.api import IRequestFilter, ITemplateStreamFilter
+from trac.web.chrome import Chrome, add_stylesheet
+from trac.config import OrderedExtensionsOption
+from genshi.template import MarkupTemplate
+from genshi import HTML
+from genshi.filters import Transformer
+from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
+from simplemultiproject.api import IRoadmapDataProvider
+from simplemultiproject.model import SmpModel
+from simplemultiproject.model import smp_filter_settings
+
+__all__ = ['SmpRoadmapGroup', 'SmpRoadmapProjectFilter', 'SmpRoadmapModule']
 
 class SmpRoadmapGroup(Component):
     """Milestone and version grouping by project"""
 
-    implements(IRequestFilter, ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateStreamFilter, IRoadmapDataProvider)
 
     def __init__(self):
         self.group_tmpl = Chrome(self.env).load_template("smp_roadmap.html")
@@ -123,12 +30,24 @@ class SmpRoadmapGroup(Component):
         self.smp_version = SmpVersion(self.env)
         self._SmpModel=SmpModel(self.env)
 
+    # IRoadmapDataProvider
+
+    def add_data(self, req, data):
+        if 'group' in req.args:
+            data['group'] = True
+        return data
+
+    def filter_data(self, req, data):
+        return data
+
+    # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
         path_elms = req.path_info.split('/')
-        if path_elms[1] == 'roadmap':
+        if data and path_elms[1] == 'roadmap':
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
 
@@ -157,7 +76,7 @@ class SmpRoadmapGroup(Component):
                     ids_for_ver = self.smp_version.get_project_ids_for_resource_item('version', item.name)
                     if not ids_for_ver:
                         item.id_project = all_known_proj_ids  # Versions without a project are for all
-                        vers_project_ids = all_known_proj_ids  # List is used to check if there is a version for the proj
+                        vers_project_ids = all_known_proj_ids  # List is used to check if there is a version for proj
                     else:
                         item.id_project = ids_for_ver
 
@@ -172,11 +91,11 @@ class SmpRoadmapGroup(Component):
                 show_proj = [p[0] for p in usr_proj]
 
             data.update({'projects': usr_proj,
-                        'hide': req.args.get('hide', []),
-                        'show': req.args.get('show', []),
-                        'projects_with_ms': ms_project_ids,  # Currently not used in the template
-                        'projects_with_ver': vers_project_ids,  # Currently not used in the template
-                        'visible_projects': show_proj})
+                         'hide': req.args.get('hide', []),
+                         'show': req.args.get('show', []),
+                         'projects_with_ms': ms_project_ids,  # Currently not used in the template
+                         'projects_with_ver': vers_project_ids,  # Currently not used in the template
+                         'visible_projects': show_proj})
 
         return template, data, content_type
 
@@ -199,7 +118,7 @@ class SmpRoadmapGroup(Component):
                                                    '<input type="checkbox" id="groupbyproject" name="group" '
                                                    'value="groupproject" %s />'
                                                    '<label for="groupbyproject">Group by project</label></div><br />' %
-                                                    chked))
+                                                   chked))
             if chked:
                 # Remove contents leaving the preferences
                 filter_ = Transformer('//div[@class="milestones"]')
@@ -209,3 +128,182 @@ class SmpRoadmapGroup(Component):
                 stream = stream | filter_.after(self.group_tmpl.generate(**data))
 
         return stream
+
+
+class SmpRoadmapModule(Component):
+    """Manage roadmap page for projects"""
+
+    implements(IRequestFilter)
+
+    data_provider = OrderedExtensionsOption('simple-multi-project', 'roadmap_data_provider', IRoadmapDataProvider,
+                                            default="SmpVersionProject, SmpRoadmapGroup, SmpRoadmapProjectFilter",
+                                            doc="""Specify the order of plugins providing data for the roadmap page""")
+    data_filters = OrderedExtensionsOption('simple-multi-project', 'roadmap_data_filters', IRoadmapDataProvider,
+                                           default="SmpRoadmapGroup, SmpRoadmapProjectFilter",
+                                           doc="""Specify the order of plugins filtering data for the roadmap page""")
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        """Call extensions adding data or filtering data in the appropriate order."""
+        if data:
+            path_elms = req.path_info.split('/')
+            if path_elms[1] == 'roadmap':
+                for provider in self.data_provider:
+                    data = provider.add_data(req, data)
+
+                for provider in self.data_filters:
+                    data = provider.filter_data(req, data)
+
+        return template, data, content_type
+
+def project_filter_from_req(req):
+    """Get a list of currently user selected projects from a req. If no project is selected return ['All']
+    """
+    filter_proj = req.args.get('filter-projects', 'All')
+
+    if type(filter_proj) is not list:
+        filter_proj = [filter_proj]
+
+    return filter_proj
+
+class SmpRoadmapProjectFilter(Component):
+    """Filter roadmap by project(s)"""
+
+    implements(ITemplateStreamFilter, IRoadmapDataProvider)
+
+    def __init__(self):
+        self._SmpModel = SmpModel(self.env)
+        self.smp_project = SmpProject(self.env)  # For create_projects_table
+        self.smp_milestone = SmpMilestone(self.env)
+        self.smp_version = SmpVersion(self.env)
+
+    # IRoadmapDataProvider
+
+    def add_data(self, req, data):
+        return data
+
+    def filter_data(self, req, data):
+
+        filter_proj = project_filter_from_req(req)
+
+        if 'All' in filter_proj:
+            return data
+
+        # Filter the given data
+        if 'projects' in data:
+            filtered = []
+            for p in data['projects']:
+                if p[1] in filter_proj:
+                    filtered.append(p)
+            data['projects'] = filtered
+
+        if 'milestones' in data:
+            item_stats = data.get('milestone_stats')
+            filtered_items = []
+            filtered_item_stats = []
+            for idx, ms in enumerate(data['milestones']):
+                ms_proj = self.smp_milestone.get_project_names_for_item(ms.name)
+                # Milestones without linked projects are good for every project
+                if not ms_proj:
+                    filtered_items.append(ms)
+                    filtered_item_stats.append(item_stats[idx])
+                else:
+                    # List of project names
+                    for name in ms_proj:
+                        if name in filter_proj:
+                            filtered_items.append(ms)
+                            filtered_item_stats.append(item_stats[idx])
+                            break  # Only add a milstone once
+            data['milestones'] = filtered_items
+            data['milestone_stats'] = filtered_item_stats
+
+        if 'versions' in data:
+            item_stats = data.get('version_stats')
+            filtered_items = []
+            filtered_item_stats = []
+            for idx, ms in enumerate(data['versions']):
+                ms_proj = self.smp_version.get_project_names_for_item(ms.name)
+                # Versions without linked projects are good for every project
+                if not ms_proj:
+                    filtered_items.append(ms)
+                    filtered_item_stats.append(item_stats[idx])
+                else:
+                    # List of project names
+                    for name in ms_proj:
+                        if name in filter_proj:
+                            filtered_items.append(ms)
+                            filtered_item_stats.append(item_stats[idx])
+                            break  # Only add a version once
+
+            data['versions'] = filtered_items
+            data['version_stats'] = filtered_item_stats
+
+        return data
+
+    # ITemplateStreamFilter methods
+
+    def filter_stream(self, req, method, filename, stream, data):
+
+        # Add project selection to the roadmap preferences
+        xformer = Transformer('//form[@id="prefs"]')
+        stream = stream | xformer.prepend(create_proj_table(self, self._SmpModel, req))
+        return stream
+
+# Genshi template for creating the project selection
+table_proj = """
+<div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
+<div>
+<label>Filter Project:</label>
+</div>
+<div>
+<select id="Filter-Projects" name="filter-projects" multiple="multiple" size="$size" style="overflow:auto;">
+    <option value="All" >All</option>
+    <option py:for="prj in all_projects" value="${prj[1]}" selected="${'selected' if prj[1] in filter_prj else None}">
+        ${prj[1]}
+    </option>
+</select>
+</div>
+<br />
+</div>
+"""
+
+
+def create_proj_table(self, _SmpModel, req):
+    """Create a select tag holding valid projects (means not closed) for the current user.
+
+    @param self: Component instance holding a self.smp_project =  SmpProject(env)
+    @param _SmpModel: SmpModel object used for filtering functions
+    @param req      : Trac request object
+
+    @return DIV tag holding a project select control with label
+    """
+    # project[0] is the id, project[1] the name
+    all_projects = [[project[0], project[1]] for project in self.smp_project.get_all_projects()]
+    all_project_names = [name for p_id, name in all_projects]
+
+    # no closed projects
+    for project_name in all_project_names:
+        project_info = _SmpModel.get_project_info(project_name)
+        _SmpModel.filter_project_by_conditions(all_project_names, project_name, project_info, req)
+
+    filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects
+                         if project_name in all_project_names]
+    if filtered_projects:
+        size = len(filtered_projects) + 1  # Account for 'All' option
+    else:
+        return MarkupTemplate('<div xmlns:py="http://genshi.edgewall.org/">'
+                              '<p>No projects defined.</p>'
+                              '<br />'
+                              '</div>').generate()
+    if size > 5:
+        size = 5
+
+    filter_prj = project_filter_from_req(req)  # list of currently selected projects
+    if 'All' in filter_prj:
+        filter_prj = []
+    tbl = MarkupTemplate(table_proj)
+    return tbl.generate(all_projects=filtered_projects, filter_prj=filter_prj, size=size)

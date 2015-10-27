@@ -10,19 +10,17 @@ from simplemultiproject.model import *
 from trac.attachment import AttachmentModule
 from trac.config import ExtensionOption
 from trac.core import *
-from trac.util.text import to_unicode
 from trac.ticket.model import Version, Ticket, TicketSystem
 from trac.ticket.roadmap import apply_ticket_permissions, get_ticket_stats, ITicketGroupStatsProvider, \
     DefaultTicketGroupStatsProvider
 from trac.ticket.query import QueryModule
 from trac.mimeview import Context
-from trac.timeline.api import ITimelineEventProvider
 from trac import __version__ as VERSION
-
 from trac.util.translation import _, tag_
 from trac.util.datefmt import parse_date, utc, to_utimestamp, \
     get_datetime_format_hint, format_date, \
     format_datetime, from_utimestamp
+from api import IRoadmapDataProvider
 
 try:
     from trac.util.datefmt import user_time
@@ -83,7 +81,7 @@ def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component', 
 class SmpVersionProject(Component):
     """Create Project dependent versions"""
 
-    implements(IRequestHandler, IRequestFilter, ITemplateStreamFilter)
+    implements(IRequestHandler, IRequestFilter, ITemplateStreamFilter, IRoadmapDataProvider)
 
     stats_provider = ExtensionOption('roadmap', 'stats_provider',
                                      ITicketGroupStatsProvider,
@@ -147,25 +145,32 @@ class SmpVersionProject(Component):
                 project_name = self.__SmpModel.get_project_version(version.name)
                 if project_name and project_name[0]:
                     self.__SmpModel.check_project_permission(req, project_name[0])
-
-        elif req.path_info.startswith('/roadmap'):
-            hide = smp_settings(req, 'roadmap', 'hide', None)
-            filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
-
-            if data and hide:
-                data['hide'] = hide
-
-            if data and (not hide or 'versions' not in hide):
-                versions, version_stats = self._versions_and_stats(req, filter_projects)
-                data['versions'] = versions
-                data['version_stats'] = version_stats
-
-            if data and hide and 'milestones' in hide:
-                data['milestones'] = []
-                data['milestone_stats'] = []
-
-            #return "roadmap_versions.html", data, content_type
         return template, data, content_type
+
+    # IRoadmapDataProvider
+
+    def add_data(self, req, data):
+
+        hide = smp_settings(req, 'roadmap', 'hide', None)
+
+        # filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
+
+        if data and hide:
+            data['hide'] = hide
+
+        if data and (not hide or 'versions' not in hide):
+            versions, version_stats = self._versions_and_stats(req, None)  # filter_projects)
+            data['versions'] = versions
+            data['version_stats'] = version_stats
+
+        if data and hide and 'milestones' in hide:
+            data['milestones'] = []
+            data['milestone_stats'] = []
+
+        return data
+
+    def filter_data(self, req, data):
+        return data
 
     # ITemplateStreamFilter methods
 
@@ -484,6 +489,7 @@ from smp_model import SmpVersion
 from genshi import HTML
 from trac.web.chrome import Chrome
 from admin_filter import SmpFilterDefaultVersionPanels
+
 
 class SmpVersionModule(Component):
     """Module to keep version information for projects up to date when SmpFilterDefaultVersionPanel is deactivated."""

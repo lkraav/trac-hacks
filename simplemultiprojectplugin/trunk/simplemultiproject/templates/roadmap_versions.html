@@ -7,6 +7,7 @@
     <!--! Versions -->
 
     <py:if test="smp_render == 'versions'">
+        <hr py:if="versions and milestones"  />
     <div py:for="idx, version in enumerate(versions)" class="milestone">
       <div class="${infodivclass}" py:with="mstats = version_stats[idx]">
         <h2><a href="${href.version(version.name)}">
