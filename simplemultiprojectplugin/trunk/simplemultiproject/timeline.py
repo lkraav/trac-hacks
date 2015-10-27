@@ -1,132 +1,100 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012 Thomas Doering, falkb
+# Copyright (C) 2015 Cinc
+#
+# License: 3-clause BSD
 #
 
-from genshi.builder import tag
-from genshi.filters.transform import Transformer
-from trac.ticket.model import Ticket
-from simplemultiproject.model import *
-from trac.util.text import to_unicode
-from trac.util.html import Markup, unescape
 from trac.core import *
+from trac.ticket.model import Ticket
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from operator import itemgetter
-from simplemultiproject.model import smp_filter_settings
+from genshi.builder import tag
+from genshi.filters import Transformer
+from simplemultiproject.model import *
+from simplemultiproject.roadmap import create_proj_table, project_filter_from_req
+from simplemultiproject.smp_model import SmpProject
+
+__author__ = 'Cinc'
+
 
 class SmpTimelineProjectFilter(Component):
-    """Allows for filtering by 'Project'
-    """
-    _old_render_fn = []
-    _current_project = []
-    _read_idx = -1
-    
-    implements(IRequestFilter, ITemplateStreamFilter)
-    
-    def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
+    """Allow filtering of timeline by projects."""
 
-    # IRequestFilter methods
+    implements(IRequestFilter, ITemplateStreamFilter)
+
+    def __init__(self):
+        self._SmpModel =  SmpModel(self.env)
+        self.smp_project = SmpProject(self.env)
+
+    # IRequestFilter
 
     def pre_process_request(self, req, handler):
         return handler
-        
-    def post_process_request(self, req, template, data, content_type):
-        if template == 'timeline.html':
-            filter_off = False
-            displayed_projects = self._filtered_projects(req)
-            if not displayed_projects: #no filter means likely more than 1 project, so we insert the project name
-                filter_off = True
-                displayed_projects = [project[1] for project in self.__SmpModel.get_all_projects()]
 
-            if displayed_projects:
-                filtered_events = []
-                tickettypes = ("newticket", "editedticket", "closedticket", "attachment", "reopenedticket")
-                self._old_render_fn = []
-                self._current_project = []
-                self._read_idx = -1
-                for event in data['events']:
-                    if event['kind'] in tickettypes:
-                        resource = event['kind'] == "attachment" and event['data'][0].parent or event['data'][0]
-                        if resource.realm == "ticket":
-                            ticket = Ticket( self.env, resource.id )   
-                            project = ticket.get_value_or_default('project')
-                            if not project:
-                                if filter_off: #display all tickets without a set project
-                                    filtered_events.append(event)
-                            elif project in displayed_projects:
-                                if len(displayed_projects) > 1: #only if more than 1 filtered project
-                                    #store the old render function and the project to be inserted
-                                    self._old_render_fn.append(event['render'])
-                                    self._current_project.append(project)
-                                    #redirect to our new render function (which will insert the project name)
-                                    event['render'] = self._render_ticket_event
-                                #add to the list of displayed events
-                                filtered_events.append(event)
-                        elif resource.realm == "wiki":
-                            filtered_events.append(event)
-                    else:
+    def post_process_request(self, req, template, data, content_type):
+        path_elms = req.path_info.split('/')
+        if data and path_elms[1] == 'timeline':
+            # These are the defined events for the ticket subsystem
+            ticket_kinds = ['newticket', 'closedticket', 'reopenedticket', 'editedticket', 'attachment']
+            proj_filter = project_filter_from_req(req)  # This returns a list of names
+            filtered_events = []
+
+            for event in data.get('events'):
+                resource = event['data'][0].parent if event['kind'] == 'attachment' else event['data'][0]
+                if event['kind'] in ticket_kinds and 'All' not in proj_filter and resource.realm == 'ticket':
+                    # We have some ticket event, maybe attachment to ticket
+                    tkt = Ticket(self.env, resource.id)
+                    if tkt['project'] in proj_filter:
+                        # New render function enhancing the title
+                        event['render'] = self._lambda_render_func(tkt['project'], event['render'])
                         filtered_events.append(event)
-    
-                data['events'] = filtered_events
+                else:
+                    filtered_events.append(event)  # Show this event
+            data['events'] = filtered_events
 
         return template, data, content_type
 
-    # ITemplateStreamFilter methods
+    # ITemplateStreamFilter
 
     def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'timeline.html':
-            filter_projects = self._filtered_projects(req) 
-
-            filter = Transformer('//form[@id="prefs"]/div[1]')
-            stream = stream | filter.before(tag.label("Filter Projects:")) | filter.before(tag.br()) | filter.before(self._projects_field_input(req, filter_projects)) | filter.before(tag.br()) | filter.before(tag.br())
+        path_elms = req.path_info.split('/')
+        if path_elms[1] == 'timeline':
+            # Add project selection to the roadmap preferences
+            xformer = Transformer('//form[@id="prefs"]')
+            stream = stream | xformer.prepend(create_proj_table(self, self._SmpModel, req))
 
         return stream
 
+    def _lambda_render_func(self, proj_name, old_render):
+        """Lambda function which saves some parameters for our private render function.
+
+        The timeline module calls render functions only with parameter field and context. In our private render
+        function we need more information.
+        So we replace the original render function stored in the event data with this one while storing the original
+        pointer to the render function and the project name within this lambda. When the timeline module calls our
+        own function field and context are forwarded together with our stored parameters.
+        """
+        return lambda field, context: self._render_ticket_event(field, context, proj_name, old_render)
+
     # Internal
-    def _render_ticket_event(self, field, context):
-        if (field == 'url'):
-            self._read_idx += 1 #next index now
+    def _render_ticket_event(self, field, context, proj_name=None, old_render=None):
+        """New render function which will render a ticket title with project name
 
-        if self._read_idx < len(self._old_render_fn):
-            #call the original render function
-            output = self._old_render_fn[self._read_idx](field, context)
-    
-            if field == 'title': #now it's time to insert the project name
-                #split the whole string until we can insert
-                splitted_output = to_unicode(output).split("</em>")
-                tooltip = splitted_output[0].split('\"')
-                ticket_no = splitted_output[0].split('>')
-                if len(tooltip) == 3: #it's a ticket
-                    #now rebuild the puzzle by inserting the name
-                    ticket_summary = unescape(Markup(tooltip[1]))
-                    msg_text = unescape(Markup(splitted_output[1]))
-                    proj = self._current_project[self._read_idx]
-                    output = tag('Ticket' + ' ', tag.em(ticket_no[1], title=ticket_summary), ' ', tag.span(proj, style="background-color: #ffffd0;"), msg_text)
-                elif len(tooltip) == 1 and len(splitted_output) == 3: #it's an attachment
-                    output += tag(' ', tag.span(self._current_project[self._read_idx], style="background-color: #ffffd0;"))
-            return output
-
-    def _projects_field_input(self, req, selectedcomps):
-        cursor = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
-
-        sorted_project_names_list = sorted(cursor, key=itemgetter(1))
-        number_displayed_entries = len(sorted_project_names_list)+1     # +1 for special entry 'All'
-        if number_displayed_entries > 15:
-            number_displayed_entries = 15
-
-        select = tag.select(name="filter-projects", id="filter-projects", multiple="multiple", size=("%s" % number_displayed_entries), style="overflow:auto;")
-        select.append(tag.option("All", value="All"))
-        
-        for component in sorted_project_names_list:
-            project = to_unicode(component[1])
-            if selectedcomps and project in selectedcomps:
-                select.append(tag.option(project, value=project, selected="selected"))
+        @param field: see render_timeline_event of ITimelineEventProvider
+        @param context: see render_timeline_event of ITimelineEventProvider
+        @param proj_name: Name of the project this event belongs too
+        @param old_render: original render function associated with the timeline event
+        """
+        if old_render:
+            tags = old_render(field, context)  # Let the ticket subsystem render the default
+            if field == 'title':
+                new_children = [tag.span(u"%s:" % proj_name), " "]  # prepend the project name to the title
+                tags.children = new_children + tags.children
+            return tags
+        else:
+            # We shouldn't end up here...
+            self.env.log.error("Function for rendering timeline event is 'None'.")
+            if field == 'title':
+                return tag.em("Internal error in component %s" % self.__class__.__name__)
             else:
-                select.append(tag.option(project, value=project))
-        return select
-        
-    def _filtered_projects(self, req):
-        filtered_projects = smp_filter_settings(req, 'timeline', 'projects')
-
-        return filtered_projects
+                return tag("")
