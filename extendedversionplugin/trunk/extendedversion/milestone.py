@@ -101,9 +101,9 @@ class MilestoneVersion(Component):
         def apply_version():
             return self._version_display(req, buffer.events[1][1])
 
-        filter = Transformer('//li[@class="milestone"]/div/h2/a/em') \
+        filter = Transformer('//*[@class="milestone"]/div/h2/a/em') \
             .copy(buffer).end() \
-            .select('//li[@class="milestone"]//p[@class="date"]') \
+            .select('//*[@class="milestone"]//p[@class="date"]') \
             .append(apply_version)
         return stream | filter
 
