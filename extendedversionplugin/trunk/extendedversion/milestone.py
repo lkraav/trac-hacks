@@ -18,6 +18,8 @@ from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import INavigationContributor
 from trac.wiki.formatter import format_to_oneliner
 
+from extendedversion.version import VisibleVersion
+
 
 class MilestoneVersion(Component):
     """Add a 'Version' attribute to milestones.
@@ -116,13 +118,11 @@ class MilestoneVersion(Component):
         row = cursor.fetchone()
 
         if row:
-            context = Context.from_request(req,
-                                           Resource('milestone', milestone))
-            return tag.span(
-                "; ",
-                format_to_oneliner(self.env, context,
-                                   "For version:%s" % (row[0],)),
-                class_="date")
+            ver = row[0]
+            resource = Resource('milestone', milestone)
+            context = Context.from_request(req, resource)
+            link = VisibleVersion(self.env)._render_link(context, ver, ver)
+            return tag.span("; For ", link, class_='date')
         else:
             return []
 
