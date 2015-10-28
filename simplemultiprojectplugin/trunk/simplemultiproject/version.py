@@ -44,7 +44,7 @@ from datetime import datetime, timedelta
 from pkg_resources import resource_filename
 from operator import itemgetter
 import re
-
+from simplemultiproject.session import get_filter_settings
 
 def get_tickets_for_any(env, db, any_name, any_value, field='component'):
     cursor = db.cursor()
@@ -151,9 +151,13 @@ class SmpVersionProject(Component):
 
     def add_data(self, req, data):
 
-        hide = smp_settings(req, 'roadmap', 'hide', None)
-
-        # filter_projects = smp_filter_settings(req, 'roadmap', 'projects')
+        hide = []
+        if get_filter_settings(req, 'roadmap', 'smp_hideversions'):
+            hide.append('versions')
+        if get_filter_settings(req, 'roadmap', 'smp_hidemilestones'):
+            hide.append('milestones')
+        if get_filter_settings(req, 'roadmap', 'smp_hideprojdesc'):
+            hide.append('projectdescription')
 
         if data and hide:
             data['hide'] = hide
@@ -551,7 +555,7 @@ class SmpVersionModule(Component):
             stream = stream | filter_.prepend(self.version_tmpl.generate(**data))
 
             # Add versions to page
-            if 'group' not in req.args:  # Roadmap group plugin is grouping by project
+            if 'smp_groupproject' not in data:  # Roadmap group plugin is grouping by project
                 data['infodivclass'] = self.infodivclass
                 data['smp_render'] = 'versions'  # Specify part of template to be rendered
                 filter_ = Transformer('//div[@class="milestones"]')

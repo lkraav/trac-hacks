@@ -14,9 +14,10 @@ from genshi.filters import Transformer
 from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.model import SmpModel
-from simplemultiproject.model import smp_filter_settings
+from simplemultiproject.session import get_project_filter_settings, get_filter_settings
 
 __all__ = ['SmpRoadmapGroup', 'SmpRoadmapProjectFilter', 'SmpRoadmapModule']
+
 
 class SmpRoadmapGroup(Component):
     """Milestone and version grouping by project"""
@@ -33,8 +34,9 @@ class SmpRoadmapGroup(Component):
     # IRoadmapDataProvider
 
     def add_data(self, req, data):
-        if 'group' in req.args:
-            data['group'] = True
+        group_proj = get_filter_settings(req, 'roadmap', 'smp_group')
+        if group_proj:
+            data['smp_groupproject'] = True
         return data
 
     def filter_data(self, req, data):
@@ -51,6 +53,7 @@ class SmpRoadmapGroup(Component):
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
 
+            # TODO: this stuff probably should be in filter_data()
             # Get list of projects for this user. Any permission filter is applied
             all_proj = self._SmpModel.get_all_projects_filtered_by_conditions(req)  # This is a list of tuples
             usr_proj = [project for project in sorted(all_proj, key=lambda k: k[1])]
@@ -80,8 +83,10 @@ class SmpRoadmapGroup(Component):
                     else:
                         item.id_project = ids_for_ver
 
-            filter_project = smp_filter_settings(req, 'roadmap', 'projects')
-            if filter_project:
+            # TODO: don't access private filter data here. This may fail if filter plugin is disabled later on
+            filter_project = get_project_filter_settings(req, 'roadmap', 'smp_projects')
+            print "    ######## cur proj", filter_project
+            if filter_project and 'All' not in filter_project:
                 l = []
                 for p in usr_proj:
                     if p[1] in filter_project:
@@ -91,8 +96,7 @@ class SmpRoadmapGroup(Component):
                 show_proj = [p[0] for p in usr_proj]
 
             data.update({'projects': usr_proj,
-                         'hide': req.args.get('hide', []),
-                         'show': req.args.get('show', []),
+                         'show': req.args.get('show', []),  # TODO: is this used at all?
                          'projects_with_ms': ms_project_ids,  # Currently not used in the template
                          'projects_with_ver': vers_project_ids,  # Currently not used in the template
                          'visible_projects': show_proj})
@@ -109,14 +113,17 @@ class SmpRoadmapGroup(Component):
             stream = stream | filter_.replace(HTML('<label for="showcompleted">Show completed milestones and '
                                                    'versions</label>'))
             # Add additional checkboxes to preferences
-            data['smp_render'] = 'prefs'
+            data['smp_render'] = 'prefs'  # specify which part of template to render
+
+            group_proj = get_filter_settings(req, 'roadmap', 'smp_group')
             chked = ''
-            if 'group' in req.args:
+            if group_proj:
                 chked = 'checked="1"'
             filter_ = Transformer('//form[@id="prefs"]')
             stream = stream | filter_.prepend(HTML('<div>'
-                                                   '<input type="checkbox" id="groupbyproject" name="group" '
-                                                   'value="groupproject" %s />'
+                                                   '<input type="hidden" name="smp_update" value="group" />'
+                                                   '<input type="checkbox" id="groupbyproject" name="smp_group" '
+                                                   'value="1" %s />'
                                                    '<label for="groupbyproject">Group by project</label></div><br />' %
                                                    chked))
             if chked:
@@ -160,16 +167,6 @@ class SmpRoadmapModule(Component):
 
         return template, data, content_type
 
-def project_filter_from_req(req):
-    """Get a list of currently user selected projects from a req. If no project is selected return ['All']
-    """
-    filter_proj = req.args.get('filter-projects', 'All')
-
-    if type(filter_proj) is not list:
-        filter_proj = [filter_proj]
-
-    return filter_proj
-
 class SmpRoadmapProjectFilter(Component):
     """Filter roadmap by project(s)"""
 
@@ -188,7 +185,7 @@ class SmpRoadmapProjectFilter(Component):
 
     def filter_data(self, req, data):
 
-        filter_proj = project_filter_from_req(req)
+        filter_proj = get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')
 
         if 'All' in filter_proj:
             return data
@@ -263,7 +260,8 @@ table_proj = """
 <label>Filter Project:</label>
 </div>
 <div>
-<select id="Filter-Projects" name="filter-projects" multiple="multiple" size="$size" style="overflow:auto;">
+<input type="hidden" name="smp_update" value="filter" />
+<select id="Filter-Projects" name="smp_projects" multiple="multiple" size="$size" style="overflow:auto;">
     <option value="All" >All</option>
     <option py:for="prj in all_projects" value="${prj[1]}" selected="${'selected' if prj[1] in filter_prj else None}">
         ${prj[1]}
@@ -305,7 +303,7 @@ def create_proj_table(self, _SmpModel, req):
     if size > 5:
         size = 5
 
-    filter_prj = project_filter_from_req(req)  # list of currently selected projects
+    filter_prj = get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')  # list of currently selected projects
     if 'All' in filter_prj:
         filter_prj = []
     tbl = MarkupTemplate(table_proj)

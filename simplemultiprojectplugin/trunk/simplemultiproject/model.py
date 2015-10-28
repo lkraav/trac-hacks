@@ -11,44 +11,6 @@ from trac.perm import PermissionSystem, IPermissionGroupProvider
 from trac.db import with_transaction
 from environmentSetup import db_version_key, db_version
 
-def smp_settings(req, context, kind, name=None):
-
-    if name:
-        settings_name = '%s-%s' % (kind, name)
-        settings_settings = '%s.%s.%s' % (context, kind, name)
-    else:
-        settings_name = '%s' % kind
-        settings_settings = '%s.%s' % (context, kind)
-
-    settings = req.args.get(settings_name)
-    if type(settings) is list:
-        new_settings = u''
-        for setting in settings:
-            new_settings = "%s,///,%s" % (setting, new_settings)
-
-        settings = new_settings
-
-    # check session attribtes
-    if not settings:
-        if req.session.has_key(settings_settings):
-            settings = req.session[settings_settings]
-    else:
-        req.session[settings_settings] = settings
-
-    if settings is None:
-        return None
-    else:
-        return settings.split(",///,")
-
-
-def smp_filter_settings(req, context, name):
-    settings = smp_settings(req, context, 'filter', name)
-
-    if settings and u'All' in settings:
-        settings = None
-
-    return settings
-
 
 class SmpModel(Component):
     # needed in self.is_not_in_restricted_users()

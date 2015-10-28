@@ -11,8 +11,9 @@ from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from genshi.builder import tag
 from genshi.filters import Transformer
 from simplemultiproject.model import *
-from simplemultiproject.roadmap import create_proj_table, project_filter_from_req
+from simplemultiproject.roadmap import create_proj_table
 from simplemultiproject.smp_model import SmpProject
+from simplemultiproject.session import get_project_filter_settings
 
 __author__ = 'Cinc'
 
@@ -36,7 +37,7 @@ class SmpTimelineProjectFilter(Component):
         if data and path_elms[1] == 'timeline':
             # These are the defined events for the ticket subsystem
             ticket_kinds = ['newticket', 'closedticket', 'reopenedticket', 'editedticket', 'attachment']
-            proj_filter = project_filter_from_req(req)  # This returns a list of names
+            proj_filter = get_project_filter_settings(req, 'timeline', 'smp_projects', 'All')  # This returns a list of names
             filtered_events = []
 
             for event in data.get('events'):

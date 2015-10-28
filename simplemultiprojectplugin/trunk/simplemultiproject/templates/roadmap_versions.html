@@ -38,18 +38,18 @@
 
     <py:if test="smp_render == 'prefs'">
         <div>
-              <input type="hidden" name="hide" id="hideall" value="none" />
-              <input type="checkbox" id="hideversions" name="hide" value="versions"
+              <input type="hidden" name="smp_update" id="smp_update_version" value="1" />
+              <input type="checkbox" id="hideversions" name="smp_hideversions" value="1"
                      checked="${'versions' in hide or None}" />
-              <label for="hideall">${_('Hide versions')}</label>
+              <label for="hideversions">${_('Hide versions')}</label>
         </div>
         <div>
-              <input type="checkbox" id="hidemilestones" name="hide" value="milestones"
+              <input type="checkbox" id="hidemilestones" name="smp_hidemilestones" value="1"
                      checked="${'milestones' in hide or None}" />
               <label for="hidemilestones">${_('Hide milestones')}</label>
         </div>
         <div>
-              <input type="checkbox" id="hideprojectdescription" name="hide" value="projectdescription"
+              <input type="checkbox" id="hideprojectdescription" name="smp_hideprojdesc" value="1"
                      checked="${'projectdescription' in hide or None}" />
               <label for="hideprojectdescription">${_('Hide project descriptions')}</label>
         </div>
