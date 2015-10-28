@@ -85,7 +85,7 @@ class SmpRoadmapGroup(Component):
 
             # TODO: don't access private filter data here. This may fail if filter plugin is disabled later on
             filter_project = get_project_filter_settings(req, 'roadmap', 'smp_projects')
-            print "    ######## cur proj", filter_project
+
             if filter_project and 'All' not in filter_project:
                 l = []
                 for p in usr_proj:
