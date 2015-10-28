@@ -43,10 +43,6 @@ class SmpModel(Component):
 
     # Commons Methods
     def get_project_info(self, name):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
         query = """SELECT
                         id_project,name,summary,description,closed,restrict_to
                    FROM
@@ -54,28 +50,18 @@ class SmpModel(Component):
                    WHERE
                         name = %s"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         cursor.execute(query, [unicode(name)])
         return  cursor.fetchone()
 
     def get_all_projects(self):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
         query = """SELECT
                         id_project,name,summary,description,closed,restrict_to
                    FROM
                         smp_project"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         cursor.execute(query)
 
@@ -146,10 +132,7 @@ class SmpModel(Component):
         return False
 
     def get_project_name(self, project_id):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
                         name
@@ -175,45 +158,29 @@ class SmpModel(Component):
                       WHERE
                         name = 'project' AND value = %s"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [new_project_name, old_project_name])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [new_project_name, old_project_name])
 
     # AdminPanel Methods
     def insert_project(self, name, summary, description, closed, restrict):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
         query    = """INSERT INTO
                         smp_project (name, summary, description, closed, restrict_to)
                       VALUES (%s, %s, %s, %s, %s);"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [name, summary, description, closed, restrict])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [name, summary, description, closed, restrict])
 
         # Keep internal list of values for ticket-custom field 'project' updated. This list is used for the dropdown
         # on the query page
         self.get_all_projects()
 
     def delete_project(self, ids_projects):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             for id in ids_projects:
                 query = """DELETE FROM smp_project WHERE id_project=%s"""
@@ -224,31 +191,12 @@ class SmpModel(Component):
                 cursor.execute(query, [id])
                 query = """DELETE FROM smp_component_project WHERE id_project=%s;"""
                 cursor.execute(query, [id])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                for id in ids_projects:
-                    query = """DELETE FROM smp_project WHERE id_project=%s"""
-                    cursor.execute(query, [id])
-                    query = """DELETE FROM smp_milestone_project WHERE id_project=%s;"""
-                    cursor.execute(query, [id])
-                    query = """DELETE FROM smp_version_project WHERE id_project=%s;"""
-                    cursor.execute(query, [id])
-                    query = """DELETE FROM smp_component_project WHERE id_project=%s;"""
-                    cursor.execute(query, [id])
 
         # Keep internal list of values for ticket-custom field 'project' updated. This list is used for the dropdown
         # on the query page
         self.get_all_projects()
 
     def update_project(self, id, name, summary, description, closed, restrict):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
-
         query = """UPDATE
                         smp_project
                       SET
@@ -256,23 +204,14 @@ class SmpModel(Component):
                       WHERE
                         id_project = %s"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [name, summary, description, closed, restrict, id])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [name, summary, description, closed, restrict, id])
 
     # Ticket Methods
     def get_ticket_project(self, id):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT value
                    FROM
@@ -284,14 +223,10 @@ class SmpModel(Component):
 
         return cursor.fetchone()
 
-
     # MilestoneProject Methods
 
     def get_milestones_of_project(self,project):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
                         m.milestone AS milestone
@@ -311,22 +246,13 @@ class SmpModel(Component):
                         smp_version_project(version, id_project)
                     VALUES (%s, %s)"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [version, str(id_project)])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [version, str(id_project)])
 
     def get_versions_of_project(self, project):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
                         m.version AS version
@@ -341,10 +267,7 @@ class SmpModel(Component):
         return sorted(cursor.fetchall())
 
     def get_project_version(self, version):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
                         name
@@ -359,10 +282,7 @@ class SmpModel(Component):
         return cursor.fetchone()
 
     def get_id_project_version(self, version):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
                         id_project
@@ -380,16 +300,10 @@ class SmpModel(Component):
                    WHERE
                         version=%s;"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [version])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [version])
 
     def update_version_project(self, version, project):
         query = """UPDATE
@@ -397,16 +311,10 @@ class SmpModel(Component):
                    SET
                         id_project=%s WHERE version=%s;"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [str(project), version])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [str(project), version])
 
     def rename_version_project(self, old_version, new_version):
         query = """UPDATE
@@ -414,16 +322,10 @@ class SmpModel(Component):
                    SET
                         version=%s WHERE version=%s;"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [new_version, old_version])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [new_version, old_version])
 
     # ComponentProject Methods
     def insert_component_projects(self, component, id_projects):
@@ -433,26 +335,15 @@ class SmpModel(Component):
         if type(id_projects) is not list:
             id_projects = [id_projects]
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             for id_project in id_projects:
                 query = """INSERT INTO smp_component_project(component, id_project) VALUES (%s, %s)"""
                 cursor.execute(query, [component, id_project])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                for id_project in id_projects:
-                    query = """INSERT INTO smp_component_project(component, id_project) VALUES (%s, %s)"""
-                    cursor.execute(query, [component, id_project])
 
     def get_projects_component(self, component):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
                         name
@@ -467,10 +358,7 @@ class SmpModel(Component):
         return cursor.fetchall()
 
     def get_id_projects_component(self, component):
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
-        else:
-            db = self.env.get_read_db()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
                         id_project
@@ -488,16 +376,10 @@ class SmpModel(Component):
                    WHERE
                         component=%s;"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [component])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [component])
 
     def rename_component_project(self, old_component, new_component):
         query = """UPDATE
@@ -505,23 +387,18 @@ class SmpModel(Component):
                    SET
                         component=%s WHERE component=%s;"""
 
-        if VERSION < '0.12':
-            db = self.env.get_db_cnx()
+        @with_transaction(self.env)
+        def execute_sql_statement(db):
             cursor = db.cursor()
             cursor.execute(query, [new_component, old_component])
-            self.__start_transaction(db)
-        else:
-            @with_transaction(self.env)
-            def execute_sql_statement(db):
-                cursor = db.cursor()
-                cursor.execute(query, [new_component, old_component])
 
     def is_milestone_completed(self, milestone_name):
-        db = self.env.get_db_cnx()
+        db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT completed FROM milestone WHERE name=%s;"""
         cursor.execute(query, [milestone_name])
         msCompletedDate = cursor.fetchone()
+
         if msCompletedDate and msCompletedDate[0] > 0:
             return True
         return False
