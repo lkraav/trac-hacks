@@ -5,10 +5,9 @@ from setuptools import setup
 
 setup(
     name = 'TracMultiSelectField',
-    version = '1.0.0',
+    version = '1.0.1',
     packages = ['multiselectfield'],
-    package_data = { 'multiselectfield': ['htdocs/*.css', 
-        'htdocs/*.js', 'htdocs/*.png' ] },
+    package_data = { 'multiselectfield': ['htdocs/*.css', 'htdocs/*.js', 'htdocs/*.png' ] },
     author = 'Olli Kallioinen',
     author_email = 'olli.kallioinen@iki.fi',
     description = 'A plugin providing a multiselection custom ticket field.',
