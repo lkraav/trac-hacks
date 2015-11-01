@@ -15,6 +15,7 @@ from trac.test import EnvironmentStub
 
 from themeengine.api import IThemeProvider, ThemeEngineSystem, ThemeBase
 
+
 class FullTheme(Component):
     implements(IThemeProvider)
 
@@ -48,7 +49,7 @@ class ThemeSystemTestCase(unittest.TestCase):
 
         env.config.set('theme', 'theme', 'default')
         self.assertTrue(self.themesys.is_active_theme('default'))
-        self.assertTrue(self.themesys.is_active_theme('default', 
+        self.assertTrue(self.themesys.is_active_theme('default',
                                                       self.themesys))
         self.assertFalse(self.themesys.is_active_theme('full'))
         self.assertFalse(self.themesys.is_active_theme('quick'))
@@ -65,7 +66,7 @@ class ThemeSystemTestCase(unittest.TestCase):
 
         env.config.set('theme', 'theme', 'wrong')
         self.assertTrue(self.themesys.is_active_theme('default'))
-        self.assertTrue(self.themesys.is_active_theme('default', 
+        self.assertTrue(self.themesys.is_active_theme('default',
                                                       self.themesys))
         self.assertFalse(self.themesys.is_active_theme('full'))
         self.assertFalse(self.themesys.is_active_theme('quick'))
@@ -92,7 +93,7 @@ class ThemeSystemTestCase(unittest.TestCase):
                                                       QuickTheme(env)))
         self.assertTrue(QuickTheme(env).is_active_theme)
         self.assertFalse(self.themesys.is_active_theme('quick',
-                                                      FullTheme(env)))
+                                                       FullTheme(env)))
 
 
 def test_suite():
@@ -102,4 +103,3 @@ def test_suite():
 
 if __name__ == '__main__':
     unittest.main(suite=test_suite)
-

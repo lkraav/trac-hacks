@@ -25,7 +25,7 @@ class SimpleThemeAdminModule(Component):
     """An admin panel for ThemeEngine."""
 
     implements(IAdminPanelProvider, IPermissionRequestor, ITemplateProvider, IRequestHandler)
-    
+
     def __init__(self):
         self.system = ThemeEngineSystem(self.env)
 
@@ -38,9 +38,9 @@ class SimpleThemeAdminModule(Component):
         if req.method == 'POST':
             self.config.set('theme', 'theme', req.args['theme'].lower())
             self.config.save()
-            
-            req.redirect(req.href.admin(cat, page)) 
-        
+
+            req.redirect(req.href.admin(cat, page))
+
         data = {
             'themeengine': {
                 'info': self.system.info.items(),
@@ -64,7 +64,7 @@ class SimpleThemeAdminModule(Component):
                 break
         data['themeengine']['current_index'] = index
         data['themeengine']['current_theme'] = curtheme
-            
+
         #add_stylesheet(req, 'themeengine/jquery.jcarousel.css')
         #add_stylesheet(req, 'themeengine/skins/tango/skin.css')
         #add_script(req, 'themeengine/jquery.jcarousel.pack.js')
@@ -73,38 +73,38 @@ class SimpleThemeAdminModule(Component):
         add_stylesheet(req, 'themeengine/cycle2.css')
         #add_script(req, 'themeengine/jcarousellite_1.0.1.js')
         return 'admin_theme.html', data
-        
+
     # IPermissionRequestor methods
     def get_permission_actions(self):
         yield 'THEME_ADMIN'
-        
+
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
         yield 'themeengine', resource_filename(__name__, 'htdocs')
-            
+
     def get_templates_dirs(self):
         yield resource_filename(__name__, 'templates')
-        
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/themeengine')
-    
+
     def process_request(self, req):
         data = {}
-        
+
         path_info = req.path_info[13:]
         if path_info.startswith('screenshot/'):
             return self._send_screenshot(req, data, path_info[11:])
         elif path_info == 'theme.css':
             req.send_file(os.path.join(self.env.path, 'htdocs', 'theme.css'), 'text/css')
-        
+
         raise HTTPNotFound("The requested URL was not found on this server")
-    
+
     def _send_screenshot(self, req, data, name):
         if name not in self.system.info:
             raise HTTPNotFound("Invalid theme name '%s'", name)
         theme = self.system.info[name]
-        
+
         if 'screenshot' in theme:
             img = resource_string(theme['module'], theme['screenshot'])
         else:
@@ -131,7 +131,7 @@ class CustomThemeAdminModule(Component):
             'themes': self.system.info.items(),
             '_dgettext' : dgettext,
         }
-        
+
         theme_name = self.system.theme_name or 'Default'
         data['current'] = theme_name
         index = 0
@@ -143,7 +143,7 @@ class CustomThemeAdminModule(Component):
                 break
         data['current_index'] = index
         data['current_theme'] = curtheme
-        
+
         colors = {}
         if curtheme:
             for name, prop, selector in curtheme.get('colors', ()):
@@ -163,21 +163,21 @@ class CustomThemeAdminModule(Component):
         data['enable'] = self.config.getbool('theme', 'enable_css', False)
         if page == 'advanced' and os.path.exists(os.path.join(self.env.path, 'htdocs', 'theme.css')):
             data['css'] = open(os.path.join(self.env.path, 'htdocs', 'theme.css')).read()
-        
+
         if req.method == 'POST':
             if 'enable_css' in req.args:
                 self.config.set('theme', 'enable_css', 'enabled')
             else:
                 self.config.set('theme', 'enable_css', 'disabled')
-            
+
             for key, value in self.config.options('theme'):
                 if key.startswith('color.'):
                     self.config.remove('theme', key)
-            
+
             for name, color in colors.iteritems():
                 color = req.args.get('color_'+name, color)
                 self.config.set('theme', 'color.'+name, color)
-            
+
             f = open(os.path.join(self.env.path, 'htdocs', 'theme.css'), 'w')
             if page == 'advanced':
                 f.write(req.args.get('css', ''))
@@ -189,10 +189,10 @@ class CustomThemeAdminModule(Component):
                     f.write('  %s: %s;\n'%(prop, color))
                     f.write('}\n\n')
             f.close()
-            
+
             self.config.save()
-            req.redirect(req.href.admin(cat, page)) 
-        
+            req.redirect(req.href.admin(cat, page))
+
         add_stylesheet(req, 'themeengine/farbtastic/farbtastic.css')
         add_stylesheet(req, 'themeengine/admin.css')
         add_script(req, 'themeengine/farbtastic/farbtastic.js')
@@ -201,5 +201,3 @@ class CustomThemeAdminModule(Component):
             return 'admin_theme_advanced.html', data
         else:
             return 'admin_theme_custom.html', data
-
-

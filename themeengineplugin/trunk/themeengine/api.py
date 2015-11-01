@@ -21,12 +21,14 @@ try:
 except ImportError:
     lazy = None
 
+
 class ThemeNotFound(TracError):
     """The requested theme isn't found."""
 
     def __init__(self, name):
         self.theme_name = name
         TracError.__init__(self, 'Unknown theme %s' % name)
+
 
 class IThemeProvider(Interface):
     """An interface to provide style information."""
@@ -35,14 +37,14 @@ class IThemeProvider(Interface):
         """Return an iterable of names."""
 
     def get_template_overrides(name):
-        """(Optional) local changes to specific templates 
+        """(Optional) local changes to specific templates
 
         Return a sequence of tuples (old_html, new_html, function) where
 
          old_html::
            The name of the template overriden by this theme.
          new_html::
-           The name of the template file replacing the former. 
+           The name of the template file replacing the former.
          function::
            Optional callback (or None) to add further data . Signature:
                    req::
@@ -63,7 +65,7 @@ class IThemeProvider(Interface):
          description::
            A brief description of the theme.
          template::
-           The name of the theme template file. 
+           The name of the theme template file.
          css::
            The filename of the CSS file.
          disable_trac_css::
@@ -78,12 +80,13 @@ class IThemeProvider(Interface):
            A list of (name, {color-name: value, ...}) tuples.
          scripts::
            A list of (filename, mimetype, charset, ie_if) respectively for
-           script (relative | absolute) URI (mandatory), 
+           script (relative | absolute) URI (mandatory),
            script MIME type (optional , defaults to 'text/javascript'),
            script charset encoding (optional, defaults to 'utf-8'),
            and a bool flag for MSIE-only shims (optional, defaults to False)
            @since 2.2.2
         """
+
 
 class ThemeEngineSystem(Component):
     """Central functionality for the theme system."""
@@ -111,7 +114,7 @@ class ThemeEngineSystem(Component):
         add_domain(self.env.path, locale_dir)
 
         if lazy is None:
-            # Trac < 1.0 : this can safely go in here because the data can 
+            # Trac < 1.0 : this can safely go in here because the data can
             # only change on a restart anyway
             self.info = self.info()
 
@@ -185,6 +188,7 @@ class ThemeEngineSystem(Component):
             ],
         }
 
+
 class ThemeBase(Component):
     """A base class for themes."""
 
@@ -226,7 +230,7 @@ class ThemeBase(Component):
 
         info['description'] = inspect.getdoc(self.__class__)
         name = name.lower()
-        self._set_info(info, 'template', 
+        self._set_info(info, 'template',
                        os.path.join('templates', name + '_theme.html'))
         self._set_info(info, 'css', name + '.css')
         self._set_info(info, 'htdocs', 'htdocs')
@@ -246,7 +250,7 @@ class ThemeBase(Component):
     # Internal methods
     def _set_info(self, info, attr, default):
         if not hasattr(self, attr):
-            return # Skip some e.g. scripts
+            return  # Skip some e.g. scripts
 
         val = getattr(self, attr)
         if val:
@@ -254,5 +258,3 @@ class ThemeBase(Component):
                 info[attr] = default
             elif val is not False:
                 info[attr] = val
-
-

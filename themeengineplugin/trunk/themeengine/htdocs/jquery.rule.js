@@ -23,8 +23,8 @@
  *
  * @example var text = $.rule('#screen h2').add('h4').end().eq(4).text();
  */
-;(function( $ ){	
-	
+;(function( $ ){
+
    /**
 	* Notes
 	*	Some styles and animations might fail, please report it.
@@ -35,18 +35,18 @@
 	*	This plugin adds $.rule and also 4 methods to $.fn: ownerNode, sheet, cssRules and cssText
 	*	Note that rules are not directly inside nodes, you need to do: $('style').sheet().cssRules().
 	*/
-	
+
 	var storageNode = $('<style rel="alternate stylesheet" type="text/css" />').appendTo('head')[0],//we must append to get a stylesheet
 		sheet = storageNode.sheet ? 'sheet' : 'styleSheet',
 		storage = storageNode[sheet],//css rules must remain in a stylesheet for IE and FF
 		rules = storage.rules ? 'rules' : 'cssRules',
 		remove = storage.deleteRule ? 'deleteRule' : 'removeRule',
-		owner = storage.ownerNode ? 'ownerNode' : 'owningElement',		
+		owner = storage.ownerNode ? 'ownerNode' : 'owningElement',
 		reRule = /^([^{]+)\{([^}]*)\}/m,
-		reStyle = /([^:]+):([^;}]+)/;	
+		reStyle = /([^:]+):([^;}]+)/;
 
-	storage.disabled = true;//let's ignore your rules 
-	
+	storage.disabled = true;//let's ignore your rules
+
 	var $rule = $.rule = function( r, c ){
 		if(!(this instanceof $rule))
 			return new $rule( r, c );
@@ -59,7 +59,7 @@
 		this.setArray( this.sheets.cssRules().get() );
 		return r ? this.filter( r ) : this;
 	};
-	
+
 	$.extend( $rule, {
 		sheets:function( c ){
 			var o = c;
@@ -89,13 +89,13 @@
 			var p;
 			if( !skip && (p = this.parent(r)) )//if this is an actual rule, and it's appended.
 				r = this.remove( r, p );
-				
-			var rule = this.rule( r );			
+
+			var rule = this.rule( r );
 			if( ss.addRule )
 				ss.addRule( rule[1], rule[2]||';' );//IE won't allow empty rules
 			else if( ss.insertRule )
 				ss.insertRule( rule[1] + '{'+ rule[2] +'}', ss[rules].length );
-			
+
 			return ss[rules][ ss[rules].length - 1 ];//return the added/parsed rule
 		},
 		remove:function( r, p ){
@@ -122,7 +122,7 @@
 			var par;
 			this.sheets().each(function(){
 				if( $.inArray(r, this[rules]) != -1 ){
-					par = this;	
+					par = this;
 					return false;
 				}
 			});
@@ -137,7 +137,7 @@
 			return !rule ? '' : rule.style.cssText.toLowerCase();
 		}
 	});
-	
+
 	$rule.fn = $rule.prototype = {
 		pushStack:function( rs, sh ){
 			var ret = $rule( rs, sh || this.sheets );
@@ -166,7 +166,7 @@
 			}));
 		},
 		add:function( rs, c ){
-			return this.pushStack( $.merge(this.get(), $rule(rs, c)) );	
+			return this.pushStack( $.merge(this.get(), $rule(rs, c)) );
 		},
 		is:function( s ){
 			return !!(s && this.filter( s ).length);
@@ -190,10 +190,10 @@
 				: this.each(function(){	$rule.text( this, txt ); });
 		},
 		outerText:function(){
-			return $rule.outerText(this[0]);	
+			return $rule.outerText(this[0]);
 		}
 	};
-	
+
 	$.each({
 		ownerNode:owner,//when having the stylesheet, get the node that contains it
 		sheet:sheet, //get the stylesheet from the node
@@ -206,13 +206,13 @@
 			});
 		};
 	});
-	
+
 	$.fn.cssText = function(){
 		return this.filter('link,style').eq(0).sheet().cssRules().map(function(){
-			return $rule.outerText(this);							   
+			return $rule.outerText(this);
 		}).get().join('\n');
 	};
-	
+
 	$.each('remove,appendTo,parent'.split(','),function( k, f ){
 		$rule.fn[f] = function(){
 			var args = $.makeArray(arguments), that = this;
@@ -223,19 +223,19 @@
 			});
 		};
 	});
-		
+
 	$.each(('each,index,setArray,get,size,eq,slice,map,attr,andSelf,css,show,hide,toggle,'+
 			'queue,dequeue,stop,animate,fadeIn,fadeOut,fadeTo').split(','),function( k, f ){
-		$rule.fn[f] = $.fn[f];																				  
+		$rule.fn[f] = $.fn[f];
 	});
-	
+
 	var curCSS = $.curCSS;
 	$.curCSS = function( e, a ){//this hack is still quite exprimental
 		return ('selectorText' in e ) ?
 			e.style[a] || $.prop( e, a=='opacity'? 1 : 0,'curCSS', 0, a )//TODO: improve these defaults
 		: curCSS.apply(this,arguments);
 	};
-	
+
 	/**
 	 * Time to hack jQuery.data for animations.
 	 * Only IE really needs this, but to keep the behavior consistent, I'll hack it for all browsers.
@@ -249,14 +249,14 @@
 			var id = elm.selectorText;
 			if( id )
 				arguments[0] = $rule.cache[id] = $rule.cache[id] || {};
-			return original.apply( $, arguments );	
+			return original.apply( $, arguments );
 		};
 	};
 	$.data = mediator( $.data );
 	$.removeData = mediator( $.removeData );
-	
+
 	$(window).unload(function(){
 		$(storage).cssRules().remove();//empty our rules bin
 	});
-		
+
 })( jQuery );

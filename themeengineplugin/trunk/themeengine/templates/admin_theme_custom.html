@@ -36,7 +36,7 @@
         theme_schemes['$name']['$colorname'] = '$color';
         </py:for>
         </py:for>
-        
+
         // <![CDATA[
         var colors = $('#colors');
         var farb = null;
@@ -46,7 +46,7 @@
           colors.addClass('js').after('<div id="farb"></div>');
           farb = jQuery.farbtastic('#farb');
         }
-        
+
         var set_color = function(name, color) {
           $('#scheme').val('__none__');
           var elm = $('#color_'+name).val(color).css('background-color', color);
@@ -56,7 +56,7 @@
           else
             elm.css('color', '#000');
           //console.log(v);
-          
+
           var theme = theme_colors[name];
           theme.color = color;
           if (!document.styleSheets) {
@@ -76,7 +76,7 @@
             $.rule(newcss).appendTo('style');
           }
         };
-        
+
         $('#schemes').find('select').change(function() {
           if($(this).val() == '__none__')
             return;
@@ -85,7 +85,7 @@
             set_color(colorname, scheme[colorname]);
           }
         }).end().show();
-        
+
         $('#colors input').focus(function() {
           var elm = $(this);
           farb.linkTo(function(color) {
@@ -99,7 +99,7 @@
           set_color($(this).attr('name').substring(6), $(this).val());
           //$(this).css('background-color', $(this).val());
         }).focus();
-        
+
         if(colors != null) {
           var off = colors.position();
           off.left += colors.outerWidth() + 4;
@@ -112,7 +112,7 @@
   </head>
   <body>
     <h2>Custom theme</h2>
-    
+
     <form method="post" id="simple" class="theme">
       <fieldset>
         <legend>General</legend>

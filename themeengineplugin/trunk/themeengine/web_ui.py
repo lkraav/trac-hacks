@@ -24,6 +24,7 @@ from trac.web.api import IRequestFilter
 from themeengine.api import ThemeEngineSystem, ThemeNotFound
 from themeengine.translation import I18N_DOC_OPTIONS
 
+
 class ThemeEngineModule(Component):
     """A module to provide the theme content."""
 
@@ -80,8 +81,8 @@ class ThemeEngineModule(Component):
                     req.chrome['theme'] = os.path.basename(theme['template'])
                 if theme and 'scripts' in theme:
                     for script_def in theme['scripts']:
-                        if (isinstance(script_def, tuple) and 
-                            1 <= len(script_def) <= 4):
+                        if (isinstance(script_def, tuple) and
+                                1 <= len(script_def) <= 4):
                             add_script(req, *script_def)
                         else:
                             self.log.warning('Bad script def %s for theme %s',
@@ -90,7 +91,7 @@ class ThemeEngineModule(Component):
                     links = req.chrome.get('links')
                     if links and 'stylesheet' in links:
                         for i, link in enumerate(links['stylesheet']):
-                            if link.get('href','') \
+                            if link.get('href', '') \
                                     .endswith('common/css/trac.css'):
                                 del links['stylesheet'][i]
                                 break
@@ -98,7 +99,7 @@ class ThemeEngineModule(Component):
                     req.chrome['theme_info'] = theme
                     # Template overrides (since 2.2.0)
                     overrides = self._get_template_overrides(theme)
-                    template, modifier = overrides.get(template, 
+                    template, modifier = overrides.get(template,
                                                        (template, None))
                     if modifier is not None:
                         modifier(req, template, data, content_type)
@@ -117,7 +118,7 @@ class ThemeEngineModule(Component):
             except Exception, e:
                 overrides = {}
                 self.log.warning('Theme %s template overrides : %s',
-                                 theme['name'], 
+                                 theme['name'],
                                  exception_to_unicode(e))
             else:
                 overrides = dict([old, (new, callback)]

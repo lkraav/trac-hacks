@@ -11,7 +11,7 @@
       xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       i18n:domain="themeengine">
-      <xi:include href="admin.html" />      
+      <xi:include href="admin.html" />
   <?python
     if _dgettext is not None:
         dgettext = _dgettext ?>
@@ -20,7 +20,7 @@
   </head>
   <body>
     <h2>Theme</h2>
-  
+
     <form method="post">
       <div id="themelistdiv">
         <ul id="themelist" class="cycle-slideshow" data-cycle-fx="fade"
@@ -50,7 +50,7 @@
         <input type="submit" value="${dgettext('themeengine', 'Use this theme')}" class="${bhdb and 'btn' or None}"/>
       </div>
     </form>
-  
+
     <script type="text/javascript">
       $(function() {
         $('#themelist input').remove();

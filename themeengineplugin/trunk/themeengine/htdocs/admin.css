@@ -50,13 +50,13 @@
   margin-bottom: 10px;
 }
 
-.admin .theme label { 
+.admin .theme label {
   display: block;  /* block float the labels to left column, set a width */
-  float: left; 
-  width: 125px; 
-  padding: 0; 
+  float: left;
+  width: 125px;
+  padding: 0;
   margin: 5px 0 0; /* set top margin same as form input - textarea etc. elements */
-  text-align: right; 
+  text-align: right;
 }
 
 .admin .theme  input {
@@ -86,4 +86,3 @@
 textarea {
   width: auto !important;
 }
-

@@ -9,4 +9,3 @@
 
 """Tests for TracThemeEngine plugin
 """
-
