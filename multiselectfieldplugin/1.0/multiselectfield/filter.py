@@ -16,6 +16,9 @@ class MultiSelectFieldModule(Component):
 
     implements(IRequestFilter, ITemplateStreamFilter, ITemplateProvider)
 
+    option_simple_selection = BoolOption('multiselectfield', 'simple_selection', False, 
+        doc="Force using a simple standard html multiselect box.")
+
     option_delimiter = Option('multiselectfield', 'data_delimiter', ' ', 
         doc="The delimiter that is used when storing the data (as the selected options are appended to a "
             "single custom text field). Space is used by default as values separated by space will be "
@@ -42,9 +45,14 @@ class MultiSelectFieldModule(Component):
 
         if match:
             add_script_data(req, {'multiselectfieldDelimiter': self.option_delimiter})
-            add_script(req, 'multiselectfield/chosen.jquery.min.js')
+            add_script_data(req, {'multiselectfieldSimple': self.option_simple_selection})
+
+            if not self.option_simple_selection:
+                add_script(req, 'multiselectfield/chosen.jquery.min.js')
+                add_stylesheet(req, 'multiselectfield/chosen.min.css')
+
             add_script(req, 'multiselectfield/multiselectfield.js')
-            add_stylesheet(req, 'multiselectfield/chosen.min.css')
+
         return template, data, content_type
 
     # ITemplateStreamFilter methods
