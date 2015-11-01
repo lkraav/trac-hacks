@@ -196,8 +196,8 @@ class CustomThemeAdminModule(Component):
         add_stylesheet(req, 'themeengine/farbtastic/farbtastic.css')
         add_stylesheet(req, 'themeengine/admin.css')
         add_script(req, 'themeengine/farbtastic/farbtastic.js')
-        add_script(req, 'themeengine/jquery.rule.js')
         if page == 'advanced':
             return 'admin_theme_advanced.html', data
         else:
+            add_script(req, 'themeengine/jquery.rule.js')
             return 'admin_theme_custom.html', data
