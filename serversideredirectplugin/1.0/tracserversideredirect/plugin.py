@@ -114,7 +114,7 @@ Any other [TracLinks TracLink] can be used:
 
     def process_request(self, req):
         """Redirect to pre-selected target."""
-        target = self._get_redirect(req)
+        target = req.args.get('redirect-target')
         if target:
             # Check for self-redirect:
             if target and target == req.href(req.path_info):
@@ -216,8 +216,10 @@ Any other [TracLinks TracLink] can be used:
             self.log.debug("SSR: no redirect: HTTP_REFERER includes "
                            "action=edit")
             return handler
-        if self._get_redirect(req):
+        target = self._get_redirect(req)
+        if target:
             self.log.debug("SSR: redirect!")
+            req.args['redirect-target'] = target
             return self
         self.log.debug("SSR: no redirect: No redirect macro found.")
         return handler
