@@ -15,7 +15,7 @@ from trac.util.text import stripws
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import web_context
 from trac.wiki.api import IWikiMacroProvider
-from trac.wiki.formatter import split_url_into_path_query_fragment
+from trac.wiki.formatter import concat_path_query_fragment
 from trac.wiki.model import WikiPage
 from trac.wiki.web_ui import WikiModule
 
@@ -153,14 +153,7 @@ Any other [TracLinks TracLink] can be used:
             # Add back link information for internal links:
             if target and target[0] == '/':
                 redirectfrom = "redirectedfrom=" + req.path_info[6:]
-                # anchor should be the last in url
-                # according to http://trac.edgewall.org/ticket/8072
-                tgt, query, anchor = self.split_link(target)
-                if not query:
-                    query = "?" + redirectfrom
-                else:
-                    query += "&" + redirectfrom
-                target = tgt + query + anchor
+                target = concat_path_query_fragment(target, redirectfrom)
             req.redirect(target)
         raise TracError("Invalid redirect target!")
 
@@ -226,9 +219,3 @@ Any other [TracLinks TracLink] can be used:
 
     def post_process_request(self, req, template, data, content_type):
         return template, data, content_type
-
-    # Internal methods
-
-    def split_link(self, target):
-        """Split a target along "?" and "#" in `(path, query, fragment)`."""
-        return split_url_into_path_query_fragment(target)
