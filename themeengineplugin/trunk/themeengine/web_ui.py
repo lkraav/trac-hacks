@@ -104,7 +104,7 @@ class ThemeEngineModule(Component):
                     if modifier is not None:
                         modifier(req, template, data, content_type)
             if self.custom_css:
-                add_stylesheet(req, '/themeengine/theme.css')
+                add_stylesheet(req, 'site/theme.css')
 
         return template, data, content_type
 

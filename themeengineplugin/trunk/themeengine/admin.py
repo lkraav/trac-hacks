@@ -95,8 +95,6 @@ class SimpleThemeAdminModule(Component):
         path_info = req.path_info[13:]
         if path_info.startswith('screenshot/'):
             return self._send_screenshot(req, data, path_info[11:])
-        elif path_info == 'theme.css':
-            req.send_file(os.path.join(self.env.path, 'htdocs', 'theme.css'), 'text/css')
 
         raise HTTPNotFound("The requested URL was not found on this server")
 
