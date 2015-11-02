@@ -1,0 +1,27 @@
+table.admin-smp-project-table {
+    padding-right: 1em;
+    margin-top: 0px;
+}
+
+.admin-smp-proj-tbl-div {
+    max-height: 300px;
+    overflow-y: auto;
+    float: left;
+    margin: 10px;
+}
+
+#project-help-div {
+    clear:both;
+}
+
+fieldset.project {
+   margin-bottom: 2em;
+   box-shadow: 1px 5px 5px #dddddd;
+}
+
+div.project > h2:after {
+  display: block;
+  content:' ';
+  border:1px solid lightgrey;
+  width: 65%;
+}
