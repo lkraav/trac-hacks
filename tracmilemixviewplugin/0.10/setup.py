@@ -13,11 +13,11 @@ setup(
     description = "MMV plugin for Trac.",
     license = "BSD",
     keywords = "trac MMV",
-    url = "http://trac-hacks.org/wiki/MMV",
+    url = "https://trac-hacks.org/wiki/TracMileMixViewPlugin",
     classifiers = [
         'Framework :: Trac',
     ],
-    
+
     install_requires = ['TracWebAdmin'],
     entry_points = {'trac.plugins': ['mmv = mmv.web_ui']},
 )
