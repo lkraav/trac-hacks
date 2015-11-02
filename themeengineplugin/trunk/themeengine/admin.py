@@ -161,8 +161,10 @@ class CustomThemeAdminModule(Component):
                 colors[name] = val
         data['colors'] = colors
         data['enable'] = self.config.getbool('theme', 'enable_css', False)
-        if page == 'advanced' and os.path.exists(os.path.join(self.env.path, 'htdocs', 'theme.css')):
-            data['css'] = open(os.path.join(self.env.path, 'htdocs', 'theme.css')).read()
+
+        theme_css_file = os.path.join(self.env.get_htdocs_dir(), 'theme.css')
+        if page == 'advanced' and os.path.exists(theme_css_file):
+            data['css'] = open(theme_css_file).read()
 
         if req.method == 'POST':
             if 'enable_css' in req.args:
@@ -178,7 +180,7 @@ class CustomThemeAdminModule(Component):
                 color = req.args.get('color_'+name, color)
                 self.config.set('theme', 'color.'+name, color)
 
-            f = open(os.path.join(self.env.path, 'htdocs', 'theme.css'), 'w')
+            f = open(theme_css_file, 'w')
             if page == 'advanced':
                 f.write(req.args.get('css', ''))
             else:
