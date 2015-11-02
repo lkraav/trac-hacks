@@ -12,6 +12,7 @@ import re
 from genshi.builder import tag
 from trac.core import *
 from trac.util.text import stripws
+from trac.util.translation import _, tag_
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import web_context
 from trac.wiki.api import IWikiMacroProvider
@@ -118,11 +119,9 @@ Any other [TracLinks TracLink] can be used:
         if target:
             # Check for self-redirect:
             if target and target == req.href(req.path_info):
-                message = tag.div('Please ',
-                                  tag.a("change the redirect target",
-                                        href=target + "?action=edit"),
-                                  ' to another page.',
-                                  class_="system-message")
+                change = tag.a(_("change"), href=target + "?action=edit")
+                message = tag_("Please %(change)s the redirect target to "
+                               "another page.", change=change)
                 data = {
                     'title': "Page redirects to itself!",
                     'message': message,
@@ -134,14 +133,13 @@ Any other [TracLinks TracLink] can be used:
             # Check for redirect pair, i.e. A->B, B->A
             redirected_from = req.args.get('redirectedfrom', '')
             if target and target == req.href.wiki(redirected_from):
-                message = tag.div(
-                    'Please change the redirect target from either ',
-                    tag.a("this page",
-                          href=req.href(req.path_info, action="edit")),
-                    ' or ',
-                    tag.a("the redirecting page",
-                          href=target + "?action=edit"),
-                    '.', class_="system-message")
+                this = tag.a(_("this"),
+                             href=req.href(req.path_info, action="edit"))
+                redirecting = tag.a(_("redirecting"),
+                                    href=target + "?action=edit")
+                message = tag_("Please change the redirect target on "
+                               "%(this)s page or the %(redirecting)s page.",
+                               this=this, redirecting=redirecting)
                 data = {
                     'title': "Redirect target redirects back to this page!",
                     'message': message,
