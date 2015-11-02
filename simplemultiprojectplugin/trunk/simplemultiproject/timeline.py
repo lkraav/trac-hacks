@@ -41,16 +41,20 @@ class SmpTimelineProjectFilter(Component):
             filtered_events = []
 
             for event in data.get('events'):
-                resource = event['data'][0].parent if event['kind'] == 'attachment' else event['data'][0]
-                if event['kind'] in ticket_kinds and 'All' not in proj_filter and resource.realm == 'ticket':
-                    # We have some ticket event, maybe attachment to ticket
-                    tkt = Ticket(self.env, resource.id)
-                    if tkt['project'] in proj_filter:
-                        # New render function enhancing the title
-                        event['render'] = self._lambda_render_func(tkt['project'], event['render'])
-                        filtered_events.append(event)
+                if event['kind'] in ticket_kinds:
+                    resource = event['data'][0].parent if event['kind'] == 'attachment' else event['data'][0]
+                    if event['kind'] in ticket_kinds and 'All' not in proj_filter and resource.realm == 'ticket':
+                        # We have some ticket event, maybe attachment to ticket
+                        tkt = Ticket(self.env, resource.id)
+                        if tkt['project'] in proj_filter:
+                            # New render function enhancing the title
+                            event['render'] = self._lambda_render_func(tkt['project'], event['render'])
+                            filtered_events.append(event)
+                    else:
+                        filtered_events.append(event)  # Show this event
                 else:
                     filtered_events.append(event)  # Show this event
+
             data['events'] = filtered_events
 
         return template, data, content_type
