@@ -14,9 +14,9 @@ table.admin-smp-project-table {
     clear:both;
 }
 
-.project {
+fieldset.project {
    margin-bottom: 2em;
-   box-shadow: 0px 5px 5px #dddddd;
+   box-shadow: 1px 5px 5px #dddddd;
 }
 
 div.project > h2:after {
