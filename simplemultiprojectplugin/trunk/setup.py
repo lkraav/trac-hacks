@@ -2,22 +2,26 @@ from setuptools import setup
 
 setup(
     name='SimpleMultiProject',
-    version='0.0.4',
+    version='0.5.0',
     packages=['simplemultiproject'],
     package_data={
-        'simplemultiproject' : [
+        'simplemultiproject': [
             'templates/*.html',
             'htdocs/*.js',
             'htdocs/css/*.css'
         ]
     },
-    author = 'Christopher Paredes',
+    install_requires=['Trac'],
+    extras_require={
+        'Trac': 'Trac >= 0.12'
+    },
+    author='Christopher Paredes',
     author_email='jesuchristopher@gmail.com',
-    maintainer = "falkb",
+    maintainer="falkb",
     license='GPL',
     url='http://trac-hacks.org/wiki/SimpleMultiProjectPlugin',
-    description='Simple Multi Project',
+    description='Simple Multi Project plugin for managing several projects with one Trac instance.',
     long_description='Simple Multi Project',
     keywords='Simple Multi Project',
-    entry_points = {'trac.plugins': ['simplemultiproject = simplemultiproject']}
+    entry_points={'trac.plugins': ['simplemultiproject = simplemultiproject']}
 )
