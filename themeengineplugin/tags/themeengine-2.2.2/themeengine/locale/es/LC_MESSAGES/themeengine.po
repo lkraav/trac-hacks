@@ -1,0 +1,91 @@
+# Spanish translations for TracThemeEngine.
+# Copyright (C) 2014 Olemis Lang
+# This file is distributed under the same license as the TracThemeEngine
+# project.
+# Olemis Lang <olemis+trac@gmail.com>, 2014.
+# #, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: TracThemeEngine 2.2.2\n"
+"Report-Msgid-Bugs-To: olemis+trac@gmail.com\n"
+"POT-Creation-Date: 2014-02-05 18:46-0500\n"
+"PO-Revision-Date: 2014-02-05 16:06-0500\n"
+"Last-Translator: Olemis Lang <olemis+trac@gmail.com>\n"
+"Language-Team: Trac L10N Spanish (https://www.transifex.com/projects/p"
+"/Trac_Plugin-L10N/language/es/)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: themeengine/admin.py:35 themeengine/admin.py:125 themeengine/admin.py:126
+#: themeengine/templates/admin_theme.html:19
+#: themeengine/templates/admin_theme.html:22
+msgid "Theme"
+msgstr "Temas"
+
+#: themeengine/admin.py:125
+msgid "Customize"
+msgstr "Ajustes"
+
+#: themeengine/admin.py:126
+msgid "Customize: Advanced"
+msgstr "Ajustes: Avanzado"
+
+#: themeengine/api.py:91
+msgid "The theme to use to style this Trac."
+msgstr "El tema visual que seá utilizado para este Trac"
+
+#: themeengine/web_ui.py:30
+msgid "Enable or disable custom CSS from theme."
+msgstr "Habilitar / deshabilitar estilos del sitio para este tema"
+
+#: themeengine/templates/admin_theme.html:50
+msgid "Use this theme"
+msgstr "Activar este tema"
+
+#: themeengine/templates/admin_theme_advanced.html:19
+msgid "Customize theme"
+msgstr "Personalizar tema"
+
+#: themeengine/templates/admin_theme_advanced.html:22
+msgid "Customize theme: Advanced"
+msgstr "Personalizar tema: Avanzado"
+
+#: themeengine/templates/admin_theme_advanced.html:26
+#: themeengine/templates/admin_theme_custom.html:118
+msgid "General"
+msgstr "General"
+
+#: themeengine/templates/admin_theme_advanced.html:28
+#: themeengine/templates/admin_theme_custom.html:120
+msgid "Enable:"
+msgstr "Habilitar"
+
+#: themeengine/templates/admin_theme_advanced.html:33
+msgid "Style"
+msgstr "Estilos del sitio"
+
+#: themeengine/templates/admin_theme_advanced.html:37
+#: themeengine/templates/admin_theme_custom.html:142
+msgid "Submit"
+msgstr "Enviar"
+
+#: themeengine/templates/admin_theme_custom.html:19
+#: themeengine/templates/admin_theme_custom.html:114
+msgid "Custom theme"
+msgstr "Tema personalizado"
+
+#: themeengine/templates/admin_theme_custom.html:125
+msgid "Schemes"
+msgstr "Esquemas"
+
+#: themeengine/templates/admin_theme_custom.html:127
+msgid "Scheme:"
+msgstr "Esquema:"
+
+#: themeengine/templates/admin_theme_custom.html:135
+msgid "Colors"
+msgstr "Colores"
+
