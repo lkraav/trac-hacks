@@ -33,7 +33,7 @@ except ImportError:
 
 setup(
     name = 'TracThemeEngine',
-    version = '2.2.2',
+    version = '2.2.3',
     packages = ['themeengine'],
     package_data = { 'themeengine': ['templates/*.html', 'htdocs/*.js',
                                      'htdocs/*.css', 'htdocs/*.png',
