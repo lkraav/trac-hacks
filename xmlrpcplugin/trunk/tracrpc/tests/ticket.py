@@ -388,6 +388,25 @@ class RpcTicketTestCase(TracRpcTestCase):
                           "</methodResponse>\n", response.read())
         self.admin.ticket.delete(1)
 
+    def test_update_ticket_12430(self):
+        # What if ticket 'time' and 'changetime' are part of attributes?
+        # See https://trac-hacks.org/ticket/12430
+        tid1 = self.admin.ticket.create('test_update_ticket_12430', 'ok?', {
+                        'owner': 'osimons1'})
+        try:
+            # Get a fresh full copy
+            tid2, created, changed, values = self.admin.ticket.get(tid1)
+            self.assertTrue('time' in values, "'time' field not returned?")
+            self.assertTrue('changetime' in values,
+                            "'changetime' field not returned?")
+            self.assertTrue('_ts' in values, "No _ts in values?")
+            # Update
+            values['action'] = 'leave'
+            values['owner'] = 'osimons2'
+            self.admin.ticket.update(tid2, "updating", values)
+        finally:
+            self.admin.ticket.delete(tid1)
+
 
 class RpcTicketVersionTestCase(TracRpcTestCase):
     

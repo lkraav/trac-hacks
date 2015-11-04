@@ -206,6 +206,11 @@ class TicketRPC(Component):
                     "non-current timestamp (%r)", author, id, when)
             when = None
         when = when or to_datetime(None, utc)
+        # never try to update 'time' and 'changetime' attributes directly
+        if 'time' in attributes:
+            del attributes['time']
+        if 'changetime' in attributes:
+            del attributes['changetime']
         # and action...
         if not 'action' in attributes:
             # FIXME: Old, non-restricted update - remove soon!
