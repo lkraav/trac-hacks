@@ -274,7 +274,7 @@ validaterule.setup = function(input, spec){
 
         // listen for form submission
         form.submit(function(){
-            if (field.is(":hidden"))
+            if (field.parent('td').hasClass('dynfields-hide'))
                 return true;
             if ((spec.value == "" && input.val() == "") ||
                 (spec.value != "" && new RegExp(spec.value).test(input.val()))){
