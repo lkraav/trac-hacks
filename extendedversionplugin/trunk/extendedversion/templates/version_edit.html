@@ -3,6 +3,7 @@
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
       xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="layout.html" />
   <head>
@@ -12,9 +13,16 @@
     </py:choose>
     <script type="text/javascript">
       jQuery(document).ready(function($) {
+        function updateReleaseDate() {
+          $("#time").enable($("#released").checked());
+        }
+        $("#released").click(updateReleaseDate);
+        updateReleaseDate();
+
         $("#name").focus();
-        if ($.isFunction($.fn.datetimepicker))
+        if ($.isFunction($.fn.datetimepicker)) {
           $("#time").datetimepicker();
+        }
       });
     </script>
   </head>
@@ -38,11 +46,14 @@
           <legend>Schedule</legend>
           <div class="field">
             <label>
+              <input type="checkbox" id="released" name="released" checked="${version.time or None}" />
               Released:<br />
-              <input type="text" id="time" name="time"
-                     size="${len(datetime_hint)}" title="Format: ${datetime_hint}"
-                     value="${format_datetime(version.time)}" />
-              <span class="hint">Format: ${datetime_hint}</span>
+            </label>
+            <label>
+              <input type="text" id="time" name="time" size="${len(datetime_hint) + 1}"
+                     value="${format_datetime(version.time)}"
+                     title="${_('Format: %(datehint)s', datehint=datetime_hint)}" />
+              <em i18n:msg="datehint">Format: $datetime_hint</em>
             </label>
             <!--py:if test="milestone_groups">
               <br/>

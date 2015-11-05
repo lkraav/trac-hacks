@@ -273,8 +273,11 @@ class VisibleVersion(Component):
             warn(_('You must provide a name for the version.'))
 
         # -- check completed date
-        if time:
-            time = user_time(req, parse_date, time, hint='datetime')
+        if 'released' in req.args:
+            time = user_time(req, parse_date, time, hint='datetime') \
+                   if time else None
+            if time and time > datetime.now(utc):
+                warn(_("Release date may not be in the future"))
         else:
             time = None
         version.time = time
@@ -334,6 +337,7 @@ class VisibleVersion(Component):
         if parse_version(trac_version) >= parse_version('1.0'):
             Chrome(self.env).add_jquery_ui(req)
         Chrome(self.env).add_wiki_toolbars(req)
+        add_stylesheet(req, 'common/css/roadmap.css')
         return 'version_edit.html', data, None
 
     def _render_link(self, context, name, label, extra=''):
