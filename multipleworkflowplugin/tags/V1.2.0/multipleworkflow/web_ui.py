@@ -1,0 +1,268 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 Cinc
+#
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+
+__author__ = 'Cinc'
+
+import json
+import io
+from ConfigParser import SafeConfigParser, ParsingError
+from pkg_resources import resource_filename
+from trac.core import Component, implements
+from trac.admin import IAdminPanelProvider
+from trac.web.chrome import ITemplateProvider, add_script_data, add_script, add_warning
+from trac.web.api import IRequestHandler
+from trac.util.translation import _, dgettext
+from trac.ticket.model import Type
+from genshi.builder import tag
+from genshi.output import HTMLSerializer
+from workflow import get_workflow_config_default, get_workflow_config_by_type, parse_workflow_config
+
+
+def get_workflow_actions_for_error():
+    """This is a small workflow just showing an 'Error' state"""
+    txt = "? = Error -> Error"
+    return get_workflow_actions_from_text(txt, True)
+
+
+def get_workflow_actions_from_text(wf_txt, is_error_wf=False):
+    """Parse workflow actions in a text snippet
+    Note that no section header [ticket-workflow_xxx] must be provided"""
+
+    def get_line_txt(txt):
+        try:
+            msg = txt.split(']:')[1]
+        except IndexError:
+            msg = txt
+
+        return msg
+
+    error_txt = ""
+    config = SafeConfigParser()
+    try:
+        config.readfp(io.BytesIO("[ticket-workflow]\n"+wf_txt.encode('utf-8')))
+        raw_actions = [(key, config.get('ticket-workflow', key)) for key in config.options('ticket-workflow')]
+    except ParsingError, err:
+        error_txt = u"Parsing error: %s" % get_line_txt(unicode(err).replace('\\n', '').replace('<???>', ''))
+
+        if not is_error_wf:  # prevent recursion
+            actions, tmp = get_workflow_actions_for_error()
+        else:
+            actions = []
+        return actions, error_txt
+
+    try:
+        actions = parse_workflow_config(raw_actions)
+    except BaseException, err:
+        error_txt = unicode(err)
+        if not is_error_wf:  # prevent recursion
+            actions, tmp = get_workflow_actions_for_error()
+        else:
+            actions = []
+
+    return actions, error_txt
+
+
+def create_workflow_name(name):
+    if name == 'default':
+        return 'ticket-workflow'
+    else:
+        return 'ticket-workflow-%s' % name
+
+
+# This function is taken from WorkflowMacro and modified for the multiple workflow display
+def create_graph_data(self, req, name=''):
+
+    txt = req.args.get('text')
+    if txt:
+        actions, error_txt = get_workflow_actions_from_text(txt)
+        if error_txt:
+            t = error_txt
+        else:
+            t = "New custom workflow (not saved)"
+        if not actions:
+            # We should never end here...
+            actions = get_workflow_config_default(self.config)
+            t = "Custom workflow is broken. Showing default workflow"
+    else:
+        t = u""
+        if name == 'default':
+            actions = get_workflow_config_default(self.config)
+        else:
+            actions = get_workflow_config_by_type(self.config, name)
+
+    states = list(set(
+        [state for action in actions.itervalues()
+         for state in action['oldstates']] + [action['newstate'] for action in actions.itervalues()]))
+
+    action_labels = [action_info['name'] for action_name, action_info in actions.items()]
+    action_names = actions.keys()
+
+    edges = []
+    for name, action in actions.items():
+        new_index = states.index(action['newstate'])
+        name_index = action_names.index(name)
+        for old_state in action['oldstates']:
+            old_index = states.index(old_state)
+            edges.append((old_index, new_index, name_index))
+
+    args = {}
+    width = args.get('width', 800)
+    height = args.get('height', 600)
+    graph = {'nodes': states, 'actions': action_labels, 'edges': edges,
+             'width': width, 'height': height}
+    graph_id = '%012x' % id(self)  # id(graph)
+
+    scr_data = {'graph_%s' % graph_id: graph}
+
+    res = tag(
+        tag.p(t),
+        tag.div('', class_='multiple-workflow-graph trac-noscript',
+                id='trac-workflow-graph-%s' % graph_id,
+                style="display:inline-block;width:%spx;height:%spx" %
+                      (width, height)),
+        tag.noscript(
+            tag.div(_("Enable JavaScript to display the workflow graph."),
+                    class_='system-message')))
+    return res, scr_data, graph
+
+
+def workflow_graph(self, req, name):
+
+    res, scr_data, graph = create_graph_data(self, req, name)
+
+    # add_script(req, 'multipleworkflow/js/excanvas.js', ie_if='IE')
+    add_script(req, 'multipleworkflow/js/workflow_graph.js')
+    add_script_data(req, scr_data)
+
+    return res
+
+
+def write_json_response(req, data_dict, httperror=200):
+    data = json.dumps(data_dict).encode('utf-8')
+    req.send_response(httperror)
+    req.send_header('Content-Type', 'application/json; charset=utf-8')
+    req.send_header('Content-Length', len(data))
+    req.end_headers()
+    req.write(data)
+
+
+class MultipleWorkflowAdminModule(Component):
+    """Implements the admin page for workflow editing. See 'Ticket System' section."""
+
+    implements(IAdminPanelProvider, ITemplateProvider, IRequestHandler)
+
+    # IRequestHandler methods
+    # Theses methods are used for the preview rendering
+    def match_request(self, req):
+        return req.path_info == '/multipleworkflow/workflow_render'
+
+    def process_request(self, req):
+        req.perm.require('TICKET_ADMIN')
+
+        div, scr_data, graph = create_graph_data(self, req)
+        rendered = "".join(HTMLSerializer()(div.generate()))
+        data = {'html': rendered.encode("utf-8"), 'graph_data': graph}
+        write_json_response(req, data)
+
+    # IAdminPanelProvider methods
+    def get_admin_panels(self, req):
+        if 'TICKET_ADMIN' in req.perm:
+            yield ('ticket', dgettext("messages", ("Ticket System")),
+                   'workflowadmin', _("Workflows"))
+
+    def _get_all_types_with_workflow(self, to_upper=False):
+        """Returns a list of all ticket types with custom workflow.
+
+        Note that a ticket type is not necessarily available during ticket creation if it was deleted in the
+        meantimes.
+        """
+        types = []
+        for section in self.config.sections():
+            if section.startswith('ticket-workflow-'):
+                if to_upper:
+                    types.append(section[len('ticket-workflow-'):].upper())
+                else:
+                    types.append(section[len('ticket-workflow-'):])
+        return types
+
+    def render_admin_panel(self, req, cat, page, path_info):
+        req.perm.assert_permission('TICKET_ADMIN')
+
+        if req.method == 'POST':
+            if req.args.get('add'):
+                cur_types = self._get_all_types_with_workflow(True)
+                name = req.args.get('name')
+                if name.upper() in cur_types:
+                    add_warning(req, _("There is already a workflow for ticket type '%s'. Note that upper/lowercase is "
+                                       "ignored"), name)
+                else:
+                    src_section = create_workflow_name(req.args.get('type'))
+                    # Now copy the workflow
+                    section = 'ticket-workflow-%s' % name
+                    for key, val in self.config.options(src_section):
+                        self.config.set(section, key, val)
+                    self.config.save()
+            elif req.args.get('remove'):
+                workflow = 'ticket-workflow-%s' % req.args.get('sel')
+                for key, val in self.config.options(workflow):
+                    self.config.remove(workflow, key)
+                self.config.save()
+            elif req.args.get('save'):
+                name = req.args.get('name', '')
+                if name:
+                    section = 'ticket-workflow-%s' % name
+                else:
+                    # If it's the default workflow the input is disabled and no value sent
+                    section = 'ticket-workflow'
+
+                # Change of workflow name. Remove old data from ini
+                if name and name != path_info:
+                    old_section = 'ticket-workflow-%s' % path_info
+                    for key, val in self.config.options(old_section):
+                        self.config.remove(old_section, key)
+
+                # Save new workflow
+                for line in req.args.get('workflow-actions').split('\n'):
+                    try:
+                        key, val= line.split('=')
+                        self.config.set(section, key, val)
+                    except ValueError:
+                        # Empty line or missing val
+                        pass
+                self.config.save()
+
+            req.redirect(req.href.admin(cat, page))
+
+        # GET, show admin page
+        data = {'types': self._get_all_types_with_workflow()}
+        if not path_info:
+            data.update({'view': 'list',
+                         'name': 'default'})
+        else:
+            data.update({'view': 'detail',
+                         'name': path_info,
+                         'workflowgraph': workflow_graph(self, req, path_info)})
+            if path_info == 'default':
+                data['workflow'] = ["%s = %s\n" % (key, val) for key, val in self.config.options('ticket-workflow')]
+            else:
+                data['workflow'] = ["%s = %s\n" % (key, val) for key, val in self.config.options('ticket-workflow-%s' %
+                                                                                                 path_info)]
+            add_script(req, 'common/js/resizer.js')
+            add_script_data(req, {
+                'auto_preview_timeout': 2,
+                'form_token': req.form_token})
+
+        return "multipleworkflowadmin.html", data
+
+    # ITemplateProvider methods
+    def get_htdocs_dirs(self):
+        return [('multipleworkflow', resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        return [resource_filename(__name__, 'templates')]
