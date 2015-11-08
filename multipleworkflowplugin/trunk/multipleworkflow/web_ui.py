@@ -15,7 +15,7 @@ from ConfigParser import SafeConfigParser, ParsingError
 from pkg_resources import resource_filename
 from trac.core import Component, implements
 from trac.admin import IAdminPanelProvider
-from trac.web.chrome import ITemplateProvider, add_script_data, add_script
+from trac.web.chrome import ITemplateProvider, add_script_data, add_script, add_warning
 from trac.web.api import IRequestHandler
 from trac.util.translation import _, dgettext
 from trac.ticket.model import Type
@@ -68,8 +68,15 @@ def get_workflow_actions_from_text(wf_txt, is_error_wf=False):
     return actions, error_txt
 
 
+def create_workflow_name(name):
+    if name == 'default':
+        return 'ticket-workflow'
+    else:
+        return 'ticket-workflow-%s' % name
+
+
 # This function is taken from WorkflowMacro and modified for the multiple workflow display
-def create_graph_data(self, req):
+def create_graph_data(self, req, name=''):
 
     txt = req.args.get('text')
     if txt:
@@ -83,14 +90,11 @@ def create_graph_data(self, req):
             actions = get_workflow_config_default(self.config)
             t = "Custom workflow is broken. Showing default workflow"
     else:
-        t = "Workflow for '%s'" % req.args.get('type')
-        actions = get_workflow_config_by_type(self.config, req.args.get('type'))
-        if not actions:
+        t = u""
+        if name == 'default':
             actions = get_workflow_config_default(self.config)
-            if not req.args.get('type'):
-                t = u"Showing default workflow"
-            else:
-                t = u"'%s' uses default workflow" % req.args.get('type')
+        else:
+            actions = get_workflow_config_by_type(self.config, name)
 
     states = list(set(
         [state for action in actions.itervalues()
@@ -128,9 +132,9 @@ def create_graph_data(self, req):
     return res, scr_data, graph
 
 
-def workflow_graph(self, req):
+def workflow_graph(self, req, name):
 
-    res, scr_data, graph = create_graph_data(self, req)
+    res, scr_data, graph = create_graph_data(self, req, name)
 
     # add_script(req, 'multipleworkflow/js/excanvas.js', ie_if='IE')
     add_script(req, 'multipleworkflow/js/workflow_graph.js')
@@ -172,51 +176,87 @@ class MultipleWorkflowAdminModule(Component):
             yield ('ticket', dgettext("messages", ("Ticket System")),
                    'workflowadmin', _("Workflows"))
 
+    def _get_all_types_with_workflow(self, to_upper=False):
+        """Returns a list of all ticket types with custom workflow.
+
+        Note that a ticket type is not necessarily available during ticket creation if it was deleted in the
+        meantimes.
+        """
+        types = []
+        for section in self.config.sections():
+            if section.startswith('ticket-workflow-'):
+                if to_upper:
+                    types.append(section[len('ticket-workflow-'):].upper())
+                else:
+                    types.append(section[len('ticket-workflow-'):])
+        return types
+
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('TICKET_ADMIN')
 
         if req.method == 'POST':
-            # Save button clicked
-            print req.args.get('workflow-actions')
-            tkt_type = req.args.get('type')
-            if tkt_type == 'default':
-                name = 'ticket-workflow'
-            else:
-                name = 'ticket-workflow-%s' % tkt_type
+            if req.args.get('add'):
+                cur_types = self._get_all_types_with_workflow(True)
+                name = req.args.get('name')
+                if name.upper() in cur_types:
+                    add_warning(req, _("There is already a workflow for ticket type '%s'. Note that upper/lowercase is "
+                                       "ignored"), name)
+                else:
+                    src_section = create_workflow_name(req.args.get('type'))
+                    # Now copy the workflow
+                    section = 'ticket-workflow-%s' % name
+                    for key, val in self.config.options(src_section):
+                        self.config.set(section, key, val)
+                    self.config.save()
+            elif req.args.get('remove'):
+                workflow = 'ticket-workflow-%s' % req.args.get('sel')
+                for key, val in self.config.options(workflow):
+                    self.config.remove(workflow, key)
+                self.config.save()
+            elif req.args.get('save'):
+                name = req.args.get('name', '')
+                if name:
+                    section = 'ticket-workflow-%s' % name
+                else:
+                    # If it's the default workflow the input is disabled and no value sent
+                    section = 'ticket-workflow'
 
-            for key, val in self.config.options(name):
-                self.config.remove(name, key)
+                # Change of workflow name. Remove old data from ini
+                if name and name != path_info:
+                    old_section = 'ticket-workflow-%s' % path_info
+                    for key, val in self.config.options(old_section):
+                        self.config.remove(old_section, key)
 
-            for line in req.args.get('workflow-actions').split('\n'):
-                try:
-                    key, val= line.split('=')
-                    self.config.set(name, key, val)
-                except ValueError:
-                    # Empty line or missing val
-                    pass
-            self.config.save()
+                # Save new workflow
+                for line in req.args.get('workflow-actions').split('\n'):
+                    try:
+                        key, val= line.split('=')
+                        self.config.set(section, key, val)
+                    except ValueError:
+                        # Empty line or missing val
+                        pass
+                self.config.save()
 
-            req.redirect(req.href.admin(cat, page)+'?type='+req.args.get('type'))
+            req.redirect(req.href.admin(cat, page))
 
         # GET, show admin page
-        if req.args.get('type'):
-            selected = req.args.get('type')
-            raw_actions = ["%s = %s\n" % (key, val) for key, val in self.config.options('ticket-workflow-%s' % selected)]
+        data = {'types': self._get_all_types_with_workflow()}
+        if not path_info:
+            data.update({'view': 'list',
+                         'name': 'default'})
         else:
-            raw_actions = []
-            selected = ""
-
-        types = [enum.name for enum in Type.select(self.env)]
-        if not raw_actions:
-            raw_actions = ["%s = %s\n" % (key, val) for key, val in self.config.options('ticket-workflow')]
-
-        data = {'types': types, 'workflowgraph': workflow_graph(self, req),
-                'selected': selected, 'workflow': raw_actions, 'panel_path': '/'+cat+'/'+page}
-
-        add_script(req, 'common/js/resizer.js')
-        add_script_data(req, {
-            'auto_preview_timeout': 2,
-            'form_token': req.form_token})
+            data.update({'view': 'detail',
+                         'name': path_info,
+                         'workflowgraph': workflow_graph(self, req, path_info)})
+            if path_info == 'default':
+                data['workflow'] = ["%s = %s\n" % (key, val) for key, val in self.config.options('ticket-workflow')]
+            else:
+                data['workflow'] = ["%s = %s\n" % (key, val) for key, val in self.config.options('ticket-workflow-%s' %
+                                                                                                 path_info)]
+            add_script(req, 'common/js/resizer.js')
+            add_script_data(req, {
+                'auto_preview_timeout': 2,
+                'form_token': req.form_token})
 
         return "multipleworkflowadmin.html", data
 
