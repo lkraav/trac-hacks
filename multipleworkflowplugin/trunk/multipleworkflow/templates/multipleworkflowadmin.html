@@ -20,6 +20,15 @@
                         window.drawWorkflows(data, graphdiv);
                     }
                 });
+                $('#name').bind('input', function() {
+                    /* trac_types holds all the known ticket types */
+                    if($.inArray($(this).val(), trac_types) == -1){
+                        $('#trac-type-hint').show();
+                    }
+                    else{
+                        $('#trac-type-hint').hide();
+                    };
+                });
         });
     </script>
 
@@ -35,7 +44,7 @@
                             <legend>Modify Workflow:</legend>
                             <div class="field">
                                 <label>Name:<br />
-                                    <input name="name" value="$name" type="text"
+                                    <input name="name" value="$name" type="text" id="name"
                                            disabled="${name == 'default' or None}" />
                                 </label>
                             </div>
@@ -43,6 +52,9 @@
                             <textarea id="workflow-actions" name="workflow-actions"
                                       class="wikitext trac-resizable" rows="15" cols="78">$workflow</textarea>
                             </div>
+                            <p py:if="type not in trac_types" class="help" id="trac-type-hint">
+                                        There is currently no ticket type matching this workflow.
+                            </p>
                             <div class="buttons">
                                 <input type="submit" name="cancel" value="${_('Cancel')}" />
                                 <input type="submit" name="save" value="${_('Save')}" />
@@ -102,6 +114,9 @@
                               </td>
                                 <td>
                                     Workflow for tickets of type <strong>$type</strong>.
+                                    <p py:if="type not in trac_types" class="help">
+                                        There is currently no ticket type matching this workflow.
+                                    </p>
                                 </td>
                             </tr>
                           </tbody>

@@ -240,7 +240,8 @@ class MultipleWorkflowAdminModule(Component):
             req.redirect(req.href.admin(cat, page))
 
         # GET, show admin page
-        data = {'types': self._get_all_types_with_workflow()}
+        data = {'types': self._get_all_types_with_workflow(),
+                'trac_types': [enum.name for enum in Type.select(self.env)]}
         if not path_info:
             data.update({'view': 'list',
                          'name': 'default'})
@@ -256,7 +257,8 @@ class MultipleWorkflowAdminModule(Component):
             add_script(req, 'common/js/resizer.js')
             add_script_data(req, {
                 'auto_preview_timeout': 2,
-                'form_token': req.form_token})
+                'form_token': req.form_token,
+                'trac_types': data['trac_types']})
 
         return "multipleworkflowadmin.html", data
 
