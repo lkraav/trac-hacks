@@ -13,63 +13,15 @@ from trac.core import Component, TracError, implements
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import PermissionSystem
 from trac.ticket import model
+from trac.ticket.default_workflow import load_workflow_config_snippet, parse_workflow_config
 from trac.ticket.api import ITicketActionController, TicketSystem
 from trac.util.compat import set
 from trac.util.translation import _
 
 
-# -- supporting procedures
-def parse_workflow_config(rawactions):
-    """Given a list of options from [ticket-workflow-xxxxx] create the
-    inner workflow model and normalize it's values"""
-    actions = {}
-    for option, value in rawactions:
-        parts = option.split('.')
-        action = parts[0]
-        if action not in actions:
-            actions[action] = {}
-        if len(parts) == 1:
-            # Base name, of the syntax: old,states,here -> newstate
-            try:
-                oldstates, newstate = [x.strip() for x in value.split('->')]
-            except ValueError:
-                raise Exception('Bad option "%s"' % (option, ))
-            actions[action]['newstate'] = newstate
-            actions[action]['oldstates'] = oldstates
-        else:
-            action, attribute = option.split('.')
-            actions[action][attribute] = value
-    # Fill in the defaults for every action, and normalize them to the desired types
-    for action, attributes in actions.items():
-        # Default the 'name' attribute to the name used in the ini file
-        if 'name' not in attributes:
-            attributes['name'] = action
-        # If not specified, an action is not the default.
-        if 'default' not in attributes:
-            attributes['default'] = 0
-        else:
-            attributes['default'] = int(attributes['default'])
-        # If operations are not specified, that means no operations
-        if 'operations' not in attributes:
-            attributes['operations'] = []
-        else:
-            attributes['operations'] = [a.strip() for a in
-                                        attributes['operations'].split(',')]
-        # If no permissions are specified, then no permissions are needed
-        if 'permissions' not in attributes:
-            attributes['permissions'] = []
-        else:
-            attributes['permissions'] = [a.strip() for a in
-                                         attributes['permissions'].split(',')]
-        # Normalize the oldstates
-        attributes['oldstates'] = [x.strip() for x in
-                                   attributes['oldstates'].split(',')]
-    return actions
-
-
 def get_workflow_config_default(config):
     """return the [ticket-workflow] session """
-    raw_actions = list(config.options('ticket-workflow')) 
+    raw_actions = list(config.options('ticket-workflow'))
     actions = parse_workflow_config(raw_actions)
     if '_reset' not in actions:
         actions['_reset'] = {
@@ -96,16 +48,6 @@ def get_workflow_config_by_type(config, tipo_ticket):
             'permissions': []}
     return actions
 
-
-def load_workflow_config_snippet(config, filename):
-    """Loads the ticket-workflow section from the given file (expected to be in
-    the 'workflows' tree) into the provided config.
-    """
-    from pkg_resources import resource_filename
-    filename = resource_filename('trac.ticket', 'workflows/%s' % filename)
-    new_config = Configuration(filename)
-    for name, value in new_config.options('ticket-workflow'):
-        config.set('ticket-workflow', name, value)
 
 def calc_status(actions):
     """Calculate all states from the given list of actions.
@@ -201,7 +143,7 @@ The ticket Workflow is now configurable.
 
 Your environment has been upgraded, but configured to use the original
 workflow. It is recommended that you look at changing this configuration to use
-basic-workflow. 
+basic-workflow.
 
 Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
 
@@ -298,7 +240,7 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
         operations = this_action['operations']
         current_owner = ticket._old.get('owner', ticket['owner'] or '(none)')
 
-        control = []
+        control = [] # default to nothing
         hints = []
         if 'reset_workflow' in operations:
             control.append(tag("from invalid state "))
@@ -319,7 +261,7 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
             else:
                 owners = None
 
-            if owners is None:
+            if owners == None:
                 owner = req.args.get(id, req.authname)
                 control.append(tag(['to ', tag.input(type='text', id=id,
                                                      name=id, value=owner)]))
@@ -370,7 +312,7 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
                     id=id, name=id)]))
                 hints.append(_("The resolution will be set"))
         if 'leave_status' in operations:
-            control.append('as %s ' % ticket._old.get('status', 
+            control.append('as %s ' % ticket._old.get('status',
                                                       ticket['status']))
         else:
             if status != '*':
@@ -405,7 +347,7 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
                 updated['owner'] = ''
             elif operation == 'set_owner':
                 newowner = req.args.get('action_%s_reassign_owner' % action,
-                                        this_action.get('set_owner', '').strip())
+                                    this_action.get('set_owner', '').strip())
                 # If there was already an owner, we get a list, [new, old],
                 # but if there wasn't we just get new.
                 if type(newowner) == list:
@@ -413,7 +355,6 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
                 updated['owner'] = newowner
             elif operation == 'set_owner_to_self':
                 updated['owner'] = req.authname
-
             if operation == 'del_resolution':
                 updated['resolution'] = ''
             elif operation == 'set_resolution':
@@ -425,10 +366,8 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
             # leave_status is just a no-op here, so we don't look for it.
         return updated
 
-
     def apply_action_side_effects(self, req, ticket, action):
         pass
-
 
     def _has_perms_for_action(self, req, action, resource):
         required_perms = action['permissions']
