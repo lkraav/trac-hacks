@@ -52,7 +52,7 @@
                             <textarea id="workflow-actions" name="workflow-actions"
                                       class="wikitext trac-resizable" rows="15" cols="78">$workflow</textarea>
                             </div>
-                            <p py:if="type not in trac_types" class="help" id="trac-type-hint">
+                            <p style='${(name in trac_types or name == "default") and "display: none" or None}' class="help" id="trac-type-hint">
                                         There is currently no ticket type matching this workflow.
                             </p>
                             <div class="buttons">
@@ -77,7 +77,8 @@
                           <label>Copy from:<br />
                             <select name="type" id="tkt-types" style="margin-left: 1em;">
                                 <option value="default">Default workflow</option>
-                                <option py:for="type in types" value="$type" selected="${type==selected and 'selected' or None}">$type</option>
+                                <option py:for="tkt_type in types" value="$tkt_type"
+                                        selected="${tkt_type == selected and 'selected' or None}">$tkt_type</option>
                             </select>
                           </label>
 
@@ -107,14 +108,14 @@
                                     Trac default workflow. It is used for ticket types without any specific workflow.
                                 </td>
                             </tr>
-                            <tr py:for="type in types">
-                              <td class="sel"><input type="checkbox" name="sel" value="$type" /></td>
+                            <tr py:for="tkt_type in types">
+                              <td class="sel"><input type="checkbox" name="sel" value="$tkt_type" /></td>
                               <td class="name">
-                                <a href="${panel_href(type)}">$type</a>
+                                <a href="${panel_href(tkt_type)}">$tkt_type</a>
                               </td>
                                 <td>
-                                    Workflow for tickets of type <strong>$type</strong>.
-                                    <p py:if="type not in trac_types" class="help">
+                                    Workflow for tickets of type <strong>$tkt_type</strong>.
+                                    <p py:if="tkt_type not in trac_types" class="help">
                                         There is currently no ticket type matching this workflow.
                                     </p>
                                 </td>
