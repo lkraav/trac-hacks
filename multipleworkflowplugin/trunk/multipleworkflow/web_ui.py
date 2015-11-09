@@ -228,6 +228,8 @@ class MultipleWorkflowAdminModule(Component):
                         self.config.remove(old_section, key)
 
                 # Save new workflow
+                for key, val in self.config.options(section):
+                    self.config.remove(section, key)
                 for line in req.args.get('workflow-actions').split('\n'):
                     try:
                         key, val= line.split('=')
