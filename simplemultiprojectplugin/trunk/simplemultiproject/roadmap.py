@@ -110,7 +110,7 @@ class SmpRoadmapGroup(Component):
         if filename == 'roadmap.html':
             # Change label to include versions
             filter_ = Transformer('//label[@for="showcompleted"]')
-            stream = stream | filter_.replace(HTML('<label for="showcompleted">Show completed milestones and '
+            stream = stream | filter_.replace(HTML(u'<label for="showcompleted">Show completed milestones and '
                                                    'versions</label>'))
             # Add additional checkboxes to preferences
             data['smp_render'] = 'prefs'  # specify which part of template to render
@@ -120,7 +120,7 @@ class SmpRoadmapGroup(Component):
             if group_proj:
                 chked = 'checked="1"'
             filter_ = Transformer('//form[@id="prefs"]')
-            stream = stream | filter_.prepend(HTML('<div>'
+            stream = stream | filter_.prepend(HTML(u'<div>'
                                                    '<input type="hidden" name="smp_update" value="group" />'
                                                    '<input type="checkbox" id="groupbyproject" name="smp_group" '
                                                    'value="1" %s />'

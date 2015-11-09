@@ -541,13 +541,13 @@ class SmpVersionModule(Component):
         if filename == 'roadmap.html':
             # Add button to create new versions
             filter_ = Transformer('//div[@class="buttons"][2]')
-            stream = stream | filter_.append(HTML('<form action="%s" method="get"><div>'
+            stream = stream | filter_.append(HTML(u'<form action="%s" method="get"><div>'
                                                   '<input type="hidden" value="new" name="action"/>'
                                                   '<input value="Add new Version" type="submit">'
                                                   '</div></form>' % req.href.version()))
             # Change label to include versions
             filter_ = Transformer('//label[@for="showcompleted"]')
-            stream = stream | filter_.replace(HTML('<label for="showcompleted">Show completed milestones and '
+            stream = stream | filter_.replace(HTML(u'<label for="showcompleted">Show completed milestones and '
                                                    'versions</label>'))
             # Add additional checkboxes to preferences
             data['smp_render'] = 'prefs'
