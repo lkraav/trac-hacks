@@ -47,7 +47,7 @@ setup(
     },
     dependency_links=[
         'http://trac-hacks.org/svn/voteplugin/trunk'
-        '#egg=TracVote-0.3dev',
+        '#egg=TracVote-0.4dev',
         'http://trac-hacks.org/svn/svnauthzadminplugin/1.0'
         '#egg=SvnAuthzAdminPlugin-1.0dev',
     ],
