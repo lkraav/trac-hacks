@@ -50,13 +50,6 @@ class DefaultCCAdmin(Component):
 
     def environment_needs_upgrade(self, db):
         return 'component_default_cc' not in self._get_tables(db)
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT COUNT(*) FROM component_default_cc")
-            cursor.fetchone()
-            return False
-        except:
-            return True
 
     def upgrade_environment(self, db):
         self._upgrade_db(db)
