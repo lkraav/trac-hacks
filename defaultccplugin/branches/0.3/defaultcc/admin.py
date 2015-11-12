@@ -45,9 +45,11 @@ class DefaultCCAdmin(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        self._upgrade_db(self.env.get_db_cnx())
+        db = self.env.get_db_cnx()
+        self._upgrade_db(db)
 
     def environment_needs_upgrade(self, db):
+        return 'component_default_cc' not in self._get_tables(db)
         cursor = db.cursor()
         try:
             cursor.execute("SELECT COUNT(*) FROM component_default_cc")
@@ -71,6 +73,22 @@ class DefaultCCAdmin(Component):
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise TracError(str(e))
+
+    def _get_tables(self, db):
+        dburi = self.config.get('trac', 'database')
+        cursor = db.cursor()
+        if dburi.startswith('sqlite:'):
+            query = "SELECT name FROM sqlite_master" \
+                    " WHERE type='table' AND NOT name='sqlite_sequence'"
+        elif dburi.startswith('postgres:'):
+            query = "SELECT tablename FROM pg_tables" \
+                    " WHERE schemaname = ANY (current_schemas(false))"
+        elif dburi.startswith('mysql:'):
+            query = "SHOW TABLES"
+        else:
+            raise TracError('Unsupported %s database' % dburi.split(':')[0])
+        cursor.execute(query)
+        return sorted(row[0] for row in cursor)
 
     # IRequestFilter methods
 
