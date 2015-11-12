@@ -46,13 +46,12 @@ class DynamicFieldsModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if ((req.path_info.startswith('/ticket') and
-             (req.perm.has_permission('TICKET_VIEW') or
-              req.perm.has_permission('TICKET_MODIFY')))
-          or (req.path_info.startswith('/newticket')) and
-              req.perm.has_permission('TICKET_CREATE')) \
-          or (req.path_info.startswith('/query') and
-              req.perm.has_permission('REPORT_VIEW')):
+        if (req.path_info.startswith('/ticket') and
+                'TICKET_VIEW' in req.perm) or \
+               (req.path_info.startswith('/newticket') and
+                'TICKET_CREATE' in req.perm) or \
+               (req.path_info.startswith('/query') and
+                'REPORT_VIEW' in req.perm):
             add_script_data(req, {'triggers': self._get_triggers(req)})
             add_script(req, 'dynfields/dynfields.js')
             add_script(req, 'dynfields/rules.js')
