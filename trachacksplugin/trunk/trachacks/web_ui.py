@@ -9,15 +9,16 @@
 #
 
 import os
-import pkg_resources
 import random
 import re
+from pkg_resources import resource_filename, resource_listdir
 from string import Template
 
 from genshi.builder import tag as builder
 from trac.core import Component, TracError, implements
 from trac.config import ConfigurationError, IntOption, Option
-from trac.perm import IPermissionRequestor, PermissionSystem
+from trac.perm import IPermissionPolicy, IPermissionRequestor, \
+                      PermissionSystem
 from trac.resource import Resource, ResourceNotFound, resource_exists
 from trac.ticket.model import Component as TicketComponent
 from trac.wiki.formatter import wiki_to_html
@@ -151,6 +152,47 @@ class ValidTypeSelected(Aspect):
         return type_
 
 
+class ReadonlyHelpPolicy(Component):
+
+    implements(IPermissionPolicy, IRequestFilter)
+
+    NOTICE_TEMPLATE = """\
+    {{{#!box note
+    The TracGuide is not editable on this site. Changes should instead
+    be made on the [trac:%(page_name)s Trac Development] site.
+    }}}
+    """
+
+    help_pages = sorted(name for name in resource_listdir('trac.wiki',
+                                                          'default-pages')
+                             if name not in ('PageTemplates', 'InterMapTxt',
+                                             'WikiStart'))
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        if template is not None:
+            match = re.match(r'/wiki(?:/(.+))?$', req.path_info)
+            if match:
+                page_name = match.group(1)
+                if page_name in self.help_pages:
+                    notice = self.NOTICE_TEMPLATE % {'page_name': page_name}
+                    data['text'] = notice + data['text']
+        return template, data, content_type
+
+    # IPermissionPolicy methods
+
+    def check_permission(self, action, username, resource, perm):
+        if resource and \
+                resource.realm and resource.realm == 'wiki' and \
+                resource.id and resource.id in self.help_pages and \
+                action != 'WIKI_VIEW':
+            return False
+
+
 class TracHacksHandler(Component):
     """Trac-Hacks request handler."""
     implements(INavigationContributor, IRequestHandler, IRequestFilter,
@@ -198,7 +240,7 @@ class TracHacksHandler(Component):
         self.form = form
 
         try:
-            locale_dir = pkg_resources.resource_filename(__name__, 'locale')
+            locale_dir = resource_filename(__name__, 'locale')
         except KeyError:
             pass
         else:
@@ -354,11 +396,9 @@ class TracHacksHandler(Component):
     # ITemplateProvider methods
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
         htdocs = resource_filename(__name__, 'htdocs')
         return [('hacks', htdocs), ('newhack', htdocs)]
 

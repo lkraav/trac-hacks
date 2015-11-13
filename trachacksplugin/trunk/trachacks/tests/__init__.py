@@ -8,12 +8,14 @@
 
 import unittest
 
+from trachacks.tests import macros, web_ui
+
 
 def test_suite():
     suite = unittest.TestSuite()
 
-    import trachacks.tests.macros
-    suite.addTest(trachacks.tests.macros.test_suite())
+    suite.addTest(macros.test_suite())
+    suite.addTest(web_ui.test_suite())
 
     return suite
 

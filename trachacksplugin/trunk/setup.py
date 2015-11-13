@@ -46,10 +46,12 @@ setup(
         ]
     },
     dependency_links=[
-        'http://trac-hacks.org/svn/voteplugin/trunk'
+        'https://trac-hacks.org/svn/voteplugin/trunk'
         '#egg=TracVote-0.4dev',
-        'http://trac-hacks.org/svn/svnauthzadminplugin/1.0'
+        'https://trac-hacks.org/svn/svnauthzadminplugin/1.0'
         '#egg=SvnAuthzAdminPlugin-1.0dev',
+        'https://trac-hacks.org/svn/wikiextrasplugin/trunk'
+        '#egg=TracWikiExtras-1.0dev',
     ],
     entry_points={
         'trac.plugins': [
@@ -63,6 +65,7 @@ setup(
         'TracAccountManager',
         'TracTags >= 0.7',
         'TracVote >= 0.3',
+        'TracWikiExtras',
         'SvnAuthzAdminPlugin',
     ],
     test_suite='trachacks.tests.test_suite',
