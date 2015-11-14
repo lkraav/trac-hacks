@@ -48,9 +48,8 @@ class DynamicFieldsModule(Component):
     def post_process_request(self, req, template, data, content_type):
         if template is not None:
             add_script_data(req, {'triggers': self._get_triggers(req)})
-            add_script(req, 'dynfields/dynfields.js')
-            add_script(req, 'dynfields/rules.js')
-            add_script(req, 'dynfields/layout.js')
+            for script in ('dynfields.js', 'rules.js', 'layout.js'):
+                add_script(req, 'dynfields/%s' % script)
             add_stylesheet(req, 'dynfields/layout.css')
         return template, data, content_type
 
