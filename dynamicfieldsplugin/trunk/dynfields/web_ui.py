@@ -46,12 +46,7 @@ class DynamicFieldsModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if (req.path_info.startswith('/ticket') and
-                'TICKET_VIEW' in req.perm) or \
-               (req.path_info.startswith('/newticket') and
-                'TICKET_CREATE' in req.perm) or \
-               (req.path_info.startswith('/query') and
-                'REPORT_VIEW' in req.perm):
+        if template is not None:
             add_script_data(req, {'triggers': self._get_triggers(req)})
             add_script(req, 'dynfields/dynfields.js')
             add_script(req, 'dynfields/rules.js')
