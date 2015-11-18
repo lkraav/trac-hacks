@@ -1,22 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2013, 2015 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
+
+import copy
+from datetime import datetime
+import re
 
 from genshi.builder import tag
 from pkg_resources import ResourceManager
 from trac.core import Component, implements, TracError
 from trac.ticket.api import TicketSystem
 from trac.ticket.query import Query
+from trac.util import datefmt
 from trac.util.translation import _
 from trac.web.chrome import add_script, ITemplateProvider, add_script_data
 from trac.wiki.api import IWikiMacroProvider
-import copy
-import re
 
 re_param = re.compile("\$[a-zA-Z]+")
 
@@ -182,14 +185,17 @@ class Macro(Component):
         for no, tid in enumerate(sorted(tickets)):
             if not too_many_tickets or tickets[tid][-1][3] != 'closed':
                 void, time, void, state = tickets[tid][-1]  # @UnusedVariable
+                # offset by req.tz
+                time = datefmt.to_timestamp(datetime.fromtimestamp(time/1000000, formatter.req.tz).replace(tzinfo=datefmt.utc)) * 1000
                 index = status_list_splitted.get(state, default_status)
                 data.append({'points': {'show': True, 'radius': 8, 'color': no},
                              'label': tid,
-                             'data': [[time / 1000, index]]})
+                             'data': [[time, index]]})
         # lines
         for no, tid in enumerate(sorted(tickets)):
             data.append({'color': no, 'label': tid,
-                         'data': [[time / 1000, status_list_splitted.get(state, default_status)]
+                         'data': [[datefmt.to_timestamp(datetime.fromtimestamp(time/1000000, formatter.req.tz).replace(tzinfo=datefmt.utc)) * 1000,
+                                   status_list_splitted.get(state, default_status)]
                                   for void, time, void, state in tickets[tid]]})  # @UnusedVariable
         from trac import __version__ as VERSION
         if VERSION[0:1] != '0':

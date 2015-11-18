@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+ * Copyright (C) 2013, 2015 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
  * All rights reserved.
  * 
  * This software is licensed as described in the file COPYING, which
@@ -12,7 +12,7 @@
         -document.location.pathname.length
         - document.location.search.length)
         + $('link[rel="search"]').attr('href').slice(0, -7);
-    $.plot($("#statushistorychart"), statushistorychart_data, {
+    p = $.plot($("#statushistorychart"), statushistorychart_data, {
       legend:{ show: false },
       grid : { hoverable : true,
                clickable : true},
@@ -27,7 +27,10 @@
         $(this).data('plot').draw();
         $(this).data('item', item);
         $("#statushistorychart_tooltip").remove();
-        $('<div id="statushistorychart_tooltip">#' + item.series.label + '</div>').css({
+        $('<div id="statushistorychart_tooltip">#' + item.series.label
+        		+ '(' + p.getYAxes()[0].ticks[item.datapoint[1]].label
+        		+ ' on ' + p.getXAxes()[0].tickFormatter(item.datapoint[0],p.getXAxes()[0]) + ')'
+        		+'</div>').css({
           position : 'absolute',
           top : item.pageY - 30,
           left : item.pageX + 5,
