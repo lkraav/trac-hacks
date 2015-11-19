@@ -7,17 +7,16 @@ http://trac.edgewall.org
 import os
 
 from trac.core import *
+from trac.env import open_environment
 from trac.web.api import IAuthenticator
 from trac.web.main import RequestDispatcher
-from trac.env import open_environment
 
 
 class SharedCookieAuth(Component):
 
-    ### class-level data
     implements(IAuthenticator)
 
-    ### method for IAuthenticator
+    # IAuthenticator methods
 
     def authenticate(self, req):
 
@@ -28,7 +27,7 @@ class SharedCookieAuth(Component):
             return req.environ['shared_cookie_auth']
         else:
             req.environ['shared_cookie_auth'] = None
-            if req.incookie.has_key('trac_auth'):
+            if 'trac_auth' in req.incookie:
                 for project, dispatcher in self.dispatchers().items():
                     agent = dispatcher.authenticate(req)
                     if agent != 'anonymous':
@@ -38,15 +37,13 @@ class SharedCookieAuth(Component):
 
         return None
 
-    ### internal methods
+    # Internal methods
 
     def dispatchers(self):
         if not hasattr(self, '_dispatchers'):
-
             dispatchers = {}
             base_path, project = os.path.split(self.env.path)
-            projects = [ i for i in os.listdir(base_path)
-                         if i != project ]
+            projects = [i for i in os.listdir(base_path) if i != project]
 
             for project in projects:
                 path = os.path.join(base_path, project)
