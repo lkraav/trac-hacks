@@ -68,6 +68,12 @@ def version_interval_hrefs(env, req, stat, milestones):
     return [query_href(interval['qry_args']) for interval in stat.intervals]
 
 
+def version_stats_href(env, req, milestones):
+    has_query = env[QueryModule] is not None
+    if has_query:
+        return req.href.query({'milestone': milestones, 'group': 'status'})
+
+
 # TODO: rename this to VersionModule, but beware that on upgrade, if the user
 # hasn't used a wildcard to specify the components to be enabled, they will
 # need to modify the components section of trac.ini:
@@ -396,7 +402,8 @@ class VisibleVersion(Component):
             and version.time < datetime.now(utc)
         version.stats = stats
         version.interval_hrefs = interval_hrefs
-        version.stats_href = []  # Not implemented yet, see th:#10349
+        names = [milestone.name for milestone in milestones]
+        version.stats_href = version_stats_href(self.env, req, names)
         data = {
             'version': version,
             'attachments': AttachmentModule(self.env)
