@@ -17,7 +17,7 @@ import re
 
 from trac.core import Component, implements, TracError
 from trac.ticket.model import Ticket
-from trac.web.api import ITemplateStreamFilter, IRequestHandler
+from trac.web.api import ITemplateStreamFilter, IRequestHandler, Request
 from trac.env import IEnvironmentSetupParticipant
 from genshi.filters.transform import Transformer, StreamBuffer
 from genshi.builder import tag
@@ -65,8 +65,13 @@ class Accreditation(Component):
         return req.path_info.startswith('/accreditation/new') or req.path_info.startswith('/accreditation/comment')
 
     def process_request(self, req):
+        """
 
-        if req.path_info.startswith('/accreditation/new') :
+        :type req: Request
+        :return:
+        """
+
+        if req.path_info.startswith('/accreditation/new'):
 
             id = int(req.args['ticket'])
             topic = req.args['topic']
@@ -86,7 +91,7 @@ class Accreditation(Component):
 
             ticket.save_changes(req.authname, "Launched New Accreditation '''%s'''" % topic)
 
-            req.redirect('/ticket/' + str(id))
+            req.redirect(req.href('ticket', id))
 
         elif req.path_info.startswith('/accreditation/comment'):
 
@@ -107,7 +112,7 @@ class Accreditation(Component):
 
             ticket.save_changes(req.authname, "Accredited '''%s''' for \"''%s''\".\n\n%s" % (topic, conclusion, comment))
 
-            req.redirect('/ticket/' + str(id))
+            req.redirect(req.href('ticket', id))
 
     def filter_stream(self, req, method, filename, stream, data):
 
@@ -130,7 +135,7 @@ class Accreditation(Component):
                             tag.td(tag.label('Participants:')),
                             tag.td(tag.input(type_='text', name='participants')))),
                     tag.div(tag.input(type_='submit', value='Submit', name='submit'), class_='buttons')),
-                id='accreditationform', method='POST', action='/accreditation/new'))
+                id='accreditationform', method='POST', action=req.href('accreditation', 'new')))
 
         acclist = tag.div(
             *[tag.div(
@@ -151,7 +156,7 @@ class Accreditation(Component):
                         class_='wiki', style='width: 100%;'),
                     tag.input(type_='submit', value='Submit', name='submit', style='margin-top: 5px; float: right;'),
                     tag.div(style='clear: both;'),
-                    action='/accreditation/comment', method='POST'
+                    action=req.href('accreditation', 'comment'), method='POST'
                 )
             ) for key, value in self._get_accreditations(ticket.id).items()]
             , class_='trac-content', style='background: none repeat scroll 0 0 #FFFFDD; border:1px solid #DDDD99;'
