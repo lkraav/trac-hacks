@@ -160,7 +160,7 @@ class SumTicketGroupStatsProvider(DefaultTicketGroupStatsProvider):
                 count=group.get('total', 0),
                 qry_args=group.get('query_args', {}),
                 css_class=group.get('css_class', group['name']),
-                overall_completion=as_bool(group.get('overall_completion')))
+                overall_completion=as_bool(group.get('overall_completion', '')))
         stat.refresh_calcs()
         return stat
 

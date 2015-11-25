@@ -11,7 +11,7 @@
 from setuptools import setup
 
 PACKAGE = 'TracSumStats'
-VERSION = '0.9.0'
+VERSION = '0.9.1'
 
 setup(
     name=PACKAGE, version=VERSION,
