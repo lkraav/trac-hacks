@@ -1,12 +1,16 @@
-"""
-SharedCookieAuth:
-a plugin for Trac to share cookies between Tracs
-http://trac.edgewall.org
-"""
+# -*- coding: utf8 -*-
+#
+# Copyright (C) 2009 Jeff Hammel <jhammel@openplans.org>
+# Copyright (C) 2012 Lars Wireen <lw@agitronic.se>
+# Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import os
 
-from trac.core import *
+from trac.core import Component, TracError, implements
 from trac.env import open_environment
 from trac.web.api import IAuthenticator
 from trac.web.main import RequestDispatcher
@@ -16,10 +20,12 @@ class SharedCookieAuth(Component):
 
     implements(IAuthenticator)
 
+    def __init__(self):
+        self._dispatchers = None
+
     # IAuthenticator methods
 
     def authenticate(self, req):
-
         if req.remote_user:
             return req.remote_user
 
@@ -28,7 +34,7 @@ class SharedCookieAuth(Component):
         else:
             req.environ['shared_cookie_auth'] = None
             if 'trac_auth' in req.incookie:
-                for project, dispatcher in self.dispatchers().items():
+                for dispatcher in self.dispatchers.values():
                     agent = dispatcher.authenticate(req)
                     if agent != 'anonymous':
                         req.authname = agent
@@ -39,20 +45,21 @@ class SharedCookieAuth(Component):
 
     # Internal methods
 
+    @property
     def dispatchers(self):
-        if not hasattr(self, '_dispatchers'):
-            dispatchers = {}
-            base_path, project = os.path.split(self.env.path)
-            projects = [i for i in os.listdir(base_path) if i != project]
+        if self._dispatchers is None:
+            self._dispatchers = {}
+            parent_dir, project = os.path.split(self.env.path)
+            projects = [i for i in os.listdir(parent_dir)
+                          if i != project and
+                             os.path.isdir(os.path.join(parent_dir, i))]
 
             for project in projects:
-                path = os.path.join(base_path, project)
+                project_path = os.path.join(parent_dir, project)
                 try:
-                    env = open_environment(path)
-                    rd = RequestDispatcher(env)
-                except:
-                    continue
-                dispatchers[project] = rd
-
-            self._dispatchers = dispatchers
+                    env = open_environment(project_path)
+                except TracError:
+                    pass
+                else:
+                    self._dispatchers[project] = RequestDispatcher(env)
         return self._dispatchers
