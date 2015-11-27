@@ -54,7 +54,8 @@ setup(
         'Framework :: Trac',
     ],
 
-    install_requires=['simple_json' if sys.version_info < (2, 6) else ''],
+    install_requires=['Trac',
+                      'simple_json' if sys.version_info < (2, 6) else ''],
     test_suite='tickettemplate.tests',
     entry_points={
         'trac.plugins': ['tickettemplate = tickettemplate.ttadmin'],
