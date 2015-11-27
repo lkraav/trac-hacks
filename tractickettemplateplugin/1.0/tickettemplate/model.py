@@ -52,7 +52,8 @@ class TT_Template(object):
         env.db_transaction("""
             INSERT INTO ticket_template_store
               (tt_time,tt_user,tt_name,tt_field,tt_value)
-            VALUES (%s,%s,%s,%s,%s)""", record)
+            VALUES (%s,%s,%s,%s,%s)
+            """, record)
 
     @classmethod
     def fetchCurrent(cls, env, data):
@@ -60,8 +61,10 @@ class TT_Template(object):
         field_value_mapping = {}
         for tt_field, tt_value in env.db_query("""
                 SELECT tt_field, tt_value FROM ticket_template_store
-                WHERE tt_user=%s AND tt_time = (SELECT max(tt_time)
-                  FROM ticket_template_store WHERE tt_name=%s)
+                WHERE tt_user=%s AND tt_time=(
+                  SELECT max(tt_time)
+                  FROM ticket_template_store
+                  WHERE tt_name=%s)
                 """, (data['tt_user'], data['tt_name'])):
             if tt_value:
                 field_value_mapping[tt_field] = tt_value
@@ -150,14 +153,16 @@ class TT_Template(object):
     @classmethod
     def fetch(cls, env, tt_name):
         """Retrieve an existing tt from the database by ID."""
+        tt_value = None
         for value, in env.db_query("""
                 SELECT tt_value FROM ticket_template_store
                 WHERE tt_time=(
                   SELECT max(tt_time)
                   FROM ticket_template_store
-                  WHERE tt_name=%s and tt_field='description')
+                  WHERE tt_name=%s)
                 """, (tt_name,)):
-            return value
+            tt_value = value
+        return tt_value
 
     @classmethod
     def fetchNames(cls, env):

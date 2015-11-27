@@ -91,7 +91,7 @@ def _findAllTmpls(env):
     files = os.listdir(basePath)
     for file in files:
         if file.startswith('description_') and file.endswith('.tmpl'):
-            tt_name_base64 = file.split('description_',1)[1] \
+            tt_name_base64 = file.split('description_', 1)[1] \
                                  .rsplit('.tmpl', 1)[0]
             # if tt_name can't decode by base64, then it's normal name
             try:
@@ -113,7 +113,7 @@ def _findAllTmplsBase64(env):
     files = os.listdir(basePath)
     for file in files:
         if file.startswith('description_') and file.endswith('.tmpl'):
-            tt_name_base64 = file.split('description_',1)[1] \
+            tt_name_base64 = file.split('description_', 1)[1] \
                              .rsplit('.tmpl', 1)[0]
             try:
                 base64.decodestring(tt_name_base64).decode('utf-8')

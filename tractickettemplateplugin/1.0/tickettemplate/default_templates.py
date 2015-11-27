@@ -8,24 +8,24 @@
 #
 
 DEFAULT_TEMPLATES = [
-("defect", """= bug description =
+    ("defect", """= bug description =
 
-= bug analysis =
+    = bug analysis =
 
-= fix recommendation ="""),
-("enhancement", """= problem =
+    = fix recommendation ="""),
+    ("enhancement", """= problem =
 
-= analysis =
+    = analysis =
 
-= enhancement recommendation ="""),
-("task", """= phenomenon =
+    = enhancement recommendation ="""),
+    ("task", """= phenomenon =
 
-= background analysis =
+    = background analysis =
 
-= implementation recommendation ="""),
-("default", """= phenomenon =
+    = implementation recommendation ="""),
+    ("default", """= phenomenon =
 
-= reason =
+    = reason =
 
-= recommendation ="""),
+    = recommendation ="""),
 ]

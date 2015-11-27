@@ -11,11 +11,6 @@
 import sys
 from setuptools import setup
 
-min_python = (2, 5)
-if sys.version_info < min_python:
-    print("TracTicketTemplate requires Python %d.%d or later" % min_python)
-    sys.exit(1)
-
 extra = {}
 
 try:
@@ -49,7 +44,7 @@ setup(
     description="Ticket template plugin for Trac.",
     license="3-Clause BSD",
     keywords="trac ticket template",
-    url="http://trac-hacks.org/wiki/TracTicketTemplatePlugin",
+    url="https://trac-hacks.org/wiki/TracTicketTemplatePlugin",
     classifiers=[
         'Framework :: Trac',
     ],

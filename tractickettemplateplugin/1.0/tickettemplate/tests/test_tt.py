@@ -12,13 +12,15 @@ import unittest
 from trac.core import *
 from trac.test import EnvironmentStub, Mock
 
+from tickettemplate.utils import SYSTEM_USER
+from tickettemplate.model import TT_Template
 import tickettemplate.ttadmin as ttadmin
 
 
 class TicketTemplateTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub()
+        self.env = EnvironmentStub(enable=['tickettemplate'])
         self.tt = ttadmin.TicketTemplateModule(self.env)
         self.tt.upgrade_environment()
 
@@ -32,14 +34,16 @@ class TicketTemplateTestCase(unittest.TestCase):
         req = Mock(path_info='/something')
         self.assertEqual(False, self.tt.match_request(req))
 
-    def test_loadSaveTemplateText(self):
-        for tt_name, tt_text in [("default", "default text"),
-                                ("defect", "defect text"),
-                                ("enhancement", "enhancement text"),
-                                ("task", "task text"),
-                                ]:
-            self.tt._saveTemplateText(tt_name, tt_text)
-            self.assertEqual(tt_name + " text", self.tt._loadTemplateText(tt_name))
+    def test_load_template_text(self):
+        templates = [
+            ("default2", "default text"),
+            ("defect", "defect text"),
+            ("enhancement", "enhancement text"),
+            ("task", "task text"),
+        ]
+        self.tt._insert_templates(templates)
+        for tt_name, tt_text in templates:
+            self.assertEqual(tt_text, self.tt._loadTemplateText(tt_name))
 
 
 def suite():

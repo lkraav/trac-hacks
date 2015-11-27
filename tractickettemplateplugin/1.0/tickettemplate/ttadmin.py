@@ -22,6 +22,7 @@ from trac.db import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor
 from trac.ticket import Ticket, Type as TicketType
+from trac.util.translation import domain_functions
 from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
 from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
                             add_script_data
@@ -31,14 +32,13 @@ try:
 except ImportError:
     import simplejson as json
 
+from default_templates import DEFAULT_TEMPLATES
 from tickettemplate.model import TT_Template, schema, schema_version
 from utils import *
 
-from i18n_domain import gettext, _, tag_, N_, add_domain
-
-from default_templates import DEFAULT_TEMPLATES
-
-__all__ = ['TicketTemplateModule']
+gettext, _, tag_, N_, add_domain = \
+    domain_functions('tickettemplate', 'gettext', '_', 'tag_', 'N_',
+                     'add_domain')
 
 
 class TicketTemplateModule(Component):
@@ -195,7 +195,7 @@ class TicketTemplateModule(Component):
                    _("Ticket Template"))
 
     def render_admin_panel(self, req, cat, page, path_info):
-        req.perm.assert_permission('TT_ADMIN')
+        req.perm.require('TT_ADMIN')
 
         data = {
             'gettext': gettext,
@@ -304,22 +304,31 @@ class TicketTemplateModule(Component):
         # tt_custom save
         elif req.path_info.startswith('/tt/custom_save'):
             tt_name, custom_template = self._handleCustomSave(req)
-            result = {'status': '1', 'tt_name': tt_name,
-                      'new_template': custom_template}
+            result = {
+                'status': '1',
+                'tt_name': tt_name,
+                'new_template': custom_template
+            }
             json_str = json.dumps(result)
             self._sendResponse(req, json_str)
 
         # tt_custom delete
         elif req.path_info.startswith('/tt/custom_delete'):
             tt_name = self._handleCustomDelete(req)
-            result = {'status': '1', 'tt_name': tt_name}
+            result = {
+                'status': '1',
+                'tt_name': tt_name
+            }
             json_str = json.dumps(result)
             self._sendResponse(req, json_str)
 
         elif req.path_info.startswith('/tt/edit_buffer_save'):
             tt_name, custom_template = self._handleCustomSave(req)
-            result = {'status': '1', 'tt_name': tt_name,
-                      'new_template': custom_template}
+            result = {
+                'status': '1',
+                'tt_name': tt_name,
+                'new_template': custom_template
+            }
             json_str = json.dumps(result)
             self._sendResponse(req, json_str)
 
@@ -464,8 +473,8 @@ class TicketTemplateModule(Component):
         req.send_header('Expires', 'Fri, 01 Jan 1999 00:00:00 GMT')
         req.send_header('Content-Type', 'text/plain' + ';charset=utf-8')
         req.send_header('Content-Length',
-                        len(isinstance(message, unicode)
-                        and message.encode('utf-8') or message))
+                        len(isinstance(message, unicode) and
+                        message.encode('utf-8') or message))
         req.end_headers()
 
         if req.method != 'HEAD':
@@ -475,9 +484,8 @@ class TicketTemplateModule(Component):
     def _saveTemplateText(self, tt_name, tt_text):
         """ save ticket template text to db.
         """
-        id = TT_Template.insert(self.env, (int(time.time()), 'SYSTEM',
-                                           tt_name, 'description', tt_text))
-        return id
+        TT_Template.insert(self.env, (int(time.time()), 'SYSTEM', tt_name,
+                                      'description', tt_text))
 
     def _getTicketTypeNames(self):
         """ get ticket type names
