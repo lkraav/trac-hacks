@@ -39,11 +39,17 @@ class SharedCookieAuth(Component):
                     if agent != 'anonymous':
                         req.authname = agent
                         req.environ['shared_cookie_auth'] = agent
+                        self.revert_expire_cookie(req)
                         return agent
 
         return None
 
     # Internal methods
+
+    def revert_expire_cookie(self, req):
+        if 'trac_auth' in req.outcookie and \
+                req.outcookie['trac_auth']['expires'] == -10000:
+            del req.outcookie['trac_auth']
 
     @property
     def dispatchers(self):
