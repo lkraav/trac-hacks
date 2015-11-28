@@ -26,27 +26,25 @@ class SharedCookieAuth(Component):
     # IAuthenticator methods
 
     def authenticate(self, req):
-        if req.remote_user:
-            return req.remote_user
-
-        if 'shared_cookie_auth' in req.environ:
-            return req.environ['shared_cookie_auth']
-        else:
-            req.environ['shared_cookie_auth'] = None
-            if 'trac_auth' in req.incookie:
-                if self._dispatchers is None:
-                    self._dispatchers = self.get_dispatchers(req)
-                for dispatcher in self._dispatchers:
-                    agent = dispatcher.authenticate(req)
-                    if agent != 'anonymous':
-                        req.authname = agent
-                        req.environ['shared_cookie_auth'] = agent
-                        self.revert_expire_cookie(req)
-                        return agent
-
-        return None
+        if not self.is_delegated_auth(req) and \
+                'trac_auth' in req.incookie:
+            if self._dispatchers is None:
+                self._dispatchers = self.get_dispatchers(req)
+            for dispatcher in self._dispatchers:
+                authname = dispatcher.authenticate(req)
+                if authname != 'anonymous':
+                    self.revert_expire_cookie(req)
+                    return authname
 
     # Internal methods
+
+    def is_delegated_auth(self, req):
+        """Return true if authentication has been delegated from
+        another project.
+        """
+        req_env_name = os.path.split(req.base_path)[-1]
+        env_name = os.path.split(self.env.path)[-1]
+        return req_env_name and env_name != req_env_name
 
     def revert_expire_cookie(self, req):
         if 'trac_auth' in req.outcookie and \
@@ -56,10 +54,11 @@ class SharedCookieAuth(Component):
     def get_dispatchers(self, req):
         dispatchers = []
         for env_path in get_environments(req.environ).values():
-            try:
-                env = open_environment(env_path)
-            except TracError:
-                pass
-            else:
-                dispatchers.append(RequestDispatcher(env))
+            if env_path != self.env.path:
+                try:
+                    env = open_environment(env_path)
+                except TracError:
+                    pass
+                else:
+                    dispatchers.append(RequestDispatcher(env))
         return dispatchers
