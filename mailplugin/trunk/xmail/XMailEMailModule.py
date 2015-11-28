@@ -49,7 +49,7 @@ class XMailEventHandler(Component):
         add_domain(self.env.path, locale_dir)
 
     def filter_stream(self, req, method, filename, stream, data):
-        if not self._TimerIsStillAlive():
+        if Locale and not self._TimerIsStillAlive():
             # copied from main.py:310ff
             available = [locale_id.replace('_', '-') for locale_id in
                          translation.get_available_locales()]
