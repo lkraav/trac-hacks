@@ -225,6 +225,7 @@ approval required to close = status == 'closed' && approval != 'Approved'
 only designated approver can approve = !authname has_role 'approver' && approval != _approval && approval == 'Approved'
 }}}
     The first rule means that the ticket cannot be closed if the 'approval' field has not been set to the value 'Approved'. The second rule means that only a user who is a member of the group 'approver' can change the 'approval' field to that value.
+    '''
 
     implements(ITicketManipulator)
 
