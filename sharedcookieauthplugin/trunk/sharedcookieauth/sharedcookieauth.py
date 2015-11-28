@@ -13,7 +13,7 @@ import os
 from trac.core import Component, TracError, implements
 from trac.env import open_environment
 from trac.web.api import IAuthenticator
-from trac.web.main import RequestDispatcher
+from trac.web.main import RequestDispatcher, get_environments
 
 
 class SharedCookieAuth(Component):
@@ -34,7 +34,9 @@ class SharedCookieAuth(Component):
         else:
             req.environ['shared_cookie_auth'] = None
             if 'trac_auth' in req.incookie:
-                for dispatcher in self.dispatchers.values():
+                if self._dispatchers is None:
+                    self._dispatchers = self.get_dispatchers(req)
+                for dispatcher in self._dispatchers:
                     agent = dispatcher.authenticate(req)
                     if agent != 'anonymous':
                         req.authname = agent
@@ -51,21 +53,13 @@ class SharedCookieAuth(Component):
                 req.outcookie['trac_auth']['expires'] == -10000:
             del req.outcookie['trac_auth']
 
-    @property
-    def dispatchers(self):
-        if self._dispatchers is None:
-            self._dispatchers = {}
-            parent_dir, project = os.path.split(self.env.path)
-            projects = [i for i in os.listdir(parent_dir)
-                          if i != project and
-                             os.path.isdir(os.path.join(parent_dir, i))]
-
-            for project in projects:
-                project_path = os.path.join(parent_dir, project)
-                try:
-                    env = open_environment(project_path)
-                except TracError:
-                    pass
-                else:
-                    self._dispatchers[project] = RequestDispatcher(env)
-        return self._dispatchers
+    def get_dispatchers(self, req):
+        dispatchers = []
+        for env_path in get_environments(req.environ).values():
+            try:
+                env = open_environment(env_path)
+            except TracError:
+                pass
+            else:
+                dispatchers.append(RequestDispatcher(env))
+        return dispatchers
