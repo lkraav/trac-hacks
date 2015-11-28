@@ -17,10 +17,9 @@ from pkg_resources import resource_filename  # @UnresolvedImport
 from trac.config import IntOption
 from trac.loader import get_plugin_info
 from trac.notification import NotifyEmail
-from trac.prefs.web_ui import Locale
 from trac.util import translation
 from trac.util.datefmt import format_datetime
-from trac.util.translation import domain_functions, activate
+from trac.util.translation import Locale, activate, domain_functions
 from trac.web.api import ITemplateStreamFilter
 from xmail.XMailFilterObject import FilterObject
 from trac.core import Component, implements
@@ -69,7 +68,7 @@ class XMailEventHandler(Component):
     # Default Config
     #=========================================================================
     DEFAULT_SLEEP_TIME = IntOption('xmail-plugin', 'sleeptime', 120,
-                                   """Sleep time in seconds for thread. 
+                                   """Sleep time in seconds for thread.
         This is the time which determines how often the filter should be checked.""")
     currentTimeInMicroSec = 0
 
@@ -208,7 +207,7 @@ class XMailEventHandler(Component):
 
     def _get_relevant_tickets(self, timefilter, filter):
         """retrieve relevant tickets for filterId
-        timefilter is usually 'time' (for new tickets) or 'time != changetime and changetime' (for ticket changes) 
+        timefilter is usually 'time' (for new tickets) or 'time != changetime and changetime' (for ticket changes)
         """
         if filter.values['interval'] > 0:
             t = filter.values['nextexe'] - \
