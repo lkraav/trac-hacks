@@ -137,21 +137,32 @@ class Macro(Component):
             cond = "ticket.id in (%s)" % ', '.join(tickets)
         else:
             raise TracError("%sMacro: Empty. There are no content and no context." % name)
+        
+        # count that how many appear this macro in a page
+        callcount = formatter.req.__dict__.get('statushistorychart_count', None)
+        if(callcount):
+            callcount += 1
+            formatter.req.statushistorychart_count = callcount
+        else:
+            callcount = 1
+            formatter.req.__setattr__('statushistorychart_count', callcount)
+        
         # execute query for value changes of each ticket
         join_clause_dummy = ''
         join_clause = "JOIN ticket_custom ON ticket.id = ticket_custom.ticket and ticket_custom.name = '%s'"
         cursor = formatter.env.get_read_db().cursor()
         cursor.execute("""
-                SELECT id, time, null, %s
+                SELECT id, time, null, %s, 'content'
                     FROM ticket
                     %s
                     WHERE %s
                 UNION
-                SELECT id, ticket_change.time, oldvalue, newvalue
+                SELECT id, ticket_change.time, ticket_change.oldvalue, ticket_change.newvalue, "comment:" || comment.oldvalue
                     FROM ticket
                     JOIN ticket_change ON ticket.id = ticket_change.ticket
-                    WHERE %s AND field='%s'
-                ORDER BY id, time
+                    JOIN ticket_change comment on ticket_change.time = comment.time
+                    WHERE %s AND ticket_change.field='%s' AND comment.field = 'comment'
+                ORDER BY id, ticket_change.time
                 """ % (custom and "'\uFEFF'" or field['name'],  # ZERO WIDTH NO-BREAK SPACE; uses for mark of invalid data
                        custom and (join_clause % field['name']) or join_clause_dummy,
                        cond, cond, field['name']))
@@ -184,30 +195,28 @@ class Macro(Component):
         too_many_tickets = len(tickets) > 200
         for no, tid in enumerate(sorted(tickets)):
             if not too_many_tickets or tickets[tid][-1][3] != 'closed':
-                void, time, void, state = tickets[tid][-1]  # @UnusedVariable
+                void, time, void, state, hashes = tickets[tid][-1]  # @UnusedVariable
                 # offset by req.tz
                 time = datefmt.to_timestamp(datetime.fromtimestamp(time/1000000, formatter.req.tz).replace(tzinfo=datefmt.utc)) * 1000
                 index = status_list_splitted.get(state, default_status)
                 data.append({'points': {'show': True, 'radius': 8, 'color': no},
                              'label': tid,
-                             'data': [[time, index]]})
+                             'data': [[time, index, hashes]]})
         # lines
         for no, tid in enumerate(sorted(tickets)):
             data.append({'color': no, 'label': tid,
                          'data': [[datefmt.to_timestamp(datetime.fromtimestamp(time/1000000, formatter.req.tz).replace(tzinfo=datefmt.utc)) * 1000,
-                                   status_list_splitted.get(state, default_status)]
-                                  for void, time, void, state in tickets[tid]]})  # @UnusedVariable
+                                   status_list_splitted.get(state, default_status), hashes]
+                                  for void, time, void, state, hashes in tickets[tid]]})  # @UnusedVariable
         from trac import __version__ as VERSION
         if VERSION[0:1] != '0':
         # render for trac 1.0 or later
-            add_script_data(formatter.req, {'statushistorychart_yaxis': map(after_AS, status_list)})
-            add_script_data(formatter.req, {'statushistorychart_data': data})
-            return tag.a(_("Return to Last Query"), href=query_href) \
-                 + tag.div(id="statushistorychart", style="width: 800px; height: 400px;")
+            add_script_data(formatter.req, {('statushistorychart%s_yaxis' % callcount): map(after_AS, status_list)})
+            add_script_data(formatter.req, {('statushistorychart%s_data' % callcount): data})
+            return tag.div(class_="statushistorychart", id="statushistorychart%s" % callcount, style="width: 800px; height: 400px;")
         else:  # if trac < 1.0 or earlier
             from trac.util.presentation import to_json
-            return tag.script("var statushistorychart_yaxis = %s; var statushistorychart_data = %s" \
-                              % (to_json(map(after_AS, status_list)), to_json(data)),
+            return tag.script("var statushistorychart%s_yaxis = %s; var statushistorychart%s_data = %s" \
+                              % (callcount, to_json(map(after_AS, status_list)), callcount, to_json(data)),
                               type="text/javascript") \
-                 + tag.a(_("Return to Last Query"), href=query_href) \
-                 + tag.div(id="statushistorychart", style="width: 800px; height: 400px;")
+                 + tag.div(class_="statushistorychart", id="statushistorychart%s" % callcount, style="width: 800px; height: 400px;")
