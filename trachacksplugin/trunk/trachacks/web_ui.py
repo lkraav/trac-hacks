@@ -11,6 +11,7 @@
 import os
 import random
 import re
+import urlparse
 from pkg_resources import resource_filename, resource_listdir
 from string import Template
 
@@ -473,8 +474,12 @@ class TracHacksHandler(Component):
                 'TITLE': data.setdefault('title', 'No title available'),
             }
             vars['LCNAME'] = vars['WIKINAME'].lower()
-            vars['SOURCEURL'] = repos.get_path_url(vars['LCNAME'], None) or \
-                                'http://localhost/svn/' + vars['LCNAME']
+            svn_url = repos.get_path_url(vars['LCNAME'], None)
+            try:
+                parsed_url = urlparse.urlparse(svn_url)
+            except AttributeError:
+                raise TracError(_("URL for repository must be set."))
+            vars['SOURCEURL'] = parsed_url.path
             vars['DESCRIPTION'] = data.setdefault('description',
                                                   'No description available')
             vars['INSTALLATION'] = data.setdefault('installation',
