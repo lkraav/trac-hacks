@@ -20,17 +20,12 @@ class SharedCookieAuth(Component):
 
     implements(IAuthenticator)
 
-    def __init__(self):
-        self._dispatchers = None
-
     # IAuthenticator methods
 
     def authenticate(self, req):
         if not self.is_delegated_auth(req) and \
                 'trac_auth' in req.incookie:
-            if self._dispatchers is None:
-                self._dispatchers = self.get_dispatchers(req)
-            for dispatcher in self._dispatchers:
+            for dispatcher in self.get_dispatchers(req):
                 authname = dispatcher.authenticate(req)
                 if authname != 'anonymous':
                     self.revert_expire_cookie(req)
@@ -56,7 +51,7 @@ class SharedCookieAuth(Component):
         for env_path in get_environments(req.environ).values():
             if env_path != self.env.path:
                 try:
-                    env = open_environment(env_path)
+                    env = open_environment(env_path, use_cache=True)
                 except TracError:
                     pass
                 else:
