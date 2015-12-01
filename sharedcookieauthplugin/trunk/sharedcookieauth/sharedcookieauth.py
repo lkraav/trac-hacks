@@ -28,7 +28,7 @@ class SharedCookieAuth(Component):
             for dispatcher in self.get_dispatchers(req):
                 authname = dispatcher.authenticate(req)
                 if authname != 'anonymous':
-                    self.revert_expire_cookie(req)
+                    self.delete_expired_cookie(req)
                     return authname
 
     # Internal methods
@@ -41,12 +41,16 @@ class SharedCookieAuth(Component):
         env_name = os.path.split(self.env.path)[-1]
         return req_env_name and env_name != req_env_name
 
-    def revert_expire_cookie(self, req):
+    def delete_expired_cookie(self, req):
+        """Delete the expired cookie."""
         if 'trac_auth' in req.outcookie and \
                 req.outcookie['trac_auth']['expires'] == -10000:
             del req.outcookie['trac_auth']
 
     def get_dispatchers(self, req):
+        """Return a list of `RequestDispatchers`, one for each of
+        the other projects in the environments directory.
+        """
         dispatchers = []
         for env_path in get_environments(req.environ).values():
             if env_path != self.env.path:
