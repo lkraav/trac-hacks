@@ -14,6 +14,7 @@ from genshi.builder import tag as builder
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.ticket.model import Component
 from trac.web.chrome import add_stylesheet
+from trac.web.session import DetachedSession
 from trac.wiki.formatter import format_to_html, format_to_oneliner, \
                                 system_message
 from trac.wiki.macros import WikiMacroBase, parse_args
@@ -286,6 +287,9 @@ class MaintainerMacro(WikiMacroBase):
     The macro accepts the hack name as an optional parameter. If not
     specified, the context must be a wiki page and the hack name is inferred
     from the wiki page name.
+
+    The full name of the maintainer will be returned if it has been set
+    in the user's session data.
     """
 
     def expand_macro(self, formatter, name, args):
@@ -303,15 +307,22 @@ class MaintainerMacro(WikiMacroBase):
                 return builder.em(_('Component "%(name)s" does not exist',
                                     name=id))
             else:
-                maintainer = component.owner
-                if not maintainer:
+                username = component.owner
+                if not username:
                     tags = resource_tags(self.env, Resource('wiki', id))
                     line = "//none ([tag:%s])//" \
                            % ('deprecated' if 'deprecated' in tags
                                            else 'needsadoption')
                     return format_to_oneliner(self.env, context, line)
+                else:
+                    # In Trac 1.2 and later we can call
+                    # req = formatter.req
+                    # fullname = Chrome(self.env).format_author(req, username)
+                    session = DetachedSession(self.env, username)
+                    fullname = session.get('name', username)
         else:
             return system_message(_("Maintainer macro error"),
                                   _("Hack name must be specified as argument "
                                     "when the context realm is not 'wiki'"))
-        return format_to_oneliner(self.env, context, "[wiki:%s]" % maintainer)
+        return format_to_oneliner(self.env, context,
+                                  "[wiki:%s %s]" % (username, fullname))

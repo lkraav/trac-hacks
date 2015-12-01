@@ -10,6 +10,7 @@ import unittest
 
 from trac.test import EnvironmentStub
 from trac.ticket.model import Component, Ticket
+from trac.web.session import DetachedSession
 from trac.wiki.model import WikiPage
 from trac.wiki.tests import formatter
 
@@ -36,6 +37,12 @@ MAINTAINER_MACRO_WIKI_TEST_CASE = u"""
 ------------------------------
 <p>
 <a class="wiki" href="/wiki/osimons">osimons</a>
+</p>
+==============================
+[[Maintainer(TracMigratePlugin)]]
+------------------------------
+<p>
+<a class="wiki" href="/wiki/jun66j5">Jun Omae</a>
 </p>
 ==============================
 [[Maintainer(AccountManagerPlugin)]]
@@ -115,12 +122,16 @@ def setup(tc):
     component3.name = 'MilestoneMacro'
     component3.insert()
     component4 = Component(tc.env)
-    component4.name = 'DeprecatedMacro'
+    component4.name = 'TracMigratePlugin'
+    component4.owner = 'jun66j5'
     component4.insert()
     component5 = Component(tc.env)
-    component5.name = 'DeprecatedPlugin'
-    component5.owner = 'the-departed'
+    component5.name = 'DeprecatedMacro'
     component5.insert()
+    component6 = Component(tc.env)
+    component6.name = 'DeprecatedPlugin'
+    component6.owner = 'the-departed'
+    component6.insert()
     ticket = Ticket(tc.env)
     ticket['summary'] = 'Ticket summary'
     ticket['reporter'] = 'hasienda'
@@ -137,6 +148,12 @@ def setup(tc):
     page3 = WikiPage(tc.env, 'DeprecatedPlugin')
     page3.text = 'The plugin is deprecated'
     page3.save('the-departed', '', '127.0.0.1')
+    page4 = WikiPage(tc.env, 'jun66j5')
+    page4.text = 'jun66j5'
+    page4.save('jun66j5', '', '127.0.0.1')
+    session = DetachedSession(tc.env, 'jun66j5')
+    session.set('name', 'Jun Omae')
+    session.save()
 
 
 def teardown(tc):
