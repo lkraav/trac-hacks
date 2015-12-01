@@ -158,7 +158,8 @@ class CustomFieldAdminTweak(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename in ['customfieldadmin.html']:
+            is_epoch = (data.get('cfield', {}).get('format') == 'epoch')
             stream = stream | Transformer('//select[@id="format"]').append(
-                tag.option('Epoch', value='epoch')
+                tag.option('Epoch', value='epoch', selected=(is_epoch and 'selected' or None))
             )
         return stream
