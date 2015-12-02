@@ -22,6 +22,9 @@ var clearrule = new Rule('ClearRule'); // must match python class name exactly
 
 // apply
 clearrule.apply = function(input, spec){
+    if (input.attr('id') === undefined)
+        return;
+
     var target = spec.target;
 
     if (spec.clear_on_change == undefined)
@@ -47,7 +50,7 @@ var copyrule = new Rule('CopyRule'); // must match python class name exactly
 
 // apply
 copyrule.apply = function(input, spec){
-    if (spec.value == undefined)
+    if (spec.value === undefined || input.attr('id') === undefined)
         return;
 
     var $field = jQuery(get_selector(spec.target));
@@ -86,6 +89,9 @@ var defaultrule = new Rule('DefaultRule'); // must match python class name exact
 
 // apply
 defaultrule.apply = function(input, spec){
+    if (input.attr('id') === undefined)
+        return;
+
     var $field = jQuery(get_selector(spec.target));
 
     if (!$field.hasClass('defaulted')){
@@ -156,6 +162,19 @@ hiderule.apply = function(input, spec){
     var trigger = spec.trigger;
     var target = spec.target;
 
+    // hide field in the header if cleared or always hidden
+    var clear_on_hide = spec.clear_on_hide.toLowerCase() == 'true';
+    var hide_always = spec.hide_always.toLowerCase() == 'true'
+    if (clear_on_hide || hide_always) {
+        th = jQuery('#h_'+spec.target);
+        td = th.next('td');
+        td.addClass('dynfields-hide dynfields-'+trigger);
+        th.addClass('dynfields-hide dynfields-'+trigger);
+    }
+
+    if (input.attr('id') !== undefined)
+      return;
+
     // process hide rule
     var v;
     if (input.attr('type') == 'checkbox')
@@ -190,15 +209,6 @@ hiderule.apply = function(input, spec){
                 if (oldval != newval)
                     field.change(); // cascade rules
             }
-        }
-
-        // hide field in the header if cleared or always hidden
-        if (spec.clear_on_hide.toLowerCase() == 'true' ||
-            spec.hide_always.toLowerCase() == 'true'){
-            th = jQuery('#h_'+target);
-            td = th.next('td');
-            td.addClass('dynfields-hide dynfields-'+trigger);
-            th.addClass('dynfields-hide dynfields-'+trigger);
         }
     }
 };

@@ -34,8 +34,6 @@ jQuery(document).ready(function($) {
         // apply each rule
         $.each(triggers, function(trigger, specs) {
             $.each(specs, function(i, spec){
-                if (input.attr('id') != specs.selector.slice(1))
-                    return;
                 spec.rule.apply(input, spec);
             });
         });
@@ -43,8 +41,6 @@ jQuery(document).ready(function($) {
         // complete each rule
         $.each(triggers, function(trigger, specs) {
             $.each(specs, function(i, spec){
-                if (input.attr('id') != specs.selector.slice(1))
-                    return;
                 spec.rule.complete(input, spec);
             });
         });
