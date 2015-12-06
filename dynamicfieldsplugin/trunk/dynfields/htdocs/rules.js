@@ -172,7 +172,7 @@ hiderule.apply = function (input, spec) {
     th.addClass('dynfields-hide dynfields-' + trigger);
   }
 
-  if (input.attr('id') !== undefined)
+  if (input.attr('id') === undefined)
     return;
 
   // process hide rule
