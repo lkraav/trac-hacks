@@ -97,7 +97,7 @@ jQuery(document).ready(function($) {
     }
 
     // delete edit_buffer from my template
-    tt_custom_select.find("option:contains('edit_buffer')").remove();
+    $("#tt_custom_select").find("option:contains('edit_buffer')").remove();
 
     if (isLoad == true) {
       var evt = {"type": "change"};

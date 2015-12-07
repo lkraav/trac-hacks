@@ -72,16 +72,14 @@ jQuery(document).ready(function($) {
 
     if (isLoad == true && queryResult.enable_custom) {
       // custom
-      var tt_custom_select = $("#tt_custom_select");
       $("#content").prepend(myTemplateHtml);
-      tt_custom_select.append("<option></option>");
+      $("#tt_custom_select")
+        .append("<option></option>").val("")
+        .change(onCustomChanged);
 
       $("#tt_custom_save").click(onCustomSave);
       $("#tt_custom_delete").click(onCustomDelete);
-      tt_custom_select.change(onCustomChanged);
       $("#tt_custom_tip").click(onCustomTip);
-      // set custom to null
-      tt_custom_select.val("");
     }
 
     // fill custom template select
@@ -91,9 +89,10 @@ jQuery(document).ready(function($) {
     }
     custom_names.sort();
 
+    var tt_custom_select = $("#tt_custom_select");
     for (var i in custom_names) {
       var name = custom_names[i];
-      $("#tt_custom_select").append("<option>" + name + "</option>");
+      tt_custom_select.append("<option>" + name + "</option>");
     }
 
     // delete edit_buffer from my template
