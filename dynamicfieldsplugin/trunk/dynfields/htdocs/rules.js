@@ -239,14 +239,23 @@ hiderule.query = function (spec) {
   // hide hide_always fields on /query page
   if (spec.hide_always.toLowerCase() == 'true') {
     // hide from columns section
-    var fieldset = jQuery('fieldset#filters');
-    fieldset.find('input[value="' + spec.target + '"]')
-      .attr('checked', false)
-      .parent().hide().end();
+    var query_form = jQuery('form#query')
+    var filters_fieldset = query_form.find('fieldset#filters');
+    filters_fieldset.find('input[value="' + spec.target + '"]')
+      .prop('checked', false)
+      .parent().hide();
     // hide from and/or column filters/dropdowns
-    fieldset.find('#add_filter option[value="' + spec.target + '"]') // trac <= 0.12.1
+    filters_fieldset.find('#add_filter option[value="' + spec.target + '"]') // trac <= 0.12.1
       .hide();
-    fieldset.find('.actions option[value="' + spec.target + '"]') // trac 0.12.2
+    filters_fieldset.find('.actions option[value="' + spec.target + '"]') // trac 0.12.2
+      .hide();
+    var columns_fieldset = query_form.find('fieldset#columns');
+    columns_fieldset.find('input[value="' + spec.target + '"]')
+      .prop('checked', false)
+      .parent().hide();
+    // Hide from "Group results by" dropdown.
+    var group_select = query_form.find('#group');
+    group_select.find('option[value="' + spec.target + '"]')
       .hide();
   }
 };
