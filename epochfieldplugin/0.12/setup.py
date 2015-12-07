@@ -19,6 +19,7 @@ setup(
     entry_points={
         'trac.plugins': [
             'EpochField.filter = epochfield.filter',
+            'EpochField.macro = epochfield.macro',
         ]
     },
 )
