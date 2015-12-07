@@ -174,4 +174,3 @@ class ParentType(object):
         if self.allow_child_tickets:
             return 'enabled'
         return 'disabled'
-

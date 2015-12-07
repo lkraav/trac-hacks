@@ -25,7 +25,7 @@ class TracchildticketsModule(Component):
         x = {}    # { parent -> children } - 1:n
 
         with self.env.db_transaction as db:
-            cursor = db.cursor() 
+            cursor = db.cursor()
             cursor.execute("SELECT ticket,value FROM ticket_custom WHERE name='parent'")
             for child,parent in cursor.fetchall():
                 if parent and re.match('#\d+',parent):
@@ -49,7 +49,7 @@ class TracchildticketsModule(Component):
     # ITicketManipulator methods
     def prepare_ticket(self, req, ticket, fields, actions):
         pass
-    
+
     def validate_ticket(self, req, ticket):
 
         # Don't allow ticket to be 'resolved' if any child tickets are still open.
@@ -88,8 +88,8 @@ class TracchildticketsModule(Component):
             # Try creating parent ticket instance : it should exist.
             try:
                 parent = Ticket(self.env, pid)
-            
-            except ResourceNotFound: 
+
+            except ResourceNotFound:
                 yield 'parent', "The parent ticket #%d does not exist." % pid
 
             else:
@@ -100,7 +100,7 @@ class TracchildticketsModule(Component):
                 # modify parent type after children have been assigned, however, further modifications to the children themselves
                 # would then throw up some errors and force the users to re-set the child type.)
 
-                # Does the parent ticket 'type' even allow child tickets? 
+                # Does the parent ticket 'type' even allow child tickets?
                 if not self.config.getbool('childtickets', 'parent.%s.allow_child_tickets' % parent['type']):
                     yield 'parent', "The parent ticket (#%s) has type %s which does not allow child tickets." % (pid,parent['type'])
 
@@ -115,7 +115,7 @@ class TracchildticketsModule(Component):
 
                 self.env.log.debug("TracchildticketsModule : parent.ticket.type: %s" % parent['type'])
 
-    
+
     # ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
 
@@ -134,7 +134,7 @@ class TracchildticketsModule(Component):
             # - If ticket has child tickets and child tickets are NOT allowed (ie. rules changed or ticket type changed after children were assigned),
             #   print list of tickets but do not allow any tickets to be created.
             # - If child tickets are allowed then print list of child tickets or 'No Child Tickets' if non are currently assigned.
-            # 
+            #
             if ticket and ticket.exists:
 
                 # The additional section on the ticket is built up of (potentially) three parts: header, ticket table, buttons. These
@@ -235,7 +235,7 @@ class TracchildticketsModule(Component):
     # ITemplateProvider methods
     def get_templates_dirs(self):
         return []
-    
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('ct', resource_filename(__name__, 'htdocs'))]
@@ -261,4 +261,3 @@ class TracchildticketsModule(Component):
         while ticket_id in parenttickets:
             yield parenttickets[ticket_id]
             ticket_id = parenttickets[ticket_id]
-
