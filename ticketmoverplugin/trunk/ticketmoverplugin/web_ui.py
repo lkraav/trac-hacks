@@ -9,9 +9,11 @@
 #
 
 from trac.core import Component, TracError, implements
+from trac.env import open_environment
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import Chrome, ITemplateProvider
+from trac.web.main import get_environments
 
 from ticketmoverplugin.ticketmover import TicketMover
 from ticketsidebarprovider import ITicketSidebarProvider
@@ -28,14 +30,14 @@ class TicketMoverSidebar(Component):
                 not ticket.exists:
             return False
         tm = TicketMover(self.env)
-        projects = tm.projects(req.authname)
+        projects = self.get_environments(req)
         self.log.debug(_("TicketMover SidebarProvider is %(status)s.",
                          status=['enabled', 'disabled'][bool(projects)]))
         return bool(projects)
 
     def content(self, req, ticket):
         tm = TicketMover(self.env)
-        projects = tm.projects(req.authname)
+        projects = self.get_environments(req)
         chrome = Chrome(self.env)
         template = chrome.load_template('ticketmover-sidebar.html')
         data = {'projects': projects,
@@ -51,6 +53,23 @@ class TicketMoverSidebar(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
+
+    # Internal methods
+
+    def get_environments(self, req):
+        """Return a dictionary of `Environments`, one for each of
+        the other projects in the environments directory.
+        """
+        envs = {}
+        for env_name, env_path in get_environments(req.environ).items():
+            if env_path != self.env.path:
+                try:
+                    env = open_environment(env_path, use_cache=True)
+                except TracError:
+                    pass
+                else:
+                    envs[env_name] = env
+        return envs
 
 
 class TicketMoverHandler(Component):

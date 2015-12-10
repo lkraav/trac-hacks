@@ -14,7 +14,6 @@ import shutil
 from trac.config import Option
 from trac.core import Component
 from trac.env import open_environment
-from trac.perm import PermissionSystem
 from trac.ticket import Ticket
 
 
@@ -25,23 +24,6 @@ class TicketMover(Component):
                            Trac projects""")
 
     ### Internal methods
-
-    def projects(self, user):
-        base_path, _project = os.path.split(self.env.path)
-        _projects = [p for p in os.listdir(base_path)
-                     if p != _project]
-        projects = {}
-        for project in _projects:
-            path = os.path.join(base_path, project)
-            try:
-                env = open_environment(path, use_cache=True)
-            except:
-                continue
-            perm = PermissionSystem(env)
-            if self.permission in perm.get_user_permissions(user):
-                projects[project] = env
-
-        return projects
 
     def move(self, ticket_id, author, env, delete=False):
         """
