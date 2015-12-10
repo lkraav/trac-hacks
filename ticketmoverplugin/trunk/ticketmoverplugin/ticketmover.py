@@ -23,7 +23,7 @@ class TicketMover(Component):
                         """permission needed to move tickets between
                            Trac projects""")
 
-    ### Internal methods
+    # Internal methods
 
     def move(self, ticket_id, author, env, delete=False):
         """

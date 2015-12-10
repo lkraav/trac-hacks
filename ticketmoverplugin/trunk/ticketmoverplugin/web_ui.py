@@ -23,7 +23,7 @@ class TicketMoverSidebar(Component):
 
     implements(ITicketSidebarProvider, ITemplateProvider)
 
-    ### ITicketSidebarProvider methods
+    # ITicketSidebarProvider methods
 
     def enabled(self, req, ticket):
         if not self.config['ticket'].get('move_permission') in req.perm or \
@@ -45,7 +45,7 @@ class TicketMoverSidebar(Component):
                 'ticket': ticket}
         return template.generate(**data)
 
-    ### ITemplateProvider methods
+    # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
         return []
@@ -57,7 +57,7 @@ class TicketMoverSidebar(Component):
     # Internal methods
 
     def get_environments(self, req):
-        """Return a dictionary of `Environments`, one for each of
+        """Return a dictionary of `Environment` objects, one for each of
         the other projects in the environments directory.
         """
         envs = {}
@@ -76,7 +76,7 @@ class TicketMoverHandler(Component):
 
     implements(IRequestHandler)
 
-    ### IRequestHandler methods
+    # IRequestHandler methods
 
     def match_request(self, req):
         return req.method == 'POST' and \
