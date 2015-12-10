@@ -27,6 +27,7 @@ setup(
     package_data={'ticketmoverplugin': ['templates/*', 'htdocs/*']},
     zip_safe=False,
     install_requires=[
+        'Trac',
         'TicketSidebarProvider',
     ],
     dependency_links=[
