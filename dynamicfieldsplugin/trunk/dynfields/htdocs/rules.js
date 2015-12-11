@@ -22,7 +22,7 @@ var clearrule = new Rule('ClearRule'); // must match python class name exactly
 
 // apply
 clearrule.apply = function (input, spec) {
-  if (input.attr('id') === undefined)
+  if (input.attr('id').slice(6) !== spec.trigger)
     return;
 
   var target = spec.target;
@@ -50,7 +50,7 @@ var copyrule = new Rule('CopyRule'); // must match python class name exactly
 
 // apply
 copyrule.apply = function (input, spec) {
-  if (spec.value === undefined || input.attr('id') === undefined)
+  if (spec.value === undefined || input.attr('id').slice(6) !== spec.trigger)
     return;
 
   var $field = jQuery(get_selector(spec.target));
@@ -89,7 +89,7 @@ var defaultrule = new Rule('DefaultRule'); // must match python class name exact
 
 // apply
 defaultrule.apply = function (input, spec) {
-  if (input.attr('id') === undefined)
+  if (input.attr('id').slice(6) !== spec.trigger)
     return;
 
   var $field = jQuery(get_selector(spec.target));
@@ -172,7 +172,7 @@ hiderule.apply = function (input, spec) {
     th.addClass('dynfields-hide dynfields-' + trigger);
   }
 
-  if (input.attr('id') === undefined)
+  if (input.attr('id').slice(6) !== spec.trigger)
     return;
 
   // process hide rule
