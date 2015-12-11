@@ -46,7 +46,6 @@ except ImportError:
                         locale=None):
         return datefmt.format_datetime(datetime, format, tzinfo)
 
-
     def get_day_names(*args):
         """Cheap replacement for the identically named Babel function."""
         names = dict()
@@ -54,6 +53,12 @@ except ImportError:
             dt = datetime(2001, 1, day + 1)
             names[day] = dt.strftime('%a')[:2]
         return names
+
+    class Locale(object):
+        pass
+
+    class UnknownLocaleError(object):
+        pass
 
 uts = None
 try:
@@ -542,7 +547,7 @@ class WikiCalendarMacros(Component):
         buff = tag.table(buff)
         if name == 'WikiTicketCalendar':
             if cal_width.startswith('+') is True:
-                width = ":".join(['min-width', cal_width]) 
+                width = ":".join(['min-width', cal_width])
                 buff(class_='wikitcalendar', style=width)
             else:
                 buff(class_='wikitcalendar')
@@ -733,7 +738,7 @@ class WikiCalendarMacros(Component):
         buff = tag.div(heading(buff))
         if name == 'WikiTicketCalendar':
             if cal_width.startswith('+') is True:
-                width = ":".join(['width', cal_width]) 
+                width = ":".join(['width', cal_width])
                 buff(class_='wikitcalendar', style=width)
             else:
                 buff(class_='wikitcalendar')
