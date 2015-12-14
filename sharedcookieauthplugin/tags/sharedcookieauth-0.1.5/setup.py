@@ -13,7 +13,7 @@ from setuptools import find_packages, setup
 
 
 setup(name='SharedCookieAuth',
-      version='0.1.6',
+      version='0.1.5',
       description="share cookies between trac projects in the same directory",
       author='Jeff Hammel',
       author_email='jhammel@openplans.org',
