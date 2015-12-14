@@ -11,7 +11,7 @@
 from setuptools import setup, find_packages
 
 PACKAGE = 'TracQuiet'
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 
 setup(
     name=PACKAGE,
@@ -20,7 +20,7 @@ setup(
     author="Rob Guttman",
     author_email="guttman@alum.mit.edu",
     license='3-Clause BSD',
-    url='http://trac-hacks.org/wiki/QuietPlugin',
+    url='https://trac-hacks.org/wiki/QuietPlugin',
     packages=['quiet'],
     package_data={'quiet': ['htdocs/*.js', 'htdocs/*.css', 'htdocs/*.png']},
     entry_points={'trac.plugins': ['quiet.web_ui = quiet.web_ui']}
