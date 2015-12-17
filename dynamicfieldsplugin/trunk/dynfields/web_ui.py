@@ -46,7 +46,9 @@ class DynamicFieldsModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if template is not None:
+        if template is not None and (
+                req.path_info in ('/newticket', '/query') or
+                req.path_info.startswith('/ticket/')):
             add_script_data(req, {'triggers': self._get_triggers(req)})
             for script in ('dynfields.js', 'rules.js', 'layout.js'):
                 add_script(req, 'dynfields/%s' % script)
