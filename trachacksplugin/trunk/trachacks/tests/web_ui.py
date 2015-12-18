@@ -111,6 +111,17 @@ class ReadonlyHelpPolicyTestCase(unittest.TestCase):
         self.assertNotIn("The TracGuide is not editable on this site.",
                          self.content)
 
+    def test_only_view_page_has_notice(self):
+        """Help page history doesn't have a notice inserted into top
+        of page content. Regression test for #12613."""
+        req = self.create_request('user_with_view',
+                                  args={'action': 'history'},
+                                  path_info='/wiki/TracGuide')
+        dispatcher = RequestDispatcher(self.env)
+        self.assertRaises(RequestDone, dispatcher.dispatch, req)
+        self.assertNotIn("The TracGuide is not editable on this site.",
+                         self.content)
+
 
 def test_suite():
     suite = unittest.TestSuite()

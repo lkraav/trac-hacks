@@ -177,7 +177,8 @@ class ReadonlyHelpPolicy(Component):
     def post_process_request(self, req, template, data, content_type):
         if template is not None:
             match = re.match(r'/wiki(?:/(.+))?$', req.path_info)
-            if match:
+            action = req.args.get('action', 'view')
+            if match and action == 'view' and 'format' not in req.args:
                 page_name = match.group(1)
                 if page_name in self.help_pages:
                     notice = self.NOTICE_TEMPLATE % {'page_name': page_name}
