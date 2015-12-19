@@ -129,17 +129,16 @@ class ChildTicketsAdminPanel(Component):
         with info as to whether the parent type is already selected as an avaible child type.
         """
 
-        with self.env.db_transaction as db:
-            cursor = db.cursor()
-            cursor.execute("select name from enum where type='ticket_type'")
-            if not ptype:
-                # No parent type supplied, return simple list.
-                return [ x for (x,) in cursor.fetchall() ]
-            else:
-                # With parent type, return a dictionary.
-                TYPES=dict.fromkeys([ x for (x,) in cursor.fetchall()], None)
-                TYPES.update( dict.fromkeys( map(lambda x:x.lower(),ptype.restrict_to_child_types), 'checked' ))
-                return TYPES
+        types = self.env.db_query("""
+                    SELECT name FROM enum WHERE type='ticket_type'""")
+        if not ptype:
+            # No parent type supplied, return simple list.
+            return [x for x, in types]
+        else:
+            # With parent type, return a dictionary.
+            TYPES = dict.fromkeys(x for x, in types)
+            TYPES.update(dict.fromkeys(map(lambda x: x.lower(), ptype.restrict_to_child_types), 'checked'))
+            return TYPES
 
 
 class ParentType(object):

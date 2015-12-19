@@ -24,12 +24,11 @@ class TracchildticketsModule(Component):
 
         x = {}    # { parent -> children } - 1:n
 
-        with self.env.db_transaction as db:
-            cursor = db.cursor()
-            cursor.execute("SELECT ticket,value FROM ticket_custom WHERE name='parent'")
-            for child,parent in cursor.fetchall():
-                if parent and re.match('#\d+',parent):
-                    x.setdefault( int(parent.lstrip('#')), [] ).append(child)
+        for child, parent in self.env.db_query("""
+                SELECT ticket,value FROM ticket_custom WHERE name='parent'
+                """):
+            if parent and re.match('#\d+', parent):
+                x.setdefault(int(parent.lstrip('#')), []).append(child)
         return x
 
 
