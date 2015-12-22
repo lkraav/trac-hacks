@@ -8,6 +8,8 @@
 # you should have received as part of this distribution.
 #
 
+import os
+
 from trac.core import Component, TracError, implements
 from trac.env import open_environment
 from trac.util.translation import _
@@ -62,7 +64,7 @@ class TicketMoverSidebar(Component):
         """
         envs = {}
         for env_name, env_path in get_environments(req.environ).items():
-            if env_path != self.env.path:
+            if os.path.normcase(env_path) != os.path.normcase(self.env.path):
                 try:
                     env = open_environment(env_path, use_cache=True)
                 except TracError:
