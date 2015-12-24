@@ -62,7 +62,7 @@ class BackLinksMenuMacro(WikiMacroBase):
             _get_backlinked_pages(self.env, caller_page, backlinks_page)
 
         buf = StringIO()
-        buf.write('<div class="wiki-toc">')
+        buf.write('<div class="wiki-toc backlinks-menu">')
         buf.write('Pages linking to %s:<br />\n' % backlinks_page)
         for page in backlinked_pages:
             buf.write('<a href="%s">' % formatter.req.href.wiki(page))
