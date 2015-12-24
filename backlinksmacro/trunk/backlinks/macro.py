@@ -32,14 +32,15 @@ class BackLinksMacro(WikiMacroBase):
             _get_backlinked_pages(self.env, caller_page, backlinks_page)
 
         buf = StringIO()
-        buf.write('<hr style="width: 10%; padding: 0; margin: 2em 0 1em 0;"/>')
-        buf.write('Pages linking to %s:\n' % backlinks_page)
-        buf.write('<ul>')
-        for page in backlinked_pages:
-            buf.write('<li><a href="%s">' % formatter.req.href.wiki(page))
-            buf.write(page)
-            buf.write('</a></li>\n')
-        buf.write('</ul>')
+        if backlinked_pages:
+            buf.write('<hr style="width: 10%; padding: 0; margin: 2em 0 1em 0;"/>')
+            buf.write('Pages linking to %s:\n' % backlinks_page)
+            buf.write('<ul>')
+            for page in backlinked_pages:
+                buf.write('<li><a href="%s">' % formatter.req.href.wiki(page))
+                buf.write(page)
+                buf.write('</a></li>\n')
+            buf.write('</ul>')
 
         return buf.getvalue()
 
@@ -62,13 +63,14 @@ class BackLinksMenuMacro(WikiMacroBase):
             _get_backlinked_pages(self.env, caller_page, backlinks_page)
 
         buf = StringIO()
-        buf.write('<div class="wiki-toc backlinks-menu">')
-        buf.write('Pages linking to %s:<br />\n' % backlinks_page)
-        for page in backlinked_pages:
-            buf.write('<a href="%s">' % formatter.req.href.wiki(page))
-            buf.write(page)
-            buf.write('</a><br />\n')
-        buf.write('</div>')
+        if backlinked_pages:
+            buf.write('<div class="wiki-toc backlinks-menu">')
+            buf.write('Pages linking to %s:<br />\n' % backlinks_page)
+            for page in backlinked_pages:
+                buf.write('<a href="%s">' % formatter.req.href.wiki(page))
+                buf.write(page)
+                buf.write('</a><br />\n')
+            buf.write('</div>')
 
         return buf.getvalue()
 
