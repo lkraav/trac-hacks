@@ -18,7 +18,7 @@ class BackLinksMacro(WikiMacroBase):
     """
     Inserts a list of all wiki pages with links to the page where this
     macro is used.
-    
+
     Accepts a page name as a parameter: if provided, pages that link to the
     provided page name are listed instead.
     """
@@ -49,7 +49,7 @@ class BackLinksMenuMacro(WikiMacroBase):
     """
     Inserts a menu with a list of all wiki pages with links to the page where
     this macro is used.
-    
+
     Accepts a page name as a parameter: if provided, pages that link to the
     provided page name are listed instead.
     """
@@ -59,7 +59,7 @@ class BackLinksMenuMacro(WikiMacroBase):
         caller_page = WikiPage(self.env, formatter.context.resource).name
         backlinks_page = args or caller_page
         db = self.env.get_db_cnx()
-        
+
         backlinked_pages = \
             _get_backlinked_pages(db, caller_page, backlinks_page)
 
