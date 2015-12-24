@@ -27,10 +27,9 @@ class BackLinksMacro(WikiMacroBase):
 
         caller_page = WikiPage(self.env, formatter.context.resource).name
         backlinks_page = args or caller_page
-        db = self.env.get_db_cnx()
 
         backlinked_pages = \
-            _get_backlinked_pages(db, caller_page, backlinks_page)
+            _get_backlinked_pages(self.env, caller_page, backlinks_page)
 
         buf = StringIO()
         buf.write('<hr style="width: 10%; padding: 0; margin: 2em 0 1em 0;"/>')
@@ -58,10 +57,9 @@ class BackLinksMenuMacro(WikiMacroBase):
 
         caller_page = WikiPage(self.env, formatter.context.resource).name
         backlinks_page = args or caller_page
-        db = self.env.get_db_cnx()
 
         backlinked_pages = \
-            _get_backlinked_pages(db, caller_page, backlinks_page)
+            _get_backlinked_pages(self.env, caller_page, backlinks_page)
 
         buf = StringIO()
         buf.write('<div class="wiki-toc">')
@@ -75,8 +73,9 @@ class BackLinksMenuMacro(WikiMacroBase):
         return buf.getvalue()
 
 
-def _get_backlinked_pages(db, caller_page, backlinks_page):
+def _get_backlinked_pages(env, caller_page, backlinks_page):
 
+    db = env.get_db_cnx()
     cursor = db.cursor()
     cursor.execute("""SELECT w1.name, w1.text FROM wiki AS w1,
         (SELECT name, MAX(version) AS version FROM wiki GROUP BY name) AS w2
