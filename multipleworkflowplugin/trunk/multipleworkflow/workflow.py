@@ -20,21 +20,6 @@ from trac.util.translation import _, tag_
 from trac.web.chrome import Chrome
 
 
-def get_workflow_config_default(config):
-    """return the [ticket-workflow] session """
-    raw_actions = list(config.options('ticket-workflow'))
-    actions = parse_workflow_config(raw_actions)
-    if '_reset' not in actions:
-        actions['_reset'] = {
-            'default': 0,
-            'name': 'reset',
-            'newstate': 'new',
-            'oldstates': [],  # Will not be invoked unless needed
-            'operations': ['reset_workflow'],
-            'permissions': []}
-    return actions
-
-
 def get_workflow_config_by_type(config, tipo_ticket):
     """return the [ticket-workflow-type] session"""
     raw_actions = list(config.options('ticket-workflow-%s' % tipo_ticket))
@@ -130,6 +115,24 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
     """
     implements(ITicketActionController)
 
+    def __init__(self, *args, **kwargs):
+        # This call creates self.actions
+        super(MultipleWorkflowPlugin, self).__init__(args, kwargs)
+        self.type_actions = {}
+        # for all ticket types do
+        for t in [enum.name for enum in model.Type.select(self.env)]:
+            actions = get_workflow_config_by_type(self.config, t)
+            if actions:
+                self.type_actions[t] = actions
+
+    def get_workflow_actions_by_type(self, tkt_type):
+        """Return the ticket actions defined by the workflow for the given ticket type or {}."""
+        try:
+            actions = self.type_actions[tkt_type]
+        except KeyError:
+            actions = {}
+        return actions
+
     # ITicketActionController methods
 
     def get_ticket_actions(self, req, ticket):
@@ -145,9 +148,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
 
         # Calculate actions for ticket type. If no wtype workflow exists use the default workflow.
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        actions = get_workflow_config_by_type(self.config, tipo_ticket)
+        actions = self.get_workflow_actions_by_type(tipo_ticket)
         if not actions:
-            actions = get_workflow_config_default(self.config)
+            actions = self.actions
 
         ticket_perm = req.perm(ticket.resource)
         allowed_actions = []
@@ -168,20 +171,20 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         # Check if the state is valid for the current ticket type. If not offer the action to reset it.
         type_status = self.get_all_status_for_type(tipo_ticket)
         if not type_status:
-            type_status = calc_status(get_workflow_config_default(self.config))
+            type_status = calc_status(self.actions)
         if status not in type_status and (0, '_reset') not in allowed_actions:
                 allowed_actions.append((0, '_reset'))
         return allowed_actions
 
     def get_all_status_for_type(self, t_type):
-        actions = get_workflow_config_by_type(self.config, t_type)
+        actions = self.get_workflow_actions_by_type(t_type)
         return calc_status(actions)
 
     def get_all_status(self):
         """Return a list of all states described by the configuration.
         """
         # Default workflow
-        all_status = calc_status(get_workflow_config_default(self.config))
+        all_status = calc_status(self.actions)
 
         # for all ticket types do
         for t in [enum.name for enum in model.Type.select(self.env)]:
@@ -193,9 +196,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         self.log.debug('render_ticket_action_control: action "%s"' % action)
 
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        actions = get_workflow_config_by_type(self.config, tipo_ticket)
+        actions = self.get_workflow_actions_by_type(tipo_ticket)
         if not actions:
-            actions = get_workflow_config_default(self.config)
+            actions = self.actions
 
         this_action = actions[action]
         status = this_action['newstate']
@@ -272,9 +275,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                 raise TracError(_("Your workflow attempts to set a resolution "
                                   "but none is defined (configuration issue, "
                                   "please contact your Trac admin)."))
-            id = 'action_%s_resolve_resolution' % action
+            id_ = 'action_%s_resolve_resolution' % action
             if len(resolutions) == 1:
-                resolution = tag.input(type='hidden', id=id, name=id,
+                resolution = tag.input(type='hidden', id=id_, name=id_,
                                        value=resolutions[0])
                 control.append(tag_('as %(resolution)s',
                                     resolution=tag(resolutions[0],
@@ -282,12 +285,12 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                 hints.append(_("The resolution will be set to %(name)s",
                                name=resolutions[0]))
             else:
-                selected_option = req.args.get(id, TicketSystem(self.env).default_resolution)
+                selected_option = req.args.get(id_, TicketSystem(self.env).default_resolution)
                 control.append(tag_('as %(resolution)s',
                                     resolution=tag.select(
                                     [tag.option(x, value=x, selected=(x == selected_option or None))
                                      for x in resolutions],
-                                     id=id, name=id)))
+                                     id=id_, name=id_)))
                 hints.append(_("The resolution will be set"))
         if 'del_resolution' in operations:
             hints.append(_("The resolution will be deleted"))
@@ -302,9 +305,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
 
     def get_ticket_changes(self, req, ticket, action):
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        actions = get_workflow_config_by_type(self.config, tipo_ticket)
+        actions = self.get_workflow_actions_by_type(tipo_ticket)
         if not actions:
-            actions = get_workflow_config_default(self.config)
+            actions = self.actions
         this_action = actions[action]
 
         # Enforce permissions
@@ -354,10 +357,10 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         """
         all_actions = {}
         # Default workflow
-        all_actions.update(get_workflow_config_default(self.config))
+        all_actions.update(self.actions)
         # for all ticket types do
         for t in [enum.name for enum in model.Type.select(self.env)]:
-            all_actions.update(get_workflow_config_by_type(self.config, t))
+            all_actions.update(self.get_workflow_actions_by_type(t))
 
         actions = [(info['default'], action) for action, info
                    in all_actions.items()
@@ -372,9 +375,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         returned.
         """
         tipo_ticket = ticket._old.get('type', ticket['type'])
-        actions = get_workflow_config_by_type(self.config,tipo_ticket)
+        actions = self.get_workflow_actions_by_type(tipo_ticket)
         if not actions:
-            actions = get_workflow_config_default(self.config)
+            actions = self.actions
 
         # Be sure to look at the original status.
         status = ticket._old.get('status', ticket['status'])
