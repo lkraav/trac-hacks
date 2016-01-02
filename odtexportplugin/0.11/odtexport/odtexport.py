@@ -288,7 +288,7 @@ class ODTFile(object):
         parent_id = '/'.join(path_segments[:-1])
         filename = len(path_segments) > 1 and path_segments[-1]
         attachment = Attachment(self.env, realm, parent_id, filename)
-        filename = attachment.path
+        filename = attachment.path.encode('utf-8')
         if not os.path.exists(filename):  # fallback
             return self.handle_remote_img(img_mo)
         return self.handle_img(img_mo.group(), src, filename)
