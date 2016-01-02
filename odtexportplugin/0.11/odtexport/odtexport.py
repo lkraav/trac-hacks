@@ -7,10 +7,10 @@ It uses a template ODT file which will be filled with the converted content of
 the exported Wiki page.
 """
 
+from PIL import Image
 from StringIO import StringIO
 from lxml import etree
 from pkg_resources import resource_filename
-import PIL
 import datetime
 import os
 import re
@@ -353,7 +353,7 @@ class ODTFile(object):
                                            os.path.basename(filename)))
         newsrc = 'Pictures/%s' % os.path.basename(filename)
         try:
-            img = PIL.Image.open(filename)
+            img = Image.open(filename)
         except IOError:
             self.env.log.warn("Failed to identify image: %s", filename)
         else:
