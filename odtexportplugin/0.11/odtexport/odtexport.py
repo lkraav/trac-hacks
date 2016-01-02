@@ -10,6 +10,7 @@ the exported Wiki page.
 from StringIO import StringIO
 from lxml import etree
 from pkg_resources import resource_filename
+import PIL
 import datetime
 import os
 import re
@@ -19,11 +20,6 @@ import tidy
 import urllib2
 import urlparse
 import zipfile
-
-try:
-    from PIL import Image
-except ImportError:
-    import Image
 
 from trac.core import Component, implements
 from trac.mimeview.api import IContentConverter, Context
@@ -199,7 +195,7 @@ class ODTFile(object):
         self.tmpdir = tempfile.mkdtemp(prefix="trac-odtexport")
         self.styles = {}
         self.autostyles = {}
-        self.style_name_re = re.compile('style:name="([^"]+)"') 
+        self.style_name_re = re.compile('style:name="([^"]+)"')
         self.fonts = {}
         self.zfile = None
 
@@ -351,7 +347,7 @@ class ODTFile(object):
                                            os.path.basename(filename)))
         newsrc = 'Pictures/%s' % os.path.basename(filename)
         try:
-            img = Image.open(filename)
+            img = PIL.Image.open(filename)
         except IOError:
             self.env.log.warn("Failed to identify image: %s", filename)
         else:
