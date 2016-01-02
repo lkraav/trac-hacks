@@ -17,6 +17,7 @@ import re
 import shutil
 import tempfile
 import tidylib
+import urllib
 import urllib2
 import urlparse
 import zipfile
@@ -284,6 +285,7 @@ class ODTFile(object):
     def handle_attached_img(self, img_mo):
         self.env.log.debug("handling local image: %s", img_mo.group())
         src, realm, path = img_mo.groups()
+        path = urllib.unquote(path).decode('utf-8')
         path_segments = path.split('/')
         parent_id = '/'.join(path_segments[:-1])
         filename = len(path_segments) > 1 and path_segments[-1]
