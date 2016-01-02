@@ -23,4 +23,6 @@ setup(
         'templates/*.txt',
     ]},
     install_requires=['Trac', 'uTidylib', 'lxml', 'pillow'],
+    dependency_links=['https://github.com/xdissent/utidylib/archive/master.zip'
+                      '#egg=uTidylib'],
 )
