@@ -11,7 +11,7 @@ setup(
     author_email='aurelien@bompard.org',
     description='A plugin to export wiki pages as OpenDocument (ODT) files',
     license='Trac license',
-    url='http://trac-hacks.org/wiki/OdtExportPlugin',
+    url='https://trac-hacks.org/wiki/OdtExportPlugin',
     entry_points={'trac.plugins': ['odtexport.odtexport=odtexport.odtexport',
                                    'odtexport.OdtTemplate=odtexport.OdtTemplate']},
     package_data={'odtexport': [
@@ -22,5 +22,5 @@ setup(
         'templates/*.odt',
         'templates/*.txt',
     ]},
-    install_requires=['Trac', 'uTidylib', 'lxml', 'PIL'],
+    install_requires=['Trac', 'uTidylib', 'lxml', 'pillow'],
 )
