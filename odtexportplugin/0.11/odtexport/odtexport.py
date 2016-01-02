@@ -16,7 +16,7 @@ import os
 import re
 import shutil
 import tempfile
-import tidy
+import tidylib
 import urllib2
 import urlparse
 import zipfile
@@ -130,11 +130,17 @@ class ODTExportPlugin(Component):
 
         # Clean up the HTML, Remove external link icon
         html = re.sub('<span class="icon">.</span>', '', html)
-        tidy_options = dict(output_xhtml=1, add_xml_decl=1, indent=1,
-                            tidy_mark=0, input_encoding='utf8',
-                            output_encoding='utf8', doctype='auto',
-                            wrap=0, char_encoding='utf8')
-        html = tidy.parseString(html, **tidy_options)
+        html, errors = tidylib.tidy_document(html, {
+            'output-xhtml': 1,
+            'add-xml-decl': 1,
+            'indent': 1,
+            'tidy-mark': 0,
+            'input-encoding': 'utf8',
+            'output-encoding': 'utf8',
+            'doctype': 'auto',
+            'wrap': 0,
+            'char-encoding': 'utf8'
+        })
         # Replace nbsp with entity:
         # http://www.mail-archive.com/analog-help@lists.meer.net/msg03670.html
         html = str(html).replace('&nbsp;', '&#160;')
