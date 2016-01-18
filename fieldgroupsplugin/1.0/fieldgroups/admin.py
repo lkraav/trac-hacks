@@ -22,12 +22,12 @@ class FieldGroupsAdminPanel(Component):
     # IAdminPanelProvider methods
     def get_admin_panels(self, req):
         if self.check_permissions(req):
-            yield ('ticket', 'Ticket System', 'fieldgroups', 'Field Groups') 
+            yield ('ticket', 'Ticket System', 'fieldgroups', 'Field Groups')
 
     def render_admin_panel(self, req, cat, page, name):
         add_stylesheet(req, 'fieldgroups/css/jquery.dataTables.css')
         add_script(req, 'fieldgroups/js/jquery.dataTables.min.js')
-        add_script(req, 'fieldclasses/js/fnGetHiddenNodes.js')
+        add_script(req, 'fieldgroups/js/fnGetHiddenNodes.js')
 
         data = {'view': 'list'}
         label = ['Field Group', 'Field Groups']
@@ -95,7 +95,7 @@ class FieldGroupsAdminPanel(Component):
                 # Apply changes
                 elif req.args.get('apply'):
                     changed = [False]
-                    
+
                     # Change enum values
                     order = dict([(key[6:], req.args.get(key)) for key
                                   in req.args.keys()
