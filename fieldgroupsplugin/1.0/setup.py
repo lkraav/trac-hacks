@@ -8,8 +8,6 @@
 # you should have received as part of this distribution.
 
 from setuptools import setup, find_packages
-from setuptools.command import sdist
-del sdist.finders[:]
 
 PACKAGE = 'FieldGroups'
 VERSION = '0.0.2'
@@ -37,7 +35,7 @@ setup(
             'htdocs/js/*.js',
             'htdocs/css/*.css',
             'htdocs/images/*',
-            'templates/*.html', 
+            'templates/*.html',
         ]
     },
 )
