@@ -46,7 +46,7 @@
 
         <div class="message" py:choose="">
           <div py:when="is_topic_edit" class="body">
-            ${wiki_to_html(discussion.env, context, req.args.body) or '&nbsp;'}
+            ${wiki_to_html(context, req.args.body) or '&nbsp;'}
           </div>
           <div py:otherwise="" class="body">
             ${wiki_to_html(context, discussion.topic.body) or '&nbsp;'}
