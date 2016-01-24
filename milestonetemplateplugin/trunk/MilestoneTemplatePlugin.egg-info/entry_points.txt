@@ -1,4 +1,0 @@
-
-        [trac.plugins]
-        MilestoneTemplatePlugin = milestonetemplate.web_ui
-    
