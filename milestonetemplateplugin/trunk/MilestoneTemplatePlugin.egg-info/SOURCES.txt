@@ -1,0 +1,8 @@
+setup.py
+MilestoneTemplatePlugin.egg-info/PKG-INFO
+MilestoneTemplatePlugin.egg-info/SOURCES.txt
+MilestoneTemplatePlugin.egg-info/dependency_links.txt
+MilestoneTemplatePlugin.egg-info/entry_points.txt
+MilestoneTemplatePlugin.egg-info/top_level.txt
+milestonetemplate/__init__.py
+milestonetemplate/web_ui.py
