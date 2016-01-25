@@ -82,16 +82,17 @@ class UserbaseModule(Component):
         
     # IRequestHandler methods
     def match_request(self, req):
-        return req.path_info == '/peerReviewPerform'
+        if 'CODE_REVIEW_DEV' in req.perm:
+            return req.path_info == '/peerReviewPerform'
 
     def process_request(self, req):
 
+        req.perm.require('CODE_REVIEW_DEV')
         data = {}
 
-        if req.perm.has_permission('CODE_REVIEW_MGR'):
+        if 'CODE_REVIEW_MGR' in req.perm:
             data['manager'] = 1
         else:
-            req.perm.assert_permission('CODE_REVIEW_DEV')
             data['manager'] = 0
 
         #for top-right navigation links

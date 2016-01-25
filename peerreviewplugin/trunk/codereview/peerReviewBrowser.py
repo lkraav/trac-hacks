@@ -45,7 +45,7 @@ def _natural_order(x, y):
 
 
 class peerReviewBrowser(Component):
-    implements(IPermissionRequestor, IRequestHandler, IHTMLPreviewAnnotator)
+    implements(IRequestHandler, IHTMLPreviewAnnotator)
 
     # ITextAnnotator methods
     def get_annotation_type(self):
@@ -58,11 +58,6 @@ class peerReviewBrowser(Component):
         row.append(tag.th(id='L%s' % lineno)(
             tag.a(lineno, href='javascript:setLineNum(%s)' % lineno)
         ))
-
-    # IPermissionRequestor methods
-
-    def get_permission_actions(self):
-        return ['BROWSER_VIEW', 'FILE_VIEW']
 
     # IRequestHandler methods
 

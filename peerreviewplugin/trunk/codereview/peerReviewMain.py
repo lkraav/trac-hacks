@@ -38,10 +38,9 @@ class UserbaseModule(Component):
         return 'peerReviewMain'
                 
     def get_navigation_items(self, req):
-        if 'CODE_REVIEW_DEV' not in req.perm:
-            return
-        yield ('mainnav', 'peerReviewMain',
-               Markup('<a href="%s">Peer Review</a>') % req.href.peerReviewMain())
+        if 'CODE_REVIEW_DEV' in req.perm:
+            yield ('mainnav', 'peerReviewMain',
+                   Markup('<a href="%s">Peer Review</a>') % req.href.peerReviewMain())
 
     # IPermissionRequestor methods
     def get_permission_actions(self):

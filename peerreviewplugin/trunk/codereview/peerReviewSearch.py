@@ -27,24 +27,25 @@ class UserbaseModule(Component):
 
     # IRequestHandler methods
     def match_request(self, req):
-        return req.path_info == '/peerReviewSearch'
+        if 'CODE_REVIEW_DEV' in req.perm:
+            return req.path_info == '/peerReviewSearch'
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
+
         return 'peerReviewMain'
 
     def get_navigation_items(self, req):
         return []
 
     def process_request(self, req):
-
+        req.perm.require('CODE_REVIEW_DEV')
         data = {}
 
         #check permissions
-        if req.perm.has_permission('CODE_REVIEW_MGR'):
+        if 'CODE_REVIEW_MGR' in req.perm:
             data['manager'] = 1
         else:
-            req.perm.assert_permission('CODE_REVIEW_DEV')
             data['manager'] = 0
 
         #if the doSearch parameter is 'yes', perform the search
