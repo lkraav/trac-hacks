@@ -38,24 +38,26 @@ class UserbaseModule(Component):
         return 'peerReviewMain'
                 
     def get_navigation_items(self, req):
-        if not (req.perm.has_permission('CODE_REVIEW_DEV') or req.perm.has_permission('CODE_REVIEW_MGR')):
+        if 'CODE_REVIEW_DEV' not in req.perm:
             return
         yield ('mainnav', 'peerReviewMain',
                Markup('<a href="%s">Peer Review</a>') % req.href.peerReviewMain())
 
     # IPermissionRequestor methods
     def get_permission_actions(self):
-        return ['CODE_REVIEW_DEV', 'CODE_REVIEW_MGR']
+        return ['CODE_REVIEW_DEV', ('CODE_REVIEW_MGR', ['CODE_REVIEW_DEV'])]
 
     # IRequestHandler methods
     def match_request(self, req):
-        return req.path_info == '/peerReviewMain'
+        if 'CODE_REVIEW_DEV' in req.perm:
+            return req.path_info == '/peerReviewMain'
+        return False
 
     def process_request(self, req):
 
         data = {}
         # test whether this user is a manager or not
-        if req.perm.has_permission('CODE_REVIEW_MGR'):
+        if 'CODE_REVIEW_MGR' in req.perm:
             data['author'] = "manager"
             data['manager'] = 1
         else:
