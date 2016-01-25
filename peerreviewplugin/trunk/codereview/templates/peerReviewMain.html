@@ -22,13 +22,8 @@
       <li py:if="create == 'yes'">Create a Code Review</li>
       <li py:if="create == 'no'"><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
 
-      <li py:if="manager == 0 and search == 'yes'" class="last">Search Code Reviews</li>
-      <li py:if="manager == 0 and search == 'no'" class="last"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
-      <li py:if="manager == 1 and search == 'yes'">Search Code Reviews</li>
-      <li py:if="manager == 1 and search == 'no'"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
-
-      <li py:if="manager == 1 and option == 'yes'" class="last">Manager Options</li>
-      <li py:if="manager == 1 and option == 'no'" class="last"><a href="${href.peerReviewOptions()}">Manager Options</a></li>
+      <li py:if="search == 'yes'" class="last">Search Code Reviews</li>
+      <li py:if="search == 'no'" class="last"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
     </ul>
   </div>
 

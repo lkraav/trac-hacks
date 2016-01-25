@@ -15,6 +15,5 @@ import peerReviewSearch
 import peerReviewBrowser
 import peerReviewView
 import peerReviewCommentCallback
-import peerReviewOptions
 import peerReviewInit
 from admin import MgrOptionsAdminPlugin
