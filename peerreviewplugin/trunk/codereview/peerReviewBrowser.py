@@ -86,6 +86,10 @@ class peerReviewBrowser(Component):
 
         repos = self.env.get_repository(authname=req.authname)
 
+        display_rev = lambda rev: rev
+        if repos:
+            display_rev = repos.display_rev
+
         try:
             node = get_existing_node(self.env, repos, path, rev)
         except:
@@ -110,7 +114,8 @@ class peerReviewBrowser(Component):
             'log_href': util.escape(self.env.href.log(path, rev=rev or None)),
             'path_links': path_links,
             'dir': node.isdir and self._render_directory(req, repos, node, rev),
-            'file': node.isfile and self._render_file(req, context, repos, node, rev) 
+            'file': node.isfile and self._render_file(req, context, repos, node, rev),
+            'display_rev': display_rev,
         }
 
         add_stylesheet(req, 'common/css/browser.css')
