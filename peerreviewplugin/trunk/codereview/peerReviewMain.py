@@ -27,7 +27,7 @@ from trac.web.chrome import INavigationContributor, ITemplateProvider,\
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
-
+from model import Review
 
 class UserbaseModule(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
@@ -64,34 +64,25 @@ class UserbaseModule(Component):
             data['author'] = "notmanager"
             data['manager'] = 0
 
-        data['main'] = "yes"
-        data['create'] = "no"
-        data['search'] = "no"
-        data['option'] = "no"
-
         data['username'] = util.get_reporter_id(req)
 
         db = self.env.get_db_cnx()
         codeReview = CodeReviewStruct(None)
         dbBack = dbBackend(db)
-        codeReviewArray = dbBack.getMyCodeReviews(util.get_reporter_id(req))
         assignedReviewArray = dbBack.getCodeReviews(util.get_reporter_id(req))
         managerReviewArray = dbBack.getCodeReviewsByStatus("Ready for inclusion")
-        reviewReturnArray = []
+
         assignedReturnArray = []
         managerReturnArray = []
         dataArray = []
 
+        all_reviews = Review.select(self.env)
+
         # fill the table of currently open reviews
-        for struct in codeReviewArray:
-            if struct.Status != "Closed":
-                dataArray.append(struct.IDReview)
-                dataArray.append(struct.Author)
-                dataArray.append(struct.Status)
-                dataArray.append(util.format_date(struct.DateCreate))
-                dataArray.append(struct.Name)
-                reviewReturnArray.append(dataArray)
-                dataArray = []
+        myreviews = []
+        for rev in all_reviews:
+            if rev.status != "Closed" and rev.author == req.authname:
+                myreviews.append(rev)
         
         # fill the table of code reviews currently assigned to you
         for struct in assignedReviewArray:
@@ -120,11 +111,11 @@ class UserbaseModule(Component):
                 managerReturnArray.append(dataArray)
                 dataArray = []
 
-        data['reviewReturnArrayLength'] = len(reviewReturnArray)
+        data['myreviews'] = myreviews
+
         data['assignedReturnArrayLength'] = len(assignedReturnArray)
         data['managerReviewArrayLength'] = len(managerReviewArray)
 
-        data['myCodeReviews'] = reviewReturnArray
         data['assignedReviews'] = assignedReturnArray
         data['managerReviews'] = managerReturnArray
 

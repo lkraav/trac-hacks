@@ -8,7 +8,7 @@
   <xi:include href="macros.html" />
 
   <head>
-    <title>Code Review</title>
+    <title>My Code Review</title>
   </head>
 
 <body>
@@ -16,23 +16,17 @@
   <div id="ctxtnav" class="nav">
     <h2>Peer Review Navigation</h2>
     <ul>
-      <li py:if="main == 'yes'" class="first">My Code Reviews</li>
-      <li py:if="main == 'no'" class="first"><a href="${href.peerReviewMain()}">My Code Reviews</a></li>
-
-      <li py:if="create == 'yes'">Create a Code Review</li>
-      <li py:if="create == 'no'"><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
-
-      <li py:if="search == 'yes'" class="last">Search Code Reviews</li>
-      <li py:if="search == 'no'" class="last"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
+      <li class="first">My Code Reviews</li>
+      <li><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
+      <li class="last"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
     </ul>
   </div>
 
-  <p><h1>My Code Reviews</h1></p>
+  <h1>My Code Reviews</h1>
 
-  <br />
   <!-- If we are a manager, display a table containing all of the code reviews requiring your approval. -->
   <py:if test="author == 'manager'">
-  <p><h2>This is a list of the code reviews currently requiring your approval.</h2></p>
+  <h2>This is a list of the code reviews currently requiring your approval.</h2>
   <table class="listing" id="approvereviewlist">
     <thead>
       <tr>
@@ -59,44 +53,38 @@
       </tr>
     </tbody>
   </table>
-  <br />
-  <br />
   </py:if>
 
-  <p><h2>This is a list of your currently open code reviews.</h2></p>
+  <h2>This is a list of currently open code reviews created by you.</h2>
 
-  <!-- Display your currently open code reviews in a table -->
   <table class="listing" id="myreviewlist">
     <thead>
-      <tr>
-        <td>Review</td>
-        <td>Name</td>
-        <td>Status</td>
-        <td>Date Opened</td>
-      </tr>
+    <tr>
+      <td>Review</td>
+      <td>Name</td>
+      <td>Status</td>
+      <td>Date Opened</td>
+    </tr>
     </thead>
     <tbody py:with="cls=cycle(('odd', 'even'))">
       <!-- if there are no reviews open for you, state this in the table -->
-      <tr py:if="reviewReturnArrayLength == 0">
-        <td>Your have no code reviews currently open.</td>
+      <tr py:if="not myreviews">
+        <td>You have no code reviews currently open.</td>
         <td />
         <td />
         <td />
       </tr>
-      <tr py:if="reviewReturnArrayLength > 0" py:for="item in myCodeReviews" class="${cls.next()}">
+      <tr py:for="item in myreviews" class="${cls.next()}">
         <!-- Set up the table with the appropriate values and then links to view the review -->
-          <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[0]}</a></td>
-          <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[4]}</a></td>
-          <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[2]}</a></td>
-          <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[3]}</a></td>
+        <td><a href="${href.peerReviewView()}?Review=${item.review_id}">${item.review_id}</a></td>
+        <td><a href="${href.peerReviewView()}?Review=${item.review_id}">${item.name}</a></td>
+        <td><a href="${href.peerReviewView()}?Review=${item.review_id}">${item.status}</a></td>
+        <td><a href="${href.peerReviewView()}?Review=${item.review_id}">${item.creation_date}</a></td>
       </tr>
     </tbody>
   </table>
 
-  <br />
-  <br />
-
-  <p><h2>This is a list of code reviews currently assigned to you.</h2></p>
+  <h2>This is a list of code reviews currently assigned to you.</h2>
 
   <!-- Display your currently assigned code reviews in a table -->
   <table class="listing" id="assignedreviewlist">
@@ -129,8 +117,5 @@
     </tbody>
   </table>
 
-  <br />
-  <br />
 </body>
-
 </html>

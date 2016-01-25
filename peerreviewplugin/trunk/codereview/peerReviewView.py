@@ -83,7 +83,7 @@ class UserbaseModule(Component):
 
         # set up the fields that will be displayed on the page
         data['myname'] = req.authname
-        data['datecreate'] = util.format_date(review.creation_date)
+        data['datecreate'] = review.creation_date
         data['voteyes'] = dbBack.getVotesByID("1", reviewID)
         data['voteno'] = dbBack.getVotesByID("0", reviewID)
         data['notvoted'] = dbBack.getVotesByID("-1", reviewID)

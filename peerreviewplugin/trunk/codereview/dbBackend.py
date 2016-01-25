@@ -32,11 +32,6 @@ class dbBackend(object):
             newStr = newStr + colName + " LIKE '%s%s%s' " % ('%', str, '%')
         return newStr
 
-    #Returns an array of all the code reviews whose author is the given user
-    def getMyCodeReviews(self, user):
-        query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE Author = '%s' ORDER BY DateCreate" % (user)
-        return self.execCodeReviewQuery(query, False)
-
     #Returns an array of all the code reviews who have the given user assigned to them as a reviewer
     def getCodeReviews(self, user):
         query = "SELECT cr.IDReview, cr.Author, cr.Status, cr.DateCreate, cr.Name, cr.Notes FROM CodeReviews cr, Reviewers r WHERE r.IDReview = cr.IDReview AND r.Reviewer = '%s' ORDER BY cr.DateCreate" % (user)

@@ -2,7 +2,7 @@
 
 from trac.resource import ResourceNotFound
 from trac.util.text import _
-
+from trac.util import format_date
 __author__ = 'Cinc'
 
 class Review(object):
@@ -38,7 +38,7 @@ class Review(object):
     exists = property(lambda self: self._old_name is not None)
 
     @classmethod
-    def select(cls, env, db=None):
+    def select(cls, env):
         db = env.get_read_db()
         cursor = db.cursor()
         # TODO: change query when database schema is adjusted
@@ -49,8 +49,9 @@ class Review(object):
             review.name = review._old_name = name
             review.review_id = rev_id
             review.author = author
-            review.satus = status
-            review.creation_date = creation_date
+            review.status = status
+            review.raw_date = creation_date
+            review.creation_date = format_date(creation_date)
             review.notes = notes or ''
             reviews.append(review)
         # TODO: should this be sorted in any way?
