@@ -136,8 +136,8 @@ class UserbaseModule(Component):
         data['review_lineEnd'] = resultFile.LineEnd
         data['review_reviewID'] = resultFile.IDReview
         #make these global for the line annotator
-        self.lineEnd = resultFile.LineEnd
-        self.lineStart = resultFile.LineStart
+        self.lineEnd = int(resultFile.LineEnd)
+        self.lineStart = int(resultFile.LineStart)
 
         #if the repository can't be found - display an error message
         if repos is None:
