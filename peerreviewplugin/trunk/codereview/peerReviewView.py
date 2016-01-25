@@ -22,7 +22,7 @@ from trac.web.main import IRequestHandler
 from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
-
+from model import Review
 
 class UserbaseModule(Component):
     implements(IRequestHandler, ITemplateProvider, INavigationContributor)
@@ -56,18 +56,10 @@ class UserbaseModule(Component):
         # reviewID argument checking
         reviewID = req.args.get('Review')
         if reviewID is None or not reviewID.isdigit():
-            data['error.type'] = "TracError"
-            data['error.title'] = "Review ID error"
-            data['error.message'] = "Invalid review ID supplied - unable to load page."
-            return 'error.cs', data, None
-
-        data['main'] = "no"
-        data['create'] = "no"
-        data['search'] = "no"
-        data['option'] = "no"
+            TracError(u"Invalid review ID supplied - unable to load page.")
 
         # set up to display the files that are in this review
-        db = self.env.get_db_cnx()
+        db = self.env.get_read_db()
         dbBack = dbBackend(db)
         files = dbBack.getReviewFiles(reviewID)
         returnfiles = []
@@ -84,29 +76,19 @@ class UserbaseModule(Component):
             newfile = []
         data['files'] = returnfiles
         data['filesLength'] = len(returnfiles)
-        data['reviewID'] = reviewID
 
         data['users'] = dbBack.getPossibleUsers()
-        review = dbBack.getCodeReviewsByID(reviewID)
-        # error if review id does not exist in the database
-        if review is None:
-            data['error.type'] = "TracError"
-            data['error.title'] = "Review error"
-            data['error.message'] = "Review does not exist in database - unable to load page."
-            return 'error.cs', data, None
+
+        review = Review(self.env, reviewID)
 
         # set up the fields that will be displayed on the page
-        data['name'] = review.Name
-        data['notes'] = review.Notes
-        data['status'] = review.Status
-        data['author'] = review.Author
-        data['myname'] = util.get_reporter_id(req)
-        data['datecreate'] = util.format_date(review.DateCreate)
+        data['myname'] = req.authname
+        data['datecreate'] = util.format_date(review.creation_date)
         data['voteyes'] = dbBack.getVotesByID("1", reviewID)
         data['voteno'] = dbBack.getVotesByID("0", reviewID)
         data['notvoted'] = dbBack.getVotesByID("-1", reviewID)
         data['total_votes_possible'] = float(data['voteyes']) + float(data['voteno']) + float(data['notvoted'])
-        data['threshold'] = float(dbBack.getThreshold())/100
+        data['review'] = review
 
         # figure out whether I can vote on this review or not
         entry = dbBack.getReviewerEntry(reviewID, data['myname'])
@@ -119,10 +101,10 @@ class UserbaseModule(Component):
         # display vote summary only if I have voted or am the author/manager,
         # or if the review is "Ready for inclusion" or "Closed
         data['viewvotesummary'] = 0
-        if data['author'] == data['myname'] or data['manager'] == '1' or \
+        if review.author == data['myname'] or data['manager'] == '1' or \
                 (dbBack.getReviewerEntry(reviewID, data['myname']) is not None and
                  dbBack.getReviewerEntry(reviewID, data['myname']).Vote != '-1') or \
-                data['status'] == "Closed" or data['status'] == "Ready for inclusion":
+                review.status == "Closed" or review.status == "Ready for inclusion":
             data['viewvotesummary'] = 1
         else:
             data['viewvotesummary'] = 0
@@ -146,7 +128,7 @@ class UserbaseModule(Component):
                     newrvpair.append("Yes")
                 rvs.append(newrvpair)
                 newrvpair = []
-        elif review.Author == util.get_reporter_id(req):
+        elif review.author == util.get_reporter_id(req):
             self.env.log.debug("I am the author")
             for reviewer in reviewers:
                 newrvpair.append(reviewer.Reviewer)

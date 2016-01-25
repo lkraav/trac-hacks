@@ -16,29 +16,22 @@
   <div id="ctxtnav" class="nav">
     <h2>Peer Review Navigation</h2>
     <ul>
-      <li py:if="main == 'yes'" class="first">My Code Reviews</li>
-      <li py:if="main == 'no'" class="first"><a href="${href.peerReviewMain()}">My Code Reviews</a></li>
-
-      <li py:if="create == 'yes'">Create a Code Review</li>
-      <li py:if="create == 'no'"><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
-
-      <li py:if="search == 'yes'" class="last">Search Code Reviews</li>
-      <li py:if="search == 'no'" class="last"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
-
+      <li class="first"><a href="${href.peerReviewMain()}">My Code Reviews</a></li>
+      <li><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
+      <li class="last"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
     </ul>
   </div>
 
-  <p><h1>Code Review Details</h1></p>
-
-  Code review name: ${name}<br />
-  Code review status: ${status}<br />
-  Author:  ${author}<br />
+  <h1>Code Review Details</h1>
+  <p>
+  Code review name: ${review.name}<br />
+  Code review status: ${review.status}<br />
+  Author:  ${review.author}<br />
   Creation Date:  ${datecreate}<br />
   <br />
-
+  </p>
   <script type="text/javascript">
     function handlerowclick(num){
-
     }
   </script>
 
@@ -68,11 +61,9 @@
     </tbody>
   </table>
 
-  <br />
-
   <h2>Users assigned to this code review</h2>
 
-  <table py:if="author == myname or manager == 1" class="listing" id="userlist">
+  <table py:if="review.author == myname or manager == 1" class="listing" id="userlist">
     <thead>
       <tr>
         <td>User name</td>
@@ -90,7 +81,7 @@
     </tbody>
   </table>
 
-  <table py:if="author != myname and manager != 1" class="listing" id="userlist">
+  <table py:if="review.author != myname and manager != 1" class="listing" id="userlist">
     <thead>
       <tr>
         <td>User name</td>
@@ -106,10 +97,9 @@
     </tbody>
   </table>
 
-  <br /><br />
+
   <h2>Author's notes and instructions</h2>
-  <textarea name="Notes" cols="60" rows="8" readonly="true">${notes}</textarea>
-  <br /><br />
+  <textarea name="Notes" cols="60" rows="8" readonly="true">${review.notes}</textarea>
 
   <py:if test="viewvotesummary == 1">
   <h2>Vote summary</h2>
@@ -135,21 +125,21 @@
   <br /><br />
   </py:if>
 
-  <py:if test="canivote == 1 and status != 'Closed' and status !=  'Ready for inclusion'">
+  <py:if test="canivote == 1 and review.status != 'Closed' and review.status !=  'Ready for inclusion'">
   <h2>${myvote != -1 and 'Modify' or 'Cast'} your vote:</h2>
   <table>
     <tr>
       <td>
         <form method="post" action="${href.peerReviewView()}">
           <input type="submit" value="Approve" />
-          <input type="hidden" value="${reviewID}" name="Review" />
+          <input type="hidden" value="${review.review_id}" name="Review" />
           <input type="hidden" value="yes" name="Vote" />
         </form>
       </td>
       <td>
         <form method="post" action="${href.peerReviewView()}">
           <input type="submit" value="Not Approve" />
-          <input type="hidden" value="${reviewID}" name="Review" />
+          <input type="hidden" value="${review.review_id}" name="Review" />
           <input type="hidden" value="no" name="Vote" />
         </form>
       </td>
@@ -170,7 +160,7 @@
             <option value="Ready for inclusion">Ready for inclusion</option>
             <option value="Closed">Closed</option>
           </select>
-          <input type="hidden" value="${reviewID}" name="Review" />
+          <input type="hidden" value="${review.review_id}" name="Review" />
           <input type="submit" name="submitbutton" value="Change Status" />
         </form>
       </td>
@@ -178,35 +168,35 @@
       <td>
         <form method="post" action="${href.peerReviewNew()}">
           <input type="submit" value="Resubmit For Review" />
-          <input type="hidden" value="${reviewID}" name="resubmit" />
+          <input type="hidden" value="${review.review_id}" name="resubmit" />
         </form>
       </td>
     </tr>
   </table>
   </py:if>
 
-  <py:if test="manager != 1 and author == myname">
+  <py:if test="manager != 1 and review.author == myname">
   <h2>Author privileges</h2>
   <table>
     <tr>
-      <td py:if="status != 'Ready for inclusion' and status != 'Closed'">
+      <td py:if="review.status != 'Ready for inclusion' and review.status != 'Closed'">
         <form method="post" action="${href.peerReviewView()}">
-          <input type="submit" value="Submit For Inclusion" disabled="${status != 'Reviewed' and 'true' or None}" />
-          <input type="hidden" value="${reviewID}" name="Review" />
+          <input type="submit" value="Submit For Inclusion" disabled="${review.status != 'Reviewed' and 'true' or None}" />
+          <input type="hidden" value="${review.review_id}" name="Review" />
           <input type="hidden" value="1" name="Inclusion" />
         </form>
       </td>
       <td>
         <form method="post" action="${href.peerReviewNew()}">
           <input type="submit" value="Resubmit For Review" />
-          <input type="hidden" value="${reviewID}" name="resubmit" />
+          <input type="hidden" value="${review.review_id}" name="resubmit" />
         </form>
       </td>
-      <td py:if="status != 'Closed'">
+      <td py:if="review.status != 'Closed'">
         <form method="post" action="${href.peerReviewView()}">
           <input type="submit" value="Close This Code Review" />
           <input type="hidden" value="1" name="Close" />
-          <input type="hidden" value="${reviewID}" name="Review" />
+          <input type="hidden" value="${review.review_id}" name="Review" />
         </form>
       </td>
     </tr>
