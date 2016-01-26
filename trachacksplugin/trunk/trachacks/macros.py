@@ -299,7 +299,17 @@ class MaintainerMacro(WikiMacroBase):
                                   _("Invalid number of arguments"))
         context = formatter.context
         resource = context.resource
-        if resource.realm == 'wiki' or largs and largs[0]:
+
+        def format_name(username, fullname):
+            return format_to_oneliner(self.env, context,
+                                      "[wiki:%s %s]" % (username, fullname))
+
+        if formatter.req.path_info.startswith('/newhack'):
+            username = formatter.req.authname
+            session = context.req.session
+            fullname = session.get('name', username)
+            return format_name(username, fullname)
+        elif resource.realm == 'wiki' or largs and largs[0]:
             id = largs[0] if largs and largs[0] else resource.id
             try:
                 component = Component(self.env, id)
@@ -324,5 +334,4 @@ class MaintainerMacro(WikiMacroBase):
             return system_message(_("Maintainer macro error"),
                                   _("Hack name must be specified as argument "
                                     "when the context realm is not 'wiki'"))
-        return format_to_oneliner(self.env, context,
-                                  "[wiki:%s %s]" % (username, fullname))
+        return format_name(username, fullname)

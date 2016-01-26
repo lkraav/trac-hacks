@@ -108,8 +108,21 @@ MAINTAINER_MACRO_TICKET_TEST_CASE = u"""
 """
 
 
+MAINTAINER_MACRO_NEWHACK_TEST_CASE = u"""
+==============================
+[[Maintainer]]
+------------------------------
+<p>
+<a class="wiki" href="/wiki/jun66j5">Jun Omae</a>
+</p>
+"""
+
+
 def setup(tc):
     tc.env = EnvironmentStub(enable=['trac.*', 'trachacks.*'])
+    tc.context.req.path_info = '/wiki/WikiStart'
+    with tc.env.db_transaction as db:
+        TagSetup(tc.env).upgrade_environment(db)
     component1 = Component(tc.env)
     component1.name = 'TracHacksPlugin'
     component1.owner = 'mrenzmann'
@@ -136,8 +149,6 @@ def setup(tc):
     ticket['summary'] = 'Ticket summary'
     ticket['reporter'] = 'hasienda'
     ticket.insert()
-    with tc.env.db_transaction as db:
-        TagSetup(tc.env).upgrade_environment(db)
     page1 = WikiPage(tc.env, 'osimons')
     page1.text = 'osimons'
     page1.save('osimons', '', '127.0.0.1')
@@ -156,6 +167,21 @@ def setup(tc):
     session.save()
 
 
+def setup_newhack(tc):
+    tc.env = EnvironmentStub(enable=['trac.*', 'trachacks.*'])
+    tc.context.req.path_info = '/newhack'
+    tc.context.req.authname = 'jun66j5'
+    with tc.env.db_transaction as db:
+        TagSetup(tc.env).upgrade_environment(db)
+    page = WikiPage(tc.env, 'jun66j5')
+    page.text = 'jun66j5'
+    page.save('jun66j5', '', '127.0.0.1')
+    session = DetachedSession(tc.env, 'jun66j5')
+    session.set('name', 'Jun Omae')
+    session.save()
+    tc.context.req.session = session
+
+
 def teardown(tc):
     tc.env.reset_db()
     with tc.env.db_transaction as db:
@@ -172,6 +198,9 @@ def test_suite():
     suite.addTest(formatter.suite(MAINTAINER_MACRO_TICKET_TEST_CASE,
                                   setup, __file__, teardown,
                                   ('ticket', 1)))
+    suite.addTest(formatter.suite(MAINTAINER_MACRO_NEWHACK_TEST_CASE,
+                                  setup_newhack, __file__, teardown,
+                                  (None, None)))
     return suite
 
 
