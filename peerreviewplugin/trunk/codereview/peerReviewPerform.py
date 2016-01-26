@@ -23,6 +23,7 @@ from trac.web.chrome import INavigationContributor, \
                             add_link, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
+from trac.versioncontrol.api import RepositoryManager
 
 from dbBackend import *
 from peerReviewMain import add_ctxt_nav_items
@@ -116,7 +117,7 @@ class UserbaseModule(Component):
             TracError("Unable to locate given file ID in database.", "File ID Error")
 
         #get the respository
-        repos = self.env.get_repository(authname=req.authname)
+        repos = RepositoryManager(self.env).get_repository('')
         #get the file attributes
         data['review_path'] = resultFile.Path
         data['review_version'] = resultFile.Version
@@ -135,7 +136,7 @@ class UserbaseModule(Component):
         try:
             node = get_existing_node(self.env, repos, resultFile.Path, resultFile.Version)
         except:
-            youngest_rev = repos.youngest_rev
+            youngest_rev = repos.get_youngest_rev()
             node = get_existing_node(self.env, repos, resultFile.Path, youngest_rev)
 
         #if the node can't be found - display error message

@@ -17,6 +17,7 @@ from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util import embedded_numbers
+from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
 from trac.web.chrome import add_link, add_stylesheet
@@ -78,7 +79,7 @@ class peerReviewBrowser(Component):
         path = req.args.get('path', '/')
         rev = req.args.get('rev')
 
-        repos = self.env.get_repository(authname=req.authname)
+        repos = RepositoryManager(self.env).get_repository('')
 
         display_rev = lambda rev: rev
         if repos:
@@ -87,7 +88,7 @@ class peerReviewBrowser(Component):
         try:
             node = get_existing_node(self.env, repos, path, rev)
         except:
-            rev = repos.youngest_rev
+            rev = repos.get_youngest_rev()
             node = get_existing_node(self.env, repos, path, rev)
        
         hidden_properties = [p.strip() for p
@@ -101,7 +102,7 @@ class peerReviewBrowser(Component):
 
         data = {
             'path': path, 'rev': node.rev, 'stickyrev': rev,
-            'revision': rev or repos.youngest_rev,
+            'revision': rev or repos.get_youngest_rev(),
             'props': dict([(util.escape(name), util.escape(value))
                            for name, value in node.get_properties().items()
                            if not name in hidden_properties]),
