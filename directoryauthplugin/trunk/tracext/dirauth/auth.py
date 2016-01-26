@@ -17,7 +17,7 @@ import time
 from trac.config import IntOption, Option
 from trac.core import Component, TracError, implements
 from trac.perm import IPermissionGroupProvider
-from trac.util.text import to_unicode
+from trac.util.text import to_unicode, to_utf8
 from trac.util.translation import _
 
 from acct_mgr.api import IPasswordStore
@@ -127,8 +127,10 @@ class DirAuthStore(Component):
             else:
                 users = lcnx.search_s(self.dir_basedn, ldap.SCOPE_SUBTREE,
                                       "objectClass=person",
-                                      [self.user_attr, self.email_attr,
-                                       self.proxy_attr, self.name_attr])
+                                      [to_utf8(self.user_attr),
+                                       to_utf8(self.email_attr),
+                                       to_utf8(self.proxy_attr),
+                                       to_utf8(self.name_attr)])
                 userinfo = [self._get_userinfo(u[1]) for u in users]
         else:
             raise TracError('Unable to bind to Active Directory')
@@ -141,7 +143,9 @@ class DirAuthStore(Component):
             group = group[1:]
             self.log.debug("search groups cn=%s,%s"
                            % (group, self.group_basedn))
-        g = cnx.search_s("cn=%s,%s" % (group, self.group_basedn), ldap.SCOPE_BASE, attrlist=[str(self.member_attr)])
+        g = cnx.search_s("cn=%s,%s" % (group, self.group_basedn),
+                         ldap.SCOPE_BASE,
+                         attrlist=[to_utf8(self.member_attr)])
         self.log.debug(g)
         if g and self.member_attr in g[0][1]:
             users = []
