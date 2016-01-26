@@ -22,11 +22,10 @@ from trac.web.main import IRequestHandler
 from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
+from model import ReviewFile
 
-
-class UserbaseModule(Component):
+class NewReviewModule(Component):
     implements(IRequestHandler, ITemplateProvider, INavigationContributor)
-    
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -46,16 +45,6 @@ class UserbaseModule(Component):
         req.perm.require('CODE_REVIEW_DEV')
 
         data = {}
-
-        if 'CODE_REVIEW_MGR' in req.perm:
-            data['manager'] = 1
-        else:
-            data['manager'] = 0
-
-        data['main'] = "no"
-        data['create'] = "yes"
-        data['search'] = "no"
-        data['option'] = "no"
 
         db = self.env.get_db_cnx()
         dbBack = dbBackend(db)
@@ -99,7 +88,6 @@ class UserbaseModule(Component):
                 tempFiles.append(struct.LineEnd)
                 popFiles.append(tempFiles)
 
-            data['files'] = returnFiles
             data['name'] = review.Name
             data['notes'] = review.Notes
             data['reviewers'] = returnUsers
@@ -185,8 +173,8 @@ class UserbaseModule(Component):
         struct.DateCreate = int(time.time())
         struct.Name = req.args.get('Name')
         struct.Notes = req.args.get('Notes')
-        id = struct.save(self.env.get_db_cnx())
-        self.log.debug('BEN %s', id)       
+        id_ = struct.save(self.env.get_db_cnx())
+        self.log.debug('BEN %s', id_)
         # loop here through all the reviewers
         # and create new reviewer structs based on them
         string = req.args.get('ReviewersSelected')
@@ -194,7 +182,7 @@ class UserbaseModule(Component):
         for token in tokens:
             if token != "":
                 struct = ReviewerStruct(None)
-                struct.IDReview = id
+                struct.IDReview = id_
                 struct.Reviewer = token
                 struct.Status = 0
                 struct.Vote = "-1"
@@ -207,12 +195,11 @@ class UserbaseModule(Component):
         for item in items:
             if item != "":
                 segment = item.split(',')
-                struct = ReviewFileStruct(None)
-                struct.IDReview = id
-                struct.Path = segment[0]
-                struct.Version = segment[1]
-                struct.LineStart = segment[2]
-                struct.LineEnd = segment[3]
-                struct.save(self.env.get_db_cnx())
-
-        return id
+                rfile = ReviewFile(self.env)
+                rfile.review_id = id_
+                rfile.path = segment[0]
+                rfile.version = segment[1]
+                rfile.start = segment[2]
+                rfile.end = segment[3]
+                rfile.insert()
+        return id_

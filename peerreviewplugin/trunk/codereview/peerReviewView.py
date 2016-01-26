@@ -14,17 +14,20 @@
 import itertools
 
 from trac import util
-from trac.core import *
+from trac.core import Component, implements, TracError
+from trac.mimeview import Context
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_stylesheet
 from trac.web.main import IRequestHandler
+from trac.wiki.formatter import format_to_html
 
 from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
-from model import Review
+from model import Review, ReviewFile
 
-class UserbaseModule(Component):
+class ViewReviewModule(Component):
+    """Displays a summary page for a review."""
     implements(IRequestHandler, ITemplateProvider, INavigationContributor)
 
     number = -1
@@ -49,9 +52,9 @@ class UserbaseModule(Component):
         data = {}
         # check to see if the user is a manager of this page or not
         if 'CODE_REVIEW_MGR' in req.perm:
-            data['manager'] = 1
+            manager = True
         else:
-            data['manager'] = 0
+            manager = False
 
         # reviewID argument checking
         reviewID = req.args.get('Review')
@@ -61,34 +64,26 @@ class UserbaseModule(Component):
         # set up to display the files that are in this review
         db = self.env.get_read_db()
         dbBack = dbBackend(db)
-        files = dbBack.getReviewFiles(reviewID)
-        returnfiles = []
-        newfile = []
-        for struct in files:
-            newfile.append(struct.IDFile)
-            newfile.append(struct.IDReview)
-            newfile.append(struct.Path)
-            newfile.append(struct.LineStart)
-            newfile.append(struct.LineEnd)
-            newfile.append(struct.Version)
-            newfile.append(len(dbBack.getCommentsByFileID(struct.IDFile)))
-            returnfiles.append(newfile)
-            newfile = []
-        data['files'] = returnfiles
-        data['filesLength'] = len(returnfiles)
 
+        rev_files = ReviewFile.select_by_review(self.env, reviewID)
+        for f in rev_files:
+            f.num_comments = len(dbBack.getCommentsByFileID(f.file_id))
+
+        data['review_files'] = rev_files
         data['users'] = dbBack.getPossibleUsers()
 
         review = Review(self.env, reviewID)
 
+        data['notes'] = format_to_html(self.env, Context.from_request(req), review.notes)
+
         # set up the fields that will be displayed on the page
         data['myname'] = req.authname
-        data['datecreate'] = review.creation_date
         data['voteyes'] = dbBack.getVotesByID("1", reviewID)
         data['voteno'] = dbBack.getVotesByID("0", reviewID)
         data['notvoted'] = dbBack.getVotesByID("-1", reviewID)
         data['total_votes_possible'] = float(data['voteyes']) + float(data['voteno']) + float(data['notvoted'])
         data['review'] = review
+        data['manager'] = manager
 
         # figure out whether I can vote on this review or not
         entry = dbBack.getReviewerEntry(reviewID, data['myname'])
@@ -101,7 +96,7 @@ class UserbaseModule(Component):
         # display vote summary only if I have voted or am the author/manager,
         # or if the review is "Ready for inclusion" or "Closed
         data['viewvotesummary'] = 0
-        if review.author == data['myname'] or data['manager'] == '1' or \
+        if review.author == data['myname'] or manager or \
                 (dbBack.getReviewerEntry(reviewID, data['myname']) is not None and
                  dbBack.getReviewerEntry(reviewID, data['myname']).Vote != '-1') or \
                 review.status == "Closed" or review.status == "Ready for inclusion":
@@ -116,7 +111,7 @@ class UserbaseModule(Component):
         # if we are the manager, list who has voted and what their vote was.
         # if we are the author, list who has voted and who has not.
         # if we are neither, list the users who are participating in this review.
-        if data['manager'] == 1:
+        if manager:
             self.env.log.debug("I am a manager")
             for reviewer in reviewers:
                 newrvpair.append(reviewer.Reviewer)
@@ -160,7 +155,7 @@ class UserbaseModule(Component):
             self.manager_change_status(mc, reviewID, req)
 
         if req.args.get('Close') == '1':
-            self.close_review(reviewID, req, data['manager'])
+            self.close_review(reviewID, req, manager)
 
         if req.args.get('Inclusion') == '1':
             self.submit_for_inclusion(reviewID, req)
@@ -230,7 +225,7 @@ class UserbaseModule(Component):
         dbBack = dbBackend(db)
         review = dbBack.getCodeReviewsByID(number)
         # this option available if you are the author or manager of this code review
-        if review.Author == util.get_reporter_id(req) or manager == 1:
+        if review.Author == util.get_reporter_id(req) or manager:
             review.Status = "Closed"
             review.save(db)
             req.redirect(self.env.href.peerReviewView() + "?Review=" + number)

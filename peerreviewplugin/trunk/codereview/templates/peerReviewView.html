@@ -27,7 +27,7 @@
   Code review name: ${review.name}<br />
   Code review status: ${review.status}<br />
   Author:  ${review.author}<br />
-  Creation Date:  ${datecreate}<br />
+  Creation Date:  ${review.creation_date}<br />
   <br />
   </p>
   <script type="text/javascript">
@@ -36,34 +36,34 @@
   </script>
 
   <h2>Files associated with this code review</h2>
-
   <table class="listing" id="filelist">
-    <thead>
+      <thead>
       <tr>
-        <td>File ID</td>
-        <td>Filename</td>
-        <td>Revision</td>
-        <td>Line Numbers</td>
-        <td># of Comments</td>
+          <td>File ID</td>
+          <td>Filename</td>
+          <td>Revision</td>
+          <td>Line Numbers</td>
+          <td># of Comments</td>
       </tr>
-    </thead>
-    <tbody py:with="cls=cycle(('odd', 'even'))">
-      <tr py:if="filesLength == 0" class="even">
-        <td>There are no files included in this code review.</td>
+      </thead>
+      <tbody py:with="cls=cycle(('odd', 'even'))">
+      <tr py:if="not review_files" class="even">
+          <td>There are no files included in this code review.</td>
       </tr>
-      <tr py:if="filesLength > 0" py:for="item in files" class="${cls.next()}">
-        <td><a href="${href.peerReviewPerform()}?IDFile=${item[0]}">${item[0]}</a></td>
-        <td><a href="${href.peerReviewPerform()}?IDFile=${item[0]}">${item[2]}</a></td>
-        <td><a href="${href.peerReviewPerform()}?IDFile=${item[0]}">${item[5]}</a></td>
-        <td><a href="${href.peerReviewPerform()}?IDFile=${item[0]}">${item[3]}-${item[4]}</a></td>
-        <td><a href="${href.peerReviewPerform()}?IDFile=${item[0]}">${item[6]}</a></td>
+      <tr py:for="item in review_files" class="${cls.next()}">
+          <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.file_id}</a></td>
+          <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.path}</a></td>
+          <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.version}</a></td>
+          <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.start}-${item.end}</a></td>
+          <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.num_comments}</a></td>
       </tr>
-    </tbody>
+      </tbody>
   </table>
+
 
   <h2>Users assigned to this code review</h2>
 
-  <table py:if="review.author == myname or manager == 1" class="listing" id="userlist">
+  <table py:if="review.author == myname or manager" class="listing" id="userlist">
     <thead>
       <tr>
         <td>User name</td>
@@ -74,14 +74,14 @@
       <tr py:if="rvsLength == 0" class="even">
         <td>There are no users included in this code review.</td>
       </tr>
-      <tr py:if="filesLength > 0" py:for="item in rvs" class="${cls.next()}">
+      <tr py:if="review_files" py:for="item in rvs" class="${cls.next()}">
         <td>${item[0]}</td>
         <td>${item[1]}</td>
       </tr>
     </tbody>
   </table>
 
-  <table py:if="review.author != myname and manager != 1" class="listing" id="userlist">
+  <table py:if="review.author != myname and not manager" class="listing" id="userlist">
     <thead>
       <tr>
         <td>User name</td>
@@ -98,9 +98,10 @@
   </table>
 
 
-  <h2>Author's notes and instructions</h2>
-  <textarea name="Notes" cols="60" rows="8" readonly="true">${review.notes}</textarea>
-
+  <py:if test="notes">
+      <h2>Author's notes and instructions</h2>
+      $notes
+  </py:if>
   <py:if test="viewvotesummary == 1">
   <h2>Vote summary</h2>
   <table width = "35%">
@@ -121,8 +122,6 @@
       </td>
     </tr>
   </table>
-
-  <br /><br />
   </py:if>
 
   <py:if test="canivote == 1 and review.status != 'Closed' and review.status !=  'Ready for inclusion'">
@@ -147,7 +146,7 @@
   </table>
   </py:if>
 
-  <py:if test="manager==1">
+  <py:if test="manager">
   <h2>Manager privileges</h2>
   Change code review status:
   <table valign="middle">
@@ -175,7 +174,7 @@
   </table>
   </py:if>
 
-  <py:if test="manager != 1 and review.author == myname">
+  <py:if test="not manager and review.author == myname">
   <h2>Author privileges</h2>
   <table>
     <tr>
