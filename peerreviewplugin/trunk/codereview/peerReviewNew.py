@@ -15,7 +15,7 @@ import itertools
 import time
 
 from trac import util
-from trac.core import *
+from trac.core import Component, implements, TracError
 from trac.web.chrome import INavigationContributor
 from trac.web.main import IRequestHandler
 
@@ -23,6 +23,7 @@ from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
 from model import ReviewFile
+from peerReviewMain import add_ctxt_nav_items
 
 class NewReviewModule(Component):
     implements(IRequestHandler, INavigationContributor)
@@ -55,10 +56,7 @@ class NewReviewModule(Component):
 
         # if we tried resubmitting and the reviewID is not a valid number or not a valid code review, error
         if reviewID is not None and (not reviewID.isdigit() or dbBack.getCodeReviewsByID(reviewID) is None):
-            data['error.type'] = "TracError"
-            data['error.title'] = "Resubmit ID error"
-            data['error.message'] = "Invalid resubmit ID supplied - unable to load page correctly."
-            return 'error.html', data, None
+            TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
         # if we are resubmitting a code review and we are the author or the manager
         if reviewID is not None and \
@@ -118,10 +116,8 @@ class NewReviewModule(Component):
         elif reviewID is not None and \
                 not dbBack.getCodeReviewsByID(reviewID).Author == util.get_reporter_id(req) and \
                 not req.perm.has_permission('CODE_REVIEW_MGR'):
-            data['error.type'] = "TracError"
-            data['error.title'] = "Access error"
-            data['error.message'] = "You need to be a manager or the author of this code review to resubmit it."
-            return 'error.html', data, None
+            TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
+
         #if we are not resubmitting
         else:
             if req.args.get('reqAction') == 'createCodeReview':
@@ -146,6 +142,7 @@ class NewReviewModule(Component):
         data['users'] = allUsers
         data['cycle'] = itertools.cycle
 
+        add_ctxt_nav_items(req)
         return 'peerReviewNew.html', data, None
 
     # Takes the information given when the page is posted

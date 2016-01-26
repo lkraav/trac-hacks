@@ -6,23 +6,12 @@
       xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="layout.html" />
   <xi:include href="macros.html" />
-
   <head>
     <title>Search Code Reviews</title>
   </head>
-
   <body>
-  <!-- Top Navigation Bar -->
-  <div id="ctxtnav" class="nav">
-    <h2>Peer Review Navigation</h2>
-    <ul>
-      <li class="first"><a href="${href.peerReviewMain()}">My Code Reviews</a></li>
-      <li><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
-      <li class="last">Search Code Reviews</li>
-    </ul>
-  </div>
 
-  <p><b><h1>Code Review Search</h1></b></p>
+  <h1>Code Review Search</h1>
 
   <form id="searchReview" action="${href.peerReviewSearch()}" method="post">
     Code Review Name:

@@ -9,24 +9,30 @@
 #
 
 # Provides functionality for main page
-# Works with peerReviewMain.cs
+# Works with peerReviewMain.html
 
 import itertools
 
-from genshi.builder import tag
-
-from trac import util
-from trac.core import *
+from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
 from trac.resource import *
 from trac.timeline.api import ITimelineEventProvider
 from trac.util import Markup
 from trac.util.datefmt import to_timestamp
-from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet
+from trac.util.text import _
+from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_ctxtnav
 from trac.web.main import IRequestHandler
+from genshi.builder import tag
 
 from dbBackend import *
 from model import Review
+
+
+def add_ctxt_nav_items(req):
+    add_ctxtnav(req, _("My Code Reviews"), "peerReviewMain", title=_("My Code Reviews"))
+    add_ctxtnav(req, _("Create a Code Review"), "peerReviewNew", title=_("Create a Code review"))
+    add_ctxtnav(req, _("Search Code Reviews"), "peerReviewSearch", _("Search Code Reviews"))
+
 
 class MainReviewModule(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
@@ -97,8 +103,8 @@ class MainReviewModule(Component):
         data['cycle'] = itertools.cycle
 
         add_stylesheet(req, 'common/css/code.css')
-        add_stylesheet(req, 'common/css/browser.css')   
-
+        add_stylesheet(req, 'common/css/browser.css')
+        add_ctxt_nav_items(req)
         return 'peerReviewMain.html', data, None
 
     # ITimelineEventProvider methods

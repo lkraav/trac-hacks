@@ -9,7 +9,7 @@
 #
 
 # Provides functionality for view code review page
-# Works with peerReviewView.cs
+# Works with peerReviewView.html
 
 import itertools
 
@@ -24,6 +24,7 @@ from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
 from model import Review, ReviewFile
+from peerReviewMain import add_ctxt_nav_items
 
 class ViewReviewModule(Component):
     """Displays a summary page for a review."""
@@ -163,6 +164,7 @@ class ViewReviewModule(Component):
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
+        add_ctxt_nav_items(req)
         return 'peerReviewView.html', data, None
 
     # If user has not voted for this review and is a voting member, and attempts

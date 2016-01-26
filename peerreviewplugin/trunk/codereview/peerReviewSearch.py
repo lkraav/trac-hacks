@@ -19,7 +19,7 @@ from trac.web.main import IRequestHandler
 
 from dbBackend import *
 from CodeReviewStruct import *
-
+from peerReviewMain import add_ctxt_nav_items
 
 class UserbaseModule(Component):
     implements(IRequestHandler, INavigationContributor)
@@ -76,6 +76,7 @@ class UserbaseModule(Component):
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
+        add_ctxt_nav_items(req)
         return 'peerReviewSearch.html', data, None
 
     #Performs the search

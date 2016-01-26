@@ -19,13 +19,13 @@ from genshi.builder import tag
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+from trac.web.chrome import INavigationContributor, \
                             add_link, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
 
 from dbBackend import *
-
+from peerReviewMain import add_ctxt_nav_items
 
 class UserbaseModule(Component):
     implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
@@ -94,21 +94,12 @@ class UserbaseModule(Component):
         else:
             data['manager'] = 0
 
-        #for top-right navigation links
-        data['main'] = "no"
-        data['create'] = "no"
-        data['search'] = "no"
-        data['options'] = "no"
-
         #get the fileID from the request arguments
         idFile = req.args.get('IDFile')
         self.fileID = idFile
         #if the file id is not set - display an error message
         if idFile is None:
-            data['error.type'] = "TracError"
-            data['error.title'] = "File ID Error"
-            data['error.message'] = "No file ID given - unable to load page."
-            return 'error.cs', data, None
+            TracError("No file ID given - unable to load page.", "File ID Error")
 
         #get the database
         db = self.env.get_db_cnx()
@@ -122,10 +113,7 @@ class UserbaseModule(Component):
 
         #if the file is not found in the database - display an error message
         if resultFile is None:
-            data['error.type'] = "TracError"
-            data['error.title'] = "File ID Error"
-            data['error.message'] = "Unable to locate given file ID in database."
-            return 'error.cs', data, None
+            TracError("Unable to locate given file ID in database.", "File ID Error")
 
         #get the respository
         repos = self.env.get_repository(authname=req.authname)
@@ -141,10 +129,7 @@ class UserbaseModule(Component):
 
         #if the repository can't be found - display an error message
         if repos is None:
-            data['error.type'] = "TracError"
-            data['error.title'] = "Subversion Repository Error"
-            data['error.message'] = "Unable to acquire subversion repository."
-            return 'error.cs', data, None
+            TracError("Unable to acquire subversion repository.", "Subversion Repository Error")
 
         #get the correct location - using revision number and repository path
         try:
@@ -155,10 +140,7 @@ class UserbaseModule(Component):
 
         #if the node can't be found - display error message
         if node is None:
-            data['error.type'] = "TracError"
-            data['error.title'] = "Subversion Node Error"
-            data['error.message'] = "Unable to locate subversion node for this file."
-            return 'error.cs', data, None
+            TracError("Unable to locate subversion node for this file.", "Subversion Node Error")
 
         # Generate HTML preview - this code take from Trac - refer to their documentation
         mime_type = node.content_type
@@ -190,4 +172,5 @@ class UserbaseModule(Component):
         
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
+        add_ctxt_nav_items(req)
         return 'peerReviewPerform.html', data, None
