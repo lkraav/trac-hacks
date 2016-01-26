@@ -22,15 +22,14 @@ from trac.resource import *
 from trac.timeline.api import ITimelineEventProvider
 from trac.util import Markup
 from trac.util.datefmt import to_timestamp
-from trac.web.chrome import INavigationContributor, ITemplateProvider,\
-                            add_stylesheet
+from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
 from model import Review
 
 class UserbaseModule(Component):
-    implements(INavigationContributor, IRequestHandler, ITemplateProvider,
+    implements(INavigationContributor, IRequestHandler,
                IPermissionRequestor, ITimelineEventProvider)
         
     # INavigationContributor methods
@@ -53,91 +52,54 @@ class UserbaseModule(Component):
         return False
 
     def process_request(self, req):
+        req.perm.require('CODE_REVIEW_DEV')
 
         data = {}
         # test whether this user is a manager or not
         if 'CODE_REVIEW_MGR' in req.perm:
-            data['author'] = "manager"
-            data['manager'] = 1
+            data['manager'] = True
         else:
-            req.perm.assert_permission('CODE_REVIEW_DEV')
-            data['author'] = "notmanager"
-            data['manager'] = 0
+            data['manager'] = False
 
-        data['username'] = util.get_reporter_id(req)
-
-        db = self.env.get_db_cnx()
-        codeReview = CodeReviewStruct(None)
+        db = self.env.get_read_db()
         dbBack = dbBackend(db)
-        assignedReviewArray = dbBack.getCodeReviews(util.get_reporter_id(req))
-        managerReviewArray = dbBack.getCodeReviewsByStatus("Ready for inclusion")
 
-        assignedReturnArray = []
-        managerReturnArray = []
-        dataArray = []
-
-        all_reviews = Review.select(self.env)
+        all_reviews = [rev for rev in Review.select(self.env) if rev.status != "Closed"]
+        rev_by_reviewer = [rev for rev in Review.select_by_reviewer(self.env, req.authname) if rev.status != "Closed"]
 
         # fill the table of currently open reviews
         myreviews = []
+        assigned_to_me =[]
+        manager_reviews = []
         for rev in all_reviews:
-            if rev.status != "Closed" and rev.author == req.authname:
+            # Reviews created by me
+            if rev.author == req.authname:
                 myreviews.append(rev)
-        
-        # fill the table of code reviews currently assigned to you
-        for struct in assignedReviewArray:
-            if struct.Status != "Closed" and struct.Status != "Ready for inclusion":
-                dataArray.append(struct.IDReview)
-                dataArray.append(struct.Author)
-                dataArray.append(struct.Name)
-                dataArray.append(util.format_date(struct.DateCreate))            
-                reviewstruct = dbBack.getReviewerEntry(struct.IDReview, util.get_reporter_id(req))
-                if reviewstruct.Vote == -1:
-                    dataArray.append('Not voted')
-                elif reviewstruct.Vote == 0:
-                    dataArray.append('Rejected')
-                elif reviewstruct.Vote == 1:
-                    dataArray.append('Accepted')
-                assignedReturnArray.append(dataArray)
-                dataArray = []
+            # Reviews a manager must handle
+            if rev.status == "Ready for inclusion":
+                manager_reviews.append(rev)
 
-        # fill the table of reviews assigned to you in a manager role
-        for struct in managerReviewArray:
-            if struct.Status != "Closed":
-                dataArray.append(struct.IDReview)
-                dataArray.append(struct.Author)
-                dataArray.append(struct.Name)
-                dataArray.append(util.format_date(struct.DateCreate))
-                managerReturnArray.append(dataArray)
-                dataArray = []
+        # All reviews assigned to me
+        for rev in rev_by_reviewer:
+            if rev.status != "Ready for inclusion":
+                reviewstruct = dbBack.getReviewerEntry(rev.review_id,req.authname)
+                if reviewstruct.Vote == -1:
+                    rev.vote = 'Not voted'
+                elif reviewstruct.Vote == 0:
+                    rev.vote = 'Rejected'
+                elif reviewstruct.Vote == 1:
+                    rev.vote = 'Accepted'
+                assigned_to_me.append(rev)
 
         data['myreviews'] = myreviews
-
-        data['assignedReturnArrayLength'] = len(assignedReturnArray)
-        data['managerReviewArrayLength'] = len(managerReviewArray)
-
-        data['assignedReviews'] = assignedReturnArray
-        data['managerReviews'] = managerReturnArray
+        data['manager_reviews'] = manager_reviews
+        data['assigned_reviews'] = assigned_to_me
+        data['cycle'] = itertools.cycle
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')   
 
-        data['cycle'] = itertools.cycle
-
         return 'peerReviewMain.html', data, None
-
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hw', resource_filename(__name__, 'htdocs'))]
 
     # ITimelineEventProvider methods
     def get_timeline_filters(self, req):

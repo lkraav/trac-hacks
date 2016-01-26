@@ -20,20 +20,25 @@ class Review(object):
             if not row:
                 raise ResourceNotFound(_('Review %(name)s does not exist.',
                                          name=review_id))
-            rev_id, author, status, creation_date, name, notes = row
-            self.name = self._old_name = name
-            self.review_id = rev_id
-            self.author = author
-            self.status = status
-            self.creation_date = creation_date
-            self.notes = notes or ''
+            self._init_from_row(row)
         else:
             self.name = self._old_name = None
             self.review_id = None
             self.author = None
             self.status = None
+            self.raw_date = None
             self.creation_date = None
             self.notes = None
+
+    def _init_from_row(self, row):
+        rev_id, author, status, creation_date, name, notes = row
+        self.name = self._old_name = name
+        self.review_id = rev_id
+        self.author = author
+        self.status = status
+        self.raw_date = creation_date
+        self.creation_date = format_date(creation_date)
+        self.notes = notes or ''
 
     exists = property(lambda self: self._old_name is not None)
 
@@ -42,17 +47,27 @@ class Review(object):
         db = env.get_read_db()
         cursor = db.cursor()
         # TODO: change query when database schema is adjusted
-        cursor.execute("SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews")
+        cursor.execute("SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews "
+                       "ORDER BY DateCreate")
         reviews = []
-        for rev_id, author, status, creation_date, name, notes in cursor:
+        for row in cursor:
             review = cls(env)
-            review.name = review._old_name = name
-            review.review_id = rev_id
-            review.author = author
-            review.status = status
-            review.raw_date = creation_date
-            review.creation_date = format_date(creation_date)
-            review.notes = notes or ''
+            review._init_from_row(row)
             reviews.append(review)
-        # TODO: should this be sorted in any way?
+        return reviews
+
+    @classmethod
+    def select_by_reviewer(cls, env, reviewer):
+        db = env.get_read_db()
+        cursor = db.cursor()
+        # TODO: change query when database schema is adjusted
+        cursor.execute("SELECT cr.IDReview, cr.Author, cr.Status, cr.DateCreate, cr.Name, cr.Notes FROM "
+                       "CodeReviews AS cr JOIN Reviewers AS r ON cr.IDReview = r.IDReview "
+                       "WHERE r.Reviewer=%s"
+                       "ORDER BY DateCreate", (reviewer,))
+        reviews = []
+        for row in cursor:
+            review = cls(env)
+            review._init_from_row(row)
+            reviews.append(review)
         return reviews
