@@ -31,7 +31,6 @@ class UserbaseModule(Component):
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
-
         return 'peerReviewMain'
 
     def get_navigation_items(self, req):
@@ -40,12 +39,6 @@ class UserbaseModule(Component):
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_DEV')
         data = {}
-
-        #check permissions
-        if 'CODE_REVIEW_MGR' in req.perm:
-            data['manager'] = 1
-        else:
-            data['manager'] = 0
 
         #if the doSearch parameter is 'yes', perform the search
         #this parameter is set when someone searches
@@ -64,14 +57,8 @@ class UserbaseModule(Component):
             data['results'] = results
             data['doSearch'] = 'yes'
 
-        #for the top-right nav links
-        data['main'] = "no"
-        data['create'] = "no"
-        data['search'] = "yes"
-        data['options'] = "no"
-
         #get the database
-        db = self.env.get_db_cnx()
+        db = self.env.get_read_db()
         dbBack = dbBackend(db)
         users = dbBack.getPossibleUsers()
         #sets the possible users for the user combo-box
@@ -99,18 +86,9 @@ class UserbaseModule(Component):
         author = req.args.get('Author')
         name = req.args.get('CodeReviewName')
         status = req.args.get('Status')
-        month = req.args.get('DateMonth')
-        day = req.args.get('DateDay')
-        year = req.args.get('DateYear')
-
-        #check for entered date values, if none are set
-        #default to 0
-        if month is None:
-            month = '0'
-        if day is None:
-            day = '0'
-        if year is None:
-            year = '0'
+        month = req.args.get('DateMonth', '0')
+        day = req.args.get('DateDay', '0')
+        year = req.args.get('DateYear', '0')
 
         #store date values for ClearSilver - used to reset values to
         #search parameters after a search is performed
@@ -125,7 +103,7 @@ class UserbaseModule(Component):
         fromdate = "-1"
 
         if (month != '0') and (day != '0') and (year != '0'):
-            t = time.strptime(month + '/' + day + '/' + year[2] + year[3], '%x')
+            t = time.strptime(month + '/' + day + '/' + year[2] + year[3], '%m/%d/%y')
             #I have no idea what this is doing - obtained from TRAC source
             fromdate = time.mktime((t[0], t[1], t[2], 23, 59, 59, t[6], t[7], t[8]))
             #convert to string for database lookup
@@ -146,7 +124,7 @@ class UserbaseModule(Component):
 
         crStruct.DateCreate = fromdate
         #get the database
-        db = self.env.get_db_cnx()
+        db = self.env.get_read_db()
         dbBack = dbBackend(db)
 
         #perform search
@@ -155,8 +133,8 @@ class UserbaseModule(Component):
         tempArray = []
 
         if results is None:
-            return returnArray
-        #fill ClearSilver friendly array with
+            return []
+        #fill array with
         #search results
         for struct in results:
             tempArray.append(struct.IDReview)

@@ -16,15 +16,9 @@
   <div id="ctxtnav" class="nav">
     <h2>Peer Review Navigation</h2>
     <ul>
-      <li py:if="main == 'yes'" class="first">My Code Reviews</li>
-      <li py:if="main == 'no'" class="first"><a href="${href.peerReviewMain()}">My Code Reviews</a></li>
-
-      <li py:if="create == 'yes'">Create a Code Review</li>
-      <li py:if="create == 'no'"><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
-
-      <li py:if="search == 'yes'" class="last">Search Code Reviews</li>
-      <li py:if="search == 'no'" class="last"><a href="${href.peerReviewSearch()}">Search Code Reviews</a></li>
-
+      <li class="first"><a href="${href.peerReviewMain()}">My Code Reviews</a></li>
+      <li><a href="${href.peerReviewNew()}">Create a Code Review</a></li>
+      <li class="last">Search Code Reviews</li>
     </ul>
   </div>
 
