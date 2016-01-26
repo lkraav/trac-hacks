@@ -14,8 +14,7 @@ import time
 
 from trac.core import *
 from trac.util import format_date
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_stylesheet
+from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
@@ -23,7 +22,7 @@ from CodeReviewStruct import *
 
 
 class UserbaseModule(Component):
-    implements(IRequestHandler, ITemplateProvider, INavigationContributor)
+    implements(IRequestHandler, INavigationContributor)
 
     # IRequestHandler methods
     def match_request(self, req):
@@ -91,19 +90,6 @@ class UserbaseModule(Component):
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
         return 'peerReviewSearch.html', data, None
-
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hw', resource_filename(__name__, 'htdocs'))]
 
     #Performs the search
     def performSearch(self, req, data):

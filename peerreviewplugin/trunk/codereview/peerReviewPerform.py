@@ -28,8 +28,7 @@ from dbBackend import *
 
 
 class UserbaseModule(Component):
-    implements(INavigationContributor, IRequestHandler,
-               ITemplateProvider, IHTMLPreviewAnnotator)
+    implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
 
     #global variables for the line annotator
     comments = {}
@@ -192,17 +191,3 @@ class UserbaseModule(Component):
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
         return 'peerReviewPerform.html', data, None
-
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    #gets the directory where the htdocs are stored - images, etc.
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hw', resource_filename(__name__, 'htdocs'))]

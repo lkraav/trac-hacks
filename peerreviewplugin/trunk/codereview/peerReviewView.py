@@ -16,8 +16,7 @@ import itertools
 from trac import util
 from trac.core import Component, implements, TracError
 from trac.mimeview import Context
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_stylesheet
+from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
 
@@ -28,7 +27,7 @@ from model import Review, ReviewFile
 
 class ViewReviewModule(Component):
     """Displays a summary page for a review."""
-    implements(IRequestHandler, ITemplateProvider, INavigationContributor)
+    implements(IRequestHandler, INavigationContributor)
 
     number = -1
     files = []
@@ -165,15 +164,6 @@ class ViewReviewModule(Component):
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
         return 'peerReviewView.html', data, None
-
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hw', resource_filename(__name__, 'htdocs'))]
 
     # If user has not voted for this review and is a voting member, and attempts
     # to vote, change the vote type in the review entry struct in the database

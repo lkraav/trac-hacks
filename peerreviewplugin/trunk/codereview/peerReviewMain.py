@@ -22,14 +22,14 @@ from trac.resource import *
 from trac.timeline.api import ITimelineEventProvider
 from trac.util import Markup
 from trac.util.datefmt import to_timestamp
-from trac.web.chrome import INavigationContributor, add_stylesheet
+from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
 from model import Review
 
-class UserbaseModule(Component):
-    implements(INavigationContributor, IRequestHandler,
+class MainReviewModule(Component):
+    implements(INavigationContributor, IRequestHandler, ITemplateProvider,
                IPermissionRequestor, ITimelineEventProvider)
         
     # INavigationContributor methods
@@ -135,3 +135,17 @@ class UserbaseModule(Component):
             return tag('Code review ', tag.em(name), ' has been raised')
         if field == 'description':
             return tag('Assigned to: ', reviewersList, tag.br(), ' Additional notes: ', notes)
+
+    # ITemplateProvider methods
+    def get_templates_dirs(self):
+        """
+        Return the absolute path of the directory containing the provided
+        ClearSilver templates.
+        """
+        from pkg_resources import resource_filename
+        return [resource_filename(__name__, 'templates')]
+
+    # Needed to be filled out based on interface
+    def get_htdocs_dirs(self):
+        from pkg_resources import resource_filename
+        return [('hw', resource_filename(__name__, 'htdocs'))]

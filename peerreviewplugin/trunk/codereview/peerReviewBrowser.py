@@ -16,7 +16,6 @@ from trac import util
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
-from trac.perm import IPermissionRequestor
 from trac.util import embedded_numbers
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
@@ -275,12 +274,3 @@ class peerReviewBrowser(Component):
                 'message': wiki_to_html(changeset.message or '--', self.env, req,
                                         escape_newlines=True)
             }
-
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hw', resource_filename(__name__, 'htdocs'))]

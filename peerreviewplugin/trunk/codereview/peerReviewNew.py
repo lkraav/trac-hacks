@@ -16,7 +16,7 @@ import time
 
 from trac import util
 from trac.core import *
-from trac.web.chrome import INavigationContributor,ITemplateProvider
+from trac.web.chrome import INavigationContributor
 from trac.web.main import IRequestHandler
 
 from CodeReviewStruct import *
@@ -25,7 +25,7 @@ from ReviewerStruct import *
 from model import ReviewFile
 
 class NewReviewModule(Component):
-    implements(IRequestHandler, ITemplateProvider, INavigationContributor)
+    implements(IRequestHandler, INavigationContributor)
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
@@ -147,20 +147,6 @@ class NewReviewModule(Component):
         data['cycle'] = itertools.cycle
 
         return 'peerReviewNew.html', data, None
-
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    # Needed to be filled out based on interface
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hw', resource_filename(__name__, 'htdocs'))]
 
     # Takes the information given when the page is posted
     # and creates a new code review struct in the database
