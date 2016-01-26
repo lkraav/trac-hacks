@@ -12,7 +12,6 @@ import string
 
 from CodeReviewStruct import *
 from ReviewerStruct import *
-from ReviewFilesStruct import *
 from ReviewCommentStruct import *
 
 
@@ -90,16 +89,6 @@ class dbBackend(object):
     def getReviewerEntry(self, id, name):
         query = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = '%s' AND Reviewer = '%s'" % (id, name)
         return self.execReviewerQuery(query, True)
-
-    #Returns an array of the files associated with the given review id
-    def getReviewFiles(self, id):
-        query = "SELECT IDFile, IDReview, Path, LineStart, LineEnd, Version FROM ReviewFiles WHERE IDReview = '%s'" % (id)
-        return self.execReviewFileQuery(query, False)
-
-    #Returns the requested review file
-    def getReviewFile(self, id):
-        query = "SELECT IDFile, IDReview, Path, LineStart, LineEnd, Version FROM ReviewFiles WHERE IDFile = '%s'" % (id)
-        return self.execReviewFileQuery(query, True)
 
     #Returns the requested comment
     def getCommentByID(self, id):
@@ -235,24 +224,3 @@ class dbBackend(object):
                 comments[comment.IDParent].Children[comment.IDComment] = comment
 
         return comments
-
-    #A generic method for executing queries that return File structures
-    #query: the query to execute
-    #single: true if this query will always return only one result, false otherwise
-    def execReviewFileQuery(self, query, single):
-        cursor = self.db.cursor()
-        cursor.execute(query)
-        if single:
-            row = cursor.fetchone()
-            if not row:
-                return None
-            return ReviewFileStruct(row)
-
-        rows = cursor.fetchall()
-        if not rows:
-            return []
-
-        files = []
-        for row in rows:
-            files.append(ReviewFileStruct(row))
-        return files

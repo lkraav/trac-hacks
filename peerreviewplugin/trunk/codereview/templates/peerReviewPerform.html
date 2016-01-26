@@ -16,18 +16,18 @@
   <h3>File Information</h3>
 
   <table border="0" width="100%" style="border-collapse: collapse" id="infoTable">
-    <tr>
-      <td>Path: ${review_path}</td>
-    </tr>
-    <tr>
-      <td>Revision: ${review_version}</td>
-    </tr>
-    <tr>
-      <td>Start Line: ${review_lineStart}<br /></td>
-    </tr>
-    <tr>
-      <td>End Line: ${review_lineEnd}<br /></td>
-    </tr>
+      <tr>
+          <td>Path: ${review_file.path}</td>
+      </tr>
+      <tr>
+          <td>Revision: ${review_file.version}</td>
+      </tr>
+      <tr>
+          <td>Start Line: ${review_file.start}<br /></td>
+      </tr>
+      <tr>
+          <td>End Line: ${review_file.end}<br /></td>
+      </tr>
   </table>
   <br />
 
@@ -45,7 +45,7 @@
   <div id="FilePreview">${file}</div>
 
   <br />
-  Back to the <a href="${href.peerReviewView()}?Review=${review_reviewID}"> Code Review Details</a> page
+  Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page
   <br /><br />
 
   <div id="ViewCommentArea" style="position:absolute;left:0px;top:0px;z-index:1;display:none;width:455px;height:500px;" cellpadding="0" cellspacing="0">
@@ -116,8 +116,8 @@
     var tacUrl = "${href.chrome('/hw/images/thumbtac11x11.gif')}";
     var plusUrl = "${href.chrome('/hw/images/plus.gif')}";
     var minusUrl = "${href.chrome('/hw/images/minus.gif')}";
-    var lineStart = ${review_lineStart};
-    var lineEnd = ${review_lineEnd};
+    var lineStart = ${review_file.start};
+    var lineEnd = ${review_file.end};
   </script>
   <script type="text/javascript" src="${href.chrome('/hw/js/peerReviewPerform.js')}"></script>
 

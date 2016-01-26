@@ -73,17 +73,17 @@ class NewReviewModule(Component):
                 returnUsers += struct.Reviewer + "#"
                 popUsers.append(struct.Reviewer)
 
-            files = dbBack.getReviewFiles(reviewID)
+            rfiles = ReviewFile.select_by_review(self.env, reviewID)
             returnFiles = ""
             popFiles = []
             # Set up the file information
-            for struct in files:
-                returnFiles += "%s, %s, %s, %s#" % (struct.Path, struct.Version, struct.LineStart, struct.LineEnd)
+            for f in rfiles:
+                returnFiles += "%s, %s, %s, %s#" % (f.path, f.version, f.start, f.end)
                 tempFiles = []
-                tempFiles.append(struct.Path)
-                tempFiles.append(struct.Version)
-                tempFiles.append(struct.LineStart)
-                tempFiles.append(struct.LineEnd)
+                tempFiles.append(f.path)
+                tempFiles.append(f.version)
+                tempFiles.append(f.start)
+                tempFiles.append(f.end)
                 popFiles.append(tempFiles)
 
             data['name'] = review.Name

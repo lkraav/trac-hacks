@@ -24,9 +24,10 @@ from trac.web.chrome import INavigationContributor, \
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import RepositoryManager
-
 from dbBackend import *
 from peerReviewMain import add_ctxt_nav_items
+from model import ReviewFile
+
 
 class UserbaseModule(Component):
     implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
@@ -108,25 +109,22 @@ class UserbaseModule(Component):
         #get all the comments for this file
         self.comments = dbBack.getCommentDictForFile(idFile)
         #get the file properties from the database
-        resultFile = dbBack.getReviewFile(idFile)
+        rfile = ReviewFile(self.env, idFile)
         #make the thumbtac image global so the line annotator has access to it
         self.imagePath = self.env.href.chrome() + '/hw/images/thumbtac11x11.gif'
 
         #if the file is not found in the database - display an error message
-        if resultFile is None:
+        if not rfile:
             TracError("Unable to locate given file ID in database.", "File ID Error")
 
         #get the respository
         repos = RepositoryManager(self.env).get_repository('')
         #get the file attributes
-        data['review_path'] = resultFile.Path
-        data['review_version'] = resultFile.Version
-        data['review_lineStart'] = resultFile.LineStart
-        data['review_lineEnd'] = resultFile.LineEnd
-        data['review_reviewID'] = resultFile.IDReview
+        data['review_file'] = rfile
+
         #make these global for the line annotator
-        self.lineEnd = int(resultFile.LineEnd)
-        self.lineStart = int(resultFile.LineStart)
+        self.lineEnd = int(rfile.end)
+        self.lineStart = int(rfile.start)
 
         #if the repository can't be found - display an error message
         if repos is None:
@@ -134,10 +132,10 @@ class UserbaseModule(Component):
 
         #get the correct location - using revision number and repository path
         try:
-            node = get_existing_node(self.env, repos, resultFile.Path, resultFile.Version)
+            node = get_existing_node(self.env, repos, rfile.path, rfile.version)
         except:
             youngest_rev = repos.get_youngest_rev()
-            node = get_existing_node(self.env, repos, resultFile.Path, youngest_rev)
+            node = get_existing_node(self.env, repos, rfile.Path, youngest_rev)
 
         #if the node can't be found - display error message
         if node is None:
