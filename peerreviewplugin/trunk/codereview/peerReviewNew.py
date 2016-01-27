@@ -9,7 +9,7 @@
 #
 
 # Provides functionality to create a new code review.
-# Works with peerReviewNew.cs
+# Works with peerReviewNew.html
 
 import itertools
 import time
@@ -22,7 +22,7 @@ from trac.web.main import IRequestHandler
 from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
-from model import ReviewFile
+from model import ReviewFile, Review
 from peerReviewMain import add_ctxt_nav_items
 
 class NewReviewModule(Component):
@@ -47,7 +47,7 @@ class NewReviewModule(Component):
 
         data = {}
 
-        db = self.env.get_db_cnx()
+        db = self.env.get_read_db()
         dbBack = dbBackend(db)
         allUsers = dbBack.getPossibleUsers()
 
@@ -55,14 +55,12 @@ class NewReviewModule(Component):
         data['oldid'] = -1
 
         # if we tried resubmitting and the reviewID is not a valid number or not a valid code review, error
-        if reviewID is not None and (not reviewID.isdigit() or dbBack.getCodeReviewsByID(reviewID) is None):
+        review = Review(self.env, reviewID)
+        if reviewID and (not reviewID.isdigit() or not review):
             TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
         # if we are resubmitting a code review and we are the author or the manager
-        if reviewID is not None and \
-                (dbBack.getCodeReviewsByID(reviewID).Author == util.get_reporter_id(req) or
-                 req.perm.has_permission('CODE_REVIEW_MGR')):
-            review = dbBack.getCodeReviewsByID(reviewID)
+        if reviewID and (review.author == req.authname or 'CODE_REVIEW_MGR' in req.perm):
             data['new'] = "no"
             data['oldid'] = reviewID
             # get code review data and populate
@@ -86,8 +84,8 @@ class NewReviewModule(Component):
                 tempFiles.append(f.end)
                 popFiles.append(tempFiles)
 
-            data['name'] = review.Name
-            data['notes'] = review.Notes
+            data['name'] = review.name
+            data['notes'] = review.name
             data['reviewers'] = returnUsers
             data['prevUsers'] = popUsers
             data['prevFiles'] = popFiles
@@ -113,9 +111,7 @@ class NewReviewModule(Component):
                 data['emptyList'] = 1
 
         #if we resubmitting a code review, and are neither the author and the manager
-        elif reviewID is not None and \
-                not dbBack.getCodeReviewsByID(reviewID).Author == util.get_reporter_id(req) and \
-                not req.perm.has_permission('CODE_REVIEW_MGR'):
+        elif reviewID and not review.author == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
             TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
 
         #if we are not resubmitting
@@ -123,9 +119,10 @@ class NewReviewModule(Component):
             if req.args.get('reqAction') == 'createCodeReview':
                 oldid = req.args.get('oldid')
                 if oldid is not None:
-                    review = dbBack.getCodeReviewsByID(oldid)
-                    review.Status = "Closed"
-                    review.save(db)
+                    # Automatically close the review we resubmitted from
+                    review = Review(self.env, oldid)
+                    review.status = "Closed"
+                    review.update()
                 returnid = self.createCodeReview(req)
                 #If no errors then redirect to the viewCodeReview page
                 req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
@@ -150,14 +147,16 @@ class NewReviewModule(Component):
     # and populates it with the information.  Also creates
     # new reviewer structs and file structs for the review.
     def createCodeReview(self, req):
-        struct = CodeReviewStruct(None)
-        struct.Author = util.get_reporter_id(req)
-        struct.Status = 'Open for review'
-        struct.DateCreate = int(time.time())
-        struct.Name = req.args.get('Name')
-        struct.Notes = req.args.get('Notes')
-        id_ = struct.save(self.env.get_db_cnx())
-        self.log.debug('BEN %s', id_)
+        review = Review(self.env)
+        review.author = req.authname
+        review.status = 'Open for review'
+        review.raw_date = int(time.time())
+        review.name = req.args.get('Name')
+        review.notes = req.args.get('Notes')
+        review.insert()
+        id_ = review.review_id
+        self.log.debug('New review created: %s', id_)
+
         # loop here through all the reviewers
         # and create new reviewer structs based on them
         string = req.args.get('ReviewersSelected')

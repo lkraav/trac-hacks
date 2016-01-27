@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from time import time
 from trac.resource import ResourceNotFound
 from trac.util.text import _
 from trac.util import format_date
@@ -23,6 +23,7 @@ class Review(object):
             self._init_from_row(row)
         else:
             self._init_from_row((None,)*6)
+            self.raw_date = int(time())
 
     def _init_from_row(self, row):
         rev_id, author, status, creation_date, name, notes = row
@@ -35,6 +36,28 @@ class Review(object):
         self.notes = notes or ''
 
     exists = property(lambda self: self._old_name is not None)
+
+    def insert(self):
+        if not self.raw_date:
+            self.raw_date = int(time())
+        @self.env.with_transaction()
+        def do_insert(db):
+            cursor = db.cursor()
+            self.env.log.debug("Creating new review '%s'" % self.review_id)
+            cursor.execute("""INSERT INTO CodeReviews (Author, Status, DateCreate, Name, Notes)
+                            VALUES (%s, %s, %s, %s, %s)
+                            """, (self.author, self.status, self.raw_date, self.name, self.notes))
+            self.review_id = db.get_last_id(cursor, 'CodeReviews', 'IDReview')
+
+    def update(self):
+        @self.env.with_transaction()
+        def do_update(db):
+            cursor = db.cursor()
+            self.env.log.debug("Updating review '%s'" % self.review_id)
+            cursor.execute("""UPDATE CodeReviews
+                            SET Author=%s, Status=%s, DateCreate=%s, Name=%s, Notes=%s
+                            WHERE IDReview=%s
+                            """, (self.author, self.status, self.raw_date, self.name, self.notes, self.review_id))
 
     @classmethod
     def select(cls, env):

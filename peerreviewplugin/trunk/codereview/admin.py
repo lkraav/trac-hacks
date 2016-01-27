@@ -5,47 +5,45 @@ from trac.core import Component, implements
 from trac.web.chrome import add_warning
 
 from dbBackend import dbBackend
+from model import Review
 
 __author__ = 'Cinc'
 
 
 def calculate_review_status(env, newThreshold):
-    # This function
-    # Copyright (C) 2005-2006 Team5
+    def calc_vote_ratio(r):
+        voteyes = float(dbBack.getVotesByID("1", r.review_id))
+        voteno = float(dbBack.getVotesByID("0", r.review_id))
+        notvoted = float(dbBack.getVotesByID("-1", r.review_id))
+        total_votes_possible = voteyes + voteno + notvoted
+        if total_votes_possible != 0:
+            vote_ratio = voteyes/total_votes_possible
+        else:
+            vote_ratio = 0
+        return vote_ratio
+
     if newThreshold is not None:
         db = env.get_read_db()
         dbBack = dbBackend(db)
 
         dbBack.setThreshold(newThreshold)
         newThreshold = float(newThreshold)/100
-        openArray = dbBack.getCodeReviewsByStatus("Open for review")
-        for struct in openArray:
-            voteyes = float(dbBack.getVotesByID("1", struct.IDReview))
-            voteno = float(dbBack.getVotesByID("0", struct.IDReview))
-            notvoted = float(dbBack.getVotesByID("-1", struct.IDReview))
-            total_votes_possible = voteyes + voteno + notvoted
-            if total_votes_possible != 0:
-                vote_ratio = voteyes/total_votes_possible
-            else:
-                vote_ratio = 0
+
+        all_reviews = Review.select(env)
+
+        open_reviews = [rev for rev in all_reviews if rev.status == "Open for review"]
+        for r in open_reviews:
             # calculate vote ratio, while preventing divide by zero tests
-            if vote_ratio >= newThreshold:
-                struct.Status = "Reviewed"
-                struct.save(db)
-        reviewArray = dbBack.getCodeReviewsByStatus("Reviewed")
-        for struct in reviewArray:
-            voteyes = float(dbBack.getVotesByID("1", struct.IDReview))
-            voteno = float(dbBack.getVotesByID("0", struct.IDReview))
-            notvoted = float(dbBack.getVotesByID("-1", struct.IDReview))
-            total_votes_possible = voteyes + voteno + notvoted
-            if total_votes_possible != 0:
-                vote_ratio = voteyes/total_votes_possible
-            else:
-                vote_ratio = 0
+            if calc_vote_ratio(r) >= newThreshold:
+                r.status = "Reviewed"
+                r.update()
+
+        rev_reviews = [rev for rev in all_reviews if rev.status == "Reviewed"]
+        for r in rev_reviews:
             # calculate vote ratio, while preventing divide by zero tests
-            if vote_ratio < newThreshold:
-                struct.Status = "Open for review"
-                struct.save(db)
+            if calc_vote_ratio(r) < newThreshold:
+                r.status = "Open for review"
+                r.update()
 
 
 class MgrOptionsAdminPlugin(Component):

@@ -152,13 +152,13 @@ class ViewReviewModule(Component):
         # process state (Open for review, ready for inclusion, etc.) change by manager
         mc = req.args.get('ManagerChoice')
         if mc == "Open for review" or mc == "Reviewed" or mc == "Ready for inclusion" or mc == "Closed":
-            self.manager_change_status(mc, reviewID, req)
+            self.manager_change_status(req, reviewID, mc)
 
         if req.args.get('Close') == '1':
-            self.close_review(reviewID, req, manager)
+            self.close_review(req, reviewID, manager)
 
         if req.args.get('Inclusion') == '1':
-            self.submit_for_inclusion(reviewID, req)
+            self.submit_for_inclusion(req, reviewID)
 
         data['cycle'] = itertools.cycle
 
@@ -179,8 +179,9 @@ class ViewReviewModule(Component):
             reviewEntry.save(db)
 
         reviewID = req.args.get('Review')
-        review = dbBack.getCodeReviewsByID(reviewID)
+        review = Review(self.env, reviewID)
 
+        # TODO: there is some code in admin.py calculsating a similar threshold. Try to unify this.
         voteyes = dbBack.getVotesByID("1", reviewID)
         voteno = dbBack.getVotesByID("0", reviewID)
         notvoted = dbBack.getVotesByID("-1", reviewID)
@@ -191,43 +192,38 @@ class ViewReviewModule(Component):
         if total_votes_possible != 0:
             vote_ratio = float(voteyes)/float(total_votes_possible)
             if vote_ratio >= threshold:
-                review.Status = "Reviewed"
+                review.status = "Reviewed"
             else:
-                review.Status = "Open for review"
-            review.save(db)
+                review.status = "Open for review"
+            review.update()
+
         req.redirect(self.env.href.peerReviewView() + "?Review=" + reviewID)
 
     # If it is confirmed that the user is the author of this review and they
     # have attempted to submit for inclusion, change the status of this review
     # to "Ready for inclusion" and reload the page.
-    def submit_for_inclusion(self, number, req):
-        db = self.env.get_db_cnx()
-        dbBack = dbBackend(db)
-        review = dbBack.getCodeReviewsByID(number)
-        if review.Author == util.get_reporter_id(req):
-            if review.Status == "Reviewed":
-                review.Status = "Ready for inclusion"
-                review.save(db)
+    def submit_for_inclusion(self, req, number):
+        review = Review(self.env, number)
+        if review.author == req.authname:
+            if review.status == "Reviewed":
+                review.status = "Ready for inclusion"
+                review.update()
                 req.redirect(self.env.href.peerReviewView() + "?Review=" + number)
 
     # If the user is confirmed to be the author or manager and tries to close
     # this review, close it by changing the status of the review to "Closed."
-    def close_review(self, number, req, manager):
-        db = self.env.get_db_cnx()
-        dbBack = dbBackend(db)
-        review = dbBack.getCodeReviewsByID(number)
+    def close_review(self, req, number, manager):
+        review = Review(self.env, number)
         # this option available if you are the author or manager of this code review
-        if review.Author == util.get_reporter_id(req) or manager:
-            review.Status = "Closed"
-            review.save(db)
+        if review.author == req.authname or manager:
+            review.status = "Closed"
+            review.update()
             req.redirect(self.env.href.peerReviewView() + "?Review=" + number)
 
     # It has already been confirmed that this user is a manager, so this routine
-    # just changes the status of the review to the type specified by the manager.
-    def manager_change_status(self, type, number, req):
-        db = self.env.get_db_cnx()
-        dbBack = dbBackend(db)
-        review = dbBack.getCodeReviewsByID(number)
-        review.Status = type
-        review.save(db)
+    # just changes the status of the review to the ne status specified by the manager.
+    def manager_change_status(self, req, number, new_status):
+        review = Review(self.env, number)
+        review.status = new_status
+        review.update()
         req.redirect(self.env.href.peerReviewView() + "?Review=" + number)

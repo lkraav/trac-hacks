@@ -31,16 +31,6 @@ class dbBackend(object):
             newStr = newStr + colName + " LIKE '%s%s%s' " % ('%', str, '%')
         return newStr
 
-    #Returns an array of all the code reviews who have the given user assigned to them as a reviewer
-    def getCodeReviews(self, user):
-        query = "SELECT cr.IDReview, cr.Author, cr.Status, cr.DateCreate, cr.Name, cr.Notes FROM CodeReviews cr, Reviewers r WHERE r.IDReview = cr.IDReview AND r.Reviewer = '%s' ORDER BY cr.DateCreate" % (user)
-        return self.execCodeReviewQuery(query, False)
-
-    #Returns an array of all the code reviews with the given status
-    def getCodeReviewsByStatus(self, status):
-        query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE Status = '%s' ORDER BY DateCreate" % (status)
-        return self.execCodeReviewQuery(query, False)
-
     def getCodeReviewsInPeriod(self, date_from, date_to):
         query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE DateCreate >= '%s' AND DateCreate <= '%s' ORDER BY DateCreate" % (date_from, date_to)
         return self.execCodeReviewQuery(query, False)
@@ -55,12 +45,7 @@ class dbBackend(object):
             return 0
         return row[0]
 
-    #Returns the code review requested by ID
-    def getCodeReviewsByID(self, id):
-        query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE IDReview = '%s'" % (id)
-        return self.execCodeReviewQuery(query, True)
-
-    #Returns an array of code reviews which have a name like any of the
+    #Returns an array of code reviews which have a namwe like any of the
     #names given in the 'name' string
     def searchCodeReviewsByName(self, name):
         queryPart = self.createORLoop(name, "Name")
