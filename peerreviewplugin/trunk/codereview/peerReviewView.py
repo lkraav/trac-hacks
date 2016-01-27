@@ -61,6 +61,23 @@ class ViewReviewModule(Component):
         if reviewID is None or not reviewID.isdigit():
             TracError(u"Invalid review ID supplied - unable to load page.")
 
+        if req.method == 'POST':
+            if req.args.get('approved'):
+                self.vote("1", reviewID, req, req.authname)  # This call will redirect
+            elif req.args.get('notapproved'):
+                self.vote("0", reviewID, req, req.authname)  # This call will redirect
+            elif req.args.get('close'):
+                self.close_review(req, reviewID, manager)
+            elif req.args.get('inclusion'):
+                self.submit_for_inclusion(req, reviewID)
+            elif req.args.get('ManagerChoice'):
+                # process state (Open for review, ready for inclusion, etc.) change by manager
+                mc = req.args.get('ManagerChoice')
+                if mc == "Open for review" or mc == "Reviewed" or mc == "Ready for inclusion" or mc == "Closed":
+                    self.manager_change_status(req, reviewID, mc)
+            elif req.args.get('resubmit'):
+                req.redirect(self.env.href.peerReviewNew(resubmit=reviewID))
+
         # set up to display the files that are in this review
         db = self.env.get_read_db()
         dbBack = dbBackend(db)
@@ -81,12 +98,11 @@ class ViewReviewModule(Component):
         data['voteyes'] = dbBack.getVotesByID("1", reviewID)
         data['voteno'] = dbBack.getVotesByID("0", reviewID)
         data['notvoted'] = dbBack.getVotesByID("-1", reviewID)
-        data['total_votes_possible'] = float(data['voteyes']) + float(data['voteno']) + float(data['notvoted'])
         data['review'] = review
         data['manager'] = manager
 
         # figure out whether I can vote on this review or not
-        entry = dbBack.getReviewerEntry(reviewID, data['myname'])
+        entry = dbBack.getReviewerEntry(reviewID, req.authname)
         if entry is not None:
             data['canivote'] = 1
             data['myvote'] = entry.Vote
@@ -95,14 +111,13 @@ class ViewReviewModule(Component):
 
         # display vote summary only if I have voted or am the author/manager,
         # or if the review is "Ready for inclusion" or "Closed
-        data['viewvotesummary'] = 0
-        if review.author == data['myname'] or manager or \
-                (dbBack.getReviewerEntry(reviewID, data['myname']) is not None and
-                 dbBack.getReviewerEntry(reviewID, data['myname']).Vote != '-1') or \
+        if review.author == req.authname or manager or \
+                (dbBack.getReviewerEntry(reviewID, req.authname) is not None and
+                 dbBack.getReviewerEntry(reviewID, req.authname).Vote != '-1') or \
                 review.status == "Closed" or review.status == "Ready for inclusion":
-            data['viewvotesummary'] = 1
+            data['viewvotesummary'] = True
         else:
-            data['viewvotesummary'] = 0
+            data['viewvotesummary'] = False
 
         rvs = []  # reviewer/vote pairs
         reviewers = dbBack.getReviewers(reviewID)
@@ -123,7 +138,7 @@ class ViewReviewModule(Component):
                     newrvpair.append("Yes")
                 rvs.append(newrvpair)
                 newrvpair = []
-        elif review.author == util.get_reporter_id(req):
+        elif review.author == req.authname:
             self.env.log.debug("I am the author")
             for reviewer in reviewers:
                 newrvpair.append(reviewer.Reviewer)
@@ -143,23 +158,6 @@ class ViewReviewModule(Component):
         data['rvs'] = rvs
         data['rvsLength'] = len(rvs)
 
-        # execute based on URL arguments
-        if req.args.get('Vote') == 'yes':
-            self.vote("1", reviewID, req, data['myname'])
-        if req.args.get('Vote') == 'no':
-            self.vote("0", reviewID, req, data['myname'])
-
-        # process state (Open for review, ready for inclusion, etc.) change by manager
-        mc = req.args.get('ManagerChoice')
-        if mc == "Open for review" or mc == "Reviewed" or mc == "Ready for inclusion" or mc == "Closed":
-            self.manager_change_status(req, reviewID, mc)
-
-        if req.args.get('Close') == '1':
-            self.close_review(req, reviewID, manager)
-
-        if req.args.get('Inclusion') == '1':
-            self.submit_for_inclusion(req, reviewID)
-
         data['cycle'] = itertools.cycle
 
         add_stylesheet(req, 'common/css/code.css')
@@ -170,12 +168,12 @@ class ViewReviewModule(Component):
     # If user has not voted for this review and is a voting member, and attempts
     # to vote, change the vote type in the review entry struct in the database
     # and reload the page.
-    def vote(self, type, number, req, myname):
+    def vote(self, one_or_zero, number, req, myname):
         db = self.env.get_db_cnx()
         dbBack = dbBackend(db)
         reviewEntry = dbBack.getReviewerEntry(number, myname)
         if reviewEntry is not None:
-            reviewEntry.Vote = type
+            reviewEntry.Vote = one_or_zero
             reviewEntry.save(db)
 
         reviewID = req.args.get('Review')
@@ -196,8 +194,7 @@ class ViewReviewModule(Component):
             else:
                 review.status = "Open for review"
             review.update()
-
-        req.redirect(self.env.href.peerReviewView() + "?Review=" + reviewID)
+        req.redirect(self.env.href.peerReviewView(Review=reviewID))
 
     # If it is confirmed that the user is the author of this review and they
     # have attempted to submit for inclusion, change the status of this review
@@ -208,7 +205,7 @@ class ViewReviewModule(Component):
             if review.status == "Reviewed":
                 review.status = "Ready for inclusion"
                 review.update()
-                req.redirect(self.env.href.peerReviewView() + "?Review=" + number)
+                req.redirect(self.env.href.peerReviewView(Review=number))
 
     # If the user is confirmed to be the author or manager and tries to close
     # this review, close it by changing the status of the review to "Closed."
@@ -218,7 +215,7 @@ class ViewReviewModule(Component):
         if review.author == req.authname or manager:
             review.status = "Closed"
             review.update()
-            req.redirect(self.env.href.peerReviewView() + "?Review=" + number)
+            req.redirect(self.env.href.peerReviewView(Review=number))
 
     # It has already been confirmed that this user is a manager, so this routine
     # just changes the status of the review to the ne status specified by the manager.
@@ -226,4 +223,4 @@ class ViewReviewModule(Component):
         review = Review(self.env, number)
         review.status = new_status
         review.update()
-        req.redirect(self.env.href.peerReviewView() + "?Review=" + number)
+        req.redirect(self.env.href.peerReviewView(Review=number))
