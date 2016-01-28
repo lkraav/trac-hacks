@@ -16,7 +16,7 @@ import time
 
 from trac import util
 from trac.core import Component, implements, TracError
-from trac.web.chrome import INavigationContributor
+from trac.web.chrome import INavigationContributor, add_javascript, add_script_data
 from trac.web.main import IRequestHandler
 
 from CodeReviewStruct import *
@@ -75,14 +75,17 @@ class NewReviewModule(Component):
             returnFiles = ""
             popFiles = []
             # Set up the file information
+            def java_string_hashcode(s):
+                # See: http://garage.pimentech.net/libcommonPython_src_python_libcommon_javastringhashcode/
+                h = 0
+                for c in s:
+                    h = (31 * h + ord(c)) & 0xFFFFFFFF
+                return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
             for f in rfiles:
                 returnFiles += "%s, %s, %s, %s#" % (f.path, f.version, f.start, f.end)
-                tempFiles = []
-                tempFiles.append(f.path)
-                tempFiles.append(f.version)
-                tempFiles.append(f.start)
-                tempFiles.append(f.end)
-                popFiles.append(tempFiles)
+                # This id is used by the hacascript code to find duplicate entries.
+                f.element_id = 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f.path, f.version, f.start, f.end))
+                popFiles.append(f)
 
             data['name'] = review.name
             data['notes'] = review.name
@@ -139,6 +142,8 @@ class NewReviewModule(Component):
         data['users'] = allUsers
         data['cycle'] = itertools.cycle
 
+        add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser()})
+        add_javascript(req, "hw/js/peer_review_new.js")
         add_ctxt_nav_items(req)
         return 'peerReviewNew.html', data, None
 

@@ -22,9 +22,9 @@
 
       <div id="jumprev">
           <div>
-            <label for="rev" title="${stickyrev and 'Hint: clear the field to view latest revision' or None}">
+            <label for="switch_rev" title="${stickyrev and 'Hint: clear the field to view latest revision' or None}">
               View revision:</label>
-            <input type="text" onkeypress="switchRev(event);" id="rev" name="rev" value="$stickyrev" size="6" />
+            <input type="text" id="switch_rev" name="newrev" value="$stickyrev" size="6" />
           </div>
       </div>
 
@@ -118,6 +118,7 @@
         <br /><br />
       </py:if>
     </div>
+      <p></p>
     <input type="button" onclick="addFile('${path}')" value="Add File" disabled="true" id="addFileButton" /> &nbsp;&nbsp;
     Start Line: <input type="text" onkeypress="lineEnter(event);" value="" size="5" id="lineBox1" onchange="addButtonEnable();" />&nbsp;&nbsp;
     End Line: <input type="text" onkeypress="lineEnter(event);" value="" size="5" id="lineBox2" onchange="addButtonEnable();" />

@@ -5,22 +5,16 @@
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="layout.html" />
-  <xi:include href="macros.html" />
 
   <head>
     <title>Create Code Review</title>
-    <style type="text/css">
-      <!--
-      table.code th.addFileNums { width: 4em; }
-      -->
-    </style>
   </head>
 
   <body>
 
-  <p><h1>Create a New Code Review</h1></p>
+  <h1>Create a New Code Review</h1>
 
-  <h2>Step 1: Choose a name for this review.</h2><br />
+  <h2>Step 1: Choose a name for this review.</h2>
 
   <!-- CodeReview name is empty if new, with previous name is resubmitted -->
   <form method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);">
@@ -29,7 +23,7 @@
     <h2>Step 2: Select the sections to be reviewed.</h2><br />
     <!-- Displays the file browser -->
     <span id="browserArea"></span>
-
+    <div id="repo_browser"></div>
     <table class="listing" id="myfilelist">
       <thead>
         <tr>
@@ -50,13 +44,13 @@
       </tbody>
 
       <tbody py:with="cls=cycle(('odd', 'even'))" id = "myfilebody">
-        <tr py:for="item in prevFiles" id="${item[0]},${item[1]},${item[2]},${item[3]}id" class="${cls.next()}">
-          <td value="${item[0]},${item[1]},${item[2]},${item[3]}">
-            <a href="javascript:removefile('${item[0]},${item[1]},${item[2]},${item[3]}')">${item[0]}</a>
+        <tr py:for="item in prevFiles" id="${item.element_id}" class="${cls.next()}">
+          <td value="${item.path},${item.version},${item.start},${item.end}">
+            <a href="javascript:removefile('${item.path},${item.version},${item.start},${item.end}')">${item.path}</a>
           </td>
-          <td>${item[2]}</td>
-          <td>${item[3]}</td>
-          <td>${item[1]}</td>
+          <td>${item.start}</td>
+          <td>${item.end}</td>
+          <td>${item.version}</td>
         </tr>
       </tbody>
     </table><br /><br />

@@ -1,24 +1,6 @@
 var GLOBAL_lineStart = -1;
 var GLOBAL_lineEnd = -1;
 
-//Forces Internet Explorer to display a scrollbar
-function resetInnerDivSize()
-{
-    var innerDiv = document.getElementById('preview');
-    if(innerDiv != null)
-    {
-        innerDiv.style.height = "";
-        if(innerDiv.clientHeight >= 400)
-        {
-            innerDiv.style.height = "400px";
-        }
-        else if(innerDiv.clientHeight > 0)
-        {
-            innerDiv.style.height = innerDiv.offsetHeight + "px";
-        }
-    }
-}
-
 //Colorizes the tables according to Trac standards
 function colorTable(txt){
     var table = document.getElementById(txt);
@@ -162,82 +144,6 @@ function validateInput(form) {
     return true;
 }
 
-//Define XML object in terms of IE or Gecko engine
-function createXMLObject(){
-    var xmlObj = null;
-    if(window.XMLHttpRequest){
-        xmlObj = new XMLHttpRequest();
-    } else if(window.ActiveXObject){
-        xmlObj = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-
-    return xmlObj;
-}
-
-//Prepares place for browser in HTML
-function placeBrowser(contents)
-{
-    var place = document.getElementById('browserArea');
-    place.innerHTML = contents;
-    processBrowser(place);
-    resetInnerDivSize();
-    GLOBAL_lineStart = -1;
-    GLOBAL_lineEnd = -1;
-}
-
-
-//Controls the file browser's click-throughs to ensure the file browser does not close
-function processBrowser(parent)
-{
-    for(var i=0; i < parent.childNodes.length; i++)
-    {
-        processBrowser(parent.childNodes[i]);
-    }
-
-    if(parent.tagName == "A")
-    {
-        if(parent.href.indexOf("peerReviewBrowser") >= 0)
-        {
-            parent.href = "javascript:getBrowser('" + parent.href + "')";
-        }
-    }
-}
-
-//Changes the revision displayed in the file browser
-function switchRev(e)
-{
-    if(e.keyCode == 13 || e.keyCode == 3)
-    {
-        getBrowser(browserCallback + '?rev=' + document.getElementById('rev').value);
-        if(e.stopPropagation)
-            e.stopPropagation();
-        e.cancelBubble = true;
-        if(e.preventDefault)
-            e.preventDefault();
-        event.returnValue = false;
-        event.cancel = true;
-    }
-}
-
-//Performs the callback to the server with the clicked links in the browser
-function getBrowser(url){
-    var place = document.getElementById('browserArea');
-    place.innerHTML = "Loading....";
-    resetInnerDivSize()
-
-    var xmlObj = createXMLObject();
-    if(xmlObj != null){
-        xmlObj.onreadystatechange = function(){
-            if(xmlObj.readyState == 4){
-                placeBrowser(xmlObj.responseText);
-            }
-        }
-        xmlObj.open ('GET', url, true);
-        xmlObj.send ('');
-    }
-    lastPick = null;
-}
-
 function lineEnter(e)
 {
     if(e.keyCode == 13 || e.keyCode == 3)
@@ -276,53 +182,6 @@ function setLineNum(num)
     }
     lastPick = num;
     addButtonEnable();
-}
-
-//Add a file to the file structure in the database
-function addFile(filepath)
-{
-    var tbl = document.getElementById('myfilebody');
-
-    if ((tbl.rows.length == 1) && (tbl.rows[0].getAttribute("id") == "nofile")) {
-        tbl.deleteRow(0);
-    }
-
-    var lastRow = tbl.rows.length;
-
-    var box1 = document.getElementById('lineBox1');
-    var box2 = document.getElementById('lineBox2');
-    var revBox = document.getElementById('fileRevVal');
-
-    var saveLine = filepath + "," + revBox.value + "," + box1.value + "," + box2.value;
-
-    if(document.getElementById(saveLine + 'id') != null) {
-        alert("Specified combination of filename, revision, and line numbers is already included in the file list.");
-        return;
-    }
-
-    var row = tbl.insertRow(lastRow);
-
-    var files = document.getElementById('FilesSelected');
-    files.setAttribute('value', files.value + saveLine + "#");
-
-    //Create the entry in the actual table in the page
-
-    row.id = saveLine + 'id';
-    var cellLeft = row.insertCell(0);
-    cellLeft.innerHTML = "<" + "a href=\"javascript:removefile('" + saveLine + "')\">" + filepath + "</a>";
-    cellLeft.setAttribute('value', saveLine);
-    row.appendChild(cellLeft);
-    cellLeft = row.insertCell(1);
-    cellLeft.innerHTML = box1.value;
-    row.appendChild(cellLeft);
-    cellLeft = row.insertCell(2);
-    cellLeft.innerHTML = box2.value;
-    row.appendChild(cellLeft);
-    cellLeft = row.insertCell(3);
-    cellLeft.innerHTML = revBox.value;
-    row.appendChild(cellLeft);
-
-    colorTable('myfilebody');
 }
 
 //Remove the file from the struct
@@ -447,5 +306,3 @@ function addButtonEnable()
     addButton.disabled = false;
     addButton.style.color = "#000000";
 }
-
-getBrowser(browserCallback);
