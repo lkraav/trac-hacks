@@ -34,6 +34,9 @@ function DOMWindowGetYOffset() {
 
 function hideLines()
 {
+    if(lineStart === 0){
+       return;
+    };
     var i = 1;
     var row = null;
     while((row = document.getElementById('L' + i)) != null)

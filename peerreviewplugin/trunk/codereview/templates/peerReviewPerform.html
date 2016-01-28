@@ -34,7 +34,7 @@
   <table border="0" width="100%" style="border-collapse: collapse" id="table1">
     <tr>
       <td align="left"><font size="2">Click line number to Add/View comments</font></td>
-      <td align="right"><font size="2">View <input type="text" id="SelectRangeTextBox"
+      <td py:if="not fullrange" align="right"><font size="2">View <input type="text" id="SelectRangeTextBox"
                          size="1" value="3" onKeyDown="if(event.keyCode == 13 || event.keyCode == 3){resetLines();}"
                          style="text-align: center" /> lines on either side of selection.</font>
       </td>

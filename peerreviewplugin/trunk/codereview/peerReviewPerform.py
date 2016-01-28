@@ -53,7 +53,7 @@ class UserbaseModule(Component):
     def annotate_row(self, context, row, lineno, line, data):
         htmlImageString = '<img src="' + self.imagePath + '">'
         #make line number light gray
-        if lineno <= self.lineEnd and lineno >= self.lineStart:
+        if (lineno <= self.lineEnd and lineno >= self.lineStart) or self.lineStart == 0:
             #if there is a comment on this line
             if self.comments.has_key(lineno):
                 #if there is more than 0 comments
@@ -125,7 +125,11 @@ class UserbaseModule(Component):
         #make these global for the line annotator
         self.lineEnd = int(rfile.end)
         self.lineStart = int(rfile.start)
-
+        # Wther to show the full file in the browser.
+        if self.lineStart == 0:
+            data['fullrange'] = True
+        else:
+            data['fullrange'] = False
         #if the repository can't be found - display an error message
         if repos is None:
             TracError("Unable to acquire subversion repository.", "Subversion Repository Error")

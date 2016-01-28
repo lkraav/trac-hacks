@@ -125,6 +125,20 @@ jQuery(document).ready(function($) {
               load_browser(url);
               return false;});
        });
+       $('.fileselect').on('change', function(){
+           if($('.fileselect:checked').length > 0){
+                $('#addfiles').prop("disabled", false);
+           }
+           else{
+               $('#addfiles').prop("disabled", true);
+           };
+       });
+       $('#addfiles').on('click', function(){
+            $('.fileselect:checked').each(function(idx){
+                 $('#fileRevVal').val($(this).data('rev'));
+                 addFile($(this).val());
+                 });
+       });
     };
 
     function switch_rev(event){
@@ -144,4 +158,5 @@ jQuery(document).ready(function($) {
 
     /* Initial browser load */
     load_browser(repo_browser);
+
 });

@@ -31,6 +31,7 @@
   <table py:if="dir" class="listing" id="dirlist">
     <thead>
       <tr>
+          <th></th>
         ${sortable_th(dir.order, dir.desc, 'name', 'Name')}
         ${sortable_th(dir.order, dir.desc, 'size', 'Size')}
         <th class="rev">Rev</th>
@@ -42,6 +43,7 @@
       <py:if test="'up' in chrome.links">
         <tr class="even">
           <td class="name" colspan="5">
+            <td></td>
             <a class="parent" title="Parent Directory" href="${chrome.links.up[0].href}">../</a>
           </td>
         </tr>
@@ -49,6 +51,11 @@
       <py:for each="idx, item in enumerate(dir['items'])">
         <py:with vars="change = dir.changes[item.rev]">
           <tr class="${idx % 2 and 'even' or 'odd'}">
+
+              <td class="'sel">
+                  <input py:if="item.size" class="fileselect" type="checkbox" name="sel" data-rev="${item.rev}" value="${item.fullpath}"/>
+              </td>
+
             <td class="name">
               <py:if test="not item.permission">
                 <span class="${item.is_dir and 'dir' or 'file'}" title="Access Denied" href="">${item.name}</span>
@@ -77,6 +84,7 @@
     </tbody>
   </table>
 
+    <!--! Properties -->
   <table py:if="props or file" id="info" summary="Revision info">
     <py:if test="file">
       <tr>
@@ -103,7 +111,15 @@
       </tr>
     </py:if>
   </table>
-
+    <py:if test="not file">
+        <div class="buttons">
+            <input type="button" id="addfiles" value="Add selected files" disabled="1" />
+        </div>
+        <input type="hidden" value="0" id="lineBox1" />
+        <input type="hidden" value="0" id="lineBox2" />
+        <input type="hidden" value="${file.rev}" id="fileRevVal" />
+    </py:if>
+    <!--! The following is only shown for files -->
   <py:if test="file">
     <div id="preview" style="overflow: auto; max-height: 400px">
       <py:if test="file.preview">${file.preview}</py:if>
