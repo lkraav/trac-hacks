@@ -82,7 +82,7 @@ class NewReviewModule(Component):
                     h = (31 * h + ord(c)) & 0xFFFFFFFF
                 return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
             for f in rfiles:
-                returnFiles += "%s, %s, %s, %s#" % (f.path, f.version, f.start, f.end)
+                returnFiles += "%s,%s,%s,%s#" % (f.path, f.version, f.start, f.end)
                 # This id is used by the hacascript code to find duplicate entries.
                 f.element_id = 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f.path, f.version, f.start, f.end))
                 popFiles.append(f)

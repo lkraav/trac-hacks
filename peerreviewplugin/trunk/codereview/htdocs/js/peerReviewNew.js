@@ -184,57 +184,6 @@ function setLineNum(num)
     addButtonEnable();
 }
 
-//Remove the file from the struct
-
-function removefile(txt) {
-    //remove the file from the post value
-    var files = document.getElementById('FilesSelected');
-    var tokens = files.value.split("#");
-    var newfiles = "";
-    for (var i=0; i < tokens.length-1; i++) {
-        if (tokens[i] == txt)
-            continue;
-        newfiles += tokens[i] + "#";
-    }
-
-    files.setAttribute('value', newfiles);
-
-    // delete the row containing the txt from the table
-    var filetable = document.getElementById('myfilelist');
-
-    var loop = 0;
-    for (loop = 0; loop < filetable.rows.length; loop++) {
-        var row = filetable.rows[loop];
-        var cell = row.cells[0];
-        if (row.id == txt + 'id') {
-            filetable.deleteRow(loop);
-            loop--;
-            break;
-        }
-    }
-
-    colorTable('myfilebody');
-
-    //Remove the entry from the table in the HTML
-
-    var tbl = document.getElementById('myfilebody');
-    if (tbl.rows.length == 0){
-        tbl.insertRow(0);
-        tbl.rows[0].setAttribute('id', "nofile");
-        var cellLeft = tbl.rows[0].insertCell(0);
-        cellLeft.innerHTML = "No files have been added to the code review.";
-        tbl.rows[0].appendChild(cellLeft);
-        cellLeft = tbl.rows[0].insertCell(1);
-        cellLeft.innerHTML ="";
-        tbl.rows[0].appendChild(cellLeft);
-        cellLeft = tbl.rows[0].insertCell(2);
-        cellLeft.innerHTML ="";
-        tbl.rows[0].appendChild(cellLeft);
-        cellLeft = tbl.rows[0].insertCell(3);
-        cellLeft.innerHTML ="";
-        tbl.rows[0].appendChild(cellLeft);
-    }
-}
 
 //Enable the Add File button when a correct file, revision, and line number range is chosen
 
