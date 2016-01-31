@@ -116,7 +116,7 @@
   </table>
   </py:if>
 
-  <py:if test="canivote == 1 and review.status != 'Closed' and review.status !=  'Ready for inclusion'">
+  <py:if test="canivote and review.status != 'Closed' and review.status !=  'Ready for inclusion'">
   <h2>${myvote != -1 and 'Modify' or 'Cast'} your vote:</h2>
     <form action="" method="post">
       <fieldset>

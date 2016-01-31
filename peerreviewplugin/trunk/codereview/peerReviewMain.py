@@ -25,7 +25,7 @@ from trac.web.main import IRequestHandler
 from genshi.builder import tag
 
 from dbBackend import *
-from model import Review
+from model import Review, Reviewer
 
 
 def add_ctxt_nav_items(req):
@@ -88,12 +88,12 @@ class MainReviewModule(Component):
         # All reviews assigned to me
         for rev in rev_by_reviewer:
             if rev.status != "Ready for inclusion":
-                reviewstruct = dbBack.getReviewerEntry(rev.review_id,req.authname)
-                if reviewstruct.Vote == -1:
+                reviewer = Reviewer.select_by_review_id(self.env, rev.review_id, req.authname)
+                if reviewer.vote == -1:
                     rev.vote = 'Not voted'
-                elif reviewstruct.Vote == 0:
+                elif reviewer.vote == 0:
                     rev.vote = 'Rejected'
-                elif reviewstruct.Vote == 1:
+                elif reviewer.vote == 1:
                     rev.vote = 'Accepted'
                 assigned_to_me.append(rev)
 
@@ -122,11 +122,11 @@ class MainReviewModule(Component):
 
             for codeReview in codeReviewDetails:
                 codereview_page = codereview_realm(id=codeReview.IDReview)
-                reviewers = dbBack.getReviewers(codeReview.IDReview)
+                reviewers = Reviewer.select_by_review_id(self.env, codeReview.IDReview)
 
                 reviewersList = ''
                 for reviewer in reviewers:
-                    reviewersList = reviewersList + reviewer.Reviewer + ','
+                    reviewersList = reviewersList + reviewer.reviewer + ','
            
                 yield('codereview', codeReview.DateCreate, codeReview.Author,
                       (codereview_page, codeReview.Name, codeReview.Notes,

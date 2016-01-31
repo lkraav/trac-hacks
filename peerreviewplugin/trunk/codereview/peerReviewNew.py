@@ -63,12 +63,10 @@ class NewReviewModule(Component):
             data['new'] = "no"
             data['oldid'] = reviewID
             # get code review data and populate
-            userStructs = dbBack.getReviewers(reviewID)
-            returnUsers = ""
+            reviewers = Reviewer.select_by_review_id(self.env, reviewID)
             popUsers = []
-            for struct in userStructs:
-                returnUsers += struct.Reviewer + "#"
-                popUsers.append(struct.Reviewer)
+            for reviewer in reviewers:
+                popUsers.append(reviewer.reviewer)
 
             rfiles = ReviewFile.select_by_review(self.env, reviewID)
             returnFiles = ""
@@ -87,8 +85,7 @@ class NewReviewModule(Component):
                 popFiles.append(f)
 
             data['name'] = review.name
-            data['notes'] = review.name
-            data['reviewers'] = returnUsers
+            data['notes'] = "Review based on ''%s'' (resubmitted)." % review.name
             data['prevUsers'] = popUsers
             data['prevFiles'] = popFiles
 

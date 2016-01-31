@@ -13,7 +13,6 @@ class Reviewer(object):
 
     def _init_from_row(self, row):
         rev_id, reviewer, status, vote = row
-
         self.review_id = rev_id
         self.reviewer = reviewer
         self.status = status
@@ -29,6 +28,34 @@ class Reviewer(object):
             cursor.execute("""INSERT INTO Reviewers (IDReview, Reviewer, Status, Vote)
                               VALUES (%s, %s, %s, %s)
                            """, (self.review_id, self.reviewer, self.status, self.vote))
+
+    @classmethod
+    def select_by_review_id(cls, env, review_id, rev_name=None):
+        db = env.get_read_db()
+        cursor = db.cursor()
+        # TODO: change query when database schema is adjusted
+        if rev_name:
+            sql = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = %s " \
+                  "AND Reviewer = %s"
+            data = (review_id, rev_name)
+            cursor.execute(sql, data)
+            row = cursor.fetchone()
+            if row:
+                reviewer = cls(env)
+                reviewer._init_from_row(row)
+            else:
+                reviewer = None
+            return reviewer
+        else:
+            sql = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = %s"
+            data = (review_id,)
+        cursor.execute(sql, data)
+        reviewers = []
+        for row in cursor:
+            reviewer = cls(env)
+            reviewer._init_from_row(row)
+            reviewers.append(reviewer)
+        return reviewers
 
 
 class Review(object):

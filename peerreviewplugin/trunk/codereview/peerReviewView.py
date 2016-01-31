@@ -20,10 +20,9 @@ from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
 
-from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
-from model import Review, ReviewFile
+from model import Review, ReviewFile, Reviewer
 from peerReviewMain import add_ctxt_nav_items
 
 class ViewReviewModule(Component):
@@ -102,12 +101,12 @@ class ViewReviewModule(Component):
         data['manager'] = manager
 
         # figure out whether I can vote on this review or not
-        entry = dbBack.getReviewerEntry(reviewID, req.authname)
-        if entry is not None:
-            data['canivote'] = 1
-            data['myvote'] = entry.Vote
+        entry = Reviewer.select_by_review_id(self.env, reviewID, req.authname)
+        if entry:
+            data['canivote'] = True
+            data['myvote'] = entry.vote
         else:
-            data['canivote'] = 0
+            data['canivote'] = False
 
         # display vote summary only if I have voted or am the author/manager,
         # or if the review is "Ready for inclusion" or "Closed
@@ -120,7 +119,7 @@ class ViewReviewModule(Component):
             data['viewvotesummary'] = False
 
         rvs = []  # reviewer/vote pairs
-        reviewers = dbBack.getReviewers(reviewID)
+        reviewers = Reviewer.select_by_review_id(self.env, reviewID)
         newrvpair = []
 
         # if we are the manager, list who has voted and what their vote was.
@@ -129,20 +128,20 @@ class ViewReviewModule(Component):
         if manager:
             self.env.log.debug("I am a manager")
             for reviewer in reviewers:
-                newrvpair.append(reviewer.Reviewer)
-                if reviewer.Vote == -1:
+                newrvpair.append(reviewer.reviewer)
+                if reviewer.vote == -1:
                     newrvpair.append("Not voted")
-                elif reviewer.Vote == 0:
+                elif reviewer.vote == 0:
                     newrvpair.append("No")
-                elif reviewer.Vote == 1:
+                elif reviewer.vote == 1:
                     newrvpair.append("Yes")
                 rvs.append(newrvpair)
                 newrvpair = []
         elif review.author == req.authname:
             self.env.log.debug("I am the author")
             for reviewer in reviewers:
-                newrvpair.append(reviewer.Reviewer)
-                if reviewer.Vote == -1:
+                newrvpair.append(reviewer.reviewer)
+                if reviewer.vote == -1:
                     newrvpair.append("Not voted")
                 else:
                     newrvpair.append("Voted")
@@ -151,7 +150,7 @@ class ViewReviewModule(Component):
         else:
             self.env.log.debug("I am somebody else")
             for reviewer in reviewers:
-                newrvpair.append(reviewer.Reviewer)
+                newrvpair.append(reviewer.reviewer)
                 rvs.append(newrvpair)
                 newrvpair = []
 
@@ -172,7 +171,7 @@ class ViewReviewModule(Component):
         db = self.env.get_db_cnx()
         dbBack = dbBackend(db)
         reviewEntry = dbBack.getReviewerEntry(number, myname)
-        if reviewEntry is not None:
+        if reviewEntry:
             reviewEntry.Vote = one_or_zero
             reviewEntry.save(db)
 

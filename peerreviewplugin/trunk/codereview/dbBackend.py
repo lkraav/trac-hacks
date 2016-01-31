@@ -65,11 +65,6 @@ class dbBackend(object):
         query = query + "Author LIKE '%s%s%s' AND Status LIKE '%s%s%s' AND DateCreate >= '%s'" % ('%', crStruct.Author, '%', '%', crStruct.Status, '%', crStruct.DateCreate)
         return self.execCodeReviewQuery(query, False)
 
-    #Returns an array of all the reviewers for a code review
-    def getReviewers(self, id):
-        query = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = '%s'" % (id)
-        return self.execReviewerQuery(query, False)
-
     #Returns a specific reviewer entry for the given code review and name
     def getReviewerEntry(self, id, name):
         query = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = '%s' AND Reviewer = '%s'" % (id, name)
