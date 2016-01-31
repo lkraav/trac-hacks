@@ -43,7 +43,8 @@
           <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.file_id}</a></td>
           <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.path}</a></td>
           <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.version}</a></td>
-          <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.start}-${item.end}</a></td>
+          <td py:if="item.start != 0"><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.start} - ${item.end}</a></td>
+          <td py:if="item.start == 0"><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">1 - End of file</a></td>
           <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.num_comments}</a></td>
       </tr>
       </tbody>
@@ -51,6 +52,8 @@
 
 
   <h2>Users assigned to this code review</h2>
+
+  <!--! <xi:include href="user_list.html" /> -->
 
   <table py:if="review.author == myname or manager" class="listing" id="userlist">
     <thead>

@@ -5,6 +5,32 @@ from trac.util.text import _
 from trac.util import format_date
 __author__ = 'Cinc'
 
+
+class Reviewer(object):
+    def __init__(self, env, name=None):  # TODO: name or review_id here?
+        self.env = env
+        self._init_from_row((None,)*4)
+
+    def _init_from_row(self, row):
+        rev_id, reviewer, status, vote = row
+
+        self.review_id = rev_id
+        self.reviewer = reviewer
+        self.status = status
+        self.vote = vote
+
+    def insert(self):
+        if not self.review_id:
+            raise ValueError("No review id given during creation of Reviewer entry.")
+        @self.env.with_transaction()
+        def do_insert(db):
+            cursor = db.cursor()
+            self.env.log.debug("Creating new reviewer entry for '%s'" % self.review_id)
+            cursor.execute("""INSERT INTO Reviewers (IDReview, Reviewer, Status, Vote)
+                              VALUES (%s, %s, %s, %s)
+                           """, (self.review_id, self.reviewer, self.status, self.vote))
+
+
 class Review(object):
     def __init__(self, env, review_id=None):
         self.env = env

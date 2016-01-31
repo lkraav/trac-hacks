@@ -16,13 +16,13 @@ import time
 
 from trac import util
 from trac.core import Component, implements, TracError
-from trac.web.chrome import INavigationContributor, add_javascript, add_script_data
+from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, add_notice
 from trac.web.main import IRequestHandler
 
 from CodeReviewStruct import *
 from dbBackend import *
 from ReviewerStruct import *
-from model import ReviewFile, Review
+from model import ReviewFile, Review, Reviewer
 from peerReviewMain import add_ctxt_nav_items
 
 class NewReviewModule(Component):
@@ -45,14 +45,13 @@ class NewReviewModule(Component):
 
         req.perm.require('CODE_REVIEW_DEV')
 
-        data = {}
+        data = {'oldid': -1}
 
         db = self.env.get_read_db()
         dbBack = dbBackend(db)
         allUsers = dbBack.getPossibleUsers()
 
         reviewID = req.args.get('resubmit')
-        data['oldid'] = -1
 
         # if we tried resubmitting and the reviewID is not a valid number or not a valid code review, error
         review = Review(self.env, reviewID)
@@ -100,12 +99,12 @@ class NewReviewModule(Component):
             notUsers = []
             if len(popUsers) != len(allUsers): 
                 for user in allUsers:
-                    match = "no"
+                    match = False
                     for candidate in popUsers:
                         if candidate == user:
-                            match = "yes"
+                            match = True
                             break
-                    if match == "no":
+                    if not match:
                         notUsers.append(user)
                 data['notPrevUsers'] = notUsers
                 data['emptyList'] = 0
@@ -121,11 +120,12 @@ class NewReviewModule(Component):
         else:
             if req.args.get('reqAction') == 'createCodeReview':
                 oldid = req.args.get('oldid')
-                if oldid is not None:
+                if oldid:
                     # Automatically close the review we resubmitted from
                     review = Review(self.env, oldid)
                     review.status = "Closed"
                     review.update()
+                    add_notice(req, "Review '%s' (#%s) was automatically closed." % (review.name, oldid))
                 returnid = self.createCodeReview(req)
                 #If no errors then redirect to the viewCodeReview page
                 req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
@@ -133,11 +133,9 @@ class NewReviewModule(Component):
                 data['new'] = "yes"
 
         if data['new'] == "yes":
-            data['reviewersSelectedValue'] = {'value': ''}
-            data['filesSelectedValue'] = {'value': ''} 
+            data['filesSelectedValue'] = {'value': ''}
         else:
-            data['reviewersSelectedValue'] = {'value': returnUsers}
-            data['filesSelectedValue'] = {'value': returnFiles} 
+            data['filesSelectedValue'] = {'value': returnFiles}
 
         data['users'] = allUsers
         data['cycle'] = itertools.cycle
@@ -164,16 +162,17 @@ class NewReviewModule(Component):
 
         # loop here through all the reviewers
         # and create new reviewer structs based on them
-        string = req.args.get('ReviewersSelected')
-        tokens = string.split('#')
-        for token in tokens:
-            if token != "":
-                struct = ReviewerStruct(None)
-                struct.IDReview = id_
-                struct.Reviewer = token
-                struct.Status = 0
-                struct.Vote = "-1"
-                struct.save(self.env.get_db_cnx())
+        user = req.args.get('user')
+        if not type(user) is list:
+            user = [user]
+        for name in user:
+            if name != "":
+                reviewer = Reviewer(self.env)
+                reviewer.review_id = id_
+                reviewer.reviewer = name
+                reviewer.status = 0
+                reviewer.vote = "-1"
+                reviewer.insert()
 
         # loop here through all included files
         # and create new file structs based on them

@@ -79,29 +79,25 @@
         </py:choose>
       </span>
     </py:choose>
-    <py:choose test="emptyList">
-      <input py:when="1" disabled="true" id="adduserbutton" type="button" onclick="adduser()" value="Add user" />
-      <input py:otherwise="" id="adduserbutton" type="button" onclick="adduser()" value="Add user" />
-    </py:choose>
 
-    <!-- Display an empty file list if it's a new CodeReview, display previous list if resubmitted -->
+      <input disabled="${emptylist == 1 or None}" id="adduserbutton" type="button" onclick="adduser()" value="Add user" />
+
+    <!-- Display an empty user list if it's a new CodeReview, display previous list if resubmitted -->
     <div py:choose="new">
-      <span py:when="'yes'">
-        <table class="listing" id="myuserlist">
+        <table py:when="'yes'" class="listing" id="myuserlist">
           <thead>
             <tr>
               <td>Username (Click to remove)</td>
             </tr>
           </thead>
           <tbody id = "myuserbody">
-            <tr id = "No Users" class="even">
+            <tr id = "no-users" class="even">
               <td>No users have been added to the code review.</td>
             </tr>
           </tbody>
         </table>
-      </span>
-      <span py:otherwise="">
-        <table class="listing" id="myuserlist">
+
+        <table py:otherwise="" class="listing" id="myuserlist">
           <thead>
             <tr>
               <td>Username (Click to remove)</td>
@@ -109,11 +105,13 @@
           </thead>
           <tbody py:with="cls=cycle(('odd', 'even'))" id = "myuserbody">
             <tr py:for="item in prevUsers" id="${item}id" class="${cls.next()}">
-              <td value="${item}"><a href="javascript:removeuser('${item}')">${item}</a></td>
+              <td value="${item}">
+                <input type="hidden" name="user" value="$item" />
+                <a href="javascript:removeuser('${item}')">${item}</a>
+              </td>
             </tr>
           </tbody>
         </table>
-      </span>
     </div>
     <br />
 
@@ -123,7 +121,6 @@
     <textarea name="Notes" cols="60" rows="8" py:content="notes"></textarea>
     <br />
     <input py:if="oldid > -1" type="hidden" name="oldid" value="${oldid}" />
-    <input type="hidden" name="ReviewersSelected" id="ReviewersSelected" py:attrs="reviewersSelectedValue" />
     <input type="hidden" name="FilesSelected" id="FilesSelected" py:attrs="filesSelectedValue" />
     <input type="hidden" name="reqAction" value="createCodeReview" />
     <input type="submit" name="Next" value="${new == 'yes' and 'Add Code Review' or 'Resubmit Code Review'}" />

@@ -1,0 +1,40 @@
+<div xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:py="http://genshi.edgewall.org/">
+    <div>
+        <select id="Reviewers">
+            <option py:for="item in users" value="${item}">${item}</option>
+        </select>
+    </div>
+    <div>
+      <table py:if="review.author == myname or manager" class="listing" id="userlist">
+        <thead>
+          <tr>
+            <td>User name</td>
+            <td>Vote</td>
+          </tr>
+        </thead>
+        <tbody py:with="cls=cycle(('odd', 'even'))">
+          <tr py:if="rvsLength == 0" class="even">
+            <td>There are no users included in this code review.</td>
+          </tr>
+          <tr py:if="review_files" py:for="item in rvs" class="${cls.next()}">
+            <td>${item[0]}</td>
+            <td>${item[1]}</td>
+          </tr>
+        </tbody>
+      </table>
+
+        <table class="listing" id="myuserlist">
+          <thead>
+            <tr>
+              <td>Username (Click to remove)</td>
+            </tr>
+          </thead>
+          <tbody py:with="cls=cycle(('odd', 'even'))" id = "myuserbody">
+            <tr py:for="item in prevUsers" id="${item}id" class="${cls.next()}">
+              <td value="${item}"><a href="javascript:removeuser('${item}')">${item}</a></td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+</div>
