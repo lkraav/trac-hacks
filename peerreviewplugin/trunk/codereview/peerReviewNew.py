@@ -69,7 +69,6 @@ class NewReviewModule(Component):
                 popUsers.append(reviewer.reviewer)
 
             rfiles = ReviewFile.select_by_review(self.env, reviewID)
-            returnFiles = ""
             popFiles = []
             # Set up the file information
             def java_string_hashcode(s):
@@ -79,7 +78,6 @@ class NewReviewModule(Component):
                     h = (31 * h + ord(c)) & 0xFFFFFFFF
                 return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
             for f in rfiles:
-                returnFiles += "%s,%s,%s,%s#" % (f.path, f.version, f.start, f.end)
                 # This id is used by the hacascript code to find duplicate entries.
                 f.element_id = 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f.path, f.version, f.start, f.end))
                 popFiles.append(f)
@@ -129,11 +127,6 @@ class NewReviewModule(Component):
             else:
                 data['new'] = "yes"
 
-        if data['new'] == "yes":
-            data['filesSelectedValue'] = {'value': ''}
-        else:
-            data['filesSelectedValue'] = {'value': returnFiles}
-
         data['users'] = allUsers
         data['cycle'] = itertools.cycle
 
@@ -173,9 +166,10 @@ class NewReviewModule(Component):
 
         # loop here through all included files
         # and create new file structs based on them
-        files = req.args.get('FilesSelected')
-        items = files.split('#')
-        for item in items:
+        files = req.args.get('file')
+        if not type(files) is list:
+            files = [files]
+        for item in files:
             if item != "":
                 segment = item.split(',')
                 rfile = ReviewFile(self.env)

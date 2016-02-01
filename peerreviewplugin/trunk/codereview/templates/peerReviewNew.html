@@ -35,7 +35,7 @@
       </thead>
     <!-- Display an empty file list if it's a new CodeReview, display previous list if resubmitted -->
       <tbody py:if="new == 'yes'" id = "myfilebody">
-        <tr id = "nofile" class="even">
+        <tr id = "no-files" class="even">
           <td>No files have been added to the code review.</td>
           <td></td>
           <td></td>
@@ -46,6 +46,7 @@
       <tbody py:with="cls=cycle(('odd', 'even'))" id = "myfilebody">
         <tr py:for="item in prevFiles" id="${item.element_id}" class="${cls.next()}">
           <td value="${item.path},${item.version},${item.start},${item.end}">
+              <input type="hidden" name="file" value="${item.path},${item.version},${item.start},${item.end}"/>
             <a href="javascript:removefile('${item.path},${item.version},${item.start},${item.end}')">${item.path}</a>
           </td>
           <td>${item.start}</td>
@@ -121,7 +122,6 @@
     <textarea name="Notes" cols="60" rows="8" py:content="notes"></textarea>
     <br />
     <input py:if="oldid > -1" type="hidden" name="oldid" value="${oldid}" />
-    <input type="hidden" name="FilesSelected" id="FilesSelected" py:attrs="filesSelectedValue" />
     <input type="hidden" name="reqAction" value="createCodeReview" />
     <input type="submit" name="Next" value="${new == 'yes' and 'Add Code Review' or 'Resubmit Code Review'}" />
     <br />

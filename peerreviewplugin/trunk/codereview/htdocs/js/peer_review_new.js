@@ -8,16 +8,33 @@ String.prototype.hashCode = function() {
     return hash;
 };
 
+function validateInput(form) {
+    if (form.Name.value == "") {
+        alert("You must specify a code review name.");
+        return false;
+    }
+
+    if($('#myfilebody > #no-files').is(':visible')){
+        alert("You must select at least one file.");
+        return false;
+    }
+
+    if($('#myuserbody > #no-users').is(':visible')){
+        alert("You must select at least one user.");
+        return false;
+    }
+
+    return true;
+}
+
 //Add a file to the file structure in the database
 function addFile(filepath)
 {
     var tbl = document.getElementById('myfilebody');
 
-    if ((tbl.rows.length == 1) && (tbl.rows[0].getAttribute("id") == "nofile")) {
+    if ((tbl.rows.length == 1) && (tbl.rows[0].getAttribute("id") == "no-files")) {
         tbl.deleteRow(0);
     }
-
-    var lastRow = tbl.rows.length;
 
     var start = $('#lineBox1').val();
     var end = $('#lineBox2').val();
@@ -31,27 +48,18 @@ function addFile(filepath)
         return;
     }
 
-    var row = tbl.insertRow(lastRow);
 
-    var files = document.getElementById('FilesSelected');
-    files.setAttribute('value', files.value + saveLine + "#");
-
-    //Create the entry in the actual table in the page
-
-    row.id = row_id;
-    var cellLeft = row.insertCell(0);
-    cellLeft.innerHTML = "<" + "a href=\"javascript:removefile('" + saveLine + "')\">" + filepath + "</a>";
-    cellLeft.setAttribute('value', saveLine);
-    row.appendChild(cellLeft);
-    cellLeft = row.insertCell(1);
-    cellLeft.innerHTML = start;
-    row.appendChild(cellLeft);
-    cellLeft = row.insertCell(2);
-    cellLeft.innerHTML = end;
-    row.appendChild(cellLeft);
-    cellLeft = row.insertCell(3);
-    cellLeft.innerHTML = rev;
-    row.appendChild(cellLeft);
+    var tline = $("<tr/>",{id: row_id}).append($('<td/>').append('<input type="hidden" name="file" value="'
+                                                                +saveLine
+                                                                +'"/><a href="javascript:removefile(\''
+                                                                +saveLine
+                                                                +'\')">'
+                                                                +filepath
+                                                                +'</a>'),
+                                                                $("<td>"+start+"</td>"),
+                                                                $("<td>"+end+"</td>"),
+                                                                $("<td>"+rev+"</td>"));
+    $('#myfilebody').append(tline);
 
     colorTable('myfilebody');
 }
@@ -59,19 +67,6 @@ function addFile(filepath)
 //Remove the file from the struct
 
 function removefile(txt) {
-    //remove the file from the post value
-    var files = document.getElementById('FilesSelected');
-    var tokens = files.value.split("#");
-    var newfiles = "";
-    for (var i=0; i < tokens.length-1; i++) {
-        if (tokens[i] == txt){
-            continue;
-            };
-        newfiles += tokens[i] + "#";
-    }
-
-    files.setAttribute('value', newfiles);
-
     // delete the row containing the txt from the table
     var filetable = document.getElementById('myfilelist');
 
@@ -93,7 +88,7 @@ function removefile(txt) {
     var tbl = document.getElementById('myfilebody');
     if (tbl.rows.length == 0){
         tbl.insertRow(0);
-        tbl.rows[0].setAttribute('id', "nofile");
+        tbl.rows[0].setAttribute('id', "no-files");
         var cellLeft = tbl.rows[0].insertCell(0);
         cellLeft.innerHTML = "No files have been added to the code review.";
         tbl.rows[0].appendChild(cellLeft);
@@ -144,9 +139,6 @@ function removeuser(txt) {
 //takes a user from the dropdown, adds them to the table, and deletes from the dropdown
 function adduser()
 {
-    var dropdown = document.getElementById('Reviewers');
-    var tbl = document.getElementById('myuserbody');
-
     var user = $("#Reviewers option:selected").text();
     var tline = $("<tr/>",{
     id: user+"id"

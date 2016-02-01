@@ -15,25 +15,6 @@ function colorTable(txt){
     }
 }
 
-function validateInput(form) {
-    if (form.Name.value == "") {
-        alert("You must specify a code review name.");
-        return false;
-    }
-
-    if (form.FilesSelected.value == "") {
-        alert("You must select at least one file.");
-        return false;
-    }
-
-    if (form.ReviewersSelected.value == "") {
-        alert("You must select at least one user.");
-        return false;
-    }
-
-    return true;
-}
-
 function lineEnter(e)
 {
     if(e.keyCode == 13 || e.keyCode == 3)
