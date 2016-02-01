@@ -21,7 +21,6 @@ from trac.web.main import IRequestHandler
 
 from CodeReviewStruct import *
 from dbBackend import *
-from ReviewerStruct import *
 from model import ReviewFile, Review, Reviewer
 from peerReviewMain import add_ctxt_nav_items
 

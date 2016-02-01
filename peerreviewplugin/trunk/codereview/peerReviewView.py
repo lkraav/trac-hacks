@@ -21,7 +21,6 @@ from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
 
 from dbBackend import *
-from ReviewerStruct import *
 from model import Review, ReviewFile, Reviewer, Vote, get_threshold
 from peerReviewMain import add_ctxt_nav_items
 

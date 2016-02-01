@@ -11,7 +11,6 @@
 import string
 
 from CodeReviewStruct import *
-from ReviewerStruct import *
 from ReviewCommentStruct import *
 
 
