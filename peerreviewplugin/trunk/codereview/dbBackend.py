@@ -35,16 +35,6 @@ class dbBackend(object):
         query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE DateCreate >= '%s' AND DateCreate <= '%s' ORDER BY DateCreate" % (date_from, date_to)
         return self.execCodeReviewQuery(query, False)
 
-    #Returns the number of votes of type 'type' for the given code review
-    def getVotesByID(self, type, id):
-        query = "SELECT Count(Reviewer) FROM Reviewers WHERE IDReview = '%s' AND Vote = '%s'" % (id, type)
-        cursor = self.db.cursor()
-        cursor.execute(query)
-        row = cursor.fetchone()
-        if not row:
-            return 0
-        return row[0]
-
     #Returns an array of code reviews which have a namwe like any of the
     #names given in the 'name' string
     def searchCodeReviewsByName(self, name):
@@ -64,11 +54,6 @@ class dbBackend(object):
             query = query + "(%s) AND " % (queryPart)
         query = query + "Author LIKE '%s%s%s' AND Status LIKE '%s%s%s' AND DateCreate >= '%s'" % ('%', crStruct.Author, '%', '%', crStruct.Status, '%', crStruct.DateCreate)
         return self.execCodeReviewQuery(query, False)
-
-    #Returns a specific reviewer entry for the given code review and name
-    def getReviewerEntry(self, id, name):
-        query = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = '%s' AND Reviewer = '%s'" % (id, name)
-        return self.execReviewerQuery(query, True)
 
     #Returns the requested comment
     def getCommentByID(self, id):
@@ -154,27 +139,6 @@ class dbBackend(object):
         for row in rows:
             codeReviews.append(CodeReviewStruct(row))
         return codeReviews
-
-    #A generic method for executing queries that return Reviewer structures
-    #query: the query to execute
-    #single: true if this query will always return only one result, false otherwise
-    def execReviewerQuery(self, query, single):
-        cursor = self.db.cursor()
-        cursor.execute(query)
-        if single:
-            row = cursor.fetchone()
-            if not row:
-                return None
-            return ReviewerStruct(row)
-
-        rows = cursor.fetchall()
-        if not rows:
-            return []
-
-        reviewers = []
-        for row in rows:
-            reviewers.append(ReviewerStruct(row))
-        return reviewers
 
     #A generic method for executing queries that return Comment structures
     #query: the query to execute

@@ -5,16 +5,17 @@ from trac.core import Component, implements
 from trac.web.chrome import add_warning
 
 from dbBackend import dbBackend
-from model import Review
+from model import Review, Vote
 
 __author__ = 'Cinc'
 
 
 def calculate_review_status(env, newThreshold):
     def calc_vote_ratio(r):
-        voteyes = float(dbBack.getVotesByID("1", r.review_id))
-        voteno = float(dbBack.getVotesByID("0", r.review_id))
-        notvoted = float(dbBack.getVotesByID("-1", r.review_id))
+        votes = Vote(env, r.review_id)
+        voteyes = float(votes.yes)
+        voteno = float(votes.no)
+        notvoted = float(votes.pending)
         total_votes_possible = voteyes + voteno + notvoted
         if total_votes_possible != 0:
             vote_ratio = voteyes/total_votes_possible

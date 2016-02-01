@@ -6,7 +6,42 @@ from trac.util import format_date
 __author__ = 'Cinc'
 
 
+class Vote(object):
+
+    def __init__(self, env, review_id):
+        if not review_id:
+            raise ValueError("No review id given during creation of Vote object.")
+        self._votes = {'yes': 0, 'no': 0, 'pending': 0}
+        db = env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT Vote FROM Reviewers WHERE IDReview = %s", (review_id,))
+        for row in cursor:
+            if row[0] == -1:
+                self._votes['pending'] += 1
+            elif row[0] == 1:
+                self._votes['yes'] += 1
+            elif row[0] == 0:
+                self._votes['no'] += 1
+
+    @property
+    def yes(self):
+        return self._votes['yes']
+
+    @property
+    def no(self):
+        return self._votes['no']
+
+    @property
+    def pending(self):
+        return self._votes['pending']
+
+    @property
+    def votes(self):
+        return self._votes
+
+
 class Reviewer(object):
+    """Model for a reviewer working on a code review."""
     def __init__(self, env, name=None):  # TODO: name or review_id here?
         self.env = env
         self._init_from_row((None,)*4)
@@ -28,6 +63,16 @@ class Reviewer(object):
             cursor.execute("""INSERT INTO Reviewers (IDReview, Reviewer, Status, Vote)
                               VALUES (%s, %s, %s, %s)
                            """, (self.review_id, self.reviewer, self.status, self.vote))
+
+    def update(self):
+        @self.env.with_transaction()
+        def do_update(db):
+            cursor = db.cursor()
+            self.env.log.debug("Updating reviewer %s for review '%s'" % (self.reviewer, self.review_id))
+            cursor.execute("""UPDATE Reviewers
+                        SET IDReview=%s, Reviewer=%s, Status=%s, Vote=%s
+                        WHERE Reviewer=%s AND IDReview=%s
+                        """, (self.review_id, self.reviewer, self.status, self.vote, self.reviewer, self.review_id))
 
     @classmethod
     def select_by_review_id(cls, env, review_id, rev_name=None):

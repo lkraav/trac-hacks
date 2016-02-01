@@ -22,7 +22,7 @@ from trac.wiki.formatter import format_to_html
 
 from dbBackend import *
 from ReviewerStruct import *
-from model import Review, ReviewFile, Reviewer
+from model import Review, ReviewFile, Reviewer, Vote
 from peerReviewMain import add_ctxt_nav_items
 
 class ViewReviewModule(Component):
@@ -92,13 +92,12 @@ class ViewReviewModule(Component):
 
         data['notes'] = format_to_html(self.env, Context.from_request(req), review.notes)
 
+        votes = Vote(self.env, reviewID)
         # set up the fields that will be displayed on the page
         data['myname'] = req.authname
-        data['voteyes'] = dbBack.getVotesByID("1", reviewID)
-        data['voteno'] = dbBack.getVotesByID("0", reviewID)
-        data['notvoted'] = dbBack.getVotesByID("-1", reviewID)
         data['review'] = review
         data['manager'] = manager
+        data['votes'] = votes
 
         # figure out whether I can vote on this review or not
         entry = Reviewer.select_by_review_id(self.env, reviewID, req.authname)
@@ -110,9 +109,9 @@ class ViewReviewModule(Component):
 
         # display vote summary only if I have voted or am the author/manager,
         # or if the review is "Ready for inclusion" or "Closed
+
         if review.author == req.authname or manager or \
-                (dbBack.getReviewerEntry(reviewID, req.authname) is not None and
-                 dbBack.getReviewerEntry(reviewID, req.authname).Vote != '-1') or \
+                (entry and entry.vote != '-1') or \
                 review.status == "Closed" or review.status == "Ready for inclusion":
             data['viewvotesummary'] = True
         else:
@@ -168,20 +167,21 @@ class ViewReviewModule(Component):
     # to vote, change the vote type in the review entry struct in the database
     # and reload the page.
     def vote(self, one_or_zero, number, req, myname):
-        db = self.env.get_db_cnx()
-        dbBack = dbBackend(db)
-        reviewEntry = dbBack.getReviewerEntry(number, myname)
+        reviewEntry = Reviewer.select_by_review_id(self.env, number, myname)
         if reviewEntry:
-            reviewEntry.Vote = one_or_zero
-            reviewEntry.save(db)
+            reviewEntry.vote = one_or_zero
+            reviewEntry.update()
 
         reviewID = req.args.get('Review')
         review = Review(self.env, reviewID)
 
+        db = self.env.get_db_cnx()
+        dbBack = dbBackend(db)
         # TODO: there is some code in admin.py calculsating a similar threshold. Try to unify this.
-        voteyes = dbBack.getVotesByID("1", reviewID)
-        voteno = dbBack.getVotesByID("0", reviewID)
-        notvoted = dbBack.getVotesByID("-1", reviewID)
+        votes = Vote(self.env, reviewID)
+        voteyes = votes.yes
+        voteno = votes.no
+        notvoted = votes.pending
         total_votes_possible = float(voteyes) + float(voteno) + float(notvoted)
         threshold = float(dbBack.getThreshold())/100
 
