@@ -35,7 +35,7 @@ class ReviewerStruct(object):
             #Add information to a new database entry
             cursor = db.cursor()
             cursor.execute("""
-                INSERT INTO Reviewers (IDReview, Reviewer, Status, Vote)
+                INSERT INTO peer_reviewer (review_id, reviewer, status, vote)
                 VALUES (%s, %s, %s, %s)
                 """, (self.IDReview, self.Reviewer, self.Status, self.Vote))
             db.commit()
@@ -43,7 +43,7 @@ class ReviewerStruct(object):
             #Update information in existing database entry
             cursor = db.cursor()
             cursor.execute("""
-                UPDATE Reviewers SET Status=%s, Vote=%s
-                WHERE IDReview=%s AND Reviewer=%s
+                UPDATE peer_reviewer SET status=%s, vote=%s
+                WHERE review_id=%s AND reviewer=%s
                 """, (self.Status, self.Vote, self.IDReview, self.Reviewer))
             db.commit()

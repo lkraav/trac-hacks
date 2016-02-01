@@ -1,10 +1,25 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2016 Cinc
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
+#
+# Author: Cinc
+#
 from time import time
 from trac.resource import ResourceNotFound
 from trac.util.text import _
 from trac.util import format_date
 __author__ = 'Cinc'
 
+def get_threshold(env):
+    return env.config.getint('peer-review', 'vote_threshold', 100)
+
+def set_threshold(env, val):
+    env.config.set('peer-review', 'vote_threshold', val)
+    env.config.save()
 
 class Vote(object):
 
@@ -14,7 +29,7 @@ class Vote(object):
         self._votes = {'yes': 0, 'no': 0, 'pending': 0}
         db = env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("SELECT Vote FROM Reviewers WHERE IDReview = %s", (review_id,))
+        cursor.execute("SELECT vote FROM peer_reviewer WHERE review_id = %s", (review_id,))
         for row in cursor:
             if row[0] == -1:
                 self._votes['pending'] += 1
@@ -60,7 +75,7 @@ class Reviewer(object):
         def do_insert(db):
             cursor = db.cursor()
             self.env.log.debug("Creating new reviewer entry for '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO Reviewers (IDReview, Reviewer, Status, Vote)
+            cursor.execute("""INSERT INTO peer_reviewer (review_id, reviewer, status, vote)
                               VALUES (%s, %s, %s, %s)
                            """, (self.review_id, self.reviewer, self.status, self.vote))
 
@@ -69,9 +84,9 @@ class Reviewer(object):
         def do_update(db):
             cursor = db.cursor()
             self.env.log.debug("Updating reviewer %s for review '%s'" % (self.reviewer, self.review_id))
-            cursor.execute("""UPDATE Reviewers
-                        SET IDReview=%s, Reviewer=%s, Status=%s, Vote=%s
-                        WHERE Reviewer=%s AND IDReview=%s
+            cursor.execute("""UPDATE peer_reviewer
+                        SET review_id=%s, reviewer=%s, status=%s, vote=%s
+                        WHERE reviewer=%s AND review_id=%s
                         """, (self.review_id, self.reviewer, self.status, self.vote, self.reviewer, self.review_id))
 
     @classmethod
@@ -80,8 +95,8 @@ class Reviewer(object):
         cursor = db.cursor()
         # TODO: change query when database schema is adjusted
         if rev_name:
-            sql = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = %s " \
-                  "AND Reviewer = %s"
+            sql = "SELECT review_id, reviewer, status, vote FROM peer_reviewer WHERE review_id = %s " \
+                  "AND reviewer = %s"
             data = (review_id, rev_name)
             cursor.execute(sql, data)
             row = cursor.fetchone()
@@ -92,7 +107,7 @@ class Reviewer(object):
                 reviewer = None
             return reviewer
         else:
-            sql = "SELECT IDReview, Reviewer, Status, Vote FROM Reviewers WHERE IDReview = %s"
+            sql = "SELECT review_id, reviewer, status, vote FROM peer_reviewer WHERE review_id = %s"
             data = (review_id,)
         cursor.execute(sql, data)
         reviewers = []
@@ -112,7 +127,7 @@ class Review(object):
             cursor = db.cursor()
             # TODO: change query when database schema is adjusted
             cursor.execute("""
-                SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE IDReview=%s
+                SELECT review_id, owner, status, created, name, notes FROM peer_review WHERE review_id=%s
                 """, (review_id,))
             row = cursor.fetchone()
             if not row:
@@ -142,19 +157,19 @@ class Review(object):
         def do_insert(db):
             cursor = db.cursor()
             self.env.log.debug("Creating new review '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO CodeReviews (Author, Status, DateCreate, Name, Notes)
+            cursor.execute("""INSERT INTO peer_review (owner, status, created, name, notes)
                             VALUES (%s, %s, %s, %s, %s)
                             """, (self.author, self.status, self.raw_date, self.name, self.notes))
-            self.review_id = db.get_last_id(cursor, 'CodeReviews', 'IDReview')
+            self.review_id = db.get_last_id(cursor, 'peer_review', 'review_id')
 
     def update(self):
         @self.env.with_transaction()
         def do_update(db):
             cursor = db.cursor()
             self.env.log.debug("Updating review '%s'" % self.review_id)
-            cursor.execute("""UPDATE CodeReviews
-                            SET Author=%s, Status=%s, DateCreate=%s, Name=%s, Notes=%s
-                            WHERE IDReview=%s
+            cursor.execute("""UPDATE peer_review
+                            SET owner=%s, status=%s, created=%s, name=%s, notes=%s
+                            WHERE review_id=%s
                             """, (self.author, self.status, self.raw_date, self.name, self.notes, self.review_id))
 
     @classmethod
@@ -162,8 +177,8 @@ class Review(object):
         db = env.get_read_db()
         cursor = db.cursor()
         # TODO: change query when database schema is adjusted
-        cursor.execute("SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews "
-                       "ORDER BY DateCreate")
+        cursor.execute("SELECT review_id, owner, status, created, name, notes FROM peer_review "
+                       "ORDER BY created")
         reviews = []
         for row in cursor:
             review = cls(env)
@@ -176,10 +191,10 @@ class Review(object):
         db = env.get_read_db()
         cursor = db.cursor()
         # TODO: change query when database schema is adjusted
-        cursor.execute("SELECT cr.IDReview, cr.Author, cr.Status, cr.DateCreate, cr.Name, cr.Notes FROM "
-                       "CodeReviews AS cr JOIN Reviewers AS r ON cr.IDReview = r.IDReview "
-                       "WHERE r.Reviewer=%s"
-                       "ORDER BY DateCreate", (reviewer,))
+        cursor.execute("SELECT cr.review_id, cr.owner, cr.status, cr.created, cr.name, cr.notes FROM "
+                       "peer_review AS cr JOIN peer_reviewer AS r ON cr.review_id = r.review_id "
+                       "WHERE r.reviewer=%s"
+                       "ORDER BY cr.created", (reviewer,))
         reviews = []
         for row in cursor:
             review = cls(env)
@@ -197,7 +212,7 @@ class ReviewFile(object):
             cursor = db.cursor()
             # TODO: change query when database schema is adjusted
             cursor.execute("""
-                SELECT IDFile, IDReview, Path, LineStart, LineEnd, Version FROM ReviewFiles WHERE IDFile=%s
+                SELECT file_id, review_id, path, line_start, line_end, revision FROM peer_review_file WHERE file_id=%s
                 """, (file_id,))
             row = cursor.fetchone()
             if not row:
@@ -221,8 +236,8 @@ class ReviewFile(object):
         def do_insert(db):
             cursor = db.cursor()
             self.env.log.debug("Creating new file for review '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO ReviewFiles (IDReview, Path, LineStart,
-                            LineEnd, Version)
+            cursor.execute("""INSERT INTO peer_review_file (review_id, path, line_start,
+                            line_end, revision)
                             VALUES (%s, %s, %s, %s, %s)
                             """, (self.review_id, self.path, self.start, self.end, self.version))
 
@@ -231,9 +246,9 @@ class ReviewFile(object):
         db = env.get_read_db()
         cursor = db.cursor()
         # TODO: change query when database schema is adjusted
-        cursor.execute("SELECT f.IDFile, f.IDReview, f.Path, f.LineStart, f.LineEnd, f.version FROM "
-                       "ReviewFiles AS f WHERE f.IDReview=%s"
-                       "ORDER BY f.Path", (review_id,))
+        cursor.execute("SELECT f.file_id, f.review_id, f.path, f.line_start, f.line_end, f.revision FROM "
+                       "peer_review_file AS f WHERE f.review_id=%s"
+                       "ORDER BY f.path", (review_id,))
         files = []
         for row in cursor:
             rev_file = cls(env)

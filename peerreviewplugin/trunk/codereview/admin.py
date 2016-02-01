@@ -5,7 +5,7 @@ from trac.core import Component, implements
 from trac.web.chrome import add_warning
 
 from dbBackend import dbBackend
-from model import Review, Vote
+from model import Review, Vote, get_threshold, set_threshold
 
 __author__ = 'Cinc'
 
@@ -24,10 +24,7 @@ def calculate_review_status(env, newThreshold):
         return vote_ratio
 
     if newThreshold is not None:
-        db = env.get_read_db()
-        dbBack = dbBackend(db)
-
-        dbBack.setThreshold(newThreshold)
+        set_threshold(env, newThreshold)
         newThreshold = float(newThreshold)/100
 
         all_reviews = Review.select(env)
@@ -75,6 +72,6 @@ class MgrOptionsAdminPlugin(Component):
                 calculate_review_status(self.env, percentage)
                 req.redirect(req.href.admin(cat, page))
 
-        data = {'percentage': dbBack.getThreshold()}
+        data = {'percentage': get_threshold(self.env)}
 
         return 'admin_mgr_options.html', data

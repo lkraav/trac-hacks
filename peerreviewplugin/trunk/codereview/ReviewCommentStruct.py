@@ -55,20 +55,20 @@ class ReviewCommentStruct(object):
             #Add information to a new database entry
             cursor = db.cursor()
             cursor.execute("""
-                INSERT INTO ReviewComments (IDFile, IDParent, LineNum,
-                  Author, Text, AttachmentPath, DateCreate)
+                INSERT INTO peer_review_comment (file_id, parent_id, line_num,
+                author, comment, attachment_path, created)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """, (self.IDFile, self.IDParent, self.LineNum, self.Author,
                       self.Text, self.AttachmentPath, self.DateCreate))
-            self.IDComment = db.get_last_id(cursor, 'ReviewComments', 'IDComment')
+            self.IDComment = db.get_last_id(cursor, 'peer_review_comment', 'comment_id')
             db.commit()
         else:
             #Update information in existing database entry
             cursor = db.cursor()
             cursor.execute("""
-                UPDATE ReviewComments SET IDFile=%s, IDParent=%s, LineNum=%s,
-                  Author=%s, Text=%s, AttachmentPath=%s, DateCreate=%s
-                WHERE IDComment=%s
+                UPDATE peer_review_comment SET file_id=%s, IDParent=%s, line_num=%s,
+                  author=%s, comment=%s, attachment_path=%s, created=%s
+                WHERE comment_id=%s
                 """, (self.IDFile, self.IDParent, self.LineNum, self.Author,
                       self.Text, self.AttachmentPath, self.DateCreate,
                       self.IDComment))

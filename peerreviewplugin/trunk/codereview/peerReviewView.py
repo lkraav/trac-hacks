@@ -22,7 +22,7 @@ from trac.wiki.formatter import format_to_html
 
 from dbBackend import *
 from ReviewerStruct import *
-from model import Review, ReviewFile, Reviewer, Vote
+from model import Review, ReviewFile, Reviewer, Vote, get_threshold
 from peerReviewMain import add_ctxt_nav_items
 
 class ViewReviewModule(Component):
@@ -183,7 +183,7 @@ class ViewReviewModule(Component):
         voteno = votes.no
         notvoted = votes.pending
         total_votes_possible = float(voteyes) + float(voteno) + float(notvoted)
-        threshold = float(dbBack.getThreshold())/100
+        threshold = float(get_threshold(self.env))/100
 
         # recalculate vote ratio, while preventing divide by zero tests, and change status if necessary
         if total_votes_possible != 0:

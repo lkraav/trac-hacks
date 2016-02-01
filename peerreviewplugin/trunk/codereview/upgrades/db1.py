@@ -1,20 +1,17 @@
+# -*- coding: utf-8 -*-
 #
-# Copyright (C) 2005-2006 Team5
+# Copyright (C) 2016 Cinc
 # All rights reserved.
 #
-# This software is licensed as described in the file COPYING.txt, which 
+# This software is licensed as described in the file COPYING.txt, which
 # you should have received as part of this distribution.
 #
-# Author: Team5
+# Author: Cinc
 #
+from trac.db import Table, Column, DatabaseManager
 
-from trac.db.schema import Table, Column
+#The tables for the Code Review Plugin database version 1
 
-
-# Version of Code Review schema
-version = 1
-
-#The tables for the Code Review Plugin
 tables = [
     Table('CodeReviews', key='IDReview')[
         Column('IDReview', auto_increment=True, type='int'),
@@ -49,3 +46,12 @@ tables = [
         Column('DateCreate', type='int'),
     ],
 ]
+
+def do_upgrade(env, ver, cursor):
+    """Add tables."""
+    db_connector, _ = DatabaseManager(env).get_connector()
+    for tbl in tables:
+        for stmt in db_connector.to_sql(tbl):
+            cursor.execute(stmt)
+
+    cursor.execute("INSERT INTO system VALUES (%s, %s)", ('CodeReviewVoteThreshold', 0))

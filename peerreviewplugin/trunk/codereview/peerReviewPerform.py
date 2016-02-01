@@ -139,7 +139,7 @@ class UserbaseModule(Component):
             node = get_existing_node(self.env, repos, rfile.path, rfile.version)
         except:
             youngest_rev = repos.get_youngest_rev()
-            node = get_existing_node(self.env, repos, rfile.Path, youngest_rev)
+            node = get_existing_node(self.env, repos, rfile.path, youngest_rev)
 
         #if the node can't be found - display error message
         if node is None:

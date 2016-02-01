@@ -44,18 +44,18 @@ class CodeReviewStruct(object):
             #Add information to a new database entry
             cursor = db.cursor()
             cursor.execute("""
-                INSERT INTO CodeReviews (Author, Status, DateCreate, Name, Notes)
+                INSERT INTO peer_review (owner, status, created, name, notes)
                 VALUES (%s, %s, %s, %s, %s)
                 """, (self.Author, self.Status, self.DateCreate,
                       self.Name, self.Notes))
-            self.IDReview = db.get_last_id(cursor, 'CodeReviews', 'IDReview')
+            self.IDReview = db.get_last_id(cursor, 'peer_review', 'review_id')
             db.commit()
         else:
             #Update information in existing database entry
             cursor = db.cursor()
             cursor.execute("""
-                UPDATE CodeReviews SET Author=%s, Status=%s, DateCreate=%s,
-                  Name=%s, Notes=%s WHERE IDReview=%s
+                UPDATE peer_review SET owner=%s, status=%s, created=%s,
+                  name=%s, notes=%s WHERE review_id=%s
                 """, (self.Author, self.Status, self.DateCreate, self.Name,
                       self.Notes, self.IDReview))
             db.commit()

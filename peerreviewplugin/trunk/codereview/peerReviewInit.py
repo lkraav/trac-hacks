@@ -10,29 +10,33 @@
 
 from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
+from trac.util.text import _
 
-import db_default
-
+db_name_old = 'codereview_version'  # for database version 1
+db_name = 'peerreview_version'
+db_version = 2
 
 class PeerReviewInit(Component):
     """ Initialise database and environment for codereview plugin """
     implements(IEnvironmentSetupParticipant)
 
+    current_db_version = 0
+
     # IEnvironmentSetupParticipant
     def environment_created(self):
-        self.found_db_version = 0
+        self.current_db_version = 0
         self.upgrade_environment(self.env.get_db_cnx())
     
     def environment_needs_upgrade(self, db):
-        cursor = db.cursor()
-        cursor.execute("SELECT value FROM system WHERE name = 'codereview_version'")
-        value = cursor.fetchone()
-        if not value:
-            self.found_db_version = 0
+        self.current_db_version = self._get_version(db.cursor())
+
+        if self.current_db_version < db_version:
+            self.log.info("PeerReview plugin database schema version is %d, should be %d",
+                          self.current_db_version, db_version)
             return True
-        else:
-            self.found_db_version = int(value[0])
-            return self.found_db_version < db_default.version
+        if self.current_db_version > db_version:
+            raise TracError(_("Database newer than PeerReview plugin version"))
+        return False
 
     def upgrade_environment(self, db):
         # 0.10 compatibility hack (thanks Alec)
@@ -44,19 +48,39 @@ class PeerReviewInit(Component):
 
         # Insert the default table
         cursor = db.cursor()
-        if not self.found_db_version:
-            cursor.execute("INSERT INTO system (name, value) VALUES ('codereview_version', %s)",
-                           (db_default.version,))
-            cursor.execute("INSERT INTO system VALUES ('CodeReviewVoteThreshold', '0')")
-        else:
-            cursor.execute("UPDATE system SET value = %s WHERE name = 'codereview_version'",
-                           (db_default.version,))
-            for tbl in db_default.tables:
-                try:
-                    cursor.execute('DROP TABLE %s'%tbl.name,)
-                except:
-                    pass
+        for i in range(self.current_db_version + 1, db_version + 1):
+            name = 'db%i' % i
+            try:
+                upgrades = __import__('upgrades', globals(), locals(), [name])
+                script = getattr(upgrades, name)
+            except AttributeError:
+                raise TracError(_("No PeerReview upgrade module %(num)i "
+                                  "(%(version)s.py)", num=i, version=name))
+            script.do_upgrade(self.env, i, cursor)
 
-        for tbl in db_default.tables:
-            for sql in db_manager.to_sql(tbl):
-                cursor.execute(sql)
+            self._set_version(cursor, i)
+            db.commit()
+
+        return
+
+    def _get_version(self, cursor):
+        cursor.execute("SELECT value FROM system WHERE name = %s", (db_name_old,))
+        value = cursor.fetchone()
+        val = int(value[0]) if value else 0
+        if not val:
+            # Database version > 1 or no datavase yet
+            cursor.execute("SELECT value FROM system WHERE name = %s", (db_name,))
+            value = cursor.fetchone()
+            val = int(value[0]) if value else 0
+        return val
+
+    def _set_version(self, cursor, cur_ver):
+        if not self.current_db_version:
+            cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
+                           (db_name, cur_ver))
+        else:
+            cursor.execute("UPDATE system SET value = %s WHERE name = %s",
+                           (db_version, db_name))
+            if cursor.rowcount == 0:
+                cursor.execute("INSERT INTO system (name,value) VALUES (%s,%s)",
+                               (db_name, db_version))

@@ -32,7 +32,8 @@ class dbBackend(object):
         return newStr
 
     def getCodeReviewsInPeriod(self, date_from, date_to):
-        query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE DateCreate >= '%s' AND DateCreate <= '%s' ORDER BY DateCreate" % (date_from, date_to)
+        query = "SELECT review_id, owner, status, created, name, notes FROM peer_review " \
+                "WHERE created >= '%s' AND created <= '%s' ORDER BY created" % (date_from, date_to)
         return self.execCodeReviewQuery(query, False)
 
     #Returns an array of code reviews which have a namwe like any of the
@@ -40,62 +41,44 @@ class dbBackend(object):
     def searchCodeReviewsByName(self, name):
         queryPart = self.createORLoop(name, "Name")
         if len(queryPart) == 0:
-            query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews"
+            query = "SELECT review_id, owner, status, created, name, notes FROM peer_review"
         else:
-            query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE %s" % (queryPart)
+            query = "SELECT review_id, owner, status, created, name, notes FROM peer_review WHERE %s" % (queryPart)
         return self.execCodeReviewQuery(query, True)
 
     #Returns an array of code reviews that match the values in the given
     #code review structure.  The 'name' part is treated as a keyword list
     def searchCodeReviews(self, crStruct):
-        query = "SELECT IDReview, Author, Status, DateCreate, Name, Notes FROM CodeReviews WHERE "
-        queryPart = self.createORLoop(crStruct.Name, "Name")
+        query = "SELECT review_id, owner, status, created, name, notes FROM peer_review WHERE "
+        queryPart = self.createORLoop(crStruct.Name, "name")
         if len(queryPart) != 0:
             query = query + "(%s) AND " % (queryPart)
-        query = query + "Author LIKE '%s%s%s' AND Status LIKE '%s%s%s' AND DateCreate >= '%s'" % ('%', crStruct.Author, '%', '%', crStruct.Status, '%', crStruct.DateCreate)
+        query = query + "owner LIKE '%s%s%s' AND status LIKE '%s%s%s' AND created >= '%s'" % \
+                        ('%', crStruct.Author, '%', '%', crStruct.Status, '%', crStruct.DateCreate)
         return self.execCodeReviewQuery(query, False)
 
     #Returns the requested comment
     def getCommentByID(self, id):
-        query = "SELECT IDComment, IDFile, IDParent, LineNum, Author, Text, AttachmentPath, DateCreate FROM ReviewComments WHERE IDComment = '%s'" % (id)
+        query = "SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created " \
+                "FROM peer_review_comment WHERE comment_id = '%s'" % (id)
         return self.execReviewCommentQuery(query, True)
 
     #Returns an array of comments for the given file
     def getCommentsByFileID(self, id):
-        query = "SELECT IDComment, IDFile, IDParent, LineNum, Author, Text, AttachmentPath, DateCreate FROM ReviewComments WHERE IDFile = '%s' ORDER BY DateCreate" % (id)
+        query = "SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created " \
+                "FROM peer_review_comment WHERE file_id = '%s' ORDER BY created" % (id)
         return self.execReviewCommentQuery(query, False)
 
     #Returns all the comments for the given file on the given line
     def getCommentsByFileIDAndLine(self, id, line):
-        query = "SELECT IDComment, IDFile, IDParent, LineNum, Author, Text, AttachmentPath, DateCreate FROM ReviewComments WHERE IDFile = '%s' AND LineNum = '%s' ORDER BY DateCreate" % (id, line)
+        query = "SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created " \
+                "FROM peer_review_comment WHERE file_id = '%s' AND line_num = '%s' ORDER BY created" % (id, line)
         return self.execReviewCommentQuery(query, False)
-
-    #Returns the current "Threshold" for code to be ready for inclusion
-    def getThreshold(self):
-        query = "SELECT value FROM system WHERE name = 'CodeReviewVoteThreshold'"
-        cursor = self.db.cursor()
-        cursor.execute(query)
-        row = cursor.fetchone()
-        if not row:
-            return 0
-        numVal = 0
-        try:
-            numVal = string.atoi(row[0])
-        except:
-            return 0
-        return numVal
-
-    #Sets the "Threshold" to the given value
-    def setThreshold(self, val):
-        query = "UPDATE system SET value = '%s' WHERE name = 'CodeReviewVoteThreshold'" % (val)
-        cursor = self.db.cursor()
-        cursor.execute(query)
-        self.db.commit()
 
     #Returns a dictionary where the key is the line number and the value is the number of comments on that line
     #for the given file id.
     def getCommentDictForFile(self, id):
-        query = "SELECT LineNum, Count(IDComment) FROM ReviewComments WHERE IDFile = '%s' GROUP BY LineNum" % (id)
+        query = "SELECT line_num, Count(comment_id) FROM peer_review_comment WHERE file_id = '%s' GROUP BY line_num" % (id)
         cursor = self.db.cursor()
         cursor.execute(query)
         rows = cursor.fetchall()
