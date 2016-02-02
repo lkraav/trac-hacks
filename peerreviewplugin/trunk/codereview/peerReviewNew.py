@@ -16,7 +16,7 @@ import time
 
 from trac import util
 from trac.core import Component, implements, TracError
-from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, add_notice
+from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, add_notice, add_stylesheet
 from trac.web.main import IRequestHandler
 
 from CodeReviewStruct import *
@@ -129,6 +129,8 @@ class NewReviewModule(Component):
         data['users'] = allUsers
         data['cycle'] = itertools.cycle
 
+        add_stylesheet(req, 'common/css/browser.css')
+        add_stylesheet(req, 'common/css/code.css')
         add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser()})
         add_javascript(req, "hw/js/peer_review_new.js")
         add_ctxt_nav_items(req)

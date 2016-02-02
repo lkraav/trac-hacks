@@ -7,18 +7,24 @@
   <xi:include href="layout.html" />
   <xi:include href="macros.html" />
   <head>
-    <title>Code Review</title>
+    <title>Code Review Details - ${review.name}</title>
   </head>
 <body>
 
-  <h1>Code Review Details</h1>
-  <p>
-  Code review name: ${review.name}<br />
-  Code review status: ${review.status}<br />
-  Author:  ${review.author}<br />
-  Creation Date:  ${review.creation_date}<br />
-  <br />
-  </p>
+  <h1>Code Review Details - ${review.name}</h1>
+  <div>
+      <dl>
+          <dt>Code review name:</dt><dd>${review.name}</dd>
+          <dt>Code review status:</dt><dd>${review.status}</dd>
+          <dt>Author:</dt><dd>${review.author}</dd>
+          <dt>Creation Date:</dt><dd>${review.creation_date}</dd>
+      </dl>
+  </div>
+  <div py:if="notes">
+        <dl>
+              <dt>Author notes:</dt><dd>$notes</dd>
+        </dl>
+  </div>
   <script type="text/javascript">
     function handlerowclick(num){
     }
@@ -89,11 +95,6 @@
     </tbody>
   </table>
 
-
-  <py:if test="notes">
-      <h2>Author's notes and instructions</h2>
-      $notes
-  </py:if>
   <py:if test="viewvotesummary">
   <h2>Vote summary</h2>
   <table width = "35%">

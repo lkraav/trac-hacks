@@ -1,7 +1,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
     xmlns:py="http://genshi.edgewall.org/"
     xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
-  <xi:include href="macros.html" />
 
   <head>
     <title>Code Review Browser</title>
@@ -17,8 +16,16 @@
   </th>
 </py:def>
 
+<py:def function="sizeinfo(size)">
+            <span title="${_('%(size)s bytes', size=size)}">
+                ${pretty_size(size)}</span>
+</py:def>
+
 <div id="content" class="browser">
-  <h2><xi:include href="path_links.html" /></h2>
+  <div>
+      <p>Current path:</p>
+      <xi:include href="path_links.html" />
+  </div>
 
       <div id="jumprev">
           <div>
@@ -28,22 +35,22 @@
           </div>
       </div>
 
-  <table py:if="dir" class="listing" id="dirlist">
+  <table py:if="dir" class="listing dirlist" id="dirlist">
     <thead>
       <tr>
-          <th></th>
-        ${sortable_th(dir.order, dir.desc, 'name', 'Name')}
-        ${sortable_th(dir.order, dir.desc, 'size', 'Size')}
-        <th class="rev">Rev</th>
-        ${sortable_th(dir.order, dir.desc, 'date', 'Age')}
-        <th class="change">Last Change</th>
+            <th></th>
+            <th class="name">Name</th>
+            <th class="size">Size</th>
+            <th class="rev">Rev</th>
+            <th class="date">Age</th>
+            <th class="author">Author</th>
+            <th class="change">Last Change</th>
       </tr>
     </thead>
     <tbody style="overflow: auto; max-height: 400px">
       <py:if test="'up' in chrome.links">
         <tr class="even">
-          <td class="name" colspan="5">
-            <td></td>
+          <td class="name" colspan="7">
             <a class="parent" title="Parent Directory" href="${chrome.links.up[0].href}">../</a>
           </td>
         </tr>
@@ -74,9 +81,17 @@
             <td class="age">
               <span title="${dir.changes[item.rev].date}">${dir.changes[item.rev] and dateinfo(dir.changes[item.rev].date) or '-'}</span>
             </td>
+              <td class="author">
+                  ${dir.changes[item.rev].author}
+              </td>
             <td class="change">
-              <span class="author">${dir.changes[item.rev].author}:</span>
-              <span class="change">${dir.changes[item.rev].message}</span>
+                <py:if test="wiki_format_messages">
+                ${wiki_to_oneliner(context('changeset', item.rev, parent=repos.resource),
+                dir.changes[item.rev].message, shorten=True)}
+                </py:if>
+                <py:if test="not wiki_format_messages">
+                    ${shorten_line(dir.changes[item.rev].message)}
+                </py:if>
             </td>
           </tr>
         </py:with>
@@ -101,10 +116,7 @@
           <ul class="props">
             <li py:for="prop in props">
             Property <strong>${prop.name}</strong> set to
-            <py:choose>
-              <em py:when="istext(prop.value)"><code>${prop.value}</code></em>
-              <py:otherwise>${prop.value}</py:otherwise>
-            </py:choose>
+              <em><code>${prop.value}</code></em>
             </li>
           </ul>
         </td>

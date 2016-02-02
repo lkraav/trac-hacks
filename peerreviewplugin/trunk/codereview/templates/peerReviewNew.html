@@ -20,9 +20,8 @@
   <form method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);">
     Name: <input type="text" name="Name" MAXLENGTH="50" value="${name}" /><br />
 
-    <h2>Step 2: Select the sections to be reviewed.</h2><br />
+    <h2>Step 2: Select the sections to be reviewed.</h2>
     <!-- Displays the file browser -->
-    <span id="browserArea"></span>
     <div id="repo_browser"></div>
     <table class="listing" id="myfilelist">
       <thead>
@@ -128,9 +127,6 @@
 
   </form>
 
-  <script type="text/javascript">
-    var browserCallback = "${href.peerReviewBrowser()}";
-  </script>
   <script type="text/javascript" src="${href.chrome('hw/js/peerReviewNew.js')}"/>
 
   </body>

@@ -16,11 +16,13 @@ from trac import util
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
+from trac.resource import ResourceNotFound
 from trac.util import embedded_numbers
-from trac.versioncontrol.api import RepositoryManager
+from trac.util.text import _
+from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
-from trac.web.chrome import add_link, add_stylesheet
+from trac.web.chrome import add_link
 from trac.wiki import wiki_to_html
 
 IMG_RE = re.compile(r"\.(gif|jpg|jpeg|png)(\?.*)?$", re.IGNORECASE)
@@ -44,7 +46,7 @@ def _natural_order(x, y):
         nx, ny = a.end(), b.end()
 
 
-class peerReviewBrowser(Component):
+class PeerReviewBrowser(Component):
     implements(IRequestHandler, IHTMLPreviewAnnotator)
 
     # ITextAnnotator methods
@@ -81,20 +83,29 @@ class peerReviewBrowser(Component):
 
         repos = RepositoryManager(self.env).get_repository('')
 
+        # Find node for the requested path/rev
+        context = Context.from_request(req)
+        node = None
         display_rev = lambda rev: rev
         if repos:
+            try:
+                if rev:
+                    rev = repos.normalize_rev(rev)
+                # If `rev` is `None`, we'll try to reuse `None` consistently,
+                # as a special shortcut to the latest revision.
+                rev_or_latest = rev or repos.youngest_rev
+                node = get_existing_node(req, repos, path, rev_or_latest)
+            except NoSuchChangeset, e:
+                raise ResourceNotFound(e.message,
+                                       _('Invalid changeset number'))
+
+            context = context(repos.resource.child('source', path,
+                                                   version=rev_or_latest))
             display_rev = repos.display_rev
 
-        try:
-            node = get_existing_node(self.env, repos, path, rev)
-        except:
-            rev = repos.get_youngest_rev()
-            node = get_existing_node(self.env, repos, path, rev)
-       
         hidden_properties = [p.strip() for p
                              in self.config.get('browser', 'hide_properties',
                                                 'svk:merge').split(',')]
-        context = Context.from_request(req, 'source', path, node.created_rev)
 
         path_links = self.get_path_links_CRB(self.env.href, path, rev)
         if len(path_links) > 1:
@@ -102,19 +113,19 @@ class peerReviewBrowser(Component):
 
         data = {
             'path': path, 'rev': node.rev, 'stickyrev': rev,
+            'context': context,
+            'repos': repos,
             'revision': rev or repos.get_youngest_rev(),
-            'props': dict([(util.escape(name), util.escape(value))
+            'props': [{'name': util.escape(name), 'value': util.escape(value)}
                            for name, value in node.get_properties().items()
-                           if not name in hidden_properties]),
+                           if name not in hidden_properties],
             'log_href': util.escape(self.env.href.log(path, rev=rev or None)),
             'path_links': path_links,
             'dir': node.isdir and self._render_directory(req, repos, node, rev),
             'file': node.isfile and self._render_file(req, context, repos, node, rev),
             'display_rev': display_rev,
+            'wiki_format_messages': self.config['changeset'].getbool('wiki_format_messages')
         }
-
-        add_stylesheet(req, 'common/css/browser.css')
-        add_stylesheet(req, 'common/css/code.css')
         return 'peerReviewBrowser.html', data, None
 
     # Internal methods
@@ -138,19 +149,6 @@ class peerReviewBrowser(Component):
         order = req.args.get('order', 'name').lower()
         desc = req.args.has_key('desc')
 
-        # Entries metadata
-        class entry(object):
-            __slots__ = 'name rev kind isdir path content_length'.split()
-            def __init__(self, node):
-                for f in entry.__slots__:
-                    setattr(self, f, getattr(n, f))
-            def display(self):
-                result = ''
-                for f in entry.__slots__:
-                    result = "%s slot: %s, value: %s;" % (result, f, getattr(n, f))
-
-                return result
-
         info = []
 
         if order == 'date':
@@ -170,18 +168,19 @@ class peerReviewBrowser(Component):
             return a.isdir and dir_order or 0, file_order(a)
 
         for entry in node.get_entries():
-            info.append({
-                'name': entry.name,
-                'fullpath': entry.path,
-                'is_dir': int(entry.isdir),
-                'content_length': entry.content_length,
-                'size': util.pretty_size(entry.content_length),
-                'rev': entry.rev,
-                'permission': 1,  # FIXME
-                'log_href': util.escape(self.env.href.log(entry.path, rev=rev)),
-                'browser_href': util.escape(self.env.href.peerReviewBrowser(entry.path,
-                                                                  rev=rev))
-            })
+            if entry.can_view(req.perm):
+                info.append({
+                    'name': entry.name,
+                    'fullpath': entry.path,
+                    'is_dir': int(entry.isdir),
+                    'content_length': entry.content_length,
+                    'size': util.pretty_size(entry.content_length),
+                    'rev': entry.created_rev,
+                    'permission': 1,  # FIXME
+                    'log_href': util.escape(self.env.href.log(entry.path, rev=rev)),
+                    'browser_href': util.escape(self.env.href.peerReviewBrowser(entry.path, rev=rev))
+                    })
+
         changes = get_changes(repos, [i['rev'] for i in info])
 
         def cmp_func(a, b):
@@ -249,8 +248,6 @@ class peerReviewBrowser(Component):
                 plain_href = req.href.browser(node.path, rev=rev, format='txt')
                 add_link(req, 'alternate', plain_href, 'Plain Text',
                          'text/plain')
-
-            add_stylesheet(req, 'common/css/code.css')
 
             raw_href = self.env.href.peerReviewBrowser(node.path, rev=rev and node.rev,
                                              format='raw')
