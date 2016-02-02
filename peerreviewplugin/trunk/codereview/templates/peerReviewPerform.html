@@ -5,32 +5,47 @@
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="layout.html" />
-  <xi:include href="macros.html" />
+  <!--<xi:include href="macros.html" />-->
 
   <head>
-    <title>Code Review</title>
+    <title>Review File - $review_file.name</title>
   </head>
 
 <body>
-
+  <h3>Review Information</h3>
+  <table class="info-table" style="width:50%;border-collapse: collapse">
+      <tr>
+          <th>Name:</th>
+          <td>$review.name</td>
+      </tr>
+      <tr>
+          <th>Status:</th>
+          <td py:if="review.status !='Closed'">$review.status</td>
+          <td py:if="review.status =='Closed'"><strong>$review.status</strong></td>
+      </tr>
+  </table>
   <h3>File Information</h3>
-
-  <table border="0" width="100%" style="border-collapse: collapse" id="infoTable">
+  <table class="info-table" style="width:50%;border-collapse: collapse" id="infoTable">
       <tr>
-          <td>Path: ${review_file.path}</td>
+          <th>Path:</th>
+          <td>${review_file.path}</td>
       </tr>
       <tr>
-          <td>Revision: ${review_file.version}</td>
+          <th>Revision:</th>
+          <td>${review_file.version}</td>
       </tr>
       <tr>
-          <td>Start Line: ${review_file.start}<br /></td>
+          <th>Start Line:</th>
+          <td>${review_file.start}<br /></td>
       </tr>
       <tr>
-          <td>End Line: ${review_file.end}<br /></td>
+          <th>End Line:</th>
+          <td>${review_file.end}<br /></td>
       </tr>
   </table>
   <br />
 
+  <!-- <xi:include href="diff.html" /> -->
   <table border="0" width="100%" style="border-collapse: collapse" id="table1">
     <tr>
       <td align="left"><font size="2">Click line number to Add/View comments</font></td>
@@ -48,8 +63,10 @@
   Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page
   <br /><br />
 
-  <div id="ViewCommentArea" style="position:absolute;left:0px;top:0px;z-index:1;display:none;width:455px;height:500px;" cellpadding="0" cellspacing="0">
-    <table width="450px" bgcolor="#F7F7F7" style="border-collapse: collapse;">
+  <div id="ViewCommentArea"
+       style="position:absolute;left:0px;top:0px;z-index:1;display:none;width:455px;height:500px;background-color:#F7F7F7"
+       cellpadding="0" cellspacing="0">
+    <table width="450px" style="border-collapse: collapse;">
       <tr height="15px">
         <td id="ViewCommentTitle" width="432px" onmousedown="dragStart(event, 'ViewCommentArea');"
             style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"

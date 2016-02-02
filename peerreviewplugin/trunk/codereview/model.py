@@ -93,7 +93,6 @@ class Reviewer(object):
     def select_by_review_id(cls, env, review_id, rev_name=None):
         db = env.get_read_db()
         cursor = db.cursor()
-        # TODO: change query when database schema is adjusted
         if rev_name:
             sql = "SELECT review_id, reviewer, status, vote FROM peer_reviewer WHERE review_id = %s " \
                   "AND reviewer = %s"
@@ -125,7 +124,6 @@ class Review(object):
         if review_id:
             db = self.env.get_read_db()
             cursor = db.cursor()
-            # TODO: change query when database schema is adjusted
             cursor.execute("""
                 SELECT review_id, owner, status, created, name, notes FROM peer_review WHERE review_id=%s
                 """, (review_id,))
@@ -176,7 +174,6 @@ class Review(object):
     def select(cls, env):
         db = env.get_read_db()
         cursor = db.cursor()
-        # TODO: change query when database schema is adjusted
         cursor.execute("SELECT review_id, owner, status, created, name, notes FROM peer_review "
                        "ORDER BY created")
         reviews = []
@@ -190,7 +187,6 @@ class Review(object):
     def select_by_reviewer(cls, env, reviewer):
         db = env.get_read_db()
         cursor = db.cursor()
-        # TODO: change query when database schema is adjusted
         cursor.execute("SELECT cr.review_id, cr.owner, cr.status, cr.created, cr.name, cr.notes FROM "
                        "peer_review AS cr JOIN peer_reviewer AS r ON cr.review_id = r.review_id "
                        "WHERE r.reviewer=%s"
@@ -210,7 +206,6 @@ class ReviewFile(object):
         if file_id:
             db = self.env.get_read_db()
             cursor = db.cursor()
-            # TODO: change query when database schema is adjusted
             cursor.execute("""
                 SELECT file_id, review_id, path, line_start, line_end, revision FROM peer_review_file WHERE file_id=%s
                 """, (file_id,))
@@ -245,7 +240,6 @@ class ReviewFile(object):
     def select_by_review(cls, env, review_id):
         db = env.get_read_db()
         cursor = db.cursor()
-        # TODO: change query when database schema is adjusted
         cursor.execute("SELECT f.file_id, f.review_id, f.path, f.line_start, f.line_end, f.revision FROM "
                        "peer_review_file AS f WHERE f.review_id=%s"
                        "ORDER BY f.path", (review_id,))
@@ -255,3 +249,33 @@ class ReviewFile(object):
             rev_file._init_from_row(row)
             files.append(rev_file)
         return files
+
+
+class Comment(object):
+
+    def __init__(self, env, file_id=None):
+        self._init_from_row((None,)*8)
+
+    def _init_from_row(self, row):
+        comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created = row
+        self.comment_id = comment_id
+        self.file_id = file_id
+        self.parent_id = parent_id
+        self.line_num = line_num
+        self.author = author
+        self.comment = comment
+        self.attachment_path = attachment_path
+        self.created = created
+
+    @classmethod
+    def select_by_file_id(cls, env, file_id):
+        db = env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created FROM "
+                       "peer_review_comment WHERE file_id=%s ORDER BY line_num", (file_id,))
+        comments = []
+        for row in cursor:
+            c = cls(env)
+            c._init_from_row(row)
+            comments.append(c)
+        return comments

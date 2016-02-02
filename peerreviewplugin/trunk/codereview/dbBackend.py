@@ -74,20 +74,6 @@ class dbBackend(object):
                 "FROM peer_review_comment WHERE file_id = '%s' AND line_num = '%s' ORDER BY created" % (id, line)
         return self.execReviewCommentQuery(query, False)
 
-    #Returns a dictionary where the key is the line number and the value is the number of comments on that line
-    #for the given file id.
-    def getCommentDictForFile(self, id):
-        query = "SELECT line_num, Count(comment_id) FROM peer_review_comment WHERE file_id = '%s' GROUP BY line_num" % (id)
-        cursor = self.db.cursor()
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        d = {}
-        if not rows:
-            return d
-        for row in rows:
-            d[row[0]] = row[1]
-        return d
-
     #Returns all the possible users who can review a code review
     def getPossibleUsers(self):
         cursor = self.db.cursor()
