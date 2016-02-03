@@ -35,8 +35,9 @@ class SimpleTicketModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith('/newticket') and \
-                data is not None and 'fields' in data and \
+        if template is not None and data is not None and \
+                req.path_info.startswith('/newticket') and \
+                'fields' in data and \
                 data['fields'] is not None:
             if 'TICKET_CREATE_SIMPLE' in req.perm and \
                     not 'TRAC_ADMIN' in req.perm:
