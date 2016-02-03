@@ -25,7 +25,8 @@ setup(
     package_data={'codereview': ['templates/*.html',
                                  'htdocs/images/*.png',
                                  'htdocs/images/*.gif',
-                                 'htdocs/js/*.js']},
+                                 'htdocs/js/*.js',
+                                 'htdocs/css/*.css']},
     entry_points={
         'trac.plugins': [
             'codereview = codereview',

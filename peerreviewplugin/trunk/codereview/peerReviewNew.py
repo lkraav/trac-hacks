@@ -131,6 +131,7 @@ class NewReviewModule(Component):
 
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
+        add_stylesheet(req, 'hw/css/peerreview.css')
         add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser()})
         add_javascript(req, "hw/js/peer_review_new.js")
         add_ctxt_nav_items(req)

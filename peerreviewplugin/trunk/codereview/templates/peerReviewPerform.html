@@ -13,7 +13,7 @@
 
 <body>
   <h3>Review Information</h3>
-  <table class="info-table" style="width:50%;border-collapse: collapse">
+  <table class="info-table" id="review-info">
       <tr>
           <th>Name:</th>
           <td>$review.name</td>
@@ -23,9 +23,12 @@
           <td py:if="review.status !='Closed'">$review.status</td>
           <td py:if="review.status =='Closed'"><strong>$review.status</strong></td>
       </tr>
+
   </table>
+  <p style="margin-top:1em;">Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
+
   <h3>File Information</h3>
-  <table class="info-table" style="width:50%;border-collapse: collapse" id="infoTable">
+  <table class="info-table" id="file-info">
       <tr>
           <th>Path:</th>
           <td>${review_file.path}</td>
@@ -48,10 +51,13 @@
   <!-- <xi:include href="diff.html" /> -->
   <table border="0" width="100%" style="border-collapse: collapse" id="table1">
     <tr>
-      <td align="left"><font size="2">Click line number to Add/View comments</font></td>
-      <td py:if="not fullrange" align="right"><font size="2">View <input type="text" id="SelectRangeTextBox"
+      <td align="left">
+          <p>Click line number to Add/View comments</p>
+      </td>
+      <td py:if="not fullrange" align="right">
+          <p>View <input type="text" id="SelectRangeTextBox"
                          size="1" value="3" onKeyDown="if(event.keyCode == 13 || event.keyCode == 3){resetLines();}"
-                         style="text-align: center" /> lines on either side of selection.</font>
+                         style="text-align: center" /> lines on either side of selection.</p>
       </td>
     </tr>
   </table>
@@ -59,16 +65,14 @@
   <!-- displays the contents of the file being reviewed -->
   <div id="FilePreview">${file}</div>
 
-  <br />
-  Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page
-  <br /><br />
 
-  <div id="ViewCommentArea"
-       style="position:absolute;left:0px;top:0px;z-index:1;display:none;width:455px;height:500px;background-color:#F7F7F7"
-       cellpadding="0" cellspacing="0">
-    <table width="450px" style="border-collapse: collapse;">
+  <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
+
+
+  <div id="ViewCommentArea" style="display:none">
+    <table class="comment-table">
       <tr height="15px">
-        <td id="ViewCommentTitle" width="432px" onmousedown="dragStart(event, 'ViewCommentArea');"
+        <td id="ViewCommentTitle" onmousedown="dragStart(event, 'ViewCommentArea');"
             style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
             background="${href.chrome('/hw/images/top_bar_repeater_1x17.gif')}">
         </td>
@@ -99,8 +103,8 @@
     </table>
   </div>
 
-  <div id="AddCommentArea" style="position:absolute;left:0px;top:0px;z-index:1;display:none;width:305px;height:325px;">
-    <table width="300px" bgcolor="#F7F7F7" style="border-collapse: collapse;">
+  <div id="AddCommentArea" style="display:none;">
+    <table class="comment-table" width="300px">
       <tr height="15px">
         <td id="AddCommentTitleArea" width="282px" onmousedown="dragStart(event, 'AddCommentArea');"
             style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
@@ -137,10 +141,6 @@
     var lineEnd = ${review_file.end};
   </script>
   <script type="text/javascript" src="${href.chrome('/hw/js/peerReviewPerform.js')}"></script>
-
-  <style>
-    table.code th.performCodeReview { width: 4em;}
-  </style>
 
   </body>
 </html>

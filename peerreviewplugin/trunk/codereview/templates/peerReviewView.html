@@ -97,22 +97,22 @@
 
   <py:if test="viewvotesummary">
   <h2>Vote summary</h2>
-  <table width = "35%">
+  <table width = "35%" id="vote-summary">
     <tr>
-      <td><strong>Vote tally:</strong></td>
-      <td><strong style="color:limegreen">Yes: ${votes.yes}</strong></td>
-      <td><strong style="color:red">No: ${votes.no}</strong></td>
-      <td><strong>Pending: ${votes.pending}</strong></td>
+      <td>Vote tally:</td>
+      <td class="yes">Yes: $votes.yes</td>
+      <td class="no">No: $votes.no</td>
+      <td class="pending">Pending: $votes.pending</td>
     </tr>
     <tr py:if="canivote">
-      <td><b>Your vote is:</b></td>
+      <td>Your vote is:</td>
       <td>
-        <strong>
           <py:if test="myvote == -1">Pending</py:if>
           <py:if test="myvote == 0"><span style="color:red">No</span></py:if>
           <py:if test="myvote == 1"><span style="color:limegreen">Yes</span></py:if>
-        </strong>
       </td>
+        <td></td>
+        <td></td>
     </tr>
   </table>
   </py:if>
