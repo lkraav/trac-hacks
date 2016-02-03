@@ -25,7 +25,7 @@ from trac.web.chrome import INavigationContributor, \
                             add_link, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
-from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
+from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset, NoSuchNode
 from peerReviewMain import add_ctxt_nav_items
 from model import ReviewFile, Review, Comment
 
@@ -80,7 +80,7 @@ class PeerReviewPerform(Component):
         #get the fileID from the request arguments
         idFile = req.args.get('IDFile')
         if not idFile:
-            TracError("No file ID given - unable to load page.", "File ID Error")
+            raise TracError("No file ID given - unable to load page.", "File ID Error")
 
         data['file_id'] = idFile
 
@@ -89,7 +89,7 @@ class PeerReviewPerform(Component):
         #get the file properties from the database
         rfile = ReviewFile(self.env, idFile)
         if not rfile:
-            TracError("Unable to locate given file ID in database.", "File ID Error")
+            raise TracError("Unable to locate given file ID in database.", "File ID Error")
 
         #get the respository
         repos = RepositoryManager(self.env).get_repository('')
@@ -103,7 +103,7 @@ class PeerReviewPerform(Component):
             data['fullrange'] = False
         #if the repository can't be found - display an error message
         if repos is None:
-            TracError("Unable to acquire subversion repository.", "Subversion Repository Error")
+            raise TracError("Unable to acquire subversion repository.", "Subversion Repository Error")
 
         #get the correct location - using revision number and repository path
         rev = rfile.version
@@ -119,8 +119,8 @@ class PeerReviewPerform(Component):
             raise TracError(e.message)
 
         #if the node can't be found - display error message
-        if node is None:
-            TracError("Unable to locate subversion node for this file.", "Subversion Node Error")
+        if not node:
+            raise TracError("Unable to locate subversion node for this file.", "Subversion Node Error")
 
         # Generate HTML preview - this code take from Trac - refer to their documentation
         mime_type = node.content_type

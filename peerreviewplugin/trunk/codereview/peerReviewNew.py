@@ -55,7 +55,7 @@ class NewReviewModule(Component):
         # if we tried resubmitting and the reviewID is not a valid number or not a valid code review, error
         review = Review(self.env, reviewID)
         if reviewID and (not reviewID.isdigit() or not review):
-            TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
+            raise TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
         # if we are resubmitting a code review and we are the author or the manager
         if reviewID and (review.author == req.authname or 'CODE_REVIEW_MGR' in req.perm):
@@ -108,7 +108,7 @@ class NewReviewModule(Component):
 
         #if we resubmitting a code review, and are neither the author and the manager
         elif reviewID and not review.author == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
-            TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
+            raise TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
 
         #if we are not resubmitting
         else:

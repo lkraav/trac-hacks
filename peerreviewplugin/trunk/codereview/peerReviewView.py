@@ -57,7 +57,7 @@ class ViewReviewModule(Component):
         # reviewID argument checking
         reviewID = req.args.get('Review')
         if reviewID is None or not reviewID.isdigit():
-            TracError(u"Invalid review ID supplied - unable to load page.")
+            raise TracError(u"Invalid review ID supplied - unable to load page.")
 
         if req.method == 'POST':
             if req.args.get('approved'):
