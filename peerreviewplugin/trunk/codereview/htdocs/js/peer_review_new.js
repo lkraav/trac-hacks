@@ -220,7 +220,7 @@ jQuery(document).ready(function($) {
        });
        $('#addfiles').on('click', function(){
             $('.fileselect:checked').each(function(idx){
-                 $('#fileRevVal').val($(this).data('rev'));
+                 /* $('#fileRevVal').val($(this).data('rev')); */
                  addFile($(this).val());
                  });
        });
