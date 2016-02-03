@@ -1,5 +1,11 @@
-# Created by Noah Kantrowitz on 2008-03-11.
-# Copyright (c) 2008 Noah Kantrowitz. All rights reserved.
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006-2008 Noah Kantrowitz <noah@coderanger.net>
+# Copyright (C) 2011-2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from trac.config import BoolOption, ListOption
 from trac.core import Component, implements

@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006-2008 Noah Kantrowitz <noah@coderanger.net>
+# Copyright (C) 2011-2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from setuptools import setup
 
@@ -14,7 +21,7 @@ setup(
     description='Restricted ticket entry form for Trac',
     long_description="""A Trac plugin that provides a configurable ticket
         entry form, with selected fields hidden from the user.""",
-    license='BSD 3-Clause',
+    license='3-Clause BSD',
     keywords='trac plugin restricted ticket',
     url='http://trac-hacks.org/wiki/SimpleTicketPlugin',
     classifiers=[
