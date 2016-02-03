@@ -4,7 +4,6 @@
 from trac.config import BoolOption, ListOption
 from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
-from trac.util.compat import set
 from trac.web.api import IRequestFilter
 
 
@@ -24,12 +23,12 @@ class SimpleTicketModule(Component):
     required_fields = set(['summary', 'reporter', 'owner',
                            'description', 'type', 'status'])
 
-    ### IPermissionRequestor methods
+    # IPermissionRequestor methods
 
     def get_permission_actions(self):
         yield 'TICKET_CREATE_SIMPLE', ['TICKET_CREATE']
 
-    ### IRequestFilter methods
+    # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
         return handler
@@ -40,9 +39,9 @@ class SimpleTicketModule(Component):
                 'fields' in data and \
                 data['fields'] is not None:
             if 'TICKET_CREATE_SIMPLE' in req.perm and \
-                    not 'TRAC_ADMIN' in req.perm:
-                self.log.debug('SimpleTicket: Filtering new ticket form for %s',
-                               req.authname)
+                    'TRAC_ADMIN' not in req.perm:
+                self.log.debug('SimpleTicket: Filtering new ticket form '
+                               'for %s', req.authname)
                 if self.show_only:
                     fields = set(self.fields) | self.required_fields
                     data['fields'] = [f for f in data['fields']
