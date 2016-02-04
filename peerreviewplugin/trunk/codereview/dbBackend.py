@@ -74,19 +74,6 @@ class dbBackend(object):
                 "FROM peer_review_comment WHERE file_id = '%s' AND line_num = '%s' ORDER BY created" % (id, line)
         return self.execReviewCommentQuery(query, False)
 
-    #Returns all the possible users who can review a code review
-    def getPossibleUsers(self):
-        cursor = self.db.cursor()
-        cursor.execute("SELECT DISTINCT p1.username as username FROM permission p1 left join permission p2 on p1.action = p2.username WHERE p1.action = 'CODE_REVIEW_DEV' OR p2.action = 'CODE_REVIEW_DEV' OR p1.action = 'CODE_REVIEW_MGR' OR p2.action = 'CODE_REVIEW_MGR'")
-        rows = cursor.fetchall()
-        if not rows:
-            return []
-
-        users = []
-        for row in rows:
-            users.append(row[0])
-        return users
-
     #A generic method for executing queries that return CodeReview structures
     #query: the query to execute
     #single: true if this query will always return only one result, false otherwise

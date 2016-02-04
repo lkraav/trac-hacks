@@ -20,8 +20,7 @@ from trac.web.chrome import INavigationContributor, add_javascript, add_script_d
 from trac.web.main import IRequestHandler
 
 from CodeReviewStruct import *
-from dbBackend import *
-from model import ReviewFile, Review, Reviewer
+from model import ReviewFile, Review, Reviewer, get_users
 from peerReviewMain import add_ctxt_nav_items
 
 class NewReviewModule(Component):
@@ -63,9 +62,7 @@ class NewReviewModule(Component):
 
         data = {}
 
-        db = self.env.get_read_db()
-        dbBack = dbBackend(db)
-        allUsers = dbBack.getPossibleUsers()
+        allUsers = get_users(self.env)
 
         reviewID = req.args.get('resubmit')
 

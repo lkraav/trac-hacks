@@ -20,8 +20,7 @@ from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
 
-from dbBackend import *
-from model import Review, ReviewFile, Reviewer, Vote, get_threshold
+from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment
 from peerReviewMain import add_ctxt_nav_items
 
 class ViewReviewModule(Component):
@@ -78,16 +77,12 @@ class ViewReviewModule(Component):
             elif req.args.get('followup'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=reviewID, followup=1))
 
-        # set up to display the files that are in this review
-        db = self.env.get_read_db()
-        dbBack = dbBackend(db)
-
         rev_files = ReviewFile.select_by_review(self.env, reviewID)
         for f in rev_files:
-            f.num_comments = len(dbBack.getCommentsByFileID(f.file_id))
+            f.num_comments = len(Comment.select_by_file_id(self.env, f.file_id))
 
         data['review_files'] = rev_files
-        data['users'] = dbBack.getPossibleUsers()
+        data['users'] = get_users(self.env)
 
         review = Review(self.env, reviewID)
         review.html_notes = format_to_html(self.env, Context.from_request(req), review.notes)
@@ -176,8 +171,6 @@ class ViewReviewModule(Component):
         reviewID = req.args.get('Review')
         review = Review(self.env, reviewID)
 
-        db = self.env.get_db_cnx()
-        dbBack = dbBackend(db)
         # TODO: there is some code in admin.py calculsating a similar threshold. Try to unify this.
         votes = Vote(self.env, reviewID)
         voteyes = votes.yes

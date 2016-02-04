@@ -21,6 +21,31 @@ def set_threshold(env, val):
     env.config.set('peer-review', 'vote_threshold', val)
     env.config.save()
 
+
+def get_users(env):
+    db = env.get_read_db()
+    cursor = db.cursor()
+    cursor.execute("""SELECT DISTINCT p1.username FROM permission AS p1
+                      LEFT JOIN permission AS p2 ON p1.action = p2.username
+                      WHERE p2.action = 'CODE_REVIEW_DEV'
+                      OR p1.action = 'CODE_REVIEW_DEV'
+                      OR p1.action = 'TRAC_ADMIN'
+                      """)
+    users = []
+    for row in cursor:
+        users.append(row[0])
+    if users:
+        # Filter groups from the results. We should probably do this using the group provider component
+        cursor.execute("""Select DISTINCT p3.action FROM permission AS p3
+                          JOIN permission p4 ON p3.action = p4.username""")
+        groups = []
+        for row in cursor:
+            groups.append(row[0])
+        groups.append('authenticated')
+        users = list(set(users)-set(groups))
+    return sorted(users)
+
+
 class Vote(object):
 
     def __init__(self, env, review_id):

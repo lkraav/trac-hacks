@@ -20,6 +20,8 @@ from trac.web.main import IRequestHandler
 from dbBackend import *
 from CodeReviewStruct import *
 from peerReviewMain import add_ctxt_nav_items
+from model import get_users
+
 
 class UserbaseModule(Component):
     implements(IRequestHandler, INavigationContributor)
@@ -57,10 +59,7 @@ class UserbaseModule(Component):
             data['results'] = results
             data['doSearch'] = 'yes'
 
-        #get the database
-        db = self.env.get_read_db()
-        dbBack = dbBackend(db)
-        users = dbBack.getPossibleUsers()
+        users = get_users(self.env)
         #sets the possible users for the user combo-box
         data['users'] = users
         #creates a year array containing the last 10
