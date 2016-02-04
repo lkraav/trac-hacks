@@ -12,25 +12,31 @@
 <body>
 
   <h1>Code Review Details - ${review.name}</h1>
-  <div>
-      <dl>
-          <dt>Code review name:</dt><dd>${review.name}</dd>
-          <dt>Code review status:</dt><dd>${review.status}</dd>
+      <dl class="overview">
+          <dt>Name:</dt><dd>${review.name}</dd>
+          <dt>Status:</dt><dd>${review.status}</dd>
+          <dt>ID:</dt><dd>$review.review_id</dd>
           <dt>Author:</dt><dd>${review.author}</dd>
           <dt>Creation Date:</dt><dd>${review.creation_date}</dd>
       </dl>
+     <dl py:if="review.notes" class="overview">
+          <dt>Author notes:</dt><dd>$review.html_notes</dd>
+     </dl>
+  <div py:if="parent_review">
+      <h2>Followup Review from:</h2>
+      <dl class="overview">
+          <dt>Name:</dt><dd>${parent_review.name}</dd>
+          <dt>Status:</dt><dd>${parent_review.status}</dd>
+          <dt>ID:</dt><dd>$parent_review.review_id</dd>
+          <dt>Author:</dt><dd>${parent_review.author}</dd>
+          <dt>Creation Date:</dt><dd>${parent_review.creation_date}</dd>
+      </dl>
   </div>
-  <div py:if="notes">
-        <dl>
-              <dt>Author notes:</dt><dd>$notes</dd>
-        </dl>
-  </div>
-  <script type="text/javascript">
-    function handlerowclick(num){
-    }
-  </script>
 
   <h2>Files associated with this code review</h2>
+  <p py:if="parent_review">The files will be compared with those from review
+      <a href="peerReviewView?Review=$parent_review.review_id">#$parent_review.review_id</a>.</p>
+
   <table class="listing" id="filelist">
       <thead>
       <tr>
@@ -61,7 +67,7 @@
 
   <!--! <xi:include href="user_list.html" /> -->
 
-  <table py:if="review.author == myname or manager" class="listing" id="userlist">
+  <table py:if="review.author == req.authname or manager" class="listing" id="userlist">
     <thead>
       <tr>
         <td>User name</td>
@@ -79,7 +85,7 @@
     </tbody>
   </table>
 
-  <table py:if="review.author != myname and not manager" class="listing" id="userlist">
+  <table py:if="review.author != req.authname and not manager" class="listing" id="userlist">
     <thead>
       <tr>
         <td>User name</td>
@@ -161,7 +167,7 @@
     </form>
   </py:if>
 
-  <py:if test="not manager and review.author == myname">
+  <py:if test="not manager and review.author == req.authname">
   <h2>Author privileges</h2>
     <form action="" method="post">
       <fieldset>
@@ -170,12 +176,17 @@
           <input py:if="review.status != 'Ready for inclusion' and review.status != 'Closed'"
                  type="submit" value="Submit For Inclusion" name="inclusion"
                  disabled="${review.status != 'Reviewed' and 'true' or None}" />
-          <input type="submit" value="Resubmit For Review" name="resubmit"/>
           <input py:if="review.status != 'Closed'" type="submit" value="Close This Code Review" name="close"/>
+          <input type="submit" value="Resubmit For Review" name="resubmit"/>
+          <input type="submit" value="Followup Review" name="followup"/>
         </div>
           <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of a new code review.
-              Comments will be stripped in the process. When the new review is finally created this one will be closed
+              Comments will not be copied. When the new review is created this one will be closed
               automatically.
+          </p>
+          <p class="help">When creating a <strong>Followup Review</strong> all the data of this review will be used
+              for prefilling the fields of a new code review. Comments will not be copied. During the new review it
+              is possible to view the changes between file data at different revisions.
           </p>
       </fieldset>
     </form>

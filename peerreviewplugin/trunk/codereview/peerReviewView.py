@@ -75,6 +75,8 @@ class ViewReviewModule(Component):
                     self.manager_change_status(req, reviewID, mc)
             elif req.args.get('resubmit'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=reviewID))
+            elif req.args.get('followup'):
+                req.redirect(self.env.href.peerReviewNew(resubmit=reviewID, followup=1))
 
         # set up to display the files that are in this review
         db = self.env.get_read_db()
@@ -88,15 +90,15 @@ class ViewReviewModule(Component):
         data['users'] = dbBack.getPossibleUsers()
 
         review = Review(self.env, reviewID)
-
-        data['notes'] = format_to_html(self.env, Context.from_request(req), review.notes)
+        review.html_notes = format_to_html(self.env, Context.from_request(req), review.notes)
+        data['review'] = review
+        if review.parent_id != 0:
+            par_review = Review(self.env, review.parent_id)
+            data['parent_review'] = par_review
 
         votes = Vote(self.env, reviewID)
-        # set up the fields that will be displayed on the page
-        data['myname'] = req.authname
-        data['review'] = review
-        data['manager'] = manager
         data['votes'] = votes
+        data['manager'] = manager
 
         # figure out whether I can vote on this review or not
         entry = Reviewer.select_by_review_id(self.env, reviewID, req.authname)
@@ -154,7 +156,6 @@ class ViewReviewModule(Component):
 
         data['rvs'] = rvs
         data['rvsLength'] = len(rvs)
-
         data['cycle'] = itertools.cycle
 
         add_stylesheet(req, 'common/css/code.css')

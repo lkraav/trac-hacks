@@ -21,17 +21,27 @@
       <fieldset>
           Name: <input type="text" name="Name" MAXLENGTH="50" value="${name}" /><br />
       </fieldset>
-    <h2>Step 2: Select the sections to be reviewed.</h2>
+
+    <h2 py:if="not followup">Step 2: Select the sections to be reviewed.</h2>
+    <h2 py:if="followup">Step 2: Select the revision for the files.</h2>
+
+    <p  py:if="followup" class="help">The selected revision is used for all files in the list. If you want to compare a file with a different revision
+      you have to create a code review just for this file.</p>
     <!-- Displays the file browser -->
-    <div id="repo_browser"></div>
+    <div id="repo_browser" data-is-followup="${followup or None}"></div>
+    <div py:if="followup" id="follow-up-hint">
+      <p class="help">You can't add files to the current review. You may use the source browser only for changing the
+      revision and checking the files in the tree.</p>
+    </div>
       <fieldset>
-        <table class="listing" id="myfilelist">
+        <table class="listing dirlist" id="myfilelist">
           <thead>
             <tr>
-              <td>Filename (Click to remove)</td>
-              <td>Start Line</td>
-              <td>End Line</td>
-              <td>Rev</td>
+              <th>Filename (Click to remove)</th>
+              <th>Start Line</th>
+              <th>End Line</th>
+              <th py:if="followup">Old Revision</th>
+              <th>Revision</th>
             </tr>
           </thead>
         <!-- Display an empty file list if it's a new CodeReview, display previous list if resubmitted -->
@@ -41,18 +51,20 @@
               <td></td>
               <td></td>
               <td></td>
+              <td py:if="followup"></td>
             </tr>
           </tbody>
 
           <tbody py:with="cls=cycle(('odd', 'even'))" id = "myfilebody">
             <tr py:for="item in prevFiles" id="${item.element_id}" class="${cls.next()}">
-              <td value="${item.path},${item.version},${item.start},${item.end}">
+              <td>
                   <input type="hidden" name="file" value="${item.path},${item.version},${item.start},${item.end}"/>
                 <a href="javascript:removefile('${item.path},${item.version},${item.start},${item.end}')">${item.path}</a>
               </td>
               <td>${item.start}</td>
               <td>${item.end}</td>
               <td>${item.version}</td>
+              <td py:if="followup" class="newrev"></td>
             </tr>
           </tbody>
         </table>
@@ -123,9 +135,10 @@
       <!-- Display an empty notes area if it's a new CodeReview, display previous notes if resubmitted -->
       <textarea name="Notes" cols="60" rows="8" py:content="notes"></textarea>
       <div class="buttons">
-        <input py:if="oldid > -1" type="hidden" name="oldid" value="${oldid}" />
-        <input type="hidden" name="reqAction" value="createCodeReview" />
-        <input type="submit" name="Next" value="${new == 'yes' and 'Add Code Review' or 'Resubmit Code Review'}" />
+        <input py:if="oldid" type="hidden" name="oldid" value="$oldid" />
+          <input py:if="not followup" type="submit" name="create" value="${new == 'yes' and 'Add Code Review' or 'Resubmit Code Review'}" />
+          <input py:if="followup" type="hidden" name="followup" value="1" />
+          <input py:if="followup" type="submit" name="createfollowup" value="${new == 'yes' and 'Add Code Review' or 'Add Followup Review'}" />
       </div>
     </fieldset>
   </form>

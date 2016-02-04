@@ -50,3 +50,16 @@ table.code th.performCodeReview{
 #vote-summary td.no{
   color: red;
 }
+
+.overview dt {
+    font-weight: bold;
+    padding-right: .25em;
+    position: absolute;
+    left: 0;
+    text-align: right;
+    width: 8.75em;
+}
+
+.overview dd {
+    margin-left: 9em;
+}

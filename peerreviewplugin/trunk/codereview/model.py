@@ -125,19 +125,20 @@ class Review(object):
             db = self.env.get_read_db()
             cursor = db.cursor()
             cursor.execute("""
-                SELECT review_id, owner, status, created, name, notes FROM peer_review WHERE review_id=%s
+                SELECT review_id, owner, status, created, name, notes, parent_id FROM peer_review WHERE review_id=%s
                 """, (review_id,))
             row = cursor.fetchone()
             if not row:
                 raise ResourceNotFound(_('Review %(name)s does not exist.',
-                                         name=review_id))
+                                         name=review_id), _('Peer Review Error'))
             self._init_from_row(row)
         else:
-            self._init_from_row((None,)*6)
+            self._init_from_row((None,)*7)
             self.raw_date = int(time())
+            self.parent_id = 0
 
     def _init_from_row(self, row):
-        rev_id, author, status, creation_date, name, notes = row
+        rev_id, author, status, creation_date, name, notes, parent_id = row
         self.name = self._old_name = name
         self.review_id = rev_id
         self.author = author
@@ -145,6 +146,7 @@ class Review(object):
         self.raw_date = creation_date
         self.creation_date = format_date(creation_date)
         self.notes = notes or ''
+        self.parent_id = parent_id or 0
 
     exists = property(lambda self: self._old_name is not None)
 
@@ -155,9 +157,9 @@ class Review(object):
         def do_insert(db):
             cursor = db.cursor()
             self.env.log.debug("Creating new review '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO peer_review (owner, status, created, name, notes)
-                            VALUES (%s, %s, %s, %s, %s)
-                            """, (self.author, self.status, self.raw_date, self.name, self.notes))
+            cursor.execute("""INSERT INTO peer_review (owner, status, created, name, notes, parent_id)
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                            """, (self.author, self.status, self.raw_date, self.name, self.notes, self.parent_id))
             self.review_id = db.get_last_id(cursor, 'peer_review', 'review_id')
 
     def update(self):
@@ -166,15 +168,16 @@ class Review(object):
             cursor = db.cursor()
             self.env.log.debug("Updating review '%s'" % self.review_id)
             cursor.execute("""UPDATE peer_review
-                            SET owner=%s, status=%s, created=%s, name=%s, notes=%s
+                            SET owner=%s, status=%s, created=%s, name=%s, notes=%s, parent_id=%s
                             WHERE review_id=%s
-                            """, (self.author, self.status, self.raw_date, self.name, self.notes, self.review_id))
+                            """, (self.author, self.status, self.raw_date, self.name, self.notes, self.parent_id,
+                                  self.review_id))
 
     @classmethod
     def select(cls, env):
         db = env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("SELECT review_id, owner, status, created, name, notes FROM peer_review "
+        cursor.execute("SELECT review_id, owner, status, created, name, notes, parent_id FROM peer_review "
                        "ORDER BY created")
         reviews = []
         for row in cursor:
@@ -187,7 +190,7 @@ class Review(object):
     def select_by_reviewer(cls, env, reviewer):
         db = env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("SELECT cr.review_id, cr.owner, cr.status, cr.created, cr.name, cr.notes FROM "
+        cursor.execute("SELECT cr.review_id, cr.owner, cr.status, cr.created, cr.name, cr.notes, cr.parent_id  FROM "
                        "peer_review AS cr JOIN peer_reviewer AS r ON cr.review_id = r.review_id "
                        "WHERE r.reviewer=%s"
                        "ORDER BY cr.created", (reviewer,))
@@ -212,7 +215,7 @@ class ReviewFile(object):
             row = cursor.fetchone()
             if not row:
                 raise ResourceNotFound(_('File %(name)s does not exist.',
-                                         name=file_id))
+                                         name=file_id), _('Peer Review Error'))
             self._init_from_row(row)
         else:
             self._init_from_row((None,)*6)

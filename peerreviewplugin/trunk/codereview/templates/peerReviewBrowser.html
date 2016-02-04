@@ -129,7 +129,7 @@
         </div>
         <input type="hidden" value="0" id="lineBox1" />
         <input type="hidden" value="0" id="lineBox2" />
-        <input type="hidden" value="$revision" id="fileRevVal" />
+        <input type="hidden" value="$revision" id="fileRevVal" name="revision" />
     </py:if>
     <!--! The following is only shown for files -->
   <py:if test="file">
@@ -147,10 +147,12 @@
       </py:if>
     </div>
       <p></p>
+      <fieldset id="add-file-fs">
     <input type="button" onclick="addFile('${path}')" value="Add File" disabled="true" id="addFileButton" /> &nbsp;&nbsp;
     Start Line: <input type="text" onkeypress="lineEnter(event);" value="" size="5" id="lineBox1" onchange="addButtonEnable();" />&nbsp;&nbsp;
     End Line: <input type="text" onkeypress="lineEnter(event);" value="" size="5" id="lineBox2" onchange="addButtonEnable();" />
-    <input type="hidden" value="$revision" id="fileRevVal" />
+    <input type="hidden" name="revision" value="$revision" id="fileRevVal" />
+      </fieldset>
   </py:if>
 
 </div>

@@ -44,7 +44,24 @@ class NewReviewModule(Component):
 
         req.perm.require('CODE_REVIEW_DEV')
 
-        data = {'oldid': -1}
+        if req.method == 'POST':
+            if req.args.get('create'):
+                oldid = req.args.get('oldid')
+                if oldid:
+                    # Automatically close the review we resubmitted from
+                    review = Review(self.env, oldid)
+                    review.status = "Closed"
+                    review.update()
+                    add_notice(req, "Review '%s' (#%s) was automatically closed." % (review.name, oldid))
+                returnid = self.createCodeReview(req)
+                #If no errors then redirect to the viewCodeReview page
+                req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
+            if req.args.get('createfollowup'):
+                returnid = self.createCodeReview(req)
+                #If no errors then redirect to the viewCodeReview page
+                req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
+
+        data = {}
 
         db = self.env.get_read_db()
         dbBack = dbBackend(db)
@@ -105,29 +122,16 @@ class NewReviewModule(Component):
             else:
                 data['notPrevUsers'] = []
                 data['emptyList'] = 1
-
         #if we resubmitting a code review, and are neither the author and the manager
         elif reviewID and not review.author == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
             raise TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
-
         #if we are not resubmitting
         else:
-            if req.args.get('reqAction') == 'createCodeReview':
-                oldid = req.args.get('oldid')
-                if oldid:
-                    # Automatically close the review we resubmitted from
-                    review = Review(self.env, oldid)
-                    review.status = "Closed"
-                    review.update()
-                    add_notice(req, "Review '%s' (#%s) was automatically closed." % (review.name, oldid))
-                returnid = self.createCodeReview(req)
-                #If no errors then redirect to the viewCodeReview page
-                req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
-            else:
-                data['new'] = "yes"
+            data['new'] = "yes"
 
         data['users'] = allUsers
         data['cycle'] = itertools.cycle
+        data['followup'] = req.args.get('followup')
 
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
@@ -148,6 +152,8 @@ class NewReviewModule(Component):
         review.raw_date = int(time.time())
         review.name = req.args.get('Name')
         review.notes = req.args.get('Notes')
+        if req.args.get('followup'):
+            review.parent_id = req.args.get('oldid', 0)
         review.insert()
         id_ = review.review_id
         self.log.debug('New review created: %s', id_)
@@ -177,7 +183,10 @@ class NewReviewModule(Component):
                 rfile = ReviewFile(self.env)
                 rfile.review_id = id_
                 rfile.path = segment[0]
-                rfile.version = segment[1]
+                if req.args.get('followup'):
+                    rfile.version = req.args.get('revision', 0)
+                else:
+                    rfile.version = segment[1]
                 rfile.start = segment[2]
                 rfile.end = segment[3]
                 rfile.insert()

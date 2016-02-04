@@ -224,6 +224,13 @@ jQuery(document).ready(function($) {
                  addFile($(this).val());
                  });
        });
+       if($('#repo_browser').data('is-followup') == 1){
+          $('#addfiles').hide();
+          $('#add-file-fs').hide();
+          $('.newrev').each(function(idx){
+             $(this).text($('#fileRevVal').val());
+          });
+       }
     };
 
     function switch_rev(event){

@@ -13,46 +13,63 @@
 
 <body>
   <h3>Review Information</h3>
-  <table class="info-table" id="review-info">
-      <tr>
-          <th>Name:</th>
-          <td>$review.name</td>
-      </tr>
-      <tr>
-          <th>Status:</th>
-          <td py:if="review.status !='Closed'">$review.status</td>
-          <td py:if="review.status =='Closed'"><strong>$review.status</strong></td>
-      </tr>
+  <py:if test="parent_review">
+      <form id="prefs" action="">
+          <div>
+              <input type="hidden" name="IDFile" value="$file_id"/>
+              <py:if test="not changeset">
+                  <!--!      <input type="hidden" name="old_path" value="${'/' + pathjoin(reponame, old_path)}" />
+                        <input type="hidden" name="new_path" value="${'/' + pathjoin(reponame, new_path)}" />
+                        <input type="hidden" name="old" value="$old_rev" />
+                        <input type="hidden" name="new" value="$new_rev" />
+                      --></py:if>
+              <xi:include href="diff_options.html" />
+          </div>
+      </form>
+  </py:if>
 
-  </table>
-  <p style="margin-top:1em;">Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 
+  <dl class="overview" id="review-info">
+      <dt>Name:</dt>
+      <dd><a href="peerReviewView?Review=$review.review_id">$review.name</a></dd>
+      <dt>Status:</dt>
+      <dd py:if="review.status !='Closed'">$review.status</dd>
+      <dd py:if="review.status =='Closed'"><strong>$review.status</strong></dd>
+      <dt>ID:</dt>
+      <dd>$review.review_id</dd>
+  </dl>
   <h3>File Information</h3>
-  <table class="info-table" id="file-info">
-      <tr>
-          <th>Path:</th>
-          <td>${review_file.path}</td>
-      </tr>
-      <tr>
-          <th>Revision:</th>
-          <td>${review_file.version}</td>
-      </tr>
-      <tr>
-          <th>Start Line:</th>
-          <td>${review_file.start}<br /></td>
-      </tr>
-      <tr>
-          <th>End Line:</th>
-          <td>${review_file.end}<br /></td>
-      </tr>
-  </table>
-  <br />
+  <dl class="overview" id="file-info">
+      <dt>Path:</dt>
+      <dd>${review_file.path}</dd>
+      <dt>Revision:</dt>
+      <dd>${review_file.version}</dd>
+      <dt>Start Line:</dt>
+      <dd>${review_file.start}<br /></dd>
+      <dt>End Line:</dt>
+      <dd>${review_file.end}<br /></dd>
+  </dl>
 
-  <!-- <xi:include href="diff.html" /> -->
+  <py:if test="parent_review">
+      <h3>Followup review from:</h3>
+      <dl class="overview" id="parent-info">
+          <dt>Review:</dt>
+          <dd><a href="peerReviewView?Review=$parent_review.review_id">$parent_review.name</a></dd>
+          <dt>ID:</dt>
+          <dd>$parent_review.review_id</dd>
+          <dt>Path:</dt>
+          <dd>${par_file.path}</dd>
+          <dt>Revision:</dt>
+          <dd>${par_file.version}</dd>
+      </dl>
+  </py:if>
+
+  <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
+
   <table border="0" width="100%" style="border-collapse: collapse" id="table1">
     <tr>
       <td align="left">
-          <p>Click line number to Add/View comments</p>
+          <p class="help">Click line number to Add/View comments</p>
       </td>
       <td py:if="not fullrange" align="right">
           <p>View <input type="text" id="SelectRangeTextBox"
@@ -62,9 +79,11 @@
     </tr>
   </table>
 
+  <py:if test="parent_review">
+      <xi:include href="diff.html" />
+  </py:if>
   <!-- displays the contents of the file being reviewed -->
-  <div id="FilePreview">${file}</div>
-
+  <div id="FilePreview">$file_rendered</div>
 
   <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 

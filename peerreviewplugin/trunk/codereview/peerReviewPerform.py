@@ -22,10 +22,11 @@ from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.resource import ResourceNotFound
 from trac.util.text import _
 from trac.web.chrome import INavigationContributor, \
-                            add_link, add_stylesheet
+                            add_link, add_stylesheet, add_script_data, add_javascript
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
-from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset, NoSuchNode
+from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
+from trac.versioncontrol.diff import diff_blocks, get_diff_options
 from peerReviewMain import add_ctxt_nav_items
 from model import ReviewFile, Review, Comment
 
@@ -73,54 +74,54 @@ class PeerReviewPerform(Component):
             return req.path_info == '/peerReviewPerform'
 
     def process_request(self, req):
-
         req.perm.require('CODE_REVIEW_DEV')
-        data = {}
 
         #get the fileID from the request arguments
         idFile = req.args.get('IDFile')
         if not idFile:
             raise TracError("No file ID given - unable to load page.", "File ID Error")
 
-        data['file_id'] = idFile
+        repos = RepositoryManager(self.env).get_repository('')
+        if not repos:
+            raise TracError("Unable to acquire subversion repository.", "Subversion Repository Error")
 
         #make the thumbtac image global so the line annotator has access to it
         self.imagePath = self.env.href.chrome() + '/hw/images/thumbtac11x11.gif'
-        #get the file properties from the database
-        rfile = ReviewFile(self.env, idFile)
-        if not rfile:
-            raise TracError("Unable to locate given file ID in database.", "File ID Error")
 
-        #get the respository
-        repos = RepositoryManager(self.env).get_repository('')
+        data = {'file_id': idFile}
+
+        rfile = ReviewFile(self.env, idFile)  # Raises 'ResourceNotFound' on error
+        review = Review(self.env, rfile.review_id)
         data['review_file'] = rfile
-        data['review'] = Review(self.env, rfile.review_id)
+        data['review'] = review
+
+        # The following may raise an exception if revision can't be found
+        rev = rfile.version
+        if rev:
+            rev = repos.normalize_rev(rev)
+        rev_or_latest = rev or repos.youngest_rev
+        node = get_existing_node(self.env, repos, rfile.path, rev_or_latest)
+
+        # Data for parent review if any
+        if review.parent_id != 0:
+            par_review = Review(self.env, review.parent_id)  # Raises 'ResourceNotFound' on error
+            parfile = ReviewFile(self.env, get_parent_file_id(self.env, rfile, review.parent_id))
+            par_revision = parfile.version
+            if par_revision:
+                par_revision = repos.normalize_rev(par_revision)
+            rev_or_latest = par_revision or repos.youngest_rev
+            par_node = get_existing_node(self.env, repos, parfile.path, rev_or_latest)
+        else:
+            par_review = None
+            parfile = None  # TODO: there may be some error handling missing for this. Create a dummy here?
+        data['par_file'] = parfile
+        data['parent_review'] = par_review
 
         # Wether to show the full file in the browser.
         if int(rfile.start) == 0:
             data['fullrange'] = True
         else:
             data['fullrange'] = False
-        #if the repository can't be found - display an error message
-        if repos is None:
-            raise TracError("Unable to acquire subversion repository.", "Subversion Repository Error")
-
-        #get the correct location - using revision number and repository path
-        rev = rfile.version
-        try:
-            if rev:
-                rev = repos.normalize_rev(rev)
-            rev_or_latest = rev or repos.youngest_rev
-            node = get_existing_node(self.env, repos, rfile.path, rev_or_latest)
-        except NoSuchChangeset, e:
-            raise ResourceNotFound(e.message,
-                                   _('Invalid changeset number'))
-        except BaseException, e:
-            raise TracError(e.message)
-
-        #if the node can't be found - display error message
-        if not node:
-            raise TracError("Unable to locate subversion node for this file.", "Subversion Node Error")
 
         # Generate HTML preview - this code take from Trac - refer to their documentation
         mime_type = node.content_type
@@ -134,27 +135,95 @@ class PeerReviewPerform(Component):
             charset = None
 
         mimeview = Mimeview(self.env)
-        rev = None
+        rev = None  # IS this correct? Seems to work with the call 'rev=rev or node.rev' further down
         content = node.get_content().read(mimeview.max_preview_size)
         if not is_binary(content):
             if mime_type != 'text/plain':
                 plain_href = self.env.href.peerReviewBrowser(node.path, rev=rev or node.rev, format='txt')
                 add_link(req, 'alternate', plain_href, 'Plain Text', 'text/plain')
 
-        context = Context.from_request(req, 'source', node.path, node.created_rev)
-        context.set_hints(reviewfile=rfile)
+        if par_review:
+            # A followup review with diff viewer
+            create_diff_data(req, data, node, par_node)
+        else:
+            context = Context.from_request(req, 'source', node.path, node.created_rev)
+            context.set_hints(reviewfile=rfile)
 
-        preview_data = mimeview.preview_data(context, content, len(content),
-                                             mime_type, node.created_path,
-                                             None,
-                                             annotations=['performCodeReview'])
+            preview_data = mimeview.preview_data(context, content, len(content),
+                                                 mime_type, node.created_path,
+                                                 None,
+                                                 annotations=['performCodeReview'])
+            data['file_rendered'] = preview_data['rendered']
 
-        data['file'] = preview_data['rendered']
-        
-        add_stylesheet(req, 'common/css/browser.css')
+        scr_data = {'peer_comments': [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
+                    'peer_file_id': idFile}
+        if par_review:
+            scr_data['peer_parent_file_id'] = parfile.file_id
+            scr_data['peer_parent_comments'] = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]
+        else:
+            scr_data['peer_parent_comments'] = []
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/diff.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
-
+        add_script_data(req, scr_data)
+        add_javascript(req, "hw/js/peer_review_perform.js")
         add_ctxt_nav_items(req)
+
         return 'peerReviewPerform.html', data, None
+
+
+def get_parent_file_id(env, rfile, par_review_id):
+
+    fid = u"%s%s%s" % (rfile.path, rfile.start, rfile.end)
+
+    rfiles = ReviewFile.select_by_review(env, par_review_id)
+    for f in rfiles:
+        tmp = u"%s%s%s" % (f.path, f.start, f.end)
+        if tmp == fid:
+            return f.file_id
+    return 0
+
+
+def create_diff_data(req, data, node, par_node):
+    style, options, diff_data = get_diff_options(req)
+
+    old = file_data_from_repo(par_node)
+    new = file_data_from_repo(node)
+
+    if diff_data['options']['contextall']:
+        context = None
+    else:
+        context = diff_data['options']['contextlines']
+
+    diff = diff_blocks(old, new, context=context,
+                       ignore_blank_lines=diff_data['options']['ignoreblanklines'],
+                       ignore_case=diff_data['options']['ignorecase'],
+                       ignore_space_changes=diff_data['options']['ignorewhitespace'])
+
+    review = data['review']
+    par_review = data['parent_review']
+    changes = []
+    info = {# 'title': '',
+            # 'comments': 'Ein Kommentar',
+            'diffs': diff,
+            'new': {'path': node.path, 'rev': "%s (Review #%s)" % (node.rev, review.review_id), 'shortrev': node.rev},
+            'old': {'path': par_node.path, 'rev': "%s (Review #%s)" % (par_node.rev, par_review.review_id),
+                    'shortrev': par_node.rev},
+            'props': []}
+    changes.append(info)
+    data['changes'] = changes
+
+    data['diff'] = diff_data  # {'style': 'inline', 'options': []},
+    data['longcol'] = 'Revision',
+    data['shortcol'] = 'r'
+
+
+def file_data_from_repo(node):
+
+    dat = ''
+    content = node.get_content()
+    res = content.read()
+    while res:
+        dat += res
+        res = content.read()
+    return dat.splitlines()
