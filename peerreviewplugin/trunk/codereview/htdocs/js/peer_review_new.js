@@ -104,96 +104,6 @@ function removefile(txt) {
     }
 }
 
-function select_options()
-{
-    if($("#Reviewers option").length == 0){
-         $("#Reviewers").append('<option id="no-more-users">-- No more users --</option>');
-         $("#adduserbutton").prop('disabled', true);
-    }
-    else{
-       $('#no-more-users').remove();
-       $("#adduserbutton").prop('disabled', false);
-    };
-};
-
-//takes a user from the table, adds them to the dropbox, and deletes from the table
-function removeuser(txt) {
-
-     tline = '<option value="'+txt+'">'+txt+'</option>';
-
-     if($('#Reviewers > #no-more-users').is(':visible')){
-        $('#no-more-users').replaceWith(tline);
-     }
-     else{
-        $('#Reviewers').append(tline);
-     };
-
-     $('#myuserbody tr[id="'+txt+'id"]').remove();
-     if($("#myuserbody tr").length == 0){
-         $('#myuserbody').append('<tr id="no-users"><td>No users have been added to the code review.</td></tr>');
-     };
-
-    colorTable('myuserbody');
-}
-
-//takes a user from the dropdown, adds them to the table, and deletes from the dropdown
-function adduser()
-{
-    var user = $("#Reviewers option:selected").text();
-    var tline = $("<tr/>",{
-    id: user+"id"
-    }).append($('<td>').append('<input type="hidden" name="user" value="'+user+'"/><a href="javascript:removeuser(\''+user+'\')">'+user+'</a>',{value: user}));
-
-    $("#Reviewers option[value='"+user+"']").remove();
-
-    if($('#myuserbody > #no-users').is(':visible')){
-        $('#no-users').replaceWith(tline);
-        delete $('#no-users');
-        select_options();
-    }
-    else{
-        $('#myuserbody').append(tline);
-        select_options();
-    };
-
-    colorTable('myuserbody');
-    return false;
-}
-
-//takes a user from the table, adds them to the dropbox, and deletes from the table
-function removeuser(txt) {
-    var dropdown = document.getElementById('Reviewers');
-
-    if (dropdown.options[0].value == '-1') {
-        dropdown.options[0] = new Option(txt, '0');
-        document.getElementById("adduserbutton").disabled = false;
-        document.getElementById("adduserbutton").style.color = "#000000";
-    } else {
-        dropdown.options[dropdown.options.length] = new Option(txt, '0');
-    }
-
-    // delete the row containing the txt from the table
-    var table = document.getElementById('myuserbody');
-
-    // remove row
-    var loop = 0;
-    for (loop = 0; loop < table.rows.length; loop++) {
-
-        var row = table.rows[loop];
-        var cell = row.cells[0];
-        if (row.id == txt + 'id') {
-            table.deleteRow(loop);
-            loop--;
-            break;
-        }
-    }
-
-    colorTable('myuserbody');
-
-    if (table.rows.length == 0)
-        checkEmpty(0, 'myuserbody');
-}
-
 jQuery(document).ready(function($) {
    var cur_repo_path = repo_browser;
 
@@ -248,7 +158,8 @@ jQuery(document).ready(function($) {
       });
     };
 
-    /* Initial browser load */
-    load_browser(repo_browser);
-
+    /* Initial browser load only when not modifying */
+    if($('#repo_browser').data('is-modify') == 0){
+       load_browser(repo_browser);
+    };
 });

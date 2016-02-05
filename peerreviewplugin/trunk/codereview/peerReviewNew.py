@@ -16,12 +16,61 @@ import time
 
 from trac import util
 from trac.core import Component, implements, TracError
-from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, add_notice, add_stylesheet
+from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, \
+    add_warning, add_notice, add_stylesheet
 from trac.web.main import IRequestHandler
 
 from CodeReviewStruct import *
-from model import ReviewFile, Review, Reviewer, get_users
+from model import ReviewFile, Review, Reviewer, get_users, Comment
 from peerReviewMain import add_ctxt_nav_items
+
+
+def java_string_hashcode(s):
+    # See: http://garage.pimentech.net/libcommonPython_src_python_libcommon_javastringhashcode/
+    h = 0
+    for c in s:
+        h = (31 * h + ord(c)) & 0xFFFFFFFF
+    return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
+
+
+def create_file_hash_id(f):
+    return 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f.path, f.version, f.start, f.end))
+
+
+def add_users_to_data(env, reviewID, data):
+    """
+    If data['user'] doesn't exist this function will query the list of available users.
+
+    :param env:
+    :param reviewID:
+    :param data:
+    :param all_users
+    :return:
+    """
+    if 'users' not in data:
+        data['users'] = get_users(env)
+    all_users = data['users']
+
+    # get code review data and populate
+    reviewers = Reviewer.select_by_review_id(env, reviewID)
+    popUsers = []
+    for reviewer in reviewers:
+        popUsers.append(reviewer.reviewer)
+    data['assigned_users'] = popUsers
+
+    # Figure out the users that were not included
+    # in the previous code review so that they can be
+    # added to the dropdown to select more users
+    # (only check if all users were not included in previous code review)
+    notUsers = []
+    if len(popUsers) != len(all_users):
+        notUsers = list(set(all_users)-set(popUsers))
+        data['emptyList'] = 0
+    else:
+        data['emptyList'] = 1
+
+    data['unassigned_users'] = notUsers
+
 
 class NewReviewModule(Component):
     implements(IRequestHandler, INavigationContributor)
@@ -44,8 +93,8 @@ class NewReviewModule(Component):
         req.perm.require('CODE_REVIEW_DEV')
 
         if req.method == 'POST':
+            oldid = req.args.get('oldid')
             if req.args.get('create'):
-                oldid = req.args.get('oldid')
                 if oldid:
                     # Automatically close the review we resubmitted from
                     review = Review(self.env, oldid)
@@ -58,11 +107,15 @@ class NewReviewModule(Component):
             if req.args.get('createfollowup'):
                 returnid = self.createCodeReview(req)
                 #If no errors then redirect to the viewCodeReview page
-                req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
+                req.redirect(self.env.href.peerReviewView(Review=returnid))
+            if req.args.get('save'):
+                self.save_changes(req)
+                req.redirect(self.env.href.peerReviewView(Review=oldid))
+            if req.args.get('cancel'):
+                req.redirect(self.env.href.peerReviewView(Review=oldid))
 
         data = {}
-
-        allUsers = get_users(self.env)
+        data['users'] = get_users(self.env)
 
         reviewID = req.args.get('resubmit')
 
@@ -75,50 +128,22 @@ class NewReviewModule(Component):
         if reviewID and (review.author == req.authname or 'CODE_REVIEW_MGR' in req.perm):
             data['new'] = "no"
             data['oldid'] = reviewID
-            # get code review data and populate
-            reviewers = Reviewer.select_by_review_id(self.env, reviewID)
-            popUsers = []
-            for reviewer in reviewers:
-                popUsers.append(reviewer.reviewer)
+
+            add_users_to_data(self.env, reviewID, data)
 
             rfiles = ReviewFile.select_by_review(self.env, reviewID)
             popFiles = []
             # Set up the file information
-            def java_string_hashcode(s):
-                # See: http://garage.pimentech.net/libcommonPython_src_python_libcommon_javastringhashcode/
-                h = 0
-                for c in s:
-                    h = (31 * h + ord(c)) & 0xFFFFFFFF
-                return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
             for f in rfiles:
                 # This id is used by the hacascript code to find duplicate entries.
-                f.element_id = 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f.path, f.version, f.start, f.end))
+                f.element_id = create_file_hash_id(f)
                 popFiles.append(f)
 
             data['name'] = review.name
             data['notes'] = "Review based on ''%s'' (resubmitted)." % review.name
-            data['prevUsers'] = popUsers
+
             data['prevFiles'] = popFiles
 
-            # Figure out the users that were not included
-            # in the previous code review so that they can be
-            # added to the dropdown to select more users
-            # (only check if all users were not included in previous code review)
-            notUsers = []
-            if len(popUsers) != len(allUsers): 
-                for user in allUsers:
-                    match = False
-                    for candidate in popUsers:
-                        if candidate == user:
-                            match = True
-                            break
-                    if not match:
-                        notUsers.append(user)
-                data['notPrevUsers'] = notUsers
-                data['emptyList'] = 0
-            else:
-                data['notPrevUsers'] = []
-                data['emptyList'] = 1
         #if we resubmitting a code review, and are neither the author and the manager
         elif reviewID and not review.author == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
             raise TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
@@ -126,7 +151,6 @@ class NewReviewModule(Component):
         else:
             data['new'] = "yes"
 
-        data['users'] = allUsers
         data['cycle'] = itertools.cycle
         data['followup'] = req.args.get('followup')
 
@@ -135,6 +159,7 @@ class NewReviewModule(Component):
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser()})
         add_javascript(req, "hw/js/peer_review_new.js")
+        add_javascript(req, 'hw/js/peer_user_list.js')
         add_ctxt_nav_items(req)
         return 'peerReviewNew.html', data, None
 
@@ -188,3 +213,47 @@ class NewReviewModule(Component):
                 rfile.end = segment[3]
                 rfile.insert()
         return id_
+
+    def save_changes(self, req):
+        def file_is_commented(author):
+            rfiles = ReviewFile.select_by_review(self.env, review.review_id)
+            for f in rfiles:
+                comments = [c for c in Comment.select_by_file_id(self.env, f.file_id) if c.author == author]
+                if comments:
+                    return True
+            return False
+
+        review = Review(self.env, req.args.get('oldid'))
+        review.name = req.args.get('Name')
+        review.notes = req.args.get('Notes')
+        review.update()
+
+        user = req.args.get('user')
+        if not type(user) is list:
+            user = [user]
+        data = {}
+        add_users_to_data(self.env,review.review_id, data)
+        # Handle new users if any
+        new_users = list(set(user) - set(data['assigned_users']))
+        for name in new_users:
+            if name != "":
+                reviewer = Reviewer(self.env)
+                reviewer.review_id = review.review_id
+                reviewer.reviewer = name
+                reviewer.status = 0
+                reviewer.vote = "-1"
+                reviewer.insert()
+        # Handle removed users if any
+        rem_users = list(set(data['assigned_users']) - set(user))
+        for name in rem_users:
+            if name != "":
+                reviewer = Reviewer(self.env, review.review_id, name)
+                if reviewer.vote != -1:
+                    add_warning(req, "User '%s' already voted. Not removed from review '#%s'",
+                                name, review.review_id)
+                    continue
+                if file_is_commented(name):
+                    add_warning(req, "User '%s' already commented a file. Not removed from review '#%s'",
+                                name, review.review_id)
+                    continue
+                reviewer.delete()

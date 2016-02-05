@@ -1,28 +1,64 @@
 <div xmlns="http://www.w3.org/1999/xhtml"
      xmlns:py="http://genshi.edgewall.org/">
-    <div>
+
+  <!-- Display a full reviewer drop-down list if it's a new CodeReview, display unassigned reviewers if resubmitted -->
+  <py:choose test="new">
+      <span py:when="'yes'">
         <select id="Reviewers">
-            <option py:for="item in users" value="${item}">${item}</option>
+          <option py:for="item in users" value="${item}">${item}</option>
         </select>
-    </div>
-    <div>
-      <table py:if="review.author == myname or manager" class="listing" id="userlist">
-        <thead>
-          <tr>
-            <td>User name</td>
-            <td>Vote</td>
-          </tr>
-        </thead>
-        <tbody py:with="cls=cycle(('odd', 'even'))">
-          <tr py:if="rvsLength == 0" class="even">
-            <td>There are no users included in this code review.</td>
-          </tr>
-          <tr py:if="review_files" py:for="item in rvs" class="${cls.next()}">
-            <td>${item[0]}</td>
-            <td>${item[1]}</td>
-          </tr>
-        </tbody>
-      </table>
+      </span>
+      <span py:otherwise="">
+          <span py:if="unassigned_users">
+            <select id="Reviewers">
+              <option py:for="item in unassigned_users" value="$item">$item</option>
+            </select>
+          </span>
+          <span py:if="not unassigned_users">
+            <select id="Reviewers">
+              <option value="-1">-- No more users --</option>
+            </select>
+          </span>
+      </span>
+  </py:choose>
+
+  <input disabled="${unassigend_users or None}" id="adduserbutton" type="button" value="Add user" />
+
+  <!-- Display an empty user list if it's a new CodeReview, display previous list if resubmitted -->
+  <div py:choose="new">
+    <table py:when="'yes'" class="listing" id="myuserlist">
+      <thead>
+      <tr>
+        <td>Username (Click to remove)</td>
+      </tr>
+      </thead>
+      <tbody id = "myuserbody">
+      <tr id = "no-users" class="even">
+        <td>No users have been added to the code review.</td>
+      </tr>
+      </tbody>
+    </table>
+
+    <table py:otherwise="" class="listing" id="myuserlist">
+      <thead>
+      <tr>
+        <td>Username (Click to remove)</td>
+      </tr>
+      </thead>
+      <tbody py:with="cls=cycle(('odd', 'even'))" id = "myuserbody">
+      <tr py:for="item in assigned_users" id="${item}id" class="${cls.next()}">
+        <td value="$item">
+          <input type="hidden" name="user" value="$item" />
+          <a href="" data-user="$item" class="remove-user">$item</a>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!--
+  <div>
+
 
         <table class="listing" id="myuserlist">
           <thead>
@@ -31,10 +67,10 @@
             </tr>
           </thead>
           <tbody py:with="cls=cycle(('odd', 'even'))" id = "myuserbody">
-            <tr py:for="item in prevUsers" id="${item}id" class="${cls.next()}">
-              <td value="${item}"><a href="javascript:removeuser('${item}')">${item}</a></td>
+            <tr py:for="item in assigned_users" id="${item}id" class="${cls.next()}">
+              <td value="$item"><a href="" data-user="$item" class="remove-user">$item</a></td>
             </tr>
           </tbody>
         </table>
-    </div>
+    </div> -->
 </div>

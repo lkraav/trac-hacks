@@ -82,9 +82,23 @@ class Vote(object):
 
 class Reviewer(object):
     """Model for a reviewer working on a code review."""
-    def __init__(self, env, name=None):  # TODO: name or review_id here?
+    def __init__(self, env, review_id=None, name=None):
         self.env = env
-        self._init_from_row((None,)*4)
+
+        if name and review_id:
+            db = self.env.get_read_db()
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT review_id, reviewer, status, vote FROM peer_reviewer WHERE reviewer=%s
+                AND review_id=%s
+                """, (name, review_id))
+            row = cursor.fetchone()
+            if not row:
+                raise ResourceNotFound(_("Reviewer '%(name)s' does not exist for review '#%(review)s'.",
+                                         name=name, review=review_id), _('Peer Review Error'))
+            self._init_from_row(row)
+        else:
+            self._init_from_row((None,)*4)
 
     def _init_from_row(self, row):
         rev_id, reviewer, status, vote = row
@@ -113,6 +127,14 @@ class Reviewer(object):
                         SET review_id=%s, reviewer=%s, status=%s, vote=%s
                         WHERE reviewer=%s AND review_id=%s
                         """, (self.review_id, self.reviewer, self.status, self.vote, self.reviewer, self.review_id))
+
+    def delete(self):
+        @self.env.with_transaction()
+        def do_update(db):
+            cursor = db.cursor()
+            cursor.execute("""DELETE FROM peer_reviewer
+                        WHERE review_id=%s AND reviewer=%s
+                        """, (self.review_id, self.reviewer))
 
     @classmethod
     def select_by_review_id(cls, env, review_id, rev_name=None):

@@ -19,9 +19,9 @@ from trac.mimeview import Context
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
-
 from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment
 from peerReviewMain import add_ctxt_nav_items
+
 
 class ViewReviewModule(Component):
     """Displays a summary page for a review."""
@@ -76,6 +76,8 @@ class ViewReviewModule(Component):
                 req.redirect(self.env.href.peerReviewNew(resubmit=reviewID))
             elif req.args.get('followup'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=reviewID, followup=1))
+            elif req.args.get('modify'):
+                req.redirect(self.env.href.peerReviewNew(resubmit=reviewID, modify=1))
 
         rev_files = ReviewFile.select_by_review(self.env, reviewID)
         for f in rev_files:

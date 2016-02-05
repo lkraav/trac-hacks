@@ -63,3 +63,8 @@ table.code th.performCodeReview{
 .overview dd {
     margin-left: 9em;
 }
+
+/* New review page */
+#review-name{
+   width: 50%;
+}

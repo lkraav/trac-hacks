@@ -62,12 +62,6 @@ class dbBackend(object):
                 "FROM peer_review_comment WHERE comment_id = '%s'" % (id)
         return self.execReviewCommentQuery(query, True)
 
-    #Returns an array of comments for the given file
-    def getCommentsByFileID(self, id):
-        query = "SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created " \
-                "FROM peer_review_comment WHERE file_id = '%s' ORDER BY created" % (id)
-        return self.execReviewCommentQuery(query, False)
-
     #Returns all the comments for the given file on the given line
     def getCommentsByFileIDAndLine(self, id, line):
         query = "SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created " \
