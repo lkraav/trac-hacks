@@ -124,6 +124,10 @@ class NewReviewModule(Component):
         if reviewID and (not reviewID.isdigit() or not review):
             raise TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
+        if review.status == 'Closed' and req.args.get('modify'):
+            raise TracError("The Review '#%s' is already closed and can't be modified." % review.review_id,
+                            "Modify Review error")
+
         # if we are resubmitting a code review and we are the author or the manager
         if reviewID and (review.author == req.authname or 'CODE_REVIEW_MGR' in req.perm):
             data['new'] = "no"

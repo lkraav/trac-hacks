@@ -19,11 +19,11 @@ import urllib
 from trac import util
 from trac.core import *
 from trac.util import Markup
-from trac.web.chrome import ITemplateProvider
+from trac.web.chrome import ITemplateProvider, add_notice
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
-
+from model import ReviewFile, Review
 
 class UserbaseModule(Component):
     implements(IRequestHandler, ITemplateProvider)
@@ -50,6 +50,10 @@ class UserbaseModule(Component):
         actionType = req.args.get('actionType')
 
         if actionType == 'addComment':
+            # TODO: This is not really nice but at least it prevents creation of comments for now...
+            if self.review_is_closed(req):
+                data['invalid'] = 'closed'
+                return 'peerReviewCommentCallback.html', data, None
             self.createComment(req, data)
         
         elif actionType == 'getCommentTree':
@@ -75,6 +79,13 @@ class UserbaseModule(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('hw', resource_filename(__name__, 'htdocs'))]
+
+    def review_is_closed(self, req):
+        rfile = ReviewFile(self.env, req.args.get('IDFile'))
+        review = Review(self.env, rfile.review_id)
+        if review.status == 'Closed':
+            return True
+        return False
 
     #Used to send a file that is attached to a comment
     def getCommentFile(self, req, data):

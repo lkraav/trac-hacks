@@ -180,7 +180,7 @@
           <input py:if="review.status != 'Closed'" type="submit" value="Close This Code Review" name="close"/>
           <input type="submit" value="Resubmit For Review" name="resubmit"/>
           <input type="submit" value="Followup Review" name="followup"/>
-          <input type="submit" value="Modify" name="modify"/>
+          <input py:if="review.status != 'Closed'" type="submit" value="Modify" name="modify"/>
         </div>
           <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of a new code review.
               Comments will not be copied. When the new review is created this one will be closed
