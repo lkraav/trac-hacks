@@ -1,8 +1,8 @@
 #
-# Copyright (C) 2005-2006 Team5 
+# Copyright (C) 2005-2006 Team5
 # All rights reserved.
 #
-# This software is licensed as described in the file COPYING.txt, which 
+# This software is licensed as described in the file COPYING.txt, which
 # you should have received as part of this distribution.
 #
 # Author: Team5
@@ -22,7 +22,7 @@ from trac.util.text import _
 from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
-from trac.web.chrome import add_link
+from trac.web.chrome import add_link, add_warning
 from trac.wiki import wiki_to_html
 
 IMG_RE = re.compile(r"\.(gif|jpg|jpeg|png)(\?.*)?$", re.IGNORECASE)
@@ -102,6 +102,9 @@ class PeerReviewBrowser(Component):
             context = context(repos.resource.child('source', path,
                                                    version=rev_or_latest))
             display_rev = repos.display_rev
+        else:
+            data['norepo'] = _("No source repository available.")
+            return 'peerReviewBrowser.html', data, None
 
         hidden_properties = [p.strip() for p
                              in self.config.get('browser', 'hide_properties',

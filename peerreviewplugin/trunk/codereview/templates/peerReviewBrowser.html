@@ -1,12 +1,7 @@
-<html xmlns="http://www.w3.org/1999/xhtml"
+<div xmlns="http://www.w3.org/1999/xhtml"
     xmlns:py="http://genshi.edgewall.org/"
     xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
 
-  <head>
-    <title>Code Review Browser</title>
-  </head>
-
-<body>
 <py:def function="sortable_th(order, desc, class_, title)">
   <th class="$class_${order == class_ and (desc and ' desc' or ' asc') or ''}">
                   <a title="Sort by $class_${order == class_ and not desc and
@@ -21,7 +16,12 @@
                 ${pretty_size(size)}</span>
 </py:def>
 
-<div id="content" class="browser">
+<div id="repo" class="browser" py:if="norepo">
+    <div class="warning system-message"><p class="">$norepo</p>
+    </div>
+</div>
+
+<div id="repo" class="browser" py:if="not norepo">
   <div>
       <p>Current path:</p>
       <xi:include href="path_links.html" />
@@ -157,5 +157,4 @@
 
 </div>
 
-</body>
-</html>
+</div>
