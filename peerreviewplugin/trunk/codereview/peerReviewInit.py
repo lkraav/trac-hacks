@@ -26,7 +26,7 @@ class PeerReviewInit(Component):
     def environment_created(self):
         self.current_db_version = 0
         self.upgrade_environment(self.env.get_db_cnx())
-    
+
     def environment_needs_upgrade(self, db):
         self.current_db_version = self._get_version(db.cursor())
 
@@ -50,6 +50,7 @@ class PeerReviewInit(Component):
         cursor = db.cursor()
         for i in range(self.current_db_version + 1, db_version + 1):
             name = 'db%i' % i
+            print "PeerReview: running upgrade ", name
             try:
                 upgrades = __import__('upgrades', globals(), locals(), [name])
                 script = getattr(upgrades, name)
@@ -84,3 +85,4 @@ class PeerReviewInit(Component):
             if cursor.rowcount == 0:
                 cursor.execute("INSERT INTO system (name,value) VALUES (%s,%s)",
                                (db_name, db_version))
+        self.current_db_version = cur_ver
