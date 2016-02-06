@@ -27,6 +27,7 @@
     <h2 py:if="not followup">Step 2: Select the sections to be reviewed.</h2>
     <h2 py:if="followup">Step 2: Select the revision for the files.</h2>
 
+    <fieldset>
     <p  py:if="followup" class="help">The selected revision is used for all files in the list. If you want to compare a file with a different revision
       you have to create a code review just for this file.</p>
     <!-- Displays the file browser -->
@@ -41,8 +42,8 @@
           <p>You can't add or remove files when modifying a review.</p>
       </div>
 
-      <fieldset py:if="not req.args.get('modify')">
-        <table class="listing dirlist" id="myfilelist">
+
+        <table  py:if="not req.args.get('modify')" class="listing dirlist" id="myfilelist" >
           <thead>
             <tr>
               <th>Filename (Click to remove)</th>
@@ -76,11 +77,13 @@
             </tr>
           </tbody>
         </table>
+      <p class="help">If <strong>Start Line</strong> and <strong>End Line</strong> are set to zero the whole file is
+      selected for review.</p>
       </fieldset>
     <h2>Step 3: Select reviewers for your review.</h2>
-
+    <fieldset>
       <xi:include href="user_list.html" />
-
+    </fieldset>
     <h2>Step 4: Write general notes and instructions for the reviewers. (Optional)</h2>
     <fieldset>
       <p class="help">You may use wiki formating here.</p>

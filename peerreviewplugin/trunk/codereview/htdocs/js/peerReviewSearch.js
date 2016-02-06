@@ -100,3 +100,8 @@ function setOptionText(control, numDays)
 
     control.innerHTML = innerHTML;
 }
+
+
+jQuery(document).ready(function($) {
+  setSearchValues();
+});

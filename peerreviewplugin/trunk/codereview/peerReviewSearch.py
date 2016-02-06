@@ -14,7 +14,7 @@ import time
 
 from trac.core import *
 from trac.util import format_date
-from trac.web.chrome import INavigationContributor, add_stylesheet
+from trac.web.chrome import INavigationContributor, add_stylesheet, add_javascript, add_script_data
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
@@ -23,7 +23,7 @@ from peerReviewMain import add_ctxt_nav_items
 from model import get_users
 
 
-class UserbaseModule(Component):
+class PeerReviewSearch(Component):
     implements(IRequestHandler, INavigationContributor)
 
     # IRequestHandler methods
@@ -75,6 +75,15 @@ class UserbaseModule(Component):
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
+        add_stylesheet(req, 'hw/css/peerreview.css')
+        add_javascript(req, 'hw/js/peerReviewSearch.js')
+        add_script_data(req, {'dateIndexSelected': '01',
+                              'monthSelected': data['searchValues_month'],
+                              'daySelected': data['searchValues_day'],
+                              'yearSelected': data['searchValues_year'],
+                              'statusSelected': data['searchValues_status'],
+                              'authorSelected': data['searchValues_author'],
+                              'nameSelected': data['searchValues_name']})
         add_ctxt_nav_items(req)
         return 'peerReviewSearch.html', data, None
 

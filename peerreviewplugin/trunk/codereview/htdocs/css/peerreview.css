@@ -82,3 +82,12 @@ table.code th.performCodeReview{
   overflow: auto;
   max-height: 400px;
 }
+
+/* search page */
+#searchReview div{
+  margin: 0.5em;
+}
+
+#myreviewlist{
+  margin-bottom: 2em;
+}

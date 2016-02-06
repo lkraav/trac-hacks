@@ -138,10 +138,11 @@
 
   <py:if test="manager">
       <h2>Manager privileges</h2>
-      <p>Change code review status:</p>
 
     <form method="post" action="">
+
       <fieldset>
+          <p>Change code review status:</p>
         <input type="hidden" value="${review.review_id}" name="Review" />
         <select name="ManagerChoice" id="ManagerChoice_">
           <option value="Open for review">Open for review</option>
