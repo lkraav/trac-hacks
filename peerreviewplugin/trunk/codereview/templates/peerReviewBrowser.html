@@ -23,8 +23,10 @@
 
 <div id="repo" class="browser" py:if="not norepo">
   <div>
-      <p>Current path:</p>
-      <xi:include href="path_links.html" />
+      <p>
+          Current path:
+          <xi:include href="path_links.html" />
+      </p>
   </div>
 
       <div id="jumprev">
@@ -104,11 +106,16 @@
     <py:if test="file">
       <tr>
         <th scope="row">
-          Revision <a href="${href.changeset(rev)}">${rev}</a>, ${sizeinfo(file.size)}
+          Revision <a href="${href.changeset(rev)}">${rev}</a>
           (checked in by ${authorinfo(file.changeset.author)}, ${dateinfo(file.changeset.date)} ago)
         </th>
-        <td class="message">${file.changeset.message}</td>
       </tr>
+        <tr>
+          <td class="message">${file.changeset.message}</td>
+        </tr>
+        <tr>
+            <td><strong>File Size:</strong> ${sizeinfo(file.size)}</td>
+        </tr>
     </py:if>
     <py:if test="props">
       <tr>
@@ -124,37 +131,59 @@
     </py:if>
   </table>
     <py:if test="not file">
-        <div class="buttons">
-            <input type="button" id="addfiles" value="Add selected files" disabled="1" />
+        <p class="help">To select a section of a file for review click on the filename to open the file preview.</p>
+        <div id="add-file">
+            <div>
+                <input type="button" id="addfiles" value="Add selected files" disabled="1" />
+            </div>
+            <input type="hidden" value="0" id="lineBox1" />
+            <input type="hidden" value="0" id="lineBox2" />
+            <input type="hidden" value="$revision" id="fileRevVal" name="revision" />
         </div>
-        <input type="hidden" value="0" id="lineBox1" />
-        <input type="hidden" value="0" id="lineBox2" />
-        <input type="hidden" value="$revision" id="fileRevVal" name="revision" />
     </py:if>
     <!--! The following is only shown for files -->
   <py:if test="file">
-    <div id="preview" style="overflow: auto; max-height: 400px">
-      <py:if test="file.preview">${file.preview}</py:if>
+    <div id="file-preview">
       <py:if test="not file.preview and file.max_file_size_reached">
-        <br /><br />
-        <strong>No HTML preview is available (the file size exceeds ${file.max_file_size} bytes) - you cannot add it to a code review</strong>.
-        <br /><br />
+          <div id="add-file">
+              <div class="warning system-message">
+                  <p>
+                    <strong>Warning: </strong>No HTML preview is available (the file size exceeds ${sizeinfo(file.max_file_size)}) - you cannot add it to a code review.
+                  </p>
+              </div>
+              <p class="help">The allowed filesize can be set by an administrator.</p>
+          </div>
       </py:if>
       <py:if test="not file.preview and not file.max_file_size_reached">
-        <br /><br/>
-        <strong>No HTML preview is available for this file - you cannot add it to a code review</strong>.
-        <br /><br />
+          <div id="add-file">
+              <div class="warning system-message">
+                  <p>
+                    <strong>Warning: </strong>No HTML preview is available for this file - you cannot add it to a code review.
+                  </p>
+              </div>
+          </div>
+      </py:if>
+      <py:if test="file.preview">${file.preview}
       </py:if>
     </div>
-      <p></p>
-      <fieldset id="add-file-fs">
-    <input type="button" onclick="addFile('${path}')" value="Add File" disabled="true" id="addFileButton" /> &nbsp;&nbsp;
-    Start Line: <input type="text" onkeypress="lineEnter(event);" value="" size="5" id="lineBox1" onchange="addButtonEnable();" />&nbsp;&nbsp;
-    End Line: <input type="text" onkeypress="lineEnter(event);" value="" size="5" id="lineBox2" onchange="addButtonEnable();" />
-    <input type="hidden" name="revision" value="$revision" id="fileRevVal" />
-      </fieldset>
+          <div id="add-file" py:if="file.preview">
+          <p class="help">Click on the line numbers to select start and end of the section.</p>
+
+              <div>
+                <input type="button" onclick="addFile('${path}')" value="Add File" disabled="true" id="addFileButton" /> &nbsp;&nbsp;
+              </div>
+              <div class="field">
+                  <label>Start Line: <input type="text" onkeypress="lineEnter(event);" value=""
+                                            size="5" id="lineBox1" onchange="addButtonEnable();" />
+                  </label>
+                  <label>End Line: <input type="text" onkeypress="lineEnter(event);" value=""
+                                          size="5" id="lineBox2" onchange="addButtonEnable();" />
+                  </label>
+              </div>
+              <input type="hidden" name="revision" value="$revision" id="fileRevVal" />
+          </div>
+
   </py:if>
 
 </div>
-
 </div>

@@ -266,6 +266,8 @@ class PeerReviewBrowser(Component):
                 'changeset': changeset,
                 'size': node.content_length,
                 'preview': preview_data['rendered'],
+                'max_file_size_reached': preview_data['max_file_size_reached'],
+                'max_file_size': preview_data['max_file_size'],
                 'annotate': False,
                 'rev': node.rev,
                 'changeset_href': util.escape(self.env.href.changeset(node.rev)),

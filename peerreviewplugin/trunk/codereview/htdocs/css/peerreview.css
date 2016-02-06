@@ -68,3 +68,17 @@ table.code th.performCodeReview{
 #review-name{
    width: 50%;
 }
+
+/* file browser */
+#add-file{
+  margin-bottom: 2em;
+}
+
+#add-file div{
+  display: inline-block;
+}
+
+#file-preview{
+  overflow: auto;
+  max-height: 400px;
+}
