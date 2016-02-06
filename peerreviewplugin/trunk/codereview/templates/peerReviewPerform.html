@@ -1,168 +1,175 @@
 <!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+        PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude">
-  <xi:include href="layout.html" />
-  <!--<xi:include href="macros.html" />-->
+    <xi:include href="layout.html"/>
+    <head>
+        <title>Review File - $review_file.name</title>
+    </head>
 
-  <head>
-    <title>Review File - $review_file.name</title>
-  </head>
+    <body>
+        <div id="content">
 
-<body>
-<div id="content">
-
-  <h3>Review Information</h3>
-  <py:if test="parent_review">
-      <form id="prefs" action="">
-          <div>
-              <input type="hidden" name="IDFile" value="$file_id"/>
-              <py:if test="not changeset">
-                  <!--!      <input type="hidden" name="old_path" value="${'/' + pathjoin(reponame, old_path)}" />
-                        <input type="hidden" name="new_path" value="${'/' + pathjoin(reponame, new_path)}" />
-                        <input type="hidden" name="old" value="$old_rev" />
-                        <input type="hidden" name="new" value="$new_rev" />
-                      --></py:if>
-              <xi:include href="diff_options.html" />
-          </div>
-      </form>
-  </py:if>
+            <h3>Review Information</h3>
+            <py:if test="parent_review">
+                <form id="prefs" action="">
+                    <div>
+                        <input type="hidden" name="IDFile" value="$file_id"/>
+                        <py:if test="not changeset">
+                            <!--!      <input type="hidden" name="old_path" value="${'/' + pathjoin(reponame, old_path)}" />
+                                  <input type="hidden" name="new_path" value="${'/' + pathjoin(reponame, new_path)}" />
+                                  <input type="hidden" name="old" value="$old_rev" />
+                                  <input type="hidden" name="new" value="$new_rev" />
+                                --></py:if>
+                        <xi:include href="diff_options.html"/>
+                    </div>
+                </form>
+            </py:if>
 
 
-  <dl class="overview" id="review-info">
-      <dt>Name:</dt>
-      <dd><a href="peerReviewView?Review=$review.review_id">$review.name</a></dd>
-      <dt>Status:</dt>
-      <dd py:if="review.status !='Closed'">$review.status</dd>
-      <dd py:if="review.status =='Closed'"><strong>$review.status</strong></dd>
-      <dt>ID:</dt>
-      <dd>$review.review_id</dd>
-  </dl>
-  <h3>File Information</h3>
-  <dl class="overview" id="file-info">
-      <dt>Path:</dt>
-      <dd>${review_file.path}</dd>
-      <dt>Revision:</dt>
-      <dd>${review_file.version}</dd>
-      <dt>Start Line:</dt>
-      <dd>${review_file.start}<br /></dd>
-      <dt>End Line:</dt>
-      <dd>${review_file.end}<br /></dd>
-  </dl>
+            <dl class="overview" id="review-info">
+                <dt>Name:</dt>
+                <dd><a href="peerReviewView?Review=$review.review_id">$review.name</a></dd>
+                <dt>Status:</dt>
+                <dd py:if="review.status !='Closed'">$review.status</dd>
+                <dd py:if="review.status =='Closed'"><strong>$review.status</strong></dd>
+                <dt>ID:</dt>
+                <dd>$review.review_id</dd>
+            </dl>
+            <h3>File Information</h3>
+            <dl class="overview" id="file-info">
+                <dt>Path:</dt>
+                <dd>${review_file.path}</dd>
+                <dt>Revision:</dt>
+                <dd>${review_file.version}</dd>
+                <dt>Start Line:</dt>
+                <dd>${review_file.start}<br/></dd>
+                <dt>End Line:</dt>
+                <dd>${review_file.end}<br/></dd>
+            </dl>
 
-  <py:if test="parent_review">
-      <h3>Followup review from:</h3>
-      <dl class="overview" id="parent-info">
-          <dt>Review:</dt>
-          <dd><a href="peerReviewView?Review=$parent_review.review_id">$parent_review.name</a></dd>
-          <dt>ID:</dt>
-          <dd>$parent_review.review_id</dd>
-          <dt>Path:</dt>
-          <dd>${par_file.path}</dd>
-          <dt>Revision:</dt>
-          <dd>${par_file.version}</dd>
-      </dl>
-  </py:if>
+            <py:if test="parent_review">
+                <h3>Followup review from:</h3>
+                <dl class="overview" id="parent-info">
+                    <dt>Review:</dt>
+                    <dd><a href="peerReviewView?Review=$parent_review.review_id">$parent_review.name</a></dd>
+                    <dt>ID:</dt>
+                    <dd>$parent_review.review_id</dd>
+                    <dt>Path:</dt>
+                    <dd>${par_file.path}</dd>
+                    <dt>Revision:</dt>
+                    <dd>${par_file.version}</dd>
+                </dl>
+            </py:if>
 
-  <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
+            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 
-  <table border="0" width="100%" style="border-collapse: collapse" id="table1">
-    <tr>
-      <td align="left">
-          <p class="help">Click line number to Add/View comments</p>
-      </td>
-      <td py:if="not fullrange" align="right">
-          <p>View <input type="text" id="SelectRangeTextBox"
-                         size="1" value="3" onKeyDown="if(event.keyCode == 13 || event.keyCode == 3){resetLines();}"
-                         style="text-align: center" /> lines on either side of selection.</p>
-      </td>
-    </tr>
-  </table>
+            <table border="0" width="100%" style="border-collapse: collapse" id="table1">
+                <tr>
+                    <td align="left">
+                        <p class="help">Click line number to Add/View comments</p>
+                    </td>
+                    <td py:if="not fullrange" align="right">
+                        <p>View <input type="text" id="SelectRangeTextBox"
+                                       size="1" value="3"
+                                       onKeyDown="if(event.keyCode == 13 || event.keyCode == 3){resetLines();}"
+                                       style="text-align: center"/> lines on either side of selection.</p>
+                    </td>
+                </tr>
+            </table>
 
-  <py:if test="parent_review">
-      <xi:include href="diff.html" />
-  </py:if>
-  <!-- displays the contents of the file being reviewed -->
-  <div id="FilePreview">$file_rendered</div>
+            <py:if test="parent_review">
+                <xi:include href="diff.html"/>
+            </py:if>
+            <!-- displays the contents of the file being reviewed -->
+            <div id="FilePreview">$file_rendered</div>
 
-  <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
+            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 
 
-  <div id="ViewCommentArea" style="display:none">
-    <table class="comment-table">
-      <tr height="15px">
-        <td id="ViewCommentTitle" onmousedown="dragStart(event, 'ViewCommentArea');"
-            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
-            background="${href.chrome('/hw/images/top_bar_repeater_1x17.gif')}">
-        </td>
-        <td width="18px" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-right: 1px solid #000000;"
-            background="${href.chrome('/hw/images/close_btn_18x17.gif')}"
-            onclick="closeCommentWindow('ViewCommentArea');">
-        </td>
-      </tr>
-      <tr height="10px">
-        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2" />
-      </tr>
-      <tr>
-        <td width="450px" align="center" style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2">
-          <div style="background-color: #F7F7F7; border: 1px solid #C0C0C0; overflow: auto; max-height: 400px; width: 425px" id="innerCommentDiv">
-            Loading...
-          </div>
-        </td>
-      </tr>
-      <tr height="5px">
-        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2" />
-      </tr>
-      <tr>
-        <td width="450px" align="right" style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2" id="ViewAddCommentButtonArea" />
-      </tr>
-      <tr height="3px">
-        <td style="border-left: 1px solid #C8C8C8; border-bottom: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2" />
-      </tr>
-    </table>
-  </div>
+            <div id="ViewCommentArea" style="display:none">
+                <table class="comment-table">
+                    <tr height="15px">
+                        <td id="ViewCommentTitle" onmousedown="dragStart(event, 'ViewCommentArea');"
+                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
+                            background="${href.chrome('/hw/images/top_bar_repeater_1x17.gif')}">
+                        </td>
+                        <td width="18px"
+                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-right: 1px solid #000000;"
+                            background="${href.chrome('/hw/images/close_btn_18x17.gif')}"
+                            onclick="closeCommentWindow('ViewCommentArea');">
+                        </td>
+                    </tr>
+                    <tr height="10px">
+                        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2"></td>
+                    </tr>
+                    <tr>
+                        <td width="450px" align="center"
+                            style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2">
+                            <div style="background-color: #F7F7F7; border: 1px solid #C0C0C0; overflow: auto; max-height: 400px; width: 425px"
+                                 id="innerCommentDiv">
+                                Loading...
+                            </div>
+                        </td>
+                    </tr>
+                    <tr height="5px">
+                        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2"></td>
+                    </tr>
+                    <tr>
+                        <td width="450px" align="right" style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;"
+                            colspan="2" id="ViewAddCommentButtonArea"></td>
+                    </tr>
+                    <tr height="3px">
+                        <td style="border-left: 1px solid #C8C8C8; border-bottom: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;"
+                            colspan="2"></td>
+                    </tr>
+                </table>
+            </div>
 
-  <div id="AddCommentArea" style="display:none;">
-    <table class="comment-table" width="300px">
-      <tr height="15px">
-        <td id="AddCommentTitleArea" width="282px" onmousedown="dragStart(event, 'AddCommentArea');"
-            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
-            background="${href.chrome('/hw/images/top_bar_repeater_1x17.gif')}">
-        </td>
-        <td width="18px" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-right: 1px solid #000000;"
-            background="${href.chrome('/hw/images/close_btn_18x17.gif')}"
-            onclick="closeCommentWindow('AddCommentArea');">
-        </td>
-      </tr>
-      <tr height="10px">
-        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2" />
-      </tr>
-      <tr>
-        <td valign="top" style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2">
-          <iframe frameborder="0" name="internalAddComment" id="internalAddComment"
-                  marginHeight="0" marginWidth="0" style="width:285px; height:196px"
-                  src="${href.peerReviewCommentCallback()}">
-          </iframe>
-        </td>
-      </tr>
-      <tr height="2px">
-        <td style="border-left: 1px solid #C8C8C8; border-bottom: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2" />
-      </tr>
-    </table>
-  </div>
+            <div id="AddCommentArea" style="display:none;">
+                <table class="comment-table" width="300px">
+                    <tr height="15px">
+                        <td id="AddCommentTitleArea" width="282px" onmousedown="dragStart(event, 'AddCommentArea');"
+                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
+                            background="${href.chrome('/hw/images/top_bar_repeater_1x17.gif')}">
+                        </td>
+                        <td width="18px"
+                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-right: 1px solid #000000;"
+                            background="${href.chrome('/hw/images/close_btn_18x17.gif')}"
+                            onclick="closeCommentWindow('AddCommentArea');">
+                        </td>
+                    </tr>
+                    <tr height="10px">
+                        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2"></td>
+                    </tr>
+                    <tr>
+                        <td valign="top" style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2">
+                            <iframe frameborder="0" name="internalAddComment" id="internalAddComment"
+                                    marginHeight="0" marginWidth="0" style="width:285px; height:196px"
+                                    src="${href.peerReviewCommentCallback()}">
+                            </iframe>
+                        </td>
+                    </tr>
+                    <tr height="2px">
+                        <td style="border-left: 1px solid #C8C8C8; border-bottom: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;"
+                            colspan="2"></td>
+                    </tr>
+                </table>
+            </div>
 
-  <script type="text/javascript">
-    var baseUrl = "${href.peerReviewCommentCallback()}";
-    var tacUrl = "${href.chrome('/hw/images/thumbtac11x11.gif')}";
-    var plusUrl = "${href.chrome('/hw/images/plus.gif')}";
-    var minusUrl = "${href.chrome('/hw/images/minus.gif')}";
-    var lineStart = ${review_file.start};
-    var lineEnd = ${review_file.end};
-  </script>
-  <script type="text/javascript" src="${href.chrome('/hw/js/peerReviewPerform.js')}"></script>
+            <script type="text/javascript">
+            var baseUrl = "${href.peerReviewCommentCallback()}";
+            var tacUrl = "${href.chrome('/hw/images/thumbtac11x11.gif')}";
+            var plusUrl = "${href.chrome('/hw/images/plus.gif')}";
+            var minusUrl = "${href.chrome('/hw/images/minus.gif')}";
+            var lineStart = ${review_file.start};
+            var lineEnd = ${review_file.end};
+
+            </script>
+            <script type="text/javascript" src="${href.chrome('/hw/js/peerReviewPerform.js')}"></script>
 
     </div>
-  </body>
+    </body>
 </html>

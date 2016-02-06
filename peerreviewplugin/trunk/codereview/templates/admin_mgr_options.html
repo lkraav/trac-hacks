@@ -5,33 +5,33 @@
       xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:i18n="http://genshi.edgewall.org/i18n">
-<xi:include href="admin.html" />
-<head>
-    <title>Set Threshold</title>
-</head>
-<body>
-<h2>Set Threshold</h2>
-    <form action="" id="percent-form" method="post">
-        <fieldset>
-            <div class="field">
-                <label>Voting threshold (0...100):</label>
-                <input type="text" class="form-control" style="width: 4em;" maxlength="3" id="percentage" name="percentage"
-                       value="$percentage" />
-            </div>
-            <div class="buttons">
-                <input name="threshold" value="${_('Set Threshold')}" type="submit" />
-            </div>
-        </fieldset>
-    </form>
-<p>This setting defines the number of positive votes versus total votes necessary for an author to submit a code review for a manager's approval.
-Adjusting the value may change the status of reviews with status <strong>Reviewed</strong> and
-    <strong>Open for review</strong>.
-</p>
-<p>
-    <ul>
-        <li>By setting to <strong>100%</strong> all reviewers have to approve for a review to pass.</li>
-        <li>By setting to <strong>0%</strong> a single reviewer has to approve for a review to pass.</li>
-</ul>
-</p>
-</body>
+    <xi:include href="admin.html" />
+    <head>
+        <title>Set Threshold</title>
+    </head>
+    <body>
+        <h2>Set Threshold</h2>
+            <form action="" id="percent-form" method="post">
+                <fieldset>
+                    <div class="field">
+                        <label>Voting threshold (0...100):</label>
+                        <input type="text" class="form-control" style="width: 4em;" maxlength="3" id="percentage" name="percentage"
+                               value="$percentage" />
+                    </div>
+                    <div class="buttons">
+                        <input name="threshold" value="${_('Set Threshold')}" type="submit" />
+                    </div>
+                </fieldset>
+            </form>
+        <p>This setting defines the number of positive votes versus total votes necessary for an author to submit a code review for a manager's approval.
+        Adjusting the value may change the status of reviews with status <strong>Reviewed</strong> and
+            <strong>Open for review</strong>.
+        </p>
+        <p>
+            <ul>
+                <li>By setting to <strong>100%</strong> all reviewers have to approve for a review to pass.</li>
+                <li>By setting to <strong>0%</strong> a single reviewer has to approve for a review to pass.</li>
+            </ul>
+        </p>
+    </body>
 </html>
