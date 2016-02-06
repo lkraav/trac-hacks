@@ -28,9 +28,9 @@
     <div py:choose="new">
         <table py:when="'yes'" class="listing" id="myuserlist">
             <thead>
-                <th>
+                <tr>
                     <th>Username (Click to remove)</th>
-                </th>
+                </tr>
             </thead>
             <tbody id="myuserbody">
                 <tr id="no-users" class="even">
@@ -41,9 +41,9 @@
 
         <table py:otherwise="" class="listing" id="myuserlist">
             <thead>
-                <th>
-                    <td>Username (Click to remove)</td>
-                </th>
+                <tr>
+                    <th>Username (Click to remove)</th>
+                </tr>
             </thead>
             <tbody py:with="cls=cycle(('odd', 'even'))" id="myuserbody">
                 <tr py:for="item in assigned_users" id="${item}id" class="${cls.next()}">
