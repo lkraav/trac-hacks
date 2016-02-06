@@ -141,6 +141,9 @@ class NewReviewModule(Component):
             for f in rfiles:
                 # This id is used by the hacascript code to find duplicate entries.
                 f.element_id = create_file_hash_id(f)
+                if req.args.get('modify'):
+                    comments = Comment.select_by_file_id(self.env, f.file_id)
+                    f.num_comments = len(comments) or 0
                 popFiles.append(f)
 
             data['name'] = review.name
@@ -264,3 +267,18 @@ class NewReviewModule(Component):
                                 name, review.review_id)
                     continue
                 reviewer.delete()
+
+        # Handle file removal
+        new_files = req.args.get('file')
+        if not type(new_files) is list:
+            new_files = [new_files]
+        old_files = []
+        rfiles = {}
+        for f in ReviewFile.select_by_review(self.env, review.review_id):
+            fid = u"%s,%s,%s,%s" % (f.path, f.version, f.start, f.end)
+            old_files.append(fid)
+            rfiles[fid] = f
+
+        rem_files = list(set(old_files) - set(new_files))
+        for fid in rem_files:
+            rfiles[fid].delete()

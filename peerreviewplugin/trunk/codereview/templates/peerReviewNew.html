@@ -11,21 +11,21 @@
     </head>
 
     <body>
-        <div id="content">
-            <h1>Create a New Code Review</h1>
+        <div id="content" py:with="modify = req.args.get('modify', 0)">
+            <h1 py:if="not modify">Create a New Code Review</h1>
+            <h1 py:if="modify">Modify an existing Code Review</h1>
 
             <h2>Step 1: Choose a name for this review.</h2>
 
             <!-- CodeReview name is empty if new, with previous name is resubmitted -->
-            <form method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);"
-                  py:with="modify = req.args.get('modify', 0)">
+            <form method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);">
                 <fieldset>
                     Name: <input type="text" name="Name" value="${name}" id="review-name"/>
                 </fieldset>
 
-                <h2 py:if="not followup">Step 2: Select the sections to be reviewed.</h2>
+                <h2 py:if="not followup and not modify">Step 2: Select the sections to be reviewed.</h2>
                 <h2 py:if="followup">Step 2: Select the revision for the files.</h2>
-
+                <h2 py:if="modify">Step 2: Modify the list of files.</h2>
                 <fieldset>
                     <p py:if="followup" class="help">The selected revision is used for all files in the list. If you want to
                         compare a file with a different revision
@@ -41,10 +41,10 @@
                     </div>
 
                     <div py:if="modify">
-                        <p>You can't add or remove files when modifying a review.</p>
+                        <p>You can't add files when modifying a review. Only files without comments may be removed</p>
                     </div>
 
-                    <table py:if="not req.args.get('modify')" class="listing dirlist" id="myfilelist">
+                    <table py:if="not modify_" class="listing dirlist" id="myfilelist">
                         <thead>
                             <tr>
                                 <th>Filename (Click to remove)</th>
@@ -52,6 +52,7 @@
                                 <th>End Line</th>
                                 <th py:if="followup">Old Revision</th>
                                 <th>Revision</th>
+                                <th py:if="modify">Comments</th>
                             </tr>
                         </thead>
                         <!-- Display an empty file list if it's a new CodeReview, display previous list if resubmitted -->
@@ -61,6 +62,7 @@
                                 <td></td>
                                 <td></td>
                                 <td></td>
+                                <td py:if="modify"></td>
                                 <td py:if="followup"></td>
                             </tr>
                         </tbody>
@@ -70,16 +72,20 @@
                                 <td>
                                     <input type="hidden" name="file"
                                            value="${item.path},${item.version},${item.start},${item.end}"/>
-                                    <a href="javascript:removefile('${item.path},${item.version},${item.start},${item.end}')">${item.path}</a>
+                                    <a py:if="not item.num_comments"
+                                       href="javascript:removefile('${item.path},${item.version},${item.start},${item.end}')">${item.path}
+                                    </a>
+                                    <py:if test="item.num_comments">${item.path}</py:if>
                                 </td>
                                 <td>${item.start}</td>
                                 <td>${item.end}</td>
                                 <td>${item.version}</td>
+                                <td py:if="modify">${item.num_comments}</td>
                                 <td py:if="followup" class="newrev"></td>
                             </tr>
                         </tbody>
                     </table>
-                    <p class="help">If <strong>Start Line</strong> and <strong>End Line</strong> are set to zero the
+                    <p  py:if="not modify" class="help">If <strong>Start Line</strong> and <strong>End Line</strong> are set to zero the
                         whole file is selected for review.</p>
                 </fieldset>
                 <h2>Step 3: Select reviewers for your review.</h2>

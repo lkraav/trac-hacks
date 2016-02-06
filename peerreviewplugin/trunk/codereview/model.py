@@ -286,6 +286,14 @@ class ReviewFile(object):
                             VALUES (%s, %s, %s, %s, %s)
                             """, (self.review_id, self.path, self.start, self.end, self.version))
 
+    def delete(self):
+        @self.env.with_transaction()
+        def do_delete(db):
+            cursor = db.cursor()
+            self.env.log.debug("Deleting file '%s' for review '%s'" % (self.file_id, self.review_id))
+            cursor.execute("""DELETE FROM peer_review_file  WHERE file_id=%s""",
+                           (self.file_id,))
+
     @classmethod
     def select_by_review(cls, env, review_id):
         db = env.get_read_db()
