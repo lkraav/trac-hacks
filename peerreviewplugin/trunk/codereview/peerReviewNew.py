@@ -2,7 +2,7 @@
 # Copyright (C) 2005-2006 Team5
 # All rights reserved.
 #
-# This software is licensed as described in the file COPYING.txt, which 
+# This software is licensed as described in the file COPYING.txt, which
 # you should have received as part of this distribution.
 #
 # Author: Team5
@@ -144,7 +144,10 @@ class NewReviewModule(Component):
                 popFiles.append(f)
 
             data['name'] = review.name
-            data['notes'] = "Review based on ''%s'' (resubmitted)." % review.name
+            if req.args.get('modify'):
+                data['notes'] = review.notes
+            else:
+                data['notes'] = "Review based on ''%s'' (resubmitted)." % review.name
 
             data['prevFiles'] = popFiles
 
