@@ -16,7 +16,7 @@
                        .new          - new value for the property
                        (both .old and .new have .name, .value and .rendered properties)
                      .diffs        - a sequence of list of blocks
-                     
+
                        Each block being a dict:
                        .type         - one of 'unmod', 'add', 'rem' or 'mod'
                        .base and .changed - information about lines from old and new content
@@ -44,7 +44,7 @@
 
   <ul py:if="any([item.diffs or item.props for item in changes])" class="entries">
     <py:for each="idx, item in enumerate(changes)" py:with="old = item.old; new = item.new">
-      <li py:if="item and (item.diffs or item.props or 'comments' in item)" class="entry" 
+      <li py:if="item and (item.diffs or item.props or 'comments' in item)" class="entry"
           py:with="comments = item.get('comments')">
         <h2 id="${not no_id and 'file%s' % idx or None}" py:choose="">
           <a py:when="new.path" href="${item.get('href', new.get('href'))}"
@@ -218,12 +218,15 @@
                       <!--! First show the "old" lines -->
                       <tr py:for="idx, line in enumerate(block.base.lines)"
                         class="${idx == 0 and 'first' or None}">
-                        <th>${block.base.offset+idx+1}</th><th>&nbsp;</th><td class="l"><span>$line</span>&nbsp;</td>
+                        <th id="P${block.base.offset+idx+1}">${block.base.offset+idx+1}</th>
+                        <th>&nbsp;</th>
+                        <td class="l"><span>$line</span>&nbsp;</td>
                       </tr>
                       <!--! Then show the "new" lines -->
                       <tr py:for="idx, line in enumerate(block.changed.lines)"
                         class="${idx + 1 == len(block.changed.lines) and 'last' or None}">
-                        <th>&nbsp;</th><th id="L${block.changed.offset+idx+1}">
+                        <th>&nbsp;</th>
+                        <th id="L${block.changed.offset+idx+1}">
                         <a href="javascript:addComment(${block.changed.offset+idx+1}, $file_id, -1)">${block.changed.offset+idx+1}</a></th><td class="r"><span>$line</span>&nbsp;</td>
                       </tr>
                     </py:when>
