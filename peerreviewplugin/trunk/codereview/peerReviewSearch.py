@@ -77,13 +77,22 @@ class PeerReviewSearch(Component):
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_javascript(req, 'hw/js/peerReviewSearch.js')
-        add_script_data(req, {'dateIndexSelected': '01',
-                              'monthSelected': data['searchValues_month'],
-                              'daySelected': data['searchValues_day'],
-                              'yearSelected': data['searchValues_year'],
-                              'statusSelected': data['searchValues_status'],
-                              'authorSelected': data['searchValues_author'],
-                              'nameSelected': data['searchValues_name']})
+        if req.args.get('doSearch_'):
+            add_script_data(req, {'dateIndexSelected': '01',
+                                  'monthSelected': data['searchValues_month'],
+                                  'daySelected': data['searchValues_day'],
+                                  'yearSelected': data['searchValues_year'],
+                                  'statusSelected': data['searchValues_status'],
+                                  'authorSelected': data['searchValues_author'],
+                                  'nameSelected': data['searchValues_name']})
+        else:
+            add_script_data(req, {'dateIndexSelected': '',
+                                  'monthSelected': '',
+                                  'daySelected': '',
+                                  'yearSelected': '',
+                                  'statusSelected': '',
+                                  'authorSelected': '',
+                                  'nameSelected': ''})
         add_ctxt_nav_items(req)
         return 'peerReviewSearch.html', data, None
 
