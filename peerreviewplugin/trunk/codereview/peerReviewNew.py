@@ -144,7 +144,7 @@ class NewReviewModule(Component):
                 popFiles.append(f)
 
             data['name'] = review.name
-            if req.args.get('modify'):
+            if req.args.get('modify') or req.args.get('followup'):
                 data['notes'] = review.notes
             else:
                 data['notes'] = "Review based on ''%s'' (resubmitted)." % review.name
