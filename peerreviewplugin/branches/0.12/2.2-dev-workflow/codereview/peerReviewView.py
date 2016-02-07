@@ -70,7 +70,7 @@ class ViewReviewModule(Component):
             elif req.args.get('ManagerChoice'):
                 # process state (Open for review, ready for inclusion, etc.) change by manager
                 mc = req.args.get('ManagerChoice')
-                if mc == "Open for review" or mc == "Reviewed" or mc == "Ready for inclusion" or mc == "Closed":
+                if mc == "new" or mc == "reviewed" or mc == "ready" or mc == "closed":
                     self.manager_change_status(req, reviewID, mc)
             elif req.args.get('resubmit'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=reviewID))
@@ -110,7 +110,7 @@ class ViewReviewModule(Component):
 
         if review.author == req.authname or manager or \
                 (entry and entry.vote != '-1') or \
-                review.status == "Closed" or review.status == "Ready for inclusion":
+                review.status == "closed" or review.status == "ready":
             data['viewvotesummary'] = True
         else:
             data['viewvotesummary'] = False
@@ -185,9 +185,9 @@ class ViewReviewModule(Component):
         if total_votes_possible != 0:
             vote_ratio = float(voteyes)/float(total_votes_possible)
             if vote_ratio >= threshold:
-                review.status = "Reviewed"
+                review.status = "reviewed"
             else:
-                review.status = "Open for review"
+                review.status = "new"
             review.update()
         req.redirect(self.env.href.peerReviewView(Review=reviewID))
 
@@ -197,8 +197,8 @@ class ViewReviewModule(Component):
     def submit_for_inclusion(self, req, number):
         review = Review(self.env, number)
         if review.author == req.authname:
-            if review.status == "Reviewed":
-                review.status = "Ready for inclusion"
+            if review.status == "reviewed":
+                review.status = "ready"
                 review.update()
                 req.redirect(self.env.href.peerReviewView(Review=number))
 
@@ -208,7 +208,7 @@ class ViewReviewModule(Component):
         review = Review(self.env, number)
         # this option available if you are the author or manager of this code review
         if review.author == req.authname or manager:
-            review.status = "Closed"
+            review.status = "closed"
             review.update()
             req.redirect(self.env.href.peerReviewView(Review=number))
 

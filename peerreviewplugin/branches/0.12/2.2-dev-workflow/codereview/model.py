@@ -46,7 +46,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         return PeerReviewModel(self.env, key['review_id'], key['res_realm'])
 
 
-class GenericWorkflowModelProvider(Component):
+class PeerReviewModelProvider(Component):
     """
     This class provides the data model for the generic workflow plugin.
 
@@ -65,34 +65,84 @@ class GenericWorkflowModelProvider(Component):
 
     implements(IConcreteClassProvider, IEnvironmentSetupParticipant)
 
+    current_db_version = 0
+
     SCHEMA = {
                 'peerreview':
                     {'table':
                         Table('peer_review', key = ('review_id'))[
                               Column('review_id', auto_increment=True, type='int'),
                               Column('owner'),
-                              Column('status'),
+                              Column('state'),
                               Column('created', type='int'),
                               Column('name'),
                               Column('notes'),
                               Column('parent_id', type='int'),
-                              Column('keywords'),
+                              Column('keywords')],
+                     'has_custom': True,
+                     'has_change': True,
+                     'version': 3},
+                'peerreviewfile':
+                    {'table':
+                        Table('peer_review_file', key='file_id')[
+                              Column('file_id', auto_increment=True, type='int'),
+                              Column('review_id', type='int'),
+                              Column('path'),
+                              Column('line_start', type='int'),
+                              Column('line_end', type='int'),
+                              Column('repo'),
+                              Column('revision'),
                               Column('state')],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 3}
+                     'version': 3},
+                'peerreviewcomment':
+                    {'table':
+                        Table('peer_review_comment', key='comment_id')[
+                              Column('comment_id', auto_increment=True, type='int'),
+                              Column('file_id', type='int'),
+                              Column('parent_id', type='int'),
+                              Column('line_num', type='int'),
+                              Column('author'),
+                              Column('comment'),
+                              Column('attachment_path'),
+                              Column('created', type='int'),
+                              Column('state')],
+                     'has_custom': True,
+                     'has_change': True,
+                     'version': 3},
             }
 
     FIELDS = {
                 'peerreview': [
-                    {'name': 'review_id', 'type': 'int', 'label': N_('ID')},
+                    {'name': 'review_id', 'type': 'int', 'label': N_('Review ID')},
                     {'name': 'owner', 'type': 'text', 'label': N_('Review owner')},
-                    {'name': 'status', 'type': 'text', 'label': N_('Review status')},
+                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state')},
                     {'name': 'created', 'type': 'int', 'label': N_('Review creation date')},
                     {'name': 'name', 'type': 'text', 'label': N_('Review name')},
                     {'name': 'notes', 'type': 'text', 'label': N_('Review notes')},
                     {'name': 'parent_id', 'type': 'int', 'label': N_('Review parent. 0 if not a followup review')},
-                    {'name': 'keywords', 'type': 'text', 'label': N_('Review keywords')},
+                    {'name': 'keywords', 'type': 'text', 'label': N_('Review keywords')}
+                ],
+                'peerreviewfile': [
+                    {'name': 'file_id', 'type': 'int', 'label': N_('File ID')},
+                    {'name': 'review_id', 'type': 'int', 'label': N_('Review ID')},
+                    {'name': 'path', 'type': 'text', 'label': N_('File path')},
+                    {'name': 'line_start', 'type': 'int', 'label': N_('First line to review')},
+                    {'name': 'line_end', 'type': 'int', 'label': N_('Last line to review')},
+                    {'name': 'repo', 'type': 'text', 'label': N_('Repository')},
+                    {'name': 'revision', 'type': 'text', 'label': N_('Revision')},
+                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state')}
+                ],
+                'peerreviewcomment': [
+                    {'name': 'review_id', 'type': 'int', 'label': N_('Comment ID')},
+                    {'name': 'file_id', 'type': 'int', 'label': N_('File ID')},
+                    {'name': 'parent_id', 'type': 'int', 'label': N_('Parent comment')},
+                    {'name': 'line_num', 'type': 'int', 'label': N_('Line')},
+                    {'name': 'author', 'type': 'text', 'label': N_('Author')},
+                    {'name': 'comment', 'type': 'text', 'label': N_('Comment')},
+                    {'name': 'attachment_path', 'type': 'text', 'label': N_('Attachment')},
+                    {'name': 'created', 'type': 'int', 'label': N_('Comment creation date')},
                     {'name': 'state', 'type': 'text', 'label': N_('Workflow state')}
                 ]
             }
@@ -103,6 +153,12 @@ class GenericWorkflowModelProvider(Component):
                         'searchable': True,
                         'has_custom': True,
                         'has_change': True
+                    },
+                'peerreviewfile': {
+                        'label': "ReviewFile",
+                        'searchable': False,
+                        'has_custom': False,
+                        'has_change': False
                     },
                 }
 
@@ -134,9 +190,9 @@ class GenericWorkflowModelProvider(Component):
     def check_permission(self, req, realm, key_str=None, operation='set', name=None, value=None):
         pass
 
-
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
+        self.current_db_version = 0
         self.upgrade_environment()
 
     def environment_needs_upgrade(self, db=None):
@@ -146,8 +202,8 @@ class GenericWorkflowModelProvider(Component):
             self.log.info("PeerReview plugin database schema version is %d, should be %d",
                           self.current_db_version, db_version)
             return True
-        if self.current_db_version > db_version:
-            raise TracError(_("Database newer than PeerReview plugin version"))
+        #if self.current_db_version > db_version:
+        #    raise TracError(_("Database newer than PeerReview plugin version"))
 
         for realm in self.SCHEMA:
             realm_metadata = self.SCHEMA[realm]
@@ -177,6 +233,20 @@ class GenericWorkflowModelProvider(Component):
                 self._set_version(cursor, i)
                 db.commit()
 
+
+        # At this point at least all legacy tables are installed with db version 2.
+        # Make sure we have a db version set for tables other than 'peerreview'
+        @self.env.with_transaction(db)
+        def add_tables(db):
+            db_names = [u'peerreviewfile_version', u'peerreviewcomment_version']
+            cursor = db.cursor()
+            for name in db_names:
+                print "checking ", name
+                cursor.execute("SELECT name FROM system")
+                if name not in [row[0] for row in cursor]:
+                    cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
+                                  (name, db_version))
+
         @self.env.with_transaction(db)
         def do_upgrade_environment(db):
             for realm in self.SCHEMA:
@@ -200,15 +270,18 @@ class GenericWorkflowModelProvider(Component):
         return val
 
     def _set_version(self, cursor, cur_ver):
+        db_names = [u'peerreview_version', u'peerreviewfile_version', u'peerreviewcomment_version']
         if not self.current_db_version:
-            cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
-                           (db_name, cur_ver))
+            for name in db_names:
+                cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
+                               (name, cur_ver))
         else:
-            cursor.execute("UPDATE system SET value = %s WHERE name = %s",
-                           (db_version, db_name))
-            if cursor.rowcount == 0:
-                cursor.execute("INSERT INTO system (name,value) VALUES (%s,%s)",
-                               (db_name, db_version))
+            for name in db_names:
+                cursor.execute("UPDATE system SET value = %s WHERE name = %s",
+                               (db_version, name))
+                if cursor.rowcount == 0:
+                    cursor.execute("INSERT INTO system (name,value) VALUES (%s,%s)",
+                                   (name, db_version))
         self.current_db_version = cur_ver
 
 
@@ -370,7 +443,7 @@ class Review(object):
             db = self.env.get_read_db()
             cursor = db.cursor()
             cursor.execute("""
-                SELECT review_id, owner, status, created, name, notes, parent_id FROM peer_review WHERE review_id=%s
+                SELECT review_id, owner, state, created, name, notes, parent_id FROM peer_review WHERE review_id=%s
                 """, (review_id,))
             row = cursor.fetchone()
             if not row:
@@ -402,7 +475,7 @@ class Review(object):
         def do_insert(db):
             cursor = db.cursor()
             self.env.log.debug("Creating new review '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO peer_review (owner, status, created, name, notes, parent_id)
+            cursor.execute("""INSERT INTO peer_review (owner, state, created, name, notes, parent_id)
                             VALUES (%s, %s, %s, %s, %s, %s)
                             """, (self.author, self.status, self.raw_date, self.name, self.notes, self.parent_id))
             self.review_id = db.get_last_id(cursor, 'peer_review', 'review_id')
@@ -413,7 +486,7 @@ class Review(object):
             cursor = db.cursor()
             self.env.log.debug("Updating review '%s'" % self.review_id)
             cursor.execute("""UPDATE peer_review
-                            SET owner=%s, status=%s, created=%s, name=%s, notes=%s, parent_id=%s
+                            SET owner=%s, state=%s, created=%s, name=%s, notes=%s, parent_id=%s
                             WHERE review_id=%s
                             """, (self.author, self.status, self.raw_date, self.name, self.notes, self.parent_id,
                                   self.review_id))
@@ -422,7 +495,7 @@ class Review(object):
     def select(cls, env):
         db = env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("SELECT review_id, owner, status, created, name, notes, parent_id FROM peer_review "
+        cursor.execute("SELECT review_id, owner, state, created, name, notes, parent_id FROM peer_review "
                        "ORDER BY created")
         reviews = []
         for row in cursor:
@@ -435,7 +508,7 @@ class Review(object):
     def select_by_reviewer(cls, env, reviewer):
         db = env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("SELECT cr.review_id, cr.owner, cr.status, cr.created, cr.name, cr.notes, cr.parent_id  FROM "
+        cursor.execute("SELECT cr.review_id, cr.owner, cr.state, cr.created, cr.name, cr.notes, cr.parent_id  FROM "
                        "peer_review AS cr JOIN peer_reviewer AS r ON cr.review_id = r.review_id "
                        "WHERE r.reviewer=%s"
                        "ORDER BY cr.created", (reviewer,))
