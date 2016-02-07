@@ -18,3 +18,4 @@ import peerReviewCommentCallback
 import peerReviewInit
 from admin import MgrOptionsAdminPlugin
 import tracgenericclass
+import tracgenericworkflow

@@ -181,7 +181,7 @@ class PeerReviewModelProvider(Component):
 
         if realm == 'peerreview':
             if key is not None:
-                obj = PeerReviewModel(self.env, key['review_id'])
+                obj = PeerReviewModel(self.env, key['review_id'], key['res_realm'])
             else:
                 obj = PeerReviewModel(self.env)
 
