@@ -91,3 +91,10 @@ table.code th.performCodeReview{
 #myreviewlist{
   margin-bottom: 2em;
 }
+
+/* timeline */
+.codereview .notes{
+  color: #aaa;
+  font-size: 90%;
+  margin-left: 2em;
+}
