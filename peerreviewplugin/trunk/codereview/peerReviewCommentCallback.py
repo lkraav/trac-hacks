@@ -2,7 +2,7 @@
 # Copyright (C) 2005-2006 Team5
 # All rights reserved.
 #
-# This software is licensed as described in the file COPYING.txt, which 
+# This software is licensed as described in the file COPYING.txt, which
 # you should have received as part of this distribution.
 #
 # Author: Team5
@@ -25,9 +25,9 @@ from trac.web.main import IRequestHandler
 from dbBackend import *
 from model import ReviewFile, Review
 
-class UserbaseModule(Component):
-    implements(IRequestHandler, ITemplateProvider)
-        
+class PeerReviewCommentHandler(Component):
+    implements(IRequestHandler)
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info == '/peerReviewCommentCallback'
@@ -55,30 +55,17 @@ class UserbaseModule(Component):
                 data['invalid'] = 'closed'
                 return 'peerReviewCommentCallback.html', data, None
             self.createComment(req, data)
-        
+
         elif actionType == 'getCommentTree':
             self.getCommentTree(req, data)
 
         elif actionType == 'getCommentFile':
             self.getCommentFile(req, data)
-            
+
         else:
             data['invalid'] = 5
 
         return 'peerReviewCommentCallback.html', data, None
-                
-    # ITemplateProvider methods
-    def get_templates_dirs(self):
-        """
-        Return the absolute path of the directory containing the provided
-        ClearSilver templates.
-        """
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hw', resource_filename(__name__, 'htdocs'))]
 
     def review_is_closed(self, req):
         rfile = ReviewFile(self.env, req.args.get('IDFile'))
@@ -94,7 +81,7 @@ class UserbaseModule(Component):
         idFile = req.args.get('IDFile')
         if idFile is None or shortPath is None:
             return
-       
+
         shortPath = urllib.unquote(shortPath)
         self.path = os.path.join(self.env.path, 'attachments', 'CodeReview',
                                  urllib.quote(idFile))
@@ -188,7 +175,7 @@ class UserbaseModule(Component):
             commentHtml = "No Comments on this Line"
         data['lineNum'] = LineNum
         data['fileID'] = IDFile
-        data['commentHTML'] = Markup(commentHtml) 
+        data['commentHTML'] = Markup(commentHtml)
 
     #Recursively builds the comment html to send back.
     def buildCommentHTML(self, comment, nodesIn, LineNum, IDFile, first):
@@ -201,10 +188,10 @@ class UserbaseModule(Component):
         for key in keys:
             child = comment.Children[key]
             childrenHTML += self.buildCommentHTML(child, nodesIn + 1, LineNum, IDFile, False)
-               
+
         factor = 15
         width = 5 + nodesIn * factor
-        
+
         html = "<table width=\"400px\" style=\"border-collapse: collapse; display: block;\" id=\"" + str(comment.IDParent) + ":" + str(comment.IDComment) + "\">"
         if not first:
             html += "<tr><td width=\"" + `width` + "px\"></td>"
