@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2015 Roberto Longobardi
-# 
+#
 # This file is part of the Test Manager plugin for Trac.
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at: 
+# are also available at:
 #   https://trac-hacks.org/wiki/TestManagerForTracPluginLicense
 #
 # Author: Roberto Longobardi <otrebor.dev@gmail.com>
-# 
+#
 
 import os
 import re
@@ -23,22 +23,22 @@ from datetime import datetime
 from trac.core import *
 from trac.db import with_transaction
 
-    
+
 def formatExceptionInfo(maxTBlevel=5):
     cla, exc, trbk = sys.exc_info()
     excName = cla.__name__
-    
+
     try:
         excArgs = exc.__dict__["args"]
     except KeyError:
         excArgs = "<no args>"
-    
+
     excTb = traceback.format_tb(trbk, maxTBlevel)
-    
+
     tracestring = ""
     for step in excTb:
         tracestring += step + "\n"
-    
+
     return "Error name: %s\nArgs: %s\nTraceback:\n%s" % (excName, excArgs, tracestring)
 
 
@@ -46,7 +46,7 @@ checked_utimestamp = False
 has_utimestamp = False
 checked_compatibility = False
 has_read_db = False
-    
+
 def to_any_timestamp(date_obj):
     global checked_utimestamp
     global has_utimestamp
@@ -111,16 +111,16 @@ def check_compatibility(env):
 
 def to_list(params=[]):
     result = []
-    
+
     for i in params:
         if isinstance(i, list):
             for v in i:
                 result.append(v)
         else:
             result.append(i)
-    
+
     return tuple(result)
-  
+
 
 def get_dictionary_from_string(str):
     result = {}
@@ -131,7 +131,7 @@ def get_dictionary_from_string(str):
     for tok in tokens:
         name = remove_quotes(tok.partition(':')[0])
         value = remove_quotes(tok.partition(':')[2])
-        
+
         result[name] = value
 
     return result
@@ -140,15 +140,17 @@ def get_dictionary_from_string(str):
 def get_string_from_dictionary(dictionary, values=None):
     if values is None:
         values = dictionary
-    
+
     result = '{'
     for i, k in enumerate(dictionary):
+        # TODO: send a patch for the following line
         result += "'"+k+"':'"+values[k]+"'"
+        # result += "'%s':'%s'" % (k, values[k])
         if i < len(dictionary)-1:
             result += ","
-    
+
     result += '}'
-    
+
     return result
 
 
@@ -171,25 +173,25 @@ def get_timestamp_db_type():
     else:
         # Trac 0.11
         return 'int'
-    
+
 def upload_file_to_subdir(env, req, subdir, param_name, target_filename):
     upload = param_name
-    
+
     if isinstance(upload, unicode) or not upload.filename:
         raise TracError('You must provide a file.')
-    
+
     txt_filename = upload.filename.replace('\\', '/').replace(':', '/')
     txt_filename = os.path.basename(txt_filename)
     if not txt_filename:
         raise TracError('You must provide a file.')
-        
+
     target_dir = os.path.join(env.path, 'upload', subdir)
-    
+
     if not os.access(target_dir, os.F_OK):
         os.makedirs(target_dir)
-        
+
     target_path = os.path.join(target_dir, target_filename)
-    
+
     try:
         target_file = open(target_path, 'w')
         shutil.copyfileobj(upload.file, target_file)
@@ -204,12 +206,12 @@ def db_insert_or_ignore(env, tablename, propname, value, db=None):
 def db_get_config_property(env, tablename, propname, db=None):
     if not db:
         db = env.get_read_db()
-        
+
     cursor = db.cursor()
-    
+
     sql = "SELECT value FROM %s WHERE propname=%%s" % tablename
     row = None
-    
+
     try:
         cursor.execute(sql, (propname,))
         row = cursor.fetchone()
@@ -218,9 +220,9 @@ def db_get_config_property(env, tablename, propname, db=None):
 
     if not row or len(row) == 0:
         return None
-        
+
     return row[0]
-        
+
 def db_set_config_property(env, tablename, propname, value, db=None):
     @env.with_transaction(db)
     def do_db_set_config_property(db):
@@ -234,7 +236,7 @@ def db_set_config_property(env, tablename, propname, value, db=None):
             cursor.execute("""
                            UPDATE %s
                                SET value = %%s
-                               WHERE propname = %%s 
+                               WHERE propname = %%s
                            """ % tablename, (str(value), propname))
         else:
             cursor.execute("""
@@ -245,23 +247,23 @@ def db_set_config_property(env, tablename, propname, value, db=None):
     return True
 
 def list_available_tables(dburi, cursor):
-    if dburi.startswith('sqlite:'): 
+    if dburi.startswith('sqlite:'):
         query = """
             SELECT name FROM sqlite_master
             WHERE type='table' AND NOT name='sqlite_sequence'
             """
-    elif dburi.startswith('postgres:'): 
+    elif dburi.startswith('postgres:'):
         query = """
             SELECT tablename FROM pg_tables
             WHERE schemaname = ANY (current_schemas(false))
             """
-    elif dburi.startswith('mysql:'): 
-        query = "SHOW TABLES" 
-    else: 
-        raise TracError('Unsupported %s database' % dburi.split(':')[0]) 
-    cursor.execute(query) 
+    elif dburi.startswith('mysql:'):
+        query = "SHOW TABLES"
+    else:
+        raise TracError('Unsupported %s database' % dburi.split(':')[0])
+    cursor.execute(query)
 
-    return sorted([row[0] for row in cursor]) 
+    return sorted([row[0] for row in cursor])
 
 def fix_base_location(req):
     return req.href('/').rstrip('/')
@@ -290,11 +292,11 @@ del __bi
 def createFunctionFromString(sourceCode, args="", additional_symbols=dict()):
   """
   Create a python function from the given source code
-  
+
   \param sourceCode A python string containing the core of the
   function. Might include the return statement (or not), definition of
   local functions, classes, etc. Indentation matters !
-  
+
   \param args The string representing the arguments to put in the function's
   prototype, such as "a, b", or "a=12, b",
   or "a=12, b=dict(akey=42, another=5)"
@@ -325,7 +327,7 @@ def createFunctionFromString(sourceCode, args="", additional_symbols=dict()):
   s += "\t" + "\n\t".join(sourceCode.split('\n')) + "\n"
 
   # Byte-compilation (optional)
-  byteCode = compile(s, "<string>", 'exec')  
+  byteCode = compile(s, "<string>", 'exec')
 
   # Setup the local and global dictionaries of the execution
   # environment for __TheFunction__
@@ -387,7 +389,7 @@ def createFunctionFromString(sourceCode, args="", additional_symbols=dict()):
 #
 # import sys, re
 #
-# f = createFunction("print a\nprint b", "a=3, b=4", 
+# f = createFunction("print a\nprint b", "a=3, b=4",
 #                    additional_symbols = dict(re=re, sys=sys,
 #                                              afunction=F, ooo=OoO))
 # f()
