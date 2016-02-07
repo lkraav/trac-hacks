@@ -42,7 +42,7 @@ class PeerReviewInit(Component):
         # 0.10 compatibility hack (thanks Alec)
         try:
             from trac.db import DatabaseManager
-            db_manager, _ = DatabaseManager(self.env)._get_connector()
+            db_manager = DatabaseManager(self.env)._get_connector()[0]
         except ImportError:
             db_manager = db
 
