@@ -61,6 +61,21 @@
                     <dd>${par_file.path}</dd>
                     <dt>Revision:</dt>
                     <dd>${par_file.version}</dd>
+                    <dt>Comments:</dt>
+                    <dd py:if="diff.options.contextall">
+                        <py:for each="idx, line in enumerate(par_file.comments)">
+                            <py:with vars="last = idx == len(par_file.comments) - 1">
+                                <a href="#P$line">Line $line</a><span py:if="not last">, </span>
+                            </py:with>
+                        </py:for>
+                    </dd>
+                    <dd py:if="not diff.options.contextall">
+                        <py:for each="idx, line in enumerate(par_file.comments)">
+                            <py:with vars="last = idx == len(par_file.comments) - 1">
+                                Line $line<span py:if="not last">, </span>
+                            </py:with>
+                        </py:for>
+                    </dd>
                 </dl>
             </py:if>
 

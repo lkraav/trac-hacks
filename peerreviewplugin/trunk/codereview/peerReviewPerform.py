@@ -35,7 +35,7 @@ class PeerReviewPerform(Component):
     implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
 
     imagePath = ''
-    
+
     # ITextAnnotator methods
     def get_annotation_type(self):
         return 'performCodeReview', 'Line', 'Line numbers'
@@ -67,7 +67,7 @@ class PeerReviewPerform(Component):
 
     def get_navigation_items(self, req):
         return []
-        
+
     # IRequestHandler methods
     def match_request(self, req):
         if 'CODE_REVIEW_DEV' in req.perm:
@@ -104,8 +104,12 @@ class PeerReviewPerform(Component):
 
         # Data for parent review if any
         if review.parent_id != 0:
+
             par_review = Review(self.env, review.parent_id)  # Raises 'ResourceNotFound' on error
             parfile = ReviewFile(self.env, get_parent_file_id(self.env, rfile, review.parent_id))
+
+            lines = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]
+            parfile.comments = list(set(lines))  # remove duplicates
             par_revision = parfile.version
             if par_revision:
                 par_revision = repos.normalize_rev(par_revision)
