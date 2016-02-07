@@ -21,7 +21,8 @@ from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
 from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment
 from peerReviewMain import add_ctxt_nav_items
-
+from tracgenericworkflow.api import ResourceWorkflowSystem
+from trac.resource import Resource
 
 class ViewReviewModule(Component):
     """Displays a summary page for a review."""
@@ -154,6 +155,11 @@ class ViewReviewModule(Component):
         data['rvs'] = rvs
         data['rvsLength'] = len(rvs)
         data['cycle'] = itertools.cycle
+        realm = 'peerreview'
+        res = Resource(realm, str(review.review_id))  # Must be a string
+        print repr(res)
+        data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, '.', realm, res)
+        print repr(data['workflow'])
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')

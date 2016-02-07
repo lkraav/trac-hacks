@@ -30,6 +30,9 @@ setup(
                                  'tracgenericclass/*.py',
                                  'tracgenericclass/templates/*.html',
                                  'tracgenericclass/htdocs/*',
+                                 'tracgenericworkflow/*.py',
+                                 'tracgenericworkflow/templates/*.html',
+                                 'tracgenericworkflow/htdocs/*',
                                  ]},
     entry_points={
         'trac.plugins': [
