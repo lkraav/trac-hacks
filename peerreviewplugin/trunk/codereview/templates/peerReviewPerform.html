@@ -68,6 +68,7 @@
                                 <a href="#P$line">Line $line</a><span py:if="not last">, </span>
                             </py:with>
                         </py:for>
+                        <py:if test="not par_file.comments">No comments</py:if>
                     </dd>
                     <dd py:if="not diff.options.contextall">
                         <py:for each="idx, line in enumerate(par_file.comments)">
@@ -75,13 +76,14 @@
                                 Line $line<span py:if="not last">, </span>
                             </py:with>
                         </py:for>
+                        <py:if test="not par_file.comments">No comments</py:if>
                     </dd>
                 </dl>
             </py:if>
 
             <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 
-            <table border="0" width="100%" style="border-collapse: collapse" id="table1">
+            <table py:if="diffs or not parent_review" border="0" width="100%" style="border-collapse: collapse" id="table1">
                 <tr>
                     <td align="left">
                         <p class="help">Click line number to Add/View comments</p>
@@ -97,6 +99,12 @@
 
             <py:if test="parent_review">
                 <xi:include href="diff.html"/>
+                <div py:if="not diffs and not diff.options.contextall">
+                    <div class="notice system-message">
+                        <p>The files are identical.</p>
+                        <p>Show the file in full context to add comments to the revision '${review_file.version}'.</p>
+                    </div>
+                </div>
             </py:if>
             <!-- displays the contents of the file being reviewed -->
             <div id="FilePreview">$file_rendered</div>
