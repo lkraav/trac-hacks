@@ -26,12 +26,12 @@ __author__ = 'Cinc'
 
 class PeerReviewModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
-    protected_fields = ('review_id', 'res_realm', 'state')
+    protected_fields = ('id', 'res_realm', 'state')
 
     def __init__(self, env, id=None, res_realm=None, state='new', db=None):
         self.values = {}
 
-        self.values['review_id'] = id
+        self.values['id'] = id
         self.values['res_realm'] = res_realm
         self.values['state'] = state
 
@@ -43,7 +43,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         return ['id', 'res_realm']
 
     def create_instance(self, key):
-        return PeerReviewModel(self.env, key['review_id'], key['res_realm'])
+        return PeerReviewModel(self.env, key['id'], key['res_realm'])
 
 
 class PeerReviewModelProvider(Component):
@@ -117,7 +117,7 @@ class PeerReviewModelProvider(Component):
                 'peerreview': [
                     {'name': 'review_id', 'type': 'int', 'label': N_('Review ID')},
                     {'name': 'owner', 'type': 'text', 'label': N_('Review owner')},
-                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state')},
+                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state for review')},
                     {'name': 'created', 'type': 'int', 'label': N_('Review creation date')},
                     {'name': 'name', 'type': 'text', 'label': N_('Review name')},
                     {'name': 'notes', 'type': 'text', 'label': N_('Review notes')},
@@ -132,7 +132,7 @@ class PeerReviewModelProvider(Component):
                     {'name': 'line_end', 'type': 'int', 'label': N_('Last line to review')},
                     {'name': 'repo', 'type': 'text', 'label': N_('Repository')},
                     {'name': 'revision', 'type': 'text', 'label': N_('Revision')},
-                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state')}
+                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state file')}
                 ],
                 'peerreviewcomment': [
                     {'name': 'review_id', 'type': 'int', 'label': N_('Comment ID')},
@@ -143,7 +143,7 @@ class PeerReviewModelProvider(Component):
                     {'name': 'comment', 'type': 'text', 'label': N_('Comment')},
                     {'name': 'attachment_path', 'type': 'text', 'label': N_('Attachment')},
                     {'name': 'created', 'type': 'int', 'label': N_('Comment creation date')},
-                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state')}
+                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state comment')}
                 ]
             }
 
