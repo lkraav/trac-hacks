@@ -1,0 +1,100 @@
+
+p.help{
+  color: #666;
+  font-size: 90%;
+}
+
+.info-table{
+  border-collapse: collapse;
+}
+
+.info-table th{
+ width: 10em;
+}
+
+#ViewCommentArea{
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 455px;
+  height: 50px;
+  background-color: #F7F7F7;
+  z-index: 1;
+}
+
+.comment-table{
+  background-color: #F7F7F7;
+  border-collapse: collapse;
+}
+
+#AddCommentArea{
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 305px;
+  height: 25px;
+  background-color: #F7F7F7;
+  z-index: 1;
+}
+
+table.code th.performCodeReview{
+  width: 4em;
+}
+
+/* View page */
+
+#vote-summary td.yes{
+  color: limegreen;
+}
+
+#vote-summary td.no{
+  color: red;
+}
+
+.overview dt {
+    font-weight: bold;
+    padding-right: .25em;
+    position: absolute;
+    left: 0;
+    text-align: right;
+    width: 8.75em;
+}
+
+.overview dd {
+    margin-left: 9em;
+}
+
+/* New review page */
+#review-name{
+   width: 50%;
+}
+
+/* file browser */
+#add-file{
+  margin-bottom: 2em;
+}
+
+#add-file div{
+  display: inline-block;
+}
+
+#file-preview{
+  overflow: auto;
+  max-height: 400px;
+}
+
+/* search page */
+#searchReview div{
+  margin: 0.5em;
+}
+
+#myreviewlist{
+  margin-bottom: 2em;
+}
+
+/* timeline */
+.codereview .notes{
+  color: #aaa;
+  font-size: 90%;
+  margin-left: 2em;
+}
