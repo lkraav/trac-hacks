@@ -49,6 +49,8 @@ class ReviewCommentStruct(object):
             self.AttachmentPath = row[6]
             self.DateCreate = row[7]
             self.Children = {}
+            if not self.AttachmentPath:
+                self.AttachmentPath = ""
 
     def save(self, db):
         if self.IDComment == "-1":

@@ -182,6 +182,20 @@
                 </table>
             </div>
 
+            <div id="add-comment-dlg">
+                <form action="peerReviewCommentCallback" method="POST" id="add-comment-form">
+                    <div>
+                        <textarea rows="6" id="comment-txt" name="comment"></textarea>
+                    </div>
+                    <div class="buttons">
+                        <input type="hidden" name="fileid" value="-1" id="comment-fileid"/>
+                        <input type="hidden" name="parentid" value="-1" id="comment-parentid"/>
+                        <input type="hidden" name="line" value="" id="comment-line" />
+                        <input type="hidden" name="addcomment" value="Add Comment"/>
+                        <input type="submit" name="addcomment" value="Add Comment" id="addcomment"/>
+                    </div>
+                </form>
+            </div>
             <script type="text/javascript">
             var baseUrl = "${href.peerReviewCommentCallback()}";
             var tacUrl = "${href.chrome('/hw/images/thumbtac11x11.gif')}";

@@ -26,6 +26,7 @@ setup(
                                  'htdocs/images/*.png',
                                  'htdocs/images/*.gif',
                                  'htdocs/js/*.js',
+                                 'htdocs/css/images/*.png',
                                  'htdocs/css/*.css']},
     entry_points={
         'trac.plugins': [

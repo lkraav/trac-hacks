@@ -215,41 +215,13 @@ function getCommentsPart2(LineNum, fileID)
 
 function addComment(LineNum, fileID, parentID)
 {
-    var area = document.getElementById('AddCommentArea');
-    var titlePlace = document.getElementById('AddCommentTitleArea');
-    if(parentID < 0)
-    {
-        titlePlace.innerHTML = "Add Comment For Line " + LineNum;
-    }
-    else
-    {
-        titlePlace.innerHTML = "Reply To Comment On Line " + LineNum;
-    }
+    $("#comment-line").val(LineNum);
+    $("#comment-parentid").val(parentID);
+    $("#comment-fileid").val(fileID);
+    $("#comment-txt").val("");
+    $('#add-comment-dlg').dialog({title: "Add Comment for Line "+LineNum});
+    $('#add-comment-dlg').dialog('open');
 
-    GLOBAL_fileID = fileID;
-    GLOBAL_parentID = parentID;
-    GLOBAL_LineNum = LineNum;
-
-    var offset = DOMWindowGetYOffset();
-    if(GLOBAL_yPosAdd < 0)
-        GLOBAL_yPosAdd = 0;
-    area.style.top = (offset + GLOBAL_yPosAdd) + "px";
-
-    area.style.display = "";
-    area.style.zIndex = ++dragObj.zIndex;
-
-    if(window.frames['internalAddComment'])
-    {
-        var iDoc = window.frames['internalAddComment'].document;
-        var button = iDoc.getElementById('AddCommentButtonArea');
-        if(button != null)
-        {
-            button.innerHTML = "<input style=\"font-size: 10;\" type=button onclick=\"submitComment(" + LineNum + ", " + fileID + ", " +  parentID + ")\" value=\"Add Comment\">&nbsp;&nbsp;";
-            GLOBAL_fileID = -1;
-            GLOBAL_LineNum = -1;
-            window.setTimeout('resetAddCommentBoxSize()', 5);
-        }
-    }
 }
 
 function resetAddCommentBoxSize()

@@ -12,31 +12,6 @@ p.help{
  width: 10em;
 }
 
-#ViewCommentArea{
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  width: 455px;
-  height: 50px;
-  background-color: #F7F7F7;
-  z-index: 1;
-}
-
-.comment-table{
-  background-color: #F7F7F7;
-  border-collapse: collapse;
-}
-
-#AddCommentArea{
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  width: 305px;
-  height: 25px;
-  background-color: #F7F7F7;
-  z-index: 1;
-}
-
 table.code th.performCodeReview{
   width: 4em;
 }
@@ -97,4 +72,34 @@ table.code th.performCodeReview{
   color: #aaa;
   font-size: 90%;
   margin-left: 2em;
+}
+
+/* Comment handling */
+
+#add-comment-dlg #comment-txt{
+  width: 100%;
+}
+
+#ViewCommentArea{
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 455px;
+  height: 50px;
+  background-color: #F7F7F7;
+}
+
+.comment-table{
+  background-color: #F7F7F7;
+  border-collapse: collapse;
+}
+
+#AddCommentArea{
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 305px;
+  height: 25px;
+  background-color: #F7F7F7;
+  z-index: 1;
 }

@@ -15,15 +15,26 @@ import sys
 import time
 import unicodedata
 import urllib
-
+import json
 from trac import util
 from trac.core import *
 from trac.util import Markup
-from trac.web.chrome import ITemplateProvider, add_notice
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
-from model import ReviewFile, Review
+from model import ReviewFile, Review, Comment
+
+def writeJSONResponse(rq, data, httperror=200):
+    writeResponse(rq, json.dumps(data), httperror)
+
+
+def writeResponse(req, data, httperror=200):
+    data=data.encode('utf-8')
+    req.send_response(httperror)
+    req.send_header('Content-Type', 'text/plain; charset=utf-8')
+    req.send_header('Content-Length', len(data))
+    req.end_headers()
+    req.write(data)
 
 class PeerReviewCommentHandler(Component):
     implements(IRequestHandler)
@@ -47,6 +58,23 @@ class PeerReviewCommentHandler(Component):
         data['invalid'] = 0
         data['trac.href.peerReviewCommentCallback'] = \
             self.env.href.peerReviewCommentCallback()
+
+        if req.method == 'POST':
+            if req.args.get('addcomment'):
+                # TODO: This is not really nice but at least it prevents creation of comments for now...
+                if self.review_is_closed(req):
+                    data['invalid'] = 'closed'
+                    return 'peerReviewCommentCallback.html', data, None
+
+                comment = Comment(self.env)
+                comment.file_id = data['fileid'] = req.args.get('fileid')
+                comment.parent_id = data['parentid'] = req.args.get('parentid')
+                comment.comment = req.args.get('comment')
+                comment.line_num = data['line'] = req.args.get('line')
+                comment.author = req.authname
+                comment.insert()
+                writeJSONResponse(req, data)
+
         actionType = req.args.get('actionType')
 
         if actionType == 'addComment':
@@ -68,9 +96,12 @@ class PeerReviewCommentHandler(Component):
         return 'peerReviewCommentCallback.html', data, None
 
     def review_is_closed(self, req):
-        rfile = ReviewFile(self.env, req.args.get('IDFile'))
+        fileid = req.args.get('IDFile')
+        if not fileid:
+            fileid = req.args.get('fileid')
+        rfile = ReviewFile(self.env, fileid)
         review = Review(self.env, rfile.review_id)
-        if review.status == 'Closed':
+        if review.status == 'closed':
             return True
         return False
 
@@ -207,7 +238,7 @@ class PeerReviewCommentHandler(Component):
         html += "<tr><td width=\"" + `width` + "px\"></td><td width=\"" + `factor` + "px\"></td>"
         html += "<td width=\"" + `(400-100-factor-width)` + "px\" align=\"left\">"
         if comment.AttachmentPath != "":
-            html += "<a border=0 alt=\"Code Attachment\"  href=\"" + self.env.href.peerReviewCommentCallback() + "?actionType=getCommentFile&fileName=" + comment.AttachmentPath + "&IDFile=" + IDFile + "\"><img src=\"" + self.env.href.chrome() + "/hw/images/paper_clip.gif\"> " +  comment.AttachmentPath + "</a>"
+            html += "<a border=0 alt=\"Code Attachment\"  href=\"" + self.env.href.peerReviewCommentCallback() + "?actionType=getCommentFile&fileName=" + comment.AttachmentPath + "&IDFile=" + str(IDFile) + "\"><img src=\"" + self.env.href.chrome() + "/hw/images/paper_clip.gif\"> " +  comment.AttachmentPath + "</a>"
         html += "</td>"
         html += "<td width=\"100px\" align=\"right\">"
         html += "<a href=\"javascript:addComment(" + str(LineNum) + ", " + str(IDFile) + ", " +  str(comment.IDComment) + ")\">Reply</a></td></tr>"

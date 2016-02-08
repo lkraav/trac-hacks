@@ -19,9 +19,8 @@ from genshi.builder import tag
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
-from trac.resource import ResourceNotFound
 from trac.util.text import _
-from trac.web.chrome import INavigationContributor, \
+from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, \
                             add_link, add_stylesheet, add_script_data, add_javascript
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
@@ -29,10 +28,10 @@ from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
 from peerReviewMain import add_ctxt_nav_items
 from model import ReviewFile, Review, Comment
-
+from genshi.filters.transform import Transformer
 
 class PeerReviewPerform(Component):
-    implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
+    implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator, ITemplateStreamFilter)
 
     imagePath = ''
 
@@ -61,7 +60,31 @@ class PeerReviewPerform(Component):
         #color line numbers outside range light gray
         return row.append(tag.th(id='L%s' % lineno)(tag.font(lineno, color='#CCCCCC')))
 
+    # ITemplateStreamFilter
+
+    def filter_stream(self, req, method, filename, stream, data):
+        def repl_jquery(name, event):
+            """ Replace Trac jquery.js with jquery.js coming with plugin. """
+            attrs = event[1][1]
+            #match=re.match(self.PATH_REGEX, req.path_info)
+            #if match and attrs.get(name) and attrs.get(name).endswith("common/js/jquery.js"):
+            if attrs.get(name):
+                if attrs.get(name).endswith("common/js/jquery.js"):
+                    return attrs.get(name) .replace("common/js/jquery.js", 'req/js/jquery-1.11.2.min.js')
+                elif attrs.get(name) and attrs.get(name).endswith("common/js/keyboard_nav.js"):
+                    #keyboard_nav.js uses function live() which was removed with jQuery 1.9. Use a fixed script here
+                    return attrs.get(name) .replace("common/js/keyboard_nav.js", 'req/js/keyboard_nav.js')
+            return attrs.get(name) #.replace('#trac-add-comment', '?minview')
+
+        # The post action URL must be changed to include '?minview' otherwise any action like
+        # 'preview' would result in a new full page instead of the minimal page
+        stream = stream | Transformer('//head/script').attr('src', repl_jquery)
+        add_javascript(req, 'hw/js/jquery-ui-1.11.4.min.js')
+        add_stylesheet(req, 'hw/css/jquery-ui-1.11.4.min.css')
+        return stream
+
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
 

@@ -312,6 +312,7 @@ class ReviewFile(object):
 class Comment(object):
 
     def __init__(self, env, file_id=None):
+        self.env = env
         self._init_from_row((None,)*8)
 
     def _init_from_row(self, row):
@@ -324,6 +325,20 @@ class Comment(object):
         self.comment = comment
         self.attachment_path = attachment_path
         self.created = created
+
+    def insert(self):
+        @self.env.with_transaction()
+        def do_insert(db):
+            created = self.created
+            if not created:
+                created = int(time())
+            cursor = db.cursor()
+            self.env.log.debug("Creating new comment for file '%s'" % self.file_id)
+            cursor.execute("""INSERT INTO peer_review_comment (file_id, parent_id, line_num,
+                            author, comment, attachment_path, created)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """, (self.file_id, self.parent_id, self.line_num, self.author, self.comment,
+                                  self.attachment_path, created))
 
     @classmethod
     def select_by_file_id(cls, env, file_id):
