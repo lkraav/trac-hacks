@@ -20,7 +20,7 @@ from trac import util
 from trac.core import *
 from trac.util import Markup
 from trac.web.main import IRequestHandler
-
+from genshi.template.markup import MarkupTemplate
 from dbBackend import *
 from model import ReviewFile, Review, Comment
 
@@ -205,6 +205,52 @@ class PeerReviewCommentHandler(Component):
         data['fileID'] = IDFile
         data['commentHTML'] = Markup(commentHtml)
 
+
+    comment_template = u"""
+            <table xmlns:py="http://genshi.edgewall.org/"
+                   width="400px" style="border-collapse: collapse; display: block;"
+                   id="${comment.IDParent}:${comment.IDComment}">
+            <tr py:if="not first">
+                <td width="${width}px"></td>
+                <td colspan="3" width="${400-width}px" style="border-top: 1px solid #C0C0C0;"></td>
+            </tr>
+            <tr>
+                <td width="${width}px"></td>
+                <td colspan="2" align="left" width="${400-100-width}px">Author: $author</td>
+                <td width="100px" align="right">$date</td>
+            </tr>
+            <tr>
+                <td width="${width}px"></td>
+                <td valign="top" width="${factor}px" id="${comment.IDComment}TreeButton">
+                    <img py:if="childrenHTML" src="$chrome/hw/images/minus.gif"
+                         onclick="collapseComments($comment.IDComment);" />
+                </td>
+                <td colspan="2" align="left" width="${400-width-factor}px" bgcolor="#F7F7F0" style="border: 1px solid #999999">
+                    $comment.Text
+                </td>
+            </tr>
+            <tr>
+                <td width="${width}px"></td>
+                <td width="${factor}px"></td>
+                <td width="${400-100-factor-width}px" align="left">
+                    <!--! Attachment -->
+                    <a py:if="comment.AttachmentPath" border="0" alt="Code Attachment"
+                       href="${callback}?actionType=getCommentFile&amp;fileName=${comment.AttachmentPath}&amp;IDFile=$fileid">
+                        <img src="$chrome/hw/images/paper_clip.gif" /> $comment.AttachmentPath
+                    </a>
+                </td>
+                <td width="100px" align="right">
+                   <a href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
+                </td>
+            </tr>
+            <tr height="3">
+                <td width="${width}px"></td>
+                <td width="${factor}px"></td>
+                <td width="${400-width-factor}px" colspan="2"></td>
+            </tr>
+            </table>
+        """
+
     #Recursively builds the comment html to send back.
     def buildCommentHTML(self, comment, nodesIn, LineNum, IDFile, first):
         if nodesIn > 50:
@@ -220,38 +266,17 @@ class PeerReviewCommentHandler(Component):
         factor = 15
         width = 5 + nodesIn * factor
 
-        html = '<table width="400px" style="border-collapse: collapse; display: block;" id="%s:%s">' % \
-               (comment.IDParent, comment.IDComment)
-        if not first:
-            html += '<tr><td width="%spx"></td><td colspan="3" width="%spx" style="border-top: 1px solid #C0C0C0;">' \
-                    '</td></tr>' % (width, 400-width)
+        tdata = {'width': width,
+                 'comment': comment,
+                 'author': comment.Author,
+                 'date': util.format_date(comment.DateCreate),
+                 'factor': factor,
+                 'childrenHTML': childrenHTML != '' or False,
+                 'chrome': self.env.href.chrome(),
+                 'line': LineNum,
+                 'fileid': IDFile,
+                 'callback': self.env.href.peerReviewCommentCallback()
+                 }
 
-        html += '<tr><td width="%spx"></td>' % width
-        html += '<td colspan="2" align="left" width="%spx">Author: %s</td>' % (400-100-width, comment.Author)
-        html += '<td width="100px" align="right">%s</td></tr>' % util.format_date(comment.DateCreate)
-        html += '<tr><td width="%spx"></td><td valign="top" width="%spx" id="%sTreeButton">' %\
-                (width, factor, comment.IDComment)
-
-        if childrenHTML:
-            html += '<img src="%s/hw/images/minus.gif" onclick="collapseComments(%s);">' % \
-                    (self.env.href.chrome(), comment.IDComment)
-        html += "</td>"
-        html += '<td colspan="2" align="left" width="%spx" bgcolor="#F7F7F0" style="border: 1px solid #999999">%s</td></tr>' % \
-                (400-width-factor, comment.Text)
-        html += '<tr><td width="%spx"></td><td width="%spx"></td>' % (width, factor)
-        html += '<td width="%spx" align="left">' % (400-100-factor-width)
-
-        if comment.AttachmentPath:
-            html += '<a border=0 alt="Code Attachment"  href="%s?actionType=getCommentFile&fileName=%s&IDFile=%s">' \
-                    '<img src="%s/hw/images/paper_clip.gif"> %s</a>' %\
-                    (self.env.href.peerReviewCommentCallback(), comment.AttachmentPath,
-                     IDFile, self.env.href.chrome(), comment.AttachmentPath)
-        html += "</td>"
-        html += '<td width="100px" align="right">'
-        html += '<a href="javascript:addComment(%s, %s, %s)">Reply</a></td></tr>' % (LineNum, IDFile, comment.IDComment)
-        html += '<tr height="3"><td width="%spx"></td><td width="%spx"></td><td width="%spx" colspan="2"></td></tr>' % \
-                (width, factor, 400-width-factor)
-        html += "</table>"
-
-        html += childrenHTML
-        return html
+        tbl = MarkupTemplate(self.comment_template, lookup='lenient')
+        return tbl.generate(**tdata).render()+childrenHTML
