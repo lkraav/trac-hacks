@@ -41,6 +41,10 @@
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       class="diff">
 
+  <py:def function="add_comment(linenum, fileid)">
+      <py:if test="review.status == 'Closed'">${linenum or '&nbsp;'}</py:if>
+      <a py:if="review.status != 'Closed'" href="javascript:addComment($linenum, $fileid, -1)">${linenum or '&nbsp;'}</a>
+  </py:def>
 
   <ul py:if="any([item.diffs or item.props for item in changes])" class="entries">
     <py:for each="idx, item in enumerate(changes)" py:with="old = item.old; new = item.new">
@@ -135,12 +139,12 @@
                         <py:when test="'sidebyside'">
                           <th id="P$from_n">$from_n</th>
                             <td class="l"><span>$line</span>&nbsp;</td>
-                          <th id="L$to_n"><a href="javascript:addComment($to_n, $file_id, -1)">$to_n</a></th>
+                          <th id="L$to_n">${add_comment(to_n, file_id)}</th>
                             <td class="r"><span>${idx &lt; len(clines) and clines[idx] or ''}</span>&nbsp;</td>
                         </py:when>
                         <py:when test="'inline'">
                             <th id="P$from_n">$from_n</th>
-                            <th id="L$to_n"><a href="javascript:addComment($to_n, $file_id, -1)">$to_n</a></th>
+                            <th id="L$to_n">${add_comment(to_n, file_id)}</th>
                             <td class="l"><span>$line</span>&nbsp;</td>
                         </py:when>
                       </py:choose>
@@ -155,10 +159,10 @@
                       <py:choose test="diff.style">
                         <py:when test="'sidebyside'">
                           <th>&nbsp;</th><td class="l">&nbsp;</td>
-                          <th id="L$to_n"><a href="javascript:addComment($to_n, $file_id, -1)">$to_n</a></th><td class="r"><ins>$line</ins>&nbsp;</td>
+                          <th id="L$to_n">${add_comment(to_n, file_id)}</th><td class="r"><ins>$line</ins>&nbsp;</td>
                         </py:when>
                         <py:when test="'inline'">
-                          <th>&nbsp;</th><th id="L$to_n"><a href="javascript:addComment($to_n, $file_id, -1)">$to_n</a></th><td class="r"><ins>$line</ins>&nbsp;</td>
+                          <th>&nbsp;</th><th id="L$to_n">${add_comment(to_n, file_id)}</th><td class="r"><ins>$line</ins>&nbsp;</td>
                         </py:when>
                       </py:choose>
                     </py:with>
@@ -192,8 +196,9 @@
                             <td class="l"><span>$line</span>&nbsp;</td>
                             <py:with vars="within_change = idx &lt; len(block.changed.lines)">
                               <th id="L${within_change and block.changed.offset+idx+1 or '0'}">
-                                <a href="javascript:addComment(${within_change and block.changed.offset+idx+1 or 0}, $file_id, -1)">
-                                ${within_change and block.changed.offset+idx+1 or '&nbsp;'}</a>
+                                  ${add_comment(within_change and block.changed.offset+idx+1 or 0, file_id)}
+                                <!--!<a href="javascript:addComment(${}, $file_id, -1)">
+                                ${within_change and block.changed.offset+idx+1 or '&nbsp;'}</a>-->
                               </th>
                               <td class="r"><span py:if="within_change">${block.changed.lines[idx]}</span>&nbsp;</td>
                             </py:with>
@@ -206,8 +211,7 @@
                               <td class="l"><span py:if="within_change">${block.base.lines[idx]}</span>&nbsp;</td>
                             </py:with>
                             <th id="L${block.changed.offset+idx+1}">
-                              <a href="javascript:addComment(${block.changed.offset+idx+1}, $file_id, -1)">
-                              ${block.changed.offset+idx+1}</a>
+                                ${add_comment(block.changed.offset+idx+1, file_id)}
                             </th>
                             <td class="r"><span>$line</span>&nbsp;</td>
                           </tr>
@@ -227,7 +231,9 @@
                         class="${idx + 1 == len(block.changed.lines) and 'last' or None}">
                         <th>&nbsp;</th>
                         <th id="L${block.changed.offset+idx+1}">
-                        <a href="javascript:addComment(${block.changed.offset+idx+1}, $file_id, -1)">${block.changed.offset+idx+1}</a></th><td class="r"><span>$line</span>&nbsp;</td>
+                            ${add_comment(block.changed.offset+idx+1, file_id)}
+                        </th>
+                          <td class="r"><span>$line</span>&nbsp;</td>
                       </tr>
                     </py:when>
                   </py:choose>
