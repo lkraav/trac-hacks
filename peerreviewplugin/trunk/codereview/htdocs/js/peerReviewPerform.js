@@ -59,10 +59,6 @@ function init()
     area.style.left = ((DOMWindowGetInnerWidth() / 2) - 225) + "px";
     GLOBAL_yPosView = ((DOMWindowGetInnerHeight() /2) - 100);
     area.style.top = GLOBAL_yPosView + "px";
-    area = document.getElementById('AddCommentArea');
-    area.style.left = ((DOMWindowGetInnerWidth() / 2) - 150) + "px";
-    GLOBAL_yPosAdd = ((DOMWindowGetInnerHeight() /2) - 150);
-    area.style.top = GLOBAL_yPosAdd + "px";
 }
 
 function resetLines()
@@ -224,22 +220,6 @@ function addComment(LineNum, fileID, parentID)
 
 }
 
-function resetAddCommentBoxSize()
-{
-    if(window.frames['internalAddComment'])
-    {
-        var iDoc = window.frames['internalAddComment'].document;
-        var acT = iDoc.getElementById('addCommentTable');
-        var iFr = document.getElementById('internalAddComment');
-        iFr.style.height = "";
-        iFr.style.height = (acT.clientHeight + 15) + "px";
-    }
-
-    innerDiv = document.getElementById('AddCommentArea');
-    innerDiv.style.height = "";
-    innerDiv.style.height = (innerDiv.clientHeight + 3) + "px";
-}
-
 function submitComment(LineNum, fileID, parentID)
 {
     var area = document.getElementById('L' + LineNum);
@@ -250,42 +230,6 @@ function submitComment(LineNum, fileID, parentID)
     GLOBAL_gettingComment = true;
 
     getCommentsFull(LineNum, fileID, true);
-}
-
-function timeToHide(line, fileID, parentID)
-{
-    area = document.getElementById('AddCommentArea');
-    area.style.top = "-10000px"
-
-        if(line != -1)
-            submitComment(line, fileID, parentID);
-}
-
-function timeToGetTree()
-{
-    area = document.getElementById('AddCommentArea');
-
-    if(GLOBAL_fileID != -1 && GLOBAL_LineNum != -1 && GLOBAL_gettingComment)
-    {
-        area.style.display = "none";
-        window.setTimeout('getCommentsPart2('+GLOBAL_LineNum+', '+GLOBAL_fileID+')', 5);
-        GLOBAL_fileID = -1;
-        GLOBAL_LineNum = -1;
-        GLOBAL_gettingComment = false;
-    }
-    else if(GLOBAL_fileID != -1 && GLOBAL_LineNum != -1)
-    {
-        var iDoc = window.frames['internalAddComment'].document;
-        var button = iDoc.getElementById('AddCommentButtonArea');
-        button.innerHTML = "<input style=\"font-size: 10;\" type=button onclick=\"submitComment(" + GLOBAL_LineNum + ", " + GLOBAL_fileID + ", " +  GLOBAL_parentID + ")\" value=\"Add Comment\">&nbsp;&nbsp;";
-        GLOBAL_fileID = -1;
-        GLOBAL_LineNum = -1;
-        resetAddCommentBoxSize();
-    }
-    else
-    {
-        area.style.display = "none";
-    }
 }
 
 function closeCommentWindow(area)

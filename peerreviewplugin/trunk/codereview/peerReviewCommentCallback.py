@@ -77,14 +77,7 @@ class PeerReviewCommentHandler(Component):
 
         actionType = req.args.get('actionType')
 
-        if actionType == 'addComment':
-            # TODO: This is not really nice but at least it prevents creation of comments for now...
-            if self.review_is_closed(req):
-                data['invalid'] = 'closed'
-                return 'peerReviewCommentCallback.html', data, None
-            self.createComment(req, data)
-
-        elif actionType == 'getCommentTree':
+        if actionType == 'getCommentTree':
             self.getCommentTree(req, data)
 
         elif actionType == 'getCommentFile':

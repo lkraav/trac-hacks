@@ -151,37 +151,6 @@
                 </table>
             </div>
 
-            <div id="AddCommentArea" style="display:none;">
-                <table class="comment-table" width="300px">
-                    <tr height="15px">
-                        <td id="AddCommentTitleArea" width="282px" onmousedown="dragStart(event, 'AddCommentArea');"
-                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
-                            background="${href.chrome('/hw/images/top_bar_repeater_1x17.gif')}">
-                        </td>
-                        <td width="18px"
-                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-right: 1px solid #000000;"
-                            background="${href.chrome('/hw/images/close_btn_18x17.gif')}"
-                            onclick="closeCommentWindow('AddCommentArea');">
-                        </td>
-                    </tr>
-                    <tr height="10px">
-                        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2"></td>
-                    </tr>
-                    <tr>
-                        <td valign="top" style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2">
-                            <iframe frameborder="0" name="internalAddComment" id="internalAddComment"
-                                    marginHeight="0" marginWidth="0" style="width:285px; height:196px"
-                                    src="${href.peerReviewCommentCallback()}">
-                            </iframe>
-                        </td>
-                    </tr>
-                    <tr height="2px">
-                        <td style="border-left: 1px solid #C8C8C8; border-bottom: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;"
-                            colspan="2"></td>
-                    </tr>
-                </table>
-            </div>
-
             <div id="add-comment-dlg">
                 <form action="peerReviewCommentCallback" method="POST" id="add-comment-form">
                     <div>
