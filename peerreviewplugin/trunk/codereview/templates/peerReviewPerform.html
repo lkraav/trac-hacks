@@ -96,13 +96,12 @@
                     </td>
                 </tr>
             </table>
-
             <py:if test="parent_review">
                 <xi:include href="diff.html"/>
-                <div py:if="not diffs and not diff.options.contextall">
+                <div py:if="nochanges">
                     <div class="notice system-message">
                         <p>The files are identical.</p>
-                        <p>Show the file in full context to add comments to the revision '${review_file.version}'.</p>
+                        <p py:if="not diff.options.contextall">Show the file in full context to add comments to the revision '${review_file.version}'.</p>
                     </div>
                 </div>
             </py:if>

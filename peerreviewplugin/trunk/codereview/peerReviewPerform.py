@@ -226,6 +226,9 @@ def create_diff_data(req, data, node, par_node):
     old = file_data_from_repo(par_node)
     new = file_data_from_repo(node)
 
+    if old == new:
+        data['nochanges'] = True
+
     if diff_data['options']['contextall']:
         context = None
     else:
