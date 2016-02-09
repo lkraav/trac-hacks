@@ -158,7 +158,7 @@ class ViewReviewModule(Component):
         realm = 'peerreview'
         res = Resource(realm, str(review.review_id))  # Must be a string
         print repr(res)
-        data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, '.', realm, res)
+        data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, '.', realm, res, False)
         print repr(data['workflow'])
 
         add_stylesheet(req, 'common/css/code.css')

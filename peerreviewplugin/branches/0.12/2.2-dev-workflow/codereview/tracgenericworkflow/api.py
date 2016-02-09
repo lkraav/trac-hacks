@@ -243,7 +243,7 @@ class ResourceWorkflowSystem(Component):
 
         return (this_action['name'], tag(*controls), '. '.join(hints))
 
-    def get_workflow_markup(self, req, base_href, realm, resource):
+    def get_workflow_markup(self, req, base_href, realm, resource, with_form=True):
             rws = ResourceWorkflowState(self.env, resource.id, realm)
 
             # action_controls is an ordered list of "renders" tuples, where
@@ -269,31 +269,40 @@ class ResourceWorkflowSystem(Component):
 
                     action_controls.append((action[1], first_label, tag(widgets), hints))
 
-                form = tag.form(id='resource_workflow_form',
-                        name='resource_workflow_form',
-                        action=base_href+'/workflowtransition',
-                        method='get')(
-                            tag.input(name='id', type='hidden', value=resource.id),
-                            tag.input(name='res_realm', type='hidden', value=realm)
-                        )
+                if with_form:
+                    form = tag.form(id='resource_workflow_form',
+                            name='resource_workflow_form',
+                            action=base_href+'/workflowtransition',
+                            method='get')(
+                                tag.input(name='id', type='hidden', value=resource.id),
+                                tag.input(name='res_realm', type='hidden', value=realm)
+                            )
+                else:
+                    form = tag.div(
+                                tag.input(name='id', type='hidden', value=resource.id),
+                                tag.input(name='res_realm', type='hidden', value=realm),
+                                id='resource_workflow_div'
+                            )
 
-                form.append(tag.div()(
-                        tag.span()("Current state: %s" % rws['state']),
+                form.append(tag.div(
+                        tag.span("Current state: %s" % rws['state']),
                         tag.br(), tag.br()
                     ))
 
                 for i, ac in enumerate(action_controls):
                     # The default action is the first in the action_controls list.
-                    if i==0:
+                    if i == 0:
                         is_checked = 'true'
                     else:
                         is_checked = None
 
-                    form.append(tag.input(name='selected_action', type='radio', value=ac[0], checked=is_checked)(
+                    form.append(tag.div(
+                        tag.input(name='selected_action', type='radio', value=ac[0], checked=is_checked),
                         ac[1],
-                        tag.div()(
+                        tag.span(
                             ac[2],
-                            ac[3]
+                            ac[3],
+                            class_="hint"
                             )
                         ))
 
