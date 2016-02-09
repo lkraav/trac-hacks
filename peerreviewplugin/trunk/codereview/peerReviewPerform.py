@@ -41,7 +41,10 @@ class PeerReviewPerform(Component):
 
     def get_annotation_data(self, context):
         rfile = context.get_hint('reviewfile')
-        return [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)]
+        review = Review(self.env, rfile.review_id)
+        data = [[c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
+                review]
+        return data
 
     #line annotator for Perform Code Review page
     #if line has a comment, places an icon to indicate comment
@@ -51,12 +54,18 @@ class PeerReviewPerform(Component):
         rfile = context.get_hint('reviewfile')
         if (lineno <= int(rfile.end) and lineno >= int(rfile.start)) or int(rfile.start) == 0:
             #if there is a comment on this line
-            if lineno in data:
+            lines = data[0]
+            review = data[1]
+            if lineno in lines:
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno),
                                                                   href='javascript:getComments(%s, %s)' %
                                                                        (lineno, rfile.file_id))))
-            return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
+            if review.status != 'Closed':
+                return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
                                                                            % (lineno, rfile.file_id))))
+            else:
+                return row.append(tag.th(str(lineno), id='L%s' % lineno))
+
         #color line numbers outside range light gray
         return row.append(tag.th(id='L%s' % lineno)(tag.font(lineno, color='#CCCCCC')))
 
