@@ -65,14 +65,15 @@ class PeerReviewCommentHandler(Component):
                 if self.review_is_closed(req):
                     data['invalid'] = 'closed'
                     return 'peerReviewCommentCallback.html', data, None
-
+                txt = req.args.get('comment')
                 comment = Comment(self.env)
                 comment.file_id = data['fileid'] = req.args.get('fileid')
                 comment.parent_id = data['parentid'] = req.args.get('parentid')
-                comment.comment = req.args.get('comment')
+                comment.comment = txt
                 comment.line_num = data['line'] = req.args.get('line')
                 comment.author = req.authname
-                comment.insert()
+                if txt and txt.strip():
+                    comment.insert()
                 writeJSONResponse(req, data)
 
         actionType = req.args.get('actionType')
@@ -181,10 +182,12 @@ class PeerReviewCommentHandler(Component):
     def getCommentTree(self, req, data):
         IDFile = req.args.get('IDFile')
         LineNum = req.args.get('LineNum')
-        if IDFile is None or LineNum is None:
+
+        if not IDFile or not LineNum:
             data['invalid'] = 1
             return
-        db = self.env.get_db_cnx()
+
+        db = self.env.get_read_db()
         dbBack = dbBackend(db)
         comments = dbBack.getCommentsByFileIDAndLine(IDFile, LineNum)
         commentHtml = ""
@@ -195,7 +198,8 @@ class PeerReviewCommentHandler(Component):
             if comments[key].IDParent not in comments:
                 commentHtml += self.buildCommentHTML(comments[key], 0, LineNum, IDFile, first)
                 first = False
-        if commentHtml == "":
+        commentHtml = commentHtml.strip()
+        if not commentHtml:
             commentHtml = "No Comments on this Line"
         data['lineNum'] = LineNum
         data['fileID'] = IDFile
@@ -216,26 +220,37 @@ class PeerReviewCommentHandler(Component):
         factor = 15
         width = 5 + nodesIn * factor
 
-        html = "<table width=\"400px\" style=\"border-collapse: collapse; display: block;\" id=\"" + str(comment.IDParent) + ":" + str(comment.IDComment) + "\">"
+        html = '<table width="400px" style="border-collapse: collapse; display: block;" id="%s:%s">' % \
+               (comment.IDParent, comment.IDComment)
         if not first:
-            html += "<tr><td width=\"" + `width` + "px\"></td>"
-            html += "<td colspan=\"3\" width=\"" + `(400-width)` + "px\" style=\"border-top: 1px solid #C0C0C0;\"></td></tr>"
-        html += "<tr><td width=\"" + `width` + "px\"></td>"
-        html += "<td colspan=\"2\" align=\"left\" width=\"" + `(400-100-width)` + "px\">Author: " + comment.Author + "</td>"
-        html += "<td width=\"100px\" align=\"right\">" + util.format_date(comment.DateCreate) + "</td></tr>"
-        html += "<tr><td width=\"" + `width` + "px\"></td><td valign=\"top\" width=\"" + `factor` + "px\" id=\"" + str(comment.IDComment) + "TreeButton\">"
-        if not childrenHTML == "":
-            html += "<img src=\"" + self.env.href.chrome() + "/hw/images/minus.gif\" onclick=\"collapseComments(" + str(comment.IDComment) + ");\">"
+            html += '<tr><td width="%spx"></td><td colspan="3" width="%spx" style="border-top: 1px solid #C0C0C0;">' \
+                    '</td></tr>' % (width, 400-width)
+
+        html += '<tr><td width="%spx"></td>' % width
+        html += '<td colspan="2" align="left" width="%spx">Author: %s</td>' % (400-100-width, comment.Author)
+        html += '<td width="100px" align="right">%s</td></tr>' % util.format_date(comment.DateCreate)
+        html += '<tr><td width="%spx"></td><td valign="top" width="%spx" id="%sTreeButton">' %\
+                (width, factor, comment.IDComment)
+
+        if childrenHTML:
+            html += '<img src="%s/hw/images/minus.gif" onclick="collapseComments(%s);">' % \
+                    (self.env.href.chrome(), comment.IDComment)
         html += "</td>"
-        html += "<td colspan=\"2\" align=\"left\" width=\"" + `(400-width-factor)` + "px\" bgcolor=\"#F7F7F0\" style=\"border: 1px solid #999999\">" + comment.Text + "</td></tr>"
-        html += "<tr><td width=\"" + `width` + "px\"></td><td width=\"" + `factor` + "px\"></td>"
-        html += "<td width=\"" + `(400-100-factor-width)` + "px\" align=\"left\">"
-        if comment.AttachmentPath != "":
-            html += "<a border=0 alt=\"Code Attachment\"  href=\"" + self.env.href.peerReviewCommentCallback() + "?actionType=getCommentFile&fileName=" + comment.AttachmentPath + "&IDFile=" + str(IDFile) + "\"><img src=\"" + self.env.href.chrome() + "/hw/images/paper_clip.gif\"> " +  comment.AttachmentPath + "</a>"
+        html += '<td colspan="2" align="left" width="%spx" bgcolor="#F7F7F0" style="border: 1px solid #999999">%s</td></tr>' % \
+                (400-width-factor, comment.Text)
+        html += '<tr><td width="%spx"></td><td width="%spx"></td>' % (width, factor)
+        html += '<td width="%spx" align="left">' % (400-100-factor-width)
+
+        if comment.AttachmentPath:
+            html += '<a border=0 alt="Code Attachment"  href="%s?actionType=getCommentFile&fileName=%s&IDFile=%s">' \
+                    '<img src="%s/hw/images/paper_clip.gif"> %s</a>' %\
+                    (self.env.href.peerReviewCommentCallback(), comment.AttachmentPath,
+                     IDFile, self.env.href.chrome(), comment.AttachmentPath)
         html += "</td>"
-        html += "<td width=\"100px\" align=\"right\">"
-        html += "<a href=\"javascript:addComment(" + str(LineNum) + ", " + str(IDFile) + ", " +  str(comment.IDComment) + ")\">Reply</a></td></tr>"
-        html += "<tr height=\"3\"><td width=\"" + `width` + "px\"></td><td width=\"" + `factor` + "px\"></td><td width=\"" + `(400-width-factor)` + "px\" colspan=\"2\"></td></tr>"
+        html += '<td width="100px" align="right">'
+        html += '<a href="javascript:addComment(%s, %s, %s)">Reply</a></td></tr>' % (LineNum, IDFile, comment.IDComment)
+        html += '<tr height="3"><td width="%spx"></td><td width="%spx"></td><td width="%spx" colspan="2"></td></tr>' % \
+                (width, factor, 400-width-factor)
         html += "</table>"
 
         html += childrenHTML
