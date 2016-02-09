@@ -94,7 +94,7 @@ class PeerReviewCommentHandler(Component):
             fileid = req.args.get('fileid')
         rfile = ReviewFile(self.env, fileid)
         review = Review(self.env, rfile.review_id)
-        if review.status == 'closed':
+        if review.status == 'Closed':
             return True
         return False
 
