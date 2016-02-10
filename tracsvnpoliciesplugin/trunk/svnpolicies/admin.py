@@ -489,11 +489,19 @@ class SVNPoliciesAdminPlugin(Component):
         If a error ocurs in the process of getting the path the method 
         returns None.
         """
+
         try :
-            if self.config.get('trac', 'repository_type') == 'svn' :
-                repository= self.config.get('trac', 'repository_dir')
-                if path.isdir(repository) :
+            rep_type = self.config.get('trac', 'repository_type') 
+            repository = self.config.get('trac', 'repository_dir')
+            if (rep_type == 'svn') and path.isdir(repository) :
+                return str(repository) + os.path.sep +'hooks'
+            else :
+                proj = self.config.get('repositories', '.alias')
+                rep_type = self.config.get('repositories', proj + '.type') 
+                repository = self.config.get('repositories',  proj + '.dir')
+                if (rep_type == 'svn') and path.isdir(repository) :
                     return str(repository) + os.path.sep +'hooks'
+
         except Exception, e:
             self.log.error(traceback.format_exc())
             self.log.error(e)
@@ -530,6 +538,7 @@ class SVNPoliciesAdminPlugin(Component):
         if svn_repository == None :
             return False
         
+
         # get the trac environment path
         trac_env= self._get_trac_env_path()
         trac_hook= trac_env + os.path.sep + link_name
