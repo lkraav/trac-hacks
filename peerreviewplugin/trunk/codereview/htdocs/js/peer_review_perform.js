@@ -17,7 +17,7 @@ function expandComments(parentID)
 
 function getComments(LineNum, fileID)
 {
-    if(LineNum != $("#comment-line-view").val()){
+    if(LineNum != $("#comment-line-view").val() || fileID != $("#comment-fileid-view").val()){
         $('#view-comment-dlg').dialog('close');
     };
     $("#comment-line-view").val(LineNum);
@@ -30,6 +30,9 @@ function getComments(LineNum, fileID)
     $('#comment-tree').load(url, function(){
                            $('#comment-loading').hide();
                            $('#comment-refresh').attr('href', 'javascript:getComments('+LineNum+', '+fileID +')')
+                           $('#addcomment-view').on('click', function(){
+                                   addComment($("#comment-line-view").val(), $("#comment-fileid-view").val(), -1);
+                           });
                            });
 }
 
@@ -94,12 +97,4 @@ jQuery(document).ready(function($) {
    });
 
     $('#addcomment').on('click', add_comment_button);
-    $('#addcomment-view').on('click', function(){
-            addComment($("#comment-line-view").val(), $("#comment-fileid-view").val(), -1);
-    });
-
-     /*addComment($("#comment-line-view").val(),
-                                                 $("#comment-fileid-view").val(),
-                                                 -1));
-*/
 });

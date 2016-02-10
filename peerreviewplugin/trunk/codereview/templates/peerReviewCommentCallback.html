@@ -4,7 +4,15 @@
   </head>
     <body>
         <py:choose test="invalid">
-          <div py:when="0" id="innerCommentSpan">${commentHTML}</div>
+          <div py:when="0" id="innerCommentSpan">
+              ${commentHTML}
+              <div py:if="review.status != 'Closed'" class="buttons">
+                  <input type="button" name="addcomment" value="Add New Comment" id="addcomment-view"/>
+              </div>
+              <p py:if="review.status == 'Closed'" class="help">
+                  This review is closed. You can't add any comments.
+              </p>
+          </div>
 
           <span py:when="1">Invalid Parameters</span>
           <span py:when="2">Comment Text Blank</span>

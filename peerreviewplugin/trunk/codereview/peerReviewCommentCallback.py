@@ -283,8 +283,6 @@ class PeerReviewCommentHandler(Component):
                  'callback': self.env.href.peerReviewCommentCallback(),
                  'review': data['review']
                  }
-        print "##################### ", data['review'].review_id
-        print "##################### ", data['review'].status
 
         tbl = MarkupTemplate(self.comment_template, lookup='lenient')
         return tbl.generate(**tdata).render() + children_html
