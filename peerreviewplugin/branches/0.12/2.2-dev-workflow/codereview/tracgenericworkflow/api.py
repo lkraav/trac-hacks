@@ -20,6 +20,8 @@ from trac.util import get_reporter_id
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import ITemplateProvider
+from trac.util import Markup
+from string import Template
 
 from codereview.tracgenericclass.util import formatExceptionInfo
 from codereview.tracgenericworkflow.model import ResourceWorkflowState
@@ -243,7 +245,7 @@ class ResourceWorkflowSystem(Component):
 
         return (this_action['name'], tag(*controls), '. '.join(hints))
 
-    def get_workflow_markup(self, req, base_href, realm, resource, with_form=True):
+    def get_workflow_markup(self, req, base_href, realm, resource):
             rws = ResourceWorkflowState(self.env, resource.id, realm)
 
             # action_controls is an ordered list of "renders" tuples, where
@@ -269,49 +271,47 @@ class ResourceWorkflowSystem(Component):
 
                     action_controls.append((action[1], first_label, tag(widgets), hints))
 
-                if with_form:
-                    form = tag.form(id='resource_workflow_form',
-                            name='resource_workflow_form',
-                            action=base_href+'/workflowtransition',
-                            method='get')(
-                                tag.input(name='id', type='hidden', value=resource.id),
-                                tag.input(name='res_realm', type='hidden', value=realm)
-                            )
-                else:
-                    form = tag.div(
-                                tag.input(name='id', type='hidden', value=resource.id),
-                                tag.input(name='res_realm', type='hidden', value=realm),
-                                id='resource_workflow_div'
-                            )
-
-                form.append(tag.div(
-                        tag.span("Current state: %s" % rws['state']),
-                        tag.br(), tag.br()
-                    ))
-
+                ctrls = ""
                 for i, ac in enumerate(action_controls):
                     # The default action is the first in the action_controls list.
-                    if i == 0:
-                        is_checked = 'true'
-                    else:
-                        is_checked = None
+                    ctrl_tmpl = """
+                    <div>
+                        <input id="wf-$val" name="selected_action" type="radio" value="$val" $is_checked />
+                        <label for="wf-$val">$label</label>
+                        $ctrl
+                        <span class="hint">$hint</span>
+                    </div>"""
+                    print "#    ##########", ac[3]
+                    print ac
+                    cdata = {'is_checked': 'checked="1"' if i == 0 else '',
+                             'val': ac[0],
+                             'label': ac[1],
+                             'ctrl': ac[2].generate(),
+                             'hint': ac[3][0]}
 
-                    form.append(tag.div(
-                        tag.input(name='selected_action', type='radio', value=ac[0], checked=is_checked),
-                        ac[1],
-                        tag.span(
-                            ac[2],
-                            ac[3],
-                            class_="hint"
-                            )
-                        ))
+                    ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
 
-                form.append(tag.span()(
-                                tag.br(),
-                                tag.input(id='resource_workflow_form_submit_button', type='submit', value='Perform Action')
-                                ))
+
+                form_tmpl = """
+                <form method="POST" action="$action" name="resource_workflow_form">
+                    <fieldset>
+                        <input name="id" type="hidden" value="$resource_id" />
+                        <input name="res_realm" type="hidden" value="realm" />
+                        <div>
+                            <p>Current state: $cur_state</p>
+                        </div>
+                        $ctrls
+                    </fieldset>
+                </form> """
+
+                data = {'action': base_href+'/workflowtransition',
+                        'resource_id': resource.id,
+                        'cur_state': rws['state'],
+                        'ctrls': ctrls}
+                tmpl = Template(form_tmpl)
+                return Markup(tmpl.safe_substitute(data))
             else:
-                form = tag('')
+                form = tag("No next workflow state available for  %s" % rws['state'])
 
             return form
 

@@ -40,7 +40,12 @@ class ViewReviewModule(Component):
     # IRequestHandler methods
     def match_request(self, req):
         if 'CODE_REVIEW_DEV' in req.perm:
-            return req.path_info == '/peerReviewView'
+            if req.path_info == '/peerReviewView':
+                return True
+            path = req.path_info.split('/')
+            if path[1] == 'peerreview':
+                return True
+
         return False
 
     def process_request(self, req):
@@ -54,6 +59,13 @@ class ViewReviewModule(Component):
         else:
             manager = False
 
+        # REST call?
+        is_rest = False
+        path = req.path_info.split('/')
+        if path[1] == 'peerreview':
+            is_rest = True
+            if len(path) == 3:
+                req.args['Review'] = path[2]
         # reviewID argument checking
         reviewID = req.args.get('Review')
         if reviewID is None or not reviewID.isdigit():
@@ -157,9 +169,12 @@ class ViewReviewModule(Component):
         data['cycle'] = itertools.cycle
         realm = 'peerreview'
         res = Resource(realm, str(review.review_id))  # Must be a string
-        print repr(res)
-        data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, '.', realm, res, False)
-        print repr(data['workflow'])
+
+        if is_rest:
+            url = ".."
+        else:
+            url = '.'
+        data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res)
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
