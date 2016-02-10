@@ -45,6 +45,26 @@ class PeerReviewModel(AbstractVariableFieldsObject):
     def create_instance(self, key):
         return PeerReviewModel(self.env, key['id'], key['res_realm'])
 
+class PeerReviewerModel(AbstractVariableFieldsObject):
+    # Fields that have no default, and must not be modified directly by the user
+    protected_fields = ('id', 'res_realm', 'state')
+
+    def __init__(self, env, id=None, res_realm=None, state='new', db=None):
+        self.values = {}
+
+        self.values['id'] = id
+        self.values['res_realm'] = res_realm
+        self.values['state'] = state
+
+        key = self.build_key_object()
+
+        AbstractVariableFieldsObject.__init__(self, env, 'peerreviewer', key, db)
+
+    def get_key_prop_names(self):
+        return ['id', 'res_realm']
+
+    def create_instance(self, key):
+        return PeerReviewModel(self.env, key['id'], key['res_realm'])
 
 class PeerReviewModelProvider(Component):
     """
@@ -73,7 +93,7 @@ class PeerReviewModelProvider(Component):
                         Table('peer_review', key = ('review_id'))[
                               Column('review_id', auto_increment=True, type='int'),
                               Column('owner'),
-                              Column('state'),
+                              Column('status'),
                               Column('created', type='int'),
                               Column('name'),
                               Column('notes'),
@@ -92,7 +112,9 @@ class PeerReviewModelProvider(Component):
                               Column('line_end', type='int'),
                               Column('repo'),
                               Column('revision'),
-                              Column('state')],
+                              Column('changerevision'),
+                              Column('hash'),
+                              Column('status')],
                      'has_custom': True,
                      'has_change': True,
                      'version': 3},
@@ -107,7 +129,18 @@ class PeerReviewModelProvider(Component):
                               Column('comment'),
                               Column('attachment_path'),
                               Column('created', type='int'),
-                              Column('state')],
+                              Column('refs'),
+                              Column('status')],
+                     'has_custom': True,
+                     'has_change': True,
+                     'version': 3},
+                'peerreviewer':
+                    {'table':
+                        Table('peer_reviewer', key=('review_id', 'reviewer'))[
+                              Column('review_id', type='int'),
+                              Column('reviewer'),
+                              Column('status'),
+                              Column('vote', type='int')],
                      'has_custom': True,
                      'has_change': True,
                      'version': 3},
@@ -117,7 +150,7 @@ class PeerReviewModelProvider(Component):
                 'peerreview': [
                     {'name': 'review_id', 'type': 'int', 'label': N_('Review ID')},
                     {'name': 'owner', 'type': 'text', 'label': N_('Review owner')},
-                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state for review')},
+                    {'name': 'status', 'type': 'text', 'label': N_('Review status')},
                     {'name': 'created', 'type': 'int', 'label': N_('Review creation date')},
                     {'name': 'name', 'type': 'text', 'label': N_('Review name')},
                     {'name': 'notes', 'type': 'text', 'label': N_('Review notes')},
@@ -132,10 +165,12 @@ class PeerReviewModelProvider(Component):
                     {'name': 'line_end', 'type': 'int', 'label': N_('Last line to review')},
                     {'name': 'repo', 'type': 'text', 'label': N_('Repository')},
                     {'name': 'revision', 'type': 'text', 'label': N_('Revision')},
-                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state file')}
+                    {'name': 'changerevision', 'type': 'text', 'label': N_('Revision of last change')},
+                    {'name': 'hash', 'type': 'text', 'label': N_('Hash of file content')},
+                    {'name': 'status', 'type': 'text', 'label': N_('File status')}
                 ],
                 'peerreviewcomment': [
-                    {'name': 'review_id', 'type': 'int', 'label': N_('Comment ID')},
+                    {'name': 'comment_id', 'type': 'int', 'label': N_('Comment ID')},
                     {'name': 'file_id', 'type': 'int', 'label': N_('File ID')},
                     {'name': 'parent_id', 'type': 'int', 'label': N_('Parent comment')},
                     {'name': 'line_num', 'type': 'int', 'label': N_('Line')},
@@ -143,7 +178,13 @@ class PeerReviewModelProvider(Component):
                     {'name': 'comment', 'type': 'text', 'label': N_('Comment')},
                     {'name': 'attachment_path', 'type': 'text', 'label': N_('Attachment')},
                     {'name': 'created', 'type': 'int', 'label': N_('Comment creation date')},
-                    {'name': 'state', 'type': 'text', 'label': N_('Workflow state comment')}
+                    {'name': 'status', 'type': 'text', 'label': N_('Comment status')}
+                ],
+                'peerreviewer': [
+                    {'name': 'review_id', 'type': 'int', 'label': N_('Review ID')},
+                    {'name': 'reviewer', 'type': 'text', 'label': N_('Reviewer')},
+                    {'name': 'status', 'type': 'text', 'label': N_('Review status')},
+                    {'name': 'vote', 'type': 'int', 'label': N_('Vote')},
                 ]
             }
 
@@ -238,7 +279,8 @@ class PeerReviewModelProvider(Component):
         # Make sure we have a db version set for tables other than 'peerreview'
         @self.env.with_transaction(db)
         def add_tables(db):
-            db_names = [u'peerreviewfile_version', u'peerreviewcomment_version']
+            db_names = [u'peerreviewfile_version', u'peerreviewcomment_version',
+                        u'peerreviewer_version']
             cursor = db.cursor()
             for name in db_names:
                 print "checking ", name
@@ -443,7 +485,7 @@ class Review(object):
             db = self.env.get_read_db()
             cursor = db.cursor()
             cursor.execute("""
-                SELECT review_id, owner, state, created, name, notes, parent_id FROM peer_review WHERE review_id=%s
+                SELECT review_id, owner, status, created, name, notes, parent_id FROM peer_review WHERE review_id=%s
                 """, (review_id,))
             row = cursor.fetchone()
             if not row:
@@ -475,7 +517,7 @@ class Review(object):
         def do_insert(db):
             cursor = db.cursor()
             self.env.log.debug("Creating new review '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO peer_review (owner, state, created, name, notes, parent_id)
+            cursor.execute("""INSERT INTO peer_review (owner, status, created, name, notes, parent_id)
                             VALUES (%s, %s, %s, %s, %s, %s)
                             """, (self.author, self.status, self.raw_date, self.name, self.notes, self.parent_id))
             self.review_id = db.get_last_id(cursor, 'peer_review', 'review_id')
@@ -486,7 +528,7 @@ class Review(object):
             cursor = db.cursor()
             self.env.log.debug("Updating review '%s'" % self.review_id)
             cursor.execute("""UPDATE peer_review
-                            SET owner=%s, state=%s, created=%s, name=%s, notes=%s, parent_id=%s
+                            SET owner=%s, status=%s, created=%s, name=%s, notes=%s, parent_id=%s
                             WHERE review_id=%s
                             """, (self.author, self.status, self.raw_date, self.name, self.notes, self.parent_id,
                                   self.review_id))
@@ -495,7 +537,7 @@ class Review(object):
     def select(cls, env):
         db = env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("SELECT review_id, owner, state, created, name, notes, parent_id FROM peer_review "
+        cursor.execute("SELECT review_id, owner, status, created, name, notes, parent_id FROM peer_review "
                        "ORDER BY created")
         reviews = []
         for row in cursor:
@@ -508,7 +550,7 @@ class Review(object):
     def select_by_reviewer(cls, env, reviewer):
         db = env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("SELECT cr.review_id, cr.owner, cr.state, cr.created, cr.name, cr.notes, cr.parent_id  FROM "
+        cursor.execute("SELECT cr.review_id, cr.owner, cr.status, cr.created, cr.name, cr.notes, cr.parent_id  FROM "
                        "peer_review AS cr JOIN peer_reviewer AS r ON cr.review_id = r.review_id "
                        "WHERE r.reviewer=%s"
                        "ORDER BY cr.created", (reviewer,))

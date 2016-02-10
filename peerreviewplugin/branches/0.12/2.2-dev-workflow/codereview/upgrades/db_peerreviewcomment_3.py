@@ -21,7 +21,8 @@ def do_upgrade(env, ver, db_backend, db):
                               Column('comment'),
                               Column('attachment_path'),
                               Column('created', type='int'),
-                              Column('state')]
+                              Column('refs'),
+                              Column('status')]
 
     env.log.info("Updating table for class %s" % realm)
     for stmt in db_backend.to_sql(table_metadata):

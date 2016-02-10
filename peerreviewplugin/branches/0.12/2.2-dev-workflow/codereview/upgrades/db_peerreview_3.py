@@ -22,7 +22,7 @@ def do_upgrade(env, ver, db_backend, db):
     table_metadata = Table('peer_review', key='review_id')[
                               Column('review_id', auto_increment=True, type='int'),
                               Column('owner'),
-                              Column('state'),
+                              Column('status'),
                               Column('created', type='int'),
                               Column('name'),
                               Column('notes'),
@@ -37,7 +37,7 @@ def do_upgrade(env, ver, db_backend, db):
 
     cursor = db.cursor()
 
-    cursor.execute("INSERT INTO peer_review (review_id,owner,state,created,name,notes,parent_id,keywords) "
+    cursor.execute("INSERT INTO peer_review (review_id,owner,status,created,name,notes,parent_id,keywords) "
                    "SELECT review_id,owner,status,created,name,notes,parent_id,keywords FROM peerreview_old")
 
     cursor.execute("DROP TABLE peerreview_old")

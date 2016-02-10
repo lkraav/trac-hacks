@@ -20,7 +20,9 @@ def do_upgrade(env, ver, db_backend, db):
                               Column('line_end', type='int'),
                               Column('repo'),
                               Column('revision'),
-                              Column('state')]
+                              Column('changerevision'),
+                              Column('hash'),
+                              Column('status')]
 
     env.log.info("Updating table for class %s" % realm)
     for stmt in db_backend.to_sql(table_metadata):

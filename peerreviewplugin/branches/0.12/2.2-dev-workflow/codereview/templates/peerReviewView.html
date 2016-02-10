@@ -164,6 +164,8 @@
                 </form>
             </py:if>
 $workflow
+$reviewer_workflow
+
             <py:if test="manager or review.author == req.authname">
                 <h2>Actions</h2>
                 <form action="" method="post">

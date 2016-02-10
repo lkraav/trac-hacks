@@ -1,0 +1,32 @@
+from trac.db import Table, Column, Index, DatabaseManager
+
+
+def do_upgrade(env, ver, db_backend, db):
+    """
+
+    """
+    cursor = db.cursor()
+
+    realm = 'peerreviewfile'
+
+    cursor.execute("CREATE TEMPORARY TABLE peerreviewer_old AS SELECT * FROM peer_reviewer")
+    cursor.execute("DROP TABLE peer_reviewer")
+
+    table_metadata = Table('peer_reviewer', key=('review_id', 'reviewer'))[
+                              Column('review_id', type='int'),
+                              Column('reviewer'),
+                              Column('status'),
+                              Column('vote', type='int')
+                              ]
+
+    env.log.info("Updating table for class %s" % realm)
+    for stmt in db_backend.to_sql(table_metadata):
+        env.log.debug(stmt)
+        cursor.execute(stmt)
+
+    cursor = db.cursor()
+
+    cursor.execute("INSERT INTO peer_reviewer (review_id,reviewer,status,vote) "
+                   "SELECT review_id,reviewer,status,vote FROM peerreviewer_old")
+
+    cursor.execute("DROP TABLE peerreviewer_old")
