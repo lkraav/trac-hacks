@@ -23,6 +23,8 @@ from trac.web.main import IRequestHandler
 from genshi.template.markup import MarkupTemplate
 from dbBackend import *
 from model import ReviewFile, Review, Comment
+from trac.wiki import format_to_html
+from trac.mimeview import Context
 
 def writeJSONResponse(rq, data, httperror=200):
     writeResponse(rq, json.dumps(data), httperror)
@@ -194,6 +196,7 @@ class PeerReviewCommentHandler(Component):
         rfile = ReviewFile(self.env, IDFile)
         review = Review(self.env, rfile.review_id)
         data['review'] = review
+        data['context'] = Context.from_request(req)
 
         commentHtml = ""
         first = True
@@ -235,7 +238,7 @@ class PeerReviewCommentHandler(Component):
                          onclick="expandComments($comment.IDComment);" />
                 </td>
                 <td colspan="2" width="${400-width-factor}px" class="comment-text">
-                    $comment.Text
+                    $text
                 </td>
             </tr>
             <tr>
@@ -272,6 +275,8 @@ class PeerReviewCommentHandler(Component):
         width = 5 + nodesIn * factor
 
         tdata = {'width': width,
+                 'text': format_to_html(self.env, data['context'], comment.Text,
+                                        escape_newlines=True),
                  'comment': comment,
                  'first': first,
                  'date': util.format_date(comment.DateCreate),
