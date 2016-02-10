@@ -285,4 +285,4 @@ class PeerReviewCommentHandler(Component):
                  }
 
         tbl = MarkupTemplate(self.comment_template, lookup='lenient')
-        return tbl.generate(**tdata).render() + children_html
+        return tbl.generate(**tdata).render(encoding=None) + children_html
