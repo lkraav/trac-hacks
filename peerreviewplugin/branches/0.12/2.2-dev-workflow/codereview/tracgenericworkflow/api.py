@@ -293,21 +293,24 @@ class ResourceWorkflowSystem(Component):
 
 
                 form_tmpl = """
-                <form method="POST" action="$action" name="resource_workflow_form">
+                <form method="get" action="$action" name="resource_workflow_form">
                     <fieldset>
                         <input name="id" type="hidden" value="$resource_id" />
-                        <input name="res_realm" type="hidden" value="realm" />
+                        <input name="res_realm" type="hidden" value="$realm" />
                         <div>
                             <p>Current state: $cur_state</p>
                         </div>
                         $ctrls
+                        <input type="submit" id="resource_workflow_form_submit_button" value="Perform Action" />
                     </fieldset>
                 </form> """
 
                 data = {'action': base_href+'/workflowtransition',
                         'resource_id': resource.id,
                         'cur_state': rws['state'],
-                        'ctrls': ctrls}
+                        'ctrls': ctrls,
+                        'realm': realm}
+
                 tmpl = Template(form_tmpl)
                 return Markup(tmpl.safe_substitute(data))
             else:

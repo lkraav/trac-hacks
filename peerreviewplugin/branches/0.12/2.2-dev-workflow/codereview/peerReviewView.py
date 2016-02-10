@@ -24,12 +24,23 @@ from peerReviewMain import add_ctxt_nav_items
 from tracgenericworkflow.api import ResourceWorkflowSystem
 from trac.resource import Resource
 
+from tracgenericworkflow.api import IWorkflowTransitionListener
+
 class ViewReviewModule(Component):
     """Displays a summary page for a review."""
-    implements(IRequestHandler, INavigationContributor)
+    implements(IRequestHandler, INavigationContributor, IWorkflowTransitionListener)
 
     number = -1
     files = []
+
+    def object_transition(self, res_wf_state, resource, action, old_state, new_state):
+        self.env.log.info("   ########################### %s", res_wf_state)
+        self.env.log.info("   ########################### %s", resource)
+        self.env.log.info("   ########################### %s %s", resource.id, resource.realm)
+        self.env.log.info("   ########################### %s", action)
+        self.env.log.info("   ########################### %s", old_state)
+        self.env.log.info("   ########################### %s", new_state)
+
 
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
