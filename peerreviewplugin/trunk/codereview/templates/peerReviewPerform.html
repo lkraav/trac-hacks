@@ -110,46 +110,6 @@
 
             <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 
-
-            <div id="ViewCommentArea" style="display:none">
-                <table class="comment-table">
-                    <tr height="15px">
-                        <td id="ViewCommentTitle" onmousedown="dragStart(event, 'ViewCommentArea');"
-                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000;"
-                            background="${href.chrome('/hw/images/top_bar_repeater_1x17.gif')}">
-                        </td>
-                        <td width="18px"
-                            style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-right: 1px solid #000000;"
-                            background="${href.chrome('/hw/images/close_btn_18x17.gif')}"
-                            onclick="closeCommentWindow('ViewCommentArea');">
-                        </td>
-                    </tr>
-                    <tr height="10px">
-                        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2"></td>
-                    </tr>
-                    <tr>
-                        <td width="450px" align="center"
-                            style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2">
-                            <div style="background-color: #F7F7F7; border: 1px solid #C0C0C0; overflow: auto; max-height: 400px; width: 425px"
-                                 id="innerCommentDiv">
-                                Loading...
-                            </div>
-                        </td>
-                    </tr>
-                    <tr height="5px">
-                        <td style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;" colspan="2"></td>
-                    </tr>
-                    <tr>
-                        <td width="450px" align="right" style="border-left: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;"
-                            colspan="2" id="ViewAddCommentButtonArea"></td>
-                    </tr>
-                    <tr height="3px">
-                        <td style="border-left: 1px solid #C8C8C8; border-bottom: 1px solid #C8C8C8; border-right: 1px solid #C8C8C8;"
-                            colspan="2"></td>
-                    </tr>
-                </table>
-            </div>
-
             <div id="add-comment-dlg">
                 <form action="peerReviewCommentCallback" method="POST" id="add-comment-form">
                     <div>
@@ -164,6 +124,19 @@
                     </div>
                 </form>
             </div>
+
+            <div id="view-comment-dlg">
+                <p id="refresh"><a id="comment-refresh" href="">Refresh</a></p>
+                <div id="comment-tree">  </div>
+                <p id="comment-loading">Loading...</p>
+                <div class="buttons">
+                    <input type="hidden" name="fileid" value="-1" id="comment-fileid-view"/>
+                    <input type="hidden" name="line" value="" id="comment-line-view" />
+                    <input type="hidden" name="addcomment" value="Add Comment"/>
+                    <input py:if="review.status != 'Closed'" type="button" name="addcomment" value="Add New Comment" id="addcomment-view"/>
+                </div>
+            </div>
+
             <script type="text/javascript">
             var baseUrl = "${href.peerReviewCommentCallback()}";
             var tacUrl = "${href.chrome('/hw/images/thumbtac11x11.gif')}";
@@ -171,9 +144,7 @@
             var minusUrl = "${href.chrome('/hw/images/minus.gif')}";
             var lineStart = ${review_file.start};
             var lineEnd = ${review_file.end};
-
             </script>
-            <script type="text/javascript" src="${href.chrome('/hw/js/peerReviewPerform.js')}"></script>
 
     </div>
     </body>

@@ -80,24 +80,11 @@ table.code th.performCodeReview{
   width: 100%;
 }
 
-#ViewCommentArea{
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  width: 455px;
-  height: 50px;
-  background-color: #F7F7F7;
-}
-
-.comment-table{
-  background-color: #F7F7F7;
-  border-collapse: collapse;
-}
-
 /* Comment dialog */
 .comment-table{
   border-collapse: collapse;
   display: block;
+  margin: 0 auto;
 }
 
 .comment-author{
@@ -122,9 +109,18 @@ table.code th.performCodeReview{
 
 .comment-reply{
   text-align: right;
-  padding: 0.5em 0em;
+  padding: 0.5em 0.25em;
 }
 
 .comment-table .border-col{
   border-top:  1px solid #C0C0C0;
+}
+
+#view-comment-dlg{
+  background-color: #F7F7F7;
+}
+
+#view-comment-dlg #refresh{
+  font-size: 80%;
+  text-align: right;
 }

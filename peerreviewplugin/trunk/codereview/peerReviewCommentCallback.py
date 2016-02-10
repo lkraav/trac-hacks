@@ -56,12 +56,11 @@ class PeerReviewCommentHandler(Component):
             return 'peerReviewCommentCallback.html', data, None
 
         data['invalid'] = 0
-        data['trac.href.peerReviewCommentCallback'] = \
-            self.env.href.peerReviewCommentCallback()
+        data['trac.href.peerReviewCommentCallback'] = self.env.href.peerReviewCommentCallback()
 
         if req.method == 'POST':
             if req.args.get('addcomment'):
-                # TODO: This is not really nice but at least it prevents creation of comments for now...
+                # We shouldn't end here but in case just drop out.
                 if self.review_is_closed(req):
                     data['invalid'] = 'closed'
                     return 'peerReviewCommentCallback.html', data, None
@@ -75,6 +74,7 @@ class PeerReviewCommentHandler(Component):
                 if txt and txt.strip():
                     comment.insert()
                 writeJSONResponse(req, data)
+                return
 
         actionType = req.args.get('actionType')
 
@@ -190,13 +190,18 @@ class PeerReviewCommentHandler(Component):
         db = self.env.get_read_db()
         dbBack = dbBackend(db)
         comments = dbBack.getCommentsByFileIDAndLine(IDFile, LineNum)
+
+        rfile = ReviewFile(self.env, IDFile)
+        review = Review(self.env, rfile.review_id)
+        data['review'] = review
+
         commentHtml = ""
         first = True
         keys = comments.keys()
         keys.sort()
         for key in keys:
             if comments[key].IDParent not in comments:
-                commentHtml += self.buildCommentHTML(comments[key], 0, LineNum, IDFile, first)
+                commentHtml += self.buildCommentHTML(comments[key], 0, LineNum, IDFile, first, data)
                 first = False
         commentHtml = commentHtml.strip()
         if not commentHtml:
@@ -223,8 +228,11 @@ class PeerReviewCommentHandler(Component):
             <tr>
                 <td width="${width}px"></td>
                 <td valign="top" width="${factor}px" id="${comment.IDComment}TreeButton">
-                    <img py:if="childrenHTML" src="$chrome/hw/images/minus.gif"
-                         onclick="collapseComments($comment.IDComment);" />
+                    <img py:if="childrenHTML" src="$chrome/hw/images/minus.gif" id="${comment.IDComment}collapse"
+                         onclick="collapseComments($comment.IDComment);" style="cursor: pointer;" />
+                    <img py:if="childrenHTML" src="$chrome/hw/images/plus.gif" style="display: none;cursor:pointer;"
+                         id="${comment.IDComment}expand"
+                         onclick="expandComments($comment.IDComment);" />
                 </td>
                 <td colspan="2" width="${400-width-factor}px" class="comment-text">
                     $comment.Text
@@ -241,7 +249,7 @@ class PeerReviewCommentHandler(Component):
                     </a>
                 </td>
                 <td width="100px" class="comment-reply">
-                   <a href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
+                   <a py:if="review.status != 'Closed'" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
                 </td>
             </tr>
             </tbody>
@@ -249,7 +257,7 @@ class PeerReviewCommentHandler(Component):
         """
 
     #Recursively builds the comment html to send back.
-    def buildCommentHTML(self, comment, nodesIn, linenum, fiileid, first):
+    def buildCommentHTML(self, comment, nodesIn, linenum, fiileid, first, data):
         if nodesIn > 50:
             return ""
 
@@ -258,7 +266,7 @@ class PeerReviewCommentHandler(Component):
         keys.sort()
         for key in keys:
             child = comment.Children[key]
-            children_html += self.buildCommentHTML(child, nodesIn + 1, linenum, fiileid, False)
+            children_html += self.buildCommentHTML(child, nodesIn + 1, linenum, fiileid, False, data)
 
         factor = 15
         width = 5 + nodesIn * factor
@@ -272,8 +280,11 @@ class PeerReviewCommentHandler(Component):
                  'chrome': self.env.href.chrome(),
                  'line': linenum,
                  'fileid': fiileid,
-                 'callback': self.env.href.peerReviewCommentCallback()
+                 'callback': self.env.href.peerReviewCommentCallback(),
+                 'review': data['review']
                  }
+        print "##################### ", data['review'].review_id
+        print "##################### ", data['review'].status
 
         tbl = MarkupTemplate(self.comment_template, lookup='lenient')
         return tbl.generate(**tdata).render() + children_html
