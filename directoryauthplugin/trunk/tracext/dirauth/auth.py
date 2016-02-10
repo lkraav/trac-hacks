@@ -17,7 +17,7 @@ import time
 from trac.config import IntOption, Option
 from trac.core import Component, TracError, implements
 from trac.perm import IPermissionGroupProvider
-from trac.util.text import to_unicode, to_utf8
+from trac.util.text import to_unicode
 from trac.util.translation import _
 
 from acct_mgr.api import IPasswordStore
@@ -26,6 +26,15 @@ GROUP_PREFIX = '@'
 NOCACHE = 0
 
 __all__ = ['DirAuthStore']
+
+
+def to_utf8(text):
+    # Account for poor behavior of to_utf8 in Trac < 1.0.2
+    if isinstance(text, unicode):
+        return text.encode('utf-8')
+    else:
+        from trac.util.text import to_utf8
+        return to_utf8(text)
 
 
 class DirAuthStore(Component):
