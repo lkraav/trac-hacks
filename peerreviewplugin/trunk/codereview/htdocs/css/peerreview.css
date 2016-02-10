@@ -93,3 +93,38 @@ table.code th.performCodeReview{
   background-color: #F7F7F7;
   border-collapse: collapse;
 }
+
+/* Comment dialog */
+.comment-table{
+  border-collapse: collapse;
+  display: block;
+}
+
+.comment-author{
+  color: #886;
+  text-align: left;
+  font-size: 80%;
+  padding: 0.5em 0em;
+}
+
+.comment-date{
+  color: #886;
+  text-align: right;
+  font-size: 80%;
+}
+
+.comment-text{
+  background-color: #fff;
+  border-left: 1px solid #C0C0C0;
+  text-align: left;
+  padding: 0.25em;
+}
+
+.comment-reply{
+  text-align: right;
+  padding: 0.5em 0em;
+}
+
+.comment-table .border-col{
+  border-top:  1px solid #C0C0C0;
+}

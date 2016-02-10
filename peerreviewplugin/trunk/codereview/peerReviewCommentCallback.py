@@ -208,16 +208,17 @@ class PeerReviewCommentHandler(Component):
 
     comment_template = u"""
             <table xmlns:py="http://genshi.edgewall.org/"
-                   width="400px" style="border-collapse: collapse; display: block;"
-                   id="${comment.IDParent}:${comment.IDComment}">
+                   width="400px" class="comment-table"
+                   id="${comment.IDParent}:${comment.IDComment}" data-child-of="$comment.IDParent">
+            <tbody>
             <tr py:if="not first">
                 <td width="${width}px"></td>
-                <td colspan="3" width="${400-width}px" style="border-top: 1px solid #C0C0C0;"></td>
+                <td colspan="3" width="${400-width}px" class="border-col"></td>
             </tr>
             <tr>
                 <td width="${width}px"></td>
-                <td colspan="2" align="left" width="${400-100-width}px">Author: $author</td>
-                <td width="100px" align="right">$date</td>
+                <td colspan="2" class="comment-author" width="${400-100-width}px">Author: $comment.Author</td>
+                <td width="100px" class="comment-date">$date</td>
             </tr>
             <tr>
                 <td width="${width}px"></td>
@@ -225,7 +226,7 @@ class PeerReviewCommentHandler(Component):
                     <img py:if="childrenHTML" src="$chrome/hw/images/minus.gif"
                          onclick="collapseComments($comment.IDComment);" />
                 </td>
-                <td colspan="2" align="left" width="${400-width-factor}px" bgcolor="#F7F7F0" style="border: 1px solid #999999">
+                <td colspan="2" width="${400-width-factor}px" class="comment-text">
                     $comment.Text
                 </td>
             </tr>
@@ -239,44 +240,40 @@ class PeerReviewCommentHandler(Component):
                         <img src="$chrome/hw/images/paper_clip.gif" /> $comment.AttachmentPath
                     </a>
                 </td>
-                <td width="100px" align="right">
+                <td width="100px" class="comment-reply">
                    <a href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
                 </td>
             </tr>
-            <tr height="3">
-                <td width="${width}px"></td>
-                <td width="${factor}px"></td>
-                <td width="${400-width-factor}px" colspan="2"></td>
-            </tr>
+            </tbody>
             </table>
         """
 
     #Recursively builds the comment html to send back.
-    def buildCommentHTML(self, comment, nodesIn, LineNum, IDFile, first):
+    def buildCommentHTML(self, comment, nodesIn, linenum, fiileid, first):
         if nodesIn > 50:
             return ""
 
-        childrenHTML = ""
+        children_html = ""
         keys = comment.Children.keys()
         keys.sort()
         for key in keys:
             child = comment.Children[key]
-            childrenHTML += self.buildCommentHTML(child, nodesIn + 1, LineNum, IDFile, False)
+            children_html += self.buildCommentHTML(child, nodesIn + 1, linenum, fiileid, False)
 
         factor = 15
         width = 5 + nodesIn * factor
 
         tdata = {'width': width,
                  'comment': comment,
-                 'author': comment.Author,
+                 'first': first,
                  'date': util.format_date(comment.DateCreate),
                  'factor': factor,
-                 'childrenHTML': childrenHTML != '' or False,
+                 'childrenHTML': children_html != '' or False,
                  'chrome': self.env.href.chrome(),
-                 'line': LineNum,
-                 'fileid': IDFile,
+                 'line': linenum,
+                 'fileid': fiileid,
                  'callback': self.env.href.peerReviewCommentCallback()
                  }
 
         tbl = MarkupTemplate(self.comment_template, lookup='lenient')
-        return tbl.generate(**tdata).render()+childrenHTML
+        return tbl.generate(**tdata).render() + children_html
