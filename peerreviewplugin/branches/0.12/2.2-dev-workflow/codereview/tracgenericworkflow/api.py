@@ -20,8 +20,8 @@ from trac.util import get_reporter_id
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import ITemplateProvider
-from trac.util import Markup
 from string import Template
+from genshi import HTML
 
 from codereview.tracgenericclass.util import formatExceptionInfo
 from codereview.tracgenericworkflow.model import ResourceWorkflowState
@@ -293,7 +293,7 @@ class ResourceWorkflowSystem(Component):
 
 
                 form_tmpl = """
-                <form method="get" action="$action" name="resource_workflow_form">
+                <form method="post" action="$action" name="resource_workflow_form">
                     <fieldset>
                         <input name="id" type="hidden" value="$resource_id" />
                         <input name="res_realm" type="hidden" value="$realm" />
@@ -312,7 +312,7 @@ class ResourceWorkflowSystem(Component):
                         'realm': realm}
 
                 tmpl = Template(form_tmpl)
-                return Markup(tmpl.safe_substitute(data))
+                return HTML(tmpl.safe_substitute(data))
             else:
                 form = tag("No next workflow state available for  %s" % rws['state'])
 
