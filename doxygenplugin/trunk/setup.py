@@ -7,9 +7,10 @@ setup(
     name='TracDoxygen',
     description='Doxygen plugin for Trac',
     keywords='trac doxygen',
-    version='0.11.0.2',
+    version='0.2.0',
     url='http://trac-hacks.org/wiki/DoxygenPlugin',
     license = """Copyright (C) 2005 Jason Parks <jparks@jparks.net>
+Copyright (C) 2016 Emmanuel Saint-James <esj@rezo.net>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -39,8 +40,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.""",
     author='Jason Parks, Radek Bartoň',
     author_email='blackhex@post.cz',
-    maintainer = "Christian Boos",
-    maintainer_email = "cboos@neuf.fr",
+    maintainer = "Committo-Ergo-Sum",
+    maintainer_email = "esj@rezo.net",
     long_description="""
     """,
     zip_safe=True,

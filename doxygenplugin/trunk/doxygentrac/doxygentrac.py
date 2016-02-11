@@ -3,6 +3,7 @@
 #
 # Copyright (C) 2005 Jason Parks <jparks@jparks.net>. All rights reserved.
 # Copyright (C) 2006-2007 Christian Boos <cboos@neuf.fr>
+# Copyright (C) 2016 Emmanuel Saint-James <esj@rezo.net>
 #
 
 import os
@@ -10,6 +11,7 @@ import time
 import posixpath
 import re
 import mimetypes
+import xml.sax
 
 from genshi.builder import tag
 from genshi.core import Markup
@@ -20,19 +22,67 @@ from trac.web import IRequestHandler
 from trac.perm import IPermissionRequestor
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_stylesheet, add_ctxtnav
-from trac.search.api import ISearchSource
+from trac.search.api import ISearchSource, shorten_result
 from trac.util.text import to_unicode
 from trac.util.datefmt import to_datetime
 from trac.wiki.api import WikiSystem, IWikiSyntaxProvider
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import wiki_to_html
 
-def compare_rank(x, y):
-    if x['rank'] == y['rank']:
-        return 0
-    elif x['rank'] > y['rank']:
-        return -1
-    return 1
+class DoxygenTracHandler(xml.sax.ContentHandler):
+    last_field_name = ''
+    fields = {}
+    multi = []
+
+    def __init__(self, find, where, multi, date):
+        self.to_where  = where
+        self.to_date  = date
+        self.to_multi = multi
+        if multi:
+            self.to_find = re.compile(r'''%s''' % find)
+        else:
+            self.to_find = find
+
+    def characters(self, content):
+        if self.last_field_name != "":
+            self.fields[self.last_field_name] += content
+
+    def startElement(self, name, attrs):
+        if name == 'field':
+            self.last_field_name = attrs['name']
+            self.fields[self.last_field_name] = ''
+        else: self.last_field_name = ''
+
+    def endElement(self, name):
+        self.last_field_name = ''
+        if name == "doc":
+            for field in self.to_where:
+                if not self.to_multi:
+                    p = self.to_find == self.fields[field]
+                else:
+                    p = self.to_find.search(self.fields[field])
+
+                if p:
+                    if '#' in self.fields['url']:
+                        url, target = self.fields['url'].split('#', 2)
+                        self.fields['url'] = url
+                        self.fields['target'] = target
+                    else: 
+                        self.fields['target'] = ''
+                    self.fields['date'] = self.to_date
+                    if not self.to_multi:
+                        raise IndexFound(self.fields)
+                    else:
+                        self.multi.append(self.fields)
+                        break;
+            self.fields = {}
+        else:
+            if name == "add" and self.to_multi:
+                raise IndexFound(self.multi)
+
+class IndexFound(Exception):
+    def __init__( self, msg ):
+        Exception.__init__(self, msg)
 
 class DoxygenPlugin(Component):
     implements(IPermissionRequestor, INavigationContributor, IRequestHandler,
@@ -54,31 +104,39 @@ class DoxygenPlugin(Component):
     title = Option('doxygen', 'title', 'Doxygen',
       """Title to use for the main navigation tab.""")
 
-    ext = Option('doxygen', 'ext', 'htm html png',
-      """Space separated list of extensions for doxygen managed files.""")
-
-    source_ext = Option('doxygen', 'source_ext',
-      'idl odl java cs py php php4 inc phtml m '
-      'cpp cxx c hpp hxx h',
-      """Space separated list of source files extensions""")
-
     index = Option('doxygen', 'index', 'main.html',
       """Default index page to pick in the generated documentation.""")
+
+    searchdata_file = Option('doxygen', 'searchdata_file', 'searchdata.xml',
+      """Default name of XML search file.""")
 
     wiki_index = Option('doxygen', 'wiki_index', None,
       """Wiki page to use as the default page for the Doxygen main page.
       If set, supersedes the `[doxygen] index` option.""")
 
-    encoding = Option('doxygen', 'encoding', 'iso-8859-1',
+    encoding = Option('doxygen', 'encoding', 'utf-8',
       """Default encoding used by the generated documentation files.""")
 
     default_namespace = Option('doxygen', 'default_namespace', '',
       """Default namespace to search for named objects in.""")
 
-    SUMMARY_PAGES = """
-    annotated classes dirs files functions globals hierarchy
-    index inherits main namespaces namespacemembers
-    """.split()
+    # internal methods
+
+    def _search_in_documentation(self, doc, name, where, multi):
+        # Open index file for documentation
+        index = os.path.join(self.base_path, doc, self.search_index)
+        res = {}
+        if not os.path.exists(index) :
+            self.log.debug('No file "%s" in Doxygen dir ' % (index))
+        else:
+            date = os.path.getctime(index)
+            parser = xml.sax.make_parser()
+            parser.setContentHandler(DoxygenTracHandler(name, where, multi, date))
+            try:
+                parser.parse(index)
+            except IndexFound as a:
+                res = a.args[0]
+        return res
 
     # IPermissionRequestor methods
 
@@ -99,21 +157,50 @@ class DoxygenPlugin(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        if re.match(r'^/doxygen(?:$|/)', req.path_info):
-            if 'path' not in req.args: # not coming from a `doxygen:` link
-                segments = filter(None, req.path_info.split('/'))
-                segments = segments[1:] # ditch 'doxygen'
-                if segments:
-                    action, path, link = self._doxygen_lookup(segments)
-                    if action == 'search' and link:
-                        req.args['query'] = link
-                    elif action == 'redirect':
-                        req.args['link'] = link
-                else:
-                    action, path = 'index', ''
-                req.args['action'] = action
-                req.args['path'] = path
+        segments = filter(None, req.path_info.split('/'))
+        if segments[0] != "doxygen":
+            return False
+        if 'path' in req.args: # coming from a `doxygen:` link
             return True
+
+        segments = segments[1:] # ditch 'doxygen'
+        if not segments:
+            req.args['action'] = 'index'
+            req.args['path'] = ''
+            return True
+
+        file = segments[-1]
+        # Direct request for searching
+        if file == 'search.php' or file == 'search.html':
+            req.args['action'] = 'search'
+            return True
+
+        doc = segments[:-1]
+        if not doc and not file:
+            req.args['action'] = 'index'
+            req.args['path'] = ''
+            return True
+
+        if not doc or doc[0] == "search":
+            if self.default_doc: # we can't stay at the 'doxygen/' level
+                if doc:
+                    file = doc[0] + '/' + file
+                req.args['action'] = 'redirect'
+                req.args['path'] = ''
+                req.args['link'] = '/'. join([self.default_doc, self.html_output, file])
+                return True
+
+        link = os.path.join(*doc) + '/' + file
+        path = os.path.join(self.base_path, link)
+        existing_path = os.path.exists(path) and path
+        if (existing_path):
+                req.args['action'] = 'view'            
+                req.args['path'] = path
+                return True
+
+        self.log.debug('%s not found in %s' % (file, link))
+        req.args['action'] = 'search'
+        return True
 
     def process_request(self, req):
         req.perm.assert_permission('DOXYGEN_VIEW')
@@ -128,8 +215,9 @@ class DoxygenPlugin(Component):
 
         # Redirect search requests.
         if action == 'search':
-            req.redirect(req.href.search(q=req.args.get('query'),
-                                         doxygen='on'))
+            url = req.href.search(q=req.args.get('query'), doxygen='on')
+            req.redirect(url)
+
         if action == 'redirect':
             if link: # we need to really redirect if there is a link
                 if path:
@@ -199,302 +287,44 @@ class DoxygenPlugin(Component):
             yield('doxygen', self.title)
 
     def get_search_results(self, req, keywords, filters):
-        self.log.debug("DOXYBUG: kw=%s f=%s" % (keywords, filters))
+        """Return the entry  whose 'keyword' or 'text' tag contains
+        one or more word among the keywords.
+        """
+
         if not 'doxygen' in filters:
             return
 
-        # We have to search for the raw bytes...
-        keywords = [k.encode(self.encoding) for k in keywords]
-
-        for doc in os.listdir(self.base_path):
-            # Search in documentation directories
-            path = os.path.join(self.base_path, doc)
-            path = os.path.join(path, self.html_output)
-            self.log.debug("looking in doc (%s) dir: %s:" % (doc, path))
-            if os.path.isdir(path):
-                index = os.path.join(path, 'search.idx')
-                if os.path.exists(index):
-                    creation = os.path.getctime(index)
-                    for result in  self._search_in_documentation(doc, keywords):
-                        result['url'] =  req.href.doxygen(doc) + '/' \
-                          + result['url']
-                        yield result['url'], result['name'], to_datetime(creation), \
-                          'doxygen', None
-
-            # Search in common documentation directory
-            index = os.path.join(self.base_path, self.html_output)
-            index = os.path.join(index, 'search.idx')
-            self.log.debug("looking in doc (%s) search.idx: %s:" % (doc, index))
-            if os.path.exists(index):
-                creation = os.path.getctime(index)
-                for result in self._search_in_documentation('', keywords):
-                    result['url'] =  req.href.doxygen() + '/' + \
-                      result['url']
-                    yield result['url'], result['name'], to_datetime(creation), 'doxygen', \
-                      None
+        k = '|'.join(keywords).encode(self.encoding)
+        doc = self.default_doc
+        all = self._search_in_documentation(doc, k, ['keywords', 'text'], True)
+        self.log.debug('%s search: "%s" items' % (all, len(all)))
+        for res in all:
+            path = os.path.join(doc, self.html_output)
+            url = req.href.doxygen(path + '/' + res['url'])  + '#' + res['target']
+            t = shorten_result(res['text'])
+            yield url, res['keywords'], to_datetime(res['date']), 'doxygen', t 
 
     # IWikiSyntaxProvider
 
     def get_link_resolvers(self):
-        def doxygen_link(formatter, ns, params, label):
-            if '/' not in params:
-                params = self.default_doc+'/'+params
-            segments = params.split('/')
-            if self.html_output:
-                segments[-1:-1] = [self.html_output]
-            action, path, link = self._doxygen_lookup(segments)
-            if action == 'index':
-                return tag.a(label, title=self.title,
-                             href=formatter.href.doxygen())
-            if action == 'redirect' and path:
-                return tag.a(label, title="Search result for "+params,
-                             href=formatter.href.doxygen(link,path=path))
-            if action == 'search':
-                return tag.a(label, title=params, class_='missing',
-                             href=formatter.href.doxygen())
+        def doxygen_link(formatter, ns, name, label):
+            if '/' not in name: 
+                doc = self.default_doc
             else:
-                return tag.a(label, title=params,
-                             href=formatter.href.doxygen(link, path=path))
+                doc, name = name.split('/') 
+            res = self._search_in_documentation(doc, name, ['name'], False)
+            if res == {}:
+                return tag.a(label, title=name, class_='missing',
+                             href=formatter.href.doxygen())
+            url = os.path.join(doc, self.html_output, res['url'])
+            url = formatter.href.doxygen(url) + '#' + res['target']
+            t = res['type'] 
+            if (t == 'function'):
+                t += ' ' + res['name'] + ' ' + res['args']
+            t += ' ' + shorten_result(res['text'])
+            return tag.a(label, title=t, href=url)
+
         yield ('doxygen', doxygen_link)
 
     def get_wiki_syntax(self):
         return []
-
-    # internal methods
-
-    def _doxygen_lookup(self, segments):
-        """Try to interpret path components as a request for doxygen targets
-
-        Return an `(action,path,link)` tuple, where:
-         - `action` describes what should be done (one of 'view',
-           'redirect', or 'search'),
-         - `path` is the location on disk of the resource.
-         - `link` is the link to the resource, relative to the
-           req.href.doxygen base or a target in case of 'redirect'
-        """
-        doc, file = segments[:-1], segments and segments[-1]
-
-        if not doc and not file:
-            return ('index', None, None) 
-        if doc:
-            doc = os.path.join(*doc)
-        else:
-            if self.default_doc: # we can't stay at the 'doxygen/' level
-                return 'redirect', None, '/'.join([self.default_doc,
-                                                   self.html_output,
-                                                   file or self.index])
-            else:
-                doc = self.html_output
-
-        def lookup(file, category='undefined'):
-            """Build (full path, relative link) and check if path exists."""
-            path = os.path.join(self.base_path, doc, file)
-            existing_path = os.path.exists(path) and path
-            link = doc+'/'+file
-            self.log.debug(' %s file %s' % (category, existing_path or
-                                            path+" (not found)"))
-            return existing_path, link
-
-        self.log.debug('Looking up "%s" in documentation "%s"' % (file, doc))
-
-        # Direct request for searching
-        if file == 'search.php':
-            return 'search', None, None # keep existing 'query' arg
-
-        # Request for a documentation file.
-        doc_ext_re = '|'.join(self.ext.split(' '))
-        if re.match(r'''^(.*)[.](%s)''' % doc_ext_re, file):
-            path, link = lookup(file, 'documentation')
-            if path:
-                return 'view', path, link
-            else:
-                return 'search', None, file
-
-        # Request for source file documentation.
-        source_ext_re = '|'.join(self.source_ext.split(' '))
-        match = re.match(r'''^(.*)[.](%s)''' % source_ext_re, file)
-        if match:
-            basename, suffix = match.groups()
-            basename = basename.replace('_', '__')
-            path, link = lookup('%s_8%s.html' % (basename, suffix), 'source')
-            if path:
-                return 'view', path, link
-            else:
-                return 'search', None, file
-
-        # Request for summary pages
-        if file in self.SUMMARY_PAGES:
-            path, link = lookup(file + '.html', 'summary')
-            if path:
-                return 'view', path, link
-
-        # Request for a named object
-        # TODO:
-        #  - do something about dirs
-        #  - expand with enum, defs, etc.
-        #  - this doesn't work well with the CREATE_SUBDIRS Doxygen option
-
-        # do doxygen-style name->file mapping
-        # this is a little different than doxygen, but I don't see another way
-        # way to make doxygen:Type<bool> links work, as it inserts a ' ' (or
-        # '_01') after/before the type name.
-        charmap = { '_':'__', ':':'_1', '/':'_2', '<':'_3_01', '>':'_01_4', \
-                    '*':'_5', '&':'_6', '|':'_7', '.':'_8', '!':'_9', \
-                    ',':'_00',' ':'_01' }
-        mangledfile = ''
-        for i in file:
-            if i in charmap.keys():
-                mangledfile += charmap[i]
-            else:
-                mangledfile += i
-
-        path, link = lookup('class%s.html' % mangledfile, 'class')
-        if not path:
-            path, link = lookup('struct%s.html' % mangledfile, 'struct')
-        if path:
-            return 'view', path, link
-
-        # Try in the default_namespace
-        if self.default_namespace != "":
-            mangledfile = self.default_namespace + '_1_1' + mangledfile
-            path, link = lookup('class%s.html' % mangledfile, 'class')
-            if not path:
-                path, link = lookup('struct%s.html' % mangledfile, 'struct')
-            if path:
-                return 'view', path, link
-
-
-        # Revert to search...
-        results = self._search_in_documentation(doc, [file])
-        class_ref = file+' Class Reference'
-        for result in results:
-            self.log.debug('Reverted to search, found: ' + repr(result))
-            name = result['name']
-            if name == file or name == class_ref:
-                url = result['url']
-                target = ''
-                if '#' in url:
-                    url, target = url.split('#', 2)
-                path, link = lookup(url)
-                if path:
-                    return 'redirect', path, link # target # FIXME
-        self.log.debug('%s not found in %s' % (file, doc))
-        return 'search', None, file
-
-    def _search_in_documentation(self, doc, keywords):
-        # Open index file for documentation
-        index = os.path.join(self.base_path, doc, self.html_output, 'search.idx')
-        if os.path.exists(index):
-            fd = open(index)
-
-            # Search for keywords in index
-            results = []
-            for keyword in keywords:
-                results += self._search(fd, keyword)
-                results.sort(compare_rank)
-                for result in results:
-                    yield result
-
-    def _search(self, fd, word):
-        results = []
-        index = self._computeIndex(word)
-        if index != -1:
-            fd.seek(index * 4 + 4, 0)
-            index = self._readInt(fd)
-
-            if index:
-                fd.seek(index)
-                w = self._readString(fd)
-                matches = []
-                while w != "":
-                    statIdx = self._readInt(fd)
-                    low = word.lower()
-                    if w.find(low) != -1:
-                        matches.append({'word': word, 'match': w,
-                         'index': statIdx, 'full': len(low) == len(w)})
-                    w = self._readString(fd)
-
-                count = 0
-                totalHi = 0
-                totalFreqHi = 0
-                totalFreqLo = 0
-
-                for match in matches:
-                    multiplier = 1
-                    if match['full']:
-                        multiplier = 2
-
-                    fd.seek(match['index'])
-                    numDocs = self._readInt(fd)
-
-                    for i in range(numDocs):
-                        idx = self._readInt(fd)
-                        if idx == -1:
-                            freq = 0
-                        else:
-                            freq = self._readInt(fd)
-                        results.append({'idx': idx, 'freq': freq >> 1,
-                          'hi': freq & 1, 'multi': multiplier})
-                        if freq & 1:
-                            totalHi += 1
-                            totalFreqHi += freq * multiplier
-                        else:
-                            totalFreqLo += freq * multiplier
-
-                    for i in range(numDocs):
-                        if results[count]['idx'] == -1:
-                            results[count]['name'] = ''
-                            results[count]['url'] = ''
-                            count += 1
-                            continue
-                        fd.seek(results[count]['idx'])
-                        name = self._readString(fd)
-                        url = self._readString(fd)
-                        results[count]['name'] = name
-                        results[count]['url'] = self.html_output + '/' + url
-                        count += 1
-
-                totalFreq = (totalHi + 1) * totalFreqLo + totalFreqHi
-                for i in range(count):
-                    freq = results[i]['freq']
-                    multi = results[i]['multi']
-                    if results[i]['hi']:
-                        results[i]['rank'] = float(freq*multi + totalFreqLo) \
-                          / float(totalFreq)
-                    else:
-                        results[i]['rank'] = float(freq*multi) \
-                          / float(totalFreq)
-        return results
-
-    def _computeIndex(self, word):
-        if len(word) < 2:
-            return -1
-
-        hi = ord(word[0].lower())
-        if hi == 0:
-            return -1
-
-        lo = ord(word[1].lower())
-        if lo == 0:
-            return -1
-
-        return hi * 256 + lo
-
-    def _readInt(self, fd):
-        b1 = fd.read(1)
-        b2 = fd.read(1)
-        b3 = fd.read(1)
-        b4 = fd.read(1)
-        
-        if not b1 or not b2 or not b3 or not b4:
-            return -1;
-
-        return (ord(b1) << 24) | (ord(b2) << 16) | (ord(b3) << 8) | ord(b4)
-
-    def _readString(self, fd):
-        result = ''
-        byte = fd.read(1)
-        while byte != '\0':
-            result = ''.join([result, byte])
-            byte = fd.read(1)
-        return result
