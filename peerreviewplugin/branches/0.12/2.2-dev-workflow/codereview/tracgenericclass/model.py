@@ -498,6 +498,12 @@ class AbstractVariableFieldsObject(object):
                               ','.join(['%s'] * len(std_fields))),
                            [values[name] for name in std_fields])
 
+            # Cinc: Make sure object has id in instance variable
+            id_ = db.get_last_id(cursor, self.realm)
+            for item in self.get_key_prop_names():
+                if not self[item]:
+                    self[item] = str(id_)
+
             # Insert custom fields
             key_names = self.get_key_prop_names()
             key_values = self.get_key_prop_values()
@@ -515,7 +521,10 @@ class AbstractVariableFieldsObject(object):
 
         self.env.log.debug('  Setting up internal fields')
         self.exists = True
-        self.resource = self.resource(id=self.get_resource_id())
+
+        # Cinc: this was skipped during init when only 'id' is given as a key property. 'id' is None for new objects
+        self.key = self.build_key_object()
+        self.resource = Resource(self.realm, self.gey_key_string())
         self._old = {}
 
         self.env.log.debug('  Calling listeners')
