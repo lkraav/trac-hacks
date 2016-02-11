@@ -8,16 +8,18 @@
 #
 # Author: Cinc
 #
+import copy
 from time import time
 from trac.core import Component, implements, TracError
-from trac.db import Table, Column, DatabaseManager
+from trac.db import Table, Column, Index,  DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import ResourceNotFound
 from trac.util.text import _
 from trac.util.translation import N_
 from trac.util import format_date
-from tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, AbstractWikiPageWrapper,\
+from tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, \
     need_db_create_for_realm, create_db_for_realm, need_db_upgrade_for_realm, upgrade_db_for_realm
+from tracgenericclass.util import get_timestamp_db_type
 from peerReviewInit import db_name, db_name_old, db_version
 
 
@@ -108,7 +110,7 @@ class PeerReviewModelProvider(Component):
                      'version': 3},
                 'peerreviewfile':
                     {'table':
-                        Table('peer_review_file', key='file_id')[
+                        Table('peerreviewfile', key='file_id')[
                               Column('file_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('path'),
@@ -201,25 +203,25 @@ class PeerReviewModelProvider(Component):
                         'label': "Review",
                         'searchable': True,
                         'has_custom': True,
-                        'has_change': False
+                        'has_change': True
                     },
                 'peerreviewfile': {
                         'label': "ReviewFile",
                         'searchable': False,
-                        'has_custom': False,
-                        'has_change': False
+                        'has_custom': True,
+                        'has_change': True
                     },
                 'peerreviewcomment': {
                     'label': "ReviewComment",
-                    'searchable': False,
-                    'has_custom': False,
-                    'has_change': False
+                    'searchable': True,
+                    'has_custom': True,
+                    'has_change': True
                 },
                 'peerreviewer': {
                     'label': "Reviewer",
-                    'searchable': True,
+                    'searchable': False,
                     'has_custom': True,
-                    'has_change': False
+                    'has_change': True
                 },
     }
 
@@ -314,6 +316,15 @@ class PeerReviewModelProvider(Component):
                     cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
                                   (name, db_version))
 
+        # Add change and custom tables
+        @self.env.with_transaction(db)
+        def do_change_custom(db):
+            if self.current_db_version == 2:
+                for realm in self.SCHEMA:
+                    realm_metadata = self.SCHEMA[realm]
+
+                    self._create_custom_change_db_for_realm(realm, realm_metadata, db)
+
         @self.env.with_transaction(db)
         def do_upgrade_environment(db):
             for realm in self.SCHEMA:
@@ -324,6 +335,89 @@ class PeerReviewModelProvider(Component):
 
                 elif need_db_upgrade_for_realm(self.env, realm, realm_metadata, db):
                     upgrade_db_for_realm(self.env, 'codereview.upgrades', realm, realm_metadata, db)
+
+    def _create_custom_change_db_for_realm(self, realm, realm_schema, db=None):
+
+        """
+        Call this method from inside your Component IEnvironmentSetupParticipant's
+        upgrade_environment() function to create the database tables corresponding to
+        your Component's generic classes.
+
+        :param realm_schema: The db schema definition, as returned by
+                       the get_data_models() function in the IConcreteClassProvider
+                       interface.
+        """
+
+        env = self.env
+        @env.with_transaction(db)
+        def do_create_db_for_realm(db):
+            cursor = db.cursor()
+
+            db_backend, _ = DatabaseManager(env).get_connector()
+
+            env.log.info("Creating DB for class '%s'.", realm)
+
+            # Create the required tables
+            table_metadata = realm_schema['table']
+            version = realm_schema['version']
+            tablename = table_metadata.name
+
+            key_names = [k for k in table_metadata.key]
+
+            # Create custom fields table if required
+            if realm_schema['has_custom']:
+                cols = []
+                for k in key_names:
+                    # Determine type of column k
+                    type = 'text'
+                    for c in table_metadata.columns:
+                        if c.name == k:
+                            type = c.type
+
+                    cols.append(Column(k, type=type))
+
+                cols.append(Column('name'))
+                cols.append(Column('value'))
+
+                custom_key = copy.deepcopy(key_names)
+                custom_key.append('name')
+
+                table_custom = Table(tablename+'_custom', key = custom_key)[cols]
+                env.log.info("Creating custom properties table %s...", table_custom.name)
+                for stmt in db_backend.to_sql(table_custom):
+                    env.log.debug(stmt)
+                    cursor.execute(stmt)
+
+            # Create change history table if required
+            if realm_schema['has_change']:
+                cols = []
+                for k in key_names:
+                    # Determine type of column k
+                    type = 'text'
+                    for c in table_metadata.columns:
+                        if c.name == k:
+                            type = c.type
+
+                    cols.append(Column(k, type=type))
+
+                cols.append(Column('time', type=get_timestamp_db_type()))
+                cols.append(Column('author'))
+                cols.append(Column('field'))
+                cols.append(Column('oldvalue'))
+                cols.append(Column('newvalue'))
+                cols.append(Index(key_names))
+
+                change_key = copy.deepcopy(key_names)
+                change_key.append('time')
+                change_key.append('field')
+
+                table_change = Table(tablename+'_change', key = change_key)[cols]
+                env.log.info("Creating change history table %s...", table_change.name)
+                for stmt in db_backend.to_sql(table_change):
+                    env.log.debug(stmt)
+                    cursor.execute(stmt)
+
+
 
     def _get_version(self, cursor):
         cursor.execute("SELECT value FROM system WHERE name = %s", (db_name_old,))
@@ -596,7 +690,7 @@ class ReviewFile(object):
             db = self.env.get_read_db()
             cursor = db.cursor()
             cursor.execute("""
-                SELECT file_id, review_id, path, line_start, line_end, revision FROM peer_review_file WHERE file_id=%s
+                SELECT file_id, review_id, path, line_start, line_end, revision FROM peerreviewfile WHERE file_id=%s
                 """, (file_id,))
             row = cursor.fetchone()
             if not row:
@@ -620,7 +714,7 @@ class ReviewFile(object):
         def do_insert(db):
             cursor = db.cursor()
             self.env.log.debug("Creating new file for review '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO peer_review_file (review_id, path, line_start,
+            cursor.execute("""INSERT INTO peerreviewfile (review_id, path, line_start,
                             line_end, revision)
                             VALUES (%s, %s, %s, %s, %s)
                             """, (self.review_id, self.path, self.start, self.end, self.version))
@@ -630,7 +724,7 @@ class ReviewFile(object):
         def do_delete(db):
             cursor = db.cursor()
             self.env.log.debug("Deleting file '%s' for review '%s'" % (self.file_id, self.review_id))
-            cursor.execute("""DELETE FROM peer_review_file  WHERE file_id=%s""",
+            cursor.execute("""DELETE FROM peerreviewfile  WHERE file_id=%s""",
                            (self.file_id,))
 
     @classmethod
@@ -638,7 +732,7 @@ class ReviewFile(object):
         db = env.get_read_db()
         cursor = db.cursor()
         cursor.execute("SELECT f.file_id, f.review_id, f.path, f.line_start, f.line_end, f.revision FROM "
-                       "peer_review_file AS f WHERE f.review_id=%s"
+                       "peerreviewfile AS f WHERE f.review_id=%s"
                        "ORDER BY f.path", (review_id,))
         files = []
         for row in cursor:

@@ -12,7 +12,7 @@ def do_upgrade(env, ver, db_backend, db):
     cursor.execute("CREATE TEMPORARY TABLE peerreviewfile_old AS SELECT * FROM peer_review_file")
     cursor.execute("DROP TABLE peer_review_file")
 
-    table_metadata = Table('peer_review_file', key='file_id')[
+    table_metadata = Table('peerreviewfile', key='file_id')[
                               Column('file_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('path'),
