@@ -101,6 +101,7 @@ class PeerReviewModelProvider(Component):
                               Column('name'),
                               Column('notes'),
                               Column('parent_id', type='int'),
+                              Column('project'),
                               Column('keywords')],
                      'has_custom': True,
                      'has_change': True,
@@ -160,6 +161,7 @@ class PeerReviewModelProvider(Component):
                     {'name': 'name', 'type': 'text', 'label': N_('Review name')},
                     {'name': 'notes', 'type': 'text', 'label': N_('Review notes')},
                     {'name': 'parent_id', 'type': 'int', 'label': N_('Review parent. 0 if not a followup review')},
+                    {'name': 'project', 'type': 'text', 'label': N_('Project')},
                     {'name': 'keywords', 'type': 'text', 'label': N_('Review keywords')}
                 ],
                 'peerreviewfile': [

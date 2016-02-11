@@ -27,6 +27,7 @@ def do_upgrade(env, ver, db_backend, db):
                               Column('name'),
                               Column('notes'),
                               Column('parent_id', type='int'),
+                              Column('project'),
                               Column('keywords')
                               ]
 
