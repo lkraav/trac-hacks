@@ -31,7 +31,7 @@ def do_upgrade(env, ver, db_backend, db):
 
     cursor = db.cursor()
 
-    cursor.execute("INSERT INTO peer_review_file (file_id,review_id,path,line_start,line_end,repo,revision) "
+    cursor.execute("INSERT INTO peerreviewfile (file_id,review_id,path,line_start,line_end,repo,revision) "
                    "SELECT file_id,review_id,path,line_start,line_end,repo,revision FROM peerreviewfile_old")
 
     cursor.execute("DROP TABLE peerreviewfile_old")

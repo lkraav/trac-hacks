@@ -141,8 +141,8 @@ class PeerReviewModelProvider(Component):
                      'version': 3},
                 'peerreviewer':
                     {'table':
-                        Table('peerreviewer', key=('id', 'reviewer'))[
-                              Column('id', auto_increment=True, type='int'),
+                        Table('peerreviewer', key=('reviewer_id', 'reviewer'))[
+                              Column('reviewer_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('reviewer'),
                               Column('status'),
@@ -188,7 +188,7 @@ class PeerReviewModelProvider(Component):
                     {'name': 'status', 'type': 'text', 'label': N_('Comment status')}
                 ],
                 'peerreviewer': [
-                    {'name': 'id', 'type': 'int', 'label': N_('ID')},
+                    {'name': 'reviewer_id', 'type': 'int', 'label': N_('ID')},
                     {'name': 'review_id', 'type': 'int', 'label': N_('Review ID')},
                     {'name': 'reviewer', 'type': 'text', 'label': N_('Reviewer')},
                     {'name': 'status', 'type': 'text', 'label': N_('Review status')},
@@ -201,7 +201,7 @@ class PeerReviewModelProvider(Component):
                         'label': "Review",
                         'searchable': True,
                         'has_custom': True,
-                        'has_change': True
+                        'has_change': False
                     },
                 'peerreviewfile': {
                         'label': "ReviewFile",
@@ -219,7 +219,7 @@ class PeerReviewModelProvider(Component):
                     'label': "Reviewer",
                     'searchable': True,
                     'has_custom': True,
-                    'has_change': True
+                    'has_change': False
                 },
     }
 
