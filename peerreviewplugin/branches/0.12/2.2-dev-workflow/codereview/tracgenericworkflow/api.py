@@ -281,16 +281,13 @@ class ResourceWorkflowSystem(Component):
                         $ctrl
                         <span class="hint">$hint</span>
                     </div>"""
-                    print "#    ##########", ac[3]
-                    print ac
+
                     cdata = {'is_checked': 'checked="1"' if i == 0 else '',
                              'val': ac[0],
                              'label': ac[1],
                              'ctrl': ac[2].generate(),
                              'hint': ac[3][0]}
-
                     ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
-
 
                 form_tmpl = """
                 <form method="post" action="$action" name="resource_workflow_form">
@@ -314,7 +311,7 @@ class ResourceWorkflowSystem(Component):
                 tmpl = Template(form_tmpl)
                 return HTML(tmpl.safe_substitute(data))
             else:
-                form = tag("No next workflow state available for  %s" % rws['state'])
+                form = tag("No next workflow state available for '%s' in realm '%s'." % (rws['state'], realm))
 
             return form
 

@@ -130,6 +130,7 @@ class PeerReviewModelProvider(Component):
                               Column('attachment_path'),
                               Column('created', type='int'),
                               Column('refs'),
+                              Column('type'),
                               Column('status')],
                      'has_custom': True,
                      'has_change': True,

@@ -22,6 +22,7 @@ def do_upgrade(env, ver, db_backend, db):
                               Column('attachment_path'),
                               Column('created', type='int'),
                               Column('refs'),
+                              Column('type'),
                               Column('status')]
 
     env.log.info("Updating table for class %s" % realm)
