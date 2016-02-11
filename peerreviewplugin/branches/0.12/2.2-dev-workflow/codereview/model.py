@@ -34,9 +34,9 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         self.values['review_id'] = id_
         self.values['res_realm'] = 'peerreview'
         self.values['state'] = state
+        self.values['status'] = state
 
         key = self.build_key_object()
-        print "        ########## PeerReviewModel.__init__", id_, key
         AbstractVariableFieldsObject.__init__(self, env, 'peerreview', key, db)
 
     def get_key_prop_names(self):
@@ -50,21 +50,21 @@ class PeerReviewModel(AbstractVariableFieldsObject):
 
 class PeerReviewerModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
-    protected_fields = ('id', 'res_realm', 'state')
+    protected_fields = ('reviewer_id', 'res_realm', 'state')
 
     def __init__(self, env, id=None, res_realm=None, state='new', db=None):
         self.values = {}
 
-        self.values['id'] = id
+        self.values['reviewer_id'] = id
         self.values['res_realm'] = res_realm
         self.values['state'] = state
+        self.values['status'] = state
 
         key = self.build_key_object()
-        print "                  ###", key
         AbstractVariableFieldsObject.__init__(self, env, 'peerreviewer', key, db)
 
     def get_key_prop_names(self):
-        return ['id']
+        return ['reviewer_id']
 
     def create_instance(self, key):
         return PeerReviewModel(self.env, 'id', 'peerreviewer')

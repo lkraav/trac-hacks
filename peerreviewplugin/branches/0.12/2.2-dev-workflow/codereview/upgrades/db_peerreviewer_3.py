@@ -29,7 +29,7 @@ def do_upgrade(env, ver, db_backend, db):
 
     cursor.execute("INSERT INTO peerreviewer (review_id,reviewer,status,vote) "
                    "SELECT review_id,reviewer,status,vote FROM peerreviewer_old")
-
+    cursor.execute("UPDATE peerreviewer SET status= 'new' WHERE status=0")
     cursor.execute("DROP TABLE peerreviewer_old")
 
     # Add default workflow
