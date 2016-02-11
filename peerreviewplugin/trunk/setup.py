@@ -26,11 +26,18 @@ setup(
                                  'htdocs/images/*.png',
                                  'htdocs/images/*.gif',
                                  'htdocs/js/*.js',
-                                 'htdocs/css/images/*.png',
-                                 'htdocs/css/*.css']},
+                                 'htdocs/css/*.css',
+                                 'tracgenericclass/*.py',
+                                 'tracgenericclass/templates/*.html',
+                                 'tracgenericclass/htdocs/*',
+                                 'tracgenericworkflow/*.py',
+                                 'tracgenericworkflow/templates/*.html',
+                                 'tracgenericworkflow/htdocs/*',
+                                 ]},
     entry_points={
         'trac.plugins': [
             'codereview = codereview',
+            'tracgenericclass = codereview.tracgenericclass'
         ],
     },
 )

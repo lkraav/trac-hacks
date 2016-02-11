@@ -98,7 +98,7 @@ class NewReviewModule(Component):
                 if oldid:
                     # Automatically close the review we resubmitted from
                     review = Review(self.env, oldid)
-                    review.status = "Closed"
+                    review.status = "closed"
                     review.update()
                     add_notice(req, "Review '%s' (#%s) was automatically closed." % (review.name, oldid))
                 returnid = self.createCodeReview(req)
@@ -124,7 +124,7 @@ class NewReviewModule(Component):
         if reviewID and (not reviewID.isdigit() or not review):
             raise TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
-        if review.status == 'Closed' and req.args.get('modify'):
+        if review.status == 'closed' and req.args.get('modify'):
             raise TracError("The Review '#%s' is already closed and can't be modified." % review.review_id,
                             "Modify Review error")
 
@@ -180,7 +180,7 @@ class NewReviewModule(Component):
     def createCodeReview(self, req):
         review = Review(self.env)
         review.author = req.authname
-        review.status = 'Open for review'
+        review.status = 'new'
         review.raw_date = int(time.time())
         review.name = req.args.get('Name')
         review.notes = req.args.get('Notes')

@@ -60,7 +60,7 @@ class PeerReviewPerform(Component):
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno),
                                                                   href='javascript:getComments(%s, %s)' %
                                                                        (lineno, rfile.file_id))))
-            if review.status != 'Closed':
+            if review.status != 'closed':
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
                                                                            % (lineno, rfile.file_id))))
             else:

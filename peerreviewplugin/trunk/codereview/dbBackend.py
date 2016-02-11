@@ -31,7 +31,7 @@ class dbBackend(object):
         return newStr
 
     def getCodeReviewsInPeriod(self, date_from, date_to):
-        query = "SELECT review_id, owner, status, created, name, notes FROM peer_review " \
+        query = "SELECT review_id, owner, status, created, name, notes FROM peerreview " \
                 "WHERE created >= '%s' AND created <= '%s' ORDER BY created" % (date_from, date_to)
         return self.execCodeReviewQuery(query, False)
 
@@ -40,15 +40,15 @@ class dbBackend(object):
     def searchCodeReviewsByName(self, name):
         queryPart = self.createORLoop(name, "Name")
         if len(queryPart) == 0:
-            query = "SELECT review_id, owner, status, created, name, notes FROM peer_review"
+            query = "SELECT review_id, owner, status, created, name, notes FROM peerreview"
         else:
-            query = "SELECT review_id, owner, status, created, name, notes FROM peer_review WHERE %s" % (queryPart)
+            query = "SELECT review_id, owner, status, created, name, notes FROM peerreview WHERE %s" % (queryPart)
         return self.execCodeReviewQuery(query, True)
 
     #Returns an array of code reviews that match the values in the given
     #code review structure.  The 'name' part is treated as a keyword list
     def searchCodeReviews(self, crStruct):
-        query = "SELECT review_id, owner, status, created, name, notes FROM peer_review WHERE "
+        query = "SELECT review_id, owner, status, created, name, notes FROM peerreview WHERE "
         queryPart = self.createORLoop(crStruct.Name, "name")
         if len(queryPart) != 0:
             query = query + "(%s) AND " % (queryPart)
@@ -59,13 +59,13 @@ class dbBackend(object):
     #Returns the requested comment
     def getCommentByID(self, id):
         query = "SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created " \
-                "FROM peer_review_comment WHERE comment_id = '%s'" % (id)
+                "FROM peerreviewcomment WHERE comment_id = '%s'" % (id)
         return self.execReviewCommentQuery(query, True)
 
     #Returns all the comments for the given file on the given line
     def getCommentsByFileIDAndLine(self, id, line):
         query = "SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created " \
-                "FROM peer_review_comment WHERE file_id = '%s' AND line_num = '%s' ORDER BY created" % (id, line)
+                "FROM peerreviewcomment WHERE file_id = '%s' AND line_num = '%s' ORDER BY created" % (id, line)
         return self.execReviewCommentQuery(query, False)
 
     #A generic method for executing queries that return CodeReview structures

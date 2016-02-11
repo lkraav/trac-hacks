@@ -133,7 +133,7 @@
                 </table>
             </py:if>
 
-            <py:if test="canivote and review.status != 'Closed' and review.status !=  'Ready for inclusion'">
+            <py:if test="canivote and review.status != 'closed' and review.status !=  'forinclusion'">
                 <h2>${myvote != -1 and 'Modify' or 'Cast'} your vote:</h2>
                 <form action="" method="post">
                     <fieldset>
@@ -170,13 +170,13 @@
                     <fieldset>
                         <div class="buttons">
                             <input type="hidden" value="${review.review_id}" name="Review"/>
-                            <input py:if="review.status != 'Ready for inclusion' and review.status != 'Closed'"
+                            <input py:if="review.status != 'forinclusion' and review.status != 'closed'"
                                    type="submit" value="Submit For Inclusion" name="inclusion"
-                                   disabled="${review.status != 'Reviewed' and 'true' or None}"/>
-                            <input py:if="review.status != 'Closed'" type="submit" value="Close This Code Review" name="close"/>
+                                   disabled="${review.status != 'reviewed' and 'true' or None}"/>
+                            <input py:if="review.status != 'closed'" type="submit" value="Close This Code Review" name="close"/>
                             <input type="submit" value="Resubmit For Review" name="resubmit"/>
                             <input type="submit" value="Followup Review" name="followup"/>
-                            <input py:if="review.status != 'Closed'" type="submit" value="Modify" name="modify"/>
+                            <input py:if="review.status != 'closed'" type="submit" value="Modify" name="modify"/>
                         </div>
                         <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
                             a new code review.

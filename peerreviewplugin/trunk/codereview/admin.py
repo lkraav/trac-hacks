@@ -29,18 +29,18 @@ def calculate_review_status(env, newThreshold):
 
         all_reviews = Review.select(env)
 
-        open_reviews = [rev for rev in all_reviews if rev.status == "Open for review"]
+        open_reviews = [rev for rev in all_reviews if rev.status == "new"]
         for r in open_reviews:
             # calculate vote ratio, while preventing divide by zero tests
             if calc_vote_ratio(r) >= newThreshold:
-                r.status = "Reviewed"
+                r.status = "reviewed"
                 r.update()
 
-        rev_reviews = [rev for rev in all_reviews if rev.status == "Reviewed"]
+        rev_reviews = [rev for rev in all_reviews if rev.status == "reviewed"]
         for r in rev_reviews:
             # calculate vote ratio, while preventing divide by zero tests
             if calc_vote_ratio(r) < newThreshold:
-                r.status = "Open for review"
+                r.status = "new"
                 r.update()
 
 

@@ -72,8 +72,8 @@ class PeerReviewReviewMain(Component):
         else:
             data['manager'] = False
 
-        all_reviews = [rev for rev in Review.select(self.env) if rev.status != "Closed"]
-        rev_by_reviewer = [rev for rev in Review.select_by_reviewer(self.env, req.authname) if rev.status != "Closed"]
+        all_reviews = [rev for rev in Review.select(self.env) if rev.status != "closed"]
+        rev_by_reviewer = [rev for rev in Review.select_by_reviewer(self.env, req.authname) if rev.status != "closed"]
 
         # fill the table of currently open reviews
         myreviews = []
@@ -84,12 +84,12 @@ class PeerReviewReviewMain(Component):
             if rev.author == req.authname:
                 myreviews.append(rev)
             # Reviews a manager must handle
-            if rev.status == "Ready for inclusion":
+            if rev.status == "forinclusion":
                 manager_reviews.append(rev)
 
         # All reviews assigned to me
         for rev in rev_by_reviewer:
-            if rev.status != "Ready for inclusion":
+            if rev.status != "forinclusion":
                 reviewer = Reviewer.select_by_review_id(self.env, rev.review_id, req.authname)
                 if reviewer.vote == -1:
                     rev.vote = 'Not voted'

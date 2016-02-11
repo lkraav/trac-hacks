@@ -97,7 +97,7 @@ class PeerReviewCommentHandler(Component):
             fileid = req.args.get('fileid')
         rfile = ReviewFile(self.env, fileid)
         review = Review(self.env, rfile.review_id)
-        if review.status == 'Closed':
+        if review.status == 'closed':
             return True
         return False
 
@@ -252,7 +252,7 @@ class PeerReviewCommentHandler(Component):
                     </a>
                 </td>
                 <td width="100px" class="comment-reply">
-                   <a py:if="review.status != 'Closed'" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
+                   <a py:if="review.status != 'closed'" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
                 </td>
             </tr>
             </tbody>

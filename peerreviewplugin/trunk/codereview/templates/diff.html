@@ -42,8 +42,8 @@
       class="diff">
 
   <py:def function="add_comment(linenum, fileid)">
-      <py:if test="review.status == 'Closed'">${linenum or '&nbsp;'}</py:if>
-      <a py:if="review.status != 'Closed'" href="javascript:addComment($linenum, $fileid, -1)">${linenum or '&nbsp;'}</a>
+      <py:if test="review.status == 'closed'">${linenum or '&nbsp;'}</py:if>
+      <a py:if="review.status != 'closed'" href="javascript:addComment($linenum, $fileid, -1)">${linenum or '&nbsp;'}</a>
   </py:def>
 
   <ul py:if="any([item.diffs or item.props for item in changes])" class="entries">
