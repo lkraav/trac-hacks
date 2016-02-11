@@ -111,44 +111,13 @@
                 </tbody>
             </table>
 
-            <py:if test="viewvotesummary">
-                <h2>Vote summary</h2>
-                <table width="35%" id="vote-summary">
-                    <tr>
-                        <td>Vote tally:</td>
-                        <td class="yes">Yes: $votes.yes</td>
-                        <td class="no">No: $votes.no</td>
-                        <td class="pending">Pending: $votes.pending</td>
-                    </tr>
-                    <tr py:if="canivote">
-                        <td>Your vote is:</td>
-                        <td>
-                            <py:if test="myvote == -1">Pending</py:if>
-                            <py:if test="myvote == 0"><span style="color:red">No</span></py:if>
-                            <py:if test="myvote == 1"><span style="color:limegreen">Yes</span></py:if>
-                        </td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </table>
-            </py:if>
-
-            <py:if test="canivote and review.status != 'closed' and review.status !=  'forinclusion'">
-                <h2>${myvote != -1 and 'Modify' or 'Cast'} your vote:</h2>
-                <form action="" method="post">
-                    <fieldset>
-                        <div class="buttons">
-                            <input type="hidden" value="${review.review_id}" name="Review"/>
-                            <input type="submit" value="Approve" name="approved"/>
-                            <input type="submit" value="Don't approve" name="notapproved"/>
-                        </div>
-                    </fieldset>
-                </form>
+            <py:if test="canivote">
+                <h2>Reviewer actions</h2>
+                $reviewer_workflow
             </py:if>
 
             <py:if test="manager">
                 <h2>Manager privileges</h2>
-
                 <form method="post" action="">
                     <fieldset>
                         <p>Change code review status:</p>

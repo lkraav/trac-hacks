@@ -143,7 +143,7 @@ class PeerReviewModelProvider(Component):
                      'version': 3},
                 'peerreviewer':
                     {'table':
-                        Table('peerreviewer', key=('reviewer_id', 'reviewer'))[
+                        Table('peerreviewer', key=('reviewer_id'))[
                               Column('reviewer_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('reviewer'),

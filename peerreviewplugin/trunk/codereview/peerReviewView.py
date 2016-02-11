@@ -16,19 +16,39 @@ import itertools
 from trac import util
 from trac.core import Component, implements, TracError
 from trac.mimeview import Context
+from trac.resource import Resource
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
-from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment
+from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment, PeerReviewerModel
 from peerReviewMain import add_ctxt_nav_items
+from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
 
 
 class ViewReviewModule(Component):
     """Displays a summary page for a review."""
-    implements(IRequestHandler, INavigationContributor)
+    implements(IRequestHandler, INavigationContributor, IWorkflowTransitionListener)
 
     number = -1
     files = []
+
+    # IWorkflowTransitionListener
+
+    def object_transition(self, res_wf_state, resource, action, old_state, new_state):
+        self.env.log.info("   ########################### %s", res_wf_state)
+        self.env.log.info("   ########################### %s", resource)
+        self.env.log.info("   ########################### %s %s", resource.id, resource.realm)
+        self.env.log.info("   ########################### %s", action)
+        self.env.log.info("   ########################### %s", old_state)
+        self.env.log.info("   ########################### %s", new_state)
+        self.env.log.info("   ########################### %s", res_wf_state.authname)
+
+        if resource.realm == 'peerreviewer':
+            reviewer = PeerReviewerModel(self.env, resource.id)
+            reviewer['status'] = new_state
+            print "--------------------------> ", reviewer['reviewer']
+            reviewer.save_changes(author=res_wf_state.authname)
+    # INavigationContributor
 
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
@@ -52,6 +72,14 @@ class ViewReviewModule(Component):
             manager = True
         else:
             manager = False
+
+        # REST call?
+        is_rest = False
+        path = req.path_info.split('/')
+        if path[1] == 'peerreview':
+            is_rest = True
+            if len(path) == 3:
+                req.args['Review'] = path[2]
 
         # reviewID argument checking
         reviewID = req.args.get('Review')
@@ -150,6 +178,19 @@ class ViewReviewModule(Component):
                 newrvpair.append(reviewer.reviewer)
                 rvs.append(newrvpair)
                 newrvpair = []
+
+        if is_rest:
+            url = ".."
+        else:
+            url = '.'
+        realm = 'peerreviewer'
+        res = None
+        for reviewer in reviewers:
+            if reviewer.reviewer == req.authname:
+                res = Resource(realm, str(reviewer.id))  # id must be a string
+        if res:
+            data['reviewer_workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res,
+                                                                                             {'redirect': req.href.peerReviewView(Review=reviewID)})
 
         data['rvs'] = rvs
         data['rvsLength'] = len(rvs)

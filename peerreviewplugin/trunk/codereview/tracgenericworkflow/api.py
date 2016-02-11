@@ -379,6 +379,7 @@ class ResourceWorkflowSystem(Component):
 
             res = Resource(res_realm, id)
             rws = ResourceWorkflowState(self.env, id, res_realm)
+            rws.authname = req.authname
 
             # from codereview.tracgenericclass.model import GenericClassModelProvider
             # gclass_modelprovider = GenericClassModelProvider(self.env)
