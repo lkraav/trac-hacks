@@ -187,8 +187,13 @@ class ViewReviewModule(Component):
             url = '.'
         data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res)
         realm = 'peerreviewer'
-        res = Resource(realm, str(req.authname))  # Must be a string
-        data['reviewer_workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res)
+        res = None
+        for reviewer in reviewers:
+            if reviewer.reviewer == req.authname:
+                res = Resource(realm, str(reviewer.id))  # Must be a string
+        if res:
+            data['reviewer_workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res,
+                                                                                             {'redirect': req.href.peerReviewView(Review=reviewID)})
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')

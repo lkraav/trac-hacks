@@ -11,7 +11,7 @@ def do_upgrade(env, ver, db_backend, db):
     status_update = [["new", "Open for review"],
                      ["reviewed", "Reviewed"],
                      ["closed", "Closed"],
-                     ["ready", "Ready for inclusion"]]
+                     ["forinclude", "Ready for inclusion"]]
 
     for status in status_update:
         cursor.execute("UPDATE peer_review SET status=%s WHERE status=%s", status)
@@ -19,7 +19,7 @@ def do_upgrade(env, ver, db_backend, db):
     cursor.execute("CREATE TEMPORARY TABLE peerreview_old AS SELECT * FROM peer_review")
     cursor.execute("DROP TABLE peer_review")
 
-    table_metadata = Table('peer_review', key='review_id')[
+    table_metadata = Table('peerreview', key='review_id')[
                               Column('review_id', auto_increment=True, type='int'),
                               Column('owner'),
                               Column('status'),
@@ -37,7 +37,7 @@ def do_upgrade(env, ver, db_backend, db):
 
     cursor = db.cursor()
 
-    cursor.execute("INSERT INTO peer_review (review_id,owner,status,created,name,notes,parent_id,keywords) "
+    cursor.execute("INSERT INTO peerreview (review_id,owner,status,created,name,notes,parent_id,keywords) "
                    "SELECT review_id,owner,status,created,name,notes,parent_id,keywords FROM peerreview_old")
 
     cursor.execute("DROP TABLE peerreview_old")

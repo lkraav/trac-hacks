@@ -12,7 +12,7 @@ def do_upgrade(env, ver, db_backend, db):
     cursor.execute("CREATE TEMPORARY TABLE peerreviewcomment_old AS SELECT * FROM peer_review_comment")
     cursor.execute("DROP TABLE peer_review_comment")
 
-    table_metadata = Table('peer_review_comment', key='comment_id')[
+    table_metadata = Table('peerreviewcomment', key='comment_id')[
                               Column('comment_id', auto_increment=True, type='int'),
                               Column('file_id', type='int'),
                               Column('parent_id', type='int'),
@@ -32,7 +32,7 @@ def do_upgrade(env, ver, db_backend, db):
 
     cursor = db.cursor()
 
-    cursor.execute("INSERT INTO peer_review_comment "
+    cursor.execute("INSERT INTO peerreviewcomment "
                    "(comment_id,file_id,parent_id,line_num,author,comment,attachment_path,created) "
                    "SELECT comment_id,file_id,parent_id,line_num,author,comment,attachment_path,created "
                    "FROM peerreviewcomment_old")

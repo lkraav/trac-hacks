@@ -12,7 +12,8 @@ def do_upgrade(env, ver, db_backend, db):
     cursor.execute("CREATE TEMPORARY TABLE peerreviewer_old AS SELECT * FROM peer_reviewer")
     cursor.execute("DROP TABLE peer_reviewer")
 
-    table_metadata = Table('peer_reviewer', key=('review_id', 'reviewer'))[
+    table_metadata = Table('peerreviewer', key=('reviewer_id', 'reviewer'))[
+                              Column('reviewer_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('reviewer'),
                               Column('status'),
@@ -26,7 +27,7 @@ def do_upgrade(env, ver, db_backend, db):
 
     cursor = db.cursor()
 
-    cursor.execute("INSERT INTO peer_reviewer (review_id,reviewer,status,vote) "
+    cursor.execute("INSERT INTO peerreviewer (review_id,reviewer,status,vote) "
                    "SELECT review_id,reviewer,status,vote FROM peerreviewer_old")
 
     cursor.execute("DROP TABLE peerreviewer_old")

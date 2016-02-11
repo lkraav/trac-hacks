@@ -245,7 +245,7 @@ class ResourceWorkflowSystem(Component):
 
         return (this_action['name'], tag(*controls), '. '.join(hints))
 
-    def get_workflow_markup(self, req, base_href, realm, resource):
+    def get_workflow_markup(self, req, base_href, realm, resource, data=None):
             rws = ResourceWorkflowState(self.env, resource.id, realm)
 
             # action_controls is an ordered list of "renders" tuples, where
@@ -294,6 +294,7 @@ class ResourceWorkflowSystem(Component):
                     <fieldset>
                         <input name="id" type="hidden" value="$resource_id" />
                         <input name="res_realm" type="hidden" value="$realm" />
+                        <input name="redirect" value="$redirect" type="hidden" />
                         <div>
                             <p>Current state: $cur_state</p>
                         </div>
@@ -302,14 +303,17 @@ class ResourceWorkflowSystem(Component):
                     </fieldset>
                 </form> """
 
-                data = {'action': base_href+'/workflowtransition',
+                tdata = {'action': base_href+'/workflowtransition',
                         'resource_id': resource.id,
                         'cur_state': rws['state'],
                         'ctrls': ctrls,
-                        'realm': realm}
+                        'realm': realm,
+                         'redirect': ''}
+                if data and data.get('redirect'):
+                    tdata['redirect'] = data.get('redirect')
 
                 tmpl = Template(form_tmpl)
-                return HTML(tmpl.safe_substitute(data))
+                return HTML(tmpl.safe_substitute(tdata))
             else:
                 form = tag("No next workflow state available for '%s' in realm '%s'." % (rws['state'], realm))
 
@@ -376,6 +380,15 @@ class ResourceWorkflowSystem(Component):
             res = Resource(res_realm, id)
             rws = ResourceWorkflowState(self.env, id, res_realm)
 
+            # from codereview.tracgenericclass.model import GenericClassModelProvider
+            # gclass_modelprovider = GenericClassModelProvider(self.env)
+            # obj = gclass_modelprovider.get_object(res_realm, str(9))
+            # print "   ", res_realm, " object: ",  obj
+            # if obj.exists:
+            #     print obj['review_id']
+            #     print obj.resource.realm
+            #     print "Resource id", obj.resource.id
+
             if rws.exists:
                 curr_state = rws['state']
             else:
@@ -430,8 +443,10 @@ class ResourceWorkflowSystem(Component):
                 self.env.log.debug(formatExceptionInfo())
                 raise
 
-            # Redirect to the resource URL.
-            href = get_resource_url(self.env, res, req.href)
+            href = req.args.get('redirect')
+            if not href:
+                # Redirect to the resource URL.
+                href = get_resource_url(self.env, res, req.href)
             req.redirect(href)
 
         return 'empty.html', {}, None
