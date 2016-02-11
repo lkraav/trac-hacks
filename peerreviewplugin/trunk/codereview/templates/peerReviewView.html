@@ -77,11 +77,11 @@
 
             <h2>Users assigned to this code review</h2>
 
-            <table py:if="review.author == req.authname or manager" class="listing" id="userlist">
+            <table py:if="review.author == req.authname or manager" class="listing dirlist" id="userlist">
                 <thead>
                     <tr>
-                        <td>User name</td>
-                        <td>Vote</td>
+                        <th style="width:90%">User name</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody py:with="cls=cycle(('odd', 'even'))">
@@ -95,10 +95,10 @@
                 </tbody>
             </table>
 
-            <table py:if="review.author != req.authname and not manager" class="listing" id="userlist">
+            <table py:if="review.author != req.authname and not manager" class="listing dirlist" id="userlist">
                 <thead>
                     <tr>
-                        <td>User name</td>
+                        <th>User name</th>
                     </tr>
                 </thead>
                 <tbody py:with="cls=cycle(('odd', 'even'))">

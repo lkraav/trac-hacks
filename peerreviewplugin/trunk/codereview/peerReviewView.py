@@ -153,31 +153,15 @@ class ViewReviewModule(Component):
         if manager:
             self.env.log.debug("I am a manager")
             for reviewer in reviewers:
-                newrvpair.append(reviewer.reviewer)
-                if reviewer.vote == -1:
-                    newrvpair.append("Not voted")
-                elif reviewer.vote == 0:
-                    newrvpair.append("No")
-                elif reviewer.vote == 1:
-                    newrvpair.append("Yes")
-                rvs.append(newrvpair)
-                newrvpair = []
+                rvs.append([reviewer.reviewer, reviewer.status])
         elif review.author == req.authname:
             self.env.log.debug("I am the author")
             for reviewer in reviewers:
-                newrvpair.append(reviewer.reviewer)
-                if reviewer.vote == -1:
-                    newrvpair.append("Not voted")
-                else:
-                    newrvpair.append("Voted")
-                rvs.append(newrvpair)
-                newrvpair = []
+                rvs.append([reviewer.reviewer, reviewer.status])
         else:
             self.env.log.debug("I am somebody else")
             for reviewer in reviewers:
-                newrvpair.append(reviewer.reviewer)
-                rvs.append(newrvpair)
-                newrvpair = []
+                rvs.append([reviewer.reviewer, reviewer.status])
 
         if is_rest:
             url = ".."

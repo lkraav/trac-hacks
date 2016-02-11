@@ -295,11 +295,14 @@ class ResourceWorkflowSystem(Component):
                         <input name="id" type="hidden" value="$resource_id" />
                         <input name="res_realm" type="hidden" value="$realm" />
                         <input name="redirect" value="$redirect" type="hidden" />
-                        <div>
-                            <p>Current state: $cur_state</p>
-                        </div>
+                        <dl class="overview">
+                            <dt>Current state:</dt>
+                             <dd>$cur_state</dd>
+                        </dl>
                         $ctrls
-                        <input type="submit" id="resource_workflow_form_submit_button" value="Perform Action" />
+                        <div class="buttons">
+                            <input type="submit" id="resource_workflow_form_submit_button" value="Perform Action" />
+                        </div>
                     </fieldset>
                 </form> """
 
