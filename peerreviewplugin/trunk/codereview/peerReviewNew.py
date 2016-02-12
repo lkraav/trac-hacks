@@ -22,7 +22,8 @@ from trac.web.chrome import INavigationContributor, add_javascript, add_script_d
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.api import RepositoryManager
 from CodeReviewStruct import *
-from model import ReviewFile, Review, Reviewer, get_users, Comment, ReviewFileModel, PeerReviewerModel
+from model import ReviewFile, Review, Reviewer, get_users, Comment, \
+    ReviewFileModel, PeerReviewerModel, PeerReviewModel
 from peerReviewMain import add_ctxt_nav_items
 from peerReviewBrowser import get_node_from_repo
 
@@ -98,6 +99,7 @@ class NewReviewModule(Component):
             if req.args.get('create'):
                 if oldid:
                     # Automatically close the review we resubmitted from
+                    # TODO: use new model here
                     review = Review(self.env, oldid)
                     review.status = "closed"
                     review.update()
@@ -121,16 +123,16 @@ class NewReviewModule(Component):
         reviewID = req.args.get('resubmit')
 
         # if we tried resubmitting and the reviewID is not a valid number or not a valid code review, error
-        review = Review(self.env, reviewID)
+        review = PeerReviewModel(self.env, reviewID)
         if reviewID and (not reviewID.isdigit() or not review):
             raise TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
-        if review.status == 'closed' and req.args.get('modify'):
-            raise TracError("The Review '#%s' is already closed and can't be modified." % review.review_id,
+        if review['status'] == 'closed' and req.args.get('modify'):
+            raise TracError("The Review '#%s' is already closed and can't be modified." % review['review_id'],
                             "Modify Review error")
 
         # if we are resubmitting a code review and we are the author or the manager
-        if reviewID and (review.author == req.authname or 'CODE_REVIEW_MGR' in req.perm):
+        if reviewID and (review['owner'] == req.authname or 'CODE_REVIEW_MGR' in req.perm):
             data['new'] = "no"
             data['oldid'] = reviewID
 
@@ -147,16 +149,16 @@ class NewReviewModule(Component):
                     f.num_comments = len(comments) or 0
                 popFiles.append(f)
 
-            data['name'] = review.name
+            data['name'] = review['name']
             if req.args.get('modify') or req.args.get('followup'):
-                data['notes'] = review.notes
+                data['notes'] = review['notes']
             else:
-                data['notes'] = "Review based on ''%s'' (resubmitted)." % review.name
+                data['notes'] = "Review based on ''%s'' (resubmitted)." % review['name']
 
             data['prevFiles'] = popFiles
 
         #if we resubmitting a code review, and are neither the author and the manager
-        elif reviewID and not review.author == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
+        elif reviewID and not review['owner'] == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
             raise TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
         #if we are not resubmitting
         else:
@@ -164,6 +166,12 @@ class NewReviewModule(Component):
 
         data['cycle'] = itertools.cycle
         data['followup'] = req.args.get('followup')
+        prj = self.env.config.getlist("peer-review", "projects", default=[])
+        if not prj:
+            prj = self.env.config.getlist("ticket-custom", "project.options", default=[], sep='|')
+
+        data['projects'] = prj
+        data['curproj'] = review['project']
 
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
@@ -179,16 +187,17 @@ class NewReviewModule(Component):
     # and populates it with the information.  Also creates
     # new reviewer structs and file structs for the review.
     def createCodeReview(self, req):
-        review = Review(self.env)
-        review.author = req.authname
-        review.status = 'new'
-        review.raw_date = int(time.time())
-        review.name = req.args.get('Name')
-        review.notes = req.args.get('Notes')
+        review = PeerReviewModel(self.env)
+        review['owner'] = req.authname
+        review['created'] = int(time.time())
+        review['name'] = req.args.get('Name')
+        review['notes'] = req.args.get('Notes')
         if req.args.get('followup'):
-            review.parent_id = req.args.get('oldid', 0)
+            review['parent_id'] = req.args.get('oldid', 0)
+        if req.args.get('project'):
+             review['project'] = req.args.get('project')
         review.insert()
-        id_ = review.review_id
+        id_ = review['review_id']
         self.log.debug('New review created: %s', id_)
 
         # loop here through all the reviewers

@@ -40,8 +40,34 @@ table.code th.performCodeReview{
 }
 
 /* New review page */
+#properties table th {
+    padding: .75em;
+    text-align: right;
+    width: 20%;
+    vertical-align: top;
+}
+
+#properties table td {
+    vertical-align: middle;
+    width: 75%;
+}
+
+#properties .help {
+    text-align: right;
+}
+
 #review-name{
-   width: 50%;
+   width: 80%;
+}
+
+#new-review legend {
+    margin-bottom: 10px;
+    font-weight: normal;
+    color: #777777;
+}
+
+#new-review fieldset {
+    margin-top: 2em;
 }
 
 /* file browser */
@@ -125,6 +151,7 @@ table.code th.performCodeReview{
   text-align: right;
 }
 
+/* View review page */
 .workflow-actions fieldset{
   margin: 0.5em 3em;
   padding: 1em;

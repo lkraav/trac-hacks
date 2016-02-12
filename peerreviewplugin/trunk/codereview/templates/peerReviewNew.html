@@ -15,18 +15,43 @@
             <h1 py:if="not modify">Create a New Code Review</h1>
             <h1 py:if="modify">Modify an existing Code Review</h1>
 
-            <h2>Step 1: Choose a name for this review.</h2>
-
             <!-- CodeReview name is empty if new, with previous name is resubmitted -->
-            <form method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);">
-                <fieldset>
-                    Name: <input type="text" name="Name" value="${name}" id="review-name"/>
+            <form method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);" id="new-review">
+                <fieldset id="properties">
+                    <legend>General information.</legend>
+                    <table>
+                        <tr>
+                            <th>Name:</th>
+                            <td><input type="text" name="Name" value="${name}" id="review-name"/></td>
+                        </tr>
+                        <tr>
+                            <th>Project:</th>
+                            <td>
+                                <select id="project" name="project">
+                                    <option value=""> --- </option>
+                                    <option py:for="item in projects" value="${item}"
+                                            selected="${curproj == item or None}" >${item}</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Additional notes:</th>
+                            <td>
+                                <p class="help">You may use wiki formating here.</p>
+                                <!-- Display an empty notes area if it's a new CodeReview, display previous notes
+                                     if resubmitted -->
+                                <textarea name="Notes" cols="60" rows="8" py:content="notes"></textarea>
+                            </td>
+                        </tr>
+                    </table>
                 </fieldset>
 
-                <h2 py:if="not followup and not modify">Step 2: Select the sections to be reviewed.</h2>
-                <h2 py:if="followup">Step 2: Select the revision for the files.</h2>
-                <h2 py:if="modify">Step 2: Modify the list of files.</h2>
+
                 <fieldset>
+                    <legend py:if="not followup and not modify">Select the sections to be reviewed.</legend>
+                    <legend py:if="followup">Select the revision for the files.</legend>
+                    <legend py:if="modify">Modify the list of files.</legend>
+
                     <p py:if="followup" class="help">The selected revision is used for all files in the list. If you want to
                         compare a file with a different revision
                         you have to create a code review just for this file.</p>
@@ -88,15 +113,13 @@
                     <p  py:if="not modify" class="help">If <strong>Start Line</strong> and <strong>End Line</strong> are set to zero the
                         whole file is selected for review.</p>
                 </fieldset>
-                <h2>Step 3: Select reviewers for your review.</h2>
+
                 <fieldset>
+                    <legend>Step 3: Select reviewers for your review.</legend>
                     <xi:include href="user_list.html"/>
                 </fieldset>
-                <h2>Step 4: Write general notes and instructions for the reviewers. (Optional)</h2>
+
                 <fieldset>
-                    <p class="help">You may use wiki formating here.</p>
-                    <!-- Display an empty notes area if it's a new CodeReview, display previous notes if resubmitted -->
-                    <textarea name="Notes" cols="60" rows="8" py:content="notes"></textarea>
                     <div class="buttons">
                         <input py:if="oldid" type="hidden" name="oldid" value="$oldid"/>
                         <input py:if="not followup and not modify" type="submit" name="create"
@@ -108,6 +131,7 @@
                         <input py:if="modify" type="submit" name="save" value="Save Changes"/>
                     </div>
                 </fieldset>
+
             </form>
             <script type="text/javascript" src="${href.chrome('hw/js/peerReviewNew.js')}"/>
         </div>

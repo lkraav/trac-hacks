@@ -8,6 +8,7 @@
 #
 # Author: Cinc
 #
+
 import copy
 from time import time
 from trac.core import Component, implements, TracError
@@ -35,8 +36,11 @@ class PeerReviewModel(AbstractVariableFieldsObject):
 
         self.values['review_id'] = id_
         self.values['res_realm'] = 'peerreview'
+        # Set defaults
         self.values['state'] = state
         self.values['status'] = state
+        self.values['created'] = int(time())
+        self.values['parent_id'] = 0
 
         key = self.build_key_object()
         AbstractVariableFieldsObject.__init__(self, env, 'peerreview', key, db)
