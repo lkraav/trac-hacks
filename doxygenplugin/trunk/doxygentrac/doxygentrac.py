@@ -312,14 +312,26 @@ class DoxygenPlugin(Component):
 
     def get_link_resolvers(self):
         def doxygen_link(formatter, ns, name, label):
+            res = True
             if '/' not in name: 
                 doc = self.default_doc
             else:
                 doc, name = name.split('/') 
-            res = self._search_in_documentation(doc, name, ['name'], False)
-            if res == {}:
-                return tag.a(label, title=name, class_='missing',
-                             href=formatter.href.doxygen())
+                if not doc: 
+                    doc = self.default_doc
+                else:
+                    res = os.path.exists(os.path.join(self.base_path, doc))
+
+            if res and name:
+                    res = self._search_in_documentation(doc, name, ['name'], False)
+            
+            if not res:
+                   return tag.a(label, title=name, class_='missing',
+                                 href=formatter.href.doxygen())
+            if not name:
+                    label = doc
+                    res = {'url':'index.html', 'target':'', 'type':'file', 'text':'index'}
+
             url = os.path.join(doc, self.html_output, res['url'])
             url = formatter.href.doxygen(url) + '#' + res['target']
             t = res['type'] 
