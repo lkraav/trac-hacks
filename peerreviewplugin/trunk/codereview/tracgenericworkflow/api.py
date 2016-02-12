@@ -290,14 +290,14 @@ class ResourceWorkflowSystem(Component):
                     ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
 
                 form_tmpl = """
-                <form method="post" action="$action" name="resource_workflow_form">
+                <form class="workflow-actions" method="post" action="$action" name="resource_workflow_form">
                     <fieldset>
                         <input name="id" type="hidden" value="$resource_id" />
                         <input name="res_realm" type="hidden" value="$realm" />
                         <input name="redirect" value="$redirect" type="hidden" />
-                        <dl class="overview">
+                        <dl>
                             <dt>Current state:</dt>
-                             <dd>$cur_state</dd>
+                            <dd>$cur_state</dd>
                         </dl>
                         $ctrls
                         <div class="buttons">

@@ -124,3 +124,20 @@ table.code th.performCodeReview{
   font-size: 80%;
   text-align: right;
 }
+
+.workflow-actions fieldset{
+  margin-left: 3em;
+  padding: 1em;
+  border: 1px solid silver;
+}
+
+.workflow-actions dt{
+  font-weight: bold;
+  padding-right: .25em;
+  position: absolute;
+  text-align: right;
+}
+
+.workflow-actions dd{
+  margin-left: 12em;
+}
