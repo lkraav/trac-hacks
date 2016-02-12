@@ -113,28 +113,35 @@
 
             <py:if test="canivote">
                 <h2>Workflow actions for reviewer</h2>
+
                 $reviewer_workflow
+
+                <p class="help">Setting the correct state helps the review author to track progress.</p>
             </py:if>
 
             <py:if test="manager or review.author == req.authname">
                 <h2 py:if="not manager">Workflow actions for author</h2>
                 <h2 py:if="manager">Workflow actions for author or manager</h2>
                 $workflow
+                <p py:if="review.status != 'closed'" class="help">Closing a review means it is obsolete. This can be done at any time.</p>
+
                 <hr />
                 <form action="" method="post">
                     <fieldset>
                         <div class="buttons">
                             <input type="hidden" value="${review.review_id}" name="Review"/>
                             <input type="submit" value="Resubmit For Review" name="resubmit"/>
-                            <input type="submit" value="Followup Review" name="followup"/>
-                            <input py:if="review.status != 'closed'" type="submit" value="Modify" name="modify"/>
+                            <input py:if="review.status != 'closed'" type="submit"
+                                   value="Followup Review" name="followup"/>
+                            <input py:if="review.status != 'closed'" type="submit"
+                                   value="Modify" name="modify"/>
                         </div>
                         <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
                             a new code review.
                             Comments will not be copied. When the new review is created this one will be closed
                             automatically.
                         </p>
-                        <p class="help">When creating a <strong>Followup Review</strong> all the data of this review will be
+                        <p py:if="review.status != 'closed'" class="help">When creating a <strong>Followup Review</strong> all the data of this review will be
                             used
                             for prefilling the fields of a new code review. Comments will not be copied. During the new review
                             it

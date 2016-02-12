@@ -318,7 +318,7 @@ class ResourceWorkflowSystem(Component):
                 tmpl = Template(form_tmpl)
                 return HTML(tmpl.safe_substitute(tdata))
             else:
-                form = tag("No next workflow state available for '%s' in realm '%s'." % (rws['state'], realm))
+                form = tag("No next workflow state available for '%s'." % (rws['state'],))
 
             return form
 
