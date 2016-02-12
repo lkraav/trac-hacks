@@ -190,15 +190,20 @@ class DoxygenPlugin(Component):
                 req.args['link'] = '/'. join([self.default_doc, self.html_output, file])
                 return True
 
-        link = os.path.join(*doc) + '/' + file
+        if doc:
+            link = os.path.join(*doc) + '/'
+        else: link = ''
         path = os.path.join(self.base_path, link)
-        existing_path = os.path.exists(path) and path
-        if (existing_path):
-                req.args['action'] = 'view'            
-                req.args['path'] = path
-                return True
+        existing_path = os.path.exists(os.path.join(path,file)) and path
+        if not existing_path:
+            path = os.path.join(path, self.html_output)
+            existing_path = os.path.exists(os.path.join(path,file)) and path
+        if existing_path:
+            req.args['action'] = 'view'            
+            req.args['path'] = path + '/' + file
+            return True
 
-        self.log.debug('%s not found in %s' % (file, link))
+        self.log.debug('%s not found in %s' % (file, path))
         req.args['action'] = 'search'
         return True
 
@@ -322,16 +327,17 @@ class DoxygenPlugin(Component):
                 else:
                     res = os.path.exists(os.path.join(self.base_path, doc))
 
-            if res and name:
-                    res = self._search_in_documentation(doc, name, ['name'], False)
+            if not name:
+                if doc:
+                    label = doc
+                else: label = 'index'
+                res = {'url':'index.html', 'target':'', 'type':'file', 'text':'index'}
+            elif res:
+                res = self._search_in_documentation(doc, name, ['name'], False)
             
             if not res:
                    return tag.a(label, title=name, class_='missing',
                                  href=formatter.href.doxygen())
-            if not name:
-                    label = doc
-                    res = {'url':'index.html', 'target':'', 'type':'file', 'text':'index'}
-
             url = os.path.join(doc, self.html_output, res['url'])
             url = formatter.href.doxygen(url) + '#' + res['target']
             t = res['type'] 
