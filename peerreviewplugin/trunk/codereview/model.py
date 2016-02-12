@@ -50,6 +50,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
     def create_instance(self, key):
         return PeerReviewModel(self.env, key, 'peerreview')
 
+
 class PeerReviewerModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
     protected_fields = ('reviewer_id', 'res_realm', 'state')
@@ -69,7 +70,30 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
         return ['reviewer_id']
 
     def create_instance(self, key):
-        return PeerReviewModel(self.env, 'id', 'peerreviewer')
+        return PeerReviewModel(self.env, key, 'peerreviewer')
+
+
+class ReviewFileModel(AbstractVariableFieldsObject):
+    # Fields that have no default, and must not be modified directly by the user
+    protected_fields = ('file_id', 'res_realm', 'state')
+
+    def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
+        self.values = {}
+
+        self.values['file_id'] = id_
+        self.values['res_realm'] = res_realm
+        self.values['state'] = state
+        self.values['status'] = state
+
+        key = self.build_key_object()
+        AbstractVariableFieldsObject.__init__(self, env, 'peerreviewfile', key, db)
+
+    def get_key_prop_names(self):
+        return ['file_id']
+
+    def create_instance(self, key):
+        return PeerReviewModel(self.env, key, 'peerreviewfile')
+
 
 class PeerReviewModelProvider(Component):
     """

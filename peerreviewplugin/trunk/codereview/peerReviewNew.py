@@ -13,17 +13,18 @@
 
 import itertools
 import time
+import hashlib
 
 from trac import util
 from trac.core import Component, implements, TracError
 from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, \
     add_warning, add_notice, add_stylesheet
 from trac.web.main import IRequestHandler
-
+from trac.versioncontrol.api import RepositoryManager
 from CodeReviewStruct import *
-from model import ReviewFile, Review, Reviewer, get_users, Comment
+from model import ReviewFile, Review, Reviewer, get_users, Comment, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
-
+from peerReviewBrowser import get_node_from_repo
 
 def java_string_hashcode(s):
     # See: http://garage.pimentech.net/libcommonPython_src_python_libcommon_javastringhashcode/
@@ -212,17 +213,32 @@ class NewReviewModule(Component):
         for item in files:
             if item != "":
                 segment = item.split(',')
-                rfile = ReviewFile(self.env)
-                rfile.review_id = id_
-                rfile.path = segment[0]
+                rfile = ReviewFileModel(self.env)
+                rfile['review_id'] = id_
+                rfile['path'] = segment[0]
                 if req.args.get('followup'):
-                    rfile.version = req.args.get('revision', 0)
+                    rfile['revision'] = req.args.get('revision', 0)
                 else:
-                    rfile.version = segment[1]
-                rfile.start = segment[2]
-                rfile.end = segment[3]
+                    rfile['revision'] = segment[1]
+                rfile['line_start'] = segment[2]
+                rfile['line_end'] = segment[3]
+                repos = RepositoryManager(self.env).get_repository('')
+                node, display_rev, context = get_node_from_repo(req, repos, rfile['path'], rfile['version'])
+                rfile['changerevision'] = unicode(node.created_rev)
+                rfile['hash'] = self._hash_from_file_node(node)
                 rfile.insert()
         return id_
+
+    def _hash_from_file_node(self, node):
+        content = node.get_content()
+        blocksize = 4096
+        hasher = hashlib.sha256()
+
+        buf = content.read(blocksize)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = content.read(blocksize)
+        return hasher.hexdigest()
 
     def save_changes(self, req):
         def file_is_commented(author):

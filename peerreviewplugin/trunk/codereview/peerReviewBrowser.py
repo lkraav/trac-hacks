@@ -81,27 +81,14 @@ class PeerReviewBrowser(Component):
         path = req.args.get('path', '/')
         rev = req.args.get('rev')
 
-        repos = RepositoryManager(self.env).get_repository('')
+        context = Context.from_request(req)
+
+        # display_rev = lambda rev: rev
 
         # Find node for the requested path/rev
-        context = Context.from_request(req)
-        node = None
-        display_rev = lambda rev: rev
+        repos = RepositoryManager(self.env).get_repository('')
         if repos:
-            try:
-                if rev:
-                    rev = repos.normalize_rev(rev)
-                # If `rev` is `None`, we'll try to reuse `None` consistently,
-                # as a special shortcut to the latest revision.
-                rev_or_latest = rev or repos.youngest_rev
-                node = get_existing_node(req, repos, path, rev_or_latest)
-            except NoSuchChangeset, e:
-                raise ResourceNotFound(e.message,
-                                       _('Invalid changeset number'))
-
-            context = context(repos.resource.child('source', path,
-                                                   version=rev_or_latest))
-            display_rev = repos.display_rev
+            node, display_rev, context = get_node_from_repo(req, repos, path, rev)
         else:
             data['norepo'] = _("No source repository available.")
             return 'peerReviewBrowser.html', data, None
@@ -277,3 +264,25 @@ class PeerReviewBrowser(Component):
                 'message': wiki_to_html(changeset.message or '--', self.env, req,
                                         escape_newlines=True)
             }
+
+
+def get_node_from_repo(req, repos, path, rev):
+
+    context = Context.from_request(req)
+
+    try:
+        if rev:
+            rev = repos.normalize_rev(rev)
+        # If `rev` is `None`, we'll try to reuse `None` consistently,
+        # as a special shortcut to the latest revision.
+        rev_or_latest = rev or repos.youngest_rev
+        node = get_existing_node(req, repos, path, rev_or_latest)
+    except NoSuchChangeset, e:
+        raise ResourceNotFound(e.message,
+                               _('Invalid changeset number'))
+
+    context = context(repos.resource.child('source', path,
+                                           version=rev_or_latest))
+    display_rev = repos.display_rev
+
+    return node, display_rev, context
