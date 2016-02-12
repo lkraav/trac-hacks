@@ -124,7 +124,7 @@ class DoxygenPlugin(Component):
 
     def _search_in_documentation(self, doc, name, where, multi):
         # Open index file for documentation
-        index = os.path.join(self.base_path, doc, self.search_index)
+        index = os.path.join(self.base_path, doc, self.searchdata_file)
         res = {}
         if not os.path.exists(index) :
             self.log.debug('No file "%s" in Doxygen dir ' % (index))
@@ -158,7 +158,7 @@ class DoxygenPlugin(Component):
 
     def match_request(self, req):
         segments = filter(None, req.path_info.split('/'))
-        if segments[0] != "doxygen":
+        if not segments or segments[0] != "doxygen":
             return False
         if 'path' in req.args: # coming from a `doxygen:` link
             return True
@@ -246,8 +246,6 @@ class DoxygenPlugin(Component):
             path = os.path.join(self.base_path, self.default_doc,
                                 self.html_output, self.index)
 
-        self.log.debug('path: %s' % (path,))
-
         # security check
         path = os.path.abspath(path)
         if not path.startswith(os.path.normpath(self.base_path)):
@@ -255,6 +253,7 @@ class DoxygenPlugin(Component):
 
         # view
         mimetype = mimetypes.guess_type(path)[0]
+        self.log.debug('mime %s path: %s' % (mimetype, path,))
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
             # Genshi can't include an unparsed file
@@ -262,7 +261,12 @@ class DoxygenPlugin(Component):
             try:
                 charset = (self.encoding or 
                            self.env.config['trac'].get('default_charset'))
-                content = Markup(to_unicode(file(path).read(), charset))
+                content = file(path).read()
+                m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*)<title>(.*?)</title>(.*)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
+                if m:
+                    content = m.group(1) + m.group(3) + m.group(4)
+                    self.log.debug('Inserting "%s" Doxygen Page', m.group(2))
+                content = Markup(to_unicode(content, charset))
                 data = {'doxygen_content': content}
                 return 'doxygen.html', data, 'text/html'
             except (IOError, OSError), e:
