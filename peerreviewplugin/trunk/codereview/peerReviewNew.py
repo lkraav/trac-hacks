@@ -22,7 +22,7 @@ from trac.web.chrome import INavigationContributor, add_javascript, add_script_d
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.api import RepositoryManager
 from CodeReviewStruct import *
-from model import ReviewFile, Review, Reviewer, get_users, Comment, ReviewFileModel
+from model import ReviewFile, Review, Reviewer, get_users, Comment, ReviewFileModel, PeerReviewerModel
 from peerReviewMain import add_ctxt_nav_items
 from peerReviewBrowser import get_node_from_repo
 
@@ -198,11 +198,10 @@ class NewReviewModule(Component):
             user = [user]
         for name in user:
             if name != "":
-                reviewer = Reviewer(self.env)
-                reviewer.review_id = id_
-                reviewer.reviewer = name
-                reviewer.status = 0
-                reviewer.vote = "-1"
+                reviewer = PeerReviewerModel(self.env)
+                reviewer['review_id'] = id_
+                reviewer['reviewer'] = name
+                reviewer['vote'] = -1
                 reviewer.insert()
 
         # loop here through all included files
@@ -263,11 +262,10 @@ class NewReviewModule(Component):
         new_users = list(set(user) - set(data['assigned_users']))
         for name in new_users:
             if name != "":
-                reviewer = Reviewer(self.env)
-                reviewer.review_id = review.review_id
-                reviewer.reviewer = name
-                reviewer.status = 0
-                reviewer.vote = "-1"
+                reviewer = PeerReviewerModel(self.env)
+                reviewer['review_id'] = review.review_id
+                reviewer['reviewer'] = name
+                reviewer['vote'] = -1
                 reviewer.insert()
         # Handle removed users if any
         rem_users = list(set(data['assigned_users']) - set(user))
