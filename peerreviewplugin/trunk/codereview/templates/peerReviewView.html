@@ -85,12 +85,12 @@
                     </tr>
                 </thead>
                 <tbody py:with="cls=cycle(('odd', 'even'))">
-                    <tr py:if="rvsLength == 0" class="even">
+                    <tr py:if="not reviewer" class="even">
                         <td>There are no users included in this code review.</td>
                     </tr>
-                    <tr py:if="review_files" py:for="item in rvs" class="${cls.next()}">
-                        <td>${item[0]}</td>
-                        <td>${item[1]}</td>
+                    <tr py:if="review_files" py:for="item in reviewer" class="${cls.next()}">
+                        <td>$item.reviewer</td>
+                        <td>$item.status</td>
                     </tr>
                 </tbody>
             </table>
@@ -102,47 +102,29 @@
                     </tr>
                 </thead>
                 <tbody py:with="cls=cycle(('odd', 'even'))">
-                    <tr py:if="rvsLength == 0" class="even">
+                    <tr py:if="not reviewer" class="even">
                         <td>There are no users included in this code review.</td>
                     </tr>
-                    <tr py:if="rvsLength > 0" py:for="item in rvs" class="${cls.next()}">
-                        <td>${item[0]}</td>
+                    <tr py:if="reviewer" py:for="item in reviewer" class="${cls.next()}">
+                        <td>$item.reviewer}</td>
                     </tr>
                 </tbody>
             </table>
 
             <py:if test="canivote">
-                <h2>Reviewer actions</h2>
+                <h2>Workflow actions for reviewer</h2>
                 $reviewer_workflow
             </py:if>
 
-            <py:if test="manager">
-                <h2>Manager privileges</h2>
-                <form method="post" action="">
-                    <fieldset>
-                        <p>Change code review status:</p>
-                        <input type="hidden" value="${review.review_id}" name="Review"/>
-                        <select name="ManagerChoice" id="ManagerChoice_">
-                            <option value="Open for review">Open for review</option>
-                            <option value="Reviewed">Reviewed</option>
-                            <option value="Ready for inclusion">Ready for inclusion</option>
-                            <option value="Closed">Closed</option>
-                        </select>
-                        <input type="submit" name="submitbutton" value="Change Status"/>
-                    </fieldset>
-                </form>
-            </py:if>
-
             <py:if test="manager or review.author == req.authname">
-                <h2>Actions</h2>
+                <h2 py:if="not manager">Workflow actions for author</h2>
+                <h2 py:if="manager">Workflow actions for author or manager</h2>
+                $workflow
+                <hr />
                 <form action="" method="post">
                     <fieldset>
                         <div class="buttons">
                             <input type="hidden" value="${review.review_id}" name="Review"/>
-                            <input py:if="review.status != 'forinclusion' and review.status != 'closed'"
-                                   type="submit" value="Submit For Inclusion" name="inclusion"
-                                   disabled="${review.status != 'reviewed' and 'true' or None}"/>
-                            <input py:if="review.status != 'closed'" type="submit" value="Close This Code Review" name="close"/>
                             <input type="submit" value="Resubmit For Review" name="resubmit"/>
                             <input type="submit" value="Followup Review" name="followup"/>
                             <input py:if="review.status != 'closed'" type="submit" value="Modify" name="modify"/>

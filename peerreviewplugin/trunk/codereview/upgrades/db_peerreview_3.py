@@ -42,3 +42,20 @@ def do_upgrade(env, ver, db_backend, db):
                    "SELECT review_id,owner,status,created,name,notes,parent_id,keywords FROM peerreview_old")
 
     cursor.execute("DROP TABLE peerreview_old")
+
+    # Add default workflow
+
+    wf_data = [['reviewing', 'new -> in-review'],
+               ['reviewing.name', 'Start review'],
+               ['review_done', 'in-review -> reviewed'],
+               ['review_done.name', 'Mark review as done.'],
+               ['reopen', 'in-review, reviewed -> new'],
+               ['reopen.name', "Reset review state to 'new'"],
+               ]
+    wf_section = 'peerreviewer-resource_workflow'
+
+    if wf_section not in env.config.sections():
+        print "Adding default workflow for 'peerreviewer' to config."
+        for item in wf_data:
+            env.config.set(wf_section, item[0], item[1])
+        env.config.save()

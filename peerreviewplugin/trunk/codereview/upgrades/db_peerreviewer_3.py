@@ -34,17 +34,21 @@ def do_upgrade(env, ver, db_backend, db):
 
     # Add default workflow
 
-    wf_data = [['reviewing', 'new -> in-review'],
-               ['reviewing.name', 'Start review'],
-               ['review_done', 'in-review -> reviewed'],
-               ['review_done.name', 'Mark review as done.'],
-               ['reopen', 'in-review, reviewed -> new'],
-               ['reopen.name', "Reset review state to 'new'"],
+    wf_data = [['review', 'new -> reviewed'],
+               ['review.name', 'Mark as reviewed'],
+               ['approve', 'reviewed -> approved'],
+               ['approve.name', 'Approve the review'],
+               ['disapprove', 'reviewed -> disapproved'],
+               ['disapprove.name', 'Deny this review'],
+               ['close', 'new, reviewed -> closed'],
+               ['close.name', 'Close review'],
+               ['reopen', 'closed, reviewed -> new'],
+               ['reopen.permissions', 'CODE_REVIEW_MGR'],
                ]
-    wf_section = 'peerreviewer-resource_workflow'
+    wf_section = 'peerreview-resource_workflow'
 
-    if 'peer-review_' not in env.config.sections():
-        print "Adding default workflow for 'peerreviewer' to config."
+    if wf_section not in env.config.sections():
+        print "Adding default workflow for 'peerreview' to config."
         for item in wf_data:
             env.config.set(wf_section, item[0], item[1])
         env.config.save()

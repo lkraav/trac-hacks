@@ -20,7 +20,8 @@ from trac.resource import Resource
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
-from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment, PeerReviewerModel
+from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment, \
+    PeerReviewerModel, PeerReviewModel
 from peerReviewMain import add_ctxt_nav_items
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
 
@@ -35,19 +36,15 @@ class ViewReviewModule(Component):
     # IWorkflowTransitionListener
 
     def object_transition(self, res_wf_state, resource, action, old_state, new_state):
-        self.env.log.info("   ########################### %s", res_wf_state)
-        self.env.log.info("   ########################### %s", resource)
-        self.env.log.info("   ########################### %s %s", resource.id, resource.realm)
-        self.env.log.info("   ########################### %s", action)
-        self.env.log.info("   ########################### %s", old_state)
-        self.env.log.info("   ########################### %s", new_state)
-        self.env.log.info("   ########################### %s", res_wf_state.authname)
-
         if resource.realm == 'peerreviewer':
             reviewer = PeerReviewerModel(self.env, resource.id)
             reviewer['status'] = new_state
-            print "--------------------------> ", reviewer['reviewer']
             reviewer.save_changes(author=res_wf_state.authname)
+        elif resource.realm == 'peerreview':
+            review = PeerReviewModel(self.env, resource.id)
+            review['status'] = new_state
+            review.save_changes(author=res_wf_state.authname)
+
     # INavigationContributor
 
     def get_active_navigation_item(self, req):
@@ -121,52 +118,22 @@ class ViewReviewModule(Component):
             par_review = Review(self.env, review.parent_id)
             data['parent_review'] = par_review
 
-        votes = Vote(self.env, reviewID)
-        data['votes'] = votes
         data['manager'] = manager
 
         # figure out whether I can vote on this review or not
-        entry = Reviewer.select_by_review_id(self.env, reviewID, req.authname)
-        if entry:
+        if Reviewer.select_by_review_id(self.env, reviewID, req.authname):
             data['canivote'] = True
-            data['myvote'] = entry.vote
         else:
             data['canivote'] = False
 
-        # display vote summary only if I have voted or am the author/manager,
-        # or if the review is "Ready for inclusion" or "Closed
-
-        if review.author == req.authname or manager or \
-                (entry and entry.vote != '-1') or \
-                review.status == "closed" or review.status == "forinclusion":
-            data['viewvotesummary'] = True
-        else:
-            data['viewvotesummary'] = False
-
-        rvs = []  # reviewer/vote pairs
         reviewers = Reviewer.select_by_review_id(self.env, reviewID)
-        newrvpair = []
-
-        # if we are the manager, list who has voted and what their vote was.
-        # if we are the author, list who has voted and who has not.
-        # if we are neither, list the users who are participating in this review.
-        if manager:
-            self.env.log.debug("I am a manager")
-            for reviewer in reviewers:
-                rvs.append([reviewer.reviewer, reviewer.status])
-        elif review.author == req.authname:
-            self.env.log.debug("I am the author")
-            for reviewer in reviewers:
-                rvs.append([reviewer.reviewer, reviewer.status])
-        else:
-            self.env.log.debug("I am somebody else")
-            for reviewer in reviewers:
-                rvs.append([reviewer.reviewer, reviewer.status])
+        data['reviewer'] = reviewers
 
         if is_rest:
             url = ".."
         else:
             url = '.'
+        # Actions for a reviewer to show progress
         realm = 'peerreviewer'
         res = None
         for reviewer in reviewers:
@@ -175,15 +142,19 @@ class ViewReviewModule(Component):
         if res:
             data['reviewer_workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res,
                                                                                              {'redirect': req.href.peerReviewView(Review=reviewID)})
+        # Actions for closing a review
+        realm = 'peerreview'
+        res = Resource(realm, str(review.review_id))  # Must be a string
+        data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res,
+                                                                                {'redirect': req.href.peerReviewView(Review=reviewID)})
 
-        data['rvs'] = rvs
-        data['rvsLength'] = len(rvs)
         data['cycle'] = itertools.cycle
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
+
         return 'peerReviewView.html', data, None
 
     # If user has not voted for this review and is a voting member, and attempts
