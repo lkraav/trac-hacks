@@ -1,8 +1,4 @@
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/">
-  <head>
-  </head>
-    <body>
+    <div xmlns:py="http://genshi.edgewall.org/">
         <py:choose test="invalid">
           <div py:when="0" id="innerCommentSpan">
               ${commentHTML}
@@ -54,5 +50,5 @@
                 </table>
           </div>
         </py:choose>
-    </body>
-</html>
+    </div>
+
