@@ -138,21 +138,26 @@ class DoxygenPlugin(Component):
                 res = a.args[0]
         return res
 
-    def _merge_header(self, path):
+    def _merge_header(self, req, path):
         # Genshi can't include an unparsed file
         # data = {'doxygen_path': path}
         try:
-            charset = (self.encoding or 
-                       self.env.config['trac'].get('default_charset'))
             content = file(path).read()
-            m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
+            m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*?)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
             if m:
+                l = re.findall(r'''<link[^>]*type=.text/css[^>]*>''', m.group(1), re.S)
+                for i in l:
+                    h = re.search(r'''href=.([^ ]*)[^ /][ /]''', i)
+                    h =  '/doxygen/' + h.group(1)
+                    self.log.debug('CSS %s', '/' + h)
+                    add_stylesheet(req, h)
                 s = re.findall(r'''<script[^>]*>.*?</script>''', m.group(1), re.S)
-                l = re.findall(r'''<link[^>]*>''', m.group(1), re.S)
                 t = re.search(r'''<title>.*?:(.*)</title>''', m.group(1), re.S)
                 t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";;})'
-                t = "<script type='application/javascript'>" + t + "</script>"
-                content = t + "\n".join(s) +  "\n".join(l) + m.group(2)
+                t = "<script type='application/javascript'>" + t + "</script>\n"
+                content = t + "\n".join(s) + m.group(2)
+            charset = (self.encoding or 
+                       self.env.config['trac'].get('default_charset'))
             content = Markup(to_unicode(content, charset))
             return {'doxygen_content': content}
         except (IOError, OSError), e:
@@ -280,7 +285,7 @@ class DoxygenPlugin(Component):
         self.log.debug('mime %s path: %s' % (mimetype, path,))
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
-            return 'doxygen.html', (self._merge_header(path)), 'text/html'
+            return 'doxygen.html', (self._merge_header(req, path)), 'text/html'
         else:
             req.send_file(path, mimetype)            
 
