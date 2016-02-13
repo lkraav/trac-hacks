@@ -17,12 +17,13 @@ import hashlib
 
 from trac import util
 from trac.core import Component, implements, TracError
+from trac.util.text import CRLF
 from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, \
     add_warning, add_notice, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.api import RepositoryManager
 from CodeReviewStruct import *
-from model import ReviewFile, Review, Reviewer, get_users, Comment, \
+from model import ReviewFile, Reviewer, get_users, Comment, \
     ReviewFileModel, PeerReviewerModel, PeerReviewModel
 from peerReviewMain import add_ctxt_nav_items
 from peerReviewBrowser import get_node_from_repo
@@ -97,14 +98,15 @@ class NewReviewModule(Component):
         if req.method == 'POST':
             oldid = req.args.get('oldid')
             if req.args.get('create'):
+                returnid = self.createCodeReview(req)
                 if oldid:
                     # Automatically close the review we resubmitted from
-                    # TODO: use new model here
-                    review = Review(self.env, oldid)
-                    review.status = "closed"
-                    review.update()
-                    add_notice(req, "Review '%s' (#%s) was automatically closed." % (review.name, oldid))
-                returnid = self.createCodeReview(req)
+                    review = PeerReviewModel(self.env, oldid)
+                    review['status'] = "closed"
+                    review.save_changes(req.authname, comment="Closed after resubmitting as review '#%s'." %
+                                                              returnid)
+                    add_notice(req, "Review '%s' (#%s) was automatically closed after resubmitting as '#%s'." %
+                               (review['name'], oldid, returnid))
                 #If no errors then redirect to the viewCodeReview page
                 req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
             if req.args.get('createfollowup'):
@@ -153,7 +155,9 @@ class NewReviewModule(Component):
             if req.args.get('modify') or req.args.get('followup'):
                 data['notes'] = review['notes']
             else:
-                data['notes'] = "Review based on ''%s'' (resubmitted)." % review['name']
+                data['notes'] = "%sReview based on ''%s'' (resubmitted)." %\
+                                (review['notes']+ CRLF + CRLF, review['name'])
+
 
             data['prevFiles'] = popFiles
 
@@ -188,15 +192,19 @@ class NewReviewModule(Component):
     # and populates it with the information.  Also creates
     # new reviewer structs and file structs for the review.
     def createCodeReview(self, req):
+        oldid = req.args.get('oldid', 0)
         review = PeerReviewModel(self.env)
         review['owner'] = req.authname
         review['created'] = int(time.time())
         review['name'] = req.args.get('Name')
         review['notes'] = req.args.get('Notes')
         if req.args.get('followup'):
-            review['parent_id'] = req.args.get('oldid', 0)
+            review['parent_id'] = oldid
         if req.args.get('project'):
              review['project'] = req.args.get('project')
+        if oldid:
+            old_review = PeerReviewModel(self.env, oldid)
+            review['parent_id'] = old_review['parent_id']
         review.insert()
         id_ = review['review_id']
         self.log.debug('New review created: %s', id_)
@@ -251,29 +259,30 @@ class NewReviewModule(Component):
 
     def save_changes(self, req):
         def file_is_commented(author):
-            rfiles = ReviewFile.select_by_review(self.env, review.review_id)
+            rfiles = ReviewFile.select_by_review(self.env, review['review_id'])
             for f in rfiles:
                 comments = [c for c in Comment.select_by_file_id(self.env, f.file_id) if c.author == author]
                 if comments:
                     return True
             return False
 
-        review = Review(self.env, req.args.get('oldid'))
-        review.name = req.args.get('Name')
-        review.notes = req.args.get('Notes')
-        review.update()
+        review = PeerReviewModel(self.env, req.args.get('oldid'))
+        review['name'] = req.args.get('Name')
+        review['notes'] = req.args.get('Notes')
+        review['project'] = req.args.get('project')
+        review.save_changes(req.authname)
 
         user = req.args.get('user')
         if not type(user) is list:
             user = [user]
         data = {}
-        add_users_to_data(self.env,review.review_id, data)
+        add_users_to_data(self.env,review['review_id'], data)
         # Handle new users if any
         new_users = list(set(user) - set(data['assigned_users']))
         for name in new_users:
             if name != "":
                 reviewer = PeerReviewerModel(self.env)
-                reviewer['review_id'] = review.review_id
+                reviewer['review_id'] = review['review_id']
                 reviewer['reviewer'] = name
                 reviewer['vote'] = -1
                 reviewer.insert()
@@ -281,14 +290,14 @@ class NewReviewModule(Component):
         rem_users = list(set(data['assigned_users']) - set(user))
         for name in rem_users:
             if name != "":
-                reviewer = Reviewer(self.env, review.review_id, name)
+                reviewer = Reviewer(self.env, review['review_id'], name)
                 if reviewer.vote != -1:
                     add_warning(req, "User '%s' already voted. Not removed from review '#%s'",
-                                name, review.review_id)
+                                name, review['review_id'])
                     continue
                 if file_is_commented(name):
                     add_warning(req, "User '%s' already commented a file. Not removed from review '#%s'",
-                                name, review.review_id)
+                                name, review['review_id'])
                     continue
                 reviewer.delete()
 
@@ -298,7 +307,7 @@ class NewReviewModule(Component):
             new_files = [new_files]
         old_files = []
         rfiles = {}
-        for f in ReviewFile.select_by_review(self.env, review.review_id):
+        for f in ReviewFile.select_by_review(self.env, review['review_id']):
             fid = u"%s,%s,%s,%s" % (f.path, f.version, f.start, f.end)
             old_files.append(fid)
             rfiles[fid] = f
