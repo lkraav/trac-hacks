@@ -81,7 +81,7 @@ class PeerReviewCommentHandler(Component):
         actionType = req.args.get('actionType')
 
         if actionType == 'getCommentTree':
-            self.getCommentTree(req, data)
+            self.get_comment_tree(req, data)
 
         elif actionType == 'getCommentFile':
             self.getCommentFile(req, data)
@@ -104,22 +104,22 @@ class PeerReviewCommentHandler(Component):
     #Used to send a file that is attached to a comment
     def getCommentFile(self, req, data):
         data['invalid'] = 6
-        shortPath = req.args.get('fileName')
-        idFile = req.args.get('IDFile')
-        if idFile is None or shortPath is None:
+        short_path = req.args.get('fileName')
+        fileid = req.args.get('IDFile')
+        if not fileid or not short_path:
             return
 
-        shortPath = urllib.unquote(shortPath)
+        short_path = urllib.unquote(short_path)
         self.path = os.path.join(self.env.path, 'attachments', 'CodeReview',
-                                 urllib.quote(idFile))
+                                 urllib.quote(fileid))
         self.path = os.path.normpath(self.path)
         attachments_dir = os.path.join(os.path.normpath(self.env.path),
                                        'attachments')
         commonprefix = os.path.commonprefix([attachments_dir, self.path])
         assert commonprefix == attachments_dir
-        fullPath = os.path.join(self.path, shortPath)
-        req.send_header('Content-Disposition', 'attachment; filename=' + shortPath)
-        req.send_file(fullPath)
+        full_path = os.path.join(self.path, short_path)
+        req.send_header('Content-Disposition', 'attachment; filename=' + short_path)
+        req.send_file(full_path)
 
     #Creates a comment based on the values from the request
     def createComment(self, req, data):
@@ -181,37 +181,37 @@ class PeerReviewCommentHandler(Component):
 
     #Returns a comment tree for the requested line number
     #in the requested file
-    def getCommentTree(self, req, data):
-        IDFile = req.args.get('IDFile')
-        LineNum = req.args.get('LineNum')
+    def get_comment_tree(self, req, data):
+        fileid = req.args.get('IDFile')
+        linenum = req.args.get('LineNum')
 
-        if not IDFile or not LineNum:
+        if not fileid or not linenum:
             data['invalid'] = 1
             return
 
         db = self.env.get_read_db()
         dbBack = dbBackend(db)
-        comments = dbBack.getCommentsByFileIDAndLine(IDFile, LineNum)
+        comments = dbBack.getCommentsByFileIDAndLine(fileid, linenum)
 
-        rfile = ReviewFile(self.env, IDFile)
+        rfile = ReviewFile(self.env, fileid)
         review = Review(self.env, rfile.review_id)
         data['review'] = review
         data['context'] = Context.from_request(req)
 
-        commentHtml = ""
+        comment_html = ""
         first = True
         keys = comments.keys()
         keys.sort()
         for key in keys:
             if comments[key].IDParent not in comments:
-                commentHtml += self.buildCommentHTML(comments[key], 0, LineNum, IDFile, first, data)
+                comment_html += self.build_comment_html(comments[key], 0, linenum, fileid, first, data)
                 first = False
-        commentHtml = commentHtml.strip()
-        if not commentHtml:
-            commentHtml = "No Comments on this Line"
-        data['lineNum'] = LineNum
-        data['fileID'] = IDFile
-        data['commentHTML'] = Markup(commentHtml)
+        comment_html = comment_html.strip()
+        if not comment_html:
+            comment_html = "No Comments on this Line"
+        data['lineNum'] = linenum
+        data['fileID'] = fileid
+        data['commentHTML'] = Markup(comment_html)
 
 
     comment_template = u"""
@@ -260,7 +260,7 @@ class PeerReviewCommentHandler(Component):
         """
 
     #Recursively builds the comment html to send back.
-    def buildCommentHTML(self, comment, nodesIn, linenum, fiileid, first, data):
+    def build_comment_html(self, comment, nodesIn, linenum, fiileid, first, data):
         if nodesIn > 50:
             return ""
 
@@ -269,7 +269,7 @@ class PeerReviewCommentHandler(Component):
         keys.sort()
         for key in keys:
             child = comment.Children[key]
-            children_html += self.buildCommentHTML(child, nodesIn + 1, linenum, fiileid, False, data)
+            children_html += self.build_comment_html(child, nodesIn + 1, linenum, fiileid, False, data)
 
         factor = 15
         width = 5 + nodesIn * factor

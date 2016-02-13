@@ -120,29 +120,29 @@ class NewReviewModule(Component):
         data = {}
         data['users'] = get_users(self.env)
 
-        reviewID = req.args.get('resubmit')
+        review_id = req.args.get('resubmit')
 
-        # if we tried resubmitting and the reviewID is not a valid number or not a valid code review, error
-        review = PeerReviewModel(self.env, reviewID)
-        if reviewID and (not reviewID.isdigit() or not review):
+        # If we tried resubmitting and the review_id is not a valid number or not a valid code review, error
+        review = PeerReviewModel(self.env, review_id)
+        if review_id and (not review_id.isdigit() or not review):
             raise TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
         if review['status'] == 'closed' and req.args.get('modify'):
             raise TracError("The Review '#%s' is already closed and can't be modified." % review['review_id'],
                             "Modify Review error")
 
-        # if we are resubmitting a code review and we are the author or the manager
-        if reviewID and (review['owner'] == req.authname or 'CODE_REVIEW_MGR' in req.perm):
+        # If we are resubmitting a code review and we are the author or the manager
+        if review_id and (review['owner'] == req.authname or 'CODE_REVIEW_MGR' in req.perm):
             data['new'] = "no"
-            data['oldid'] = reviewID
+            data['oldid'] = review_id
 
-            add_users_to_data(self.env, reviewID, data)
+            add_users_to_data(self.env, review_id, data)
 
-            rfiles = ReviewFile.select_by_review(self.env, reviewID)
+            rfiles = ReviewFile.select_by_review(self.env, review_id)
             popFiles = []
             # Set up the file information
             for f in rfiles:
-                # This id is used by the hacascript code to find duplicate entries.
+                # This id is used by the javascript code to find duplicate entries.
                 f.element_id = create_file_hash_id(f)
                 if req.args.get('modify'):
                     comments = Comment.select_by_file_id(self.env, f.file_id)
@@ -157,10 +157,11 @@ class NewReviewModule(Component):
 
             data['prevFiles'] = popFiles
 
-        #if we resubmitting a code review, and are neither the author and the manager
-        elif reviewID and not review['owner'] == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
-            raise TracError("You need to be a manager or the author of this code review to resubmit it.", "Access error")
-        #if we are not resubmitting
+        # If we resubmitting a code review, and are neither the author and the manager
+        elif review_id and not review['owner'] == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
+            raise TracError("You need to be a manager or the author of this code review to resubmit it.",
+                            "Access error")
+        # If we are not resubmitting
         else:
             data['new'] = "yes"
 

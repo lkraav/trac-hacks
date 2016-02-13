@@ -109,8 +109,8 @@ class PeerReviewPerform(Component):
         req.perm.require('CODE_REVIEW_DEV')
 
         #get the fileID from the request arguments
-        idFile = req.args.get('IDFile')
-        if not idFile:
+        fileid = req.args.get('IDFile')
+        if not fileid:
             raise TracError("No file ID given - unable to load page.", "File ID Error")
 
         repos = RepositoryManager(self.env).get_repository('')
@@ -120,9 +120,9 @@ class PeerReviewPerform(Component):
         #make the thumbtac image global so the line annotator has access to it
         self.imagePath = self.env.href.chrome() + '/hw/images/thumbtac11x11.gif'
 
-        data = {'file_id': idFile}
+        data = {'file_id': fileid}
 
-        rfile = ReviewFile(self.env, idFile)  # Raises 'ResourceNotFound' on error
+        rfile = ReviewFile(self.env, fileid)  # Raises 'ResourceNotFound' on error
         review = Review(self.env, rfile.review_id)
         data['review_file'] = rfile
         data['review'] = review
@@ -192,7 +192,7 @@ class PeerReviewPerform(Component):
             data['file_rendered'] = preview_data['rendered']
 
         scr_data = {'peer_comments': [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
-                    'peer_file_id': idFile}
+                    'peer_file_id': fileid}
         if par_review:
             scr_data['peer_parent_file_id'] = parfile.file_id
             scr_data['peer_parent_comments'] = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]

@@ -70,48 +70,40 @@ class ViewReviewModule(Component):
         else:
             manager = False
 
-        # REST call?
-        is_rest = False
-        path = req.path_info.split('/')
-        if path[1] == 'peerreview':
-            is_rest = True
-            if len(path) == 3:
-                req.args['Review'] = path[2]
-
-        # reviewID argument checking
-        reviewID = req.args.get('Review')
-        if reviewID is None or not reviewID.isdigit():
+        # review_id argument checking
+        review_id = req.args.get('Review')
+        if review_id is None or not review_id.isdigit():
             raise TracError(u"Invalid review ID supplied - unable to load page.")
 
         if req.method == 'POST':
             if req.args.get('approved'):
-                self.vote("1", reviewID, req, req.authname)  # This call will redirect
+                self.vote("1", review_id, req, req.authname)  # This call will redirect
             elif req.args.get('notapproved'):
-                self.vote("0", reviewID, req, req.authname)  # This call will redirect
+                self.vote("0", review_id, req, req.authname)  # This call will redirect
             elif req.args.get('close'):
-                self.close_review(req, reviewID, manager)
+                self.close_review(req, review_id, manager)
             elif req.args.get('inclusion'):
-                self.submit_for_inclusion(req, reviewID)
+                self.submit_for_inclusion(req, review_id)
             elif req.args.get('ManagerChoice'):
                 # process state (Open for review, ready for inclusion, etc.) change by manager
                 mc = req.args.get('ManagerChoice')
                 if mc == "new" or mc == "reviewed" or mc == "forinclusion" or mc == "closed":
-                    self.manager_change_status(req, reviewID, mc)
+                    self.manager_change_status(req, review_id, mc)
             elif req.args.get('resubmit'):
-                req.redirect(self.env.href.peerReviewNew(resubmit=reviewID))
+                req.redirect(self.env.href.peerReviewNew(resubmit=review_id))
             elif req.args.get('followup'):
-                req.redirect(self.env.href.peerReviewNew(resubmit=reviewID, followup=1))
+                req.redirect(self.env.href.peerReviewNew(resubmit=review_id, followup=1))
             elif req.args.get('modify'):
-                req.redirect(self.env.href.peerReviewNew(resubmit=reviewID, modify=1))
+                req.redirect(self.env.href.peerReviewNew(resubmit=review_id, modify=1))
 
-        rev_files = ReviewFile.select_by_review(self.env, reviewID)
+        rev_files = ReviewFile.select_by_review(self.env, review_id)
         for f in rev_files:
             f.num_comments = len(Comment.select_by_file_id(self.env, f.file_id))
 
         data['review_files'] = rev_files
         data['users'] = get_users(self.env)
 
-        review = Review(self.env, reviewID)
+        review = Review(self.env, review_id)
         review.html_notes = format_to_html(self.env, Context.from_request(req), review.notes)
         data['review'] = review
         if review.parent_id != 0:
@@ -120,33 +112,39 @@ class ViewReviewModule(Component):
 
         data['manager'] = manager
 
-        # figure out whether I can vote on this review or not
-        if Reviewer.select_by_review_id(self.env, reviewID, req.authname):
+        # Figure out whether I can vote on this review or not. This is used to decide in the template
+        # if the reviewer actions should be shown. Note that this is legacy stuff going away later.
+        #
+        # TODO: remove this and use a better solution
+        if Reviewer.select_by_review_id(self.env, review_id, req.authname):
             data['canivote'] = True
         else:
             data['canivote'] = False
 
-        reviewers = Reviewer.select_by_review_id(self.env, reviewID)
+        reviewers = Reviewer.select_by_review_id(self.env, review_id)
         data['reviewer'] = reviewers
 
-        if is_rest:
-            url = ".."
-        else:
-            url = '.'
-        # Actions for a reviewer to show progress
+        url = '.'
+
+        # Actions for a reviewer. Each reviewer marks his progress on a review. The author
+        # can see this progress in the user list. The possible actions are defined in trac.ini
+        # as a workflow in [peerreviewer-resource_workflow]
         realm = 'peerreviewer'
         res = None
         for reviewer in reviewers:
             if reviewer.reviewer == req.authname:
                 res = Resource(realm, str(reviewer.id))  # id must be a string
+                break
         if res:
-            data['reviewer_workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res,
-                                                                                             {'redirect': req.href.peerReviewView(Review=reviewID)})
-        # Actions for closing a review
+            data['reviewer_workflow'] = ResourceWorkflowSystem(self.env).\
+                get_workflow_markup(req, url, realm, res, {'redirect': req.href.peerReviewView(Review=review_id)})
+
+        # Actions for the author of a review. The author may approve, disapprove or close a review.
+        # The possible actions are defined in trac.ini as a workflow in [peerreview-resource_workflow]
         realm = 'peerreview'
         res = Resource(realm, str(review.review_id))  # Must be a string
-        data['workflow'] = ResourceWorkflowSystem(self.env).get_workflow_markup(req, url, realm, res,
-                                                                                {'redirect': req.href.peerReviewView(Review=reviewID)})
+        data['workflow'] = ResourceWorkflowSystem(self.env).\
+            get_workflow_markup(req, url, realm, res, {'redirect': req.href.peerReviewView(Review=review_id)})
 
         data['cycle'] = itertools.cycle
 
