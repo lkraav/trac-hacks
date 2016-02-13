@@ -22,7 +22,7 @@ from trac.util import Markup
 from trac.web.main import IRequestHandler
 from genshi.template.markup import MarkupTemplate
 from dbBackend import *
-from model import ReviewFile, Review, Comment
+from model import ReviewFile, Comment, PeerReviewModel
 from trac.wiki import format_to_html
 from trac.mimeview import Context
 
@@ -96,8 +96,8 @@ class PeerReviewCommentHandler(Component):
         if not fileid:
             fileid = req.args.get('fileid')
         rfile = ReviewFile(self.env, fileid)
-        review = Review(self.env, rfile.review_id)
-        if review.status == 'closed':
+        review = PeerReviewModel(self.env, rfile.review_id)
+        if review['status'] == 'closed':
             return True
         return False
 
@@ -194,7 +194,7 @@ class PeerReviewCommentHandler(Component):
         comments = dbBack.getCommentsByFileIDAndLine(fileid, linenum)
 
         rfile = ReviewFile(self.env, fileid)
-        review = Review(self.env, rfile.review_id)
+        review = PeerReviewModel(self.env, rfile.review_id)
         data['review'] = review
         data['context'] = Context.from_request(req)
 
@@ -252,7 +252,7 @@ class PeerReviewCommentHandler(Component):
                     </a>
                 </td>
                 <td width="100px" class="comment-reply">
-                   <a py:if="review.status != 'closed'" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
+                   <a py:if="review['status'] != 'closed'" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
                 </td>
             </tr>
             </tbody>

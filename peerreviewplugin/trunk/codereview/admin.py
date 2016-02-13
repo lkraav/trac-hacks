@@ -5,7 +5,7 @@ from trac.core import Component, implements
 from trac.web.chrome import add_warning
 
 from dbBackend import dbBackend
-from model import Review, Vote, get_threshold, set_threshold
+from model import get_threshold, set_threshold
 
 __author__ = 'Cinc'
 

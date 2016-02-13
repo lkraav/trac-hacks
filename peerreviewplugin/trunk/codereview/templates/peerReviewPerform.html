@@ -31,12 +31,12 @@
 
             <dl class="overview" id="review-info">
                 <dt>Name:</dt>
-                <dd><a href="peerReviewView?Review=$review.review_id">$review.name</a></dd>
+                <dd><a href="peerReviewView?Review=${review['review_id']}">${review['name']}</a></dd>
                 <dt>Status:</dt>
-                <dd py:if="review.status !='closed'">$review.status</dd>
-                <dd py:if="review.status =='closed'"><strong>$review.status</strong></dd>
+                <dd py:if="review['status'] !='closed'">${review['status']}</dd>
+                <dd py:if="review['status'] =='closed'"><strong>${review['status']}</strong></dd>
                 <dt>ID:</dt>
-                <dd>$review.review_id</dd>
+                <dd>${review['review_id']}</dd>
             </dl>
             <h3>File Information</h3>
             <dl class="overview" id="file-info">
@@ -54,9 +54,9 @@
                 <h3>Followup review from:</h3>
                 <dl class="overview" id="parent-info">
                     <dt>Review:</dt>
-                    <dd><a href="peerReviewView?Review=$parent_review.review_id">$parent_review.name</a></dd>
+                    <dd><a href="peerReviewView?Review=${parent_review['review_id']}">${parent_review['name']}</a></dd>
                     <dt>ID:</dt>
-                    <dd>$parent_review.review_id</dd>
+                    <dd>${parent_review['review_id']}</dd>
                     <dt>Path:</dt>
                     <dd>${par_file.path}</dd>
                     <dt>Revision:</dt>

@@ -21,7 +21,7 @@ from trac.util import format_date
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
-from model import Review, ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment, \
+from model import ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment, \
     PeerReviewerModel, PeerReviewModel
 from peerReviewMain import add_ctxt_nav_items
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem

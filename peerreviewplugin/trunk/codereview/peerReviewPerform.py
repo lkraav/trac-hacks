@@ -27,7 +27,7 @@ from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
 from peerReviewMain import add_ctxt_nav_items
-from model import ReviewFile, Review, Comment
+from model import ReviewFile, Comment, PeerReviewModel
 from genshi.filters.transform import Transformer
 
 class PeerReviewPerform(Component):
@@ -41,7 +41,7 @@ class PeerReviewPerform(Component):
 
     def get_annotation_data(self, context):
         rfile = context.get_hint('reviewfile')
-        review = Review(self.env, rfile.review_id)
+        review = PeerReviewModel(self.env, rfile.review_id)
         data = [[c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
                 review]
         return data
@@ -60,7 +60,7 @@ class PeerReviewPerform(Component):
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno),
                                                                   href='javascript:getComments(%s, %s)' %
                                                                        (lineno, rfile.file_id))))
-            if review.status != 'closed':
+            if review['status'] != 'closed':
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
                                                                            % (lineno, rfile.file_id))))
             else:
@@ -123,7 +123,7 @@ class PeerReviewPerform(Component):
         data = {'file_id': fileid}
 
         rfile = ReviewFile(self.env, fileid)  # Raises 'ResourceNotFound' on error
-        review = Review(self.env, rfile.review_id)
+        review = PeerReviewModel(self.env, rfile.review_id)
         data['review_file'] = rfile
         data['review'] = review
 
@@ -135,10 +135,9 @@ class PeerReviewPerform(Component):
         node = get_existing_node(self.env, repos, rfile.path, rev_or_latest)
 
         # Data for parent review if any
-        if review.parent_id != 0:
-
-            par_review = Review(self.env, review.parent_id)  # Raises 'ResourceNotFound' on error
-            parfile = ReviewFile(self.env, get_parent_file_id(self.env, rfile, review.parent_id))
+        if review['parent_id'] != 0:
+            par_review = PeerReviewModel(self.env, review['parent_id'])  # Raises 'ResourceNotFound' on error
+            parfile = ReviewFile(self.env, get_parent_file_id(self.env, rfile, review['parent_id']))
 
             lines = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]
             parfile.comments = list(set(lines))  # remove duplicates
@@ -245,8 +244,8 @@ def create_diff_data(req, data, node, par_node):
     info = {# 'title': '',
             # 'comments': 'Ein Kommentar',
             'diffs': diff,
-            'new': {'path': node.path, 'rev': "%s (Review #%s)" % (node.rev, review.review_id), 'shortrev': node.rev},
-            'old': {'path': par_node.path, 'rev': "%s (Review #%s)" % (par_node.rev, par_review.review_id),
+            'new': {'path': node.path, 'rev': "%s (Review #%s)" % (node.rev, review['review_id']), 'shortrev': node.rev},
+            'old': {'path': par_node.path, 'rev': "%s (Review #%s)" % (par_node.rev, par_review['review_id']),
                     'shortrev': par_node.rev},
             'props': []}
     changes.append(info)
