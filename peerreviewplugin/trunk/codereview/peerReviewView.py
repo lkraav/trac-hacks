@@ -17,6 +17,7 @@ from trac import util
 from trac.core import Component, implements, TracError
 from trac.mimeview import Context
 from trac.resource import Resource
+from trac.util import format_date
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
@@ -103,11 +104,13 @@ class ViewReviewModule(Component):
         data['review_files'] = rev_files
         data['users'] = get_users(self.env)
 
-        review = Review(self.env, review_id)
-        review.html_notes = format_to_html(self.env, Context.from_request(req), review.notes)
+        review = PeerReviewModel(self.env, review_id)
+        review.html_notes = format_to_html(self.env, Context.from_request(req), review['notes'])
+        review.date = format_date(review['creation_date'])
         data['review'] = review
-        if review.parent_id != 0:
-            par_review = Review(self.env, review.parent_id)
+        if review['parent_id'] != 0:
+            par_review = PeerReviewModel(self.env, review['parent_id'])
+            par_review.date = format_date(par_review['creation_date'])
             data['parent_review'] = par_review
 
         data['manager'] = manager
@@ -142,7 +145,7 @@ class ViewReviewModule(Component):
         # Actions for the author of a review. The author may approve, disapprove or close a review.
         # The possible actions are defined in trac.ini as a workflow in [peerreview-resource_workflow]
         realm = 'peerreview'
-        res = Resource(realm, str(review.review_id))  # Must be a string
+        res = Resource(realm, str(review['review_id']))  # Must be a string
         data['workflow'] = ResourceWorkflowSystem(self.env).\
             get_workflow_markup(req, url, realm, res, {'redirect': req.href.peerReviewView(Review=review_id)})
 

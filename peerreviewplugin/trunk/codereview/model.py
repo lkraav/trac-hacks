@@ -34,6 +34,8 @@ class PeerReviewModel(AbstractVariableFieldsObject):
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
 
+        if type(id_) is int:
+            id_ = str(id_)
         self.values['review_id'] = id_
         self.values['res_realm'] = 'peerreview'
         # Set defaults
@@ -59,10 +61,10 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
     protected_fields = ('reviewer_id', 'res_realm', 'state')
 
-    def __init__(self, env, id=None, res_realm=None, state='new', db=None):
+    def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
 
-        self.values['reviewer_id'] = id
+        self.values['reviewer_id'] = id_
         self.values['res_realm'] = res_realm
         self.values['state'] = state
         self.values['status'] = state

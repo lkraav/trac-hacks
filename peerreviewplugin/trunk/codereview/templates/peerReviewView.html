@@ -6,24 +6,26 @@
       xmlns:xi="http://www.w3.org/2001/XInclude">
     <xi:include href="layout.html"/>
     <head>
-        <title>Code Review Details - ${review.name}</title>
+        <title>Code Review Details - ${review['name']}</title>
     </head>
     <body>
         <div id="content">
-            <h1>Code Review Details - ${review.name}</h1>
+            <h1>Code Review Details - ${review['name']}</h1>
             <dl class="overview">
                 <dt>Name:</dt>
-                <dd>${review.name}</dd>
+                <dd>${review['name']}</dd>
                 <dt>Status:</dt>
-                <dd>${review.status}</dd>
+                <dd>${review['status']}</dd>
                 <dt>ID:</dt>
-                <dd>$review.review_id</dd>
+                <dd>${review['review_id']}</dd>
+                <dt>Project:</dt>
+                <dd>${review['project']}</dd>
                 <dt>Author:</dt>
-                <dd>${review.author}</dd>
+                <dd>${review['owner']}</dd>
                 <dt>Creation Date:</dt>
-                <dd>${review.creation_date}</dd>
+                <dd>$review.date</dd>
             </dl>
-            <dl py:if="review.notes" class="overview">
+            <dl py:if="review['notes']" class="overview">
                 <dt>Author notes:</dt>
                 <dd>$review.html_notes</dd>
             </dl>
@@ -31,22 +33,28 @@
                 <h2>Followup Review from:</h2>
                 <dl class="overview">
                     <dt>Name:</dt>
-                    <dd>${parent_review.name}</dd>
+                    <dd>${parent_review['name']}</dd>
                     <dt>Status:</dt>
-                    <dd>${parent_review.status}</dd>
+                    <dd>${parent_review['status']}</dd>
                     <dt>ID:</dt>
-                    <dd>$parent_review.review_id</dd>
+                    <dd>${parent_review['review_id']}</dd>
+                    <dt>Project:</dt>
+                    <dd>${parent_review['project']}</dd>
                     <dt>Author:</dt>
-                    <dd>${parent_review.author}</dd>
+                    <dd>${parent_review['owner']}</dd>
                     <dt>Creation Date:</dt>
-                    <dd>${parent_review.creation_date}</dd>
+                    <dd>${parent_review.date}</dd>
+                </dl>
+                <dl py:if="parent_review['notes']" class="overview">
+                    <dt>Author notes:</dt>
+                    <dd>$parent_review.html_notes</dd>
                 </dl>
             </div>
 
             <h2>Files associated with this code review</h2>
             <p py:if="parent_review">The files will be compared with those from review
-                <a href="peerReviewView?Review=$parent_review.review_id">#$parent_review.review_id</a>.</p>
-
+                <a href="peerReviewView?Review=$parent_review['review_id']">#$parent_review['review_id']</a>.
+            </p>
             <table class="listing" id="filelist">
                 <thead>
                 <tr>
@@ -77,7 +85,7 @@
 
             <h2>Users assigned to this code review</h2>
 
-            <table py:if="review.author == req.authname or manager" class="listing dirlist" id="userlist">
+            <table py:if="review['owner'] == req.authname or manager" class="listing dirlist" id="userlist">
                 <thead>
                     <tr>
                         <th style="width:90%">User name</th>
@@ -95,7 +103,7 @@
                 </tbody>
             </table>
 
-            <table py:if="review.author != req.authname and not manager" class="listing dirlist" id="userlist">
+            <table py:if="review['owner'] != req.authname and not manager" class="listing dirlist" id="userlist">
                 <thead>
                     <tr>
                         <th>User name</th>
@@ -119,21 +127,21 @@
                 <p class="help">Setting the correct state helps the review author to track progress.</p>
             </py:if>
 
-            <py:if test="manager or review.author == req.authname">
+            <py:if test="manager or review['owner'] == req.authname">
                 <h2 py:if="not manager">Workflow actions for author</h2>
                 <h2 py:if="manager">Workflow actions for author or manager</h2>
                 $workflow
-                <p py:if="review.status != 'closed'" class="help">Closing a review means it is obsolete. This can be done at any time.</p>
+                <p py:if="review['status'] != 'closed'" class="help">Closing a review means it is obsolete. This can be done at any time.</p>
 
                 <hr />
                 <form action="" method="post">
                     <fieldset>
                         <div class="buttons">
-                            <input type="hidden" value="${review.review_id}" name="Review"/>
+                            <input type="hidden" value="${review['review_id']}" name="Review"/>
                             <input type="submit" value="Resubmit For Review" name="resubmit"/>
-                            <input py:if="review.status != 'closed'" type="submit"
+                            <input py:if="review['status'] != 'closed'" type="submit"
                                    value="Followup Review" name="followup"/>
-                            <input py:if="review.status != 'closed'" type="submit"
+                            <input py:if="review['status'] != 'closed'" type="submit"
                                    value="Modify" name="modify"/>
                         </div>
                         <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
@@ -141,7 +149,7 @@
                             Comments will not be copied. When the new review is created this one will be closed
                             automatically.
                         </p>
-                        <p py:if="review.status != 'closed'" class="help">When creating a <strong>Followup Review</strong> all the data of this review will be
+                        <p py:if="review['status'] != 'closed'" class="help">When creating a <strong>Followup Review</strong> all the data of this review will be
                             used
                             for prefilling the fields of a new code review. Comments will not be copied. During the new review
                             it
