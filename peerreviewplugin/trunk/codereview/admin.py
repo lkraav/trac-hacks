@@ -10,40 +10,6 @@ from model import Review, Vote, get_threshold, set_threshold
 __author__ = 'Cinc'
 
 
-def calculate_review_status(env, newThreshold):
-    def calc_vote_ratio(r):
-        votes = Vote(env, r.review_id)
-        voteyes = float(votes.yes)
-        voteno = float(votes.no)
-        notvoted = float(votes.pending)
-        total_votes_possible = voteyes + voteno + notvoted
-        if total_votes_possible != 0:
-            vote_ratio = voteyes/total_votes_possible
-        else:
-            vote_ratio = 0
-        return vote_ratio
-
-    if newThreshold is not None:
-        set_threshold(env, newThreshold)
-        newThreshold = float(newThreshold)/100
-
-        all_reviews = Review.select(env)
-
-        open_reviews = [rev for rev in all_reviews if rev.status == "new"]
-        for r in open_reviews:
-            # calculate vote ratio, while preventing divide by zero tests
-            if calc_vote_ratio(r) >= newThreshold:
-                r.status = "reviewed"
-                r.update()
-
-        rev_reviews = [rev for rev in all_reviews if rev.status == "reviewed"]
-        for r in rev_reviews:
-            # calculate vote ratio, while preventing divide by zero tests
-            if calc_vote_ratio(r) < newThreshold:
-                r.status = "new"
-                r.update()
-
-
 class MgrOptionsAdminPlugin(Component):
     """Set threshold percentage"""
     implements(IAdminPanelProvider)
@@ -69,7 +35,6 @@ class MgrOptionsAdminPlugin(Component):
                 add_warning(req, u"You must specify a  percentage between 0 and 100.")
                 req.redirect(req.href.admin(cat, page))
             else:
-                calculate_review_status(self.env, percentage)
                 req.redirect(req.href.admin(cat, page))
 
         data = {'percentage': get_threshold(self.env)}
