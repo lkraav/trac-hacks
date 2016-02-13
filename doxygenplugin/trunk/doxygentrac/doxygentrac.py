@@ -138,6 +138,26 @@ class DoxygenPlugin(Component):
                 res = a.args[0]
         return res
 
+    def _merge_header(self, path):
+        # Genshi can't include an unparsed file
+        # data = {'doxygen_path': path}
+        try:
+            charset = (self.encoding or 
+                       self.env.config['trac'].get('default_charset'))
+            content = file(path).read()
+            m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
+            if m:
+                s = re.findall(r'''<script[^>]*>.*?</script>''', m.group(1), re.S)
+                l = re.findall(r'''<link[^>]*>''', m.group(1), re.S)
+                t = re.search(r'''<title>.*?:(.*)</title>''', m.group(1), re.S)
+                t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";;})'
+                t = "<script type='application/javascript'>" + t + "</script>"
+                content = t + "\n".join(s) +  "\n".join(l) + m.group(2)
+            content = Markup(to_unicode(content, charset))
+            return {'doxygen_content': content}
+        except (IOError, OSError), e:
+            raise TracError("Can't read doxygen content: %s" % e)
+
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
@@ -215,9 +235,8 @@ class DoxygenPlugin(Component):
         action = req.args.get('action')
         link = req.args.get('link')
 
-        self.log.debug('Performing %s(%s,%s)"' % (action or 'default',
-                                                  path, link))
-
+        self.log.debug('Performing A %s, P %s, L %s, W %s.' %
+                       (action or 'default', path, link, self.wiki_index))
         # Redirect search requests.
         if action == 'search':
             url = req.href.search(q=req.args.get('query'), doxygen='on')
@@ -261,21 +280,7 @@ class DoxygenPlugin(Component):
         self.log.debug('mime %s path: %s' % (mimetype, path,))
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
-            # Genshi can't include an unparsed file
-            # data = {'doxygen_path': path}
-            try:
-                charset = (self.encoding or 
-                           self.env.config['trac'].get('default_charset'))
-                content = file(path).read()
-                m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*)<title>(.*?)</title>(.*)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
-                if m:
-                    content = m.group(1) + m.group(3) + m.group(4)
-                    self.log.debug('Inserting "%s" Doxygen Page', m.group(2))
-                content = Markup(to_unicode(content, charset))
-                data = {'doxygen_content': content}
-                return 'doxygen.html', data, 'text/html'
-            except (IOError, OSError), e:
-                raise TracError("Can't read doxygen content: %s" % e)
+            return 'doxygen.html', (self._merge_header(path)), 'text/html'
         else:
             req.send_file(path, mimetype)            
 
