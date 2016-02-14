@@ -127,7 +127,7 @@ class DoxygenPlugin(Component):
         index = os.path.join(self.base_path, doc, self.searchdata_file)
         res = {}
         if not os.path.exists(index) :
-            self.log.debug('No file "%s" in Doxygen dir ' % (index))
+            self.log.debug('No file "%s" in Doxygen dir ', index)
         else:
             date = os.path.getctime(index)
             parser = xml.sax.make_parser()
@@ -228,7 +228,7 @@ class DoxygenPlugin(Component):
             req.args['path'] = path + '/' + file
             return True
 
-        self.log.debug('%s not found in %s' % (file, path))
+        self.log.debug('%s not found in %s', file, path)
         req.args['action'] = 'search'
         return True
 
@@ -240,8 +240,8 @@ class DoxygenPlugin(Component):
         action = req.args.get('action')
         link = req.args.get('link')
 
-        self.log.debug('Performing A %s, P %s, L %s, W %s.' %
-                       (action or 'default', path, link, self.wiki_index))
+        self.log.debug('Performing A %s, P %s, L %s, W %s.',
+                       action or 'default', path, link, self.wiki_index)
         # Redirect search requests.
         if action == 'search':
             url = req.href.search(q=req.args.get('query'), doxygen='on')
@@ -282,7 +282,7 @@ class DoxygenPlugin(Component):
 
         # view
         mimetype = mimetypes.guess_type(path)[0]
-        self.log.debug('mime %s path: %s' % (mimetype, path,))
+        self.log.debug('mime %s path: %s', mimetype, path)
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
             return 'doxygen.html', self._merge_header(req, path), 'text/html'
@@ -316,7 +316,7 @@ class DoxygenPlugin(Component):
         k = '|'.join(keywords).encode(self.encoding)
         doc = self.default_doc
         all = self._search_in_documentation(doc, k, ['keywords', 'text'], True)
-        self.log.debug('%s search: "%s" items' % (all, len(all)))
+        self.log.debug('%s search: "%s" items', all, len(all))
         for res in all:
             path = os.path.join(doc, self.html_output)
             url = req.href.doxygen(path + '/' + res['url'])  + '#' + res['target']
