@@ -67,7 +67,7 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
                         url, target = self.fields['url'].split('#', 2)
                         self.fields['url'] = url
                         self.fields['target'] = target
-                    else: 
+                    else:
                         self.fields['target'] = ''
                     self.fields['date'] = self.to_date
                     if not self.to_multi:
@@ -156,7 +156,7 @@ class DoxygenPlugin(Component):
                 t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";;})'
                 t = "<script type='application/javascript'>" + t + "</script>\n"
                 content = t + "\n".join(s) + m.group(2)
-            charset = (self.encoding or 
+            charset = (self.encoding or
                        self.env.config['trac'].get('default_charset'))
             content = Markup(to_unicode(content, charset))
             return {'doxygen_content': content}
@@ -224,7 +224,7 @@ class DoxygenPlugin(Component):
             path = os.path.join(path, self.html_output)
             existing_path = os.path.exists(os.path.join(path,file)) and path
         if existing_path:
-            req.args['action'] = 'view'            
+            req.args['action'] = 'view'
             req.args['path'] = path + '/' + file
             return True
 
@@ -285,9 +285,9 @@ class DoxygenPlugin(Component):
         self.log.debug('mime %s path: %s' % (mimetype, path,))
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
-            return 'doxygen.html', (self._merge_header(req, path)), 'text/html'
+            return 'doxygen.html', self._merge_header(req, path), 'text/html'
         else:
-            req.send_file(path, mimetype)            
+            req.send_file(path, mimetype)
 
     # ITemplateProvider methods
 
@@ -321,18 +321,18 @@ class DoxygenPlugin(Component):
             path = os.path.join(doc, self.html_output)
             url = req.href.doxygen(path + '/' + res['url'])  + '#' + res['target']
             t = shorten_result(res['text'])
-            yield url, res['keywords'], to_datetime(res['date']), 'doxygen', t 
+            yield url, res['keywords'], to_datetime(res['date']), 'doxygen', t
 
     # IWikiSyntaxProvider
 
     def get_link_resolvers(self):
         def doxygen_link(formatter, ns, name, label):
             res = True
-            if '/' not in name: 
+            if '/' not in name:
                 doc = self.default_doc
             else:
-                doc, name = name.split('/') 
-                if not doc: 
+                doc, name = name.split('/')
+                if not doc:
                     doc = self.default_doc
                 else:
                     res = os.path.exists(os.path.join(self.base_path, doc))
@@ -344,13 +344,13 @@ class DoxygenPlugin(Component):
                 res = {'url':'index.html', 'target':'', 'type':'file', 'text':'index'}
             elif res:
                 res = self._search_in_documentation(doc, name, ['name'], False)
-            
+
             if not res:
                    return tag.a(label, title=name, class_='missing',
                                  href=formatter.href.doxygen())
             url = os.path.join(doc, self.html_output, res['url'])
             url = formatter.href.doxygen(url) + '#' + res['target']
-            t = res['type'] 
+            t = res['type']
             if (t == 'function'):
                 t += ' ' + res['name'] + ' ' + res['args']
             t += ' ' + shorten_result(res['text'])
