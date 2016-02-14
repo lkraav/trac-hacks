@@ -346,8 +346,8 @@ class DoxygenPlugin(Component):
                 res = self._search_in_documentation(doc, name, ['name'], False)
 
             if not res:
-                   return tag.a(label, title=name, class_='missing',
-                                 href=formatter.href.doxygen())
+                return tag.a(label, title=name, class_='missing',
+                              href=formatter.href.doxygen())
             url = os.path.join(doc, self.html_output, res['url'])
             url = formatter.href.doxygen(url) + '#' + res['target']
             t = res['type']
