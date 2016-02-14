@@ -19,7 +19,7 @@ from trac.wiki.formatter import format_to_html
 from trac.perm import IPermissionRequestor
 from trac.resource import *
 from trac.timeline.api import ITimelineEventProvider
-from trac.util import Markup
+from trac.util import Markup, format_date
 from trac.util.datefmt import to_timestamp
 from trac.util.text import _
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_ctxtnav
@@ -27,7 +27,7 @@ from trac.web.main import IRequestHandler
 from genshi.builder import tag
 
 from dbBackend import *
-from model import Review, Reviewer
+from model import Review, Reviewer, PeerReviewModel, PeerReviewerModel
 
 
 def add_ctxt_nav_items(req):
@@ -72,31 +72,34 @@ class PeerReviewReviewMain(Component):
         else:
             data['manager'] = False
 
-        all_reviews = [rev for rev in Review.select(self.env) if rev.status != "closed"]
-        rev_by_reviewer = [rev for rev in Review.select_by_reviewer(self.env, req.authname) if rev.status != "closed"]
+        r_tmpl = PeerReviewModel(self.env)
+        r_tmpl.clear_props()
+        all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
+        # all_reviews = [rev for rev in Review.select(self.env) if rev.status != "closed"]
+
+        # rev_by_reviewer = [rev for rev in Review.select_by_reviewer(self.env, req.authname) if rev.status != "closed"]
+
+        r_tmpl = PeerReviewerModel(self.env)
+        r_tmpl.clear_props()
+        r_tmpl['reviewer'] = req.authname
+        reviewer = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "reviewed"]
 
         # fill the table of currently open reviews
         myreviews = []
         assigned_to_me =[]
         manager_reviews = []
+
         for rev in all_reviews:
             # Reviews created by me
-            if rev.author == req.authname:
+            if rev['owner'] == req.authname:
+                rev.date = format_date(rev['created'])
                 myreviews.append(rev)
-            # Reviews a manager must handle
-            if rev.status == "forinclusion":
-                manager_reviews.append(rev)
 
         # All reviews assigned to me
-        for rev in rev_by_reviewer:
-            if rev.status != "forinclusion":
-                reviewer = Reviewer.select_by_review_id(self.env, rev.review_id, req.authname)
-                if reviewer.vote == -1:
-                    rev.vote = 'Not voted'
-                elif reviewer.vote == 0:
-                    rev.vote = 'Rejected'
-                elif reviewer.vote == 1:
-                    rev.vote = 'Accepted'
+        for item in reviewer:
+            rev = PeerReviewModel(self.env, item['review_id'])
+            if rev['status'] != 'closed':
+                rev.date = format_date(rev['created'])
                 assigned_to_me.append(rev)
 
         data['myreviews'] = myreviews

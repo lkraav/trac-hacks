@@ -53,8 +53,13 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         #     SELECT foo FROM bar WHERE key1 = .. AND key2 = .. AND ...
         return ['review_id']
 
+    def clear_props(self):
+        for key in self.values:
+            if key not in ['review_id', 'res_realm']:
+                self.values[key] = None
+
     def create_instance(self, key):
-        return PeerReviewModel(self.env, key, 'peerreview')
+        return PeerReviewModel(self.env, key['review_id'], 'peerreview')
 
 
 class PeerReviewerModel(AbstractVariableFieldsObject):
@@ -64,6 +69,8 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
 
+        if type(id_) is int:
+            id_ = str(id_)
         self.values['reviewer_id'] = id_
         self.values['res_realm'] = res_realm
         self.values['state'] = state
@@ -75,8 +82,13 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
     def get_key_prop_names(self):
         return ['reviewer_id']
 
+    def clear_props(self):
+        for key in self.values:
+            if key not in ['reviewer_id', 'res_realm']:
+                self.values[key] = None
+
     def create_instance(self, key):
-        return PeerReviewModel(self.env, key, 'peerreviewer')
+        return PeerReviewerModel(self.env, key['reviewer_id'], 'peerreviewer')
 
 
 class ReviewFileModel(AbstractVariableFieldsObject):
@@ -98,7 +110,7 @@ class ReviewFileModel(AbstractVariableFieldsObject):
         return ['file_id']
 
     def create_instance(self, key):
-        return PeerReviewModel(self.env, key, 'peerreviewfile')
+        return ReviewFileModel(self.env, key['file_id'], 'peerreviewfile')
 
 
 class PeerReviewModelProvider(Component):
