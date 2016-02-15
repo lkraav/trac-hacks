@@ -61,6 +61,30 @@ class PeerReviewModel(AbstractVariableFieldsObject):
     def create_instance(self, key):
         return PeerReviewModel(self.env, key['review_id'], 'peerreview')
 
+    def change_status(self, new_status, author=None):
+        """Called from the change object listener"""
+        self['status'] = new_status
+        self.save_changes(author=author)
+
+        # Change the status of files attached to this review
+
+        r_tmpl = ReviewFileModel(self.env)
+        r_tmpl.clear_props()
+        r_tmpl['review_id'] = self['review_id']
+        all_files = r_tmpl.list_matching_objects()  # This is a generator
+        if new_status in ['closed', 'approved', 'disapproved']:
+            self.env.log.debug("ReviewModel: changing status of attached files for review '#%s'to '%s'" %
+                               (self['review_id'], new_status))
+            status = new_status
+        else:
+            status = 'new'
+            self.env.log.debug("ReviewModel: changing status of attached files for review '#%s'to '%s'" %
+                               (self['review_id'], status))
+        for f in all_files:
+            f['status'] = status
+            f.save_changes(author, "Status of review '#%s' changed." % self['review_id'])
+
+
 
 class PeerReviewerModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
@@ -98,6 +122,8 @@ class ReviewFileModel(AbstractVariableFieldsObject):
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
 
+        if type(id_) is int:
+            id_ = str(id_)
         self.values['file_id'] = id_
         self.values['res_realm'] = res_realm
         self.values['state'] = state
@@ -105,6 +131,11 @@ class ReviewFileModel(AbstractVariableFieldsObject):
 
         key = self.build_key_object()
         AbstractVariableFieldsObject.__init__(self, env, 'peerreviewfile', key, db)
+
+    def clear_props(self):
+        for key in self.values:
+            if key not in ['file_id', 'res_realm']:
+                self.values[key] = None
 
     def get_key_prop_names(self):
         return ['file_id']

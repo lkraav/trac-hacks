@@ -65,21 +65,23 @@
                     <th>Revision</th>
                     <th>Line Numbers</th>
                     <th># of Comments</th>
+                    <th>Status</th>
                 </tr>
                 </thead>
                 <tbody py:with="cls=cycle(('odd', 'even'))">
                 <tr py:if="not review_files" class="even" colspan="5">
                     <td>There are no files included in this code review.</td>
                 </tr>
-                <tr py:for="item in review_files" class="${cls.next()}" id="$item.element_id">
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.file_id}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.path}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.version}</a></td>
-                    <td py:if="item.start != 0"><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.start} -
-                        ${item.end}</a></td>
+                <tr py:for="item in review_files" class="${cls.next()}" id="$item['file_id']">
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['revision']}</a></td>
+                    <td py:if="item.start != 0"><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item['start']} -
+                        ${item['end']}</a></td>
                     <td py:if="item.start == 0"><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">1 - End of file</a>
                     </td>
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.num_comments}</a></td>
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item['status']}</a></td>
                 </tr>
                 </tbody>
             </table>

@@ -21,13 +21,13 @@ from trac.util import format_date
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
-from model import ReviewFile, Reviewer, Vote, get_threshold, get_users, Comment, \
-    PeerReviewerModel, PeerReviewModel
+from model import Reviewer, get_users, Comment, \
+    PeerReviewerModel, PeerReviewModel, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
 
 
-class ViewReviewModule(Component):
+class PeerReviewView(Component):
     """Displays a summary page for a review."""
     implements(IRequestHandler, INavigationContributor, IWorkflowTransitionListener)
 
@@ -43,8 +43,7 @@ class ViewReviewModule(Component):
             reviewer.save_changes(author=res_wf_state.authname)
         elif resource.realm == 'peerreview':
             review = PeerReviewModel(self.env, resource.id)
-            review['status'] = new_state
-            review.save_changes(author=res_wf_state.authname)
+            review.change_status(new_state, res_wf_state.authname)
 
     # INavigationContributor
 
@@ -84,9 +83,14 @@ class ViewReviewModule(Component):
             elif req.args.get('modify'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=review_id, modify=1))
 
-        rev_files = ReviewFile.select_by_review(self.env, review_id)
+        # rev_files = ReviewFile.select_by_review(self.env, review_id)
+        rfm = ReviewFileModel(self.env)
+        rfm.clear_props()
+        rfm['review_id'] = review_id
+        rev_files = list(rfm.list_matching_objects())
         for f in rev_files:
-            f.num_comments = len(Comment.select_by_file_id(self.env, f.file_id))
+            print '   #####', f['file_id']
+            f.num_comments = len(Comment.select_by_file_id(self.env, f['file_id']))
 
         data['review_files'] = rev_files
         data['users'] = get_users(self.env)
