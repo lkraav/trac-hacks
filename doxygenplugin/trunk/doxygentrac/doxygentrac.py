@@ -21,7 +21,7 @@ from trac.core import *
 from trac.web import IRequestHandler
 from trac.perm import IPermissionRequestor
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_stylesheet, add_ctxtnav
+                            add_stylesheet, add_script, add_ctxtnav
 from trac.search.api import ISearchSource, shorten_result
 from trac.util.text import to_unicode
 from trac.util.datefmt import to_datetime
@@ -147,19 +147,32 @@ class DoxygenPlugin(Component):
             raise TracError("Can't read doxygen content: %s" % e)
         m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*?)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
         if m:
-            l = re.findall(r'''<link[^>]*type=.text/css[^>]*>''',
-                           m.group(1), re.S)
+            l = re.findall(r'''<link[^>]*type=.text/css[^>]*>''', m.group(1), re.S)
             for i in l:
                 h = re.search(r'''href=.([^ ]*)[^ /][ /]''', i)
-                h = '/doxygen/' + h.group(1)
+                h =  '/doxygen/' + h.group(1)
                 self.log.debug('CSS %s', '/' + h)
                 add_stylesheet(req, h)
-            s = re.findall(r'''<script[^>]*>.*?</script>''', m.group(1), re.S)
+
             t = re.search(r'''<title>.*?:(.*)</title>''', m.group(1), re.S)
-            t = '$(document).ready(function() { document.title+="' + \
-                t.group(1) + '";;})'
-            t = "<script type='application/javascript'>" + t + "</script>\n"
-            content = t + "\n".join(s) + m.group(2)
+            if t:
+                t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";;})'
+            else:
+                t = ''
+            s = re.findall(r'''<script([^>]*)>(.*?)</script>''', m.group(1), re.S)
+            for i in s:
+                h = re.search(r'''src=.([^ ]*).''', i[0])
+                self.log.debug('Script %s %s', i[0], h)
+                if not h:
+                    t += i[1]
+                else:
+                    h = h.group(1)
+                    if (h != 'jquery.js'):
+                        add_script(req, '/doxygen/' + h)
+
+            if t:
+                t = "<script type='application/javascript'>" + t + "</script>\n"
+            content = t + m.group(2)
         charset = (self.encoding or
                    self.env.config['trac'].get('default_charset'))
         content = Markup(to_unicode(content, charset))
