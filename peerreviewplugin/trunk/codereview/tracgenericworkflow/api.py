@@ -246,50 +246,7 @@ class ResourceWorkflowSystem(Component):
         return (this_action['name'], tag(*controls), '. '.join(hints))
 
     def get_workflow_markup(self, req, base_href, realm, resource, data=None):
-            rws = ResourceWorkflowState(self.env, resource.id, realm)
-
-            # action_controls is an ordered list of "renders" tuples, where
-            # renders is a list of (action_key, label, widgets, hints) representing
-            # the user interface for each action
-            action_controls = []
-            sorted_actions = self.get_available_actions(
-                req, realm, resource=resource)
-
-            if len(sorted_actions) > 0:
-                for action in sorted_actions:
-                    first_label = None
-                    hints = []
-                    widgets = []
-
-                    label, widget, hint = self.get_action_markup(req, realm, action[1], resource)
-
-                    if not first_label:
-                        first_label = label
-
-                    widgets.append(widget)
-                    hints.append(hint)
-
-                    action_controls.append((action[1], first_label, tag(widgets), hints))
-
-                ctrls = ""
-                for i, ac in enumerate(action_controls):
-                    # The default action is the first in the action_controls list.
-                    ctrl_tmpl = """
-                    <div>
-                        <input id="wf-$val" name="selected_action" type="radio" value="$val" $is_checked />
-                        <label for="wf-$val">$label</label>
-                        $ctrl
-                        <span class="hint">$hint</span>
-                    </div>"""
-
-                    cdata = {'is_checked': 'checked="1"' if i == 0 else '',
-                             'val': ac[0],
-                             'label': ac[1],
-                             'ctrl': ac[2].generate(),
-                             'hint': ac[3][0]}
-                    ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
-
-                form_tmpl = """
+        form_tmpl = """
                 <form class="workflow-actions" method="post" action="$action" name="resource_workflow_form">
                     <fieldset>
                         <input name="id" type="hidden" value="$resource_id" />
@@ -300,28 +257,72 @@ class ResourceWorkflowSystem(Component):
                             <dd>$cur_state</dd>
                         </dl>
                         $ctrls
-                        <div class="buttons">
+                        <div class="buttons" $display>
                             <input type="submit" id="resource_workflow_form_submit_button" value="Perform Action" />
                         </div>
                     </fieldset>
                 </form> """
 
-                tdata = {'action': base_href+'/workflowtransition',
-                        'resource_id': resource.id,
-                        'cur_state': rws['state'],
-                        'ctrls': ctrls,
-                        'realm': realm,
-                         'redirect': ''}
-                if data and data.get('redirect'):
-                    tdata['redirect'] = data.get('redirect')
+        rws = ResourceWorkflowState(self.env, resource.id, realm)
 
-                tmpl = Template(form_tmpl)
-                return HTML(tmpl.safe_substitute(tdata))
-            else:
-                form = tag("No next workflow state available for '%s'." % (rws['state'],))
+        # action_controls is an ordered list of "renders" tuples, where
+        # renders is a list of (action_key, label, widgets, hints) representing
+        # the user interface for each action
+        action_controls = []
+        sorted_actions = self.get_available_actions(
+            req, realm, resource=resource)
 
-            return form
+        tdata = {'action': base_href+'/workflowtransition',
+                 'resource_id': resource.id,
+                 'cur_state': rws['state'],
+                 'ctrls': "",
+                 'realm': realm,
+                 'redirect': '',
+                 'display': ''}
 
+        tmpl = Template(form_tmpl)
+        if len(sorted_actions) > 0:
+            for action in sorted_actions:
+                first_label = None
+                hints = []
+                widgets = []
+
+                label, widget, hint = self.get_action_markup(req, realm, action[1], resource)
+
+                if not first_label:
+                    first_label = label
+
+                widgets.append(widget)
+                hints.append(hint)
+
+                action_controls.append((action[1], first_label, tag(widgets), hints))
+
+            ctrls = ""
+            for i, ac in enumerate(action_controls):
+                # The default action is the first in the action_controls list.
+                ctrl_tmpl = """
+                <div>
+                    <input id="wf-$val" name="selected_action" type="radio" value="$val" $is_checked />
+                    <label for="wf-$val">$label</label>
+                    $ctrl
+                    <span class="hint">$hint</span>
+                </div>"""
+
+                cdata = {'is_checked': 'checked="1"' if i == 0 else '',
+                         'val': ac[0],
+                         'label': ac[1],
+                         'ctrl': ac[2].generate(),
+                         'hint': ac[3][0]}
+                ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
+
+            tdata['ctrls'] = ctrls
+            if data and data.get('redirect'):
+                tdata['redirect'] = data.get('redirect')
+
+            return HTML(tmpl.safe_substitute(tdata))
+        else:
+            tdata['display'] = 'style="display: none;"'
+            return HTML(tmpl.safe_substitute(tdata))
 
     # Workflow operations management
 

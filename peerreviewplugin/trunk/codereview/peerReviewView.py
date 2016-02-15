@@ -89,7 +89,6 @@ class PeerReviewView(Component):
         rfm['review_id'] = review_id
         rev_files = list(rfm.list_matching_objects())
         for f in rev_files:
-            print '   #####', f['file_id']
             f.num_comments = len(Comment.select_by_file_id(self.env, f['file_id']))
 
         data['review_files'] = rev_files

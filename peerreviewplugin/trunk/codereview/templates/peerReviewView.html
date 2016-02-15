@@ -19,7 +19,8 @@
                 <dt>ID:</dt>
                 <dd>${review['review_id']}</dd>
                 <dt>Project:</dt>
-                <dd>${review['project']}</dd>
+                <dd py:if="review['project']">${review['project']}</dd>
+                <dd py:if="not review['project']">not specified</dd>
                 <dt>Author:</dt>
                 <dd>${review['owner']}</dd>
                 <dt>Creation Date:</dt>
@@ -76,12 +77,12 @@
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['revision']}</a></td>
-                    <td py:if="item.start != 0"><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item['start']} -
-                        ${item['end']}</a></td>
-                    <td py:if="item.start == 0"><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">1 - End of file</a>
+                    <td py:if="item['line_start'] != 0"><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['line_start']} -
+                        ${item['line_end']}</a></td>
+                    <td py:if="item['line_start'] == 0"><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">1 - End of file</a>
                     </td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item.num_comments}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item.file_id}">${item['status']}</a></td>
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item.num_comments}</a></td>
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['status']}</a></td>
                 </tr>
                 </tbody>
             </table>
@@ -135,8 +136,12 @@
                 <h2 py:if="not manager">Workflow actions for author</h2>
                 <h2 py:if="manager">Workflow actions for author or manager</h2>
                 $workflow
-                <p py:if="review['status'] != 'closed'" class="help">Closing a review means it is obsolete. This can be done at any time.</p>
-
+                <p py:if="review['status'] not in  ['closed', 'approved', 'disapprove']" class="help">
+                    Closing a review means it is obsolete.
+                </p>
+                <p py:if="review['status']in  ['closed', 'approved', 'disapprove']" class="help">
+                    This review is finished. A code review manager may reopen it.
+                </p>
                 <hr />
                 <form action="" method="post">
                     <fieldset>
