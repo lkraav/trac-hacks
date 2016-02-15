@@ -330,8 +330,9 @@ class AbstractVariableFieldsObject(object):
             value = row[i]
             if field in self.time_fields:
                 self.values[field] = from_any_timestamp(value)
-            elif value is None:
-                self.values[field] = '0'
+            # Cinc: we don't want to have '0' in text fields
+            # elif value is None:
+            #     self.values[field] = '0'
             else:
                 self.values[field] = value
 
