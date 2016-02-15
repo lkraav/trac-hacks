@@ -77,20 +77,7 @@ class ViewReviewModule(Component):
             raise TracError(u"Invalid review ID supplied - unable to load page.")
 
         if req.method == 'POST':
-            if req.args.get('approved'):
-                self.vote("1", review_id, req, req.authname)  # This call will redirect
-            elif req.args.get('notapproved'):
-                self.vote("0", review_id, req, req.authname)  # This call will redirect
-            elif req.args.get('close'):
-                self.close_review(req, review_id, manager)
-            elif req.args.get('inclusion'):
-                self.submit_for_inclusion(req, review_id)
-            elif req.args.get('ManagerChoice'):
-                # process state (Open for review, ready for inclusion, etc.) change by manager
-                mc = req.args.get('ManagerChoice')
-                if mc == "new" or mc == "reviewed" or mc == "forinclusion" or mc == "closed":
-                    self.manager_change_status(req, review_id, mc)
-            elif req.args.get('resubmit'):
+            if req.args.get('resubmit'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=review_id))
             elif req.args.get('followup'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=review_id, followup=1))

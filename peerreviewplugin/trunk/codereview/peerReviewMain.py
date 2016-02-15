@@ -36,7 +36,7 @@ def add_ctxt_nav_items(req):
     add_ctxtnav(req, _("Search Code Reviews"), "peerReviewSearch", _("Search Code Reviews"))
 
 
-class PeerReviewReviewMain(Component):
+class PeerReviewMain(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
                IPermissionRequestor, ITimelineEventProvider)
 
@@ -76,13 +76,7 @@ class PeerReviewReviewMain(Component):
         r_tmpl.clear_props()
         all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
         # all_reviews = [rev for rev in Review.select(self.env) if rev.status != "closed"]
-
         # rev_by_reviewer = [rev for rev in Review.select_by_reviewer(self.env, req.authname) if rev.status != "closed"]
-
-        r_tmpl = PeerReviewerModel(self.env)
-        r_tmpl.clear_props()
-        r_tmpl['reviewer'] = req.authname
-        reviewer = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "reviewed"]
 
         # fill the table of currently open reviews
         myreviews = []
@@ -95,11 +89,17 @@ class PeerReviewReviewMain(Component):
                 rev.date = format_date(rev['created'])
                 myreviews.append(rev)
 
+        r_tmpl = PeerReviewerModel(self.env)
+        r_tmpl.clear_props()
+        r_tmpl['reviewer'] = req.authname
+        reviewer = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "reviewed"]
+
         # All reviews assigned to me
         for item in reviewer:
             rev = PeerReviewModel(self.env, item['review_id'])
             if rev['status'] != 'closed':
                 rev.date = format_date(rev['created'])
+                rev.reviewer = item
                 assigned_to_me.append(rev)
 
         data['myreviews'] = myreviews

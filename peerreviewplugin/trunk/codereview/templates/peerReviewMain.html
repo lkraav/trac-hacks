@@ -47,6 +47,39 @@
 
             </py:if>
 
+            <h2>This is a list of code reviews currently assigned to you.</h2>
+
+            <!--! Display your currently assigned code reviews in a table -->
+            <table class="listing dirlist" id="assignedreviewlist">
+                <thead>
+                <tr>
+                    <th>Review</th>
+                    <th>Author</th>
+                    <th>Name</th>
+                    <th>My Status</th>
+                    <th>Date Opened</th>
+                </tr>
+                </thead>
+                <tbody py:with="cls=cycle(('odd', 'even'))">
+                <!--! if there are no reviews open for you, state this in the table -->
+                <tr py:if="not assigned_reviews">
+                    <td>There are no code reviews assigned to you.</td>
+                    <td/>
+                    <td/>
+                    <td/>
+                    <td/>
+                </tr>
+                <tr py:for="item in assigned_reviews" class="${cls.next()}">
+                    <!--! Set up the table with the appropriate values and then links to view the review -->
+                    <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['review_id']}</a></td>
+                    <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['owner']}</a></td>
+                    <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['name']}</a></td>
+                    <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item.reviewer['status']}</a></td>
+                    <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item.date}</a></td>
+                </tr>
+                </tbody>
+            </table>
+
             <h2>This is a list of currently open code reviews created by you.</h2>
 
             <table class="listing dirlist" id="myreviewlist">
@@ -76,38 +109,6 @@
                 </tbody>
             </table>
 
-            <h2>This is a list of code reviews currently assigned to you.</h2>
-
-            <!--! Display your currently assigned code reviews in a table -->
-            <table class="listing dirlist" id="assignedreviewlist">
-                <thead>
-                    <tr>
-                        <th>Review</th>
-                        <th>Author</th>
-                        <th>Name</th>
-                        <th>My Vote</th>
-                        <th>Date Opened</th>
-                    </tr>
-                </thead>
-                <tbody py:with="cls=cycle(('odd', 'even'))">
-                    <!--! if there are no reviews open for you, state this in the table -->
-                    <tr py:if="not assigned_reviews">
-                        <td>There are no code reviews assigned to you.</td>
-                        <td/>
-                        <td/>
-                        <td/>
-                        <td/>
-                    </tr>
-                    <tr py:for="item in assigned_reviews" class="${cls.next()}">
-                        <!--! Set up the table with the appropriate values and then links to view the review -->
-                        <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['review_id']}</a></td>
-                        <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['owner']}</a></td>
-                        <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['name']}</a></td>
-                        <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['vote']}</a></td>
-                        <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item.date}</a></td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </body>
 </html>
