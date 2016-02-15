@@ -33,6 +33,7 @@ from model import Review, Reviewer, PeerReviewModel, PeerReviewerModel
 def add_ctxt_nav_items(req):
     add_ctxtnav(req, _("My Code Reviews"), "peerReviewMain", title=_("My Code Reviews"))
     add_ctxtnav(req, _("Create a Code Review"), "peerReviewNew", title=_("Create a Code review"))
+    add_ctxtnav(req, _("Show files"), "peerreviewfile", title=_("Show reviewed files"))
     add_ctxtnav(req, _("Search Code Reviews"), "peerReviewSearch", _("Search Code Reviews"))
 
 
