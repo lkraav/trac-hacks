@@ -11,6 +11,16 @@
     <body>
         <div id="content">
             <h1>Code Review Details - ${review['name']}</h1>
+            <div py:if="is_finished" class="notice system-message">
+                <p>
+                    This review is finished. A code review manager may reopen it.
+                </p>
+            </div>
+            <div py:if="review_locked and not is_finished" class="notice system-message">
+                <p>
+                    This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
+                </p>
+            </div>
             <dl class="overview">
                 <dt>Name:</dt>
                 <dd>${review['name']}</dd>
@@ -101,9 +111,9 @@
                     <tr py:if="not reviewer" class="even">
                         <td>There are no users included in this code review.</td>
                     </tr>
-                    <tr py:if="review_files" py:for="item in reviewer" class="${cls.next()}">
-                        <td>$item.reviewer</td>
-                        <td>$item.status</td>
+                    <tr py:if="reviewer" py:for="item in reviewer" class="${cls.next()}">
+                        <td>${item['reviewer']}</td>
+                        <td>${item['status']}</td>
                     </tr>
                 </tbody>
             </table>
@@ -119,7 +129,7 @@
                         <td>There are no users included in this code review.</td>
                     </tr>
                     <tr py:if="reviewer" py:for="item in reviewer" class="${cls.next()}">
-                        <td>$item.reviewer</td>
+                        <td>${item['reviewer']}</td>
                     </tr>
                 </tbody>
             </table>
@@ -129,19 +139,23 @@
 
                 $reviewer_workflow
 
-                <p class="help">Setting the correct state helps the review author to track progress.</p>
+                <p py:if="not is_finished"
+                   class="help">Setting the correct state helps the review author to track progress.</p>
             </py:if>
 
             <py:if test="manager or review['owner'] == req.authname">
-                <h2 py:if="not manager">Workflow actions for author</h2>
-                <h2 py:if="manager">Workflow actions for author or manager</h2>
-                $workflow
-                <p py:if="review['status'] not in  ['closed', 'approved', 'disapprove']" class="help">
-                    Closing a review means it is obsolete.
-                </p>
-                <p py:if="review['status']in  ['closed', 'approved', 'disapprove']" class="help">
-                    This review is finished. A code review manager may reopen it.
-                </p>
+                <py:if test="not is_finished">
+                    <h2 py:if="not manager">Workflow actions for author</h2>
+                    <h2 py:if="manager">Workflow actions for author or manager</h2>
+                    $workflow
+                    <p class="help">
+                        Closing a review means it is obsolete.
+                    </p>
+                </py:if>
+                <py:if test="is_finished and manager">
+                    <h2 py:if="manager">Workflow actions for manager</h2>
+                    $workflow
+                </py:if>
                 <hr />
                 <form action="" method="post">
                     <fieldset>
@@ -150,7 +164,7 @@
                             <input type="submit" value="Resubmit For Review" name="resubmit"/>
                             <input py:if="review['status'] != 'closed'" type="submit"
                                    value="Followup Review" name="followup"/>
-                            <input py:if="review['status'] != 'closed'" type="submit"
+                            <input py:if="not is_finished" type="submit"
                                    value="Modify" name="modify"/>
                         </div>
                         <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of

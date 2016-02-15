@@ -21,10 +21,19 @@ from trac.util import format_date
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
-from model import Reviewer, get_users, Comment, \
+from model import get_users, Comment, \
     PeerReviewerModel, PeerReviewModel, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
+
+
+def review_is_finished(review):
+    """A finished review may only be reopened by a manger"""
+    return review['status'] in ['closed', 'approved', 'disapproved']
+
+def review_is_locked(review):
+    """For a locked review a iser can't change his voting"""
+    return review['status'] == 'reviewed'
 
 
 class PeerReviewView(Component):
@@ -66,9 +75,7 @@ class PeerReviewView(Component):
         data = {}
         # check to see if the user is a manager of this page or not
         if 'CODE_REVIEW_MGR' in req.perm:
-            manager = True
-        else:
-            manager = False
+            data['manager'] = True
 
         # review_id argument checking
         review_id = req.args.get('Review')
@@ -83,7 +90,6 @@ class PeerReviewView(Component):
             elif req.args.get('modify'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=review_id, modify=1))
 
-        # rev_files = ReviewFile.select_by_review(self.env, review_id)
         rfm = ReviewFileModel(self.env)
         rfm.clear_props()
         rfm['review_id'] = review_id
@@ -98,23 +104,30 @@ class PeerReviewView(Component):
         review.html_notes = format_to_html(self.env, Context.from_request(req), review['notes'])
         review.date = format_date(review['creation_date'])
         data['review'] = review
+
+        # A finished review can't be changed anymore except by a manager
+        data['is_finished'] = review_is_finished(review)
+        # A user can't chnage his voting for a reviewed review
+        data['review_locked'] = review_is_locked(review)
+
+        # Parent review if any
         if review['parent_id'] != 0:
             par_review = PeerReviewModel(self.env, review['parent_id'])
+            par_review.html_notes = format_to_html(self.env, Context.from_request(req), par_review['notes'])
             par_review.date = format_date(par_review['creation_date'])
             data['parent_review'] = par_review
-
-        data['manager'] = manager
 
         # Figure out whether I can vote on this review or not. This is used to decide in the template
         # if the reviewer actions should be shown. Note that this is legacy stuff going away later.
         #
         # TODO: remove this and use a better solution
-        if Reviewer.select_by_review_id(self.env, review_id, req.authname):
-            data['canivote'] = True
-        else:
-            data['canivote'] = False
-
-        reviewers = Reviewer.select_by_review_id(self.env, review_id)
+        rm = PeerReviewerModel(self.env)
+        rm.clear_props()
+        rm['review_id'] = review_id
+        reviewers = list(rm.list_matching_objects())
+        for rev in reviewers:
+            if rev['reviewer'] == req.authname:
+                break
         data['reviewer'] = reviewers
 
         url = '.'
@@ -124,9 +137,12 @@ class PeerReviewView(Component):
         # as a workflow in [peerreviewer-resource_workflow]
         realm = 'peerreviewer'
         res = None
+
         for reviewer in reviewers:
-            if reviewer.reviewer == req.authname:
-                res = Resource(realm, str(reviewer.id))  # id must be a string
+            if reviewer['reviewer'] == req.authname:
+                res = Resource(realm, str(reviewer['reviewer_id']))  # id must be a string
+                if not data['is_finished'] and not data['review_locked']:
+                    data['canivote'] = True
                 break
         if res:
             data['reviewer_workflow'] = ResourceWorkflowSystem(self.env).\
