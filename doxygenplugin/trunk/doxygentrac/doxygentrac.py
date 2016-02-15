@@ -28,6 +28,7 @@ from trac.util.datefmt import to_datetime
 from trac.wiki.api import WikiSystem, IWikiSyntaxProvider
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import wiki_to_html
+from trac.loader import get_plugin_info
 
 class DoxygenTracHandler(xml.sax.ContentHandler):
     last_field_name = ''
@@ -145,8 +146,11 @@ class DoxygenPlugin(Component):
             content = file(path).read()
         except (IOError, OSError), e:
             raise TracError("Can't read doxygen content: %s" % e)
+
+        # Pick up header and body parts of the Doxygen page
         m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*?)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
         if m:
+            # pick up links to CSS and move them to header of the Trac Page
             l = re.findall(r'''<link[^>]*type=.text/css[^>]*>''', m.group(1), re.S)
             for i in l:
                 h = re.search(r'''href=.([^ ]*)[^ /][ /]''', i)
@@ -154,11 +158,17 @@ class DoxygenPlugin(Component):
                 self.log.debug('CSS %s', '/' + h)
                 add_stylesheet(req, h)
 
+            # pick up the title of the Doxygen page
+            # since there is no API to move it in the header of the Trac page
+            # we will use JQuery to do it on load
             t = re.search(r'''<title>.*?:(.*)</title>''', m.group(1), re.S)
             if t:
-                t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";;})'
+                t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";})'
             else:
                 t = ''
+            # pick up the scripts
+            # if it is a file, move the tag Script in the header of the Trac page
+            # otherwise, keep it here
             s = re.findall(r'''<script([^>]*)>(.*?)</script>''', m.group(1), re.S)
             for i in s:
                 h = re.search(r'''src=.([^ ]*).''', i[0])
@@ -175,8 +185,11 @@ class DoxygenPlugin(Component):
             content = t + m.group(2)
         charset = (self.encoding or
                    self.env.config['trac'].get('default_charset'))
-        content = Markup(to_unicode(content, charset))
-        return {'doxygen_content': content}
+        content = to_unicode(content, charset)
+        info = get_plugin_info(self.env)
+        version = ('DoxygenPlugin ' + info[0]['info']['version'] + ' &amp; ').decode('ascii')
+        content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + version + r'\2', content,1,re.S)
+        return {'doxygen_content': Markup(content)}
 
     # IPermissionRequestor methods
 
