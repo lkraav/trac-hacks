@@ -31,8 +31,10 @@ def review_is_finished(review):
     """A finished review may only be reopened by a manger"""
     return review['status'] in ['closed', 'approved', 'disapproved']
 
-def review_is_locked(review):
+def review_is_locked(review, authname=""):
     """For a locked review a iser can't change his voting"""
+    if review['owner'] == authname:
+        return False
     return review['status'] == 'reviewed'
 
 
@@ -108,7 +110,7 @@ class PeerReviewView(Component):
         # A finished review can't be changed anymore except by a manager
         data['is_finished'] = review_is_finished(review)
         # A user can't chnage his voting for a reviewed review
-        data['review_locked'] = review_is_locked(review)
+        data['review_locked'] = review_is_locked(review, req.authname)
 
         # Parent review if any
         if review['parent_id'] != 0:

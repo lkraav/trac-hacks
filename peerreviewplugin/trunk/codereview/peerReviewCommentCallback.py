@@ -25,6 +25,7 @@ from dbBackend import *
 from model import ReviewFile, Comment, PeerReviewModel
 from trac.wiki import format_to_html
 from trac.mimeview import Context
+from peerReviewView import review_is_locked, review_is_finished
 
 def writeJSONResponse(rq, data, httperror=200):
     writeResponse(rq, json.dumps(data), httperror)
@@ -197,6 +198,10 @@ class PeerReviewCommentHandler(Component):
         review = PeerReviewModel(self.env, rfile.review_id)
         data['review'] = review
         data['context'] = Context.from_request(req)
+        # A finished review can't be changed anymore except by a manager
+        data['is_finished'] = review_is_finished(review)
+        # A user can't chnage his voting for a reviewed review
+        data['review_locked'] = review_is_locked(review, req.authname)
 
         comment_html = ""
         first = True
@@ -252,7 +257,7 @@ class PeerReviewCommentHandler(Component):
                     </a>
                 </td>
                 <td width="100px" class="comment-reply">
-                   <a py:if="review['status'] != 'closed'" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
+                   <a py:if="not is_locked" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
                 </td>
             </tr>
             </tbody>
@@ -286,7 +291,8 @@ class PeerReviewCommentHandler(Component):
                  'line': linenum,
                  'fileid': fiileid,
                  'callback': self.env.href.peerReviewCommentCallback(),
-                 'review': data['review']
+                 'review': data['review'],
+                 'is_locked': data['is_finished'] or data['review_locked']
                  }
 
         tbl = MarkupTemplate(self.comment_template, lookup='lenient')

@@ -29,6 +29,8 @@ from trac.versioncontrol.diff import diff_blocks, get_diff_options
 from peerReviewMain import add_ctxt_nav_items
 from model import ReviewFile, Comment, PeerReviewModel
 from genshi.filters.transform import Transformer
+from peerReviewView import review_is_locked, review_is_finished
+
 
 class PeerReviewPerform(Component):
     implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator, ITemplateStreamFilter)
@@ -41,9 +43,17 @@ class PeerReviewPerform(Component):
 
     def get_annotation_data(self, context):
         rfile = context.get_hint('reviewfile')
+        authname = context.get_hint('authname')
         review = PeerReviewModel(self.env, rfile.review_id)
+
+        # Is it allowed to comment on the file?
+        if review_is_finished(review):
+            is_locked = True
+        else:
+            is_locked = review_is_locked(review, authname)
+
         data = [[c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
-                review]
+                review, is_locked]
         return data
 
     #line annotator for Perform Code Review page
@@ -53,14 +63,14 @@ class PeerReviewPerform(Component):
     def annotate_row(self, context, row, lineno, line, data):
         rfile = context.get_hint('reviewfile')
         if (lineno <= int(rfile.end) and lineno >= int(rfile.start)) or int(rfile.start) == 0:
-            #if there is a comment on this line
+            # If there is a comment on this line
             lines = data[0]
             review = data[1]
             if lineno in lines:
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno),
                                                                   href='javascript:getComments(%s, %s)' %
                                                                        (lineno, rfile.file_id))))
-            if review['status'] != 'closed':
+            if not data[2]:
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
                                                                            % (lineno, rfile.file_id))))
             else:
@@ -183,12 +193,18 @@ class PeerReviewPerform(Component):
         else:
             context = Context.from_request(req, 'source', node.path, node.created_rev)
             context.set_hints(reviewfile=rfile)
+            context.set_hints(authname=req.authname)
 
             preview_data = mimeview.preview_data(context, content, len(content),
                                                  mime_type, node.created_path,
                                                  None,
                                                  annotations=['performCodeReview'])
             data['file_rendered'] = preview_data['rendered']
+
+        # A finished review can't be changed anymore except by a manager
+        data['is_finished'] = review_is_finished(review)
+        # A user can't chnage his voting for a reviewed review
+        data['review_locked'] = review_is_locked(review, req.authname)
 
         scr_data = {'peer_comments': [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
                     'peer_file_id': fileid}

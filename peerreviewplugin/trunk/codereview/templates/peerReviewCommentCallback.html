@@ -2,11 +2,11 @@
         <py:choose test="invalid">
           <div py:when="0" id="innerCommentSpan">
               ${commentHTML}
-              <div py:if="review.status != 'closed'" class="buttons">
+              <div py:if="not is_finished and not review_locked" class="buttons">
                   <input type="button" name="addcomment" value="Add New Comment" id="addcomment-view"/>
               </div>
-              <p py:if="review.status == 'closed'" class="help">
-                  This review is closed. You can't add any comments.
+              <p py:if="is_finished or review_locked" class="help">
+                  This review is locked. You can't add any comments.
               </p>
           </div>
 

@@ -11,7 +11,16 @@
 
     <body>
         <div id="content">
-
+            <div py:if="is_finished" class="notice system-message">
+                <p>
+                    This review is finished. A code review manager may reopen it.
+                </p>
+            </div>
+            <div py:if="review_locked and not is_finished" class="notice system-message">
+                <p>
+                    This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
+                </p>
+            </div>
             <h3>Review Information</h3>
             <py:if test="parent_review">
                 <form id="prefs" action="">
