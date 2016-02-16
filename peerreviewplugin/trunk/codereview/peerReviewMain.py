@@ -27,7 +27,7 @@ from trac.web.main import IRequestHandler
 from genshi.builder import tag
 
 from dbBackend import *
-from model import Review, Reviewer, PeerReviewModel, PeerReviewerModel
+from model import Reviewer, PeerReviewModel, PeerReviewerModel
 
 
 def add_ctxt_nav_items(req):
@@ -76,8 +76,6 @@ class PeerReviewMain(Component):
         r_tmpl = PeerReviewModel(self.env)
         r_tmpl.clear_props()
         all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
-        # all_reviews = [rev for rev in Review.select(self.env) if rev.status != "closed"]
-        # rev_by_reviewer = [rev for rev in Review.select_by_reviewer(self.env, req.authname) if rev.status != "closed"]
 
         # fill the table of currently open reviews
         myreviews = []
@@ -95,10 +93,12 @@ class PeerReviewMain(Component):
         r_tmpl['reviewer'] = req.authname
         reviewer = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "reviewed"]
 
+        from peerReviewView import review_is_finished, review_is_locked
+
         # All reviews assigned to me
         for item in reviewer:
             rev = PeerReviewModel(self.env, item['review_id'])
-            if rev['status'] != 'closed':
+            if not review_is_finished(rev) and not review_is_locked(rev):
                 rev.date = format_date(rev['created'])
                 rev.reviewer = item
                 assigned_to_me.append(rev)
