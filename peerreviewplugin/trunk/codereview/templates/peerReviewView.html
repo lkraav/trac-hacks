@@ -9,6 +9,42 @@
         <title>Code Review Details - ${review['name']}</title>
     </head>
     <body>
+        <py:def function="review_info(review)">
+            <table class="info-table">
+                <tbody>
+                <tr>
+                    <th>Name:</th>
+                    <td><a href="peerReviewView?Review=${review['review_id']}">${review['name']}</a></td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <td>${review['status']}</td>
+                </tr>
+                <tr>
+                    <th>ID:</th>
+                    <td>${review['review_id']}</td>
+                </tr>
+                <tr>
+                    <th>Project:</th>
+                    <td>${review['project']}</td>
+                </tr>
+                <tr>
+                    <th>Author:</th>
+                    <td>${review['owner']}</td>
+                </tr>
+                <tr>
+                    <th>Creation Date:</th>
+                    <td>$review.date</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <dl py:if="review['notes']" class="overview">
+                <dt>Author notes:</dt>
+                <dd>$review.html_notes</dd>
+            </dl>
+        </py:def>
+
         <div id="content">
             <h1>Code Review Details - ${review['name']}</h1>
             <div py:if="is_finished" class="notice system-message">
@@ -21,48 +57,10 @@
                     This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
                 </p>
             </div>
-            <dl class="overview">
-                <dt>Name:</dt>
-                <dd>${review['name']}</dd>
-                <dt>Status:</dt>
-                <dd>${review['status']}</dd>
-                <dt>ID:</dt>
-                <dd>${review['review_id']}</dd>
-                <dt>Project:</dt>
-                <dd py:if="review['project']">${review['project']}</dd>
-                <dd py:if="not review['project']">not specified</dd>
-                <dt>Author:</dt>
-                <dd>${review['owner']}</dd>
-                <dt>Creation Date:</dt>
-                <dd>$review.date</dd>
-            </dl>
-            <dl py:if="review['notes']" class="overview">
-                <dt>Author notes:</dt>
-                <dd>$review.html_notes</dd>
-            </dl>
+            ${review_info(review)}
             <div py:if="parent_review">
                 <h2>Followup Review from:</h2>
-                <dl class="overview">
-                    <dt>Name:</dt>
-                    <dd>
-                        <a href="peerReviewView?Review=${parent_review['review_id']}">${parent_review['name']}</a>
-                    </dd>
-                    <dt>Status:</dt>
-                    <dd>${parent_review['status']}</dd>
-                    <dt>ID:</dt>
-                    <dd>${parent_review['review_id']}</dd>
-                    <dt>Project:</dt>
-                    <dd py:if="parent_review['project']">${parent_review['project']}</dd>
-                    <dd py:if="not parent_review['project']">not specified</dd>
-                    <dt>Author:</dt>
-                    <dd>${parent_review['owner']}</dd>
-                    <dt>Creation Date:</dt>
-                    <dd>${parent_review.date}</dd>
-                </dl>
-                <dl py:if="parent_review['notes']" class="overview">
-                    <dt>Author notes:</dt>
-                    <dd>$parent_review.html_notes</dd>
-                </dl>
+                ${review_info(parent_review)}
             </div>
 
             <h2>Files associated with this code review</h2>
