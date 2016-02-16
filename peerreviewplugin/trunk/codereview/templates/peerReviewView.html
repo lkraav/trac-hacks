@@ -52,7 +52,8 @@
                     <dt>ID:</dt>
                     <dd>${parent_review['review_id']}</dd>
                     <dt>Project:</dt>
-                    <dd>${parent_review['project']}</dd>
+                    <dd py:if="parent_review['project']">${parent_review['project']}</dd>
+                    <dd py:if="not parent_review['project']">not specified</dd>
                     <dt>Author:</dt>
                     <dd>${parent_review['owner']}</dd>
                     <dt>Creation Date:</dt>
