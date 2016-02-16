@@ -198,13 +198,16 @@ class NewReviewModule(Component):
         review['created'] = int(time.time())
         review['name'] = req.args.get('Name')
         review['notes'] = req.args.get('Notes')
-        if req.args.get('followup'):
-            review['parent_id'] = oldid
         if req.args.get('project'):
              review['project'] = req.args.get('project')
         if oldid:
-            old_review = PeerReviewModel(self.env, oldid)
-            review['parent_id'] = old_review['parent_id']
+            # Resubmit or follow up
+            if req.args.get('followup'):
+                review['parent_id'] = oldid
+            else:
+                # Keep parent -> follow up relationship when resubmitting
+                old_review = PeerReviewModel(self.env, oldid)
+                review['parent_id'] = old_review['parent_id']
         review.insert()
         id_ = review['review_id']
         self.log.debug('New review created: %s', id_)
