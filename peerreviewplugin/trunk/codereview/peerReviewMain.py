@@ -73,9 +73,15 @@ class PeerReviewMain(Component):
         else:
             data['manager'] = False
 
+        data['allassigned'] = req.args.get('allassigned')
+        data['allcreated'] = req.args.get('allcreated')
+
         r_tmpl = PeerReviewModel(self.env)
         r_tmpl.clear_props()
-        all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
+        if data['allcreated']:
+            all_reviews = list(r_tmpl.list_matching_objects())
+        else:
+            all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
 
         # fill the table of currently open reviews
         myreviews = []
@@ -91,14 +97,19 @@ class PeerReviewMain(Component):
         r_tmpl = PeerReviewerModel(self.env)
         r_tmpl.clear_props()
         r_tmpl['reviewer'] = req.authname
-        reviewer = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "reviewed"]
 
         from peerReviewView import review_is_finished, review_is_locked
+        if data['allassigned']:
+            # Don't filter list here
+            reviewer = list(r_tmpl.list_matching_objects())
+        else:
+            reviewer = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "reviewed"]
 
         # All reviews assigned to me
         for item in reviewer:
             rev = PeerReviewModel(self.env, item['review_id'])
-            if not review_is_finished(rev) and not review_is_locked(rev):
+            if not review_is_finished(rev):
+                #if not review_is_locked(rev) or data['allassigned']:
                 rev.date = format_date(rev['created'])
                 rev.reviewer = item
                 assigned_to_me.append(rev)
@@ -110,7 +121,9 @@ class PeerReviewMain(Component):
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
+        add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
+
         return 'peerReviewMain.html', data, None
 
     # ITimelineEventProvider methods

@@ -14,11 +14,10 @@
             <form method="POST" action="">
                 <p class="option">
                     <label for="max">Max items per page</label>
-                    <input name="max" id="max" size="10" value="${item_page or 20}" type="text" />
-                </p>
-                <div class="buttons">
+                    <input name="max" id="max" size="6" value="${item_page or 20}" type="text" />
                     <input name="update" value="Update" type="submit" />
-                </div>
+                </p>
+
             </form>
             <h2 class="report-result" py:if="paginator.has_more_pages">
                 Results <span class="numresults">(${paginator.displayed_items()})</span>
