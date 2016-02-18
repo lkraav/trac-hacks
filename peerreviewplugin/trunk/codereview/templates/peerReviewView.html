@@ -162,20 +162,24 @@
                             <input type="hidden" value="${review['review_id']}" name="Review"/>
                             <input type="submit" value="Resubmit For Review" name="resubmit"/>
                             <input py:if="review['status'] != 'closed'" type="submit"
-                                   value="Followup Review" name="followup"/>
+                                   value="Followup Review" name="followup"
+                                   py:attrs="{'disabled': 'disabled'} if not is_finished else {'disabled': None}"/>
                             <input py:if="not is_finished" type="submit"
                                    value="Modify" name="modify"/>
                         </div>
                         <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
                             a new code review.
                             Comments will not be copied. When the new review is created this one will be closed
-                            automatically.
+                            automatically which means it will be practically discarded.
                         </p>
-                        <p py:if="review['status'] != 'closed'" class="help">When creating a <strong>Followup Review</strong> all the data of this review will be
-                            used
-                            for prefilling the fields of a new code review. Comments will not be copied. During the new review
-                            it
-                            is possible to view the changes between file data at different revisions.
+                        <p py:if="review['status'] != 'closed'" class="help">
+                            When creating a <strong>Followup Review</strong> all the data of this review will be
+                            used for prefilling the fields of a new code review. Comments will not be copied. During
+                            the new review it is possible to view the changes between file data at different revisions.
+                        </p>
+                        <p py:if="review['status'] != 'closed' and not is_finished" class="help">
+                            A followup review can't be created at the moment because this review is not in a
+                            finishing state.
                         </p>
                     </fieldset>
                 </form>
