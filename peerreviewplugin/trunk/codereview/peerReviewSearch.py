@@ -28,8 +28,7 @@ class PeerReviewSearch(Component):
 
     # IRequestHandler methods
     def match_request(self, req):
-        if 'CODE_REVIEW_DEV' in req.perm:
-            return req.path_info == '/peerReviewSearch'
+        return req.path_info == '/peerReviewSearch'
 
     # INavigationContributor methods
     def get_active_navigation_item(self, req):

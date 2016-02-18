@@ -49,6 +49,7 @@ class PeerReviewCommentHandler(Component):
     #This page should never be called directly.  It should only be called
     #by JavaScript HTTPRequest calls.
     def process_request(self, req):
+        req.perm.require('CODE_REVIEW_DEV')
 
         data = {}
 
@@ -102,7 +103,7 @@ class PeerReviewCommentHandler(Component):
             return True
         return False
 
-    #Used to send a file that is attached to a comment
+    # Used to send a file that is attached to a comment
     def getCommentFile(self, req, data):
         data['invalid'] = 6
         short_path = req.args.get('fileName')
@@ -146,9 +147,9 @@ class PeerReviewCommentHandler(Component):
         if struct.IDParent is None or struct.IDParent == "":
             struct.IDParent = "-1"
 
-        #If there was a file uploaded with the comment, place it in the correct spot
-        #The basic parts of this code were taken from the file upload portion of
-        #the trac wiki code
+        # If there was a file uploaded with the comment, place it in the correct spot
+        # The basic parts of this code were taken from the file upload portion of
+        # the trac wiki code
 
         if 'FileUp' in req.args:
             upload = req.args['FileUp']
@@ -180,8 +181,8 @@ class PeerReviewCommentHandler(Component):
                         targetfile.close()
         struct.save(self.env.get_db_cnx())
 
-    #Returns a comment tree for the requested line number
-    #in the requested file
+    # Returns a comment tree for the requested line number
+    # in the requested file
     def get_comment_tree(self, req, data):
         fileid = req.args.get('IDFile')
         linenum = req.args.get('LineNum')

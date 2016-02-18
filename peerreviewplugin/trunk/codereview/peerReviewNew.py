@@ -87,9 +87,8 @@ class NewReviewModule(Component):
 
     # IRequestHandler methods
     def match_request(self, req):
-        if 'CODE_REVIEW_DEV' in req.perm:
-            return req.path_info == '/peerReviewNew'
-        return False
+        return req.path_info == '/peerReviewNew'
+
 
     def process_request(self, req):
 

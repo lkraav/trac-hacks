@@ -37,9 +37,7 @@ class PeerReviewFile(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        if 'CODE_REVIEW_DEV' in req.perm:
-            return req.path_info == '/peerreviewfile'
-        return False
+        return req.path_info == '/peerreviewfile'
 
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_DEV')
