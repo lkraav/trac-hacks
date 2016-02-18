@@ -88,7 +88,11 @@ class PeerReviewBrowser(Component):
         # Find node for the requested path/rev
         repos = RepositoryManager(self.env).get_repository('')
         if repos:
-            node, display_rev, context = get_node_from_repo(req, repos, path, rev)
+            try:
+                node, display_rev, context = get_node_from_repo(req, repos, path, rev)
+            except NoSuchChangeset, e:
+                data['norepo'] = _(e.message)
+                return 'peerReviewBrowser.html', data, None
         else:
             data['norepo'] = _("No source repository available.")
             return 'peerReviewBrowser.html', data, None
@@ -270,16 +274,12 @@ def get_node_from_repo(req, repos, path, rev):
 
     context = Context.from_request(req)
 
-    try:
-        if rev:
-            rev = repos.normalize_rev(rev)
-        # If `rev` is `None`, we'll try to reuse `None` consistently,
-        # as a special shortcut to the latest revision.
-        rev_or_latest = rev or repos.youngest_rev
-        node = get_existing_node(req, repos, path, rev_or_latest)
-    except NoSuchChangeset, e:
-        raise ResourceNotFound(e.message,
-                               _('Invalid changeset number'))
+    if rev:
+        rev = repos.normalize_rev(rev)
+    # If `rev` is `None`, we'll try to reuse `None` consistently,
+    # as a special shortcut to the latest revision.
+    rev_or_latest = rev or repos.youngest_rev
+    node = get_existing_node(req, repos, path, rev_or_latest)
 
     context = context(repos.resource.child('source', path,
                                            version=rev_or_latest))

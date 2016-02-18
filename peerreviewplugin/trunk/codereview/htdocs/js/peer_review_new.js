@@ -145,8 +145,14 @@ jQuery(document).ready(function($) {
 
     function switch_rev(event){
       if ( event.which == 13 ) {
-         load_browser(cur_repo_path+"?rev="+$('#switch_rev').val());
-         event.preventDefault();
+          if($('#switch_rev').val() != ""){
+             load_browser(cur_repo_path.split('?')[0]+"?rev="+$('#switch_rev').val());
+             event.preventDefault();
+             }
+          else{
+             load_browser(cur_repo_path.split('?')[0]);
+             event.preventDefault();
+          };
       };
     };
 
