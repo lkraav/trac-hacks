@@ -47,11 +47,11 @@ def do_upgrade(env, ver, db_backend, db):
 
     wf_data = [['approve', 'reviewed -> approved'],
                ['approve.name', 'Approve the review'],
-               ['close', 'new, reviewed -> closed'],
+               ['close', 'new, reviewed, in-review -> closed'],
                ['close.name', 'Close review'],
                ['disapprove', 'reviewed -> disapproved'],
                ['disapprove.name', 'Deny this review'],
-               ['reopen', 'closed, reviewed -> new'],
+               ['reopen', 'closed, reviewed, approved, disapproved -> new'],
                ['reopen.permissions', 'CODE_REVIEW_MGR'],
                ['review-done', 'in-review -> reviewed'],
                ['review-done.name', 'Mark as reviewed'],
