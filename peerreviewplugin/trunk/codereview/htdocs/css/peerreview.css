@@ -167,6 +167,7 @@ table.code th.performCodeReview{
   padding-right: .25em;
   position: absolute;
   text-align: right;
+  left: 4em; /* IE 9 */
 }
 
 .workflow-actions dd{
