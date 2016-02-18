@@ -33,6 +33,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
 
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
+        self.env = env
 
         if type(id_) is int:
             id_ = str(id_)
@@ -72,7 +73,9 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         r_tmpl.clear_props()
         r_tmpl['review_id'] = self['review_id']
         all_files = r_tmpl.list_matching_objects()  # This is a generator
-        if new_status in ['closed', 'approved', 'disapproved']:
+        # We only mark files for terminal states
+        finish_states = self.env.config.getlist("peer-review", "terminal_review_states")
+        if new_status in finish_states:
             self.env.log.debug("ReviewModel: changing status of attached files for review '#%s'to '%s'" %
                                (self['review_id'], new_status))
             status = new_status

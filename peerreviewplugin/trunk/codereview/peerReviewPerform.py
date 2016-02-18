@@ -47,10 +47,10 @@ class PeerReviewPerform(Component):
         review = PeerReviewModel(self.env, rfile.review_id)
 
         # Is it allowed to comment on the file?
-        if review_is_finished(review):
+        if review_is_finished(self.env.config, review):
             is_locked = True
         else:
-            is_locked = review_is_locked(review, authname)
+            is_locked = review_is_locked(self.env.config, review, authname)
 
         data = [[c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
                 review, is_locked]
@@ -202,9 +202,9 @@ class PeerReviewPerform(Component):
             data['file_rendered'] = preview_data['rendered']
 
         # A finished review can't be changed anymore except by a manager
-        data['is_finished'] = review_is_finished(review)
+        data['is_finished'] = review_is_finished(self.env.config, review)
         # A user can't chnage his voting for a reviewed review
-        data['review_locked'] = review_is_locked(review, req.authname)
+        data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
         scr_data = {'peer_comments': [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
                     'peer_file_id': fileid}

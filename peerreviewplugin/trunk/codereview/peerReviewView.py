@@ -15,6 +15,7 @@ import itertools
 
 from trac import util
 from trac.core import Component, implements, TracError
+from trac.config import ListOption
 from trac.mimeview import Context
 from trac.resource import Resource
 from trac.util import format_date
@@ -27,23 +28,53 @@ from peerReviewMain import add_ctxt_nav_items
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
 
 
-def review_is_finished(review):
-    """A finished review may only be reopened by a manger"""
-    return review['status'] in ['closed', 'approved', 'disapproved']
+def review_is_finished(config, review):
+    """A finished review may only be reopened by a manager or admisnistrator
 
-def review_is_locked(review, authname=""):
-    """For a locked review a iser can't change his voting"""
+    :param config: Trac config object
+    :param review: review object
+
+    :return True if review is in one of the terminal states
+    """
+    finish_states = config.getlist("peer-review", "terminal_review_states")
+    return review['status'] in finish_states
+
+
+def review_is_locked(config, review, authname=""):
+    """For a locked review a user can't change his voting
+    :param config: Trac config object
+    :param review: review object
+    :authname: login name of user
+
+    :return True if review is in lock state, usually 'reviewed'.
+
+    authname may be an empty string to check if a review is in the lock state at all.
+    If not empty the review is not locked for the user with the given login name.
+    """
     if review['owner'] == authname:
         return False
-    return review['status'] == 'reviewed'
+
+    lock_states = config.getlist("peer-review", "reviewer_locked_states")
+    return review['status'] in lock_states
 
 
 class PeerReviewView(Component):
-    """Displays a summary page for a review."""
+    """Displays a summary page for a review.
+
+    === The following configuration options may be set:
+
+    [[TracIni(peer-review)]]
+    """
     implements(IRequestHandler, INavigationContributor, IWorkflowTransitionListener)
 
-    number = -1
-    files = []
+    ListOption("peer-review", "terminal_review_states", ['closed', 'approved', 'disapproved'],
+               doc="Ending states for a review. Only an administrator may force a review to leave these states. "
+                   "Reviews in one of these states may not be modified.")
+
+    ListOption("peer-review", "reviewer_locked_states", ['reviewed'],
+               doc="A reviewer may no longer comment on reviews in one of the given states. The review owner still "
+                   "may comment. Used to lock a review against modification after all reviewing persons have "
+                   "finished their task.")
 
     # IWorkflowTransitionListener
 
@@ -108,9 +139,9 @@ class PeerReviewView(Component):
         data['review'] = review
 
         # A finished review can't be changed anymore except by a manager
-        data['is_finished'] = review_is_finished(review)
+        data['is_finished'] = review_is_finished(self.env.config, review)
         # A user can't chnage his voting for a reviewed review
-        data['review_locked'] = review_is_locked(review, req.authname)
+        data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
         # Parent review if any
         if review['parent_id'] != 0:

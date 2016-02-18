@@ -199,9 +199,9 @@ class PeerReviewCommentHandler(Component):
         data['review'] = review
         data['context'] = Context.from_request(req)
         # A finished review can't be changed anymore except by a manager
-        data['is_finished'] = review_is_finished(review)
+        data['is_finished'] = review_is_finished(self.env.config, review)
         # A user can't chnage his voting for a reviewed review
-        data['review_locked'] = review_is_locked(review, req.authname)
+        data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
         comment_html = ""
         first = True

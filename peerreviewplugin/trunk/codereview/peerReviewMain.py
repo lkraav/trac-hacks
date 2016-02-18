@@ -108,7 +108,7 @@ class PeerReviewMain(Component):
         # All reviews assigned to me
         for item in reviewer:
             rev = PeerReviewModel(self.env, item['review_id'])
-            if not review_is_finished(rev):
+            if not review_is_finished(self.env.config, rev):
                 #if not review_is_locked(rev) or data['allassigned']:
                 rev.date = format_date(rev['created'])
                 rev.reviewer = item
