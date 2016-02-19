@@ -128,7 +128,7 @@ class DoxygenPlugin(Component):
     default_namespace = Option('doxygen', 'default_namespace', '',
       """Default namespace to search for named objects in.""")
 
-    doxygen_path = Option('doxygen', 'doxygen_path', '/usr/local/bin/doxygen',
+    doxygen = Option('doxygen', 'doxygen', '/usr/local/bin/doxygen',
       """Default namespace to search for named objects in.""")
 
     # internal methods
@@ -379,7 +379,7 @@ class DoxygenPlugin(Component):
     def render_admin_panel(self, req, cat, page, info):
         req.perm.require('TRAC_ADMIN')
         path_trac = os.path.join(self.base_path, self.default_doc, 'Doxyfile-trac')
-        n = msg = ''
+        msg = trace = ''
         if req.method == 'POST':
             f = open(path_trac, 'w')
             for k in req.args:
@@ -396,7 +396,7 @@ class DoxygenPlugin(Component):
             o = open(fo, 'w');
             fr = path_trac + '.err'
             e = open(fr, 'w');
-            n = call([self.doxygen_path, path_trac], shell=False, stdin=None, stdout=o, stderr=e)
+            n = call([self.doxygen, path_trac], shell=False, stdin=None, stdout=o, stderr=e)
             o.close()
             e.close()
             if n == 0:
@@ -421,7 +421,7 @@ class DoxygenPlugin(Component):
         o = open(fo, 'w');
         fr = path_trac + '.err'
         e = open(fr, 'w');
-        call([self.doxygen_path, '-g', fi], shell=False, stdin=None, stdout=o, stderr=e)
+        call([self.doxygen, '-g', fi], shell=False, stdin=None, stdout=o, stderr=e)
         # Read it and report old choices in it
         inputs = self.analyse_doxyfile(fi, old)
         os.unlink(fi)
