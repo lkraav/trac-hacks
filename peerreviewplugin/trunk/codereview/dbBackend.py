@@ -30,11 +30,6 @@ class dbBackend(object):
             newStr = newStr + colName + " LIKE '%s%s%s' " % ('%', str, '%')
         return newStr
 
-    def getCodeReviewsInPeriod(self, date_from, date_to):
-        query = "SELECT review_id, owner, status, created, name, notes FROM peerreview " \
-                "WHERE created >= '%s' AND created <= '%s' ORDER BY created" % (date_from, date_to)
-        return self.execCodeReviewQuery(query, False)
-
     #Returns an array of code reviews which have a namwe like any of the
     #names given in the 'name' string
     def searchCodeReviewsByName(self, name):

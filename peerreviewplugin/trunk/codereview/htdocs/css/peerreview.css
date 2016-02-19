@@ -184,3 +184,8 @@ table.code th.performCodeReview{
 .workflow-actions dd{
   margin-left: 12em;
 }
+
+/* Timeline */
+dt.peerreview, dt.peerreview a {
+    background-image: url(../images/thumbtac11x11.gif) !important;
+}

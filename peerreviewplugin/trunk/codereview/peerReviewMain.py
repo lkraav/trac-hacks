@@ -15,19 +15,14 @@
 import itertools
 
 from trac.core import Component, implements
-from trac.wiki.formatter import format_to_html
 from trac.perm import IPermissionRequestor
 from trac.resource import *
-from trac.timeline.api import ITimelineEventProvider
 from trac.util import Markup, format_date
-from trac.util.datefmt import to_timestamp
 from trac.util.text import _
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_ctxtnav
 from trac.web.main import IRequestHandler
-from genshi.builder import tag
 
-from dbBackend import *
-from model import Reviewer, PeerReviewModel, PeerReviewerModel
+from model import PeerReviewModel, PeerReviewerModel
 
 
 def add_ctxt_nav_items(req):
@@ -39,7 +34,7 @@ def add_ctxt_nav_items(req):
 
 class PeerReviewMain(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
-               IPermissionRequestor, ITimelineEventProvider)
+               IPermissionRequestor)
 
     # INavigationContributor methods
 
@@ -123,51 +118,6 @@ class PeerReviewMain(Component):
         add_ctxt_nav_items(req)
 
         return 'peerReviewMain.html', data, None
-
-    # ITimelineEventProvider methods
-
-    def get_timeline_filters(self, req):
-        if 'CODE_REVIEW_DEV' in req.perm:
-            yield ('codereview', 'Code Reviews')
-
-    def get_timeline_events(self, req, start, stop, filters):
-        if 'codereview' in filters:
-            codereview_realm = Resource('codereview')
-
-            db = self.env.get_db_cnx()
-            dbBack = dbBackend(db)
-            codeReviewDetails = dbBack.getCodeReviewsInPeriod(to_timestamp(start), to_timestamp(stop))
-            add_stylesheet(req, 'hw/css/peerreview.css')
-
-            for codeReview in codeReviewDetails:
-                codereview_page = codereview_realm(id=codeReview.IDReview)
-                reviewers = Reviewer.select_by_review_id(self.env, codeReview.IDReview)
-
-                reviewersList = ''
-                last = len(reviewers) - 1
-                for idx, reviewer in enumerate(reviewers):
-                    reviewersList = reviewersList + reviewer.reviewer
-                    if idx != last:
-                        reviewersList += ', '
-
-                yield('codereview', codeReview.DateCreate, codeReview.Author,
-                      (codereview_page, codeReview.Name, codeReview.Notes,
-                       reviewersList))
-
-    def render_timeline_event(self, context, field, event):
-        codereview_page, name, notes, reviewersList = event[3]
-
-        if field == 'url':
-            return context.href.peerReviewView(Review=codereview_page.id)
-        if field == 'title':
-            return tag('Code review ', tag.em(name), ' has been raised')
-        if field == 'description':
-            return tag('Assigned to: ', reviewersList,
-                       tag.div(' Additional notes: '),
-                       tag.div(
-                           format_to_html(self.env, context, notes),
-                           class_='notes'
-                       ))
 
     # ITemplateProvider methods
 
