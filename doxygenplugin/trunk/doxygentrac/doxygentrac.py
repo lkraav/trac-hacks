@@ -134,7 +134,7 @@ class DoxygenPlugin(Component):
     doxygen = Option('doxygen', 'doxygen', '/usr/local/bin/doxygen',
       """Full path of the Doxygen command.""")
 
-    doxygen_args = Option('doxygen', 'doxygen_arg', '',
+    doxygen_args = Option('doxygen', 'doxygen_args', '',
       """Arguments for the Doxygen command.""")
 
 
