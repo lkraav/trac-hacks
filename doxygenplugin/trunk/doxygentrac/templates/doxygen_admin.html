@@ -1,0 +1,37 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="inieditorpanel"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="admin.html" />
+  <head>
+    <title>DoyygenPlugin Settings (Doxyfile)</title>
+  </head>
+
+  <body>
+    <div class="toparea">
+      <div py:if="msg">
+	<span class="arrow" onclick="this.nextSibling.style.display=this.nextSibling.style.display=='none' ? 'block' : 'none'">► ${msg}
+	</span><pre style='display: none'>
+	  ${trace}
+	</pre>
+      </div>
+      <h1 >Doxyfile Generator</h1> 
+      <div id="select_section_form">
+        <form method="post" action="" enctype="multipart/form-data;charset=UTF-8">
+	  <div py:for="k,s in inputs.iteritems()">
+	    <h1 py:if="s.h1"><pre>${s.h1}</pre></h1>
+	    <fieldset>
+	      <label for="${k}"><pre>${s.label}</pre></label>
+	      <input id="${k}" name="${k}" value="${s.value}" size="${s.size}" />
+	    </fieldset>
+	  </div>
+          <input type="submit" />
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

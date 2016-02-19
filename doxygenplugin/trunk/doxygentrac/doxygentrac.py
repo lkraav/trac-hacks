@@ -13,22 +13,28 @@ import re
 import mimetypes
 import xml.sax
 
+from collections import OrderedDict
 from genshi.builder import tag
 from genshi.core import Markup
-
+from subprocess import call
+from trac.admin import IAdminPanelProvider
 from trac.config import Option
 from trac.core import *
-from trac.web import IRequestHandler
+from trac.loader import get_plugin_info
 from trac.perm import IPermissionRequestor
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_stylesheet, add_script, add_ctxtnav
 from trac.search.api import ISearchSource, shorten_result
 from trac.util.text import to_unicode
 from trac.util.datefmt import to_datetime
+from trac.util.text import exception_to_unicode
+from trac.util.translation import _
+from trac.web import IRequestHandler
+from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+                            add_stylesheet, add_script, add_ctxtnav, \
+                            add_notice, add_warning
 from trac.wiki.api import WikiSystem, IWikiSyntaxProvider
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import wiki_to_html
-from trac.loader import get_plugin_info
+
 
 class DoxygenTracHandler(xml.sax.ContentHandler):
     last_field_name = ''
@@ -87,7 +93,8 @@ class IndexFound(Exception):
 
 class DoxygenPlugin(Component):
     implements(IPermissionRequestor, INavigationContributor, IRequestHandler,
-               ITemplateProvider, ISearchSource, IWikiSyntaxProvider)
+               ITemplateProvider, ISearchSource, IWikiSyntaxProvider,
+               IAdminPanelProvider)
 
     base_path = Option('doxygen', 'path', '/var/lib/trac/doxygen',
       """Directory containing doxygen generated files.""")
@@ -105,7 +112,7 @@ class DoxygenPlugin(Component):
     title = Option('doxygen', 'title', 'Doxygen',
       """Title to use for the main navigation tab.""")
 
-    index = Option('doxygen', 'index', 'main.html',
+    index = Option('doxygen', 'index', 'index.html',
       """Default index page to pick in the generated documentation.""")
 
     searchdata_file = Option('doxygen', 'searchdata_file', 'searchdata.xml',
@@ -119,6 +126,9 @@ class DoxygenPlugin(Component):
       """Default encoding used by the generated documentation files.""")
 
     default_namespace = Option('doxygen', 'default_namespace', '',
+      """Default namespace to search for named objects in.""")
+
+    doxygen_path = Option('doxygen', 'doxygen_path', '/usr/local/bin/doxygen',
       """Default namespace to search for named objects in.""")
 
     # internal methods
@@ -190,6 +200,39 @@ class DoxygenPlugin(Component):
         version = ('DoxygenPlugin ' + info[0]['info']['version'] + ' &amp; ').decode('ascii')
         content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + version + r'\2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
+
+    def analyse_doxyfile(self, path, old):
+        # find all the options "X = "
+        # with their description just before
+        # text blocs between '#----' introduce new section
+
+        try:
+            content = file(path).read()
+        except (IOError, OSError), e:
+            raise TracError("Can't read doxygen content: %s" % e)
+
+        content = to_unicode(content, 'utf-8')
+        # Initial text is about file, not form
+        c = re.match(r'''^.*?(#-----.*)''', content, re.S)
+        if c:
+            self.log.debug('taking "%s" last characters out of %s in %s', len(c.group(1)), len(content), path);
+            content = c.group(1)
+
+        m = re.compile(r'''\s*(#-*$.*?-$)?(.*?)$\s*([A-Z][A-Z0-9_-]+)\s*=([^#]*?)$''', re.S|re.M)
+        s = m.findall(content)
+        self.log.debug('Found "%s" options in Doxyfile', len(s));
+        inputs = OrderedDict()
+        for o in s:
+            h1, label, id, value = o
+            if id in old:
+                value = old[id]['value']
+            # prepare longer input tag for long default value
+            if len(value) >= 20:
+                l = len(value) + 3
+            else:
+                l = 20
+            inputs[id] = {'h1': h1, 'label': label, 'value': value, 'size': l}
+        return inputs
 
     # IPermissionRequestor methods
 
@@ -326,6 +369,65 @@ class DoxygenPlugin(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
+
+    # IAdminPanelProvidermethods
+
+    def get_admin_panels(self, req):
+        if 'TRAC_ADMIN' in req.perm:
+            yield ('general', _("General"), 'query', 'Doxyfile')
+
+    def render_admin_panel(self, req, cat, page, info):
+        req.perm.require('TRAC_ADMIN')
+        path_trac = os.path.join(self.base_path, self.default_doc, 'Doxyfile-trac')
+        n = msg = ''
+        if req.method == 'POST':
+            f = open(path_trac, 'w')
+            for k in req.args:
+                if not re.match(r'''^[A-Z]''', k):
+                    continue
+                if req.args.get(k):
+                    s = req.args.get(k)
+                else:
+                    s = '';
+                o = "#\n" + k + '=' + s + "\n"
+                f.write(o.encode('utf8'))
+            f.close()
+            fo = path_trac + '.out'
+            o = open(fo, 'w');
+            fr = path_trac + '.err'
+            e = open(fr, 'w');
+            n = call([self.doxygen_path, path_trac], shell=False, stdin=None, stdout=o, stderr=e)
+            o.close()
+            e.close()
+            if n == 0:
+                msg = "Doxygen exits successfuly\n";
+                trace = file(fo).read()
+            else:
+                msg = ("Doxygen Error %s\n" %(n))
+                trace = file(fr).read()
+            os.unlink(fo)
+            os.unlink(fr)
+            self.log.debug("Doxygen exit for %s: %s" % (path_trac, n))
+
+        # Read old choices if they exists
+        if os.path.exists(path_trac):
+            old = self.analyse_doxyfile(path_trac, {})
+        else:
+            old = {}
+        # Generate the std Doxyfile
+        # (newer after a doxygen command update, who knows)
+        fi = path_trac + '.tmp'
+        fo = path_trac + '.out'
+        o = open(fo, 'w');
+        fr = path_trac + '.err'
+        e = open(fr, 'w');
+        call([self.doxygen_path, '-g', fi], shell=False, stdin=None, stdout=o, stderr=e)
+        # Read it and report old choices in it
+        inputs = self.analyse_doxyfile(fi, old)
+        os.unlink(fi)
+        os.unlink(fr)
+        os.unlink(fo)
+        return 'doxygen_admin.html', {'inputs': inputs, 'msg': msg, 'trace': trace}
 
     # ISearchProvider methods
 
