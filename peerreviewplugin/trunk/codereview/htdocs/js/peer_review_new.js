@@ -177,4 +177,16 @@ jQuery(document).ready(function($) {
         else if ($("#noteschange ul.changes").length == 0)
           $("#noteschange").hide();
     });
+
+    var review_not_saved = true;
+
+    $(window).bind("beforeunload", function(e) {
+      var confirmationMessage = "Review is not saved yet. Do you really want to leave the page?";
+      if(review_not_saved){
+          e.returnValue = confirmationMessage;
+          return confirmationMessage
+      };
+    })
+
+    $('#new-review').on('submit', function(event){review_not_saved = false;});
 });
