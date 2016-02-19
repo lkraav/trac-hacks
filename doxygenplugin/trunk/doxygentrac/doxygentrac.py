@@ -128,8 +128,15 @@ class DoxygenPlugin(Component):
     default_namespace = Option('doxygen', 'default_namespace', '',
       """Default namespace to search for named objects in.""")
 
+    doxyfile = Option('doxygen', 'doxyfile', '',
+      """Full path of the Doxyile to be created.""")
+
     doxygen = Option('doxygen', 'doxygen', '/usr/local/bin/doxygen',
-      """Default namespace to search for named objects in.""")
+      """Full path of the Doxygen command.""")
+
+    doxygen_args = Option('doxygen', 'doxygen_arg', '',
+      """Arguments for the Doxygen command.""")
+
 
     # internal methods
 
@@ -378,10 +385,14 @@ class DoxygenPlugin(Component):
 
     def render_admin_panel(self, req, cat, page, info):
         req.perm.require('TRAC_ADMIN')
-        path_trac = os.path.join(self.base_path, self.default_doc, 'Doxyfile-trac')
+        path_trac = os.path.join(self.base_path, self.default_doc)
+        if self.doxyfile:
+            doxyfile = self.doxyfile
+        else:
+            doxyfile = os.path.join(path_trac, 'Doxyfile')
         msg = trace = ''
         if req.method == 'POST':
-            f = open(path_trac, 'w')
+            f = open(doxyfile, 'w')
             for k in req.args:
                 if not re.match(r'''^[A-Z]''', k):
                     continue
@@ -392,11 +403,16 @@ class DoxygenPlugin(Component):
                 o = "#\n" + k + '=' + s + "\n"
                 f.write(o.encode('utf8'))
             f.close()
-            fo = path_trac + '.out'
+            fo = path_trac + 'doxygen.out'
             o = open(fo, 'w');
-            fr = path_trac + '.err'
+            fr = path_trac + 'doxygen.err'
             e = open(fr, 'w');
-            n = call([self.doxygen, path_trac], shell=False, stdin=None, stdout=o, stderr=e)
+            if self.doxygen_args:
+                arg = self.doxygen_args
+            else:
+                arg = doxyfile
+            self.log.debug('calling ' + self.doxygen + ' ' + arg)
+            n = call([self.doxygen, arg], shell=False, stdin=None, stdout=o, stderr=e)
             o.close()
             e.close()
             if n == 0:
@@ -410,16 +426,16 @@ class DoxygenPlugin(Component):
             self.log.debug("Doxygen exit for %s: %s" % (path_trac, n))
 
         # Read old choices if they exists
-        if os.path.exists(path_trac):
-            old = self.analyse_doxyfile(path_trac, {})
+        if os.path.exists(doxyfile):
+            old = self.analyse_doxyfile(doxyfile, {})
         else:
             old = {}
         # Generate the std Doxyfile
         # (newer after a doxygen command update, who knows)
-        fi = path_trac + '.tmp'
-        fo = path_trac + '.out'
+        fi = path_trac + 'doxygen.tmp'
+        fo = path_trac + 'doxygen.out'
         o = open(fo, 'w');
-        fr = path_trac + '.err'
+        fr = path_trac + 'doxygen.err'
         e = open(fr, 'w');
         call([self.doxygen, '-g', fi], shell=False, stdin=None, stdout=o, stderr=e)
         # Read it and report old choices in it
