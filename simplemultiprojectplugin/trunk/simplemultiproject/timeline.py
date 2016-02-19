@@ -34,7 +34,7 @@ class SmpTimelineProjectFilter(Component):
 
     def post_process_request(self, req, template, data, content_type):
         path_elms = req.path_info.split('/')
-        if data and path_elms[1] == 'timeline':
+        if data and len(path_elms) > 1 and path_elms[1] == 'timeline':
             # These are the defined events for the ticket subsystem
             ticket_kinds = ['newticket', 'closedticket', 'reopenedticket', 'editedticket', 'attachment']
             proj_filter = get_project_filter_settings(req, 'timeline', 'smp_projects', 'All')  # This returns a list of names
@@ -63,7 +63,7 @@ class SmpTimelineProjectFilter(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         path_elms = req.path_info.split('/')
-        if path_elms[1] == 'timeline':
+        if len(path_elms) > 1 and path_elms[1] == 'timeline':
             # Add project selection to the roadmap preferences
             xformer = Transformer('//form[@id="prefs"]')
             stream = stream | xformer.prepend(create_proj_table(self, self._SmpModel, req))
