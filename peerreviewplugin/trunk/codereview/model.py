@@ -21,10 +21,12 @@ from trac.util import format_date
 from tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, \
     need_db_create_for_realm, create_db_for_realm, need_db_upgrade_for_realm, upgrade_db_for_realm
 from tracgenericclass.util import get_timestamp_db_type
-from peerReviewInit import db_name, db_name_old, db_version
-
 
 __author__ = 'Cinc'
+
+db_name_old = 'codereview_version'  # for database version 1
+db_name = 'peerreview_version'
+db_version = 2
 
 
 class PeerReviewModel(AbstractVariableFieldsObject):
