@@ -66,7 +66,15 @@ function addFile(filepath)
 
 //Remove the file from the struct
 
-function removefile(txt) {
+function removefile(filepath){
+    $('#confirm-name').text(filepath.split(',')[0]);
+    $('#dialog-confirm').data('filename', filepath);
+    $('#dialog-confirm').dialog('open');
+    /* File is removed in click handler of dialog if necessary */
+};
+
+
+function do_removefile(txt) {
     // delete the row containing the txt from the table
     var filetable = document.getElementById('myfilelist');
 
@@ -178,6 +186,7 @@ jQuery(document).ready(function($) {
           $("#noteschange").hide();
     });
 
+    /* Confirmation when leaving page. */
     var review_not_saved = true;
 
     $(window).bind("beforeunload", function(e) {
@@ -187,6 +196,24 @@ jQuery(document).ready(function($) {
           return confirmationMessage
       };
     })
-
     $('#new-review').on('submit', function(event){review_not_saved = false;});
+
+    /* Confirmation dialog when removing files */
+    $( "#dialog-confirm" ).dialog({
+          resizable: false,
+          height: 150,
+          width: 500,
+          modal: true,
+          autoOpen: false,
+          buttons: {
+            "Remove File": function() {
+              $(this).dialog( "close" );
+              var filepath = $('#dialog-confirm').data('filename');
+              do_removefile(filepath);
+            },
+            Cancel: function() {
+              $(this).dialog( "close" );
+            }
+          }
+    });
 });
