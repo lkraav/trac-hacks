@@ -168,4 +168,13 @@ jQuery(document).ready(function($) {
     if($('#repo_browser').data('is-modify') == 0){
        load_browser(repo_browser);
     };
+
+    var args = {realm: "peerreview", escape_newlines: 1};
+    $("#review-notes").autoPreview("wiki_render", args, function(textarea, text, rendered) {
+        $("#noteschange div.comment").html(rendered);
+        if (rendered)
+          $("#noteschange").show();
+        else if ($("#noteschange ul.changes").length == 0)
+          $("#noteschange").hide();
+    });
 });
