@@ -7,7 +7,7 @@ setup(
     name='TracDoxygen',
     description='Doxygen plugin for Trac',
     keywords='trac doxygen',
-    version='0.4.6',
+    version='0.4.7',
     url='http://trac-hacks.org/wiki/DoxygenPlugin',
     license = """Copyright (C) 2016 Emmanuel Saint-James <esj@rezo.net>
 Copyright (C) 2005 Jason Parks <jparks@jparks.net>

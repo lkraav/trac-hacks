@@ -24,7 +24,8 @@
         <form method="post" action="" enctype="multipart/form-data;charset=UTF-8">
 	  <div py:for="k,s in inputs.iteritems()">
 	    <h1 py:if="s.h1"><pre>${s.h1}</pre></h1>
-	    <fieldset>
+	    <fieldset style="${s.style}">
+	      <legend>${k}</legend>
 	      <label for="${k}"><pre>${s.label}</pre></label>
 	      <input id="${k}" name="${k}" value="${s.value}" size="${s.size}" />
 	    </fieldset>

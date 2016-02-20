@@ -132,7 +132,7 @@ class DoxygenPlugin(Component):
       """Default namespace to search for named objects in.""")
 
     doxyfile = Option('doxygen', 'doxyfile', '',
-      """Full path of the Doxyile to be created.""")
+      """Full path of the Doxyfile to be created.""")
 
     doxygen = Option('doxygen', 'doxygen', '/usr/local/bin/doxygen',
       """Full path of the Doxygen command.""")
@@ -234,14 +234,15 @@ class DoxygenPlugin(Component):
         inputs = OrderedDict()
         for o in s:
             h1, label, id, value = o
-            if id in old:
+            if id in old and value != old[id]['value']:
                 value = old[id]['value']
-            # prepare longer input tag for long default value
-            if len(value) >= 20:
-                l = len(value) + 3
+                style = 'border:2px solid red'
+                self.log.debug('New "%s" options' % (id))
             else:
-                l = 20
-            inputs[id] = {'h1': h1, 'label': label, 'value': value, 'size': l}
+                style = '';
+            # prepare longer input tag for long default value
+            l = 20 if len(value) < 20 else len(value) + 3
+            inputs[id] = {'h1': h1, 'label': label, 'value': value, 'size': l, 'style': style}
         return inputs
 
     def apply_doxyfile(self, doxyfile, path_trac, req):
