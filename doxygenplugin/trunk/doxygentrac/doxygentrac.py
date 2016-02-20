@@ -99,6 +99,9 @@ class DoxygenPlugin(Component):
     base_path = Option('doxygen', 'path', '/var/lib/trac/doxygen',
       """Directory containing doxygen generated files.""")
 
+    input = Option('doxygen', 'input', '',
+      """Directory containing sources.""")
+
     default_doc = Option('doxygen', 'default_documentation', '',
       """Default documentation project, relative to `[doxygen] path`.
       When no explicit path is given in a documentation request,
@@ -262,7 +265,8 @@ class DoxygenPlugin(Component):
         else:
             arg = doxyfile
         self.log.debug('calling ' + self.doxygen + ' ' + arg)
-        p = Popen([self.doxygen, arg], bufsize=-1, stdout=o, stderr=e, cwd=req.args.get('INPUT') if req.args.get('INPUT') else None)
+        dir = req.args.get('INPUT') if req.args.get('INPUT') else self.input;
+        p = Popen([self.doxygen, arg], bufsize=-1, stdout=o, stderr=e, cwd=dir if dir else None)
         p.communicate();
         n = p.returncode;
         o.close()
