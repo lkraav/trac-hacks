@@ -242,8 +242,6 @@ class DoxygenPlugin(Component):
         return inputs
 
     def apply_doxyfile(self, doxyfile, path_trac, req):
-        if not req.args.get('INPUT'):
-            return {'msg': 'No INPUT option', 'trace': ''}
         f = open(doxyfile, 'w')
         for k in req.args:
             if not re.match(r'''^[A-Z]''', k):
@@ -263,9 +261,8 @@ class DoxygenPlugin(Component):
             arg = self.doxygen_args
         else:
             arg = doxyfile
-        dir = req.args.get('INPUT')
-        self.log.debug('calling ' + self.doxygen + ' ' + arg + ' in ' + dir)
-        p = Popen([self.doxygen, arg], bufsize=-1, executable=None, stdin=None, stdout=o, stderr=e, preexec_fn=None, close_fds=False, shell=False, cwd=dir)
+        self.log.debug('calling ' + self.doxygen + ' ' + arg)
+        p = Popen([self.doxygen, arg], bufsize=-1, stdout=o, stderr=e, cwd=req.args.get('INPUT') if req.args.get('INPUT') else None)
         p.communicate();
         n = p.returncode;
         o.close()
