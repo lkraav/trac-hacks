@@ -16,7 +16,7 @@ import xml.sax
 from collections import OrderedDict
 from genshi.builder import tag
 from genshi.core import Markup
-from subprocess import call
+from subprocess import Popen
 from trac.admin import IAdminPanelProvider
 from trac.config import Option
 from trac.core import *
@@ -241,6 +241,46 @@ class DoxygenPlugin(Component):
             inputs[id] = {'h1': h1, 'label': label, 'value': value, 'size': l}
         return inputs
 
+    def apply_doxyfile(self, doxyfile, path_trac, req):
+        if not req.args.get('INPUT'):
+            return {'msg': 'No INPUT option', 'trace': ''}
+        f = open(doxyfile, 'w')
+        for k in req.args:
+            if not re.match(r'''^[A-Z]''', k):
+                continue
+            if req.args.get(k):
+                s = req.args.get(k)
+            else:
+                s = '';
+            o = "#\n" + k + '=' + s + "\n"
+            f.write(o.encode('utf8'))
+        f.close()
+        fo = path_trac + 'doxygen.out'
+        o = open(fo, 'w');
+        fr = path_trac + 'doxygen.err'
+        e = open(fr, 'w');
+        if self.doxygen_args:
+            arg = self.doxygen_args
+        else:
+            arg = doxyfile
+        dir = req.args.get('INPUT')
+        self.log.debug('calling ' + self.doxygen + ' ' + arg + ' in ' + dir)
+        p = Popen([self.doxygen, arg], bufsize=-1, executable=None, stdin=None, stdout=o, stderr=e, preexec_fn=None, close_fds=False, shell=False, cwd=dir)
+        p.communicate();
+        n = p.returncode;
+        o.close()
+        e.close()
+        if n == 0:
+            msg = "Doxygen exits successfuly\n";
+            trace = file(fo).read()
+        else:
+            msg = ("Doxygen Error %s\n" %(n))
+            trace = file(fr).read()
+        os.unlink(fo)
+        os.unlink(fr)
+        self.log.debug("Doxygen exit for %s: %s" % (path_trac, n))
+        return {'msg': msg, 'trace': trace}
+
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
@@ -390,41 +430,10 @@ class DoxygenPlugin(Component):
             doxyfile = self.doxyfile
         else:
             doxyfile = os.path.join(path_trac, 'Doxyfile')
-        msg = trace = ''
         if req.method == 'POST':
-            f = open(doxyfile, 'w')
-            for k in req.args:
-                if not re.match(r'''^[A-Z]''', k):
-                    continue
-                if req.args.get(k):
-                    s = req.args.get(k)
-                else:
-                    s = '';
-                o = "#\n" + k + '=' + s + "\n"
-                f.write(o.encode('utf8'))
-            f.close()
-            fo = path_trac + 'doxygen.out'
-            o = open(fo, 'w');
-            fr = path_trac + 'doxygen.err'
-            e = open(fr, 'w');
-            if self.doxygen_args:
-                arg = self.doxygen_args
-            else:
-                arg = doxyfile
-            self.log.debug('calling ' + self.doxygen + ' ' + arg)
-            n = call([self.doxygen, arg], shell=False, stdin=None, stdout=o, stderr=e)
-            o.close()
-            e.close()
-            if n == 0:
-                msg = "Doxygen exits successfuly\n";
-                trace = file(fo).read()
-            else:
-                msg = ("Doxygen Error %s\n" %(n))
-                trace = file(fr).read()
-            os.unlink(fo)
-            os.unlink(fr)
-            self.log.debug("Doxygen exit for %s: %s" % (path_trac, n))
-
+            env = self.apply_doxyfile(doxyfile, path_trac, req)
+        else:
+            env = {'msg': '', 'trace': ''}
         # Read old choices if they exists
         if os.path.exists(doxyfile):
             old = self.analyse_doxyfile(doxyfile, {})
@@ -432,18 +441,34 @@ class DoxygenPlugin(Component):
             old = {}
         # Generate the std Doxyfile
         # (newer after a doxygen command update, who knows)
-        fi = path_trac + 'doxygen.tmp'
-        fo = path_trac + 'doxygen.out'
+        fi = os.path.join(path_trac, 'doxygen.tmp')
+        fo = os.path.join(path_trac, 'doxygen.out')
         o = open(fo, 'w');
-        fr = path_trac + 'doxygen.err'
+        fr = os.path.join(path_trac, 'doxygen.err')
         e = open(fr, 'w');
-        call([self.doxygen, '-g', fi], shell=False, stdin=None, stdout=o, stderr=e)
-        # Read it and report old choices in it
-        inputs = self.analyse_doxyfile(fi, old)
-        os.unlink(fi)
-        os.unlink(fr)
-        os.unlink(fo)
-        return 'doxygen_admin.html', {'inputs': inputs, 'msg': msg, 'trace': trace}
+        if o and e:
+            p = Popen([self.doxygen, '-g', fi],  bufsize=-1, stdout=o, stderr=e)
+            p.communicate()
+            n = p.returncode
+        else:
+            n = -1
+        if os.path.exists(fi) and not n :
+            # Read it and report old choices in it
+            env['inputs'] = self.analyse_doxyfile(fi, old)
+        else:
+            env['inputs'] = {};
+            env['msg'] += (" Doxygen Error %s\n" %(n))
+            env['trace'] = file(fr).read()
+
+        # try, don't cry
+        try:
+            os.unlink(fi)
+            os.unlink(fr)
+            os.unlink(fo)
+        except (IOError, OSError), e:
+            self.log.debug("forget temporary files")
+
+        return 'doxygen_admin.html', env
 
     # ISearchProvider methods
 

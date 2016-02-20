@@ -20,7 +20,7 @@
 	</pre>
       </div>
       <h1 >Doxyfile Generator</h1> 
-      <div id="select_section_form">
+      <div id="select_section_form" py:if="inputs">
         <form method="post" action="" enctype="multipart/form-data;charset=UTF-8">
 	  <div py:for="k,s in inputs.iteritems()">
 	    <h1 py:if="s.h1"><pre>${s.h1}</pre></h1>
