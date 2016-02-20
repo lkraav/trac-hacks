@@ -89,7 +89,7 @@ class PeerReviewPerform(Component):
             #if match and attrs.get(name) and attrs.get(name).endswith("common/js/jquery.js"):
             if attrs.get(name):
                 if attrs.get(name).endswith("common/js/jquery.js"):
-                    return attrs.get(name) .replace("common/js/jquery.js", 'req/js/jquery-1.11.2.min.js')
+                    return attrs.get(name) .replace("common/js/jquery.js", 'hw/js/jquery-1.11.2.min.js')
                 elif attrs.get(name) and attrs.get(name).endswith("common/js/keyboard_nav.js"):
                     #keyboard_nav.js uses function live() which was removed with jQuery 1.9. Use a fixed script here
                     return attrs.get(name) .replace("common/js/keyboard_nav.js", 'req/js/keyboard_nav.js')
