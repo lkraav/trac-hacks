@@ -7,8 +7,18 @@ setup(
     name='TracDoxygen',
     description='Doxygen plugin for Trac',
     keywords='trac doxygen',
-    version='0.4.7',
+    version='0.4.8',
     url='http://trac-hacks.org/wiki/DoxygenPlugin',
+    author='Emmanuel Saint-James, Jason Parks, Radek Bartoň',
+    author_email='blackhex@post.cz',
+    maintainer = "Committo-Ergo-Sum",
+    maintainer_email = "esj@rezo.net",
+    long_description="""
+    """,
+    zip_safe=True,
+    packages=['doxygentrac'],
+    package_data={'doxygentrac': ['templates/*.html', 'htdocs/css/*.css']},
+    entry_points={'trac.plugins': 'doxygentrac = doxygentrac.doxygentrac'},
     license = """Copyright (C) 2016 Emmanuel Saint-James <esj@rezo.net>
 Copyright (C) 2005 Jason Parks <jparks@jparks.net>
 All rights reserved.
@@ -38,13 +48,4 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
 IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.""",
-    author='Jason Parks, Radek Bartoň',
-    author_email='blackhex@post.cz',
-    maintainer = "Committo-Ergo-Sum",
-    maintainer_email = "esj@rezo.net",
-    long_description="""
-    """,
-    zip_safe=True,
-    packages=['doxygentrac'],
-    package_data={'doxygentrac': ['templates/*.html', 'htdocs/css/*.css']},
-    entry_points={'trac.plugins': 'doxygentrac = doxygentrac.doxygentrac'})
+)
