@@ -1,0 +1,445 @@
+body {
+    padding-bottom: 40px;
+    font-size : 12px;
+}
+
+body, th, tr {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 12px;
+}
+
+h1 {
+  font-size: 1.7em;
+  border-bottom: solid 1px #4F7AC6;
+}
+
+h2 {
+  font-size: 1.5em;
+}
+
+h3 {
+  font-size: 1.3em;
+}
+
+h4 {
+  font-size: 1.15em;
+  color : #4F7AC6;
+}
+
+textarea {
+  font-family: monospace;
+  border-radius: 0em;
+}
+
+#tabcontent form, #content form{ /*.query form, .attachment form, .wiki form, #propertyform{*/
+  padding: 0.5em 1em;
+  background-color: #F5F5F5;
+  border: 1px solid #E3E3E3;
+  margin-bottom: 0.5em;
+}
+
+fieldset{
+  box-shadow: none;
+  background-color: inherit;
+  border-radius: 0em;
+  margin-bottom: 1em;
+}
+
+legend{
+  border-bottom: 0px;
+  margin-bottom: 0.25em;
+  margin-left: 0px;
+  font-weight : normal;
+  font-size: 125%;
+}
+
+label {
+  margin-top: 5px;
+  font-weight : normal;
+}
+
+form label, form input {
+    display: inline-block;
+}
+
+input[type="radio"], input[type="checkbox"] {
+    margin-top: -4px;
+}
+.nav-list > li > a {
+    padding: 5px 10px;
+}
+
+.nav li {
+    border-right: 0;
+    padding: 0;
+}
+
+.navbar .nav> li > a {
+    color: #FFFFFF;
+    text-shadow: none;
+    padding : 4px 7px;
+}
+
+.navbar .nav .active > a, .navbar .nav .active > a:hover {
+    color: #333333;
+    background-color: #FFFFFF;
+}
+
+.navbar .nav > li > a:focus, .navbar .nav > li > a:hover , .navbar .navbar-brand:hover,
+ #ctxtnav :link:hover, #ctxtnav :link:hover{
+  /* color: #4F7AC6; */
+  background-color : white;
+
+  box-shadow: 0 3px 3px rgba(106, 143, 226, 0.8);
+  -webkit-box-shadow: 0 3px 3px rgba(106, 143, 226, 0.8);
+  -moz-box-shadow: 0 3px 3px rgba(106, 143, 226, 0.8);
+}
+
+.navbar-default {
+  padding-left: 10px;
+  padding-right: 10px;
+  background-color:  #4F7AC6;
+  min-height : 20px;
+  margin-bottom: 10px;
+  font-size : 12px;
+  border : #FFFFFF;
+}
+
+.navbar-default .navbar-brand {
+    font-weight: 600;
+    color: #fff;
+    padding : 4px 6px;
+    font-size : 135%;
+    min-height : 20px;
+    height: 28px;
+}
+
+.navbar .btn-group {
+   margin-top :3px;
+}
+
+/* Responsive menu */
+.navbar-default .navbar-toggle .icon-bar {
+    background-color: #ddd;
+}
+
+.navbar-default .navbar-toggle:hover .icon-bar {
+    background-color: #4F7AC6;
+}
+
+.dropdown-menu {
+  padding : 5px 9px;
+  margin : 0px 0px;
+  color : #aaa;
+}
+
+.dropdown-menu li > a:hover, #metanav form.trac-logout button:hover{ /*, .dropdown-menu .active > a, .dropdown-menu .active > a:hover { */
+    color: white !important;
+    text-decoration: none;
+    background: #4F7AC6;
+}
+
+.dropdown-toggle {
+  padding : 0px 4px;
+  background-color : #fff;
+  z-index : 1;
+}
+
+div.trac-content, div.system-message{
+  border-radius: 0em;
+  box-shadow: none;
+}
+
+#ticket, input[type="text"]{
+  border-radius: 0em;
+}
+
+#content.report form, #content.browser form, #content .buttons form, #ticket form, #changelog form{
+  padding: 0em;
+  background-color: inherit;
+  border: 0px;
+}
+
+.foldable :link, .foldable :visited {
+  text-shadow: none;
+  border-radius: 0em;
+  box-shadow:none;
+  border-top: 1px solid #E3E3E3;
+  margin-bottom: 0.5em;
+}
+
+.collapsed > .foldable :link, .collapsed > .foldable :visited {
+  border-bottom: 1px solid #E3E3E3;
+}
+
+table.listing{
+  box-shadow: none;
+  background-color: #fcfcfc;
+  border: 1px solid #E3E3E3;
+}
+table.listing thead tr {
+  background-color: #eef2f8;
+}
+table.listing tbody tr:hover td { background: #eef2f8 !important }
+#metanav{
+  margin-top: 0em;
+}
+
+#metanav form.trac-logout button {
+  padding: 3px 20px;
+  border-bottom: 0px;
+  color: #333;
+  width: 100%;
+  text-align: left;
+}
+
+#prefs {
+  padding: 0.5em 1em;
+  background-color: #F5F5F5;
+  border: 1px solid #E3E3E3;
+  border-radius: 0em;
+  box-shadow: none;
+  margin: 0 0 1em;
+}
+
+#info{
+  background-color: #eef2f8;
+}
+.milestone .info h2, .timeline h2, .wikipage h2{
+  border-radius: 0em;
+  box-shadow: none;
+}
+
+/* Color links */
+ :link,  :visited {
+    color: #3C5FC8;
+    border-bottom: 0px;
+}
+
+h1 :link, h1 :visited {
+    color: #3C5FC8;
+}
+
+#ctxtnav{
+   margin-left : 1em;
+    z-index: 1; /* enable wiki edit buttons with bootstrap multi column layout */
+}
+
+#ctxtnav :link, #ctxtnav :visited {
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 0.1em 0.5em;
+    text-decoration: none;
+    margin: 0em 0.1em;
+}
+
+#ctxtnav span.disabled{
+    color: #aaa;
+    border: 1px solid #ccc;
+    padding: 0.1em 0.5em;
+}
+
+#search {
+    clear: none;
+    margin: 0px;
+}
+
+#search input {
+    margin: 3px 5px;
+    width : 8em;
+    padding: 1px 6px;
+    font-size: 13px;
+}
+
+/* This won't work for the milestone page */
+.wikipage .milestone{
+  margin-bottom: 0em;
+}
+
+/* Browser page */
+#diffrev label{
+  margin-top: 2px;
+}
+/* Wiki pages */
+#pagepath {
+    position:relative; /* without 'position' z-index is ignored */
+    z-index: 1; /* enable wiki edit buttons with bootstrap multi column layout */
+}
+h1:target, h2:target, h3:target, h4:target, h5:target, h6:target, span:target {
+    border-radius: 0em;
+}
+/* End Wiki pages */
+
+/* Ticket page */
+#content.ticket .trac-topnav {
+    float: right;
+    text-align: right;
+    margin-top: 7px;
+    display: inline-block;
+}
+#properties table th{
+   white-space: normal;
+}
+#changelog h3, #ticketchange h3{
+  box-shadow: none;
+}
+/* End ticket page */
+
+#content {
+    position: inherit;
+}
+
+#edit #text {
+    min-height: 40em;
+}
+
+#topsearch label {
+    display: inherit;
+}
+
+/* Admin page */
+#content.admin h1 {
+    float: none;
+}
+#tabcontent{
+  margin-top : 16px;
+}
+
+#tabs{
+  background-color: #F5F5F5;
+  border: 1px solid #E3E3E3;
+  border-radius: 0em;
+  box-shadow: none;
+}
+
+#tabs li li.active {
+    background: #4F7AC6;
+    border : none;
+    border-radius: 0em;
+    box-shadow: none;
+}
+#tabs li li.active > a {
+    color: white !important;
+}
+#tabs li li.active > a:hover {
+    color: white !important;
+}
+
+.plugin{
+  border-radius: 0em;
+  box-shadow: none;
+  background-color: #fcfcfc;
+  margin: 0;
+}
+
+.plugin .foldable{
+  color: #3C5FC8;
+}
+/* Admin page end */
+
+.about img{
+  background-color: white;
+}
+#footer {
+    margin-left : 1em;
+    margin-right : 1em;
+    margin-top : 20px;
+}
+
+/* Make requirement status pages less wasteful */
+#wikipage .report-result {
+    margin : 0 0 0;
+    font-size: 16px;
+    line-height: 20px;
+}
+#wikipage .paging:first-of-type {
+    margin-top: 0.2em;
+    margin-bottom: 0;
+}
+
+
+/* TODO: unify with .btn */
+input[type="button"], input[type="submit"], input[type="reset"] {
+margin-bottom : 1px;
+padding-bottom: 0px;
+background: #FAFAFA;
+color: #333;
+border: 1px solid #CCC;
+padding: .1em .5em;
+-webkit-border-radius: 0px;
+-moz-border-radius: 0px;
+border-radius: 0px;
+border-bottom-color: #BBB;
+box-shadow: none;
+text-shadow: none;
+}
+
+input[type="button"]:hover, input[type="submit"]:hover, input[type="reset"]:hover {
+background: #FAFAFF;
+border-bottom: 1px solid #6A8FE2;
+box-shadow:  0 3px 3px rgba(106, 143, 226, 0.8);
+-webkit-box-shadow: 0 3px 3px rgba(106, 143, 226, 0.8);
+-moz-box-shadow: 0 3px 3px rgba(106, 143, 226, 0.8);
+}
+
+#main a:hover {
+  background-color : inherit;
+  color: inherit;
+}
+
+
+#main .btn:hover {
+  text-decoration: none;
+  background-color: #FAFAFF;
+  box-shadow:  0 3px 3px rgba(106, 143, 226, 0.8);
+  -webkit-box-shadow: 0 3px 3px rgba(106, 143, 226, 0.8);
+  -moz-box-shadow: 0 3px 3px rgba(106, 143, 226, 0.8);
+}
+
+.btn-mini {
+  padding: 1px 1px;
+  font-size: 10px;
+  line-height: normal;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  float: right;
+  margin-right: 6px;
+  margin-bottom: 1px;
+}
+
+
+@media print {
+/* remove stuff when printing ticket view */
+#attachments, #changelog, .navbar, .span2, #ctxtnav, .infoselect, #main .btn, #reqtoc{
+    display: none;
+}
+
+body {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.row-fluid .span10 {
+    width: 100%;
+}
+
+.ticket h1, h2 {
+   font-size:150%;
+}
+
+.ticket p {
+   font-size:100%;
+}
+
+/* Prevent link URL from being printed */
+a:after{
+    content:" (" attr(href) ") ";
+    display:none;
+}
+
+table {
+    page-break-inside:avoid;
+}
+
+}

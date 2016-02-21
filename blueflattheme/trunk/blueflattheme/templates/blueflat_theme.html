@@ -1,0 +1,182 @@
+<?python
+
+first_metanav = chrome['nav']['metanav'][0]['label']
+if hasattr(first_metanav, 'children'):
+  user_menu_text = first_metanav.children
+else:
+  user_menu_text = first_metanav
+
+?>
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      py:strip="">
+
+  <!--! Add site-specific style sheet -->
+  <head py:match="head" py:attrs="select('@*')">
+ ${select('*|comment()|text()')}
+      <link rel="stylesheet" type="text/css"
+          href="${href.chrome('blueflat/css/bootstrap.min.css')}" />
+      <!-- Optional theme -->
+      <link rel="stylesheet" type="text/css"
+            href="${req.base_path}/chrome/blueflat/css/bootstrap-flat.css" />
+
+      <link rel="stylesheet" type="text/css"
+            href="${req.base_path}/chrome/blueflat/css/blueflat.css" />
+      <script src="${href.chrome('theme/js/bootstrap.min.js')}"></script>
+
+      <script type="text/javascript">
+        // Avoid `console` errors in browsers that lack a console.
+        (function() {
+            var method;
+            var noop = function () {};
+            var methods = [
+                'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
+                'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+                'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
+                'timeStamp', 'trace', 'warn'
+            ];
+            var length = methods.length;
+            var console = (window.console = window.console || {});
+
+            while (length--) {
+                method = methods[length];
+
+                // Only stub undefined methods.
+                if (!console[method]) {
+                    console[method] = noop;
+                }
+            }
+        }());
+    </script>
+  </head>
+
+  <py:match path="body" once="true" buffer="false">
+    <body>
+
+            <!--! Top navigation -->
+            <div class="navbar navbar-default" id="navbar-fixed-top">
+             <div class="container-fluid">
+                <div class="navbar-header">
+                  <a class="navbar-toggle collapsed navbar-btn" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </a>
+                  <a class="navbar-brand" href="${req.base_url}">${project.name}</a>
+                </div>
+
+                 <div class="collapse navbar-collapse">
+                  <div class="btn-group pull-right" id="metanav">
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                      ${user_menu_text}
+                      <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu" py:if="chrome.nav['metanav']">
+                      <li py:for="idx, item in  enumerate(chrome.nav['metanav'])"
+                          class="${classes(first_last(idx, chrome.nav['metanav']), active=item.active)}">${item.label}</li>
+                    </ul>
+                  </div>
+
+                  <div >
+                    <ul class="nav navbar-nav" py:if="chrome.nav['mainnav']">
+                      <li py:for="idx, item in enumerate(chrome.nav['mainnav'])"
+                          class="${classes(first_last(idx, chrome.nav['mainnav']), active=item.active)}">${item.label}
+                      </li>
+                      <li>
+                        <form id="search" class="navbar-search pull-left" action="${href.search()}" method="get">
+                          <py:if test="not defined('trac_error_rendering') and 'SEARCH_VIEW' in perm">
+                            <input type="text" class="search-query span2" placeholder="Quick search" id="proj-search" name="q" size="18" accesskey="f" value=""/>
+                          </py:if>
+                        </form>
+                      </li>
+                    </ul>
+                  </div> <!-- /.nav-collapse -->
+
+                </div>
+
+              </div> <!-- /navbar-inner -->
+            </div>
+
+
+    <div id="main" class="container">
+      <div class="row">
+
+        <xi:include py:if="value_of('resourcepath_template')" href="${resourcepath_template}" />
+
+          <div id="ctxtnav" class="btn-group pull-right" py:if="chrome.ctxtnav">
+              <py:choose test="1">
+                <py:when test="req.environ['PATH_INFO'].startswith('/wiki')" py:with="path = req.environ['PATH_INFO'][6:]">
+                    <!--! Add edit button to top of wiki pages -->
+                    <a py:if="'WIKI_MODIFY' in req.perm('wiki', path)" href="${req.href(req.path_info)}?action=edit">
+                        Edit page
+                    </a>
+                    <py:for each="i, elm in enumerate(chrome.ctxtnav)">${elm(role="button")}</py:for>
+                </py:when>
+
+                <py:when test="req.environ['PATH_INFO'].startswith('/ticket')">
+                    <py:for each="i, elm in enumerate(chrome.ctxtnav)">
+
+                    <?python
+                       if not isinstance(elm, basestring):
+                         c=elm.attrib.get('class')
+                         if c and 'missing' in c:
+                           elm(role="button", class_="disabled")
+                         else:
+                           elm(role="button")
+                       else:
+                         elm=''
+                    ?>
+                    $elm
+                    </py:for>
+                </py:when>
+
+              <py:otherwise>
+                  <py:for each="i, elm in enumerate(chrome.ctxtnav)">
+                    <?python
+                       if not isinstance(elm, basestring):
+                         elm(role="button")
+                       else:
+                         elm=''
+                    ?>
+                    $elm
+                  </py:for>
+              </py:otherwise>
+              </py:choose>
+          </div>
+
+          <div id="warning" py:if="chrome.warnings" class="system-message">
+            <py:choose test="len(chrome.warnings)">
+              <strong>Warning:</strong>
+              <py:when test="1">${chrome.warnings[0]}</py:when>
+              <py:otherwise><ul><li py:for="warning in chrome.warnings">$warning</li></ul></py:otherwise>
+            </py:choose>
+          </div>
+          <div id="notice" py:if="chrome.notices" class="system-message">
+            <py:choose test="len(chrome.notices)">
+              <py:when test="1">${chrome.notices[0]}</py:when>
+              <py:otherwise><ul><li py:for="notice in chrome.notices">$notice</li></ul></py:otherwise>
+            </py:choose>
+          </div>
+          ${select('*|comment()|text()')}
+      </div>
+    </div>
+
+    <div id="footer" xml:lang="en"><hr/>
+        <a id="tracpowered" href="http://trac.edgewall.org/">
+            <img src="${href.chrome('/common/trac_logo_mini.png')}" alt="Trac Powered" height="30" width="107" /></a>
+      <p class="pull-left" i18n:msg="version">
+        Powered by <a href="${href.about()}"><strong>Trac ${trac.version}</strong></a><br />
+        By <a href="http://www.edgewall.org/">Edgewall Software</a>.
+      </p>
+      <p class="pull-right">${chrome.footer}</p>
+    </div>
+
+    <!-- Put script at the end for faster loading. -->
+  </body>
+  </py:match>
+</html>
