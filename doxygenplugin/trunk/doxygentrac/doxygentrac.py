@@ -474,6 +474,7 @@ class DoxygenPlugin(Component):
                 sets[k] = s
             if prev and sets:
                 fieldsets[prev] = sets;
+            env['fieldsets'] = fieldsets
         # try, don't cry
         try:
             os.unlink(fi)
@@ -482,6 +483,7 @@ class DoxygenPlugin(Component):
         except (IOError, OSError), e:
             self.log.debug("forget temporary files")
 
+        add_stylesheet(req, 'doxygen/css/doxygen.css')
         return 'doxygen_admin.html', env
 
     # ISearchProvider methods
