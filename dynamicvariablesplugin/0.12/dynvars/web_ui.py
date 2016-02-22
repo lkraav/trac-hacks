@@ -41,7 +41,7 @@ class DynamicVariablesModule(Component):
             report = self._get_report(req, check_referer=True)
             for var in self._extract_vars(report):
                 dynvars[var] = self._get_options(var.lower())
-            add_script_data(req, dynvars=dynvars)
+            add_script_data(req, {'dynvars': dynvars})
         return template, data, content_type
 
     # Private methods
