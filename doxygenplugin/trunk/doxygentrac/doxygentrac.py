@@ -244,6 +244,14 @@ class DoxygenPlugin(Component):
             options[id] = {'explain': explain, 'label': label, 'value': value, 'size': l, 'atclass': atclass}
         return options
 
+    def display_doxyfile(self, prev, first, sets):
+        if re.match(r'''.*output$''', prev) and first == 'NO':
+            display = 'none'
+        else:
+            display = 'block'
+        return {'display': display, 'opt': sets}
+
+
     def apply_doxyfile(self, doxyfile, path_trac, req):
         f = open(doxyfile, 'w')
         for k in req.args:
@@ -462,18 +470,19 @@ class DoxygenPlugin(Component):
             # split in fieldsets
             fieldsets = OrderedDict()
             sets = OrderedDict()
-            prev = ''
+            prev = first = ''
             inputs = self.analyse_doxyfile(fi, old)
             for k,s in inputs.iteritems():
                 if s['explain']:
-                    if prev:
-                        fieldsets[prev] = sets;
+                    if prev and sets:
+                        self.log.debug("fieldset %s first '%s'" % (prev, first))
+                        fieldsets[prev] = self.display_doxyfile(prev, first, sets)
                     sets = OrderedDict()
                     prev = s['explain']
-                    self.log.debug("fieldset %s" % prev)
+                    first = s['value'].strip()
                 sets[k] = s
             if prev and sets:
-                fieldsets[prev] = sets;
+                fieldsets[prev] = self.display_doxyfile(prev, first, sets)
             env['fieldsets'] = fieldsets
         # try, don't cry
         try:
