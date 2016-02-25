@@ -174,8 +174,10 @@ class DoxygenPlugin(Component):
             l = re.findall(r'''<link[^>]*type=.text/css[^>]*>''', m.group(1), re.S)
             for i in l:
                 h = re.search(r'''href=.([^ ]*)[^ /][ /]''', i)
-                h =  '/doxygen/' + h.group(1)
-                self.log.debug('CSS %s', '/' + h)
+                h = h.group(1)
+                if not re.match(r'''^(\w+:/)?/''', h):
+                    h = os.path.join('/doxygen', self.default_doc, self.html_output, h)
+                self.log.debug('CSS %s', h)
                 add_stylesheet(req, h)
 
             # pick up the title of the Doxygen page
@@ -198,6 +200,8 @@ class DoxygenPlugin(Component):
                 else:
                     h = h.group(1)
                     if (h != 'jquery.js'):
+                        if not re.match(r'''^(\w+:/)?/''', h):
+                            h = os.path.join(self.default_doc, self.html_output, h)
                         add_script(req, '/doxygen/' + h)
 
             if t:
@@ -309,85 +313,19 @@ class DoxygenPlugin(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        segments = filter(None, req.path_info.split('/'))
-        if not segments or segments[0] != "doxygen":
-            return False
-        if 'path' in req.args: # coming from a `doxygen:` link
-            return True
-
-        segments = segments[1:] # ditch 'doxygen'
-        if not segments:
-            req.args['action'] = 'index'
-            req.args['path'] = ''
-            return True
-
-        file = segments[-1]
-        # Direct request for searching
-        if file == 'search.php' or file == 'search.html':
-            req.args['action'] = 'search'
-            return True
-
-        doc = segments[:-1]
-        if not doc and not file:
-            req.args['action'] = 'index'
-            req.args['path'] = ''
-            return True
-
-        if not doc or doc[0] == "search":
-            if self.default_doc: # we can't stay at the 'doxygen/' level
-                if doc:
-                    file = doc[0] + '/' + file
-                req.args['action'] = 'redirect'
-                req.args['path'] = ''
-                req.args['link'] = '/'. join([self.default_doc, self.html_output, file])
-                return True
-
-        if doc:
-            link = os.path.join(*doc) + '/'
-        else: link = ''
-        path = os.path.join(self.base_path, link)
-        existing_path = os.path.exists(os.path.join(path,file)) and path
-        if not existing_path:
-            path = os.path.join(path, self.html_output)
-            existing_path = os.path.exists(os.path.join(path,file)) and path
-        if existing_path:
-            req.args['action'] = 'view'
-            req.args['path'] = path + '/' + file
-            return True
-
-        self.log.debug('%s not found in %s', file, path)
-        req.args['action'] = 'search'
-        return True
+        return re.match(r'''/doxygen(/|$)''', req.path_info)
 
     def process_request(self, req):
         req.perm.assert_permission('DOXYGEN_VIEW')
-
-        # Get request arguments
-        path = req.args.get('path')
-        action = req.args.get('action')
-        link = req.args.get('link')
-
-        self.log.debug('Performing A %s, P %s, L %s, W %s.',
-                       action or 'default', path, link, self.wiki_index)
-        # Redirect search requests.
-        if action == 'search':
-            url = req.href.search(q=req.args.get('query'), doxygen='on')
-            req.redirect(url)
-
-        if action == 'redirect':
-            if link: # we need to really redirect if there is a link
-                if path:
-                    req.redirect(req.href.doxygen(path=path)+link)
-                else:
-                    req.redirect(req.href.doxygen(link))
-            else:
-                self.log.warn("redirect without link")
-
         if req.path_info == '/doxygen':
             req.redirect(req.href.doxygen('/'))
 
-        # Handle /doxygen request
-        if action == 'index':
+        self.log.debug('process_request %s', req.path_info)
+        segments = filter(None, req.path_info.split('/'))
+        segments = segments[1:] # ditch 'doxygen'
+        if not segments:
+            self.log.debug('page garde from %s', req.path_info)
+            # Handle /doxygen request
             wiki = self.wiki_index
             if wiki:
                 if WikiSystem(self.env).has_page(wiki):
@@ -398,18 +336,39 @@ class DoxygenPlugin(Component):
                 data = {'doxygen_text': wiki_to_html(text, self.env, req)}
                 add_ctxtnav(req, "View %s page" % wiki, req.href.wiki(wiki))
                 return 'doxygen.html', data, 'text/html'
-            # use configured Doxygen index
-            path = os.path.join(self.base_path, self.default_doc,
-                                self.html_output, self.index)
+            else:
+                # use configured Doxygen index
+                path = os.path.join(self.base_path, self.default_doc, self.html_output)
+                file = self.index
+        else:
+            file = segments[-1]
+            doc = segments[:-1]
+            # the Doxygen repository "search" contains CSS and other static stuff
+            if doc and doc[0]=='search':
+                link = '/'. join([self.default_doc, self.html_output, doc[0]])
+                path = os.path.join(self.base_path, link)
+            else:
+                link = os.path.join(*doc) if doc else self.default_doc
+                path = os.path.join(self.base_path, link)
+                existing_path = os.path.exists(os.path.join(path,file)) and path
+                if not existing_path:
+                    path = os.path.join(self.base_path, link, self.html_output)
+
+        path = os.path.join(path,file)
+        if not path or not os.path.exists(path):
+            self.log.debug('%s not found in %s from %s', file, path, link)
+            url = req.href.search(q=req.args.get('query'), doxygen='on')
+            req.redirect(url)
+
+        self.log.debug('Process_req P %s.', path, req.path_info)
 
         # security check
         path = os.path.abspath(path)
         if not path.startswith(os.path.normpath(self.base_path)):
             raise TracError("Can't access paths outside of " + self.base_path)
 
-        # view
         mimetype = mimetypes.guess_type(path)[0]
-        self.log.debug('mime %s path: %s', mimetype, path)
+        self.log.debug('mime %s path: %s for %s.', mimetype, path, req.path_info)
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
             return 'doxygen.html', self._merge_header(req, path), 'text/html'
@@ -546,6 +505,7 @@ class DoxygenPlugin(Component):
                               href=formatter.href.doxygen())
             url = os.path.join(doc, self.html_output, res['url'])
             url = formatter.href.doxygen(url) + '#' + res['target']
+            self.log.debug("doxygen_link %s" %(url))
             t = res['type']
             if (t == 'function'):
                 t += ' ' + res['name'] + ' ' + res['args']
