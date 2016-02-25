@@ -96,8 +96,8 @@ class DoxygenPlugin(Component):
                ITemplateProvider, ISearchSource, IWikiSyntaxProvider,
                IAdminPanelProvider)
 
-    base_path = Option('doxygen', 'path', '/var/lib/trac/doxygen',
-      """Directory containing doxygen generated files.""")
+    base_path = Option('doxygen', 'path', '',
+      """Directory containing doxygen generated files (= OUTPUT_DIRECTORY).""")
 
     input = Option('doxygen', 'input', '',
       """Directory containing sources.""")
@@ -238,11 +238,18 @@ class DoxygenPlugin(Component):
         options = OrderedDict()
         for o in s:
             u, explain, label, id, value = o
-            if id in old and value != old[id]['value']:
-                value = old[id]['value']
-                atclass = 'changed'
+            atclass = 'changed'
+            if id == 'OUTPUT_DIRECTORY' and self.base_path:
+                value = self.base_path
             else:
-                atclass = '';
+                if id == 'INPUT' and self.input:
+                    value = self.input
+                else: 
+                    if id in old and value != old[id]['value']:
+                        value = old[id]['value']
+                    else:
+                        atclass = ''
+
             # prepare longer input tag for long default value
             l = 20 if len(value) < 20 else len(value) + 3
             options[id] = {'explain': explain, 'label': label, 'value': value, 'size': l, 'atclass': atclass}
@@ -356,7 +363,7 @@ class DoxygenPlugin(Component):
 
         path = os.path.join(path,file)
         if not path or not os.path.exists(path):
-            self.log.debug('%s not found in %s from %s', file, path, link)
+            self.log.debug('%s not found in %s', file, path)
             url = req.href.search(q=req.args.get('query'), doxygen='on')
             req.redirect(url)
 
@@ -394,6 +401,9 @@ class DoxygenPlugin(Component):
     def render_admin_panel(self, req, cat, page, info):
         req.perm.require('TRAC_ADMIN')
         path_trac = os.path.join(self.base_path, self.default_doc)
+        if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
+            env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
+            path_trac = '/tmp'
         if self.doxyfile:
             doxyfile = self.doxyfile
         else:
