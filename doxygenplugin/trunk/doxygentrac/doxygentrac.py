@@ -175,8 +175,9 @@ class DoxygenPlugin(Component):
             for i in l:
                 h = re.search(r'''href=.([^ ]*)[^ /][ /]''', i)
                 h = h.group(1)
-                if not re.match(r'''^(\w+:/)?/''', h):
-                    h = os.path.join('/doxygen', self.default_doc, self.html_output, h)
+                u = re.match(r'''^[./]*([^:]+)$''', h)
+                if u:
+                    h = os.path.join('/doxygen', u.group(1))
                 self.log.debug('CSS %s', h)
                 add_stylesheet(req, h)
 
@@ -200,9 +201,10 @@ class DoxygenPlugin(Component):
                 else:
                     h = h.group(1)
                     if (h != 'jquery.js'):
-                        if not re.match(r'''^(\w+:/)?/''', h):
-                            h = os.path.join(self.default_doc, self.html_output, h)
-                        add_script(req, '/doxygen/' + h)
+                        u = re.match(r'''^[./]*([^:]+)$''', h)
+                        if u:
+                            h = os.path.join('/doxygen', u.group(1))
+                        add_script(req, h)
 
             if t:
                 t = "<script type='application/javascript'>" + t + "</script>\n"
@@ -345,23 +347,15 @@ class DoxygenPlugin(Component):
                 return 'doxygen.html', data, 'text/html'
             else:
                 # use configured Doxygen index
-                path = os.path.join(self.base_path, self.default_doc, self.html_output)
                 file = self.index
+                dir = ''
         else:
             file = segments[-1]
-            doc = segments[:-1]
-            # the Doxygen repository "search" contains CSS and other static stuff
-            if doc and doc[0]=='search':
-                link = '/'. join([self.default_doc, self.html_output, doc[0]])
-                path = os.path.join(self.base_path, link)
-            else:
-                link = os.path.join(*doc) if doc else self.default_doc
-                path = os.path.join(self.base_path, link)
-                existing_path = os.path.exists(os.path.join(path,file)) and path
-                if not existing_path:
-                    path = os.path.join(self.base_path, link, self.html_output)
+            self.log.debug('file %s in %s', file, req.path_info)
+            dir = segments[:-1]
+            dir = os.path.join(*dir) if dir else ''
 
-        path = os.path.join(path,file)
+        path = os.path.join(self.base_path, self.default_doc, self.html_output, dir, file)
         if not path or not os.path.exists(path):
             self.log.debug('%s not found in %s', file, path)
             url = req.href.search(q=req.args.get('query'), doxygen='on')
