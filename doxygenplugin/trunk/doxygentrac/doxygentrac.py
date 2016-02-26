@@ -293,6 +293,8 @@ class DoxygenPlugin(Component):
         o.close()
         e.close()
         if n == 0:
+            path = os.path.join(self.base_path, self.default_doc)
+            p = Popen(['chmod', '-R', 'g+w', path])
             msg = "Doxygen exits successfuly\n";
             trace = file(fo).read()
         else:
