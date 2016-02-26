@@ -332,7 +332,9 @@ class DoxygenPlugin(Component):
             req.redirect(req.href.doxygen('/'))
 
         self.log.debug('process_request %s', req.path_info)
-        segments = filter(None, req.path_info.split('/'))
+        path = req.path_info.split('?')
+        args = path[1:]
+        segments = filter(None, path[0].split('/'))
         segments = segments[1:] # ditch 'doxygen'
         if not segments:
             self.log.debug('page garde from %s', req.path_info)
@@ -357,7 +359,9 @@ class DoxygenPlugin(Component):
             dir = segments[:-1]
             dir = os.path.join(*dir) if dir else ''
 
-        path = os.path.join(self.base_path, self.default_doc, self.html_output, dir, file)
+        doc = re.match('doc=(.*)', args[0]) if args else ''
+        doc = doc.group(1) if doc else self.default_doc
+        path = os.path.join(self.base_path, doc, self.html_output, dir, file)
         if not path or not os.path.exists(path):
             self.log.debug('%s not found in %s', file, path)
             url = req.href.search(q=req.args.get('query'), doxygen='on')
@@ -479,8 +483,7 @@ class DoxygenPlugin(Component):
         all = self._search_in_documentation(doc, k, ['keywords', 'text'], True)
         self.log.debug('%s search: "%s" items', all, len(all))
         for res in all:
-            path = os.path.join(doc, self.html_output)
-            url = req.href.doxygen(path + '/' + res['url'])  + '#' + res['target']
+            url = 'doxygen/' + res['url']  + '#' + res['target']
             t = shorten_result(res['text'])
             yield url, res['keywords'], to_datetime(res['date']), 'doxygen', t
 
@@ -498,6 +501,7 @@ class DoxygenPlugin(Component):
                 else:
                     res = os.path.exists(os.path.join(self.base_path, doc))
 
+            self.log.debug('link ' + name + ' doc ' + doc)
             if not name:
                 if doc:
                     label = doc
@@ -509,8 +513,9 @@ class DoxygenPlugin(Component):
             if not res:
                 return tag.a(label, title=name, class_='missing',
                               href=formatter.href.doxygen())
-            url = os.path.join(doc, self.html_output, res['url'])
-            url = formatter.href.doxygen(url) + '#' + res['target']
+            if doc != self.default_doc:
+                res['url'] += '?doc=' + doc
+            url = formatter.href.doxygen(res['url']) + '#' + res['target']
             self.log.debug("doxygen_link %s" %(url))
             t = res['type']
             if (t == 'function'):
