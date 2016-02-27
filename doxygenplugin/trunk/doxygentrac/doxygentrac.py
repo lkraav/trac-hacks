@@ -159,7 +159,7 @@ class DoxygenPlugin(Component):
                 res = a.args[0]
         return res
 
-    def _merge_header(self, req, path):
+    def _merge_header(self, req, path, doc):
         # Genshi can't include an unparsed file
         # data = {'doxygen_path': path}
         try:
@@ -212,8 +212,13 @@ class DoxygenPlugin(Component):
         charset = (self.encoding or
                    self.env.config['trac'].get('default_charset'))
         content = to_unicode(content, charset)
-        info = get_plugin_info(self.env)
-        version = ('DoxygenPlugin ' + info[0]['info']['version'] + ' &amp; ').decode('ascii')
+        if doc:
+            href = re.compile(r'''<a.*?href=.[^"]*?[.]html''')
+            s = href.findall(content)
+            self.log.debug('Found "%s" href for doc %s', len(s), doc);
+            content = href.sub(r'\g<0>' + '?doc=' + doc, content)
+        info = get_plugin_info(self.env)[0]
+        version = (info['name'] + ' ' + info['info']['version'] + ' &amp; ').decode('ascii')
         content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + version + r'\2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
 
@@ -324,6 +329,7 @@ class DoxygenPlugin(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
+        self.log.debug('match_request %s', req.path_info)
         return re.match(r'''/doxygen(/|$)''', req.path_info)
 
     def process_request(self, req):
@@ -331,10 +337,8 @@ class DoxygenPlugin(Component):
         if req.path_info == '/doxygen':
             req.redirect(req.href.doxygen('/'))
 
-        self.log.debug('process_request %s', req.path_info)
-        path = req.path_info.split('?')
-        args = path[1:]
-        segments = filter(None, path[0].split('/'))
+        self.log.debug('process_request %s et %s', req.path_info, req.query_string)
+        segments = filter(None, req.path_info.split('/'))
         segments = segments[1:] # ditch 'doxygen'
         if not segments:
             self.log.debug('page garde from %s', req.path_info)
@@ -355,15 +359,14 @@ class DoxygenPlugin(Component):
                 dir = ''
         else:
             file = segments[-1]
-            self.log.debug('file %s in %s', file, req.path_info)
             dir = segments[:-1]
             dir = os.path.join(*dir) if dir else ''
 
-        doc = re.match('doc=(.*)', args[0]) if args else ''
-        doc = doc.group(1) if doc else self.default_doc
+        doc = req.args.get('doc') if req.args.get('doc') else self.default_doc
+        self.log.debug('file %s in doc %s', file, doc)
         path = os.path.join(self.base_path, doc, self.html_output, dir, file)
         if not path or not os.path.exists(path):
-            self.log.debug('%s not found in %s', file, path)
+            self.log.debug('%s not found in %s for doc %s', file, path, doc)
             url = req.href.search(q=req.args.get('query'), doxygen='on')
             req.redirect(url)
 
@@ -378,7 +381,8 @@ class DoxygenPlugin(Component):
         self.log.debug('mime %s path: %s for %s.', mimetype, path, req.path_info)
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
-            return 'doxygen.html', self._merge_header(req, path), 'text/html'
+            content = self._merge_header(req, path, doc if req.args.get('doc') else '')
+            return 'doxygen.html', content, 'text/html'
         else:
             req.send_file(path, mimetype)
 
@@ -514,8 +518,10 @@ class DoxygenPlugin(Component):
                 return tag.a(label, title=name, class_='missing',
                               href=formatter.href.doxygen())
             if doc != self.default_doc:
-                res['url'] += '?doc=' + doc
-            url = formatter.href.doxygen(res['url']) + '#' + res['target']
+                url = formatter.href.doxygen(res['url'], doc=doc)
+            else:
+                url = formatter.href.doxygen(res['url'])
+            url += '#' + res['target']
             self.log.debug("doxygen_link %s" %(url))
             t = res['type']
             if (t == 'function'):

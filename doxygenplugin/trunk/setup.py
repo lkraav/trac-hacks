@@ -7,10 +7,10 @@ setup(
     name='TracDoxygen',
     description='Doxygen plugin for Trac',
     keywords='trac doxygen',
-    version='0.4.14',
+    version='0.5.0',
     url='http://trac-hacks.org/wiki/DoxygenPlugin',
     author='Emmanuel Saint-James, Jason Parks, Radek Bartoň',
-    author_email='blackhex@post.cz',
+    author_email='esj@rezo.net',
     maintainer = "Committo-Ergo-Sum",
     maintainer_email = "esj@rezo.net",
     long_description="""
