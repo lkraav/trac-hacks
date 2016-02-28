@@ -254,6 +254,8 @@ class DoxygenPlugin(Component):
                 else: 
                     if id in old and value != old[id]['value']:
                         value = old[id]['value']
+                    if id == 'SERVER_BASED_SEARCH' or id == 'EXTERNAL_SEARCH':
+                        value = 'YES'
                     else:
                         atclass = ''
 
