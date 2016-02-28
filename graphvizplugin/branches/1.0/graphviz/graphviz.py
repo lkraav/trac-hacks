@@ -412,7 +412,7 @@ class Graphviz(Component):
             map = f.readlines()
             f.close()
             map = "".join(map).replace('\n', '')
-            return tag(tag.map(Markup(map),
+            return tag(tag.map(Markup(to_unicode(map)),
                                id='G' + sha_key, name='G' + sha_key),
                        tag.img(src=img_url, usemap="#G" + sha_key,
                                alt=_("GraphViz image")))
