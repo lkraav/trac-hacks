@@ -1,24 +1,18 @@
-"""
-$Id$
-$HeadURL$
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2005, 2006, 2008 Peter Kropf. All rights reserved.
+#
+# $Id$
 
-Copyright (c) 2005, 2006, 2008 Peter Kropf. All rights reserved.
+"""Python egg setup file for the graphviz trac wiki processor."""
 
-Python egg setup file for the graphviz trac wiki processor.
-"""
-
-
-__revision__  = '$LastChangedRevision$'
-__id__        = '$Id$'
-__headurl__   = '$HeadURL$'
-__docformat__ = 'restructuredtext'
-__version__   = '1.0.0.8'
+import graphviz
 
 from setuptools import setup, find_packages
 
 setup (
     name = 'graphviz',
-    version = __version__,
+    version = graphviz.__version__,
     install_requires='Trac >=1.0dev',
     packages = find_packages(),
     package_data = { 'graphviz' : ['examples/*',],
@@ -33,7 +27,8 @@ setup (
     The graphviz wiki processor is a plugin for Trac that allows the
 dynamic generation of diagrams by the various graphviz programs. The
 text of a wiki page can contain the source text for graphviz and the
-web browser will show the resulting image.""",
+web browser will show the resulting image.
+    """,
     license = """Copyright (C) 2005, 2006, 2008 Peter Kropf
 All rights reserved.
 
@@ -61,5 +56,6 @@ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
 IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.""",
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    """,
 )
