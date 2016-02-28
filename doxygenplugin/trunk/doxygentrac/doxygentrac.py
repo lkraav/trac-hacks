@@ -302,7 +302,7 @@ class DoxygenPlugin(Component):
         if n == 0:
             path = os.path.join(self.base_path, self.default_doc)
             p = Popen(['chmod', '-R', 'g+w', path])
-            msg = "Doxygen exits successfuly\n";
+            msg = "";
             trace = file(fo).read()
         else:
             msg = ("Doxygen Error %s\n" %(n))
@@ -414,10 +414,14 @@ class DoxygenPlugin(Component):
             doxyfile = self.doxyfile
         else:
             doxyfile = os.path.join(path_trac, 'Doxyfile')
-        if req.method == 'POST':
-            env = self.apply_doxyfile(doxyfile, path_trac, req)
-        else:
+        if req.method != 'POST':
             env = {'msg': '', 'trace': ''}
+        else:
+            env = self.apply_doxyfile(doxyfile, path_trac, req)
+            if env['msg'] == '':
+                self.log.debug(env['trace'])
+                url = req.href.doxygen('/')
+                req.redirect(url)
         # Read old choices if they exists
         if os.path.exists(doxyfile):
             old = self.analyse_doxyfile(doxyfile, {})
