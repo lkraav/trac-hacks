@@ -245,23 +245,38 @@ class DoxygenPlugin(Component):
         options = OrderedDict()
         for o in s:
             u, explain, label, id, value = o
-            atclass = 'changed'
+            atclass = default = ''
+            if id in old and value != old[id]['value']:
+                value = old[id]['value']
+                atclass = 'changed'
+            # required for plugin to work
+            if id == 'SERVER_BASED_SEARCH' or id == 'EXTERNAL_SEARCH':
+                value = 'YES'
+                atclass = 'changed'
             if id == 'OUTPUT_DIRECTORY' and self.base_path:
-                value = self.base_path
+                default = self.base_path
+                value = value[len(default):]
+                if value:
+                    value = self.default_doc
+                else:
+                    atclass = 'changed'
             else:
                 if id == 'INPUT' and self.input:
-                    value = self.input
-                else: 
-                    if id in old and value != old[id]['value']:
-                        value = old[id]['value']
-                    if id == 'SERVER_BASED_SEARCH' or id == 'EXTERNAL_SEARCH':
-                        value = 'YES'
-                    else:
-                        atclass = ''
+                    default = self.input
+                    value = value[len(default):]
+                    if value:
+                        atclass = 'changed'
 
             # prepare longer input tag for long default value
             l = 20 if len(value) < 20 else len(value) + 3
-            options[id] = {'explain': explain, 'label': label, 'value': value, 'size': l, 'atclass': atclass}
+            options[id] = {
+                'explain': explain,
+                'label': label,
+                'value': value,
+                'default': default,
+                'size': l,
+                'atclass': atclass
+            }
         return options
 
     def display_doxyfile(self, prev, first, sets):
@@ -406,22 +421,33 @@ class DoxygenPlugin(Component):
 
     def render_admin_panel(self, req, cat, page, info):
         req.perm.require('TRAC_ADMIN')
-        path_trac = os.path.join(self.base_path, self.default_doc)
-        if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
-            env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
-            path_trac = '/tmp'
         if self.doxyfile:
             doxyfile = self.doxyfile
         else:
-            doxyfile = os.path.join(path_trac, 'Doxyfile')
+            doxyfile = ''
+
         if req.method != 'POST':
+            path_trac = os.path.join(self.base_path, self.default_doc)
+            if not doxyfile:
+                doxyfile = os.path.join(path_trac, 'Doxyfile')
             env = {'msg': '', 'trace': ''}
         else:
-            env = self.apply_doxyfile(doxyfile, path_trac, req)
-            if env['msg'] == '':
-                self.log.debug(env['trace'])
-                url = req.href.doxygen('/')
-                req.redirect(url)
+            path_trac = req.args.get('OUTPUT_DIRECTORY')
+            if not doxyfile:
+                doxyfile = os.path.join(path_trac, 'Doxyfile')
+            if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
+                env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
+                path_trac = '/tmp'
+            else:
+                env = self.apply_doxyfile(doxyfile, path_trac, req)
+                if env['msg'] == '':
+                    self.log.debug(env['trace'])
+                    doc = path_trac[len(self.base_path):]
+                    if not doc:
+                        url = req.href.doxygen('/')
+                    else:
+                        url = req.href.doxygen('/', doc=doc)
+                    req.redirect(url)
         # Read old choices if they exists
         if os.path.exists(doxyfile):
             old = self.analyse_doxyfile(doxyfile, {})
@@ -442,7 +468,7 @@ class DoxygenPlugin(Component):
             n = -1
         if not os.path.exists(fi) or n !=0:
             env['fieldsets'] = {};
-            env['msg'] += (" Doxygen Error %s\n" %(n))
+            env['msg'] += (" Doxygen -g Error %s\n" %(n))
             env['trace'] = file(fr).read()
         else:
             # Read std Doxyfile and report old choices in it

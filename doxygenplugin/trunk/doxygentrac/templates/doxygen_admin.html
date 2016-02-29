@@ -13,6 +13,18 @@
       function toggle_display_next(node) {
       node.nextElementSibling.style.display=node.nextElementSibling.style.display=='none' ? 'block' : 'none'
       }
+      function check_dir(form, name) {
+        var d = form.elements[name]
+        var def = d.previousElementSibling
+      // check for a prefix default value
+        if (def.tagName == 'SPAN')
+              d.value = def.firstChild.data + d.value;
+        if (/[.][.]/.test(d.value) || !d.value) {
+      		alert("'" + d.value + "': incorrect value for " + name)
+      		return false
+        }
+	return true
+      }
     </script>
   </head>
   <body>
@@ -25,14 +37,18 @@
       </div>
       <h2 class="doxygenplugin">Doxyfile Generator</h2>
       <div id="select_section_form" py:if="fieldsets">
-        <form method="post" action="" enctype="multipart/form-data;charset=UTF-8">
+        <form action=""
+	      method="post"
+	      onsubmit="return !(!check_dir(this, 'OUTPUT_DIRECTORY') || !check_dir(this, 'INPUT'))"
+	      enctype="multipart/form-data;charset=UTF-8" >
 	  <fieldset py:for="k,d in fieldsets.iteritems()">
 	    <legend class="doxygenplugin arrow" onclick="toggle_display_next(this)">► ${k}</legend>
 	    <div style='display:${d.display}'>
 	      <div py:for="id,s in d.opt.iteritems()" class="labelinput ${s.atclass}">
 		<label for="${id}" class="arrow" onclick="toggle_display_next(this)">► ${id}
 		</label><pre style='display:none'>${s.label}</pre>
-		<input id="${id}" name="${id}" value="${s.value}" size="${s.size}" />
+		<span py:if="s.default"
+		      >${s.default}</span><input id="${id}" name="${id}" value="${s.value}" size="${s.size}" />
 	      </div>
 	    </div>
 	  </fieldset>
