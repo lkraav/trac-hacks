@@ -430,11 +430,17 @@ class DoxygenPlugin(Component):
             path_trac = os.path.join(self.base_path, self.default_doc)
             if not doxyfile:
                 doxyfile = os.path.join(path_trac, 'Doxyfile')
-            env = {'msg': '', 'trace': ''}
+            if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
+                env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
+                path_trac = '/tmp'
+            else:
+                env = {'msg': '', 'trace': ''}
         else:
             path_trac = req.args.get('OUTPUT_DIRECTORY')
             if not doxyfile:
                 doxyfile = os.path.join(path_trac, 'Doxyfile')
+            if not os.path.isdir(path_trac):
+                os.mkdir(path_trac)
             if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
                 env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
                 path_trac = '/tmp'
