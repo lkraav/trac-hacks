@@ -7,8 +7,8 @@ jQuery(document).ready(function($) {
       var $input = $('input[name="' + field + '"]', $filters);
       if ($input.length != 0) {
           var $select = $('<select>').insertAfter($input);
-          $(options).each(function() {
-            $select.append($('<option>').attr('value', this).text(this));
+          $.each(options, function(key, val) {
+            $select.append($('<option />').attr('value', val).text(val));
           });
           $input.hide();
           $select.val($input.val()).change(function() {
