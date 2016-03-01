@@ -45,6 +45,7 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
         self.to_where  = where
         self.to_date  = date
         self.to_multi = multi
+        find = find.replace('::', '\\')
         if multi:
             self.to_find = re.compile(r'''%s''' % find)
         else:
@@ -218,7 +219,11 @@ class DoxygenPlugin(Component):
             self.log.debug('Found "%s" href for doc %s', len(s), doc);
             content = href.sub(r'\g<0>' + '?doc=' + doc, content)
         info = get_plugin_info(self.env)[0]
-        version = (info['name'] + ' ' + info['info']['version'] + ' &amp; ').decode('ascii')
+        name = info['name'].decode('ascii')
+        info = info['info']
+        version = info['version'] 
+        url = info.get('home_page')
+        version = ('<a href="' + url + '">' + name + ' ' +  version + '</a> &amp; ')
         content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + version + r'\2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
 
@@ -299,9 +304,9 @@ class DoxygenPlugin(Component):
             o = "#\n" + k + '=' + s + "\n"
             f.write(o.encode('utf8'))
         f.close()
-        fo = path_trac + 'doxygen.out'
+        fo = os.path.join(path_trac, 'doxygen.out')
         o = open(fo, 'w');
-        fr = path_trac + 'doxygen.err'
+        fr = os.path.join(path_trac, 'doxygen.err')
         e = open(fr, 'w');
         if self.doxygen_args:
             arg = self.doxygen_args
@@ -523,7 +528,7 @@ class DoxygenPlugin(Component):
         k = '|'.join(keywords).encode(self.encoding)
         doc = self.default_doc
         all = self._search_in_documentation(doc, k, ['keywords', 'text'], True)
-        self.log.debug('%s search: "%s" items', all, len(all))
+        self.log.debug('%s search: "%s" items', k, len(all))
         for res in all:
             url = 'doxygen/' + res['url']  + '#' + res['target']
             t = shorten_result(res['text'])
