@@ -218,13 +218,17 @@ class DoxygenPlugin(Component):
             s = href.findall(content)
             self.log.debug('Found "%s" href for doc %s', len(s), doc);
             content = href.sub(r'\g<0>' + '?doc=' + doc, content)
-        info = get_plugin_info(self.env)[0]
-        name = info['name'].decode('ascii')
-        info = info['info']
-        version = info['version'] 
-        url = info.get('home_page')
-        version = ('<a href="' + url + '">' + name + ' ' +  version + '</a> &amp; ')
-        content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + version + r'\2', content,1,re.S)
+        
+        name = 'TracDoxygen'
+        for plugin in get_plugin_info(self.env):
+            if 'name' in plugin and plugin['name'] == 'TracDoxygen':
+                info = plugin['info']
+                url = info.get('home_page')
+                version = info['version']
+                name = '<a href="' + url + '">TracDoxygen ' +  version + '</a>'
+                break
+
+        content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + name + r' &amp; \2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
 
     def analyse_doxyfile(self, path, old):
@@ -323,7 +327,9 @@ class DoxygenPlugin(Component):
             path = os.path.join(self.base_path, self.default_doc)
             p = Popen(['chmod', '-R', 'g+w', path])
             msg = "";
-            trace = file(fo).read()
+            # the std-error may be not empty because of warnings
+            # and because exit status in "dot" execution is not reported
+            trace = file(fo).read() + file(fr).read()
         else:
             msg = ("Doxygen Error %s\n" %(n))
             trace = file(fr).read()
