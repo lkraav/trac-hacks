@@ -16,11 +16,12 @@
 # reviewed and if there are any comments on a particular line.
 
 from genshi.builder import tag
+from genshi.core import QName
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util.text import _
-from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, \
+from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_javascript
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
@@ -30,12 +31,33 @@ from peerReviewMain import add_ctxt_nav_items
 from model import ReviewFile, Comment, PeerReviewModel
 from genshi.filters.transform import Transformer
 from peerReviewView import review_is_locked, review_is_finished
-
+from pkg_resources import get_distribution, parse_version
 
 class PeerReviewPerform(Component):
+    """Perform a code review.
+
+    Trac 0.12 comes with a very ancient version of jQuery. This plugin replaces that version with 1.11.2 on the
+    fly. Similar to Trac 1.0 you may specify your own jQuery in your config file.
+
+    {{{#!ini
+    [trac]
+    jquery_location = https://path/to/jquery.js
+    }}}
+    If not set the bundled version will be used.
+
+    The same can be done for the jQuery UI package and the theme to use.
+    {{{#!ini
+    [trac]
+    jquery_ui_location = https://path/to/jquery-ui.js
+    jquery_ui_theme_location = https://path/to/jquery-ui-theme.css
+    }}}
+    jQuery-ui 1.11.4 is bundled with this plugin.
+    """
     implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator, ITemplateStreamFilter)
 
     imagePath = ''
+    trac_version = get_distribution('trac').version
+    legacy_trac = parse_version(trac_version) < parse_version('1.0.0')  # True if Trac V0.12.x
 
     # ITextAnnotator methods
     def get_annotation_type(self):
@@ -89,15 +111,20 @@ class PeerReviewPerform(Component):
             #if match and attrs.get(name) and attrs.get(name).endswith("common/js/jquery.js"):
             if attrs.get(name):
                 if attrs.get(name).endswith("common/js/jquery.js"):
-                    return attrs.get(name) .replace("common/js/jquery.js", 'hw/js/jquery-1.11.2.min.js')
+                    jquery = self.env.config.get('trac', 'jquery_location')
+                    if jquery:
+                        attrs -= name
+                        attrs |= [(QName(name), jquery)]
+                    else:
+                        return attrs.get(name).replace("common/js/jquery.js", 'hw/js/jquery-1.11.2.min.js')
                 elif attrs.get(name) and attrs.get(name).endswith("common/js/keyboard_nav.js"):
                     #keyboard_nav.js uses function live() which was removed with jQuery 1.9. Use a fixed script here
                     return attrs.get(name) .replace("common/js/keyboard_nav.js", 'req/js/keyboard_nav.js')
             return attrs.get(name) #.replace('#trac-add-comment', '?minview')
 
-        # The post action URL must be changed to include '?minview' otherwise any action like
-        # 'preview' would result in a new full page instead of the minimal page
-        stream = stream | Transformer('//head/script').attr('src', repl_jquery)
+        # Replace jQuery with a more recent version when using Trac 0.12
+        if self.legacy_trac:
+            stream = stream | Transformer('//head/script').attr('src', repl_jquery)
         return stream
 
     # INavigationContributor methods
@@ -213,9 +240,14 @@ class PeerReviewPerform(Component):
         else:
             scr_data['peer_parent_comments'] = []
 
-        # For comment dialogs
-        add_javascript(req, 'hw/js/jquery-ui-1.11.4.min.js')
-        add_stylesheet(req, 'hw/css/jquery-ui-1.11.4.min.css')
+        # For comment dialogs when using Trac 0.12. Otherwise use jQuery coming with Trac
+        if self.legacy_trac:
+            add_javascript(req, self.env.config.get('trac', 'jquery_ui_location') or
+                           'hw/js/jquery-ui-1.11.4.min.js')
+            add_stylesheet(req, self.env.config.get('trac', 'jquery_ui_theme_location') or
+                           'hw/css/jquery-ui-1.11.4.min.css')
+        else:
+            Chrome(self.env).add_jquery_ui(req)
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/diff.css')
