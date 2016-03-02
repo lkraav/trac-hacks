@@ -269,13 +269,20 @@ class DoxygenPlugin(Component):
                     value = self.default_doc
                 else:
                     atclass = 'changed'
-            else:
-                if id == 'INPUT' and self.input:
-                    default = self.input
-                    value = value[len(default):]
-                    if value:
-                        atclass = 'changed'
-
+            elif id == 'INPUT' and self.input:
+                default = self.input
+                value = value[len(default):]
+                if value:
+                    atclass = 'changed'
+            elif id == 'STRIP_FROM_PATH' and self.input and not value:
+                value = self.input
+                atclass = 'changed'
+            elif id == 'PROJECT_NAME' and re.match('\s*"My Project"', value):
+                value = os.path.basename(self.input)
+                if not value:
+                    value = os.path.basename(self.base_path)
+                atclass = 'changed'
+                
             # prepare longer input tag for long default value
             l = 20 if len(value) < 20 else len(value) + 3
             options[id] = {
