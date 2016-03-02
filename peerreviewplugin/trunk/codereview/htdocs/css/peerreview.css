@@ -44,6 +44,10 @@ table.code th.performCodeReview{
 }
 
 /* New review page */
+#properties table{
+    width: 58em;
+}
+
 #properties table th {
     padding: .75em;
     text-align: right;
@@ -67,7 +71,7 @@ table.code th.performCodeReview{
 #new-review legend {
     margin-bottom: 10px;
     font-weight: normal;
-    color: #777777;
+    color: #333;
 }
 
 #new-review fieldset {
