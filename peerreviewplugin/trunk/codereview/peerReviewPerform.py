@@ -98,8 +98,6 @@ class PeerReviewPerform(Component):
         # The post action URL must be changed to include '?minview' otherwise any action like
         # 'preview' would result in a new full page instead of the minimal page
         stream = stream | Transformer('//head/script').attr('src', repl_jquery)
-        add_javascript(req, 'hw/js/jquery-ui-1.11.4.min.js')
-        add_stylesheet(req, 'hw/css/jquery-ui-1.11.4.min.css')
         return stream
 
     # INavigationContributor methods
@@ -206,16 +204,24 @@ class PeerReviewPerform(Component):
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
         scr_data = {'peer_comments': [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
-                    'peer_file_id': fileid}
+                    'peer_file_id': fileid,
+                    'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
+                    'form_token': req.form_token}
         if par_review:
             scr_data['peer_parent_file_id'] = parfile.file_id
             scr_data['peer_parent_comments'] = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]
         else:
             scr_data['peer_parent_comments'] = []
+
+        # For comment dialogs
+        add_javascript(req, 'hw/js/jquery-ui-1.11.4.min.js')
+        add_stylesheet(req, 'hw/css/jquery-ui-1.11.4.min.css')
+
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/diff.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_script_data(req, scr_data)
+        add_javascript(req, 'common/js/auto_preview.js')
         add_javascript(req, "hw/js/peer_review_perform.js")
         add_ctxt_nav_items(req)
 

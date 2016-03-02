@@ -123,6 +123,12 @@
                 <form action="peerReviewCommentCallback" method="POST" id="add-comment-form">
                     <div>
                         <textarea rows="6" id="comment-txt" name="comment"></textarea>
+                        <div id="commentchange" class="ticketdraft" style="display: none">
+                            <p class="help">Preview:</p>
+                            <div class="notes-preview comment searchable">
+
+                            </div>
+                        </div>
                     </div>
                     <div class="buttons">
                         <input type="hidden" name="fileid" value="-1" id="comment-fileid"/>

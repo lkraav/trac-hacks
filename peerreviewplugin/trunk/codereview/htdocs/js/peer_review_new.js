@@ -178,7 +178,7 @@ jQuery(document).ready(function($) {
     };
 
     var args = {realm: "peerreview", escape_newlines: 1};
-    $("#review-notes").autoPreview("wiki_render", args, function(textarea, text, rendered) {
+    $("#review-notes").autoPreview("preview_render", args, function(textarea, text, rendered) {
         $("#noteschange div.comment").html(rendered);
         if (rendered)
           $("#noteschange").show();

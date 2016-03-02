@@ -42,6 +42,7 @@ function addComment(LineNum, fileID, parentID)
     $("#comment-parentid").val(parentID);
     $("#comment-fileid").val(fileID);
     $("#comment-txt").val("");
+    $("#commentchange").hide();
     $('#add-comment-dlg').dialog({title: "Add Comment for Line "+LineNum});
     $('#add-comment-dlg').dialog('open');
 }
@@ -86,7 +87,7 @@ jQuery(document).ready(function($) {
       title: "Add Comment",
       width: 500,
       autoOpen: false,
-      resizable: false,
+      resizable: true,
    });
 
    $( "#view-comment-dlg" ).dialog({
@@ -97,4 +98,14 @@ jQuery(document).ready(function($) {
    });
 
     $('#addcomment').on('click', add_comment_button);
+
+    /* auto preview */
+    var args = {realm: "peerreview", escape_newlines: 1};
+    $("#comment-txt").autoPreview("preview_render", args, function(textarea, text, rendered) {
+        $("#commentchange div.comment").html(rendered);
+        if (rendered)
+          $("#commentchange").show();
+        else if ($("#commentchange ul.changes").length == 0)
+          $("#commentchange").hide();
+    });
 });

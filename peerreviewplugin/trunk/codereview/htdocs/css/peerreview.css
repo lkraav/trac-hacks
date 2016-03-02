@@ -170,6 +170,10 @@ table.code th.performCodeReview{
   text-align: right;
 }
 
+.ui-widget-content a {
+  color: #3C5FC8;
+}
+
 /* View review page */
 .workflow-actions fieldset{
   margin: 0.5em 3em;
