@@ -20,7 +20,7 @@ from trac.mimeview import Context
 from trac.resource import Resource
 from trac.util import format_date
 from trac.util.text import CRLF
-from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, add_stylesheet, web_context
+from trac.web.chrome import INavigationContributor, add_stylesheet, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
 from model import get_users, Comment, \
@@ -236,5 +236,4 @@ ${review_notes}
     def create_preview(self, req, text):
         resource = Resource('peerreview')
         context = web_context(req, resource)
-        print repr(text)
         return format_to_html(self.env, context, text)
