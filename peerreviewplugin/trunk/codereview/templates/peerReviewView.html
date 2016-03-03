@@ -133,6 +133,40 @@
                 </tbody>
             </table>
 
+            <py:if test="(manager or review['owner'] == req.authname) and review_done">
+                <h2>Prepare ticket</h2>
+                <form action="${req.href.newticket()}" method="post" target="_blank" id="prepare-ticket">
+                    <input type="hidden" name="preview" value="" />
+                    <input type="hidden" name="field_project" value="${review['project']}" />
+                    <input type="hidden" name="field_summary" value="$ticket_summary"/>
+                    <input type="hidden" name="field_description" value="$ticket_desc" />
+                    <fieldset>
+                        <table class="ticket-table">
+                            <tr>
+                                <th>Summary:</th>
+                                <td>$ticket_summary</td>
+                            </tr>
+                            <tr>
+                                <th>Description:</th>
+                                <td>
+                                    <div id="ticket" class="trac-content ticketdraft">
+                                        <div class="description">
+                                            <h3>Description</h3>
+                                        ${ticket_desc_wiki}
+                                        </div>
+                                    </div>
+                                    <p class="help">This is a preview. You may change summary and description on the ticket page which
+                                        opens in a new window or tab.</p>
+                                </td>
+                            </tr>
+                    </table>
+                    <div class="buttons">
+                        <input type="submit" value="Prepare Ticket"/>
+                    </div>
+                    </fieldset>
+                </form>
+            </py:if>
+
             <py:if test="canivote">
                 <h2>Workflow actions for reviewer</h2>
 
@@ -148,7 +182,7 @@
                     <h2 py:if="manager">Workflow actions for author or manager</h2>
                     $workflow
                     <p class="help">
-                        Closing a review means it is obsolete.
+                        Closing a review means it is obsolete and all associated data will be unavailable.
                     </p>
                 </py:if>
                 <py:if test="is_finished and manager">

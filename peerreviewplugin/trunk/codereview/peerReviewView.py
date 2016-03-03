@@ -12,16 +12,17 @@
 # Works with peerReviewView.html
 
 import itertools
-
+from string import Template
 from trac import util
 from trac.core import Component, implements, TracError
 from trac.config import ListOption
 from trac.mimeview import Context
 from trac.resource import Resource
 from trac.util import format_date
-from trac.web.chrome import INavigationContributor, add_stylesheet
+from trac.util.text import CRLF
+from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, add_stylesheet, web_context
 from trac.web.main import IRequestHandler
-from trac.wiki.formatter import format_to_html
+from trac.wiki.formatter import format_to, format_to_html
 from model import get_users, Comment, \
     PeerReviewerModel, PeerReviewModel, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
@@ -138,8 +139,11 @@ class PeerReviewView(Component):
 
         # A finished review can't be changed anymore except by a manager
         data['is_finished'] = review_is_finished(self.env.config, review)
-        # A user can't chnage his voting for a reviewed review
+        # A user can't change his voting for a reviewed review
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
+        # Used to indicate that a review is done. 'review_locked' is not suitable because it is false for the
+        # author of a review even when the review is done.
+        data['review_done'] = review_is_locked(self.env.config, review)
 
         # Parent review if any
         if review['parent_id'] != 0:
@@ -161,8 +165,8 @@ class PeerReviewView(Component):
                 break
         data['reviewer'] = reviewers
 
+        self.create_ticket_data(req, data)
         url = '.'
-
         # Actions for a reviewer. Each reviewer marks his progress on a review. The author
         # can see this progress in the user list. The possible actions are defined in trac.ini
         # as a workflow in [peerreviewer-resource_workflow]
@@ -190,7 +194,47 @@ class PeerReviewView(Component):
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
+        add_stylesheet(req, 'common/css/ticket.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
 
         return 'peerReviewView.html', data, None
+
+    desc = u"""
+Review [/peerReviewView?Review=${review_id} ${review_name}] is finished.
+=== Review
+
+||= Name =|| ${review_name} ||
+||= ID =|| ${review_id} ||
+[[br]]
+**Review Notes:**
+${review_notes}
+
+=== Files
+||= File name =||= Comments =||
+"""
+
+    def create_ticket_data(self, req, data):
+        """Create the ticket description for tickets created from the review page"""
+        txt = u""
+        review = data['review']
+        tmpl = Template(self.desc)
+        txt = tmpl.substitute(review_name=review['name'], review_id=review['review_id'],
+                                   review_notes="")  #review['notes'])
+
+        try:
+            for f in data['review_files']:
+                txt += u"||[/peerReviewPerform?IDFile=%s %s]|| %s ||%s" % \
+                       (f['file_id'], f['path'], f.num_comments, CRLF)
+        except KeyError:
+            pass
+
+        data['ticket_desc_wiki'] = self.create_preview(req, txt)
+        data['ticket_desc'] = txt
+        data['ticket_summary'] = u'Problems with Review "%s"'% review['name']
+
+    def create_preview(self, req, text):
+        resource = Resource('peerreview')
+        context = web_context(req, resource)
+        print repr(text)
+        return format_to_html(self.env, context, text)
