@@ -120,6 +120,9 @@ table.code th.performCodeReview{
 }
 
 /* Comment handling */
+.top-dialog {
+  z-index: 200 !important;
+}
 
 #add-comment-dlg #comment-txt{
   width: 100%;

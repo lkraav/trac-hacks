@@ -45,6 +45,8 @@ function addComment(LineNum, fileID, parentID)
     $("#commentchange").hide();
     $('#add-comment-dlg').dialog({title: "Add Comment for Line "+LineNum});
     $('#add-comment-dlg').dialog('open');
+    $('#add-comment-dlg').dialog('moveToTop');
+    console.log('add comment');
 }
 
 jQuery(document).ready(function($) {
@@ -88,6 +90,7 @@ jQuery(document).ready(function($) {
       width: 500,
       autoOpen: false,
       resizable: true,
+      dialogClass: 'top-dialog',
    });
 
    $( "#view-comment-dlg" ).dialog({
