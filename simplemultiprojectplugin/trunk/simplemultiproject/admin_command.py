@@ -9,7 +9,8 @@ __author__ = 'Cinc'
 
 from trac.core import Component, implements
 from trac.admin import IAdminCommandProvider
-from trac.util.text import printout, _
+from trac.util.text import printout
+from trac.util.translation import _
 from smp_model import SmpMilestone, SmpVersion, SmpComponent
 # Model Class
 from model import SmpModel
