@@ -145,7 +145,7 @@ input[type="radio"], input[type="checkbox"] {
   z-index : 1;
 }
 
-div.trac-content, div.system-message{
+div.trac-content, div.system-message, h2.report-result{
   border-radius: 0em;
   box-shadow: none;
 }
@@ -167,12 +167,18 @@ div.system-message{
   text-shadow: none;
   border-radius: 0em;
   box-shadow:none;
-  border-top: 1px solid #E3E3E3;
+  /* border-top: 1px solid #E3E3E3; */
   margin-bottom: 0.5em;
 }
 
+/*
 .collapsed > .foldable :link, .collapsed > .foldable :visited {
   border-bottom: 1px solid #E3E3E3;
+}
+*/
+
+fieldset > legend.foldable :link, fieldset > legend.foldable :visited {
+    text-shadow: none;
 }
 
 table.listing{
@@ -242,6 +248,7 @@ h1 :link, h1 :visited {
 
 #ctxtnav span.disabled{
     color: #aaa;
+    background-color: #fafafa;
     border: 1px solid #ccc;
     padding: 0.1em 0.5em;
 }
@@ -249,6 +256,7 @@ h1 :link, h1 :visited {
 #search {
     clear: none;
     margin: 0px;
+    height: inherit; /* Make it the size of the list item */
 }
 
 #search input {
@@ -256,6 +264,7 @@ h1 :link, h1 :visited {
     width : 8em;
     padding: 1px 6px;
     font-size: 13px;
+    position: relative; /* Make sure whole input field is clickable */
 }
 
 /* This won't work for the milestone page */
@@ -287,8 +296,21 @@ h1:target, h2:target, h3:target, h4:target, h5:target, h6:target, span:target {
 #properties table th{
    white-space: normal;
 }
+
+/* textareas defined as ticket_custom don't get the trac-fullwidth class  so do it here */
+#properties .trac-resizable .wikitext{
+  width: 100%;
+}
+
 #changelog h3, #ticketchange h3{
   box-shadow: none;
+}
+blockquote.citation{
+  font-size: 100%;
+  padding: 0 .5em;
+}
+blockquote p:last-child, blockquote ul:last-child, blockquote ol:last-child {
+    margin-bottom: 10px;
 }
 /* End ticket page */
 
