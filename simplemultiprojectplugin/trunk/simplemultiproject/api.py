@@ -4,7 +4,7 @@
 #
 # License: 3-clause BSD
 #
-from trac.config import Interface
+from trac.core import Interface
 
 __author__ = 'Cinc'
 
