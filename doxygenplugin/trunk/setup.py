@@ -7,7 +7,7 @@ setup(
     name='TracDoxygen',
     description='Doxygen plugin for Trac',
     keywords='trac doxygen',
-    version='0.5.6',
+    version='0.5.7',
     url='https://trac-hacks.org/wiki/DoxygenPlugin',
     author='Emmanuel Saint-James, Jason Parks, Radek Bartoň',
     author_email='esj@rezo.net',
@@ -17,7 +17,7 @@ setup(
     """,
     zip_safe=True,
     packages=['doxygentrac'],
-    package_data={'doxygentrac': ['templates/*.html', 'htdocs/css/*.css']},
+    package_data={'doxygentrac': ['templates/*.html', 'htdocs/css/*.css', 'htdocs/js/*.js']},
     entry_points={'trac.plugins': 'doxygentrac = doxygentrac.doxygentrac'},
     license = """Copyright (C) 2016 Emmanuel Saint-James <esj@rezo.net>
 Copyright (C) 2005 Jason Parks <jparks@jparks.net>

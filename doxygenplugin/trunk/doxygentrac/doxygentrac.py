@@ -525,6 +525,7 @@ class DoxygenPlugin(Component):
             self.log.debug("forget temporary files")
 
         add_stylesheet(req, 'doxygen/css/doxygen.css')
+        add_script(req, 'doxygen/js/doxygentrac.js')
         return 'doxygen_admin.html', env
 
     # ISearchProvider methods
