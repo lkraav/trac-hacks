@@ -10,6 +10,7 @@
 #
 
 import copy
+from collections import defaultdict
 from time import time
 from trac.core import Component, implements, TracError
 from trac.db import Table, Column, Index,  DatabaseManager
@@ -161,6 +162,21 @@ class ReviewFileModel(AbstractVariableFieldsObject):
     def create_instance(self, key):
         return ReviewFileModel(self.env, key['file_id'], 'peerreviewfile')
 
+    @classmethod
+    def file_dict_by_review(cls, env, include_closed=False):
+        """Return a dict with review_id as key and a file list as value.
+
+        :param include_closed: if True return closed files too.
+        """
+
+        db = env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT file_id, review_id FROM peerreviewfile ORDER BY review_id")
+        files_dict = defaultdict(list)
+        for row in cursor:
+            file_ = cls(env, row[0])
+            files_dict[row[1]].append(file_)
+        return files_dict
 
 class PeerReviewModelProvider(Component):
     """

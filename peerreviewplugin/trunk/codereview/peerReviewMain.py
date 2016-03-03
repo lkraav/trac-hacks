@@ -23,7 +23,7 @@ from trac.web.chrome import INavigationContributor, ITemplateProvider, add_style
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to
 
-from model import PeerReviewModel, PeerReviewerModel
+from model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
 
 
 def add_ctxt_nav_items(req):
@@ -104,6 +104,9 @@ class PeerReviewMain(Component):
         else:
             all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
 
+        # Add files
+        files = ReviewFileModel.file_dict_by_review(self.env)
+
         # fill the table of currently open reviews
         myreviews = []
         assigned_to_me =[]
@@ -113,6 +116,7 @@ class PeerReviewMain(Component):
             # Reviews created by me
             if rev['owner'] == req.authname:
                 rev.date = format_date(rev['created'])
+                rev.rev_files = files[rev['review_id']]
                 myreviews.append(rev)
 
         r_tmpl = PeerReviewerModel(self.env)
@@ -133,6 +137,7 @@ class PeerReviewMain(Component):
                 #if not review_is_locked(rev) or data['allassigned']:
                 rev.date = format_date(rev['created'])
                 rev.reviewer = item
+                rev.rev_files = files[rev['review_id']]
                 assigned_to_me.append(rev)
 
         data['myreviews'] = myreviews
