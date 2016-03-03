@@ -270,7 +270,7 @@ class DoxygenPlugin(Component):
                 else:
                     atclass = 'changed'
             elif id == 'INPUT' and self.input:
-                default = self.input
+                default = self.input + ('' if self.input[-1] =='/' else '/')
                 value = value[len(default):]
                 if value:
                     atclass = 'changed'
@@ -458,7 +458,10 @@ class DoxygenPlugin(Component):
             if not doxyfile:
                 doxyfile = os.path.join(path_trac, 'Doxyfile')
             if not os.path.isdir(path_trac):
-                os.mkdir(path_trac)
+                try:
+                    os.mkdir(path_trac)
+                except (IOError, OSError), e:
+                    raise TracError("Can't create directory: %s" % path_trac)
             if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
                 env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
                 path_trac = '/tmp'
