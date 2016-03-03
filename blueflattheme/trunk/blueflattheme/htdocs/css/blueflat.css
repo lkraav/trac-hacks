@@ -305,7 +305,7 @@ h1:target, h2:target, h3:target, h4:target, h5:target, h6:target, span:target {
 #changelog h3, #ticketchange h3{
   box-shadow: none;
 }
-blockquote.citation{
+blockquote{
   font-size: 100%;
   padding: 0 .5em;
 }
