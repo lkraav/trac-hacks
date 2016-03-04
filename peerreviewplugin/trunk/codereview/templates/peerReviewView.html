@@ -72,6 +72,7 @@
                 <tr>
                     <th>File ID</th>
                     <th>Filename</th>
+                    <th py:if="parent_review">Old Revision</th>
                     <th>Revision</th>
                     <th>Line Numbers</th>
                     <th># of Comments</th>
@@ -85,13 +86,14 @@
                 <tr py:for="item in review_files" class="${cls.next()}" id="$item['file_id']">
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['revision']}</a></td>
-                    <td py:if="item['line_start'] != 0"><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['line_start']} -
-                        ${item['line_end']}</a></td>
-                    <td py:if="item['line_start'] == 0"><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">1 - End of file</a>
+                    <td py:if="parent_review">${file_map[item['file_id']]['revision']}</td>
+                    <td>${item['revision']}</td>
+                    <td py:if="item['line_start'] != 0">${item['line_start']} -
+                        ${item['line_end']}</td>
+                    <td py:if="item['line_start'] == 0">1 - End of file
                     </td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item.num_comments}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['status']}</a></td>
+                    <td>${item.num_comments}</td>
+                    <td>${item['status']}</td>
                 </tr>
                 </tbody>
             </table>

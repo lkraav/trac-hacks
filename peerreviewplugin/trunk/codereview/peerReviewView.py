@@ -101,6 +101,22 @@ class PeerReviewView(Component):
         return req.path_info == '/peerReviewView'
 
     def process_request(self, req):
+        def get_review_by_id(review_id):
+            """Get a PeerReviewModel for the given review id and prepare some additional data used by the template"""
+            review = PeerReviewModel(self.env, review_id)
+            review.html_notes = format_to_html(self.env, Context.from_request(req), review['notes'])
+            review.date = format_date(review['creation_date'])
+            return review
+        def get_files_for_review_id(review_id, comments=False):
+            """Get all files belonging to the given review id. Provide the number of comments if asked for."""
+            rfm = ReviewFileModel(self.env)
+            rfm.clear_props()
+            rfm['review_id'] = review_id
+            rev_files = list(rfm.list_matching_objects())
+            if comments:
+                for f in rev_files:
+                    f.num_comments = len(Comment.select_by_file_id(self.env, f['file_id']))
+            return rev_files
 
         req.perm.require('CODE_REVIEW_DEV')
 
@@ -122,19 +138,10 @@ class PeerReviewView(Component):
             elif req.args.get('modify'):
                 req.redirect(self.env.href.peerReviewNew(resubmit=review_id, modify=1))
 
-        rfm = ReviewFileModel(self.env)
-        rfm.clear_props()
-        rfm['review_id'] = review_id
-        rev_files = list(rfm.list_matching_objects())
-        for f in rev_files:
-            f.num_comments = len(Comment.select_by_file_id(self.env, f['file_id']))
-
-        data['review_files'] = rev_files
+        data['review_files'] = get_files_for_review_id(review_id, True)
         data['users'] = get_users(self.env)
 
-        review = PeerReviewModel(self.env, review_id)
-        review.html_notes = format_to_html(self.env, Context.from_request(req), review['notes'])
-        review.date = format_date(review['creation_date'])
+        review = get_review_by_id(review_id)
         data['review'] = review
 
         # A finished review can't be changed anymore except by a manager
@@ -147,10 +154,24 @@ class PeerReviewView(Component):
 
         # Parent review if any
         if review['parent_id'] != 0:
-            par_review = PeerReviewModel(self.env, review['parent_id'])
-            par_review.html_notes = format_to_html(self.env, Context.from_request(req), par_review['notes'])
-            par_review.date = format_date(par_review['creation_date'])
-            data['parent_review'] = par_review
+            data['parent_review'] = get_review_by_id(review['parent_id'])
+            rev_files = get_files_for_review_id(review_id, False)
+            data['parent_files'] = rev_files
+
+            # Map files to parent files. Key is current file id, value is parent file object
+
+            def get_parent_file(rfile, par_review_id, par_files):
+                fid = u"%s%s%s" % (rfile['path'], rfile['line_start'], rfile['line_end'])
+                for f in par_files:
+                    tmp = u"%s%s%s" % (f['path'], f['line_start'], f['line_end'])
+                    if tmp == fid:
+                        return f
+                return None
+
+            file_map = {}
+            for f in data['review_files']:
+                file_map[f['file_id']] = get_parent_file(f, review['parent_id'], rev_files)
+            data['file_map'] = file_map
 
         # Figure out whether I can vote on this review or not. This is used to decide in the template
         # if the reviewer actions should be shown. Note that this is legacy stuff going away later.
