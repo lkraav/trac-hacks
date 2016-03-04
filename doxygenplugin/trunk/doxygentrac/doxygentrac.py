@@ -144,6 +144,15 @@ class DoxygenPlugin(Component):
 
     # internal methods
 
+    def link_me (self, name):
+        for plugin in get_plugin_info(self.env):
+            if 'name' in plugin and plugin['name'] == name:
+                info = plugin['info']
+                url = info.get('home_page')
+                version = info['version']
+                return '<a href="' + url + '">TracDoxygen ' +  version + '</a>'
+        return name
+
     def _search_in_documentation(self, doc, name, where, multi):
         # Open index file for documentation
         index = os.path.join(self.base_path, doc, self.searchdata_file)
@@ -218,16 +227,8 @@ class DoxygenPlugin(Component):
             s = href.findall(content)
             self.log.debug('Found "%s" href for doc %s', len(s), doc);
             content = href.sub(r'\g<0>' + '?doc=' + doc, content)
-        
-        name = 'TracDoxygen'
-        for plugin in get_plugin_info(self.env):
-            if 'name' in plugin and plugin['name'] == 'TracDoxygen':
-                info = plugin['info']
-                url = info.get('home_page')
-                version = info['version']
-                name = '<a href="' + url + '">TracDoxygen ' +  version + '</a>'
-                break
 
+        name = self.link_me('TracDoxygen')
         content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + name + r' &amp; \2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
 
@@ -551,7 +552,9 @@ class DoxygenPlugin(Component):
         for res in all:
             url = 'doxygen/' + res['url']  + '#' + res['target']
             t = shorten_result(res['text'])
-            yield url, res['keywords'], to_datetime(res['date']), 'doxygen', t
+            # Doxygen produces duplicates in this field !
+            k = ' '.join(list(set(res['keywords'].split(' '))))
+            yield url, k, to_datetime(res['date']), 'doxygen', t
 
     # IWikiSyntaxProvider
 
