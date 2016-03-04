@@ -266,9 +266,9 @@ class DoxygenPlugin(Component):
                 default = self.base_path + ('' if self.base_path[-1] =='/' else '/')
                 value = value[len(default):]
                 if value:
-                    value = self.default_doc
-                else:
                     atclass = 'changed'
+                else:
+                    value = self.default_doc
             elif id == 'INPUT' and self.input:
                 default = self.input + ('' if self.input[-1] =='/' else '/')
                 value = value[len(default):]
@@ -455,6 +455,8 @@ class DoxygenPlugin(Component):
                 env = {'msg': '', 'trace': ''}
         else:
             path_trac = req.args.get('OUTPUT_DIRECTORY')
+            if  path_trac and path_trac[-1] !='/':
+                path_trac += '/'
             if not doxyfile:
                 doxyfile = os.path.join(path_trac, 'Doxyfile')
             if not os.path.isdir(path_trac):
@@ -464,12 +466,12 @@ class DoxygenPlugin(Component):
                     raise TracError("Can't create directory: %s" % path_trac)
             if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
                 env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
-                path_trac = '/tmp'
+                path_trac = '/tmp/'
             else:
                 env = self.apply_doxyfile(doxyfile, path_trac, req)
                 if env['msg'] == '':
                     self.log.debug(env['trace'])
-                    doc = path_trac[len(self.base_path):]
+                    doc = path_trac[len(self.base_path):].strip('/')
                     if not doc:
                         url = req.href.doxygen('/')
                     else:
