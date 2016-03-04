@@ -27,8 +27,15 @@ jQuery(document).ready(function($) {
         };
     };
 
+    function removeuser(user_name){
+        $('#user-rem-name').text(user_name);
+        $('#user-rem-confirm').data('username', user_name);
+        $('#user-rem-confirm').dialog('open');
+        /* User is removed in click handler of dialog if necessary */
+    };
+
     //takes a user from the table, adds them to the dropbox, and deletes from the table
-    function removeuser(txt) {
+    function do_removeuser(txt) {
 
          tline = '<option value="'+txt+'">'+txt+'</option>';
 
@@ -99,5 +106,24 @@ jQuery(document).ready(function($) {
            event.preventDefault ? event.preventDefault() : event.returnValue = false;
            adduser($(this).data('user'));
            return false;
+    });
+
+    /* Confirmation dialog when removing users */
+    $( "#user-rem-confirm" ).dialog({
+          resizable: false,
+          height: 150,
+          width: 500,
+          modal: true,
+          autoOpen: false,
+          buttons: {
+            "Remove User": function() {
+              $(this).dialog( "close" );
+              var username = $('#user-rem-confirm').data('username');
+              do_removeuser(username);
+            },
+            Cancel: function() {
+              $(this).dialog( "close" );
+            }
+          }
     });
 });
