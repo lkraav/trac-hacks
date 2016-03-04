@@ -38,11 +38,18 @@
                 </tr>
                 </tbody>
             </table>
-
-            <dl py:if="review['notes']" class="overview">
-                <dt>Author notes:</dt>
-                <dd>$review.html_notes</dd>
-            </dl>
+            <table py:if="review['notes']" class="info-table">
+                <tbody>
+                <tr>
+                    <th>
+                        <p>Author notes:</p>
+                    </th>
+                    <td>
+                        $review.html_notes
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </py:def>
 
         <div id="content">
@@ -57,10 +64,36 @@
                     This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
                 </p>
             </div>
-            ${review_info(review)}
+
             <div py:if="parent_review">
-                <h2>Followup Review from:</h2>
-                ${review_info(parent_review)}
+                <table class="review-table">
+                    <thead>
+                        <tr>
+                            <th>Review Information</th>
+                            <th>Followup from</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${review_info(review)}</td>
+                            <td>${review_info(parent_review)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div py:if="not parent_review">
+                <table class="review-table">
+                    <thead>
+                        <tr>
+                            <th>Review Information</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>${review_info(review)}</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
 
             <h2>Files associated with this code review</h2>

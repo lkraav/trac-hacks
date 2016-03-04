@@ -4,16 +4,32 @@ p.help{
   font-size: 90%;
 }
 
+table.review-table thead th {
+  font-size: 150%;
+  padding: .25em;
+  background-color: #f7f7f7;
+}
+
+.review-table tbody td {
+  vertical-align: top;
+  padding-left: 1em;
+}
+
 .info-table{
   border-collapse: collapse;
+  margin-top: 1em;
   margin-bottom: 0.5em;
+  margin-left: 1em;
 }
 
 .info-table th{
  width: 9em;
  text-align: right;
  font-weight: bold;
- padding-right: 0.5em;
+}
+
+.info-table td{
+ padding: 0.125em 1em;
 }
 
 table.code th.performCodeReview{
