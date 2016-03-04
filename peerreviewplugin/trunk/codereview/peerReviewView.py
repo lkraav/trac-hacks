@@ -105,7 +105,7 @@ class PeerReviewView(Component):
             """Get a PeerReviewModel for the given review id and prepare some additional data used by the template"""
             review = PeerReviewModel(self.env, review_id)
             review.html_notes = format_to_html(self.env, Context.from_request(req), review['notes'])
-            review.date = format_date(review['creation_date'])
+            review.date = format_date(review['created'])
             return review
         def get_files_for_review_id(review_id, comments=False):
             """Get all files belonging to the given review id. Provide the number of comments if asked for."""
