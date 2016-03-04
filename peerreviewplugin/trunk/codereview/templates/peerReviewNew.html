@@ -16,7 +16,7 @@
             <h1 py:if="modify">Modify an existing Code Review</h1>
 
             <!-- CodeReview name is empty if new, with previous name is resubmitted -->
-            <form method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);" id="new-review">
+            <form class="workflow-actions" method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);" id="new-review">
                 <fieldset id="properties">
                     <legend>General information.</legend>
                     <table>

@@ -52,7 +52,7 @@
             </table>
         </py:def>
 
-        <div id="content">
+        <div id="content" class="peerreview-content">
             <h1>Code Review Details - ${review['name']}</h1>
             <div py:if="is_finished" class="notice system-message">
                 <p>
@@ -170,7 +170,7 @@
 
             <py:if test="(manager or review['owner'] == req.authname) and review_done">
                 <h2>Prepare ticket</h2>
-                <form action="${req.href.newticket()}" method="post" target="_blank" id="prepare-ticket">
+                <form class="workflow-actions" action="${req.href.newticket()}" method="post" target="_blank" id="prepare-ticket">
                     <input type="hidden" name="preview" value="" />
                     <input type="hidden" name="field_project" value="${review['project']}" />
                     <input type="hidden" name="field_summary" value="$ticket_summary"/>
@@ -225,7 +225,7 @@
                     $workflow
                 </py:if>
                 <hr />
-                <form action="" method="post">
+                <form class="workflow-actions" action="" method="post">
                     <fieldset>
                         <div class="buttons">
                             <input type="hidden" value="${review['review_id']}" name="Review"/>
