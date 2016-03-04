@@ -263,7 +263,7 @@ class DoxygenPlugin(Component):
                 value = 'YES'
                 atclass = 'changed'
             if id == 'OUTPUT_DIRECTORY' and self.base_path:
-                default = self.base_path
+                default = self.base_path + ('' if self.base_path[-1] =='/' else '/')
                 value = value[len(default):]
                 if value:
                     value = self.default_doc
