@@ -145,7 +145,7 @@ table.code th.performCodeReview{
 
 /* Comment handling */
 .top-dialog {
-  z-index: 200 !important;
+  z-index: 2000 !important;
 }
 
 #add-comment-dlg #comment-txt{

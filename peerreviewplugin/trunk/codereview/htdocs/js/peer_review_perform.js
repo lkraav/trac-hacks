@@ -46,7 +46,6 @@ function addComment(LineNum, fileID, parentID)
     $('#add-comment-dlg').dialog({title: "Add Comment for Line "+LineNum});
     $('#add-comment-dlg').dialog('open');
     $('#add-comment-dlg').dialog('moveToTop');
-    console.log('add comment');
 }
 
 jQuery(document).ready(function($) {
