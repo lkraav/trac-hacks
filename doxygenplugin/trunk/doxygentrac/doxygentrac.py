@@ -68,7 +68,7 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
                 if not self.to_multi:
                     p = self.to_find == self.fields[field]
                 else:
-                    p = self.to_find.search(self.fields[field])
+                    p = self.to_find.findall(self.fields[field])
 
                 if p:
                     if '#' in self.fields['url']:
@@ -81,6 +81,7 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
                     if not self.to_multi:
                         raise IndexFound(self.fields)
                     else:
+                        self.fields['score'] = len(p)
                         self.multi.append(self.fields)
                         break;
             self.fields = {}
@@ -553,7 +554,7 @@ class DoxygenPlugin(Component):
             url = 'doxygen/' + res['url']  + '#' + res['target']
             t = shorten_result(res['text'])
             # Doxygen produces duplicates in this field !
-            k = ' '.join(list(set(res['keywords'].split(' '))))
+            k = res['score'] . ' ' . ' '.join(list(set(res['keywords'].split(' '))))
             yield url, k, to_datetime(res['date']), 'doxygen', t
 
     # IWikiSyntaxProvider
