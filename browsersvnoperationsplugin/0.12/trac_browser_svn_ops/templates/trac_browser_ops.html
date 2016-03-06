@@ -1,9 +1,9 @@
 <!DOCTYPE html
-	    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-	    xmlns:py="http://genshi.edgewall.org/"
-	    xmlns:xi="http://www.w3.org/2001/XInclude">
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <!-- Only the .bsop_dialog divs are transmitted to the client, the rest serves
      as a convenience during development
@@ -14,17 +14,17 @@
 
 <link rel="stylesheet" href="../htdocs/css/theme/smoothness/jquery-ui.css"
     type="text/css" />
-<link rel="stylesheet" href="../htdocs/css/trac_browser_ops.css" 
+<link rel="stylesheet" href="../htdocs/css/trac_browser_ops.css"
     type="text/css" />
 
 <script type="text/javascript" src="../htdocs/js/jquery-ui.js"></script>
 <script type="text/javascript" src="../htdocs/js/trac_browser_ops.js"></script>
 <script type="text/javascript">
-	$('#show_upload')
-		.button()
-		.click(function() {
-			$('#dialog-bsop_upload').dialog('open');
-		});
+  $('#show_upload')
+    .button()
+    .click(function() {
+      $('#dialog-bsop_upload').dialog('open');
+    });
 </script>
 </head>
 
@@ -32,7 +32,7 @@
 
 <div id="dialog-bsop_upload"  class="bsop_dialog"
     title="Upload a file to the repository">
-  <p>Choose a file to upload to the repository. It will be placed in the 
+  <p>Choose a file to upload to the repository. It will be placed in the
   current directory.</p>
   <p class="validate_tips">All fields are required</p>
   <form id="bsop_upload_form" method="post" enctype="multipart/form-data"
@@ -42,7 +42,7 @@
     <label for="bsop_upload_file">
         File (maximum size ${pretty_size(max_upload_size)})
     </label>
-    <input type="file" name="bsop_upload_file" id="bsop_upload_file" 
+    <input type="file" name="bsop_upload_file" id="bsop_upload_file"
         class="bsop_ctl" />
     <label for="bsop_upload_commit">Commit message</label>
     <textarea name="bsop_upload_commit" id="bsop_upload_commit"
@@ -71,7 +71,7 @@
 
 <div id="dialog-bsop_move_delete" class="bsop_dialog"
     title="${['Move', 'Rename'][rename_only]} or delete a file in the repository">
-  <p>Please provide a commit message<span id="bsop_mvdel_supplemental"> and a 
+  <p>Please provide a commit message<span id="bsop_mvdel_supplemental"> and a
   ${['destination', 'new name'][rename_only]}</span>.</p>
   <p class="validate_tips">All fields are required</p>
   <form id="bsop_move_delete_form" method="post" action=""
@@ -80,20 +80,20 @@
     <legend>Commit message</legend>
     <label for="bsop_mvdel_dst_name" class="bsop_ctl_move">
       ${['Destination', 'New name'][rename_only]}
-    </label> 
+    </label>
     <input type="text" id="bsop_mvdel_dst_name" name="bsop_mvdel_dst_name"
         value=""  class="bsop_ctl bsop_ctl_move"/>
     <label for="bsop_mvdel_commit">Commit message</label>
     <textarea name="bsop_mvdel_commit" id="bsop_mvdel_commit"
         cols="50" rows="2" class="bsop_ctl"></textarea>
   </fieldset>
-  
+
   <div style="display: none;">
     <span id="bsop_mvdel_move_title">${['Move', 'Rename'][rename_only]}</span>
-    <span id="bsop_mvdel_delete_title">Delete</span>    
-    <input type="hidden" id="bsop_mvdel_op" name="bsop_mvdel_op" 
+    <span id="bsop_mvdel_delete_title">Delete</span>
+    <input type="hidden" id="bsop_mvdel_op" name="bsop_mvdel_op"
         value="" />
-    <select id="bsop_mvdel_src_name" name="bsop_mvdel_src_name" 
+    <select id="bsop_mvdel_src_name" name="bsop_mvdel_src_name"
         multiple="multiple">
       <option>Place holder</option>
     </select>
@@ -110,4 +110,3 @@
 </div>
 </body>
 </html>
-    

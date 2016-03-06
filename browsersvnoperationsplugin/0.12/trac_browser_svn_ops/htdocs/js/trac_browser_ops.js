@@ -1,6 +1,6 @@
 $(function() {
   var tips = $(".validate_tips");
-  
+
   function update_tips(t) {
     tips.text(t)
         .addClass("ui-state-highlight");
@@ -8,7 +8,7 @@ $(function() {
       tips.removeClass("ui-state-highlight");
     }, 1500);
   }
-  
+
   function check_not_empty(o, n) {
     if (o.val().length < 1) {
       o.addClass("ui-state-error");
@@ -38,7 +38,7 @@ $(function() {
       return true;
     }
   }
-  
+
   $("#dialog-bsop_create_folder").dialog({
     autoOpen: false,
     height: 370,
@@ -51,9 +51,9 @@ $(function() {
 
         bValid = bValid && check_not_empty($("#bsop_create_folder_name"),
                                            "folder name");
-        bValid = bValid && check_not_empty($("#bsop_create_commit"), 
+        bValid = bValid && check_not_empty($("#bsop_create_commit"),
                                            "commit message");
-        
+
         if (bValid) {
           $('#bsop_create_form').trigger('submit');
         }
@@ -79,9 +79,9 @@ $(function() {
         $("dialog-bsop_upload .bsop_ctl").removeClass('ui-state-error');
 
         bValid = bValid && check_not_empty($("#bsop_upload_file"), "file");
-        bValid = bValid && check_not_empty($("#bsop_upload_commit"), 
+        bValid = bValid && check_not_empty($("#bsop_upload_commit"),
                                            "commit message");
-        
+
         if (bValid) {
           $('#bsop_upload_form').trigger('submit');
         }
@@ -104,14 +104,14 @@ $(function() {
       'Commit': function() {
         var bValid = true;
         $("dialog-bsop_move_delete .bsop_ctl").removeClass('ui-state-error');
-        
+
         if ($('#bsop_mvdel_op').val() === "move") {
-          bValid = bValid && check_not_empty($("#bsop_mvdel_dst_name"), 
+          bValid = bValid && check_not_empty($("#bsop_mvdel_dst_name"),
                                              "destination");
         }
-        bValid = bValid && check_not_empty($("#bsop_mvdel_commit"), 
+        bValid = bValid && check_not_empty($("#bsop_mvdel_commit"),
                                            "commit message");
-        
+
         if (bValid) {
           $('#bsop_move_delete_form').trigger('submit');
         }
@@ -125,18 +125,18 @@ $(function() {
                                             .removeClass('ui-state-error');
     }
   });
-  
+
   // Show dialogs on click of corresponding button
   $('.bsop_upload').click(function(e) {
     e.preventDefault();
     $('#dialog-bsop_upload').dialog('open');
   });
-      
+
   $('.bsop_create_folder').click(function(e) {
     e.preventDefault();
     $('#dialog-bsop_create_folder').dialog('open');
   });
-    
+
   function show_move_delete_dialog(operation, src_items) {
     // Is this a move or a delete? Show/hide the destination field
     if (operation === 'move') {
@@ -150,7 +150,7 @@ $(function() {
         $('#bsop_mvdel_supplemental').hide();
         $('.bsop_ctl_move').hide();
     }
-    
+
     // Populate the move/delete form controls
     $('#bsop_mvdel_op').val(operation);
     $('#bsop_mvdel_src_name').empty();
@@ -159,30 +159,30 @@ $(function() {
                                         .val(value)
                                         .text(value));
     });
-                                          
+
     $('#dialog-bsop_move_delete').dialog('open');
   }
-      
+
   $('.bsop_move, .bsop_delete').live('click', function() {
     // A context menu item has been clicked
     // Ascend the tree to the context-menu, then descend to find the hidden
     // name provided by ContextMenuPlugin, ignore the checkboxes
-    var mvdel_src_name = $(this).closest('div.context-menu') 
+    var mvdel_src_name = $(this).closest('div.context-menu')
                                 .find('span.filenameholder').text();
-      
+
     if ($(this).hasClass('bsop_move')) {
         show_move_delete_dialog('move', [mvdel_src_name]);
     } else if ($(this).hasClass('bsop_delete')) {
         show_move_delete_dialog('delete', [mvdel_src_name]);
     }
   });
-  
+
   $('#bsop_move, #bsop_delete').bind('click', function() {
     // The Move selected or Delete selected button has been clicked
     // Retrieve which fileselect checkboxes have been checked
     var selected_items = $('td .fileselect:checked');
     var bsop_tips = $('.bsop_tips');
-    
+
     if (selected_items.length === 0) {
       bsop_tips.text('No files or folders selected')
                .addClass("ui-state-highlight");
@@ -191,7 +191,7 @@ $(function() {
       }, 1500);
       return;
     }
-    
+
     // Retrieve the hidden contextmenu name element for each selected item
     // build an array of selected names
     var selected_names = $(selected_items).closest('tr')
@@ -199,7 +199,7 @@ $(function() {
                                           .map(function() {
                                                return $(this).text();})
                                           .get();
-    
+
     if ($(this).is('#bsop_move')) {
         show_move_delete_dialog('move', selected_names);
     } else if ($(this).is('#bsop_delete')) {
