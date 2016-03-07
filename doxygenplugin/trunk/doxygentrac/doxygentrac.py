@@ -16,6 +16,7 @@ import xml.sax
 from collections import OrderedDict
 from genshi.builder import tag
 from genshi.core import Markup
+from operator import itemgetter
 from subprocess import Popen
 from trac.admin import IAdminPanelProvider
 from trac.config import Option
@@ -62,8 +63,10 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
         else: self.last_field_name = ''
 
     def endElement(self, name):
-        self.last_field_name = ''
         if name == "doc":
+            self.fields['occ'] = 0
+            self.fields['target'] = ''
+            self.fields['date'] = self.to_date
             for field in self.to_where:
                 if not self.to_multi:
                     p = self.to_find == self.fields[field]
@@ -75,19 +78,19 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
                         url, target = self.fields['url'].split('#', 2)
                         self.fields['url'] = url
                         self.fields['target'] = target
-                    else:
-                        self.fields['target'] = ''
-                    self.fields['date'] = self.to_date
                     if not self.to_multi:
                         raise IndexFound(self.fields)
                     else:
-                        self.fields['occ'] = len(p)
-                        self.multi.append(self.fields)
-                        break;
+                        self.fields['occ'] += len(list(set(p)))
+
+            self.multi.append(self.fields)
             self.fields = {}
-        else:
-            if name == "add" and self.to_multi:
-                raise IndexFound(self.multi)
+        elif name == "add" and self.to_multi:
+            raise IndexFound(self.multi)
+        elif self.last_field_name == 'keywords':
+            # Doxygen produces duplicates in this field !
+            self.fields['keywords'] = ' '.join(list(set(self.fields['keywords'].split(' '))))
+        self.last_field_name = ''
 
 class IndexFound(Exception):
     def __init__( self, msg ):
@@ -549,13 +552,14 @@ class DoxygenPlugin(Component):
         k = '|'.join(keywords).encode(self.encoding)
         doc = self.default_doc
         all = self._search_in_documentation(doc, k, ['keywords', 'text'], True)
+        all = sorted(all, key=itemgetter('keywords'));
+        all = sorted(all, key=itemgetter('occ'), reverse=True)
         self.log.debug('%s search: "%s" items', k, len(all))
         for res in all:
             url = 'doxygen/' + res['url']  + '#' + res['target']
             t = shorten_result(res['text'])
-            # Doxygen produces duplicates in this field !
-            k = ' '.join(list(set(res['keywords'].split(' '))))
-            yield url, "%s (occurrences: %d)" % (k, res['occ']), to_datetime(res['date']), 'doxygen', t
+            n = "%s (occurrences: %d)" % (res['keywords'], res['occ'])
+            yield url, n, to_datetime(res['date']), 'doxygen', t
 
     # IWikiSyntaxProvider
 
