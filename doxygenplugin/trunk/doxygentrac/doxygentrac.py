@@ -179,65 +179,78 @@ class DoxygenPlugin(Component):
             self.log.debug("SAX %s", a)
         return res
 
-    def _merge_header(self, req, path, doc):
-        # Genshi can't include an unparsed file
-        # data = {'doxygen_path': path}
+    def merge_header(self, req, content):
+        # Pick up header and body parts of the Doxygen page
+        m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*?)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
+        if not m:
+            return content
+
+        # pick up links to CSS and move them to header of the Trac Page
+        l = re.findall(r'''<link[^>]*type=.text/css[^>]*>''', m.group(1), re.S)
+        for i in l:
+            h = re.search(r'''href=.([^ ]*)[^ /][ /]''', i)
+            h = h.group(1)
+            u = re.match(r'''^[./]*([^:]+)$''', h)
+            if u:
+                h = os.path.join('/doxygen', u.group(1))
+            self.log.debug('CSS %s', h)
+            add_stylesheet(req, h)
+
+        # pick up the title of the Doxygen page
+        # since there is no API to move it in the header of the Trac page
+        # we will use JQuery to do it on load
+        t = re.search(r'''<title>.*?:(.*)</title>''', m.group(1), re.S)
+        if t:
+            t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";})'
+        else:
+            t = ''
+        # pick up the scripts
+        # if it is a file, move the tag Script in the header of the Trac page
+        # otherwise, keep it here
+        s = re.findall(r'''<script([^>]*)>(.*?)</script>''', m.group(1), re.S)
+        for i in s:
+            h = re.search(r'''src=.([^ ]*).''', i[0])
+            self.log.debug('Script %s %s', i[0], h)
+            if not h:
+                t += i[1]
+            else:
+                h = h.group(1)
+                if (h != 'jquery.js'):
+                    u = re.match(r'''^[./]*([^:]+)$''', h)
+                    if u:
+                        h = os.path.join('/doxygen', u.group(1))
+                    add_script(req, h)
+
+        if t:
+            t = "<script type='application/javascript'>" + t + "</script>\n"
+        return t + m.group(2)
+
+    def rewrite_doxygen(self, req, path, doc):
+        def wiki_in_doxygen(m):
+            return wiki_to_html(m.group(1), self.env, req)
+
         try:
             content = file(path).read()
         except (IOError, OSError), e:
             raise TracError("Can't read doxygen content: %s" % e)
 
-        # Pick up header and body parts of the Doxygen page
-        m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*?)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
-        if m:
-            # pick up links to CSS and move them to header of the Trac Page
-            l = re.findall(r'''<link[^>]*type=.text/css[^>]*>''', m.group(1), re.S)
-            for i in l:
-                h = re.search(r'''href=.([^ ]*)[^ /][ /]''', i)
-                h = h.group(1)
-                u = re.match(r'''^[./]*([^:]+)$''', h)
-                if u:
-                    h = os.path.join('/doxygen', u.group(1))
-                self.log.debug('CSS %s', h)
-                add_stylesheet(req, h)
-
-            # pick up the title of the Doxygen page
-            # since there is no API to move it in the header of the Trac page
-            # we will use JQuery to do it on load
-            t = re.search(r'''<title>.*?:(.*)</title>''', m.group(1), re.S)
-            if t:
-                t = '$(document).ready(function() { document.title+="' +  t.group(1) + '";})'
-            else:
-                t = ''
-            # pick up the scripts
-            # if it is a file, move the tag Script in the header of the Trac page
-            # otherwise, keep it here
-            s = re.findall(r'''<script([^>]*)>(.*?)</script>''', m.group(1), re.S)
-            for i in s:
-                h = re.search(r'''src=.([^ ]*).''', i[0])
-                self.log.debug('Script %s %s', i[0], h)
-                if not h:
-                    t += i[1]
-                else:
-                    h = h.group(1)
-                    if (h != 'jquery.js'):
-                        u = re.match(r'''^[./]*([^:]+)$''', h)
-                        if u:
-                            h = os.path.join('/doxygen', u.group(1))
-                        add_script(req, h)
-
-            if t:
-                t = "<script type='application/javascript'>" + t + "</script>\n"
-            content = t + m.group(2)
         charset = (self.encoding or
                    self.env.config['trac'].get('default_charset'))
-        content = to_unicode(content, charset)
+
+        content = to_unicode(self.merge_header(req, content), charset)
+
+        # Add a query string for explicit documentation
         if doc:
             href = re.compile(r'''<a.*?href=.[^"]*?[.]html''')
-            s = href.findall(content)
-            self.log.debug('Found "%s" href for doc %s', len(s), doc);
             content = href.sub(r'\g<0>' + '?doc=' + doc, content)
 
+        # translate TracLink in Doxygen comments
+        # (unless some HTML tags are present. Should be better)
+        comment = re.compile(r'''<p>([^<>&]*?)</p>''', re.S)
+        content = comment.sub(wiki_in_doxygen, content)
+        comment = re.compile(r'''<dd>([^<>&]*?)</dd>''', re.S)
+        content = comment.sub(wiki_in_doxygen, content)
+        
         name = self.link_me('TracDoxygen')
         content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + name + r' &amp; \2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
@@ -427,7 +440,7 @@ class DoxygenPlugin(Component):
         self.log.debug('mime %s path: %s for %s.', mimetype, path, req.path_info)
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
-            content = self._merge_header(req, path, doc if req.args.get('doc') else '')
+            content = self.rewrite_doxygen(req, path, doc if req.args.get('doc') else '')
             return 'doxygen.html', content, 'text/html'
         else:
             req.send_file(path, mimetype)
