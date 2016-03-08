@@ -3,7 +3,7 @@
 import re
 import trac
 
-from pkg_resources import resource_filename
+from pkg_resources import resource_exists, resource_filename
 
 from trac.config import BoolOption, Option
 from trac.core import *
@@ -47,7 +47,9 @@ class TicketWebUiAddon(Component):
     def post_process_request(self, req, template, data, content_type):
         if re.search('ticket', req.path_info):
             add_script(req, 'cc_selector/cc_selector.js')
-            if req.locale is not None:
+            if req.locale is not None and \
+                    resource_exists('cc_selector',
+                                    'htdocs/lang_js/%s.js' % req.locale):
                 add_script(req, 'cc_selector/lang_js/%s.js' % req.locale)
         return template, data, content_type
 
