@@ -28,27 +28,27 @@ except ImportError:
 VERSION = '0.0.3'
 
 setup(
-    name = PACKAGE,
-    version = VERSION,
-    description = 'Visual Cc ticket field editor for Trac',
-    keywords = 'trac cc ticket editor',
-    url = 'http://trac-hacks.org/wiki/CcSelectorPlugin',
-    author = 'Vladislav Naumov',
-    author_email = 'vnaum@vnaum.com',
-    license = 'GPL',
-    maintainer = 'Steffen Hoffmann',
-    maintainer_email = 'hoff.st@web.de',
-    packages = [PACKAGE],
-    package_data = {PACKAGE: [
+    name=PACKAGE,
+    version=VERSION,
+    description='Visual Cc ticket field editor for Trac',
+    keywords='trac cc ticket editor',
+    url='http://trac-hacks.org/wiki/CcSelectorPlugin',
+    author='Vladislav Naumov',
+    author_email='vnaum@vnaum.com',
+    license='GPL',
+    maintainer='Steffen Hoffmann',
+    maintainer_email='hoff.st@web.de',
+    packages=[PACKAGE],
+    package_data={PACKAGE: [
         'htdocs/*.js', 'htdocs/lang_js/*.js', 'locale/*/LC_MESSAGES/*.mo',
         'locale/.placeholder', 'templates/*.html'
         ]},
-    zip_safe = True,
-    entry_points = {
+    zip_safe=True,
+    entry_points={
         'trac.plugins': [
-            'cc_selector.cc_selector = cc_selector.cc_selector'
+            'cc_selector.cc_selector=cc_selector.cc_selector'
         ]},
-    install_requires = ['Genshi >= 0.5', 'Trac >= 0.11'],
-    extras_require = {'Babel': 'Babel>= 0.9.5', 'Trac': 'Trac >= 0.12'},
+    install_requires=['Genshi >=0.5', 'Trac >=0.11'],
+    extras_require={'Babel': 'Babel>=0.9.5', 'Trac': 'Trac >=0.12'},
     **extra
-    )
+)
