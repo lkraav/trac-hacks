@@ -42,9 +42,9 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
     fields = {}
     multi = []
 
-    def __init__(self, find, where, multi, date):
-        self.to_where  = where
-        self.to_date  = date
+    def __init__(self, find, where, multi, index):
+        self.to_where = where
+        self.to_date = os.path.getctime(index)
         self.to_multi = multi
         find = find.replace('::', '\\')
         if multi:
@@ -83,7 +83,8 @@ class DoxygenTracHandler(xml.sax.ContentHandler):
                     else:
                         self.fields['occ'] += len(list(set(p)))
 
-            self.multi.append(self.fields)
+            if self.fields['occ']:
+                self.multi.append(self.fields)
             self.fields = {}
         elif name == "add" and self.to_multi:
             raise IndexFound(self.multi)
@@ -157,20 +158,25 @@ class DoxygenPlugin(Component):
                 return '<a href="' + url + '">TracDoxygen ' +  version + '</a>'
         return name
 
-    def _search_in_documentation(self, doc, name, where, multi):
-        # Open index file for documentation
+    def check_documentation(self, doc):
         index = os.path.join(self.base_path, doc, self.searchdata_file)
+        if not os.path.exists(index) or not os.access(index, os.R_OK):
+            self.log.debug('No readable file "%s" in Doxygen dir ', index)
+            return ''
+        return index
+
+    def search_in_documentation(self, file, name, where, multi):
+        if not file:
+            return {}
+        parser = xml.sax.make_parser()
+        parser.setContentHandler(DoxygenTracHandler(name, where, multi, file))
         res = {}
-        if not os.path.exists(index) :
-            self.log.debug('No file "%s" in Doxygen dir ', index)
-        else:
-            date = os.path.getctime(index)
-            parser = xml.sax.make_parser()
-            parser.setContentHandler(DoxygenTracHandler(name, where, multi, date))
-            try:
-                parser.parse(index)
-            except IndexFound as a:
-                res = a.args[0]
+        try:
+            parser.parse(file)
+        except IndexFound, a:
+            res = a.args[0]
+        except xml.sax.SAXException, a:
+            self.log.debug("SAX %s", a)
         return res
 
     def _merge_header(self, req, path, doc):
@@ -538,8 +544,11 @@ class DoxygenPlugin(Component):
     # ISearchProvider methods
 
     def get_search_filters(self, req):
-        if req.perm.has_permission('DOXYGEN_VIEW'):
-            yield('doxygen', self.title)
+        if not req.perm.has_permission('DOXYGEN_VIEW'):
+            return
+        if not self.check_documentation(self.default_doc):
+            return 
+        yield('doxygen', self.title)
 
     def get_search_results(self, req, keywords, filters):
         """Return the entry  whose 'keyword' or 'text' tag contains
@@ -550,43 +559,38 @@ class DoxygenPlugin(Component):
             return
 
         k = '|'.join(keywords).encode(self.encoding)
-        doc = self.default_doc
-        all = self._search_in_documentation(doc, k, ['keywords', 'text'], True)
+        doc = self.check_documentation(self.default_doc)
+        all = self.search_in_documentation(doc, k, ['keywords', 'text'], True)
         all = sorted(all, key=itemgetter('keywords'));
         all = sorted(all, key=itemgetter('occ'), reverse=True)
         self.log.debug('%s search: "%s" items', k, len(all))
         for res in all:
             url = 'doxygen/' + res['url']  + '#' + res['target']
             t = shorten_result(res['text'])
-            n = "%s (occurrences: %d)" % (res['keywords'], res['occ'])
-            yield url, n, to_datetime(res['date']), 'doxygen', t
+            yield url, res['keywords'], to_datetime(res['date']), 'doxygen', t
 
     # IWikiSyntaxProvider
 
     def get_link_resolvers(self):
         def doxygen_link(formatter, ns, name, label):
-            res = True
-            if '/' not in name:
-                doc = self.default_doc
-            else:
+            doc = self.default_doc
+            if '/' in name:
                 doc, name = name.split('/')
                 if not doc:
                     doc = self.default_doc
-                else:
-                    res = os.path.exists(os.path.join(self.base_path, doc))
-
             self.log.debug('link ' + name + ' doc ' + doc)
             if not name:
                 if doc:
                     label = doc
                 else: label = 'index'
                 res = {'url':'index.html', 'target':'', 'type':'file', 'text':'index'}
-            elif res:
-                res = self._search_in_documentation(doc, name, ['name'], False)
-
-            if not res:
-                return tag.a(label, title=name, class_='missing',
+            else:
+                file = self.check_documentation(doc)
+                res = self.search_in_documentation(file, name, ['name'], False)
+                if not res:
+                    return tag.a(label, title=name, class_='missing',
                               href=formatter.href.doxygen())
+
             if doc != self.default_doc:
                 url = formatter.href.doxygen(res['url'], doc=doc)
             else:
