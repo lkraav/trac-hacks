@@ -148,8 +148,6 @@ class TT_Template(object):
             WHERE tt_user=%s ORDER BY tt_name
             """, (tt_user,))]
 
-    getCustomTemplate = classmethod(getCustomTemplate)
-
     @classmethod
     def fetch(cls, env, tt_name):
         """Retrieve an existing tt from the database by ID."""
