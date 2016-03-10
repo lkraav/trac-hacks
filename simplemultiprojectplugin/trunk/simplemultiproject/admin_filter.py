@@ -8,13 +8,13 @@
 # Trac extension point imports
 from trac.core import *
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_stylesheet, ITemplateStreamFilter
 from trac.util.translation import _
 from trac.config import BoolOption
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Component as TicketComponent  # Make sure not to confuse with Component for plugins
 from trac.ticket.model import Milestone, Version
 from trac.ticket.api import IMilestoneChangeListener
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateStreamFilter
 from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
@@ -525,3 +525,48 @@ class SmpFilterDefaultComponentPanels(Component):
                 filter_form = Transformer('//form[@id="modcomp"]//div[@class="field"][1]')
                 stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
+
+class SmpAddExtendedVersionColumn(Component):
+    """Add version column to milestone table when using ExtendedVersion plugin."""
+
+    implements(IRequestFilter)
+
+    def __init__(self):
+        self.extended_version = self._get_ext_version(self.env.get_read_db()) != 0
+
+    def _get_ext_version(self, db):
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                    """SELECT value FROM system
+                       WHERE name='extended_version_plugin'""")
+            row = cursor.fetchone()
+            if row:
+                return int(row[0])
+            else:
+                return 0
+        except:
+            return 0
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        if self.extended_version and template == 'admin_milestones.html':
+            if data and data['view'] == 'list':
+                add_script_data(req, {'ms_ext_version': self.get_version_for_milestone()})
+                add_script(req, "simplemultiproject/js/add_version_column.js")
+
+        return template, data, content_type
+
+    def get_version_for_milestone(self):
+        data = {}
+        if self.extended_version:
+            db = self.env.get_read_db()
+            cursor = db.cursor()
+            cursor.execute('SELECT * FROM milestone_version')
+            for row in cursor:
+                data.update({row[0]: row[1]})
+        return data

@@ -6,6 +6,7 @@
 #
 
 from trac.config import BoolOption
+from trac.core import Component, implements
 from trac.ticket.api import IMilestoneChangeListener
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateStreamFilter, add_stylesheet

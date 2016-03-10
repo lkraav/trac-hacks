@@ -8,6 +8,7 @@ setup(
         'simplemultiproject': [
             'templates/*.html',
             'htdocs/*.js',
+            'htdocs/js/*.js',
             'htdocs/css/*.css'
         ]
     },
