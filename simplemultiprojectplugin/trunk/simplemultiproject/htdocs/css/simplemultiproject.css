@@ -25,3 +25,7 @@ div.project > h2:after {
   border:1px solid lightgrey;
   width: 65%;
 }
+
+#smp-hide-completed{
+  margin-right: 0.5em;
+}

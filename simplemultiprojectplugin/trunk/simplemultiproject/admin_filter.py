@@ -191,6 +191,7 @@ class SmpFilterDefaultMilestonePanels(Component):
         if filename == "admin_milestones.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            add_script(req, "simplemultiproject/js/filter_milestone_table.js")
             if self.single_project:
                 input_type = 'radio'
             else:
