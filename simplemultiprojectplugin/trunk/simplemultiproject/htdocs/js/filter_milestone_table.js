@@ -19,6 +19,12 @@ jQuery(document).ready(function($) {
             if(txt.length > 0){
               $(this).addClass('completed');
             };
+            /* */
+            txt = $('td.project', this).text();
+            if(txt.length > 0){
+              //$(this).data('project', txt);
+              $(this).attr('data-project', txt);
+            };
           }
     };
     function hide_milestone(){
@@ -30,8 +36,18 @@ jQuery(document).ready(function($) {
       };
     };
 
+    function hide_milestone_by_prj(){
+      var prj = $('#smp-projects-sel').val();
+      if(prj != ''){
+        $('[data-project='+prj+']').hide();
+      };
+    };
+
     /* Add version dropdown */
     $('#millist').before('<label><input type="checkbox" id="smp-hide-completed"/>Hide completed milestones</label>');
     $('#smp-hide-completed').on('click', hide_milestone);
     $('#millist tr').each(prepare_hiding);
+
+    $('#hide-ms-by-prj').on('click', hide_milestone_by_prj);
+
 });

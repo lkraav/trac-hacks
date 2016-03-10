@@ -26,6 +26,11 @@ div.project > h2:after {
   width: 65%;
 }
 
+#smp-ms-sel-div{
+  display: inline-block;
+  margin-right: 2em;
+}
+
 #smp-hide-completed{
   margin-right: 0.5em;
 }
