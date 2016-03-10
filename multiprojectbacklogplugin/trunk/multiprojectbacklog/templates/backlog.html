@@ -1,0 +1,81 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:py="http://genshi.edgewall.org/"
+    xmlns:xi="http://www.w3.org/2001/XInclude">
+<xi:include href="layout.html" />
+<head>
+    <title>Backlog: $title</title>
+    </head>
+
+    <body>
+        <div id="content" class="report">
+
+    <h1>Backlog: $title</h1>
+
+    <div id="container">
+        <div class="field">
+            <legend>Columns</legend>
+        </div>
+        <div>
+            <label class="mp-sel-label" py:for="field in mp_fields">
+                <input type="checkbox" class="prj-field-sel" name="backlog_fields" value="${field[0]}"
+                       checked="${field[0] in shown_fields_sel or None}" />${field[1]}
+            </label>
+        </div>
+        <div>
+            <p class="help">Drag tickets to the milestones on the right for assigning.</p>
+        </div>
+        <div class="backlog-ticket-list">
+            <table id="tickets_table" class="listing tickets">
+                <thead>
+                    <tr class="ticket-th">
+                        <th py:if="'id' in shown_fields" class="id">Id</th>
+                        <th py:if="'summary' in shown_fields" class="summary">Summary</th>
+                        <th py:if="'component' in shown_fields" class="component">Component</th>
+                        <th py:if="'version' in shown_fields" class="version">Version</th>
+                        <th py:if="'type' in shown_fields" class="type">Type</th>
+                        <th py:if="'owner' in shown_fields" class="owner">Owner</th>
+                        <th py:if="'status' in shown_fields" class="status">Status</th>
+                        <th py:if="'time_created' in shown_fields" class="time_created">Created</th>
+                        <th py:for="cf in custom_fields"
+                            py:attrs='{"style": "display:none"} if cf[0] not in shown_fields else {"style": None}' class="${cf[0]}">${cf[1]}</th>
+                    </tr>
+                </thead>
+                <tbody id="tickets">
+                    <tr py:for="ticket in tickets" py:if="not mp_proj or mp_proj == ticket['project']"
+                        id="ticket_${ticket.id}" class="ticket-tr">
+                        <td py:if="'id' in shown_fields" class="id"><a href="${base_path}/ticket/${ticket.id}">#$ticket.id</a></td>
+                        <td py:if="'summary' in shown_fields" class="summary"><a href="${base_path}/ticket/${ticket.id}">$ticket.summary</a></td>
+                        <td py:if="'component' in shown_fields" class="component">$ticket.component</td>
+                        <td py:if="'version' in shown_fields" class="version">$ticket.version</td>
+                        <td py:if="'type' in shown_fields" class="type">$ticket.type</td>
+                        <td py:if="'owner' in shown_fields" class="owner">$ticket.owner</td>
+                        <td py:if="'status' in shown_fields" class="status">$ticket.status</td>
+                        <td py:if="'time_created' in shown_fields" class="time_created">${format_date(ticket.time_created)}</td>
+                        <py:for each="cf in custom_fields">
+                            <td py:attrs='{"style": "display:none"} if cf[0] not in shown_fields else {"style": None}'
+                                class="${cf[0]}">${ticket[cf[0]]}</td>
+                        </py:for>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="milestone_list">
+            <div py:for="milestone in active_milestones"
+                 py:with="show = not mp_proj or milestone.name == '(unscheduled)' or milestone.name in ms_for_proj[mp_proj]"
+                 py:attrs="{'class': 'milestone' if show else 'hide-ms-div'}"
+                 id="${milestone.id}">
+                <h4><a href="${base_path}/mpbacklog?mp_proj=$mp_proj" py:if="milestone.name == '(unscheduled)'">${milestone.name}</a>
+                    <a href="${base_path}/mpbacklog/milestone/${milestone.path}?mp_proj=$mp_proj" py:if="milestone.name != '(unscheduled)'">${milestone.name}</a></h4>
+                <table>
+                  <tr><td>Due:</td><td>${milestone.due}</td></tr>
+                  <tr><td>Tickets:</td><td class="num_tickets">${milestone.num_tickets}</td></tr>
+                </table>
+            </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

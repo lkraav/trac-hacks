@@ -1,0 +1,20 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:py="http://genshi.edgewall.org/"
+    xmlns:xi="http://www.w3.org/2001/XInclude">
+<xi:include href="prefs.html" />
+    <head>
+        <title>Backlog</title>
+    </head>
+    <body>
+        <div class="field">
+            <legend>Shown Ticket Fields:</legend>
+            <label py:for="field in fields" class="mp-sel-label">
+                <input class="prj-field-sel" type="checkbox" name="backlog_fields" value="${field[0]}"
+                       checked="${field[0] in shown_fields or None}" />${field[1]}
+            </label>
+        </div>
+    </body>
+</html>
