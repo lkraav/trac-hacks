@@ -12,6 +12,7 @@ from collections import defaultdict
 from operator import itemgetter
 from pkg_resources import get_distribution, parse_version
 from genshi.template.markup import MarkupTemplate
+from genshi.builder import tag
 from trac.core import *
 from trac.db import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
@@ -23,7 +24,7 @@ from trac.web.chrome import add_ctxtnav, add_script, add_script_data, add_styles
 from trac.web.main import IRequestHandler
 from trac.web.api import HTTPBadRequest, IRequestFilter
 from trac.util.datefmt import format_date
-from trac.util.html import html, tag
+from trac.util.html import html
 from trac.util import get_reporter_id
 from trac.util.text import _, unicode_quote, unicode_from_base64, unicode_to_base64
 
@@ -149,6 +150,7 @@ class MultiProjectBacklog(Component):
 <form xmlns:py="http://genshi.edgewall.org/" action="" py:if="all_projects" style="display:inline-block;">
 $proj
 <select id="mp-projects-sel" name="mp_proj">
+    <option value="" selected="'' == sel_prj or None}">$all_label</option>
     <option py:for="prj in all_projects" value="$prj" selected="${prj == sel_prj or None}">$prj</option>
 </select>
 <input type="submit" value="$btn"/>
@@ -176,15 +178,15 @@ $proj
 
     def post_process_request(self, req, template, data, content_type):
         if have_smp and template == 'backlog.html':
-            all_proj = [''] + self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+            all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
 
             if all_proj:
-                sel_proj = req.args.get('mp_proj', all_proj[0])
+                sel_proj = req.args.get('mp_proj', '')
                 data['mp_proj'] = sel_proj
                 data['ms_for_proj'] = self.get_milestone_data(req)
                 sel = MarkupTemplate(self.projects_tmpl)
                 add_ctxtnav(req, tag.div(sel.generate(proj=_("Project"), all_projects=all_proj,
-                                                      sel_prj=sel_proj, btn=_("Change"))))
+                                                      sel_prj=sel_proj, btn=_("Change"), all_label=_('All'))))
         return template, data, content_type
 
     # INavigationContributor methods
