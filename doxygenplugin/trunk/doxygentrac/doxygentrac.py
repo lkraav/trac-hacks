@@ -36,7 +36,6 @@ from trac.wiki.api import WikiSystem, IWikiSyntaxProvider
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import wiki_to_html
 
-
 class DoxygenTracHandler(xml.sax.ContentHandler):
     last_field_name = ''
     fields = {}
@@ -168,6 +167,7 @@ class DoxygenPlugin(Component):
     def search_in_documentation(self, file, name, where, multi):
         if not file:
             return {}
+        self.log.debug("Search %s in %s by SAX", name, file)
         parser = xml.sax.make_parser()
         parser.setContentHandler(DoxygenTracHandler(name, where, multi, file))
         res = {}
@@ -180,7 +180,13 @@ class DoxygenPlugin(Component):
         return res
 
     def merge_header(self, req, content):
-        # Pick up header and body parts of the Doxygen page
+        """Split a Doxygen HTML page in its head and body part.
+        Find the references to style sheets by the Link tag
+        and move them to the Trac Head part by add_stylesheet.
+        Same work for the JS files referenced by the Script Tag, by add_script.
+        Move also the content of the Title Tag, by using JQuery.
+        """
+
         m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*?)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
         if not m:
             return content
@@ -591,7 +597,7 @@ class DoxygenPlugin(Component):
                 doc, name = name.split('/')
                 if not doc:
                     doc = self.default_doc
-            self.log.debug('link ' + name + ' doc ' + doc)
+            self.log.debug('search link for ' + name + ' inc doc ' + doc)
             if not name:
                 if doc:
                     label = doc
@@ -601,8 +607,14 @@ class DoxygenPlugin(Component):
                 file = self.check_documentation(doc)
                 res = self.search_in_documentation(file, name, ['name'], False)
                 if not res:
-                    return tag.a(label, title=name, class_='missing',
-                              href=formatter.href.doxygen())
+                    suffix = '[.:\\\\]' + name + '$'
+                    res = self.search_in_documentation(file, suffix, ['name'], True)
+                    if len(res) != 1:
+                        self.log.debug('%s: %d occurrences in %s' % (suffix, len(res), file))
+                        return tag.a(label, title=name, class_='missing',
+                                     href=formatter.href.doxygen())
+                    else:
+                        res = res[0]
 
             if doc != self.default_doc:
                 url = formatter.href.doxygen(res['url'], doc=doc)

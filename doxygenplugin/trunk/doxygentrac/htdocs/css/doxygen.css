@@ -46,3 +46,6 @@ legend.doxygenplugin {font-size: 1.25em;}
 .changed {border:2px solid orange;}
  
 .labelinput {margin: 0.25em; padding: 0.2em;}
+
+/* configuration when wiki_processor is applied to a dt dd sequence */
+dl[class~=see] dt, dl[class~=see] dt+p, dl[class~=return] dt, dl[class~=return] dt+p {display: inline}
