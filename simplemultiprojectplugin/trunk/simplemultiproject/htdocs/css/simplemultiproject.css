@@ -26,11 +26,26 @@ div.project > h2:after {
   width: 65%;
 }
 
+/* Hide milestones checkbox */
+#smp-hide-completed{
+  margin-right: 0.5em;
+}
+
+#smp-hide-label{
+  float: right;
+}
+
+.smp-hide-completed{
+  display: none;
+}
+/* end */
+/* Hide by project*/
 #smp-ms-sel-div{
   display: inline-block;
   margin-right: 2em;
 }
 
-#smp-hide-completed{
-  margin-right: 0.5em;
+.smp-hide-project{
+  display: none;
 }
+/* end */

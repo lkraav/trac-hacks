@@ -189,10 +189,10 @@ class SmpFilterDefaultMilestonePanels(Component):
     projects_tmpl = """
 <div xmlns:py="http://genshi.edgewall.org/" id="smp-ms-sel-div" py:if="all_projects">
 $proj
-<select id="smp-projects-sel">
+<select id="smp-project-sel">
+    <option value="" selected="'' == sel_prj or None}">$all_label</option>
     <option py:for="prj in all_projects" value="$prj" selected="${prj == sel_prj or None}">$prj</option>
 </select>
-<input id="hide-ms-by-prj" type="button" value="$btn"/>
 </div>
 """
 
@@ -228,13 +228,12 @@ $proj
                 # Add project column to main milestone table
                 stream = stream | Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
+                # Add select control with projects for hiding milestones
                 sel = MarkupTemplate(self.projects_tmpl)
-                all_proj = [''] + self.env.config.getlist('ticket-custom', 'project.options', sep='|')
-                if all_proj:
-                    sel_proj = req.args.get('mp_proj', all_proj[0])
-                # stream = stream | Transformer('//table[@id="millist"]').\
-                #     before(sel.generate(proj=_("Project"), all_projects=all_proj,
-                #                        sel_prj=sel_proj, btn=_("Change")))
+                all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+                stream = stream | Transformer('//table[@id="millist"]').\
+                   before(sel.generate(proj=_("Project"), all_projects=all_proj,
+                                       sel_prj="", all_label=_("All")))
                 # The 'add milestone' part of the page
                 if not self.allow_no_project:
                     stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type))\

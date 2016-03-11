@@ -1,53 +1,54 @@
 jQuery(document).ready(function($) {
-    var col_pos = 2;
 
-    function add_version_column(idx){
-          if(idx > 0){ /* Skip header */
-            var name = $('input', this).val();
-            var ver = ms_ext_version[name];
-            if(ver != undefined){
-                $('td:nth-child(' + col_pos + ')', this).after('<td>' + ver + '</td>')
-            }
-            else{
-                $('td:nth-child(' + col_pos + ')', this).after('<td></td>')
-            };
-          }
-    };
     function prepare_hiding(idx){
           if(idx > 0){ /* Skip header */
             var txt = $('td.default', this).prev().text();
             if(txt.length > 0){
               $(this).addClass('completed');
             };
-            /* */
             txt = $('td.project', this).text();
             if(txt.length > 0){
-              //$(this).data('project', txt);
-              $(this).attr('data-project', txt);
+              $(this).data('project', txt);
             };
           }
     };
-    function hide_milestone(){
+    function toggle_milestone_completed(){
       if($('#smp-hide-completed').is(':checked')){
-        $('tr.completed').hide();
+        $('tr.completed').addClass('smp-hide-completed');
       }
       else{
-        $('tr.completed').show();
+        $('tr.completed').removeClass('smp-hide-completed')
       };
     };
 
-    function hide_milestone_by_prj(){
-      var prj = $('#smp-projects-sel').val();
+    function toggle_milestone_by_prj(){
+      var prj = $('#smp-project-sel').val();
       if(prj != ''){
-        $('[data-project='+prj+']').hide();
+        $('#millist tr').each(function(idx){
+          if($(this).data('project') === prj){
+            $(this).removeClass('smp-hide-project');
+          }else{
+              if(idx > 0){
+                $(this).addClass('smp-hide-project');
+              };
+          };
+        });
+      }else{
+        $('#millist tr').each(function(idx){
+               if(idx > 0){
+                   $(this).removeClass('smp-hide-project');
+               };
+           });
       };
     };
 
-    /* Add version dropdown */
-    $('#millist').before('<label><input type="checkbox" id="smp-hide-completed"/>Hide completed milestones</label>');
-    $('#smp-hide-completed').on('click', hide_milestone);
+    /* Hide completed */
+    $('#millist').before('<label id="smp-hide-label"><input type="checkbox" id="smp-hide-completed"/>Hide completed milestones</label>');
+    $('#smp-hide-completed').on('click', toggle_milestone_completed);
     $('#millist tr').each(prepare_hiding);
 
-    $('#hide-ms-by-prj').on('click', hide_milestone_by_prj);
+    /* Hide by project */
+    $('#smp-project-sel').on('change', toggle_milestone_by_prj);
+    toggle_milestone_by_prj(); /* For proper reloading of page */
 
 });
