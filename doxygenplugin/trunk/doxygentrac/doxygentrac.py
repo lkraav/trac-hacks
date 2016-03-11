@@ -11,13 +11,12 @@ import time
 import posixpath
 import re
 import mimetypes
-import xml.sax
 
-from collections import OrderedDict
+from doxyfiletrac import init_doxyfile, post_doxyfile
 from genshi.builder import tag
 from genshi.core import Markup
 from operator import itemgetter
-from subprocess import Popen
+from saxygen import search_in_doxygen
 from trac.admin import IAdminPanelProvider
 from trac.config import Option
 from trac.core import *
@@ -35,66 +34,6 @@ from trac.web.chrome import INavigationContributor, ITemplateProvider, \
 from trac.wiki.api import WikiSystem, IWikiSyntaxProvider
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import wiki_to_html
-
-class DoxygenTracHandler(xml.sax.ContentHandler):
-    last_field_name = ''
-    fields = {}
-    multi = []
-
-    def __init__(self, find, where, multi, index):
-        self.to_where = where
-        self.to_date = os.path.getctime(index)
-        self.to_multi = multi
-        find = find.replace('::', '\\')
-        if multi:
-            self.to_find = re.compile(r'''%s''' % find)
-        else:
-            self.to_find = find
-
-    def characters(self, content):
-        if self.last_field_name != "":
-            self.fields[self.last_field_name] += content
-
-    def startElement(self, name, attrs):
-        if name == 'field':
-            self.last_field_name = attrs['name']
-            self.fields[self.last_field_name] = ''
-        else: self.last_field_name = ''
-
-    def endElement(self, name):
-        if name == "doc":
-            self.fields['occ'] = 0
-            self.fields['target'] = ''
-            self.fields['date'] = self.to_date
-            for field in self.to_where:
-                if not self.to_multi:
-                    p = self.to_find == self.fields[field]
-                else:
-                    p = self.to_find.findall(self.fields[field])
-
-                if p:
-                    if '#' in self.fields['url']:
-                        url, target = self.fields['url'].split('#', 2)
-                        self.fields['url'] = url
-                        self.fields['target'] = target
-                    if not self.to_multi:
-                        raise IndexFound(self.fields)
-                    else:
-                        self.fields['occ'] += len(list(set(p)))
-
-            if self.fields['occ']:
-                self.multi.append(self.fields)
-            self.fields = {}
-        elif name == "add" and self.to_multi:
-            raise IndexFound(self.multi)
-        elif self.last_field_name == 'keywords':
-            # Doxygen produces duplicates in this field !
-            self.fields['keywords'] = ' '.join(list(set(self.fields['keywords'].split(' '))))
-        self.last_field_name = ''
-
-class IndexFound(Exception):
-    def __init__( self, msg ):
-        Exception.__init__(self, msg)
 
 class DoxygenPlugin(Component):
     implements(IPermissionRequestor, INavigationContributor, IRequestHandler,
@@ -164,22 +103,7 @@ class DoxygenPlugin(Component):
             return ''
         return index
 
-    def search_in_documentation(self, file, name, where, multi):
-        if not file:
-            return {}
-        self.log.debug("Search %s in %s by SAX", name, file)
-        parser = xml.sax.make_parser()
-        parser.setContentHandler(DoxygenTracHandler(name, where, multi, file))
-        res = {}
-        try:
-            parser.parse(file)
-        except IndexFound, a:
-            res = a.args[0]
-        except xml.sax.SAXException, a:
-            self.log.debug("SAX %s", a)
-        return res
-
-    def merge_header(self, req, content):
+    def merge_header(self, req, path):
         """Split a Doxygen HTML page in its head and body part.
         Find the references to style sheets by the Link tag
         and move them to the Trac Head part by add_stylesheet.
@@ -187,7 +111,13 @@ class DoxygenPlugin(Component):
         Move also the content of the Title Tag, by using JQuery.
         """
 
+        try:
+            content = file(path).read()
+        except (IOError, OSError), e:
+            raise TracError("Can't read doxygen content: %s" % e)
+
         m = re.match(r'''^\s*<!DOCTYPE[^>]*>\s*<html[^>]*>\s*<head>(.*?)</head>\s*<body[^>]*>(.*)</body>\s*</html>''', content, re.S)
+
         if not m:
             return content
 
@@ -199,7 +129,6 @@ class DoxygenPlugin(Component):
             u = re.match(r'''^[./]*([^:]+)$''', h)
             if u:
                 h = os.path.join('/doxygen', u.group(1))
-            self.log.debug('CSS %s', h)
             add_stylesheet(req, h)
 
         # pick up the title of the Doxygen page
@@ -216,7 +145,6 @@ class DoxygenPlugin(Component):
         s = re.findall(r'''<script([^>]*)>(.*?)</script>''', m.group(1), re.S)
         for i in s:
             h = re.search(r'''src=.([^ ]*).''', i[0])
-            self.log.debug('Script %s %s', i[0], h)
             if not h:
                 t += i[1]
             else:
@@ -231,19 +159,11 @@ class DoxygenPlugin(Component):
             t = "<script type='application/javascript'>" + t + "</script>\n"
         return t + m.group(2)
 
-    def rewrite_doxygen(self, req, path, doc):
+    def rewrite_doxygen(self, req, path, doc, charset):
         def wiki_in_doxygen(m):
             return wiki_to_html(m.group(1), self.env, req)
 
-        try:
-            content = file(path).read()
-        except (IOError, OSError), e:
-            raise TracError("Can't read doxygen content: %s" % e)
-
-        charset = (self.encoding or
-                   self.env.config['trac'].get('default_charset'))
-
-        content = to_unicode(self.merge_header(req, content), charset)
+        content = to_unicode(self.merge_header(req, path), charset)
 
         # Add a query string for explicit documentation
         if doc:
@@ -261,119 +181,6 @@ class DoxygenPlugin(Component):
         content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + name + r' &amp; \2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
 
-    def analyse_doxyfile(self, path, old):
-        # find all the options "X = "
-        # with their description just before
-        # text blocs between '#----' introduce new section
-
-        try:
-            content = file(path).read()
-        except (IOError, OSError), e:
-            raise TracError("Can't read doxygen content: %s" % e)
-
-        content = to_unicode(content, 'utf-8')
-        # Initial text is about file, not form
-        c = re.match(r'''^.*?(#-----.*)''', content, re.S)
-        if c:
-            self.log.debug('taking "%s" last characters out of %s in %s', len(c.group(1)), len(content), path);
-            content = c.group(1)
-
-        m = re.compile(r'''\s*(#-+\s+#(.*?)\s+#-+)?(.*?)$\s*([A-Z][A-Z0-9_-]+)\s*=([^#]*?)$''', re.S|re.M)
-        s = m.findall(content)
-        self.log.debug('Found "%s" options in Doxyfile', len(s));
-        options = OrderedDict()
-        for o in s:
-            u, explain, label, id, value = o
-            atclass = default = ''
-            if id in old and value != old[id]['value']:
-                value = old[id]['value']
-                atclass = 'changed'
-            # required for plugin to work
-            if id == 'SERVER_BASED_SEARCH' or id == 'EXTERNAL_SEARCH':
-                value = 'YES'
-                atclass = 'changed'
-            if id == 'OUTPUT_DIRECTORY' and self.base_path:
-                default = self.base_path + ('' if self.base_path[-1] =='/' else '/')
-                value = value[len(default):]
-                if value:
-                    atclass = 'changed'
-                else:
-                    value = self.default_doc
-            elif id == 'INPUT' and self.input:
-                default = self.input + ('' if self.input[-1] =='/' else '/')
-                value = value[len(default):]
-                if value:
-                    atclass = 'changed'
-            elif id == 'STRIP_FROM_PATH' and self.input and not value:
-                value = self.input
-                atclass = 'changed'
-            elif id == 'PROJECT_NAME' and re.match('\s*"My Project"', value):
-                value = os.path.basename(self.input)
-                if not value:
-                    value = os.path.basename(self.base_path)
-                atclass = 'changed'
-                
-            # prepare longer input tag for long default value
-            l = 20 if len(value) < 20 else len(value) + 3
-            options[id] = {
-                'explain': explain,
-                'label': label,
-                'value': value,
-                'default': default,
-                'size': l,
-                'atclass': atclass
-            }
-        return options
-
-    def display_doxyfile(self, prev, first, sets):
-        if re.match(r'''.*output$''', prev) and first == 'NO':
-            display = 'none'
-        else:
-            display = 'block'
-        return {'display': display, 'opt': sets}
-
-
-    def apply_doxyfile(self, doxyfile, path_trac, req):
-        f = open(doxyfile, 'w')
-        for k in req.args:
-            if not re.match(r'''^[A-Z]''', k):
-                continue
-            if req.args.get(k):
-                s = req.args.get(k)
-            else:
-                s = '';
-            o = "#\n" + k + '=' + s + "\n"
-            f.write(o.encode('utf8'))
-        f.close()
-        fo = os.path.join(path_trac, 'doxygen.out')
-        o = open(fo, 'w');
-        fr = os.path.join(path_trac, 'doxygen.err')
-        e = open(fr, 'w');
-        if self.doxygen_args:
-            arg = self.doxygen_args
-        else:
-            arg = doxyfile
-        self.log.debug('calling ' + self.doxygen + ' ' + arg)
-        dir = req.args.get('INPUT') if req.args.get('INPUT') else self.input;
-        p = Popen([self.doxygen, arg], bufsize=-1, stdout=o, stderr=e, cwd=dir if dir else None)
-        p.communicate();
-        n = p.returncode;
-        o.close()
-        e.close()
-        if n == 0:
-            path = os.path.join(self.base_path, self.default_doc)
-            p = Popen(['chmod', '-R', 'g+w', path])
-            msg = "";
-            # the std-error may be not empty because of warnings
-            # and because exit status in "dot" execution is not reported
-            trace = file(fo).read() + file(fr).read()
-        else:
-            msg = ("Doxygen Error %s\n" %(n))
-            trace = file(fr).read()
-        os.unlink(fo)
-        os.unlink(fr)
-        self.log.debug("Doxygen exit for %s: %s" % (path_trac, n))
-        return {'msg': msg, 'trace': trace}
 
     # IPermissionRequestor methods
 
@@ -446,7 +253,9 @@ class DoxygenPlugin(Component):
         self.log.debug('mime %s path: %s for %s.', mimetype, path, req.path_info)
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
-            content = self.rewrite_doxygen(req, path, doc if req.args.get('doc') else '')
+            charset = (self.encoding or self.env.config['trac'].get('default_charset'))
+            doc = doc if req.args.get('doc') else ''
+            content = self.rewrite_doxygen(req, path, doc, charset)
             return 'doxygen.html', content, 'text/html'
         else:
             req.send_file(path, mimetype)
@@ -469,93 +278,15 @@ class DoxygenPlugin(Component):
 
     def render_admin_panel(self, req, cat, page, info):
         req.perm.require('TRAC_ADMIN')
-        if self.doxyfile:
-            doxyfile = self.doxyfile
-        else:
-            doxyfile = ''
 
-        if req.method != 'POST':
-            path_trac = os.path.join(self.base_path, self.default_doc)
-            if not doxyfile:
-                doxyfile = os.path.join(path_trac, 'Doxyfile')
-            if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
-                env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
-                path_trac = '/tmp'
-            else:
-                env = {'msg': '', 'trace': ''}
+        if req.method == 'POST':
+            # if post is ok, we dont return here:
+            # a redirection to the main page of the documentation occurs
+            env = post_doxyfile(req, self.doxygen, self.doxygen_args, self.doxyfile, self.input, self.base_path, self.log)
         else:
-            path_trac = req.args.get('OUTPUT_DIRECTORY')
-            if  path_trac and path_trac[-1] !='/':
-                path_trac += '/'
-            if not doxyfile:
-                doxyfile = os.path.join(path_trac, 'Doxyfile')
-            if not os.path.isdir(path_trac):
-                try:
-                    os.mkdir(path_trac)
-                except (IOError, OSError), e:
-                    raise TracError("Can't create directory: %s" % path_trac)
-            if not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
-                env = {'msg': 'Error:' + path_trac + ' not W_OK', 'trace': ''}
-                path_trac = '/tmp/'
-            else:
-                env = self.apply_doxyfile(doxyfile, path_trac, req)
-                if env['msg'] == '':
-                    self.log.debug(env['trace'])
-                    doc = path_trac[len(self.base_path):].strip('/')
-                    if not doc:
-                        url = req.href.doxygen('/')
-                    else:
-                        url = req.href.doxygen('/', doc=doc)
-                    req.redirect(url)
-        # Read old choices if they exists
-        if os.path.exists(doxyfile):
-            old = self.analyse_doxyfile(doxyfile, {})
-        else:
-            old = {}
-        # Generate the std Doxyfile
-        # (newer after a doxygen command update, who knows)
-        fi = os.path.join(path_trac, 'doxygen.tmp')
-        fo = os.path.join(path_trac, 'doxygen.out')
-        o = open(fo, 'w');
-        fr = os.path.join(path_trac, 'doxygen.err')
-        e = open(fr, 'w');
-        if o and e:
-            p = Popen([self.doxygen, '-g', fi],  bufsize=-1, stdout=o, stderr=e)
-            p.communicate()
-            n = p.returncode
-        else:
-            n = -1
-        if not os.path.exists(fi) or n !=0:
-            env['fieldsets'] = {};
-            env['msg'] += (" Doxygen -g Error %s\n" %(n))
-            env['trace'] = file(fr).read()
-        else:
-            # Read std Doxyfile and report old choices in it
-            # split in fieldsets
-            fieldsets = OrderedDict()
-            sets = OrderedDict()
-            prev = first = ''
-            inputs = self.analyse_doxyfile(fi, old)
-            for k,s in inputs.iteritems():
-                if s['explain']:
-                    if prev and sets:
-                        self.log.debug("fieldset %s first '%s'" % (prev, first))
-                        fieldsets[prev] = self.display_doxyfile(prev, first, sets)
-                    sets = OrderedDict()
-                    prev = s['explain']
-                    first = s['value'].strip()
-                sets[k] = s
-            if prev and sets:
-                fieldsets[prev] = self.display_doxyfile(prev, first, sets)
-            env['fieldsets'] = fieldsets
-        # try, don't cry
-        try:
-            os.unlink(fi)
-            os.unlink(fr)
-            os.unlink(fo)
-        except (IOError, OSError), e:
-            self.log.debug("forget temporary files")
+            env = {}
 
+        env = init_doxyfile(env, self.doxygen, self.doxyfile, self.input, self.base_path, self.default_doc, self.log)
         add_stylesheet(req, 'doxygen/css/doxygen.css')
         add_script(req, 'doxygen/js/doxygentrac.js')
         return 'doxygen_admin.html', env
@@ -579,10 +310,10 @@ class DoxygenPlugin(Component):
 
         k = '|'.join(keywords).encode(self.encoding)
         doc = self.check_documentation(self.default_doc)
-        all = self.search_in_documentation(doc, k, ['keywords', 'text'], True)
+        all = search_in_doxygen(doc, k, ['keywords', 'text'], True, self.log)
         all = sorted(all, key=itemgetter('keywords'));
         all = sorted(all, key=itemgetter('occ'), reverse=True)
-        self.log.debug('%s search: "%s" items', k, len(all))
+        self.log.debug('%s search in %s: "%s" items', k, doc, len(all))
         for res in all:
             url = 'doxygen/' + res['url']  + '#' + res['target']
             t = shorten_result(res['text'])
@@ -605,10 +336,10 @@ class DoxygenPlugin(Component):
                 res = {'url':'index.html', 'target':'', 'type':'file', 'text':'index'}
             else:
                 file = self.check_documentation(doc)
-                res = self.search_in_documentation(file, name, ['name'], False)
+                res = search_in_doxygen(file, name, ['name'], False, self.log)
                 if not res:
                     suffix = '[.:\\\\]' + name + '$'
-                    res = self.search_in_documentation(file, suffix, ['name'], True)
+                    res = search_in_doxygen(file, suffix, ['name'], True, self.log)
                     if len(res) != 1:
                         self.log.debug('%s: %d occurrences in %s' % (suffix, len(res), file))
                         return tag.a(label, title=name, class_='missing',
@@ -621,7 +352,7 @@ class DoxygenPlugin(Component):
             else:
                 url = formatter.href.doxygen(res['url'])
             url += '#' + res['target']
-            self.log.debug("doxygen_link %s" %(url))
+            self.log.debug("doxygen_link %s for %s in %s" %(url, name, doc))
             t = res['type']
             if (t == 'function'):
                 t += ' ' + res['name'] + ' ' + res['args']
