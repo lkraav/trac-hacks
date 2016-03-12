@@ -549,6 +549,12 @@ class SmpAddExtendedVersionColumn(Component):
 
     def __init__(self):
         self.extended_version = self._get_ext_version(self.env.get_read_db()) != 0
+        if self.extended_version:
+            try:
+                from extendedversion.milestone import MilestoneVersion
+                self.extended_version = self.env.enabled[MilestoneVersion]
+            except ImportError:
+                self.extended_version = False
 
     def _get_ext_version(self, db):
         cursor = db.cursor()
