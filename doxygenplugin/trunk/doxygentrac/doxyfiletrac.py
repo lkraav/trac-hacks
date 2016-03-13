@@ -11,6 +11,11 @@ from subprocess import Popen
 from trac.util.text import to_unicode
 
 def post_doxyfile(req, doxygen, doxygen_args, doxyfile, input, base_path, log):
+    """
+    Build a Doxyfile from POST data and execute Doxygen,
+    whose path and arguments are issued from trac.ini.
+    If exec succeed, redirect to the main page of the generated documentation.
+    """
     path_trac = req.args.get('OUTPUT_DIRECTORY')
     if  path_trac and path_trac[-1] !='/':
         path_trac += '/'
@@ -38,7 +43,14 @@ def post_doxyfile(req, doxygen, doxygen_args, doxyfile, input, base_path, log):
                 url = req.href.doxygen('/', doc=doc)
             req.redirect(url)
 
+
 def init_doxyfile(env, doxygen, doxyfile, input, base_path, default_doc, log):
+    """
+    Build the standard Doxyfile, and merge it with the current if any.
+    Return a dict with the list of Doxygen options with their values,
+    along with an error message if any,
+    and the trace for warnings and the like.
+    """
     path_trac = os.path.join(base_path, default_doc)
     if not env and not os.path.isdir(path_trac) or not os.access(path_trac, os.W_OK):
         env = {'msg': 'Error: ' + path_trac + ' not W_OK', 'trace': ''}
@@ -81,7 +93,7 @@ def init_doxyfile(env, doxygen, doxyfile, input, base_path, default_doc, log):
         for k,s in inputs.iteritems():
             if s['explain']:
                 if prev and sets:
-                    log.debug("fieldset %s first '%s'" % (prev, first))
+                    log.debug("fieldset %s first '%s'", prev, first)
                     fieldsets[prev] = display_doxyfile(prev, first, sets)
                 sets = OrderedDict()
                 prev = s['explain']
@@ -103,6 +115,16 @@ def init_doxyfile(env, doxygen, doxyfile, input, base_path, default_doc, log):
 
 
 def apply_doxyfile(req_args, doxygen, doxygen_args, doxyfile, input, path_trac):
+    """
+    Save the POST data in the Doxyfile, and execute doxygen from the INPUT dir,
+    since the EXCLUDE option is computed relative to the execution path.
+    Return a dict with an empty "msg" field if ok, an error message otherwise.
+    Warning: Doxygen does not check if the Dot utility exit on error,
+    so an empty message doest not always mean the execution is ok.
+    The "trace" field mention the possible Dot errors.
+    It also contains the Doxygen warnings.
+    """
+
     f = open(doxyfile, 'w')
 
     for k in req_args:
@@ -136,8 +158,6 @@ def apply_doxyfile(req_args, doxygen, doxygen_args, doxyfile, input, path_trac):
     if n == 0:
         p = Popen(['chmod', '-R', 'g+w', path_trac])
         msg = "";
-        # the std-error may be not empty because of warnings
-        # and because exit status in "dot" execution is not reported
         trace = file(fo).read() + file(fr).read()
     else:
         msg = ("Doxygen Error %s\n" %(n))
@@ -148,9 +168,14 @@ def apply_doxyfile(req_args, doxygen, doxygen_args, doxyfile, input, path_trac):
 
 
 def analyze_doxyfile(base_path, default_doc, input, path, old, log):
-    # find all the options "X = "
-    # with their description just before
-    # text blocs between '#----' introduce new section
+    """
+    Read a Doxyfile and build a Web form allowing to change its default values.
+    Text blocs between '#----' introduce new section.
+    Other text blocs are treated as the "label" tag of the "input" tag
+    described by the line matching NAME=VALUE that follows.
+    Values different form default value for a field have a different CSS class.
+    For some NAMES, value cannot be choosen freely.
+    """
 
     try:
         content = file(path).read()
@@ -212,6 +237,12 @@ def analyze_doxyfile(base_path, default_doc, input, path, old, log):
     return options
 
 def display_doxyfile(prev, first, sets):
+    """
+    Prepare the fieldset corresponding to a section in the Doxyfile.
+    If the name of the section matches "output", 
+    and the first option in it is set to 'NO',
+    the fieldset will not be displayed.
+    """
     if re.match(r'''.*output$''', prev) and first == 'NO':
         display = 'none'
     else:
