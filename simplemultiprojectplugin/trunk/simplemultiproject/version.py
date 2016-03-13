@@ -114,7 +114,7 @@ class SmpVersionProject(Component):
             action = 'edit'  # rather than 'new' so that it works for POST/save
 
         if req.method == 'POST':
-            if req.args.has_key('cancel'):
+            if 'cancel' in req.args:
                 if version.exists:
                     req.redirect(req.href.version(version.name))
                 else:
