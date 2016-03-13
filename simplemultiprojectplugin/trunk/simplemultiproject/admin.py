@@ -48,14 +48,14 @@ class SmpAdminPanel(Component):
 
     def add_project(self, name, summary, description, closed, restrict):
         try:
-            self.log.info("Simple Multi Project: Adding project %s" % (name))
+            self.log.info("Simple Multi Project: Adding project %s", name)
             self.__SmpModel.insert_project(name, summary, description, closed, restrict)
             # Make sure the internal list of projects is up to date
             self.__SmpModel.get_all_projects()  # This sets the data in the config object
             self.config.save()  # Fixes #12524
             return True
         except Exception, e:
-            self.log.error("Add Project Error: %s" % (e, ))
+            self.log.error("Add Project Error: %s", e)
             return False
 
     def update_project(self, id, name, summary, description, closed, restrict):
@@ -63,7 +63,7 @@ class SmpAdminPanel(Component):
             # we have to rename the project in tickets custom field
             old_project_name = self.__SmpModel.get_project_name(id)
 
-            self.log.info("Simple Multi Project: Modify project %s" % (name))
+            self.log.info("Simple Multi Project: Modify project %s", name)
             self.__SmpModel.update_project(id, name, summary, description, closed, restrict)
 
             if old_project_name and old_project_name != name:
@@ -73,7 +73,7 @@ class SmpAdminPanel(Component):
             self.config.save()  # Fixes #12524
             return True
         except Exception, e:
-            self.log.error("Modify Project Error: %s" % (e, ))
+            self.log.error("Modify Project Error: %s", e)
             return False
 
     def render_admin_panel(self, req, category, page, path_info):
@@ -102,7 +102,9 @@ class SmpAdminPanel(Component):
                     time = to_utimestamp(time)
 
                     if not self.update_project(req.args.get('id'), req.args.get('name'), req.args.get('summary'), req.args.get('description'), time, req.args.get('restrict')):
-                        self.log.error("SimpleMultiProject Error: Failed to add project '%s'" % (req.args.get('name'),))
+                        self.log.error("SimpleMultiProject Error: Failed to "
+                                       "add project '%s'",
+                                       req.args.get('name'))
                     else:
                         add_notice(req, "'The project '%s' has been modified." % req.args.get('name'))
                         req.redirect(req.href.admin(category, page))
@@ -127,7 +129,9 @@ class SmpAdminPanel(Component):
                         time = to_utimestamp(time)
 
                         if not self.add_project(req.args.get('name'), req.args.get('summary'), req.args.get('description'), time, req.args.get('restrict')):
-                            self.log.error("SimpleMultiProject Error: Failed to added project '%s'" % (req.args.get('name'),))
+                            self.log.error("SimpleMultiProject Error: Failed "
+                                           "to add project '%s'",
+                                           req.args.get('name'))
                         else:
                             add_notice(req, "'The project '%s' has been added." % req.args.get('name'))
                             req.redirect(req.href.admin(category, page))
