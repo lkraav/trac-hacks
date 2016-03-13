@@ -176,7 +176,7 @@ class DoxygenPlugin(Component):
         content = comment.sub(wiki_in_doxygen, content)
         comment = re.compile(r'''<dd>([^<>&]*?)</dd>''', re.S)
         content = comment.sub(wiki_in_doxygen, content)
-        
+
         name = self.link_me('TracDoxygen')
         content = re.sub(r'(<small>.*)(<a .*</small>)', r'\1' + name + r' &amp; \2', content,1,re.S)
         return {'doxygen_content': Markup(content)}
@@ -297,7 +297,7 @@ class DoxygenPlugin(Component):
         if not req.perm.has_permission('DOXYGEN_VIEW'):
             return
         if not self.check_documentation(self.default_doc):
-            return 
+            return
         yield('doxygen', self.title)
 
     def get_search_results(self, req, keywords, filters):
@@ -328,7 +328,7 @@ class DoxygenPlugin(Component):
                 doc, name = name.split('/')
                 if not doc:
                     doc = self.default_doc
-            self.log.debug('search link for ' + name + ' inc doc ' + doc)
+            self.log.debug("search link for %s inc doc %s", name, doc)
             if not name:
                 if doc:
                     label = doc
@@ -341,7 +341,8 @@ class DoxygenPlugin(Component):
                     suffix = '[.:\\\\]' + name + '$'
                     res = search_in_doxygen(file, suffix, ['name'], True, self.log)
                     if len(res) != 1:
-                        self.log.debug('%s: %d occurrences in %s' % (suffix, len(res), file))
+                        self.log.debug('%s: %d occurrences in %s', suffix,
+                                       len(res), file)
                         return tag.a(label, title=name, class_='missing',
                                      href=formatter.href.doxygen())
                     else:
@@ -352,7 +353,7 @@ class DoxygenPlugin(Component):
             else:
                 url = formatter.href.doxygen(res['url'])
             url += '#' + res['target']
-            self.log.debug("doxygen_link %s for %s in %s" %(url, name, doc))
+            self.log.debug("doxygen_link %s for %s in %s", url, name, doc)
             t = res['type']
             if (t == 'function'):
                 t += ' ' + res['name'] + ' ' + res['args']
