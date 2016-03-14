@@ -20,14 +20,18 @@ from trac.mimeview import Context
 from trac.resource import Resource
 from trac.util import format_date
 from trac.util.text import CRLF
-from trac.web.chrome import INavigationContributor, add_stylesheet, web_context
+from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
 from model import get_users, Comment, \
     PeerReviewerModel, PeerReviewModel, ReviewFileModel
-from peerReviewMain import add_ctxt_nav_items
+from peerReviewMain import add_ctxt_nav_items, web_context_compat
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
 
+try:
+    from trac.web.chrome import web_context
+except ImportError:
+    web_context = web_context_compat
 
 def review_is_finished(config, review):
     """A finished review may only be reopened by a manager or admisnistrator
