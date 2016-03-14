@@ -117,6 +117,15 @@ def get_milestone_from_trac(env, name):
     except ResourceNotFound:
         return None
 
+projects_tmpl = """
+<div xmlns:py="http://genshi.edgewall.org/" id="smp-ms-sel-div" py:if="all_projects">
+$proj
+<select id="smp-project-sel">
+    <option value="" selected="'' == sel_prj or None}">$all_label</option>
+    <option py:for="prj in all_projects" value="$prj" selected="${prj == sel_prj or None}">$prj</option>
+</select>
+</div>
+"""
 
 class SmpFilterDefaultMilestonePanels(Component):
     """Modify default Trac admin panels for milestones to include project selection.
@@ -186,16 +195,6 @@ class SmpFilterDefaultMilestonePanels(Component):
 
     # ITemplateStreamFilter methods
 
-    projects_tmpl = """
-<div xmlns:py="http://genshi.edgewall.org/" id="smp-ms-sel-div" py:if="all_projects">
-$proj
-<select id="smp-project-sel">
-    <option value="" selected="'' == sel_prj or None}">$all_label</option>
-    <option py:for="prj in all_projects" value="$prj" selected="${prj == sel_prj or None}">$prj</option>
-</select>
-</div>
-"""
-
     def filter_stream(self, req, method, filename, stream, data):
 
         if filename == "admin_milestones.html":
@@ -229,7 +228,7 @@ $proj
                 stream = stream | Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
                 # Add select control with projects for hiding milestones
-                sel = MarkupTemplate(self.projects_tmpl)
+                sel = MarkupTemplate(projects_tmpl)
                 all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
                 stream = stream | Transformer('//table[@id="millist"]').\
                    before(sel.generate(proj=_("Project"), all_projects=all_proj,
@@ -347,6 +346,7 @@ class SmpFilterDefaultVersionPanels(Component):
         if filename == "admin_versions.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            add_script(req, "simplemultiproject/js/filter_version_table.js")
             if self.single_project:
                 input_type = 'radio'
             else:
@@ -363,10 +363,16 @@ class SmpFilterDefaultVersionPanels(Component):
                     except KeyError:
                         # A version without a project
                         all_ver_proj[ver] = [all_proj[p_id]]
-
+                add_script_data(req, {'smp_proj_ver': all_ver_proj})
                 # Add project column to main version table
                 stream = stream | Transformer('//table[@id="verlist"]//th[2]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="verlist"]//tr').apply(InsertProjectTd("", all_ver_proj))
+
+                sel = MarkupTemplate(projects_tmpl)
+                all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+                stream = stream | Transformer('//table[@id="verlist"]'). \
+                    before(sel.generate(proj=_("Project"), all_projects=all_proj,
+                                        sel_prj="", all_label=_("All")))
 
                 # The 'add version' part of the page
                 if not self.allow_no_project:
