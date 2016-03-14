@@ -224,6 +224,7 @@ class SmpFilterDefaultMilestonePanels(Component):
                             # missing from the SMP milestone table
                             all_ms_proj[ms] = [""]
 
+                add_script_data(req, {'smp_proj_ms': all_ms_proj})
                 # Add project column to main milestone table
                 stream = stream | Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
                 stream = stream | Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))

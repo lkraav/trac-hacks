@@ -6,10 +6,6 @@ jQuery(document).ready(function($) {
             if(txt.length > 0){
               $(this).addClass('completed');
             };
-            txt = $('td.project', this).text();
-            if(txt.length > 0){
-              $(this).data('project', txt);
-            };
           }
     };
     function toggle_milestone_completed(){
@@ -25,12 +21,13 @@ jQuery(document).ready(function($) {
       var prj = $('#smp-project-sel').val();
       if(prj != ''){
         $('#millist tr').each(function(idx){
-          if($(this).data('project') === prj){
-            $(this).removeClass('smp-hide-project');
-          }else{
-              if(idx > 0){
-                $(this).addClass('smp-hide-project');
-              };
+          if(idx > 0){
+             var prj_for_ms = smp_proj_ms[$('input:first', this).val()];
+             if ($.inArray(prj, prj_for_ms) != -1){
+                $(this).removeClass('smp-hide-project');
+             }else{
+                 $(this).addClass('smp-hide-project');
+             };
           };
         });
       }else{
