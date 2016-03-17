@@ -137,20 +137,20 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                 elif data.get('view') == 'detail':
                     # Add preview div
                     tmpl = MarkupTemplate(self.preview_tmpl)
-                    self._add_preview(req, req.base_path+'/preview_render')
+                    self._add_preview(req, req.base_path+'/wiki_render')
                     filter_ = Transformer('//form[@id="modifymilestone"]//div[@class="buttons"]')
                     stream = stream | filter_.before(tmpl.generate())
         elif req.args.get('action') == 'new' and len(path) > 1 and path[1] == 'milestone':
             # Milestone creation from roadmap page
             templates = self.get_milestone_templates(req)
-            self._add_preview(req, 'preview_render')
+            self._add_preview(req, 'wiki_render')
             filter_ = Transformer('//form[@id="edit"]//p')
             if templates:
                 stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template))
             tmpl = MarkupTemplate(self.preview_tmpl)
             stream = stream | filter_.after(tmpl.generate())
         elif filename == 'milestone_edit.html':
-            self._add_preview(req, req.base_path+'/preview_render')
+            self._add_preview(req, req.base_path+'/wiki_render')
             filter_ = Transformer('//form[@id="edit"]//p')
             if req.method == "POST":
                 # Milestone creation from roadmap page. Duplicate name redirected to edit page.
