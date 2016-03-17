@@ -12,12 +12,17 @@ setup(
     name='MilestoneTemplatePlugin',
     description='Use templates when creating milestones.',
     long_description='Use templates when creating milestones.',
-    version='0.1.0',
+    version='0.1.1',
     url='http://trac-hacks.org/wiki/MilestoneTemplatePlugin',
     license="New BSD",
     author='Cinc-th',
     maintainer='Cinc-th',
     packages=['milestonetemplate'],
+    package_data={
+        'milestonetemplate': [
+            'htdocs/js/*.js',
+            'htdocs/css/*.css',
+        ]},
     entry_points="""
         [trac.plugins]
         MilestoneTemplatePlugin = milestonetemplate.web_ui

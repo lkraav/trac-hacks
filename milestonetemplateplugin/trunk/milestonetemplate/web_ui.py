@@ -9,22 +9,24 @@ from trac.ticket.model import Milestone
 from trac.util.datefmt import parse_date
 from trac.util.text import _
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateStreamFilter, add_notice
+from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, \
+    ITemplateProvider, ITemplateStreamFilter
 from trac.wiki import WikiSystem, WikiPage
 from genshi.filters import Transformer
 from genshi.template.markup import MarkupTemplate
 from string import Template
 
+
 class MilestoneTemplatePlugin(MilestoneAdminPanel):
     """Use templates when creating milestones.
 
-    Any wiki page with a name starting with ''MilestoneTemplates/'' can be used as a template. This works in a
+    Any wiki page with a name starting with ''!MilestoneTemplates/'' can be used as a template. This works in a
     similar way as wiki templates work (see PageTemplates).
 
     Examples for milestone templates:
 
-    * MilestoneTemplates/MsTemplate
-    * MilestoneTemplates/MyMilestoneTemplate
+    * !MilestoneTemplates/MsTemplate
+    * !MilestoneTemplates/MyMilestoneTemplate
 
     Milestone template may use the variable ''$MILESTONE'' for inserting the chosen milestone name into the
     description. This may be useful if the template contains a TracQuery with milestone parameter.
@@ -34,7 +36,7 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
     }}}
     """
 
-    implements(ITemplateStreamFilter, IRequestFilter)
+    implements(ITemplateStreamFilter, IRequestFilter, ITemplateProvider)
 
     MILESTONE_TEMPLATES_PREFIX = u'MilestoneTemplates/'
 
@@ -53,6 +55,11 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         """
     edit_page_template = u"""
         <div xmlns:py="http://genshi.edgewall.org/" class="field">
+            <div id="mschange" class="ticketdraft" style="display: none">
+                <h3 id="ms-change-h3">Preview:</h3>
+                    <div class="notes-preview comment searchable">
+                    </div>
+            </div>
             <p>Or use a template for the description:</p>
             <label>Template:
             <select id="ms-templates" name="template">
@@ -65,6 +72,17 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
             </label>
         </div>
         """
+    preview_tmpl = u"""
+            <div id="mschange" class="ticketdraft" style="display: none">
+                <h3 id="ms-change-h3">Preview:</h3>
+                    <div class="notes-preview comment searchable">
+                    </div>
+            </div>
+    """
+    def __init__(self):
+        # Let our component handle the milestone stuff
+        if self.env.is_enabled(MilestoneAdminPanel):
+            self.env.disable_component(MilestoneAdminPanel)
 
     def render_admin_panel(self, req, cat, page, version):
         req.perm.require('MILESTONE_VIEW')
@@ -115,14 +133,24 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         path = req.path_info.split('/')
         if filename == 'admin_milestones.html':
             # Milestone creation from admin page
-            templates = self.get_milestone_templates(req)
-            if templates:
-                filter_ = Transformer('//form[@id="addmilestone"]//div[@class="buttons"]')
-                stream = stream | filter_.before(self.create_templ_select_ctrl(templates, self.admin_page_template))
-        elif path[1] == 'milestone' and req.args.get('action') == 'new':
+            if data:
+                if data.get('view') == 'list':
+                    templates = self.get_milestone_templates(req)
+                    if templates:
+                        filter_ = Transformer('//form[@id="addmilestone"]//div[@class="buttons"]')
+                        stream = stream | filter_.before(self.create_templ_select_ctrl(templates, self.admin_page_template))
+                elif data.get('view') == 'detail':
+                    # Add preview div
+                    templates = self.get_milestone_templates(req)
+                    tmpl = MarkupTemplate(self.preview_tmpl)
+                    self._add_preview(req, req.base_path+'/preview_render')
+                    filter_ = Transformer('//form[@id="modifymilestone"]//div[@class="buttons"]')
+                    stream = stream | filter_.before(tmpl.generate())
+        elif req.args.get('action') == 'new' and len(path) > 1 and path[1] == 'milestone':
             # Milestone creation from roadmap page
             templates = self.get_milestone_templates(req)
             if templates:
+                self._add_preview(req, 'preview_render')
                 filter_ = Transformer('//form[@id="edit"]//p')
                 stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template))
         elif filename == 'milestone_edit.html' and req.method == 'POST':
@@ -133,6 +161,16 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                 stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template,
                                                                               req.args.get('template', None)))
         return stream
+
+    def _add_preview(self, req, render_url):
+        scr_data = {'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
+                    'form_token': req.form_token,
+                    'ms_preview_renderer': render_url}
+        add_script_data(req, scr_data)
+        add_script(req, 'common/js/auto_preview.js')
+        add_script(req, 'mstemplate/js/ms_preview.js')
+        add_stylesheet(req, 'common/css/ticket.css')
+        add_stylesheet(req, 'mstemplate/css/ms_preview.css')
 
     def get_milestone_templates(self, req):
         """Get milestone templates from wiki. You need WIKI_VIEW oermission to use templates"""
@@ -177,3 +215,12 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
 
     def post_process_request(self, req, template, data, content_type):
         return template, data, content_type
+
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        return []
+
+    def get_htdocs_dirs(self):
+        from pkg_resources import resource_filename
+        return [('mstemplate', resource_filename(__name__, 'htdocs'))]
