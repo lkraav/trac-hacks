@@ -55,11 +55,6 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         """
     edit_page_template = u"""
         <div xmlns:py="http://genshi.edgewall.org/" class="field">
-            <div id="mschange" class="ticketdraft" style="display: none">
-                <h3 id="ms-change-h3">Preview:</h3>
-                    <div class="notes-preview comment searchable">
-                    </div>
-            </div>
             <p>Or use a template for the description:</p>
             <label>Template:
             <select id="ms-templates" name="template">
@@ -141,7 +136,6 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                         stream = stream | filter_.before(self.create_templ_select_ctrl(templates, self.admin_page_template))
                 elif data.get('view') == 'detail':
                     # Add preview div
-                    templates = self.get_milestone_templates(req)
                     tmpl = MarkupTemplate(self.preview_tmpl)
                     self._add_preview(req, req.base_path+'/preview_render')
                     filter_ = Transformer('//form[@id="modifymilestone"]//div[@class="buttons"]')
@@ -149,17 +143,24 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         elif req.args.get('action') == 'new' and len(path) > 1 and path[1] == 'milestone':
             # Milestone creation from roadmap page
             templates = self.get_milestone_templates(req)
+            self._add_preview(req, 'preview_render')
+            filter_ = Transformer('//form[@id="edit"]//p')
             if templates:
-                self._add_preview(req, 'preview_render')
-                filter_ = Transformer('//form[@id="edit"]//p')
                 stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template))
-        elif filename == 'milestone_edit.html' and req.method == 'POST':
-            # Milestone creation from roadmap page. Duplicate name redirected to edit page.
-            templates = self.get_milestone_templates(req)
-            if templates:
-                filter_ = Transformer('//form[@id="edit"]//p')
-                stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template,
-                                                                              req.args.get('template', None)))
+            tmpl = MarkupTemplate(self.preview_tmpl)
+            stream = stream | filter_.after(tmpl.generate())
+        elif filename == 'milestone_edit.html':
+            self._add_preview(req, req.base_path+'/preview_render')
+            filter_ = Transformer('//form[@id="edit"]//p')
+            if req.method == "POST":
+                # Milestone creation from roadmap page. Duplicate name redirected to edit page.
+                templates = self.get_milestone_templates(req)
+                if templates:
+                    stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template,
+                                                                                  req.args.get('template', None)))
+            tmpl = MarkupTemplate(self.preview_tmpl)
+            stream = stream | filter_.after(tmpl.generate())
+
         return stream
 
     def _add_preview(self, req, render_url):
