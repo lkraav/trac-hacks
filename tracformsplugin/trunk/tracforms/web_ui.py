@@ -109,7 +109,7 @@ class FormUI(FormDBUser):
         if req.args.get('action') == 'select':
             realm=req.args.get('realm')
             resource_id=req.args.get('resource_id')
-            if realm is not None and resource_id is not None: 
+            if realm is not None and resource_id is not None:
                 form = Form(env, realm, resource_id)
                 req.perm(form.resource).require('FORM_VIEW')
                 return self._do_switch(env, req, form)
@@ -215,7 +215,7 @@ class FormUI(FormDBUser):
             # DEVEL: support for handling form revisions not implemented yet
             #form = Form(env, realm, parent, subctxt, id, version)
             form = Form(env, realm, parent, subctxt, id)
-            if 'FORM_VIEW' in req.perm(form):
+            if 'FORM_VIEW' in req.perm(form.resource):
                 form = form.resource
                 # build a more human-readable form values representation,
                 # especially with unicode character escapes removed
