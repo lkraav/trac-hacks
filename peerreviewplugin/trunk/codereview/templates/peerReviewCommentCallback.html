@@ -1,9 +1,12 @@
     <div xmlns:py="http://genshi.edgewall.org/">
         <py:choose test="invalid">
-          <div py:when="0" id="innerCommentSpan">
+          <div py:when="0" id="${fileID+'_'+lineNum}" class="comment-tree-div">
               ${commentHTML}
               <div py:if="not is_finished and not review_locked" class="buttons">
-                  <input type="button" name="addcomment" value="Add New Comment" id="addcomment-view"/>
+                  <input type="button" name="addcomment" value="Add New Comment"
+                         id="${'addcomment-view'+lineNum}"/>
+                  <input type="hidden" name="fileid" value="" id="${'comment-fileid-view'+lineNum}"/>
+                  <input type="hidden" name="line" value="" id="${'comment-line-view'+lineNum}" />
               </div>
               <p py:if="is_finished or review_locked" class="help">
                   This review is locked. You can't add any comments.
@@ -15,7 +18,7 @@
           <span py:when="3">Invalid Action Type</span>
           <span py:when="4">Invalid Permission</span>
           <span py:when="closed">Review already closed</span>
-          <div py:when="5" id="innerCommentSpan">
+          <div py:when="5" id="${fileID+'_'+lineNum}">
                 <table width="100%" id="addCommentTable">
                   <tr>
                     <td align="center">

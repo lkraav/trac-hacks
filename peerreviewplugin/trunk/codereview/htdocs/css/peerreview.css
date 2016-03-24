@@ -196,7 +196,39 @@ table.code th.performCodeReview{
   border-top:  1px solid #C0C0C0;
 }
 
-.comment-notread {
+/* For inline comment */
+/* Reset background color set by syntax highlighter */
+table.comment-table td{
+  background-color: transparent;
+}
+
+table.code tbody tr.comment-tr:hover td{
+  background-color: transparent;
+}
+
+/*td .comment-tree-div{
+*/
+td .peer-comment{
+  background-color: #f0f0f0;
+  border: 1px solid #C0C0C0;
+  float: left;
+  margin: 0.75em;
+  padding: 0.5em;
+  font-family: inherit;
+}
+
+td .comment-tree-div .comment-author{
+  font-size: 80%;
+  padding: 0.5em 0em;
+}
+
+table.code tr.comment-tr th, table.code tr.comment-tr td{
+  background-color: transparent;
+  font-family: inherit;
+}
+/* End inline comment */
+
+.comment-notread{
   background-color: #ffd;
 }
 

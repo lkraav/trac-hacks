@@ -230,7 +230,8 @@ class PeerReviewPerform(Component):
         # A user can't chnage his voting for a reviewed review
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
-        scr_data = {'peer_comments': [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
+        scr_data = {'peer_comments': list(set([c.line_num for c in
+                                               Comment.select_by_file_id(self.env, rfile.file_id)])),
                     'peer_file_id': fileid,
                     'peer_review_id': rfile.review_id,
                     'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),

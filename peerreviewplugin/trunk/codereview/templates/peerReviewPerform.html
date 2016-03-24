@@ -92,6 +92,9 @@
 
             <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 
+            <py:if test="not parent_review">
+                <label><input type="checkbox" id="inline-comments" />Show comments inline.</label>
+            </py:if>
             <table py:if="diffs or not parent_review" border="0" width="100%" style="border-collapse: collapse" id="table1">
                 <tr>
                     <td align="left">
@@ -114,7 +117,7 @@
                     </div>
                 </div>
             </py:if>
-            <!-- displays the contents of the file being reviewed -->
+            <!--! displays the contents of the file being reviewed -->
             <div id="FilePreview">$file_rendered</div>
 
             <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
