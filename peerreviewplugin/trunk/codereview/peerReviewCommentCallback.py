@@ -1,5 +1,7 @@
 #
 # Copyright (C) 2005-2006 Team5
+# Copyright (C) 2016 Cinc
+#
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -22,7 +24,7 @@ from trac.util import Markup
 from trac.web.main import IRequestHandler
 from genshi.template.markup import MarkupTemplate
 from dbBackend import *
-from model import ReviewFile, Comment, PeerReviewModel
+from model import ReviewFile, Comment, PeerReviewModel, ReviewDataModel
 from trac.wiki import format_to_html
 from trac.mimeview import Context
 from peerReviewView import review_is_locked, review_is_finished
@@ -77,6 +79,27 @@ class PeerReviewCommentHandler(Component):
                 comment.author = req.authname
                 if txt and txt.strip():
                     comment.insert()
+                writeJSONResponse(req, data)
+                return
+            elif req.args.get('markread'):
+                data['fileid'] = req.args.get('fileid')
+                data['line'] = req.args.get('line')
+                if req.args.get('markread') == 'read':
+                    rev_dat = ReviewDataModel(self.env)
+                    rev_dat['file_id'] = data['fileid']
+                    rev_dat['comment_id'] = req.args.get('commentid')
+                    rev_dat['review_id'] = req.args.get('reviewid')
+                    rev_dat['owner'] = req.authname
+                    rev_dat['type'] = 'read'
+                    rev_dat['data'] = 'read'
+                    rev_dat.insert()
+                else:
+                    rev_dat = ReviewDataModel(self.env)
+                    rev_dat['file_id'] = data['fileid']
+                    rev_dat['comment_id'] = req.args.get('commentid')
+                    rev_dat['owner'] = req.authname
+                    for rev in rev_dat.list_matching_objects():
+                        rev.delete()
                 writeJSONResponse(req, data)
                 return
 
@@ -195,6 +218,9 @@ class PeerReviewCommentHandler(Component):
         dbBack = dbBackend(db)
         comments = dbBack.getCommentsByFileIDAndLine(fileid, linenum)
 
+        my_comment_data = ReviewDataModel.comments_for_file_and_owner(self.env, fileid, req.authname)
+        data['read_comments'] = [c_id for c_id, t, dat in my_comment_data if t == 'read']
+
         rfile = ReviewFile(self.env, fileid)
         review = PeerReviewModel(self.env, rfile.review_id)
         data['review'] = review
@@ -222,42 +248,51 @@ class PeerReviewCommentHandler(Component):
 
     comment_template = u"""
             <table xmlns:py="http://genshi.edgewall.org/"
-                   width="400px" class="comment-table"
+                   style="width:400px"
+                   py:attrs="{'class': 'comment-table'} if comment.IDComment in read_comments else {'class': 'comment-table comment-notread'}"
                    id="${comment.IDParent}:${comment.IDComment}" data-child-of="$comment.IDParent">
             <tbody>
-            <tr py:if="not first">
-                <td width="${width}px"></td>
-                <td colspan="3" width="${400-width}px" class="border-col"></td>
+            <tr>
+                <td style="width:${width}px"></td>
+                <td colspan="3" style="width:${400-width}px"
+                class="border-col"></td>
             </tr>
             <tr>
-                <td width="${width}px"></td>
-                <td colspan="2" class="comment-author" width="${400-100-width}px">Author: $comment.Author</td>
-                <td width="100px" class="comment-date">$date</td>
+                <td style="width:${width}px"></td>
+                <td colspan="2" class="comment-author">Author: $comment.Author
+                <a py:if="comment.IDComment not in read_comments"
+                   href="javascript:markCommentRead($line, $fileid, $comment.IDComment)">Mark read</a>
+                <a py:if="comment.IDComment in read_comments"
+                   href="javascript:markCommentNotread($line, $fileid, $comment.IDComment)">Mark unread</a>
+                </td>
+                <td style="width:100px" class="comment-date">$date</td>
             </tr>
             <tr>
-                <td width="${width}px"></td>
-                <td valign="top" width="${factor}px" id="${comment.IDComment}TreeButton">
+                <td style="width:${width}px"></td>
+                <td valign="top" style="width:${factor}px" id="${comment.IDComment}TreeButton">
                     <img py:if="childrenHTML" src="$chrome/hw/images/minus.gif" id="${comment.IDComment}collapse"
                          onclick="collapseComments($comment.IDComment);" style="cursor: pointer;" />
                     <img py:if="childrenHTML" src="$chrome/hw/images/plus.gif" style="display: none;cursor:pointer;"
                          id="${comment.IDComment}expand"
                          onclick="expandComments($comment.IDComment);" />
                 </td>
-                <td colspan="2" width="${400-width-factor}px" class="comment-text">
+                <td colspan="2">
+                <div class="comment-text">
                     $text
+                </div>
                 </td>
             </tr>
             <tr>
-                <td width="${width}px"></td>
-                <td width="${factor}px"></td>
-                <td width="${400-100-factor-width}px" align="left">
+                <td></td>
+                <td></td>
+                <td>
                     <!--! Attachment -->
                     <a py:if="comment.AttachmentPath" border="0" alt="Code Attachment"
                        href="${callback}?actionType=getCommentFile&amp;fileName=${comment.AttachmentPath}&amp;IDFile=$fileid">
                         <img src="$chrome/hw/images/paper_clip.gif" /> $comment.AttachmentPath
                     </a>
                 </td>
-                <td width="100px" class="comment-reply">
+                <td class="comment-reply">
                    <a py:if="not is_locked" href="javascript:addComment($line, $fileid, $comment.IDComment)">Reply</a>
                 </td>
             </tr>
@@ -293,7 +328,8 @@ class PeerReviewCommentHandler(Component):
                  'fileid': fiileid,
                  'callback': self.env.href.peerReviewCommentCallback(),
                  'review': data['review'],
-                 'is_locked': data['is_finished'] or data['review_locked']
+                 'is_locked': data['is_finished'] or data['review_locked'],
+                 'read_comments': data['read_comments']
                  }
 
         tbl = MarkupTemplate(self.comment_template, lookup='lenient')

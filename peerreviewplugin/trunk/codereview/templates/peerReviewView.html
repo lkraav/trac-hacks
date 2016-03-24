@@ -109,6 +109,7 @@
                     <th>Revision</th>
                     <th>Line Numbers</th>
                     <th># of Comments</th>
+                    <th># Not Read</th>
                     <th>Status</th>
                 </tr>
                 </thead>
@@ -126,11 +127,11 @@
                     <td py:if="item['line_start'] == 0">1 - End of file
                     </td>
                     <td>${item.num_comments}</td>
+                    <td py:attrs="{'class': 'comment-notread'} if item.num_notread else None">${item.num_notread}</td>
                     <td>${item['status']}</td>
                 </tr>
                 </tbody>
             </table>
-
 
             <h2>Users assigned to this code review</h2>
 

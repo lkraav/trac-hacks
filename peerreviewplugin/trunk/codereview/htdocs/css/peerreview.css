@@ -176,6 +176,7 @@ table.code th.performCodeReview{
   color: #886;
   text-align: right;
   font-size: 80%;
+  padding-right: 0.5em;
 }
 
 .comment-text{
@@ -183,6 +184,7 @@ table.code th.performCodeReview{
   border-left: 1px solid #C0C0C0;
   text-align: left;
   padding: 0.25em;
+  margin-right: 5px;
 }
 
 .comment-reply{
@@ -192,6 +194,10 @@ table.code th.performCodeReview{
 
 .comment-table .border-col{
   border-top:  1px solid #C0C0C0;
+}
+
+.comment-notread {
+  background-color: #ffd;
 }
 
 #view-comment-dlg{

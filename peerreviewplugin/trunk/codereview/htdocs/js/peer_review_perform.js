@@ -48,6 +48,34 @@ function addComment(LineNum, fileID, parentID)
     $('#add-comment-dlg').dialog('moveToTop');
 }
 
+function markCommentRead(line, file_id, comment_id){
+
+    $.post("peerReviewCommentCallback",
+           {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': 'read',
+            'reviewid': peer_review_id,
+            '__FORM_TOKEN': form_token
+           },
+            function(data){
+              var data = $.parseJSON(data);
+              /* Show or refresh comment doalog */
+              getComments(data['line'], data['fileid']);
+           });
+};
+
+function markCommentNotread(line, file_id, comment_id){
+
+    $.post("peerReviewCommentCallback",
+           {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': 'notread',
+            'reviewid': peer_review_id,
+            '__FORM_TOKEN': form_token
+           },
+            function(data){
+              var data = $.parseJSON(data);
+              /* Show or refresh comment doalog */
+              getComments(data['line'], data['fileid']);
+           });
+};
+
 jQuery(document).ready(function($) {
 
     function create_comment_link(LineNum, fileID){

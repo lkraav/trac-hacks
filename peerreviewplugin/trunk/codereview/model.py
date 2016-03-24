@@ -178,6 +178,98 @@ class ReviewFileModel(AbstractVariableFieldsObject):
             files_dict[row[1]].append(file_)
         return files_dict
 
+
+class ReviewDataModel(AbstractVariableFieldsObject):
+    """Data model holding whatever you want to create relations for."""
+    # Fields that have no default, and must not be modified directly by the user
+    protected_fields = ('data_id', 'res_realm', 'state')
+
+    def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
+        self.values = {}
+
+        if type(id_) is int:
+            id_ = str(id_)
+        self.values['data_id'] = id_
+        self.values['res_realm'] = res_realm
+        self.values['state'] = state
+
+        key = self.build_key_object()
+        AbstractVariableFieldsObject.__init__(self, env, 'peerreviewdata', key, db)
+
+    def get_key_prop_names(self):
+        return ['data_id']
+
+    def clear_props(self):
+        for key in self.values:
+            if key not in ['data_id', 'res_realm']:
+                self.values[key] = None
+
+    def create_instance(self, key):
+        return ReviewDataModel(self.env, key['data_id'], 'peerreviewdata')
+
+    @classmethod
+    def comments_for_file_and_owner(cls, env, file_id, owner):
+        """Return a list of data."""
+
+        db = env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT comment_id, type, data FROM peerreviewdata "
+                       "WHERE file_id = %s AND owner = %s",
+                       (file_id, owner))
+        return cursor.fetchall()
+
+    @classmethod
+    def comments_for_owner(cls, env, owner):
+        """Return a list of comment data for owner.
+        """
+        db = env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT comment_id, review_id, type, data FROM peerreviewdata "
+                       "WHERE owner = %s", (owner,))
+        return cursor.fetchall()
+
+
+class ReviewCommentModel(AbstractVariableFieldsObject):
+    """Data model holding whatever you want to create relations for."""
+    # Fields that have no default, and must not be modified directly by the user
+    protected_fields = ('commwent_id', 'res_realm', 'state')
+
+    def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
+        self.values = {}
+
+        if type(id_) is int:
+            id_ = str(id_)
+        self.values['comment_id'] = id_
+        self.values['res_realm'] = res_realm
+        self.values['state'] = state
+
+        key = self.build_key_object()
+        AbstractVariableFieldsObject.__init__(self, env, 'peerreviewcomment', key, db)
+
+    def get_key_prop_names(self):
+        return ['comment_id']
+
+    def clear_props(self):
+        for key in self.values:
+            if key not in ['comment_id', 'res_realm']:
+                self.values[key] = None
+
+    def create_instance(self, key):
+        return ReviewDataModel(self.env, key['comment_id'], 'peerreviewcomment')
+
+    @classmethod
+    def comments_by_file_id(cls, env):
+        """Return a dict with file_id as key and a comment id list as value."""
+
+        db = env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT comment_id, file_id FROM peerreviewcomment")
+        the_dict = defaultdict(list)
+        for row in cursor:
+            the_dict[row[1]].append(row[0])
+        return the_dict
+
+
 class PeerReviewModelProvider(Component):
     """
     This class provides the data model for the generic workflow plugin.
@@ -259,7 +351,21 @@ class PeerReviewModelProvider(Component):
                      'has_custom': True,
                      'has_change': True,
                      'version': 3},
-            }
+                'peerreviewdata':
+                    {'table':
+                         Table('peerreviewdata', key=('data_id'))[
+                             Column('data_id', type='int'),
+                             Column('review_id', type='int'),
+                             Column('comment_id', type='int'),
+                             Column('file_id', type='int'),
+                             Column('reviewer_id', type='int'),
+                             Column('type'),
+                             Column('data'),
+                             Column('owner')],
+                     'has_custom': False,
+                     'has_change': False,
+                     'version': 1},
+                    }
 
     FIELDS = {
                 'peerreview': [
@@ -302,7 +408,17 @@ class PeerReviewModelProvider(Component):
                     {'name': 'reviewer', 'type': 'text', 'label': N_('Reviewer')},
                     {'name': 'status', 'type': 'text', 'label': N_('Review status')},
                     {'name': 'vote', 'type': 'int', 'label': N_('Vote')},
-                ]
+                ],
+                'peerreviewdata': [
+                    {'name': 'data_id', 'type': 'int', 'label': N_('ID')},
+                    {'name': 'review_id', 'type': 'int', 'label': N_('Review ID')},
+                    {'name': 'comment_id', 'type': 'int', 'label': N_('Comment ID')},
+                    {'name': 'file_id', 'type': 'int', 'label': N_('File ID')},
+                    {'name': 'reviewer_id', 'type': 'int', 'label': N_('Reviewer ID')},
+                    {'name': 'type', 'type': 'text', 'label': N_('Type')},
+                    {'name': 'data', 'type': 'text', 'label': N_('Data')},
+                    {'name': 'owner', 'type': 'text', 'label': N_('Owner')},
+                ],
             }
 
     METADATA = {
@@ -329,6 +445,12 @@ class PeerReviewModelProvider(Component):
                     'searchable': False,
                     'has_custom': True,
                     'has_change': True
+                },
+                'peerreviewdata': {
+                    'label': "Data",
+                    'searchable': True,
+                    'has_custom': False,
+                    'has_change': False
                 },
     }
 
@@ -763,7 +885,7 @@ class ReviewFile(object):
             files.append(rev_file)
         return files
 
-
+# Obsolete use ReviewCommentModel instead
 class Comment(object):
 
     def __init__(self, env, file_id=None):

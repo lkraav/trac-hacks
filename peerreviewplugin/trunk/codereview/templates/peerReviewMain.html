@@ -15,38 +15,6 @@
         <div id="content">
             <h1>My Code Reviews</h1>
 
-            <!--! If we are a manager, display a table containing all of the code reviews requiring your approval. -->
-            <py:if test="manager">
-                <h2>This is a list of the code reviews currently requiring your approval.</h2>
-                <table class="listing dirlist" id="approvereviewlist">
-                    <thead>
-                        <tr>
-                            <th>Review</th>
-                            <th>Author</th>
-                            <th>Name</th>
-                            <th>Date Opened</th>
-                        </tr>
-                    </thead>
-                    <tbody py:with="cls=cycle(('odd', 'even'))">
-                        <!--! if there are no reviews open for you, state this in the table -->
-                        <tr py:if="not manager_reviews">
-                            <td>There are no code reviews requiring your approval.</td>
-                            <td/>
-                            <td/>
-                            <td/>
-                        </tr>
-                        <tr py:for="item in manager_reviews" class="${cls.next()}">
-                            <!--! Set up the table with the appropriate values and then links to view the review -->
-                            <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['review_id']}</a></td>
-                            <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['owner']}</a></td>
-                            <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['name']}</a></td>
-                            <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item.date}</a></td>
-                        </tr>
-                    </tbody>
-                </table>
-
-            </py:if>
-
             <h2>This is a list of open code reviews currently assigned to you.</h2>
             <form action="" method="get">
                 <fieldset>
@@ -70,6 +38,8 @@
                     <th>Name</th>
                     <th>Review Status</th>
                     <th>My Status</th>
+                    <th># Comments</th>
+                    <th># Not Read</th>
                     <th>Date Opened</th>
                     <th>Files</th>
                 </tr>
@@ -84,6 +54,8 @@
                     <td/>
                     <td/>
                     <td/>
+                    <td/>
+                    <td/>
                 </tr>
                 <tr py:for="item in assigned_reviews" class="${cls.next()}">
                     <!--! Set up the table with the appropriate values and then links to view the review -->
@@ -92,6 +64,8 @@
                     <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['name']}</a></td>
                     <td>${item['status']}</td>
                     <td>${item.reviewer['status']}</td>
+                    <td>$item.num_comments</td>
+                    <td py:attrs="{'class': 'comment-notread'} if item.num_notread else None">$item.num_notread</td>
                     <td>${item.date}</td>
                     <td>
                         <p py:for="file in item.rev_files" class="path">
@@ -120,6 +94,8 @@
                         <th>Review</th>
                         <th>Name</th>
                         <th>Review Status</th>
+                        <th># Comments</th>
+                        <th># Not Read</th>
                         <th>Date Opened</th>
                         <th>Files</th>
                     </tr>
@@ -132,12 +108,16 @@
                         <td/>
                         <td/>
                         <td/>
+                        <td/>
+                        <td/>
                     </tr>
                     <tr py:for="item in myreviews" class="${cls.next()}">
                         <!--! Set up the table with the appropriate values and then links to view the review -->
                         <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['review_id']}</a></td>
                         <td><a href="${href.peerReviewView()}?Review=${item['review_id']}">${item['name']}</a></td>
                         <td>${item['status']}</td>
+                        <td>$item.num_comments</td>
+                        <td py:attrs="{'class': 'comment-notread'} if item.num_notread else None">$item.num_notread</td>
                         <td>${item.date}</td>
                         <td>
                             <p py:for="file in item.rev_files" class="path">

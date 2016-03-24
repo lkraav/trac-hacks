@@ -232,6 +232,7 @@ class PeerReviewPerform(Component):
 
         scr_data = {'peer_comments': [c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
                     'peer_file_id': fileid,
+                    'peer_review_id': rfile.review_id,
                     'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
                     'form_token': req.form_token}
         if par_review:

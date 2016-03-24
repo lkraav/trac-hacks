@@ -22,8 +22,7 @@ from trac.util.text import _
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_ctxtnav
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to
-
-from model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
+from model import ReviewCommentModel, ReviewDataModel, ReviewFileModel, PeerReviewModel, PeerReviewerModel
 
 
 def web_context_compat(req, resource=None, id=False, version=False, parent=False,
@@ -148,6 +147,10 @@ class PeerReviewMain(Component):
         else:
             all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
 
+        # We need this for displaying information about comments
+        comments = ReviewCommentModel.comments_by_file_id(self.env)
+        my_comment_data = ReviewDataModel.comments_for_owner(self.env, req.authname)
+
         # Add files
         files = ReviewFileModel.file_dict_by_review(self.env)
 
@@ -161,6 +164,13 @@ class PeerReviewMain(Component):
             if rev['owner'] == req.authname:
                 rev.date = format_date(rev['created'])
                 rev.rev_files = files[rev['review_id']]
+                # Prepare number of comments for a review
+                rev.num_comments = 0
+                for f in rev.rev_files:
+                    if f['file_id'] in comments:
+                        rev.num_comments += len(comments[f['file_id']])
+                rev.num_notread = rev.num_comments - len([c_id for c_id, r, t, dat in my_comment_data if t == 'read'
+                                                          and r == rev['review_id']])
                 myreviews.append(rev)
 
         r_tmpl = PeerReviewerModel(self.env)
@@ -178,10 +188,16 @@ class PeerReviewMain(Component):
         for item in reviewer:
             rev = PeerReviewModel(self.env, item['review_id'])
             if not review_is_finished(self.env.config, rev):
-                #if not review_is_locked(rev) or data['allassigned']:
-                rev.date = format_date(rev['created'])
                 rev.reviewer = item
+                rev.date = format_date(rev['created'])
                 rev.rev_files = files[rev['review_id']]
+                # Prepare number of comments for a review
+                rev.num_comments = 0
+                for f in rev.rev_files:
+                    if f['file_id'] in comments:
+                        rev.num_comments += len(comments[f['file_id']])
+                rev.num_notread = rev.num_comments - len([c_id for c_id, r, t, dat in my_comment_data if t == 'read'
+                                                          and r == rev['review_id']])
                 assigned_to_me.append(rev)
 
         data['myreviews'] = myreviews

@@ -24,7 +24,7 @@ from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
 from model import get_users, Comment, \
-    PeerReviewerModel, PeerReviewModel, ReviewFileModel
+    PeerReviewerModel, PeerReviewModel, ReviewFileModel, ReviewDataModel
 from peerReviewMain import add_ctxt_nav_items, web_context_compat
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
 
@@ -120,6 +120,8 @@ class PeerReviewView(Component):
             if comments:
                 for f in rev_files:
                     f.num_comments = len(Comment.select_by_file_id(self.env, f['file_id']))
+                    my_comment_data = ReviewDataModel.comments_for_file_and_owner(self.env, f['file_id'], req.authname)
+                    f.num_notread = f.num_comments - len([c_id for c_id, t, dat in my_comment_data if t == 'read'])
             return rev_files
 
         req.perm.require('CODE_REVIEW_DEV')
