@@ -31,6 +31,7 @@
                     <th>File ID</th>
                     <th>Filename</th>
                     <th>Review ID</th>
+                    <th># Comments</th>
                     <th>Changed Revision</th>
                     <th>Review Revision</th>
                     <th>Start</th>
@@ -47,12 +48,13 @@
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['review_id']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['changerevision']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['revision']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['line_start']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['line_end']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['hash']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['status']}</a></td>
+                    <td>${item.num_comments}</td>
+                    <td>${item['changerevision']}</td>
+                    <td>${item['revision']}</td>
+                    <td>${item['line_start']}</td>
+                    <td>${item['line_end']}</td>
+                    <td>${item['hash']}</td>
+                    <td>${item['status']}</td>
                 </tr>
                 </tbody>
             </table>

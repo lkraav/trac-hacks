@@ -20,7 +20,7 @@ from trac.web.chrome import INavigationContributor, add_stylesheet, add_link
 from trac.web.main import IRequestHandler, RequestDone
 
 from peerReviewMain import add_ctxt_nav_items
-from model import ReviewFileModel
+from model import ReviewCommentModel, ReviewFileModel
 
 
 class PeerReviewFile(Component):
@@ -52,6 +52,12 @@ class PeerReviewFile(Component):
         rfm = ReviewFileModel(self.env)
         rfm.clear_props()
         rev_files = list(rfm.list_matching_objects())
+
+        # Prepare comments for file
+        comments = ReviewCommentModel.comments_by_file_id(self.env)
+        for rfile in rev_files:
+            if rfile['file_id'] in comments:
+                rfile.num_comments = len(comments[rfile['file_id']])
 
         format = req.args.get('format')
         if format in ('cvs', 'txt'):
