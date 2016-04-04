@@ -21,6 +21,10 @@ table.review-table thead th {
   padding-left: 1em;
 }
 
+#review-info{
+  margin-top: 2.75em;
+}
+
 .info-table{
   border-collapse: collapse;
   margin-top: 1em;

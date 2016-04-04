@@ -20,6 +20,7 @@ from genshi.core import QName
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
+from trac.util import format_date
 from trac.util.text import _
 from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_javascript
@@ -158,6 +159,7 @@ class PeerReviewPerform(Component):
 
         rfile = ReviewFile(self.env, fileid)  # Raises 'ResourceNotFound' on error
         review = PeerReviewModel(self.env, rfile.review_id)
+        review.date = format_date(review['created'])
         data['review_file'] = rfile
         data['review'] = review
 
@@ -171,6 +173,7 @@ class PeerReviewPerform(Component):
         # Data for parent review if any
         if review['parent_id'] != 0:
             par_review = PeerReviewModel(self.env, review['parent_id'])  # Raises 'ResourceNotFound' on error
+            par_review.date = format_date(par_review['created'])
             parfile = ReviewFile(self.env, get_parent_file_id(self.env, rfile, review['parent_id']))
 
             lines = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]

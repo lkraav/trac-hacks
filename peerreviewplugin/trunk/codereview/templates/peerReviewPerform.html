@@ -9,6 +9,8 @@
         <title>Review File - $review_file.name</title>
     </head>
 
+    <xi:include href="peer_functions.html"/>
+
     <body>
         <div id="content">
             <div py:if="is_finished" class="notice system-message">
@@ -21,7 +23,7 @@
                     This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
                 </p>
             </div>
-            <h3>Review Information</h3>
+
             <py:if test="parent_review">
                 <form id="prefs" action="">
                     <div>
@@ -37,16 +39,37 @@
                 </form>
             </py:if>
 
+            <div py:if="parent_review" id="review-info">
+                <table class="review-table">
+                    <thead>
+                    <tr>
+                        <th>Review Information</th>
+                        <th>Followup from</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>${review_info(review)}</td>
+                        <td>${review_info(parent_review)}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div py:if="not parent_review">
+                <table class="review-table">
+                    <thead>
+                    <tr>
+                        <th>Review Information</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>${review_info(review)}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
 
-            <dl class="overview" id="review-info">
-                <dt>Name:</dt>
-                <dd><a href="peerReviewView?Review=${review['review_id']}">${review['name']}</a></dd>
-                <dt>Status:</dt>
-                <dd py:if="review['status'] !='closed'">${review['status']}</dd>
-                <dd py:if="review['status'] =='closed'"><strong>${review['status']}</strong></dd>
-                <dt>ID:</dt>
-                <dd>${review['review_id']}</dd>
-            </dl>
             <h3>File Information</h3>
             <dl class="overview" id="file-info">
                 <dt>Path:</dt>
@@ -60,12 +83,8 @@
             </dl>
 
             <py:if test="parent_review">
-                <h3>Followup review from:</h3>
+                <h3>Followup from file:</h3>
                 <dl class="overview" id="parent-info">
-                    <dt>Review:</dt>
-                    <dd><a href="peerReviewView?Review=${parent_review['review_id']}">${parent_review['name']}</a></dd>
-                    <dt>ID:</dt>
-                    <dd>${parent_review['review_id']}</dd>
                     <dt>Path:</dt>
                     <dd>${par_file.path}</dd>
                     <dt>Revision:</dt>
