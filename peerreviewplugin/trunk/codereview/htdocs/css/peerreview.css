@@ -210,6 +210,16 @@ table.code tbody tr.comment-tr:hover td{
   background-color: transparent;
 }
 
+table.trac-diff tbody tr.comment-tr:hover td{
+  background-color_: transparent;
+}
+
+.diff table.trac-diff tbody.mod tr:hover td,
+.diff table.trac-diff tbody.add tr:hover td,
+.diff table.trac-diff tbody.rem tr:hover td {
+  background: transparent;
+}
+
 /*td .comment-tree-div{
 */
 td .peer-comment{
@@ -227,6 +237,11 @@ td .comment-tree-div .comment-author{
 }
 
 table.code tr.comment-tr th, table.code tr.comment-tr td{
+  background-color: transparent;
+  font-family: inherit;
+}
+
+table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
   background-color: transparent;
   font-family: inherit;
 }

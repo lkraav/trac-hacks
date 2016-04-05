@@ -88,7 +88,7 @@ class PeerReviewPerform(Component):
         if (lineno <= int(rfile.end) and lineno >= int(rfile.start)) or int(rfile.start) == 0:
             # If there is a comment on this line
             lines = data[0]
-            review = data[1]
+            # review = data[1]
             if lineno in lines:
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno),
                                                                   href='javascript:getComments(%s, %s)' %
@@ -233,16 +233,19 @@ class PeerReviewPerform(Component):
         # A user can't chnage his voting for a reviewed review
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
-        scr_data = {'peer_comments': list(set([c.line_num for c in
-                                               Comment.select_by_file_id(self.env, rfile.file_id)])),
+        scr_data = {'peer_comments': sorted(list(set([c.line_num for c in
+                                               Comment.select_by_file_id(self.env, rfile.file_id)]))),
                     'peer_file_id': fileid,
                     'peer_review_id': rfile.review_id,
                     'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
-                    'form_token': req.form_token}
+                    'form_token': req.form_token,
+                    'peer_diff_style': data['style'] if 'style' in data else 'no_diff'}
         if par_review:
             scr_data['peer_parent_file_id'] = parfile.file_id
-            scr_data['peer_parent_comments'] = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]
+            scr_data['peer_parent_comments'] = sorted(list(set([c.line_num for c in
+                                                         Comment.select_by_file_id(self.env, parfile.file_id)])))
         else:
+            scr_data['peer_parent_file_id'] = 0  # Mark that we don't have a parent
             scr_data['peer_parent_comments'] = []
 
         # For comment dialogs when using Trac 0.12. Otherwise use jQuery coming with Trac
@@ -312,6 +315,7 @@ def create_diff_data(req, data, node, par_node):
     data['diff'] = diff_data  # {'style': 'inline', 'options': []},
     data['longcol'] = 'Revision',
     data['shortcol'] = 'r'
+    data['style'] = style
 
 
 def file_data_from_repo(node):

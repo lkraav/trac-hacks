@@ -104,6 +104,8 @@
                                 Line $line<span py:if="not last">, </span>
                             </py:with>
                         </py:for>
+                        <p class="help" py:if="par_file.comments">Some comments may be hidden. Select
+                            <strong>Show changes in full context</strong> to show the whole file.</p>
                         <py:if test="not par_file.comments">No comments</py:if>
                     </dd>
                 </dl>
@@ -111,9 +113,9 @@
 
             <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
 
-            <py:if test="not parent_review">
+
                 <label><input type="checkbox" id="inline-comments" />Show comments inline.</label>
-            </py:if>
+
             <table py:if="diffs or not parent_review" border="0" width="100%" style="border-collapse: collapse" id="table1">
                 <tr>
                     <td align="left">
