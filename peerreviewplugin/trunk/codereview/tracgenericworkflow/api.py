@@ -246,7 +246,7 @@ class ResourceWorkflowSystem(Component):
         return (this_action['name'], tag(*controls), '. '.join(hints))
 
     def get_workflow_markup(self, req, base_href, realm, resource, data=None):
-        form_tmpl = """
+        form_tmpl = u"""
                 <form class="workflow-actions" method="post" action="$action" name="resource_workflow_form">
                     <fieldset>
                         <input name="id" type="hidden" value="$resource_id" />
@@ -300,7 +300,7 @@ class ResourceWorkflowSystem(Component):
             ctrls = ""
             for i, ac in enumerate(action_controls):
                 # The default action is the first in the action_controls list.
-                ctrl_tmpl = """
+                ctrl_tmpl = u"""
                 <div>
                     <input id="wf-$val" name="selected_action" type="radio" value="$val" $is_checked />
                     <label for="wf-$val">$label</label>
@@ -319,10 +319,10 @@ class ResourceWorkflowSystem(Component):
             if data and data.get('redirect'):
                 tdata['redirect'] = data.get('redirect')
 
-            return HTML(tmpl.safe_substitute(tdata))
+            return HTML(tmpl.safe_substitute(tdata), encoding="utf-8")
         else:
             tdata['display'] = 'style="display: none;"'
-            return HTML(tmpl.safe_substitute(tdata))
+            return HTML(tmpl.safe_substitute(tdata), encoding="utf-8")
 
     # Workflow operations management
 
