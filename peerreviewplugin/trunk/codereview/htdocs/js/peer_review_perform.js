@@ -16,7 +16,7 @@ function expandComments(parentID)
 function createCommentDiv(type_char, LineNum){
   var comment = '<div class="peer-comment">'
   comment += '<p class="refresh"><a id="comment-refresh-'+type_char+LineNum+'" href="">Refresh</a></p>'
-  comment += '<p id="comment-loading-'+type_char+LineNum+'">Loading...</p>'  /* TODO: parent or followup */
+  comment += '<p id="comment-loading-'+type_char+LineNum+'">Loading...</p>'
   if(type_char === 'P'){
     comment += '<div id="PL'+LineNum+'"></div></div>'
   }
@@ -30,7 +30,12 @@ function getInlineCommentMarkup(LineNum, diff_view, parent_comment){
   var markup = '<th></th>'
   if(parent_comment){
       /* Parent comment implies diff view */
-      markup += '<td id="PTD'+LineNum+'">'+createCommentDiv('P', LineNum)+'</td><th></th><td id="CTD'+LineNum+'"></td>'
+      if(peer_diff_style === 'inline'){
+          markup += '<th></th><td id="PTD'+LineNum+'">'+createCommentDiv('P', LineNum)+'</td><td id="CTD'+LineNum+'"></td>'
+      }
+      else{
+          markup += '<td id="PTD'+LineNum+'">'+createCommentDiv('P', LineNum)+'</td><th></th><td id="CTD'+LineNum+'"></td>'
+      }
   }
   else{
       comment = createCommentDiv('C', LineNum)
@@ -176,40 +181,35 @@ function addComment(LineNum, fileID, parentID)
     $('#add-comment-dlg').dialog('moveToTop');
 }
 
-function markCommentRead(line, file_id, comment_id){
-
+function markComment(line, file_id, comment_id, read_status){
     $.post("peerReviewCommentCallback",
-           {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': 'read',
+           {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': read_status,
             'reviewid': peer_review_id,
             '__FORM_TOKEN': form_token
            },
             function(data){
               var data = $.parseJSON(data);
-              /* Show or refresh comment doalog */
+              /* Show or refresh comment dialog */
               getComments(data['line'], data['fileid'], true);
            });
 };
 
-function markCommentNotread(line, file_id, comment_id){
+function markCommentRead(line, file_id, comment_id){
+    markComment(line, file_id, comment_id, 'read');
+};
 
-    $.post("peerReviewCommentCallback",
-           {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': 'notread',
-            'reviewid': peer_review_id,
-            '__FORM_TOKEN': form_token
-           },
-            function(data){
-              var data = $.parseJSON(data);
-              /* Show or refresh comment doalog */
-              getComments(data['line'], data['fileid'], true);
-           });
+function markCommentNotread(line, file_id, comment_id){
+    markComment(line, file_id, comment_id, 'notread');
 };
 
 jQuery(document).ready(function($) {
 
     function create_comment_link(LineNum, fileID, is_parent){
-        var js_href = 'javascript:getComments(' + LineNum + ',' + fileID+ ')'
         if(is_parent){
-            js_href = 'javascript:getParentComments(' + LineNum + ',' + fileID+ ')'
+            var js_href = 'javascript:getParentComments(' + LineNum + ',' + fileID+ ')'
+        }
+        else{
+            var js_href = 'javascript:getComments(' + LineNum + ',' + fileID+ ')'
         };
         return $('<a>', {href: js_href,
                          text: LineNum}).prepend($('<img>', {src: tacUrl}));
@@ -240,7 +240,12 @@ jQuery(document).ready(function($) {
              $('#view-comment-dlg').dialog('close');
 
              if(peer_parent_file_id !== 0){
-                 /* This is a diff view. First load parent comments */
+                 /* This is a diff view. */
+                 if(peer_diff_style === 'inline'){
+                     $('table.trac-diff thead tr').append('<td class="ctd-inline"></td>')
+                     $('table.trac-diff tbody tr').append('<td class="ctd-inline"></td>')
+                 };
+                 /* First load parent comments */
                  for(var i = 0; i < peer_parent_comments.length; i++){
                      getParentCommentsInline(peer_parent_comments[i], peer_parent_file_id);
                  };
@@ -249,6 +254,9 @@ jQuery(document).ready(function($) {
                  getCommentsInline(peer_comments[i], peer_file_id);
              };
          }else{
+                 if(peer_diff_style === 'inline'){
+                     $('table.trac-diff .ctd-inline').remove()
+                 };
              $('.comment-tr').remove();
          };
     };

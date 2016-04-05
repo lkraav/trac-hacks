@@ -211,7 +211,7 @@ table.code tbody tr.comment-tr:hover td{
 }
 
 table.trac-diff tbody tr.comment-tr:hover td{
-  background-color_: transparent;
+  background-color: transparent;
 }
 
 .diff table.trac-diff tbody.mod tr:hover td,
