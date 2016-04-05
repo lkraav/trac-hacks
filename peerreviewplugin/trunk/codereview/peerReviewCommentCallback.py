@@ -261,9 +261,9 @@ class PeerReviewCommentHandler(Component):
                 <td style="width:${width}px"></td>
                 <td colspan="2" class="comment-author">Author: $comment.Author
                 <a py:if="comment.IDComment not in read_comments"
-                   href="javascript:markCommentRead($line, $fileid, $comment.IDComment)">Mark read</a>
+                   href="javascript:markCommentRead($line, $fileid, $comment.IDComment, ${review['review_id']})">Mark read</a>
                 <a py:if="comment.IDComment in read_comments"
-                   href="javascript:markCommentNotread($line, $fileid, $comment.IDComment)">Mark unread</a>
+                   href="javascript:markCommentNotread($line, $fileid, $comment.IDComment, ${review['review_id']})">Mark unread</a>
                 </td>
                 <td style="width:100px" class="comment-date">$date</td>
             </tr>

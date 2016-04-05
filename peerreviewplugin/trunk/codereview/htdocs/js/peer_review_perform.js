@@ -40,7 +40,12 @@ function getInlineCommentMarkup(LineNum, diff_view, parent_comment){
   else{
       comment = createCommentDiv('C', LineNum)
       if(diff_view){
-          markup += '<td id="PTD'+LineNum+'"></td><th></th><td id="CTD'+LineNum+'">'+comment+'</td>'
+          if(peer_diff_style === 'inline'){
+              markup += '<th></th><td id="PTD'+LineNum+'"></td><td id="CTD'+LineNum+'">'+comment+'</td>'
+          }
+          else{
+              markup += '<td id="PTD'+LineNum+'"></td><th></th><td id="CTD'+LineNum+'">'+comment+'</td>'
+          };
       }
       else{
           markup += '<td id="CTD'+LineNum+'">'+comment+'</td>';
@@ -181,10 +186,10 @@ function addComment(LineNum, fileID, parentID)
     $('#add-comment-dlg').dialog('moveToTop');
 }
 
-function markComment(line, file_id, comment_id, read_status){
+function markComment(line, file_id, comment_id, read_status, review_id){
     $.post("peerReviewCommentCallback",
            {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': read_status,
-            'reviewid': peer_review_id,
+            'reviewid': review_id,
             '__FORM_TOKEN': form_token
            },
             function(data){
@@ -194,12 +199,12 @@ function markComment(line, file_id, comment_id, read_status){
            });
 };
 
-function markCommentRead(line, file_id, comment_id){
-    markComment(line, file_id, comment_id, 'read');
+function markCommentRead(line, file_id, comment_id, review_id){
+    markComment(line, file_id, comment_id, 'read', review_id);
 };
 
-function markCommentNotread(line, file_id, comment_id){
-    markComment(line, file_id, comment_id, 'notread');
+function markCommentNotread(line, file_id, comment_id, review_id){
+    markComment(line, file_id, comment_id, 'notread', review_id);
 };
 
 jQuery(document).ready(function($) {
