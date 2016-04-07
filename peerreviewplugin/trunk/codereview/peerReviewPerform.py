@@ -153,7 +153,7 @@ class PeerReviewPerform(Component):
             raise TracError("Unable to acquire subversion repository.", "Subversion Repository Error")
 
         #make the thumbtac image global so the line annotator has access to it
-        self.imagePath = self.env.href.chrome() + '/hw/images/thumbtac11x11.gif'
+        self.imagePath = 'chrome/hw/images/thumbtac11x11.gif'
 
         data = {'file_id': fileid}
 

@@ -203,7 +203,7 @@ class PeerReviewView(Component):
         for reviewer in reviewers:
             if reviewer['reviewer'] == req.authname:
                 res = Resource(realm, str(reviewer['reviewer_id']))  # id must be a string
-                if not data['is_finished'] and not data['review_locked']:
+                if not data['is_finished'] and not data['review_done']:  # even author isn't allowed to change
                     data['canivote'] = True
                 break
         if res:

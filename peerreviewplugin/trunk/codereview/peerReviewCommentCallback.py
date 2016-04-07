@@ -270,9 +270,9 @@ class PeerReviewCommentHandler(Component):
             <tr>
                 <td style="width:${width}px"></td>
                 <td valign="top" style="width:${factor}px" id="${comment.IDComment}TreeButton">
-                    <img py:if="childrenHTML" src="$chrome/hw/images/minus.gif" id="${comment.IDComment}collapse"
+                    <img py:if="childrenHTML" src="chrome/hw/images/minus.gif" id="${comment.IDComment}collapse"
                          onclick="collapseComments($comment.IDComment);" style="cursor: pointer;" />
-                    <img py:if="childrenHTML" src="$chrome/hw/images/plus.gif" style="display: none;cursor:pointer;"
+                    <img py:if="childrenHTML" src="chrome/hw/images/plus.gif" style="display: none;cursor:pointer;"
                          id="${comment.IDComment}expand"
                          onclick="expandComments($comment.IDComment);" />
                 </td>
@@ -289,7 +289,7 @@ class PeerReviewCommentHandler(Component):
                     <!--! Attachment -->
                     <a py:if="comment.AttachmentPath" border="0" alt="Code Attachment"
                        href="${callback}?actionType=getCommentFile&amp;fileName=${comment.AttachmentPath}&amp;IDFile=$fileid">
-                        <img src="$chrome/hw/images/paper_clip.gif" /> $comment.AttachmentPath
+                        <img src="chrome/hw/images/paper_clip.gif" /> $comment.AttachmentPath
                     </a>
                 </td>
                 <td class="comment-reply">
@@ -323,7 +323,6 @@ class PeerReviewCommentHandler(Component):
                  'date': util.format_date(comment.DateCreate),
                  'factor': factor,
                  'childrenHTML': children_html != '' or False,
-                 'chrome': self.env.href.chrome(),
                  'line': linenum,
                  'fileid': fiileid,
                  'callback': self.env.href.peerReviewCommentCallback(),

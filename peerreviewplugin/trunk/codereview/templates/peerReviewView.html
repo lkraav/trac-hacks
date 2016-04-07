@@ -8,50 +8,8 @@
     <head>
         <title>Code Review Details - ${review['name']}</title>
     </head>
+    <xi:include href="peer_functions.html"/>
     <body>
-        <py:def function="review_info(review)">
-            <table class="info-table">
-                <tbody>
-                <tr>
-                    <th>Name:</th>
-                    <td><a href="peerReviewView?Review=${review['review_id']}">${review['name']}</a></td>
-                </tr>
-                <tr>
-                    <th>Status:</th>
-                    <td>${review['status']}</td>
-                </tr>
-                <tr>
-                    <th>ID:</th>
-                    <td>${review['review_id']}</td>
-                </tr>
-                <tr>
-                    <th>Project:</th>
-                    <td>${review['project']}</td>
-                </tr>
-                <tr>
-                    <th>Author:</th>
-                    <td>${review['owner']}</td>
-                </tr>
-                <tr>
-                    <th>Creation Date:</th>
-                    <td>$review.date</td>
-                </tr>
-                </tbody>
-            </table>
-            <table py:if="review['notes']" class="info-table">
-                <tbody>
-                <tr>
-                    <th>
-                        <p>Author notes:</p>
-                    </th>
-                    <td>
-                        $review.html_notes
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </py:def>
-
         <div id="content" class="peerreview-content">
             <h1>Code Review Details - ${review['name']}</h1>
             <div py:if="is_finished" class="notice system-message">
@@ -64,7 +22,11 @@
                     This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
                 </p>
             </div>
-
+            <div py:if="review_done and not is_finished and not review_locked" class="notice system-message">
+                <p>
+                    This review is marked as <strong>reviewed</strong>. Reviewers can't change it anymore. As author you have to set the final status now.
+                </p>
+            </div>
             <div py:if="parent_review">
                 <table class="review-table">
                     <thead>
@@ -132,7 +94,8 @@
                 </tr>
                 </tbody>
             </table>
-
+            <p class="help">The status of the listed files will be set when the review author sets the final status
+                of the review.</p>
             <h2>Users assigned to this code review</h2>
 
             <table py:if="review['owner'] == req.authname or manager" class="listing dirlist" id="userlist">
@@ -218,7 +181,7 @@
                     <h2 py:if="manager">Workflow actions for author or manager</h2>
                     $workflow
                     <p class="help">
-                        Closing a review means it is obsolete and all associated data will be unavailable.
+                        Closing a review means it is marked as obsolete and <strong>all associated data will be unavailable</strong>.
                     </p>
                 </py:if>
                 <py:if test="is_finished and manager">
@@ -237,22 +200,22 @@
                             <input py:if="not is_finished" type="submit"
                                    value="Modify" name="modify"/>
                         </div>
-                        <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
-                            a new code review.
-                            Comments will not be copied. When the new review is created this one will be closed
-                            automatically which means it will be practically discarded.
-                        </p>
-                        <p py:if="review['status'] != 'closed'" class="help">
-                            When creating a <strong>Followup Review</strong> all the data of this review will be
-                            used for prefilling the fields of a new code review. Comments will not be copied. During
-                            the new review it is possible to view the changes between file data at different revisions.
-                        </p>
-                        <p py:if="review['status'] != 'closed' and not is_finished" class="help">
-                            A followup review can't be created at the moment because this review is not in a
-                            finishing state.
-                        </p>
                     </fieldset>
                 </form>
+                <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
+                    a new code review.
+                    Comments will not be copied. When the new review is created <strong>this one will be closed
+                    automatically</strong> which means it will be practically discarded.
+                </p>
+                <p py:if="review['status'] != 'closed'" class="help">
+                    When creating a <strong>Followup Review</strong> all the data of this review will be
+                    used for prefilling the fields of a new code review. Comments will not be copied. During
+                    the new review it is possible to view the changes between file data at different revisions.
+                </p>
+                <p py:if="review['status'] != 'closed' and not is_finished" class="help">
+                    A followup review can't be created at the moment because this review is not in a
+                    finishing state.
+                </p>
             </py:if>
         </div>
     </body>
