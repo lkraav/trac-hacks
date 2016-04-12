@@ -232,7 +232,7 @@ class ReviewDataModel(AbstractVariableFieldsObject):
 class ReviewCommentModel(AbstractVariableFieldsObject):
     """Data model holding whatever you want to create relations for."""
     # Fields that have no default, and must not be modified directly by the user
-    protected_fields = ('commwent_id', 'res_realm', 'state')
+    protected_fields = ('comment_id', 'res_realm', 'state')
 
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
@@ -255,7 +255,7 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
                 self.values[key] = None
 
     def create_instance(self, key):
-        return ReviewDataModel(self.env, key['comment_id'], 'peerreviewcomment')
+        return ReviewCommentModel(self.env, key['comment_id'], 'peerreviewcomment')
 
     @classmethod
     def comments_by_file_id(cls, env):
