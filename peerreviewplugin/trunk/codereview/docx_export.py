@@ -2,6 +2,7 @@
 
 
 import io
+import os
 from collections import defaultdict
 from trac.util.datefmt import format_date
 from trac.util.text import to_unicode
@@ -231,12 +232,12 @@ def add_file_info_to_table(doc, review_id, file_info):
     def get_file_table(doc):
         for table in doc.tables:
             row = table.rows[-1]
-            if len(row.cells) > 1 and row.cells[1].text == u'$FILENAME$':
+            if len(row.cells) > 1 and row.cells[1].text == u'$FILEPATH$':
                 return table
 
         # Table not found, add it. This may be an empty template
         cell_data = [['ID', 'Path', 'Revision', 'Comments', 'Status'],
-                     ['', '$FILENAME$', '', '', '']
+                     ['', '$FILEPATH$', '', '', '']
                      ]
         doc.add_heading(u'Files', level=1)
         tbl = doc.add_table(len(cell_data), 5)
@@ -326,7 +327,7 @@ def add_file_data(env, doc, file_info):
     """Add file content and associated comments to document.
 
     The content of the given file is added to the document using the paragraph style 'Code'.
-    The position in the document is specified by the string $FILEINFO$ which must be in the
+    The position in the document is specified by the string $FILECONTENT$ which must be in the
     template. If this string can't be found the data is appended to the end of the document.
     Note that a header with style 'Heading 2' will be added with the file path.
 
@@ -337,9 +338,9 @@ def add_file_data(env, doc, file_info):
     """
     def get_fileinfo_paragraph(doc):
         for par in doc.paragraphs:
-            if u"$FILEINFO$" in par.text:
+            if u"$FILECONTENT$" in par.text:
                 return par
-        par = doc.add_paragraph(u"$FILEINFO$")
+        par = doc.add_paragraph(u"$FILECONTENT$")
         return par
 
     par = get_fileinfo_paragraph(doc)
@@ -365,8 +366,18 @@ def add_file_data(env, doc, file_info):
         par.text = u""  # Overwrite marker text
 
 
-def create_docx_for_review(env, review_id):
-    doc = Document()
+def create_docx_for_review(env, review_id, template):
+    def template_exists(tpath):
+        if not tpath:
+            return False
+        if os.path.isfile(tpath):
+            return True
+        return False
+
+    if template and template_exists(template):
+        doc = Document(template)
+    else:
+        doc = Document()
 
     ensure_paragraph_styles(doc)
 
