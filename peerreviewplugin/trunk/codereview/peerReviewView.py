@@ -17,10 +17,11 @@ from trac import util
 from trac.core import Component, implements, TracError
 from trac.config import ListOption
 from trac.mimeview import Context
+from trac.mimeview.api import Mimeview
 from trac.resource import Resource
 from trac.util import format_date
 from trac.util.text import CRLF
-from trac.web.chrome import INavigationContributor, add_stylesheet
+from trac.web.chrome import INavigationContributor, add_stylesheet, add_link
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
 from model import get_users, Comment, \
@@ -224,6 +225,12 @@ class PeerReviewView(Component):
         add_stylesheet(req, 'common/css/ticket.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
+
+        # For downloading in docx format
+        conversions = Mimeview(self.env).get_supported_conversions('text/x-trac-peerreview')
+        for key, name, ext, mime_in, mime_out, q, c in conversions:
+            conversion_href = req.href("peerreview", format=key, reviewid=review_id)
+            add_link(req, 'alternate', conversion_href, name, mime_out)
 
         return 'peerReviewView.html', data, None
 
