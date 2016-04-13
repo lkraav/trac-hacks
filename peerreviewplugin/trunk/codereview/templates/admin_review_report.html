@@ -1,0 +1,38 @@
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+    <xi:include href="admin.html" />
+    <head>
+        <title>Review Report</title>
+    </head>
+    <body>
+        <h2>Set Document Variables</h2>
+            <form action="" id="docvar-form" method="post">
+                <fieldset>
+                    <div class="field">
+                        <label>Title:</label>
+                        <input type="text" class="form-control" maxlength="255" id="doctitle"
+                               name="title" value="$title" />
+                    </div>
+                    <div class="field">
+                        <label>Subject:</label>
+                        <input type="text" class="form-control" maxlength="255" id="docsubject"
+                               name="subject" value="$subject" />
+                    </div>
+                    <div class="buttons">
+                        <input name="save" value="${_('Save')}" type="submit" />
+                    </div>
+                    <p>You can't use special characters like umlauts here. Only ASCII characters are allowed.</p>
+                </fieldset>
+            </form>
+        <p class="help">This information is used when creating a document from a review. You may use the following
+            variable which will be replaced with the actual value when creating a document.
+        </p>
+        <p class="help"><strong>$$reviewid</strong>: ID of the review</p>
+        <p class="help"><strong>Example</strong>: Report for Review $$reviewid</p>
+    </body>
+</html>

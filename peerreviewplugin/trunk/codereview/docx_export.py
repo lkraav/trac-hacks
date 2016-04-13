@@ -5,7 +5,7 @@ import io
 import os
 from collections import defaultdict
 from trac.util.datefmt import format_date
-from trac.util.text import to_unicode
+from trac.util.text import to_unicode, to_utf8
 from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.web_ui.util import get_existing_node
 from .model import PeerReviewModel, PeerReviewerModel, ReviewCommentModel, ReviewFileModel
@@ -366,7 +366,17 @@ def add_file_data(env, doc, file_info):
         par.text = u""  # Overwrite marker text
 
 
-def create_docx_for_review(env, review_id, template):
+def set_core_properties(doc, data):
+    from datetime import datetime
+
+    props = doc.core_properties
+    props.title = data['title']
+    props.created = datetime.now()
+    props.subject = data['subject']
+    props.author = data['author']
+
+
+def create_docx_for_review(env, data, template):
     def template_exists(tpath):
         if not tpath:
             return False
@@ -374,6 +384,7 @@ def create_docx_for_review(env, review_id, template):
             return True
         return False
 
+    review_id = data['review_id']
     if template and template_exists(template):
         doc = Document(template)
     else:
@@ -388,6 +399,7 @@ def create_docx_for_review(env, review_id, template):
     add_file_info_to_table(doc, review_id, file_info)
     add_file_data(env, doc, file_info)
 
+    set_core_properties(doc, data)
     buff = io.BytesIO()
     doc.save(buff)
     return buff.getvalue()

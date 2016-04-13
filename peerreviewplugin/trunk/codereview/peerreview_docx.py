@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 
+from string import Template
+from trac.admin import IAdminPanelProvider
 from trac.config import ListOption
 from trac.core import Component, implements
 from trac.mimeview.api import IContentConverter, Mimeview
-from trac.web.main import IRequestHandler
+from trac.util.text import _
+from trac.web.main import add_notice, add_warning, IRequestHandler
+from model import ReviewDataModel
+
 try:
     from docx import Document
     from docx_export import create_docx_for_review
@@ -90,7 +95,7 @@ class PeerReviewDocx(Component):
     The python package ''python-docx'' (https://python-docx.readthedocs.org/en/latest/index.html) must
     be installed. If it isn't available the feature will be silently disabled.
     """
-    implements(IContentConverter, IRequestHandler,)
+    implements(IAdminPanelProvider, IContentConverter, IRequestHandler,)
 
     ListOption('peer-review', 'review.docx', doc=u"Path to template document in ''docx'' format used for generating "
                                                  u"review documents.")
@@ -98,7 +103,67 @@ class PeerReviewDocx(Component):
         if not docx_support:
             self.env.log.info("PeerReviewPlugin: python-docx is not installed. Review report creation as docx is not "
                               "available.")
+        else:
+            # Create default database entries
+            defaults = ['reviewreport.title', 'reviewreport.subject']
+            rdm = ReviewDataModel(self.env)
+            rdm.clear_props()
+            rdm['type'] = "reviewreport.%"
+            keys = [item['type'] for item in rdm.list_matching_objects(False)]
+            for d in defaults:
+                if d not in keys:
+                    rdm = ReviewDataModel(self.env)
+                    rdm['type'] = d
+                    rdm['data'] = u""
+                    rdm.insert()
+
+    # IAdminPanelProvider methods
+
+    def get_admin_panels(self, req):
+        if 'CODE_REVIEW_MGR' in req.perm:
+            yield ('codereview', 'Code review', 'reviewreport', 'Review Report')
+
+    def render_admin_panel(self, req, cat, page, path_info):
+        req.perm.require('CODE_REVIEW_MGR')
+
+        report_data = self.get_report_defaults()
+
+        if req.method=='POST':
+            save = req.args.get('save', '')
+            if save:
+                # First check for ASCII only text
+                try:
+                    dummy = str(req.args.get('title', u''))
+                    dummy = str(req.args.get('subject', u''))
+                except UnicodeEncodeError:
+                    add_warning(req, u"You can't use non ASCII characters like 'ü', 'ä', 'ö' in title or subject.")
+                    req.redirect(req.href.admin(cat, page))
+
+                report_data['reviewreport.title']['data'] = req.args.get('title', u'')
+                report_data['reviewreport.title'].save_changes()
+                report_data['reviewreport.subject']['data'] = req.args.get('subject', u'')
+                report_data['reviewreport.subject'].save_changes()
+                add_notice(req, _("Your changes have been saved."))
+            req.redirect(req.href.admin(cat, page))
+
+        data = {'title': report_data['reviewreport.title']['data'],
+                'subject': report_data['reviewreport.subject']['data']}
+        return 'admin_review_report.html', data
+
+    def get_report_defaults(self):
+        """
+        @return: dict with default values. Key: one of [reviewreport.title, reviewreport.subject], value: unicode
+        """
+        rdm = ReviewDataModel(self.env)
+        rdm.clear_props()
+        rdm['type'] = "reviewreport%"
+        d = {}
+        for item in rdm.list_matching_objects(False):
+            d[item['type']] = item
+        return d
+
     # IRequestHandler methods
+
     def match_request(self, req):
         if not docx_support:
             return False
@@ -131,7 +196,13 @@ class PeerReviewDocx(Component):
         """
         if mimetype == 'text/x-trac-peerreview':
             template = self.env.config.get('peer-review', 'review.docx')
-            data = create_docx_for_review(self.env, content, template)
+            report_data = self.get_report_defaults()
+            tdata = {'reviewid': content}
+            info = {'review_id': content,
+                    'author': req.authname,
+                    'title': Template(report_data['reviewreport.title']['data']).safe_substitute(tdata),
+                    'subject': Template(report_data['reviewreport.subject']['data']).safe_substitute(tdata)}
+            data = create_docx_for_review(self.env, info, template)
             return data, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
         return None # This will cause a Trac error displayed to the user
