@@ -10,27 +10,38 @@
         <title>Review Report</title>
     </head>
     <body>
-        <h2>Set Document Variables</h2>
+        <h2>Settings for Review Reports</h2>
             <form action="" id="docvar-form" method="post">
                 <fieldset>
+                    <h3>Document Variables</h3>
                     <div class="field">
                         <label>Title:</label>
                         <input type="text" class="form-control" maxlength="255" id="doctitle"
                                name="title" value="$title" />
                     </div>
+                    <p class="help">You can't use special characters like umlauts here. Only ASCII characters are allowed.</p>
                     <div class="field">
                         <label>Subject:</label>
                         <input type="text" class="form-control" maxlength="255" id="docsubject"
                                name="subject" value="$subject" />
                     </div>
+                    <p class="help">You can't use special characters like umlauts here. Only ASCII characters are allowed.</p>
+                    <h3>Document Template</h3>
+                    <div class="field">
+                        <label>Path:</label>
+                        <input type="text" class="form-control" maxlength="255" id="tmplpath"
+                               name="template" value="$template" />
+                    </div>
+                    <p class="help">The path must be readable by Trac. If no template is specified a default
+                        will be used.</p>
                     <div class="buttons">
                         <input name="save" value="${_('Save')}" type="submit" />
                     </div>
-                    <p>You can't use special characters like umlauts here. Only ASCII characters are allowed.</p>
+
                 </fieldset>
             </form>
         <p class="help">This information is used when creating a document from a review. You may use the following
-            variable which will be replaced with the actual value when creating a document.
+            variable in title and subject which will be replaced with the actual value when creating a document.
         </p>
         <p class="help"><strong>$$reviewid</strong>: ID of the review</p>
         <p class="help"><strong>Example</strong>: Report for Review $$reviewid</p>
