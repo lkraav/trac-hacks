@@ -55,8 +55,10 @@ class PeerReviewDocx(Component):
     ||= Project =|| $PROJECT$ ||
     ||= Author =|| $AUTHOR$ ||
     ||= Date =|| $DATE$ ||
+    ||= Followup from =|| $FOLLOWUP$ ||
     [[BR]]
-    Any formatting will be preserved.
+    Any formatting will be preserved. Note that the order of rows is not important. You may also omit
+    rows.
 
     === Reviewer info table
     The table must have the following format.
@@ -73,8 +75,8 @@ class PeerReviewDocx(Component):
 
     === File info table
 
-    ||= ID =||= Path =||= Revision =||= Comments =||= Status =||
-    ||  || $FILEPATH$ ||  ||  ||
+    ||= ID =||= Path =||= Hash =||= Revision =||= Comments =||= Status =||
+    ||  || $FILEPATH$ ||  ||  ||  ||  ||
     [[BR]]
     === File content marker
     File content is added at the position marked by the paragraph ''$FILECONTENT$''.

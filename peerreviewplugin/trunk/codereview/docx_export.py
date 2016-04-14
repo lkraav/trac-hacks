@@ -102,7 +102,8 @@ def add_review_info_to_table(env, doc, review_id):
                      ['ID', '$ID$'],
                      ['Project', '$PROJECT$'],
                      ['Author', '$AUTHOR$'],
-                     ['Date', '$DATE$']
+                     ['Date', '$DATE$'],
+                     ['Followup from', '$FOLLOWUP$']
                      ]
         doc.add_heading('Review Info', level=1)
         tbl = doc.add_table(len(cell_data), 2)
@@ -129,7 +130,8 @@ def add_review_info_to_table(env, doc, review_id):
                     cell.text = format_date(rev_info['created'], 'iso8601')
                 elif cell.text == u'$ID$':
                     cell.text = str(rev_info['review_id'])
-
+                elif cell.text == u'$FOLLOWUP$':
+                    cell.text = str(rev_info['parent_id']) if rev_info['parent_id'] > 0  else '---'
 
 def add_reviewers_to_table(env, doc, review_id):
     """Add reviewer names to a table in the document.
@@ -175,13 +177,18 @@ def add_reviewers_to_table(env, doc, review_id):
     reviewers = get_reviewers(env, review_id)
     table, row = get_reviewer_table(doc)
     if table:
-        row.cells[0].text = reviewers[0]['reviewer']
-        row.cells[1].text = reviewers[0]['status']
+        try:
+            row.cells[0].text = reviewers[0]['reviewer']
+            row.cells[1].text = reviewers[0]['status']
+        except IndexError:
+            pass
         for idx, reviewer in enumerate(reviewers[1:]):
             cells = table.add_row().cells
-            cells[0].text = reviewer['reviewer']
-            cells[1].text = reviewer['status']
-
+            try:
+                cells[0].text = reviewer['reviewer']
+                cells[1].text = reviewer['status']
+            except IndexError:
+                pass
 
 def get_file_info(env, review_id):
     """Get a list of objects holding file and comment information for a review.
@@ -192,7 +199,8 @@ def get_file_info(env, review_id):
 
     @param env: Trac environment object
     @param review_id: review id
-    @return: list of ReviewFileModel objects
+    @return: list of ReviewFileModel objects. This one has an additional attribute 'comments' which holds
+             a dict with key: line number, value: list of comments for that line
     """
     def get_files_for_review_id(review_id):
         """Get all files belonging to the given review id. Provide the number of comments if asked for."""
@@ -236,8 +244,8 @@ def add_file_info_to_table(doc, review_id, file_info):
                 return table
 
         # Table not found, add it. This may be an empty template
-        cell_data = [['ID', 'Path', 'Revision', 'Comments', 'Status'],
-                     ['', '$FILEPATH$', '', '', '']
+        cell_data = [['ID', 'Path', 'Hash', 'Revision', 'Comments', 'Status'],
+                     ['', '$FILEPATH$', '', '', '', '']
                      ]
         doc.add_heading(u'Files', level=1)
         tbl = doc.add_table(len(cell_data), 5)
@@ -246,23 +254,41 @@ def add_file_info_to_table(doc, review_id, file_info):
                 tbl.rows[idx].cells[i].text = val
         return tbl
 
+    def get_num_comments(comments):
+        """Count total number of comments for a file given a dict with comment information.
+
+        @param comments: dict with key: line number, value: comments for this line
+        @return: total number of comments
+        """
+        num = 0
+        for value in comments.items():
+            num += len(value)
+        return num
+
     table = get_file_table(doc)
     if file_info and table:
         cells = table.rows[-1].cells
-        cells[0].text = str(file_info[0]['file_id'])
-        cells[1].text = file_info[0]['path']
-        cells[2].text = file_info[0]['revision']
-        cells[3].text = str(len(file_info[0]['comments']))
-        cells[4].text = file_info[0]['status'] or ''
+        try:
+            cells[0].text = str(file_info[0]['file_id'])
+            cells[1].text = file_info[0]['path']
+            cells[2].text = file_info[0]['hash'] or ''
+            cells[3].text = file_info[0]['revision'].strip()
+            cells[4].text = str(get_num_comments(file_info[0]['comments']))
+            cells[5].text = file_info[0]['status'] or ''
+        except IndexError:  # May happen if the template misses some table columns
+            pass
 
         for item in file_info[1:]:
-            cells = table.add_row().cells
-            cells[0].text = str(item['file_id'])
-            cells[1].text = item['path']
-            cells[2].text = item['revision']
-            cells[3].text = str(len(item['comments']))
-            cells[4].text = item['status'] or ''
-
+            try:
+                cells = table.add_row().cells
+                cells[0].text = str(item['file_id'])
+                cells[1].text = item['path']
+                cells[2].text = item['hash'] or ''
+                cells[3].text = item['revision']
+                cells[4].text = str(get_num_comments(item['comments']))
+                cells[5].text = item['status'] or ''
+            except IndexError:
+                pass
 
 def get_file_data(env, f_info):
     """Get file content from repository.
