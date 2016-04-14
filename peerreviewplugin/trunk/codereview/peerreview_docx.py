@@ -31,10 +31,13 @@ class PeerReviewDocx(Component):
     The document holds all the information from the review page and the file content of each file.
     File comments are printed inline.
 
-    It is possible to provide a template document by providing the path in ''trac.ini'':
+    It is possible to provide a default template document for new environments by providing the path
+    in ''trac.ini'':
     [[TracIni(peer-review, review.docx)]]
 
-    The path must be readable by Trac.
+    The path must be readable by Trac. It will be used only on first start to populate the database and is
+    meant to make automated deploying easier.
+    You may use the admin page to change it later on.
 
     == Template document format
     Markers are used to signify the position where to add information to the document.
@@ -107,17 +110,25 @@ class PeerReviewDocx(Component):
                               "available.")
         else:
             # Create default database entries
-            defaults = ['reviewreport.title', 'reviewreport.subject']
+            defaults = ['reviewreport.title', 'reviewreport.subject', 'reviewreport.template']
             rdm = ReviewDataModel(self.env)
             rdm.clear_props()
             rdm['type'] = "reviewreport.%"
             keys = [item['type'] for item in rdm.list_matching_objects(False)]
             for d in defaults:
                 if d not in keys:
+                    if d == 'reviewreport.template':
+                        # Admins may set this value in trac.ini to specify a default which will be used on first
+                        # start.
+                        data = self.env.config.get('peer-review', 'review.docx', '')
+                    else:
+                        data = u""
                     rdm = ReviewDataModel(self.env)
                     rdm['type'] = d
-                    rdm['data'] = u""
+                    rdm['data'] = data
                     rdm.insert()
+                    self.env.log.info("PeerReviewPlugin: added '%s' with value '%s' to 'peerreviewdata' table",
+                                      d, data)
 
     # IAdminPanelProvider methods
 
@@ -145,11 +156,14 @@ class PeerReviewDocx(Component):
                 report_data['reviewreport.title'].save_changes()
                 report_data['reviewreport.subject']['data'] = req.args.get('subject', u'')
                 report_data['reviewreport.subject'].save_changes()
+                report_data['reviewreport.template']['data'] = req.args.get('template', u'')
+                report_data['reviewreport.template'].save_changes()
                 add_notice(req, _("Your changes have been saved."))
             req.redirect(req.href.admin(cat, page))
 
         data = {'title': report_data['reviewreport.title']['data'],
-                'subject': report_data['reviewreport.subject']['data']}
+                'subject': report_data['reviewreport.subject']['data'],
+                'template': report_data['reviewreport.template']['data']}
         return 'admin_review_report.html', data
 
     def get_report_defaults(self):
@@ -197,8 +211,8 @@ class PeerReviewDocx(Component):
         @param content: This is the review id
         """
         if mimetype == 'text/x-trac-peerreview':
-            template = self.env.config.get('peer-review', 'review.docx')
             report_data = self.get_report_defaults()
+            template = report_data['reviewreport.template']['data']
             tdata = {'reviewid': content}
             info = {'review_id': content,
                     'author': req.authname,
