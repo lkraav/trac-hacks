@@ -248,7 +248,7 @@ def add_file_info_to_table(doc, review_id, file_info):
                      ['', '$FILEPATH$', '', '', '', '']
                      ]
         doc.add_heading(u'Files', level=1)
-        tbl = doc.add_table(len(cell_data), 5)
+        tbl = doc.add_table(len(cell_data), len(cell_data[0]))
         for idx, data in enumerate(cell_data):
             for i, val in enumerate(data):
                 tbl.rows[idx].cells[i].text = val
