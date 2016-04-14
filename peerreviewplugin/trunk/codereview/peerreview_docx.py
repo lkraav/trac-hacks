@@ -133,7 +133,7 @@ class PeerReviewDocx(Component):
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
-        if 'CODE_REVIEW_MGR' in req.perm:
+        if docx_support and 'CODE_REVIEW_MGR' in req.perm:
             yield ('codereview', 'Code review', 'reviewreport', 'Review Report')
 
     def render_admin_panel(self, req, cat, page, path_info):
