@@ -647,7 +647,6 @@ class PeerReviewModelProvider(Component):
                     cursor.execute(stmt)
 
 
-
     def _get_version(self, cursor):
         cursor.execute("SELECT value FROM system WHERE name = %s", (db_name_old,))
         value = cursor.fetchone()
@@ -673,14 +672,6 @@ class PeerReviewModelProvider(Component):
                     cursor.execute("INSERT INTO system (name,value) VALUES (%s,%s)",
                                    (name, db_version))
         self.current_db_version = cur_ver
-
-
-def get_threshold(env):
-    return env.config.getint('peer-review', 'vote_threshold', 100)
-
-def set_threshold(env, val):
-    env.config.set('peer-review', 'vote_threshold', val)
-    env.config.save()
 
 
 def get_users(env):

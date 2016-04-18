@@ -17,5 +17,4 @@ import peerReviewView
 import peerReviewCommentCallback
 from peerreview_docx import PeerReviewDocx
 from peerreviewfile import PeerReviewFile
-from admin import MgrOptionsAdminPlugin
 from timeline import PeerReviewTimeline
