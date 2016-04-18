@@ -13,10 +13,10 @@
 # Works with peerReviewMain.html
 
 import itertools
-
+from genshi.builder import tag
 from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
-from trac.resource import *
+from trac.resource import IResourceManager, Resource, ResourceNotFound
 from trac.util import as_int, format_date, Markup
 from trac.util.text import _
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_ctxtnav
@@ -78,7 +78,7 @@ def add_ctxt_nav_items(req):
 
 class PeerReviewMain(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
-               IPermissionRequestor)
+               IPermissionRequestor, IResourceManager)
 
     # INavigationContributor methods
 
@@ -93,7 +93,11 @@ class PeerReviewMain(Component):
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        return ['CODE_REVIEW_DEV', ('CODE_REVIEW_MGR', ['CODE_REVIEW_DEV'])]
+        return [
+            ('CODE_REVIEW_VIEW',['PEERREVIEWFILE_VIEW']),
+            ('CODE_REVIEW_DEV', ['CODE_REVIEW_VIEW']),
+            ('CODE_REVIEW_MGR', ['CODE_REVIEW_DEV', 'PEERREVIEWFILE_VIEW'])
+        ]
 
     # IRequestHandler methods
 
@@ -177,7 +181,7 @@ class PeerReviewMain(Component):
         r_tmpl.clear_props()
         r_tmpl['reviewer'] = req.authname
 
-        from peerReviewView import review_is_finished, review_is_locked
+        from peerReviewView import review_is_finished
         if data['allassigned']:
             # Don't filter list here
             reviewer = list(r_tmpl.list_matching_objects())
@@ -211,6 +215,41 @@ class PeerReviewMain(Component):
         add_ctxt_nav_items(req)
 
         return 'peerReviewMain.html', data, None
+
+    # IResourceManager methods
+
+    def get_resource_url(self, resource, href, **kwargs):
+        """Return the canonical URL for displaying the given resource.
+
+        :param resource: a `Resource`
+        :param href: an `Href` used for creating the URL
+
+        Note that if there's no special rule associated to this realm for
+        creating URLs (i.e. the standard convention of using realm/id applies),
+        then it's OK to not define this method.
+        """
+        return href('peerReviewPerform', IDFile=resource.id)
+
+    def get_resource_realms(self):
+        yield 'peerreviewfile'
+
+    def get_resource_description(self, resource, format=None, context=None,
+                                 **kwargs):
+        desc = resource.id
+        if format != 'compact':
+            desc = _('PeerReviewFile %(name)s', name=resource.id)
+        if context:
+            return tag.a('PeerReviewFile %(name)s', name=resource.id,
+                         href=context.href('peerReviewPerform', IDFile=resource.id))
+        else:
+            return desc
+
+    def resource_exists(self, resource):
+        try:
+            m = ReviewFileModel(self.env, resource.id)
+            return m.exists
+        except ResourceNotFound:
+            return False
 
     # ITemplateProvider methods
 
