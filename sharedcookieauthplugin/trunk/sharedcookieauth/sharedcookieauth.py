@@ -28,6 +28,9 @@ class SharedCookieAuth(Component):
             for dispatcher in self.get_dispatchers(req):
                 authname = dispatcher.authenticate(req)
                 if authname != 'anonymous':
+                    # The cookie is expired when not found in delegated
+                    # environments, but expiration can be prevented by
+                    # deleting the 'expires' attribute.
                     self.delete_expired_cookie(req)
                     return authname
 
@@ -37,12 +40,12 @@ class SharedCookieAuth(Component):
         """Return true if authentication has been delegated from
         another project.
         """
-        req_env_name = os.path.split(req.base_path)[-1]
-        env_name = os.path.split(self.env.path)[-1]
+        req_env_name = os.path.basename(req.base_path)
+        env_name = os.path.basename(self.env.path)
         return req_env_name and env_name != req_env_name
 
     def delete_expired_cookie(self, req):
-        """Delete the expired cookie."""
+        """Delete the cookie's expired attribute."""
         if 'trac_auth' in req.outcookie and \
                 req.outcookie['trac_auth']['expires'] == -10000:
             del req.outcookie['trac_auth']
