@@ -294,7 +294,7 @@ class PeerReviewModelProvider(Component):
     SCHEMA = {
                 'peerreview':
                     {'table':
-                        Table('peerreview', key = ('review_id'))[
+                        Table('peerreview', key=('review_id', 'owner', 'status'))[
                               Column('review_id', auto_increment=True, type='int'),
                               Column('owner'),
                               Column('status'),
@@ -306,10 +306,10 @@ class PeerReviewModelProvider(Component):
                               Column('keywords')],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 3},
+                     'version': 4},
                 'peerreviewfile':
                     {'table':
-                        Table('peerreviewfile', key='file_id')[
+                        Table('peerreviewfile', key=('file_id', 'hash', 'project', 'review_id', 'status'))[
                               Column('file_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('path'),
@@ -319,13 +319,14 @@ class PeerReviewModelProvider(Component):
                               Column('revision'),
                               Column('changerevision'),
                               Column('hash'),
-                              Column('status')],
+                              Column('status'),
+                              Column('project')],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 3},
+                     'version': 4},
                 'peerreviewcomment':
                     {'table':
-                        Table('peerreviewcomment', key='comment_id')[
+                        Table('peerreviewcomment', key=('comment_id', 'file_id', 'author'))[
                               Column('comment_id', auto_increment=True, type='int'),
                               Column('file_id', type='int'),
                               Column('parent_id', type='int'),
@@ -339,10 +340,10 @@ class PeerReviewModelProvider(Component):
                               Column('status')],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 3},
+                     'version': 4},
                 'peerreviewer':
                     {'table':
-                        Table('peerreviewer', key=('reviewer_id'))[
+                        Table('peerreviewer', key=('reviewer_id', 'reviewer', 'review_id'))[
                               Column('reviewer_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('reviewer'),
@@ -350,10 +351,10 @@ class PeerReviewModelProvider(Component):
                               Column('vote', type='int')],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 3},
+                     'version': 4},
                 'peerreviewdata':
                     {'table':
-                         Table('peerreviewdata', key=('data_id'))[
+                         Table('peerreviewdata', key=('data_id', 'review_id', 'comment_id', 'file_id'))[
                              Column('data_id', type='int'),
                              Column('review_id', type='int'),
                              Column('comment_id', type='int'),
@@ -361,10 +362,11 @@ class PeerReviewModelProvider(Component):
                              Column('reviewer_id', type='int'),
                              Column('type'),
                              Column('data'),
-                             Column('owner')],
+                             Column('owner'),
+                             Column('data_key')],
                      'has_custom': False,
                      'has_change': False,
-                     'version': 1},
+                     'version': 2},
                     }
 
     FIELDS = {
@@ -389,7 +391,8 @@ class PeerReviewModelProvider(Component):
                     {'name': 'revision', 'type': 'text', 'label': N_('Revision')},
                     {'name': 'changerevision', 'type': 'text', 'label': N_('Revision of last change')},
                     {'name': 'hash', 'type': 'text', 'label': N_('Hash of file content')},
-                    {'name': 'status', 'type': 'text', 'label': N_('File status')}
+                    {'name': 'status', 'type': 'text', 'label': N_('File status')},
+                    {'name': 'project', 'type': 'text', 'label': N_('Project')},
                 ],
                 'peerreviewcomment': [
                     {'name': 'comment_id', 'type': 'int', 'label': N_('Comment ID')},
