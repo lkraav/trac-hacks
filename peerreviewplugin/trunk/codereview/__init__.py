@@ -15,6 +15,7 @@ import peerReviewSearch
 import peerReviewBrowser
 import peerReviewView
 import peerReviewCommentCallback
+from admin import PeerReviewFileAdmin
 from peerreview_docx import PeerReviewDocx
 from peerreviewfile import PeerReviewFile
 from timeline import PeerReviewTimeline

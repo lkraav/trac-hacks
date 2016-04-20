@@ -178,6 +178,19 @@ class ReviewFileModel(AbstractVariableFieldsObject):
             files_dict[row[1]].append(file_)
         return files_dict
 
+    @classmethod
+    def delete_files_by_project_name(cls, env, proj_name):
+        """Delete all file information belonging to project proj_name.
+
+        @param env: Trac environment object
+        @param proj_name: name of project. USed to filter by 'project' column
+        @return: None
+        """
+        @env.with_transaction()
+        def do_delete(db):
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM peerreviewfile WHERE project=%s", (proj_name,))
+
 
 class ReviewDataModel(AbstractVariableFieldsObject):
     """Data model holding whatever you want to create relations for."""
@@ -227,6 +240,25 @@ class ReviewDataModel(AbstractVariableFieldsObject):
         cursor.execute("SELECT comment_id, review_id, type, data FROM peerreviewdata "
                        "WHERE owner = %s", (owner,))
         return cursor.fetchall()
+
+    @classmethod
+    def all_file_project_data(cls, env):
+        """Return a dict with project name as key and a dict with project information as value."""
+
+        sql = """SELECT n.data AS name , r.type, r.data FROM peerreviewdata AS n
+                 JOIN peerreviewdata AS r ON r.data_key = n.data
+                 WHERE n.type = 'fileproject'"""
+        db = env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute(sql)
+        files_dict = defaultdict(dict)
+        for row in cursor:
+            file_ = cls(env, row[0])
+            if row[1] == 'rootfolder':
+                files_dict[row[0]]['rootfolder'] = row[2]
+            elif row[1] == 'extensions':
+                files_dict[row[0]]['extensions'] = row[2]
+        return files_dict
 
 
 class ReviewCommentModel(AbstractVariableFieldsObject):
@@ -421,6 +453,7 @@ class PeerReviewModelProvider(Component):
                     {'name': 'type', 'type': 'text', 'label': N_('Type')},
                     {'name': 'data', 'type': 'text', 'label': N_('Data')},
                     {'name': 'owner', 'type': 'text', 'label': N_('Owner')},
+                    {'name': 'data_key', 'type': 'text', 'label': N_('Key for data')},
                 ],
             }
 
