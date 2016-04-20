@@ -1,11 +1,11 @@
 #
 # Copyright (C) 2005-2006 Team5
+# Copyright (C) 2016 Cinc
+#
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
 # you should have received as part of this distribution.
-#
-# Author: Team5
 #
 
 # Provides functionality to create a new code review.
@@ -13,7 +13,6 @@
 
 import itertools
 import time
-import hashlib
 from pkg_resources import get_distribution, parse_version
 from trac import util
 from trac.core import Component, implements, TracError
@@ -27,6 +26,8 @@ from model import ReviewFile, Reviewer, get_users, Comment, \
     ReviewFileModel, PeerReviewerModel, PeerReviewModel
 from peerReviewMain import add_ctxt_nav_items
 from peerReviewBrowser import get_node_from_repo
+from .repo import hash_from_file_node
+
 
 def java_string_hashcode(s):
     # See: http://garage.pimentech.net/libcommonPython_src_python_libcommon_javastringhashcode/
@@ -262,15 +263,7 @@ class NewReviewModule(Component):
         return id_
 
     def _hash_from_file_node(self, node):
-        content = node.get_content()
-        blocksize = 4096
-        hasher = hashlib.sha256()
-
-        buf = content.read(blocksize)
-        while len(buf) > 0:
-            hasher.update(buf)
-            buf = content.read(blocksize)
-        return hasher.hexdigest()
+        return hash_from_file_node(node)
 
     def save_changes(self, req):
         def file_is_commented(author):
