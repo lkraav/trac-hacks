@@ -18,4 +18,5 @@ import peerReviewCommentCallback
 from admin import PeerReviewFileAdmin
 from peerreview_docx import PeerReviewDocx
 from peerreviewfile import PeerReviewFile
+from report import PeerReviewReport
 from timeline import PeerReviewTimeline
