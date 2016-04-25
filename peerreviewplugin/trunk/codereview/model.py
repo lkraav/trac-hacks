@@ -740,40 +740,6 @@ def get_users(env):
     return sorted(users)
 
 
-class Vote(object):
-
-    def __init__(self, env, review_id):
-        if not review_id:
-            raise ValueError("No review id given during creation of Vote object.")
-        self._votes = {'yes': 0, 'no': 0, 'pending': 0}
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT vote FROM peerreviewer WHERE review_id = %s", (review_id,))
-        for row in cursor:
-            if row[0] == -1:
-                self._votes['pending'] += 1
-            elif row[0] == 1:
-                self._votes['yes'] += 1
-            elif row[0] == 0:
-                self._votes['no'] += 1
-
-    @property
-    def yes(self):
-        return self._votes['yes']
-
-    @property
-    def no(self):
-        return self._votes['no']
-
-    @property
-    def pending(self):
-        return self._votes['pending']
-
-    @property
-    def votes(self):
-        return self._votes
-
-
 class Reviewer(object):
     """Model for a reviewer working on a code review."""
     def __init__(self, env, review_id=None, name=None):
