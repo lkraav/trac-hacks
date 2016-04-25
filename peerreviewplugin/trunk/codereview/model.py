@@ -11,11 +11,13 @@
 
 import copy
 from collections import defaultdict
+from datetime import datetime
 from time import time
 from trac.core import Component, implements, TracError
 from trac.db import Table, Column, Index,  DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import ResourceNotFound
+from trac.util.datefmt import to_utimestamp, utc
 from trac.util.text import _
 from trac.util.translation import N_
 from trac.util import format_date
@@ -27,8 +29,9 @@ __author__ = 'Cinc'
 
 db_name_old = 'codereview_version'  # for database version 1
 db_name = 'peerreview_version'
-db_version = 2
+db_version = 2  # Don't change this one!
 
+datetime_now = datetime.now
 
 class PeerReviewModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
@@ -45,7 +48,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         # Set defaults
         self.values['state'] = state
         self.values['status'] = state
-        self.values['created'] = int(time())
+        self.values['created'] = to_utimestamp(datetime_now(utc))
         self.values['parent_id'] = 0
 
         key = self.build_key_object()
@@ -274,6 +277,7 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
         self.values['comment_id'] = id_
         self.values['res_realm'] = res_realm
         self.values['state'] = state
+        self.values['created'] = to_utimestamp(datetime_now(utc))
 
         key = self.build_key_object()
         AbstractVariableFieldsObject.__init__(self, env, 'peerreviewcomment', key, db)
@@ -331,6 +335,7 @@ class PeerReviewModelProvider(Component):
                               Column('owner'),
                               Column('status'),
                               Column('created', type='int'),
+                              Column('closed', type='int'),
                               Column('name'),
                               Column('notes'),
                               Column('parent_id', type='int'),
@@ -338,7 +343,7 @@ class PeerReviewModelProvider(Component):
                               Column('keywords')],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 4},
+                     'version': 5},
                 'peerreviewfile':
                     {'table':
                         Table('peerreviewfile', key=('file_id', 'hash', 'project', 'review_id', 'status'))[
@@ -372,7 +377,7 @@ class PeerReviewModelProvider(Component):
                               Column('status')],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 4},
+                     'version': 5},
                 'peerreviewer':
                     {'table':
                         Table('peerreviewer', key=('reviewer_id', 'reviewer', 'review_id'))[
@@ -407,6 +412,7 @@ class PeerReviewModelProvider(Component):
                     {'name': 'owner', 'type': 'text', 'label': N_('Review owner')},
                     {'name': 'status', 'type': 'text', 'label': N_('Review status')},
                     {'name': 'created', 'type': 'int', 'label': N_('Review creation date')},
+                    {'name': 'closed', 'type': 'int', 'label': N_('Review closing date')},
                     {'name': 'name', 'type': 'text', 'label': N_('Review name')},
                     {'name': 'notes', 'type': 'text', 'label': N_('Review notes')},
                     {'name': 'parent_id', 'type': 'int', 'label': N_('Review parent. 0 if not a followup review')},
@@ -935,7 +941,7 @@ class Comment(object):
         def do_insert(db):
             created = self.created
             if not created:
-                created = int(time())
+                created = to_utimestamp(datetime_now(utc))
             cursor = db.cursor()
             self.env.log.debug("Creating new comment for file '%s'" % self.file_id)
             cursor.execute("""INSERT INTO peerreviewcomment (file_id, parent_id, line_num,
