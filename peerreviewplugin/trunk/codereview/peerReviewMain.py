@@ -94,8 +94,8 @@ class PeerReviewMain(Component):
 
     def get_permission_actions(self):
         return [
-            ('CODE_REVIEW_VIEW',['PEERREVIEWFILE_VIEW']),
-            ('CODE_REVIEW_DEV', ['CODE_REVIEW_VIEW']),
+            ('CODE_REVIEW_VIEW',['PEERREVIEWFILE_VIEW', 'PEERREVIEW_VIEW']),  # Allow viewing of realm so reports show
+            ('CODE_REVIEW_DEV', ['CODE_REVIEW_VIEW']),                        # results.
             ('CODE_REVIEW_MGR', ['CODE_REVIEW_DEV', 'PEERREVIEWFILE_VIEW'])
         ]
 
@@ -228,28 +228,50 @@ class PeerReviewMain(Component):
         creating URLs (i.e. the standard convention of using realm/id applies),
         then it's OK to not define this method.
         """
-        return href('peerReviewPerform', IDFile=resource.id)
+        if resource.realm == 'peerreviewfile':
+            return href('peerReviewPerform', IDFile=resource.id)
+        elif resource.realm == 'peerreview':
+            return href('peerReviewView', Review=resource.id)
+
+        return href('peerReviewMain')
 
     def get_resource_realms(self):
+        yield 'peerreview'
         yield 'peerreviewfile'
 
     def get_resource_description(self, resource, format=None, context=None,
                                  **kwargs):
-        desc = resource.id
-        if format != 'compact':
-            desc = _('PeerReviewFile %(name)s', name=resource.id)
-        if context:
-            return tag.a('PeerReviewFile %(name)s', name=resource.id,
-                         href=context.href('peerReviewPerform', IDFile=resource.id))
-        else:
-            return desc
+        desc = unicode(resource.id)
+        if resource.realm == 'peerreview':
+            if format == 'compact':
+                return 'review:%s' % resource.id  # Will be used as id in reports when 'realm' is used
+            else:
+                return 'Review %s' % resource.id
+        elif resource.realm == 'peerreviewfile':
+            if format == 'compact':
+                return 'rfile:%s' % resource.id
+            else:
+                return 'ReviewFile %s' % resource.id
+        return ""
+
 
     def resource_exists(self, resource):
-        try:
-            m = ReviewFileModel(self.env, resource.id)
-            return m.exists
-        except ResourceNotFound:
-            return False
+        db = self.env.get_read_db()
+        cursor = db.cursor()
+        if resource.realm == 'peerreview':
+            cursor.execute("SELECT * FROM peerreview WHERE review_id = %s", (resource.id,))
+            if cursor.fetchone():
+                return True
+            else:
+                return False
+        elif resource.realm == 'peerreviewfile':
+            cursor.execute("SELECT * FROM peerreviewfile WHERE file_id = %s", (resource.id,))
+            if cursor.fetchone():
+                return True
+            else:
+                return False
+
+        raise ResourceNotFound('Resource %s not found.' % resource.realm)
 
     # ITemplateProvider methods
 
