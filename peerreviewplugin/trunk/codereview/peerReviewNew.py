@@ -208,7 +208,6 @@ class NewReviewModule(Component):
         oldid = req.args.get('oldid', 0)
         review = PeerReviewModel(self.env)
         review['owner'] = req.authname
-        review['created'] = int(time.time())
         review['name'] = req.args.get('Name')
         review['notes'] = req.args.get('Notes')
         if req.args.get('project'):
