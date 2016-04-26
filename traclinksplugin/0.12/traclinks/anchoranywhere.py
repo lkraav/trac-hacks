@@ -84,6 +84,7 @@ class _AttrLaterTransformation(object):
         self.trimmer = trimmer
 
     def __call__(self, stream):
+        value = None
         for mark, event in stream:
             if mark is OUTSIDE or mark is None:
                 yield mark, event
