@@ -330,7 +330,7 @@ class PeerReviewModelProvider(Component):
     SCHEMA = {
                 'peerreview':
                     {'table':
-                        Table('peerreview', key=('review_id', 'owner', 'status'))[
+                        Table('peerreview', key=('review_id'))[
                               Column('review_id', auto_increment=True, type='int'),
                               Column('owner'),
                               Column('status'),
@@ -340,13 +340,15 @@ class PeerReviewModelProvider(Component):
                               Column('notes'),
                               Column('parent_id', type='int'),
                               Column('project'),
-                              Column('keywords')],
+                              Column('keywords'),
+                              Index(['owner']),
+                              Index(['status'])],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 5},
+                     'version': 6},
                 'peerreviewfile':
                     {'table':
-                        Table('peerreviewfile', key=('file_id', 'hash', 'project', 'review_id', 'status'))[
+                        Table('peerreviewfile', key=('file_id'))[
                               Column('file_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('path'),
@@ -357,13 +359,18 @@ class PeerReviewModelProvider(Component):
                               Column('changerevision'),
                               Column('hash'),
                               Column('status'),
-                              Column('project')],
+                              Column('project'),
+                              Index(['hash']),
+                              Index(['review_id']),
+                              Index(['status']),
+                              Index(['project'])
+                        ],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 4},
+                     'version': 5},
                 'peerreviewcomment':
                     {'table':
-                        Table('peerreviewcomment', key=('comment_id', 'file_id', 'author'))[
+                        Table('peerreviewcomment', key=('comment_id'))[
                               Column('comment_id', auto_increment=True, type='int'),
                               Column('file_id', type='int'),
                               Column('parent_id', type='int'),
@@ -374,24 +381,30 @@ class PeerReviewModelProvider(Component):
                               Column('created', type='int'),
                               Column('refs'),
                               Column('type'),
-                              Column('status')],
+                              Column('status'),
+                              Index(['file_id']),
+                              Index(['author'])
+                        ],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 5},
+                     'version': 6},
                 'peerreviewer':
                     {'table':
-                        Table('peerreviewer', key=('reviewer_id', 'reviewer', 'review_id'))[
+                        Table('peerreviewer', key=('reviewer_id'))[
                               Column('reviewer_id', auto_increment=True, type='int'),
                               Column('review_id', type='int'),
                               Column('reviewer'),
                               Column('status'),
-                              Column('vote', type='int')],
+                              Column('vote', type='int'),
+                              Index(['reviewer']),
+                              Index(['review_id'])
+                        ],
                      'has_custom': True,
                      'has_change': True,
-                     'version': 4},
+                     'version': 5},
                 'peerreviewdata':
                     {'table':
-                         Table('peerreviewdata', key=('data_id', 'review_id', 'comment_id', 'file_id'))[
+                         Table('peerreviewdata', key=('data_id'))[
                              Column('data_id', type='int'),
                              Column('review_id', type='int'),
                              Column('comment_id', type='int'),
@@ -400,10 +413,14 @@ class PeerReviewModelProvider(Component):
                              Column('type'),
                              Column('data'),
                              Column('owner'),
-                             Column('data_key')],
+                             Column('data_key'),
+                             Index(['review_id']),
+                             Index(['comment_id']),
+                             Index(['file_id'])
+                         ],
                      'has_custom': False,
                      'has_change': False,
-                     'version': 2},
+                     'version': 3},
                     }
 
     FIELDS = {
@@ -541,8 +558,6 @@ class PeerReviewModelProvider(Component):
             self.log.info("PeerReview plugin database schema version is %d, should be %d",
                           self.current_db_version, db_version)
             return True
-        #if self.current_db_version > db_version:
-        #    raise TracError(_("Database newer than PeerReview plugin version"))
 
         for realm in self.SCHEMA:
             realm_metadata = self.SCHEMA[realm]
@@ -553,9 +568,88 @@ class PeerReviewModelProvider(Component):
         return False
 
     def upgrade_environment(self, db=None):
-        # Create or update db
+        # Create or update db. We are going step by step through all database versions.
 
-        @self.env.with_transaction(db)
+        self.upgrade_env_to_db2()  # This is the legacy database from the dawn of time
+
+        # At this point at least all legacy tables are installed with db version 2.
+        # Make sure we have a db version set for tables other than 'peerreview'
+        self.ensure_table_versions()
+
+        # Add change and custom tables
+        # During past db upgrades the change and custom tables may have been created in a broken way because
+        # the primary keys of the tables were set incorrectly.
+        # We remove all broken tables here and create proper ones again. This is only done for the following versions:
+        # peer_review: 5, peerreviewer: 4, peerreviewcomment: 5, peerreviewfile: 4
+        self.add_change_custom_tables()
+
+        self.upgrade_tracgeneric()
+
+    def upgrade_tracgeneric(self):
+        """Upgrade for versions > 2 using the TracGenericClass mechanism."""
+        @self.env.with_transaction()
+        def do_upgrade_environment(db):
+            for realm in self.SCHEMA:
+                realm_metadata = self.SCHEMA[realm]
+
+                if need_db_create_for_realm(self.env, realm, realm_metadata, db):
+                    create_db_for_realm(self.env, realm, realm_metadata, db)
+
+                elif need_db_upgrade_for_realm(self.env, realm, realm_metadata, db):
+                    upgrade_db_for_realm(self.env, 'codereview.upgrades', realm, realm_metadata, db)
+
+    def add_change_custom_tables(self):
+        def _add_tables():
+            @self.env.with_transaction()
+            def do_change_custom(db):
+                for realm in self.SCHEMA:
+                    realm_metadata = self.SCHEMA[realm]
+                    self._create_custom_change_db_for_realm(realm, realm_metadata, db)
+
+        read_db = self.env.get_read_db()
+        cursor = read_db.cursor()
+        cursor.execute("SELECT value FROM system WHERE NAME = 'peerreview_version'")
+        ver = int(cursor.fetchone()[0])  # We made sure before an entry exists.
+        if ver <= 6:
+            # During past db upgrades the change and custom tables may have been created in a broken way because
+            # the primary keys of the tables were set incorrectly.
+            # We remove all broken tables here and create proper ones again.
+            # In case of legacy version 2 no such tables were ever created.
+            print "Custom and change tables for PeerReview need update."
+            tables = ['peerreview_change', 'peerreview_custom',
+                      'peerreviewer_change', 'peerreviewer_custom',
+                      'peerreviewfile_change', 'peerreviewfile_custom',
+                      'peerreviewcomment_change', 'peerreviewcomment_custom']
+            for name in tables:
+                print '  Dropping %s' % name
+                try:
+                    @self.env.with_transaction()
+                    def do_drop(db):
+                        cursor = db.cursor()
+                        cursor.execute("DROP TABLE %s" % name)
+                except:
+                    pass
+            print 'Recreating change and custom tables.'
+            _add_tables()
+
+    def ensure_table_versions(self):
+        """Make sure that for each peerreview table there is a version in the system table."""
+        @self.env.with_transaction()
+        def add_tables(db):
+            db_names = [u'peerreviewfile_version', u'peerreviewcomment_version',
+                        u'peerreviewer_version']
+            cursor = db.cursor()
+            for name in db_names:
+                print "checking ", name
+                cursor.execute("SELECT name FROM system")
+                if name not in [row[0] for row in cursor]:
+                    cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
+                                   (name, db_version))
+
+    def upgrade_env_to_db2(self):
+        """Update database to hold tables from before using TracGenericClass"""
+
+        @self.env.with_transaction()
         def do_upgrade(db):
             cursor = db.cursor()
             for i in range(self.current_db_version + 1, db_version + 1):
@@ -571,41 +665,6 @@ class PeerReviewModelProvider(Component):
 
                 self._set_version(cursor, i)
                 db.commit()
-
-
-        # At this point at least all legacy tables are installed with db version 2.
-        # Make sure we have a db version set for tables other than 'peerreview'
-        @self.env.with_transaction(db)
-        def add_tables(db):
-            db_names = [u'peerreviewfile_version', u'peerreviewcomment_version',
-                        u'peerreviewer_version']
-            cursor = db.cursor()
-            for name in db_names:
-                print "checking ", name
-                cursor.execute("SELECT name FROM system")
-                if name not in [row[0] for row in cursor]:
-                    cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
-                                  (name, db_version))
-
-        # Add change and custom tables
-        @self.env.with_transaction(db)
-        def do_change_custom(db):
-            if self.current_db_version == 2:
-                for realm in self.SCHEMA:
-                    realm_metadata = self.SCHEMA[realm]
-
-                    self._create_custom_change_db_for_realm(realm, realm_metadata, db)
-
-        @self.env.with_transaction(db)
-        def do_upgrade_environment(db):
-            for realm in self.SCHEMA:
-                realm_metadata = self.SCHEMA[realm]
-
-                if need_db_create_for_realm(self.env, realm, realm_metadata, db):
-                    create_db_for_realm(self.env, realm, realm_metadata, db)
-
-                elif need_db_upgrade_for_realm(self.env, realm, realm_metadata, db):
-                    upgrade_db_for_realm(self.env, 'codereview.upgrades', realm, realm_metadata, db)
 
     def _create_custom_change_db_for_realm(self, realm, realm_schema, db=None):
 
@@ -694,13 +753,14 @@ class PeerReviewModelProvider(Component):
         value = cursor.fetchone()
         val = int(value[0]) if value else 0
         if not val:
-            # Database version > 1 or no datavase yet
+            # Database version > 1 or no database yet
             cursor.execute("SELECT value FROM system WHERE name = %s", (db_name,))
             value = cursor.fetchone()
             val = int(value[0]) if value else 0
         return val
 
     def _set_version(self, cursor, cur_ver):
+        """This is ONLY used for update to version 2!"""
         db_names = [u'peerreview_version', u'peerreviewfile_version', u'peerreviewcomment_version']
         if not self.current_db_version:
             for name in db_names:

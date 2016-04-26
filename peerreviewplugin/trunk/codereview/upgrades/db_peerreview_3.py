@@ -2,7 +2,7 @@ from trac.db import Table, Column
 
 def do_upgrade(env, ver, db_backend, db):
     """
-    Add 'page_version' column to testcaseinplan table
+
     """
     cursor = db.cursor()
 
