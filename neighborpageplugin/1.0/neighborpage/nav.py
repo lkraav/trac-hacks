@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2012-2013, 2016 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -9,6 +9,7 @@
 
 from genshi.builder import tag
 from trac.core import Component, implements
+from trac.mimeview.api import RenderingContext
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import prevnext_nav, add_link
@@ -25,6 +26,7 @@ class NeighborPage(Component):
 
     def post_process_request(self, req, template, data, content_type):
         if data and 'context' in data and \
+                isinstance(data['context'], RenderingContext) and \
                 data['context'].resource.realm == 'wiki' and \
                 'action' not in req.args and \
                 'version' not in req.args:
