@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2013, 2016 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
