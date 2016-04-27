@@ -136,6 +136,13 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
     def create_instance(self, key):
         return PeerReviewerModel(self.env, key['reviewer_id'], 'peerreviewer')
 
+    @classmethod
+    def select_by_review_id(cls, env, review_id):
+        rm = PeerReviewerModel(env)
+        rm.clear_props()
+        rm['review_id'] = review_id
+        return rm.list_matching_objects()
+
 
 class ReviewFileModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
@@ -855,33 +862,6 @@ class Reviewer(object):
             cursor.execute("""DELETE FROM peerreviewer
                         WHERE review_id=%s AND reviewer=%s
                         """, (self.review_id, self.reviewer))
-
-    @classmethod
-    def select_by_review_id(cls, env, review_id, rev_name=None):
-        db = env.get_read_db()
-        cursor = db.cursor()
-        if rev_name:
-            sql = "SELECT reviewer_id, review_id, reviewer, status, vote FROM peerreviewer WHERE review_id = %s " \
-                  "AND reviewer = %s"
-            data = (review_id, rev_name)
-            cursor.execute(sql, data)
-            row = cursor.fetchone()
-            if row:
-                reviewer = cls(env)
-                reviewer._init_from_row(row)
-            else:
-                reviewer = None
-            return reviewer
-        else:
-            sql = "SELECT reviewer_id, review_id, reviewer, status, vote FROM peerreviewer WHERE review_id = %s"
-            data = (review_id,)
-        cursor.execute(sql, data)
-        reviewers = []
-        for row in cursor:
-            reviewer = cls(env)
-            reviewer._init_from_row(row)
-            reviewers.append(reviewer)
-        return reviewers
 
 
 class ReviewFile(object):

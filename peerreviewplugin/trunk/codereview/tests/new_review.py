@@ -13,6 +13,16 @@ __author__ = 'Cinc'
 __copyright__ = "Copyright 2016"
 __license__ = "BSD"
 
+def _add_permissions(env):
+    admin = TracAdmin()
+    admin.env_set('Testenv', env)
+    admin.onecmd("permission add Tester TICKET_VIEW")  # User not allowed to perform code reviews
+    admin.onecmd("permission add Rev1 TRAC_ADMIN")
+    admin.onecmd("permission add Rev2 CODE_REVIEW_DEV")
+    admin.onecmd("permission add Rev3 CODE_REVIEW_MGR")
+    admin.onecmd("permission add Rev1 RevGroup")
+    admin.onecmd("permission add Rev2 RevGroup")
+
 
 class TestCreateFileHashId(unittest.TestCase):
 
@@ -49,17 +59,14 @@ class TestUserHandling(unittest.TestCase):
         PeerReviewModelProvider(cls.env).environment_created()
         cls.plugin =  NewReviewModule(cls.env)
         # cls.req = Mock(href=Mock(), perm=MockPerm())
-        admin = TracAdmin()
-        admin.env_set('Testenv', cls.env)
-        admin.onecmd("permission add Tester TICKET_VIEW")  # User not allowed to perform code reviews
-        admin.onecmd("permission add Rev1 TRAC_ADMIN")
-        admin.onecmd("permission add Rev2 CODE_REVIEW_DEV")
-        admin.onecmd("permission add Rev3 CODE_REVIEW_MGR")
-        admin.onecmd("permission add Rev1 RevGroup")
-        admin.onecmd("permission add Rev2 RevGroup")
+        _add_permissions(cls.env)
         reviewer = PeerReviewerModel(cls.env)
         reviewer['review_id'] = 1
         reviewer['reviewer'] = 'Rev1'
+        reviewer.insert()
+        reviewer = PeerReviewerModel(cls.env)
+        reviewer['review_id'] = 1
+        reviewer['reviewer'] = 'Rev2'
         reviewer.insert()
 
     def test_get_code_review_users(self):
@@ -86,10 +93,10 @@ class TestUserHandling(unittest.TestCase):
         self.assertEqual(3, len(data['users']))
         # There is no review so we have no assigned users.
         self.assertTrue('assigned_users' in data)
-        self.assertEqual(1, len(data['assigned_users']))
+        self.assertEqual(2, len(data['assigned_users']))
 
         self.assertTrue('unassigned_users' in data)
-        self.assertEqual(2, len(data['unassigned_users']))
+        self.assertEqual(1, len(data['unassigned_users']))
         self.assertTrue('emptyList' in data)
         self.assertEqual(0, data['emptyList'])
 

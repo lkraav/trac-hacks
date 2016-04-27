@@ -42,24 +42,27 @@ def create_file_hash_id(f):
 
 
 def add_users_to_data(env, reviewID, data):
-    """
-    If data['user'] doesn't exist this function will query the list of available users.
+    """Add user, assigned and unassigned users to dict data.
 
-    :param env:
-    :param reviewID:
+    This function searches all users assigned to the given review and adds the list to the data dictionary using
+    key 'assigned_users'. Not yet assigned users are added using the key 'unassigned_users'.
+    If data['user'] doesn't exist this function will query the list of available users and add them.
+
+    :param env: Trac environment object
+    :param reviewID: Id of a review
     :param data:
-    :param all_users
-    :return:
+
+    :return: None. Data is added to dict data using keys 'users', 'assigned_users', 'unassigned_users', 'emptyList'
     """
     if 'users' not in data:
         data['users'] = get_users(env)
     all_users = data['users']
 
     # get code review data and populate
-    reviewers = Reviewer.select_by_review_id(env, reviewID)
+    reviewers = PeerReviewerModel.select_by_review_id(env, reviewID)
     popUsers = []
     for reviewer in reviewers:
-        popUsers.append(reviewer.reviewer)
+        popUsers.append(reviewer['reviewer'])
     data['assigned_users'] = popUsers
 
     # Figure out the users that were not included
