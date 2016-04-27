@@ -12,7 +12,7 @@
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.util.text import _
-from trac.web.main import add_notice, add_warning
+from trac.web.chrome import add_notice, add_warning
 from .model import ReviewDataModel, ReviewFileModel
 from .repo import insert_project_files, repo_path_exists
 
