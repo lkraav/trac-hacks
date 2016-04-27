@@ -24,7 +24,7 @@ from trac.util import Markup
 from trac.web.main import IRequestHandler
 from genshi.template.markup import MarkupTemplate
 from dbBackend import *
-from model import ReviewFile, Comment, PeerReviewModel, ReviewDataModel
+from model import ReviewFile, Comment, PeerReviewModel, ReviewDataModel, ReviewFileModel
 from trac.wiki import format_to_html
 from trac.mimeview import Context
 from peerReviewView import review_is_locked, review_is_finished
@@ -120,8 +120,8 @@ class PeerReviewCommentHandler(Component):
         fileid = req.args.get('IDFile')
         if not fileid:
             fileid = req.args.get('fileid')
-        rfile = ReviewFile(self.env, fileid)
-        review = PeerReviewModel(self.env, rfile.review_id)
+        r_file = ReviewFileModel(self.env, fileid)
+        review = PeerReviewModel(self.env, r_file['review_id'])
         if review['status'] == 'closed':
             return True
         return False
@@ -221,13 +221,13 @@ class PeerReviewCommentHandler(Component):
         my_comment_data = ReviewDataModel.comments_for_file_and_owner(self.env, fileid, req.authname)
         data['read_comments'] = [c_id for c_id, t, dat in my_comment_data if t == 'read']
 
-        rfile = ReviewFile(self.env, fileid)
-        review = PeerReviewModel(self.env, rfile.review_id)
+        rfile = ReviewFileModel(self.env, fileid)
+        review = PeerReviewModel(self.env, rfile['review_id'])
         data['review'] = review
         data['context'] = Context.from_request(req)
         # A finished review can't be changed anymore except by a manager
         data['is_finished'] = review_is_finished(self.env.config, review)
-        # A user can't chnage his voting for a reviewed review
+        # A user can't change his voting for a reviewed review
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
         comment_html = ""
