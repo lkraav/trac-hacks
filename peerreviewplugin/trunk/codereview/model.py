@@ -201,6 +201,14 @@ class ReviewFileModel(AbstractVariableFieldsObject):
             cursor = db.cursor()
             cursor.execute("DELETE FROM peerreviewfile WHERE project=%s", (proj_name,))
 
+    @classmethod
+    def select_by_review(cls, env, review_id):
+        """Returns a generator."""
+        rf = ReviewFileModel(env)
+        rf.clear_props()
+        rf['review_id'] = review_id
+        return rf.list_matching_objects()
+
 
 class ReviewDataModel(AbstractVariableFieldsObject):
     """Data model holding whatever you want to create relations for."""
