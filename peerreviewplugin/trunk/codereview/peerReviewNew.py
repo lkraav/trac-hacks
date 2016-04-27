@@ -229,7 +229,7 @@ class NewReviewModule(Component):
 
         # loop here through all the reviewers
         # and create new reviewer structs based on them
-        user = req.args.get('user')
+        user = req.args.get('user', [])
         if not type(user) is list:
             user = [user]
         for name in user:
@@ -242,26 +242,25 @@ class NewReviewModule(Component):
 
         # loop here through all included files
         # and create new file structs based on them
-        files = req.args.get('file')
+        files = req.args.get('file', [])
         if not type(files) is list:
             files = [files]
         for item in files:
-            if item != "":
-                segment = item.split(',')
-                rfile = ReviewFileModel(self.env)
-                rfile['review_id'] = id_
-                rfile['path'] = segment[0]
-                if req.args.get('followup'):
-                    rfile['revision'] = req.args.get('revision', 0)
-                else:
-                    rfile['revision'] = segment[1]
-                rfile['line_start'] = segment[2]
-                rfile['line_end'] = segment[3]
-                repos = RepositoryManager(self.env).get_repository('')
-                node, display_rev, context = get_node_from_repo(req, repos, rfile['path'], rfile['version'])
-                rfile['changerevision'] = unicode(node.created_rev)
-                rfile['hash'] = self._hash_from_file_node(node)
-                rfile.insert()
+            segment = item.split(',')
+            rfile = ReviewFileModel(self.env)
+            rfile['review_id'] = id_
+            rfile['path'] = segment[0]
+            if req.args.get('followup'):
+                rfile['revision'] = req.args.get('revision', 0)
+            else:
+                rfile['revision'] = segment[1]
+            rfile['line_start'] = segment[2]
+            rfile['line_end'] = segment[3]
+            repos = RepositoryManager(self.env).get_repository('')
+            node, display_rev, context = get_node_from_repo(req, repos, rfile['path'], rfile['revision'])
+            rfile['changerevision'] = unicode(node.created_rev)
+            rfile['hash'] = self._hash_from_file_node(node)
+            rfile.insert()
         return id_
 
     def _hash_from_file_node(self, node):

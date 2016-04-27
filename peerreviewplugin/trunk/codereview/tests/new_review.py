@@ -5,7 +5,7 @@ from trac.admin.console import TracAdmin
 from trac.web import Href
 from trac.perm import PermissionError
 from trac.test import EnvironmentStub, Mock, MockPerm
-from ..model import  get_users, PeerReviewerModel, PeerReviewModelProvider
+from ..model import  get_users, PeerReviewModel, PeerReviewerModel, PeerReviewModelProvider
 from ..peerReviewNew import add_users_to_data, create_file_hash_id, NewReviewModule
 
 __author__ = 'Cinc'
@@ -58,7 +58,6 @@ class TestUserHandling(unittest.TestCase):
         cls.env = EnvironmentStub(default_data=True, enable=['trac.*', 'codereview.*'])
         PeerReviewModelProvider(cls.env).environment_created()
         cls.plugin =  NewReviewModule(cls.env)
-        # cls.req = Mock(href=Mock(), perm=MockPerm())
         _add_permissions(cls.env)
         reviewer = PeerReviewerModel(cls.env)
         reviewer['review_id'] = 1
@@ -101,11 +100,56 @@ class TestUserHandling(unittest.TestCase):
         self.assertEqual(0, data['emptyList'])
 
 
+class TestCreateCodeReview(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.env = EnvironmentStub(default_data=True, enable=['trac.*', 'codereview.*'])
+        PeerReviewModelProvider(cls.env).environment_created()
+        _add_permissions(cls.env)
+        cls.plugin =  NewReviewModule(cls.env)
+        cls.req = Mock(href=Mock(), perm=MockPerm())
+        cls.req.authname = 'Tester'
+
+        cls.req.args={
+            'Name': 'review_name',
+            'Notes': 'review_notes',
+            'project': 'review_project',
+            'user': ['Rev1', 'Rev2'],
+            # 'file': 'path,file_revision,123,789'
+        }
+
+    def test_create_code_review(self):
+        review_id = self.plugin.createCodeReview(self.req)
+        self.assertEqual(u'1', review_id)
+        review = PeerReviewModel(self.env, review_id)
+        self.assertTrue(isinstance(review, PeerReviewModel))
+        items = [
+            [u'review_name', 'name'],
+            [u'review_notes', 'notes'],
+            [u'review_project', 'project'],
+            [u'Tester', 'owner'],
+            [u'new', 'status'],
+            [0, 'parent_id']
+        ]
+        for item in items:
+            self.assertEqual(item[0], review[item[1]])
+        rm = PeerReviewerModel(self.env)
+        rm.clear_props()
+        rm['review_id'] = review_id
+        reviewers = list(rm.list_matching_objects())
+        self.assertEqual(2, len(reviewers))
+        for rev in reviewers:
+            self.assertEqual(1, rev['review_id'])
+            self.assertTrue(rev['reviewer'] in ['Rev1', 'Rev2'])
+            self.assertEqual(u'new', rev['status'])
+
 def new_review_suite():
     suite = unittest.TestSuite()
 
     suite.addTest(unittest.makeSuite(TestCreateFileHashId))
     suite.addTest(unittest.makeSuite(TestComponent))
     suite.addTest(unittest.makeSuite(TestUserHandling))
+    suite.addTest(unittest.makeSuite(TestCreateCodeReview))
 
     return suite
