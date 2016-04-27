@@ -781,9 +781,8 @@ def get_users(env):
     cursor = db.cursor()
     cursor.execute("""SELECT DISTINCT p1.username FROM permission AS p1
                       LEFT JOIN permission AS p2 ON p1.action = p2.username
-                      WHERE p2.action = 'CODE_REVIEW_DEV'
-                      OR p1.action = 'CODE_REVIEW_DEV'
-                      OR p1.action = 'TRAC_ADMIN'
+                      WHERE p2.action IN ('CODE_REVIEW_DEV', 'CODE_REVIEW_MGR')
+                      OR p1.action IN ('CODE_REVIEW_DEV', 'CODE_REVIEW_MGR', 'TRAC_ADMIN')
                       """)
     users = []
     for row in cursor:
