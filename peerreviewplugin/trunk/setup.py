@@ -33,6 +33,7 @@ setup(
                                  'tracgenericworkflow/*.py',
                                  'tracgenericworkflow/templates/*.html',
                                  'tracgenericworkflow/htdocs/*',
+                                 'test/*.py'
                                  ]},
     entry_points={
         'trac.plugins': [
@@ -40,4 +41,5 @@ setup(
             'tracgenericclass = codereview.tracgenericclass'
         ],
     },
+    test_suite = 'codereview.test.suite',
 )
