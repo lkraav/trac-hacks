@@ -6,7 +6,7 @@
       xmlns:xi="http://www.w3.org/2001/XInclude">
     <xi:include href="layout.html"/>
     <head>
-        <title>Review File - $review_file.name</title>
+        <title>Review File - $review_file['name']</title>
     </head>
 
     <xi:include href="peer_functions.html"/>
@@ -73,22 +73,22 @@
             <h3>File Information</h3>
             <dl class="overview" id="file-info">
                 <dt>Path:</dt>
-                <dd>${review_file.path}</dd>
+                <dd>${review_file['path']}</dd>
                 <dt>Revision:</dt>
-                <dd>${review_file.version}</dd>
+                <dd>${review_file['revision']}</dd>
                 <dt>Start Line:</dt>
-                <dd>${review_file.start}<br/></dd>
+                <dd>${review_file['line_start']}<br/></dd>
                 <dt>End Line:</dt>
-                <dd>${review_file.end}<br/></dd>
+                <dd>${review_file['line_end']}<br/></dd>
             </dl>
 
             <py:if test="parent_review">
                 <h3>Followup from file:</h3>
                 <dl class="overview" id="parent-info">
                     <dt>Path:</dt>
-                    <dd>${par_file.path}</dd>
+                    <dd>${par_file['path']}</dd>
                     <dt>Revision:</dt>
-                    <dd>${par_file.version}</dd>
+                    <dd>${par_file['revision']}</dd>
                     <dt>Comments:</dt>
                     <dd py:if="diff.options.contextall">
                         <py:for each="idx, line in enumerate(par_file.comments)">
@@ -111,7 +111,7 @@
                 </dl>
             </py:if>
 
-            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
+            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file['review_id']}"> Code Review Details</a> page.</p>
 
 
                 <label><input type="checkbox" id="inline-comments" />Show comments inline.</label>
@@ -134,14 +134,14 @@
                 <div py:if="nochanges">
                     <div class="notice system-message">
                         <p>The files are identical.</p>
-                        <p py:if="not diff.options.contextall">Show the file in full context to add comments to the revision '${review_file.version}'.</p>
+                        <p py:if="not diff.options.contextall">Show the file in full context to add comments to the revision '${review_file['revision']}'.</p>
                     </div>
                 </div>
             </py:if>
             <!--! displays the contents of the file being reviewed -->
             <div id="FilePreview">$file_rendered</div>
 
-            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file.review_id}"> Code Review Details</a> page.</p>
+            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file['review_id']}"> Code Review Details</a> page.</p>
 
             <div id="add-comment-dlg">
                 <form action="peerReviewCommentCallback" method="POST" id="add-comment-form">
@@ -178,8 +178,8 @@
             <script type="text/javascript">
             var baseUrl = "${href.peerReviewCommentCallback()}";
             var tacUrl = "${href.chrome('/hw/images/thumbtac11x11.gif')}";
-            var lineStart = ${review_file.start};
-            var lineEnd = ${review_file.end};
+            var lineStart = ${review_file['line_start']};
+            var lineEnd = ${review_file['line_end']};
             </script>
 
     </div>

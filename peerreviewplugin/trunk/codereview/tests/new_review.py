@@ -27,12 +27,13 @@ def _add_permissions(env):
 class TestCreateFileHashId(unittest.TestCase):
 
     def test_hash(self):
-        class f(object):
-            pass
-        f.path = "path"
-        f.version = 123
-        f.start = 1234
-        f.end = 5678
+
+        f = {
+            'path': "path",
+            'revision': 123,
+            'line_start': 1234,
+            'line_end': 5678
+        }
         self. assertEqual('id2008204331', create_file_hash_id(f))
 
 class TestComponent(unittest.TestCase):

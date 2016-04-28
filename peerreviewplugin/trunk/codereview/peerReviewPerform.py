@@ -29,7 +29,7 @@ from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
 from peerReviewMain import add_ctxt_nav_items
-from model import ReviewFile, Comment, PeerReviewModel
+from model import Comment, PeerReviewModel, ReviewFileModel
 from genshi.filters.transform import Transformer
 from peerReviewView import review_is_locked, review_is_finished
 from pkg_resources import get_distribution, parse_version
@@ -65,9 +65,9 @@ class PeerReviewPerform(Component):
         return 'performCodeReview', 'Line', 'Line numbers'
 
     def get_annotation_data(self, context):
-        rfile = context.get_hint('reviewfile')
+        r_file = context.get_hint('reviewfile')
         authname = context.get_hint('authname')
-        review = PeerReviewModel(self.env, rfile.review_id)
+        review = PeerReviewModel(self.env, r_file['review_id'])
 
         # Is it allowed to comment on the file?
         if review_is_finished(self.env.config, review):
@@ -75,7 +75,7 @@ class PeerReviewPerform(Component):
         else:
             is_locked = review_is_locked(self.env.config, review, authname)
 
-        data = [[c.line_num for c in Comment.select_by_file_id(self.env, rfile.file_id)],
+        data = [[c.line_num for c in Comment.select_by_file_id(self.env, r_file['file_id'])],
                 review, is_locked]
         return data
 
@@ -84,18 +84,18 @@ class PeerReviewPerform(Component):
     #if line is not in the rage of reviewed lines, it makes
     #the color a light gray
     def annotate_row(self, context, row, lineno, line, data):
-        rfile = context.get_hint('reviewfile')
-        if (lineno <= int(rfile.end) and lineno >= int(rfile.start)) or int(rfile.start) == 0:
+        r_file = context.get_hint('reviewfile')
+        if (lineno <= int(r_file['line_end']) and lineno >= int(r_file['line_start'])) or int(r_file['line_start']) == 0:
             # If there is a comment on this line
             lines = data[0]
             # review = data[1]
             if lineno in lines:
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno),
                                                                   href='javascript:getComments(%s, %s)' %
-                                                                       (lineno, rfile.file_id))))
+                                                                       (lineno, r_file['file_id']))))
             if not data[2]:
                 return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
-                                                                           % (lineno, rfile.file_id))))
+                                                                           % (lineno, r_file['file_id']))))
             else:
                 return row.append(tag.th(str(lineno), id='L%s' % lineno))
 
@@ -157,40 +157,39 @@ class PeerReviewPerform(Component):
 
         data = {'file_id': fileid}
 
-        rfile = ReviewFile(self.env, fileid)  # Raises 'ResourceNotFound' on error
-        review = PeerReviewModel(self.env, rfile.review_id)
+        r_file = ReviewFileModel(self.env, fileid)  # This will replace rfile
+        review = PeerReviewModel(self.env, r_file['review_id'])
         review.date = format_date(review['created'])
-        data['review_file'] = rfile
+        data['review_file'] = r_file
         data['review'] = review
 
         # The following may raise an exception if revision can't be found
-        rev = rfile.version
+        rev = r_file['revision']
         if rev:
             rev = repos.normalize_rev(rev)
         rev_or_latest = rev or repos.youngest_rev
-        node = get_existing_node(self.env, repos, rfile.path, rev_or_latest)
+        node = get_existing_node(self.env, repos, r_file['path'], rev_or_latest)
 
         # Data for parent review if any
         if review['parent_id'] != 0:
             par_review = PeerReviewModel(self.env, review['parent_id'])  # Raises 'ResourceNotFound' on error
             par_review.date = format_date(par_review['created'])
-            parfile = ReviewFile(self.env, get_parent_file_id(self.env, rfile, review['parent_id']))
-
-            lines = [c.line_num for c in Comment.select_by_file_id(self.env, parfile.file_id)]
-            parfile.comments = list(set(lines))  # remove duplicates
-            par_revision = parfile.version
+            par_file = ReviewFileModel(self.env, get_parent_file_id(self.env, r_file, review['parent_id']))
+            lines = [c.line_num for c in Comment.select_by_file_id(self.env, par_file['file_id'])]
+            par_file.comments = list(set(lines))  # remove duplicates
+            par_revision = par_file['revision']
             if par_revision:
                 par_revision = repos.normalize_rev(par_revision)
             rev_or_latest = par_revision or repos.youngest_rev
-            par_node = get_existing_node(self.env, repos, parfile.path, rev_or_latest)
+            par_node = get_existing_node(self.env, repos, par_file['path'], rev_or_latest)
         else:
             par_review = None
-            parfile = None  # TODO: there may be some error handling missing for this. Create a dummy here?
-        data['par_file'] = parfile
+            par_file = None  # TODO: there may be some error handling missing for this. Create a dummy here?
+        data['par_file'] = par_file
         data['parent_review'] = par_review
 
         # Wether to show the full file in the browser.
-        if int(rfile.start) == 0:
+        if int(r_file['line_start']) == 0:
             data['fullrange'] = True
         else:
             data['fullrange'] = False
@@ -219,7 +218,7 @@ class PeerReviewPerform(Component):
             create_diff_data(req, data, node, par_node)
         else:
             context = Context.from_request(req, 'source', node.path, node.created_rev)
-            context.set_hints(reviewfile=rfile)
+            context.set_hints(reviewfile=r_file)
             context.set_hints(authname=req.authname)
 
             preview_data = mimeview.preview_data(context, content, len(content),
@@ -234,16 +233,16 @@ class PeerReviewPerform(Component):
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
 
         scr_data = {'peer_comments': sorted(list(set([c.line_num for c in
-                                               Comment.select_by_file_id(self.env, rfile.file_id)]))),
+                                               Comment.select_by_file_id(self.env, r_file['file_id'])]))),
                     'peer_file_id': fileid,
-                    'peer_review_id': rfile.review_id,
+                    'peer_review_id': r_file['review_id'],
                     'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
                     'form_token': req.form_token,
                     'peer_diff_style': data['style'] if 'style' in data else 'no_diff'}
         if par_review:
-            scr_data['peer_parent_file_id'] = parfile.file_id
+            scr_data['peer_parent_file_id'] = par_file['file_id']
             scr_data['peer_parent_comments'] = sorted(list(set([c.line_num for c in
-                                                         Comment.select_by_file_id(self.env, parfile.file_id)])))
+                                                         Comment.select_by_file_id(self.env, par_file['file_id'])])))
         else:
             scr_data['peer_parent_file_id'] = 0  # Mark that we don't have a parent
             scr_data['peer_parent_comments'] = []
@@ -268,15 +267,15 @@ class PeerReviewPerform(Component):
         return 'peerReviewPerform.html', data, None
 
 
-def get_parent_file_id(env, rfile, par_review_id):
+def get_parent_file_id(env, r_file, par_review_id):
 
-    fid = u"%s%s%s" % (rfile.path, rfile.start, rfile.end)
+    fid = u"%s%s%s" % (r_file['path'], r_file['line_start'], r_file['line_end'])
 
-    rfiles = ReviewFile.select_by_review(env, par_review_id)
+    rfiles = ReviewFileModel.select_by_review(env, par_review_id)
     for f in rfiles:
-        tmp = u"%s%s%s" % (f.path, f.start, f.end)
+        tmp = u"%s%s%s" % (f['path'], f['line_start'], f['line_end'])
         if tmp == fid:
-            return f.file_id
+            return f['file_id']
     return 0
 
 

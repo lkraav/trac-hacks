@@ -872,65 +872,6 @@ class Reviewer(object):
                         """, (self.review_id, self.reviewer))
 
 
-class ReviewFile(object):
-    def __init__(self, env, file_id=None):
-        self.env = env
-
-        if file_id:
-            db = self.env.get_read_db()
-            cursor = db.cursor()
-            cursor.execute("""
-                SELECT file_id, review_id, path, line_start, line_end, revision FROM peerreviewfile WHERE file_id=%s
-                """, (file_id,))
-            row = cursor.fetchone()
-            if not row:
-                raise ResourceNotFound(_('File %(name)s does not exist.',
-                                         name=file_id), _('Peer Review Error'))
-            self._init_from_row(row)
-        else:
-            self._init_from_row((None,)*6)
-
-    def _init_from_row(self, row):
-        file_id, rev_id, fpath, start, end, ver = row
-        self.file_id = file_id
-        self.review_id = rev_id
-        self.path = fpath
-        self.start = start
-        self.end = end
-        self.version = ver
-
-    def insert(self):
-        @self.env.with_transaction()
-        def do_insert(db):
-            cursor = db.cursor()
-            self.env.log.debug("Creating new file for review '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO peerreviewfile (review_id, path, line_start,
-                            line_end, revision)
-                            VALUES (%s, %s, %s, %s, %s)
-                            """, (self.review_id, self.path, self.start, self.end, self.version))
-
-    def delete(self):
-        @self.env.with_transaction()
-        def do_delete(db):
-            cursor = db.cursor()
-            self.env.log.debug("Deleting file '%s' for review '%s'" % (self.file_id, self.review_id))
-            cursor.execute("""DELETE FROM peerreviewfile  WHERE file_id=%s""",
-                           (self.file_id,))
-
-    @classmethod
-    def select_by_review(cls, env, review_id):
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT f.file_id, f.review_id, f.path, f.line_start, f.line_end, f.revision FROM "
-                       "peerreviewfile AS f WHERE f.review_id=%s"
-                       "ORDER BY f.path", (review_id,))
-        files = []
-        for row in cursor:
-            rev_file = cls(env)
-            rev_file._init_from_row(row)
-            files.append(rev_file)
-        return files
-
 # Obsolete use ReviewCommentModel instead
 class Comment(object):
 

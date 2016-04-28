@@ -22,8 +22,8 @@ from trac.web.chrome import INavigationContributor, add_javascript, add_script_d
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.api import RepositoryManager
 from CodeReviewStruct import *
-from model import ReviewFile, Reviewer, get_users, Comment, \
-    ReviewFileModel, PeerReviewerModel, PeerReviewModel
+from model import Comment, get_users, \
+    PeerReviewerModel, PeerReviewModel, Reviewer, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
 from peerReviewBrowser import get_node_from_repo
 from .repo import hash_from_file_node
@@ -38,7 +38,7 @@ def java_string_hashcode(s):
 
 
 def create_file_hash_id(f):
-    return 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f.path, f.version, f.start, f.end))
+    return 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f['path'], f['revision'], f['line_start'], f['line_end']))
 
 
 def add_users_to_data(env, reviewID, data):
@@ -146,14 +146,14 @@ class NewReviewModule(Component):
 
             add_users_to_data(self.env, review_id, data)
 
-            rfiles = ReviewFile.select_by_review(self.env, review_id)
+            rfiles = ReviewFileModel.select_by_review(self.env, review_id)
             popFiles = []
             # Set up the file information
             for f in rfiles:
                 # This id is used by the javascript code to find duplicate entries.
                 f.element_id = create_file_hash_id(f)
                 if req.args.get('modify'):
-                    comments = Comment.select_by_file_id(self.env, f.file_id)
+                    comments = Comment.select_by_file_id(self.env, f['file_id'])
                     f.num_comments = len(comments) or 0
                 popFiles.append(f)
 
@@ -163,7 +163,6 @@ class NewReviewModule(Component):
             else:
                 data['notes'] = "%sReview based on ''%s'' (resubmitted)." %\
                                 (review['notes']+ CRLF + CRLF, review['name'])
-
 
             data['prevFiles'] = popFiles
 
@@ -268,9 +267,9 @@ class NewReviewModule(Component):
 
     def save_changes(self, req):
         def file_is_commented(author):
-            rfiles = ReviewFile.select_by_review(self.env, review['review_id'])
+            rfiles = ReviewFileModel.select_by_review(self.env, review['review_id'])
             for f in rfiles:
-                comments = [c for c in Comment.select_by_file_id(self.env, f.file_id) if c.author == author]
+                comments = [c for c in Comment.select_by_file_id(self.env, f['file_id']) if c.author == author]
                 if comments:
                     return True
             return False
@@ -300,10 +299,6 @@ class NewReviewModule(Component):
         for name in rem_users:
             if name != "":
                 reviewer = Reviewer(self.env, review['review_id'], name)
-                if reviewer.vote != -1:
-                    add_warning(req, "User '%s' already voted. Not removed from review '#%s'",
-                                name, review['review_id'])
-                    continue
                 if file_is_commented(name):
                     add_warning(req, "User '%s' already commented a file. Not removed from review '#%s'",
                                 name, review['review_id'])
@@ -316,8 +311,8 @@ class NewReviewModule(Component):
             new_files = [new_files]
         old_files = []
         rfiles = {}
-        for f in ReviewFile.select_by_review(self.env, review['review_id']):
-            fid = u"%s,%s,%s,%s" % (f.path, f.version, f.start, f.end)
+        for f in ReviewFileModel.select_by_review(self.env, review['review_id']):
+            fid = u"%s,%s,%s,%s" % (f['path'], f['revision'], f['line_start'], f['line_end'])
             old_files.append(fid)
             rfiles[fid] = f
 

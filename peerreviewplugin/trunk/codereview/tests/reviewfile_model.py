@@ -2,8 +2,10 @@
 
 import unittest
 from trac.test import EnvironmentStub, Mock, MockPerm
-from ..model import  PeerReviewModel, ReviewFile, ReviewFileModel, PeerReviewModelProvider
+from ..model import  PeerReviewModel, ReviewFileModel, PeerReviewModelProvider
 from ..peerReviewCommentCallback import PeerReviewCommentHandler
+from ..peerReviewPerform import get_parent_file_id
+
 
 __author__ = 'Cinc'
 __copyright__ = "Copyright 2016"
@@ -60,32 +62,19 @@ class TestReviewFileModel(unittest.TestCase):
         cls.req = Mock(href=Mock(), perm=MockPerm())
         cls.req.authname = 'tester'
 
-    def test_review_file_model(self):
-        """Checks if new model gives same items as old model"""
-        rf_obsolete = ReviewFile(self.env).select_by_review(self.env, 1)
-        self.assertEqual(2, len(rf_obsolete))
+    def test_get_parent_file_id(self):
+        class RFile(object):
+            pass
 
-        rf_obsolete = ReviewFile(self.env).select_by_review(self.env, 2)
-        self.assertEqual(3, len(rf_obsolete))
+        rf_old = ReviewFileModel(self.env)
+        rf_old['path'] = '/foo/bar'
+        rf_old['line_start'] = 5
+        rf_old['line_end'] = 100
+        self.assertEqual(1, get_parent_file_id(self.env, rf_old, 1))
+        self.assertEqual(3, get_parent_file_id(self.env, rf_old, 2))
+        self.assertEqual(0, get_parent_file_id(self.env, rf_old, 3))
+        self.assertEqual(7, get_parent_file_id(self.env, rf_old, 4))
 
-        rf = list(ReviewFileModel(self.env).select_by_review(self.env, 2))
-        self.assertEqual(3, len(rf))
-        old = {}
-        for item in rf_obsolete:
-            old[item.path] = item
-        new = {}
-        for item in rf:
-            new[item['path']] = item
-        self.assertEqual(3, len(new))
-        self.assertEqual(3, len(old))
-        for item in rf_obsolete:
-            p = item.path
-            self.assertEqual(old[p].file_id, new[p]['file_id'])
-            self.assertEqual(old[p].review_id, new[p]['review_id'])
-            self.assertEqual(old[p].path, new[p]['path'])
-            self.assertEqual(old[p].start, new[p]['line_start'])
-            self.assertEqual(old[p].end, new[p]['line_end'])
-            self.assertEqual(old[p].version, new[p]['revision'])
 
 def reviewfile_model_suite():
     suite = unittest.TestSuite()
