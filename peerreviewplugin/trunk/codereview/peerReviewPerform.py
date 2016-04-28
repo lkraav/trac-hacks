@@ -29,7 +29,7 @@ from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
 from peerReviewMain import add_ctxt_nav_items
-from model import Comment, PeerReviewModel, ReviewFileModel
+from model import Comment, PeerReviewModel, PeerReviewerModel, ReviewFileModel
 from genshi.filters.transform import Transformer
 from peerReviewView import review_is_locked, review_is_finished
 from pkg_resources import get_distribution, parse_version
@@ -67,6 +67,7 @@ class PeerReviewPerform(Component):
     def get_annotation_data(self, context):
         r_file = context.get_hint('reviewfile')
         authname = context.get_hint('authname')
+        perm = context.get_hint('perm')
         review = PeerReviewModel(self.env, r_file['review_id'])
 
         # Is it allowed to comment on the file?
@@ -74,6 +75,16 @@ class PeerReviewPerform(Component):
             is_locked = True
         else:
             is_locked = review_is_locked(self.env.config, review, authname)
+
+        # Don't let users comment who are not part of this review
+        reviewers = PeerReviewerModel.select_by_review_id(self.env, review['review_id'])
+        all_names = [reviewer['reviewer'] for reviewer in reviewers]
+        # Include owner of review in allowed names
+        if review['owner'] not in all_names:
+            all_names.append(review['owner'])
+
+        if authname not in all_names and 'CODE_REVIEW_MGR' not in perm:
+            is_locked = True
 
         data = [[c.line_num for c in Comment.select_by_file_id(self.env, r_file['file_id'])],
                 review, is_locked]
@@ -220,6 +231,7 @@ class PeerReviewPerform(Component):
             context = Context.from_request(req, 'source', node.path, node.created_rev)
             context.set_hints(reviewfile=r_file)
             context.set_hints(authname=req.authname)
+            context.set_hints(perm=req.perm)
 
             preview_data = mimeview.preview_data(context, content, len(content),
                                                  mime_type, node.created_path,
