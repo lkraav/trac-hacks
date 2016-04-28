@@ -144,8 +144,8 @@ def get_string_from_dictionary(dictionary, values=None):
     result = '{'
     for i, k in enumerate(dictionary):
         # TODO: send a patch for the following line
-        result += "'"+k+"':'"+values[k]+"'"
-        # result += "'%s':'%s'" % (k, values[k])
+        # result += "'"+k+"':'"+values[k]+"'"  # old code not working for int values
+        result += "'%s':'%s'" % (k, values[k])
         if i < len(dictionary)-1:
             result += ","
 

@@ -122,7 +122,7 @@ class TestCreateCodeReview(unittest.TestCase):
 
     def test_create_code_review(self):
         review_id = self.plugin.createCodeReview(self.req)
-        self.assertEqual(u'1', review_id)
+        self.assertEqual(1, review_id)
         review = PeerReviewModel(self.env, review_id)
         self.assertTrue(isinstance(review, PeerReviewModel))
         items = [

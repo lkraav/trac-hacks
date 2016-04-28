@@ -41,8 +41,6 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         self.values = {}
         self.env = env
 
-        if type(id_) is int:
-            id_ = str(id_)
         self.values['review_id'] = id_
         self.values['res_realm'] = 'peerreview'
         # Set defaults
@@ -115,8 +113,6 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
 
-        if type(id_) is int:
-            id_ = str(id_)
         self.values['reviewer_id'] = id_
         self.values['res_realm'] = res_realm
         self.values['state'] = state
@@ -218,8 +214,6 @@ class ReviewDataModel(AbstractVariableFieldsObject):
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
 
-        if type(id_) is int:
-            id_ = str(id_)
         self.values['data_id'] = id_
         self.values['res_realm'] = res_realm
         self.values['state'] = state
@@ -287,8 +281,6 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
     def __init__(self, env, id_=None, res_realm=None, state='new', db=None):
         self.values = {}
 
-        if type(id_) is int:
-            id_ = str(id_)
         self.values['comment_id'] = id_
         self.values['res_realm'] = res_realm
         self.values['state'] = state

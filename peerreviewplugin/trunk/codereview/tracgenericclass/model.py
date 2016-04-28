@@ -503,7 +503,8 @@ class AbstractVariableFieldsObject(object):
             id_ = db.get_last_id(cursor, self.realm)
             for item in self.get_key_prop_names():
                 if not self[item]:
-                    self[item] = str(id_)
+                    self[item] = id_
+            # End Cinc
 
             # Insert custom fields
             key_names = self.get_key_prop_names()
