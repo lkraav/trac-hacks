@@ -23,12 +23,14 @@ def suite():
     from tests.db import db_suite
     from tests.comment_callback import comment_callback_suite
     from tests.reviewfile_model import reviewfile_model_suite
+    from tests. review_model import review_model_suite
 
     suite = unittest.TestSuite()
     suite.addTest(new_review_suite())
     suite.addTest(db_suite())
     suite.addTest(comment_callback_suite())
     suite.addTest(reviewfile_model_suite())
+    suite.addTest(review_model_suite())
 
     return suite
 
