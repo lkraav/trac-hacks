@@ -11,7 +11,7 @@
 
 import hashlib
 import os
-from trac.versioncontrol.api import RepositoryManager, NoSuchNode
+from trac.versioncontrol.api import NoSuchNode, RepositoryManager
 from .model import ReviewFileModel
 
 __author__ = 'Cinc'
@@ -63,6 +63,17 @@ def get_nodes_for_dir(repos, dir_node, nodes, ignore_ext):
                     'change_rev':node.created_rev,
                     'hash': hash_from_file_node(node)
                 })
+
+
+def file_data_from_repo(node):
+
+    dat = ''
+    content = node.get_content()
+    res = content.read()
+    while res:
+        dat += res
+        res = content.read()
+    return dat.splitlines()
 
 
 def insert_project_files(env, src_path, project, ignore_ext, rev=None):

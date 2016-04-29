@@ -13,9 +13,8 @@
 
 import itertools
 from string import Template
-from trac import util
-from trac.core import Component, implements, TracError
 from trac.config import ListOption
+from trac.core import Component, implements, TracError
 from trac.mimeview import Context
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
@@ -24,67 +23,16 @@ from trac.util.text import CRLF
 from trac.web.chrome import INavigationContributor, add_stylesheet, add_link
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
-from model import get_users, Comment, \
+from model import Comment, get_users, \
     PeerReviewerModel, PeerReviewModel, ReviewFileModel, ReviewDataModel
 from peerReviewMain import add_ctxt_nav_items, web_context_compat
 from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
+from util import review_is_finished, review_is_locked
 
 try:
     from trac.web.chrome import web_context
 except ImportError:
     web_context = web_context_compat
-
-def review_is_finished(config, review):
-    """A finished review may only be reopened by a manager or admisnistrator
-
-    :param config: Trac config object
-    :param review: review object
-
-    :return True if review is in one of the terminal states
-    """
-    finish_states = config.getlist("peer-review", "terminal_review_states")
-    return review['status'] in finish_states
-
-
-def review_is_locked(config, review, authname=""):
-    """For a locked review a user can't change his voting
-    :param config: Trac config object
-    :param review: review object
-    :authname: login name of user
-
-    :return True if review is in lock state, usually 'reviewed'.
-
-    authname may be an empty string to check if a review is in the lock state at all.
-    If not empty the review is not locked for the user with the given login name.
-    """
-    if review['owner'] == authname:
-        return False
-
-    lock_states = config.getlist("peer-review", "reviewer_locked_states")
-    return review['status'] in lock_states
-
-
-def not_allowed_to_comment(env, review, perm, authname):
-    """Check if the current user may comment on a file.
-
-    For adding a comment you must either be:
-
-    * the owner of the review
-    * one of the reviewers
-    * a user with permission CODE_REVIEW_MGR
-
-    @return: True if commenting is not allowed, False otherwise
-    """
-    # Don't let users comment who are not part of this review
-    reviewers = PeerReviewerModel.select_by_review_id(env, review['review_id'])
-    all_names = [reviewer['reviewer'] for reviewer in reviewers]
-    # Include owner of review in allowed names
-    all_names.append(review['owner'])  # We don't care if the name is already in the list
-
-    if authname not in all_names and 'CODE_REVIEW_MGR' not in perm:
-        return True
-
-    return False
 
 
 class PeerReviewView(Component):

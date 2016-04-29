@@ -18,24 +18,16 @@ import time
 import unicodedata
 import urllib
 import json
+from genshi.template.markup import MarkupTemplate
 from trac import util
 from trac.core import *
+from trac.mimeview import Context
 from trac.util import Markup
 from trac.web.main import IRequestHandler
-from genshi.template.markup import MarkupTemplate
+from trac.wiki import format_to_html
 from dbBackend import *
 from model import Comment, PeerReviewModel, ReviewDataModel, ReviewFileModel
-from trac.wiki import format_to_html
-from trac.mimeview import Context
-from peerReviewView import not_allowed_to_comment, review_is_finished, review_is_locked
-
-
-def get_review_for_file(env, file_id):
-    rf = ReviewFileModel(env, file_id)
-    if not rf:
-        return None
-    rev = PeerReviewModel(env, rf['review_id'])
-    return rev
+from util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
 
 
 def writeJSONResponse(rq, data, httperror=200):

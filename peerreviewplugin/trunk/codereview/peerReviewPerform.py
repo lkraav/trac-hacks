@@ -17,22 +17,23 @@
 
 from genshi.builder import tag
 from genshi.core import QName
+from genshi.filters.transform import Transformer
+from pkg_resources import get_distribution, parse_version
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util import format_date
-from trac.util.text import _
 from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_javascript
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
-from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
+from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
+from model import Comment, PeerReviewModel, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
-from model import Comment, PeerReviewModel, PeerReviewerModel, ReviewFileModel
-from genshi.filters.transform import Transformer
-from peerReviewView import not_allowed_to_comment, review_is_finished, review_is_locked
-from pkg_resources import get_distribution, parse_version
+from repo import file_data_from_repo
+from util import not_allowed_to_comment, review_is_finished, review_is_locked
+
 
 class PeerReviewPerform(Component):
     """Perform a code review.
@@ -322,14 +323,3 @@ def create_diff_data(req, data, node, par_node):
     data['longcol'] = 'Revision',
     data['shortcol'] = 'r'
     data['style'] = style
-
-
-def file_data_from_repo(node):
-
-    dat = ''
-    content = node.get_content()
-    res = content.read()
-    while res:
-        dat += res
-        res = content.read()
-    return dat.splitlines()

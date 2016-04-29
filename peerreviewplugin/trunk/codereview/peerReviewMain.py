@@ -23,6 +23,7 @@ from trac.web.chrome import INavigationContributor, ITemplateProvider, add_style
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to
 from model import ReviewCommentModel, ReviewDataModel, ReviewFileModel, PeerReviewModel, PeerReviewerModel
+from util import review_is_finished
 
 
 def web_context_compat(req, resource=None, id=False, version=False, parent=False,
@@ -181,7 +182,6 @@ class PeerReviewMain(Component):
         r_tmpl.clear_props()
         r_tmpl['reviewer'] = req.authname
 
-        from peerReviewView import review_is_finished
         if data['allassigned']:
             # Don't filter list here
             reviewer = list(r_tmpl.list_matching_objects())
