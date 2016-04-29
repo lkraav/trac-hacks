@@ -24,10 +24,19 @@ from trac.util import Markup
 from trac.web.main import IRequestHandler
 from genshi.template.markup import MarkupTemplate
 from dbBackend import *
-from model import ReviewFile, Comment, PeerReviewModel, ReviewDataModel, ReviewFileModel
+from model import Comment, PeerReviewModel, ReviewDataModel, ReviewFileModel
 from trac.wiki import format_to_html
 from trac.mimeview import Context
-from peerReviewView import review_is_locked, review_is_finished
+from peerReviewView import not_allowed_to_comment, review_is_finished, review_is_locked
+
+
+def get_review_for_file(env, file_id):
+    rf = ReviewFileModel(env, file_id)
+    if not rf:
+        return None
+    rev = PeerReviewModel(env, rf['review_id'])
+    return rev
+
 
 def writeJSONResponse(rq, data, httperror=200):
     writeResponse(rq, json.dumps(data), httperror)
@@ -66,6 +75,11 @@ class PeerReviewCommentHandler(Component):
 
         if req.method == 'POST':
             if req.args.get('addcomment'):
+                # This shouldn't happen but still...
+                review = get_review_for_file(self.env, req.args.get('fileid'))
+                if not_allowed_to_comment(self.env, review, req.perm, req.authname):
+                    writeResponse(req, "", 403)
+                    return
                 # We shouldn't end here but in case just drop out.
                 if self.review_is_closed(req):
                     data['invalid'] = 'closed'
@@ -229,6 +243,7 @@ class PeerReviewCommentHandler(Component):
         data['is_finished'] = review_is_finished(self.env.config, review)
         # A user can't change his voting for a reviewed review
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
+        data['not_allowed'] = not_allowed_to_comment(self.env, review, req.perm, req.authname)
 
         comment_html = ""
         first = True
@@ -328,7 +343,7 @@ class PeerReviewCommentHandler(Component):
                  'fileid': fiileid,
                  'callback': self.env.href.peerReviewCommentCallback(),
                  'review': data['review'],
-                 'is_locked': data['is_finished'] or data['review_locked'],
+                 'is_locked': data['is_finished'] or data['review_locked'] or data.get('not_allowed', False),
                  'read_comments': data['read_comments']
                  }
 

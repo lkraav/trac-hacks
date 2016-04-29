@@ -31,7 +31,7 @@ from trac.versioncontrol.diff import diff_blocks, get_diff_options
 from peerReviewMain import add_ctxt_nav_items
 from model import Comment, PeerReviewModel, PeerReviewerModel, ReviewFileModel
 from genshi.filters.transform import Transformer
-from peerReviewView import review_is_locked, review_is_finished
+from peerReviewView import not_allowed_to_comment, review_is_finished, review_is_locked
 from pkg_resources import get_distribution, parse_version
 
 class PeerReviewPerform(Component):
@@ -77,13 +77,7 @@ class PeerReviewPerform(Component):
             is_locked = review_is_locked(self.env.config, review, authname)
 
         # Don't let users comment who are not part of this review
-        reviewers = PeerReviewerModel.select_by_review_id(self.env, review['review_id'])
-        all_names = [reviewer['reviewer'] for reviewer in reviewers]
-        # Include owner of review in allowed names
-        if review['owner'] not in all_names:
-            all_names.append(review['owner'])
-
-        if authname not in all_names and 'CODE_REVIEW_MGR' not in perm:
+        if not_allowed_to_comment(self.env, review, perm, authname):
             is_locked = True
 
         data = [[c.line_num for c in Comment.select_by_file_id(self.env, r_file['file_id'])],
@@ -243,6 +237,7 @@ class PeerReviewPerform(Component):
         data['is_finished'] = review_is_finished(self.env.config, review)
         # A user can't chnage his voting for a reviewed review
         data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
+        data['not_allowed'] = not_allowed_to_comment(self.env, review, req.perm, req.authname)
 
         scr_data = {'peer_comments': sorted(list(set([c.line_num for c in
                                                Comment.select_by_file_id(self.env, r_file['file_id'])]))),

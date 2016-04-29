@@ -64,6 +64,29 @@ def review_is_locked(config, review, authname=""):
     return review['status'] in lock_states
 
 
+def not_allowed_to_comment(env, review, perm, authname):
+    """Check if the current user may comment on a file.
+
+    For adding a comment you must either be:
+
+    * the owner of the review
+    * one of the reviewers
+    * a user with permission CODE_REVIEW_MGR
+
+    @return: True if commenting is not allowed, False otherwise
+    """
+    # Don't let users comment who are not part of this review
+    reviewers = PeerReviewerModel.select_by_review_id(env, review['review_id'])
+    all_names = [reviewer['reviewer'] for reviewer in reviewers]
+    # Include owner of review in allowed names
+    all_names.append(review['owner'])  # We don't care if the name is already in the list
+
+    if authname not in all_names and 'CODE_REVIEW_MGR' not in perm:
+        return True
+
+    return False
+
+
 class PeerReviewView(Component):
     """Displays a summary page for a review.
 
