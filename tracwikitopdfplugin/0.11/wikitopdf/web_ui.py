@@ -23,7 +23,7 @@ class WikiToPdfAdmin(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
-        
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('wikitopdf', resource_filename(__name__, 'htdocs'))]
@@ -45,7 +45,7 @@ class WikiToPdfAdmin(Component):
                     'name': name,
                     'provider': provider,
                 }
-        
+
         if req.method == 'POST':
             rightpages = req.args.get('rightpages_all')
             title = req.args.get('title') or self.env.project_name
@@ -63,10 +63,10 @@ class WikiToPdfAdmin(Component):
             pdfbookname = title
             pdfbookname = pdfbookname.replace(' ', '')
             pdfbookname = pdfbookname.replace(':', '')
-            pdfbookname = pdfbookname.replace(',', '') 
-            
+            pdfbookname = pdfbookname.replace(',', '')
+
             return formats[format]['provider'].process_wikitopdf(req, format, title, subject, rightpages, date, version, pdfbookname)
-            
+
         data = {
             'allpages': allpages,
             'leftpages': sorted(x for x in allpages if x not in rightpages),
@@ -74,6 +74,6 @@ class WikiToPdfAdmin(Component):
             'formats': formats,
         }
 
-        add_script(req, 'wikitopdf/js/admin_wikitopdf.js') 
+        add_script(req, 'wikitopdf/js/admin_wikitopdf.js')
 
         return 'admin_wikitopdf.html', {'wikitopdf': data}
