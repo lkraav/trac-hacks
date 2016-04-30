@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='SimpleMultiProject',
-    version='0.5.1',
+    version='0.5.2',
     packages=['simplemultiproject'],
     package_data={
         'simplemultiproject': [
