@@ -62,6 +62,10 @@ class TestReviewFileModel(unittest.TestCase):
         cls.req = Mock(href=Mock(), perm=MockPerm())
         cls.req.authname = 'tester'
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.shutdown()
+
     def test_get_parent_file_id(self):
         class RFile(object):
             pass

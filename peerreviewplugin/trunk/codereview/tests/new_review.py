@@ -40,10 +40,18 @@ class TestComponent(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env = EnvironmentStub(default_data=True, enable=['trac.*', 'codereview.*'])
+        cls.env = EnvironmentStub(default_data=True, enable=['trac.*',
+                                                             'codereview.model.*',
+                                                             'codereview.peerreviewnew.*',
+                                                             'codereview.peerreviewmain.*',
+                                                             'codereview.tracgenericclass.*'])
         PeerReviewModelProvider(cls.env).environment_created()
         cls.plugin =  NewReviewModule(cls.env)
         cls.req = Mock(href=Mock(), perm=MockPerm())
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.shutdown()
 
     def test_get_active_navigation_item(self):
         self.assertEqual('peerReviewMain', self.plugin.get_active_navigation_item(self.req))
@@ -56,7 +64,12 @@ class TestUserHandling(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env = EnvironmentStub(default_data=True, enable=['trac.*', 'codereview.*'])
+        cls.env = EnvironmentStub(default_data=True,
+                                  enable=['trac.*',
+                                          'codereview.model.*',
+                                          'codereview.peerreviewnew.*',
+                                          'codereview.peerreviewmain.*',
+                                          'codereview.tracgenericclass.*'])
         PeerReviewModelProvider(cls.env).environment_created()
         cls.plugin =  NewReviewModule(cls.env)
         _add_permissions(cls.env)
@@ -68,6 +81,10 @@ class TestUserHandling(unittest.TestCase):
         reviewer['review_id'] = 1
         reviewer['reviewer'] = 'Rev2'
         reviewer.insert()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.shutdown()
 
     def test_get_code_review_users(self):
         self.assertEqual(3,len(get_users(self.env)))
@@ -105,7 +122,11 @@ class TestCreateCodeReview(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env = EnvironmentStub(default_data=True, enable=['trac.*', 'codereview.*'])
+        cls.env = EnvironmentStub(default_data=True, enable=['trac.*',
+                                                             'codereview.model.*',
+                                                             'codereview.peerreviewnew.*',
+                                                             'codereview.peerreviewmain.*',
+                                                             'codereview.tracgenericclass.*'])
         PeerReviewModelProvider(cls.env).environment_created()
         _add_permissions(cls.env)
         cls.plugin =  NewReviewModule(cls.env)
@@ -119,6 +140,10 @@ class TestCreateCodeReview(unittest.TestCase):
             'user': ['Rev1', 'Rev2'],
             # 'file': 'path,file_revision,123,789'
         }
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.shutdown()
 
     def test_create_code_review(self):
         review_id = self.plugin.createCodeReview(self.req)

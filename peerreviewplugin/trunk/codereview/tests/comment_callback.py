@@ -65,6 +65,10 @@ class TestCommentHelper(unittest.TestCase):
         cls.req = Mock(href=Mock(), perm=MockPerm())
         cls.req.authname = 'tester'
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.shutdown()
+
     def test_review_is_closed(self):
         self.req.args = {
             'IDFile': 1

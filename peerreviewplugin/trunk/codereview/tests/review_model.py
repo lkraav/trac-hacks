@@ -43,6 +43,10 @@ class TestReviewModel(unittest.TestCase):
         cls.req.authname = 'Tester'
         cls.req.path_info = '/workflowtransition'
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.shutdown()
+
     def test_get_review(self):
         rm = PeerReviewModel(self.env, 1)
         self.assertTrue(isinstance(rm, PeerReviewModel))

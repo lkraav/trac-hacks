@@ -25,6 +25,10 @@ class TestDbInitialUpgrade(unittest.TestCase):
     def setUpClass(cls):
         cls.env = EnvironmentStub(enable=['trac.*', 'codereview.*'])
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.shutdown()
+
     def test_db_init(self):
         # Update database schema
         self.assertIsNone(PeerReviewModelProvider(self.env).environment_created())
