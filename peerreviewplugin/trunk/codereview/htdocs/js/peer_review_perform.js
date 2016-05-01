@@ -114,7 +114,7 @@ function getParentCommentsInline(LineNum, fileID, refresh)
     var diff_view = true;
 
     if($('#PTD'+LineNum).length === 0 ){
-        $('#L'+LineNum).parent().after(getInlineCommentMarkup(LineNum, diff_view, true));
+        $('#P'+LineNum).parent().after(getInlineCommentMarkup(LineNum, diff_view, true));
     }
     else{
         $('#PTD'+LineNum).append(createCommentDiv('P', LineNum));
