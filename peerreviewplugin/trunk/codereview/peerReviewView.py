@@ -138,31 +138,17 @@ class PeerReviewView(Component):
 
             # Map files to parent files. Key is current file id, value is parent file object
 
-            def get_parent_file(rfile, par_review_id, par_files):
+            def get_parent_file(rfile, par_files):
                 fid = u"%s%s%s" % (rfile['path'], rfile['line_start'], rfile['line_end'])
                 for f in par_files:
                     tmp = u"%s%s%s" % (f['path'], f['line_start'], f['line_end'])
                     if tmp == fid:
                         return f
                 return None
-
             file_map = {}
             for f in data['review_files']:
-                file_map[f['file_id']] = get_parent_file(f, review['parent_id'], rev_files)
+                file_map[f['file_id']] = get_parent_file(f, rev_files)
             data['file_map'] = file_map
-
-        # Figure out whether I can vote on this review or not. This is used to decide in the template
-        # if the reviewer actions should be shown. Note that this is legacy stuff going away later.
-        #
-        # TODO: remove this and use a better solution
-        rm = PeerReviewerModel(self.env)
-        rm.clear_props()
-        rm['review_id'] = review_id
-        reviewers = list(rm.list_matching_objects())
-        for rev in reviewers:
-            if rev['reviewer'] == req.authname:
-                break
-        data['reviewer'] = reviewers
 
         self.create_ticket_data(req, data)
         url = '.'
@@ -171,6 +157,12 @@ class PeerReviewView(Component):
         # as a workflow in [peerreviewer-resource_workflow]
         realm = 'peerreviewer'
         res = None
+
+        rm = PeerReviewerModel(self.env)
+        rm.clear_props()
+        rm['review_id'] = review_id
+        reviewers = list(rm.list_matching_objects())
+        data['reviewer'] = reviewers
 
         for reviewer in reviewers:
             if reviewer['reviewer'] == req.authname:
