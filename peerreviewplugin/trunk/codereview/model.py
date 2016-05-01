@@ -559,6 +559,9 @@ class PeerReviewModelProvider(Component):
         self.upgrade_environment()
 
     def environment_needs_upgrade(self, db=None):
+
+        if not db:
+            db = self.env.get_read_db()
         self.current_db_version = self._get_version(db.cursor())
 
         if self.current_db_version < db_version:
