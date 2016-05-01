@@ -78,6 +78,7 @@ def add_ctxt_nav_items(req):
 
 
 class PeerReviewMain(Component):
+    """Show overview page for code reviews."""
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
                IPermissionRequestor, IResourceManager)
 
@@ -142,6 +143,7 @@ class PeerReviewMain(Component):
         else:
             data['manager'] = False
 
+        # User requests an update
         data['allassigned'] = req.args.get('allassigned')
         data['allcreated'] = req.args.get('allcreated')
 
@@ -209,8 +211,6 @@ class PeerReviewMain(Component):
         data['assigned_reviews'] = assigned_to_me
         data['cycle'] = itertools.cycle
 
-        add_stylesheet(req, 'common/css/code.css')
-        add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
 
