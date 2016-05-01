@@ -26,6 +26,7 @@ __license__ = "BSD"
 class PeerReviewDocx(Component):
     """Export reviews as a document in Word 2010 format (docx).
 
+    [[BR]]
     == Overview
     When enabled a download link (''Download in other formats'') for a Word 2010 document is added to
     review pages.

@@ -38,6 +38,7 @@ from util import not_allowed_to_comment, review_is_finished, review_is_locked
 class PeerReviewPerform(Component):
     """Perform a code review.
 
+    [[BR]]
     Trac 0.12 comes with a very ancient version of jQuery. This plugin replaces that version with 1.11.2 on the
     fly. Similar to Trac 1.0 you may specify your own jQuery in your config file.
 

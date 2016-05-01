@@ -314,9 +314,9 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
 
 
 class PeerReviewModelProvider(Component):
-    """
-    This class provides the data model for the generic workflow plugin.
+    """This class provides the data model for the generic workflow plugin.
 
+    [[BR]]
     The actual data model on the db is created starting from the
     SCHEMA declaration below.
     For each table, we specify whether to create also a '_custom' and

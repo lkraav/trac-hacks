@@ -22,6 +22,7 @@ __license__ = "BSD"
 class PeerReviewFileAdmin(Component):
     """Admin panel to specify files belonging to a project.
 
+    [[BR]]
     You may define a project identifier and a root folder from the repository holding all the files
     of a project using this admin panel. When saving the information all the files in the folder hierarchy are hashed
     and file name, revision, hash and project name are inserted in the database.
