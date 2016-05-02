@@ -10,6 +10,7 @@ import subprocess
 import xml.sax.saxutils
 from urllib import urlretrieve
 from tempfile import NamedTemporaryFile, mkstemp
+from trac.config import Option
 from trac.core import *
 from trac.mimeview.api import Context, IContentConverter
 from trac.util import escape
@@ -176,8 +177,10 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
     env.log.debug('WikiToPdf => Start function html_to_pdf')
 
     # Check existence and version of HTMLDOC.
+    htmldoc_path = env.config.get('wikitopdf', 'htmldoc_path')
     try:
-        version = subprocess.Popen(('htmldoc', '--version'), stdout=subprocess.PIPE).communicate()[0]
+        version = subprocess.Popen((htmldoc_path, '--version'),
+                                   stdout=subprocess.PIPE).communicate()[0]
         env.log.debug("Using HTMLDOC version %s" % version)
     except OSError, e:
         raise TracError(e)
@@ -193,7 +196,8 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
     pfile, pfilename = mkstemp('wikitopdf')
     os.close(pfile)
 
-    cmd_string = 'htmldoc %s %s -f %s' % (args_string, ' '.join(files), pfilename)
+    cmd_string = '%s %s %s -f %s' \
+                 % (htmldoc_path, args_string, ' '.join(files), pfilename)
     env.log.debug('WikiToPdf => Htmldoc command line: %s' % cmd_string)
     os.system(cmd_string.encode(codepage))
 
@@ -216,6 +220,8 @@ class WikiToPdfPage(Component):
     """Convert Wiki pages to PDF using HTMLDOC (http://www.htmldoc.org/)."""
     implements(IContentConverter)
 
+    htmldoc_path = Option('wikitopdf', 'htmldoc_path', 'htmldoc', """
+        Path to HTMLDOC binary.""")
 
     # IContentConverter methods
     def get_supported_conversions(self):
