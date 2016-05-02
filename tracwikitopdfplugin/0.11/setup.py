@@ -25,6 +25,4 @@ setup(
             'wikitopdf.wikitopdf = wikitopdf.wikitopdf',
         ],
     },
-
-    install_requires = [ 'Trac >= 0.11' ]
 )

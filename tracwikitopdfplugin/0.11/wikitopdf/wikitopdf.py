@@ -12,8 +12,9 @@ from urllib import urlretrieve
 from tempfile import NamedTemporaryFile, mkstemp
 from trac.config import Option
 from trac.core import *
+from trac.env import ISystemInfoProvider
 from trac.mimeview.api import Context, IContentConverter
-from trac.util import escape
+from trac.util import escape, lazy
 from trac.wiki.formatter import format_to_html
 
 EXCLUDE_RES = [
@@ -176,17 +177,8 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
 
     env.log.debug('WikiToPdf => Start function html_to_pdf')
 
-    # Check existence and version of HTMLDOC.
     htmldoc_path = env.config.get('wikitopdf', 'htmldoc_path')
-    try:
-        version = subprocess.Popen((htmldoc_path, '--version'),
-                                   stdout=subprocess.PIPE).communicate()[0]
-    except OSError, e:
-        raise TracError(e)
-    except:
-        raise TracError("Unexpected error while checking version of HTMLDOC.")
-    else:
-        env.log.debug("Using HTMLDOC version %s", version)
+    version = htmldoc_version(env)
 
     global IMG_CACHE
     os.environ["HTMLDOC_NOCGI"] = 'yes'
@@ -217,9 +209,25 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
 
     return out
 
+
+def htmldoc_version(env):
+    # Check existence and version of HTMLDOC.
+    htmldoc_path = env.config.get('wikitopdf', 'htmldoc_path')
+    try:
+        version = subprocess.Popen((htmldoc_path, '--version'),
+                                   stdout=subprocess.PIPE).communicate()[0]
+    except OSError, e:
+        raise TracError(e)
+    except:
+        raise TracError("Unexpected error while checking version of HTMLDOC.")
+    else:
+        env.log.debug("Using HTMLDOC version %s", version)
+    return version
+
+
 class WikiToPdfPage(Component):
     """Convert Wiki pages to PDF using HTMLDOC (http://www.htmldoc.org/)."""
-    implements(IContentConverter)
+    implements(IContentConverter, ISystemInfoProvider)
 
     htmldoc_path = Option('wikitopdf', 'htmldoc_path', 'htmldoc', """
         Path to HTMLDOC binary.""")
@@ -246,3 +254,11 @@ class WikiToPdfPage(Component):
         os.unlink(hfilename)
 
         return (out, 'application/pdf')
+
+    # ISystemInfoProvider methods
+    def get_system_info(self):
+        yield 'HTMLDOC', self.htmldoc_version
+
+    @lazy
+    def htmldoc_version(self):
+        return htmldoc_version(self.env)
