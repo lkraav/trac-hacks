@@ -23,8 +23,8 @@ from trac.web.chrome import ITemplateProvider
 from string import Template
 from genshi import HTML
 
-from codereview.tracgenericclass.util import formatExceptionInfo
-from codereview.tracgenericworkflow.model import ResourceWorkflowState
+from ..tracgenericclass.util import formatExceptionInfo
+from .model import ResourceWorkflowState
 
 
 class IWorkflowTransitionListener(Interface):
@@ -300,20 +300,29 @@ class ResourceWorkflowSystem(Component):
             ctrls = ""
             for i, ac in enumerate(action_controls):
                 # The default action is the first in the action_controls list.
-                ctrl_tmpl = u"""
-                <div>
-                    <input id="wf-$val" name="selected_action" type="radio" value="$val" $is_checked />
-                    <label for="wf-$val">$label</label>
-                    $ctrl
-                    <span class="hint">$hint</span>
-                </div>"""
-
                 cdata = {'is_checked': 'checked="1"' if i == 0 else '',
                          'val': ac[0],
                          'label': ac[1],
-                         'ctrl': ac[2].generate(),
+                         'ctrl': ac[2].generate().render(),
                          'hint': ac[3][0]}
-                ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
+                if len(ac[2].children):
+                    # This is some custom workflow creating it's own markup
+                    ctrl_tmpl2 = u"""
+                    <div>
+                        <input id="wf-$val" name="selected_action" type="radio" value="$val" $is_checked />
+                        $ctrl
+                        <span class="hint">$hint</span>
+                    </div>"""
+                    ctrls += Template(ctrl_tmpl2).safe_substitute(cdata)
+                else:
+                    ctrl_tmpl = u"""
+                    <div>
+                        <input id="wf-$val" name="selected_action" type="radio" value="$val" $is_checked />
+                        <label for="wf-$val">$label</label>
+                        $ctrl
+                        <span class="hint">$hint</span>
+                    </div>"""
+                    ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
 
             tdata['ctrls'] = ctrls
             if data and data.get('redirect'):
@@ -404,7 +413,7 @@ class ResourceWorkflowSystem(Component):
 
             if new_state == '*':
                 new_state = curr_state
-
+            print '     #############################'
             self.env.log.debug("Performing action %s. Transitioning the resource %s in realm %s from the state %s to the state %s" % (selected_action, id, res_realm, curr_state, new_state))
 
             try:
@@ -415,8 +424,10 @@ class ResourceWorkflowSystem(Component):
 
                 # Perform operations
                 operations = this_action['operations']
-
+                print
+                print '  ##########################', operations
                 for operation in operations:
+                    print '    ##########################', operation
                     provider = self.get_operation_provider(operation)
 
                     if provider is not None:
