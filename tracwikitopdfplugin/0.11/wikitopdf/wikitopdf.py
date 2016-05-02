@@ -48,7 +48,7 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
     for r in EXCLUDE_RES:
         text = r.sub('', text)
 
-    env.log.debug('WikiToPdf => Wiki intput for WikiToPdf: %r' % text)
+    env.log.debug('WikiToPdf => Wiki intput for WikiToPdf: %r', text)
 
     context = Context.from_request(req, resource='wiki', id=req.args.get('page', 'False'))
     page = format_to_html(env, context, text)
@@ -96,7 +96,7 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
                 theimg = theimg.replace(" ","%20")
                 urlretrieve(theimg, newimg)
                 IMG_CACHE[theimg] = newimg
-                env.log.debug("ISLAM the image is %s new image is %s" % ( theimg, newimg))
+                env.log.debug("ISLAM the image is %s new image is %s", theimg, newimg)
                 imgcounter += 1
                 page = page[:addrpos+5] + newimg + page[addrpos+5+thepos:]
                 simgpos = page.find('<img', addrpos)
@@ -167,7 +167,7 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
     page = '<html><head>' + meta + css + '</head><body>' + page + '</body></html>'
     page = page.encode(codepage,'replace')
 
-    env.log.debug('WikiToPdf => HTML output for WikiToPdf in charset %s is: %r' % (codepage, page))
+    env.log.debug('WikiToPdf => HTML output for WikiToPdf in charset %s is: %r', codepage, page)
     env.log.debug('WikiToPdf => Finish function wiki_to_pdf')
 
     return page
@@ -181,11 +181,12 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
     try:
         version = subprocess.Popen((htmldoc_path, '--version'),
                                    stdout=subprocess.PIPE).communicate()[0]
-        env.log.debug("Using HTMLDOC version %s" % version)
     except OSError, e:
         raise TracError(e)
     except:
         raise TracError("Unexpected error while checking version of HTMLDOC.")
+    else:
+        env.log.debug("Using HTMLDOC version %s", version)
 
     global IMG_CACHE
     os.environ["HTMLDOC_NOCGI"] = 'yes'
@@ -198,7 +199,7 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
 
     cmd_string = '%s %s %s -f %s' \
                  % (htmldoc_path, args_string, ' '.join(files), pfilename)
-    env.log.debug('WikiToPdf => Htmldoc command line: %s' % cmd_string)
+    env.log.debug('WikiToPdf => Htmldoc command line: %s', cmd_string)
     os.system(cmd_string.encode(codepage))
 
     # Delete files from tmp_dir
