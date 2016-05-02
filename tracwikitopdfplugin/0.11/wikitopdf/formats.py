@@ -33,7 +33,7 @@ class WikiToPdfOutput(Component):
         #Setup the title and license pages
         title_template = self.env.config.get('wikitopdf', 'pathtocover')
         if title_template == '':
-                title_template = self.env.config.get('wikitopdf', 'titlefile')
+            title_template = self.env.config.get('wikitopdf', 'titlefile')
         title_template = title_template + '/cover.html'
         titlefile = title_template and self.get_titlepage(title_template, title, subject, date, version) or None
 

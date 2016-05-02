@@ -57,7 +57,7 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
 
     """I need improve this... Ticket #3427"""
     page = page.replace('<a class="wiki" href="/' + env.config.get('wikitopdf', 'folder_name') + '/wiki/', '<a class="wiki" href="'
-			+ env.config.get('wikitopdf', 'link') + '/wiki/')
+                        + env.config.get('wikitopdf', 'link') + '/wiki/')
 
     page = page.replace('<pre class="wiki">', '<table align="center" width="95%" border="1" bordercolor="#d7d7d7">'
                         + '<tr><td bgcolor="#f7f7f7"><pre class="wiki">')
@@ -200,7 +200,7 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
     # Delete files from tmp_dir
     for v in IMG_CACHE.values():
         if os.path.exists(v):
-    	    os.unlink(v);
+            os.unlink(v);
     IMG_CACHE = { }
     infile = open(pfilename, 'rb')
     out = infile.read()
