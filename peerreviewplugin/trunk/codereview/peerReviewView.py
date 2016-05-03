@@ -12,6 +12,7 @@
 # Works with peerReviewView.html
 
 import itertools
+from genshi.builder import tag
 from string import Template
 from trac.config import ListOption
 from trac.core import Component, implements, TracError
@@ -19,14 +20,14 @@ from trac.mimeview import Context
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
 from trac.util import format_date
-from trac.util.text import CRLF
-from trac.web.chrome import INavigationContributor, add_stylesheet, add_link
+from trac.util.text import CRLF, obfuscate_email_address
+from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
 from model import Comment, get_users, \
     PeerReviewerModel, PeerReviewModel, ReviewFileModel, ReviewDataModel
 from peerReviewMain import add_ctxt_nav_items, web_context_compat
-from tracgenericworkflow.api import IWorkflowTransitionListener, ResourceWorkflowSystem
+from tracgenericworkflow.api import IWorkflowOperationProvider, IWorkflowTransitionListener, ResourceWorkflowSystem
 from util import review_is_finished, review_is_locked
 
 try:
@@ -42,7 +43,7 @@ class PeerReviewView(Component):
 
     [[TracIni(peer-review)]]
     """
-    implements(IRequestHandler, INavigationContributor, IWorkflowTransitionListener)
+    implements(IRequestHandler, INavigationContributor, IWorkflowOperationProvider, IWorkflowTransitionListener)
 
     ListOption("peer-review", "terminal_review_states", ['closed', 'approved', 'disapproved'],
                doc="Ending states for a review. Only an administrator may force a review to leave these states. "
@@ -52,6 +53,72 @@ class PeerReviewView(Component):
                doc="A reviewer may no longer comment on reviews in one of the given states. The review owner still "
                    "may comment. Used to lock a review against modification after all reviewing persons have "
                    "finished their task.")
+
+    # IWorkflowOperationProvider methods
+
+    def get_implemented_operations(self):
+        yield 'set_review_owner'
+
+    def get_operation_control(self, req, action, operation, res_wf_state, resource):
+        """Get markup for workflow operation 'set_review_owner."""
+
+        id_ = 'action_%s_operation_%s' % (action, operation)
+
+        rws = ResourceWorkflowSystem(self.env)
+        this_action = rws.actions[resource.realm][action]  # We need the full action data for custom label
+
+        if operation == 'set_review_owner':
+            self.log.debug("Creating control for setting review owner.")
+            review = PeerReviewModel(self.env, resource.id)
+
+            if not (Chrome(self.env).show_email_addresses
+                    or 'EMAIL_VIEW' in req.perm(resource)):
+                format_user = obfuscate_email_address
+            else:
+                format_user = lambda address: address
+            current_owner = format_user(review['owner'])
+
+            self.log.debug("Current owner is %s." % current_owner)
+
+            selected_owner = req.args.get(id_, req.authname)
+
+            hint = "The owner will be changed from %s" % current_owner
+
+            owners = get_users(self.env)
+            if not owners:
+                owner = req.args.get(id_, req.authname)
+                control = tag(u'%s ' % this_action['name'],
+                              tag.input(type='text', id=id_,
+                                        name=id_, value=owner))
+            elif len(owners) == 1:
+                owner = tag.input(type='hidden', id=id_, name=id_,
+                                  value=owners[0])
+                formatted_owner = format_user(owners[0])
+                control = tag(u'%s ' % this_action['name'],
+                              tag(formatted_owner, owner))
+                if res_wf_state['owner'] != owners[0]:
+                    hint = "The owner will be changed from %s to %s" % (current_owner, formatted_owner)
+            else:
+                control = tag(u'%s ' % this_action['name'], tag.select(
+                        [tag.option(format_user(x), value=x,
+                                    selected=(x == selected_owner or None))
+                         for x in owners],
+                        id=id_, name=id_))
+
+            return control, hint
+
+        return None, ''
+
+    def perform_operation(self, req, action, operation, old_state, new_state, res_wf_state, resource):
+        """Perform 'set_review_owner' operation on reviews."""
+
+        self.log.debug("---> Performing operation %s while transitioning from %s to %s."
+                       % (operation, old_state, new_state))
+        new_owner = req.args.get('action_%s_operation_%s' % (action, operation), None)
+        review = PeerReviewModel(self.env, int(resource.id))
+        if review:
+            review['owner'] = new_owner
+            review.save_changes(author=req.authname)
 
     # IWorkflowTransitionListener
 

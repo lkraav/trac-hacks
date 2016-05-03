@@ -413,7 +413,6 @@ class ResourceWorkflowSystem(Component):
 
             if new_state == '*':
                 new_state = curr_state
-            print '     #############################'
             self.env.log.debug("Performing action %s. Transitioning the resource %s in realm %s from the state %s to the state %s" % (selected_action, id, res_realm, curr_state, new_state))
 
             try:
@@ -424,10 +423,7 @@ class ResourceWorkflowSystem(Component):
 
                 # Perform operations
                 operations = this_action['operations']
-                print
-                print '  ##########################', operations
                 for operation in operations:
-                    print '    ##########################', operation
                     provider = self.get_operation_provider(operation)
 
                     if provider is not None:
