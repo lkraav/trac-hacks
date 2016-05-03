@@ -55,7 +55,7 @@ def review_is_finished(config, review):
 
     :return True if review is in one of the terminal states
     """
-    finish_states = config.getlist("peer-review", "terminal_review_states")
+    finish_states = config.getlist("peerreview", "terminal_review_states")
     return review['status'] in finish_states
 
 
@@ -73,5 +73,5 @@ def review_is_locked(config, review, authname=""):
     if review['owner'] == authname:
         return False
 
-    lock_states = config.getlist("peer-review", "reviewer_locked_states")
+    lock_states = config.getlist("peerreview", "reviewer_locked_states")
     return review['status'] in lock_states

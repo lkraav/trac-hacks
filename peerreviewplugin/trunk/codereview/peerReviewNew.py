@@ -176,7 +176,7 @@ class NewReviewModule(Component):
 
         data['cycle'] = itertools.cycle
         data['followup'] = req.args.get('followup')
-        prj = self.env.config.getlist("peer-review", "projects", default=[])
+        prj = self.env.config.getlist("peerreview", "projects", default=[])
         if not prj:
             prj = self.env.config.getlist("ticket-custom", "project.options", default=[], sep='|')
 

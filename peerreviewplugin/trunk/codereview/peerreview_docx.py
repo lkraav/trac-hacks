@@ -35,7 +35,7 @@ class PeerReviewDocx(Component):
 
     It is possible to provide a default template document for new environments by providing the path
     in ''trac.ini'':
-    [[TracIni(peer-review, review.docx)]]
+    [[TracIni(peerreview, review.docx)]]
 
     The path must be readable by Trac. It will be used only on first start to populate the database and is
     meant to make automated deploying easier.
@@ -104,7 +104,7 @@ class PeerReviewDocx(Component):
     """
     implements(IAdminPanelProvider, IContentConverter, IRequestHandler,)
 
-    ListOption('peer-review', 'review.docx', doc=u"Path to template document in ''docx'' format used for generating "
+    ListOption('peerreview', 'review.docx', doc=u"Path to template document in ''docx'' format used for generating "
                                                  u"review documents.")
     def __init__(self):
         if not docx_support:
@@ -122,7 +122,7 @@ class PeerReviewDocx(Component):
                     if d == 'reviewreport.template':
                         # Admins may set this value in trac.ini to specify a default which will be used on first
                         # start.
-                        data = self.env.config.get('peer-review', 'review.docx', '')
+                        data = self.env.config.get('peerreview', 'review.docx', '')
                     else:
                         data = u""
                     rdm = ReviewDataModel(self.env)

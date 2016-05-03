@@ -41,15 +41,15 @@ class PeerReviewView(Component):
 
     === The following configuration options may be set:
 
-    [[TracIni(peer-review)]]
+    [[TracIni(peerreview)]]
     """
     implements(IRequestHandler, INavigationContributor, IWorkflowOperationProvider, IWorkflowTransitionListener)
 
-    ListOption("peer-review", "terminal_review_states", ['closed', 'approved', 'disapproved'],
+    ListOption("peerreview", "terminal_review_states", ['closed', 'approved', 'disapproved'],
                doc="Ending states for a review. Only an administrator may force a review to leave these states. "
                    "Reviews in one of these states may not be modified.")
 
-    ListOption("peer-review", "reviewer_locked_states", ['reviewed'],
+    ListOption("peerreview", "reviewer_locked_states", ['reviewed'],
                doc="A reviewer may no longer comment on reviews in one of the given states. The review owner still "
                    "may comment. Used to lock a review against modification after all reviewing persons have "
                    "finished their task.")

@@ -78,7 +78,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         r_tmpl['review_id'] = self['review_id']
         all_files = r_tmpl.list_matching_objects()  # This is a generator
         # We only mark files for terminal states
-        finish_states = self.env.config.getlist("peer-review", "terminal_review_states")
+        finish_states = self.env.config.getlist("peerreview", "terminal_review_states")
         if new_status in finish_states:
             status = new_status
             self.env.log.debug("ReviewModel: changing status of attached files for review '#%s'to '%s'" %
