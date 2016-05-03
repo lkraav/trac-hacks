@@ -15,6 +15,7 @@ from trac.core import *
 from trac.env import ISystemInfoProvider
 from trac.mimeview.api import Context, IContentConverter
 from trac.util import escape, lazy
+from trac.util.translation import _
 from trac.wiki.formatter import format_to_html
 
 EXCLUDE_RES = [
@@ -256,9 +257,14 @@ class WikiToPdfPage(Component):
         return (out, 'application/pdf')
 
     # ISystemInfoProvider methods
+
     def get_system_info(self):
         yield 'HTMLDOC', self.htmldoc_version
 
     @lazy
     def htmldoc_version(self):
-        return htmldoc_version(self.env)
+        try:
+            version = htmldoc_version(self.env)
+        except TracError, e:
+            version = _("Executable not found or unexpected error")
+        return version
