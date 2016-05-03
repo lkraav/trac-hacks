@@ -653,8 +653,10 @@ class PeerReviewModelProvider(Component):
                 print "checking ", name
                 cursor.execute("SELECT name FROM system")
                 if name not in [row[0] for row in cursor]:
+                    print "  inserting ", name
                     cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
                                    (name, db_version))
+                    db.commit()
 
     def upgrade_env_to_db2(self):
         """Update database to hold tables from before using TracGenericClass"""
