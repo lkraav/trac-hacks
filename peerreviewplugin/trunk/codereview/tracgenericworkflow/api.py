@@ -13,6 +13,7 @@
 #
 
 from genshi.builder import tag
+from operator import itemgetter
 from trac.core import Interface, Component, implements, ExtensionPoint, \
     TracError
 from trac.resource import Resource, get_resource_url
@@ -159,14 +160,13 @@ class ResourceWorkflowSystem(Component):
 
         # Get the list of actions that can be performed
 
-        user_perm = None
+        user_perms = None
+        curr_state = 'new'
         if resource is not None:
             user_perms = req.perm(resource)
             rws = ResourceWorkflowState(self.env, resource.id, realm)
             if rws.exists:
                 curr_state = rws['state']
-            else:
-                curr_state = 'new'
 
         allowed_actions = []
 
@@ -176,7 +176,7 @@ class ResourceWorkflowSystem(Component):
                 if oldstates == ['*'] or curr_state in oldstates:
                     # This action is valid in this state.
                     # Check permissions if possible.
-                    if user_perms is not None:
+                    if user_perms:
                         required_perms = action_info['permissions']
                         if not self._is_action_allowed(user_perms, required_perms):
                             continue
@@ -185,8 +185,7 @@ class ResourceWorkflowSystem(Component):
                                             action_name))
 
         self.log.debug("<<< ResourceWorkflowSystem - get_available_actions")
-
-        return allowed_actions
+        return sorted(allowed_actions, key=itemgetter(0), reverse=True)
 
     def _is_action_allowed(self, user_perms, required_perms):
         if not required_perms:
