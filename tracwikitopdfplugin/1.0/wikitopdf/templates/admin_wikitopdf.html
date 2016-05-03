@@ -1,0 +1,97 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+
+<xi:include href="admin.html" />
+
+<head>
+  <title>Generate WikiToPdf</title>
+</head>
+
+<body>
+<h2>Generate WikiToPdf</h2>
+
+<form method="post" onsubmit="compile_pages(this);">
+
+<fieldset>
+	<legend>Book Properties</legend>
+	<table>
+	<tbody>
+		<tr>
+			<td>Title:</td>
+			<td><input type="text" name="title" size="80"/></td>
+		</tr>
+		<tr>
+			<td>Sub-title:</td>
+			<td><input type="text" name="subject" size="80"/></td>
+		</tr>
+		<tr>
+			<td>Version:</td>
+			<td><input type="text" name="version" size="20" /></td>
+		</tr>
+		<tr>
+			<td>Date:</td>
+			<td><input type="text" name="date" size="20"/></td>
+		</tr>
+	</tbody>
+	</table>
+</fieldset>
+
+<fieldset>
+    <legend>Select pages</legend>
+	    <table border="0" width="100%">
+        <tr>
+            <td align="left" colspan="2">All Pages</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <select id="leftpages_select" name="leftpages" size="10" style="width: 100%;" multiple="multiple">
+                    <option py:for="page in wikitopdf.leftpages" value="$page">$page</option>
+                </select>
+            </td>
+	</tr>
+	<tr>
+            <td align="center" colspan="2">
+                <input type="button" onclick="move_item('right', 'left')" value="/\" />
+					 &nbsp;&nbsp; 
+                <input type="button" onclick="move_item('left', 'right')" value="\/" />
+            </td>
+	</tr>	
+	<tr>
+            <td align="left" colspan="2">Selected Pages</td>
+         </tr>
+	 <tr>
+	 	<td width="95%">
+	                <select id="rightpages_select" name="rightpages" size="10" style="width: 100%;" multiple="multiple">
+                                <option py:for="page in wikitopdf.rightpages" value="$page">$page</option>
+                	</select>
+		</td>
+		<td width="5%" align="center">
+			<input type="button" onclick="reorder_item('right', -1)" value="/\" />
+                        <br /><br />
+			<input type="button" onclick="reorder_item('right', 1)" value="\/" />
+		</td>
+        </tr>
+  </table>    
+</fieldset>
+
+<fieldset>
+    <legend>Output Format</legend>
+    <label py:for="idx, (key, format) in enumerate(wikitopdf.formats.iteritems())">
+        <input type="radio" name="format" value="$key"
+               checked="${(None, 'checked')[idx == 0]}"
+               />${format.name}
+    </label>
+</fieldset>
+
+<input type="hidden" name="rightpages_all" value="" />
+
+<div class="buttons">
+    <input type="submit" name="create" value="Create" />
+</div>
+</form>
+</body>
+</html>
