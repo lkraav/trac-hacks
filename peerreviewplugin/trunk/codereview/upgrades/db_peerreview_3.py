@@ -56,7 +56,13 @@ def do_upgrade(env, ver, db_backend, db):
                ['review-done', 'in-review -> reviewed'],
                ['review-done.name', 'Mark as reviewed'],
                ['reviewing', 'new -> in-review'],
+               ['reviewing.default', '5'],
                ['reviewing.name', 'Start review'],
+               ['change_owner','* -> *'],
+               ['change_owner.name','Change Owner to'],
+               ['change_owner.operations','set_review_owner'],
+               ['change_owner.permissions','CODE_REVIEW_MGR'],
+               ['change_owner.default','-1'],
                ]
     wf_section = 'peerreview-resource_workflow'
 
