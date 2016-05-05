@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = 'RemovePendingStatusPlugin',
-    version = '0.0.5',
+    version = '1.0',
     packages = ['removepending'],
 
     author = "Daniel Atallah",
@@ -21,7 +21,7 @@ setup(
     """,
     license = "BSD",
     keywords = "trac plugin pending ticket",
-    url = "http://trac-hacks.org/wiki/PendingTicketPlugin",
+    url = "https://trac-hacks.org/wiki/PendingTicketPlugin",
     classifiers = [
         'Framework :: Trac',
     ],
