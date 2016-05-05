@@ -1,31 +1,37 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2007-2013 Daniel Atallah <datallah@pidgin.im>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 # Script to close old tickets that are in Pending status.
-# Copyright 2007 Daniel A. Atallah <datallah@pidgin.im>
 #
 # It should be called via cron on a daily basis to close old tickets:
-
+#
 # TRAC_ENV=/somewhere/trac/project/
 # DAYS_PENDING=14
-
+#
 # /usr/bin/python /path/to/trac_scripts/close_old_pending.py \
 #  -p "$TRAC_ENV" -d $DAYS_PENDING
 
-AUTHOR='trac-robot'
-MESSAGE="This ticket was closed automatically by the system.  " \
-        "It was previously set to a Pending status and hasn't been updated within %s days."
-
 import sys
-import time
+import traceback
 from datetime import datetime, timedelta
 from optparse import OptionParser
 
 from trac.env import open_environment
+from trac.ticket.model import Ticket
 from trac.ticket.notification import TicketNotifyEmail
-from trac.ticket import Ticket
 from trac.ticket.web_ui import TicketModule
-from trac.web.href import Href
 from trac.util.datefmt import utc, to_utimestamp
+
+AUTHOR = 'trac-robot'
+MESSAGE = "This ticket was closed automatically by the system. " \
+          "It was previously set to a Pending status and hasn't " \
+          "been updated within %s days."
 
 
 parser = OptionParser()
@@ -34,33 +40,35 @@ parser.add_option('-p', '--project', dest='project',
 parser.add_option('-d', '--daysback', type='int', dest='maxage', default=14,
                   help='Timeout for Pending Tickets to be closed after.')
 
-(options, args) = parser.parse_args(sys.argv[1:])
+options, args = parser.parse_args(sys.argv[1:])
+
 
 class CloseOldPendingTickets:
 
     def __init__(self, project=options.project, author=AUTHOR,
-                     maxage=options.maxage):
+                 maxage=options.maxage):
 
         try:
             self.env = open_environment(project)
             db = self.env.get_db_cnx()
             cursor = db.cursor()
 
-            msg = MESSAGE % (maxage)
+            msg = MESSAGE % maxage
 
             now = datetime.now(utc)
-            maxtime = to_utimestamp(now - timedelta(days=maxage))
+            max_time = to_utimestamp(now - timedelta(days=maxage))
 
-            cursor.execute("SELECT id FROM ticket " \
-                           "WHERE status = %s " \
-                           "AND changetime < %s ", ('pending', maxtime))
-    
+            cursor.execute("""
+                SELECT id FROM ticket
+                WHERE status = %s AND changetime < %s
+                """, ('pending', max_time))
+
             rows = cursor.fetchall()
 
             for row in rows:
                 id = row[0]
                 try:
-                    ticket = Ticket(self.env, id, db);
+                    ticket = Ticket(self.env, id, db)
 
                     ticket['status'] = 'closed'
 
@@ -75,23 +83,22 @@ class CloseOldPendingTickets:
                     ticket.save_changes(author, msg, now, db, str(cnum + 1))
                     db.commit()
 
-                    print 'Closing Ticket %s (%s)' % (id, ticket['summary'])
+                    print('Closing Ticket %s (%s)' % (id, ticket['summary']))
 
                     tn = TicketNotifyEmail(self.env)
                     tn.notify(ticket, newticket=0, modtime=now)
                 except Exception, e:
-                    import traceback
                     traceback.print_exc(file=sys.stderr)
-                    print>>sys.stderr, 'Unexpected error while processing ticket ' \
-                                   'ID %s: %s' % (id, e)
-        except Exception, e:
-               import traceback
-               traceback.print_exc(file=sys.stderr)
-               print>>sys.stderr, 'Unexpected error while retrieving tickets '
+                    print>>sys.stderr, \
+                        'Unexpected error while processing ticket ID %s: %s' \
+                        % (id, e)
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
+            print>>sys.stderr, 'Unexpected error while retrieving tickets'
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print "For usage: %s --help" % (sys.argv[0])
+        print("For usage: %s --help" % (sys.argv[0]))
     else:
         CloseOldPendingTickets()
