@@ -21,8 +21,8 @@
 
   <py:def function="display_group(group, forums)">
     <div py:if="group and group.id != 0" class="group">
-      <div class="name">${format_to_oneliner(discussion.env, context, group.name)}</div>
-      <div class="description">${format_to_oneliner(discussion.env, context, group.description)}</div>
+      <div class="name">${wiki_to_oneliner(context, group.name)}</div>
+      <div class="description">${wiki_to_oneliner(context, group.description)}</div>
     </div>
     <table class="listing">
       <thead>
