@@ -29,7 +29,7 @@
           <td colspan="3" class="subject">
             <div class="subject">
               <a href="${href.discussion('topic', topic.id)}">
-                <strong>${discussion.format_to_oneliner_no_links(dcontext, topic.subject) or '&nbsp;'}</strong>
+                <strong>${discussion.format_to_oneliner_no_links(context, topic.subject) or '&nbsp;'}</strong>
               </a> (#${topic.id})<br/>
               by ${wiki_to_oneliner(context, format_author(topic.author))} - ${format_datetime(topic.time)} (${pretty_timedelta(topic.time)} ago)
             </div>
