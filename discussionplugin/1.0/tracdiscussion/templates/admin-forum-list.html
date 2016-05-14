@@ -16,10 +16,6 @@
     <title>Discussion Forums</title>
   </head>
 
-  <?python
-    from tracdiscussion.api import format_to_oneliner_no_links
-  ?>
-
   <py:with vars="is_edit = discussion.forum.id and not req.args.submit">
     <body>
       <h2>Forums</h2>
@@ -127,8 +123,7 @@
                       discussion.forum.forum_group)" value="${group.id}"
                       selected="selected">${group.name}</option>
                     <option py:otherwise="" value="${group.id}">
-                      ${format_to_oneliner_no_links(discussion.env, context,
-                      group.name)}</option>
+                      ${discussion.format_to_oneliner_no_links(context, group.name)}</option>
                   </py:choose>
                 </py:for>
               </select><br/>
@@ -190,24 +185,21 @@
                   <td class="name">
                     <div class="name">
                       <a href="${panel_href(forum.id)}">
-                        <span>${format_to_oneliner_no_links(discussion.env,
-                          context, forum.name) or '&nbsp;'}</span>
+                        <span>${discussion.format_to_oneliner_no_links(context, forum.name) or '&nbsp;'}</span>
                       </a>
                     </div>
                   </td>
                   <td class="subject">
                     <div class="subject">
                       <a href="${panel_href(forum.id)}">
-                        <span>${format_to_oneliner_no_links(discussion.env,
-                          context, forum.subject) or '&nbsp;'}</span>
+                        <span>${discussion.format_to_oneliner_no_links(context, forum.subject) or '&nbsp;'}</span>
                       </a>
                     </div>
                   </td>
                   <td class="description">
                     <div class="description">
                       <a href="${panel_href(forum.id)}">
-                        <span>${format_to_oneliner_no_links(discussion.env,
-                          context, forum.description) or '&nbsp;'}</span>
+                        <span>${discussion.format_to_oneliner_no_links(context, forum.description) or '&nbsp;'}</span>
                       </a>
                     </div>
                   </td>
@@ -229,8 +221,7 @@
                     <div py:for="group in discussion.groups" py:if="group.id ==
                       forum.forum_group" class="group">
                       <a href="${panel_href(forum.id)}">
-                        <span>${format_to_oneliner_no_links(discussion.env,
-                          context, group.name)}</span>
+                        <span>${discussion.format_to_oneliner_no_links(context, group.name)}</span>
                       </a>
                     </div>
                   </td>

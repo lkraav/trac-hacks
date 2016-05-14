@@ -8,9 +8,6 @@
     This software is licensed as described in the file COPYING, which
     you should have received as part of this distribution.
   -->
-  <?python
-    from tracdiscussion.api import format_to_oneliner_no_links
-  ?>
 
   <py:def function="sortable_th(order, desc, Class, title, href)">
     <th class="${Class}${order == Class and (desc and ' desc' or ' asc') or ''}">
@@ -69,8 +66,7 @@
 
           <div class="footer">
             <div class="author">
-              ${format_to_oneliner_no_links(discussion.env, context,
-                                            format_author(discussion.topic.author))}
+              ${discussion.format_to_oneliner_no_links(context, format_author(discussion.topic.author))}
             </div>
             <div class="time">
               ${format_datetime(discussion.topic.time)}

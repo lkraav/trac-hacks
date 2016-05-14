@@ -15,10 +15,6 @@
     <title>Discussion Forums</title>
   </head>
 
-  <?python
-    from tracdiscussion.api import format_to_oneliner_no_links
-  ?>
-
   <py:with vars="is_edit = discussion.group.id and not req.args.submit">
     <body>
       <h2>Forum Groups</h2>
@@ -75,14 +71,14 @@
                   <td class="name">
                     <div class="name">
                       <a href="${panel_href(group.id)}">
-                        <span>${format_to_oneliner_no_links(discussion.env, context, group.name) or '&nbsp;'}</span>
+                        <span>${discussion.format_to_oneliner_no_links(context, group.name) or '&nbsp;'}</span>
                       </a>
                     </div>
                   </td>
                   <td class="description">
                     <div class="description">
                       <a href="${panel_href(group.id)}">
-                        <span>${format_to_oneliner_no_links(discussion.env, context, group.description) or '&nbsp;'}</span>
+                        <span>${discussion.format_to_oneliner_no_links(context, group.description) or '&nbsp;'}</span>
                       </a>
                     </div>
                   </td>

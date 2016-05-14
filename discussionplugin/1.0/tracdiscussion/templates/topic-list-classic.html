@@ -38,14 +38,14 @@
           <td class="subject">
             <div class="subject">
               <a href="${href.discussion('topic', topic.id)}">
-                <span>${format_to_oneliner_no_links(discussion.env, context, topic.subject) or '&nbsp;'}</span>
+                <span>${discussion.format_to_oneliner_no_links(context, topic.subject) or '&nbsp;'}</span>
               </a>
             </div>
           </td>
           <td class="author">
             <div class="author">
               <a href="${href.discussion('topic', topic.id)}">
-                <span>${format_to_oneliner_no_links(discussion.env, context, format_author(topic.author)) or '&nbsp;'}</span>
+                <span>${discussion.format_to_oneliner_no_links(context, format_author(topic.author)) or '&nbsp;'}</span>
               </a>
             </div>
           </td>
