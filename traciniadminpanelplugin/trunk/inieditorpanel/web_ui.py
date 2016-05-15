@@ -16,7 +16,7 @@ from trac.util.translation import dgettext, domain_functions
 from inieditorpanel.api import *
 
 _, tag_, N_, add_domain, gettext = domain_functions(
-    'inieditorpanel', 
+    'inieditorpanel',
     ('_', 'tag_', 'N_', 'add_domain', 'gettext'))
 
 
@@ -24,49 +24,53 @@ class TracIniAdminPanel(Component):
   """ An editor panel for trac.ini. """
 
   implements(IAdminPanelProvider, ITemplateProvider)
-  
+
   valid_section_name_chars = Option('ini-editor', 'valid-section-name-chars', '^[a-zA-Z0-9\\-_\\:]+$',
-      doc="""Defines the valid characters for a section name or option name in 
-      `trac.ini`. Must be a valid regular expression. You only need to change 
+      doc="""Defines the valid characters for a section name or option name in
+      `trac.ini`. Must be a valid regular expression. You only need to change
       these if you have plugins that use some strange section or option names.
       """, doc_domain="inieditorpanel")
-  
+
   valid_option_name_chars = Option('ini-editor', 'valid-option-name-chars', '^[a-zA-Z0-9\\-_\\:.]+$',
-      doc="""Defines the valid characters for a section name or option name in 
-      `trac.ini`. Must be a valid regular expression. You only need to change 
+      doc="""Defines the valid characters for a section name or option name in
+      `trac.ini`. Must be a valid regular expression. You only need to change
       these if you have plugins that use some strange section or option names.
       """, doc_domain="inieditorpanel")
-      
-  security_manager = ExtensionOption('ini-editor', 'security-manager', 
+
+  security_manager = ExtensionOption('ini-editor', 'security-manager',
       IOptionSecurityManager, 'IniEditorEmptySecurityManager',
-      doc="""Defines the security manager that specifies whether the user has 
+      doc="""Defines the security manager that specifies whether the user has
       access to certain options.
       """, doc_domain="inieditorpanel")
-  
+
   # See "IniEditorBasicSecurityManager" for why we use a pipe char here.
   password_options = ListOption('ini-editor', 'password-options',
-      doc="""Defines option fields (as `section-name|option-name`) that 
+      doc="""Defines option fields (as `section-name|option-name`) that
       represent passwords. Password input fields are used for these fields.
-      Note the fields specified here are taken additionally to some predefined 
+      Note the fields specified here are taken additionally to some predefined
       fields provided by the ini editor.
       """, doc_domain="inieditorpanel")
 
   ini_section = ConfigSection('ini-editor',
       """This section is used to handle configurations used by
       TracIniAdminPanel plugin.""", doc_domain='inieditorpanel')
-      
+
   DEFAULT_PASSWORD_OPTIONS = {
       'notification|smtp_password': True
     }
-  
+
   def __init__(self):
     """Set up translation domain"""
-    locale_dir = resource_filename(__name__, 'locale')
-    add_domain(self.env.path, locale_dir)
+    try:
+        locale_dir = resource_filename(__name__, 'locale')
+    except KeyError:
+        pass
+    else:
+        add_domain(self.env.path, locale_dir)
 
     self.valid_section_name_chars_regexp = re.compile(self.valid_section_name_chars)
     self.valid_option_name_chars_regexp = re.compile(self.valid_option_name_chars)
-    
+
     self.password_options_set = copy.deepcopy(self.DEFAULT_PASSWORD_OPTIONS)
     for option in self.password_options:
       self.password_options_set[option] = True
@@ -79,7 +83,7 @@ class TracIniAdminPanel(Component):
     if 'TRAC_ADMIN' in req.perm:
       yield ('general', dgettext('messages', 'General'), 'trac_ini_editor', _('trac.ini Editor'))
 
-  def render_admin_panel(self, req, cat, page, path_info):  
+  def render_admin_panel(self, req, cat, page, path_info):
     req.perm.require('TRAC_ADMIN')
 
     if path_info == None:
@@ -108,7 +112,7 @@ class TracIniAdminPanel(Component):
         add_warning(req, _('The section name %s is invalid.') % path_info)
         req.redirect(req.href.admin(cat, page))
         return None
-        
+
       # Add current section if it's not already in the list. This happens if
       # the section is essentially empty (i.e. newly created with no non-default
       # option values and no option from the option registry).
@@ -126,9 +130,9 @@ class TracIniAdminPanel(Component):
         descriptions[section_name] = dgettext(section.doc_domain, doc)
 
     all_section_names.sort()
-        
+
     sections = {}
-    
+
     #
     # Check security manager
     #
@@ -149,18 +153,18 @@ class TracIniAdminPanel(Component):
         return None
 
     elif req.method == 'POST' and 'change-section' in req.args:
-      # 
+      #
       # Changing the section
       #
       req.redirect(req.href.admin(cat, page) + '/' + req.args['change-section'])
       return None
-        
+
     elif req.method == 'POST' and 'new-section-name' in req.args:
       #
       # Create new section (essentially simply changing the section)
       #
       section_name = req.args['new-section-name'].strip()
-      
+
       if section_name == '':
         add_warning(req, _('The section name was empty.'))
         req.redirect(req.href.admin(cat, page) + ext)
@@ -176,15 +180,15 @@ class TracIniAdminPanel(Component):
         else:
           add_warning(req, _('The section already exists.'))
         req.redirect(req.href.admin(cat, page) + '/' + section_name)
-      
+
       return None
-    
+
     elif path_info is not None and path_info not in ('', '/'):
       #
       # Display and possibly modify section (if one is selected)
       #
       default_values = self.config.defaults()
-      
+
       # Gather option values
       # NOTE: This needs to be done regardless whether we have POST data just to
       #   be on the safe site.
@@ -196,10 +200,10 @@ class TracIniAdminPanel(Component):
           sections[section_name] = self._read_section_config(req, section_name, default_values, custom_options)
       else:
         # Only a single section
-        # Note: At this point path_info has already been verified to contain a 
+        # Note: At this point path_info has already been verified to contain a
         #   valid section name (see check above).
         sections[path_info] = self._read_section_config(req, path_info, default_values)
-      
+
 
       #
       # Handle POST data
@@ -209,14 +213,14 @@ class TracIniAdminPanel(Component):
         for key, value in req.args.items():
           if not key.startswith('inieditor_value##'): # skip unrelated args
             continue
-         
+
           name = key[len('inieditor_value##'):].split('##')
           section_name = name[0].strip()
           option_name = name[1].strip()
-          
+
           if section_name == 'components':
             continue
-          
+
           if option_name == 'dummy':
             if section_name not in sections:
               sections[section_name] = { }
@@ -233,8 +237,8 @@ class TracIniAdminPanel(Component):
           else:
             # newly created section (not yet stored)
             sections[section_name] = { option_name: self._create_new_field_instance(req, section_name, option_name, None, value) }
-            
-        
+
+
         # Check which options use their default values
         # NOTE: Must be done after assigning field value from the previous step
         #   to ensure that the default value has been initialized.
@@ -245,8 +249,8 @@ class TracIniAdminPanel(Component):
             default_using_options = [ ]
           elif type(default_using_options).__name__ != 'list':
             # if there's only one checkbox it's just a string
-            default_using_options = [ unicode(default_using_options) ] 
-          
+            default_using_options = [ unicode(default_using_options) ]
+
           for default_using_option in default_using_options:
             name = default_using_option.split('##')
             section_name = name[0].strip()
@@ -263,12 +267,12 @@ class TracIniAdminPanel(Component):
             else:
               # newly created section (not yet stored)
               sections[section_name] = { option_name: self._create_new_field_instance(req, section_name, option_name, None) }
-        
-        
+
+
         #
         # Identify submit type
-        # NOTE: Using "cur_focused_field" is a hack to support hitting the 
-        #  return key even for the new-options field. Without this hitting 
+        # NOTE: Using "cur_focused_field" is a hack to support hitting the
+        #  return key even for the new-options field. Without this hitting
         #  return would always associated to the apply button.
         #
         submit_type = None
@@ -281,10 +285,10 @@ class TracIniAdminPanel(Component):
           for key in req.args:
             if not key.startswith('inieditor-submit-'):
               continue
-              
+
             submit_type = key[len('inieditor-submit-'):]
             break
-       
+
         if submit_type.startswith('apply'): # apply changes
           if submit_type.startswith('apply-'):
             # apply only one section
@@ -300,7 +304,7 @@ class TracIniAdminPanel(Component):
             for section_name, options in sections.items():
               if self._apply_section_changes(req, section_name, options):
                 changes_applied = True
-            
+
             if changes_applied:
               add_notice(req, _('Changes have been applied.'))
               self.config.save()
@@ -318,39 +322,39 @@ class TracIniAdminPanel(Component):
             for section_name, options in sections.items():
               self._discard_section_changes(req, section_name, options)
             add_notice(req, _('All changes have been discarded.'))
-        
+
         elif submit_type.startswith('addnewoptions-'):
           section_name = submit_type[len('addnewoptions-'):].strip()
           section = sections[section_name]
           new_option_names = req.args['new-options-' + section_name].split(',')
           section_default_values = default_values.get(section_name, None)
-          
+
           field_added = False
           for new_option_name in new_option_names:
             new_option_name = new_option_name.strip()
             if new_option_name in section:
               continue # field already exists
-            
+
             if self.valid_option_name_chars_regexp.match(new_option_name) is None:
               add_warning(req, _('The option name %s is invalid.') % new_option_name)
               continue
-              
+
             new_option = self._create_new_field_instance(req, section_name, new_option_name, section_default_values)
             if new_option['access'] != ACCESS_MODIFIABLE:
               add_warning(req, _('The new option %s could not be added due to security restrictions.') % new_option_name)
               continue
-            
+
             self._add_session_custom_option(req, section_name, new_option_name)
             field_added = True
-          
+
           if field_added:
             add_notice(req, _('The new fields have been added to section %s.') % section_name)
           else:
             add_warning(req, _('No new fields have been added.'))
-        
+
         req.redirect(req.href.admin(cat, page) + ext)
         return None
-    
+
     # Split sections dict for faster template rendering
     modifiable_options = { }
     readonly_options = { }
@@ -366,7 +370,7 @@ class TracIniAdminPanel(Component):
           sect_readonly[option_name] = option
         else:
           sect_hidden[option_name] = option
-      
+
       modifiable_options[section_name] = sect_modifiable
       readonly_options[section_name] = sect_readonly
       hidden_options[section_name] = sect_hidden
@@ -377,8 +381,8 @@ class TracIniAdminPanel(Component):
       doc = section.__doc__
       if doc:
         descriptions[name] = dgettext(section.doc_domain, doc)
-    
-    data = { 'all_section_names': all_section_names, 
+
+    data = { 'all_section_names': all_section_names,
              'sections' : sections,
              'descriptions' : descriptions,
              'modifiable_options': modifiable_options,
@@ -416,7 +420,7 @@ class TracIniAdminPanel(Component):
   @staticmethod
   def _fixname(name):
     return re.sub('[:.]', '_', name);
-    
+
   def _get_session_value(self, req, section_name, option_name):
     """ Returns the value for an unsaved option stored in the current session,
         if it exists. Values get removed here when they're saved/applied.
@@ -426,26 +430,26 @@ class TracIniAdminPanel(Component):
       return True, req.session[name]
     else:
       return False, None
-    
+
   def _set_session_value(self, req, section_name, option_name, option_value):
     """ Stores the value of an unsaved option in the current session. """
     name = 'inieditor|%s|%s' % (section_name, option_name)
     req.session[name] = option_value
-      
+
   def _remove_session_value(self, req, section_name, option_name):
     """ Removes the value of an unsaved option from the current session. """
     name = 'inieditor|%s|%s' % (section_name, option_name)
     if name in req.session:
       del req.session[name]
-      
+
   def _add_session_custom_option(self, req, section_name, option_name):
-    """ Used to remember a custom (new) option which isn't backed by 
+    """ Used to remember a custom (new) option which isn't backed by
         "Option.registry". Without storing it here, such options would be
         lost when using "req.redirect()".
     """
     name = 'inieditor-custom|%s|%s' % (section_name, option_name)
     req.session[name] = True
-    
+
   def _get_session_custom_options(self, req, filter_section_name = None):
     """ Retrieves the remembered custom (new) options. If "filter_section_name"
         is None, the options for all sections will be returned. Otherwise only
@@ -455,29 +459,29 @@ class TracIniAdminPanel(Component):
     for item_name in req.session.keys():
       if not item_name.startswith('inieditor-custom|'):
         continue
-        
+
       parts = item_name.split('|', 3)
       if len(parts) < 3:
         continue
-        
+
       section_name = parts[1]
       option_name = parts[2]
-      
+
       if filter_section_name is not None and section_name != filter_section_name:
         continue
-        
+
       if section_name in sections:
         sections[section_name][option_name] = True
       else:
         sections[section_name] = { option_name: True }
-        
+
     return sections
-    
+
   def _remove_session_custom_option(self, req, section_name, option_name):
     name = 'inieditor-custom|%s|%s' % (section_name, option_name)
     if name in req.session:
       del req.session[name]
-    
+
   def _read_section_config(self, req, section_name, default_values, custom_options = None):
     """ Gathers all existing information about the specified section. Retrieves
         this information from "self.config" (stored options and options from the
@@ -492,28 +496,28 @@ class TracIniAdminPanel(Component):
         option['value'] = value
       else:
         option['value'] = stored_value
-      
+
       option['stored_value'] = stored_value
       return option
-    
+
     options = {}
     section_default_values = default_values.get(section_name, None)
 
     for option_name, stored_value in self.config.options(section_name):
       options[option_name] = _assemble_option(option_name, stored_value)
-      
+
     if custom_options is None:
       custom_options = self._get_session_custom_options(req, section_name)
-    
+
     if section_name in custom_options:
       for option_name in custom_options[section_name].keys():
         if option_name in options:
           continue
-        
+
         options[option_name] = _assemble_option(option_name, None)
-      
+
     return options
-    
+
   def _convert_value(self, value, option = None):
     """ Converts a config value into a string so that it can be used by Genshi
         without needing to convert or escape anything.
@@ -527,13 +531,13 @@ class TracIniAdminPanel(Component):
           return 'false'
       elif (option_type == 'ListOption' or option_type == 'OrderedExtensionsOption') and type(value).__name__ == 'list':
         return unicode(option.sep).join(value)
-    
+
     if value is None:
       return ''
-    
+
     return unicode(value)
-    
-  def _gather_option_data(self, req, section_name, option_name, section_default_values):    
+
+  def _gather_option_data(self, req, section_name, option_name, section_default_values):
     option = None
     if (section_name, option_name) in Option.registry:
       # Allow wiki formatting in descriptions
@@ -548,23 +552,23 @@ class TracIniAdminPanel(Component):
     else:
       option_desc = None
       option_type = N_('text')
-      
+
     # See "IniEditorBasicSecurityManager" for why we use a pipe char here.
     if ('%s|%s' % (section_name, option_name)) in self.password_options_set:
       option_type = N_('password')
-      
+
     if section_default_values:
       default_value = (self._convert_value(section_default_values.get(option_name), option) or '')
     else:
       default_value = ''
-      
-    return { 'default_value': default_value, 'desc': option_desc, 'type': option_type, 
+
+    return { 'default_value': default_value, 'desc': option_desc, 'type': option_type,
              'option_info': option, 'access': self._check_option_access(section_name, option_name) }
 
-  def _create_new_field_instance(self, req, section_name, option_name, section_default_values, value = None):    
+  def _create_new_field_instance(self, req, section_name, option_name, section_default_values, value = None):
     option = self._gather_option_data(req, section_name, option_name, section_default_values)
     option['stored_value'] = option['default_value']
-   
+
     self._set_option_value(req, section_name, option_name, option, value)
     return option
 
@@ -572,19 +576,19 @@ class TracIniAdminPanel(Component):
     if option['access'] != ACCESS_MODIFIABLE:
       option['value'] = option['stored_value']
       return
-      
+
     if value is None:
       value = option['default_value']
-    
+
     option['value'] = value
     if value != option['stored_value']:
       self._set_session_value(req, section_name, option_name, value)
     else:
       self._remove_session_value(req, section_name, option_name)
-      
+
   def _check_option_access(self, section_name, option_name):
     return self.security_manager.get_option_access(section_name, option_name)
-    
+
   def _is_option_value_valid(self, section_name, option_name, option_value):
     is_valid, reason = self.security_manager.is_value_valid(section_name, option_name, option_value)
     if not is_valid and (reason is None or reason == ''):
@@ -593,13 +597,13 @@ class TracIniAdminPanel(Component):
 
   def _apply_section_changes(self, req, section_name, options):
     values_applied = False #indicates whether at least one value has been set
-    
+
     for option_name, option in options.items():
       if option['access'] != ACCESS_MODIFIABLE:
         # Simply ignore options we don't have access to.
         self._remove_session_value(req, section_name, option_name) # remove if exists
         continue
-      
+
       if option['value'] == option['default_value']:
         #
         # The option shall use its default value
@@ -612,13 +616,13 @@ class TracIniAdminPanel(Component):
 
           self.log.info("Removing option: [" + section_name + "] " + option_name)
           self.config.remove(section_name, option_name)
-          
-          # Check whether the option was actually removed (i.e. reset to its 
+
+          # Check whether the option was actually removed (i.e. reset to its
           # default value). The option can't be removed if it's set in a parent
           # trac.ini. In this case we set the default value explicitly.
           #
           # NOTE: The option may haven been defined with its default value in a
-          #   parent trac.ini as well as in the project's trac ini with a 
+          #   parent trac.ini as well as in the project's trac ini with a
           #   non-default value. Because of this we need to recheck against the
           #   default value here.
           if self.config.has_option(section_name, option_name) and \
@@ -633,25 +637,25 @@ class TracIniAdminPanel(Component):
           if option['type'] == 'password' and option['value'] == '':
             # An empty password field means: Don't change the password
             continue
-          
+
           is_valid, reason = self._is_option_value_valid(section_name, option_name, option['value'])
           if not is_valid:
             add_warning(req, _('The value for option "%s" in section "%s" is invalid. Reason: %s') % (option_name, section_name, reason))
             continue
-          
+
           self.log.info("Setting option: [" + section_name + "] " + option_name + " to: " + option['value'])
           self.config.set(section_name, option_name, option['value'])
-          
+
       option['stored_value'] = option['value']
-      
-      # Remove applied value 
+
+      # Remove applied value
       self._remove_session_value(req, section_name, option_name)
-      
+
       values_applied = True
-      
+
     return values_applied
-          
-          
+
+
   def _discard_section_changes(self, req, section_name, options):
     for option_name, option in options.items():
       option['value'] = option['stored_value']
@@ -663,7 +667,7 @@ class TracIniAdminPanel(Component):
   #
   def get_templates_dirs(self):
     """Return a list of directories containing the provided template files.
-    """  
+    """
     from pkg_resources import resource_filename
     return [ resource_filename(__name__, 'templates') ]
     # return []
@@ -675,7 +679,7 @@ class TracIniAdminPanel(Component):
         Each item in the list must be a `(prefix, abspath)` tuple. The
         `prefix` part defines the path in the URL that requests to these
         resources are prefixed with.
-      
+
         The `abspath` is the absolute path to the directory containing the
         resources on the local file system.
     """

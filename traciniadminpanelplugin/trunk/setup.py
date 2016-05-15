@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 
 NAME = 'TracIniAdminPanel'
 PACKAGE = 'inieditorpanel'
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 
 extra = {}
 try:
@@ -37,22 +37,22 @@ except ImportError:
 setup(
     name = NAME,
     version = VERSION,
-    
+
     author = "Sebastian Krysmanski, Dirk Stöcker",
     author_email = 'trac@dstoecker.de',
-    url = "http://trac-hacks.org/wiki/TracIniAdminPanelPlugin",
+    url = "https://trac-hacks.org/wiki/TracIniAdminPanelPlugin",
     description = "An admin panel for editing trac.ini",
     keywords = "trac plugin",
     license = "BSD",
     classifiers=[
         'Framework :: Trac',
-        'License :: OSI Approved :: BSD License', 
+        'License :: OSI Approved :: BSD License',
     ],
     install_requires = ['Trac>=1.0'],
     packages = find_packages(exclude=['*.texts*']),
     package_data = { PACKAGE: [ 'templates/*', 'htdocs/*', 'locale/*/LC_MESSAGES/*.mo' ] },
-                                         
-    entry_points = { 'trac.plugins': [ 
+
+    entry_points = { 'trac.plugins': [
         '%s.web_ui = %s.web_ui' % (PACKAGE, PACKAGE),
         '%s.default_manager = %s.default_manager' % (PACKAGE, PACKAGE),
         # Add additional components here
