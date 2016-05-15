@@ -1,12 +1,5 @@
-"""
- Copyright (c) 2008-2009 by Martin Scharrer <martin@scharrer-online.de>
-"""
-
-__url__      = ur"$URL$"[6:-2]
-__author__   = ur"$Author$"[9:-2]
-__revision__ = r"$Rev$"[6:-2]
-__date__     = r"$Date$"[7:-2]
-
+# -*- coding: utf-8 -*-
+# Copyright (c) 2008-2009 by Martin Scharrer <martin@scharrer-online.de>
 
 from trac.core import *
 from trac.wiki.api import IWikiMacroProvider
@@ -23,10 +16,8 @@ from time import time as unixtime
 from tracadvparseargs import parse_args
 
 class ListOfWikiPagesComponent(Component):
-    implements ( IWikiMacroProvider, IRequestFilter, ITemplateProvider )
 
-    rev = __revision__
-    date = __date__
+    implements ( IWikiMacroProvider, IRequestFilter, ITemplateProvider )
 
     long_format = False
 
@@ -88,7 +79,7 @@ class ListOfWikiPagesComponent(Component):
           val = int(unixtime()) - val
           # mod for trac 0.12
           nval = to_utimestamp(to_datetime(val))
-          
+
         except:
           raise TracError("Invalid value '%s' for argument '%s'! "
               % (self.kwargs[name],name) )
@@ -105,7 +96,7 @@ class ListOfWikiPagesComponent(Component):
         ntime = from_utimestamp(time)
         return [ tag.span( format_datetime  ( ntime ) ),
                  tag.span(
-                    " (", 
+                    " (",
                     tag.a( pretty_timedelta ( ntime ),
                            href = self.href('timeline',
                                   precision='seconds', from_=
@@ -176,16 +167,16 @@ Website: http://trac-hacks.org/wiki/ListOfWikiPagesMacro
 
 `$Id$`
 
-The macro `ListOfWikiPages` prints a table of all (user generated, i.e. 
-non-trac-default) wiki pages with last changed date and author as requested in 
+The macro `ListOfWikiPages` prints a table of all (user generated, i.e.
+non-trac-default) wiki pages with last changed date and author as requested in
 Request-a-Hack th:#2427.
-Version 0.2 provides also a long format which also includes the newest version 
-number and links to the difference and the history as well as the last comment.  
+Version 0.2 provides also a long format which also includes the newest version
+number and links to the difference and the history as well as the last comment.
 This was requested by th:#4717.
 
-The second macro provided by this package is `LastChangesBy` which prints the 
-last changes made by the given user or the logged-in user if no username is 
-given. 
+The second macro provided by this package is `LastChangesBy` which prints the
+last changes made by the given user or the logged-in user if no username is
+given.
 
 == Usage ==
 
@@ -200,11 +191,11 @@ which prints a table of all wiki pages, or with a list of wiki pages:
 [[ListOfWikiPages(ThatWikiPage,ThisWikiPage,AnotherWikiPage,format=...)]]
 }}}
 
-Since v0.3 the optional arguments `from` and `to` can be used to specify a 
+Since v0.3 the optional arguments `from` and `to` can be used to specify a
 time/date range as requested by th:#5344.
-The values of this arguments are taken as negative offsets to the current time 
+The values of this arguments are taken as negative offsets to the current time
 (i.e. the time the wiki page is displayed).
-Allowed is a number followed by a unit which can be `s`,`m`,`h`,`d`,`w`,`o`,`y` 
+Allowed is a number followed by a unit which can be `s`,`m`,`h`,`d`,`w`,`o`,`y`
 for seconds, minutes, hours, days, weeks, month and years.
 If the unit is missing seconds are assumed.
 
@@ -236,7 +227,7 @@ The wildcards '`*`' (matches everything) and '`?`' (matches a single character) 
         self.href = formatter.req.href
         section = 'listofwikipages'
 
-        long_format = self.env.config.get(section, 'default_format', 
+        long_format = self.env.config.get(section, 'default_format',
             'short').lower() == 'long'
         if 'format' in kwargs:
           long_format = kwargs['format'].lower() == 'long'
@@ -261,8 +252,8 @@ The wildcards '`*`' (matches everything) and '`?`' (matches a single character) 
         self.kwargs = kwargs
         dfrom, fromtext = self.timeval('from', (0,''))
         dto, totext     = self.timeval('to',   (int(unixtime()),''))
-       
-       
+
+
         if 'from' in kwargs or 'to' in kwargs:
           sql_time = " time BETWEEN %d AND %d AND " % (dfrom,dto)
         else:
@@ -304,7 +295,7 @@ The wildcards '`*`' (matches everything) and '`?`' (matches a single character) 
 
     def LastChangesBy(self, formatter, content):
         """
-This macro prints a table similar to the `[[ListOfWikiPages]]` only with the 
+This macro prints a table similar to the `[[ListOfWikiPages]]` only with the
 ''By'' column missing and the author name in the table head.
 {{{
 [[LastChangesBy(martin_s)]]          # the last 5 changes by user `martin_s`
@@ -331,7 +322,7 @@ This macro prints a table similar to the `[[ListOfWikiPages]]` only with the
         self.href = formatter.req.href
         section = 'listofwikipages'
 
-        long_format = self.env.config.get(section, 'default_format', 
+        long_format = self.env.config.get(section, 'default_format',
             'short').lower() == 'long'
         if 'format' in kwargs:
           long_format = kwargs['format'].lower() == 'long'
