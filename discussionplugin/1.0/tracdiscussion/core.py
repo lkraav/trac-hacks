@@ -19,7 +19,7 @@ from trac.resource import Resource, get_resource_url
 from trac.search import ISearchSource
 from trac.util.html import html
 from trac.util.translation import _, N_
-from trac.web.chrome import INavigationContributor, ITemplateProvider
+from trac.web.chrome import Chrome, INavigationContributor, ITemplateProvider
 from trac.web.chrome import add_link, web_context
 from trac.web.main import IRequestHandler
 
