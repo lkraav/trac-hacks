@@ -580,18 +580,24 @@ class PeerReviewModelProvider(Component):
     def upgrade_environment(self, db=None):
         # Create or update db. We are going step by step through all database versions.
 
-        self.upgrade_env_to_db2()  # This is the legacy database from the dawn of time
+        if self.current_db_version != 0 and self.current_db_version < 6:
+            raise TracError("Upgrade for database version %s not supported. Raise a ticket for "
+                            "PeerReviewPlugin for a fix"
+                            % self.current_db_version)
+
+        #raise TracError("Now upgrading or creating")
+        #self.upgrade_env_to_db2()  # This is the legacy database from the dawn of time
 
         # At this point at least all legacy tables are installed with db version 2.
         # Make sure we have a db version set for tables other than 'peerreview'
-        self.ensure_table_versions()
+        #self.ensure_table_versions()
 
         # Add change and custom tables
         # During past db upgrades the change and custom tables may have been created in a broken way because
         # the primary keys of the tables were set incorrectly.
         # We remove all broken tables here and create proper ones again. This is only done for the following versions:
         # peer_review: 5, peerreviewer: 4, peerreviewcomment: 5, peerreviewfile: 4
-        self.add_change_custom_tables()
+        #self.add_change_custom_tables()
 
         self.upgrade_tracgeneric()
 
@@ -604,11 +610,65 @@ class PeerReviewModelProvider(Component):
 
                 if need_db_create_for_realm(self.env, realm, realm_metadata, db):
                     create_db_for_realm(self.env, realm, realm_metadata, db)
+                    self.add_workflows()
 
                 elif need_db_upgrade_for_realm(self.env, realm, realm_metadata, db):
                     upgrade_db_for_realm(self.env, 'codereview.upgrades', realm, realm_metadata, db)
 
+    def add_workflows(self):
+
+        env = self.env
+        # Add default workflow for peerreview
+
+        wf_data = [['approve', 'reviewed -> approved'],
+                   ['approve.name', 'Approve the review'],
+                   ['close', 'new, reviewed, in-review -> closed'],
+                   ['close.name', 'Close review'],
+                   ['disapprove', 'reviewed -> disapproved'],
+                   ['disapprove.name', 'Deny this review'],
+                   ['reopen', 'closed, reviewed, approved, disapproved -> new'],
+                   ['reopen.permissions', 'CODE_REVIEW_MGR'],
+                   ['review-done', 'in-review -> reviewed'],
+                   ['review-done.name', 'Mark as reviewed'],
+                   ['reviewing', 'new -> in-review'],
+                   ['reviewing.default', '5'],
+                   ['reviewing.name', 'Start review'],
+                   ['change_owner','* -> *'],
+                   ['change_owner.name','Change Owner to'],
+                   ['change_owner.operations','set_review_owner'],
+                   ['change_owner.permissions','CODE_REVIEW_MGR'],
+                   ['change_owner.default','-1'],
+                   ]
+        wf_section = 'peerreview-resource_workflow'
+
+        if wf_section not in env.config.sections():
+            env.log.info("Adding default workflow for 'peerreview' to config.")
+            for item in wf_data:
+                env.config.set(wf_section, item[0], item[1])
+            env.config.save()
+
+        # Add default workflow for peerreviewer
+
+        wf_data = [['reviewing', 'new -> in-review'],
+                   ['reviewing.name', 'Start review'],
+                   ['review_done', 'in-review -> reviewed'],
+                   ['review_done.name', 'Mark review as done.'],
+                   ['reopen', 'in-review, reviewed -> new'],
+                   ['reopen.name', "Reset review state to 'new'"],
+                   ]
+        wf_section = 'peerreviewer-resource_workflow'
+
+        if wf_section not in env.config.sections():
+            env.log.info("Adding default workflow for 'peerreviewer' to config.")
+            for item in wf_data:
+                env.config.set(wf_section, item[0], item[1])
+            env.config.save()
+
     def add_change_custom_tables(self):
+        """
+        This is deprecated and not used anymore because upgrading breaks for databases != SQLite for
+        peerreview_version < 6.
+        """
         def _add_tables():
             @self.env.with_transaction()
             def do_change_custom(db):
@@ -643,7 +703,11 @@ class PeerReviewModelProvider(Component):
             _add_tables()
 
     def ensure_table_versions(self):
-        """Make sure that for each peerreview table there is a version in the system table."""
+        """Make sure that for each peerreview table there is a version in the system table.
+
+        This is deprecated and not used anymore because upgrading breaks for databases != SQLite for
+        peerreview_version < 6.
+        """
         @self.env.with_transaction()
         def add_tables(db):
             db_names = [u'peerreviewfile_version', u'peerreviewcomment_version',
@@ -659,7 +723,10 @@ class PeerReviewModelProvider(Component):
                     db.commit()
 
     def upgrade_env_to_db2(self):
-        """Update database to hold tables from before using TracGenericClass"""
+        """Update database to hold tables from before using TracGenericClass
+
+        This is deprecated and not used anymore because upgrading breaks for databases != SQLite
+        """
 
         @self.env.with_transaction()
         def do_upgrade(db):
@@ -681,6 +748,9 @@ class PeerReviewModelProvider(Component):
     def _create_custom_change_db_for_realm(self, realm, realm_schema, db=None):
 
         """
+        This is deprecated and not used anymore because upgrading breaks for databases != SQLite.
+        The normal TracGeneric upgrade mechanism is used now.
+
         Call this method from inside your Component IEnvironmentSetupParticipant's
         upgrade_environment() function to create the database tables corresponding to
         your Component's generic classes.
@@ -772,7 +842,10 @@ class PeerReviewModelProvider(Component):
         return val
 
     def _set_version(self, cursor, cur_ver):
-        """This is ONLY used for update to version 2!"""
+        """This is ONLY used for update to version 2!
+
+        This is deprecated and not used anymore because upgrading breaks for databases != SQLite
+        """
         db_names = [u'peerreview_version', u'peerreviewfile_version', u'peerreviewcomment_version']
         if not self.current_db_version:
             for name in db_names:
