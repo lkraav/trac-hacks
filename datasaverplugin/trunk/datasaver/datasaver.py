@@ -26,8 +26,8 @@ class DataSaverModule(Component):
 
     def post_process_request(self, req, template, data, content_type):
         add_script(req, 'datasaver/datasaver.js')
-        if req.locale is not None: 
- 	    add_script(req, 'datasaver/lang_js/%s.js' % req.locale)
+        if req.locale is not None:
+            add_script(req, 'datasaver/lang_js/%s.js' % req.locale)
         add_stylesheet(req, 'datasaver/datasaver.css')
         add_ctxtnav(req, tag.a(_('Restore Form') , id='datasaver_restorer',
                     href='javascript:datasaver_restore()'))
@@ -38,4 +38,3 @@ class DataSaverModule(Component):
 
     def get_htdocs_dirs(self):
         return [('datasaver', resource_filename(__name__, 'htdocs'))]
-
