@@ -1,6 +1,6 @@
 import re, sys
 
-from pkg_resources         import resource_filename
+from pkg_resources         import resource_filename, resource_exists
 
 from genshi.builder        import tag
 from trac.core             import Component, implements
@@ -26,7 +26,9 @@ class DataSaverModule(Component):
 
     def post_process_request(self, req, template, data, content_type):
         add_script(req, 'datasaver/datasaver.js')
-        if req.locale is not None:
+        if req.locale is not None and \
+                resource_exists('datasaver',
+                                'htdocs/lang_js/%s.js' % req.locale):
             add_script(req, 'datasaver/lang_js/%s.js' % req.locale)
         add_stylesheet(req, 'datasaver/datasaver.css')
         add_ctxtnav(req, tag.a(_('Restore Form') , id='datasaver_restorer',
