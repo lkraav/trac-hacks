@@ -11,7 +11,7 @@ from trac.env          import IEnvironmentSetupParticipant
 from trac.mimeview.api import IHTMLPreviewRenderer
 from trac.util         import md5, to_unicode
 from trac.web.api      import IRequestFilter, IRequestHandler, RequestDone
-from trac.web.chrome   import ITemplateProvider, add_script, add_stylesheet
+from trac.web.chrome   import Chrome, ITemplateProvider, add_script, add_stylesheet
 from trac.web.href     import Href
 from trac.wiki.api     import IWikiMacroProvider, parse_args
 from tracextracturl    import extract_url
@@ -126,10 +126,13 @@ class MindMapMacro(Component):
         add_script( req, 'mindmap/tools.flashembed-1.0.4.min.js', mimetype='text/javascript' )
         add_script( req, 'mindmap/mindmap.js', mimetype='text/javascript' )
         if self.resizable:
-            add_stylesheet( req, 'mindmap/ui.theme.css', mimetype='text/css' )
-            add_stylesheet( req, 'mindmap/ui.resizable.css', mimetype='text/css' )
-            add_script( req, 'mindmap/ui.core.js', mimetype='text/javascript' )
-            add_script( req, 'mindmap/ui.resizable.js', mimetype='text/javascript' )
+            if hasattr(Chrome, 'add_jquery_ui'):
+                Chrome(self.env).add_jquery_ui(req)
+            else:
+                add_stylesheet(req, 'mindmap/ui.theme.css', mimetype='text/css')
+                add_stylesheet(req, 'mindmap/ui.resizable.css', mimetype='text/css')
+                add_script(req, 'mindmap/ui.core.js', mimetype='text/javascript')
+                add_script(req, 'mindmap/ui.resizable.js', mimetype='text/javascript')
         return (template, data, content_type)
 
 
