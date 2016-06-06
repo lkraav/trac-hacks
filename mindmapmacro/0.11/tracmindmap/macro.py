@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-__url__      = ur"$URL$"[6:-2]
-__author__   = ur"$Author$"[9:-2]
-__revision__ = int("0" + ur"$Rev$"[6:-2])
-__date__     = ur"$Date$"[7:-2]
 
 from trac.core         import *
 from trac.resource     import *
@@ -23,12 +19,6 @@ from tracextracturl    import extract_url
 mindmaps = dict()
 
 class MindMapMacro(Component):
-    """
-Website: http://trac-hacks.org/wiki/MindMapMacro
-
-`$Id$`
-
-    """
     implements ( IWikiMacroProvider, IHTMLPreviewRenderer, ITemplateProvider,
                  IRequestHandler, IRequestFilter, IEnvironmentSetupParticipant )
 
