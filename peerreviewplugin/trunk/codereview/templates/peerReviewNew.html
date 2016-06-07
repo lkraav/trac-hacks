@@ -104,9 +104,9 @@
                             <tr py:for="item in prevFiles" id="${item.element_id}" class="${cls.next()}">
                                 <td>
                                     <input type="hidden" name="file"
-                                           value="${item['path']},${item['revision']},${item['line_start']},${item['line_end']}"/>
+                                           value="${item.id_string}"/>
                                     <a py:if="not item.num_comments"
-                                       href="javascript:removefile('${item['path']},${item['revision']},${item['line_start']},${item['line_end']}')">${item['path']}
+                                       href="javascript:removefile('${item.id_string}')">${item['path']}
                                     </a>
                                     <py:if test="item.num_comments">${item['path']}</py:if>
                                 </td>

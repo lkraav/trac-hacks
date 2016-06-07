@@ -37,8 +37,13 @@ def java_string_hashcode(s):
     return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
 
 
+def create_id_string(f):
+    return "%s,%s,%s,%s,%s" %\
+           (f['path'], f['revision'], f['line_start'], f['line_end'], f['repo'])
+
+
 def create_file_hash_id(f):
-    return 'id%s' % java_string_hashcode("%s,%s,%s,%s" % (f['path'], f['revision'], f['line_start'], f['line_end']))
+    return 'id%s' % java_string_hashcode(create_id_string(f))
 
 
 def add_users_to_data(env, reviewID, data):
@@ -152,6 +157,7 @@ class NewReviewModule(Component):
             for f in rfiles:
                 # This id is used by the javascript code to find duplicate entries.
                 f.element_id = create_file_hash_id(f)
+                f.id_string = create_id_string(f)
                 if req.args.get('modify'):
                     comments = Comment.select_by_file_id(self.env, f['file_id'])
                     f.num_comments = len(comments) or 0
@@ -255,8 +261,9 @@ class NewReviewModule(Component):
                 rfile['revision'] = segment[1]
             rfile['line_start'] = segment[2]
             rfile['line_end'] = segment[3]
-            repos = RepositoryManager(self.env).get_repository('')
-            node, display_rev, context = get_node_from_repo(req, repos, rfile['path'], rfile['revision'])
+            rfile['repo'] = segment[4]
+            repo = RepositoryManager(self.env).get_repository(rfile['repo'])
+            node, display_rev, context = get_node_from_repo(req, repo, rfile['path'], rfile['revision'])
             rfile['changerevision'] = unicode(node.created_rev)
             rfile['hash'] = self._hash_from_file_node(node)
             rfile.insert()
@@ -312,7 +319,7 @@ class NewReviewModule(Component):
         old_files = []
         rfiles = {}
         for f in ReviewFileModel.select_by_review(self.env, review['review_id']):
-            fid = u"%s,%s,%s,%s" % (f['path'], f['revision'], f['line_start'], f['line_end'])
+            fid = u"%s,%s,%s,%s,%s" % (f['path'], f['revision'], f['line_start'], f['line_end'], f['repo'])
             old_files.append(fid)
             rfiles[fid] = f
 

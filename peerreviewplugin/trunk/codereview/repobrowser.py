@@ -94,7 +94,8 @@ class PeerReviewBrowser(Component):
             data['norepo'] = _("No source repository available.")
             return 'repobrowser.html', data, None
 
-        if cur_repo not in data['all_repos']:  # This happens if we have no default repo and open the page for the first time
+        if cur_repo not in data['all_repos'] or req.args.get('repo', None) == None:
+            # This happens if we have no default repo and open the page for the first time
             data['show_repo_idx'] = True
             return 'repobrowser.html', data, None
 
