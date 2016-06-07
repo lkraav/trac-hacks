@@ -1,0 +1,118 @@
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+    <xi:include href="admin.html" />
+    <head>
+        <title>Project File Information</title>
+    </head>
+    <body>
+        <h2>Manage Project File Information</h2>
+        <py:choose test="view">
+            <form py:when="'detail'" class="mod" id="modprojinfo" method="post" action="">
+                <fieldset>
+                    <legend>Add Project Info</legend>
+                    <div class="field">
+                        <label>Project Name:</label>
+                        <input type="text" class="form-control" maxlength="255" id="projname"
+                               name="projectname" value="$projectname" />
+                    </div>
+                    <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
+                    <div class="field">
+                        <label>Root Folder:</label>
+                        <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                               name="rootfolder" value="$rootfolder" />
+                    </div>
+                    <p class="help">The root folder in the repository holding all the project files.</p>
+                    <div class="field">
+                        <label>Ignored Extensions:</label>
+                        <input type="text" class="form-control" maxlength="255" id="extensions"
+                               name="extensions" value="$extensions" />
+                    </div>
+                    <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
+                        Example: <strong>.tmb, .zip</strong>.</p>
+                    <div class="buttons">
+                        <input type="submit" name="cancel" value="${_('Cancel')}" />
+                        <input type="submit" name="save" value="${_('Save')}" />
+                    </div>
+                </fieldset>
+                <p class="help">Saving may need some time because all the files for a project are gathered and processed
+                    for future report generation.</p>
+            </form>
+
+            <py:otherwise>
+                <form action="" id="addprojinfo" method="post">
+                    <fieldset>
+                        <legend>Add Project Info</legend>
+                        <div class="field">
+                            <label>Project Name:</label>
+                            <input type="text" class="form-control" maxlength="255" id="projname"
+                                   name="projectname" value="$projectname" />
+                        </div>
+                        <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
+                        <div class="field">
+                            <label>Root Folder:</label>
+                            <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                                   name="rootfolder" value="$rootfolder" />
+                        </div>
+                        <p class="help">The root folder in the repository holding all the project files.</p>
+                        <div class="field">
+                            <label>Ignored Extensions:</label>
+                            <input type="text" class="form-control" maxlength="255" id="extensions"
+                                   name="extensions" value="$extensions" />
+                        </div>
+                        <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
+                        Example: <strong>.tmb, .zip</strong>.</p>
+                        <div class="buttons">
+                            <input name="add" value="${_('Add')}" type="submit" />
+                        </div>
+                    </fieldset>
+                    <p class="help">Adding a project may need some time because all the files for a project are gathered and processed
+                        for future report generation.</p>
+                </form>
+
+                <form py:if="projects" id="projinfo_table" method="post" action="">
+                    <table class="listing" id="projinfolist">
+                        <thead>
+                        <tr><th class="sel">&nbsp;</th>
+                            <th>Project</th><th>Root Folder</th><th>Extensions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr py:for="proj in projects">
+                            <td class="sel"><input type="checkbox" name="sel" value="${proj[0]}" /></td>
+                            <td class="name">
+                                <a href="${panel_href(proj[0])}">${proj[0]}</a>
+                            </td>
+                            <td class="owner">${proj[1].rootfolder}</td>
+                            <td class="extensions">${proj[1].extensions}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="buttons">
+                        <input type="submit" name="remove" value="${_('Remove selected items')}" />
+                    </div>
+                </form>
+                <div py:if="not projects" class="system-message notice">
+                    <p>There is no project file information defined yet.</p>
+                </div>
+                <div>
+                    <p>
+                        You may define a project identifier and a root folder from the repository holding all the files
+                        of a project here.
+                        When saving the information all the files in the folder hierarchy are hashed and file name,
+                        revision, hash and project name are inserted in the database.
+                    </p>
+                    <p>
+                        Using the file information it is possible to create reports
+                        (see <a href="${href.wiki('TracReports')}">TracReports</a> for more information) like which
+                        files may need a review and more.
+                    </p>
+                </div>
+            </py:otherwise>
+        </py:choose>
+    </body>
+</html>
