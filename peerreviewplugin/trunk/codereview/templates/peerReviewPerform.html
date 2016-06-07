@@ -74,6 +74,8 @@
             <dl class="overview" id="file-info">
                 <dt>Path:</dt>
                 <dd>${review_file['path']}</dd>
+                <dt>Repository:</dt>
+                <dd>${review_file['repo'] if review_file['repo'] else '(default)'}</dd>
                 <dt>Revision:</dt>
                 <dd>${review_file['revision']}</dd>
                 <dt>Start Line:</dt>

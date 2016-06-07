@@ -67,6 +67,7 @@
                 <tr>
                     <th>File ID</th>
                     <th>Filename</th>
+                    <th>Repository</th>
                     <th py:if="parent_review">Old Revision</th>
                     <th>Revision</th>
                     <th>Line Numbers</th>
@@ -76,12 +77,13 @@
                 </tr>
                 </thead>
                 <tbody py:with="cls=cycle(('odd', 'even'))">
-                <tr py:if="not review_files" class="even" colspan="5">
+                <tr py:if="not review_files" class="even" colspan="8">
                     <td>There are no files included in this code review.</td>
                 </tr>
                 <tr py:for="item in review_files" class="${cls.next()}" id="$item['file_id']">
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
+                    <td>${item['repo'] if item['repo'] else '(default)'}</td>
                     <td py:if="parent_review">${file_map[item['file_id']]['revision']}</td>
                     <td>${item['revision']}</td>
                     <td py:if="item['line_start'] != 0">${item['line_start']} -
