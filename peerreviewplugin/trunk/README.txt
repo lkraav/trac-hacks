@@ -66,5 +66,5 @@ Adam Westhusing
 ===================
 Contact information
 ===================
-Website - http://tracreview.sourceforge.net
-Email   - tracteam5@users.sourceforge.net
+Website - https://trac-hacks.org/wiki/PeerReviewPlugin
+

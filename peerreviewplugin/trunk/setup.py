@@ -12,11 +12,11 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracCodeReview',
-    version='2.3',
+    version='3.0',
     author="Team5",
     author_email="UNKNOWN",
-    maintainer="Olemis Lang",
-    maintainer_email="olemis+trac@gmail.com",
+    maintainer="Cinc",
+    maintainer_email="",
     description="Framework for code review in Trac.",
     license="3-Clause BSD",
     keywords="trac plugin code peer review",
