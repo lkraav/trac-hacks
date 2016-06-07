@@ -1,0 +1,155 @@
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include href="layout.html"/>
+
+    <head>
+        <title>Create Code Review</title>
+    </head>
+
+    <body>
+        <div id="content" py:with="modify = req.args.get('modify', 0)">
+            <h1 py:if="not modify">Create a New Code Review</h1>
+            <h1 py:if="modify">Modify an existing Code Review</h1>
+
+            <!-- CodeReview name is empty if new, with previous name is resubmitted -->
+            <form class="workflow-actions" method="post" action="${href.peerReviewNew()}" onsubmit="return validateInput(this);" id="new-review">
+                <fieldset id="properties">
+                    <legend>General information.</legend>
+                    <table>
+                        <tr>
+                            <th>Name:</th>
+                            <td><input type="text" name="Name" value="${name}" id="review-name"/></td>
+                        </tr>
+                        <tr>
+                            <th>Project:</th>
+                            <td>
+                                <select id="project" name="project">
+                                    <option value=""> --- </option>
+                                    <option py:for="item in projects" value="${item}"
+                                            selected="${curproj == item or None}" >${item}</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Additional notes:</th>
+                            <td>
+                                <p class="help">You may use wiki formating here.</p>
+                                <!-- Display an empty notes area if it's a new CodeReview, display previous notes
+                                     if resubmitted -->
+                                <textarea class="trac-fullwidth" name="Notes" cols="60" rows="8" py:content="notes" id="review-notes"></textarea>
+                                <div id="noteschange" class="ticketdraft" style="display: none">
+                                    <p>Preview:</p>
+                                    <div class="notes-preview comment searchable">
+
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+
+
+                <fieldset>
+                    <legend py:if="not followup and not modify">Select the sections to be reviewed.</legend>
+                    <legend py:if="followup">Select the revision for the files.</legend>
+                    <legend py:if="modify">Modify the list of files.</legend>
+
+                    <p py:if="followup" class="help">The selected revision is used for all files in the list. If you want to
+                        compare a file with a different revision
+                        you have to create a code review just for this file.</p>
+                    <!-- Displays the file browser -->
+                    <div id="repo_browser" data-is-followup="${followup or None}"
+                         data-is-modify="$modify">
+                    </div>
+
+                    <div py:if="followup" id="follow-up-hint">
+                        <p class="help">You can't add files to the current review. You may use the source browser only for
+                            changing the revision and checking the files in the tree.</p>
+                    </div>
+
+                    <div py:if="modify">
+                        <p>You can't add files when modifying a review. Only files without comments may be removed</p>
+                    </div>
+
+                    <table py:if="not modify_" class="listing dirlist" id="myfilelist">
+                        <thead>
+                            <tr>
+                                <th>Filename (Click to remove)</th>
+                                <th>Start Line</th>
+                                <th>End Line</th>
+                                <th py:if="followup">Old Revision</th>
+                                <th>Revision</th>
+                                <th py:if="modify">Comments</th>
+                            </tr>
+                        </thead>
+                        <!-- Display an empty file list if it's a new CodeReview, display previous list if resubmitted -->
+                        <tbody py:if="new == 'yes'" id="myfilebody">
+                            <tr id="no-files" class="even">
+                                <td>No files have been added to the code review.</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td py:if="modify"></td>
+                                <td py:if="followup"></td>
+                            </tr>
+                        </tbody>
+
+                        <tbody py:with="cls=cycle(('odd', 'even'))" id="myfilebody">
+                            <tr py:for="item in prevFiles" id="${item.element_id}" class="${cls.next()}">
+                                <td>
+                                    <input type="hidden" name="file"
+                                           value="${item['path']},${item['revision']},${item['line_start']},${item['line_end']}"/>
+                                    <a py:if="not item.num_comments"
+                                       href="javascript:removefile('${item['path']},${item['revision']},${item['line_start']},${item['line_end']}')">${item['path']}
+                                    </a>
+                                    <py:if test="item.num_comments">${item['path']}</py:if>
+                                </td>
+                                <td>${item['line_start']}</td>
+                                <td>${item['line_end']}</td>
+                                <td>${item['revision']}</td>
+                                <td py:if="modify">${item.num_comments}</td>
+                                <td py:if="followup" class="newrev"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p  py:if="not modify" class="help">If <strong>Start Line</strong> and <strong>End Line</strong> are set to zero the
+                        whole file is selected for review.</p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Select reviewers for your review.</legend>
+                    <xi:include href="user_list.html"/>
+                </fieldset>
+
+                <fieldset>
+                    <div class="buttons">
+                        <input py:if="oldid" type="hidden" name="oldid" value="$oldid"/>
+                        <input py:if="not followup and not modify" type="submit" name="create"
+                               value="${new == 'yes' and 'Add Code Review' or 'Resubmit Code Review'}"/>
+                        <input py:if="followup" type="hidden" name="followup" value="1"/>
+                        <input py:if="followup" type="submit" name="createfollowup"
+                               value="${new == 'yes' and 'Add Code Review' or 'Add Followup Review'}"/>
+                        <input py:if="modify" type="submit" name="cancel" value="Cancel"/>
+                        <input py:if="modify" type="submit" name="save" value="Save Changes"/>
+                    </div>
+                </fieldset>
+
+            </form>
+            <div id="dialog-confirm" title="Remove file?">
+                <p>
+                    <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+                    Really remove the file <strong id="confirm-name"></strong>?</p>
+            </div>
+            <div id="user-rem-confirm" title="Remove user?">
+                <p>
+                    <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+                    Really remove the user <strong id="user-rem-name"></strong>?</p>
+            </div>
+            <script type="text/javascript" src="${href.chrome('hw/js/peerReviewNew.js')}"/>
+        </div>
+    </body>
+</html>
