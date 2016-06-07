@@ -25,7 +25,7 @@ from CodeReviewStruct import *
 from model import Comment, get_users, \
     PeerReviewerModel, PeerReviewModel, Reviewer, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
-from peerReviewBrowser import get_node_from_repo
+from repobrowser import get_node_from_repo
 from .repo import hash_from_file_node
 
 

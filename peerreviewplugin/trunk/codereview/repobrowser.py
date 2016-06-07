@@ -92,10 +92,10 @@ class PeerReviewBrowser(Component):
                 node, display_rev, context = get_node_from_repo(req, repos, path, rev)
             except NoSuchChangeset, e:
                 data['norepo'] = _(e.message)
-                return 'peerReviewBrowser.html', data, None
+                return 'repobrowser.html', data, None
         else:
             data['norepo'] = _("No source repository available.")
-            return 'peerReviewBrowser.html', data, None
+            return 'repobrowser.html', data, None
 
         hidden_properties = [p.strip() for p
                              in self.config.get('browser', 'hide_properties',
@@ -120,7 +120,7 @@ class PeerReviewBrowser(Component):
             'display_rev': display_rev,
             'wiki_format_messages': self.config['changeset'].getbool('wiki_format_messages')
         }
-        return 'peerReviewBrowser.html', data, None
+        return 'repobrowser.html', data, None
 
     # Internal methods
 

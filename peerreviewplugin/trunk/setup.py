@@ -12,7 +12,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracCodeReview',
-    version='3.0',
+    version='3.1',
     author="Team5",
     author_email="UNKNOWN",
     maintainer="Cinc",

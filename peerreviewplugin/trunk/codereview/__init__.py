@@ -11,7 +11,7 @@ import peerReviewMain
 import peerReviewNew
 import peerReviewPerform
 import peerReviewSearch
-import peerReviewBrowser
+import repobrowser
 import peerReviewView
 import peerReviewCommentCallback
 from admin import PeerReviewFileAdmin
