@@ -138,6 +138,18 @@ table.code th.performCodeReview{
   max-height: 400px;
 }
 
+#repo_browser .pathentry{
+  margin-left: 0.25em;
+}
+
+#repo_browser .pathentry.first{
+  margin-right: 0.25em;
+}
+
+#sel_repo_table{
+    margin-bottom: 1em;
+}
+
 /* search page */
 #searchReview div{
   margin: 0.5em;

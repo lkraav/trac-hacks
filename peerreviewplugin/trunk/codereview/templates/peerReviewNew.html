@@ -79,6 +79,7 @@
                         <thead>
                             <tr>
                                 <th>Filename (Click to remove)</th>
+                                <th>Repository</th>
                                 <th>Start Line</th>
                                 <th>End Line</th>
                                 <th py:if="followup">Old Revision</th>
@@ -90,6 +91,7 @@
                         <tbody py:if="new == 'yes'" id="myfilebody">
                             <tr id="no-files" class="even">
                                 <td>No files have been added to the code review.</td>
+                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -108,6 +110,7 @@
                                     </a>
                                     <py:if test="item.num_comments">${item['path']}</py:if>
                                 </td>
+                                <td >${item['repo'] if item['repo'] else '(default)'}</td>
                                 <td>${item['line_start']}</td>
                                 <td>${item['line_end']}</td>
                                 <td>${item['revision']}</td>

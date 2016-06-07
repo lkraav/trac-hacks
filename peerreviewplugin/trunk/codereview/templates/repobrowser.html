@@ -21,8 +21,26 @@
         </div>
     </div>
 
-    <div id="repo" class="browser" py:if="not norepo">
+    <div py:if="show_repo_idx" id="repo_idx">
+        <p class="help">Select a repository from the following list.</p>
+        <table class="listing" id="sel_repo_table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tr py:for="key, val in all_repos.iteritems()">
+                <td><a class="link_repo_idx" href="${browse_url+'?repo='+val.name}">$val.name</a></td>
+                <td>${wiki_to_oneliner(context('wiki'), val.description)}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="repo" class="browser" py:if="not norepo and not show_repo_idx">
         <div>
+            <p py:if="reponame">Current repository: ${repo.reponame}</p>
+            <p py:if="not reponame">Current repository: (default)</p>
             <p>
                 Current path:
                 <xi:include href="path_links.html"/>
@@ -90,7 +108,7 @@
                             </td>
                             <td class="change">
                                 <py:if test="wiki_format_messages">
-                                    ${wiki_to_oneliner(context('changeset', item.rev, parent=repos.resource),
+                                    ${wiki_to_oneliner(context('changeset', item.rev, parent=repo.resource),
                                     dir.changes[item.rev].message, shorten=True)}
                                 </py:if>
                                 <py:if test="not wiki_format_messages">
@@ -141,6 +159,7 @@
                 <input type="hidden" value="0" id="lineBox1"/>
                 <input type="hidden" value="0" id="lineBox2"/>
                 <input type="hidden" value="$revision" id="fileRevVal" name="revision"/>
+                <input type="hidden" value="$reponame" id="reponame_file" name="repofile"/>
             </div>
         </py:if>
         <!--! The following is only shown for files -->

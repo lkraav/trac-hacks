@@ -39,8 +39,14 @@ function addFile(filepath)
     var start = $('#lineBox1').val();
     var end = $('#lineBox2').val();
     var rev = $('#fileRevVal').val();
+    var reponame = $('#reponame_file').val();
+    if(reponame === ''){
+        display_reponame = '(default)'
+    }else{
+        display_reponame = reponame
+    };
 
-    var saveLine = filepath + "," + rev + "," + start + "," + end;
+    var saveLine = filepath + "," + rev + "," + start + "," + end + "," + reponame;
     var row_id = 'id'+saveLine.hashCode();
 
     if(document.getElementById(row_id) != null) {
@@ -56,6 +62,7 @@ function addFile(filepath)
                                                                 +'\')">'
                                                                 +filepath
                                                                 +'</a>'),
+                                                                $("<td>"+display_reponame+"</td>"),
                                                                 $("<td>"+start+"</td>"),
                                                                 $("<td>"+end+"</td>"),
                                                                 $("<td>"+rev+"</td>"));
@@ -66,9 +73,9 @@ function addFile(filepath)
 
 //Remove the file from the struct
 
-function removefile(filepath){
-    $('#confirm-name').text(filepath.split(',')[0]);
-    $('#dialog-confirm').data('filename', filepath);
+function removefile(fileidstring){
+    $('#confirm-name').text(fileidstring.split(',')[0]);
+    $('#dialog-confirm').data('filename', fileidstring);
     $('#dialog-confirm').dialog('open');
     /* File is removed in click handler of dialog if necessary */
 };
@@ -117,7 +124,7 @@ jQuery(document).ready(function($) {
 
     /* Called after browser is loaded */
     function create_browser_link(){
-       $('#repo_browser .dir, #repo_browser .file,#repo_browser .parent,#repo_browser .pathentry').each(function(idx){
+       $('#repo_browser .dir, #repo_browser .file,#repo_browser .parent,#repo_browser .pathentry, .link_repo_idx').each(function(idx){
           var url = $(this).attr('href');
           $(this).on("click", function(){
               /* Reset line selection stuff */
@@ -154,7 +161,7 @@ jQuery(document).ready(function($) {
     function switch_rev(event){
       if ( event.which == 13 ) {
           if($('#switch_rev').val() != ""){
-             load_browser(cur_repo_path.split('?')[0]+"?rev="+$('#switch_rev').val());
+             load_browser(cur_repo_path.split('?')[0]+"?rev="+$('#switch_rev').val()+'&repo='+$('#reponame_file').val());
              event.preventDefault();
              }
           else{
@@ -164,11 +171,15 @@ jQuery(document).ready(function($) {
       };
     };
 
+    function changeRepo(){
+        load_browser($(this).val()+'&rev='+encodeURIComponent($('#switch_rev').val()));
+    };
+
     function load_browser(url){
       $('#repo_browser').load(url, function(){
            create_browser_link();
-           $('#repo_browser #switch_rev').on('keypress',switch_rev)
-           //$("#addFileButton").on('click', addFile_)
+           $('#repo_browser #switch_rev').on('keypress',switch_rev);
+           $('#sel_repo').on('change', changeRepo);
       });
     };
 
