@@ -270,6 +270,10 @@ class ReviewDataModel(AbstractVariableFieldsObject):
                 files_dict[row[0]]['rootfolder'] = row[2]
             elif row[1] == 'extensions':
                 files_dict[row[0]]['extensions'] = row[2]
+            elif row[1] == 'repo':
+                files_dict[row[0]]['repo'] = row[2]
+            elif row[1] == 'revision':
+                files_dict[row[0]]['revision'] = row[2]
         return files_dict
 
 

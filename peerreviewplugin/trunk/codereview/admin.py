@@ -12,7 +12,7 @@
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.util.text import _
-from trac.web.chrome import add_notice, add_warning
+from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, add_warning
 from .model import ReviewDataModel, ReviewFileModel
 from .repo import insert_project_files, repo_path_exists
 
@@ -78,7 +78,8 @@ class PeerReviewFileAdmin(Component):
 
         name = req.args.get('projectname') or path_info
         rootfolder = req.args.get('rootfolder')
-
+        reponame = req.args.get('reponame', '')
+        rev = req.args.get('rev', None)
         exts = req.args.get('extensions', '')
         ext_list, ext_filtered = create_ext_list(exts)
         sel = req.args.get('sel', [])  # For removal
@@ -93,21 +94,26 @@ class PeerReviewFileAdmin(Component):
                     add_warning(req, _("The project identifier already exists."))
                     req.redirect(req.href.admin(cat, page, projectname=name,
                                                 rootfolder=rootfolder,
-                                                extensions=exts))
-                if not repo_path_exists(self.env, rootfolder, ''):
+                                                extensions=exts,
+                                                reponame=reponame))
+                if not repo_path_exists(self.env, rootfolder, reponame):
                     add_warning(req, _("The given root folder can't be found in the repository or it is a file."))
                     req.redirect(req.href.admin(cat, page, projectname=name,
                                                 rootfolder=rootfolder,
-                                                extensions=exts))
+                                                extensions=exts,
+                                                reponame=reponame))
                 if len(ext_list) != len(ext_filtered):
                     add_warning(req, _("Some extensions are not valid."))
                     req.redirect(req.href.admin(cat, page, projectname=name,
                                                 rootfolder=rootfolder,
-                                                extensions=exts))
+                                                extensions=exts,
+                                                reponame=reponame))
                 _insert_project_info('fileproject', 'name', name)
                 _insert_project_info('rootfolder', name, rootfolder)
                 _insert_project_info('extensions', name, exts)
-                insert_project_files(self.env, rootfolder, name, ext_filtered)
+                _insert_project_info('repo', name, reponame)
+                _insert_project_info('revision', name, rev)
+                insert_project_files(self.env, rootfolder, name, ext_filtered, rev=rev, reponame=reponame)
                 add_notice(req, _("The project has been added. All files belonging to the project have been added "
                                   "to the database"))
             elif req.args.get('save'):
@@ -116,23 +122,28 @@ class PeerReviewFileAdmin(Component):
                         add_warning(req, _("The project identifier already exists."))
                         req.redirect(req.href.admin(cat, page, path_info, projectname=name,
                                                     rootfolder=rootfolder,
-                                                    extensions=exts))
+                                                    extensions=exts,
+                                                    reponame=reponame))
                 if not repo_path_exists(self.env, rootfolder, ''):
                     add_warning(req, _("The given root folder can't be found in the repository or it is a file."))
                     req.redirect(req.href.admin(cat, page, path_info, projectname=name,
                                                 rootfolder=rootfolder,
-                                                extensions=exts))
+                                                extensions=exts,
+                                                reponame=reponame))
                 if len(ext_list) != len(ext_filtered):
                     add_warning(req, _("Some extensions are not valid. %s"), exts)
                     req.redirect(req.href.admin(cat, page, path_info, projectname=name,
                                                 rootfolder=rootfolder,
-                                                extensions=exts))
+                                                extensions=exts,
+                                                reponame=reponame))
                 # Handle change. We remove all data for old name and recreate it using the new one
                 remove_project_info(path_info)
                 _insert_project_info('fileproject', 'name', name)
                 _insert_project_info('rootfolder', name, rootfolder)
                 _insert_project_info('extensions', name, exts)
-                insert_project_files(self.env, rootfolder, name, ext_filtered)
+                _insert_project_info('repo', name, reponame)
+                _insert_project_info('revision', name, rev)
+                insert_project_files(self.env, rootfolder, name, ext_filtered, rev=rev, reponame=reponame)
                 add_notice(req, _("Your changes have been changed. All files belonging to the project have been added "
                                   "to the database"))
             elif req.args.get('remove'):
@@ -140,23 +151,32 @@ class PeerReviewFileAdmin(Component):
                     remove_project_info(rem_name)
 
             req.redirect(req.href.admin(cat, page))
+
         all_proj_lst = [[key, value] for key, value in all_proj.items()]
         data = {'view': 'detail' if path_info else 'list',
                 'projects': sorted(all_proj_lst, key=lambda item: item[0]),
+                'projectname': name,
         }
         if(path_info):
             data['view_project'] = path_info
             view_proj = all_proj[path_info]
             data.update({
-                'projectname': name,
                 'rootfolder': rootfolder or view_proj['rootfolder'],
-                'extensions': exts or view_proj['extensions']
+                'extensions': exts or view_proj['extensions'],
+                'reponame': reponame or view_proj['repo'],
+                'revision': rev or view_proj['revision'],
             })
         else:
             data.update({
-                'projectname': name,
                 'rootfolder': rootfolder,
-                'extensions': exts
+                'extensions': exts,
+                'reponame': reponame,
+                'revision': rev
             })
-
+        add_stylesheet(req, 'common/css/browser.css')
+        add_stylesheet(req, 'hw/css/admin_file.css')
+        add_script_data(req, {'repo_browser': self.env.href.adminrepobrowser(data['rootfolder'],
+                                                                             repo=data['reponame'],
+                                                                             rev=data['revision'])})
+        add_script(req, 'hw/js/admin_files.js')
         return 'admin_files.html', data

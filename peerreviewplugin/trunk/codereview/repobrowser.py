@@ -19,7 +19,7 @@ from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.resource import ResourceNotFound
 from trac.util import embedded_numbers
 from trac.util.text import _
-from trac.versioncontrol.api import RepositoryManager, NoSuchChangeset
+from trac.versioncontrol.api import NoSuchChangeset, NoSuchNode, RepositoryManager
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
 from trac.web.chrome import add_link, add_warning
@@ -65,7 +65,7 @@ class PeerReviewBrowser(Component):
 
     def match_request(self, req):
         import re
-        match = re.match(r'/(peerReviewBrowser|file)(?:(/.*))?', req.path_info)
+        match = re.match(r'/(peerReviewBrowser|file|adminrepobrowser)(?:(/.*))?', req.path_info)
         if match:
             req.args['path'] = match.group(2) or '/'
             if match.group(1) == 'file':
@@ -73,6 +73,9 @@ class PeerReviewBrowser(Component):
                 req.redirect(self.env.href.peerReviewBrowser(req.args.get('path'),
                                                    rev=req.args.get('rev'),
                                                    format=req.args.get('format')))
+            elif match.group(1) == 'adminrepobrowser':
+                # This one is for the browser on admin pages
+                req.args['is_admin_browser'] = True
             return True
 
     def process_request(self, req):
@@ -80,15 +83,17 @@ class PeerReviewBrowser(Component):
         path = req.args.get('path', '/')
         rev = req.args.get('rev')
         cur_repo = req.args.get('repo', '')
-
+        is_admin_browser = req.args.get('is_admin_browser', False)
         context = Context.from_request(req)
+        template_file = 'admin_repobrowser.html' if is_admin_browser else 'repobrowser.html'
 
         # display_rev = lambda rev: rev
 
         repoman = RepositoryManager(self.env)
-
+        browse_url_base = 'adminrepobrowser' if is_admin_browser else 'peerReviewBrowser'
         data = {'all_repos': repoman.get_all_repositories(),
-                'browse_url': self.env.href.peerReviewBrowser()
+                'browse_url': self.env.href(browse_url_base),
+                'is_admin_browser': is_admin_browser
         }
         if not data['all_repos']:
             data['norepo'] = _("No source repository available.")
@@ -97,7 +102,7 @@ class PeerReviewBrowser(Component):
         if cur_repo not in data['all_repos'] or req.args.get('repo', None) == None:
             # This happens if we have no default repo and open the page for the first time
             data['show_repo_idx'] = True
-            return 'repobrowser.html', data, None
+            return template_file, data, None
 
         # Find node for the requested repo/path/rev
         repo = repoman.get_repository(cur_repo)
@@ -106,51 +111,59 @@ class PeerReviewBrowser(Component):
                 node, display_rev, context = get_node_from_repo(req, repo, path, rev)
             except NoSuchChangeset, e:
                 data['norepo'] = _(e.message)
-                return 'repobrowser.html', data, None
+                return template_file, data, None
+            except ResourceNotFound, e:  # NoSuchNode is converted to this exception by Trac
+                data['nonode'] = e.message
+                node = None
+                display_rev = rev
         else:
             data['norepo'] = _("No source repository available.")
-            return 'repobrowser.html', data, None
+            return template_file, data, None
 
         hidden_properties = [p.strip() for p
                              in self.config.get('browser', 'hide_properties',
                                                 'svk:merge').split(',')]
 
-        path_links = self.get_path_links_CRB(self.env.href, path, rev, cur_repo)
+        path_links = self.get_path_links_CRB(self.env.href, browse_url_base, path, rev, cur_repo)
         if len(path_links) > 1:
             add_link(req, 'up', path_links[-2]['href'], 'Parent directory')
 
+        if node:
+            props = [{'name': util.escape(name), 'value': util.escape(value)}
+                     for name, value in node.get_properties().items()
+                     if name not in hidden_properties]
+        else:
+            props = []
         data.update({
             'path': path,
-            'rev': node.rev,
+            'rev': node.rev if node else rev,
             'stickyrev': rev,
             'context': context,
             'repo': repo,
             'reponame': repo.reponame,  # for included path_links.html
             'revision': rev or repo.get_youngest_rev(),
-            'props': [{'name': util.escape(name), 'value': util.escape(value)}
-                           for name, value in node.get_properties().items()
-                           if name not in hidden_properties],
+            'props': props,
             'log_href': util.escape(self.env.href.log(path, rev=rev or None)),
             'path_links': path_links,
-            'dir': node.isdir and self._render_directory(req, repo, node, rev, cur_repo),
-            'file': node.isfile and self._render_file(req, context, repo, node, rev, cur_repo),
+            'dir': node and node.isdir and self._render_directory(req, repo, node, rev, cur_repo),
+            'file': node and node.isfile and self._render_file(req, context, repo, node, rev, cur_repo),
             'display_rev': display_rev,
             'wiki_format_messages': self.config['changeset'].getbool('wiki_format_messages'),
         })
-        return 'repobrowser.html', data, None
+        return template_file, data, None
 
     # Internal methods
 
-    def get_path_links_CRB(self, href, fullpath, rev, repo):
+    def get_path_links_CRB(self, href, browse_url_base, fullpath, rev, repo):
         path = '/'
         links = [{'name': 'Repository Index',
-                  'href': href.peerReviewBrowser(path, rev=rev)}]
+                  'href': href(browse_url_base, path, rev=rev)}]
 
         for part in [p for p in fullpath.split('/') if p]:
             path += part + '/'
             links.append({
                 'name': part,
-                'href': href.peerReviewBrowser(path, rev=rev, repo=repo)
+                'href': href(browse_url_base, path, rev=rev, repo=repo)
                 })
         return links
 
@@ -178,6 +191,7 @@ class PeerReviewBrowser(Component):
         def browse_order(a):
             return a.isdir and dir_order or 0, file_order(a)
 
+        browse_url = "peerReviewBrowser" if not req.args.get('is_admin_browser', False) else "adminrepobrowser"
         for entry in node.get_entries():
             if entry.can_view(req.perm):
                 info.append({
@@ -189,7 +203,7 @@ class PeerReviewBrowser(Component):
                     'rev': entry.created_rev,
                     'permission': 1,  # FIXME
                     'log_href': util.escape(self.env.href.log(repo, entry.path, rev=rev)),
-                    'browser_href': self.env.href.peerReviewBrowser(entry.path, rev=rev, repo=repo)
+                    'browser_href': self.env.href(browse_url, entry.path, rev=rev, repo=repo)
                     })
 
         changes = get_changes(repos, [i['rev'] for i in info])

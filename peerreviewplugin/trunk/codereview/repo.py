@@ -50,11 +50,18 @@ def get_node(repos, path, rev):
         return None
 
 
-def get_nodes_for_dir(repos, dir_node, nodes, ignore_ext):
+def get_nodes_for_dir(repo, dir_node, nodes, ignore_ext):
+    """Get file nodes recursively for a given directory node.
 
+    :param repo: the repository holding the nodes
+    :param dir_node: a trac directory node
+    :param nodes: list of nodes. Found file nodes will be appended.
+    :param ignore_ext: list of file extensions to be ignored
+    :return:
+    """
     for node in dir_node.get_entries():
         if node.isdir:
-            get_nodes_for_dir(repos, node, nodes, ignore_ext)
+            get_nodes_for_dir(repo, node, nodes, ignore_ext)
         else:
             if os.path.splitext(node.path)[1].lower() not in ignore_ext:
                 nodes.append({
@@ -76,9 +83,13 @@ def file_data_from_repo(node):
     return dat.splitlines()
 
 
-def insert_project_files(env, src_path, project, ignore_ext, rev=None):
+def insert_project_files(env, src_path, project, ignore_ext, rev=None, reponame=''):
+    """Add project files to the database.
 
-    repos = RepositoryManager(env).get_repository('')
+    :param env: Trac environment object
+    :param src_path
+    """
+    repos = RepositoryManager(env).get_repository(reponame)
     if not repos:
         return
 
@@ -99,5 +110,5 @@ def insert_project_files(env, src_path, project, ignore_ext, rev=None):
         for item in nodes:
             cursor.execute("INSERT INTO peerreviewfile"
                            "(review_id,path,line_start,line_end,repo,revision, changerevision,hash,project)"
-                           "VALUES (0, %s, 0, 0, '', %s, %s, %s, %s)",
-                           (item['path'], item['rev'], item['change_rev'], item['hash'], project))
+                           "VALUES (0, %s, 0, 0, %s, %s, %s, %s, %s)",
+                           (item['path'], reponame, item['rev'], item['change_rev'], item['hash'], project))
