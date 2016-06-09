@@ -160,6 +160,12 @@ class PeerReviewFileAdmin(Component):
         if(path_info):
             data['view_project'] = path_info
             view_proj = all_proj[path_info]
+            # With V3.1 the following was added to the saved information for multi repo support.
+            # It isn't available for old projects.
+            if 'repo' not in view_proj:
+                view_proj['repo'] = ''
+            if 'revision' not in view_proj:
+                view_proj['revision'] = ''
             data.update({
                 'rootfolder': rootfolder or view_proj['rootfolder'],
                 'extensions': exts or view_proj['extensions'],

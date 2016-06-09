@@ -118,8 +118,14 @@ class PeerReviewBrowser(Component):
 
         data['all_repos'] = filtered_repos
 
-        if cur_repo not in data['all_repos'] or req.args.get('repo', None) == None:
-            # This happens if we have no repo or open the page for the first time
+        # if not req.args.get('repo', None): won't work here because of default repo name ''
+        if req.args.get('repo', None) == None:
+            # We open the page for the first time
+            data['show_repo_idx'] = True
+            return template_file, data, None
+
+        if cur_repo not in data['all_repos']:
+            data['repo_gone'] = cur_repo if cur_repo else '(default)'
             data['show_repo_idx'] = True
             return template_file, data, None
 

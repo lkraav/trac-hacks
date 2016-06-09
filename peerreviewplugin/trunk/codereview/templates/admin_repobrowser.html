@@ -22,6 +22,10 @@
     </div>
 
     <div py:if="show_repo_idx" id="repo_idx">
+        <div id="repo_gone" class="browser" py:if="repo_gone">
+            <div class="warning system-message"><p class="">The repository '$repo_gone' is not available anymore. You may select a new repository and root folder now.</p>
+            </div>
+        </div>
         <table class="listing" id="sel_repo_table">
             <thead>
                 <tr>
@@ -152,13 +156,11 @@
         </table>
         <p class="help"> If you don't specify a revision the current head revision will be used. This head revision is
         saved with the file information so the current files will be correctly identified in the future.</p>
-        <py:if test="not file">
-            <div>
-                <input type="hidden" value="$path" id="root_path"/>
-                <input type="hidden" value="$revision" id="fileRevVal" name="rev"/>
-                <input type="hidden" value="$reponame" id="reponame" name="reponame"/>
-            </div>
-        </py:if>
-
     </div>
+    <div>
+        <input type="hidden" value="$path" id="root_path"/>
+        <input type="hidden" value="$revision" id="fileRevVal" name="rev"/>
+        <input type="hidden" value="$reponame" id="reponame" name="reponame"/>
+    </div>
+
 </div>

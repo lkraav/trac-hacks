@@ -83,8 +83,13 @@
                 <form py:if="projects" id="projinfo_table" method="post" action="">
                     <table class="listing" id="projinfolist">
                         <thead>
-                        <tr><th class="sel">&nbsp;</th>
-                            <th>Project</th><th>Root Folder</th><th>Extensions</th>
+                        <tr>
+                            <th class="sel">&nbsp;</th>
+                            <th>Project</th>
+                            <th>Root Folder</th>
+                            <th>Repository</th>
+                            <th>Revision</th>
+                            <th>Extensions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -94,6 +99,8 @@
                                 <a href="${panel_href(proj[0])}">${proj[0]}</a>
                             </td>
                             <td class="owner">${proj[1].rootfolder}</td>
+                            <td>${proj[1].repo}</td>
+                            <td>${proj[1].revision}</td>
                             <td class="extensions">${proj[1].extensions}</td>
                         </tr>
                         </tbody>

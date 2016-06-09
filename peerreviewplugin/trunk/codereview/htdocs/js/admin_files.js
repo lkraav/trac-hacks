@@ -7,16 +7,9 @@ jQuery(document).ready(function($) {
        $('#repo_browser .dir, #repo_browser .file,#repo_browser .parent,#repo_browser .pathentry, .link_repo_idx').each(function(idx){
           var url = $(this).attr('href');
           $(this).on("click", function(){
-              /* Reset line selection stuff */
               cur_repo_path = url;
               load_browser(url);
               return false;});
-       });
-       $('#addfiles').on('click', function(){
-            $('.fileselect:checked').each(function(idx){
-                 /* $('#fileRevVal').val($(this).data('rev')); */
-                 addFile($(this).val());
-                 });
        });
     };
 
