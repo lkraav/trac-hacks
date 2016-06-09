@@ -83,24 +83,43 @@ class PeerReviewBrowser(Component):
         path = req.args.get('path', '/')
         rev = req.args.get('rev')
         cur_repo = req.args.get('repo', '')
-        is_admin_browser = req.args.get('is_admin_browser', False)
+        is_admin_browser = req.args.get('is_admin_browser', False)  # Set when we come from the file admin page
         context = Context.from_request(req)
+        # Depending on from where we are coming we have to preprocess in match_request() thus use different paths
+        browse_url_base = 'adminrepobrowser' if is_admin_browser else 'peerReviewBrowser'
         template_file = 'admin_repobrowser.html' if is_admin_browser else 'repobrowser.html'
 
         # display_rev = lambda rev: rev
 
-        repoman = RepositoryManager(self.env)
-        browse_url_base = 'adminrepobrowser' if is_admin_browser else 'peerReviewBrowser'
-        data = {'all_repos': repoman.get_all_repositories(),
-                'browse_url': self.env.href(browse_url_base),
+        data = {'browse_url': self.env.href(browse_url_base),
                 'is_admin_browser': is_admin_browser
-        }
-        if not data['all_repos']:
+                }
+
+        repoman = RepositoryManager(self.env)
+
+        all_repos = repoman.get_all_repositories()
+        if not all_repos:
             data['norepo'] = _("No source repository available.")
             return 'repobrowser.html', data, None
 
+        # Repositories may be hidden
+        filtered_repos = {}
+        for rname, info in all_repos.iteritems():
+            try:
+                if not info['hidden'] == u'1':
+                    filtered_repos[rname] = info
+            except KeyError:
+                # This is the default repo
+                filtered_repos[rname] = info
+
+        if not filtered_repos:
+            data['norepo'] = _("No source repository available.")
+            return 'repobrowser.html', data, None
+
+        data['all_repos'] = filtered_repos
+
         if cur_repo not in data['all_repos'] or req.args.get('repo', None) == None:
-            # This happens if we have no default repo and open the page for the first time
+            # This happens if we have no repo or open the page for the first time
             data['show_repo_idx'] = True
             return template_file, data, None
 
