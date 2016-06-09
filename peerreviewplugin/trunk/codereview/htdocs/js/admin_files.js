@@ -46,5 +46,10 @@ jQuery(document).ready(function($) {
       });
     };
 
-    load_browser(repo_browser);
+    if(show_repo_idx){
+        load_browser(repo_browser.split('?')[0]);
+    }
+    else{
+        load_browser(repo_browser);
+    };
 });
