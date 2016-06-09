@@ -39,12 +39,7 @@ class PeerReviewFileAdmin(Component):
             yield ('codereview', 'Code review', 'projectfiles', 'Project Files')
 
     def render_admin_panel(self, req, cat, page, path_info):
-        def _insert_project_info(type_, key_, val):
-            rev_data = ReviewDataModel(self.env)
-            rev_data['type'] = type_
-            rev_data['data_key'] = key_
-            rev_data['data'] = val
-            rev_data.insert()
+
         def remove_project_info(rem_name):
             # Remove project name info
             rev_data = ReviewDataModel(self.env)
@@ -53,13 +48,26 @@ class PeerReviewFileAdmin(Component):
             rev_data['data_key'] = 'name'
             for item in rev_data.list_matching_objects():
                 item.delete()
-            # Remove info about project like rootfolder, extensions
+            # Remove info about project like rootfolder, extensions, revision, repo
             rev_data = ReviewDataModel(self.env)
             rev_data.clear_props()
             rev_data['data_key'] = rem_name
             for item in rev_data.list_matching_objects():
                 item.delete()
             ReviewFileModel.delete_files_by_project_name(self.env, rem_name)
+
+        def add_project_info():
+            def _insert_project_info(type_, key_, val):
+                rev_data = ReviewDataModel(self.env)
+                rev_data['type'] = type_
+                rev_data['data_key'] = key_
+                rev_data['data'] = val
+                rev_data.insert()
+            _insert_project_info('fileproject', 'name', name)
+            _insert_project_info('rootfolder', name, rootfolder)
+            _insert_project_info('extensions', name, exts)
+            _insert_project_info('repo', name, reponame)
+            _insert_project_info('revision', name, rev)
 
         def create_ext_list(ext_str):
             """Create a list of extensions from a string.
@@ -90,59 +98,56 @@ class PeerReviewFileAdmin(Component):
 
         if req.method=='POST':
             if req.args.get('add'):
+                def do_redirect():
+                    req.redirect(req.href.admin(cat, page, projectname=name,
+                                                rootfolder=rootfolder,
+                                                extensions=exts,
+                                                repo=reponame,
+                                                rev=rev,
+                                                error=1))
+                if not name:
+                    add_warning(req, _("You need to specify a project name."))
+                    do_redirect()
                 if name in all_proj:
                     add_warning(req, _("The project identifier already exists."))
-                    req.redirect(req.href.admin(cat, page, projectname=name,
-                                                rootfolder=rootfolder,
-                                                extensions=exts,
-                                                reponame=reponame))
+                    do_redirect()
                 if not repo_path_exists(self.env, rootfolder, reponame):
                     add_warning(req, _("The given root folder can't be found in the repository or it is a file."))
-                    req.redirect(req.href.admin(cat, page, projectname=name,
-                                                rootfolder=rootfolder,
-                                                extensions=exts,
-                                                reponame=reponame))
+                    do_redirect()
                 if len(ext_list) != len(ext_filtered):
                     add_warning(req, _("Some extensions are not valid."))
-                    req.redirect(req.href.admin(cat, page, projectname=name,
-                                                rootfolder=rootfolder,
-                                                extensions=exts,
-                                                reponame=reponame))
-                _insert_project_info('fileproject', 'name', name)
-                _insert_project_info('rootfolder', name, rootfolder)
-                _insert_project_info('extensions', name, exts)
-                _insert_project_info('repo', name, reponame)
-                _insert_project_info('revision', name, rev)
+                    do_redirect()
+                add_project_info()
                 insert_project_files(self.env, rootfolder, name, ext_filtered, rev=rev, reponame=reponame)
                 add_notice(req, _("The project has been added. All files belonging to the project have been added "
                                   "to the database"))
             elif req.args.get('save'):
+                def do_redirect_save():
+                    req.redirect(req.href.admin(cat, page, path_info,
+                                                projectname=name,
+                                                rootfolder=rootfolder,
+                                                extensions=exts,
+                                                repo=reponame,
+                                                rev=rev,
+                                                error=1))
+
+                if not req.args.get('projectname'):
+                    add_warning(req, _("No project name given. The old name was inserted again."))
+                    add_warning(req, _("No changes have been saved."))
+                    do_redirect_save()
                 if name != path_info:
                     if name in all_proj:
                         add_warning(req, _("The project identifier already exists."))
-                        req.redirect(req.href.admin(cat, page, path_info, projectname=name,
-                                                    rootfolder=rootfolder,
-                                                    extensions=exts,
-                                                    reponame=reponame))
+                        do_redirect_save()
                 if not repo_path_exists(self.env, rootfolder, ''):
                     add_warning(req, _("The given root folder can't be found in the repository or it is a file."))
-                    req.redirect(req.href.admin(cat, page, path_info, projectname=name,
-                                                rootfolder=rootfolder,
-                                                extensions=exts,
-                                                reponame=reponame))
+                    do_redirect_save()
                 if len(ext_list) != len(ext_filtered):
                     add_warning(req, _("Some extensions are not valid. %s"), exts)
-                    req.redirect(req.href.admin(cat, page, path_info, projectname=name,
-                                                rootfolder=rootfolder,
-                                                extensions=exts,
-                                                reponame=reponame))
+                    do_redirect_save()
                 # Handle change. We remove all data for old name and recreate it using the new one
                 remove_project_info(path_info)
-                _insert_project_info('fileproject', 'name', name)
-                _insert_project_info('rootfolder', name, rootfolder)
-                _insert_project_info('extensions', name, exts)
-                _insert_project_info('repo', name, reponame)
-                _insert_project_info('revision', name, rev)
+                add_project_info()
                 insert_project_files(self.env, rootfolder, name, ext_filtered, rev=rev, reponame=reponame)
                 add_notice(req, _("Your changes have been changed. All files belonging to the project have been added "
                                   "to the database"))
@@ -184,7 +189,7 @@ class PeerReviewFileAdmin(Component):
         add_script_data(req, {'repo_browser': self.env.href.adminrepobrowser(data['rootfolder'],
                                                                              repo=data['reponame'],
                                                                              rev=data['revision']),
-                              'show_repo_idx': path_info == None}
+                              'show_repo_idx': path_info == None if 'error' not in req.args else False}
                         )
         add_script(req, 'hw/js/admin_files.js')
         return 'admin_files.html', data
