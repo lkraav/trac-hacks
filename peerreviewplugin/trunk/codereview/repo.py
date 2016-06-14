@@ -49,27 +49,67 @@ def get_node(repos, path, rev):
     except NoSuchNode, e:
         return None
 
+from svn_externals import parse_externals
 
-def get_nodes_for_dir(repo, dir_node, nodes, ignore_ext):
+
+def get_nodes_for_dir(env, repodict, dir_node, fnodes, ignore_ext, follow_ext):
     """Get file nodes recursively for a given directory node.
 
-    :param repo: the repository holding the nodes
+    :param env: Trac environment object
+    :param repodict: dict holding info about known repositories
     :param dir_node: a trac directory node
-    :param nodes: list of nodes. Found file nodes will be appended.
+    :param fnodes: list of file info nodes. Info for found files will be appended.
     :param ignore_ext: list of file extensions to be ignored
-    :return:
+    :param follow_ext: if True follow externals to folders in the same or another repository
+
+    :return errors: list of errors. Empty list if no errors occurred.
     """
+    errors = []
     for node in dir_node.get_entries():
         if node.isdir:
-            get_nodes_for_dir(repo, node, nodes, ignore_ext)
+            errors += get_nodes_for_dir(env, repodict, node, fnodes, ignore_ext, follow_ext)
+            if follow_ext:
+                props = node.get_properties()
+                try:
+                    for external in parse_externals(props['svn:externals']):
+                        try:
+
+                            # list of lists. First item is len of common prefix, second is repository object
+                            len_common = []
+                            for key, val in repodict.iteritems():
+                                try:
+                                    len_common.append([len(os.path.commonprefix([external['url'], val['url']])),
+                                                       val['repo']])
+                                except KeyError:
+                                    pass
+                            len_common.sort(reverse=True)
+                            # First item in list is repo holding the external path because it has the longest common prefix
+                            repo_path = repodict[len_common[0][1].reponame]['prefix'] + external['url'][len_common[0][0]:]
+                            ext_node = get_node(len_common[0][1], repo_path, external['rev'])
+                            if ext_node:
+                                errors += get_nodes_for_dir(env, repodict, ext_node, fnodes, ignore_ext, follow_ext)
+                            else:
+                                txt = "No node for external path '%s' in repository '%s'. External: '%s %s' was ignored " \
+                                      "for directory '%s'."\
+                                      % (repo_path, len_common[0][1].reponame, external['url'], external['dir'], node.name)
+                                env.log.warning(txt)
+                                errors.append(txt)
+                        except KeyError:  # Missing data in dictionary e.g. we try to use aan unnamed repository
+                            txt = "External: '%s %s' was ignored for directory '%s'." %\
+                                  (external['url'], external['dir'], node.name)
+                            env.log.warning(txt)
+                            errors.append(txt)
+                except KeyError:  # property has no svn:externals
+                    pass
         else:
             if os.path.splitext(node.path)[1].lower() not in ignore_ext:
-                nodes.append({
+                fnodes.append({
                     'path': node.path,
                     'rev': node.rev,
                     'change_rev':node.created_rev,
                     'hash': hash_from_file_node(node)
                 })
+    return errors
 
 
 def file_data_from_repo(node):
@@ -83,15 +123,25 @@ def file_data_from_repo(node):
     return dat.splitlines()
 
 
-def insert_project_files(env, src_path, project, ignore_ext, rev=None, reponame=''):
+def insert_project_files(self, src_path, project, ignore_ext, follow_ext=False, rev=None, reponame=''):
     """Add project files to the database.
 
-    :param env: Trac environment object
+    :param self: Trac component object
     :param src_path
     """
-    repos = RepositoryManager(env).get_repository(reponame)
+    repoman = RepositoryManager(self.env)
+    repos = repoman.get_repository(reponame)
     if not repos:
         return
+
+    repolist = repoman.get_all_repositories()  # repolist is a dict with key = reponame, val = dict
+    for repo in repoman.get_real_repositories():
+        repolist[repo.reponame]['repo'] = repoman.get_repository(repo.reponame)
+        # We need the last part of the path later when following externals
+        try:
+            repolist[repo.reponame]['prefix'] = '/' + os.path.basename(repolist[repo.reponame]['url'].rstrip('/'))
+        except KeyError:
+            repolist[repo.reponame]['prefix'] = ''
 
     if rev:
         rev = repos.normalize_rev(rev)
@@ -99,16 +149,20 @@ def insert_project_files(env, src_path, project, ignore_ext, rev=None, reponame=
 
     root_node = get_node(repos, src_path, rev_or_latest)
 
-    nodes = []
+    fnodes = []
     if root_node.isdir:
-        get_nodes_for_dir(repos, root_node, nodes, ignore_ext)
+        errors = get_nodes_for_dir(self.env, repolist, root_node, fnodes, ignore_ext, follow_ext)
+    else:
+        errors = []
 
-    ReviewFileModel.delete_files_by_project_name(env, project)
-    @env.with_transaction()
+    ReviewFileModel.delete_files_by_project_name(self.env, project)
+    @self.env.with_transaction()
     def insert_data(db):
         cursor = db.cursor()
-        for item in nodes:
+        for item in fnodes:
             cursor.execute("INSERT INTO peerreviewfile"
                            "(review_id,path,line_start,line_end,repo,revision, changerevision,hash,project)"
                            "VALUES (0, %s, 0, 0, %s, %s, %s, %s, %s)",
                            (item['path'], reponame, item['rev'], item['change_rev'], item['hash'], project))
+
+    return errors, len(fnodes)

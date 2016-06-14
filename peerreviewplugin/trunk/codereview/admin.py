@@ -89,6 +89,7 @@ class PeerReviewFileAdmin(Component):
         reponame = req.args.get('reponame', '')
         rev = req.args.get('rev', None)
         exts = req.args.get('extensions', '')
+        follow_ext = req.args.get('follow_ext', False)
         ext_list, ext_filtered = create_ext_list(exts)
         sel = req.args.get('sel', [])  # For removal
         if type(sel) is not list:
@@ -118,9 +119,11 @@ class PeerReviewFileAdmin(Component):
                     add_warning(req, _("Some extensions are not valid."))
                     do_redirect()
                 add_project_info()
-                insert_project_files(self.env, rootfolder, name, ext_filtered, rev=rev, reponame=reponame)
-                add_notice(req, _("The project has been added. All files belonging to the project have been added "
-                                  "to the database"))
+                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, follow_ext, rev=rev, reponame=reponame)
+                add_notice(req, _("The project has been added. %s files belonging to the project have been added "
+                                  "to the database"), num_files)
+                for err in errors:
+                    add_warning(req, err)
             elif req.args.get('save'):
                 def do_redirect_save():
                     req.redirect(req.href.admin(cat, page, path_info,
@@ -148,9 +151,11 @@ class PeerReviewFileAdmin(Component):
                 # Handle change. We remove all data for old name and recreate it using the new one
                 remove_project_info(path_info)
                 add_project_info()
-                insert_project_files(self.env, rootfolder, name, ext_filtered, rev=rev, reponame=reponame)
-                add_notice(req, _("Your changes have been changed. All files belonging to the project have been added "
-                                  "to the database"))
+                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, follow_ext, rev=rev, reponame=reponame)
+                add_notice(req, _("Your changes have been changed. %s files belonging to the project have been added "
+                                  "to the database"), num_files)
+                for err in errors:
+                    add_warning(req, err)
             elif req.args.get('remove'):
                 for rem_name in sel:
                     remove_project_info(rem_name)
