@@ -83,15 +83,18 @@ def get_nodes_for_dir(env, repodict, dir_node, fnodes, ignore_ext, follow_ext):
                                 except KeyError:
                                     pass
                             len_common.sort(reverse=True)
-                            # First item in list is repo holding the external path because it has the longest common prefix
-                            repo_path = repodict[len_common[0][1].reponame]['prefix'] + external['url'][len_common[0][0]:]
-                            ext_node = get_node(len_common[0][1], repo_path, external['rev'])
+                            # First item in list is repo holding the external path because it has the longest
+                            # common prefix
+                            repos = len_common[0][1]
+                            repo_path = repodict[repos.reponame]['prefix'] + '/' + \
+                                external['url'][len_common[0][0]:].lstrip('/')
+                            ext_node = get_node(repos, repo_path, external['rev'])
                             if ext_node:
                                 errors += get_nodes_for_dir(env, repodict, ext_node, fnodes, ignore_ext, follow_ext)
                             else:
-                                txt = "No node for external path '%s' in repository '%s'. External: '%s %s' was ignored " \
-                                      "for directory '%s'."\
-                                      % (repo_path, len_common[0][1].reponame, external['url'], external['dir'], node.name)
+                                txt = "No node for external path '%s' in repository '%s'. " \
+                                      "External: '%s %s' was ignored for directory '%s'." \
+                                      % (repo_path, repos.reponame, external['url'], external['dir'], node.name)
                                 env.log.warning(txt)
                                 errors.append(txt)
                         except KeyError:  # Missing data in dictionary e.g. we try to use aan unnamed repository
