@@ -277,7 +277,7 @@ def add_file_info_to_table(env, doc, review_id, file_info):
             try:
                 try:
                     prefix = repodict[item['repo']]['url'].rstrip('/')
-                except:
+                except KeyError:
                     prefix = ''
                 if idx > 0:
                     cells = table.add_row().cells
