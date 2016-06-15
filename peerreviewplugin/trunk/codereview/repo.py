@@ -126,16 +126,21 @@ def file_data_from_repo(node):
     return dat.splitlines()
 
 
-def insert_project_files(self, src_path, project, ignore_ext, follow_ext=False, rev=None, reponame=''):
-    """Add project files to the database.
+def get_repository_dict(env):
+    """Get a dict with information about all repositories.
 
-    :param self: Trac component object
-    :param src_path
+    :param env: Trac environment object
+    :return: dict with key = reponame, value = dict with information about repository.
+
+    The information about a repository is queried using ''get_all_repositories'' from
+    RepositoryManager.
+    - For any real repository (that means not an alias) the Repository object
+      is inserted into the dictionary using the key 'repo'.
+    - For any real repository (that means not an alias) a prefix is calculated from the url info
+      and inserted using the key 'prefix'. This prefix is used to build paths into the repository.
+
     """
-    repoman = RepositoryManager(self.env)
-    repos = repoman.get_repository(reponame)
-    if not repos:
-        return
+    repoman = RepositoryManager(env)
 
     repolist = repoman.get_all_repositories()  # repolist is a dict with key = reponame, val = dict
     for repo in repoman.get_real_repositories():
@@ -145,6 +150,23 @@ def insert_project_files(self, src_path, project, ignore_ext, follow_ext=False, 
             repolist[repo.reponame]['prefix'] = '/' + os.path.basename(repolist[repo.reponame]['url'].rstrip('/'))
         except KeyError:
             repolist[repo.reponame]['prefix'] = ''
+    return repolist
+
+
+def insert_project_files(self, src_path, project, ignore_ext, follow_ext=False, rev=None, reponame=''):
+    """Add project files to the database.
+
+    :param self: Trac component object
+    :param src_path
+    """
+    repolist = get_repository_dict(self.env)
+    try:
+        repos = repolist[reponame]['repo']
+    except KeyError:
+        return
+
+    if not repos:
+        return
 
     if rev:
         rev = repos.normalize_rev(rev)
