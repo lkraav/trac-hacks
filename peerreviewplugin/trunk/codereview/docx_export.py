@@ -4,6 +4,7 @@
 import io
 import os
 from collections import defaultdict
+from repo import get_repository_dict
 from trac.util.datefmt import format_date
 from trac.util.text import to_unicode, to_utf8
 from trac.versioncontrol.api import RepositoryManager
@@ -229,13 +230,14 @@ def get_file_info(env, review_id):
     return items
 
 
-def add_file_info_to_table(doc, review_id, file_info):
+def add_file_info_to_table(env, doc, review_id, file_info):
     """Find or create file information table and add file info.
 
     @param doc: python-docx Document object
     @param review_id: id of this review
     @param file_info: list of PeerReviewFile objects
     @return: None
+    :param env:
     """
     def get_file_table(doc):
         for table in doc.tables:
@@ -265,29 +267,27 @@ def add_file_info_to_table(doc, review_id, file_info):
             num += len(value)
         return num
 
+    repodict = get_repository_dict(env)
+
     table = get_file_table(doc)
     if file_info and table:
         cells = table.rows[-1].cells
-        try:
-            cells[0].text = str(file_info[0]['file_id'])
-            cells[1].text = file_info[0]['path']
-            cells[2].text = file_info[0]['hash'] or ''
-            cells[3].text = file_info[0]['revision'].strip()
-            cells[4].text = str(get_num_comments(file_info[0]['comments']))
-            cells[5].text = file_info[0]['status'] or ''
-        except IndexError:  # May happen if the template misses some table columns
-            pass
 
-        for item in file_info[1:]:
+        for idx, item in enumerate(file_info):
             try:
-                cells = table.add_row().cells
+                try:
+                    prefix = repodict[item['repo']]['url'].rstrip('/')
+                except:
+                    prefix = ''
+                if idx > 0:
+                    cells = table.add_row().cells
                 cells[0].text = str(item['file_id'])
-                cells[1].text = item['path']
+                cells[1].text = prefix + item['path']
                 cells[2].text = item['hash'] or ''
                 cells[3].text = item['revision']
                 cells[4].text = str(get_num_comments(item['comments']))
                 cells[5].text = item['status'] or ''
-            except IndexError:
+            except IndexError:  # May happen if the template misses some table columns
                 pass
 
 def get_file_data(env, f_info):
@@ -422,7 +422,7 @@ def create_docx_for_review(env, data, template):
     add_reviewers_to_table(env, doc, review_id)
 
     file_info = get_file_info(env, review_id)
-    add_file_info_to_table(doc, review_id, file_info)
+    add_file_info_to_table(env, doc, review_id, file_info)
     add_file_data(env, doc, file_info)
 
     set_core_properties(doc, data)
