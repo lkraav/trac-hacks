@@ -8,5 +8,10 @@ setup(
             'TracJupyterNotebook = tracjupyternotebook.renderer',
         ],
     },
+    install_requires = [
+        'ipython',
+        'nbformat',
+        'nbconvert',
+    ],
 )
 
