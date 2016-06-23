@@ -5,7 +5,6 @@ Modified by: Alvaro Iradier <alvaro.iradier@polartech.es>
 """
 
 import StringIO
-import defaults
 import os
 import re
 import tempfile
@@ -31,19 +30,21 @@ try:
 except ImportError:
     import ho.pisa as pisa
 
+import defaults
+
 # Kludge to workaround the lack of absolute imports in Python version prior to
 # 2.5
-pigments_loaded = False
 try:
-    # TODO: A better way of importing and checking pigments?
+    # TODO: A better way of importing and checking pygments?
     # Copied from trac.mimeview.pigments
     pygments = __import__('pygments', {}, {},
                           ['lexers', 'styles', 'formatters'])
+except ImportError:
+    pygments_loaded = False
+else:
     HtmlFormatter = pygments.formatters.html.HtmlFormatter
     get_style_by_name = pygments.styles.get_style_by_name
-    pigments_loaded = True
-except:
-    pass
+    pygments_loaded = True
 
 EXCLUDE_RES = [
     re.compile(r'\[\[TracGuideToc([^]]*)\]\]'),
@@ -78,10 +79,10 @@ class linkLoader:
 
             if name.startswith('http://') or name.startswith('https://'):
                 self.env.log.debug(
-                    "WikiPrint.linkLoader => Resolving URL: %s" % name)
+                    "WikiPrint.linkLoader => Resolving URL: %s", name)
                 url = urlparse.urljoin(relative, name)
                 self.env.log.debug(
-                    "WikiPrint.linkLoader => urljoined URL: %s" % url)
+                    "WikiPrint.linkLoader => urljoined URL: %s", url)
             elif self.allow_local:
                 self.req.perm.assert_permission('WIKIPRINT_FILESYSTEM')
                 self.env.log.debug(
@@ -95,7 +96,7 @@ class linkLoader:
                 url = urlparse.urljoin(self.req.abs_href(), name)
 
             path = urlparse.urlsplit(url)[2]
-            self.env.log.debug("WikiPrint.linkLoader => path: %s" % path)
+            self.env.log.debug("WikiPrint.linkLoader => path: %s", path)
             suffix = ''
             if '.' in path:
                 new_suffix = '.' + path.split(".")[-1].lower()
@@ -146,7 +147,7 @@ class linkLoader:
             return path
 
         except Exception, e:
-            self.env.log.debug("WikiPrint.linkLoader ERROR: %s" % e)
+            self.env.log.debug("WikiPrint.linkLoader ERROR: %s", e)
         return None
 
 
@@ -230,7 +231,7 @@ class WikiPrint(Component):
             r = re.compile(r'\[wiki:(.*?)\]')
             text = r.sub('[%s/wiki/\g<1>]' % self.rebase_links, text)
 
-        self.env.log.debug('WikiPrint => Wiki input for WikiPrint: %r' % text)
+        self.env.log.debug('WikiPrint => Wiki input for WikiPrint: %r', text)
 
         #First create a Context object from the wiki page
         context = Context(Resource('wiki', page_name), req.abs_href, req.perm)
@@ -238,10 +239,10 @@ class WikiPrint(Component):
 
         #Now convert in that context
         page = format_to_html(self.env, context, text)
-        self.env.log.debug('WikiPrint => Wiki to HTML output: %r' % page)
+        self.env.log.debug('WikiPrint => Wiki to HTML output: %r', page)
 
-        self.env.log.debug('WikiPrint => HTML output for WikiPrint is: %r'
-                           % page)
+        self.env.log.debug('WikiPrint => HTML output for WikiPrint is: %r',
+                           page)
         self.env.log.debug('WikiPrint => Finish function wikipage_to_html')
 
         return page
@@ -337,7 +338,7 @@ class WikiPrint(Component):
             style = Markup(self.get_article_css(req))
 
         # Get pygments style
-        if pigments_loaded:
+        if pygments_loaded:
             try:
                 style_cls = get_style_by_name('trac')
                 parts = style_cls.__module__.split('.')
@@ -368,11 +369,10 @@ class WikiPrint(Component):
         loader = linkLoader(self.env, req, allow_local=True)
         if file_or_url:
             file_or_url = loader.getFileName(file_or_url)
-            self.env.log.debug("wikiprint => Loading URL: %s" % file_or_url)
+            self.env.log.debug("wikiprint => Loading URL: %s", file_or_url)
             try:
-                f = open(file_or_url)
-                data = f.read()
-                f.close()
+                with open(file_or_url) as f:
+                    data = f.read()
             except:
                 data = default
         else:
