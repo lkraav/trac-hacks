@@ -9,4 +9,9 @@ setup(
             'traccitecode = traccitecode',
         ],
     },
+    package_data = {
+        'traccitecode': [
+            'htdocs/*',
+        ],
+    },
 )
