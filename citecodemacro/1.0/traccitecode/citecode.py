@@ -30,10 +30,10 @@ class CiteCodeMacro(WikiMacroBase):
 
         reponame, repo, path = self.repoman.get_repository_by_path(path)
         try:
-            if qs.has_key('rev') == None:
-                rev = None
-            else:
+            if 'rev' in qs:
                 rev = qs['rev'][0].encode()
+            else:
+                rev = None
             self.log.debug("rev=%s" % rev)
             node = repo.get_node(path, rev = rev)
             content = node.get_content()
