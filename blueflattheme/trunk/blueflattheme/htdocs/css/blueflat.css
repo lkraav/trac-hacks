@@ -1,28 +1,28 @@
 body {
     padding-bottom: 40px;
-    font-size : 14px;
+    font-size : 13px;
 }
 
 body, th, tr {
     font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 h1 {
-  font-size: 1.7em;
+  font-size: 1.4em;
   border-bottom: solid 1px #4F7AC6;
 }
 
 h2 {
-  font-size: 1.5em;
-}
-
-h3 {
   font-size: 1.3em;
 }
 
+h3 {
+  font-size: 1.2em;
+}
+
 h4 {
-  font-size: 1.15em;
+  font-size: 1.1em;
   color : #4F7AC6;
 }
 
@@ -149,6 +149,10 @@ input[type="radio"], input[type="checkbox"] {
   z-index : 1;
 }
 
+#content {
+    position: inherit;
+}
+
 div.trac-content, div.system-message, h2.report-result{
   border-radius: 0em;
   box-shadow: none;
@@ -238,7 +242,8 @@ h1 :link, h1 :visited {
 
 #ctxtnav{
    margin-left : 1em;
-    z-index: 1; /* enable wiki edit buttons with bootstrap multi column layout */
+   z-index: 1; /* enable wiki edit buttons with bootstrap multi column layout */
+   padding: 0;
 }
 
 #ctxtnav :link, #ctxtnav :visited {
@@ -280,6 +285,13 @@ h1 :link, h1 :visited {
 #diffrev label{
   margin-top: 2px;
 }
+
+.browser h1{
+    margin-top: 1.5em;
+    padding-bottom: 0;
+}
+/* Browser page */
+
 /* Wiki pages */
 #pagepath {
     position:relative; /* without 'position' z-index is ignored */
@@ -318,10 +330,6 @@ blockquote p:last-child, blockquote ul:last-child, blockquote ol:last-child {
 }
 /* End ticket page */
 
-#content {
-    position: inherit;
-}
-
 #edit #text {
     min-height: 40em;
 }
@@ -333,6 +341,7 @@ blockquote p:last-child, blockquote ul:last-child, blockquote ol:last-child {
 /* Admin page */
 #content.admin h1 {
     float: none;
+    padding-bottom: 0; /* Because we may include browser.css for project file page */
 }
 #tabcontent{
   margin-top : 16px;
