@@ -19,6 +19,8 @@ else:
   <!--! Add site-specific style sheet -->
   <head py:match="head" py:attrs="select('@*')">
  ${select('*|comment()|text()')}
+      <!--! Set the viewport so responsive feature works on mobile devices -->
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <link rel="stylesheet" type="text/css"
           href="${href.chrome('blueflat/css/bootstrap.min.css')}" />
       <!-- Optional theme -->
