@@ -1,8 +1,8 @@
 Subcomponents in Trac
 =====================
 
-The current version is updated for Trac 1.0 and is compatible with Trac 0.12.
-There is an older, unmaintained, version for Trac 0.11.
+The current version is ready for Trac 1.0. There are older, unmaintained,
+versions for Trac 0.12 and Trac 0.11.
 
 What is it?
 -----------
