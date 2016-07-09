@@ -4,6 +4,7 @@
  #
 
 from pkg_resources import resource_filename
+from genshi import HTML
 from genshi.builder import tag
 from genshi.filters.transform import Transformer
 
@@ -44,10 +45,11 @@ class SubComponentsModule(Component):
         return handler
     
     def post_process_request(self, req, template, data, content_type):
+        # The /query paths are handled in filter_stream()
         if req.path_info.startswith('/ticket/') or \
-           req.path_info.startswith('/newticket') or \
-           req.path_info.startswith('/query'):
+           req.path_info.startswith('/newticket'):
             add_script(req, 'subcomponents/componentselect.js')
+        
                                  
         if template == "query.html":
             # Allow users to query for parent components and include all subs
@@ -125,6 +127,12 @@ class SubComponentsModule(Component):
             if data['view'] == 'detail':
                 if len(self._get_component_children(data['component'].name)) > 0:
                     stream |= Transformer("//div[@class='field'][1]").after(self._build_renamechildren_field())
+        elif req.path_info.startswith('/query'):
+            # We need to load our script after the initializeFilters() call done by Trac
+            html = HTML('<script type="text/javascript" charset="utf-8" src="' +
+                        req.href.base +
+                        '/chrome/subcomponents/componentselect.js"></script>')
+            stream |= Transformer('//head').append(html)
         return stream
     
     
