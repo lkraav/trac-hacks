@@ -16,7 +16,7 @@ setup(
     author = 'Niels Sascha Reedijk',
     author_email = 'niels.reedijk@gmail.com',
     description = 'Provides support for subcomponents in the interface.',
-    license = 'BSD',
+    license = 'MIT',
     keywords = 'trac plugin ticket query components',
     url = 'http://hg.haiku-os.org/trac-subcomponents',
     classifiers = [
