@@ -14,6 +14,7 @@ from trac.util.text import unicode_quote_plus
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, ITemplateStreamFilter, add_notice, add_script
 from trac.ticket.roadmap import TicketGroupStats
+from trac.util.translation import _
 
 class SubComponentsModule(Component):
     """Implements subcomponents in Trac's interface."""
@@ -32,14 +33,18 @@ class SubComponentsModule(Component):
                 parentcomponent.name = req.args.get('name')
                 parentcomponent.owner = req.args.get('owner')
                 parentcomponent.description = req.args.get('description')
-                parentcomponent.update()
-                
+                try:
+                    parentcomponent.update()
+                except self.env.db_exc.IntegrityError:
+                    raise TracError(_('The component "%(name)s" already '
+                                      'exists.', name=parentcomponentname))
+                    
                 # Now update the child components
                 childcomponents = self._get_component_children(parentcomponentname)
                 for component in childcomponents:
                     component.name = component.name.replace(parentcomponentname, req.args.get('name'), 1)
                     component.update()
-                add_notice(req, 'Your changes have been saved.')
+                add_notice(req, _('Your changes have been saved.'))
                 req.redirect(req.href.admin('ticket', 'components'))
                 
         return handler
