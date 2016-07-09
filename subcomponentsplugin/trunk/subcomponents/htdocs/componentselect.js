@@ -259,32 +259,28 @@ window.maxBranches = 0;
   follows the DOM way of thinking
  */
 function convertQueryComponent() {
-	
-	var comps = jQuery('tr.component td.filter select');
-	if ( comps.length > 0 )
-		for (var i = 0; i < comps.length; i++) 
-			if ( comps[ i ].name.match(/[0-9]+_component/g) )
-				reduceComponents( comps[i], null, true );		
+	jQuery('tr.component td.filter select').each(function () {
+		if (this.name.match(/[0-9]+_component/g) )
+			reduceComponents(this, null, true)
+	});
 }
 
 function convertBatchModifyComponent() {
-	var comps = jQuery('#batchmod_component td.batchmod_property select');
-	if (comps.length > 0)
-		/* We don't really need a loop here, there should be only one ...*/
-		for (var i = 0; i < comps.length; i++) 
-			if (comps[i].name == "batchmod_value_component")
-				reduceComponents( comps[i], null, true );		
+	jQuery('#batchmod_component td.batchmod_property select').each(function () {
+		if (this.name == "batchmod_value_component")
+			reduceComponents(this, null, true);
+	});
 }
 
 function initialiseComponents() { 
 
-	var comps = jQuery( 'tr.component td.filter select' );
 	if ( jQuery( '[id^=add_filter_]' ).length )
 		jQuery( '[id^=add_filter_]' ).change( convertQueryComponent );
 	
 	if ( jQuery('#add_batchmod_field').length )
 		jQuery( '#add_batchmod_field').change(convertBatchModifyComponent );
 
+	var comps = jQuery( 'tr.component td.filter select' );
 	if ( comps.length > 0 ) {
 		// For the query page
 		for (var i = 0; i < comps.length; i++)
