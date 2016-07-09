@@ -273,24 +273,25 @@ function convertBatchModifyComponent() {
 }
 
 function initialiseComponents() { 
-
-	if ( jQuery( '[id^=add_filter_]' ).length )
-		jQuery( '[id^=add_filter_]' ).change( convertQueryComponent );
+	// Query page: add filters
+	if (jQuery('[id^=add_filter_]').length)
+		jQuery('[id^=add_filter_]').change(convertQueryComponent);
 	
-	if ( jQuery('#add_batchmod_field').length )
-		jQuery( '#add_batchmod_field').change(convertBatchModifyComponent );
+	// Query page: batch modify
+	if (jQuery('#add_batchmod_field').length)
+		jQuery('#add_batchmod_field').change(convertBatchModifyComponent);
 
-	var comps = jQuery( 'tr.component td.filter select' );
-	if ( comps.length > 0 ) {
-		// For the query page
-		for (var i = 0; i < comps.length; i++)
-			reduceComponents( comps[i], null, true );
-	}
+	// Query page: existing filters
+	jQuery('tr.component td.filter select').each( function () {
+		reduceComponents(this, null, true)
+	});
 	
-	// Interestingly, Opera picks up .names in getElementById(), hence it being at the end now
-	if ( jQuery( '#field-component' ) )
+	// Ticket/Newticket page: component field 
+	// Original comment: Opera picks up .names in getElementById(), hence it being at the end now
+	if ( jQuery( '#field-component' ).length )
 		reduceComponents( jQuery( '#field-component' )[0], null, true ); // For the new ticket page
 
+	// Legacy: is this (still) necessary?
 	// now we need to query any radio groups for Mozilla breakage: http://www.quirksmode.org/js/tests/moz_radios.html
 	var brokMoz = jQuery('input[type="radio"]');
 	if ( brokMoz.length > 0 ) {
