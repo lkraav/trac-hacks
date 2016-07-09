@@ -95,3 +95,12 @@ Testing of the Javascript
 
   - **Check** if the XPath to the component field in the batch modify section
     is correct
+
+
+Using the init-test-env.py tool
+-------------------------------
+
+In order to help test the right combination of components and subcomponents it
+is possible to use the init-test-env.py tool to create a test environment with
+various default components for testing. The components have a descriptive name
+which should give an indication of how it functions. 
