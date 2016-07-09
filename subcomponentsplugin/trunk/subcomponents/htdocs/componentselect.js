@@ -8,250 +8,210 @@
  */
 
 /*
- * Maintained by Niels Sascha Reedijk <niels.reedijk@gmail.com>
+ * Rewritten & maintained by Niels Sascha Reedijk <niels.reedijk@gmail.com>
  * Copyright 2012.
 */
 
-/*
-	take the current selection, and make a haiku/component
- */
-function updateSelection( set, level ) {
+
+function getLeafsForLevel(level, prefix, forceEmptyLeafs)
+{
+	var retVal = new Array();
+	var previous = null;
 	
-	var text, i, component = '';
-	for ( i = 1; i <= level + 1 ; i++ ) { 
-		if ( componentSelector[ set ][ i ] && componentSelector[ set ][ i ].selectedIndex != -1 ) {
-			text = componentSelector[ set ][ i ].options[ componentSelector[ set ][ i ].selectedIndex ].text;
-			if ( text != '' )
-				component += text + '/';
+	for (i = 0; i < gComponentList.length; i++) {
+		// Check if the current item has the right prefix
+		if (gComponentList[i].join('/').substring(0, prefix.length) != prefix){
+			continue;
 		}
-	}
-	hiddenComponent[ set ].value = component.substring( 0, component.length - 1 );
-}
-
-/*
-	The user has changed the selected component
- */
-function selectComponent( e ) {
-
-	// because browsers never make it easy (IE)..
-	var caller, remover;
-	if ( !e ) e = window.event;
-	if ( e.target ) caller = e.target; else if ( e.srcElement ) caller = e.srcElement;
-	if ( caller.nodeType == 3 ) // defeat Safari bug
-		caller = caller.parentNode;
-	var level = caller.stage, set = caller.set, onlyLeafs = caller.allowleafs;
-
-	// bomb out if this is a last choice
-	if ( level >= maxBranches ) {
-		updateSelection( set, level ); 
-		return;
-	}
-
-	// remove any <select>s to the right of us
-	for ( i = maxBranches; i > level; i-- ) {
-		if ( null != ( remover = componentSelector[ set ][ i ] ) ) {
-			remover.selectedIndex = -1;
-			if ( remover.parentNode )
-				 remover.parentNode.removeChild( remover );
+		
+		var current = gComponentList[i][level];
+		if (!current){
+			// This item has the right prefix, but no value. This means that
+			// it is an empty leaf
+			current = "";
 		}
-	}
-	// check if the user back–pedalled to a non option ( we no longer have '' choices )
-    var parentChoices = Array()
-	var parentChoice = componentSelector[ set ][ level ].options[ componentSelector[ set ][ level ].selectedIndex ].text;
-    for(k=0; k<level; k++) {
-        parentChoices[k] = componentSelector[ set ][ k+1 ].options[ componentSelector[ set ][ k+1 ].selectedIndex ].text; // we need to examine more than just one parent
-    }
-	if ( parentChoice == '' ) {
-		updateSelection( set, level ); 
-		return;
-	}
-
-	var choice, superChoice, shortLeaf = false, previous = 's33d', p = 0, recursive = false, currentSelector = componentSelector[ set ][ level + 1 ];
-	// empty the choice
-	currentSelector.options.length = 0;
-	previous = currentSelector.options[ p++ ] = new Option( );
- 
-	// Populate the choice 
-	for ( i = 0; i < componentList.length ; i++ ) {
-		choice = componentList[ i ][ level ]; 
-		superChoice = componentList[ i ][ level - 1 ]; 
-       
-        // more extensive check: all parent components are compared to all super components:
-        var isOK=true;
-        for (l=1;l<level;++l) {
-            if ( componentList[i][l-1] != parentChoices[l-1] ) {
-                isOK = false;
-            }
-        }
-
-		if ( superChoice == parentChoice ) {
-			if ( previous != choice && choice != null ) {
-			
-				previous = choice;
-
-                // for the actual adding of the option, the extensive check's
-                // result is used:
-                if(isOK) {
-                    currentSelector.options[ p++ ] = new Option( choice, choice );
-                }
-			}
-			if ( componentList[ i ][ level + 1 ] != null ) 
-				recursive = true;
-			if ( choice == null )
-				shortLeaf = true;
-		}
-	}
-	currentSelector.selectedIndex = 0; // Konq. has fits without
-
-	// shortLeaf is true when we have a stump with leafs further on
-	if ( currentSelector.options.length > 0 ) {
-		if ( !( shortLeaf || !onlyLeafs) || previous == currentSelector.options[ 0 ]  ) {
-			currentSelector.options[ 0 ] = null;
-		}
-	}
-
-	// avoid cases where there are no options, ie, we have selected a leaf
-	if ( currentSelector.options.length < ( onlyLeafs ? 1 : 2 ) ) {
-		updateSelection( set, level ); 
-		return;
-	}
-
-	// We're done, add it back to the page
-	var parent = caller.parentNode;
-	var sibling = caller.nextSibling;
-	if ( sibling != null )
-		parent.insertBefore( currentSelector, sibling );
-	else
-		parent.appendChild( currentSelector );
-
-	// does this branch continue?
-	if ( recursive ) {
-		var event = { target : currentSelector };
-		selectComponent( event ); // My Konq was being funny with anon {}
-	} else 
-		updateSelection( set, level ); 
-}
-
-
-
-/*
-	This function deletes the <select> box, replaces it with a hidden input box, 
-	and as many <select>s as the first/selected component had parts: this new element has an 
-	event that triggers on change, to add or remove <select> boxes
-	original: the <select> field that is to be replaced
-	set: support multiple component fields, can leave null for autoincrement
-	onlyLeafs: add leafs that contain '', so users can pick super components
- */
-function reduceComponents( original, set, onlyLeafs ) {
-	
-	// check support, else block js method
-	if ( !document.createElement || !original )
-		return; 
-	if ( set == null ) set = window.components++;
-	if ( onlyLeafs == null ) onlyLeafs = true;
-
-	var i, p, j, sibling = original, parent = original.parentNode;
-	// we assume the options never change between reduceComponents calls
-	if ( componentList.length == 0 ) {
-		for ( i = 0; i < original.options.length; i++ ) {
-			componentList[ i ] = original.options[ i ].text.split( '/' );
-			maxBranches = ( maxBranches < componentList[ i ].length ? componentList[ i ].length : maxBranches );
-		}
-		componentList.sort(); // so Trac can be lazy
-	}
-
-	componentSelector[ set ] = new Array();
-
-	// create some replacement dropdowns
-	for ( i = 1; i <= maxBranches; i++ ) {
-		componentSelector[ set ][ i ] = document.createElement( 'SELECT' );
-		componentSelector[ set ][ i ].id = 'component-selector-' + set + '-' + i;
-		componentSelector[ set ][ i ].className = 'haikucomponent';
-		componentSelector[ set ][ i ].stage = i;
-		componentSelector[ set ][ i ].set = set;
-		componentSelector[ set ][ i ].allowleafs = onlyLeafs;
-		addEvent( componentSelector[ set ][ i ], 'change', selectComponent );
-	}
-
-	// Setup the field to submit
-	var currentSelector = componentSelector[ set ][ 1 ];
-			hiddenComponent[ set ] = document.createElement( 'INPUT' );
-			hiddenComponent[ set ].id = original.id;
-			hiddenComponent[ set ].name = original.name;
-			hiddenComponent[ set ].type = 'hidden';	
-
-	// Take currently selected option, or the first
-	if ( !original.options ) return; // because Opera is buggy
-	if ( original.selectedIndex == -1 ) original.selectedIndex = 0;
-	// Query adds '' at the start
-	if ( onlyLeafs && original.options[ original.selectedIndex ].text == '' && original.selectedIndex == 0 ) original.selectedIndex = 1;
-	hiddenComponent[ set ].value = original.options[ original.selectedIndex ].text;
-	subItems		  = hiddenComponent[ set ].value.split( '/' );
-	var previous = 's33d', shortLeaf = false;
-	// Populate choice(s)	
-	for ( i = 0; i < subItems.length + 1; i++ ) {
-
-		p = 0;
-		currentSelector = componentSelector[ set ][ i + 1 ];
-		if ( !currentSelector )
+		
+		if (current == previous)
+			// this item is already in the list
 			continue;
 		
-		previous = currentSelector.options[ p++ ] = new Option( );
-		for( j = 0; j < componentList.length ; j++ ) {
-
-			choice = componentList[ j ][ i ];
-
-            // go through whole path - all subcomponents must match:
-            isOK=true;
-            for (k=0; k <= i-1 ; ++k) {
-                if(componentList[j][k] != subItems[k]) {
-                    isOK=false;
-                    break;
-                }
-            }
-
-            // old:
-            // (this only checks the last subcomponent)
-			//if ( componentList[ j ][ i - 1 ] == subItems[ i - 1 ] /*|| typeof subItems[ i - 1 ] == 'undefined'*/ ) 
-            // new:
-            if (isOK)
-            {
-
-				if ( previous != choice && choice != null && choice != '' ) {
-					previous = choice;					
-					currentSelector.options[ p++ ] = new Option( choice, choice );
-					if ( choice == subItems[ i ] )
-						currentSelector.selectedIndex = p - 1;
-				}
-				if ( choice == null )
-					shortLeaf = true;
-			}
-
-		}
-		// Special case(s) for supercomponents: we have children, but! we dont have a child ourselves
-		if ( currentSelector.options.length > 0 ) {
-			if ( !( subItems[ i ] == null || shortLeaf || !onlyLeafs ) || previous == currentSelector.options[ 0 ] ) {
-				currentSelector.options[ 0 ] = null;
-			}
-		}
-
-		if ( currentSelector.options.length < ( onlyLeafs ? 1 : 2 ) )
-			continue;
-
-		// insert into page
-		if ( sibling != null )
-			parent.insertBefore( currentSelector, sibling );
-		else
-			parent.appendChild( currentSelector );
+		retVal.push(current);
+		previous = current;
 	}
-	parent.replaceChild( hiddenComponent[ set ], original );
+	
+	if (retVal.length == 0 || ( retVal.length == 1 && retVal[0] == "" ))
+		// There are no entries, or the only entry is an empty leaf
+		return new Array();
+	
+	if (forceEmptyLeafs && retVal[0] != "")
+		retVal.unshift("")
+	
+	return retVal;
 }
 
-window.componentList = new Array( );
-window.components = 0;
-window.componentSelector = new Array( );
-window.hiddenComponent = new Array( );
-window.maxBranches = 0;
+/*
+	Event handler for when the user has changed the selected component
+ */
+function selectedComponentChanged(e) {
+	// Get the level of this select
+	var level = jQuery(this).prevAll('[class=haikucomponent]').length + 1;
+	
+	// Hide the deeper subcomponents (if applicable)
+	jQuery(this).nextAll('[class=haikucomponent]').hide();
+	
+	// Check if the current selected value is an empty leaf
+	if (jQuery(this).val().length == 0) {
+		var prefix = ""
+		jQuery(this).prevAll('[class=haikucomponent]').reverse()
+			.each(function() {
+				if (prefix.length != 0)
+					prefix += "/"
+				prefix += jQuery(this).val();
+			});
+		// Store the path of the previous leafs and end
+		jQuery(this).parent().find("input[type=hidden]").val(prefix);
+		return;
+	}
+	
+	// Just store the new path if this is the 'highest' level
+	if (level == gMaxBranches) {
+		var prefix = ""
+		jQuery(this).parent().find('[class=haikucomponent]').each(function() {
+			if (prefix.length != 0)
+				prefix += "/";
+			prefix += jQuery(this).val(); 
+		});
+		jQuery(this).parent().find("input[type=hidden]").val(prefix);
+		return;
+	}
+	
+	// Empty the next selects
+	jQuery(this).nextAll('[class=haikucomponent]').empty();
+	
+	// Walk through all the component names at this level
+	var prefix = "";
+	jQuery(this).prevAll('[class=haikucomponent]').reverse().each(function() {
+		prefix += jQuery(this).val(); 
+		prefix += "/";
+	});
+	prefix += jQuery(this).val();
+		
+	var items = getLeafsForLevel(level, prefix, e.data.forceEmptyLeafs);
+	
+	for (i = 0; i < items.length; i++)
+		jQuery(this).next().append(jQuery("<option/>", {
+			value: items[i],
+			text: items[i]
+		}));
+	
+
+	// If there are any entries in the select to the right, show it
+	if (items.length)
+		jQuery(this).next().show();
+	
+	// Update the current selected value
+	// It might be the case that the next is an obligatory choice. In that
+	// case append the selected item to the selected value.
+	if (items.length && jQuery(this).next().val().length > 0)
+		prefix = prefix + "/" + jQuery(this).next().val()
+
+	jQuery(this).parent().find("input[type=hidden]").val(prefix);
+}
+
+
+/*
+	This function deletes the <select> box, replaces it with a hidden input 
+	box, and as many <select>s as the first/selected component had parts: this
+	new element has an  event that triggers on change, to add or remove 
+	<select> boxes
+	original: the <select> field that is to be replaced
+	set: support multiple component fields, can leave null for autoincrement
+	forceEmptyLeafs: add leafs that contain '', so users can pick super components
+	                 used in the Query
+*/
+function convertComponentSelect(element, forceEmptyLeafs)
+{
+	var e = jQuery(element);
+	var parent = jQuery(element).parent();
+
+	gComponentCount ++;
+
+	// Populate the global component list if it has not been populated before
+	if ( gComponentList.length == 0 ) {
+		var i = 0;
+		e.find('option').each(function() {
+			gComponentList[i] = jQuery(this).text().split('/');
+			gMaxBranches = (gMaxBranches < gComponentList[i].length ? gComponentList[i].length : gMaxBranches);
+			i++;
+		});
+
+		gComponentList.sort(); // so Trac can be lazy
+	}
+	
+	// create some replacement dropdowns
+	for (i = 1; i <= gMaxBranches; i++) {
+		parent.append(jQuery(document.createElement('select'))
+			.attr('id', 'component-selector' + gComponentCount + '-' + i)
+			.attr('class', 'haikucomponent')
+			.change({forceEmptyLeafs: forceEmptyLeafs}, selectedComponentChanged));
+	}
+		
+	// Store the current selected item 
+	var currentItems = e.val().split('/');
+	var currentSelectors = parent.find('[class=haikucomponent]');
+	var prefix = "";
+		
+	// Populate choice(s)
+	// Note: always use currentItems.length + 1 because we want to check
+	// whether there are more subselections possible
+	for (i = 0; i < currentItems.length + 1; i++) {		
+		var items = getLeafsForLevel(i, prefix, forceEmptyLeafs);
+
+		for (j = 0; j < items.length; j++) {
+			jQuery(currentSelectors[i]).append(jQuery("<option/>", {
+				value: items[j],
+				text: items[j]
+			}));
+		}
+
+		if (items.length == 0) {
+			break;
+		}
+		
+		jQuery(currentSelectors[i]).val(currentItems[i]);
+		
+		// Add the current selected item to the prefix to prepare for the next
+		// level
+		if (prefix.length != 0)
+			prefix += "/";
+		if (currentItems[i] == "")
+			// In case we have an 'emtpy' value, we only need to go once to get
+			// the toplevel
+			break;
+		prefix += currentItems[i];
+	}
+		
+	// Hide the unused inputs
+	jQuery(currentSelectors[currentItems.length]).nextAll().hide();
+
+	// Hide the highest input if there are no options
+	var foo = jQuery(currentSelectors[currentItems.length]).children();
+	if (jQuery(currentSelectors[currentItems.length]).children().length == 0)
+		jQuery(currentSelectors[currentItems.length]).hide();
+	
+	// Replace the current selector with a hidden input field
+	e.replaceWith(
+		$(document.createElement('input'))
+			.attr('id', e.attr('id'))
+			.attr('name', e.attr('name'))
+			.attr('value', e.val())
+			.attr('type', "hidden")
+	);
+}
+
+window.gComponentList = new Array( );
+window.gMaxBranches = 0;
+window.gComponentCount = 0;
 
 /*
   We hook into the query page with this attached to the filter <select>
@@ -261,14 +221,14 @@ window.maxBranches = 0;
 function convertQueryComponent() {
 	jQuery('tr.component td.filter select').each(function () {
 		if (this.name.match(/[0-9]+_component/g) )
-			reduceComponents(this, null, true)
+			convertComponentSelect(this, true)
 	});
 }
 
 function convertBatchModifyComponent() {
 	jQuery('#batchmod_component td.batchmod_property select').each(function () {
 		if (this.name == "batchmod_value_component")
-			reduceComponents(this, null, true);
+			convertComponentSelect(this, false);
 	});
 }
 
@@ -283,13 +243,13 @@ function initialiseComponents() {
 
 	// Query page: existing filters
 	jQuery('tr.component td.filter select').each( function () {
-		reduceComponents(this, null, true)
+		convertComponentSelect(this, true)
 	});
 	
 	// Ticket/Newticket page: component field 
 	// Original comment: Opera picks up .names in getElementById(), hence it being at the end now
 	if ( jQuery( '#field-component' ).length )
-		reduceComponents( jQuery( '#field-component' )[0], null, true ); // For the new ticket page
+		convertComponentSelect( jQuery( '#field-component' )[0], false ); // For the new ticket page
 
 	// Legacy: is this (still) necessary?
 	// now we need to query any radio groups for Mozilla breakage: http://www.quirksmode.org/js/tests/moz_radios.html
@@ -298,6 +258,9 @@ function initialiseComponents() {
 		for (var i = 0; i < brokMoz.length; i++)
 			{ if (brokMoz[i]) brokMoz[i].checked = brokMoz[i].defaultChecked; }
 	}
+	
+	// Add the reverse function to jQuery, used by convertComponentSelect()
+	jQuery.fn.reverse = [].reverse;
 }
 
 jQuery(document).ready(initialiseComponents);
