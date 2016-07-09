@@ -7,7 +7,7 @@ setup(
     name = 'TracSubcomponents',
     version = '0.0.1',
     packages = ['subcomponents'],
-    package_data = { 'subcomponents': ['templates/*.html', 'htdocs/*.js', 'htdocs/*.css' ] },
+    package_data = { 'subcomponents': ['htdocs/*.js'] },
 
     author = 'Niels Sascha Reedijk',
     author_email = 'niels.reedijk@gmail.com',
