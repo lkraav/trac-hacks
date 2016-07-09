@@ -51,7 +51,11 @@ function selectComponent( e ) {
 		}
 	}
 	// check if the user back–pedalled to a non option ( we no longer have '' choices )
+    var parentChoices = Array()
 	var parentChoice = componentSelector[ set ][ level ].options[ componentSelector[ set ][ level ].selectedIndex ].text;
+    for(k=0; k<level; k++) {
+        parentChoices[k] = componentSelector[ set ][ k+1 ].options[ componentSelector[ set ][ k+1 ].selectedIndex ].text; // we need to examine more than just one parent
+    }
 	if ( parentChoice == '' ) {
 		updateSelection( set, level ); 
 		return;
@@ -66,11 +70,25 @@ function selectComponent( e ) {
 	for ( i = 0; i < componentList.length ; i++ ) {
 		choice = componentList[ i ][ level ]; 
 		superChoice = componentList[ i ][ level - 1 ]; 
+       
+        // more extensive check: all parent components are compared to all super components:
+        var isOK=true;
+        for (l=1;l<level;++l) {
+            if ( componentList[i][l-1] != parentChoices[l-1] ) {
+                isOK = false;
+            }
+        }
+
 		if ( superChoice == parentChoice ) {
 			if ( previous != choice && choice != null ) {
 			
 				previous = choice;
-				currentSelector.options[ p++ ] = new Option( choice, choice );
+
+                // for the actual adding of the option, the extensive check's
+                // result is used:
+                if(isOK) {
+                    currentSelector.options[ p++ ] = new Option( choice, choice );
+                }
 			}
 			if ( componentList[ i ][ level + 1 ] != null ) 
 				recursive = true;
@@ -165,7 +183,6 @@ function reduceComponents( original, set, onlyLeafs ) {
 	hiddenComponent[ set ].value = original.options[ original.selectedIndex ].text;
 	subItems		  = hiddenComponent[ set ].value.split( '/' );
 	var previous = 's33d', shortLeaf = false;
-	
 	// Populate choice(s)	
 	for ( i = 0; i < subItems.length + 1; i++ ) {
 
@@ -178,8 +195,23 @@ function reduceComponents( original, set, onlyLeafs ) {
 		for( j = 0; j < componentList.length ; j++ ) {
 
 			choice = componentList[ j ][ i ];
-			if ( componentList[ j ][ i - 1 ] == subItems[ i - 1 ] /*|| typeof subItems[ i - 1 ] == 'undefined'*/ ) {
-				
+
+            // go through whole path - all subcomponents must match:
+            isOK=true;
+            for (k=0; k <= i-1 ; ++k) {
+                if(componentList[j][k] != subItems[k]) {
+                    isOK=false;
+                    break;
+                }
+            }
+
+            // old:
+            // (this only checks the last subcomponent)
+			//if ( componentList[ j ][ i - 1 ] == subItems[ i - 1 ] /*|| typeof subItems[ i - 1 ] == 'undefined'*/ ) 
+            // new:
+            if (isOK)
+            {
+
 				if ( previous != choice && choice != null && choice != '' ) {
 					previous = choice;					
 					currentSelector.options[ p++ ] = new Option( choice, choice );
