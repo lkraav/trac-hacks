@@ -151,7 +151,7 @@ class SubComponentsModule(Component):
         return result
     
     def _build_renamechildren_field(self):
-        return tag.div(tag.label(tag.input("Also rename children", \
+        return tag.div(tag.label(tag.input(_("Also rename children"), \
                                            type='checkbox', id='renamechildren', \
                                            name='renamechildren', checked='checked') \
                                 ), \
