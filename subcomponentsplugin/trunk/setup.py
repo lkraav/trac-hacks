@@ -9,7 +9,7 @@ from setuptools import setup
 
 setup(
     name = 'TracSubcomponents',
-    version = '1.0.9',
+    version = '1.1.0',
     packages = ['subcomponents'],
     package_data = { 'subcomponents': ['htdocs/*.js'] },
 
@@ -35,7 +35,7 @@ setup(
         'Programming Language :: Python',
     ],
     
-    install_requires = ['Trac>=0.11', 'Trac<0.12', 'Genshi>=0.5'],
+    install_requires = ['Trac>=0.12dev',],
 
     entry_points = {
         'trac.plugins': [
