@@ -4,20 +4,43 @@
  #
 
 from pkg_resources import resource_filename
+from genshi.builder import tag
+from genshi.filters.transform import Transformer
 
 from trac.core import *
+from trac.ticket import model
 from trac.util.text import unicode_quote_plus
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_script
+from trac.web.chrome import ITemplateProvider, ITemplateStreamFilter, add_notice, add_script
 from trac.ticket.roadmap import TicketGroupStats
 
 class SubComponentsModule(Component):
     """Implements subcomponents in Trac's interface."""
     
-    implements(IRequestFilter, ITemplateProvider)
+    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
  
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
+        if req.path_info.startswith('/admin/ticket/components/'):
+            if req.method == "POST" and 'renamechildren' in req.args:
+                if req.args.get('renamechildren') != 'on':
+                    return handler # Let trac handle this update
+                # First process the parent component. 
+                parentcomponentname = req.path_info[25:]
+                parentcomponent = model.Component(self.env, parentcomponentname)
+                parentcomponent.name = req.args.get('name')
+                parentcomponent.owner = req.args.get('owner')
+                parentcomponent.description = req.args.get('description')
+                parentcomponent.update()
+                
+                # Now update the child components
+                childcomponents = self._get_component_children(parentcomponentname)
+                for component in childcomponents:
+                    component.name = component.name.replace(parentcomponentname, req.args.get('name'), 1)
+                    component.update()
+                add_notice(req, 'Your changes have been saved.')
+                req.redirect(req.href.admin('ticket', 'components'))
+                
         return handler
     
     def post_process_request(self, req, template, data, content_type):
@@ -31,6 +54,7 @@ class SubComponentsModule(Component):
             data['modes']['select'].insert(0, {'name': "begins with", 'value': "^"})
 
         if template == "milestone_view.html":
+            # Group components in the milestone view by base component.
             if data['grouped_by'] == "component":
                 componentname = ''
                 newgroups = []
@@ -93,3 +117,29 @@ class SubComponentsModule(Component):
         return [resource_filename(__name__, 'templates')]
 
 
+    # ITemplateStreamFilter methods
+    def filter_stream(self, req, method, filename, stream, data):
+        if filename == "admin_components.html":
+            # If we are at detail editing of a component, and it has
+            # children, then add a checkbox to rename those.
+            if data['view'] == 'detail':
+                if len(self._get_component_children(data['component'].name)) > 0:
+                    stream |= Transformer("//div[@class='field'][1]").after(self._build_renamechildren_field())
+        return stream
+    
+    
+    # Other functions
+    def _get_component_children(self, name):
+        components = model.Component.select(self.env)
+        result = []
+        for component in components:
+            if component.name.startswith(name) and component.name != name:
+                result.append(component)
+        return result
+    
+    def _build_renamechildren_field(self):
+        return tag.div(tag.label(tag.input("Also rename children", \
+                                           type='checkbox', id='renamechildren', \
+                                           name='renamechildren', checked='checked') \
+                                ), \
+                       class_='field')
