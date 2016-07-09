@@ -226,15 +226,15 @@ function convertQueryComponent() {
 	var comps = jQuery('tr.component td.filter select');
 	if ( comps.length > 0 )
 		for (var i = 0; i < comps.length; i++) 
-			if ( comps[ i ].name == 'component' )
+			if ( comps[ i ].name.match(/[0-9]+_component/g) )
 				reduceComponents( comps[i], null, true );		
 }
 
 function initialiseComponents() { 
 
 	var comps = jQuery( 'tr.component td.filter select' );
-	if ( jQuery( '#add_filter' ).length )
-		jQuery( '#add_filter' ).change( convertQueryComponent );
+	if ( jQuery( '[id^=add_filter_]' ).length )
+		jQuery( '[id^=add_filter_]' ).change( convertQueryComponent );
 
 	if ( comps.length > 0 ) {
 		// For the query page
