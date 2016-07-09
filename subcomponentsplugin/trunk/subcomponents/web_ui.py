@@ -114,7 +114,7 @@ class SubComponentsModule(Component):
         """Return the absolute path of the directory containing the provided
         ClearSilver templates.
         """
-        return [resource_filename(__name__, 'templates')]
+        return ""
 
 
     # ITemplateStreamFilter methods
