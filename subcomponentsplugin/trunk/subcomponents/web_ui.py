@@ -1,4 +1,7 @@
 from pkg_resources import resource_filename
+from genshi.core import Markup, START, END, TEXT
+from genshi.builder import tag
+from genshi.filters.transform import Transformer
 
 from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
@@ -7,7 +10,7 @@ from trac.web.chrome import ITemplateProvider, add_script
 class SubComponentsModule(Component):
     """Implements subcomponents in Trac's interface."""
     
-    implements(IRequestFilter, ITemplateProvider) #, ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
  
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -17,8 +20,12 @@ class SubComponentsModule(Component):
         if req.path_info.startswith('/ticket/') or \
            req.path_info.startswith('/newticket') or \
            req.path_info.startswith('/query'):
-            add_script(req, 'subcomponents/componentselect.js')                      
-        
+            add_script(req, 'subcomponents/componentselect.js')
+                                 
+        if template == "query.html":
+            # Allow users to query for parent components and include all subs
+            data['modes']['select'].insert(0, {'name': "begins with", 'value': "^"})
+
         return template, data, content_type        
  
   
@@ -37,7 +44,6 @@ class SubComponentsModule(Component):
 
 
     # ITemplateStreamFilter
-#    def filter_stream(self, req, method, filename, stream, data):
- #       # Add the componentselect.js file to several templates
-     #   return stream
-    #
+    def filter_stream(self, req, method, filename, stream, data):
+        return stream
+
