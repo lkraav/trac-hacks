@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+
+ #
+ # Copyright 2009, Niels Sascha Reedijk <niels.reedijk@gmail.com>
+ # All rights reserved. Distributed under the terms of the MIT License.
+ #
 
 from setuptools import setup
 
