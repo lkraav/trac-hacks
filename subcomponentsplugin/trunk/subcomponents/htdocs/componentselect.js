@@ -8,6 +8,11 @@
  */
 
 /*
+ * Maintained by Niels Sascha Reedijk <niels.reedijk@gmail.com>
+ * Copyright 2012.
+*/
+
+/*
 	take the current selection, and make a haiku/component
  */
 function updateSelection( set, level ) {
@@ -262,11 +267,23 @@ function convertQueryComponent() {
 				reduceComponents( comps[i], null, true );		
 }
 
+function convertBatchModifyComponent() {
+	var comps = jQuery('#batchmod_component td.batchmod_property select');
+	if (comps.length > 0)
+		/* We don't really need a loop here, there should be only one ...*/
+		for (var i = 0; i < comps.length; i++) 
+			if (comps[i].name == "batchmod_value_component")
+				reduceComponents( comps[i], null, true );		
+}
+
 function initialiseComponents() { 
 
 	var comps = jQuery( 'tr.component td.filter select' );
 	if ( jQuery( '[id^=add_filter_]' ).length )
 		jQuery( '[id^=add_filter_]' ).change( convertQueryComponent );
+	
+	if ( jQuery('#add_batchmod_field').length )
+		jQuery( '#add_batchmod_field').change(convertBatchModifyComponent );
 
 	if ( comps.length > 0 ) {
 		// For the query page
