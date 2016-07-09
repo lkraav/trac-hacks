@@ -18,7 +18,7 @@ function getLeafsForLevel(level, prefix, forceEmptyLeafs)
 	var retVal = new Array();
 	var previous = null;
 	
-	for (i = 0; i < gComponentList.length; i++) {
+	for (var i = 0; i < gComponentList.length; i++) {
 		// Check if the current item has the right prefix
 		if (gComponentList[i].join('/').substring(0, prefix.length) != prefix){
 			continue;
@@ -88,33 +88,46 @@ function selectedComponentChanged(e) {
 	// Empty the next selects
 	jQuery(this).nextAll('[class=haikucomponent]').empty();
 	
-	// Walk through all the component names at this level
+	// Fill the next selects with the right options. Sometimes that only means
+	// that the next select is filled, at other times, we have to go deeper, 
+	// for example when there are no empty leaves for a subcomponent.
+	
 	var prefix = "";
 	jQuery(this).prevAll('[class=haikucomponent]').reverse().each(function() {
 		prefix += jQuery(this).val(); 
 		prefix += "/";
 	});
 	prefix += jQuery(this).val();
+	
+	var currentSelector = jQuery(this);
+	for (var i = level; i < gMaxBranches; i++) {
+		var items = getLeafsForLevel(i, prefix, e.data.forceEmptyLeafs);
+
+		for (j = 0; j < items.length; j++)
+			currentSelector.next().append(jQuery("<option/>", {
+				value: items[j],
+				text: items[j]
+			}));
 		
-	var items = getLeafsForLevel(level, prefix, e.data.forceEmptyLeafs);
+		// If there are any entries in the select to the right, show it
+		// otherwise break out of the loop as we are done
+		if (items.length)
+			currentSelector.next().show();
+		else
+			break;
+		
+		// If the next selector has an empty leaf, then we are done. Otherwise
+		// go deeper
+		if (items[0] == "")
+			break;
+		
+		prefix += "/"
+		prefix += items[0]
+		currentSelector = currentSelector.next()
+	}		
 	
-	for (i = 0; i < items.length; i++)
-		jQuery(this).next().append(jQuery("<option/>", {
-			value: items[i],
-			text: items[i]
-		}));
-	
-
-	// If there are any entries in the select to the right, show it
-	if (items.length)
-		jQuery(this).next().show();
-	
-	// Update the current selected value
-	// It might be the case that the next is an obligatory choice. In that
-	// case append the selected item to the selected value.
-	if (items.length && jQuery(this).next().val().length > 0)
-		prefix = prefix + "/" + jQuery(this).next().val()
-
+	// Update the current selected value. The prefix string has the complete
+	// path of the current selection
 	jQuery(this).parent().find("input[type=hidden]").val(prefix);
 }
 
@@ -149,7 +162,7 @@ function convertComponentSelect(element, forceEmptyLeafs)
 	}
 	
 	// create some replacement dropdowns
-	for (i = 1; i <= gMaxBranches; i++) {
+	for (var i = 1; i <= gMaxBranches; i++) {
 		parent.append(jQuery(document.createElement('select'))
 			.attr('id', 'component-selector' + gComponentCount + '-' + i)
 			.attr('class', 'haikucomponent')
@@ -164,7 +177,7 @@ function convertComponentSelect(element, forceEmptyLeafs)
 	// Populate choice(s)
 	// Note: always use currentItems.length + 1 because we want to check
 	// whether there are more subselections possible
-	for (i = 0; i < currentItems.length + 1; i++) {		
+	for (var i = 0; i < currentItems.length + 1; i++) {		
 		var items = getLeafsForLevel(i, prefix, forceEmptyLeafs);
 
 		for (j = 0; j < items.length; j++) {
