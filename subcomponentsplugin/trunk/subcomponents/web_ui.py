@@ -134,9 +134,8 @@ class SubComponentsModule(Component):
                     stream |= Transformer("//div[@class='field'][1]").after(self._build_renamechildren_field())
         elif req.path_info.startswith('/query'):
             # We need to load our script after the initializeFilters() call done by Trac
-            html = HTML('<script type="text/javascript" charset="utf-8" src="' +
-                        req.href.base +
-                        '/chrome/subcomponents/componentselect.js"></script>')
+            html = tag.script(type='text/javascript', charset='utf-8',
+                              src=req.href.chrome('subcomponents/componentselect.js'))
             stream |= Transformer('//head').append(html)
         return stream
 
