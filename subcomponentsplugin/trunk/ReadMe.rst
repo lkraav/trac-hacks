@@ -7,9 +7,9 @@ versions for Trac 0.12 and Trac 0.11.
 What is it?
 -----------
 
-This plugin alters Trac's behavior so that the interface supports multiple 
+This plugin alters Trac's behavior so that the interface supports multiple
 layers of components. In project with lots of components, rearranging these
-components into several layers can clear up the list of components. 
+components into several layers can clear up the list of components.
 
 What is it not?
 ---------------
@@ -23,7 +23,7 @@ Installation
 ------------
 
 To install the module see the TracPlugins page on
-http://trac.edgewall.org/wiki/TracPlugins. After activating the plugin in 
+http://trac.edgewall.org/wiki/TracPlugins. After activating the plugin in
 the configuration file or through the plugins page, it will be activated
 without any further configuration.
 
@@ -38,4 +38,4 @@ standard component admin page. If you enter the following components:
 * ``Web/Backend``
 
 Then the user interface will show the ``Frontend`` and ``Backend`` as a
-subcomponent of the ``Web`` component.  
+subcomponent of the ``Web`` component.

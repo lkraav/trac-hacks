@@ -11,17 +11,17 @@ if __name__ == "__main__":
     admin = TracAdmin(sys.argv[1])
     admin.onecmd("initenv \"trac-subcomponents test environment\" sqlite:db/trac.db")
     admin.onecmd("permission add anonymous TRAC_ADMIN")
-    
-    components = ("NoSubcomponents", 
-        "SuperComponent", "SuperComponent/SubComponent1", 
-        "SuperComponent/SubComponent2", 
+
+    components = ("NoSubcomponents",
+        "SuperComponent", "SuperComponent/SubComponent1",
+        "SuperComponent/SubComponent2",
         "ForcedSubcomponent/ForcedSub1/ForcedSubSub",
         "LeafTest", "LeafTest/HasEmptyLeaf", "LeafTest/HasEmptyLeaf/Sub1",
         "LeafTest/HasEmptyLeaf/Sub2", "LeafTest/NoEmptyLeaf/Sub1",
         "LeafTest/NoEmptyLeaf/Sub2", "SixSubLevels/s1/s2/s3/s4/s5/s6")
     for component in components:
         admin.onecmd("component add %s nobody" % (component,))
-    
+
     printout("""
 The test environment is set up at %s. You can run tracd to test this
 environment. Please make sure that the trac-subcomponents plugin is loaded,

@@ -4,7 +4,7 @@ Testing to Prepare for New Trac Version
 
 Both the Javascript code and the Trac plugin perform manipulation of the
 original Trac HTML output. With each new version of Trac the hardcoded
-elements need to be tested and verified. 
+elements need to be tested and verified.
 
 
 Testing of the python code
@@ -28,11 +28,11 @@ The web_ui.py code manipulates the following aspects:
 
     + This adds the javascript to relevant ticket pages
     + **Test** if the javascript is actually added
-    + **Check** if the ticket paths are still correct   
+    + **Check** if the ticket paths are still correct
 
   - template is "query.html"
 
-    + This adds the option of searching for tickets with a specific parent 
+    + This adds the option of searching for tickets with a specific parent
       component. This needs the ^ operator
     + **Check** if the 'begins with' operator actually shows up in the Custom
       Query page.
@@ -80,11 +80,11 @@ Testing of the Javascript
     + **Check** if the XPath to the batch modify is correct
 
   - Query page: existing filters
-    
+
     + **Check** if the XPath to existing filters is correct
 
   - Ticket/Newticket page: component field
-   
+
     + **Check** if the XPath to the field is correct
 
 * convertQueryComponent()
@@ -103,4 +103,4 @@ Using the init-test-env.py tool
 In order to help test the right combination of components and subcomponents it
 is possible to use the init-test-env.py tool to create a test environment with
 various default components for testing. The components have a descriptive name
-which should give an indication of how it functions. 
+which should give an indication of how it functions.

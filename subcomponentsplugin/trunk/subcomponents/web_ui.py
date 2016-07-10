@@ -18,16 +18,16 @@ from trac.util.translation import _
 
 class SubComponentsModule(Component):
     """Implements subcomponents in Trac's interface."""
-    
+
     implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
- 
+
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         if req.path_info.startswith('/admin/ticket/components/'):
             if req.method == "POST" and 'renamechildren' in req.args:
                 if req.args.get('renamechildren') != 'on':
                     return handler # Let trac handle this update
-                # First process the parent component. 
+                # First process the parent component.
                 parentcomponentname = req.path_info[25:]
                 parentcomponent = model.Component(self.env, parentcomponentname)
                 parentcomponent.name = req.args.get('name')
@@ -38,7 +38,7 @@ class SubComponentsModule(Component):
                 except self.env.db_exc.IntegrityError:
                     raise TracError(_('The component "%(name)s" already '
                                       'exists.', name=parentcomponentname))
-                    
+
                 # Now update the child components
                 childcomponents = self._get_component_children(parentcomponentname)
                 for component in childcomponents:
@@ -46,16 +46,16 @@ class SubComponentsModule(Component):
                     component.update()
                 add_notice(req, _('Your changes have been saved.'))
                 req.redirect(req.href.admin('ticket', 'components'))
-                
+
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         # The /query paths are handled in filter_stream()
         if req.path_info.startswith('/ticket/') or \
            req.path_info.startswith('/newticket'):
             add_script(req, 'subcomponents/componentselect.js')
-        
-                                 
+
+
         if template == "query.html":
             # Allow users to query for parent components and include all subs
             data['modes']['select'].insert(0, {'name': "begins with", 'value': "^"})
@@ -81,7 +81,7 @@ class SubComponentsModule(Component):
                         # Set the name to the base name (in case this originally
                         # is a subcomponent.
                         component['name'] = componentname
-                        
+
                         newgroups.append(component)
                     else:
                         # This is a subcomponent. Add the stats to the main component.
@@ -91,12 +91,12 @@ class SubComponentsModule(Component):
                         corecomponent = newgroups[newcomponents.index(componentname)]
                         mergedstats = corecomponent['stats'] #TicketGroupStats from trac.ticket.roadmap
                         newstats = component['stats']
-                        
+
                         # Bear with me as we go to this mess that is the group stats
                         # (or of course this hack, depending on who's viewpoint).
                         # First merge the totals
-                        mergedstats.count += newstats.count 
-                        
+                        mergedstats.count += newstats.count
+
                         # The stats are divided in intervals, merge these.
                         i = 0
                         for interval in mergedstats.intervals:
@@ -104,12 +104,12 @@ class SubComponentsModule(Component):
                             interval['count'] += newinterval['count']
                             i += 1
                         mergedstats.refresh_calcs()
-                
+
                 # Now store the new milestone component groups
                 data['groups'] = newgroups
-        return template, data, content_type        
- 
-  
+        return template, data, content_type
+
+
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
         """Return the absolute path of a directory containing additional
@@ -139,8 +139,8 @@ class SubComponentsModule(Component):
                         '/chrome/subcomponents/componentselect.js"></script>')
             stream |= Transformer('//head').append(html)
         return stream
-    
-    
+
+
     # Other functions
     def _get_component_children(self, name):
         components = model.Component.select(self.env)
@@ -149,7 +149,7 @@ class SubComponentsModule(Component):
             if component.name.startswith(name) and component.name != name:
                 result.append(component)
         return result
-    
+
     def _build_renamechildren_field(self):
         return tag.div(tag.label(tag.input(_("Also rename children"), \
                                            type='checkbox', id='renamechildren', \
