@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+ * Copyright (C) 2013,2016 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
  * All rights reserved.
  * 
  * This software is licensed as described in the file COPYING, which
@@ -66,6 +66,6 @@
       }
       addAnchor(this, name);
     });
-    
+    with(window.location) { hash = [hash, hash=''][0] }  // invokes hashchange event handler
   }); // end of document.ready
 })(jQuery);
