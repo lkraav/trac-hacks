@@ -9,6 +9,7 @@ import re
 from collections import OrderedDict
 from subprocess import Popen
 from trac.util.text import to_unicode
+from trac.core import TracError
 
 def post_doxyfile(req, doxygen, doxygen_args, doxyfile, input, base_path, log):
     """
