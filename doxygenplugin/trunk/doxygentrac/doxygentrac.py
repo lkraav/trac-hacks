@@ -242,7 +242,7 @@ class DoxygenPlugin(Component):
             url = req.href.search(q=req.args.get('query'), doxygen='on')
             req.redirect(url)
 
-        self.log.debug('Process_req P %s.', path, req.path_info)
+        self.log.debug('Process_req P %s  %s.', path, req.path_info)
 
         # security check
         path = os.path.abspath(path)

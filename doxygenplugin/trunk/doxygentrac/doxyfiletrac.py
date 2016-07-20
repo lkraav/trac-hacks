@@ -33,6 +33,7 @@ def post_doxyfile(req, doxygen, doxygen_args, doxyfile, input, base_path, log):
     else:
         log.debug('calling ' + doxygen + ' ' + doxygen_args)
         env = apply_doxyfile(req.args, doxygen, doxygen_args, doxyfile, input, path_trac)
+        log.debug('write %d options in %s', env['options'], doxyfile);
         if env['msg'] != '':
             return env
         else:
@@ -127,7 +128,7 @@ def apply_doxyfile(req_args, doxygen, doxygen_args, doxyfile, input, path_trac):
     """
 
     f = open(doxyfile, 'w')
-
+    i = 0;
     for k in req_args:
         if not re.match(r'''^[A-Z]''', k):
             continue
@@ -137,6 +138,7 @@ def apply_doxyfile(req_args, doxygen, doxygen_args, doxyfile, input, path_trac):
             s = '';
         o = "#\n" + k + '=' + s + "\n"
         f.write(o.encode('utf8'))
+        i+=1
 
     f.close()
     fo = os.path.join(path_trac, 'doxygen.out')
@@ -150,7 +152,7 @@ def apply_doxyfile(req_args, doxygen, doxygen_args, doxyfile, input, path_trac):
 
     dir = req_args.get('INPUT') if req_args.get('INPUT') else input;
     if not os.path.isdir(dir) or not os.access(dir, os.R_OK):
-        return {'msg': 'Error: ' + dir + ' not R_OK', 'trace': ''}
+        return {'msg': 'Error: ' + dir + ' not R_OK', 'trace': '', 'options': i}
     p = Popen([doxygen, arg], bufsize=-1, stdout=o, stderr=e, cwd=dir if dir else None)
     p.communicate();
     n = p.returncode;
@@ -165,7 +167,7 @@ def apply_doxyfile(req_args, doxygen, doxygen_args, doxyfile, input, path_trac):
         trace = file(fr).read()
     os.unlink(fo)
     os.unlink(fr)
-    return {'msg': msg, 'trace': trace}
+    return {'msg': msg, 'trace': trace, 'options': i}
 
 
 def analyze_doxyfile(base_path, default_doc, input, path, old, log):
