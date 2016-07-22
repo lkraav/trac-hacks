@@ -3195,10 +3195,10 @@ if (window.getSelection) {
         var node = range.endContainer;
         var header = null;
         if (node && node.nodeType == 3 && range.endOffset == node.nodeValue.length) {
-            var nextSibling = node.nextSibling;
-            if (!nextSibling || nextSibling.tagName.toLowerCase() == "br") {
+            var next = node.nextSibling;
+            if (next === null || next.nodeType === 1 && next.tagName === 'BR') {
                 while (node) {
-                    if (node.nodeType == 1 && /^h[1-6]$/i.exec(node.tagName)) {
+                    if (node.nodeType === 1 && /^h[1-6]$/i.exec(node.tagName)) {
                         header = node;
                         break;
                     }
@@ -3215,7 +3215,7 @@ if (window.getSelection) {
                         }
                     }
                     this.selectRange(parent, offset, parent, offset);
-                    this.insertHTML('<p><br></p>');
+                    this.insertHTML('<p><br /></p>');
                     TracWysiwyg.stopEvent(event);
                 }
             }
