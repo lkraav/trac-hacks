@@ -766,15 +766,15 @@ TracWysiwyg.prototype.setupToggleEditorButtons = function() {
         + '<label title="Links as you type (Ctrl-L)">'
         + '<input type="checkbox" checked="checked" />'
         + 'autolink</label> '
-        + '<label><input type="radio" class="editor-radio-@" value="wysiwyg"'
+        + '<label><input type="radio" value="wysiwyg"'
         + (mode == "wysiwyg" ? ' checked="checked"' : '')
         + ' />wysiwyg</label> '
-        + '<label><input type="radio" class="editor-radio-@" value="textarea"'
+        + '<label><input type="radio" value="textarea"'
         + (mode == "textarea" ? ' checked="checked"' : '')
         + ' />textarea</label> '
         + '&nbsp; ';
     div.className = "editor-toggle";
-    div.innerHTML = html.replace(/@/g, ++TracWysiwyg.count);
+    div.innerHTML = html;
     this.toggleEditorButtons = div;
 
     var buttons = div.getElementsByTagName("input");
@@ -3766,7 +3766,6 @@ else {
 }
 
 TracWysiwyg.instances = [];
-TracWysiwyg.count = 0;
 TracWysiwyg.tracPaths = null;
 
 TracWysiwyg.newInstance = function(textarea, options) {
