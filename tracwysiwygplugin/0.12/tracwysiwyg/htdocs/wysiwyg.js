@@ -163,12 +163,20 @@ TracWysiwyg.prototype.listenerToggleAutolink = function(input) {
     };
 };
 
-TracWysiwyg.prototype.listenerToggleEditor = function(type) {
+TracWysiwyg.prototype.listenerToggleEditor = function(selected, unselected) {
+    function toggle() {
+        unselected.removeAttribute('checked');
+        unselected.checked = false;
+        selected.setAttribute('checked', 'checked');
+        selected.checked = true;
+    }
     var self = this;
+    var type = selected.value;
 
     switch (type) {
     case "textarea":
         return function(event) {
+            toggle();
             var textarea = self.textareaResizable || self.textarea;
             if (textarea.style.position == "absolute") {
                 self.hideAllMenus();
@@ -188,6 +196,7 @@ TracWysiwyg.prototype.listenerToggleEditor = function(type) {
         };
     case "wysiwyg":
         return function(event) {
+            toggle();
             var frame = self.resizable || self.frame;
             if (frame.style.position == "absolute") {
                 try {
@@ -754,37 +763,32 @@ TracWysiwyg.prototype.setupToggleEditorButtons = function() {
     var div = document.createElement("div");
     var mode = TracWysiwyg.editorMode;
     var html = ''
-        + '<label for="editor-autolink-@" title="Links as you type (Ctrl-L)">'
-        + '<input type="checkbox" id="editor-autolink-@" checked="checked" />'
-        + 'autolink </label>'
-        + '<label for="editor-wysiwyg-@">'
-        + '<input type="radio" name="__EDITOR__@" value="wysiwyg" id="editor-wysiwyg-@" '
-        + (mode == "wysiwyg" ? 'checked="checked"' : '') + ' />'
-        + 'wysiwyg</label> '
-        + '<label for="editor-textarea-@">'
-        + '<input type="radio" name="__EDITOR__@" value="textarea" id="editor-textarea-@" '
-        + (mode == "textarea" ? 'checked="checked"' : '') + ' />'
-        + 'textarea</label> '
+        + '<label title="Links as you type (Ctrl-L)">'
+        + '<input type="checkbox" checked="checked" />'
+        + 'autolink</label> '
+        + '<label><input type="radio" class="editor-radio-@" value="wysiwyg"'
+        + (mode == "wysiwyg" ? ' checked="checked"' : '')
+        + ' />wysiwyg</label> '
+        + '<label><input type="radio" class="editor-radio-@" value="textarea"'
+        + (mode == "textarea" ? ' checked="checked"' : '')
+        + ' />textarea</label> '
         + '&nbsp; ';
     div.className = "editor-toggle";
     div.innerHTML = html.replace(/@/g, ++TracWysiwyg.count);
     this.toggleEditorButtons = div;
 
     var buttons = div.getElementsByTagName("input");
-    for (var i = 0; i < buttons.length; i++) {
-        var button = buttons[i];
-        switch (button.type) {
-        case "checkbox":
-            var listener = this.listenerToggleAutolink(button);
-            addEvent(button, "click", listener);
-            addEvent(button, "keypress", listener);
-            this.autolinkButton = button;
-            break;
-        case "radio":
-            addEvent(button, "click", this.listenerToggleEditor(button.value));
-            break;
-        }
-    }
+
+    var autolink = buttons[0];
+    var listener = this.listenerToggleAutolink(autolink);
+    addEvent(autolink, "click", listener);
+    addEvent(autolink, "keypress", listener);
+    this.autolinkButton = autolink;
+
+    var wysiwyg = buttons[1];
+    var textarea = buttons[2];
+    addEvent(wysiwyg, "click", this.listenerToggleEditor(wysiwyg, textarea));
+    addEvent(textarea, "click", this.listenerToggleEditor(textarea, wysiwyg));
 };
 
 TracWysiwyg.prototype.setupSyncTextAreaHeight = function() {
