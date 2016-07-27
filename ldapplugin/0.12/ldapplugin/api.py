@@ -27,6 +27,7 @@ import time
 from trac.config import _TRUE_VALUES
 from trac.core import *
 from trac.perm import IPermissionGroupProvider, IPermissionStore
+from trac.util.text import exception_to_unicode
 
 LDAP_MODULE_CONFIG = [ 'enable', 'permfilter',
                        'global_perms', 'manage_groups'
@@ -652,9 +653,10 @@ class LdapConnection(object):
         except ldap.LDAPError, e:
             self._ds = None
             if self.bind_user:
-                self.log.warn("Unable to open LDAP with user %s" % \
+                self.log.warn("Unable to open LDAP with user %s",
                               self.bind_user)
-            raise TracError("Unable to open LDAP cnx: %s" % e[0]['desc'])
+            raise TracError("Unable to open LDAP cnx: %s"
+                            % exception_to_unicode(e))
 
     def _search(self, basedn, filterstr='(objectclass=*)', attributes=None,
                 scope=ldap.SCOPE_ONELEVEL):
