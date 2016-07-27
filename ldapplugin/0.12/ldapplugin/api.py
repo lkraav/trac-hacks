@@ -20,13 +20,13 @@
 # Requires Python-LDAP, available from http://python-ldap.sourceforge.net
 #
 
+import ldap
 import re
 import time
-import ldap
 
+from trac.config import _TRUE_VALUES
 from trac.core import *
 from trac.perm import IPermissionGroupProvider, IPermissionStore
-from trac.config import _TRUE_VALUES
 
 LDAP_MODULE_CONFIG = [ 'enable', 'permfilter',
                        'global_perms', 'manage_groups'
@@ -43,6 +43,7 @@ GROUP_PREFIX = '@'
 
 # regular expression to explode a DN into a (attr, rdn, basedn)
 DN_RE = re.compile(r'^(?P<attr>.+?)=(?P<rdn>.+?),(?P<base>.+)$')
+
 
 class LdapPermissionGroupProvider(Component):
     """
@@ -157,6 +158,7 @@ class LdapPermissionGroupProvider(Component):
                     if groupname not in groups:
                         groups.append(groupname)
         return groups
+
 
 class LdapPermissionStore(Component):
     """
@@ -451,6 +453,7 @@ class LdapPermissionStore(Component):
                 if isinstance(provider, LdapPermissionGroupProvider):
                     provider.flush_cache(username)
 
+
 class LdapUtil(object):
     """Utilities for LDAP data management"""
 
@@ -505,6 +508,7 @@ class LdapUtil(object):
                 if m.group('attr').lower() == self.uidattr:
                     return m.group('rdn')
         return None
+
 
 class LdapConnection(object):
     """
