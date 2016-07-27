@@ -155,10 +155,6 @@ class PeerReviewPerform(Component):
         if not fileid:
             raise TracError("No file ID given - unable to load page.", "File ID Error")
 
-        repos = RepositoryManager(self.env).get_repository('')
-        if not repos:
-            raise TracError("Unable to acquire subversion repository.", "Subversion Repository Error")
-
         #make the thumbtac image global so the line annotator has access to it
         self.imagePath = 'chrome/hw/images/thumbtac11x11.gif'
 
@@ -169,6 +165,11 @@ class PeerReviewPerform(Component):
         review.date = format_date(review['created'])
         data['review_file'] = r_file
         data['review'] = review
+
+        repos = RepositoryManager(self.env).get_repository(r_file['repo'])
+        if not repos:
+            raise TracError("Unable to acquire subversion repository.",
+                            "Subversion Repository Error")
 
         # The following may raise an exception if revision can't be found
         rev = r_file['revision']
