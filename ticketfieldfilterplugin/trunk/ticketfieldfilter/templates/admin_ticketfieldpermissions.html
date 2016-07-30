@@ -1,0 +1,58 @@
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+<xi:include href="admin.html" />
+<head>
+    <title>Field Permissions</title>
+</head>
+<body>
+
+<h2>Ticket Field Permissions for <strong>$tkt_type</strong></h2>
+    <div id="content">
+        <p>The following fields are disabled for ticket type <strong>$tkt_type</strong> and not shown here.</p>
+        <ul>
+            <li py:for="key, val in all_fields" py:if="key not in tkt_fields[tkt_type]">$val</li>
+        </ul>
+        <div>
+            <form py:if="key in tkt_fields[tkt_type]" py:for="key, val in all_fields" action=""
+                  id="${key}_form" method="post" class="field-form">
+                <fieldset>
+                    <legend>$val</legend>
+                    <table class="listing">
+                        <thead>
+                        <tr>
+                            <th>Permissions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>
+                                <label py:for="perm in all_perms" class="field_label">
+                                    <input name="sel" value="$perm" type="checkbox"
+                                           checked="${perm in field_perms[key] or None}" />
+                                    <span title="$perm">$perm</span>
+                                </label>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </fieldset>
+                <p class="help">The ticket field will be hidden if the user doesn't have the permissions
+                    selected here. Leave all permissions unselected to disable permission checks.</p>
+                <fieldset>
+                    <div>
+                        <input type="hidden" name="type" value="$tkt_type"/>
+                        <input type="hidden" name="field" value="$key"/>
+                        <input name="cancel" value="${_('Cancel')}" id="${type}_cancel" type="submit"/>
+                        <input name="save" value="${_('Save')}" id="${type}_save" type="submit" class="save-button"/>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

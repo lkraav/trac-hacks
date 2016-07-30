@@ -1,0 +1,12 @@
+.field_label{
+    float: left;
+    width: 13em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.field-form{
+    margin-bottom: 1.5em;
+}
