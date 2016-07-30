@@ -17,7 +17,7 @@ from trac.ticket.api import TicketSystem
 from trac.ticket.model import Type
 from trac.util.text import _
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import add_script, add_stylesheet, ITemplateProvider
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
 
 
 class TicketFieldFilter(Component):
@@ -162,6 +162,10 @@ class TicketFieldFilter(Component):
                 data['fields'] is not None:
             tkt = data.get('ticket')
             if tkt:
+                if self.tkt_fields:
+                    add_script_data(req, {'tff_newticket': 1 if req.path_info == '/newticket' else 0})
+                    add_script(req, 'ticketfieldfilter/js/ticketfieldfilter.js')
+
                 tkt_type = tkt['type']
                 if '+' not in self.tkt_fields[tkt_type]:
                     # Only show fields specified in trac.ini
