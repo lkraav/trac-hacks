@@ -302,7 +302,7 @@ class ResourceWorkflowSystem(Component):
                 cdata = {'is_checked': 'checked="1"' if i == 0 else '',
                          'val': ac[0],
                          'label': ac[1],
-                         'ctrl': ac[2].generate().render().decode('utf-8'),
+                         'ctrl': ac[2].generate().render(None),
                          'hint': ac[3][0]}
                 if len(ac[2].children):
                     # This is some custom workflow creating it's own markup
