@@ -159,7 +159,9 @@ jQuery(document).ready(function($) {
           $('.newrev').each(function(idx){
              $(this).text($('#fileRevVal').val());
           });
-          $('#missing-rev-warning').hide();
+          if($('#fileRevVal').length != 0){
+              $('#missing-rev-warning').hide();
+          };
        }
     };
 
