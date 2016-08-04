@@ -200,8 +200,8 @@ class PeerReviewView(Component):
         # Parent review if any
         if review['parent_id'] != 0:
             data['parent_review'] = get_review_by_id(review['parent_id'])
-            rev_files = get_files_for_review_id(review_id, False)
-            data['parent_files'] = rev_files
+            par_files = get_files_for_review_id(review['parent_id'], False)
+            data['parent_files'] = par_files
 
             # Map files to parent files. Key is current file id, value is parent file object
 
@@ -214,7 +214,8 @@ class PeerReviewView(Component):
                 return None
             file_map = {}
             for f in data['review_files']:
-                file_map[f['file_id']] = get_parent_file(f, rev_files)
+                file_map[f['file_id']] = get_parent_file(f, par_files)
+
             data['file_map'] = file_map
 
         self.create_ticket_data(req, data)
