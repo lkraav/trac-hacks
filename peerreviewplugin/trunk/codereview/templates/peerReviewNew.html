@@ -55,13 +55,17 @@
 
                 <fieldset>
                     <legend py:if="not followup and not modify">Select the sections to be reviewed.</legend>
-                    <legend py:if="followup">Select the revision for the files.</legend>
+                    <legend py:if="followup">Choose the file revision to use for the new review.</legend>
                     <legend py:if="modify">Modify the list of files.</legend>
 
-                    <p py:if="followup" class="help">The selected revision is used for all files in the list. If you want to
-                        compare a file with a different revision
-                        you have to create a code review just for this file.</p>
-                    <!-- Displays the file browser -->
+                    <div py:if="followup" id="missing-rev-warning" class="system-message warning"><p>You must select a revision for your new files.</p></div>
+
+                    <p py:if="followup">The chosen revision is used for all files in the list. If you want to
+                        compare some file with a different revision you have to create a code review just for that file.
+                        Select the revision by browsing the repository of the files. Just by selecting the repository
+                        the current head revision is used. You may switch to another revision in the browser.
+                    </p>
+                    <!--! Displays the file browser -->
                     <div id="repo_browser" data-is-followup="${followup or None}"
                          data-is-modify="$modify">
                     </div>
@@ -115,7 +119,7 @@
                                 <td>${item['line_end']}</td>
                                 <td>${item['revision']}</td>
                                 <td py:if="modify">${item.num_comments}</td>
-                                <td py:if="followup" class="newrev"></td>
+                                <td py:if="followup" class="newrev"><p style="color:red;">Revision is missing</p></td>
                             </tr>
                         </tbody>
                     </table>

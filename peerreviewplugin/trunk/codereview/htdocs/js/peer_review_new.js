@@ -24,6 +24,10 @@ function validateInput(form) {
         return false;
     }
 
+    if($('#fileRevVal').length == 0){
+        alert("You must choose a revision for your new files.");
+        return false;
+    }
     return true;
 }
 
@@ -155,6 +159,7 @@ jQuery(document).ready(function($) {
           $('.newrev').each(function(idx){
              $(this).text($('#fileRevVal').val());
           });
+          $('#missing-rev-warning').hide();
        }
     };
 
