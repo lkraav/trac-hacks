@@ -24,7 +24,6 @@ import ldap
 import re
 import time
 
-from trac.config import _TRUE_VALUES
 from trac.core import *
 from trac.perm import IPermissionGroupProvider, IPermissionStore
 from trac.util.text import exception_to_unicode
@@ -537,7 +536,7 @@ class LdapConnection(object):
         self.use_tls = False
         for k, v in ldap.items():
             if k in LdapConnection._BOOL_VAL:
-                self.__setattr__(k, v.lower() in _TRUE_VALUES)
+                self.__setattr__(k, as_bool(v))
             elif k in LdapConnection._INT_VAL:
                 self.__setattr__(k, int(v))
             else:
@@ -689,3 +688,32 @@ class LdapConnection(object):
             self._ds = False
             return False
 
+
+# as_bool copied from Trac 1.2 for compatibility. Can be removed when
+# support for Trac < 0.12.2 is dropped and trac.util.as_bool used instead.
+
+def as_bool(value, default=False):
+    """Convert the given value to a `bool`.
+
+    If `value` is a string, return `True` for any of "yes", "true",
+    "enabled", "on" or non-zero numbers, ignoring case. For non-string
+    arguments, return the argument converted to a `bool`, or `default`
+    if the conversion fails.
+
+    :since 1.2: the `default` argument can be specified.
+    """
+    if isinstance(value, basestring):
+        try:
+            return bool(float(value))
+        except ValueError:
+            value = value.strip().lower()
+            if value in ('yes', 'true', 'enabled', 'on'):
+                return True
+            elif value in ('no', 'false', 'disabled', 'off'):
+                return False
+            else:
+                return default
+    try:
+        return bool(value)
+    except (TypeError, ValueError):
+        return default
