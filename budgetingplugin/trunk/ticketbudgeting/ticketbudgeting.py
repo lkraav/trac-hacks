@@ -236,12 +236,12 @@ class TicketBudgetingView(Component):
     Option(_CONFIG_SECTION, 'exclude_users',
            "'anonymous','authenticated','tracadmin'",
            'list of users, which should be excluded to show in the drop-down list; should be usable as SQL-IN list')
-    
+
     _def_cost = IntOption( _CONFIG_SECTION, 'default_cost', 0,
                 doc = """Default costs or -1 to disabled entering costs.
-                         This might useful when costs are entered by third 
+                         This might useful when costs are entered by third
                          party software.""" )
-    
+
     _type_list = None
     _name_list = None
     _name_list_str = None
@@ -250,29 +250,29 @@ class TicketBudgetingView(Component):
 
 
     BUDGET_REPORTS = [(BUDGET_REPORT_ALL_ID, 'report_title_90', 'report_description_90',
-    u"""SELECT t.id, t.summary, t.milestone AS __group__, ''../milestone/'' || t.milestone AS __grouplink__, 
+    u"""SELECT t.id, t.summary, t.milestone AS __group__, ''../milestone/'' || t.milestone AS __grouplink__,
     t.owner, t.reporter, t.status, t.type, t.priority, t.component,
     count(b.ticket) AS Anz, sum(b.cost) AS Aufwand, sum(b.estimation) AS Schaetzung,
-    floor(avg(b.status)) || ''%'' AS "Status", 
-    (CASE t.status 
+    floor(avg(b.status)) || ''%'' AS "Status",
+    (CASE t.status
       WHEN ''closed'' THEN ''color: #777; background: #ddd; border-color: #ccc;''
-      ELSE 
+      ELSE
         (CASE sum(b.cost) > sum(b.estimation) WHEN true THEN ''font-weight: bold; background: orange;'' END)
     END) AS __style__
     from ticket t
     left join budgeting b ON b.ticket = t.id
-    where t.milestone like 
+    where t.milestone like
     (CASE $MILESTONE
-              WHEN '''' THEN ''%'' 
+              WHEN '''' THEN ''%''
               ELSE $MILESTONE END) and
     (t.component like (CASE $COMPONENT
-              WHEN '''' THEN ''%'' 
-              ELSE $COMPONENT END) or t.component is null) and 
+              WHEN '''' THEN ''%''
+              ELSE $COMPONENT END) or t.component is null) and
     (t.owner like (CASE $OWNER
-              WHEN '''' THEN $USER 
-              ELSE $OWNER END) or t.owner is null or 
+              WHEN '''' THEN $USER
+              ELSE $OWNER END) or t.owner is null or
      b.username like (CASE $OWNER
-              WHEN '''' THEN $USER 
+              WHEN '''' THEN $USER
               ELSE $OWNER END) )
     group by t.id, t.type, t.priority, t.summary, t.owner, t.reporter, t.component, t.status, t.milestone
     having count(b.ticket) > 0
@@ -282,7 +282,7 @@ class TicketBudgetingView(Component):
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
         add_domain(self.env.path, locale_dir)
-        
+
         try:
             self.env.db_query("SELECT ticket FROM %s where ticket is null" %
                               BUDGETING_TABLE.name)
@@ -293,10 +293,10 @@ class TicketBudgetingView(Component):
                             "does not exists" % BUDGETING_TABLE.name)
             try:
                 self.create_table()
-                self.log.info("[__init__] table '%s' successfully created" 
+                self.log.info("[__init__] table '%s' successfully created"
                               % BUDGETING_TABLE.name)
                 self.create_reports()
-                self.log.info("[__init__] report '%s' successfully created" 
+                self.log.info("[__init__] report '%s' successfully created"
                               % BUDGET_REPORT_ALL_ID)
             except Exception, e:
                 self.log.error("[__init__] ERROR when creating table" \
@@ -334,7 +334,7 @@ class TicketBudgetingView(Component):
                 def_est = self._get_budget_attr('default_estimation')
                 if not def_est:
                     def_est = '0.0'
-                    
+
                 def_state = self._get_budget_attr('default_state')
                 if not def_state:
                     def_state = '0'
@@ -607,7 +607,7 @@ class TicketBudgetingView(Component):
                         else:
                             col_val = ''
                             size = 60
-                    
+
                     if col == 4 and self._def_cost == -1: # disable cost
                         input_html += '<input type="hidden" name="%s-%s" value="%s" />' % (pos, col, 0)
                     else:
@@ -739,7 +739,7 @@ class TicketBudgetingView(Component):
                 self.log.debug("report description (translated): %s" % descr)
                 self.log.debug( "report - id, title (translated):  %s, '%s'" %
                                 (report[0], title) )
-                
+
                 sql = "INSERT INTO report " \
                       "(id, author, title, query, description)" \
                       " VALUES(%s, null, '%s', '%s', '%s');" \
@@ -752,7 +752,7 @@ class TicketBudgetingView(Component):
 
 
     def get_col_list(self, ignore_cols=None):
-        """ return col list as string; usable for selecting all cols 
+        """ return col list as string; usable for selecting all cols
         from budgeting table """
         col_list = "";
         i = 0
@@ -800,4 +800,3 @@ class TicketBudgetingPermission(Component):
     # IPermissionRequestor
     def get_permission_actions(self):
         yield self.definedPermissions
-

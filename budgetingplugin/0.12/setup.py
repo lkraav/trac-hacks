@@ -4,10 +4,10 @@ from setuptools import find_packages, setup
 # name that is used in packages is the one that is used in the trac.ini file.
 # use package name as entry_points
 setup(
-    name='Budgeting Plugin', 
+    name='Budgeting Plugin',
     version='0.5.a4',
     author = 'Gefasoft AG, Franz Mayer',
-    author_email = 'franz.mayer@gefasoft.de', 
+    author_email = 'franz.mayer@gefasoft.de',
     description = 'Adds Budgeting Informations to Tickets',
     url = 'http://www.gefasoft-muenchen.de',
     download_url = 'https://trac-hacks.org/wiki/BudgetingPlugin',
@@ -20,4 +20,3 @@ setup(
                                       'locale/*.*',
                                       'locale/*/LC_MESSAGES/*.*']},
 )
-
