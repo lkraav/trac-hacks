@@ -298,7 +298,7 @@ def get_file_data(env, f_info):
     @return: file data for file specified by f_info
     """
     f_data = []
-    repos = RepositoryManager(env).get_repository('')
+    repos = RepositoryManager(env).get_repository(f_info['repo'] or '')
     if not repos:
         return f_data
 
@@ -339,7 +339,7 @@ def print_comment(par, comment, indent=0):
     @param indent: number of tabs used for indenting
     @return: None
     """
-    header = u"ID: %s,\t%s,\tAutor: %s" % (comment['comment_id'], comment['created'], comment['author'])
+    header = u"ID: %s: \t%s,\tAutor: %s" % (comment['comment_id'], format_date(comment['created']), comment['author'])
     par.insert_paragraph_before(u"\t"*indent + header, style=u"Reviewcommentinfo")
     par.insert_paragraph_before(u"\t"*indent + comment['comment'], style=u"Reviewcomment")
     children = comment['children']
