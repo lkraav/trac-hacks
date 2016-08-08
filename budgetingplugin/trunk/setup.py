@@ -18,7 +18,7 @@ setup(
     author = 'Gefasoft AG, Franz Mayer',
     author_email = 'franz.mayer@gefasoft.de',
     description = 'Possibility to add budgeting information (estimation, cost, user) to tickets',
-        license = "BSD 3-Clause",
+    license = "BSD 3-Clause",
     url = 'http://trac-hacks.org/wiki/BudgetingPlugin',
     download_url = 'https://trac-hacks.org/wiki/BudgetingPlugin',
     packages=find_packages(exclude=['*.tests*']),
