@@ -403,6 +403,13 @@ def set_core_properties(doc, data):
 
 
 def create_docx_for_review(env, data, template):
+    """
+
+    :param env: Trac environment object
+    :param data: dictionary with information about the review
+    :param template: path to docx template
+    :return: docx file data
+    """
     def template_exists(tpath):
         if not tpath:
             return False

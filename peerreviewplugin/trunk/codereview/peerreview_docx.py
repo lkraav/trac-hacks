@@ -8,7 +8,7 @@ from trac.mimeview.api import IContentConverter, Mimeview
 from trac.util.text import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import add_notice, add_warning
-from model import ReviewDataModel
+from model import PeerReviewModel, ReviewDataModel
 
 try:
     from docx import Document
@@ -21,6 +21,15 @@ except ImportError:
 __author__ = 'Cinc'
 __copyright__ = "Copyright 2016"
 __license__ = "BSD"
+
+
+def escape_chars(txt):
+    repl = {u'ä': u'ae', u'ü': u'ue', u'ö': u'oe',
+            u'ß': u'ss',
+            u'Ä': u'Ae', u'Ü': u'Ue', u'Ö': u'Oe'}
+    for key in repl:
+        txt = txt.replace(key, repl[key])
+    return txt
 
 
 class PeerReviewDocx(Component):
@@ -193,9 +202,21 @@ class PeerReviewDocx(Component):
         review_id = req.args.get('reviewid', None)
         referrer=req.get_header("Referer")
         if review_id and format_arg == 'docx':
+            review = PeerReviewModel(self.env, review_id)
+            if review:
+                def proj_name():
+                    return review['project'] + u'_' if review['project'] and review['project'].upper() != 'MC000000' \
+                        else u''
+                def review_name():
+                    return escape_chars(review['name'].replace(' ', '_'))
+                doc_name = u"%sCOMP-REV_%s_Review_%s_V1.0" % (proj_name(), review_name(), review_id)
+            else:
+                doc_name = u"Review %s" % review_id
+            content_info = {'review_id': review_id,
+                            'review': review}
             Mimeview(self.env).send_converted(req,
                                               'text/x-trac-peerreview',
-                                              review_id, format_arg, u"Review %s" % review_id)
+                                              content_info, format_arg, doc_name)
 
         self.env.log.info("PeerReviewPlugin: Export of Review data in format 'docx' failed because of missing "
                           "parameters. Review id is '%s'. Format is '%s'.", review_id, format_arg)
@@ -215,11 +236,18 @@ class PeerReviewDocx(Component):
         if mimetype == 'text/x-trac-peerreview':
             report_data = self.get_report_defaults()
             template = report_data['reviewreport.template']['data']
-            tdata = {'reviewid': content}
-            info = {'review_id': content,
-                    'author': req.authname,
-                    'title': Template(report_data['reviewreport.title']['data']).safe_substitute(tdata),
-                    'subject': Template(report_data['reviewreport.subject']['data']).safe_substitute(tdata)}
+            review = content['review']
+            # Data for title and subject templates
+            tdata = {'reviewid': content['review_id'],
+                     'review_name': review['name'],
+                     'review_name_escaped': escape_chars(review['name'])}
+
+            info = {'review_id': content['review_id'],
+                    'review': review,
+                    'author': review['owner'],
+                    'title': escape_chars(Template(report_data['reviewreport.title']['data']).safe_substitute(tdata)),
+                    'subject': escape_chars(
+                            Template(report_data['reviewreport.subject']['data']).safe_substitute(tdata))}
             data = create_docx_for_review(self.env, info, template)
             return data, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
