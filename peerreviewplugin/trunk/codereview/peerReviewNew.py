@@ -202,7 +202,8 @@ class NewReviewModule(Component):
         add_javascript(req, 'common/js/auto_preview.js')
         add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser(),
                               'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
-                              'form_token': req.form_token})
+                              'form_token': req.form_token,
+                              'peer_is_modify': req.args.get('modify', '0')})
         add_javascript(req, "hw/js/peer_review_new.js")
         add_javascript(req, 'hw/js/peer_user_list.js')
         add_ctxt_nav_items(req)

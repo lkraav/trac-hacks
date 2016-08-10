@@ -24,9 +24,11 @@ function validateInput(form) {
         return false;
     }
 
-    if($('#fileRevVal').length == 0){
-        alert("You must choose a revision for your new files.");
-        return false;
+    if(peer_is_modify != 1){
+        if($('#fileRevVal').length == 0){
+            alert("You must choose a revision for your new files.");
+            return false;
+        }
     }
     return true;
 }

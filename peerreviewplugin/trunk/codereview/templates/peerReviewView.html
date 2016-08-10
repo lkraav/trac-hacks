@@ -203,7 +203,7 @@
                             <input py:if="review['status'] != 'closed'" type="submit"
                                    value="Followup Review" name="followup"
                                    py:attrs="{'disabled': 'disabled'} if not is_finished else {'disabled': None}"/>
-                            <input py:if="not is_finished" type="submit"
+                            <input py:if="not is_finished or manager" type="submit"
                                    value="Modify" name="modify"/>
                         </div>
                     </fieldset>
