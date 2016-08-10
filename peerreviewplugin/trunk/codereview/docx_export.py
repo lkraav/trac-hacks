@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
 
+import datetime
 import io
 import os
+import zipfile
 from collections import defaultdict
+from lxml import etree as et
 from repo import get_repository_dict
 from trac.util.datefmt import format_date
 from trac.util.text import to_unicode, to_utf8
@@ -392,6 +395,28 @@ def add_file_data(env, doc, file_info):
         par.text = u""  # Overwrite marker text
 
 
+def set_custom_doc_properties(zin, review):
+    def set_element_txt(elm, txt):
+        e = dom.xpath("//p:property[@name='%s']" % elm,
+                      namespaces={'p': 'http://schemas.openxmlformats.org/officeDocument/2006/custom-properties'})
+        if e:
+            try:
+                e[0][0].text = txt
+            except IndexError:
+                pass
+
+    dom = et.fromstring(zin.read("docProps/custom.xml"))
+
+    set_element_txt(u'VersionDate', datetime.datetime.today().strftime("%d.%m.%Y"))
+    # Set document id
+    set_element_txt(u'Dokumentnummer', '-REV')
+    set_element_txt(u'MCNummer', review['project'])
+    set_element_txt(u'VersionMajor', u'1')
+    set_element_txt(u'VersionMinor', u'0')
+
+    return et.tostring(dom)
+
+
 def set_core_properties(doc, data):
     from datetime import datetime
 
@@ -435,4 +460,18 @@ def create_docx_for_review(env, data, template):
     set_core_properties(doc, data)
     buff = io.BytesIO()
     doc.save(buff)
-    return buff.getvalue()
+
+    # Change custom properties
+    out_buff = io.BytesIO()
+
+    zin = zipfile.ZipFile(buff, 'r')
+    with zipfile.ZipFile(out_buff, 'w') as zout:
+        for item in zin.infolist():
+            buf = zin.read(item.filename)
+            if item.filename == 'docProps/custom.xml':
+                zout.writestr("docProps/custom.xml",
+                              set_custom_doc_properties(zin, data['review']))
+            else:
+                zout.writestr(item, buf)
+
+    return out_buff.getvalue()

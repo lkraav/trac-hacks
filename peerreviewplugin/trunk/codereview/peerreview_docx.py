@@ -209,7 +209,7 @@ class PeerReviewDocx(Component):
                         else u''
                 def review_name():
                     return escape_chars(review['name'].replace(' ', '_'))
-                doc_name = u"%sCOMP-REV_%s_Review_%s_V1.0" % (proj_name(), review_name(), review_id)
+                doc_name = u"%sSRC-REV_%s_Review_%s_V1.0" % (proj_name(), review_name(), review_id)
             else:
                 doc_name = u"Review %s" % review_id
             content_info = {'review_id': review_id,
