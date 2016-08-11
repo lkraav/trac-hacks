@@ -155,14 +155,6 @@ class PeerReviewDocx(Component):
         if req.method=='POST':
             save = req.args.get('save', '')
             if save:
-                # First check for ASCII only text
-                try:
-                    dummy = str(req.args.get('title', u''))
-                    dummy = str(req.args.get('subject', u''))
-                except UnicodeEncodeError:
-                    add_warning(req, u"You can't use non ASCII characters like 'ü', 'ä', 'ö' in title or subject.")
-                    req.redirect(req.href.admin(cat, page))
-
                 report_data['reviewreport.title']['data'] = req.args.get('title', u'')
                 report_data['reviewreport.title'].save_changes()
                 report_data['reviewreport.subject']['data'] = req.args.get('subject', u'')
@@ -245,9 +237,8 @@ class PeerReviewDocx(Component):
             info = {'review_id': content['review_id'],
                     'review': review,
                     'author': review['owner'],
-                    'title': escape_chars(Template(report_data['reviewreport.title']['data']).safe_substitute(tdata)),
-                    'subject': escape_chars(
-                            Template(report_data['reviewreport.subject']['data']).safe_substitute(tdata))}
+                    'title': Template(report_data['reviewreport.title']['data']).safe_substitute(tdata),
+                    'subject': Template(report_data['reviewreport.subject']['data']).safe_substitute(tdata)}
             data = create_docx_for_review(self.env, info, template)
             return data, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 

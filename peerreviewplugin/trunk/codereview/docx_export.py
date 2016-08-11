@@ -342,7 +342,8 @@ def print_comment(par, comment, indent=0):
     @param indent: number of tabs used for indenting
     @return: None
     """
-    header = u"ID: %s: \t%s,\tAutor: %s" % (comment['comment_id'], format_date(comment['created']), comment['author'])
+    header = u"ID: %s: \t%s,\tAutor: %s" % (comment['comment_id'], format_date(comment['created']),
+                                            comment['author'])
     par.insert_paragraph_before(u"\t"*indent + header, style=u"Reviewcommentinfo")
     par.insert_paragraph_before(u"\t"*indent + comment['comment'], style=u"Reviewcomment")
     children = comment['children']
@@ -409,7 +410,7 @@ def set_custom_doc_properties(zin, review):
 
     set_element_txt(u'VersionDate', datetime.datetime.today().strftime("%d.%m.%Y"))
     # Set document id
-    set_element_txt(u'Dokumentnummer', '-REV')
+    set_element_txt(u'Dokumentnummer', '0')
     set_element_txt(u'MCNummer', review['project'])
     set_element_txt(u'VersionMajor', u'1')
     set_element_txt(u'VersionMinor', u'0')
@@ -421,10 +422,35 @@ def set_core_properties(doc, data):
     from datetime import datetime
 
     props = doc.core_properties
-    props.title = data['title']
     props.created = datetime.now()
-    props.subject = data['subject']
-    props.author = data['author']
+
+
+def set_core_doc_properties(zin, data):
+
+    review = data['review']
+
+    dom = et.fromstring(zin.read("docProps/core.xml"))
+
+    e = dom.find("{http://purl.org/dc/elements/1.1/}creator")
+    if e is not None:
+        e.text = review['owner']
+    e = dom.find("{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}lastModifiedBy")
+    if e is not None:
+        e.text = review['owner']
+
+    e = dom.find("{http://purl.org/dc/elements/1.1/}subject")
+    if e is not None:
+        e.text = data['subject']
+
+    e = dom.find("{http://purl.org/dc/elements/1.1/}title")
+    if e is not None:
+        e.text = data['title']
+
+    e = dom.find("{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}revision")
+    if e is not None:
+        e.text = '1'
+
+    return et.tostring(dom)
 
 
 def create_docx_for_review(env, data, template):
@@ -471,6 +497,9 @@ def create_docx_for_review(env, data, template):
             if item.filename == 'docProps/custom.xml':
                 zout.writestr("docProps/custom.xml",
                               set_custom_doc_properties(zin, data['review']))
+            elif item.filename == 'docProps/core.xml':
+                zout.writestr("docProps/core.xml",
+                              set_core_doc_properties(zin, data))
             else:
                 zout.writestr(item, buf)
 
