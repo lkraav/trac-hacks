@@ -61,10 +61,10 @@ def parse_options(options, default):
                 # skip...
                 if c == ':':
                     force_xtra = True
-                    continue
-                else:
-                    state = 'name'
-                    name = ''
+                continue
+            else:
+                state = 'name'
+                name = ''
 
         if state == 'name':
             if c == '"':
@@ -83,9 +83,9 @@ def parse_options(options, default):
                     result['cfg'][name] = ''
                 if c == ':':
                     force_xtra = True
-                    state = 'idle'
-                else:
-                    name += c
+                state = 'idle'
+            else:
+                name += c
         elif state == 'doublequotedname':
             if c == '"':
                 state = 'name'
@@ -111,9 +111,9 @@ def parse_options(options, default):
 
                 if c == ':':
                     force_xtra = True
-                    state = 'idle'
-                else:
-                    value += c
+                state = 'idle'
+            else:
+                value += c
         elif state == 'doublequotedvalue':
             if c == '"':
                 state = 'value'
