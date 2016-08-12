@@ -28,12 +28,10 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__id__        = '$Id$'
-__version__ = '1.0.0.8'
-
 import inspect
 import locale
 import os
+import pkg_resources
 import re
 import sha
 import subprocess
@@ -54,6 +52,9 @@ from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.wiki.api import IWikiMacroProvider, WikiSystem
 from trac.wiki.formatter import extract_link, WikiProcessor
+
+__id__        = '$Id$'
+__version__ = pkg_resources.get_distribution('graphviz')
 
 
 class Graphviz(Component):

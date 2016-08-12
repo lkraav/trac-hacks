@@ -6,22 +6,20 @@
 
 """Python egg setup file for the graphviz trac wiki processor."""
 
-import graphviz
-
 from setuptools import setup, find_packages
 
 setup (
     name = 'graphviz',
-    version = graphviz.__version__,
-    install_requires='Trac >=1.0dev',
+    version = '1.0.0.8',
+    install_requires='Trac',
     packages = find_packages(),
     package_data = { 'graphviz' : ['examples/*',],
     },
-    entry_points={'trac.plugins': 'graphviz = graphviz'},
+    entry_points={'trac.plugins': 'graphviz = graphviz.graphviz'},
     author = "Peter Kropf",
     author_email = "pkropf@gmail.com",
     keywords = "trac graphviz",
-    url = "http://trac-hacks.org/wiki/GraphvizPlugin",
+    url = "https://trac-hacks.org/wiki/GraphvizPlugin",
     description = "Graphviz plugin for Trac 1.0",
     long_description = """
     The graphviz wiki processor is a plugin for Trac that allows the
