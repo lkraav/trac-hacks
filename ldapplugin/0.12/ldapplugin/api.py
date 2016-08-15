@@ -651,9 +651,12 @@ class LdapConnection(object):
                 self._ds.simple_bind_s()
         except ldap.LDAPError, e:
             self._ds = None
+            traceback = exception_to_unicode(e, traceback=True)
             if self.bind_user:
-                self.log.warn("Unable to open LDAP with user %s",
-                              self.bind_user)
+                self.log.warning("Unable to open LDAP with user %s%s",
+                                 self.bind_user, traceback)
+            else:
+                self.log.warning("Unable to open LDAP%s", traceback)
             raise TracError("Unable to open LDAP cnx: %s"
                             % exception_to_unicode(e))
 
