@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2007-2012 Colin Guthrie <trac@colin.guthr.ie>
+# Copyright (c) 2011-2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from trac.core import Component, implements
 from trac.ticket import ITicketChangeListener

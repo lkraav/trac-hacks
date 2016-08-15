@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#### AUTHORS ####
-## Primary Author:
-## Colin Guthrie
-## http://colin.guthr.ie/
-## trac@colin.guthr.ie
-## trac-hacks user: coling
+#
+# Copyright (c) 2007-2012 Colin Guthrie <trac@colin.guthr.ie>
+# Copyright (c) 2011-2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import sys
 from setuptools import find_packages, setup
