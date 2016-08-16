@@ -117,11 +117,11 @@ def get_nodes_for_dir(env, repodict, dir_node, fnodes, ignore_ext, follow_ext):
 
 def file_data_from_repo(node):
 
-    dat = ''
+    dat = u''
     content = node.get_content()
     res = content.read()
     while res:
-        dat += res
+        dat += res.decode('utf-8')  # We assume 'utf-8' here. In fact it may be anything.
         res = content.read()
     return dat.splitlines()
 
