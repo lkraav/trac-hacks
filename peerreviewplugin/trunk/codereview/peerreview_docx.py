@@ -25,7 +25,7 @@ __license__ = "BSD"
 
 def escape_chars(txt):
     repl = {u'ä': u'ae', u'ü': u'ue', u'ö': u'oe',
-            u'ß': u'ss',
+            u'ß': u'ss', u'(': u'', u')': u'',
             u'Ä': u'Ae', u'Ü': u'Ue', u'Ö': u'Oe'}
     for key in repl:
         txt = txt.replace(key, repl[key])
