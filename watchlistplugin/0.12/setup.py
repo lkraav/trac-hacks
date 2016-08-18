@@ -54,17 +54,15 @@ except ImportError:
 
 setup(
     name = 'TracWatchlistPlugin',
-    version = '1.0.3',
-    description = "Watchlist Plugin for Trac 0.11/0.12",
+    version = '2.0.0',
+    description = "Watchlist Plugin for Trac 0.12/1.0",
     keywords = 'trac watchlist wiki plugin',
     author = 'Martin Scharrer',
     author_email = 'martin@scharrer-online.de',
-    url = 'http://www.trac-hacks.org/wiki/WatchlistPlugin',
-    download_url = 'http://trac-hacks.org/svn/watchlistplugin/releases/',
+    url = 'https://www.trac-hacks.org/wiki/WatchlistPlugin',
     license      = 'GPLv3',
     classifiers = ['Framework :: Trac'],
-    #install_requires = ['Babel>= 0.9.5', 'Trac >= 0.11'],
-    install_requires = ['Trac >= 0.11'],
+    install_requires = ['Trac', 'Babel>= 0.9.5'],
     packages = ['tracwatchlist'],
     package_data = {
         'tracwatchlist' : [

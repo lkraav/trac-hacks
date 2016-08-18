@@ -24,4 +24,8 @@ For a copy of the GNU General Public License see
 
 $Id$
 """
+import pkg_resources
+
 from tracwatchlist import *
+
+pkg_resources.require('Trac >= 0.11')
