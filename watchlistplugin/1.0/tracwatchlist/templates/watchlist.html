@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude" 
+      xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       i18n:domain="watchlist">
@@ -25,7 +25,7 @@
     <script type="text/javascript" py:if="booloptions['dynamic_tables']"
       src="${href.chrome('watchlist','js','jquery.dataTables.min.js')}">
     </script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
       src="${href.chrome('watchlist','js','watchlist.js')}"></script>
     <script type="text/javascript" py:if="booloptions['autocomplete_inputs']"
       src="${href.chrome('watchlist','js','autocomplete.js')}"></script>
@@ -36,7 +36,7 @@
     <!-- dynamictables.js must be loaded after watchlist.js and orderadd.js ! -->
     <script type="text/javascript" py:if="booloptions['dynamic_tables']"
       src="${href.chrome('watchlist','js','dynamictables.js')}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
       src="${href.chrome('common','js','folding.js')}"></script>
     <script type="text/javascript" py:if="booloptions['autocomplete_inputs']"
       src="${href.chrome('watchlist','js','jquery.autocomplete.js')}"></script>
@@ -98,7 +98,7 @@
                 title="${_('Only show resources which changed since they got last visited')}"
             /><input id="${id}_from_init" name="from-datetime-init" type="hidden" value="$from_dt"
             /><input id="${id}_from" name="from-datetime" type="text" size="4" value="$from_dt"
-            /><input name="from-datetime-ts" type="hidden" 
+            /><input name="from-datetime-ts" type="hidden"
             />-<input id="${id}_to_init" name="to-datetime-init" type="hidden" value="$to_dt"
             /><input id="${id}_to" name="to-datetime" type="text" size="4" value="$to_dt"
             /><input name="to-datetime-ts" type="hidden" />
@@ -115,7 +115,7 @@
             <a class="notifyon plainlink"
               href="${href.watchlist(action=notifyon and 'notifyoff' or 'notifyon',realm=realm,
               resid=name)}" py:strip="disabled">
-              <input checked="${notifyon and 'checked' or None}" 
+              <input checked="${notifyon and 'checked' or None}"
                      disabled="${disabled and 'disabled' or None}" type="checkbox" name="$name" />
             </a>
         </py:def>

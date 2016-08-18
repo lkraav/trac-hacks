@@ -1,31 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-User renamer for the Trac Watchlist Plugin.
-Version 1.0 from 24th Sep 2010
-Renames a users name in all DB tables created by the watchlist plugin.
-
-Plugin website:  http://trac-hacks.org/wiki/WatchlistPlugin
-Trac website:    http://trac.edgewall.org/
-
-Copyright (c) 2008-2010 by Martin Scharrer <martin@scharrer-online.de>
-All rights reserved.
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-For a copy of the GNU General Public License see
-<http://www.gnu.org/licenses/>.
-
-$Id$
-"""
+#
+# Copyright (c) 2008-2010 by Martin Scharrer <martin@scharrer-online.de>
+# All rights reserved.
+#
+# The i18n support was added by Steffen Hoffmann <hoff.st@web.de>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# For a copy of the GNU General Public License see
+# <http://www.gnu.org/licenses/>.
 
 import sys
 import getopt
@@ -105,7 +97,6 @@ def main(argv):
         rename_user(envpath, oldname, newname)
     sys.exit()
 
+
 if __name__ == "__main__":
     main(sys.argv[1:])
-
-# EOF

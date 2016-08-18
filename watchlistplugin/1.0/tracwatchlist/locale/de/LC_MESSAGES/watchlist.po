@@ -474,4 +474,3 @@ msgstr "Ihnen fehlt die Leseberechtigung für %(realm_plural)s."
 #, python-format
 msgid "No %(realm_plural)s are currently watched."
 msgstr "Momentan werden keine %(realm_plural)s beobachtet."
-

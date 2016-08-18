@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude" 
+      xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       i18n:domain="watchlist"
@@ -22,7 +22,7 @@
         </tr>
         <tr>
           <td rowspan="5">
-            <select class="active_fields" size="8" 
+            <select class="active_fields" size="8"
               multiple="multiple" style="min-width:12em">
               <py:for each="field in active_fields.get(realm)">
                 <option value="${field}">
@@ -37,7 +37,7 @@
           <td rowspan="5">
             <select class="available_fields" size="8" multiple="multiple" style="min-width:12em">
               <py:for each="
-              field in 
+              field in
               [ c for c in available_fields.get(realm) if c not in active_fields.get(realm) ]
               ">
                 <option value="${field}">
