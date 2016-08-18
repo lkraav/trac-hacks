@@ -62,7 +62,7 @@ setup(
     url = 'https://www.trac-hacks.org/wiki/WatchlistPlugin',
     license      = 'GPLv3',
     classifiers = ['Framework :: Trac'],
-    install_requires = ['Trac', 'Babel>= 0.9.5'],
+    install_requires = ['Trac'],
     packages = ['tracwatchlist'],
     package_data = {
         'tracwatchlist' : [
