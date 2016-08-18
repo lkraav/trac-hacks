@@ -59,12 +59,10 @@ setup(
     keywords = 'trac watchlist wiki plugin',
     author = 'Martin Scharrer',
     author_email = 'martin@scharrer-online.de',
-    url = 'http://www.trac-hacks.org/wiki/WatchlistPlugin',
-    download_url = 'http://trac-hacks.org/svn/watchlistplugin/releases/',
+    url = 'https://www.trac-hacks.org/wiki/WatchlistPlugin',
     license      = 'GPLv3',
     classifiers = ['Framework :: Trac'],
-    #install_requires = ['Babel>= 0.9.5', 'Trac >= 0.11'],
-    install_requires = ['Trac >= 0.11'],
+    install_requires = ['Trac'],
     packages = ['tracwatchlist'],
     package_data = {
         'tracwatchlist' : [
