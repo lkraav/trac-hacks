@@ -26,8 +26,7 @@ from  trac.util.datefmt      import  pretty_timedelta, \
                                      datetime, utc, to_timestamp
 from  trac.util.text         import  to_unicode, obfuscate_email_address
 from  trac.wiki.formatter    import  format_to_oneliner
-from  trac.mimeview.api      import  Context
-from  trac.web.chrome        import  Chrome
+from  trac.web.chrome        import  Chrome, web_context
 from  trac.resource          import  Resource
 from  trac.attachment        import  Attachment
 
@@ -161,7 +160,7 @@ class TicketWatchlist(BasicWatchlist):
     def get_list(self, realm, wl, req, fields=None):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        context = Context.from_request(req)
+        context = web_context(req)
         locale = getattr(req, 'locale', None) or LC_TIME
 
         ticketlist = []

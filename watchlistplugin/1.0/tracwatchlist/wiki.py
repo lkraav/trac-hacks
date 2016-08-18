@@ -27,8 +27,7 @@ from  trac.util.datefmt      import  pretty_timedelta, \
 from  trac.util.text         import  obfuscate_email_address
 
 from  trac.util.datefmt      import  format_datetime as trac_format_datetime
-from  trac.web.chrome        import  Chrome
-from  trac.mimeview.api      import  Context
+from  trac.web.chrome        import  Chrome, web_context
 from  trac.resource          import  Resource
 from  trac.attachment        import  Attachment
 
@@ -161,7 +160,7 @@ class WikiWatchlist(BasicWatchlist):
         cursor = db.cursor()
         user = req.authname
         locale = getattr(req, 'locale', None) or LC_TIME
-        context = Context.from_request(req)
+        context = web_context(req)
         wikilist = []
         extradict = {}
         if not fields:

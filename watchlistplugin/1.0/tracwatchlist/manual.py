@@ -21,12 +21,13 @@
 from  pkg_resources          import  resource_filename
 from  datetime               import  datetime
 import os
+import functools
 
 from  trac.core              import  *
 from  genshi.builder         import  tag
 from  trac.web.api           import  IRequestHandler, HTTPNotFound
+from  trac.web.chrome        import  web_context
 from  trac.wiki.formatter    import  format_to_html
-from  trac.mimeview.api      import  Context
 from  trac.util.text         import  unicode_unquote, to_unicode
 from  tracwatchlist.util     import  LC_TIME
 
@@ -90,9 +91,12 @@ class WatchlistManual(Component):
         except Exception as e:
             raise HTTPNotFound(e)
 
-        wldict = dict(
-                format_text=lambda text: format_to_html(self.env, Context.from_request(req), text),
-                text=text)
+        context = web_context(req)
+        format_text = functools.partial(format_to_html, self.env, context)
+        wldict = {
+            'format_text': format_text,
+            'text': text,
+        }
         return ("watchlist_manual.html", wldict, "text/html")
 
 
