@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # For licensing and copyright info, see multicommitupdater/commitupdater.py
+
 from setuptools import setup
 
 setup(name='MultiProjectCommitTicketUpdater',
@@ -6,6 +8,7 @@ setup(name='MultiProjectCommitTicketUpdater',
       description='Multi-project version of commit_updater',
       author='fleeblewidget',
       author_email='fleeblewidget@gmail.com',
+      license='3-Clause BSD',
       packages=['multicommitupdater'],
       entry_points = {
         'trac.plugins': [
