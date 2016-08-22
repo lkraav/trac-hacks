@@ -8,7 +8,7 @@
 #
 # *  The name of the author may not be used to endorse or promote
 #    products derived from this software without specific prior
-#    written permission. 
+#    written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR `AS IS'' AND ANY EXPRESS
 # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -41,7 +41,7 @@
 # 3. The name of the author may not be used to endorse or promote
 #    products derived from this software without specific prior
 #    written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR `AS IS'' AND ANY EXPRESS
 # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -108,7 +108,7 @@ from trac.wiki.macros import WikiMacroBase
 
 class MultiProjectCommitTicketUpdater(Component):
     """Update tickets based on commit messages.
-   
+
     Extending the functionality of CommitTicketUpdater, this component hooks
     into changeset notifications and searches commit messages for text in the
     form of:
@@ -118,25 +118,25 @@ class MultiProjectCommitTicketUpdater(Component):
     command my-project:#1 & #2
     command my-project:#1 and #2
     }}}
-   
+
     You can have more than one command in a message. The following commands
     are supported. There is more than one spelling for each command, to make
     this as user-friendly as possible.
-   
+
       close, closed, closes, fix, fixed, fixes::
         The specified tickets are closed, and the commit message is added to
         them as a comment.
-   
+
       references, refs, addresses, re, see::
         The specified tickets are left in their current status, and the commit
         message is added to them as a comment.
-   
+
     A fairly complicated example of what you can do is with a commit message
     of:
-   
+
         Changed blah and foo to do this or that. Fixes my-project:#10 and
         #12, and refs my-other-project:#12.
-   
+
     This will close #10 and #12 in my-project, and add a note to #12 in
     my-other-project.
 
@@ -145,35 +145,35 @@ class MultiProjectCommitTicketUpdater(Component):
     """
 
     implements(IRepositoryChangeListener)
-   
+
     envelope = Option('multicommitupdater', 'envelope', '',
         """Require commands to be enclosed in an envelope.
-      
+
         Must be empty or contain two characters. For example, if set to "[]",
         then commands must be in the form of [closes my-env#4]. Note that each
         command must have its own envelope, eg '[closes env1#5], [re env2#3]'""")
-    
+
     commands_close = Option('multicommitupdater','commands.close',
         'close closed closes fix fixed fixes',
         """Commands that close tickets, as a space-separated list.""")
-    
+
     commands_refs = Option('multicommitupdater','commands.refs',
         'addresses re references refs see',
         """Commands that add a reference, as a space-separated list.
-       
+
         If set to the special value <ALL>, all tickets referenced by the
         message will get a reference to the changeset.""")
-   
+
     check_perms = BoolOption('multicommitupdater','check_perms','true',
         """Check that the committer has permission to perform the requested
         operations on the referenced tickets.
-       
+
         This requires that the user names be the same for Trac and repository
         operations.""")
 
     notify = BoolOption('multicommitupdater', 'notify','true',
         """Send ticket change notification when updating a ticket.""")
-   
+
     project_reference = '[^\s]+:'
     ticket_prefix = '(?:#|(?:ticket|issue|bug)[: ]?)'
     ticket_reference = ticket_prefix + '[0-9]+'
@@ -181,7 +181,7 @@ class MultiProjectCommitTicketUpdater(Component):
     ticket_command = (r'(?P<action>[A-Za-z]*)\s*.?\s*'
                       r'(?P<ticket>%s(?:(?:[, &]*|[ ]?and[ ]?)%s)*)' %
                       (whole_reference, ticket_reference))
-   
+
     @property
     def command_re(self):
         (begin, end) = (re.escape(self.envelope[0:1]),
@@ -192,9 +192,9 @@ class MultiProjectCommitTicketUpdater(Component):
     project_re = re.compile('([^\s]+):')
 
     _last_cset_id = None
-   
+
     # IRepositoryChangeListener methods
-   
+
     def changeset_added(self, repos, changeset):
         if self._is_duplicate(changeset):
             return
@@ -202,7 +202,7 @@ class MultiProjectCommitTicketUpdater(Component):
         comment = self.make_ticket_comment(repos, changeset)
         self._update_tickets(tickets, changeset, comment,
                              datetime.now(utc))
-   
+
     def changeset_modified(self, repos, changeset, old_changeset):
         if self._is_duplicate(changeset):
             return
@@ -215,7 +215,7 @@ class MultiProjectCommitTicketUpdater(Component):
         comment = self.make_ticket_comment(repos, changeset)
         self._update_tickets(tickets, changeset, comment,
                              datetime.now(utc))
-  
+
     def _is_duplicate(self, changeset):
         # Avoid duplicate changes with multiple scoped repositories
         cset_id = (changeset.rev, changeset.message, changeset.author,
@@ -224,7 +224,7 @@ class MultiProjectCommitTicketUpdater(Component):
             self._last_cset_id = cset_id
             return False
         return True
-       
+
     def _parse_message(self, message):
         """Parse the commit message and return the ticket references."""
         cmd_groups = self.command_re.findall(message)
@@ -246,7 +246,7 @@ class MultiProjectCommitTicketUpdater(Component):
                     for tkt_id in self.ticket_re.findall(tkts):
                         tickets.setdefault(int(tkt_id), []).append(func)
         return tickets
-   
+
     def make_ticket_comment(self, repos, changeset):
         """Create the ticket comment from the changeset data."""
         revstring = str(changeset.rev)
@@ -258,7 +258,7 @@ In [%s]:
 #!CommitTicketReference repository="%s" revision="%s"
 %s
 }}}""" % (revstring, repos.reponame, changeset.rev, changeset.message.strip())
-       
+
     def _update_tickets(self, tickets, changeset, comment, date):
         """Update the tickets with the given comment."""
         perm = PermissionCache(self.env, changeset.author)
@@ -276,7 +276,7 @@ In [%s]:
             except Exception, e:
                 self.log.error("Unexpected error while processing ticket "
                                "#%s: %s", tkt_id, exception_to_unicode(e))
-   
+
     def _notify(self, ticket, date):
         """Send a ticket update notification."""
         if not self.notify:
@@ -288,7 +288,7 @@ In [%s]:
             self.log.error("Failure sending notification on change to "
                            "ticket #%s: %s", ticket.id,
                            exception_to_unicode(e))
-   
+
     def _get_functions(self):
         """Create a mapping from commands to command functions."""
         functions = {}
@@ -299,7 +299,7 @@ In [%s]:
             for cmd in getattr(self, 'commands_' + each[4:], '').split():
                 functions[cmd] = func
         return functions
-   
+
     def cmd_close(self, ticket, changeset, perm):
         if not self.check_perms or 'TICKET_MODIFY' in perm:
             ticket['status'] = 'closed'
@@ -316,7 +316,7 @@ class CommitTicketReferenceMacro(WikiMacroBase):
     This macro must be called using wiki processor syntax as follows:
     {{{
     {{{
-    #!CommitTicketReference repository="reponame" revision="re"
+    #!CommitTicketReference repository="reponame" revision="rev"
     }}}
     }}}
     where the arguments are the following:
@@ -332,7 +332,7 @@ class CommitTicketReferenceMacro(WikiMacroBase):
             changeset = repos.get_changeset(rev)
             message = changeset.message
             rev = changeset.rev
-            resource = repose.resource
+            resource = repos.resource
         except Exception:
             message = content
             resource = Resource('repository', reponame)
@@ -344,9 +344,7 @@ class CommitTicketReferenceMacro(WikiMacroBase):
                              "ticket)", class_='hint')
         if ChangesetModule(self.env).wiki_format_messages:
             return tag.div(format_to_html(self.env,
-                                          formatter.context('changeset', rev,
-                                                            parent=resource),
-                                          message, escape_newlines=True),
-                           class_='message')
+                formatter.context('changeset', rev, parent=resource),
+                message, escape_newlines=True), class_='message')
         else:
             return tag.pre(message, class_='message')
