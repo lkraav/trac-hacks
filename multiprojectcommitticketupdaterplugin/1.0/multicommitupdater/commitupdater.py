@@ -87,6 +87,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import os
 import re
 
 from trac.config import BoolOption, Option
@@ -159,12 +160,26 @@ class MultiProjectCommitTicketUpdater(CommitTicketUpdater):
     notify = BoolOption('ticket', 'commit_ticket_update_notify', 'true',
         """Send ticket change notification when updating a ticket.""")
 
-    project_reference = '[\S]+:'
+    short_name = Option('ticket', 'commit_ticket_update_short_name', '',
+        """The name to use when referencing tickets using the
+        !MultiProjectCommitTicketUpdater. The name should not contain
+        whitespace.
+        """)
+
+    project_reference = '\S+:'
     whole_reference = ' ' + project_reference + CommitTicketUpdater.ticket_reference
     ticket_command = (r'(?P<action>[A-Za-z]*)\s*.?\s*'
                       r'(?P<ticket>%s(?:(?:[, &]*|[ ]?and[ ]?)%s)*)' %
                       (whole_reference, CommitTicketUpdater.ticket_reference))
-    project_re = re.compile('([\S]+):')
+    project_re = re.compile('(\S+):')
+
+    def __init__(self):
+        if not hasattr(self.env, 'name'):
+            self.env.name = os.path.basename(self.env.path)
+
+    @property
+    def project_name(self):
+        return self.short_name or self.env.name
 
     def _parse_message(self, message):
         """Parse the commit message and return the ticket references."""
@@ -178,7 +193,7 @@ class MultiProjectCommitTicketUpdater(CommitTicketUpdater):
                 project_groups.remove(' ')
             # Project name is the first thing in the list, then tickets.
             name = project_groups.pop(0)
-            if name.lower() == self.env.project_name.lower():
+            if name.lower() == self.project_name.lower():
                 func = functions.get(cmd.lower())
                 if not func and self.commands_refs.strip() == '<ALL>':
                     func = self.cmd_refs
