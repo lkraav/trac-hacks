@@ -174,6 +174,7 @@ class MultiProjectCommitTicketUpdater(CommitTicketUpdater):
     project_re = re.compile('(\S+):')
 
     def __init__(self):
+        super(self, MultiProjectCommitTicketUpdater).__init__()
         if not hasattr(self.env, 'name'):
             self.env.name = os.path.basename(self.env.path)
 
