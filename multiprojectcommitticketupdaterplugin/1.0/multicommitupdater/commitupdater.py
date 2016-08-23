@@ -87,40 +87,18 @@ class MultiProjectCommitTicketUpdater(CommitTicketUpdater):
         whitespace.
         """)
 
-    project_reference = '\S+:'
-    whole_reference = ' ' + project_reference + CommitTicketUpdater.ticket_reference
-    ticket_command = (r'(?P<action>[A-Za-z]*)\s*.?\s*'
-                      r'(?P<ticket>%s(?:(?:[, &]*|[ ]?and[ ]?)%s)*)' %
-                      (whole_reference, CommitTicketUpdater.ticket_reference))
-    project_re = re.compile('(\S+):')
-
     def __init__(self):
-        super(self, MultiProjectCommitTicketUpdater).__init__()
+        super(MultiProjectCommitTicketUpdater, self).__init__()
         if not hasattr(self.env, 'name'):
             self.env.name = os.path.basename(self.env.path)
 
     @property
+    def ticket_command(self):
+        return (r'(?P<action>[A-Za-z]*)\s*.?\s*'
+                r'(?P<ticket>(?:%s)\:%s(?:(?:[, &]*|[ ]?and[ ]?)(?:%s)\:%s)*)' %
+                (re.escape(self.project_name), self.ticket_reference,
+                 re.escape(self.project_name), self.ticket_reference))
+
+    @property
     def project_name(self):
         return self.short_name or self.env.name
-
-    def _parse_message(self, message):
-        """Parse the commit message and return the ticket references."""
-        cmd_groups = self.command_re.findall(message)
-        functions = self._get_functions()
-        tickets = {}
-        for cmd, projects in cmd_groups:
-            project_groups = self.project_re.split(projects)
-            # Deal with blanks - should be one at the start
-            while project_groups.count(' ') > 0:
-                project_groups.remove(' ')
-            # Project name is the first thing in the list, then tickets.
-            name = project_groups.pop(0)
-            if name.lower() == self.project_name.lower():
-                func = functions.get(cmd.lower())
-                if not func and self.commands_refs.strip() == '<ALL>':
-                    func = self.cmd_refs
-                if func:
-                    tkts = project_groups.pop(0)
-                    for tkt_id in self.ticket_re.findall(tkts):
-                        tickets.setdefault(int(tkt_id), []).append(func)
-        return tickets
