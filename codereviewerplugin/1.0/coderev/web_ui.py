@@ -66,7 +66,8 @@ class CodeReviewerModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith('/changeset'):
+        diff_mode = 'changeset' in data and data['changeset'] is False
+        if req.path_info.startswith('/changeset') and not diff_mode:
             changeset = data['changeset']
             repos, rev = changeset.repos.reponame, changeset.rev
             review = CodeReview(self.env, repos, rev)
