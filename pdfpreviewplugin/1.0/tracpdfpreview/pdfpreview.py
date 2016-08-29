@@ -40,7 +40,7 @@ class PdfRenderer(Component):
                     'raw-attachment', parent.realm, parent.id, resource.id)
         viewer_url = href('chrome', 'pdfpreview', 'web', 'viewer.html')
         iframe = """
-        <iframe style="width:100%%; height:480px" src="%s?%s"></iframe>
+        <iframe style="width:100%%; height:480px" src="%s?file=%s"></iframe>
         """
         return iframe % (viewer_url, pdf_url)
 
