@@ -19,7 +19,7 @@
 #
 # Changes added for the GraphStream Tracker
 # These changes allow to retrieve Django user data.
-# 
+#
 # Author: Guilhelm Savin <guilhelm.savin@graphstream-project.org>
 #
 
@@ -126,7 +126,7 @@ class RequestDispatcher(Component):
     default_handler = ExtensionOption('trac', 'default_handler',
                                       IRequestHandler, 'WikiModule',
         """Name of the component that handles requests to the base URL.
-        
+
         Options include `TimelineModule`, `RoadmapModule`, `BrowserModule`,
         `QueryModule`, `ReportModule`, `TicketModule` and `WikiModule`. The
         default is `WikiModule`. (''since 0.9'')""")
@@ -147,7 +147,7 @@ class RequestDispatcher(Component):
     def dispatch(self, req):
         """Find a registered handler that matches the request and let it process
         it.
-        
+
         In addition, this method initializes the HDF data set and adds the web
         site chrome.
         """
@@ -285,7 +285,7 @@ class RequestDispatcher(Component):
         By requiring that every POST form to contain this value we're able to
         protect against CSRF attacks. Since this value is only known by the
         user and not by an attacker.
-        
+
         If the the user does not have a `trac_form_token` cookie a new
         one is generated.
         """
@@ -307,7 +307,7 @@ class RequestDispatcher(Component):
         nbargs = len(args)
         resp = args
         for f in reversed(self.filters):
-            # As the arity of `post_process_request` has changed since 
+            # As the arity of `post_process_request` has changed since
             # Trac 0.10, only filters with same arity gets passed real values.
             # Errors will call all filters with None arguments,
             # and results will not be not saved.
@@ -321,7 +321,7 @@ class RequestDispatcher(Component):
 
 def dispatch_request(environ, start_response):
     """Main entry point for the Trac web interface.
-    
+
     @param environ: the WSGI environment dict
     @param start_response: the WSGI callback for starting the response
     """
@@ -348,7 +348,7 @@ def dispatch_request(environ, start_response):
     environ.setdefault('trac.locale', '')
     environ.setdefault('trac.base_url',
                        os.getenv('TRAC_BASE_URL'))
-    
+
 
     locale.setlocale(locale.LC_ALL, environ['trac.locale'])
 
@@ -383,7 +383,7 @@ def dispatch_request(environ, start_response):
 
             if not env_path or not os.path.isdir(env_path):
                 errmsg = 'Environment not found'
-                start_response('404 Not Found', 
+                start_response('404 Not Found',
                                [('Content-Type', 'text/plain'),
                                 ('Content-Length', str(len(errmsg)))])
                 return [errmsg]
@@ -407,17 +407,17 @@ def dispatch_request(environ, start_response):
             mod_wsgi_version = environ.get('mod_wsgi.version')
             if mod_wsgi_version:
                 mod_wsgi_version = (
-                        "%s (WSGIProcessGroup %s WSGIApplicationGroup %s)" % 
+                        "%s (WSGIProcessGroup %s WSGIApplicationGroup %s)" %
                         ('.'.join([str(x) for x in mod_wsgi_version]),
                          environ.get('mod_wsgi.process_group'),
-                         environ.get('mod_wsgi.application_group') or 
+                         environ.get('mod_wsgi.application_group') or
                          '%{GLOBAL}'))
                 environ.update({
                     'trac.web.frontend': 'mod_wsgi',
                     'trac.web.version': mod_wsgi_version})
             env.webfrontend = environ.get('trac.web.frontend')
             if env.webfrontend:
-                env.systeminfo.append((env.webfrontend, 
+                env.systeminfo.append((env.webfrontend,
                                        environ['trac.web.version']))
     except Exception, e:
         env_error = e
@@ -493,7 +493,7 @@ def _dispatch_request(req, env, env_error):
 
     except Exception, e:
         if env:
-            env.log.error("Internal Server Error: %s", 
+            env.log.error("Internal Server Error: %s",
                           exception_to_unicode(e, traceback=True))
 
         exc_info = sys.exc_info()
@@ -607,7 +607,7 @@ def get_environments(environ, warn=False):
         paths = dircache.listdir(env_parent_dir)[:]
         dircache.annotate(env_parent_dir, paths)
         env_paths += [os.path.join(env_parent_dir, project) \
-                      for project in paths 
+                      for project in paths
                       if project[-1] == '/' and project != '.egg-cache/']
     envs = {}
     for env_path in env_paths:

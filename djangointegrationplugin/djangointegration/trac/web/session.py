@@ -21,7 +21,7 @@
 #
 # Changes added for the GraphStream Tracker
 # These changes allow to retrieve Django user data.
-# 
+#
 # Author: Guilhelm Savin <guilhelm.savin@graphstream-project.org>
 #
 
@@ -52,7 +52,7 @@ class DetachedSession(dict):
         self.last_visit = 0
         self._new = True
         self._old = {}
-	self.django_user_data = None
+        self.django_user_data = None
         if sid:
             self.get_session(sid, authenticated=True)
         else:
@@ -63,72 +63,72 @@ class DetachedSession(dict):
 
     def get_session(self, sid, authenticated=False):
         self.env.log.debug('Retrieving session for ID %r', sid)
-	
+
         #db = self.env.get_db_cnx()
         #cursor = db.cursor()
-	
-	ss = DjangoSessionStore(session_key=sid)
-	
-	if not ss.exists(sid):
-	  ss.load()
-	  ss.save()
-	  sid = ss.session_key
-	  self.env.log.warning('create new django session')
+
+        ss = DjangoSessionStore(session_key=sid)
+
+        if not ss.exists(sid):
+            ss.load()
+            ss.save()
+            sid = ss.session_key
+            self.env.log.warning('create new django session')
 
         self.sid = sid
         self.authenticated = authenticated
-	
-	try:
-	
-	  ds = DjangoSession.objects.get(pk=sid)
 
-	  if not ds:
-	    return
+        try:
 
-	  session_data = ds.get_decoded()
+            ds = DjangoSession.objects.get(pk=sid)
 
-	  if session_data.has_key('_auth_user_id'):
-	    mb = DjangoModelBackend()
-	    self.django_user_data = mb.get_user(session_data['_auth_user_id'])
-	    self.authenticated = self.django_user_data.is_authenticated()
-	    self.last_visit = int(mktime(self.django_user_data.last_login.timetuple()))
-	    self.env.log.debug('authenticated as %s',self.django_user_data.username)
-	  else:
-	    self.django_user_data = DjangoAnonymousUser()
-	    self.last_visit = int(mktime(gmtime()))
-	    self.env.log.debug('anonymous request')
-	    
-	except DjangoSession.objects.model.DoesNotExist:
-	  self.env.log.error('session does not exist')
-	  
+            if not ds:
+                return
+
+            session_data = ds.get_decoded()
+
+            if session_data.has_key('_auth_user_id'):
+                mb = DjangoModelBackend()
+                self.django_user_data = mb.get_user(session_data['_auth_user_id'])
+                self.authenticated = self.django_user_data.is_authenticated()
+                self.last_visit = int(mktime(self.django_user_data.last_login.timetuple()))
+                self.env.log.debug('authenticated as %s',self.django_user_data.username)
+            else:
+                self.django_user_data = DjangoAnonymousUser()
+                self.last_visit = int(mktime(gmtime()))
+                self.env.log.debug('anonymous request')
+
+        except DjangoSession.objects.model.DoesNotExist:
+            self.env.log.error('session does not exist')
+
         self._new = False
-	
+
         #cursor.execute("SELECT last_visit FROM session "
                        #"WHERE sid=%s AND authenticated=%s",
                        #(sid, int(authenticated)))
         #row = cursor.fetchone()
         #if not row:
-            #return
+                #return
 
         #cursor.execute("SELECT name,value FROM session_attribute "
                        #"WHERE sid=%s and authenticated=%s",
                        #(sid, int(authenticated)))
         #for name, value in cursor:
-            #self[name] = value
+                #self[name] = value
         #self._old.update(self)
 
     def save(self):
         if not self._old and not self.items():
-            # The session doesn't have associated data, so there's no need to
-            # persist it
+                # The session doesn't have associated data, so there's no need to
+                # persist it
             return
 
         authenticated = int(self.authenticated)
         now = int(time.time())
-        
-	
-	
-	#db = self.env.get_db_cnx()
+
+
+
+        #db = self.env.get_db_cnx()
 
         #if self._new:
             #self.last_visit = now
@@ -142,7 +142,7 @@ class DetachedSession(dict):
                                #(self.sid, self.last_visit, authenticated))
             #except Exception, e:
                 #db.rollback()
-                #self.env.log.warning('Session %s already exists: %s' % 
+                #self.env.log.warning('Session %s already exists: %s' %
                                      #(self.sid, e))
         #if self._old != self:
             #attrs = [(self.sid, authenticated, k, v) for k, v in self.items()]
@@ -151,7 +151,7 @@ class DetachedSession(dict):
                            #(self.sid,))
             #self._old = dict(self.items())
             #if attrs:
-                ## The session variables might already have been updated by a 
+                ## The session variables might already have been updated by a
                 ## concurrent request.
                 #try:
                     #cursor.executemany("INSERT INTO session_attribute "
@@ -198,36 +198,36 @@ class Session(DetachedSession):
     def __init__(self, env, req):
         super(Session, self).__init__(env, None)
         self.req = req
-	
-	if req.incookie:
-	  sid = ''
-	  need_bake = False
-	  
-	  if not req.incookie.has_key(COOKIE_KEY):
-	    sid = hex_entropy(32)
-	    need_bake = True
-	  else:
-	    sid = req.incookie[COOKIE_KEY].value
-	  
-	  self.get_session(sid)
 
-	  if need_bake or sid != self.sid:
-	    self.bake_cookie()
-	else:
-	  env.log.warning('no incookie')
-	
+        if req.incookie:
+            sid = ''
+            need_bake = False
+
+            if not req.incookie.has_key(COOKIE_KEY):
+                sid = hex_entropy(32)
+                need_bake = True
+            else:
+                sid = req.incookie[COOKIE_KEY].value
+
+            self.get_session(sid)
+
+            if need_bake or sid != self.sid:
+                self.bake_cookie()
+        else:
+            env.log.warning('no incookie')
+
         #if req.authname == 'anonymous':
-            #if not req.incookie.has_key(COOKIE_KEY):
+                #if not req.incookie.has_key(COOKIE_KEY):
                 #self.sid = hex_entropy(24)
                 #self.bake_cookie()
-            #else:
+                #else:
                 #sid = req.incookie[COOKIE_KEY].value
                 #self.get_session(sid)
         #else:
-            #if req.incookie.has_key(COOKIE_KEY):
+                #if req.incookie.has_key(COOKIE_KEY):
                 #sid = req.incookie[COOKIE_KEY].value
                 #self.promote_session(sid)
-            #self.get_session(req.authname, authenticated=True)
+                #self.get_session(req.authname, authenticated=True)
 
     def bake_cookie(self, expires=PURGE_AGE):
         assert self.sid, 'Session ID not set'
@@ -286,7 +286,7 @@ class Session(DetachedSession):
         cursor.execute("SELECT authenticated FROM session "
                        "WHERE sid=%s OR sid=%s ", (sid, self.req.authname))
         authenticated_flags = [row[0] for row in cursor.fetchall()]
-        
+
         if len(authenticated_flags) == 2:
             # There's already an authenticated session for the user, we
             # simply delete the anonymous session

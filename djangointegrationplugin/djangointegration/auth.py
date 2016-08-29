@@ -25,48 +25,48 @@ class DjangoIntegrationPlugin(Component):
 # IAuthenticator
 
     def authenticate(self, req):
-	self.log.debug('authenticate wia DjangoIntegration')
-	
-	session = Session(self.env,req)
-	
-	if session.django_user_data:
-	  return session.django_user_data.username
-	else:
-	  return "anonymous"
+        self.log.debug('authenticate wia DjangoIntegration')
+
+        session = Session(self.env,req)
+
+        if session.django_user_data:
+            return session.django_user_data.username
+        else:
+            return "anonymous"
 
 # INavigationContributor
 
     def get_active_navigation_item(self, req):
-	  return 'login'
+        return 'login'
 
     def get_navigation_items(self, req):
-	  if req.authname and req.authname != 'anonymous':
-	      yield 'metanav', 'login', req.authname
-	      yield 'metanav', 'logout', html.a('sign out', href=self.logout_url)
-	  else:
-	      yield 'metanav', 'login', html.a('sign in', href=self.login_url)
-	      yield 'metanav', 'logout', html.a('register', href=self.registration_url)
+        if req.authname and req.authname != 'anonymous':
+            yield 'metanav', 'login', req.authname
+            yield 'metanav', 'logout', html.a('sign out', href=self.logout_url)
+        else:
+            yield 'metanav', 'login', html.a('sign in', href=self.login_url)
+            yield 'metanav', 'logout', html.a('register', href=self.registration_url)
 
 # IEnvironmentSetupParticipant
 
     def environment_created(self):
-      pass
+        pass
 
     def environment_needs_upgrade(self, db):
-    
-      def inline_django_get_known_users(environment = None, cnx=None):
-	
-	from django.contrib.auth.models import User as DjangoUser
-	
-	if DjangoUser.objects.count() > 0:
-	  
-	  for user in DjangoUser.objects.all():
-	    yield (user.username,user.get_full_name(),user.email)
 
-      self.env.get_known_users = inline_django_get_known_users
-      self.env.log.info('users list is now the django user list')
-      
-      return False   
-	
+        def inline_django_get_known_users(environment = None, cnx=None):
+
+            from django.contrib.auth.models import User as DjangoUser
+
+            if DjangoUser.objects.count() > 0:
+
+                for user in DjangoUser.objects.all():
+                    yield (user.username,user.get_full_name(),user.email)
+
+        self.env.get_known_users = inline_django_get_known_users
+        self.env.log.info('users list is now the django user list')
+
+        return False
+
     def upgrade_environment(self, db):
-      pass
+        pass
