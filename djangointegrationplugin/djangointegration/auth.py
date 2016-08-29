@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2010 Guilhelm Savin
+#
+# Copyright (C) 2010 Guilhelm Savin
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from trac.config import Option
 from trac.core import *
