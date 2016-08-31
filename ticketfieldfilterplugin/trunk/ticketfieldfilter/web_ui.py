@@ -160,6 +160,8 @@ class TicketFieldFilter(Component):
         if template == 'ticket.html' and data is not None and \
                 'fields' in data and \
                 data['fields'] is not None:
+            # Make sure we have the proper data. An admin may have created a new type in the meantime.
+            self.tkt_fields, self.fields_readonly, self.field_perms = self.get_configuration_for_tkt_types()
             tkt = data.get('ticket')
             if tkt:
                 if self.tkt_fields:
@@ -167,24 +169,27 @@ class TicketFieldFilter(Component):
                     add_script(req, 'ticketfieldfilter/js/ticketfieldfilter.js')
 
                 tkt_type = tkt['type']
-                if '+' not in self.tkt_fields[tkt_type]:
-                    # Only show fields specified in trac.ini
-                    self.log.debug("TicketFieldFilter: Filtering ticket fields for type '%s'" % tkt_type)
-                    # The fields to be shown.
-                    fields = set(self.tkt_fields[tkt_type]) | self.required_fields
-                    perms = self.field_perms[tkt_type]
-                    for field in data['fields']:
-                        field['skip'] = False if field['name'] in fields and not field['skip'] else True
-                        # Now apply permissions if any
-                        if field['name'] in perms:
-                            skip = True
-                            for perm in perms[field['name']]:
-                                if perm in req.perm:
-                                    skip = False
-                                    break
-                            if skip:
-                                field['skip'] = True
-
+                try:
+                    if '+' not in self.tkt_fields[tkt_type]:
+                        # Only show fields specified in trac.ini
+                        self.log.debug("TicketFieldFilter: Filtering ticket fields for type '%s'" % tkt_type)
+                        # The fields to be shown.
+                        fields = set(self.tkt_fields[tkt_type]) | self.required_fields
+                        perms = self.field_perms[tkt_type]
+                        for field in data['fields']:
+                            field['skip'] = False if field['name'] in fields and not field['skip'] else True
+                            # Now apply permissions if any
+                            if field['name'] in perms:
+                                skip = True
+                                for perm in perms[field['name']]:
+                                    if perm in req.perm:
+                                        skip = False
+                                        break
+                                if skip:
+                                    field['skip'] = True
+                except KeyError:
+                    pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
+                          # this type.
         return template, data, content_type
 
     ## ITemplateStreamFilter
@@ -194,23 +199,27 @@ class TicketFieldFilter(Component):
             # Remove fields from the modify area if read only
             tkt = data['ticket']
             if tkt:
-                for item in self.fields_readonly[tkt['type']]:
-                    if item != 'type':
-                        stream = stream | Transformer(
-                                '//label[@for="field-%s"]' % item).remove()
-                        stream = stream | Transformer(
-                                '//*[@id="field-%s"]' % item).remove()
-                    else:
-                        stream = stream | Transformer(
-                                '//label[@for="field-type"]/text()'). \
-                            replace('Type (Fixed):')
+                try:
+                    for item in self.fields_readonly[tkt['type']]:
+                        if item != 'type':
+                            stream = stream | Transformer(
+                                    '//label[@for="field-%s"]' % item).remove()
+                            stream = stream | Transformer(
+                                    '//*[@id="field-%s"]' % item).remove()
+                        else:
+                            stream = stream | Transformer(
+                                    '//label[@for="field-type"]/text()'). \
+                                replace('Type (Fixed):')
 
-                        stream = stream | Transformer(
-                                '//*[@id="field-type"]/option').remove()
-                        stream = stream | Transformer(
-                                '//*[@id="field-type"]').append(tkt['type'])
-                        stream = stream | Transformer(
-                                '//*[@id="field-type"]/text()').wrap('option')
+                            stream = stream | Transformer(
+                                    '//*[@id="field-type"]/option').remove()
+                            stream = stream | Transformer(
+                                    '//*[@id="field-type"]').append(tkt['type'])
+                            stream = stream | Transformer(
+                                    '//*[@id="field-type"]/text()').wrap('option')
+                except KeyError:
+                    pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
+                          # this type.
         return stream
 
     def get_configuration_for_tkt_types(self):
