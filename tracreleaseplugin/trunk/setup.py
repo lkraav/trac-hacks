@@ -12,7 +12,6 @@ from setuptools import find_packages, setup
 
 setup(name='TracReleasePlugin',
         version='0.2',
-        packages = ['tracrelease', 'tracrelease.db'],
         description="Release Control",
         author='Joao Alexandre de Toledo',
         author_email='tracrelease@toledosp.com.br',
