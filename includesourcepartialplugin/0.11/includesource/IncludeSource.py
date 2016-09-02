@@ -10,29 +10,29 @@ try:
     multirepos = True
 except:
     multirepos = False
-    
-class IncludeSourceMacro(WikiMacroBase):
-    """Includes a source file from the repository into the Wiki. 
 
-    There is one required parameter, which is the path to the 
-    file to include. This should be the repository path, not a 
-    full URL. 
+class IncludeSourceMacro(WikiMacroBase):
+    """Includes a source file from the repository into the Wiki.
+
+    There is one required parameter, which is the path to the
+    file to include. This should be the repository path, not a
+    full URL.
 
     Optional named parameters are:
-     * ''start '' The first line of the file to include. Defaults to the 
-     beginning of the file. Otherwise should be a numeric value. 
+     * ''start '' The first line of the file to include. Defaults to the
+     beginning of the file. Otherwise should be a numeric value.
 
-     Note that files start with line 1, not line 0. 
+     Note that files start with line 1, not line 0.
      * ''end'' The last line of the file to include. Defaults to the end
-     of the file. 
+     of the file.
 
-     Note that both 'start' and 'end' are used for array slicing the 
-     lines of the file, so if (for example) you want the last 20 lines 
-     of the file, you can use start=-20 and leave end blank. 
-     * ''rev'' Which revision to include. This defaults to HEAD if 
-     not supplied. Otherwise this should be a valid numeric revision 
-     number in your version control repository. 
-     * ''mimetype'' Which mimetype to use to determine syntax highlighting. 
+     Note that both 'start' and 'end' are used for array slicing the
+     lines of the file, so if (for example) you want the last 20 lines
+     of the file, you can use start=-20 and leave end blank.
+     * ''rev'' Which revision to include. This defaults to HEAD if
+     not supplied. Otherwise this should be a valid numeric revision
+     number in your version control repository.
+     * ''mimetype'' Which mimetype to use to determine syntax highlighting.
      If not supplied, this is determined by the file extension (which
      is normally what you want)
 
@@ -53,13 +53,13 @@ class IncludeSourceMacro(WikiMacroBase):
         # includes line 20-50 inclusive and overrides file name link
         # in header text
         [[IncludeSource(trunk/proj/file.py, start=20, end=50, header=New header text)]]
-        
+
         # includes line 20-50 inclusive and overrides file name link
         # in header text, along with a specific CSS class (class must exist
         # in CSS on page; there is no provision for defining it in this macro)
         [[IncludeSource(trunk/proj/file.py, start=20, end=50, header=New header text, header_class=my_class)]]
-        
-        # includes line 20-50 inclusive, but suppresses the display of line numbers. 
+
+        # includes line 20-50 inclusive, but suppresses the display of line numbers.
         # (0, no, false, and none are all honored for suppressing - case insensitive)
         [[IncludeSource(trunk/proj/file.py, start=20, end=50, line_numbers=0)]]
 
@@ -73,24 +73,24 @@ class IncludeSourceMacro(WikiMacroBase):
 
     * Fix proper encoding of output
 
-    * Implement some sort of caching (especially in cases where the 
-    revision is known and we know that the contents won't change). 
+    * Implement some sort of caching (especially in cases where the
+    revision is known and we know that the contents won't change).
 
     * Allow multiple chunks from the file in one call. You can do this
     with the existing code, but it will pull the entire file out of
-    version control and trim it for each chunk, so this could be 
-    optimized a bit.  This could be done with the Ranges object 
-    
+    version control and trim it for each chunk, so this could be
+    optimized a bit.  This could be done with the Ranges object
+
     * Refactor code a bit - there are enough special cases in it now
-    that the expand_macro call is getting a bit unwieldy. 
+    that the expand_macro call is getting a bit unwieldy.
 
     }}}
-    """    
+    """
 
     def expand_macro(self, formatter, name, content):
         self.log.info('Begin expand_macro for req: ' + repr(content))
         largs, kwargs = parse_args(content)
-        
+
         if len(largs) == 0:
             raise TracError("File name to include is required parameter!")
 
@@ -114,9 +114,9 @@ class IncludeSourceMacro(WikiMacroBase):
                 file_name = file_name[l:]
             else:
                 repos = self.env.get_repository()
-                
+
         rev = kwargs.get('rev', None)
-        
+
         if kwargs.has_key('header'):
             header = kwargs.get('header')   # user specified header
         else:
@@ -124,13 +124,13 @@ class IncludeSourceMacro(WikiMacroBase):
             header = tag.a(file_name, href=href)
         if not header:
             header = u'\xa0'    # default value from trac.mimeview.api.py
-            
+
         # TODO - 'content' is default from mimeview.api.py, but it picks
         # up text-align: center, which probably isn't the best thing if
         # we are adding a file name in the header. There isn't an obvious
         # replacement in the delivered CSS to pick over this for now though
         header_class = kwargs.get('header_class', 'content')
-            
+
         src = repos.get_node(file_name, rev).get_content().read()
 
         context = formatter.context
@@ -138,7 +138,7 @@ class IncludeSourceMacro(WikiMacroBase):
         context.file_name = file_name
         context.rev = rev
         context.startline = 1
-        
+
         # we generally include line numbers in the output, unless it has been
         # explicitly requested otherwise. 0, no, false, none will suppress
         line_numbers = kwargs.get('line_numbers', None)
@@ -153,12 +153,12 @@ class IncludeSourceMacro(WikiMacroBase):
 
         # lines added up front to "trick" renderer when rendering partial
         render_prepend = []
-        
+
         start, end = kwargs.get('start', None), kwargs.get('end', None)
         if start or end:
             src, start, end = self._handle_partial(src, start, end)
             context.startline = start
-            
+
             if start > 2 and file_name.endswith('.php'):
                 render_prepend = [ '#!/usr/bin/php -f', '<?' ]
 
@@ -166,14 +166,14 @@ class IncludeSourceMacro(WikiMacroBase):
                 src = '\n'.join(render_prepend) + '\n' + src
 
                 # ensure accurate start number after this gets stripped
-                context.startline = start - len(render_prepend) 
+                context.startline = start - len(render_prepend)
 
         mimetype = kwargs.get('mimetype', None)
         url = None  # render method doesn't seem to use this
 
         mv = Mimeview(self.env)
         annotations = line_numbers and ['givenlineno'] or None
-            
+
         src = mv.render(formatter.context, mimetype, src, file_name, url, annotations)
 
         if line_numbers:
@@ -182,23 +182,23 @@ class IncludeSourceMacro(WikiMacroBase):
             if not hasattr(src, 'generate'):
                 from genshi.input import XML
                 src = XML(src)
-            
+
             # the _render_source method will always set the CSS class
             # of the annotator to it's name; there isn't an easy way
             # to override that. We could create our own CSS class for
-            # givenlineno that mimics lineno, but it's cleaner to just 
+            # givenlineno that mimics lineno, but it's cleaner to just
             # tweak the output here by running the genshi stream from
             # src through a transformer that will make the change
-            
+
             xpath1 = 'thead/tr/th[@class="givenlineno"]'
             xpath2 = 'thead/tr/th[2]'   # last() not supported by Genshi?
             xpath3 = 'thead/tr/th[2]/text()'
-            
+
             # TODO - does genshi require a QName here? Seems to work w/o it
             src = src.generate() | Transformer(xpath1).attr('class', 'lineno') \
                                  | Transformer(xpath2).attr('class', header_class) \
                                  | Transformer(xpath3).replace(header)
-                                 
+
             if render_prepend:
                 # TODO - is there a better of stripping lines here?
                 for i in xrange(len(render_prepend)):
@@ -209,10 +209,10 @@ class IncludeSourceMacro(WikiMacroBase):
     def _handle_partial(self, src, start, end):
         # we want to only show a certain number of lines, so we
         # break the source into lines and set our numbers for 1-based
-        # line numbering. 
+        # line numbering.
         #
         # Note that there are some good performance enhancements that
-        # could be done by 
+        # could be done by
         # a) reading lines out of Subversion, using svn_stream_readline
         #    instead of svn_stream_read when fetching data
         # b) have the render method accept a list/iterator of lines
@@ -258,11 +258,10 @@ class GivenLineNumberAnnotator(Component):
         rev = make_rev_str(context.rev)
 
         lineno = context.startline + lineno - 1
-        
+
         row.append(tag.th(id='L%s' % lineno)(
             tag.a(lineno, href='../browser/%s%s#L%s' % (file_name, rev, lineno))
         ))
 
 def make_rev_str(rev=None):
     return rev and '?rev=' + str(rev) or ''
-    
