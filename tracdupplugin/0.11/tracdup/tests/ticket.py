@@ -29,7 +29,7 @@ class TracDupTestCase(unittest.TestCase):
         self.env.log.warning = lambda _: sys.stdout.write('%s\n' % _)
         self.env.log.debug = lambda _: sys.stdout.write('%s\n' % _)
         self.env.log.warning('Hey I am here')
-        
+
         self.ticket_module = TicketModule(self.env)
         self.comp = ticket.TracDupPlugin(self.env)
 
@@ -132,7 +132,7 @@ class TracDupTestCase(unittest.TestCase):
 
         # apparently setting status to new didn't get saved; assert it
         t1 = Ticket(self.env, 1)
-    
+
         self.assertEquals(t1['status'], 'new')
         self.failIf(t1.values.has_key('dup_of'))
 
@@ -140,7 +140,7 @@ class TracDupTestCase(unittest.TestCase):
         t1['status'] = 'closed'
         t1['resolution'] = 'fixed'
         t1.save_changes('test', 'test', when=1)
-        
+
         t1 = Ticket(self.env, 1)
         self.assertEquals(t1['status'], 'closed')
         self.failIf(t1.values.has_key('dup_of'))

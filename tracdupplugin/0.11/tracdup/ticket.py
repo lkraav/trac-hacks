@@ -6,6 +6,7 @@ import time
 from trac import core
 from trac.ticket import api, model
 
+
 class TracDupPlugin(core.Component):
     core.implements(api.ITicketChangeListener)
     core.implements(api.ITicketManipulator)
@@ -175,7 +176,7 @@ WHERE c.name='dup_of' AND t.id=c.ticket AND c.value=%s
 
         dup.save_changes(author, cmt)
 
- 
+
     # ITicketChangeListener implementation
     def ticket_created(self, ticket):
         """Called when a ticket is created."""
@@ -234,10 +235,10 @@ WHERE c.name='dup_of' AND t.id=c.ticket AND c.value=%s
     def prepare_ticket(self, req, ticket, fields, actions):
         """Not currently called, but should be provided for future
         compatibility."""
-       
+
     def validate_ticket(self, req, ticket):
         """Validate a ticket after it's been populated from user input.
-       
+
         Must return a list of `(field, message)` tuples, one for each problem
         detected. `field` can be `None` to indicate an overall problem with the
         ticket. Therefore, a return value of `[]` means everything is OK."""
@@ -293,13 +294,13 @@ WHERE c.name='dup_of' AND t.id=c.ticket AND c.value=%s
         # refuse to dup_of and reopen ticket in one go
         if ot.values['status'] == u'closed' \
             and ticket.values['status'] == u'reopened':
-                self.env.log.debug("validate_ticket: "
-                    "refusing to dup_of and reopen ticket #%s" %
-                        ticket.id)
-                res.append(('status',
-                    'If you want to duplicate an already closed ticket, '
-                    'only change dup_of without reopening the ticket.'))
-                return res
+            self.env.log.debug("validate_ticket: "
+                "refusing to dup_of and reopen ticket #%s" %
+                    ticket.id)
+            res.append(('status',
+                'If you want to duplicate an already closed ticket, '
+                'only change dup_of without reopening the ticket.'))
+            return res
 
         # warn when it starts with #
         if len(new_id) > 0 and new_id[0] == '#':
