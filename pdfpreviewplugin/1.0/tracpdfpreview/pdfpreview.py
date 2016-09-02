@@ -6,19 +6,16 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.core import escape
 from trac.core import implements, Component
 from trac.mimeview.api import IHTMLPreviewRenderer
 from trac.web.chrome import ITemplateProvider
+
 
 class PdfRenderer(Component):
     """
     HTML renderer for PDF files.  Add application/pdf to mime_map in trac.ini
     """
     implements(IHTMLPreviewRenderer, ITemplateProvider)
-
-    def __init__(self):
-        pass
 
     # IHTMLPreviewRenderer methods
 
@@ -47,8 +44,7 @@ class PdfRenderer(Component):
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename 
-        self.log.info(resource_filename(__name__, 'htdocs'))
+        from pkg_resources import resource_filename
         return [('pdfpreview', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
