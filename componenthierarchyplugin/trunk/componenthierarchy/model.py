@@ -41,7 +41,7 @@ class ComponentHierarchyModel(Component):
             query = "DELETE FROM component_hierarchy WHERE component='%s'" % component
         else:
             if self.has_parent_component(component):
-                query = "UPDATE component_hierarchy SET parent_component='%s' WHERE component='%s'" % (component, parent_component)
+                query = "UPDATE component_hierarchy SET parent_component='%s' WHERE component='%s'" % (parent_component, component)
             else:
                 query = "INSERT INTO component_hierarchy (component, parent_component) VALUES ('%s', '%s')" % (component, parent_component)
 
