@@ -44,6 +44,9 @@ function ch_updateComponentOptions()
 
 jQuery(document).ready(function($) {
     $('#field-component').bind("onUpdate", function() {
+        // works with a custom event triggered from SimpleMultiProjectPlugin
         ch_updateComponentOptions();
     });
+    // immediate update (not completely sure if this works)
+    ch_updateComponentOptions();
 });
