@@ -1,4 +1,0 @@
-#for title, status, color, countsToProg in groups
-table.progress tr td.${title} { background: ${color} }
-dl.progress dt.${title} { background: ${color} }
-#end
