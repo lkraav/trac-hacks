@@ -169,7 +169,7 @@ WHERE c.name='dup_of' AND t.id=c.ticket AND c.value=%s
         self.env.log.debug("adding comment to dup ticket %s", dup.id)
         # FIXME: ugly hack to avoid
         # IntegrityError: columns ticket, time, field are not unique
-        import time; time.sleep(1)
+        time.sleep(1)
         dup['status'] = u'reopened'
 
         dup.save_changes(author, cmt)
@@ -239,12 +239,12 @@ WHERE c.name='dup_of' AND t.id=c.ticket AND c.value=%s
 
         # refuse changes to dup_count and dups fields
         new = ticket.values.get('dups', None)
-        if new is not None and new != ot.values.get('dups', None):
+        if new and new != ot.values.get('dups', None):
             res.append(('dups', 'Cannot manually change the dups field.'))
             return res
 
         new = ticket.values.get('dup_count', None)
-        if new is not None and new != ot.values.get('dup_count', None):
+        if new and new != ot.values.get('dup_count', None):
             res.append(('dup_count',
                 "Cannot manually change the dup_count field."))
             return res
