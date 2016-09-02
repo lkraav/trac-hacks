@@ -90,6 +90,7 @@ class IncludeSourceMacro(WikiMacroBase):
     def expand_macro(self, formatter, name, content):
         self.log.info('Begin expand_macro for req: ' + repr(content))
         largs, kwargs = parse_args(content)
+        href = formatter.href
 
         if len(largs) == 0:
             raise TracError("File name to include is required parameter!")
@@ -120,8 +121,7 @@ class IncludeSourceMacro(WikiMacroBase):
         if kwargs.has_key('header'):
             header = kwargs.get('header')   # user specified header
         else:
-            href = '../browser/%s%s' % (orig_file_name, make_rev_str(rev))
-            header = tag.a(file_name, href=href)
+            header = tag.a(file_name, href=href.browser(orig_file_name, rev))
         if not header:
             header = u'\xa0'    # default value from trac.mimeview.api.py
 
