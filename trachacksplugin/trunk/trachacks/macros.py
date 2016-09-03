@@ -25,7 +25,7 @@ from trachacks.util import natural_sort
 from tractags.api import TagSystem
 from tractags.model import resource_tags
 
-title_extract = re.compile(r'^\s*=\s(.*?)\s*$', re.MULTILINE | re.UNICODE)
+title_extract = re.compile(r'^\s*=\s(.*?)\s=?\s*$', re.MULTILINE | re.UNICODE)
 
 
 class ListHacksMacro(WikiMacroBase):
