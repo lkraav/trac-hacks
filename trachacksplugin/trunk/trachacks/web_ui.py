@@ -214,7 +214,7 @@ class TracHacksHandler(Component):
         "Path to the Subversion client executable.")
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
-    title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
+    title_extract = re.compile(r'^\s*=\s(.*?)\s*$', re.MULTILINE | re.UNICODE)
 
     def __init__(self):
         # Validate form

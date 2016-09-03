@@ -25,6 +25,8 @@ from trachacks.util import natural_sort
 from tractags.api import TagSystem
 from tractags.model import resource_tags
 
+title_extract = re.compile(r'^\s*=\s(.*?)\s*$', re.MULTILINE | re.UNICODE)
+
 
 class ListHacksMacro(WikiMacroBase):
     """Provides a list of registered hacks.
@@ -58,7 +60,6 @@ class ListHacksMacro(WikiMacroBase):
     }}}
     """
 
-    title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
     self_extract = re.compile(r'\[\[ListHacks[^\]]*\]\]\s?\n?',
                               re.MULTILINE | re.UNICODE)
 
@@ -143,10 +144,10 @@ class ListHacksMacro(WikiMacroBase):
 
         for category in categories:
             page = WikiPage(self.env, category)
-            match = self.title_extract.search(page.text)
+            match = title_extract.search(page.text)
             if match:
                 cat_title = '%s' % match.group(1).strip()
-                cat_body = self.title_extract.sub('', page.text, 1)
+                cat_body = title_extract.sub('', page.text, 1)
             else:
                 cat_title = '%s' % category
                 cat_body = page.text
@@ -178,7 +179,7 @@ class ListHacksMacro(WikiMacroBase):
                 li = builder.li(link(resource), ': ')
 
                 page = WikiPage(self.env, resource)
-                match = self.title_extract.search(page.text)
+                match = title_extract.search(page.text)
                 description = "''no description available''"
                 if match:
                     if match.group(1):
@@ -214,7 +215,6 @@ class ListHacksMacro(WikiMacroBase):
 
 class ListHackTypesMacro(WikiMacroBase):
     """Provides a list of known hack types (categories)."""
-    title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
     self_extract = re.compile(r'\[\[ListHacks[^\]]*\]\]\s?\n?',
                               re.MULTILINE | re.UNICODE)
 
@@ -235,10 +235,10 @@ class ListHackTypesMacro(WikiMacroBase):
         dl = builder.dl(class_='hacktypesmacro')
         for category in categories:
             page = WikiPage(self.env, category)
-            match = self.title_extract.search(page.text)
+            match = title_extract.search(page.text)
             if match:
                 cat_title = '%s' % match.group(1).strip()
-                cat_body = self.title_extract.sub('', page.text, 1)
+                cat_body = title_extract.sub('', page.text, 1)
             else:
                 cat_title = '%s' % category
                 cat_body = page.text
@@ -251,7 +251,6 @@ class ListHackTypesMacro(WikiMacroBase):
 
 class ListTracReleasesMacro(WikiMacroBase):
     """Provides a list of known Trac releases."""
-    title_extract = re.compile(r'=\s+([^=]*)=', re.MULTILINE | re.UNICODE)
 
     def expand_macro(self, formatter, name, args):
         req = formatter.req
@@ -269,7 +268,7 @@ class ListTracReleasesMacro(WikiMacroBase):
         dl = builder.dl(class_='tracreleasesmacro')
         for release in releases:
             page = WikiPage(self.env, release)
-            match = self.title_extract.search(page.text)
+            match = title_extract.search(page.text)
             if match:
                 rel_title = '%s' % match.group(1).strip()
             else:
