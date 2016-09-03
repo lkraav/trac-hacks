@@ -39,7 +39,7 @@ from trachacks import _, add_domain, tag_
 from trachacks.validate import *
 from trachacks.util import FakeRequest, natural_sort
 from tractags.api import TagSystem
-from tractags.macros import TagWikiMacros
+from tractags.macros import TagWikiMacros, title_extract
 from tractags.query import Query
 from tracvote import VoteSystem
 
@@ -214,7 +214,6 @@ class TracHacksHandler(Component):
         "Path to the Subversion client executable.")
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
-    title_extract = re.compile(r'^\s*=\s(.*?)\s*$', re.MULTILINE | re.UNICODE)
 
     def __init__(self):
         # Validate form
@@ -293,11 +292,9 @@ class TracHacksHandler(Component):
         for category in sorted([r.id for r, _ in
                                 tag_system.query(req, 'realm:wiki type')]):
             page = WikiPage(self.env, category)
-            match = self.title_extract.search(page.text)
-            if match:
-                title = '%s' % match.group(1).strip()
-            else:
-                title = '%s' % category
+            match = title_extract.search(page.text)
+            title = '%s' % match.group(1).strip() \
+                    if match else '%s' % category
             types.append((category, title))
 
         # Trac releases
@@ -749,12 +746,10 @@ class TracHacksHandler(Component):
                 if not query(text):
                     continue
             _, count, _ = vote_system.get_vote_counts(resource)
-            match = self.title_extract.search(page.text)
             count_string = pluralise(count, 'vote')
-            if match:
-                title = '%s (%s)' % (match.group(1).strip(), count_string)
-            else:
-                title = '%s' % count_string
+            match = title_extract.search(page.text)
+            title = '%s (%s)' % (match.group(1).strip(), count_string) \
+                    if match else '%s' % count_string
             hacks.append([count, None, resource, tags, title])
 
         # Rank
