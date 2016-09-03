@@ -40,6 +40,7 @@ from trachacks.macros import title_extract
 from trachacks.validate import *
 from trachacks.util import FakeRequest, natural_sort
 from tractags.api import TagSystem
+from tractags.macros import TagWikiMacros
 from tractags.query import Query
 from tracvote import VoteSystem
 
