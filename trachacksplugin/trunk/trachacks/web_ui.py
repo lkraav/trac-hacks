@@ -36,10 +36,10 @@ from acct_mgr.api import IAccountChangeListener, IPasswordStore
 from acct_mgr.htfile import HtPasswdStore
 from svnauthz.io import AuthzFile
 from trachacks import _, add_domain, tag_
+from trachacks.macros import title_extract
 from trachacks.validate import *
 from trachacks.util import FakeRequest, natural_sort
 from tractags.api import TagSystem
-from tractags.macros import TagWikiMacros, title_extract
 from tractags.query import Query
 from tracvote import VoteSystem
 
