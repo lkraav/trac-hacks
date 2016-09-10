@@ -93,7 +93,9 @@ class WikiToEditorHtmlFormatter(Formatter):
         while anchor in self._anchors:
             anchor = anchor_base + str(i)
             i += 1
-        self._anchors.append(anchor)
+#        self.env.log.debug("self._anchors = %s" % self._anchors)
+#        self.env.log.debug("anchor = %s " % anchor)
+        self._anchors[depth] = anchor
         self.out.write('<h%d id="%s">%s</h%d>' % (depth, anchor, text, depth))
     #def _indent_formatter(self, match, fullmatch): return match
     #def _last_table_cell_formatter(self, match, fullmatch): return match
@@ -275,7 +277,7 @@ class TracHtmlWrapFormatter(WikiToEditorHtmlFormatter):
 
         for line in text.splitlines():
             # Throw a bunch of regexps on the problem
-            result = re.sub(self.rules, self.replace, line)
+            result = re.sub(self.wiki.rules, self.replace, line)
             out.write(result )
 
 
@@ -453,7 +455,7 @@ class TracHTMLParser(HTMLParser):
         pass
 
     def output_texts(self):
-        data = ''.join(self.texts)
+        data = ''.join([s.decode("utf-8") for s in self.texts])
         if self.mode == self.MODE_H:
             self.output.append(data) # for attribute 'id'
         

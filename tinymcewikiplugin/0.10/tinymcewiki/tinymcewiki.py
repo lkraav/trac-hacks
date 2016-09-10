@@ -3,11 +3,12 @@
 #
 
 import os
+import inspect
 from StringIO import StringIO
 
 from trac.core import *
 from trac.wiki.api import IWikiMacroProvider 
-from trac.util import enum, escape, format_datetime, get_reporter_id, \
+from trac.util import escape, format_datetime, get_reporter_id, \
                       pretty_timedelta, shorten_line
 from trac.wiki.web_ui import WikiModule
 from trac.wiki.formatter import wiki_to_html, wiki_to_oneliner
@@ -32,7 +33,7 @@ class TracHtmlToHtml(Component):
     def get_macro_description(self,name):
         """Return a plain text description of the macro with the specified name.
         """
-        return inspect.getdoc(RecentChangesMacro)
+        return inspect.getdoc(self.__class__)
 
     def render_macro(self,req, name, content):
         """Return the HTML output of the macro."""
