@@ -10,8 +10,11 @@ from genshi.builder import tag
 from trac.wiki.formatter import format_to_oneliner
 from trac.wiki.macros import WikiMacroBase
 
-revision="$Rev$"
-url="http://trac-hacks.org/wiki/ColorMacro"
+author="David Roussel"
+license="MIT"
+version="1.0 ($Rev$)"
+url="https://trac-hacks.org/wiki/ColorMacro"
+
 
 class ColorMacro(WikiMacroBase):
     """Usage:
