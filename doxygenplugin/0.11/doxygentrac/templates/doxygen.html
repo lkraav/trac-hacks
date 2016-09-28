@@ -11,7 +11,7 @@
 
   <body>
     <div id="content" class="doxygen">
-      <div py:if="doxygen_text" id="content" class="wiki">
+      <div py:if="doxygen_text" id="doxygen_text" class="wiki">
          <div class="wikipage">
            <div id="searchable" py:content="doxygen_text" />
         </div>
@@ -23,7 +23,7 @@
          !    but there's currently no way to specify /no/ parsing on the
          !    included file, as in:
          !
-         !      <xi:include href="$doxygen_path" parse="" /> 
+         !      <xi:include href="$doxygen_path" parse="" />
          !
          !    (using parse="text" won't work either, as the output will be
          !     HTML escaped)
