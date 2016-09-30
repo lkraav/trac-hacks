@@ -640,6 +640,7 @@ var page_info;
 // This function is called when the page has loaded. It queries the server to
 // get the trac.ini data, the ticket status and the authenticated user name.
 // Once the data has arrived, the fields are initialised accordingly.
+window.ui = []
 $(function () {
     $.getJSON('kis_init',
         { op: 'get_ini', id: $('a.trac-id', '#ticket').text().slice(1) },
@@ -648,6 +649,7 @@ $(function () {
             for(var field_name in page_info['trac_ini']) {
                 var field = new Field(field_name);
                 field.setup();
+                window.ui[field_name] = field.ui;
             }
         }
     );
