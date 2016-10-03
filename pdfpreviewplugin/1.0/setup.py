@@ -10,7 +10,7 @@ from setuptools import find_packages, setup
 
 setup(
     name = 'TracPdfPreview',
-    version = '0.1.1',
+    version = '0.1.2',
     packages = find_packages(exclude = ['*.tests*']),
     license = "BSD 3-Clause",
     entry_points = {
@@ -20,9 +20,12 @@ setup(
     },
     package_data = {
         'tracpdfpreview': [
-            'htdocs/*',
-            'htdocs/*/*',
-            'htdocs/*/*/*',
+            'htdocs/*.*',
+            'htdocs/*/*.*',
+            'htdocs/*/*/*.*',
+            'htdocs/*/*/*/*.*',
+            'htdocs/LICENSE',
+            'htdocs/*/*/LICENSE',
         ],
     },
 )
