@@ -6,8 +6,8 @@ setup(
     author = 'Jonathan Ashley <trac@ifton.co.uk>',
     license = 'GPLv3',
     name = 'KeepInterfaceSimplePlugin',
-    version='1.0',
-    description = 'Can make it easier for users when tickets have a complex workflow. Fields that don\'t need to be completed at a given time can be hidden, and commits can be prevented if not all the information required has been provided.',
+    version='1.1',
+    description = 'Makes it easier for users when tickets have a complex workflow. Fields that don\'t need to be completed at a given time can be hidden, and commits can be prevented if not all the information required has been provided.',
     packages = ['kis'],
     package_data = { 'kis': ['htdocs/*.js'] },
     entry_points = """

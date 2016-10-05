@@ -1,7 +1,7 @@
 'use strict';
 
 // ----------------------------------------------------------------------------
-// Copyright (c) Jonathan Ashley <trac@ifton.co.uk> 2015
+// Copyright (c) Jonathan Ashley <trac@ifton.co.uk> 2015-2016
 // ----------------------------------------------------------------------------
 //
 // This file is part of the Keep Interfaces Simple plugin for Trac.
@@ -180,6 +180,9 @@ TracInterface.prototype.val = function () {
             context = context.filter(':checked');
             result = context.val.apply(context, arguments);
             break;
+        case undefined:
+            result = null;
+            break;
         default:
             result = context.val.apply(context, arguments);
     }
@@ -216,7 +219,7 @@ function evaluate(predicate, depends, callback) {
     var token = '';
     var rest_of_input = predicate;
 
-    // Results of permission queries are stored in the cache.
+    // Results of config function calls are stored in the cache.
     if (typeof evaluate.cache == 'undefined') {
         evaluate.cache = {};
     }
@@ -290,33 +293,85 @@ function evaluate(predicate, depends, callback) {
             if (token[0] == '_') {
                 var field = new TracInterface(token.slice(1));
                 v = field.initial_val();
+                next_token();
             } else
             if (token == 'status') {
                 // Can't use $('.trac-status a').text(), because that would
                 // fail if previewing a transition to the next state.
                 v = page_info['status'];
+                next_token();
             } else
             if (token == 'authname') {
                 v = page_info['authname'];
+                next_token();
             } else
             if (token == 'true' || token == 'false') {
                 v = eval(token);
+                next_token();
             } else {
-                // If we are looking for triggers, and the field is not yet
-                // listed as a dependency for this predicate, add it now.
-                if (depends && $.inArray(token, depends) == -1) {
-                    depends.push(token);
+                // Look ahead. If next token is '(', this is a function call.
+                var field_token = token;
+                next_token();
+                if (token == '(') {
+                    next_token();
+                    var parameters = param_list();
+                    var cache_key = field_token + '@' + parameters.join();
+                    if (cache_key in evaluate.cache) {
+                        v = evaluate.cache[cache_key];
+                    } else {
+                        $.get('kis_function',
+                            { op: 'call_function',
+                              id: $('a.trac-id', '#ticket').text().slice(1),
+                              config_func: field_token,
+                              args: parameters },
+                            function (result) {
+                                console.log(cache_key + '=' + result)
+                                evaluate.cache[cache_key] = eval(result);
+                                callback();
+                            }
+                        );
+                        throw 'retry';
+                    }
+                    if (token != ')') {
+                        config_error('syntax', 1);
+                    }
+                    next_token();
+                } else {
+                    // If we are looking for triggers, and the field is not yet
+                    // listed as a dependency for this predicate, add it now.
+                    if (depends && $.inArray(field_token, depends) == -1) {
+                        depends.push(field_token);
+                    }
+                    var field = new TracInterface(field_token);
+                    v = field.val();
+                    if (v === null) {
+                        console.log("no field named '" + field_token +
+                                    "' present on page");
+                    }
                 }
-                var field = new TracInterface(token);
-                v = field.val();
             }
-            next_token();
         } else {
             config_error('syntax', -token.length);
         }
         return v;
     }
 
+    function param_list() {
+        var v;
+
+        if (token == ')') {
+            v = [];
+        } else {
+            v = [term()];
+            if (token == ',') {
+                next_token();
+                v = v.concat(param_list());
+            }
+        }
+        return v;
+    }
+
+    // Parameter 't' is the value that is being checked for membership.
     function cmp_list(t) {
         var v;
 
@@ -365,29 +420,6 @@ function evaluate(predicate, depends, callback) {
                 // comparison ::= term '~=' term
                 next_token();
                 v = Boolean(v.match(term()));
-            } else
-            if (token == 'has_role') {
-                // comparison ::= term 'has_role' term
-                next_token();
-
-                // If the answer is cached, uses that. Otherwise, makes the
-                // request with a callback to cache the answer and retry, then
-                // throws an error.
-                var role = term();
-                var cache_key = v + '/' + role;
-
-                if (cache_key in evaluate.cache) {
-                    v = evaluate.cache[cache_key];
-                } else {
-                    $.get('kis_get_role',
-                        { op: 'get_role', authname: v, role: role },
-                        function (result) {
-                            evaluate.cache[cache_key] = eval(result);
-                            callback();
-                        }
-                    );
-                    throw 'retry';
-                }
             } else
             if (token == 'in') {
                 // comparison ::= term 'IN' cmp_list
@@ -643,7 +675,8 @@ var page_info;
 window.ui = []
 $(function () {
     $.getJSON('kis_init',
-        { op: 'get_ini', id: $('a.trac-id', '#ticket').text().slice(1) },
+        { op: 'get_ini',
+          id: $('a.trac-id', '#ticket').text().slice(1) },
         function (data) {
             page_info = data;
             for(var field_name in page_info['trac_ini']) {

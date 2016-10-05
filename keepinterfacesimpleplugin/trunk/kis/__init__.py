@@ -1,1 +1,1 @@
-import kis
+from kis import IConfigFunction
