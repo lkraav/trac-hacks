@@ -85,16 +85,16 @@ class PrivateWikiSystem(Component):
                 self.env.log.debug('Attempting to protect against %s' % action)
                 
                 if action == 'WIKI_VIEW':
-                    if ('PRIVATE_ALL_VIEW' in perm(res)
-                        or view_perm in perm(res)
-                        or edit_perm in perm(res)):
+                    if perm and ('PRIVATE_ALL_VIEW' in perm(res) or
+                                 view_perm in perm(res) or
+                                 edit_perm in perm(res)):
 
                         self.env.log.debug('--Can VIEW')
                         return True
 
                 elif action in ('WIKI_MODIFY', 'WIKI_CREATE'):
-                    if ('PRIVATE_ALL_EDIT' in perm(res)
-                        or edit_perm in perm(res)):
+                    if perm and ('PRIVATE_ALL_EDIT' in perm(res) or
+                                 edit_perm in perm(res)):
 
                         self.env.log.debug('--Can MODIFY or CREATE')
                         return True
