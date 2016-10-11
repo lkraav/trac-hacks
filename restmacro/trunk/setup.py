@@ -17,6 +17,7 @@ setup(
     version = __version__,
     packages = ['tracrst'],
     author = __author__,
+    author_email = 'phil@base-art.net',
     description = "ReST Wiki macro",
     #long_description = inspect.getdoc(TracReSTMacro),
     long_description = "The ReST Wiki macro translates ReST files hosted on the Subversion repository to HTML snippets.",
