@@ -5,11 +5,11 @@ import re
 
 from genshi.builder import tag
 from genshi.filters.transform import Transformer
-from pkg_resources import resource_filename
 
 from trac.core import Component, TracError, implements
 from trac.config import IntOption, ListOption, Option
 from trac.env import IEnvironmentSetupParticipant
+from trac.resource import Resource, get_resource_summary
 from trac.web import IRequestFilter
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_stylesheet
@@ -86,7 +86,7 @@ class BreadCrumbsSystem(Component):
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-        
+
     def post_process_request(self, req, template, data, content_type):
         if self.compiled_ignore_pattern is None and self.ignore_pattern:
             self.compiled_ignore_pattern = re.compile(self.ignore_pattern)
@@ -94,7 +94,7 @@ class BreadCrumbsSystem(Component):
         path = req.path_info
         try:
             if path.count('/') >= 2:
-                _, realm, resource = path.split('/', 2)
+                _, realm, resource_id = path.split('/', 2)
 
                 supported = False
 
@@ -109,16 +109,16 @@ class BreadCrumbsSystem(Component):
                     supported = False
 
                 if not supported or (self.compiled_ignore_pattern and
-                            self.compiled_ignore_pattern.match(resource)):
+                            self.compiled_ignore_pattern.match(resource_id)):
                     return template, data, content_type
 
-                if '&' in resource:
-                    resource = resource[0:resource.index('&')]
+                if '&' in resource_id:
+                    resource_id = resource_id[0:resource_id.index('&')]
 
                 sess = req.session
                 crumbs = self._get_crumbs(sess)
-                
-                current = '/'.join( (realm, resource) )
+
+                current = '/'.join( (realm, resource_id) )
                 if current in crumbs:
                     crumbs.remove(current)
                     crumbs.insert(0, current)
@@ -164,10 +164,10 @@ class BreadCrumbsSystem(Component):
 
         path = req.path_info
         if path.count('/') >= 2:
-            _, realm, resource = path.split('/', 2)
-            if '&' in resource:
-                resource = resource[0:resource.index('&')]
-            current = '/'.join( (realm, resource) )
+            _, realm, resource_id = path.split('/', 2)
+            if '&' in resource_id:
+                resource_id = resource_id[0:resource_id.index('&')]
+            current = '/'.join( (realm, resource_id) )
         else:
             current = None
 
@@ -176,18 +176,24 @@ class BreadCrumbsSystem(Component):
         if crumbs and crumbs[0] == current:
             offset = 1
         for crumb in crumbs[offset:self.max_crumbs + offset]:
-            realm, resource = crumb.split('/', 1)
-            name = resource.replace('_', ' ')
+            realm, resource_id = crumb.split('/', 1)
+            name = resource_id.replace('_', ' ')
 
             if realm == "ticket":
-                name = "#" + resource
+                name = "#" + resource_id
             elif realm != "wiki":
                 name = "%s:%s" % (realm, name)
 
-            link = req.href(realm, resource)
+            if realm in ('ticket', 'wiki'):
+                resource = Resource(realm, resource_id)
+                title = get_resource_summary(self.env, resource)
+            else:
+                title = name
+
+            link = req.href(realm, resource_id)
 
             first = ul == []
-            li = tag.li(tag.a(title=name, href=link)(name))
+            li = tag.li(tag.a(title=title, href=link)(name))
             if first:
                 li(class_="first")
             ul.append(li)
