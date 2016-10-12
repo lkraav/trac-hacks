@@ -9,7 +9,8 @@ from genshi.filters.transform import Transformer
 from trac.core import Component, TracError, implements
 from trac.config import IntOption, ListOption, Option
 from trac.env import IEnvironmentSetupParticipant
-from trac.resource import Resource, get_resource_summary
+from trac.resource import Resource, get_resource_shortname, \
+                          get_resource_summary
 from trac.web import IRequestFilter
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_stylesheet
@@ -177,19 +178,10 @@ class BreadCrumbsSystem(Component):
             offset = 1
         for crumb in crumbs[offset:self.max_crumbs + offset]:
             realm, resource_id = crumb.split('/', 1)
-            name = resource_id.replace('_', ' ')
+            resource = Resource(realm, resource_id)
 
-            if realm == "ticket":
-                name = "#" + resource_id
-            elif realm != "wiki":
-                name = "%s:%s" % (realm, name)
-
-            if realm in ('ticket', 'wiki'):
-                resource = Resource(realm, resource_id)
-                title = get_resource_summary(self.env, resource)
-            else:
-                title = name
-
+            name = get_resource_shortname(self.env, resource)
+            title = get_resource_summary(self.env, resource)
             link = req.href(realm, resource_id)
 
             first = ul == []
