@@ -325,7 +325,6 @@ function evaluate(predicate, depends, callback) {
                               config_func: field_token,
                               args: parameters },
                             function (result) {
-                                console.log(cache_key + '=' + result)
                                 evaluate.cache[cache_key] = eval(result);
                                 callback();
                             }
@@ -523,7 +522,9 @@ Field.prototype.add_one_option_set = function (option_set, callback) {
     }
 
     for (var value in option_values) {
-        var name = option_values[value];
+        // Parse the option value. Most will be simple strings, but they could
+        // contain calls to configuration functions.
+        var name = evaluate(option_values[value], null, callback);
 
         if (!this.ui.show_item(name, show_set)) {
             if (this.field_name != 'action') {
@@ -575,9 +576,15 @@ Field.prototype.add_options = function () {
 };
 
 Field.prototype.set_template = function () {
-    var matches_a_template = function () {
+    var matches_a_template = function (callback) {
         for (var template in this.operations['template']) {
-            var content = this.operations['template'][template]['#'].join();
+            var content = evaluate(
+                this.operations['template'][template]['#'].join(),
+                null,
+                callback);
+            if (content == undefined) {
+                return undefined;
+            }
             if (this.val().replace(/[ \n]/g, '') ==
                     content.replace(/\\n/g, '\n').replace(/[ \n]/g, '')) {
                 return true;
@@ -598,8 +605,20 @@ Field.prototype.set_template = function () {
 
         if (do_select) {
             // Apply template if field is empty or matches a template value.
-            var content = this.operations['template'][template]['#'].join();
-            if (this.val() == '' || matches_a_template()) {
+            var is_match = matches_a_template(callback);
+            if (is_match == undefined) {
+                return;
+            }
+
+            var content = evaluate(
+                this.operations['template'][template]['#'].join(),
+                null,
+                callback);
+            if (content == undefined) {
+                return;
+            }
+
+            if (this.val() == '' || is_match) {
                 this.val(content.replace(/\\n/g, '\n'));
                 // Notify other scripts that the field content has changed.
                 this.ui.trigger('onpaste')

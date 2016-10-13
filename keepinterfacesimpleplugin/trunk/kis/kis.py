@@ -105,6 +105,10 @@ This example would allow `safety('OK')` to return the string `Safety related - O
         if len(args) > 1:
             raise ConfigurationError('is_parent() called with %s arguments' %
                 len(args))
+
+        if req.path_info.startswith('/newticket'):
+            return False
+
         if len(args) == 1:
             ticket = args[0].lstrip('#')
         else:
