@@ -691,6 +691,7 @@ Field.prototype.set_visibility = function () {
     if (make_visible == undefined) {
         return;
     }
+    console.log((make_visible ? 'show ' : 'hide ') + this.field_name);
     this.ui.show_field(make_visible);
 
     if (!this.visibility_onchange_attached) {
