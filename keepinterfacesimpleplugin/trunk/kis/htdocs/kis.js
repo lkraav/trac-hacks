@@ -67,47 +67,55 @@ var TracInterface = function(field_name) {
 
     if (field_name == 'action') {
         // The 'action' field is a special case.
-        this.select_field = $('[name=action][type=radio]');
-        this.select_options = this.select_field;
+        this.selector = '[name=action][type=radio]';
+        this.option_selector = this.selector;
         this.show_field = function (show) {
-            return this.select_field.closest('fieldset').
+            return this.select_field().closest('fieldset').
                 css('display', show ? '' : 'none');
         };
     } else {
-        this.select_field = $('#field-' + field_name);
-        this.select_options = $('#field-' + field_name + ' option');
-        if (this.select_field.length == 0) {
+        this.selector = '#field-' + field_name;
+        this.option_selector = '#field-' + field_name + ' option';
+        if (this.select_field().length == 0) {
             // Radio button set.
-            this.select_field = $('[name=field_' + field_name + ']');
-            this.select_options = this.select_field;
+            this.selector = '[name=field_' + field_name + ']';
+            this.option_selector = this.select_field;
         }
     }
 };
 
+TracInterface.prototype.select_field = function () {
+    return $(this.selector);
+}
+
+TracInterface.prototype.select_options = function () {
+    return $(this.option_selector);
+}
+
 TracInterface.prototype._options = function () {
     // Return an array containing the valid values for the element.
-    if (this.select_field.prop('type') == 'checkbox') {
+    if (this.select_field().prop('type') == 'checkbox') {
         return [ false, true ];
     }
     // Work around an apparent Trac bug: the value of empty options isn't
-    // explicitly set, which for some reason prevents setting a CSS style.
-    this.select_options.each(
+    // explicitly set, which means jQuery can't select the option by value.
+    this.select_options().each(
         function () {
             if ($(this).val() === '') {
                 $(this).val('');
             }
         });
-    return this.select_options.map(function () { return this.value; }).get();
+    return this.select_options().map(function () { return this.value; }).get();
 }
 
 TracInterface.prototype._item = function (name) {
     if ($.inArray(name, this._options()) == -1) {
         return undefined;
     }
-    if (this.select_field.prop('type') == 'radio') {
-        var result = this.select_field.filter('[value="' + name + '"]');
+    if (this.select_field().prop('type') == 'radio') {
+        var result = this.select_field().filter('[value="' + name + '"]');
     } else {
-        result = $('option[value="' + name + '"]', this.select_field);
+        result = $('option[value="' + name + '"]', this.select_field());
     }
     return result;
 };
@@ -115,17 +123,17 @@ TracInterface.prototype._item = function (name) {
 TracInterface.prototype.attach_change_handler = function (trigger, callback) {
     var triggering_field = new TracInterface(trigger);
 
-    return triggering_field.select_field.on('change', callback);
+    return triggering_field.select_field().on('change', callback);
 };
 
 TracInterface.prototype.first_available_item = function () {
     var is_visible = function () { return this.style['display'] != 'none'; };
 
-    if (this.select_field.prop('type') == 'radio') {
-        var result = $('input', this.select_field.parent().
+    if (this.select_field().prop('type') == 'radio') {
+        var result = $('input', this.select_field().parent().
             filter(is_visible)).first();
     } else {
-        result = this.select_field.children().filter(is_visible).first();
+        result = this.select_field().children().filter(is_visible).first();
     }
     return result.val();
 };
@@ -143,7 +151,7 @@ TracInterface.prototype.is_visible = function (name) {
         return undefined;
     }
 
-    if (this.select_field.prop('type') == 'radio') {
+    if (this.select_field().prop('type') == 'radio') {
         var result = item.parent().css('display');
     } else {
         result = item.css('display');
@@ -157,7 +165,7 @@ TracInterface.prototype.select = function (name) {
         return undefined;
     }
 
-    if (this.select_field.prop('type') == 'radio') {
+    if (this.select_field().prop('type') == 'radio') {
         item.checked(true);
     } else {
         item.prop('selected', true);
@@ -168,16 +176,16 @@ TracInterface.prototype.select = function (name) {
 };
 
 TracInterface.prototype.selected_item = function () {
-    if (this.select_field.prop('type') == 'radio') {
-        var result = this.select_field.filter(':checked');
+    if (this.select_field().prop('type') == 'radio') {
+        var result = this.select_field().filter(':checked');
     } else {
-        result = $(':checked', this.select_field);
+        result = $(':checked', this.select_field());
     }
     return result.val();
 };
 
 TracInterface.prototype.show_field = function (show) {
-    return this.select_field.closest('td').prev().andSelf().
+    return this.select_field().closest('td').prev().andSelf().
         css('display', show ? '' : 'none');
 };
 
@@ -187,7 +195,7 @@ TracInterface.prototype.show_item = function (name, show) {
         return undefined;
     }
 
-    if (this.select_field.prop('type') == 'radio') {
+    if (this.select_field().prop('type') == 'radio') {
         item = item.parent();
     }
     item.css('display', show ? '' : 'none');
@@ -196,14 +204,14 @@ TracInterface.prototype.show_item = function (name, show) {
 };
 
 TracInterface.prototype.trigger = function () {
-    return this.select_field.trigger.apply(this.select_field, arguments);
+    return this.select_field().trigger.apply(this.select_field(), arguments);
 };
 
 TracInterface.prototype.val = function () {
-    var context = this.select_field;
+    var context = this.select_field();
     var result;
 
-    switch (this.select_field.prop('type')) {
+    switch (this.select_field().prop('type')) {
         case 'checkbox':
             result = context.checked.apply(context, arguments);
             break;
@@ -691,7 +699,6 @@ Field.prototype.set_visibility = function () {
     if (make_visible == undefined) {
         return;
     }
-    console.log((make_visible ? 'show ' : 'hide ') + this.field_name);
     this.ui.show_field(make_visible);
 
     if (!this.visibility_onchange_attached) {
