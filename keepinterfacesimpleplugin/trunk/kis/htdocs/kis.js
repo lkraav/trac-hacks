@@ -11,7 +11,7 @@
 
 // Configuration file structure is
 //
-// [kis_interface]
+// [kis_assistant]
 // <field_name>.visible = <predicate>
 // <field_name>.available.<option_set_name> = <predicate>
 // <field_name>.options.<option_set_name> = <option list>
@@ -68,20 +68,42 @@ var TracInterface = function(field_name) {
     if (field_name == 'action') {
         // The 'action' field is a special case.
         this.select_field = $('[name=action][type=radio]');
+        this.select_options = this.select_field;
         this.show_field = function (show) {
             return this.select_field.closest('fieldset').
                 css('display', show ? '' : 'none');
         };
     } else {
         this.select_field = $('#field-' + field_name);
+        this.select_options = $('#field-' + field_name + ' option');
         if (this.select_field.length == 0) {
             // Radio button set.
             this.select_field = $('[name=field_' + field_name + ']');
+            this.select_options = this.select_field;
         }
     }
 };
 
+TracInterface.prototype._options = function () {
+    // Return an array containing the valid values for the element.
+    if (this.select_field.prop('type') == 'checkbox') {
+        return [ false, true ];
+    }
+    // Work around an apparent Trac bug: the value of empty options isn't
+    // explicitly set, which for some reason prevents setting a CSS style.
+    this.select_options.each(
+        function () {
+            if ($(this).val() === '') {
+                $(this).val('');
+            }
+        });
+    return this.select_options.map(function () { return this.value; }).get();
+}
+
 TracInterface.prototype._item = function (name) {
+    if ($.inArray(name, this._options()) == -1) {
+        return undefined;
+    }
     if (this.select_field.prop('type') == 'radio') {
         var result = this.select_field.filter('[value="' + name + '"]');
     } else {
@@ -117,6 +139,9 @@ TracInterface.prototype.initial_val = function () {
 
 TracInterface.prototype.is_visible = function (name) {
     var item = this._item(name);
+    if (item === undefined) {
+        return undefined;
+    }
 
     if (this.select_field.prop('type') == 'radio') {
         var result = item.parent().css('display');
@@ -128,6 +153,9 @@ TracInterface.prototype.is_visible = function (name) {
 
 TracInterface.prototype.select = function (name) {
     var item = this._item(name);
+    if (item === undefined) {
+        return undefined;
+    }
 
     if (this.select_field.prop('type') == 'radio') {
         item.checked(true);
@@ -136,7 +164,7 @@ TracInterface.prototype.select = function (name) {
     }
     item.trigger('change');
 
-    return item.length > 0;
+    return true;
 };
 
 TracInterface.prototype.selected_item = function () {
@@ -155,13 +183,16 @@ TracInterface.prototype.show_field = function (show) {
 
 TracInterface.prototype.show_item = function (name, show) {
     var item = this._item(name);
+    if (item === undefined) {
+        return undefined;
+    }
 
     if (this.select_field.prop('type') == 'radio') {
         item = item.parent();
     }
     item.css('display', show ? '' : 'none');
 
-    return item.length > 0;
+    return true;
 };
 
 TracInterface.prototype.trigger = function () {
@@ -521,19 +552,9 @@ Field.prototype.add_one_option_set = function (option_set, callback) {
         return false;
     }
 
-    for (var value in option_values) {
-        // Parse the option value. Most will be simple strings, but they could
-        // contain calls to configuration functions.
-        var name = evaluate(option_values[value], null, callback);
-
-        if (!this.ui.show_item(name, show_set)) {
-            if (this.field_name != 'action') {
-                // Log a warning: that value isn't present. (This isn't true
-                // for actions, which aren't always available in the
-                // interface.)
-                console.log("option '" + this.field_name +
-                            "' value '" + name + "' not defined in trac.ini");
-            }
+    if (show_set) {
+        for (var option in option_values) {
+            this.ui.show_item(option_values[option], true);
         }
     }
     return true;
@@ -547,6 +568,25 @@ Field.prototype.add_one_option_set = function (option_set, callback) {
 // field that might affect the contents of this field.
 Field.prototype.add_options = function () {
     var callback = this.add_options.bind(this);
+
+    // Clear all the options that are controlled by kisplugin, then add the
+    // ones back where the 'available' predicate evaluates true.
+    for (var option_set in this.operations['available']) {
+        var option_values = this.operations['options'][option_set]['#'];
+        for (var option in option_values) {
+            var value = option_values[option];
+            if (this.ui.show_item(value, false) === undefined) {
+                if (this.field_name != 'action') {
+                    // Log a warning: that value isn't present. (This isn't
+                    // true for actions, which aren't always available in the
+                    // interface.)
+                    console.log("option '" + this.field_name
+                        + "' value '" + value + "' not defined in trac.ini"
+                    );
+                }
+            }
+        }
+    }
 
     for (var option_set in this.operations['available']) {
         if (this.add_one_option_set(option_set, callback) == false) {
@@ -691,7 +731,7 @@ var page_info;
 // This function is called when the page has loaded. It queries the server to
 // get the trac.ini data, the ticket status and the authenticated user name.
 // Once the data has arrived, the fields are initialised accordingly.
-window.ui = []
+window.ui = [];
 $(function () {
     $.getJSON('kis_init',
         { op: 'get_ini',
