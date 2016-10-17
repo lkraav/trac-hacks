@@ -7,7 +7,7 @@ author = "Alec Thomas"
 author_email = "alec@swapoff.org"
 version = "1.0 ($Rev$)"
 license = "3-Clause BSD"
-url = "$URL$"
+url = "https://trac-hacks.org/wiki/CsvMacro"
 
 
 class CsvMacro(WikiMacroBase):
