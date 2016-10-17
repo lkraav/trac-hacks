@@ -5,7 +5,7 @@ import csv
 
 author = "Alec Thomas"
 author_email = "alec@swapoff.org"
-version = "1.0 ($Rev$)"
+version = "1.0-$Rev$"
 license = "3-Clause BSD"
 url = "https://trac-hacks.org/wiki/CsvMacro"
 

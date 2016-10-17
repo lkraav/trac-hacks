@@ -11,7 +11,7 @@ from trac.wiki.formatter import format_to_oneliner
 from trac.wiki.macros import WikiMacroBase
 
 author = "David Roussel"
-version = "1.0 ($Rev$)"
+version = "1.0-$Rev$"
 license = "MIT"
 url = "https://trac-hacks.org/wiki/ColorMacro"
 
