@@ -3,45 +3,52 @@
 from trac.wiki.macros import WikiMacroBase
 from xml.etree.ElementTree import tostring
 
+author = "Jeffrey Armstrong"
+author_email = "jeff@approximatrix.com"
+version = "1.0 ($Rev$)"
+license = "GPL"
+url = "$URL$"
+
+
 class ASCIIMathMacro(WikiMacroBase):
     """Implements ASCIIMathML as a macro for Trac
-    
+
        Author: Jeffrey Armstrong <jeff@approximatrix.com>
-        
+
        Relies completely on asciimathml.py by Gabriele Favalessa
-        
+
        See [https://github.com/favalex/python-asciimathml] for more info.
-        
+
        This macro allows equations to be written in a simple text format using
-       a subset of the ASCIIMathML syntax.  When the page is requested, the 
+       a subset of the ASCIIMathML syntax.  When the page is requested, the
        ASCII text is transformed into MathML, which can be rendered in any
        capable browser (Firefox for sure, IE with MathPlayer plugin, maybe
-       Opera).  
-        
+       Opera).
+
        See [http://www1.chapman.edu/~jipsen/mathml/asciimath.html] for info on
        proper equation formatting.
-        
+
        Usage:
        {{{!#ASCIIMath
        <your equation here>
        }}}
-        
+
        This code is licensed under GNU GPL Version 3.
     """
-    
+
     def expand_macro(self, formatter, name, text, args=None):
-        
+
         #text = "whatever '''wiki''' markup you want, even containing other macros"
-                
+
         try:
             output = tostring(parse(text))
         except e:
             output = '<em>An error has occured: {0}</em>'.format(e.message)
-        
+
         return output
-        
-### BEGIN ASCIIMathML (version 0.9.3) ###        
-        
+
+### BEGIN ASCIIMathML (version 0.9.3) ###
+
 # Copyright (c) 2010-2011, Gabriele Favalessa
 #
 # This program is free software: you can redistribute it and/or modify
