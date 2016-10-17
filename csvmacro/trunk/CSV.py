@@ -3,6 +3,13 @@ from trac.util import escape
 from StringIO import StringIO
 import csv
 
+author = "Alec Thomas"
+author_email = "alec@swapoff.org"
+version = "1.0 ($Rev$)"
+license = "3-Clause BSD"
+url = "$URL$"
+
+
 class CsvMacro(WikiMacroBase):
     """
     Display CSV data in a table. Simply copy and paste the CSV data into the macro body and hope for the best.
@@ -20,7 +27,7 @@ class CsvMacro(WikiMacroBase):
     || 123 || 123 || 123 || 123 ||
     || 234 || 234 || 234 || 234 ||
      """
-       
+
     def get_macros(self):
         yield 'CSV'
 
