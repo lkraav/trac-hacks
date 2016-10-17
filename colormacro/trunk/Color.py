@@ -10,10 +10,10 @@ from genshi.builder import tag
 from trac.wiki.formatter import format_to_oneliner
 from trac.wiki.macros import WikiMacroBase
 
-author="David Roussel"
-license="MIT"
-version="1.0 ($Rev$)"
-url="https://trac-hacks.org/wiki/ColorMacro"
+author = "David Roussel"
+version = "1.0 ($Rev$)"
+license = "MIT"
+url = "https://trac-hacks.org/wiki/ColorMacro"
 
 
 class ColorMacro(WikiMacroBase):
@@ -25,12 +25,12 @@ class ColorMacro(WikiMacroBase):
     {{{
       [[Color(color, text)]]
     }}}
-    Where: 
+    Where:
     color::
       is a color keyword or hex color number recognized by your browser
     text::
       any wiki markup you like
-    
+
     Example:
     {{{
       [[Color(red,This has a red background)]]
