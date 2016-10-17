@@ -7,7 +7,7 @@ author = "Jeffrey Armstrong"
 author_email = "jeff@approximatrix.com"
 version = "1.0 ($Rev$)"
 license = "GPL"
-url = "$URL$"
+url = "https://trac-hacks.org/wiki/CsvMacro"
 
 
 class ASCIIMathMacro(WikiMacroBase):
