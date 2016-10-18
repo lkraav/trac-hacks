@@ -73,13 +73,19 @@ var TracInterface = function(field_name) {
             return this.select_field().closest('fieldset').
                 css('display', show ? '' : 'none');
         };
+        this.type = 'action';
     } else {
         this.selector = '#field-' + field_name;
         this.option_selector = '#field-' + field_name + ' option';
+        this.type = 'field';
+        if (this.select_field().prop('type') == 'checkbox') {
+            this.type = 'checkbox';
+        }
         if (this.select_field().length == 0) {
             // Radio button set.
             this.selector = '[name=field_' + field_name + ']';
-            this.option_selector = this.select_field;
+            this.option_selector = this.selector;
+            this.type = 'radio';
         }
     }
 };
@@ -94,11 +100,11 @@ TracInterface.prototype.select_options = function () {
 
 TracInterface.prototype._options = function () {
     // Return an array containing the valid values for the element.
-    if (this.select_field().prop('type') == 'checkbox') {
+    if (this.type == 'checkbox') {
         return [ false, true ];
     }
-    // Work around an apparent Trac bug: the value of empty options isn't
-    // explicitly set, which means jQuery can't select the option by value.
+    // Work around a Trac quirk: the value of empty options isn't explicitly
+    // set, which means jQuery can't select the option by value.
     this.select_options().each(
         function () {
             if ($(this).val() === '') {
@@ -112,7 +118,7 @@ TracInterface.prototype._item = function (name) {
     if ($.inArray(name, this._options()) == -1) {
         return undefined;
     }
-    if (this.select_field().prop('type') == 'radio') {
+    if (this.type == 'radio') {
         var result = this.select_field().filter('[value="' + name + '"]');
     } else {
         result = $('option[value="' + name + '"]', this.select_field());
@@ -129,7 +135,7 @@ TracInterface.prototype.attach_change_handler = function (trigger, callback) {
 TracInterface.prototype.first_available_item = function () {
     var is_visible = function () { return this.style['display'] != 'none'; };
 
-    if (this.select_field().prop('type') == 'radio') {
+    if (this.type == 'radio') {
         var result = $('input', this.select_field().parent().
             filter(is_visible)).first();
     } else {
@@ -151,7 +157,7 @@ TracInterface.prototype.is_visible = function (name) {
         return undefined;
     }
 
-    if (this.select_field().prop('type') == 'radio') {
+    if (this.type == 'radio') {
         var result = item.parent().css('display');
     } else {
         result = item.css('display');
@@ -165,7 +171,7 @@ TracInterface.prototype.select = function (name) {
         return undefined;
     }
 
-    if (this.select_field().prop('type') == 'radio') {
+    if (this.type == 'radio') {
         item.checked(true);
     } else {
         item.prop('selected', true);
@@ -176,7 +182,7 @@ TracInterface.prototype.select = function (name) {
 };
 
 TracInterface.prototype.selected_item = function () {
-    if (this.select_field().prop('type') == 'radio') {
+    if (this.type == 'radio') {
         var result = this.select_field().filter(':checked');
     } else {
         result = $(':checked', this.select_field());
@@ -192,10 +198,10 @@ TracInterface.prototype.show_field = function (show) {
 TracInterface.prototype.show_item = function (name, show) {
     var item = this._item(name);
     if (item === undefined) {
-        return undefined;
+        return false;
     }
 
-    if (this.select_field().prop('type') == 'radio') {
+    if (this.type == 'radio') {
         item = item.parent();
     }
     item.css('display', show ? '' : 'none');
@@ -211,16 +217,13 @@ TracInterface.prototype.val = function () {
     var context = this.select_field();
     var result;
 
-    switch (this.select_field().prop('type')) {
+    switch (this.type) {
         case 'checkbox':
             result = context.checked.apply(context, arguments);
             break;
         case 'radio':
             context = context.filter(':checked');
             result = context.val.apply(context, arguments);
-            break;
-        case undefined:
-            result = null;
             break;
         default:
             result = context.val.apply(context, arguments);
@@ -583,7 +586,7 @@ Field.prototype.add_options = function () {
         var option_values = this.operations['options'][option_set]['#'];
         for (var option in option_values) {
             var value = option_values[option];
-            if (this.ui.show_item(value, false) === undefined) {
+            if (!this.ui.show_item(value, false)) {
                 if (this.field_name != 'action') {
                     // Log a warning: that value isn't present. (This isn't
                     // true for actions, which aren't always available in the
