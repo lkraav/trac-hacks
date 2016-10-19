@@ -121,7 +121,7 @@ class IncludeSourceMacro(WikiMacroBase):
         if kwargs.has_key('header'):
             header = kwargs.get('header')   # user specified header
         else:
-            header = tag.a(file_name, href=href.browser(orig_file_name, rev))
+            header = tag.a(file_name, href=href.browser(orig_file_name, rev=rev))
         if not header:
             header = u'\xa0'    # default value from trac.mimeview.api.py
 

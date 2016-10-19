@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='IncludeSource',
-    version='0.3',
+    version='0.4',
     packages=['includesource'],
     author='Chris Heller',
     description='Include (parts of) a source file into the current wiki page',
