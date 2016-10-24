@@ -1,0 +1,19 @@
+Changes in version 1.1:
+    - Fix: jQuery selectors are now cached less aggressively, so the plugin
+      works with fields managed by TracTicketChainedFieldsPlugin. (#12899)
+
+    - Fix: Option-select fields in which one of the valid values is blank
+      are now handled correctly.
+
+    - Fix: Initial values of radio buttons are now selected correctly.
+
+    - The values in the sets of options for a single option-select field no
+      longer need to be disjunct. If more than one set of options is
+      available, the union of those sets is taken.
+
+    - A utility script has been provided to create KISplugin configurations
+      by importing TracTicketChainedFieldsPlugin configurations.
+
+    - An array named 'ui' is exported to the browser window. It contains
+      objects representing the fields controlled by KISplugin, allowing the
+      user to manipulate or inspect those fields from the browser console.
