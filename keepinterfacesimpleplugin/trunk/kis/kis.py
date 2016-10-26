@@ -528,6 +528,10 @@ evaluation.available.none = evaluation_template == 'None'
     def post_process_request(self, req, template, data, content_type):
         if req.path_info.startswith('/newticket') or \
                 req.path_info.startswith('/ticket/'):
+            if 'rv:11' in req.environ['HTTP_USER_AGENT'] \
+                    or 'MSIE' in req.environ['HTTP_USER_AGENT']:
+                # Provide Promise support for Internet Explorer.
+                add_script(req, 'kis/bluebird.min.js')
             add_script(req, 'kis/kis.js')
         return template, data, content_type
 

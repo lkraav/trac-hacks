@@ -236,32 +236,30 @@ TracInterface.prototype.val = function () {
     return result;
 };
 
-// evaluate(predicate, depends, callback)
+// evaluate(predicate)
 //
 // Top-down parser to interpret the predicates used in the trac.ini file.
 //
-// 'predicate' parameter: The grammar for the predicates is described in the
-// plugin's help documentation. The function attempts to detect syntax errors
-// in the predicates and log an error message to the console.
+// The grammar for the predicates is described in the plugin's help
+// documentation. The function attempts to detect syntax errors in the
+// predicates and log an error message to the console.
 //
-// 'depends' parameter: If an array is provided for the 'depends' parameter,
-// then the names of any fields required to evaluate the predicate are added
-// to that array. This allows the caller to arrange for the predicate to be
-// re-evaluated when necessary.
-//
-// 'callback' parameter: If the value of a field required to evaluate a
-// predicate is not immediately available, evaluate() returns undefined. The
-// 'callback' function is called once the field value is available.
-//
-// Return value: evaluate() either returns the value of the predicate, or
-// returns undefined if the predicate cannot immediately be evaluated.
-
-function evaluate(predicate, depends, callback) {
+// Returns a Promise which is resolved when the predicate has been evaluated.
+// The value of the Promise contains the following fields:
+//  If resolved:
+//      .value = the result of evaluating the predicate;
+//      .depends = an array of names of fields required to evaluate the
+//                 predicate. This allows the caller to arrange for the
+//                 predicate to be re-evaluated when necessary;
+//  If rejected:
+//      .error = a description of any error raised during evaluation.
+function evaluate(predicate) {
     var token_type = '';
     var token = '';
     var rest_of_input = predicate;
+    var depends = [];
 
-    // Results of config function calls are stored in the cache.
+    // Results of config function calls are stored in the (static) cache.
     if (typeof evaluate.cache == 'undefined') {
         evaluate.cache = {};
     }
@@ -273,10 +271,11 @@ function evaluate(predicate, depends, callback) {
         var chars_parsed = predicate.length - rest_of_input.length;
 
         if (window.console) {
-            console.log(predicate);
-            console.log(new Array(chars_parsed + where).join('-') + '^');
+            console.log(type);
+            console.log('    ' + predicate);
+            console.log(
+                '    ' + new Array(chars_parsed + where).join('-') + '^');
         }
-        throw(type + ' error in trac.ini');
     }
 
     // next_token()
@@ -308,212 +307,277 @@ function evaluate(predicate, depends, callback) {
         }
 
         if (rest_of_input) {
-            config_error('lexical', 1);
+            // No need to call config_error(); the error will be picked up
+            // elsewhere in the parser and logged then.
+            console.log('lexical error');
         }
         token_type = 'EOF'; token = '';
     }
 
     function term() {
-        var v;
+        function query_server(config_func, args, cache_key) {
+            return new Promise(function (resolve, reject) {
+                $.ajax('kis_function', {
+                    data: {
+                        op: 'call_function',
+                        id: $('a.trac-id', '#ticket').text().slice(1),
+                        config_func: config_func,
+                        args: args,
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        if (errorThrown == 'Internal Server Error') {
+                            $('body').replaceWith(jqXHR.responseText);
+                        }
+                        reject({ error: errorThrown });
+                    },
+                    success: function (result) {
+                        evaluate.cache[cache_key] = eval(result);
+                        resolve({ value: result });
+                    },
+                    timeout: 10000,
+                });
+            });
+        }
 
-        if (token == '(') {
-            // term ::= '(' expression ')'
-            next_token();
-            v = expression();
-            if (token != ')') {
-                config_error('syntax', 1);
-            }
-            next_token();
-        } else
-        if (token_type == 'string') {
-            // term ::= '"' <string> '"'
-            v = token;
-            next_token();
-        } else
-        if (token_type == 'field name') {
-            // term ::= <field_name>
-            if (token[0] == '_') {
-                var field = new TracInterface(token.slice(1));
-                v = field.initial_val();
+        return new Promise(function (resolve, reject) {
+
+            var result = { value: undefined };
+
+            if (token == '(') {
+                // term ::= '(' expression ')'
                 next_token();
-            } else
-            if (token == 'status') {
-                // Can't use $('.trac-status a').text(), because that would
-                // fail if previewing a transition to the next state.
-                v = page_info['status'];
-                next_token();
-            } else
-            if (token == 'authname') {
-                v = page_info['authname'];
-                next_token();
-            } else
-            if (token == 'true' || token == 'false') {
-                v = eval(token);
-                next_token();
-            } else {
-                // Look ahead. If next token is '(', this is a function call.
-                var field_token = token;
-                next_token();
-                if (token == '(') {
-                    next_token();
-                    var parameters = param_list();
-                    var cache_key = field_token + '@' + parameters.join();
-                    if (cache_key in evaluate.cache) {
-                        v = evaluate.cache[cache_key];
-                    } else {
-                        $.get('kis_function',
-                            { op: 'call_function',
-                              id: $('a.trac-id', '#ticket').text().slice(1),
-                              config_func: field_token,
-                              args: parameters },
-                            function (result) {
-                                evaluate.cache[cache_key] = eval(result);
-                                callback();
-                            }
-                        );
-                        throw 'retry';
-                    }
+                resolve(expression().then(function (r) {
                     if (token != ')') {
-                        config_error('syntax', 1);
+                        config_error('expected ")"', 0);
+                        r.error = 'syntax error';
+                        return Promise.reject(r);
                     }
                     next_token();
+                    return r;
+                }));
+            } else
+            if (token_type == 'string') {
+                // term ::= '"' <string> '"'
+                result.value = token;
+                next_token();
+                resolve(result);
+            } else
+            if (token_type == 'field name') {
+                // term ::= <field_name>
+                if (token[0] == '_') {
+                    var field = new TracInterface(token.slice(1));
+                    result.value = field.initial_val();
+                    next_token();
+                    resolve(result);
+                } else
+                if (token == 'status') {
+                    // Can't use $('.trac-status a').text(), because that
+                    // would fail if previewing a transition to the next
+                    // state.
+                    result.value = page_info['status'];
+                    next_token();
+                    resolve(result);
+                } else
+                if (token == 'authname') {
+                    result.value = page_info['authname'];
+                    next_token();
+                    resolve(result);
+                } else
+                if (token == 'true' || token == 'false') {
+                    result.value = eval(token);
+                    next_token();
+                    resolve(result);
                 } else {
-                    // If we are looking for triggers, and the field is not yet
-                    // listed as a dependency for this predicate, add it now.
-                    if (depends && $.inArray(field_token, depends) == -1) {
-                        depends.push(field_token);
-                    }
-                    var field = new TracInterface(field_token);
-                    v = field.val();
-                    if (v === null) {
-                        console.log("no field named '" + field_token +
-                                    "' present on page");
+                    // Look ahead. If next token is '(', this is a
+                    // function call.
+                    var field_token = token;
+                    next_token();
+                    if (token == '(') {
+                        next_token();
+                        resolve(param_list().then(function (r) {
+                            if (token != ')') {
+                                config_error('expected ")"', 0);
+                                r.error = 'syntax error';
+                                return Promise.reject(r);
+                            }
+                            next_token();
+                            var cache_key = field_token + '@'
+                                            + r.value.join();
+                            if (cache_key in evaluate.cache) {
+                                r.value = evaluate.cache[cache_key];
+                                return r;
+                            } else {
+                                return query_server(
+                                    field_token,
+                                    r.value,
+                                    cache_key
+                                );
+                            }
+                        }));
+                    } else {
+                        // If the field is not yet listed as a dependency for
+                        // this predicate, add it now.
+                        if ($.inArray(field_token, depends) == -1) {
+                            depends.push(field_token);
+                        }
+                        var field = new TracInterface(field_token);
+                        result.value = field.val();
+                        if (field.val() === null) {
+                            console.log("no field named '" + field_token +
+                                        "' present on page");
+                        }
+                        resolve(result);
                     }
                 }
+            } else {
+                config_error('unexpected token', -token.length);
+                result.error = 'syntax error';
+                reject(result);
             }
-        } else {
-            config_error('syntax', -token.length);
-        }
-        return v;
+        });
     }
 
     function param_list() {
-        var v;
-
         if (token == ')') {
-            v = [];
+            return Promise.resolve({ value: [] });
         } else {
-            v = [term()];
-            if (token == ',') {
-                next_token();
-                v = v.concat(param_list());
-            }
+            return term().then(function (r) {
+                if (token == ',') {
+                    next_token();
+                    return param_list().then(function (p) {
+                        p.value = [r.value].concat(p.value);
+                        return p;
+                    });
+                } else {
+                    r.value = [r.value];
+                    return r;
+                }
+            });
         }
-        return v;
     }
 
-    // Parameter 't' is the value that is being checked for membership.
-    function cmp_list(t) {
-        var v;
-
+    function cmp_list() {
         if (token == '(') {
             // cmp_list ::= '(' cmp_list ')'
             next_token();
-            v = cmp_list(t);
-            if (token != ')') {
-                config_error('syntax', 1);
-            }
-            next_token();
+            return cmp_list().then(function (r) {
+                if (token != ')') {
+                    config_error('expected ")"', 1);
+                    r.error = 'syntax error';
+                    return Promise.reject(r);
+                }
+                next_token();
+                return r;
+            });
         } else {
             // cmp_list ::= term
-            v = (t == term());
-            if (token == ',') {
-                // cmp_list ::= term ',' cmp_list
-                next_token();
-                // Put cmp_list(t) first to ensure it gets evaluated.
-                v = (cmp_list(t) || v);
-            }
+            return term().then(function (r) {
+                if (token == ',') {
+                    // cmp_list ::= term ',' cmp_list
+                    next_token();
+                    return cmp_list().then(function (c) {
+                        c.value = [r.value].concat(c.value);
+                        return c;
+                    });
+                } else {
+                    r.value = [r.value];
+                    return r;
+                }
+            });
         }
-        return v;
     }
 
     function comparison() {
-        var v;
-
         if (token == '!') {
             // comparison ::= '!' comparison
             next_token();
-            v = !comparison();
+            return comparison().then(function (r) {
+                r.value = !r.value;
+                return r;
+            });
         } else {
             // comparison ::= term
-            v = term();
-            if (token == '==') {
-                // comparison ::= term '==' term
-                next_token();
-                v = (v == term());
-            } else
-            if (token == '!=') {
-                // comparison ::= term '!=' term
-                next_token();
-                v = (v != term());
-            } else
-            if (token == '~=') {
-                // comparison ::= term '~=' term
-                next_token();
-                v = Boolean(v.match(term()));
-            } else
-            if (token == 'in') {
-                // comparison ::= term 'IN' cmp_list
-                next_token();
-                v = cmp_list(v);
-            }
+            return term().then(function (r) {
+                if (token == '==') {
+                    // comparison ::= term '==' term
+                    next_token();
+                    return term().then(function (t) {
+                        t.value = (r.value == t.value);
+                        return t;
+                    });
+                } else
+                if (token == '!=') {
+                    // comparison ::= term '!=' term
+                    next_token();
+                    return term().then(function (t) {
+                        t.value = (r.value != t.value);
+                        return t;
+                    });
+                } else
+                if (token == '~=') {
+                    // comparison ::= term '~=' term
+                    next_token();
+                    return term().then(function (t) {
+                        t.value = Boolean(r.value.match(t.value));
+                        return t;
+                    });
+                } else
+                if (token == 'in') {
+                    // comparison ::= term 'IN' cmp_list
+                    next_token();
+                    return cmp_list().then(function (c) {
+                        c.value = ($.inArray(r.value, c.value) != -1);
+                        return c;
+                    });
+                } else
+                return r;
+            });
         }
-        return v;
     }
 
     function and_expression() {
-        var v;
-
         // and_expression ::= comparison
-        v = comparison();
-        if (token == '&&') {
-            // and_expression ::= comparison '&&' and_expression
-            next_token();
-            // Put and_expression() first to ensure it gets evaluated.
-            v = (and_expression() && v);
-        }
-        return v;
+        return comparison().then(function (r) {
+            if (token == '&&') {
+                // and_expression ::= comparison '&&' and_expression
+                next_token();
+                return and_expression().then(function (a) {
+                    a.value = a.value && r.value;
+                    return a
+                });
+            } else {
+                return r;
+            }
+        });
     }
 
     function expression() {
-        var v;
-
-        // expression ::= and_expression
-        v = and_expression();
-        if (token == '||') {
-            // expression ::= and_expression '||' comparison
-            next_token();
-            // Put expression() first to ensure it gets evaluated.
-            v = (expression() || v);
-        }
-        return v;
+        return and_expression().then(function (r) {
+            if (token == '||') {
+                // expression ::= and_expression '||' comparison
+                next_token();
+                return expression().then(function (e) {
+                    e.value = e.value || r.value;
+                    return e;
+                });
+            } else {
+                return r;
+            }
+        });
     }
 
     next_token();
-    try {
-        var result = expression();
+
+    return expression().then(function (r) {
         if (token) {
-            config_error('syntax', -token.length);
-        }
-        return result;
-    } catch (err) {
-        if (err == 'retry') {
-            // Predicate can't be evaluated yet; waiting for data.
-            return undefined;
+            config_error('unexpected input', -token.length + 1);
+            r.error = 'syntax error';
+            return Promise.reject(r);
         } else {
-            throw err;
+            r.depends = depends;
+            return r;
         }
-    }
+    });
 }
 
 // Field()
@@ -530,188 +594,219 @@ function Field(field_name) {
     this.operations = page_info['trac_ini'][field_name];
     this.ui = new TracInterface(field_name);
 
-    // The set of triggers that affect visibility of the field.
-    this.visibility_triggers = [];
-    // Flag to ensure visibility onchange handlers are only attached once.
+    // Flags to ensure visibility, option-select and template onchange
+    // handlers are only attached once.
     this.visibility_onchange_attached = false;
-
-    // The set of triggers that affect the available options of the field.
-    this.options_triggers = [];
-    // Flag to ensure option-select onchange handlers are only attached once.
     this.options_onchange_attached = false;
-
-    // The set of triggers that select the template for the field.
-    this.template_triggers = [];
-    // Flag to ensure template onchange handlers are only attached once.
     this.template_onchange_attached = false;
 }
 
-// add_one_option_set()
+// set_options()
 //
-// Adds one set of options (from the trac.ini) to an option-select field.
-// Called at setup time, and possibly called again shortly afterwards if a
-// corresponding predicate can't be evaluated immediately. Called later by
-// add_options() when that is invoked as an onchange handler.
-//
-// Returns 'true' for success; 'false' if the callback was scheduled.
-Field.prototype.add_one_option_set = function (option_set, callback) {
-    var predicate = this.operations['available'][option_set]['#'].join();
-    var option_values = this.operations['options'][option_set]['#'];
+// Sets up an option-select field. Called at setup time and later as an
+// onchange handler of any field that might affect the contents of this field.
+Field.prototype.set_options = function () {
+    var callback = this.set_options.bind(this);
 
-    var show_set = evaluate(predicate, this.options_triggers, callback);
-    if (show_set == undefined) {
-        return false;
-    }
-
-    if (show_set) {
-        for (var option in option_values) {
-            this.ui.show_item(option_values[option], true);
+    // Resolve all the evaluations up-front. Create two arrays indexed by the
+    // set name. all_set_items['set_name'] is a list of the items in that set.
+    // all_set_show['set_name'] is the evaluated predicate for whether the
+    // items in that set should be visible.
+    var all_set_items = [];
+    var all_set_show = [];
+    var promise_list = [];
+    for (var option_set in this.operations['options']) {
+        var set_show = function(option_set) {
+            return function (o) {
+                all_set_show[option_set] = o;
+            }
+        };
+        var set_items = function (option_set) {
+            return function (o) {
+                all_set_items[option_set].push(o.value);
+            }
+        };
+        var option_values = this.operations['options'][option_set]['#'];
+        var option_available = this.operations['available'][option_set]['#'];
+        promise_list.push(
+            evaluate(option_available[0]).then(set_show(option_set))
+        );
+        all_set_items[option_set] = [];
+        for (var option_value in option_values) {
+            promise_list.push(
+                evaluate(option_values[option_value]).then(
+                    set_items(option_set)
+                )
+            );
         }
     }
-    return true;
-};
-
-// add_options()
-//
-// Completely initialises an option-select field. Called at setup time, and
-// possibly called again shortly afterwards if a predicate of an option set
-// can't be evaluated immediately. Called later as an onchange handler of any
-// field that might affect the contents of this field.
-Field.prototype.add_options = function () {
-    var callback = this.add_options.bind(this);
-
-    // Clear all the options that are controlled by kisplugin, then add the
-    // ones back where the 'available' predicate evaluates true.
-    for (var option_set in this.operations['available']) {
-        var option_values = this.operations['options'][option_set]['#'];
-        for (var option in option_values) {
-            var value = option_values[option];
-            if (!this.ui.show_item(value, false)) {
-                if (this.field_name != 'action') {
-                    // Log a warning: that value isn't present. (This isn't
-                    // true for actions, which aren't always available in the
-                    // interface.)
-                    console.log("option '" + this.field_name
-                        + "' value '" + value + "' not defined in trac.ini"
-                    );
+    return Promise.all(promise_list).then(function (unused) {
+        // Hide all the options that are controlled by KISplugin.
+        for (var option_set in all_set_items) {
+            for (var option in all_set_items[option_set]) {
+                var option_field = all_set_items[option_set][option];
+                if (!this.ui.show_item(option_field, false)) {
+                    if (this.field_name != 'action') {
+                        // Log a warning: that value isn't present. (This
+                        // isn't true for actions, which aren't always
+                        // available in the interface.)
+                        console.log("option '" + this.field_name + "' value '"
+                            + e.value + "' not defined in trac.ini");
+                    }
                 }
             }
         }
-    }
-
-    for (var option_set in this.operations['available']) {
-        if (this.add_one_option_set(option_set, callback) == false) {
-            // This function has been rescheduled as a callback.
-            return;
+        // Unhide all the options that are to be shown.
+        for (var option_set in all_set_show) {
+            if (all_set_show[option_set].value === true) {
+                for (var option in all_set_items[option_set]) {
+                    this.ui.show_item(all_set_items[option_set][option], true);
+                }
+            }
         }
-    }
-
-    // Ensure that a visible option is selected, if necessary and possible.
-    if (!this.ui.is_visible(this.ui.selected_item())) {
-        // Use the original value at page-load if available.
-        if (this.ui.is_visible(this.ui.initial_val())) {
-            this.ui.select(this.ui.initial_val());
-        } else {
-            this.ui.select(this.ui.first_available_item());
+        // Ensure that a visible option is selected, if necessary and
+        // possible.
+        if (!this.ui.is_visible(this.ui.selected_item())) {
+            // Use the original value at page-load if available.
+            if (this.ui.is_visible(this.ui.initial_val())) {
+                this.ui.select(this.ui.initial_val());
+            } else {
+                this.ui.select(this.ui.first_available_item());
+            }
         }
-    }
 
-    if (!this.options_onchange_attached) {
-        // Attach the onchange handlers.
-        for (var triggers_index in this.options_triggers) {
-            var trigger = this.options_triggers[triggers_index];
-            this.ui.attach_change_handler(trigger, callback);
+        if (!this.options_onchange_attached) {
+            // Attach the onchange handlers.
+            var attached_triggers = [];
+            for (var option_set in all_set_show) {
+                var trigger_set = all_set_show[option_set].depends;
+                for (var triggers_index in trigger_set) {
+                    var trigger = trigger_set[triggers_index];
+                    if ($.inArray(trigger, attached_triggers) == -1) {
+                        this.ui.attach_change_handler(trigger, callback);
+                        attached_triggers.push(trigger);
+                    }
+                }
+                this.options_onchange_attached = true;
+            }
         }
-        this.options_onchange_attached = true;
-    }
+        return unused;
+    }.bind(this),
+    function (err) {
+        console.log(this.field_name + '.available ' + err.error);
+    }.bind(this));
 };
 
+// set_template()
+//
+// Applies a template to a field. Called at setup time and as an onchange
+// handler of any field that affects whether the template should be applied.
+// Templates are only applied to fields that are either blank, or contain an
+// unmodified template.
 Field.prototype.set_template = function () {
-    var matches_a_template = function (callback) {
+    var matches_a_template = function () {
+        // Returns a Promise that resolves True if the current content of the
+        // field matches any of the templates defined for the field, False
+        // otherwise.
+        var templates = [];
         for (var template in this.operations['template']) {
-            var content = evaluate(
-                this.operations['template'][template]['#'].join(),
-                null,
-                callback);
-            if (content == undefined) {
-                return undefined;
-            }
-            if (this.val().replace(/[ \n]/g, '') ==
-                    content.replace(/\\n/g, '\n').replace(/[ \n]/g, '')) {
-                return true;
-            }
+            var content = this.operations['template'][template]['#'].join();
+            templates.push(evaluate(content).then(function (c) {
+                return this.val().replace(/[ \n]/g, '') ==
+                    c.value.replace(/\\n/g, '\n').replace(/[ \n]/g, '');
+            }.bind(this)));
         }
-        return false;
+        return Promise.all(templates).then(function (t) {
+            return $.inArray(true, t) != -1;
+        });
     }.bind(this);
 
-    var callback = this.set_template.bind(this);
-
+    var predicates = [];
+    var template_triggers = [];
     for (var template in this.operations['available']) {
+
+        var success = function(template, field) { return function (result) {
+            for (var dependency in result.depends) {
+                var trigger = result.depends[dependency];
+                if ($.inArray(trigger, template_triggers) == -1) {
+                    template_triggers.push(trigger);
+                }
+            }
+            if (result.value) {
+                // Apply template if field is empty or matches a template
+                // value.
+                matches_a_template().then(function (matched) {
+                    var content =
+                        field.operations['template'][template]['#'].join();
+                    evaluate(content).then(function (c) {
+                        if (field.val() == '' || matched) {
+                            field.val(c.value.replace(/\\n/g, '\n'));
+                            // Notify other scripts that the field content has
+                            // changed.
+                            field.ui.trigger('onpaste');
+                        }
+                    });
+                });
+            }
+            return result;
+        } }
+
         var predicate = this.operations['available'][template]['#'].join();
-        var do_select = evaluate(predicate, this.template_triggers, callback);
-
-        if (do_select == undefined) {
-            return;
-        }
-
-        if (do_select) {
-            // Apply template if field is empty or matches a template value.
-            var is_match = matches_a_template(callback);
-            if (is_match == undefined) {
-                return;
-            }
-
-            var content = evaluate(
-                this.operations['template'][template]['#'].join(),
-                null,
-                callback);
-            if (content == undefined) {
-                return;
-            }
-
-            if (this.val() == '' || is_match) {
-                this.val(content.replace(/\\n/g, '\n'));
-                // Notify other scripts that the field content has changed.
-                this.ui.trigger('onpaste')
-            }
-        }
+        predicates.push(evaluate(predicate).then(success(template, this)));
     }
 
-    if (!this.template_onchange_attached) {
-        // Attach the onchange handlers.
-        for (var triggers_index in this.template_triggers) {
-            var trigger = this.template_triggers[triggers_index];
-            this.ui.attach_change_handler(trigger, callback);
+    return Promise.all(predicates).then(function (p) {
+        if (!this.template_onchange_attached) {
+            // Attach the onchange handlers.
+            for (var triggers_index in template_triggers) {
+                var trigger = template_triggers[triggers_index];
+                this.ui.attach_change_handler(
+                    trigger,
+                    this.set_template.bind(this)
+                );
+            }
+            this.template_onchange_attached = true;
         }
-        this.template_onchange_attached = true;
-    }
+        return p;
+    }.bind(this),
+    function (p) {
+        console.log(this.field_name + '.available ' + p.error);
+    }.bind(this));
 };
 
 // set_visibility()
 //
-// Sets the visibility of a field or an action. Called at setup time, and
-// possibly called again shortly afterwards if the corresponding predicate
-// can't be evaluated immediately. Called later as an onchange handler of any
-// field that might affect the contents of this field.
+// Sets the visibility of a field or an action. Called at setup time, then
+// registered as an onchange handler of any field that might affect the
+// contents of this field.
 Field.prototype.set_visibility = function () {
-    var predicate = this.operations['visible']['#'].join();
-    var callback = this.set_visibility.bind(this);
+    function evaluate_success(visibility) {
+        this.ui.show_field(visibility.value);
+
+        if (!this.visibility_onchange_attached) {
+            // Attach the onchange handlers.
+            for (var triggers_index in visibility.depends) {
+                var trigger = visibility.depends[triggers_index];
+                this.ui.attach_change_handler(
+                    trigger,
+                    this.set_visibility.bind(this)
+                );
+            }
+            this.visibility_onchange_attached = true;
+        }
+        return visibility;
+    }
+
+    function evaluate_error(result) {
+        console.log(this.field_name + '.visible ' + result.error);
+        return result;
+    }
 
     // Show or hide field according to the value of its visibility predicate.
-    var make_visible = evaluate(predicate, this.visibility_triggers, callback);
-    if (make_visible == undefined) {
-        return;
-    }
-    this.ui.show_field(make_visible);
-
-    if (!this.visibility_onchange_attached) {
-        // Attach the onchange handlers.
-        for (var triggers_index in this.visibility_triggers) {
-            var trigger = this.visibility_triggers[triggers_index];
-            this.ui.attach_change_handler(trigger, callback);
-        }
-        this.visibility_onchange_attached = true;
-    }
+    return evaluate(this.operations['visible']['#'].join()).then(
+        evaluate_success.bind(this),
+        evaluate_error.bind(this)
+    );
 };
 
 // setup()
@@ -722,12 +817,12 @@ Field.prototype.setup = function () {
         this.set_visibility();
     }
     if (this.operations['options']) {
-        this.add_options();
+        this.set_options();
     }
     if (this.operations['template']) {
         this.set_template();
     }
-};
+}
 
 // val()
 //
