@@ -36,11 +36,11 @@ def outline_tree(env, ol, outline, context, active, min_depth, max_depth):
     max_depth = min(6, max_depth)
     min_depth = max(1, min_depth)
     previous_depth = min_depth
-    
+
     stack = [None] * (max_depth + 1)
     # stack of (<element for new sublists>, <element for new items>)
     stack[previous_depth] = (None, ol)
-    
+
     for depth, anchor, heading in outline:
         if min_depth <= depth <= max_depth:
             for d in range(previous_depth, depth):
@@ -70,7 +70,7 @@ class TOCMacro(WikiMacroBase):
     Generate a table of contents for the current page or a set of pages.
 
     If no arguments are given, a table of contents is generated for the
-    current page, with the top-level title stripped: 
+    current page, with the top-level title stripped:
     {{{
     [[TOC]]
     }}}
@@ -88,7 +88,7 @@ class TOCMacro(WikiMacroBase):
     [[TOC(Trac*, WikiFormatting, WikiMacros)]]
     }}}
     The following ''control'' arguments change the default behaviour of
-    the TOC macro: 
+    the TOC macro:
     ||= Argument     =||= Description =||
     || `heading=<x>`  || Override the default heading of "Table of Contents" ||
     || `noheading`    || Suppress display of the heading. ||
@@ -115,25 +115,25 @@ class TOCMacro(WikiMacroBase):
     [[TOC(sectionindex, notitle, heading=This section pages)]]
     }}}
     """
-    
+
     def expand_macro(self, formatter, name, args):
         context = formatter.context
         resource = formatter.context.resource
-        
+
         # Bail out if we are in a no-float zone
         if hasattr(formatter, 'properties') and \
                'macro_no_float' in formatter.properties:
             return ''
-        
+
         current_page = unicode(resource.id)
-         
+
         # Split the args
         args, kw = parse_args(args)
         # Options
         inline = False
         pagenames = []
         reverse = False
-        
+
         default_heading = 'Table of Contents'
         params = {'min_depth': 1, 'max_depth': 6}
         # Global options
