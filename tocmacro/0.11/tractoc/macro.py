@@ -202,8 +202,9 @@ class TOCMacro(WikiMacroBase):
         active = len(pagenames) > 1
         for pagename in pagenames:
             page_resource = resource(id=pagename)
-            if not 'WIKI_VIEW' in context.perm(page_resource):
-                # Not access to the page, so should not be included
+            if resource.id != pagename and \
+                    not 'WIKI_VIEW' in context.perm(page_resource):
+                # No access to the page, so should not be included
                 continue
             if 'title_index' in params:
                 self._render_title_index(formatter, ol, page_resource,
