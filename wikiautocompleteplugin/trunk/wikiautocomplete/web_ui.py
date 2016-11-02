@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import with_statement
+
 import pkg_resources
 import re
-from json import JSONEncoder
 
 from trac.core import *
 from trac.resource import Resource
+from trac.ticket.model import Ticket
 from trac.util.text import to_unicode
 from trac.util.translation import dgettext
 from trac.web import IRequestFilter, IRequestHandler
@@ -13,6 +15,26 @@ from trac.web.chrome import ITemplateProvider, add_script, add_script_data, add_
 from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.wiki.api import WikiSystem
 from trac.versioncontrol.api import RepositoryManager
+
+
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError:
+        json = None
+if json:
+    def to_json(data):
+        return json.dumps(data)
+else:
+    def to_json(data):
+        from trac.util.presentation import to_json
+        text = to_json(data)
+        if isinstance(text, unicode):
+            text = text.encode('utf-8')
+        return text
+
 
 class WikiAutoCompleteModule(Component):
     """Auto-completes wiki formatting."""
@@ -60,35 +82,39 @@ class WikiAutoCompleteModule(Component):
             self._send_json(req, completions)
 
         elif strategy == 'ticket':
-            with self.env.db_query as db:
-                rows = db("""
-                    SELECT id, summary
-                    FROM ticket
-                    WHERE %s %s
+            try:
+                num = int(term)
+            except:
+                num = 0
+            args = []
+            mul = 1
+            while num > 0 and Ticket.id_is_valid(num):
+                args.append(num)
+                args.append(num + mul)
+                num *= 10
+                mul *= 10
+            if args:
+                expr = ' OR '.join(['id>=%s AND id<%s'] * (len(args) / 2))
+                rows = self.env.db_query("""
+                    SELECT id, summary FROM ticket
+                    WHERE %(expr)s
                     ORDER BY changetime DESC
                     LIMIT 10
-                    """ % (db.cast('id', 'text'), db.prefix_match()),
-                    (db.prefix_match_value(term), ))
-            completions = [{
-                'id': row[0],
-                'summary': row[1],
-                } for row in rows
-                if 'TICKET_VIEW' in req.perm(Resource('ticket', row[0]))]
+                    """ % {'expr': expr}, args)
+            else:
+                rows = self.env.db_query("""
+                    SELECT id, summary FROM ticket
+                    ORDER BY changetime DESC LIMIT 10""")
+            completions = [{'id': row[0], 'summary': row[1]}
+                           for row in rows
+                           if 'TICKET_VIEW' in req.perm('ticket', row[0])]
             self._send_json(req, completions)
 
         elif strategy == 'wikipage':
-            with self.env.db_query as db:
-                rows = db("""
-                    SELECT name
-                    FROM wiki
-                    WHERE name %s
-                    GROUP BY name
-                    ORDER BY name
-                    LIMIT 10
-                    """ % db.prefix_match(),
-                    (db.prefix_match_value(term), ))
-            completions = [row[0] for row in rows
-                           if 'WIKI_VIEW' in req.perm(Resource('wiki', row[0]))]
+            pages = sorted(page for page in WikiSystem(self.env).pages
+                                if page.startswith(term) and
+                                   'WIKI_VIEW' in req.perm('wiki', page))
+            completions = pages[:10]
             self._send_json(req, completions)
 
         elif strategy == 'macro':
@@ -117,11 +143,12 @@ class WikiAutoCompleteModule(Component):
                     descr = provider.get_macro_description(name)
                     if isinstance(descr, (tuple, list)):
                         descr = dgettext(descr[0], to_unicode(descr[1]))
-                    descr = format_to_oneliner(self.env, context, descr, shorten=True)
-                    completions.append({
-                        'name': name,
-                        'description': descr,
-                    })
+                    completions.append({'name': name, 'description': descr})
+                completions = sorted(completions,
+                                     key=lambda entry: entry['name'])[:10]
+                for entry in completions:
+                    entry['description'] = format_to_oneliner(
+                        self.env, context, entry['description'], shorten=True)
             self._send_json(req, completions)
 
         elif strategy == 'source':
@@ -157,8 +184,7 @@ class WikiAutoCompleteModule(Component):
         raise TracError()
 
     def _send_json(self, req, data):
-        content = JSONEncoder().encode(data).encode('utf-8')
-        req.send(content, 'application/json')
+        req.send(to_json(data), 'application/json')
 
     # ITemplateProvider methods
     
