@@ -8,10 +8,10 @@ setup(
     keywords='trac wiki plugin icons smileys entities symbols color phrases '
              'boxes',
     url='http://trac-hacks.org/wiki/WikiExtrasPlugin',
-    version='1.0',
+    version='1.0.1',
     license='BSD',
     author='Mikael Relbe and Christian Boos',
-    author_email='mikael@relbe.se; cboos@neuf.fr',
+    author_email='mikael@relbe.se; christian.boos@free.fr',
     long_description="""
         This Trac plugin extends the Trac Wiki by providing support for:
          * Icons and smileys.

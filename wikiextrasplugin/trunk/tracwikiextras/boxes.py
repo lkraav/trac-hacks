@@ -41,16 +41,17 @@ class Boxes(Component):
 
     Four processors are defined for creating boxes:
      * `box` -- The core box processor.
-     * `rbox` -- Display a right aligned box to show side notes and warnings
-       etc. This will probably be the most used box.
+     * `rbox` (`lbox`) -- Display a right (left) aligned box to show
+       side notes and warnings etc. This will probably be the most
+       used box.
      * `newsbox` -- Display news in a right aligned box. ''(This box
        corresponds to the well-known ''`NewsFlash`'' macro.)''
      * `imagebox` -- Display a single image with caption in a centered box.
 
-    The visual appearance of `box` and `rbox` is set by a `type` parameter,
-    which comes in a dozen or so flavors to call for attention in an
-    appropriate manner when displayed. Use the `AboutWikiBoxes` macro for a
-    demonstration.
+    The visual appearance of `box`, `rbox` and `lbox` is set by a
+    `type` parameter, which comes in a dozen or so flavors to call for
+    attention in an appropriate manner when displayed. Use the
+    `AboutWikiBoxes` macro for a demonstration.
 
     The width of right aligned boxes is adjustable and configured in the
     `[wikiextras]` section in `trac.ini`.
@@ -70,7 +71,9 @@ class Boxes(Component):
 
     rbox_width = IntOption('wikiextras', 'rbox_width', 300,
                            "Width of right aligned boxes.")
-
+    lbox_width = IntOption('wikiextras', 'lbox_width', 300,
+                           """Width of left aligned boxes (defaults to
+                           `rbox_width`).""")
     wide_toc = BoolOption('wikiextras', 'wide_toc', 'false',
                             """Right aligned boxes with table of contents,
                             produced by the `PageOutline` macro, are either
@@ -155,6 +158,7 @@ class Boxes(Component):
     def get_macros(self):
         yield 'box'
         yield 'rbox'
+        yield 'lbox'
         yield 'newsbox'
         yield 'imagebox'
 
@@ -225,28 +229,28 @@ class Boxes(Component):
                 styling of the box. See also the `rbox`, `newsbox` and
                 `imagebox` macros (processors).
                 """) % self._get_type_description(' ' * 5)
-        elif name == 'rbox':
+        elif name in ('rbox', 'lbox'):
             return cleandoc("""\
 
-                View a right-aligned box. (This is a shorthand for
-                `box align=right`)
+                View a %(direction)s-aligned box. (This is a shorthand for
+                `box align=%(direction)s`)
 
                 Syntax:
                 {{{
-                {{{#!rbox type width=...
+                {{{#!%(name)s type width=...
                 wiki text
                 }}}
                 }}}
                 or preferably when content is short:
                 {{{
-                [[rbox(wiki text, type=..., width=...)]]
+                [[%(name)s(wiki text, type=..., width=...)]]
                 }}}
                 where
                  * `type` is an optional flag, or parameter, to call for
                    attention depending on type of matter. When `type` is set,
                    the box is decorated with an icon (except for `news`) and
                    colored, depending on what ''urgency'' the type represents:
-                %s
+                %(type_description)s
                      `type` may be abbreviated as long as the abbreviation is
                      unique for one of the keywords above.
                  * `width` is optional and sets the width of the box (defaults
@@ -255,18 +259,22 @@ class Boxes(Component):
 
                 Examples:
                 {{{
-                {{{#!rbox warn
+                {{{#!%(name)s warn
                 = Warning
                 Beware of the bugs
                 }}}
 
-                [[rbox(Beware of the bugs, type=warn)]]
+                [[%(name)s(Beware of the bugs, type=warn)]]
                 }}}
 
                 A `style` parameter is also accepted, to allow for custom
                 styling of the box. See also the `box`, `newsbox` and
                 `imagebox` macros (processors).
-                """) % self._get_type_description(' ' * 5)
+                """) % {
+                'name': name,
+                'direction': 'right' if name is 'rbox' else 'left',
+                'type_description': self._get_type_description(' ' * 5),
+                }
         elif name == 'newsbox':
             return cleandoc("""\
                 Present a news box to the right. (This is a shorthand for
@@ -355,8 +363,10 @@ class Boxes(Component):
         if class_arg:
             class_list.append(class_arg)
 
-        align = 'right' if name in ['newsbox', 'rbox'] else \
-                'center' if name=='imagebox' else ''
+        align = ('right' if name in ('newsbox', 'rbox') else
+                 'center' if name == 'imagebox' else
+                 'left' if name == 'lbox' else
+                 '')
         align = args.get('align', align)
         if align:
             class_list.append(align)
