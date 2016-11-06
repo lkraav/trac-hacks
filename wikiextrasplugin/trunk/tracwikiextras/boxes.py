@@ -15,7 +15,7 @@ import os
 
 from pkg_resources import resource_filename
 
-from genshi.builder import tag
+from trac.util.html import tag
 
 from trac.config import BoolOption, IntOption
 from trac.core import implements, Component

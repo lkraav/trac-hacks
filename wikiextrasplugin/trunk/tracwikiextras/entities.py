@@ -12,7 +12,7 @@
 # See http://www.w3.org/TR/html401/sgml/entities.html for the official list
 # and http://www.cookwood.com/html/extras/entities.html for an illustration.
 
-from genshi.core import Markup
+from trac.util.html import Markup
 
 from trac.core import implements, Component
 from trac.wiki import IWikiSyntaxProvider, IWikiMacroProvider

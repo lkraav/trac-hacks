@@ -12,8 +12,7 @@
 """Decorate wiki text with colors.
 """
 
-from genshi.builder import tag
-from genshi.core import Markup
+from trac.util.html import Markup, tag
 
 from trac.core import implements, Component
 from trac.util.compat import cleandoc

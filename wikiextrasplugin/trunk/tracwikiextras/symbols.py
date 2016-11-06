@@ -13,7 +13,7 @@
 # Author: Christian Boos <cboos@neuf.fr>
 #         Mikael Relbe <mikael@relbe.se>
 
-from genshi.core import Markup
+from trac.util.html import Markup
 
 from trac.config import BoolOption, ConfigSection, ListOption
 from trac.core import implements, Component

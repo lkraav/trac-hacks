@@ -8,7 +8,7 @@ setup(
     keywords='trac wiki plugin icons smileys entities symbols color phrases '
              'boxes',
     url='http://trac-hacks.org/wiki/WikiExtrasPlugin',
-    version='1.0.1',
+    version='1.3.1',
     license='BSD',
     author='Mikael Relbe and Christian Boos',
     author_email='mikael@relbe.se; christian.boos@free.fr',
@@ -33,7 +33,7 @@ setup(
 
         Attentional phrases such as FIXME, TODO and DONE are highlighted to
         catch attention.
-        
+
         Use the Color macro to decorate wiki text with colors.
 
         Use the box wiki processor -- and its variants rbox, newsbox and

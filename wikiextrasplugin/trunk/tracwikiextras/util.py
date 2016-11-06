@@ -16,11 +16,16 @@
 import re
 import string
 
-from genshi.builder import tag
-from genshi.core import Markup, Stream
+from trac.util.html import Markup, tag
 
 from trac.util.compat import sorted
 from trac.util.html import TracHTMLSanitizer
+if hasattr(TracHTMLSanitizer, 'sanitize_attrs'):
+    sanitizer = TracHTMLSanitizer()
+    from trac.util.html import Element
+else:
+    sanitizer = None
+    from genshi.builder import Stream
 from trac.wiki.api import WikiSystem
 
 
@@ -60,7 +65,7 @@ def render_table(items, colspec, render_item, colspace=1):
             s = Markup(s.replace('&', '&amp;'))
         return [tag.td(rendered, nbsp, style='border:none'),
                 tag.td(tag.kbd(s), style=value_style)]
-    
+
     return tag.table(#tag.tr((hdr + [tag.td(style=spacer_style)]) *
                      #       (columns-1) + hdr),
                      [tag.tr([render_def(s) + [tag.td(style=spacer_style)]
@@ -256,11 +261,18 @@ def reduce_names(names, keep=40):
     return get_names(tree)
 
 
-def sanitize_attrib(env, element):
-    if not WikiSystem(env).render_unsafe_content:
-        sanitized = getattr(tag, element.tag.localname)
-        for k, data, pos in (Stream(element) | TracHTMLSanitizer()):
-            sanitized.attrib = data[1]
-            break  # only look at START
-        element = sanitized
-    return element
+if sanitizer:
+    def sanitize_attrib(env, element):
+        if not WikiSystem(env).render_unsafe_content:
+            sanitized = sanitizer.sanitize_attrs(element.attrib)
+            element = Element(element.tag, **sanitized)
+        return element
+else:
+    def sanitize_attrib(env, element):
+        if not WikiSystem(env).render_unsafe_content:
+            sanitized = getattr(tag, element.tag.localname)
+            for k, data, pos in (Stream(element) | TracHTMLSanitizer()):
+                sanitized.attrib = data[1]
+                break  # only look at START
+            element = sanitized
+        return element

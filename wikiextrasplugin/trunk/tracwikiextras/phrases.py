@@ -22,8 +22,7 @@ Activate this component to highlight this: FIXME
 
 from pkg_resources import resource_filename
 
-from genshi.builder import tag
-from genshi.core import Markup
+from trac.util.html import Markup, tag 
 
 from trac.config import ListOption
 from trac.core import implements, Component
