@@ -47,18 +47,14 @@ class WikiAutoCompleteModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if (req.path_info.startswith('/wiki') or
-            req.path_info.startswith('/ticket') or
-            req.path_info.startswith('/newticket')):
-            if req.method == 'GET':
-                self.env.log.info('Injecting wikiautocomplete javascript')
-                add_script_data(req, {
-                    'wikiautocomplete_url': req.href('wikiautocomplete'),
-                    })
-                add_script(req, 'wikiautocomplete/js/jquery.textcomplete.min.js')
-                add_script(req, 'wikiautocomplete/js/wikiautocomplete.js')
-                add_stylesheet(req, 'wikiautocomplete/css/jquery.textcomplete.css')
-        return (template, data, content_type)
+        if template:
+            add_script_data(req, {
+                'wikiautocomplete_url': req.href('wikiautocomplete'),
+                })
+            add_script(req, 'wikiautocomplete/js/jquery.textcomplete.min.js')
+            add_script(req, 'wikiautocomplete/js/wikiautocomplete.js')
+            add_stylesheet(req, 'wikiautocomplete/css/jquery.textcomplete.css')
+        return template, data, content_type
 
     # IRequestHandler methods
 

@@ -1,5 +1,5 @@
 jQuery(document).ready(function($) {
-    $('textarea').textcomplete([
+    $('textarea.wikitext').textcomplete([
         { // TracLinks
             match: /(^|[^[])\[(\w*)$/,
             search: function (term, callback) {
