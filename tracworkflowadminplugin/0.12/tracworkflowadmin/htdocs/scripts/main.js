@@ -1,4 +1,4 @@
-jQuery(document).ready(function(){
+jQuery(document).ready(function($) {
 
 /* variables */
     var sorterHtml = '<div class="sorter"><span class="up ui-icon ui-icon-arrowthick-1-n">up</span><span class="down ui-icon ui-icon-arrowthick-1-s">down</span></div>';
@@ -730,29 +730,22 @@ jQuery(document).ready(function(){
         return false;
     });
 
-    // 「処理」列のソート処理（上に移動）
-    $('.col-operations select + button + div.ui-multiselect-menu ul li label div span.up').live('click', function(){
-        var lis = $('li', $(this).closest('ul'));
-        var thisLi = $(this).closest('li')[0];
-        var curIndex = -1;
-        for (var i = 0; i < lis.length; i++) {
-            if (lis[i] == thisLi) {
-                curIndex = i;
-                break;
-            }
-        }
-        if (curIndex == 0 || curIndex == -1) {
-            alert('error');
+    // 「処理」列のソート処理
+    $('#elements').delegate(
+        '.col-operations select + button + div.ui-multiselect-menu ul li label div span',
+        'click', function()
+    {
+        var span = $(this);
+        var direction;
+        if (span.hasClass('up'))
+            direction = -1;
+        else if (span.hasClass('down'))
+            direction = 1;
+        else
             return false;
-        }
-        swapOperationOrder(this, curIndex, curIndex - 1);
-        return false;
-    });
 
-    // 「処理」列のソート処理（下に移動）
-    $('.col-operations select + button + div.ui-multiselect-menu ul li label div span.down').live('click', function(){
-        var lis = $('li', $(this).closest('ul'));
-        var thisLi = $(this).closest('li')[0];
+        var lis = $('li', span.closest('ul'));
+        var thisLi = span.closest('li')[0];
         var curIndex = -1;
         for (var i = 0; i < lis.length; i++) {
             if (lis[i] == thisLi) {
@@ -760,11 +753,19 @@ jQuery(document).ready(function(){
                 break;
             }
         }
-        if (curIndex == lis.length - 1 || curIndex == -1) {
-            alert('error');
+        if (curIndex === -1)
             return false;
+        if (direction === -1) {
+            if (curIndex == 0) {
+                return false;
+            }
         }
-        swapOperationOrder(this, curIndex, curIndex +1);
+        else {
+            if (curIndex == lis.length - 1) {
+                return false;
+            }
+        }
+        swapOperationOrder(this, curIndex, curIndex + direction);
         return false;
     });
 
