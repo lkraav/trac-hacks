@@ -3,6 +3,9 @@
 .dropdown-menu {
     border: 1px solid #ddd;
     background-color: white;
+    max-height: 20em;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .dropdown-menu li {

@@ -70,12 +70,11 @@ class WikiAutoCompleteModule(Component):
 
         if strategy == 'linkresolvers':
             wiki = WikiSystem(self.env)
-            completions = []
-            for provider in wiki.syntax_providers:
-                for name, resolver in provider.get_link_resolvers():
-                    if name.startswith(term):
-                        completions.append(name)
-            self._send_json(req, completions)
+            completions = set(name for provider in wiki.syntax_providers
+                                   for name, resolver
+                                        in provider.get_link_resolvers()
+                                   if name.startswith(term))
+            self._send_json(req, sorted(completions))
 
         elif strategy == 'ticket':
             try:
@@ -107,10 +106,9 @@ class WikiAutoCompleteModule(Component):
             self._send_json(req, completions)
 
         elif strategy == 'wikipage':
-            pages = sorted(page for page in WikiSystem(self.env).pages
-                                if page.startswith(term) and
-                                   'WIKI_VIEW' in req.perm('wiki', page))
-            completions = pages[:10]
+            completions = sorted(page for page in WikiSystem(self.env).pages
+                                      if page.startswith(term) and
+                                         'WIKI_VIEW' in req.perm('wiki', page))
             self._send_json(req, completions)
 
         elif strategy == 'macro':
@@ -141,7 +139,7 @@ class WikiAutoCompleteModule(Component):
                         descr = dgettext(descr[0], to_unicode(descr[1]))
                     completions.append({'name': name, 'description': descr})
                 completions = sorted(completions,
-                                     key=lambda entry: entry['name'])[:10]
+                                     key=lambda entry: entry['name'])
                 for entry in completions:
                     entry['description'] = format_to_oneliner(
                         self.env, context, entry['description'], shorten=True)

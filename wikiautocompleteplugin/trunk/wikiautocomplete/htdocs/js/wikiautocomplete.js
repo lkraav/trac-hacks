@@ -78,5 +78,6 @@ jQuery(document).ready(function($) {
 
     ], {
         appendTo: $('body'),
+        maxCount: 10000
     });
 });
