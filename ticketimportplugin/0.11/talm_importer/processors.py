@@ -4,6 +4,7 @@
 # Licensed under the same license as Trac - http://trac.edgewall.org/wiki/TracLicense
 #
 
+import inspect
 import re
 import time
 
@@ -23,10 +24,23 @@ def _normalize_newline(value):
     return value
 
 
-class ImportProcessor(object):
-    def __init__(self, env, req, filename, tickettime):
+class ProcessorBase(object):
+
+    def new_ticket(self, tkt_id=None):
+        from ticket import PatchedTicket
+        from trac.ticket.model import Ticket
+        kwargs = {'tkt_id': tkt_id}
+        if 'db' in inspect.getargspec(Ticket.__init__)[0]:
+            kwargs['db'] = self.db
+        return PatchedTicket(self.env, **kwargs)
+
+
+class ImportProcessor(ProcessorBase):
+    def __init__(self, env, db, req, filename, tickettime):
         self.env = env
+        self.db = db
         self.req = req
+        self.reporter = get_reporter_id(req)
         self.filename = filename
         self.modified = {}
         self.added = {}
@@ -34,8 +48,6 @@ class ImportProcessor(object):
         # TODO: check that the tickets haven't changed since preview
         self.tickettime = tickettime
         
-        # Keep the db to commit it all at once at the end
-        self.db = self.env.get_db_cnx()
         self.missingemptyfields = None
         self.missingdefaultedfields = None
         self.computedfields = None
@@ -58,10 +70,9 @@ class ImportProcessor(object):
         pass
 
     def start_process_row(self, row_idx, ticket_id):
-        from ticket import PatchedTicket
         if ticket_id > 0:
             # existing ticket
-            self.ticket = PatchedTicket(self.env, tkt_id=ticket_id, db=self.db)
+            self.ticket = self.new_ticket(tkt_id=ticket_id)
 
             # 'Ticket.time_changed' is a datetime in 0.11, and an int in 0.10.
             # if we have trac.util.datefmt.to_datetime, we're likely with 0.11
@@ -83,7 +94,7 @@ class ImportProcessor(object):
                     pass
 
         else:
-            self.ticket = PatchedTicket(self.env, db=self.db)
+            self.ticket = self.new_ticket()
         self.comment = ''
 
     def process_cell(self, column, cell):
@@ -107,6 +118,19 @@ class ImportProcessor(object):
         except ImportError:
             return self.tickettime
 
+    _insert_ticket_db_arg = None
+
+    def _insert_ticket(self, ticket, when=None):
+        if self._insert_ticket_db_arg is None:
+            from trac.ticket.model import Ticket
+            self._insert_ticket_db_arg = \
+                    'db' in inspect.getargspec(Ticket.insert)[0]
+        kwargs = {}
+        if self._insert_ticket_db_arg:
+            kwargs['db'] = self.db
+        return ticket.insert(when=when, **kwargs)
+
+    _save_ticket_db_arg = None
 
     def _save_ticket(self, ticket, with_comment=True):
         if with_comment:
@@ -115,11 +139,15 @@ class ImportProcessor(object):
             else:
                 comment = "''Batch update from file " + self.filename + "''"
         else:
-            comment=None
-        ticket.save_changes(get_reporter_id(self.req), 
-                            comment, 
-                            when=self._tickettime(), 
-                            db=self.db)
+            comment = None
+
+        if self._save_ticket_db_arg is None:
+            from trac.ticket.model import Ticket
+            self._save_ticket_db_arg = \
+                    'db' in inspect.getargspec(Ticket.save_changes)[0]
+        kwargs = {}
+        return ticket.save_changes(self.reporter, comment,
+                                   when=self._tickettime(), **kwargs)
 
     def end_process_row(self):
                 
@@ -146,7 +174,7 @@ class ImportProcessor(object):
                             self.computedfields[f]['set']:
                         self.ticket[f] = self.computedfields[f]['value']
 
-            self.ticket.insert(when=self._tickettime(), db=self.db)
+            self._insert_ticket(self.ticket, when=self._tickettime())
             self.added[self.ticket.id] = 1
         else:
             if self.ticket.is_modified() or self.comment:
@@ -156,25 +184,32 @@ class ImportProcessor(object):
         self.crossref.append(self.ticket.id)
         self.ticket = None
 
+
+    EnumClasses = {'component': model.Component, 'milestone': model.Milestone,
+                   'version': model.Version, 'type': model.Type}
+
+    _abstract_enum_db_arg = \
+            'db' in inspect.getargspec(model.AbstractEnum.__init__)[0]
+
     def process_new_lookups(self, newvalues):
+        kwargs = {}
+        if self._abstract_enum_db_arg:
+            kwargs['db'] = self.db
+
         for field, names in newvalues.iteritems():
             if field == 'status':
                 continue
-            
-            LOOKUPS = {  'component': model.Component,
-                         'milestone': model.Milestone,
-                         'version':  model.Version,
-                         'type': model.Type,
-                         }
+
             try:
-                CurrentLookupEnum = LOOKUPS[field]
+                enum = self.EnumClasses[field]
             except KeyError:
-                class CurrentLookupEnum(model.AbstractEnum):
+                class enum(model.AbstractEnum):
                     # here, you shouldn't put 'self.' before the class field.
                     type = field
+                self.EnumClasses[field] = enum
 
             for name in names:
-                lookup = CurrentLookupEnum(self.env, db=self.db)
+                lookup = enum(self.env, **kwargs)
                 lookup.name = name
                 lookup.insert()
 
@@ -184,8 +219,6 @@ class ImportProcessor(object):
     # Rows is an array of dictionaries.
     # Each row is indexed by the field names in relativeticketfields.
     def process_relativeticket_fields(self, rows, relativeticketfields):
-        from ticket import PatchedTicket
-        
         # Find the WBS columns, if any.  We never expect to have more
         # than one but this is flexible and easy.  There's no good
         # reason to go to the trouble of ignoring extras.
@@ -211,7 +244,7 @@ class ImportProcessor(object):
             id = self.crossref[row_idx]
 
             # Get the ticket (added or updated in the main loop
-            ticket = PatchedTicket(self.env, tkt_id=id, db=self.db)
+            ticket = self.new_ticket(tkt_id=id)
 
             for f in relativeticketfields:
                 # Get the value of the relative field column (e.g., "2,3")
@@ -269,10 +302,11 @@ class ImportProcessor(object):
         return 'import_preview.html', data, None
     
 
-class PreviewProcessor(object):
+class PreviewProcessor(ProcessorBase):
     
-    def __init__(self, env, req):
+    def __init__(self, env, db, req):
         self.env = env
+        self.db = db
         self.req = req
         self.data = {'rows': []}
         self.ticket = None
@@ -312,14 +346,14 @@ class PreviewProcessor(object):
     # This could be simplified...
     def process_missing_fields(self, missingfields, missingemptyfields, missingdefaultedfields, computedfields):
         self.message += ' * Some Trac fields are not present in the import. They will default to:\n\n'
-        self.message += "   ||'''field'''||'''Default value'''||\n"
+        self.message += "   || '''field''' || '''Default value''' ||\n"
         if missingemptyfields != []:
-            self.message += u"   ||%s||''(Empty value)''||\n" \
+            self.message += u"   || %s || ''(Empty value)'' ||\n" \
                             % u', '.join([to_unicode(x.capitalize()) for x in missingemptyfields])
             
         if missingdefaultedfields != []:
             for f in missingdefaultedfields:
-                self.message += u'   ||%s||%s||\n' % (to_unicode(f.capitalize()), computedfields[f]['value'])
+                self.message += u'   || %s || %s ||\n' % (to_unicode(f.capitalize()), computedfields[f]['value'])
 
         self.message += '(You can change some of these default values in the Trac Admin module, if you are administrator; or you can add the corresponding column to your spreadsheet and re-upload it).\n'
 
@@ -346,14 +380,13 @@ class PreviewProcessor(object):
         self.message += u' * The field "%s" will be used as comment when modifying tickets, and appended to the description for new tickets.\n' % comment
 
     def start_process_row(self, row_idx, ticket_id):
-        from ticket import PatchedTicket
         self.ticket = None
         self.cells = []
         self.rowmodified = False
         self.row_idx = row_idx
         if ticket_id > 0:
             # existing ticket. Load the ticket, to see which fields will be modified
-            self.ticket = PatchedTicket(self.env, ticket_id)
+            self.ticket = self.new_ticket(ticket_id)
             
 
     def process_cell(self, column, cell):
@@ -400,9 +433,9 @@ class PreviewProcessor(object):
             
         if newvalues:
             self.message += ' * Some lookup values are not found and will be added to the possible list of values:\n\n'
-            self.message += "   ||'''field'''||'''New values'''||\n"
-            for field, values in newvalues.iteritems():                
-                self.message += u"   ||%s||%s||\n" % (to_unicode(field.capitalize()), u', '.join(values))
+            self.message += "   || '''field''' || '''New values''' ||\n"
+            for field, values in newvalues.iteritems():
+                self.message += u"   || %s || %s ||\n" % (to_unicode(field.capitalize()), u', '.join(values))
             
 
     def process_new_users(self, newusers):

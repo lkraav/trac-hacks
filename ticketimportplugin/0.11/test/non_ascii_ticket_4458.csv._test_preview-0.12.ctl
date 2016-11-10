@@ -19,13 +19,13 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>Default value</strong>
-</td></tr><tr><td>Description, Cc, Keywords, Version, Mycustomfield, Severity</td><td><em>(Empty value)</em>
-</td></tr><tr><td>Changetime</td><td><em>(now)</em>
-</td></tr><tr><td>Reporter</td><td>testuser
-</td></tr><tr><td>Time</td><td><em>(now)</em>
-</td></tr><tr><td>Owner</td><td>Computed from component
-</td></tr><tr><td>Resolution</td><td><em>(None)</em>
+<tr><td> <strong>field</strong> </td><td> <strong>Default value</strong> 
+</td></tr><tr><td> Description, Cc, Keywords, Version, Mycustomfield, Severity </td><td> <em>(Empty value)</em> 
+</td></tr><tr><td> Changetime </td><td> <em>(now)</em> 
+</td></tr><tr><td> Reporter </td><td> testuser 
+</td></tr><tr><td> Time </td><td> <em>(now)</em> 
+</td></tr><tr><td> Owner </td><td> Computed from component 
+</td></tr><tr><td> Resolution </td><td> <em>(None)</em> 
 </td></tr></table>
 </blockquote>
 </blockquote>
@@ -36,10 +36,10 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>New values</strong>
-</td></tr><tr><td>Component</td><td>Wiki
-</td></tr><tr><td>Type</td><td>Aufgabe
-</td></tr><tr><td>Milestone</td><td>Infothek-Pr\xc3\xa4si
+<tr><td> <strong>field</strong> </td><td> <strong>New values</strong> 
+</td></tr><tr><td> Component </td><td> Wiki 
+</td></tr><tr><td> Type </td><td> Aufgabe 
+</td></tr><tr><td> Milestone </td><td> Infothek-Pr\xc3\xa4si 
 </td></tr></table>
 </blockquote>
 </blockquote>

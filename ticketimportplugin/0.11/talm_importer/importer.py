@@ -6,6 +6,7 @@
 #
 
 import encodings
+import inspect
 import os
 import re
 import shutil
@@ -13,10 +14,10 @@ import tempfile
 import time
 import unicodedata
 
-from trac.core import *
 from trac.attachment import AttachmentModule
-from trac.core import Component
+from trac.core import Component, TracError, implements
 from trac.config import Option
+from trac.env import Environment
 from trac.perm import IPermissionRequestor
 from trac.ticket import TicketSystem
 from trac.ticket import model
@@ -27,6 +28,7 @@ from trac.util.text import to_unicode
 from trac.web import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider
 
+from talm_importer.compat import with_transaction
 from talm_importer.processors import ImportProcessor
 from talm_importer.processors import PreviewProcessor
 from talm_importer.readers import get_reader
@@ -117,24 +119,31 @@ class ImportModule(Component):
         return str(self.config.get('importer', 'datetime_format', '%x')) # default is Locale's appropriate date representation
 
     def _do_preview(self, uploadedfile, sheet, req, encoding=None):
-        filereader = get_reader(uploadedfile, sheet, self._datetime_format(), encoding=encoding)
+        filereader = get_reader(uploadedfile, sheet, self._datetime_format(),
+                                encoding=encoding)
         try:
-            return self._process(filereader, get_reporter_id(req), PreviewProcessor(self.env, req))
+            result = [None]
+            @with_transaction(self.env)
+            def fn(db):
+                processor = PreviewProcessor(self.env, db, req)
+                result[0] = self._process(filereader, processor)
+            return result[0]
         finally:
             filereader.close()
 
     def _do_import(self, uploadedfile, sheet, req, uploadedfilename, tickettime, encoding=None):
-        filereader = get_reader(uploadedfile, sheet, self._datetime_format(), encoding=encoding)
+        filereader = get_reader(uploadedfile, sheet, self._datetime_format(),
+                                encoding=encoding)
         try:
-            try:
-                return self._process(filereader, get_reporter_id(req), ImportProcessor(self.env, req, uploadedfilename, tickettime))
-            finally:
-                filereader.close()
-        except:
-            # Unlock the database. This is not really tested, but seems reasonable. TODO: test or verify this
-            self.env.get_db_cnx().rollback()
-            raise
-
+            result = [None]
+            @with_transaction(self.env)
+            def fn(db):
+                processor = ImportProcessor(self.env, db, req,
+                                            uploadedfilename, tickettime)
+                result[0] = self._process(filereader, processor)
+            return result[0]
+        finally:
+            filereader.close()
 
     def _save_uploaded_file(self, req):
         req.perm.assert_permission('IMPORT_EXECUTE')
@@ -187,7 +196,8 @@ class ImportModule(Component):
 
 
 
-    def _process(self, filereader, reporter, processor):
+    def _process(self, filereader, processor):
+        reporter = get_reporter_id(processor.req)
         tracfields = [field['name'] for field in TicketSystem(self.env).get_ticket_fields()]
         tracfields = [ 'ticket', 'id' ] + tracfields
         customfields = [field['name'] for field in TicketSystem(self.env).get_custom_fields()]
@@ -319,7 +329,7 @@ class ImportModule(Component):
                 aset.update([val for val, in cursor])
 
         existingusers = set()
-        db = self.env.get_db_cnx()
+        db = processor.db
         add_sql_result(
             db, existingusers,
             [("SELECT DISTINCT reporter FROM ticket"
@@ -328,7 +338,7 @@ class ImportModule(Component):
               " WHERE owner IS NOT NULL AND owner != ''"),
              ("SELECT DISTINCT owner FROM component"
               " WHERE owner IS NOT NULL AND owner != ''")])
-        for username, name, email in self.env.get_known_users(db):
+        for username, name, email in self._get_known_users(db):
             existingusers.add(username)
         newusers = []
 
@@ -418,6 +428,12 @@ class ImportModule(Component):
 
         return processor.end_process(row_idx)
 
+    if 'db' not in inspect.getargspec(Environment.get_known_users)[0]:
+        def _get_known_users(self, db):
+            return self.env.get_known_users()
+    else:
+        def _get_known_users(self, db):
+            return self.env.get_known_users(db)
 
     def _reconciliate_by_owner_also(self):
         return self.config.getbool('importer', 'reconciliate_by_owner_also', False)

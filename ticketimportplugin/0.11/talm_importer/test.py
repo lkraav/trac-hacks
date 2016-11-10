@@ -20,6 +20,7 @@ from trac.core import TracError
 from trac.env import Environment
 from trac.web.api import Request
 
+from talm_importer.compat import get_read_db, with_transaction
 from talm_importer.importer import ImportModule
 
 
@@ -100,7 +101,7 @@ class ImporterTestCase(unittest.TestCase):
            pass
         req.authname = 'testuser'
         #req.hdf = HDFWrapper([]) # replace by this if you want to generate HTML: req.hdf = HDFWrapper(loadpaths=chrome.get_all_templates_dirs())
-        db = env.get_db_cnx()
+        db = get_read_db(env)
         cursor = db.cursor()
         _exec(cursor, "SELECT * FROM enum ORDER BY type, value, name")
         enums_before = cursor.fetchall()
@@ -115,12 +116,18 @@ class ImporterTestCase(unittest.TestCase):
         #sys.stdout = tempstdout
         #req.display(template, content_type or 'text/html')
         #open('/tmp/out.html', 'w').write(req.hdf.render(template, None))
+        def empty2none(cursor):  # see trac:#11018
+            def to_none(value):
+                if value == '':
+                    value = None
+                return value
+            return [tuple(to_none(value) for value in row) for row in cursor]
         _exec(cursor, "SELECT * FROM ticket ORDER BY id")
-        tickets = cursor.fetchall()
+        tickets = empty2none(cursor)
         _exec(cursor, "SELECT * FROM ticket_custom ORDER BY ticket, name")
-        tickets_custom = cursor.fetchall()
+        tickets_custom = empty2none(cursor)
         _exec(cursor, "SELECT * FROM ticket_change")
-        tickets_change = cursor.fetchall()
+        tickets_change = empty2none(cursor)
         _exec(cursor, "SELECT * FROM enum ORDER BY type, value, name")
         enums = [f for f in set(cursor.fetchall()) - set(enums_before)]
         _exec(cursor, "SELECT * FROM component ORDER BY name")
@@ -180,7 +187,10 @@ class ImporterTestCase(unittest.TestCase):
     def _setup(self, configuration = None, plugin_dir=None):
         configuration = configuration or '[ticket-custom]\nmycustomfield = text\nmycustomfield.label = My Custom Field\nmycustomfield.order = 1\n'
 
-        configuration += '\n[ticket]\ndefault_type = task\n'
+        configuration += ('\n'
+                          '[ticket]\n'
+                          'default_type = task\n'
+                          'default_owner = \n')
 
         env_path = tempfile.mkdtemp(prefix='ticketimportplugin-')
         env = Environment(env_path, create=True)
@@ -191,22 +201,21 @@ class ImporterTestCase(unittest.TestCase):
                 shutil.copyfile(os.path.join(plugin_dir, file), os.path.join(env_path, 'plugins', file))
 
         open(os.path.join(os.path.join(env_path, 'conf'), 'trac.ini'), 'a').write('\n' + configuration + '\n')
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "INSERT INTO permission VALUES ('anonymous', 'REPORT_ADMIN')")
-        _exec(cursor, "INSERT INTO permission VALUES ('anonymous', 'IMPORT_EXECUTE')")
-        db.commit()
-        db = None
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO permission VALUES ('anonymous', 'REPORT_ADMIN')")
+            _exec(cursor, "INSERT INTO permission VALUES ('anonymous', 'IMPORT_EXECUTE')")
         env.shutdown()
         ImporterTestCase.TICKET_TIME = 1190909220
         self.env = Environment(env_path)
         return self.env
 
     def _insert_one_ticket(self, env):
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1245, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', u'', u'', u'', u'new', None, u'sum2', u'', u''])
-        db.commit()
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1245, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', None, None, None, u'new', None, u'sum2', None, None])
 
     def test_import_1(self):
         env = self._setup()
@@ -219,24 +228,25 @@ class ImporterTestCase(unittest.TestCase):
         ImporterTestCase.TICKET_TIME = 1190909221
         self._do_test(env, 'simple-copy.csv', self._test_import)
         # import after modification should throw exception
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "update ticket set changetime = " + str(ImporterTestCase.TICKET_TIME + 10) + " where id = 1245")
-        db.commit()
+        @with_transaction(env)
+        def do_update(db):
+            cursor = db.cursor()
+            _exec(cursor, "UPDATE ticket SET changetime=%s WHERE id=1245",
+                  [ImporterTestCase.TICKET_TIME + 10])
         try:
            pass
            # TODO: this should throw an exception (a ticket has been modified between preview and import)
-          #_do_test(env, 'simple-copy.csv', self._test_import)
+           #_do_test(env, 'simple-copy.csv', self._test_import)
         except TracError, err_string:
             print err_string
         #TODO: change the test case to modify the second or third row, to make sure that db.rollback() works
 
     def test_import_with_comments(self):
         env = self._setup()
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1245, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', u'', u'', u'', u'new', None, u'sum2', u'', u''])
-        db.commit()
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1245, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', None, None, None, u'new', None, u'sum2', None, None])
         self._do_test_diffs(env, 'simple.csv', self._test_import)
         self._do_test_diffs(env, 'simple_with_comments.csv', self._test_preview)
         ImporterTestCase.TICKET_TIME = ImporterTestCase.TICKET_TIME + 100
@@ -244,10 +254,10 @@ class ImporterTestCase(unittest.TestCase):
 
     def test_import_with_comments_and_description(self):
         env = self._setup()
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1245, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', u'', u'', u'', u'new', None, u'sum2', u'', u''])
-        db.commit()
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1245, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', None, None, None, u'new', None, u'sum2', None, None])
         self._do_test_diffs(env, 'simple.csv', self._test_import)
         self._do_test_diffs(env, 'simple_with_comments_and_description.csv', self._test_preview)
         ImporterTestCase.TICKET_TIME = ImporterTestCase.TICKET_TIME + 100
@@ -269,26 +279,26 @@ class ImporterTestCase(unittest.TestCase):
 
     def test_import_4(self):
         env = self._setup()
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', u'', u'', u'', u'new', None, u'summary before change', u'', u''])
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [2, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', u'', u'', u'', u'new', None, u'summarybefore change', u'', u''])
-        _exec(cursor, "insert into enum values (%s, %s, %s)", ['priority', 'mypriority', '1'])
-        _exec(cursor, "insert into enum values (%s, %s, %s)", ['priority', 'yourpriority', '2'])
-        _exec(cursor, "insert into component values (%s, %s, %s)", ['mycomp', '', ''])
-        _exec(cursor, "insert into component values (%s, %s, %s)", ['yourcomp', '', ''])
-        db.commit()
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', None, None, None, u'new', None, u'summary before change', None, None])
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [2, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', None, None, None, u'new', None, u'summarybefore change', None, None])
+            _exec(cursor, "INSERT INTO enum VALUES (%s, %s, %s)", ['priority', 'mypriority', '1'])
+            _exec(cursor, "INSERT INTO enum VALUES (%s, %s, %s)", ['priority', 'yourpriority', '2'])
+            _exec(cursor, "INSERT INTO component VALUES (%s, %s, %s)", ['mycomp', '', ''])
+            _exec(cursor, "INSERT INTO component VALUES (%s, %s, %s)", ['yourcomp', '', ''])
         self._do_test_diffs(env, 'with-id.csv', self._test_preview)
         self._do_test(env, 'with-id.csv', self._test_import)
 
     def test_import_5(self):
         env = self._setup()
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', u'', u'', u'', u'new', None, u'a summary that is duplicated', u'', u''])
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [2, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', u'', u'', u'', u'new', None, u'a summary that is duplicated', u'', u''])
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [3, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', u'', u'', u'', u'new', None, u'a summary that is duplicated', u'', u''])
-        db.commit()
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', None, None, None, u'new', None, u'a summary that is duplicated', None, None])
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [2, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', None, None, None, u'new', None, u'a summary that is duplicated', None, None])
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [3, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', None, None, None, u'new', None, u'a summary that is duplicated', None, None])
         self.assertEquals(self._do_test_with_exception(env, 'test-detect-duplicate-summary-in-trac.csv', self._test_preview), 'Tickets #1, #2 and #3 have the same summary "a summary that is duplicated" in Trac. Ticket reconciliation by summary can not be done. Please modify the summaries to ensure that they are unique.')
 
     def test_import_6(self):
@@ -353,15 +363,15 @@ class ImporterTestCase(unittest.TestCase):
 
     def test_import_with_id_called_id(self):
         env = self._setup()
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', u'', u'', u'', u'new', None, u'summary before change', u'', u''])
-        _exec(cursor, "insert into ticket values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [2, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', u'', u'', u'', u'new', None, u'summarybefore change', u'', u''])
-        _exec(cursor, "insert into enum values (%s, %s, %s)", ['priority', 'mypriority', '1'])
-        _exec(cursor, "insert into enum values (%s, %s, %s)", ['priority', 'yourpriority', '2'])
-        _exec(cursor, "insert into component values (%s, %s, %s)", ['mycomp', '', ''])
-        _exec(cursor, "insert into component values (%s, %s, %s)", ['yourcomp', '', ''])
-        db.commit()
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [1, u'defect', 1191377630, 1191377630, u'component1', None, u'major', u'somebody', u'anonymous', None, None, None, u'new', None, u'summary before change', None, None])
+            _exec(cursor, "INSERT INTO ticket VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [2, u'defect', 1191377630, 1191377630, u'component2', None, u'major', u'somebody2', u'anonymous2', None, None, None, u'new', None, u'summarybefore change', None, None])
+            _exec(cursor, "INSERT INTO enum VALUES (%s, %s, %s)", ['priority', 'mypriority', '1'])
+            _exec(cursor, "INSERT INTO enum VALUES (%s, %s, %s)", ['priority', 'yourpriority', '2'])
+            _exec(cursor, "INSERT INTO component VALUES (%s, %s, %s)", ['mycomp', '', ''])
+            _exec(cursor, "INSERT INTO component VALUES (%s, %s, %s)", ['yourcomp', '', ''])
         self._do_test_diffs(env, 'with-id-called-id.csv', self._test_preview)
         self._do_test(env, 'with-id-called-id.csv', self._test_import)
 
@@ -371,10 +381,10 @@ class ImporterTestCase(unittest.TestCase):
 
     def test_ticket_6220(self):
         env = self._setup()
-        db = env.get_db_cnx()
-        cursor = db.cursor()
-        _exec(cursor, "insert into session values (%s,1,1174683538)", ["newuser2"])
-        db.commit()
+        @with_transaction(env)
+        def do_insert(db):
+            cursor = db.cursor()
+            _exec(cursor, "INSERT INTO session VALUES (%s,1,1174683538)", ["newuser2"])
         self._do_test_diffs(env, 'multiple_new_users_ticket_6220.csv', self._test_preview)
 
     def test_status_ticket_7679(self):
@@ -487,9 +497,8 @@ datetime_format=%Y-%m-%d %H:%M
                           self._test_preview)
             assert False, 'No TracError'
         except TracError, e:
-            self.assertEquals('Error while reading from line 4 to 6:'
-                              ' newline inside string',
-                              unicode(e))
+            self.assertEquals('Error while reading from line 4 to 6',
+                              unicode(e).split(':', 1)[0])
 
 
 def suite():

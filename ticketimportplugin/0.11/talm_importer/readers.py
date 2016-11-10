@@ -57,9 +57,12 @@ class UTF8Reader(object):
         self.line_num += 1
         return line.encode("utf-8")
 
+class CSVDialect(csv.excel):
+    strict = True
+
 class CSVDictReader(csv.DictReader):
     def __init__(self, reader, fields):
-        csv.DictReader.__init__(self, reader, fields)
+        csv.DictReader.__init__(self, reader, fields, dialect=CSVDialect)
         self.__reader = reader
 
     def next(self):

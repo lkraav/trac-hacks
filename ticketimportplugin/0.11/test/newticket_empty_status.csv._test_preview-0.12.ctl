@@ -16,14 +16,14 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>Default value</strong>
-</td></tr><tr><td>Description, Cc, Milestone, Component, Version, Mycustomfield, Keywords, Severity</td><td><em>(Empty value)</em>
-</td></tr><tr><td>Changetime</td><td><em>(now)</em>
-</td></tr><tr><td>Reporter</td><td>testuser
-</td></tr><tr><td>Resolution</td><td><em>(None)</em>
-</td></tr><tr><td>Priority</td><td>major
-</td></tr><tr><td>Time</td><td><em>(now)</em>
-</td></tr><tr><td>Type</td><td>task
+<tr><td> <strong>field</strong> </td><td> <strong>Default value</strong> 
+</td></tr><tr><td> Description, Cc, Milestone, Component, Version, Mycustomfield, Keywords, Severity </td><td> <em>(Empty value)</em> 
+</td></tr><tr><td> Changetime </td><td> <em>(now)</em> 
+</td></tr><tr><td> Reporter </td><td> testuser 
+</td></tr><tr><td> Resolution </td><td> <em>(None)</em> 
+</td></tr><tr><td> Priority </td><td> major 
+</td></tr><tr><td> Time </td><td> <em>(now)</em> 
+</td></tr><tr><td> Type </td><td> task 
 </td></tr></table>
 </blockquote>
 </blockquote>
