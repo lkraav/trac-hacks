@@ -16,11 +16,16 @@ jQuery(document).ready(function($) {
         };
     }
 
+    function template(text, term) {
+        return $.htmlEscape(text);
+    }
+
     $('textarea.wikitext').textcomplete([
         { // Attachment
             match: /\b((?:raw-)?attachment):(\S*)$/,
             search: search('attachment'),
             index: 2,
+            template: template,
             replace: function (name) {
                 if (/\s/.test(name))
                     name = '"' + name + '"';
@@ -33,6 +38,7 @@ jQuery(document).ready(function($) {
             match: /(^|[^[])\[(\w*)$/,
             search: search('linkresolvers'),
             index: 2,
+            template: template,
             replace: function (resolver) {
                 return ['$1[' + escape_newvalue(resolver) + ':', ']'];
             },
@@ -44,7 +50,7 @@ jQuery(document).ready(function($) {
             search: search('ticket'),
             index: 2,
             template: function (ticket) {
-                return '#' + ticket.id + ' ' + ticket.summary;
+                return $.htmlEscape('#' + ticket.id + ' ' + ticket.summary);
             },
             replace: function (ticket) {
                 return '$1' + ticket.id;
@@ -56,6 +62,7 @@ jQuery(document).ready(function($) {
             match: /\bwiki:([\w/]*)$/,
             search: search('wikipage'),
             index: 1,
+            template: template,
             replace: function (wikipage) {
                 return 'wiki:' + escape_newvalue(wikipage);
             },
@@ -79,6 +86,7 @@ jQuery(document).ready(function($) {
             match: /\b(source:|log:)([\w/.]*(?:@\w*)?)$/,
             search: search('source'),
             index: 2,
+            template: template,
             replace: function (path) {
                 return '$1' + escape_newvalue(path);
             },
@@ -89,6 +97,7 @@ jQuery(document).ready(function($) {
             match: /\bmilestone:(\S*)$/,
             search: search('milestone'),
             index: 1,
+            template: template,
             replace: function (name) {
                 if (/\s/.test(name))
                     name = '"' + name + '"';
@@ -102,7 +111,7 @@ jQuery(document).ready(function($) {
             search: search('report'),
             index: 2,
             template: function (report) {
-                return '{' + report.id + '} ' + report.title;
+                return $.htmlEscape('{' + report.id + '} ' + report.title);
             },
             replace: function (report) {
                 return ['$1{' + report.id, '}'];
@@ -115,7 +124,7 @@ jQuery(document).ready(function($) {
             search: search('report'),
             index: 1,
             template: function (report) {
-                return '{' + report.id + '} ' + report.title;
+                return $.htmlEscape('{' + report.id + '} ' + report.title);
             },
             replace: function (report) {
                 return 'report:' + report.id;
