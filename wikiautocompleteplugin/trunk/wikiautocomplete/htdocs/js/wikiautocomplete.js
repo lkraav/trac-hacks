@@ -3,16 +3,23 @@ jQuery(document).ready(function($) {
         return value.replace(/\$/g, '$$$$');
     }
 
+    function search(strategy) {
+        return function (term, callback) {
+            var data = {q: term};
+            if (strategy === 'attachment') {
+                data.realm = wikiautocomplete.realm;
+                data.id = wikiautocomplete.id;
+            }
+            $.getJSON(wikiautocomplete.url + '/' + strategy, data)
+                .done(function (resp) { callback(resp); })
+                .fail(function () { callback([]); });
+        };
+    }
+
     $('textarea.wikitext').textcomplete([
         { // Attachment
             match: /\b((?:raw-)?attachment):(\S*)$/,
-            search: function (term, callback) {
-                $.getJSON(wikiautocomplete.url + '/attachment',
-                          { q: term, realm: wikiautocomplete.realm,
-                            id: wikiautocomplete.id })
-                    .done(function (resp) { callback(resp); })
-                    .fail(function () { callback([]); });
-            },
+            search: search('attachment'),
             index: 2,
             replace: function (name) {
                 if (/\s/.test(name))
@@ -24,11 +31,7 @@ jQuery(document).ready(function($) {
 
         { // TracLinks
             match: /(^|[^[])\[(\w*)$/,
-            search: function (term, callback) {
-                $.getJSON(wikiautocomplete.url + '/linkresolvers', { q: term })
-                    .done(function (resp) { callback(resp); })
-                    .fail(function () { callback([]); });
-            },
+            search: search('linkresolvers'),
             index: 2,
             replace: function (resolver) {
                 return ['$1[' + escape_newvalue(resolver) + ':', ']'];
@@ -37,29 +40,21 @@ jQuery(document).ready(function($) {
         },
 
         { // Tickets
-            match: /#(\d*)$/,
-            search: function (term, callback) {
-                $.getJSON(wikiautocomplete.url + '/ticket', { q: term })
-                    .done(function (resp) { callback(resp); })
-                    .fail(function () { callback([]); });
-            },
-            index: 1,
+            match: /(#|\bticket:)(\d*)$/,
+            search: search('ticket'),
+            index: 2,
             template: function (ticket) {
                 return '#' + ticket.id + ' ' + ticket.summary;
             },
             replace: function (ticket) {
-                return '#' + ticket.id;
+                return '$1' + ticket.id;
             },
             cache: true,
         },
 
         { // Wiki pages
             match: /\bwiki:([\w/]*)$/,
-            search: function (term, callback) {
-                $.getJSON(wikiautocomplete.url + '/wikipage', { q: term })
-                    .done(function (resp) { callback(resp); })
-                    .fail(function () { callback([]); });
-            },
+            search: search('wikipage'),
             index: 1,
             replace: function (wikipage) {
                 return 'wiki:' + escape_newvalue(wikipage);
@@ -69,11 +64,7 @@ jQuery(document).ready(function($) {
 
         { // Macros
             match: /\[\[(\w*)(?:\(([^)]*))?$/,
-            search: function (term, callback) {
-                $.getJSON(wikiautocomplete.url + '/macro', { q: term })
-                    .done(function (resp) { callback(resp); })
-                    .fail(function () { callback([]); });
-            },
+            search: search('macro'),
             index: 1,
             template: function (macro) {
                 return macro.name + ' ' + macro.description;
@@ -86,17 +77,51 @@ jQuery(document).ready(function($) {
 
         { // Source
             match: /\b(source:|log:)([\w/.]*(?:@\w*)?)$/,
-            search: function (term, callback) {
-                $.getJSON(wikiautocomplete.url + '/source', { q: term })
-                    .done(function (resp) { callback(resp); })
-                    .fail(function () { callback([]); });
-            },
+            search: search('source'),
             index: 2,
             replace: function (path) {
                 return '$1' + escape_newvalue(path);
             },
             cache: true,
         },
+
+        { // Milestone
+            match: /\bmilestone:(\S*)$/,
+            search: search('milestone'),
+            index: 1,
+            replace: function (name) {
+                if (/\s/.test(name))
+                    name = '"' + name + '"';
+                return 'milestone:' + escape_newvalue(name);
+            },
+            cache: true
+        },
+
+        { // Report - {\d+}
+            match: /(^|[^{])\{(\d*)$/,
+            search: search('report'),
+            index: 2,
+            template: function (report) {
+                return '{' + report.id + '} ' + report.title;
+            },
+            replace: function (report) {
+                return ['$1{' + report.id, '}'];
+            },
+            cache: true
+        },
+
+        { // Report - report:\d+
+            match: /\breport:(\d*)$/,
+            search: search('report'),
+            index: 1,
+            template: function (report) {
+                return '{' + report.id + '} ' + report.title;
+            },
+            replace: function (report) {
+                return 'report:' + report.id;
+            },
+            cache: true
+        }
 
     ], {
         appendTo: $('body'),

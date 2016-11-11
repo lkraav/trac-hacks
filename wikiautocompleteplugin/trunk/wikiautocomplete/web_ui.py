@@ -83,6 +83,10 @@ class WikiAutoCompleteModule(Component):
             completions = self._suggest_macro(req, term)
         elif strategy == 'source':
             completions = self._suggest_source(req, term)
+        elif strategy == 'milestone':
+            completions = self._suggest_milestone(req, term)
+        elif strategy == 'report':
+            completions = self._suggest_report(req, term)
         else:
             completions = None
         if completions is None:
@@ -99,17 +103,7 @@ class WikiAutoCompleteModule(Component):
         return sorted(completions)
 
     def _suggest_ticket(self, req, term):
-        try:
-            num = int(term)
-        except:
-            num = 0
-        args = []
-        mul = 1
-        while num > 0 and Ticket.id_is_valid(num):
-            args.append(num)
-            args.append(num + mul)
-            num *= 10
-            mul *= 10
+        args = self._get_num_ranges(term, Ticket.id_is_valid)
         if args:
             expr = ' OR '.join(['id>=%s AND id<%s'] * (len(args) / 2))
             rows = self.env.db_query("""
@@ -225,6 +219,46 @@ class WikiAutoCompleteModule(Component):
                                    for n in node.get_entries()
                                    if n.can_view(req.perm) and n.name.startswith(filename)]
         return completions
+
+    def _suggest_milestone(self, req, term):
+        with self.env.db_query as db:
+            if hasattr(db, 'prefix_match'):
+                rows = db("""
+                    SELECT name FROM milestone WHERE name %s ORDER BY name
+                    """ % db.prefix_match(),
+                    (db.prefix_match_value(term),))
+                names = [row[0] for row in rows]
+            else:
+                names = [row[0] for row in db(
+                    "SELECT name FROM milestone ORDER BY name")]
+                names = [name for name in names if name.startswith(term)]
+            return [name for name in names
+                         if 'MILESTONE_VIEW' in req.perm('milestone', name)]
+
+    def _suggest_report(self, req, term):
+        args = self._get_num_ranges(term, lambda id: 1 <= id <= 0x7fffffff)
+        if args:
+            query = 'SELECT id, title FROM report WHERE %s ORDER BY id' % \
+                    ' OR '.join(['id>=%s AND id<%s'] * (len(args) / 2))
+        else:
+            query = 'SELECT id, title FROM report ORDER BY id'
+        return [{'id': id, 'title': title}
+                for id, title in self.env.db_query(query, args)
+                if 'REPORT_VIEW' in req.perm('report', id)]
+
+    def _get_num_ranges(self, term, validate):
+        try:
+            num = int(term)
+        except:
+            return []
+        ranges = []
+        mul = 1
+        while num > 0 and validate(num):
+            ranges.append(num)
+            ranges.append(num + mul)
+            num *= 10
+            mul *= 10
+        return ranges
 
     def _send_json(self, req, data):
         req.send(to_json(data), 'application/json')
