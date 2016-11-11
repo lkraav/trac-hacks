@@ -24,5 +24,6 @@ setup(
     description='Simple Multi Project plugin for managing several projects with one Trac instance.',
     long_description='Simple Multi Project',
     keywords='Simple Multi Project',
-    entry_points={'trac.plugins': ['simplemultiproject = simplemultiproject']}
+    entry_points={'trac.plugins': ['simplemultiproject = simplemultiproject']},
+    test_suite='simplemultiproject.tests.suite'
 )

@@ -5,7 +5,7 @@
 # License: 3-clause BSD
 #
 
-from unittest import TestCase
+import unittest
 from trac.web.api import Request
 from trac.web.session import DetachedSession
 from trac.test import EnvironmentStub, Mock
@@ -14,7 +14,7 @@ from simplemultiproject.session import get_list_from_req_or_session, get_project
 __author__ = 'Cinc'
 
 
-class TestGet_list_from_req_or_session(TestCase):
+class TestGet_list_from_req_or_session(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
@@ -92,7 +92,7 @@ class TestGet_list_from_req_or_session(TestCase):
         self.assertEqual(u'bar_value,///,foo_value', req.session['ctx.filter.tst'], "Session data not updated.")
 
 
-class TestGet_project_filter_settings(TestCase):
+class TestGet_project_filter_settings(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
@@ -124,3 +124,14 @@ class TestGet_project_filter_settings(TestCase):
         self.assertIsInstance(res, list)
         self.assertEqual('foo', res[0])
         self.assertEqual('bar', res[1])
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestGet_list_from_req_or_session))
+    suite.addTest(unittest.makeSuite(TestGet_project_filter_settings))
+    return suite
+
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')

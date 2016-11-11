@@ -1,11 +1,11 @@
-from unittest import TestCase
-from trac.test  import EnvironmentStub
+import unittest
+from trac.test import EnvironmentStub
 from simplemultiproject.smp_model import SmpMilestone
 
 __author__ = 'cinc'
 
 
-class TestSmpMilestone(TestCase):
+class TestSmpMilestone(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
@@ -33,3 +33,13 @@ class TestSmpMilestone(TestCase):
         self.assertEqual(2, len(items))
         self.assertEqual("foo1", items[0])
         self.assertEqual("foo2", items[1])
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestSmpMilestone))
+    return suite
+
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')

@@ -1,16 +1,16 @@
-from unittest import TestCase
+import unittest
 from trac.test  import EnvironmentStub
 from simplemultiproject.smp_model import SmpComponent
+from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 
 __author__ = 'cinc'
 
 
-class TestSmpComponent(TestCase):
+class TestSmpComponent(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
         self.env.upgrade()
-        # self.env.config.set("ticket-custom", "project", "select")
         self.model = SmpComponent(self.env)
         self.model.add("foo1", 1)
         self.model.add("bar", 2)
@@ -33,3 +33,13 @@ class TestSmpComponent(TestCase):
         self.assertEqual(2, len(items))
         self.assertEqual("foo1", items[0])
         self.assertEqual("foo2", items[1])
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestSmpComponent))
+    return suite
+
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')

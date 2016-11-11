@@ -1,11 +1,11 @@
-from unittest import TestCase
+import unittest
 from trac.test  import EnvironmentStub
 from simplemultiproject.smp_model import SmpVersion
 
 __author__ = 'cinc'
 
 
-class TestSmpVersion(TestCase):
+class TestSmpVersion(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
@@ -40,3 +40,13 @@ class TestSmpVersion(TestCase):
         self.assertEqual(2, len(versions))
         self.assertEqual("foo1", versions[0])
         self.assertEqual("foo2", versions[1])
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestSmpVersion))
+    return suite
+
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')
