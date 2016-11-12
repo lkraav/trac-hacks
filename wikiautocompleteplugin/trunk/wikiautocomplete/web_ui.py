@@ -191,6 +191,26 @@ class WikiAutoCompleteModule(Component):
             return completions
 
     def _suggest_source(self, req, term):
+
+        def suggest_revs(repos, node, search_rev):
+            if search_rev:
+                for category, names, path, rev in repos.get_quickjump_entries(None):
+                    if path and path != '/':
+                        # skip jumps to other paths
+                        # (like SVN's 'trunk', 'branches/...', 'tags/...' folders)
+                        continue
+                    # Multiple Mercurial tags on same revision are comma-separated:
+                    for name in names.split(', '):
+                        if ' ' in name:
+                            # use first token, e.g. '1.0' from '1.0 (tip)'
+                            name = name.split(' ', 1)[0]
+                        if name.startswith(search_rev):
+                            yield name
+            for r in node.get_history(10):
+                rev = repos.short_rev(r[1])
+                if str(rev).startswith(search_rev):
+                    yield rev
+
         rm = RepositoryManager(self.env)
         completions = []
         if term.find('/') == -1 and term.find('@') == -1:
@@ -209,10 +229,8 @@ class WikiAutoCompleteModule(Component):
                     path, search_rev = path.rsplit('@', 1)
                     node = repos.get_node(path, repos.youngest_rev)
                     if node.can_view(req.perm):
-                        for r in node.get_history(10):
-                            rev = repos.short_rev(r[1])
-                            if str(rev).startswith(search_rev):
-                                completions.append('%s%s@%s' % (reponame, path, rev))
+                        for rev in suggest_revs(repos, node, search_rev):
+                            completions.append('%s%s@%s' % (reponame, path, rev))
                 else:
                     dir, filename = path.rsplit('/', 1)
                     if dir == '':
