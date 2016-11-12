@@ -193,13 +193,16 @@ class WikiAutoCompleteModule(Component):
     def _suggest_source(self, req, term):
         rm = RepositoryManager(self.env)
         completions = []
-        if term.find('/') == -1:
+        if term.find('/') == -1 and term.find('@') == -1:
             for reponame, repoinfo in rm.get_all_repositories().iteritems():
                 if 'BROWSER_VIEW' in req.perm(Resource('repository', reponame)):
                     if len(term) == 0 or reponame.lower().startswith(term.lower()):
                         completions.append(reponame + '/')
         else:
-            reponame, path = term.split('/', 1)
+            pos = term.find('/')
+            if pos == -1:
+                pos = term.find('@')
+            reponame, path = term[:pos], term[pos:]
             repos = rm.get_repository(reponame)
             if repos is not None:
                 if path.find('@') != -1:
@@ -207,13 +210,13 @@ class WikiAutoCompleteModule(Component):
                     node = repos.get_node(path, repos.youngest_rev)
                     if node.can_view(req.perm):
                         for r in node.get_history(10):
-                            if str(r[1]).startswith(search_rev):
-                                completions.append('%s/%s@%s' % (reponame, path, r[1]))
+                            rev = repos.short_rev(r[1])
+                            if str(rev).startswith(search_rev):
+                                completions.append('%s%s@%s' % (reponame, path, rev))
                 else:
-                    if path.find('/') != -1:
-                        dir, filename = path.rsplit('/', 1)
-                    else:
-                        dir, filename = '/', path
+                    dir, filename = path.rsplit('/', 1)
+                    if dir == '':
+                        dir = '/'
                     node = repos.get_node(dir, repos.youngest_rev)
                     completions = ['%s/%s%s' % (reponame, n.path, '/' if n.isdir else '')
                                    for n in node.get_entries()
