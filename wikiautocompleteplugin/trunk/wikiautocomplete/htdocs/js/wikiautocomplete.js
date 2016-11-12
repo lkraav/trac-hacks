@@ -59,7 +59,7 @@ jQuery(document).ready(function($) {
         },
 
         { // Wiki pages
-            match: /\bwiki:([\w/]*)$/,
+            match: /\bwiki:(\S*)$/,
             search: search('wikipage'),
             index: 1,
             template: template,
@@ -83,7 +83,7 @@ jQuery(document).ready(function($) {
         },
 
         { // Source
-            match: /\b(source:|log:)([\w/.]*(?:@\w*)?)$/,
+            match: /\b(source:|log:)([^@\s]*(?:@\S*)?)$/,
             search: search('source'),
             index: 2,
             template: template,
