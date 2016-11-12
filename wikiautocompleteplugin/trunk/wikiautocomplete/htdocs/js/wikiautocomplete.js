@@ -34,6 +34,24 @@ jQuery(document).ready(function($) {
             cache: true
         },
 
+        { // Processors
+            match: /^(\s*\{{3}#!)(.*)(?!\n)$/m,
+            search: search('processor'),
+            index: 2,
+            template: function (processor) {
+                switch (processor.type) {
+                case 'macro':
+                    return processor.name + ' ' + processor.description;
+                case 'mimetype':
+                    return $.htmlEscape(processor.name);
+                }
+            },
+            replace: function (processor) {
+                return '$1' + escape_newvalue(processor.name);
+            },
+            cache: true
+        },
+
         { // TracLinks
             match: /(^|[^[])\[(\w*)$/,
             search: search('linkresolvers'),
@@ -46,7 +64,7 @@ jQuery(document).ready(function($) {
         },
 
         { // Tickets
-            match: /(#|\bticket:)(\d*)$/,
+            match: /((?:^|[^{])#|\bticket:)(\d*)$/,
             search: search('ticket'),
             index: 2,
             template: function (ticket) {

@@ -7,15 +7,17 @@ import re
 
 from trac.core import Component, TracError, implements
 from trac.attachment import Attachment
+from trac.mimeview.api import Mimeview
 from trac.resource import Resource
 from trac.ticket.model import Ticket
+from trac.util import lazy
 from trac.util.text import to_unicode
 from trac.util.translation import dgettext
+from trac.versioncontrol.api import RepositoryManager
 from trac.web import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data, add_stylesheet, web_context
-from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.wiki.api import WikiSystem
-from trac.versioncontrol.api import RepositoryManager
+from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 
 try:
@@ -81,6 +83,8 @@ class WikiAutoCompleteModule(Component):
             completions = self._suggest_attachment(req, term)
         elif strategy == 'macro':
             completions = self._suggest_macro(req, term)
+        elif strategy == 'processor':
+            completions = self._suggest_processor(req, term)
         elif strategy == 'source':
             completions = self._suggest_source(req, term)
         elif strategy == 'milestone':
@@ -160,35 +164,46 @@ class WikiAutoCompleteModule(Component):
         return completions
 
     def _suggest_macro(self, req, term):
-        resource = Resource()
-        context = web_context(req, resource)
-        wiki = WikiSystem(self.env)
-        macros = []
-        for provider in wiki.macro_providers:
-            names = list(provider.get_macros() or [])
-            for name in names:
-                if name.startswith(term):
-                    macros.append((name, provider))
+        context = web_context(req)
+        macros = self._get_macros(term)
         if len(macros) == 1:
-            name, provider = macros[0]
-            descr = provider.get_macro_description(name)
-            if isinstance(descr, (tuple, list)):
-                descr = dgettext(descr[0], to_unicode(descr[1]))
-            descr = format_to_html(self.env, context, descr)
-            return [{'name': name, 'description': descr}]
+            for name, descr in macros.iteritems():
+                descr = self._format_to_html(context, descr)
+                return [{'name': name, 'description': descr}]
         else:
             completions = []
-            for name, provider in macros:
-                descr = provider.get_macro_description(name)
-                if isinstance(descr, (tuple, list)):
-                    descr = dgettext(descr[0], to_unicode(descr[1]))
+            for name, descr in macros.iteritems():
+                descr = self._format_to_oneliner(context, descr, shorten=True)
                 completions.append({'name': name, 'description': descr})
-            completions = sorted(completions,
-                                 key=lambda entry: entry['name'])
-            for entry in completions:
-                entry['description'] = format_to_oneliner(
-                    self.env, context, entry['description'], shorten=True)
-            return completions
+            return sorted(completions, key=lambda entry: entry['name'])
+
+    def _suggest_processor(self, req, term):
+        context = web_context(req)
+        macros = self._get_macros(term)
+        mimetypes = set()
+        for name, mimetype in Mimeview(self.env).mime_map.iteritems():
+            if name not in macros and name.startswith(term):
+                mimetypes.add(name)
+            if mimetype.startswith(term):
+                mimetypes.add(mimetype)
+
+        n = len(macros) + len(mimetypes)
+        if n != 1:
+            completions = []
+            for name, descr in macros.iteritems():
+                descr = self._format_to_oneliner(context, descr, shorten=True)
+                completions.append({'type': 'macro', 'name': name,
+                                    'description': descr})
+            completions.extend({'type': 'mimetype', 'name': mimetype}
+                               for mimetype in mimetypes)
+            return sorted(completions, key=lambda item: item['name'])
+        elif macros:
+            for name, descr in macros.iteritems():
+                return [{'type': 'macro', 'name': name,
+                         'description': self._format_to_html(context, descr)}]
+        else:
+            for mimetype in mimetypes:
+                return [{'type': 'mimetype', 'name': mimetype}]
 
     def _suggest_source(self, req, term):
 
@@ -280,6 +295,34 @@ class WikiAutoCompleteModule(Component):
             num *= 10
             mul *= 10
         return ranges
+
+    _builtin_macros = ('html', 'htmlcomment', 'default', 'comment', 'div',
+                       'rtl', 'span', 'Span', 'td', 'th', 'tr', 'table')
+
+    @lazy
+    def _known_macros(self):
+        macros = {}
+        macros.update((name, '(built-in)') for name in self._builtin_macros)
+        macros.update((name, provider.get_macro_description(name))
+                      for provider in WikiSystem(self.env).macro_providers
+                      for name in provider.get_macros() or ()
+                      if name not in macros)
+        return macros
+
+    def _get_macros(self, term):
+        macros = {}
+        for name, descr in self._known_macros.iteritems():
+            if name.startswith(term):
+                if isinstance(descr, (tuple, list)):
+                    descr = dgettext(descr[0], to_unicode(descr[1]))
+                macros[name] = descr
+        return macros
+
+    def _format_to_html(self, context, wikidom, **options):
+        return format_to_html(self.env, context, wikidom, **options)
+
+    def _format_to_oneliner(self, context, wikidom, **options):
+        return format_to_oneliner(self.env, context, wikidom, **options)
 
     def _send_json(self, req, data):
         req.send(to_json(data), 'application/json')
