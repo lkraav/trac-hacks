@@ -227,33 +227,35 @@ class WikiAutoCompleteModule(Component):
                     yield rev
 
         rm = RepositoryManager(self.env)
-        completions = []
         if term.find('/') == -1 and term.find('@') == -1:
-            for reponame, repoinfo in rm.get_all_repositories().iteritems():
-                if 'BROWSER_VIEW' in req.perm(Resource('repository', reponame)):
-                    if len(term) == 0 or reponame.lower().startswith(term.lower()):
-                        completions.append(reponame + '/')
+            lower_term = term.lower()
+            completions = sorted(
+                reponame + '/'
+                for reponame in rm.get_all_repositories()
+                if reponame.lower().startswith(lower_term) and
+                    'BROWSER_VIEW' in req.perm('repository', reponame))
         else:
             pos = term.find('/')
             if pos == -1:
                 pos = term.find('@')
             reponame, path = term[:pos], term[pos:]
             repos = rm.get_repository(reponame)
+            completions = []
             if repos is not None:
                 if path.find('@') != -1:
                     path, search_rev = path.rsplit('@', 1)
                     node = repos.get_node(path, repos.youngest_rev)
                     if node.can_view(req.perm):
-                        for rev in suggest_revs(repos, node, search_rev):
-                            completions.append('%s%s@%s' % (reponame, path, rev))
+                        completions.extend(
+                            '%s%s@%s' % (reponame, path, rev)
+                            for rev in suggest_revs(repos, node, search_rev))
                 else:
                     dir, filename = path.rsplit('/', 1)
-                    if dir == '':
-                        dir = '/'
-                    node = repos.get_node(dir, repos.youngest_rev)
-                    completions = ['%s/%s%s' % (reponame, n.path, '/' if n.isdir else '')
-                                   for n in node.get_entries()
-                                   if n.can_view(req.perm) and n.name.startswith(filename)]
+                    node = repos.get_node(dir or '/', repos.youngest_rev)
+                    completions = sorted(
+                        '%s/%s%s' % (reponame, n.path.lstrip('/'), '/' if n.isdir else '')
+                        for n in node.get_entries()
+                        if n.name.startswith(filename) and n.can_view(req.perm))
         return completions
 
     def _suggest_milestone(self, req, term):
