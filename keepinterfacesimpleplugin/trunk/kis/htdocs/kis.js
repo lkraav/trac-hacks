@@ -57,6 +57,11 @@
 //      - fire the named event trigger;
 //  val(new_value?)
 //      - return the current value, set a new value if one is provided.
+//
+// Values in the public interface:
+//  type - Trac field type; one of 'checkbox', 'field', 'radio' or
+//  'undefined'. (Option-select fields and text fields both show up as type
+//  'field'; there's never been a need to distinguish them.)
 var TracInterface = function(field_name) {
     // Caches values of fields at the point they're first queried.
     if (typeof TracInterface.cache == 'undefined') {
@@ -73,7 +78,7 @@ var TracInterface = function(field_name) {
             return this.select_field().closest('fieldset').
                 css('display', show ? '' : 'none');
         };
-        this.type = 'action';
+        this.type = 'radio';
     } else {
         this.selector = '#field-' + field_name;
         this.option_selector = '#field-' + field_name + ' option';
@@ -86,6 +91,9 @@ var TracInterface = function(field_name) {
             this.selector = '[name=field_' + field_name + ']';
             this.option_selector = this.selector;
             this.type = 'radio';
+            if (this.select_field().length == 0) {
+                this.type = 'undefined';
+            }
         }
     }
 };
@@ -191,7 +199,7 @@ TracInterface.prototype.selected_item = function () {
 };
 
 TracInterface.prototype.show_field = function (show) {
-    return this.select_field().closest('td').prev().andSelf().
+    return this.select_field().closest('td').prev().addBack().
         css('display', show ? '' : 'none');
 };
 
@@ -287,14 +295,20 @@ function evaluate(predicate) {
     function next_token() {
         var m;
 
-        // Ignoring whitespace, split the input on words...
-        m = rest_of_input.match(/^(\w+)( *)(.*)/i);
+        // Ignoring whitespace, split the input on numbers...
+        m = rest_of_input.match(/^([0-9]+(?:\.[0-9]+)?)( *)(.*)/i);
+        if (m) {
+            token_type = 'number'; token = m[1]; rest_of_input = m[3];
+            return;
+        }
+        // ... or on words...
+        m = rest_of_input.match(/^([A-Za-z_]\w*)( *)(.*)/i);
         if (m) {
             token_type = 'field name'; token = m[1]; rest_of_input = m[3];
             return;
         }
         // ... or on one of the various operators...
-        m = rest_of_input.match(/^(,|\|\||\(|\)|&&|==|!=|~=|in|!)( *)(.*)/i);
+        m = rest_of_input.match(/^(,|\|\||\(|\)|&&|==|!=|~=|in|!|\+|-|\*|\/|<|>|<=|>=|\?|:)( *)(.*)/i);
         if (m) {
             token_type = 'operator'; token = m[1]; rest_of_input = m[3];
             return;
@@ -314,7 +328,84 @@ function evaluate(predicate) {
         token_type = 'EOF'; token = '';
     }
 
-    function term() {
+    function term() { return new Promise(function (resolve, reject) {
+
+        var result = { value: undefined };
+
+        if (token_type == 'number') {
+            // term ::= <number>
+            result.value = eval(token);
+            next_token();
+            resolve(result);
+        } else
+        if (token_type == 'string') {
+            // term ::= '"' <string> '"'
+            result.value = token;
+            next_token();
+            resolve(result);
+        } else
+        if (token == '(') {
+            // term ::= '(' expression ')'
+            next_token();
+            resolve(expression().then(function (r) {
+                if (token != ')') {
+                    config_error('expected ")"', 0);
+                    r.error = 'syntax error';
+                    return Promise.reject(r);
+                }
+                next_token();
+                return r;
+            }));
+        } else
+        if (token_type != 'field name') {
+            config_error('unexpected token', 0);
+            result.error = 'syntax error';
+            reject(result);
+            return;
+        } else
+        // term ::= <field_value>
+        if (token[0] == '_') {
+            var field = new TracInterface(token.slice(1));
+            result.value = field.initial_val();
+            next_token();
+        } else
+        if (token == 'status') {
+            // Can't use $('.trac-status a').text(), because that would
+            // fail if previewing a transition to the next state.
+            result.value = page_info['status'];
+            next_token();
+        } else
+        if (token == 'authname') {
+            result.value = page_info['authname'];
+            next_token();
+        } else
+        if (token == 'true' || token == 'false') {
+            result.value = eval(token);
+            next_token();
+        } else {
+            var field = new TracInterface(token);
+            result.value = field.val();
+            if (field.type !== 'undefined') {
+                // If the field is not yet listed as a dependency for this
+                // predicate, add it now.
+                if ($.inArray(token, depends) == -1) {
+                    depends.push(token);
+                }
+            }
+            next_token();
+            if (token !== '(') {
+                if (field.type === 'undefined') {
+                    console.log('no field named ' + field.field_name
+                                + ' present on page');
+                    result.error = 'undefined field ' + field.field_name;
+                    reject(result);
+                }
+            }
+        }
+        resolve(result);
+    });}
+
+    function func_term() {
         function query_server(config_func, args, cache_key) {
             return new Promise(function (resolve, reject) {
                 $.ajax('kis_function', {
@@ -332,107 +423,55 @@ function evaluate(predicate) {
                     },
                     success: function (result) {
                         evaluate.cache[cache_key] = eval(result);
-                        resolve({ value: result });
+                        if (eval(result) !== null) {
+                            resolve({ value: result });
+                        } else {
+                            reject(
+                                { error: 'function "'
+                                         + cache_key.replace(/@.*/, '()')
+                                         + '" not implemented'
+                                }
+                            );
+                        }
                     },
                     timeout: 10000,
                 });
             });
         }
 
-        return new Promise(function (resolve, reject) {
-
-            var result = { value: undefined };
-
-            if (token == '(') {
-                // term ::= '(' expression ')'
+        var term_token = token;
+        return term().then(function (t) {
+            if (token == 'in') {
                 next_token();
-                resolve(expression().then(function (r) {
+                return cmp_list().then(function (c) {
+                    c.value = ($.inArray(t.value, c.value) != -1);
+                    return c;
+                });
+            } else
+            if (token == '(') {
+                next_token();
+                return param_list().then(function (r) {
                     if (token != ')') {
                         config_error('expected ")"', 0);
                         r.error = 'syntax error';
                         return Promise.reject(r);
                     }
                     next_token();
-                    return r;
-                }));
-            } else
-            if (token_type == 'string') {
-                // term ::= '"' <string> '"'
-                result.value = token;
-                next_token();
-                resolve(result);
-            } else
-            if (token_type == 'field name') {
-                // term ::= <field_name>
-                if (token[0] == '_') {
-                    var field = new TracInterface(token.slice(1));
-                    result.value = field.initial_val();
-                    next_token();
-                    resolve(result);
-                } else
-                if (token == 'status') {
-                    // Can't use $('.trac-status a').text(), because that
-                    // would fail if previewing a transition to the next
-                    // state.
-                    result.value = page_info['status'];
-                    next_token();
-                    resolve(result);
-                } else
-                if (token == 'authname') {
-                    result.value = page_info['authname'];
-                    next_token();
-                    resolve(result);
-                } else
-                if (token == 'true' || token == 'false') {
-                    result.value = eval(token);
-                    next_token();
-                    resolve(result);
-                } else {
-                    // Look ahead. If next token is '(', this is a
-                    // function call.
-                    var field_token = token;
-                    next_token();
-                    if (token == '(') {
-                        next_token();
-                        resolve(param_list().then(function (r) {
-                            if (token != ')') {
-                                config_error('expected ")"', 0);
-                                r.error = 'syntax error';
-                                return Promise.reject(r);
-                            }
-                            next_token();
-                            var cache_key = field_token + '@'
-                                            + r.value.join();
-                            if (cache_key in evaluate.cache) {
-                                r.value = evaluate.cache[cache_key];
-                                return r;
-                            } else {
-                                return query_server(
-                                    field_token,
-                                    r.value,
-                                    cache_key
-                                );
-                            }
-                        }));
+                    var cache_key = term_token + '@'
+                                    + r.value.join();
+                    if (cache_key in evaluate.cache) {
+                        r.value = evaluate.cache[cache_key];
+                        return r;
                     } else {
-                        // If the field is not yet listed as a dependency for
-                        // this predicate, add it now.
-                        if ($.inArray(field_token, depends) == -1) {
-                            depends.push(field_token);
-                        }
-                        var field = new TracInterface(field_token);
-                        result.value = field.val();
-                        if (field.val() === null) {
-                            console.log("no field named '" + field_token +
-                                        "' present on page");
-                        }
-                        resolve(result);
+                        return query_server(
+                            term_token,
+                            r.value,
+                            cache_key
+                        );
                     }
-                }
+                });
             } else {
-                config_error('unexpected token', -token.length);
-                result.error = 'syntax error';
-                reject(result);
+                return t;
             }
         });
     }
@@ -441,7 +480,7 @@ function evaluate(predicate) {
         if (token == ')') {
             return Promise.resolve({ value: [] });
         } else {
-            return term().then(function (r) {
+            return negation().then(function (r) {
                 if (token == ',') {
                     next_token();
                     return param_list().then(function (p) {
@@ -470,10 +509,10 @@ function evaluate(predicate) {
                 return r;
             });
         } else {
-            // cmp_list ::= term
-            return term().then(function (r) {
+            // cmp_list ::= expression
+            return expression().then(function (r) {
                 if (token == ',') {
-                    // cmp_list ::= term ',' cmp_list
+                    // cmp_list ::= expression ',' cmp_list
                     next_token();
                     return cmp_list().then(function (c) {
                         c.value = [r.value].concat(c.value);
@@ -487,62 +526,134 @@ function evaluate(predicate) {
         }
     }
 
-    function comparison() {
-        if (token == '!') {
-            // comparison ::= '!' comparison
+    function negation() {
+        if (token == '-') {
+            // negation ::= '-' negation
             next_token();
-            return comparison().then(function (r) {
-                r.value = !r.value;
-                return r;
+            return negation().then(function (n) {
+                n.value = -n.value;
+                return n;
             });
-        } else {
-            // comparison ::= term
-            return term().then(function (r) {
-                if (token == '==') {
-                    // comparison ::= term '==' term
-                    next_token();
-                    return term().then(function (t) {
-                        t.value = (r.value == t.value);
-                        return t;
-                    });
-                } else
-                if (token == '!=') {
-                    // comparison ::= term '!=' term
-                    next_token();
-                    return term().then(function (t) {
-                        t.value = (r.value != t.value);
-                        return t;
-                    });
-                } else
-                if (token == '~=') {
-                    // comparison ::= term '~=' term
-                    next_token();
-                    return term().then(function (t) {
-                        t.value = Boolean(r.value.match(t.value));
-                        return t;
-                    });
-                } else
-                if (token == 'in') {
-                    // comparison ::= term 'IN' cmp_list
-                    next_token();
-                    return cmp_list().then(function (c) {
-                        c.value = ($.inArray(r.value, c.value) != -1);
-                        return c;
-                    });
-                } else
-                return r;
+        } else
+        if (token == '!') {
+            // negation ::= '!' negation
+            next_token();
+            return negation().then(function (n) {
+                n.value = !n.value;
+                return n;
             });
-        }
+        } else
+        return func_term();
+    }
+
+    function product() {
+        // product ::= negation
+        return negation().then(function (r) {
+            if ((token == '*') || (token == '/')) {
+                // product ::= negation '*' | '/' product
+                var op = token;
+                next_token();
+                return product().then(function (p) {
+                    if (op == '*') {
+                        p.value = r.value * p.value;
+                    } else {
+                        p.value = r.value / p.value;
+                    }
+                    return p;
+                });
+            } else {
+                return r;
+            }
+        });
+    }
+
+    function sum() {
+        // sum ::= product
+        return product().then(function (r) {
+            if ((token == '+') || (token == '-')) {
+                // sum ::= product '+' | '-' sum
+                var op = token;
+                next_token();
+                return sum().then(function (s) {
+                    if (op == '+') {
+                        s.value = r.value + s.value;
+                    } else {
+                        s.value = r.value - s.value;
+                    }
+                    return s;
+                });
+            } else {
+                return r;
+            }
+        });
+    }
+
+    function comparison() {
+        // comparison ::= sum
+        return sum().then(function (r) {
+            if ((token == '<') || (token == '>') || (token == '<=') ||
+                    (token == '>=')) {
+                // comparison ::= sum '<' | '>' | '<=' | '>=' comparison
+                var op = token;
+                next_token();
+                return comparison().then(function (c) {
+                    if (op == '<') {
+                        c.value = r.value < c.value;
+                    } else if (op == '>') {
+                        c.value = r.value > c.value;
+                    } else if (op == '<=') {
+                        c.value = r.value <= c.value;
+                    } else { // op == '>='
+                        c.value = r.value >= c.value;
+                    }
+                    return c;
+                });
+            } else {
+                return r;
+            }
+        });
+    }
+
+    function equality() {
+        // equality ::= comparison
+        return comparison().then(function (r) {
+           if (token == '==') {
+                // equality ::= comparison '==' equality
+                next_token();
+                return equality().then(function (t) {
+                    t.value = (r.value == t.value);
+                    return t;
+                });
+            } else
+            if (token == '!=') {
+                // equality ::= comparison '!=' equality
+                next_token();
+                return equality().then(function (t) {
+                    t.value = (r.value != t.value);
+                    return t;
+                });
+            } else
+            if (token == '~=') {
+                // equality ::= comparison '~=' equality
+                next_token();
+                return equality().then(function (t) {
+                    t.value = Boolean(r.value.match(t.value));
+                    return t;
+                });
+            } else {
+                return r;
+            }
+        });
     }
 
     function and_expression() {
-        // and_expression ::= comparison
-        return comparison().then(function (r) {
+        // and_expression ::= sum
+        return equality().then(function (r) {
             if (token == '&&') {
-                // and_expression ::= comparison '&&' and_expression
+                // and_expression ::= sum '&&' and_expression
                 next_token();
                 return and_expression().then(function (a) {
-                    a.value = a.value && r.value;
+                    a.value = r.value && a.value;
                     return a
                 });
             } else {
@@ -551,14 +662,40 @@ function evaluate(predicate) {
         });
     }
 
-    function expression() {
+    function or_expression() {
         return and_expression().then(function (r) {
             if (token == '||') {
-                // expression ::= and_expression '||' comparison
+                // or_expression ::= and_expression '||' or_expression
                 next_token();
-                return expression().then(function (e) {
-                    e.value = e.value || r.value;
+                return or_expression().then(function (e) {
+                    e.value = r.value || e.value;
                     return e;
+                });
+            } else {
+                return r;
+            }
+        });
+    }
+
+    function expression() {
+        // expression ::= or_expression()
+        return or_expression().then(function (r) {
+            if (token == '?') {
+                // expression ::= or_expression '?' expression ':' expression
+                next_token();
+                return expression().then(function (e_true) {
+                    if (token != ':') {
+                        r.error = 'syntax error';
+                        return Promise.reject(r);
+                    }
+                    next_token();
+                    return expression().then(function (e_false) {
+                        if (r.value) {
+                            return e_true;
+                        } else {
+                            return e_false;
+                        }
+                    });
                 });
             } else {
                 return r;
@@ -596,9 +733,10 @@ function Field(field_name) {
 
     // Flags to ensure visibility, option-select and template onchange
     // handlers are only attached once.
-    this.visibility_onchange_attached = false;
     this.options_onchange_attached = false;
     this.template_onchange_attached = false;
+    this.update_onchange_attached = false;
+    this.visibility_onchange_attached = false;
 }
 
 // set_options()
@@ -651,7 +789,7 @@ Field.prototype.set_options = function () {
                         // isn't true for actions, which aren't always
                         // available in the interface.)
                         console.log("option '" + this.field_name + "' value '"
-                            + e.value + "' not defined in trac.ini");
+                            + option_field + "' not defined in trac.ini");
                     }
                 }
             }
@@ -696,6 +834,99 @@ Field.prototype.set_options = function () {
         console.log(this.field_name + '.available ' + err.error);
     }.bind(this));
 };
+
+// set_update()
+//
+// Updates the value of a feld. Called at setup time and as an onchange
+// handler of any field that affects whether the value of this field should be
+// changed.
+Field.prototype.set_update = function () {
+    var update = this.operations['update']['#'].join();
+    var update_when = ('when' in this.operations['update']) ?
+        this.operations['update']['when']['#'].join() : null;
+
+    function attach_update_handlers(change) {
+        // Attach the onchange handlers.
+        for (var triggers_index in change.depends) {
+            var trigger = change.depends[triggers_index];
+            this.ui.attach_change_handler(
+                trigger,
+                this.set_update.bind(this)
+            );
+        }
+        this.update_onchange_attached = true;
+        return change;
+    }
+
+    function attach_update_error(result) {
+        console.log(this.field_name + '.update.when ' + result.error);
+    }
+
+    function update_success(change) {
+        // Only allow boolean 'false' to be assigned to checkboxes. For other
+        // types of fields, we assume that isn't what's wanted and leave the
+        // field unchanged.
+        if ((change.value !== false) || this.ui.type == 'checkbox') {
+            if (this.val() != change.value) {
+                // Send notification that the field content has changed.
+                this.val(change.value);
+                this.ui.trigger('change');
+            }
+        }
+        return change.value
+    }
+
+    function update_failure(result) {
+        console.log(this.field_name + '.update ' + result.error);
+    }
+
+    if (!this.update_onchange_attached) {
+        if (update_when) {
+            return evaluate(update_when).then(
+                attach_update_handlers.bind(this),
+                attach_update_error.bind(this)
+            ).then(
+                function (change) {
+                    // FIXME this line can throw an error 'change undefined'.
+                    if (change.value) {
+                        return evaluate(update).then(
+                            update_success.bind(this),
+                            update_failure.bind(this)
+                        );
+                    } else {
+                        return change;
+                    }
+                }.bind(this)
+            );
+        } else {
+            return evaluate(update).then(
+                attach_update_handlers.bind(this),
+                attach_update_error.bind(this)
+            ).then(
+                update_success.bind(this),
+                update_failure.bind(this)
+            );
+        }
+    }
+
+    if (update_when) {
+        return evaluate(update_when).then(function (change) {
+            if (change.value) {
+                return evaluate(update).then(
+                    update_success.bind(this),
+                    update_failure.bind(this)
+                );
+            } else {
+                return change;
+            }
+        }.bind(this));
+    } else {
+        return evaluate(update).then(
+            update_success.bind(this),
+            update_failure.bind(this)
+        );
+    }
+}
 
 // set_template()
 //
@@ -813,14 +1044,17 @@ Field.prototype.set_visibility = function () {
 //
 // Completely initialises a field; called exactly once for each field.
 Field.prototype.setup = function () {
-    if (this.operations['visible']) {
-        this.set_visibility();
-    }
     if (this.operations['options']) {
         this.set_options();
     }
+    if (this.operations['update']) {
+        this.set_update();
+    }
     if (this.operations['template']) {
         this.set_template();
+    }
+    if (this.operations['visible']) {
+        this.set_visibility();
     }
 }
 
@@ -838,6 +1072,7 @@ var page_info;
 // get the trac.ini data, the ticket status and the authenticated user name.
 // Once the data has arrived, the fields are initialised accordingly.
 window.ui = [];
+window.ev = evaluate;
 $(function () {
     $.getJSON('kis_init',
         { op: 'get_ini',

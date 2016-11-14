@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 # -*- coding: utf-8 -*-
 #
 #------------------------------------------------------------------------------
@@ -23,11 +21,6 @@ from trac.ticket import TicketSystem
 from trac.ticket.model import Ticket
 from trac.web.api import IRequestFilter, IRequestHandler, RequestDone
 from trac.web.chrome import add_script, ITemplateProvider
-
-# Change 'debug' to be either the print function or a null function, depending
-# on whether debugging is required.
-debug = lambda x: None
-# debug = print
 
 ###############################################################################
 
@@ -64,6 +57,7 @@ class MyConfigFunctions(Component):
             return 'Not safety related'
 }}}
 This example would allow `safety('OK')` to return the string `Safety related - OK to close`.
+The 'req' parameter is the HTTP request object; the remaining parameters are the parameters of the function call.
     """
     implements(IConfigFunction)
 
@@ -131,8 +125,9 @@ class Lexer():
 
     # 'tokeniser' looks for tokens at the start of 'rest' and returns with the
     # token text placed into 'token', and the token type into 'token_type'.
-    # There are three types of token, each indicated with a single character:
+    # There are four types of token, each indicated with a single character:
     #
+    #    - N - means that the text in 'token' identifies a Number;
     #    - F - means that the text in 'token' identifies a Field;
     #    - O - means that the text in 'token' is an Operator;
     #    - S - means that the text in 'token' is a String.
@@ -140,15 +135,20 @@ class Lexer():
     # The variable 'rest' is updated to remove the matched token.
 
     def tokeniser(self, x):
-        # Ignoring whitespace, split x on words,
+        # Ignoring whitespace, split x on numbers,
+        # on words,
         # on tokens ',', '||', '(', ')', '&&', '!', '==', '!=', '~=' or 'in',
         # or on strings delimited by single quotes.
 
-        m = re.search('^(\w+) *(.*)', x)
+        m = re.search('^([0-9]+(?:\.[0-9]+)?) *(.*)', x)
+        if m:
+            return 'N', m.group(1), m.group(2)
+
+        m = re.search('^([A-Za-z_]\w*) *(.*)', x)
         if m:
             return 'F', m.group(1), m.group(2)
 
-        m = re.search('^(in|==|\(|\)|&&|\|\||!=|~=|!|,) *(.*)', x)
+        m = re.search('^(,|\|\||\(|\)|&&|==|!=|~=|in|!|\+|-|\*|\/|<|>|<=|>=|\?|:) *(.*)', x)
         if m:
             return 'O', m.group(1), m.group(2)
 
@@ -163,152 +163,186 @@ class Lexer():
 
     def match(self, m):
         if self.look[1] == m:
-            debug('--> %s' % m)
             self.look[0], self.look[1], self.rest = self.tokeniser(self.rest)
         else:
             raise ConfigurationError('Syntax error: %s; expected %s' %
                                      (self.look[1], m))
 
     def term(self):
-        debug('^ term()')
-
-        if self.look[1] == '(':
+        if self.look[0] == 'N':
+            v = float(self.look[1])
+            self.match(self.look[1])
+            text = '%s' % v
+        elif self.look[0] == 'S':
+            v = self.look[1]
+            self.match(v)
+            text = "'%s'" % v
+        elif self.look[1] == '(':
             self.match('(')
             v, text = self.expression()
             self.match(')')
-            debug('TERM expression (%s) --> %s' % (v, '(%s)' % text))
-            return v, '(%s)' % text
-
-        if self.look[0] == 'S':
-            v = self.look[1]
-            self.match(v)
-            debug("TERM literal ('%s') --> '%s'" % (v, v))
-            return v, "'%s'" % v
-
-        if self.look[0] == 'F':
-            sym = self.look[1]
-            # Look ahead. If next token is '(', this is a function call.
-            self.match(self.look[1])
-            if self.look[1] == '(':
-                self.match(self.look[1])
-                args, text = self.param_list()
-                v = None
-                for provider in self.config_functions:
-                    funcs = provider.__class__.__dict__
-                    if sym in funcs:
-                        v = funcs[sym].__get__(provider)(self.req, *args)
-                        if v != None:
-                            break
-                self.match(')')
-                sym = '%s(%s)' % (sym, text)
-                debug("TERM function ('%s') --> %s" % (v, sym))
-            else:
-                v = self.symbol_table[sym]
-                if v == None:
+            text = '(%s)' % text
+        elif self.look[0] == 'F':
+            text = self.look[1]
+            v = self.symbol_table[text]
+            self.match(text)
+            if v == None:
+                if self.look[1] != '(':
                     raise ConfigurationError(
-                        "No field named '%s' is defined" % sym)
-                debug("TERM symbol ('%s') --> %s" % (v, sym))
-            return v, sym
+                        "No field named '%s' is defined" % text)
+                else:
+                    v = text
+        else:
+            raise ConfigurationError(
+                'Unexpected terminal %s' % self.look[1],
+                title='Syntax error in trac.ini [kis_warden]')
+        return v, text
 
-        raise ConfigurationError('Unexpected terminal %s' % self.look[1],
-                                 title='Syntax error in trac.ini [kis_warden]',
-                                 show_traceback=True)
+    def func_term(self):
+        v, text = self.term()
+        if self.look[1] == 'in':
+            self.match('in')
+            i, text2 = self.cmp_list()
+            v = v in i
+            text = '%s in %s' % (text, text2)
+        elif self.look[1] == '(':
+            self.match('(')
+            args, text2 = self.param_list()
+            self.match(')')
+            v = None
+            for provider in self.config_functions:
+                funcs = provider.__class__.__dict__
+                if text in funcs:
+                    v = funcs[text].__get__(provider)(self.req, *args)
+                    if v != None:
+                        break
+            text = '%s(%s)' % (text, text2)
+        return v, text
 
     def param_list(self):
         if self.look[1] == ')':
             v_list = []
-            sym = ''
+            text = ''
         else:
-            v, sym = self.term()
+            t, text = self.term()
+            v_list = [t]
+            if self.look[1] == ',':
+                self.match(',')
+                p_list, text2 = self.param_list()
+                v_list = v_list + p_list
+                text = '%s, %s' % (text, text2)
+        return v_list, text
+
+    def cmp_list(self):
+        if self.look[1] == '(':
+            self.match('(')
+            v_list, text = self.cmp_list()
+            self.match(')')
+            text = '(%s)' % text
+        else:
+            v, text = self.expression()
             v_list = [v]
             if self.look[1] == ',':
                 self.match(',')
-                v, text = self.param_list()
-                v_list = v_list + v
-                sym = sym + ', %s' % text
-        return v_list, sym
+                c_list, text2 = self.cmp_list()
+                v_list = v_list + c_list
+                text = '%s, %s' % (text, text2)
+        return v_list, text
 
-    def cmp_list(self, t):
-        debug('^ cmp_list(%s)' % t)
+    def negation(self):
+        if self.look[1] == '-':
+            self.match('-')
+            v, text = self.negation()
+            v = -v
+            text = '-%s' % text
+        elif self.look[1] == '!':
+            self.match('!')
+            v, text = self.negation()
+            v = not v
+            text = '!%s' % text
+        else:
+            v, text = self.func_term()
+        return v, text
 
-        if self.look[1] == '(':
-            self.match('(')
-            v, text = self.cmp_list(t)
-            self.match(')')
-            debug('CMP_LIST cmp_list (%s) --> %s' %
-                    (v, "'%s' in (%s)" % (t, text)))
-            return v, '(%s)' % text
+    def product(self):
+        v, text = self.negation()
+        if self.look[1] in ('*', '/'):
+            op = self.look[1]
+            self.match(op)
+            e, text2 = self.product()
+            v = eval('v %s e' % op)
+            text = '%s %s %s' % (text, op, text2)
+        return v, text
 
-        v, text = self.term()
-        if self.look[1] == ',':
-            self.match(',')
-            tmp, text2 = self.cmp_list(t)
-            debug('CMP_LIST comma (%s) --> %s' %
-                ((t == v) or tmp, "'%s' in %s, %s" % (t, text, text2)))
-            return (t == v) or tmp, '%s, %s' % (text, text2)
-
-        debug('CMP_LIST (%s) --> %s' % (t == v, "'%s' in %s" % (t, text)))
-        return t == v, text
+    def sum(self):
+        v, text = self.product()
+        if self.look[1] in ('+', '-'):
+            op = self.look[1]
+            self.match(op)
+            e, text2 = self.sum()
+            v = eval('v %s e' % op)
+            text = '%s %s %s' % (text, op, text2)
+        return v, text
 
     def comparison(self):
-        debug('^ comparison()')
+        v, text = self.sum()
+        if self.look[1] in ('<', '>', '<=', '>='):
+            op = self.look[1]
+            self.match(op)
+            e, text2 = self.comparison()
+            v = eval('v %s e' % op)
+            text = '%s %s %s' % (text, op, text2)
+        return v, text
 
-        if self.look[1] == '!':
-            self.match('!')
-            v, text = self.comparison()
-            v = not v
-            debug('EXPR not (%s) --> %s' % (v, '!%s' % text))
-            return v, '!%s' % text
-
-        v, text = self.term()
+    def equality(self):
+        v, text = self.comparison()
         if self.look[1] in ('==', '!=', '~='):
             op = self.look[1]
             self.match(op)
-            e, text2 = self.term()
-            if op == '==':
-                debug('CMP compare_equal (%s) --> %s' %
-                    ((v == e), '%s == %s' % (text, text2)))
-                return v == e, '%s == %s' % (text, text2)
-            if op == '!=':
-                debug('CMP compare_unequal (%s) --> %s' %
-                    ((v != e), '%s != %s' % (text, text2)))
-                return v != e, '%s != %s' % (text, text2)
-            if op == '~=':
-                debug('CMP compare_match (%s) --> %s' %
-                    (bool(re.search(e, v)), '%s ~= %s' % (text, text2)))
-                return bool(re.search(e, v)), '%s ~= %s' % (text, text2)
-        if self.look[1] == 'in':
-            self.match('in')
-            e, text2 = self.cmp_list(v)
-            debug('IN (%s) --> %s' % (e, '%s in %s' % (text, text2)))
-            return e, '%s in %s' % (text, text2)
-
+            e, text2 = self.equality()
+            if op == '==' or op == '!=':
+                v = eval('v %s e' % op)
+            elif op == '~=':
+                v = bool(re.search(e, v))
+            text = '%s %s %s' % (text, op, text2)
         return v, text
 
     def and_expression(self):
-        debug('^ and_expression()')
-
-        v, text = self.comparison()
+        v, text = self.equality()
         if self.look[1] == '&&':
             self.match('&&')
             e, text2 = self.and_expression()
-            debug('AND_EXPR and (%s) --> %s' % ((v and e),
-                                                '%s && %s' % (text, text2)))
-            return v and e, '%s && %s' % (text, text2)
-        debug('AND_EXPR (%s) --> %s' % (v, text))
+            v = v and e
+            text = '%s && %s' % (text, text2)
         return v, text
 
-    def expression(self):
-        debug('^ expression()')
-
+    def or_expression(self):
         v, text = self.and_expression()
         if self.look[1] == '||':
             self.match('||')
-            e, text2 = self.expression()
-            debug('EXPR or (%s) --> %s' %
-                    ((v or e), '%s || %s' % (text, text2)))
-            return v or e, '%s || %s' % (text, text2)
-        debug('EXPR (%s) --> %s' % (v, text))
+            e, text2 = self.or_expression()
+            v = v or e
+            text = '%s || %s' % (text, text2)
+        return v, text
+
+    def expression(self):
+        v, text = self.or_expression()
+        if self.look[1] == '?':
+            self.match('?')
+            v_t, text_t= self.expression()
+            if self.look[1] != ':':
+                raise ConfigurationError(
+                    'Unexpected terminal %s' % self.look[1],
+                     title='Syntax error in trac.ini [kis_warden]',
+                     show_traceback=True)
+            else:
+                self.match(':')
+                v_f, text_f= self.expression()
+            if v:
+                v = v_t
+            else:
+                v = v_f
+            text = '%s ? %s : %s' % (text, text_t, text_f)
         return v, text
 
     def evaluate(self, predicate):
@@ -321,11 +355,11 @@ class KisWarden(Component):
     The configuration file structure is
 {{{
 [kis_warden]
-<rule name> = <predicate>
+<rule name> = <boolean valued expression>
 }}}
-    Predicates describe the state of the ticket after a change has been submitted. If the predicate for any rule evaluates to 'true', then the change is blocked.
+    Expressions describe the state of the ticket after a change has been submitted. If the expression for any rule evaluates to 'true', then the change is blocked.
 
-    The grammar of the predicates is the same as defined for the '!KisAssistant' component, except that the regular expression syntax is Python rather than Javascript.
+    The grammar of the expressions is the same as defined for the '!KisAssistant' component, except that the regular expression syntax is Python rather than Javascript.
 
     For example, take the rules:
 {{{
@@ -421,7 +455,7 @@ only designated approver can approve = !has_role('approver') && approval != _app
         lexer = Lexer(symbol_table, self.config_functions, req)
         errors = []
 
-        for rule, predicate in self.config.options('kis_warden'):
+        for rule, predicate in self.config.parser.items('kis_warden'):
             e, text = lexer.evaluate(predicate)
             if e:
                 errors.append((None, "Check '%s' failed: %s" % (rule, text)))
@@ -430,82 +464,127 @@ only designated approver can approve = !has_role('approver') && approval != _app
 ###############################################################################
 
 class KisAssistant(Component):
-    ''' Controls which fields, actions and options are available in the user interface.
-    
-    Also allows templates to be defined for initialising text fields.
+    ''' Controls which fields, actions and options are available in the user interface. Can automatically update the content of fields. Allows templates to be defined for initialising text fields.
 
+=== Configuration file ===
     The configuration file structure is:
 {{{
 [kis_assistant]
-<field_or_action_name>.visible = <predicate>
-<field_name>.available.<option_set_name> = <predicate>
-<field_name>.options.<option_set_name> = <option list>
-<field_name>.available.<template_name> = <predicate>
-<field_name>.template.<template_name> = <template_text>
+<field_or_action_name>.visible = <boolean valued expression>
+<field_name>.available.<option_set_name> = <boolean valued expression>
+<field_name>.options.<option_set_name> = <list of string valued expressions>
+<field_name>.available.<template_name> = <boolean valued expression>
+<field_name>.template.<template_name> = <string valued expression>
+<field_name>.update = <expression>
+<field_name>.update.when = <boolean valued expression>
 }}}
 
-    The rule attribute 'visible' defines when the associate field will be visible in the interface. Dropdown fields and radio button fields also have attributes 'options' and 'available'. The 'options' attribute is used to assign a name to a group of options, then the matching 'available' attribute for that name defines when those options are available.
+    The restrictions imposed by '!KisAssistant' are in the user interface only. None of the constraints are enforced. Define matching rules using the '!KisWarden' component if it's necessary to enforce the restrictions.
 
-    The ticket actions are accessed with a pre-defined field named 'action'. The available values for the ticket actions are the transition names defined in the configuration file.
+=== Hiding and showing fields ===
+    The rule attribute 'visible' defines when the associated field will be visible in the interface.
 
-    If no visibility rule is defined for a field, the field is visible by default. Similarly, if no availability rule is defined for an option, the option is available by default.
-
-    In predicates, field names evaluate to the current value of the corresponding field, except for the special names 'status', which evaluates to the ticket status, 'authname', which evaluates to the current username, 'true' which evaluates True and 'false', which evaluates False. If the field name is prefixed with an underscore, it evaluates to the value of the field at the time the page was loaded.
-
-    Text-type fields evaluate to their contents, checkboxes evaluate to true if checked or false if not, and radio buttons evaluate to the selected item if an item is selected or undefined if no item is selected.
-
-    The grammar of the predicates is:
+    For example, take the rule:
 {{{
-                expression ::= and_expression
-                             | and_expression '||' expression
-            and_expression ::= comparison
-                             | comparison '&&' and_expression
-                comparison ::= '!' comparison
-                             | term
-                             | term equ_op term
-                             | term 'in' cmp_list
-                     eq_op ::= '=='
-                             | '!='
-                             | '~='
-                  cmp_list ::= '(' cmp_list ')'
-                             | term
-                             | term ',' cmp_list
-                      term ::= '(' expression ')'
-                             | <field_name>
-                             | <function_name> '(' param_list ')'
-                             | '"' <string> '"'
-                param_list ::= *empty*
-                             | term
-                             | term ',' param_list
+approval.visible = !status in 'new', 'closed'
 }}}
-    `~=` is an operator that returns True only if the value on the left is matched by the Javascript regular expression on the right. `in` is an operator that returns True only if the value on the left appears in the list on the right. The operators `!`, `==`, `!=`, `||` and `&&` are negation, equality, inequality, OR and AND respectively.
+    This requires that a custom field named 'approval' is defined. This rule states that the field only appears when the ticket status is other than 'new' or 'closed'.
+    If no visibility rule is defined for a field, the field is visible by default.
 
-    The field name 'authname' is a special case that evaluates to the name of the user attempting the transition.
+=== Controlling the options available in dropdowns (Select fields) and radio button sets (Radio fields) ===
+    The options shown in Select and Radio fields can be controlled using the attributes 'options' and 'available'. The 'options' attribute is used to assign a name to a group of options. Then the matching 'available' attribute for that name defines when those options are available.
 
     For example, take the rules:
 {{{
-approval.visible = !status in 'new', 'closed'
-approval.options.basic_set = Not assessed, Denied
+approval.options.basic_set = 'Not assessed', 'Denied'
 approval.available.basic_set = true
-approval.options.full_set = Approved
+approval.options.full_set = 'Approved'
 approval.available.full_set = has_role('approver') || _approval == 'Approved'
 }}}
-    This requires that a custom field named 'approval' is defined (either a Select or a Radio field) with options 'Not assessed', 'Denied' and 'Approved'. These rules state that the field only appears when the ticket status is other than 'new' or 'closed'. The options 'Not assessed' or 'Denied' are always available, but the option 'Approved' is only available if the user is a member of the 'approver' group or if the field already had the value 'Approved' when the page was loaded.
+    This requires that the 'approval' field is either a Select or a Radio field, with options 'Not assessed', 'Denied' and 'Approved'. The options 'Not assessed' or 'Denied' are always available, but the option 'Approved' is only available if the user is a member of the 'approver' group or if the field already had the value 'Approved' when the page was loaded.
 
-    Note that options defined in the Trac administration interface will appear by default unless specifically hidden by a rule. It isn't therefore strictly necessary to specify 'Not assessed' and 'Denied' here, but it can be clearer to do so.
+    Options will appear by default unless specifically hidden by a rule. It isn't therefore strictly necessary to specify 'Not assessed' and 'Denied' here, but it can be clearer to do so. An option will be available if it appears it at least one set that is available.
 
-    These restrictions are in the user interface only; none of the constraints are enforced. Define matching rules using the '!KisWarden' component if it's necessary to enforce the restrictions.
+    The ticket actions can be controlled as if they were a custom field of Radio type. They are accessed with a pre-defined field named 'action'. The available values for the ticket actions are the names defined in the configuration file for the state transitions corresponding to the action.
 
-    The 'template' options work in a similar manner. For example:
+    Note that the options are hidden, not removed. The user will still be able to select the option in most browsers by using keyboard shortcuts. Use a '!KisWarden' rule to restrict the values accepted when a ticket is submitted, if that is what is needed.
+
+=== Automatic updates ===
+
+    The 'update' attribute of a field defines a rule for automatically updating the field's content. Normally, it is re-evaluated whenever one of the fields used to determine the outcome of the rule is changed.
+
+    For example, take the rule:
 {{{
-evaluation.template.change = === Description ===\\nDescribe the change fully...
+priority.update = (effort > 5) ? 'high' : 'low'
+}}}
+    This requires that a custom field named 'effort' is defined. If the 'effort' field is changed to a value greater than 5, then the priority field is set to 'high'. Otherwise it is set to low.
+
+    Sometimes it's necessary to update a field only under certain conditions. In that case, the optional 'update.when' attribute can be used to define those conditions.
+
+    For example:
+{{{
+priority.update.when = milestone == 'Build 42'
+}}}
+    Now the rule stated previously will be applied when the milestone is changed to 'Build 42', not when the 'effort' field is changed. The 'update.when' rule is re-evaluated whenever one of the fields used to determine the outcome of the rule is changed.
+
+=== Using templates ===
+    Templating rules use the attributes 'template' and 'available'. The 'template' attribute assigns a name to a block of template text that could be used to pre-populate a field. The 'available' attribute for that name defines the condition under which the field will be populated with that text.
+
+    For example:
+{{{
+evaluation.template.change = '=== Description ===\\nDescribe the change fully...'
 evaluation.available.change = evaluation_template == 'Change'
-evaluation.template.fault = === Description ===\\nDescribe the fault fully...
+evaluation.template.fault = '=== Description ===\\nDescribe the fault fully...'
 evaluation.available.fault = evaluation_template == 'Fault'
-evaluation.template.none =
+evaluation.template.none = ''
 evaluation.available.none = evaluation_template == 'None'
 }}}
-    This requires that a custom field named 'evaluation_template' is defined (either a Select or a Radio field) with options 'None', 'Change' and 'Fault'. Another custom Textarea field named 'evaluation' is defined. When 'evaluation_template' is set to 'Change', the 'evaluation' field will be initialised with the value of the `evaluation.template.change` option (shown here in a cut-down form; it would normally contain template entries for all the items of information that might be wanted in a Change evaluation). Similarly for 'evaluation_template' values of 'Fault' or 'None'. The 'evaluation' field will only be initialised if it is currently either empty or unchanged from one of the alternative template values.
+
+    This requires that a custom field named 'evaluation_template' is defined (either a Select or a Radio field) with options 'None', 'Change' and 'Fault'. Another custom Textarea field named 'evaluation' is defined. When 'evaluation_template' is set to 'Change', the 'evaluation' field will be initialised with the value of the 'evaluation.template.change' option (shown here in a cut-down form; it would normally contain template entries for all the items of information that might be wanted in a Change evaluation). Similarly for 'evaluation_template' values of 'Fault' or 'None'.
+
+    A field will only be initialised from a template if it is currently either empty or unchanged from one of the alternative template values. Template fields can be preferred over the use of automatically-updated fields because of this behaviour.
+
+=== Expression syntax and semantics ===
+
+    In expressions, field names evaluate to the current value of the corresponding field, except for the special names `status`, which evaluates to the ticket status, `authname`, which evaluates to the current username, `true` which evaluates True and `false`, which evaluates False. If the field name is prefixed with an underscore, it evaluates to the value of the field at the time the page was loaded.
+
+    Text-type fields evaluate to their contents, checkboxes evaluate to true if checked or false if not, and Select or Radio fields evaluate to the selected item if an item is selected or undefined if no item is selected.
+
+    The grammar of the expressions is:
+{{{
+                expression ::= or_expression
+                             | or_expression "?" expression ":" expression
+             or_expression ::= and_expression
+                             | and_expression "||" or_expression
+            and_expression ::= equality
+                             | equality "&&" and_expression
+                  equality ::= comparison
+                             | comparison "==" | "!=" | "~=" equality
+                comparison ::= sum
+                             | sum "<" | ">" | "<=" | ">=" comparison
+                       sum ::= product
+                             | product "+" | "-" sum
+                   product ::= negation
+                             | negation "*" | "/" product
+                  negation ::= func_term
+                             | "-" | "!" negation
+                 func_term ::= term
+                             | term "in" cmp_list
+                             | <function_name> "(" param_list ")"
+                  cmp_list ::= "(" cmp_list ")"
+                             | term
+                             | term "," cmp_list
+                param_list ::= *empty*
+                             | term
+                             | term "," param_list
+                      term ::= "(" expression ")"
+                             | <number>
+                             | <field>
+                             | "'" <string> "'"
+}}}
+    `~=` is an operator that returns True only if the value on the left is matched by the Javascript regular expression on the right. `in` is an operator that returns True only if the value on the left appears in the list on the right. The operators `!`, `==`, `!=`, `||` and `&&` are negation, equality, inequality, OR and AND respectively.
+
+    Note that the `&&` and `||` operators evaluate in the same way as the Javascript operators (or the Python `and` and `or` operators). So 'x && y' evaluates to 'x' if 'x' is false; 'y' if 'x' is true. [[span('x || y')]] evaluates to 'x' if 'x' is true; 'y' if 'x' is false.
     '''
 
     implements(IRequestFilter,
