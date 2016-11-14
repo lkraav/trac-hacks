@@ -154,4 +154,16 @@ jQuery(document).ready(function($) {
         appendTo: $('body'),
         maxCount: 10000
     });
+
+    if (/^1\.[78]\./.test($.fn.jquery) && $.browser.mozilla &&
+        navigator.userAgent.indexOf('like Gecko') === -1 /* is not IE 11 */)
+    {
+        var margin = $('body').css('margin-top');
+        if (margin && margin !== '0px') {
+            if (!/px$/.test(margin))
+                margin += 'px';
+            $('<style type="text/css">.dropdown-menu { margin-top: ' +
+              margin + ' !important }</style>').appendTo('head');
+        }
+    }
 });
