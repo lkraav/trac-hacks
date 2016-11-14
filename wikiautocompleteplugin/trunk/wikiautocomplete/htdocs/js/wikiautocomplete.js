@@ -22,14 +22,14 @@ jQuery(document).ready(function($) {
 
     $('textarea.wikitext').textcomplete([
         { // Attachment
-            match: /\b((?:raw-)?attachment):(\S*)$/,
+            match: /(\b(?:raw-)?attachment:|\[\[Image\()(\S*)$/,
             search: search('attachment'),
             index: 2,
             template: template,
             replace: function (name) {
                 if (/\s/.test(name))
                     name = '"' + name + '"';
-                return '$1:' + escape_newvalue(name);
+                return '$1' + escape_newvalue(name);
             },
             cache: true
         },
