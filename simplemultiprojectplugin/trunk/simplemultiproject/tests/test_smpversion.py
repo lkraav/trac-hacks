@@ -1,6 +1,8 @@
 import unittest
 from trac.test  import EnvironmentStub
+from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.smp_model import SmpVersion
+from simplemultiproject.tests.util import revert_schema
 
 __author__ = 'cinc'
 
@@ -9,13 +11,18 @@ class TestSmpVersion(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
-        self.env.upgrade()
+        with self.env.db_transaction as db:
+            revert_schema(self.env)
+            smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
         # self.env.config.set("ticket-custom", "project", "select")
         self.model = SmpVersion(self.env)
         self.model.add("foo1", 1)
         self.model.add("bar", 2)
         self.model.add("baz", 3)
         self.model.add("foo2", 1)
+
+    def tearDown(self):
+        self.env.reset_db()
 
     def print_table(self, tbl_name):
         db = self.env.get_read_db()
