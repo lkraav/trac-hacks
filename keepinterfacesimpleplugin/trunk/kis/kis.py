@@ -240,7 +240,7 @@ class Lexer():
             self.match(')')
             text = '(%s)' % text
         else:
-            v, text = self.expression()
+            v, text = self.func_term()
             v_list = [v]
             if self.look[1] == ',':
                 self.match(',')
@@ -572,8 +572,8 @@ evaluation.available.none = evaluation_template == 'None'
                              | term "in" cmp_list
                              | <function_name> "(" param_list ")"
                   cmp_list ::= "(" cmp_list ")"
-                             | term
-                             | term "," cmp_list
+                             | func_term
+                             | func_term "," cmp_list
                 param_list ::= *empty*
                              | term
                              | term "," param_list

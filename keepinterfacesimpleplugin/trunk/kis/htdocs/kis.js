@@ -509,12 +509,12 @@ function evaluate(predicate) {
                 return r;
             });
         } else {
-            // cmp_list ::= expression
-            return expression().then(function (r) {
+            // cmp_list ::= func_term
+            return func_term().then(function (r) {
                 if (token == ',') {
-                    // cmp_list ::= expression ',' cmp_list
+                    // cmp_list ::= func_term ',' cmp_list
                     next_token();
-                    return cmp_list().then(function (c) {
+                    return func_term().then(function (c) {
                         c.value = [r.value].concat(c.value);
                         return c;
                     });
@@ -637,6 +637,11 @@ function evaluate(predicate) {
                 // equality ::= comparison '~=' equality
                 next_token();
                 return equality().then(function (t) {
+                    if (typeof(r.value) != 'string') {
+                        config_error('match against non-string', 0);
+                        r.error = 'type error (check operator precedence)';
+                        return Promise.reject(r);
+                    }
                     t.value = Boolean(r.value.match(t.value));
                     return t;
                 });
@@ -765,9 +770,10 @@ Field.prototype.set_options = function () {
             }
         };
         var option_values = this.operations['options'][option_set]['#'];
-        var option_available = this.operations['available'][option_set]['#'];
+        var option_available =
+            this.operations['available'][option_set]['#'].join();
         promise_list.push(
-            evaluate(option_available[0]).then(set_show(option_set))
+            evaluate(option_available).then(set_show(option_set))
         );
         all_set_items[option_set] = [];
         for (var option_value in option_values) {
@@ -1068,11 +1074,16 @@ Field.prototype.val = function () {
 // The page data provided by the server query.
 var page_info;
 
+// Debugging exports and compatibility patches.
+window.ui = [];
+window.ev = evaluate;
+if ($.fn.addBack === undefined) {
+    $.fn.addBack = $.fn.andSelf;
+}
+
 // This function is called when the page has loaded. It queries the server to
 // get the trac.ini data, the ticket status and the authenticated user name.
 // Once the data has arrived, the fields are initialised accordingly.
-window.ui = [];
-window.ev = evaluate;
 $(function () {
     $.getJSON('kis_init',
         { op: 'get_ini',
