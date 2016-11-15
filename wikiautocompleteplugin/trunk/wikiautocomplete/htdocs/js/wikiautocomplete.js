@@ -20,6 +20,19 @@ jQuery(document).ready(function($) {
         return $.htmlEscape(text);
     }
 
+    var TextareaAdapter = $.fn.textcomplete.Textarea;
+    function Adapter(element, completer, option) {
+        this.initialize(element, completer, option);
+    }
+    $.extend(Adapter.prototype, TextareaAdapter.prototype, {
+        _skipSearchOrig: TextareaAdapter.prototype._skipSearch,
+        _skipSearch: function (clickEvent) {
+            if (clickEvent.keyCode === 9)
+                return;  // do not skip TAB key
+            return this._skipSearchOrig(clickEvent);
+        }
+    });
+
     $('textarea.wikitext').textcomplete([
         { // Attachment
             match: /(\b(?:raw-)?attachment:|\[\[Image\()(\S*)$/,
@@ -152,6 +165,7 @@ jQuery(document).ready(function($) {
 
     ], {
         appendTo: $('body'),
+        adapter: Adapter,
         maxCount: 10000
     });
 
