@@ -57,7 +57,7 @@ class SearchRPC(Component):
 
         results = []
         for source in self.search_sources:
-            for result in source.get_search_results(req, query, filters):
+            for result in source.get_search_results(req, query, filters) or []:
                 results.append(['/'.join(req.base_url.split('/')[0:3])
                                 + result[0]] + list(result[1:]))
         return results

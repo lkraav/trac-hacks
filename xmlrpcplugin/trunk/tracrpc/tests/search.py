@@ -36,6 +36,30 @@ class RpcSearchTestCase(TracRpcTestCase):
                           results[0][1])
         self.assertEquals(0, self.admin.ticket.delete(t1))
 
+    def test_search_null_result(self):
+
+        plugin = os.path.join(rpc_testenv.tracdir, 'plugins',
+                              'NoneSearchPlugin.py')
+        open(plugin, 'w').write(
+        "from trac.core import *\n"
+        "from trac.search.api import ISearchSource\n"
+        "class NoneSearch(Component):\n"
+        "    implements(ISearchSource)\n"
+        "    def get_search_filters(self, req):\n"
+        "        yield ('test', 'Test')\n"
+        "    def get_search_results(self, req, terms, filters):\n"
+        "        self.log.debug('Search plugin returning None')\n"
+        "        return None")
+        rpc_testenv.restart()
+
+        results = self.user.search.performSearch("nothing_should_be_found")
+        self.assertEquals([], results)
+
+        # Remove plugin and restart
+        os.unlink(plugin)
+        rpc_testenv.restart()
+
+
 def test_suite():
     test_suite = unittest.TestSuite()
     test_suite.addTest(unittest.makeSuite(RpcSearchTestCase))
