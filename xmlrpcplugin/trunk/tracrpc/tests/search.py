@@ -36,8 +36,11 @@ class RpcSearchTestCase(TracRpcTestCase):
                           results[0][1])
         self.assertEquals(0, self.admin.ticket.delete(t1))
 
-    def test_search_null_result(self):
+    def test_search_none_result(self):
+        # Some plugins may return None instead of empty iterator
+        # https://trac-hacks.org/ticket/12950
 
+        # Add custom plugin to provoke error
         plugin = os.path.join(rpc_testenv.tracdir, 'plugins',
                               'NoneSearchPlugin.py')
         open(plugin, 'w').write(
@@ -52,6 +55,7 @@ class RpcSearchTestCase(TracRpcTestCase):
         "        return None")
         rpc_testenv.restart()
 
+        # Test
         results = self.user.search.performSearch("nothing_should_be_found")
         self.assertEquals([], results)
 
