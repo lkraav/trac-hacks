@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 F@lk Brettschneider aka falkb
@@ -10,15 +9,15 @@
 # Originally based on MilestoneQueryMacro code of Nic Ferrier.
 #
 
-from genshi.core import Markup
-from trac.wiki.macros import WikiMacroBase
-from trac.wiki import Formatter
-from trac.util.datefmt import format_datetime, format_date, from_utimestamp, utc
-from trac.util.text import to_unicode
-from trac import __version__ as VERSION
-from datetime import datetime, timedelta
 from StringIO import StringIO
-import babel
+from datetime import datetime
+
+from genshi.core import Markup
+from trac import __version__ as VERSION
+from trac.util.datefmt import format_date, from_utimestamp, utc
+from trac.wiki.formatter import Formatter
+from trac.wiki.macros import WikiMacroBase
+
 
 class UpcomingMilestonesChartMacro(WikiMacroBase):
     """Display a list of the latest upcoming milestones.
@@ -54,7 +53,7 @@ class UpcomingMilestonesChartMacro(WikiMacroBase):
                     wikitext += """ * [milestone:\"%(milestonename)s\" %(milestonename)s]""" % {
                         "milestonename": m
                         }
-                    
+
                     date = ''
                     if VERSION < '1.0':
                         date = "(%s)" % format_date(milestone_dues[cur_idx])
