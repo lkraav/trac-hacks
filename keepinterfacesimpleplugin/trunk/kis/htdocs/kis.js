@@ -411,7 +411,7 @@ function evaluate(predicate) {
                 $.ajax('kis_function', {
                     data: {
                         op: 'call_function',
-                        id: $('a.trac-id', '#ticket').text().slice(1),
+                        id: page_info['id'],
                         config_func: config_func,
                         args: args,
                     },
@@ -771,7 +771,7 @@ Field.prototype.set_options = function () {
         };
         var option_values = this.operations['options'][option_set]['#'];
         var option_available =
-            this.operations['available'][option_set]['#'].join();
+            this.operations['available'][option_set]['#'].join(', ');
         promise_list.push(
             evaluate(option_available).then(set_show(option_set))
         );
@@ -835,9 +835,9 @@ Field.prototype.set_options = function () {
             }
         }
         return unused;
-    }.bind(this),
-    function (err) {
+    }.bind(this)).catch(function (err) {
         console.log(this.field_name + '.available ' + err.error);
+        return err;
     }.bind(this));
 };
 
@@ -847,9 +847,9 @@ Field.prototype.set_options = function () {
 // handler of any field that affects whether the value of this field should be
 // changed.
 Field.prototype.set_update = function () {
-    var update = this.operations['update']['#'].join();
+    var update = this.operations['update']['#'].join(', ');
     var update_when = ('when' in this.operations['update']) ?
-        this.operations['update']['when']['#'].join() : null;
+        this.operations['update']['when']['#'].join(', ') : null;
 
     function attach_update_handlers(change) {
         // Attach the onchange handlers.
@@ -866,6 +866,7 @@ Field.prototype.set_update = function () {
 
     function attach_update_error(result) {
         console.log(this.field_name + '.update.when ' + result.error);
+        return result;
     }
 
     function update_success(change) {
@@ -879,11 +880,12 @@ Field.prototype.set_update = function () {
                 this.ui.trigger('change');
             }
         }
-        return change.value
+        return change;
     }
 
     function update_failure(result) {
         console.log(this.field_name + '.update ' + result.error);
+        return result;
     }
 
     if (!this.update_onchange_attached) {
@@ -947,7 +949,7 @@ Field.prototype.set_template = function () {
         // otherwise.
         var templates = [];
         for (var template in this.operations['template']) {
-            var content = this.operations['template'][template]['#'].join();
+            var content = this.operations['template'][template]['#'].join(', ');
             templates.push(evaluate(content).then(function (c) {
                 return this.val().replace(/[ \n]/g, '') ==
                     c.value.replace(/\\n/g, '\n').replace(/[ \n]/g, '');
@@ -974,7 +976,7 @@ Field.prototype.set_template = function () {
                 // value.
                 matches_a_template().then(function (matched) {
                     var content =
-                        field.operations['template'][template]['#'].join();
+                        field.operations['template'][template]['#'].join(', ');
                     evaluate(content).then(function (c) {
                         if (field.val() == '' || matched) {
                             field.val(c.value.replace(/\\n/g, '\n'));
@@ -988,7 +990,7 @@ Field.prototype.set_template = function () {
             return result;
         } }
 
-        var predicate = this.operations['available'][template]['#'].join();
+        var predicate = this.operations['available'][template]['#'].join(', ');
         predicates.push(evaluate(predicate).then(success(template, this)));
     }
 
@@ -1005,9 +1007,9 @@ Field.prototype.set_template = function () {
             this.template_onchange_attached = true;
         }
         return p;
-    }.bind(this),
-    function (p) {
+    }.bind(this)).catch(function (p) {
         console.log(this.field_name + '.available ' + p.error);
+        return p;
     }.bind(this));
 };
 
@@ -1040,7 +1042,7 @@ Field.prototype.set_visibility = function () {
     }
 
     // Show or hide field according to the value of its visibility predicate.
-    return evaluate(this.operations['visible']['#'].join()).then(
+    return evaluate(this.operations['visible']['#'].join(', ')).then(
         evaluate_success.bind(this),
         evaluate_error.bind(this)
     );
@@ -1071,8 +1073,8 @@ Field.prototype.val = function () {
     return this.ui.val.apply(this.ui, arguments);
 };
 
-// The page data provided by the server query.
-var page_info;
+// Page data was provided by the IRequestFilter request post-processing.
+var page_info = window.page_info;
 
 // Debugging exports and compatibility patches.
 window.ui = [];
@@ -1081,20 +1083,11 @@ if ($.fn.addBack === undefined) {
     $.fn.addBack = $.fn.andSelf;
 }
 
-// This function is called when the page has loaded. It queries the server to
-// get the trac.ini data, the ticket status and the authenticated user name.
-// Once the data has arrived, the fields are initialised accordingly.
+// This function is called when the page has loaded. It initialises the fields.
 $(function () {
-    $.getJSON('kis_init',
-        { op: 'get_ini',
-          id: $('a.trac-id', '#ticket').text().slice(1) },
-        function (data) {
-            page_info = data;
-            for(var field_name in page_info['trac_ini']) {
-                var field = new Field(field_name);
-                field.setup();
-                window.ui[field_name] = field.ui;
-            }
-        }
-    );
+    for(var field_name in page_info['trac_ini']) {
+        var field = new Field(field_name);
+        field.setup();
+        window.ui[field_name] = field.ui;
+    }
 });

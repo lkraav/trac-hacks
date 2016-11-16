@@ -20,7 +20,7 @@ from trac.ticket import ITicketManipulator
 from trac.ticket import TicketSystem
 from trac.ticket.model import Ticket
 from trac.web.api import IRequestFilter, IRequestHandler, RequestDone
-from trac.web.chrome import add_script, ITemplateProvider
+from trac.web.chrome import add_script, add_script_data, ITemplateProvider
 
 ###############################################################################
 
@@ -605,6 +605,34 @@ evaluation.available.none = evaluation_template == 'None'
         return handler
 
     def post_process_request(self, req, template, data, content_type):
+        # Create and include the initial data dump.
+        items = self.config.parser.items('kis_assistant')
+        config = {}
+        for dotted_name, value in items:
+            config_traverse = config
+            for component in dotted_name.split('.'):
+                if not component in config_traverse:
+                    if component.startswith('#'):
+                        continue
+                    config_traverse[component] = {}
+                config_traverse = config_traverse[component]
+            config_traverse['#'] = \
+                re.sub("\s*,\s*", ",", value.strip()).split(",")
+
+        if req.args['id']:
+            ticket_id = req.args['id'].lstrip('#')
+            ticket = Ticket(self.env, ticket_id)
+            status = ticket.get_value_or_default('status')
+        else:
+            ticket_id = None
+            status = 'new'
+        page_data = { 'trac_ini' : config,
+                      'status'   : status,
+                      'id'       : ticket_id,
+                      'authname' : req.authname }
+        add_script_data(req, {'page_info' : page_data})
+
+        # Add the client-side support functions.
         if req.path_info.startswith('/newticket') or \
                 req.path_info.startswith('/ticket/'):
             if 'rv:11' in req.environ['HTTP_USER_AGENT'] \
@@ -612,6 +640,7 @@ evaluation.available.none = evaluation_template == 'None'
                 # Provide Promise support for Internet Explorer.
                 add_script(req, 'kis/bluebird.min.js')
             add_script(req, 'kis/kis.js')
+
         return template, data, content_type
 
     # IRequestHandler
@@ -620,32 +649,7 @@ evaluation.available.none = evaluation_template == 'None'
             req.path_info.startswith('/kis')
 
     def process_request(self, req):
-        if req.args['op'] == 'get_ini':
-            # Create and send the initial data dump.
-            items = self.config.parser.items('kis_assistant')
-            config = {}
-            for dotted_name, value in items:
-                config_traverse = config
-                for component in dotted_name.split('.'):
-                    if not component in config_traverse:
-                        if component.startswith('#'):
-                            continue
-                        config_traverse[component] = {}
-                    config_traverse = config_traverse[component]
-                config_traverse['#'] = \
-                    re.sub("\s*,\s*", ",", value.strip()).split(",")
-
-            if req.args['id']:
-                ticket = Ticket(self.env, req.args['id'].lstrip('#'))
-                status = ticket.get_value_or_default('status')
-            else:
-                status = 'new'
-            page_data = { 'trac_ini' : config,
-                          'status'   : status,
-                          'authname' : req.authname }
-            # req.send() method raises trac.web.api.RequestDone when complete.
-            req.send(json.dumps(page_data).encode('utf-8'), 'application/json')
-        elif req.args['op'] == 'call_function':
+        if req.args['op'] == 'call_function':
             args = req.args.get('args[]')
             if type(args) == type(None):
                 args = []
