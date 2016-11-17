@@ -20,7 +20,7 @@ setup(
     license='3-Clause BSD', url='https://trac-hacks.org/wiki/QueuesPlugin',
     packages=['queues'],
     package_data={
-        'queues': ['templates/*.html', 'htdocs/*.css', 'htdocs/*.js']
+        'queues': ['htdocs/*.css', 'htdocs/*.js']
     },
     entry_points = {'trac.plugins': ['queues.web_ui = queues.web_ui']}
 )

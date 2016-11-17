@@ -13,12 +13,12 @@ from trac.config import ChoiceOption, IntOption, ListOption
 from trac.core import *
 from trac.ticket.model import Ticket
 from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
-                            add_stylesheet
+                            add_script_data, add_stylesheet
 from trac.web.main import IRequestFilter, IRequestHandler
 
 
 class QueuesModule(Component):
-    implements(IRequestHandler, ITemplateProvider, IRequestFilter)
+    implements(IRequestFilter, ITemplateProvider)
 
     reports = ListOption('queues', 'reports', default=[],
             doc="List of report numbers to treat as queues")
@@ -27,14 +27,7 @@ class QueuesModule(Component):
     max_position = IntOption('queues', 'max_position', default=99,
             doc="Max position value (default is 99); set to 0 for no maximum")
 
-    # ITemplateProvider methods
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('queues', resource_filename(__name__, 'htdocs'))]
-
-    def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+    report_re = re.compile(r"/report/(?P<num>[1-9][0-9]*)")
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -44,18 +37,21 @@ class QueuesModule(Component):
         if self._valid_request(req):
             Chrome(self.env).add_jquery_ui(req)
             add_stylesheet(req, 'queues/queues.css')
-            add_script(req, '/queues/queues.js')
+            add_script(req, 'queues/queues.js')
+            add_script_data(req, {
+                'groups': self._get_groups(),
+                'pad_length': self.pad_length,
+                'max_position': self.max_position,
+            })
         return template, data, content_type
 
-    # IRequestHandler methods
-    def match_request(self, req):
-        return req.path_info.startswith('/queues/')
+    # ITemplateProvider methods
+    def get_htdocs_dirs(self):
+        from pkg_resources import resource_filename
+        return [('queues', resource_filename(__name__, 'htdocs'))]
 
-    def process_request(self, req):
-        data = {'groups': self._get_groups(),
-                'pad_length': self.pad_length,
-                'max_position': self.max_position}
-        return 'queues.html', {'data': data}, 'text/javascript'
+    def get_templates_dirs(self):
+        return []
 
     # private methods
     def _valid_request(self, req):
@@ -75,8 +71,7 @@ class QueuesModule(Component):
           [queues]
           reports: 11, 12
         """
-        report_re = re.compile(r"/report/(?P<num>[1-9][0-9]*)")
-        match = report_re.search(req.path_info)
+        match = self.report_re.search(req.path_info)
         if match:
             report = match.groupdict()['num']
             if report in self.reports:
@@ -108,6 +103,8 @@ class QueuesAjaxModule(Component):
 
     audit = ChoiceOption('queues', 'audit', choices=['log', 'ticket', 'none'],
             doc="Record reorderings in log, in ticket, or not at all.")
+
+    keyval_re = re.compile(r"(?P<key>[^0-9]+)(?P<val>[0-9]*)")
 
     # IRequestHandler methods
     def match_request(self, req):
@@ -148,10 +145,9 @@ class QueuesAjaxModule(Component):
           id5=position1&id23=position2
         """
         changes = {}
-        keyval_re = re.compile(r"(?P<key>[^0-9]+)(?P<val>[0-9]*)")
         for key, val in args.items():
             # get ticket id
-            match = keyval_re.search(key)
+            match = self.keyval_re.search(key)
             if not match:
                 continue
             id = match.groupdict()['val']
@@ -159,7 +155,7 @@ class QueuesAjaxModule(Component):
                 continue
 
             # get position field name and value
-            match = keyval_re.search(val)
+            match = self.keyval_re.search(val)
             if not match:
                 continue
             field = match.groupdict()['key']

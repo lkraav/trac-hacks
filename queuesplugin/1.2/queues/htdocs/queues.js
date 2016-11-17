@@ -1,98 +1,10 @@
-<!--!
+/*
   Copyright (C) 2011-2012 Rob Guttman <guttman@alum.mit.edu>
   All rights reserved.
 
   This software is licensed as described in the file COPYING, which
   you should have received as part of this distribution.
--->
-<script type="text/javascript" xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/" py:strip="">
-
-var setup = function(paging){
-    jQuery('table.listing.tickets tbody').attr('op', 'reorder');
-        
-    // make the table rows sortable (but only if on first page)
-    if (jQuery('div.paging').length == 0 || jQuery('div.paging:last span.current').text() == '1'){
-        
-        // add op classes to each group of tickets
-        jQuery('#content').find('h2.report-result').each(function(i){
-            grouped = true;
-            var h2 = jQuery(this);
-            var name = jQuery.trim(h2.text().split('\n')[1]).toLowerCase();
-            
-            // determine operation
-            var op = 'reorder';
-          <py:for each="group,op in data.groups.items()">
-            if (name == '${group}'){
-                op = '${op}';
-            }
-          </py:for>
-          
-            // find the rows
-            var rows = h2.parents('tbody').next().attr('op', op);
-            if (rows.length == 0)
-                rows = h2.next().children('tbody:first').attr('op', op);
-            
-            // add simple collapsibility
-            if (op != 'reorder'){
-                h2.click(function(){
-                    rows.toggle("blind");
-                });
-            }
-        });
-        
-        var fixHelper = function(e, ui){
-            ui.children().each(function(){
-                $(this).width($(this).width());
-            });
-            return ui;
-        };
-        jQuery("table.listing.tickets tbody[op!=ignore]").sortable({
-            connectWith: jQuery("table.listing.tickets tbody[op!=ignore]"),
-            helper: fixHelper,
-            update: update,
-            cancel: 'select,option,input' // needed for GridModify in chrome/safari
-        }).disableSelection();
-    	
-    }
-    
-    // disable column sorting (screws up queue ordering)
-    var cols = jQuery("table.listing.tickets tr.trac-columns th a");
-    if (cols.length == 0)
-        cols = jQuery("table.listing.tickets thead tr th a"); // Trac 0.12.1 support
-    cols.each(function(i,a){
-        var href = jQuery(a)
-        href.parent().text(href.text());
-        href.remove();
-    })
-    
-    // add a "warning" to the page
-    var html = '<div class="system-message" id="message">'
-              +'  This is a special <strong>queue</strong> report.'
-              +'  Drag and drop tickets to their desired position.'
-              +'  Select report arguments to the right.'
-              +'</div>';
-    jQuery('#ctxtnav').after(html);
-    
-    // move report arguments (prefs) up to the message
-    jQuery('#message').append(jQuery('#prefs').parent());
-    
-    //move description to after h1 title
-    jQuery('#content h1:first').after(jQuery('#description'));
-    
-    // remove top pagination (if present)
-    jQuery('h2.report-result').each(function(){
-        var txt = jQuery.trim(jQuery(this).text()).substr(0,9);
-        if (txt == 'Results ('){
-            jQuery(this).remove();
-        }
-    });
-    jQuery('div.paging:first').remove();
-    
-    // do an update
-    update();
-}
+*/
 
 var update = function(){
     // change positions and submit to backend
@@ -113,10 +25,10 @@ var change = function(changes, cells){
             if (op == 'reorder'){
                 var cell = jQuery(this).find('td:first'); // use 1st cell of row
                 var num = i+1;
-                if (${data.max_position} != 0){
-                    num = Math.min(num,${data.max_position});
+                if (max_position != 0){
+                    num = Math.min(num, max_position);
                 }
-                var new_pos = pad(num, ${data.pad_length});
+                var new_pos = pad(num, pad_length);
                 if (!ignore(jQuery.trim(cell.text()), new_pos)){
                     // returned args look like: id5=position1 amp id23=position2
                     var id = cell.siblings('.ticket').text().replace(/[^\d]/g,'');
@@ -124,13 +36,13 @@ var change = function(changes, cells){
                         var field = cell.attr('class').replace(/ /g,'').toLowerCase();
                         changes['id'+id] = field+new_pos;
                         len += 1;
-                        
+
                         // update cell to new position
                         cells.push(cell.text(new_pos));
                     }
                 };
             }
-            
+
             // check for items that were cleared
             if (op == 'clear'){
                 var cell = jQuery(this).find('td:first'); // use 1st cell of row
@@ -138,7 +50,7 @@ var change = function(changes, cells){
                     var id = cell.siblings('.ticket').text().replace(/[^\d]/g,'');
                     changes['id'+id] = cell.attr('class').replace(/ /g,'').toLowerCase(); // empty position
                     len += 1;
-                    
+
                     // clear the cell's position
                     cells.push(cell.text(''));
                 }
@@ -193,7 +105,87 @@ var submit = function(changes,cells){
     });
 }
 
-jQuery(document).ready(function(){
-    setup();
+jQuery(document).ready(function($){
+    $('table.listing.tickets tbody').attr('op', 'reorder');
+
+    // make the table rows sortable (but only if on first page)
+    if ($('div.paging').length == 0 || $('div.paging:last span.current').text() == '1'){
+
+        // add op classes to each group of tickets
+        $('#content').find('h2.report-result').each(function(i){
+            grouped = true;
+            var h2 = $(this);
+            var name = $.trim(h2.text().split('\n')[1]).toLowerCase();
+
+            // determine operation
+            var op = 'reorder';
+            for(var key in groups) {
+                if (name == key){
+                    groups[key] == op;
+                }
+            }
+
+            // find the rows
+            var rows = h2.parents('tbody').next().attr('op', op);
+            if (rows.length == 0)
+                rows = h2.next().children('tbody:first').attr('op', op);
+
+            // add simple collapsibility
+            if (op != 'reorder'){
+                h2.click(function(){
+                    rows.toggle("blind");
+                });
+            }
+        });
+
+        var fixHelper = function(e, ui){
+            ui.children().each(function(){
+                $(this).width($(this).width());
+            });
+            return ui;
+        };
+        $("table.listing.tickets tbody[op!=ignore]").sortable({
+            connectWith: $("table.listing.tickets tbody[op!=ignore]"),
+            helper: fixHelper,
+            update: update,
+            cancel: 'select,option,input' // needed for GridModify in chrome/safari
+        }).disableSelection();
+
+    }
+
+    // disable column sorting (screws up queue ordering)
+    var cols = $("table.listing.tickets tr.trac-columns th a");
+    if (cols.length == 0)
+        cols = $("table.listing.tickets thead tr th a"); // Trac 0.12.1 support
+    cols.each(function(i,a){
+        var href = $(a)
+        href.parent().text(href.text());
+        href.remove();
+    })
+
+    // add a "warning" to the page
+    var html = '<div class="system-message" id="message">'
+              +'  This is a special <strong>queue</strong> report.'
+              +'  Drag and drop tickets to their desired position.'
+              +'  Select report arguments to the right.'
+              +'</div>';
+    $('#ctxtnav').after(html);
+
+    // move report arguments (prefs) up to the message
+    $('#message').append($('#prefs').parent());
+
+    //move description to after h1 title
+    $('#content h1:first').after($('#description'));
+
+    // remove top pagination (if present)
+    $('h2.report-result').each(function(){
+        var txt = $.trim($(this).text()).substr(0,9);
+        if (txt == 'Results ('){
+            $(this).remove();
+        }
+    });
+    $('div.paging:first').remove();
+
+    // do an update
+    update();
 });
-</script>
