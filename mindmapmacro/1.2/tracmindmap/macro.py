@@ -9,7 +9,7 @@ from trac.config       import Option, ListOption, BoolOption
 from trac.db           import Table, Column, DatabaseManager
 from trac.env          import IEnvironmentSetupParticipant
 from trac.mimeview.api import IHTMLPreviewRenderer
-from trac.util         import md5, to_unicode
+from trac.util         import md5, to_unicode, to_utf8
 from trac.web.api      import IRequestFilter, IRequestHandler, RequestDone
 from trac.web.chrome   import Chrome, ITemplateProvider, add_script, add_stylesheet
 from trac.web.href     import Href
@@ -222,7 +222,7 @@ class MindMapMacro(Component):
                 ])))
             except Exception, e:
                 content = tag.html(tag.body(tag.strong("DB Error: " + unicode(e))))
-            html = content.generate().render("xhtml")
+            html = content.generate().render("xhtml").encode('utf-8')
             req.send_response(200)
             req.send_header('Cache-control', 'must-revalidate')
             req.send_header('Content-Type', 'text/html;charset=utf-8')
