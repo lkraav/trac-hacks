@@ -55,6 +55,7 @@ a {
 #elements th a { padding: 1px }
 #elements th, #elements td { padding: 0 }
 
+div.ui-multiselect-menu ul { overflow-x: hidden }
 div.ui-multiselect-menu ul li label div.sorter {
  display: block;
  visibility: hidden;

@@ -1,7 +1,10 @@
 jQuery(document).ready(function($) {
 
 /* variables */
-    var sorterHtml = '<div class="sorter"><span class="up ui-icon ui-icon-arrowthick-1-n">up</span><span class="down ui-icon ui-icon-arrowthick-1-s">down</span></div>';
+    var sorterHtml =
+        '<div class="sorter">' +
+        '<span class="up ui-icon ui-icon-arrowthick-1-n">↑</span>' +
+        '<span class="down ui-icon ui-icon-arrowthick-1-s">↓</span></div>';
     var imagePath = $('#image-area img').attr('src');
     var inputBackup = '';
     var uiOpened = false;
@@ -13,8 +16,8 @@ jQuery(document).ready(function($) {
 /* functions */
     var escape = (function(){
       var map = {"<":"&lt;", ">":"&gt;", "&":"&amp;", "'":"&#39;", "\"":"&quot;"};
-      var replaceStr = function(s){ return map[s]; };
-      return function(str) { return str.replace(/<|>|&|'|"/g, replaceStr); };
+      var repl = function(s){ return map[s]; };
+      return function(str) { return str.replace(/[<>&'"]/g, repl) };
     })();
 
     function restoreDropDown(td, multi, value) {
@@ -50,32 +53,25 @@ jQuery(document).ready(function($) {
         }
     }
 
-    /*
-        multiselectorの横幅を計算する
-        本当はピクセル単位で計算したい所だが、outerWidthが取得できない(0になる)ので、
-        文字数からおおよその値を計算している。
-     */
-    function calcListWidth(td) {
-        var max = 0;
-        $('select + button + div:first ul li label input + span', td).each(function() {
-            var w = $(this).text().length;
-            if (max < w) max = w;
-        });
-        return max + 'em';
-    }
-
     function setupOperations(tr) {
-        restoreDropDown($('td.col-operations', tr), true);
-        $('td.col-operations select', tr).multiselect({'header': false, 'selectedList': 1, 'minWidth': 180, 'close': updateChart});
-        $('td.col-operations select + button + div.ui-multiselect-menu ul li label', tr).prepend(sorterHtml);
-        $('td.col-operations select + button + div:first', tr).css('width', calcListWidth($('td.col-operations', tr)));
+        var td = $('td.col-operations', tr);
+        restoreDropDown(td, true);
+        var select = td.find('select');
+        select.multiselect({
+            header: false, selectedList: 1, minWidth: 180, close: updateChart,
+            appendTo: td, position: {of: td, my: 'left top', at: 'left bottom'}});
+        $('div.ui-multiselect-menu ul li label', td).prepend(sorterHtml);
+        $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
     }
 
     function setupPermissions(tr) {
-        restoreDropDown($('td.col-permissions', tr), true);
-        $('td.col-permissions select', tr).multiselect({'header': false, 'selectedList': 1, 'minWidth': 180});
-        $('td.col-permissions select + button + div:first', tr).css('width', calcListWidth($('td.col-permissions', tr)));
-        var ul = $('td.col-permissions select + button + div ul.ui-multiselect-checkboxes', tr);
+        var td = $('td.col-permissions', tr);
+        restoreDropDown(td, true);
+        $('select', td).multiselect({
+            header: false, selectedList: 1, minWidth: 180, appendTo: td,
+            position: {of: td, my: 'left top', at: 'left bottom'}});
+        $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
+        var ul = $('div.ui-multiselect-menu ul.ui-multiselect-checkboxes', td);
         if ($('li:first input', ul).attr('checked')) {
             $('li input', ul).attr('disabled', 'disabled');
             $('li input:first', ul).attr('disabled', false);
@@ -91,9 +87,13 @@ jQuery(document).ready(function($) {
     }
 
     function setupNextStatus(tr) {
-        restoreDropDown($('td.col-next-status', tr), false, false);
-        $('td.col-next-status select', tr).multiselect({'header': false, 'selectedList': 1, 'multiple': false, 'minWidth': 120, 'close': updateChart});
-        $('td.col-next-status select + button + div:first', tr).css('width', calcListWidth($('td.col-next-status', tr)));
+        var td = $('td.col-next-status', tr);
+        restoreDropDown(td, false, false);
+        $('select', td).multiselect({
+            header: false, selectedList: 1, multiple: false, minWidth: 120,
+            close: updateChart,
+            appendTo: td, position: {of: td, my: 'left top', at: 'left bottom'}});
+        $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
     }
 
     function setupLine(tr) {
@@ -139,18 +139,20 @@ jQuery(document).ready(function($) {
     }
 
     function selectCurrentLine(line) {
-        if ($(line).closest('tr').hasClass('current-line')) {
+        line = $(line);
+        if (line.closest('tr').hasClass('current-line')) {
             $('#elements tbody tr').removeClass('current-line');
             return;
         }
         $('#elements tbody tr').removeClass('current-line');
-        $(line).closest('tr').addClass('current-line');
+        line.closest('tr').addClass('current-line');
         return false;
     }
 
     function swapOperationOrder(obj, idx1, idx2) {
-        var checks = $("input[type='checkbox']", $(obj).closest('ul'));
-        var options = $('option', $(obj).closest('td'));
+        obj = $(obj);
+        var checks = $("input[type='checkbox']", obj.closest('ul'));
+        var options = $('option', obj.closest('td'));
 
         // <select>要素には値が反映されていないので、リフレッシュする前にチェックの値を書き戻す
         // DOM操作ライクな方法で行いたかったが、innerHTMLを操作する方法以外の方法では、selected
@@ -161,17 +163,17 @@ jQuery(document).ready(function($) {
             var selected = $(checks[i]).attr('checked') ? 'selected="selected"' : '';
             html += '<option ' + selected + ' >' + name + '</option>';
         }
-        var sel = $('select', $(obj).closest('td'));
+        var sel = $('select', obj.closest('td'));
         sel.html(html);
         options = $('option', sel);
         var op1 = $(options[idx1]).clone(true);
         var op2 = $(options[idx2]).clone(true);
         $(options[idx2]).replaceWith(op1);
         $(options[idx1]).replaceWith(op2);
-        var td = $(obj).closest('td');
+        var td = obj.closest('td');
         $('select', td).multiselect('refresh');
-        $('select + button + div.ui-multiselect-menu ul li label', td).prepend(sorterHtml);
-        $('div:first', td).css('width', calcListWidth(td));
+        $('div.ui-multiselect-menu ul li label', td).prepend(sorterHtml);
+        $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
     }
 
     function isDirty() {
@@ -732,7 +734,7 @@ jQuery(document).ready(function($) {
 
     // 「処理」列のソート処理
     $('#elements').delegate(
-        '.col-operations select + button + div.ui-multiselect-menu ul li label div span',
+        '.col-operations div.ui-multiselect-menu div.sorter span',
         'click', function()
     {
         var span = $(this);

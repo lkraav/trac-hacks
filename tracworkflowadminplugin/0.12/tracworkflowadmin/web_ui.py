@@ -143,7 +143,7 @@ class TracWorkflowAdminModule(Component):
         self._add_jquery_ui(req)
         add_stylesheet(req, 'tracworkflowadmin/css/jquery.multiselect.css')
         add_script(req, 'tracworkflowadmin/scripts/jquery.json-2.2.js')
-        add_script(req, 'tracworkflowadmin/scripts/jquery.multiselect.js')
+        add_script(req, self._jquery_multiselect)
         add_script(req, 'tracworkflowadmin/scripts/main.js')
         add_script_data(req, {'auto_update_interval': int(self.auto_update_interval)})
         if req.locale and str(req.locale) in self.msgjs_locales:
@@ -161,10 +161,13 @@ class TracWorkflowAdminModule(Component):
     if hasattr(Chrome, 'add_jquery_ui'):
         def _add_jquery_ui(self, req):
             Chrome(self.env).add_jquery_ui(req)
+        _jquery_multiselect = 'tracworkflowadmin/scripts/jquery.multiselect.js'
     else:
         def _add_jquery_ui(self, req):
             add_stylesheet(req, 'tracworkflowadmin/themes/base/jquery-ui.css')
             add_script(req, 'tracworkflowadmin/scripts/jquery-ui.js')
+        _jquery_multiselect = \
+            'tracworkflowadmin/scripts/jquery.multiselect-1.9.js'
 
     def _conf_to_inner_format(self, conf):
         statuses = []
