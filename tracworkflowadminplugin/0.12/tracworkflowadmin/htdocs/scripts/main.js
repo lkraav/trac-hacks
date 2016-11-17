@@ -11,7 +11,9 @@ jQuery(document).ready(function($) {
     var ajaxNow = false;
     var lastUpdateTime = new Date().getTime();
     var lastUpdateText = '';
+    var lastRequestJson = '';
     var backup = '';
+    var formToken = $('#main-form [name="__FORM_TOKEN"]').val();
 
 /* functions */
     var escape = (function(){
@@ -224,7 +226,10 @@ jQuery(document).ready(function($) {
         return out;
     }
 
-    function updateChart() {
+    function updateChart() { return _updateChart(false) }
+    function updateChartForce() { return _updateChart(true) }
+
+    function _updateChart(force) {
         function uiEnabled() {
             $('#chart-update-button').css('display', 'inline');
             $('#chart-update-status').css('display', 'none');
@@ -235,14 +240,18 @@ jQuery(document).ready(function($) {
         }
 
         var jsonstr = $.toJSON(createParams({mode: 'update-chart'}));
+        if (!force && lastRequestJson === jsonstr)
+            return;
         uiDisabled();
         ajaxNow = true;
+        var editor = $('#editor-mode').val();
         $.ajax({
             url      : location.href,
             type     : "POST",
             cache    : false,
             dataType : 'json',
-            data     : {'editor_mode': $('#editor-mode').val(), 'params': jsonstr, '__FORM_TOKEN': $('#main-form [name="__FORM_TOKEN"]').val()},
+            data     : {'editor_mode': editor, 'params': jsonstr,
+                        '__FORM_TOKEN': formToken},
             success  : (
                 function(result) {
                     var msg = $('#tabcontent .system-message');
@@ -271,7 +280,8 @@ jQuery(document).ready(function($) {
                 lastUpdateTime = new Date().getTime();
             }
         });
-        if ($('#editor-mode').val() == 'text') {
+        lastRequestJson = jsonstr;
+        if (editor == 'text') {
             lastUpdateText = $('#text-data').val();
         }
         return false;
@@ -835,12 +845,12 @@ jQuery(document).ready(function($) {
     });
 
     // ダイアグラムの更新
-    $('#chart-update-button').click(updateChart);
+    $('#chart-update-button').click(updateChartForce);
 
     // 画面初期化
     $('#table-wrapper').css('display', 'block'); // IEでは初期化に時間が掛かるので初期化後に表示するようにしている
     if ($('#image-area').size() > 0)
-        updateChart();
+        updateChartForce();
 
     // 開始時のデータを保存しておく
     resetDirtyFlag();
