@@ -2,10 +2,10 @@
 #
 # Copyright (C) 2012 Thomas Doering, falkb
 #
+
 from trac.core import *
-from trac.db import *
+from trac.db import Column, DatabaseManager, Table
 from trac.env import IEnvironmentSetupParticipant
-from trac.db import Table, Column, DatabaseManager
 
 
 # Database schema variables
@@ -20,53 +20,35 @@ tables_v1 = [
 ]
 
 class ComponentHierarchyEnvironmentSetupParticipant(Component):
+
     implements(IEnvironmentSetupParticipant)
 
     def environment_created(self):
         pass
 
     def environment_needs_upgrade(self, db):
-        # Initialise database schema version tracking.
-        cursor = db.cursor()
-        # Get currently installed database schema version
-        db_installed_version = 0
-        try:
-            sqlGetInstalledVersion = "SELECT value FROM system WHERE name = '%s'" % db_version_key
-            cursor.execute(sqlGetInstalledVersion)
-            db_installed_version = int(cursor.fetchone()[0])
-        except:
-            # No version currently, inserting new one.
-            db_installed_version = 0
-            
-        # return boolean for if we need to update or not
-        needsUpgrade = (db_installed_version < db_version)
-        if needsUpgrade:
-            print "ComponentHierarchy database schema version: %s initialized." % db_version
-            print "ComponentHierarchy database schema version: %s installed." % db_installed_version
-            print "ComponentHierarchy database schema is out of date: %s" % needsUpgrade
-        return needsUpgrade
-
+        db_installed_version = self._get_db_version(db)
+        return db_installed_version < db_version
 
     def upgrade_environment(self, db):
-        print "Upgrading ComponentHierarchy database schema"
+        """Create tables."""
         cursor = db.cursor()
+        db_connector = DatabaseManager(self.env)._get_connector()[0]
+        for table in tables_v1:
+            for statement in db_connector.to_sql(table):
+                cursor.execute(statement)
+        cursor.execute("""
+            INSERT INTO system (name,value) VALUES (%s,%s)
+            """, (db_version_key, db_version))
 
-        db_installed_version = 0
+    def _get_db_version(self, db):
+        """Get currently installed database schema version."""
+        version = 0
+        cursor = db.cursor()
         try:
-            sqlGetInstalledVersion = "SELECT value FROM system WHERE name = '%s'" % db_version_key
-            cursor.execute(sqlGetInstalledVersion)
-            db_installed_version = int(cursor.fetchone()[0])
+            cursor.execute("SELECT value FROM system WHERE name=%s",
+                           (db_version_key,))
+            version = int(cursor.fetchone()[0])
         except:
-            print "Upgrading ComponentHierarchy database schema"
-            
-        db_connector, _ = DatabaseManager(self.env)._get_connector()
-
-        if db_installed_version < 1:
-            # Create tables
-            for table in tables_v1:
-                for statement in db_connector.to_sql(table):
-                    cursor.execute(statement)
-                    
-            sqlInsertVersion = "INSERT INTO system (name, value) VALUES ('%s','%s')" % (db_version_key, db_version)
-            cursor.execute(sqlInsertVersion)
-            db_installed_version = 1
+            version = 0
+        return version
