@@ -10,13 +10,18 @@
 from setuptools import setup
 
 setup(name='NavAdd',
-      version='0.3',
+      version='0.4',
       packages=['navadd'],
       author='Michael Renzmann',
       author_email='mrenzmann@otaku42.de',
       license='3-Clause BSD',
-      url='http://trac-hacks.org/wiki/NavAddPlugin',
+      url='https://trac-hacks.org/wiki/NavAddPlugin',
       description='A plugin for adding navigation items into one of the navigation bars.',
       keywords='trac navigation main meta',
-      entry_points={'trac.plugins': ['navadd.navadd = navadd.navadd']}
+      entry_points={'trac.plugins': ['navadd.navadd = navadd.navadd']},
+      package_data = {
+          'navadd': [
+              'htdocs/*.js',
+          ],
+      },
 )
