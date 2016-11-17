@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from trac.core         import *
-from trac.resource     import *
+import hashlib
 
 from genshi.builder    import tag
 from genshi.core       import Markup
 from trac.config       import Option, ListOption, BoolOption
+from trac.core         import *
 from trac.db           import Table, Column, DatabaseManager
 from trac.env          import IEnvironmentSetupParticipant
 from trac.mimeview.api import IHTMLPreviewRenderer
-from trac.util         import md5, to_unicode, to_utf8
+from trac.resource     import *
+from trac.util         import to_unicode
 from trac.web.api      import IRequestFilter, IRequestHandler, RequestDone
-from trac.web.chrome   import Chrome, ITemplateProvider, add_script, add_stylesheet
-from trac.web.href     import Href
+from trac.web.chrome   import Chrome, ITemplateProvider, add_script
 from trac.wiki.api     import IWikiMacroProvider, parse_args
 
 from tracextracturl    import extract_url
@@ -140,7 +140,7 @@ class MindMapMacro(Component):
             url = extract_url (self.env, formatter.context, file, raw=True)
         else: # Long macro
             largs, kwargs = parse_args( args )
-            digest = md5()
+            digest = hashlib.md5()
             digest.update(unicode(content).encode('utf-8'))
             hash = digest.hexdigest()
             if not self._check_cache(hash):
