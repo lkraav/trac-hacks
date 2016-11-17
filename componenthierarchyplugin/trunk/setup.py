@@ -14,7 +14,7 @@ setup(
     author_email='tdoering@baumer.com',
     maintainer = 'falkb',
     license = "BSD 3-Clause",
-    url='http://trac-hacks.org/wiki/ComponentHierarchyPlugin',
+    url='https://trac-hacks.org/wiki/ComponentHierarchyPlugin',
     description='ComponentHierarchy',
     long_description='ComponentHierarchy',
     keywords='ticket component hierarchy',

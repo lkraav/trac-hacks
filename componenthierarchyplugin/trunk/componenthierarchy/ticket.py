@@ -3,25 +3,28 @@
 # Copyright (C) 2012 Thomas Doering, falkb
 #
 
+from pkg_resources import resource_filename
+
 from trac.core import *
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
+from trac.web.chrome import ITemplateProvider, add_script, \
+                            add_script_data, add_stylesheet
 from trac.ticket import model
-from pkg_resources import resource_filename
 
 from componenthierarchy.model import *
 
+
 class ComponentHierarchyTicket(Component):
-    
+
     implements(IRequestFilter, ITemplateProvider)
-    
+
     def __init__(self):
         self._ChModel = ComponentHierarchyModel(self.env)
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-        
+
     def post_process_request(self, req, template, data, content_type):
         if template == 'ticket.html':
             all_components = model.Component.select(self.env)
@@ -36,7 +39,6 @@ class ComponentHierarchyTicket(Component):
             add_script_data(req, component_children)
             add_stylesheet(req, 'componenthierarchy/css/component_hierarchy.css')
             add_script(req, 'componenthierarchy/create_component_hierarchy.js')
-            
 
         return template, data, content_type
 
@@ -44,6 +46,6 @@ class ComponentHierarchyTicket(Component):
 
     def get_htdocs_dirs(self):
         return [('componenthierarchy', resource_filename(__name__, 'htdocs'))]
-            
+
     def get_templates_dirs(self):
         return []

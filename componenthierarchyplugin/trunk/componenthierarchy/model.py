@@ -5,7 +5,6 @@
 
 from trac import __version__ as VERSION
 from trac.core import *
-from trac.ticket import model
 from trac.db import with_transaction
 
 class ComponentHierarchyModel(Component):
@@ -23,11 +22,11 @@ class ComponentHierarchyModel(Component):
         else:
             db = self.env.get_read_db()
         cursor = db.cursor()
-                 
+
         query = "SELECT parent_component FROM component_hierarchy WHERE component='%s'" % component
         cursor.execute(query)
         result = cursor.fetchone()
-        
+
         if result and len(result) > 0:
             return result[0]
         else:
@@ -72,7 +71,7 @@ class ComponentHierarchyModel(Component):
                 cursor = db.cursor()
                 cursor.execute(query1)
                 cursor.execute(query2)
-        
+
     def remove_parent_component(self, component):
         self.set_parent_component(component, None)
 
@@ -91,7 +90,7 @@ class ComponentHierarchyModel(Component):
         else:
             db = self.env.get_read_db()
         cursor = db.cursor()
-                 
+
         query = "SELECT component FROM component_hierarchy WHERE parent_component='%s'" % component
         cursor.execute(query)
 
@@ -100,4 +99,4 @@ class ComponentHierarchyModel(Component):
             result = [row[0] for row in sorted(result)]
 
         return result
-        
+
