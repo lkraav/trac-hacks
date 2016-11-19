@@ -20,6 +20,18 @@ jQuery(document).ready(function($) {
         return $.htmlEscape(text);
     }
 
+    function template_descr(value, descr, term) {
+        var text = $.htmlEscape(value);
+        if (descr && value !== descr)
+            text += $.htmlFormat(
+                '<span class="wikiautocomplete-menu-descr">$1</span>', descr);
+        return text;
+    }
+
+    function template_report(report, term) {
+        return template_descr('{' + report.id + '}', report.title, term);
+    }
+
     var TextareaAdapter = $.fn.textcomplete.Textarea;
     function Adapter(element, completer, option) {
         this.initialize(element, completer, option);
@@ -65,13 +77,17 @@ jQuery(document).ready(function($) {
             cache: true
         },
 
-        { // TracLinks
+        { // TracLinks, InterTrac and InterWiki
             match: /(^|[^[])\[(\w*)$/,
             search: search('linkresolvers'),
             index: 2,
-            template: template,
+            template: function (resolver, term) {
+                var descr = resolver.name !== resolver.title ?
+                            resolver.title : resolver.url;
+                return template_descr(resolver.name, descr, term);
+            },
             replace: function (resolver) {
-                return ['$1[' + escape_newvalue(resolver) + ':', ']'];
+                return ['$1[' + escape_newvalue(resolver.name) + ':', ']'];
             },
             cache: true,
         },
@@ -80,8 +96,8 @@ jQuery(document).ready(function($) {
             match: /((?:^|[^{])#|\bticket:)(\d*)$/,
             search: search('ticket'),
             index: 2,
-            template: function (ticket) {
-                return $.htmlEscape('#' + ticket.id + ' ' + ticket.summary);
+            template: function (ticket, term) {
+                return template_descr('#' + ticket.id, ticket.summary);
             },
             replace: function (ticket) {
                 return '$1' + ticket.id;
@@ -141,9 +157,7 @@ jQuery(document).ready(function($) {
             match: /(^|[^{])\{(\d*)$/,
             search: search('report'),
             index: 2,
-            template: function (report) {
-                return $.htmlEscape('{' + report.id + '} ' + report.title);
-            },
+            template: template_report,
             replace: function (report) {
                 return ['$1{' + report.id, '}'];
             },
@@ -154,9 +168,7 @@ jQuery(document).ready(function($) {
             match: /\breport:(\d*)$/,
             search: search('report'),
             index: 1,
-            template: function (report) {
-                return $.htmlEscape('{' + report.id + '} ' + report.title);
-            },
+            template: template_report,
             replace: function (report) {
                 return 'report:' + report.id;
             },

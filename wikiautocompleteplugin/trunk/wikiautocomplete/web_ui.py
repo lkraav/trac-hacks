@@ -17,6 +17,7 @@ from trac.versioncontrol.api import RepositoryManager
 from trac.web import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data, add_stylesheet, web_context
 from trac.wiki.api import WikiSystem
+from trac.wiki.interwiki import InterWikiMap
 from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 
@@ -99,12 +100,21 @@ class WikiAutoCompleteModule(Component):
             self._send_json(req, completions)
 
     def _suggest_linkresolvers(self, req, term):
-        wiki = WikiSystem(self.env)
-        completions = set(name for provider in wiki.syntax_providers
-                               for name, resolver
-                                   in provider.get_link_resolvers()
-                               if name.startswith(term))
-        return sorted(completions)
+        links = {}
+        links.update((name, (2, name, url, title))
+                     for name, url, title
+                     in InterWikiMap(self.env).interwiki_map.itervalues())
+        links.update((name, (1, name, url, title))
+                     for name, url, title in self._get_intertracs())
+        links.update((name, (0, name, None, None))
+                     for provider in WikiSystem(self.env).syntax_providers
+                     for name, resolver in provider.get_link_resolvers())
+        links = [(order, name, url, title)
+                 for order, name, url, title in links.itervalues()
+                 if name.startswith(term)]
+        links.sort(key=lambda item: (item[0], item[1]))
+        return [{'name': name, 'url': url, 'title': title}
+                for order, name, url, title in links]
 
     def _suggest_ticket(self, req, term):
         args = self._get_num_ranges(term, Ticket.id_is_valid)
@@ -297,6 +307,20 @@ class WikiAutoCompleteModule(Component):
             num *= 10
             mul *= 10
         return ranges
+
+    def _get_intertracs(self):
+        has_trac = False
+        for name, value in self.config.options('intertrac'):
+            if name.endswith('.url'):
+                name = name[:-4]
+                title = self.config.get('intertrac', name + '.title')
+                yield name, value, title
+                if name == 'trac':
+                    has_trac = True
+
+        if not has_trac:
+            yield ('trac', 'http://trac.edgewall.org',
+                   dgettext('messages', 'The Trac Project'))
 
     _builtin_macros = ('html', 'htmlcomment', 'default', 'comment', 'div',
                        'rtl', 'span', 'Span', 'td', 'th', 'tr', 'table')
