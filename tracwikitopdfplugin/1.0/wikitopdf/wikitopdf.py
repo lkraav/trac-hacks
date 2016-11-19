@@ -50,7 +50,7 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
     for r in EXCLUDE_RES:
         text = r.sub('', text)
 
-    env.log.debug('WikiToPdf => Wiki intput for WikiToPdf: %r', text)
+    env.log.debug('WikiToPdf => Wiki input for WikiToPdf: %r', text)
 
     context = Context.from_request(req, resource='wiki', id=req.args.get('page', 'False'))
     page = format_to_html(env, context, text)
@@ -98,7 +98,7 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
                 theimg = theimg.replace(" ","%20")
                 urlretrieve(theimg, newimg)
                 IMG_CACHE[theimg] = newimg
-                env.log.debug("ISLAM the image is %s new image is %s", theimg, newimg)
+                env.log.debug("The image is %s new image is %s", theimg, newimg)
                 imgcounter += 1
                 page = page[:addrpos+5] + newimg + page[addrpos+5+thepos:]
                 simgpos = page.find('<img', addrpos)
