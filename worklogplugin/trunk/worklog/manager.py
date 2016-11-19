@@ -77,17 +77,6 @@ class WorkLogManager:
     def save_ticket(self, tkt, msg):
         now_dt = to_datetime(self.now)
         tkt.save_changes(self.authname, msg, now_dt)
-        ## Often the time overlaps and causes a db error,
-        ## especially when the trac integration post-commit hook is used.
-        ## NOTE TO SELF. I DON'T THINK THIS IS NECESSARY RIGHT NOW...
-        #count = 0
-        #while count < 10:
-        #    try:
-        #        tckt.save_changes(self.authname, msg, self.now, cnum=cnum+1)
-        #        count = 42
-        #    except Exception, e:
-        #        self.now += 1
-        #        count += 1
 
         tn = TicketNotifyEmail(self.env)
         tn.notify(tkt, newticket=0, modtime=now_dt)
@@ -137,13 +126,10 @@ class WorkLogManager:
             self.stop_work(comment='Stopping work on this ticket to start work on #%s.' % ticket)
             self.explanation = ''
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
+        self.env.db_transaction("""
             INSERT INTO work_log (worker, ticket, lastchange, starttime, endtime)
             VALUES (%s, %s, %s, %s, %s)
             """, (self.authname, ticket, self.now, self.now, 0))
-        db.commit()
 
         return True
 
@@ -165,13 +151,11 @@ class WorkLogManager:
 
         stoptime = float(stoptime)
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute('UPDATE work_log '
-                       'SET endtime=%s, lastchange=%s, comment=%s '
-                       'WHERE worker=%s AND lastchange=%s AND endtime=0',
-                       (stoptime, stoptime, comment, self.authname, active['lastchange']))
-        db.commit()
+        self.env.db_transaction("""
+                UPDATE work_log SET endtime=%s, lastchange=%s, comment=%s
+                WHERE worker=%s AND lastchange=%s AND endtime=0
+                """, (stoptime, stoptime, comment, self.authname,
+                      active['lastchange']))
 
         plugtne = self.config.getbool('worklog', 'timingandestimation') and self.config.get('ticket-custom', 'hours')
         plughrs = self.config.getbool('worklog', 'trachoursplugin') and self.config.get('ticket-custom', 'totalhours')
@@ -224,15 +208,13 @@ class WorkLogManager:
         return True
 
     def who_is_working_on(self, ticket):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute('SELECT worker,starttime FROM work_log WHERE ticket=%s AND endtime=0', (ticket,))
-        try:
-            who, since = cursor.fetchone()
+        for who, since in self.env.db_query("""
+                SELECT worker,starttime FROM work_log
+                WHERE ticket=%s AND endtime=0
+                """, (ticket,)):
             return who, float(since)
-        except:
-            pass
-        return None, None
+        else:
+            return None, None
 
     def who_last_worked_on(self, ticket):
         return "Not implemented"
@@ -241,33 +223,29 @@ class WorkLogManager:
         if self.authname == 'anonymous':
             return None
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute('SELECT MAX(lastchange) FROM work_log WHERE worker=%s', (self.authname,))
-        row = cursor.fetchone()
-        if not row or not row[0]:
+        lastchange = None
+        for lastchange, in self.env.db_query("""
+                SELECT MAX(lastchange) FROM work_log WHERE worker=%s
+                """, (self.authname,)):
+            break
+        else:
             return None
 
-        lastchange = row[0]
-
         task = {}
-        cursor.execute('SELECT wl.worker, wl.ticket, t.summary, wl.lastchange, wl.starttime, wl.endtime, wl.comment '
-                       'FROM work_log wl '
-                       'LEFT JOIN ticket t ON wl.ticket=t.id '
-                       'WHERE wl.worker=%s AND wl.lastchange=%s',
-                       (self.authname, lastchange))
-
-        for user, ticket, summary, lastchange, starttime, endtime, comment in cursor:
-            if not comment:
-                comment = ''
-
-            task['user'] = user
-            task['ticket'] = ticket
-            task['summary'] = summary
-            task['lastchange'] = float(lastchange)
-            task['starttime'] = float(starttime)
-            task['endtime'] = float(endtime)
-            task['comment'] = comment
+        for row in self.env.db_query("""
+                SELECT wl.worker, wl.ticket, t.summary, wl.lastchange,
+                       wl.starttime, wl.endtime, wl.comment
+                FROM work_log wl
+                LEFT JOIN ticket t ON wl.ticket=t.id
+                WHERE wl.worker=%s AND wl.lastchange=%s
+                """, (self.authname, lastchange)):
+            task['user'] = row[0]
+            task['ticket'] = row[1]
+            task['summary'] = row[2]
+            task['lastchange'] = float(row[3])
+            task['starttime'] = float(row[4])
+            task['endtime'] = float(row[5])
+            task['comment'] = row[6] or ''
         return task
 
     def get_active_task(self):
@@ -283,31 +261,46 @@ class WorkLogManager:
         return task
 
     def get_work_log(self, mode='all'):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
+        args = ()
         if mode == 'user':
-            cursor.execute('SELECT wl.worker, s.value, wl.starttime, wl.endtime, wl.ticket, t.summary, t.status, wl.comment '
-                           'FROM work_log wl '
-                           'INNER JOIN ticket t ON wl.ticket=t.id '
-                           'LEFT JOIN session_attribute s ON wl.worker=s.sid AND s.name=\'name\' '
-                           'WHERE wl.worker=%s '
-                           'ORDER BY wl.lastchange DESC', (self.authname,))
+            sql = """
+                SELECT wl.worker, s.value, wl.starttime, wl.endtime,
+                       wl.ticket, t.summary, t.status, wl.comment
+                FROM work_log wl
+                INNER JOIN ticket t ON wl.ticket=t.id
+                LEFT JOIN session_attribute s
+                 ON wl.worker=s.sid AND s.name='name'
+                WHERE wl.worker=%s
+                ORDER BY wl.lastchange DESC
+                """
+            args = (self.authname,)
         elif mode == 'summary':
-            cursor.execute('SELECT wl.worker, s.value, wl.starttime, wl.endtime, wl.ticket, t.summary, t.status, wl.comment '
-                           'FROM (SELECT worker,MAX(lastchange) AS lastchange FROM work_log GROUP BY worker) wlt '
-                           'INNER JOIN work_log wl ON wlt.worker=wl.worker AND wlt.lastchange=wl.lastchange '
-                           'INNER JOIN ticket t ON wl.ticket=t.id '
-                           'LEFT JOIN session_attribute s ON wl.worker=s.sid AND s.name=\'name\' '
-                           'ORDER BY wl.lastchange DESC, wl.worker')
+            sql = """
+                SELECT wl.worker, s.value, wl.starttime, wl.endtime,
+                       wl.ticket, t.summary, t.status, wl.comment
+                FROM (SELECT worker,MAX(lastchange) AS lastchange
+                      FROM work_log GROUP BY worker) wlt
+                INNER JOIN work_log wl ON wlt.worker=wl.worker
+                 AND wlt.lastchange=wl.lastchange
+                INNER JOIN ticket t ON wl.ticket=t.id
+                LEFT JOIN session_attribute s
+                 ON wl.worker=s.sid AND s.name='name'
+                ORDER BY wl.lastchange DESC, wl.worker
+                """
         else:
-            cursor.execute('SELECT wl.worker, s.value, wl.starttime, wl.endtime, wl.ticket, t.summary, t.status, wl.comment '
-                           'FROM work_log wl '
-                           'INNER JOIN ticket t ON wl.ticket=t.id '
-                           'LEFT JOIN session_attribute s ON wl.worker=s.sid AND s.name=\'name\' '
-                           'ORDER BY wl.lastchange DESC, wl.worker')
+            sql = """
+                SELECT wl.worker, s.value, wl.starttime, wl.endtime,
+                       wl.ticket, t.summary, t.status, wl.comment
+                FROM work_log wl
+                INNER JOIN ticket t ON wl.ticket=t.id
+                LEFT JOIN session_attribute s
+                 ON wl.worker=s.sid AND s.name='name'
+                ORDER BY wl.lastchange DESC, wl.worker
+                """
 
         rv = []
-        for user, name, starttime, endtime, ticket, summary, status, comment in cursor:
+        for (user, name, starttime, endtime, ticket, summary, status,
+             comment) in self.env.db_query(sql, args):
             starttime = float(starttime)
             endtime = float(endtime)
 

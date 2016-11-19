@@ -29,7 +29,7 @@ setup(
     description='Plugin to track tickets users are working',
     keywords='trac plugin ticket working',
     version=version,
-    url='http://trac-hacks.org/wiki/WorklogPlugin',
+    url='https://trac-hacks.org/wiki/WorklogPlugin',
     license='http://www.opensource.org/licenses/mit-license.php',
     author='Colin Guthrie',
     author_email='trac@colin.guthr.ie',

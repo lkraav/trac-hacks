@@ -41,26 +41,24 @@ class WorklogTimelineEventProvider(Component):
             ts_stop = to_timestamp(stop)
 
             ticket_realm = Resource('ticket')
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
 
-            cursor.execute("""SELECT wl.worker,wl.ticket,wl.time,wl.starttime,wl.comment,wl.kind,t.summary,t.status,t.resolution,t.type
-                             FROM (
-
-                             SELECT worker, ticket, starttime AS time, starttime, comment, 'start' AS kind
-                             FROM work_log
-
-                             UNION
-
-                             SELECT worker, ticket, endtime AS time, starttime, comment, 'stop' AS kind
-                             FROM work_log
-
-                             ) AS wl
-                             INNER JOIN ticket t ON t.id = wl.ticket
-                                 AND wl.time>=%s AND wl.time<=%s
-                           ORDER BY wl.time"""
-                           % (ts_start, ts_stop))
-            for worker, tid, ts, ts_start, comment, kind, summary, status, resolution, type in cursor:
+            for (worker, tid, ts, ts_start, comment, kind, summary, status,
+                 resolution, type) in self.env.db_query("""
+                        SELECT wl.worker,wl.ticket,wl.time,wl.starttime,
+                               wl.comment,wl.kind,t.summary,t.status,
+                               t.resolution,t.type
+                        FROM (
+                         SELECT worker, ticket, starttime
+                          AS time, starttime, comment, 'start' AS kind
+                         FROM work_log
+                         UNION
+                         SELECT worker,ticket,endtime AS time,starttime,
+                                comment,'stop' AS kind
+                         FROM work_log) AS wl
+                         INNER JOIN ticket t ON t.id = wl.ticket
+                          AND wl.time>=%s AND wl.time<=%s
+                         ORDER BY wl.time
+                    """, (ts_start, ts_stop)):
                 ticket = ticket_realm(id=tid)
                 time = datetime.fromtimestamp(ts, utc)
                 started = None

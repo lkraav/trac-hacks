@@ -10,6 +10,7 @@
 from datetime import datetime
 
 from trac.core import *
+from trac.db import Column, DatabaseManager, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.util.datefmt import to_utimestamp, utc
 
@@ -19,161 +20,128 @@ try:
 except:
     pass
 
+schema = [
+    Table('work_log')[
+        Column('worker'),
+        Column('comment'),
+        Column('ticket', type='int'),
+        Column('lastchange', type='int'),
+        Column('starttime', type='int'),
+        Column('endtime', type='int'),
+    ]
+]
+
 
 class WorkLogSetupParticipant(Component):
     implements(IEnvironmentSetupParticipant)
 
-    db_version_key = None
-    db_version = None
+    db_version_key = 'WorklogPlugin_Db_Version'
+    db_version = 3
     db_installed_version = None
 
     def __init__(self):
-        self.db_version_key = 'WorklogPlugin_Db_Version'
-        self.db_version = 3
-        self.db_installed_version = None
+        self.db_installed_version = self._get_db_version()
 
-        # Initialise database schema version tracking.
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("SELECT value FROM system WHERE name=%s",
-                       (self.db_version_key,))
-        try:
-            self.db_installed_version = int(cursor.fetchone()[0])
-        except:
-            self.db_installed_version = 0
-            try:
-                cursor.execute(
-                    "INSERT INTO system (name,value) VALUES(%s,%s)",
-                    (self.db_version_key, self.db_installed_version))
-                db.commit()
-            except Exception, e:
-                db.rollback()
-                raise e
+    # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        @self.env.with_transaction()
-        def tx(db):
+        with self.env.db_transaction as db:
             self.upgrade_environment(db)
 
-    def system_needs_upgrade(self):
+    def environment_needs_upgrade(self, db):
+        return self._system_needs_upgrade() or self._needs_user_man()
+
+    def upgrade_environment(self, db):
+        print "Worklog needs an upgrade"
+        with self.env.db_transaction:
+            if self._system_needs_upgrade():
+                print " * Upgrading Database"
+                self._do_db_upgrade(db)
+            if self._needs_user_man():
+                print " * Upgrading usermanual"
+                self._do_user_man_update()
+            print "Done upgrading Worklog"
+
+    # Internal methods
+
+    def _system_needs_upgrade(self):
         return self.db_installed_version < self.db_version
 
-    def do_db_upgrade(self, db):
-        # Legacy support hack (supports upgrades from revisions <= r2495)
-        if self.db_installed_version == 0:
-            try:
-
-                db = self.env.get_db_cnx()
-                cursor = db.cursor()
-                cursor.execute('SELECT * FROM work_log LIMIT 1')
-                # We've succeeded so we actually have version 1
-                self.db_installed_version = 1
-            except:
-                db.rollback()
-                self.db_installed_version = 0
-        # End Legacy support hack
-
-        # Do the staged updates
-        cursor = db.cursor()
-        try:
-            # This var is to deal with a problem case with pgsql and the "user"
-            # keyword. We need to skip over new installations but not upgrades
-            # for other db backends.
+    def _do_db_upgrade(self, db):
+        with self.env.db_transaction as db:
             skip = False
-
             if self.db_installed_version < 1:
                 print 'Creating work_log table'
-                cursor.execute('CREATE TABLE work_log ('
-                               'worker     TEXT,'
-                               'ticket     INTEGER,'
-                               'lastchange INTEGER,'
-                               'starttime  INTEGER,'
-                               'endtime    INTEGER'
-                               ')')
+                self._create_tables(schema)
                 skip = True
 
             if self.db_installed_version < 2:
-                print 'Updating work_log table (v2)'
-                cursor.execute('ALTER TABLE work_log '
-                               'ADD COLUMN comment TEXT')
+                if not skip:
+                    print 'Updating work_log table (v2)'
+                    db("ALTER TABLE work_log ADD COLUMN comment TEXT")
 
             if self.db_installed_version < 3:
-                print 'Updating work_log table (v3)'
                 if not skip:
-                    # This whole section is just to rename the "user" column
-                    # to "worker". This column used to be created in step 1
-                    # above, but we can no longer do this in order to support
-                    # pgsql. This step is skipped if step 1 was also run
-                    # (e.g. new installs). The below seems to be the only way
-                    # to rename (or drop) a column on sqlite *sigh*
-                    cursor.execute('CREATE TABLE work_log_tmp ('
-                                   'worker     TEXT,'
-                                   'ticket     INTEGER,'
-                                   'lastchange INTEGER,'
-                                   'starttime  INTEGER,'
-                                   'endtime    INTEGER,'
-                                   'comment    TEXT'
-                                   ')')
-                    cursor.execute("""
+                    print 'Updating work_log table (v3)'
+                    # Rename 'user' column to 'worker', to support psql
+                    db("""
+                        CREATE TABLE work_log_tmp
+                         (worker TEXT, comment TEXT, ticket INTEGER,
+                          lastchange INTEGER, starttime INTEGER,
+                          endtime INTEGER)
+                        """)
+                    db("""
                         INSERT INTO work_log_tmp
-                          (worker,ticket,lastchange,starttime,endtime,comment)
-                        SELECT user,ticket,lastchange,starttime,endtime,comment
+                          (worker,comment,ticket,lastchange,starttime,
+                           endtime,comment)
+                        SELECT user,comment, ticket,lastchange,starttime,
+                               endtime,comment
                         FROM work_log
                         """)
-                    cursor.execute('DROP TABLE work_log')
-                    cursor.execute("""
-                        ALTER TABLE work_log_tmp RENAME TO work_log
-                        """)
+                    db("DROP TABLE work_log")
+                    db("ALTER TABLE work_log_tmp RENAME TO work_log")
 
-            # Updates complete, set the version
-            cursor.execute("UPDATE system SET value=%s WHERE name=%s",
-                           (self.db_version, self.db_version_key))
-            db.commit()
-        except Exception, e:
-            self.log.error("WorklogPlugin Exception: %s" % (e,))
-            db.rollback()
-            raise e
+            db("UPDATE system SET value=%s WHERE name=%s",
+                (self.db_version, self.db_version_key))
 
-    def needs_user_man(self):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                'SELECT MAX(version) FROM wiki WHERE name=%s',
-                (user_manual_wiki_title,))
-            maxversion = int(cursor.fetchone()[0])
-        except:
-            db.rollback()
+    def _needs_user_man(self):
+        for maxversion, in self.env.db_transaction("""
+                SELECT MAX(version) FROM wiki WHERE name=%s
+                """, (user_manual_wiki_title,)):
+            maxversion = int(maxversion) if maxversion else 0
+            break
+        else:
             maxversion = 0
 
         return maxversion < user_manual_version
 
-    def do_user_man_update(self, db):
-        cursor = db.cursor()
-        try:
-            when = to_utimestamp(datetime.now(utc))
-            cursor.execute("""
+    def _do_user_man_update(self):
+        when = to_utimestamp(datetime.now(utc))
+        self.env.db_transaction("""
                 INSERT INTO wiki
                   (name,version,time,author,ipnr,text,comment,readonly)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (user_manual_wiki_title, user_manual_version,
                       when, 'WorkLog Plugin', '127.0.0.1',
                       user_manual_content, '', 0))
-            db.commit()
-        except Exception, e:
-            db.rollback()
-            self.log.error("WorklogPlugin Exception: %s" % (e,))
 
-    def environment_needs_upgrade(self, db):
-        return (self.system_needs_upgrade()
-                or self.needs_user_man())
+    def _get_db_version(self):
+        with self.env.db_transaction as db:
+            for version, in db("""
+                    SELECT value FROM system WHERE name=%s
+                    """, (self.db_version_key,)):
+                version = int(version)
+                break
+            else:
+                version = 0
+                db("""
+                    INSERT INTO system (name,value) VALUES(%s,%s)
+                    """, (self.db_version_key, version))
+        return version
 
-    def upgrade_environment(self, db):
-        print "Worklog needs an upgrade"
-        if self.system_needs_upgrade():
-            print " * Upgrading Database"
-            self.do_db_upgrade(db)
-        if self.needs_user_man():
-            print " * Upgrading usermanual"
-            self.do_user_man_update(db)
-        print "Done upgrading Worklog"
+    def _create_tables(self, schema):
+        connector = DatabaseManager(self.env).get_connector()[0]
+        with self.env.db_transaction as db:
+            for table in schema:
+                for sql in connector.to_sql(table):
+                    db(sql)
