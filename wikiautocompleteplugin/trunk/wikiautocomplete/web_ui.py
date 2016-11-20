@@ -8,7 +8,6 @@ import re
 from trac.core import Component, TracError, implements
 from trac.attachment import Attachment
 from trac.mimeview.api import Mimeview
-from trac.resource import Resource
 from trac.ticket.model import Ticket
 from trac.util import lazy
 from trac.util.text import to_unicode
@@ -73,25 +72,25 @@ class WikiAutoCompleteModule(Component):
 
     def process_request(self, req):
         strategy = req.args.get('strategy')
-        term = req.args.get('q')
+        term = req.args.get('q', '')
         if strategy == 'linkresolvers':
-            completions = self._suggest_linkresolvers(req, term)
+            completions = self._suggest_linkresolvers(req)
         elif strategy == 'ticket':
             completions = self._suggest_ticket(req, term)
         elif strategy == 'wikipage':
-            completions = self._suggest_wikipage(req, term)
+            completions = self._suggest_wikipage(req)
         elif strategy == 'attachment':
             completions = self._suggest_attachment(req, term)
         elif strategy == 'macro':
-            completions = self._suggest_macro(req, term)
+            completions = self._suggest_macro(req)
         elif strategy == 'processor':
-            completions = self._suggest_processor(req, term)
+            completions = self._suggest_processor(req)
         elif strategy == 'source':
             completions = self._suggest_source(req, term)
         elif strategy == 'milestone':
-            completions = self._suggest_milestone(req, term)
+            completions = self._suggest_milestone(req)
         elif strategy == 'report':
-            completions = self._suggest_report(req, term)
+            completions = self._suggest_report(req)
         else:
             completions = None
         if completions is None:
@@ -99,7 +98,7 @@ class WikiAutoCompleteModule(Component):
         else:
             self._send_json(req, completions)
 
-    def _suggest_linkresolvers(self, req, term):
+    def _suggest_linkresolvers(self, req):
         links = {}
         links.update((name, (2, name, url, title))
                      for name, url, title
@@ -109,12 +108,10 @@ class WikiAutoCompleteModule(Component):
         links.update((name, (0, name, None, None))
                      for provider in WikiSystem(self.env).syntax_providers
                      for name, resolver in provider.get_link_resolvers())
-        links = [(order, name, url, title)
-                 for order, name, url, title in links.itervalues()
-                 if name.startswith(term)]
-        links.sort(key=lambda item: (item[0], item[1]))
         return [{'name': name, 'url': url, 'title': title}
-                for order, name, url, title in links]
+                for order, name, url, title
+                in sorted(links.itervalues(),
+                          key=lambda item: (item[0], item[1]))]
 
     def _suggest_ticket(self, req, term):
         args = self._get_num_ranges(term, Ticket.id_is_valid)
@@ -133,10 +130,9 @@ class WikiAutoCompleteModule(Component):
         return [{'id': row[0], 'summary': row[1]}
                 for row in rows if 'TICKET_VIEW' in req.perm('ticket', row[0])]
 
-    def _suggest_wikipage(self, req, term):
+    def _suggest_wikipage(self, req):
         return sorted(page for page in WikiSystem(self.env).pages
-                           if page.startswith(term) and
-                              'WIKI_VIEW' in req.perm('wiki', page))
+                           if 'WIKI_VIEW' in req.perm('wiki', page))
 
     def _suggest_attachment(self, req, term):
         tokens = term.split(':', 2)
@@ -173,47 +169,40 @@ class WikiAutoCompleteModule(Component):
                 completions.extend(filenames)
         return completions
 
-    def _suggest_macro(self, req, term):
+    def _suggest_macro(self, req):
         context = web_context(req)
-        macros = self._get_macros(term)
-        if len(macros) == 1:
-            for name, descr in macros.iteritems():
-                descr = self._format_to_html(context, descr)
-                return [{'name': name, 'description': descr}]
-        else:
-            completions = []
-            for name, descr in macros.iteritems():
-                descr = self._format_to_oneliner(context, descr, shorten=True)
-                completions.append({'name': name, 'description': descr})
-            return sorted(completions, key=lambda entry: entry['name'])
+        completions = []
+        for name, descr in self._get_macros().iteritems():
+            descr = {
+                'html': self._format_to_html(context, descr),
+                'oneliner':
+                    self._format_to_oneliner(context, descr, shorten=True),
+            }
+            completions.append({'type': 'macro', 'name': name,
+                                'description': descr})
+        return sorted(completions, key=lambda entry: entry['name'])
 
-    def _suggest_processor(self, req, term):
+    def _suggest_processor(self, req):
         context = web_context(req)
-        macros = self._get_macros(term)
+        macros = self._get_macros()
         mimetypes = set()
         for name, mimetype in Mimeview(self.env).mime_map.iteritems():
-            if name not in macros and name.startswith(term):
+            if name not in macros:
                 mimetypes.add(name)
-            if mimetype.startswith(term):
-                mimetypes.add(mimetype)
+            mimetypes.add(mimetype)
 
-        n = len(macros) + len(mimetypes)
-        if n != 1:
-            completions = []
-            for name, descr in macros.iteritems():
-                descr = self._format_to_oneliner(context, descr, shorten=True)
-                completions.append({'type': 'macro', 'name': name,
-                                    'description': descr})
-            completions.extend({'type': 'mimetype', 'name': mimetype}
-                               for mimetype in mimetypes)
-            return sorted(completions, key=lambda item: item['name'])
-        elif macros:
-            for name, descr in macros.iteritems():
-                return [{'type': 'macro', 'name': name,
-                         'description': self._format_to_html(context, descr)}]
-        else:
-            for mimetype in mimetypes:
-                return [{'type': 'mimetype', 'name': mimetype}]
+        completions = []
+        for name, descr in macros.iteritems():
+            descr = {
+                'html': self._format_to_html(context, descr),
+                'oneliner':
+                    self._format_to_oneliner(context, descr, shorten=True),
+            }
+            completions.append({'type': 'macro', 'name': name,
+                                'description': descr})
+        completions.extend({'type': 'mimetype', 'name': mimetype}
+                           for mimetype in mimetypes)
+        return sorted(completions, key=lambda item: item['name'])
 
     def _suggest_source(self, req, term):
 
@@ -268,30 +257,16 @@ class WikiAutoCompleteModule(Component):
                         if n.name.startswith(filename) and n.can_view(req.perm))
         return completions
 
-    def _suggest_milestone(self, req, term):
-        with self.env.db_query as db:
-            if hasattr(db, 'prefix_match'):
-                rows = db("""
-                    SELECT name FROM milestone WHERE name %s ORDER BY name
-                    """ % db.prefix_match(),
-                    (db.prefix_match_value(term),))
-                names = [row[0] for row in rows]
-            else:
-                names = [row[0] for row in db(
-                    "SELECT name FROM milestone ORDER BY name")]
-                names = [name for name in names if name.startswith(term)]
-            return [name for name in names
-                         if 'MILESTONE_VIEW' in req.perm('milestone', name)]
+    def _suggest_milestone(self, req):
+        names = [row[0] for row in self.env.db_query(
+                                "SELECT name FROM milestone ORDER BY name")]
+        return [name for name in names
+                     if 'MILESTONE_VIEW' in req.perm('milestone', name)]
 
-    def _suggest_report(self, req, term):
-        args = self._get_num_ranges(term, lambda id: 1 <= id <= 0x7fffffff)
-        if args:
-            query = 'SELECT id, title FROM report WHERE %s ORDER BY id' % \
-                    ' OR '.join(['id>=%s AND id<%s'] * (len(args) / 2))
-        else:
-            query = 'SELECT id, title FROM report ORDER BY id'
+    def _suggest_report(self, req):
         return [{'id': id, 'title': title}
-                for id, title in self.env.db_query(query, args)
+                for id, title in self.env.db_query(
+                                    "SELECT id, title FROM report ORDER BY id")
                 if 'REPORT_VIEW' in req.perm('report', id)]
 
     def _get_num_ranges(self, term, validate):
@@ -335,13 +310,12 @@ class WikiAutoCompleteModule(Component):
                       if name not in macros)
         return macros
 
-    def _get_macros(self, term):
+    def _get_macros(self):
         macros = {}
         for name, descr in self._known_macros.iteritems():
-            if name.startswith(term):
-                if isinstance(descr, (tuple, list)):
-                    descr = dgettext(descr[0], to_unicode(descr[1]))
-                macros[name] = descr
+            if isinstance(descr, (tuple, list)):
+                descr = dgettext(descr[0], to_unicode(descr[1]))
+            macros[name] = descr
         return macros
 
     def _format_to_html(self, context, wikidom, **options):

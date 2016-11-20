@@ -1,4 +1,6 @@
 jQuery(document).ready(function($) {
+    var cache = {};
+
     function escape_newvalue(value) {
         return value.replace(/\$/g, '$$$$');
     }
@@ -14,6 +16,66 @@ jQuery(document).ready(function($) {
                 .done(function (resp) { callback(resp); })
                 .fail(function () { callback([]); });
         };
+    }
+
+    function search_cache(strategy, match) {
+        return function(term, callback) {
+            function invoke_callback(resp) {
+                callback($.grep(resp, function(item) {
+                    return match(item, term);
+                }));
+            }
+            if (cache[strategy] !== undefined) {
+                invoke_callback(cache[strategy]);
+                return;
+            }
+            $.getJSON(wikiautocomplete.url + '/' + strategy)
+                .done(function(resp) {
+                    cache[strategy] = resp;
+                    invoke_callback(resp);
+                })
+                .fail(function() { callback([]) });
+        };
+    }
+
+    function search_macro(strategy) {
+        return function(term, callback) {
+            function invoke_callback(resp) {
+                var resp = $.grep(resp, function(item) {
+                    return item.name.startsWith(term);
+                });
+                var key = resp.length === 1 ? 'html' : 'oneliner';
+                callback($.map(resp, function(item) {
+                    switch (item.type) {
+                    case 'mimetype':
+                        return {type: item.type, name: item.name};
+                    case 'macro':
+                        return {type: item.type, name: item.name,
+                                description: item.description[key],
+                                description_type: key};
+                    }
+                }));
+            }
+            if (cache[strategy] !== undefined) {
+                invoke_callback(cache[strategy]);
+            }
+            else {
+                $.getJSON(wikiautocomplete.url + '/' + strategy)
+                    .done(function(resp) {
+                        cache[strategy] = resp;
+                        invoke_callback(resp);
+                    })
+                    .fail(function() { callback([]) });
+            }
+        };
+    }
+
+    function match_string(string, term) {
+        return string.startsWith(term);
+    }
+
+    function match_report(report, term) {
+        return report.id.toString().startsWith(term);
     }
 
     function template(text, term) {
@@ -61,15 +123,19 @@ jQuery(document).ready(function($) {
 
         { // Processors
             match: /^(\s*\{{3}#!)(.*)(?!\n)$/m,
-            search: search('processor'),
+            search: search_macro('processor'),
             index: 2,
             template: function (processor) {
-                switch (processor.type) {
-                case 'macro':
-                    return processor.name + ' ' + processor.description;
-                case 'mimetype':
-                    return $.htmlEscape(processor.name);
-                }
+                var name = $.htmlEscape(processor.name);
+                var descr = processor.description;
+                if (processor.type === 'mimetype')
+                    return name;
+                if (!descr)
+                    return name;
+                var f =
+                    processor.description_type === 'html' ? '$1<div>$2</div>' :
+                    '$1<span class="wikiautocomplete-menu-descr">$2</span>';
+                return $.format(f, name, descr);
             },
             replace: function (processor) {
                 return '$1' + escape_newvalue(processor.name);
@@ -79,7 +145,9 @@ jQuery(document).ready(function($) {
 
         { // TracLinks, InterTrac and InterWiki
             match: /(^|[^[])\[(\w*)$/,
-            search: search('linkresolvers'),
+            search: search_cache('linkresolvers', function(resolver, term) {
+                return resolver.name.startsWith(term);
+            }),
             index: 2,
             template: function (resolver, term) {
                 var descr = resolver.name !== resolver.title ?
@@ -107,7 +175,7 @@ jQuery(document).ready(function($) {
 
         { // Wiki pages
             match: /\bwiki:(\S*)$/,
-            search: search('wikipage'),
+            search: search_cache('wikipage', match_string),
             index: 1,
             template: template,
             replace: function (wikipage) {
@@ -118,10 +186,17 @@ jQuery(document).ready(function($) {
 
         { // Macros
             match: /\[\[(\w*)(?:\(([^)]*))?$/,
-            search: search('macro'),
+            search: search_macro('macro'),
             index: 1,
             template: function (macro) {
-                return macro.name + ' ' + macro.description;
+                var name = $.htmlEscape(macro.name);
+                var descr = macro.description;
+                if (!descr)
+                    return name;
+                var f =
+                    macro.description_type === 'html' ? '$1<div>$2</div>' :
+                    '$1<span class="wikiautocomplete-menu-descr">$2</span>';
+                return $.format(f, name, descr);
             },
             replace: function (macro) {
                 return ['[[' + macro.name + '($2',')]]'];
@@ -142,7 +217,7 @@ jQuery(document).ready(function($) {
 
         { // Milestone
             match: /\bmilestone:(\S*)$/,
-            search: search('milestone'),
+            search: search_cache('milestone', match_string),
             index: 1,
             template: template,
             replace: function (name) {
@@ -155,7 +230,7 @@ jQuery(document).ready(function($) {
 
         { // Report - {\d+}
             match: /(^|[^{])\{(\d*)$/,
-            search: search('report'),
+            search: search_cache('report', match_report),
             index: 2,
             template: template_report,
             replace: function (report) {
@@ -166,7 +241,7 @@ jQuery(document).ready(function($) {
 
         { // Report - report:\d+
             match: /\breport:(\d*)$/,
-            search: search('report'),
+            search: search_cache('report', match_report),
             index: 1,
             template: template_report,
             replace: function (report) {
