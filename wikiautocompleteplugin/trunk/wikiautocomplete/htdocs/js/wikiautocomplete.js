@@ -42,7 +42,7 @@ jQuery(document).ready(function($) {
         return function(term, callback) {
             function invoke_callback(resp) {
                 var resp = $.grep(resp, function(item) {
-                    return item.name.startsWith(term);
+                    return match_string(item.name, term);
                 });
                 var key = resp.length === 1 ? 'html' : 'oneliner';
                 callback($.map(resp, function(item) {
@@ -71,11 +71,11 @@ jQuery(document).ready(function($) {
     }
 
     function match_string(string, term) {
-        return string.startsWith(term);
+        return string.substr(0, term.length) === term;
     }
 
     function match_report(report, term) {
-        return report.id.toString().startsWith(term);
+        return match_string(report.id.toString(), term);
     }
 
     function template(text, term) {
@@ -146,7 +146,7 @@ jQuery(document).ready(function($) {
         { // TracLinks, InterTrac and InterWiki
             match: /(^|[^[])\[(\w*)$/,
             search: search_cache('linkresolvers', function(resolver, term) {
-                return resolver.name.startsWith(term);
+                return match_string(resolver.name, term);
             }),
             index: 2,
             template: function (resolver, term) {
