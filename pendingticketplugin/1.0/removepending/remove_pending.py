@@ -15,7 +15,7 @@ from trac.ticket.api import ITicketChangeListener
 from trac.ticket.model import Ticket
 from trac.ticket.notification import TicketNotifyEmail
 from trac.ticket.web_ui import TicketModule
-from trac.util.datefmt import to_timestamp, utc
+from trac.util.datefmt import to_utimestamp, utc
 
 
 class RemovePendingPlugin(Component):
@@ -51,7 +51,7 @@ class RemovePendingPlugin(Component):
                     INSERT INTO ticket_change
                      (ticket,time,author,field,oldvalue,newvalue)
                     VALUES (%s, %s, %s, %s, %s, %s)
-                    """, (ticket.id, to_timestamp(ticket.time_changed),
+                    """, (ticket.id, to_utimestamp(ticket.time_changed),
                           author, 'status', 'pending', new_status))
 
     def ticket_deleted(self, ticket):
