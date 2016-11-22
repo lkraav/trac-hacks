@@ -10,7 +10,7 @@
 from setuptools import setup
 
 setup(
-    name='RemovePendingStatusPlugin',
+    name='PendingTicket',
     version='1.0',
     packages=['removepending'],
 
