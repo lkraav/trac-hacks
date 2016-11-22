@@ -43,55 +43,35 @@ parser.add_option('-d', '--daysback', type='int', dest='maxage', default=14,
 options, args = parser.parse_args(sys.argv[1:])
 
 
-class CloseOldPendingTickets:
+class CloseOldPendingTickets(object):
 
     def __init__(self, project=options.project, author=AUTHOR,
                  maxage=options.maxage):
 
+        msg = MESSAGE % maxage
+        now = datetime.now(utc)
+        max_time = to_utimestamp(now - timedelta(days=maxage))
+
         try:
             self.env = open_environment(project)
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
 
-            msg = MESSAGE % maxage
-
-            now = datetime.now(utc)
-            max_time = to_utimestamp(now - timedelta(days=maxage))
-
-            cursor.execute("""
-                SELECT id FROM ticket
-                WHERE status = %s AND changetime < %s
-                """, ('pending', max_time))
-
-            rows = cursor.fetchall()
-
-            for row in rows:
-                id = row[0]
-                try:
-                    ticket = Ticket(self.env, id, db)
-
-                    ticket['status'] = 'closed'
-
-                    # determine sequence number...
-                    cnum = 0
-                    tm = TicketModule(self.env)
-                    for change in tm.grouped_changelog_entries(ticket, db):
-                        c_cnum = change.get('cnum', None)
-                        if c_cnum and int(c_cnum) > cnum:
-                            cnum = int(c_cnum)
-
-                    ticket.save_changes(author, msg, now, db, str(cnum + 1))
-                    db.commit()
-
-                    print('Closing Ticket %s (%s)' % (id, ticket['summary']))
-
-                    tn = TicketNotifyEmail(self.env)
-                    tn.notify(ticket, newticket=0, modtime=now)
-                except Exception, e:
-                    traceback.print_exc(file=sys.stderr)
-                    print>>sys.stderr, \
-                        'Unexpected error while processing ticket ID %s: %s' \
-                        % (id, e)
+            with self.env.db_transaction as db:
+                for id, in db("""
+                        SELECT id FROM ticket
+                        WHERE status = %s AND changetime < %s
+                        """, ('pending', max_time)):
+                    try:
+                        ticket = Ticket(self.env, id, db)
+                        ticket['status'] = 'closed'
+                        ticket.save_changes(author, msg, now)
+                        print('Closing Ticket %s (%s)' % (id, ticket['summary']))
+                        tn = TicketNotifyEmail(self.env)
+                        tn.notify(ticket, newticket=0, modtime=now)
+                    except Exception, e:
+                        traceback.print_exc(file=sys.stderr)
+                        print>>sys.stderr, \
+                            'Unexpected error while processing ticket ID %s: %s' \
+                            % (id, e)
         except Exception:
             traceback.print_exc(file=sys.stderr)
             print>>sys.stderr, 'Unexpected error while retrieving tickets'

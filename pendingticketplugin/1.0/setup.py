@@ -16,6 +16,8 @@ setup(
 
     author='Daniel Atallah',
     author_email='datallah@pidgin.im',
+    maintainer='Ryan J Ollos',
+    maintainer_email='ryan.j.ollos@gmail.com',
     description="""
     Switch from 'pending' status to a configurable status when the
     reporter responds to a ticket.
