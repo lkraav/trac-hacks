@@ -514,7 +514,7 @@ function evaluate(predicate) {
                 if (token == ',') {
                     // cmp_list ::= func_term ',' cmp_list
                     next_token();
-                    return func_term().then(function (c) {
+                    return cmp_list().then(function (c) {
                         c.value = [r.value].concat(c.value);
                         return c;
                     });

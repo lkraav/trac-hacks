@@ -605,36 +605,36 @@ evaluation.available.none = evaluation_template == 'None'
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        # Create and include the initial data dump.
-        items = self.config.parser.items('kis_assistant')
-        config = {}
-        for dotted_name, value in items:
-            config_traverse = config
-            for component in dotted_name.split('.'):
-                if not component in config_traverse:
-                    if component.startswith('#'):
-                        continue
-                    config_traverse[component] = {}
-                config_traverse = config_traverse[component]
-            config_traverse['#'] = \
-                re.sub("\s*,\s*", ",", value.strip()).split(",")
-
-        if req.args['id']:
-            ticket_id = req.args['id'].lstrip('#')
-            ticket = Ticket(self.env, ticket_id)
-            status = ticket.get_value_or_default('status')
-        else:
-            ticket_id = None
-            status = 'new'
-        page_data = { 'trac_ini' : config,
-                      'status'   : status,
-                      'id'       : ticket_id,
-                      'authname' : req.authname }
-        add_script_data(req, {'page_info' : page_data})
-
-        # Add the client-side support functions.
         if req.path_info.startswith('/newticket') or \
                 req.path_info.startswith('/ticket/'):
+            # Create and include the initial data dump.
+            items = self.config.parser.items('kis_assistant')
+            config = {}
+            for dotted_name, value in items:
+                config_traverse = config
+                for component in dotted_name.split('.'):
+                    if not component in config_traverse:
+                        if component.startswith('#'):
+                            continue
+                        config_traverse[component] = {}
+                    config_traverse = config_traverse[component]
+                config_traverse['#'] = \
+                    re.sub("\s*,\s*", ",", value.strip()).split(",")
+
+            if 'id' in req.args:
+                ticket_id = req.args['id'].lstrip('#')
+                ticket = Ticket(self.env, ticket_id)
+                status = ticket.get_value_or_default('status')
+            else:
+                ticket_id = None
+                status = 'new'
+            page_data = { 'trac_ini' : config,
+                          'status'   : status,
+                          'id'       : ticket_id,
+                          'authname' : req.authname }
+            add_script_data(req, {'page_info' : page_data})
+
+            # Add the client-side support functions.
             if 'rv:11' in req.environ['HTTP_USER_AGENT'] \
                     or 'MSIE' in req.environ['HTTP_USER_AGENT']:
                 # Provide Promise support for Internet Explorer.
