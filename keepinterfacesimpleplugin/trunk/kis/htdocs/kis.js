@@ -137,7 +137,7 @@ TracInterface.prototype._item = function (name) {
 TracInterface.prototype.attach_change_handler = function (trigger, callback) {
     var triggering_field = new TracInterface(trigger);
 
-    return triggering_field.select_field().on('change', callback);
+    return triggering_field.select_field().on('change keyup', callback);
 };
 
 TracInterface.prototype.first_available_item = function () {
@@ -480,7 +480,7 @@ function evaluate(predicate) {
         if (token == ')') {
             return Promise.resolve({ value: [] });
         } else {
-            return negation().then(function (r) {
+            return expression().then(function (r) {
                 if (token == ',') {
                     next_token();
                     return param_list().then(function (p) {
@@ -509,10 +509,10 @@ function evaluate(predicate) {
                 return r;
             });
         } else {
-            // cmp_list ::= func_term
-            return func_term().then(function (r) {
+            // cmp_list ::= expression
+            return expression().then(function (r) {
                 if (token == ',') {
-                    // cmp_list ::= func_term ',' cmp_list
+                    // cmp_list ::= expression ',' cmp_list
                     next_token();
                     return cmp_list().then(function (c) {
                         c.value = [r.value].concat(c.value);

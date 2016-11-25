@@ -224,7 +224,7 @@ class Lexer():
             v_list = []
             text = ''
         else:
-            t, text = self.term()
+            t, text = self.expression()
             v_list = [t]
             if self.look[1] == ',':
                 self.match(',')
@@ -240,7 +240,7 @@ class Lexer():
             self.match(')')
             text = '(%s)' % text
         else:
-            v, text = self.func_term()
+            v, text = self.expression()
             v_list = [v]
             if self.look[1] == ',':
                 self.match(',')
