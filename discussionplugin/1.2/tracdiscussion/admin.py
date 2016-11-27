@@ -34,7 +34,7 @@ class DiscussionWebAdmin(Component):
 
     def render_admin_panel(self, req, category, page, path_info):
         if page == 'forum':
-            if not req.args.has_key('group'):
+            if 'group' not in req.args:
                 req.args['group'] = '-1'
             if path_info:
                 req.args['forum'] = path_info

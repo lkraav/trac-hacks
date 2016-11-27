@@ -111,13 +111,13 @@ class DiscussionCore(Component):
         context.realm = 'discussion-core'
 
         # Redirect to content converter if requested.
-        if req.args.has_key('format'):
+        if 'format' in req.args:
             format = req.args.get('format')
-            if req.args.has_key('topic'):
+            if 'topic' in req.args:
                 in_type = 'tracdiscussion.topic'
                 Mimeview(self.env).send_converted(
                     req, in_type, context.resource, format, filename=None)
-            elif req.args.has_key('forum'):
+            elif 'forum' in req.args:
                 in_type = 'tracdiscussion.forum'
                 Mimeview(self.env).send_converted(
                     req, in_type, context.resource, format, filename=None),

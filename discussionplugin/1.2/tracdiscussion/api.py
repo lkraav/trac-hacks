@@ -377,7 +377,7 @@ class DiscussionApi(DiscussionDb):
             )
 
         # Populate active topic.
-        elif context.req.args.has_key('topic'):
+        elif 'topic' in context.req.args:
             topic_id = int(context.req.args.get('topic') or 0)
             context.topic = self.get_topic(context, topic_id)
             if not context.topic:
@@ -392,7 +392,7 @@ class DiscussionApi(DiscussionDb):
                                            context.topic['id']))
 
         # Populate active forum.
-        elif context.req.args.has_key('forum'):
+        elif 'forum' in context.req.args:
             forum_id = int(context.req.args.get('forum') or 0)
             context.forum = self.get_forum(context, forum_id)
             if not context.forum:
@@ -403,7 +403,7 @@ class DiscussionApi(DiscussionDb):
             context.resource = realm(id='forum/%s' % forum_id)
 
         # Populate active group.
-        elif context.req.args.has_key('group'):
+        elif 'group' in context.req.args:
             group_id = int(context.req.args.get('group') or 0)
             context.group = self.get_group(context, group_id)
             if not context.group:
@@ -427,8 +427,8 @@ class DiscussionApi(DiscussionDb):
     def _get_actions(self, context):
         # Get action.
         action = context.req.args.get('discussion_action')
-        preview = context.req.args.has_key('preview');
-        submit = context.req.args.has_key('submit');
+        preview = 'preview' in context.req.args
+        submit = 'submit' in context.req.args
         self.log.debug('realm: %s, action: %s, format: %s preview: %s, submit:'
           ' %s' % (context.realm, action, context.format, preview, submit))
 
@@ -1172,8 +1172,8 @@ class DiscussionApi(DiscussionDb):
                     raise PermissionError("Topic editing")
 
                 # Get form values.
-                if not context.req.args.has_key('name') and \
-                  context.req.args.has_key('value'):
+                if 'name' not in context.req.args and \
+                        'value' in context.req.args:
                     raise TracError("Missing request arguments.")
                 name = context.req.args.get('name')
                 value = context.req.args.get('value')
@@ -1527,8 +1527,8 @@ class DiscussionApi(DiscussionDb):
 
     def _prepare_message_list(self, context, topic):
         # Get time when topic was visited from session.
-        visit_time = int(context.visited_topics.has_key(topic['id']) and
-          (context.visited_topics[topic['id']] or 0))
+        visit_time = int(topic['id'] in context.visited_topics and
+                         (context.visited_topics[topic['id']] or 0))
 
         # Get form values
         page = int(context.req.args.get('discussion_page') or '1') - 1

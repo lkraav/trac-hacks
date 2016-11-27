@@ -100,7 +100,7 @@ class DiscussionTagProvider(DefaultTagProvider):
 
     def _get_forum_tags(self, forum):
         tags = []
-        if forum.has_key('tags'):
+        if 'tags' in forum:
             tags += forum['tags']
         if 'name' in self.automatic_forum_tags and forum['name']:
             if not forum['name'] in tags:
@@ -112,7 +112,7 @@ class DiscussionTagProvider(DefaultTagProvider):
 
     def _get_topic_tags(self, topic):
         tags = []
-        if topic.has_key('tags'):
+        if 'tags' in topic:
             tags += topic['tags']
         if 'author' in self.automatic_topic_tags and topic['author']:
             if not topic['author'] in tags:

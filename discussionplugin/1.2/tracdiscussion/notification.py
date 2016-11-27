@@ -229,7 +229,7 @@ class DiscussionEmailNotification(Component):
         notifier.notify(context, forum, topic, None)
 
     def topic_changed(self, context, topic, old_topic):
-        if topic.has_key('subscribers'):
+        if 'subscribers' in topic:
             # Get new subscribers to topic.
             new_subscribers = [subscriber for subscriber in topic['subscribers']
               if subscriber not in old_topic['subscribers']]
