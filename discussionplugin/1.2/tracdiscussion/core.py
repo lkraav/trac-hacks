@@ -15,7 +15,7 @@ from pkg_resources import resource_filename
 from trac.core import Component, implements
 from trac.config import Option
 from trac.mimeview.api import IContentConverter, Mimeview
-from trac.resource import Resource, get_resource_url
+from trac.resource import get_resource_url
 from trac.search import ISearchSource
 from trac.util.html import html
 from trac.util.translation import _, N_

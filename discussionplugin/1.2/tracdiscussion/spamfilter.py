@@ -9,7 +9,6 @@
 #
 
 from trac.core import Component, implements
-from trac.util import arity
 
 from tracspamfilter.api import RejectContent
 from tracspamfilter.filtersystem import FilterSystem

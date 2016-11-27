@@ -7,6 +7,7 @@
 #
 
 import unittest
+from trac.wiki.web_ui import WikiModule
 
 
 def test_suite():

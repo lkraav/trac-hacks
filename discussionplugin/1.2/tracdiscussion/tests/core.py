@@ -12,6 +12,7 @@ from trac.perm import PermissionCache
 from trac.test import Mock
 from trac.web.chrome import Chrome
 from trac.web.href import Href
+from trac.wiki.web_ui import WikiModule
 
 from tracdiscussion.core import DiscussionCore
 from tracdiscussion.tests.test import DiscussionBaseTestCase

@@ -13,7 +13,6 @@ import unittest
 from datetime import datetime, timedelta
 
 from trac.perm import PermissionCache, PermissionSystem
-from trac.resource import Resource
 from trac.test import EnvironmentStub, Mock
 from trac.util.datefmt import to_datetime, to_timestamp, utc
 from trac.web.chrome import web_context

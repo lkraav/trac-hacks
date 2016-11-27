@@ -10,8 +10,9 @@ import shutil
 import tempfile
 import unittest
 
-from trac.test import EnvironmentStub, Mock, MockPerm
+from trac.test import EnvironmentStub
 
+from tracdiscussion.core import DiscussionCore
 from tracdiscussion.notification import DiscussionNotifyEmail
 from tracdiscussion.notification import DiscussionEmailNotification
 

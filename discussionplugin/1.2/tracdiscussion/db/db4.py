@@ -2,6 +2,7 @@
 
 from trac.db import DatabaseManager
 
+
 def do_upgrade(env, cursor):
     db_connector, _ = DatabaseManager(env)._get_connector()
 

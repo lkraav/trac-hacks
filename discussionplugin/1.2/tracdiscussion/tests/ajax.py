@@ -11,7 +11,6 @@ import tempfile
 import unittest
 
 from trac.perm import PermissionCache, PermissionSystem
-from trac.resource import Resource
 from trac.test import EnvironmentStub, Mock
 
 from tracdiscussion.ajax import DiscussionAjax

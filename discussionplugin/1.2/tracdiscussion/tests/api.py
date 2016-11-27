@@ -9,8 +9,6 @@
 import unittest
 
 from datetime import timedelta
-from genshi.builder import tag
-from genshi.core import Markup
 
 from trac.perm import PermissionCache
 from trac.resource import Resource

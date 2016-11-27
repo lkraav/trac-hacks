@@ -15,13 +15,12 @@ from genshi.builder import tag
 
 from trac.core import Component, TracError, implements
 from trac.resource import Resource, ResourceNotFound
-from trac.web.chrome import Chrome, add_stylesheet
+from trac.web.chrome import Chrome
 from trac.web.main import IRequestFilter
 from trac.wiki import IWikiSyntaxProvider
 from trac.wiki.api import IWikiMacroProvider, parse_args
-from trac.wiki.formatter import format_to_html, format_to_oneliner
-from trac.wiki.web_ui import WikiModule
-from trac.util import format_date, format_datetime
+from trac.wiki.formatter import format_to_html
+from trac.util import format_date
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.web.chrome import web_context

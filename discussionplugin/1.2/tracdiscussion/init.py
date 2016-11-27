@@ -8,7 +8,6 @@
 # you should have received as part of this distribution.
 #
 
-from trac.core import Component, TracError, implements
 from trac.db import *
 from trac.env import IEnvironmentSetupParticipant
 

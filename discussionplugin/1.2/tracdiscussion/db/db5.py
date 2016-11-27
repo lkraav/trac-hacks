@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from trac.db import Table, Column, Index, DatabaseManager
+from trac.db import Table, Column, DatabaseManager
 
 tables = [
   Table('topic', key = 'id')[
@@ -13,6 +13,7 @@ tables = [
     Column('body'),
   ]
 ]
+
 
 def do_upgrade(env, cursor):
     db_connector, _ = DatabaseManager(env)._get_connector()

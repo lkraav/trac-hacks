@@ -22,7 +22,7 @@ from trac.resource import IResourceManager, Resource
 from trac.util.datefmt import to_timestamp, utc
 from trac.util.presentation import Paginator
 from trac.util.text import to_unicode
-from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
+from trac.web.chrome import add_link, add_script, add_stylesheet
 from trac.web.chrome import exception_to_unicode, add_ctxtnav
 from trac.web.href import Href
 

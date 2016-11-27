@@ -13,7 +13,7 @@ import unittest
 from trac import __version__ as trac_version
 from trac.db import Table, Column, Index
 from trac.db.api import DatabaseManager
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub
 
 from tracdiscussion.init import DiscussionInit, schema_version
 

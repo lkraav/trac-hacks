@@ -10,7 +10,6 @@ import shutil
 import tempfile
 import unittest
 
-from trac.util.compat import sorted
 from trac.test import EnvironmentStub
 
 from tracdiscussion.spamfilter import DiscussionSpamFilter

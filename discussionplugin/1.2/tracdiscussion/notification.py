@@ -7,28 +7,15 @@
 # you should have received as part of this distribution.
 #
 
-# Standard imports.
-from datetime import datetime
-
-# Trac imports.
 from trac.core import *
 from trac.config import ListOption
-from trac.resource import Resource
 from trac.web.chrome import Chrome
 from trac.notification import NotifyEmail
-from trac.util import md5, format_datetime
-from trac.util.datefmt import to_timestamp
-from trac.util.text import to_unicode
+from trac.util import md5
 from trac.util.translation import _
 
-# Trac interfaces.
-from trac.web.chrome import ITemplateProvider
-
-# Genshi imports.
-from genshi.template import TemplateLoader, TextTemplate
-
-# Local imports.
 from tracdiscussion.api import *
+
 
 class DiscussionNotifyEmail(NotifyEmail):
 

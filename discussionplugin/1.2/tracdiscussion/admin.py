@@ -7,12 +7,8 @@
 # you should have received as part of this distribution.
 #
 
-import time
-
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
-from trac.mimeview import Context
-from trac.perm import IPermissionRequestor
 from trac.web.chrome import web_context
 
 from tracdiscussion.api import DiscussionApi

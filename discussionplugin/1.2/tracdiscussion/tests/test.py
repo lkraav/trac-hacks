@@ -10,12 +10,9 @@ import shutil
 import tempfile
 import unittest
 
-from trac.db.api import DatabaseManager
 from trac.perm import PermissionSystem
-from trac.resource import Resource
 from trac.test import EnvironmentStub
 
-from tracdiscussion.api import DiscussionApi
 from tracdiscussion.init import DiscussionInit
 
 
