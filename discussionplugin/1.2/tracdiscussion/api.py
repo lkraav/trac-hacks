@@ -23,10 +23,9 @@ from trac.util.datefmt import to_timestamp, utc
 from trac.util.presentation import Paginator
 from trac.util.text import to_unicode
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet
-from trac.web.chrome import add_ctxtnav
+from trac.web.chrome import exception_to_unicode, add_ctxtnav
 from trac.web.href import Href
 
-from tracdiscussion.compat import exception_to_unicode, is_enabled
 from tracdiscussion.model import DiscussionDb
 from tracdiscussion.util import as_list, format_to_oneliner_no_links
 from tracdiscussion.util import prepare_topic, topic_status_from_list
@@ -38,8 +37,8 @@ except ImportError:
 
 
 def is_tags_enabled(env):
-    return is_enabled(env, 'tractags.api.TagSystem') and \
-           is_enabled(env, 'tracdiscussion.tags.DiscussionTags')
+    return env.is_enabled('tractags.api.TagSystem') and \
+           env.is_enabled('tracdiscussion.tags.DiscussionTags')
 
 
 class IDiscussionFilter(Interface):
