@@ -8,8 +8,6 @@
 # you should have received as part of this distribution.
 #
 
-from datetime import datetime
-
 from trac.core import Component
 from trac.mimeview import Context
 from trac.resource import Resource
@@ -374,7 +372,7 @@ class DiscussionDb(Component):
         values = tuple(item.values())
         if not 'forum_group' == table:
             fields += ('time',)
-            values += (to_timestamp(datetime.now(utc)),)
+            values += (to_timestamp(datetime_now(utc)),)
 
         sql_values = {
             'table': table,

@@ -10,7 +10,6 @@
 
 import re
 from copy import deepcopy
-from datetime import datetime
 import functools
 
 from trac.attachment import AttachmentModule, ILegacyAttachmentPolicyDelegate
@@ -19,7 +18,7 @@ from trac.core import implements
 from trac.config import IntOption, Option
 from trac.perm import IPermissionRequestor, PermissionError, PermissionSystem
 from trac.resource import IResourceManager, Resource
-from trac.util.datefmt import to_timestamp, utc
+from trac.util.datefmt import datetime_now, to_timestamp, utc
 from trac.util.presentation import Paginator
 from trac.util.text import to_unicode
 from trac.web.chrome import add_link, add_script, add_stylesheet
@@ -279,7 +278,7 @@ class DiscussionApi(DiscussionDb):
         context.data['authemail'] = context.authemail
         context.data['realm'] = context.realm
         context.data['mode'] = actions[-1]
-        context.data['time'] = datetime.now(utc)
+        context.data['time'] = datetime_now(utc)
         context.data['env'] = self.env
         context.data['format_to_oneliner_no_links'] = \
             functools.partial(format_to_oneliner_no_links, self.env)
@@ -1011,8 +1010,8 @@ class DiscussionApi(DiscussionDb):
                                                    context.resource)
 
                 # Update this forum visit time.
-                context.visited_forums[context.forum['id']] = to_timestamp(
-                  datetime.now(utc))
+                context.visited_forums[context.forum['id']] = \
+                    to_timestamp(datetime_now(utc))
 
                 # Get form values.
                 order = context.req.args.get('order') or self.topic_sort
@@ -1533,7 +1532,7 @@ class DiscussionApi(DiscussionDb):
         page = int(context.req.args.get('discussion_page') or '1') - 1
 
         # Update this topic visit time.
-        context.visited_topics[topic['id']] = to_timestamp(datetime.now(utc))
+        context.visited_topics[topic['id']] = to_timestamp(datetime_now(utc))
 
         # Get topic messages for the current page.
         display = context.req.session.get('message-list-display') or \
