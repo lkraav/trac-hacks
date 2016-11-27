@@ -13,7 +13,7 @@ if sys.version_info >= (3,):
     sys.exit(1)
 
 setup(name='TracDiscussion',
-    version='0.10',
+    version='0.10.0',
     author='Radek Bartoň',
     author_email='blackhex@post.cz',
     license='''GPL''',
