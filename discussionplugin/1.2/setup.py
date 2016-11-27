@@ -38,7 +38,7 @@ setup(name='TracDiscussion',
         'TracDiscussion.wiki = tracdiscussion.wiki']
     },
     install_requires=['Trac'],
-    extras_require={'spamfilter' : ['TracSpamFilter >= 0.2'],
+    extras_require={'spamfilter' : ['TracSpamFilter >= 1.0'],
                     'tags' : ['TracTags >= 0.7']},
     test_suite = 'tracdiscussion.tests.test_suite',
     tests_require = [],

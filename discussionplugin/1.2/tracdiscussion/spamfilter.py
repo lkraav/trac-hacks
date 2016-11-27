@@ -12,12 +12,7 @@ from trac.core import Component, implements
 from trac.util import arity
 
 from tracspamfilter.api import RejectContent
-try:
-    # SpamFilter < 0.7
-    from tracspamfilter.api import FilterSystem
-except ImportError:
-    # SpamFilter 0.7+
-    from tracspamfilter.filtersystem import FilterSystem
+from tracspamfilter.filtersystem import FilterSystem
 
 from tracdiscussion.api import IDiscussionFilter
 
@@ -57,9 +52,4 @@ class DiscussionSpamFilter(Component):
         return True, message
 
     def _spam_test(self, req, author, changes, ip):
-        if arity(FilterSystem.test) == 4:
-            # SpamFilter < 0.3.2 or >= 0.7.0
-            FilterSystem(self.env).test(req, author, changes)
-        else:
-            # SpamFilter >= 0.3.2 or < 0.7.0
-            FilterSystem(self.env).test(req, author, changes, ip)
+        FilterSystem(self.env).test(req, author, changes)
