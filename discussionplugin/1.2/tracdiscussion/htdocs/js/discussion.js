@@ -5,9 +5,8 @@ function change_attribute(url, name, value)
   function callback(data, text_status)
   {
     // Nothing.
-  };
-
-  arguments = {'discussion_action' : 'edit-attribute',
+  }
+    arguments = {'discussion_action' : 'edit-attribute',
     'name' : name,
     'value' : value,
     '__FORM_TOKEN': $('input[name="__FORM_TOKEN"]')[0].value};

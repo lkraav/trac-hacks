@@ -64,18 +64,18 @@ class DiscussionWiki(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        return (template, data, content_type)
+        return template, data, content_type
 
     # IWikiSyntaxProvider methods
 
     def get_link_resolvers(self):
-        yield ('forum', self._discussion_link)
-        yield ('last-forum', self._discussion_link)
-        yield ('topic', self._discussion_link)
-        yield ('last-topic', self._discussion_link)
-        yield ('message', self._discussion_link)
-        yield ('topic-attachment', self._discussion_attachment_link)
-        yield ('raw-topic-attachment', self._discussion_attachment_link)
+        yield 'forum', self._discussion_link
+        yield 'last-forum', self._discussion_link
+        yield 'topic', self._discussion_link
+        yield 'last-topic', self._discussion_link
+        yield 'message', self._discussion_link
+        yield 'topic-attachment', self._discussion_attachment_link
+        yield 'raw-topic-attachment', self._discussion_attachment_link
 
     def get_wiki_syntax(self):
         return []
@@ -157,10 +157,9 @@ class DiscussionWiki(Component):
 
         args, kw = parse_args(content)
         forum_id = None
-        limit = 10
-        if 1 == len(args):
+        if len(args) == 1:
             limit = args[0]
-        elif 2 == len(args):
+        elif len(args) == 2:
             forum_id, limit = args[:2]
         else:
             raise TracError("Invalid number of macro arguments.")
@@ -174,7 +173,8 @@ class DiscussionWiki(Component):
                 prevdate = date
                 entries_per_date.append((date, []))
             forum_name = self.api.get_forum(context, entry['forum'])['name']
-            topic_subject = self.api.get_topic_subject(context, entry['topic'])
+            topic_subject = \
+                self.api.get_topic_subject(context, entry['topic'])
             entries_per_date[-1][1].append((entry['forum'], forum_name,
                                             entry['topic'], topic_subject))
         href = formatter.href
@@ -189,7 +189,7 @@ class DiscussionWiki(Component):
                                   href=href.discussion('topic', topic_id)))
                         for forum_id, forum_name, topic_id, topic_subject
                         in entries)
-                    )
+                )
                for date, entries in entries_per_date)
 
     def _discussion_link(self, formatter, namespace, params, label):
@@ -204,7 +204,6 @@ class DiscussionWiki(Component):
             id = -1
 
         if 'forum' == namespace:
-            columns = ('subject',)
             forum_subject = self.api.get_forum_subject(context, id)
             if forum_subject:
                 return tag.a(label, href=href.discussion('forum', id),
@@ -233,8 +232,8 @@ class DiscussionWiki(Component):
                                                            topic['forum'])
                 return tag.a(label, href='%s#-1'
                                          % href.discussion('topic', id),
-                             title=('%s: %s'
-                                    % (forum_subject, topic['subject']))
+                             title=('%s: %s' % (forum_subject,
+                                                topic['subject']))
                                    .replace('"', ''))
             return tag.a(label, href=href.discussion('topic', id),
                          title=title, class_='missing')
@@ -250,8 +249,8 @@ class DiscussionWiki(Component):
                 return tag.a(label, href='%s#-1'
                                          % (href.discussion('topic',
                                                             topic[0]['id']),),
-                             title=('%s: %s'
-                                    % (forum_subject, topic[0]['subject']))
+                             title=('%s: %s' % (forum_subject,
+                                                topic[0]['subject']))
                                    .replace('"', ''))
             return tag.a(label, href=href.discussion('topic', '-1'),
                          title=title, class_='missing')

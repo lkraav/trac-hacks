@@ -40,11 +40,13 @@ class DiscussionNotifyEmail(NotifyEmail):
         self.message = message
 
         # Initialize template data.
-        data = {}
-        data['forum'] = self.forum
-        data['topic'] = self.topic
-        data['message'] = self.message
-        data['prefix'] = self.config.get('notification', 'smtp_subject_prefix')
+        data = {
+            'forum': self.forum,
+            'topic': self.topic,
+            'message': self.message,
+            'prefix': self.config.get('notification',
+                                      'smtp_subject_prefix')
+        }
         if data['prefix'] == '__default__':
             data['prefix'] = self.env.project_name
         self.data.update({'discussion' : data})
@@ -69,16 +71,18 @@ class DiscussionNotifyEmail(NotifyEmail):
           'topic-notify-subject.txt', self.data, 'text/plain'))).strip()
         NotifyEmail.notify(self, id, subject)
 
-    def invite(self, context, forum = None, topic = None, recipients = []):
+    def invite(self, context, forum = None, topic = None, recipients=None):
         # Store link to currently notifying forum.
+        recipients = recipients or []
         self.forum = forum
         self.topic = topic
 
         # Initialize template data.
-        data = {}
-        data['forum'] = self.forum
-        data['topic'] = self.topic
-        data['prefix'] = self.config.get('notification', 'smtp_subject_prefix')
+        data = {
+            'forum': self.forum,
+            'topic': self.topic,
+            'prefix': self.config.get('notification', 'smtp_subject_prefix')
+        }
         if data['prefix'] == '__default__':
             data['prefix'] = self.env.project_name
         self.data.update({'discussion' : data})
@@ -142,7 +146,7 @@ class DiscussionNotifyEmail(NotifyEmail):
         NotifyEmail.send(self, to_recipients, cc_recipients, header)
 
     def get_recipients(self, item_id):
-        return (self.to_recipients, self.cc_recipients)
+        return self.to_recipients, self.cc_recipients
 
     def get_message_email_id(self, message_id):
         # Generate a predictable, but sufficiently unique message ID.
@@ -174,8 +178,8 @@ class DiscussionEmailNotification(Component):
         listener interfaces and send e-mail notifications when topics and
         messages are created.
     """
-    implements(IForumChangeListener, ITopicChangeListener,
-      IMessageChangeListener)
+    implements(IForumChangeListener, IMessageChangeListener,
+               ITopicChangeListener)
 
     # Configuration options.
 
@@ -219,13 +223,15 @@ class DiscussionEmailNotification(Component):
     def topic_changed(self, context, topic, old_topic):
         if 'subscribers' in topic:
             # Get new subscribers to topic.
-            new_subscribers = [subscriber for subscriber in topic['subscribers']
-              if subscriber not in old_topic['subscribers']]
+            new_subscribers = [
+                subscriber for subscriber in topic['subscribers']
+                if subscriber not in old_topic['subscribers']
+            ]
 
             # We need to use complete topic dictionary.
             old_topic.update(topic)
 
-            # Get forum of the topic.
+            # Get forum of the topic.
             api = self.env[DiscussionApi]
             forum = api.get_forum(context, old_topic['forum'])
 
@@ -239,7 +245,7 @@ class DiscussionEmailNotification(Component):
     # IMessageChangeListener methods.
 
     def message_created(self, context, message):
-        # Get access to api component.
+        # Get access to api component.
         api = self.env[DiscussionApi]
         forum = api.get_forum(context, message['forum'])
         topic = api.get_topic(context, message['topic'])

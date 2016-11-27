@@ -24,10 +24,12 @@ def as_list(value):
     raise NotImplementedError('Conversion of %r to list is not implemented'
                               % value)
 
+
 # Formats wiki text to single line HTML but removes all links.
 def format_to_oneliner_no_links(env, context, content):
     stream = HTML(format_to_oneliner(env, context, to_unicode(content)))
     return Markup(stream | Transformer('//a').unwrap())
+
 
 def prepare_topic(uids, topic):
     """Unpack list of topic subscribers and get topic status."""
@@ -37,6 +39,7 @@ def prepare_topic(uids, topic):
                                             .difference(uids)
         topic['status'] = topic_status_to_list(topic['status'])
     return topic
+
 
 def topic_status_to_list(status):
     if status == 0:
@@ -50,10 +53,11 @@ def topic_status_to_list(status):
         status_list.add('locked')
     return status_list
 
+
 def topic_status_from_list(status_list):
     status = 0
     if 'solved' in status_list:
-        status = status | 0x01
+        status |= 0x01
     if 'locked' in status_list:
-        status = status | 0x02
+        status |= 0x02
     return status

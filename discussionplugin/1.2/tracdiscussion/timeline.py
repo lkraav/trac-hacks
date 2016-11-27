@@ -26,12 +26,12 @@ class DiscussionTimeline(Component):
 
     implements(ITimelineEventProvider)
 
-    # ITimelineEventProvider
+    # ITimelineEventProvider methods
 
     def get_timeline_filters(self, req):
         if 'DISCUSSION_VIEW' in req.perm:
-            yield ('discussion', self.config.get('discussion', 'title') +
-              ' changes')
+            yield ('discussion',
+                   self.config.get('discussion', 'title') + ' changes')
 
     def get_timeline_events(self, req, start, stop, filters):
         self.log.debug("Discussion timeline events start: %s, "

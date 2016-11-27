@@ -28,10 +28,10 @@ class DiscussionTagProvider(DefaultTagProvider):
 
     realm = 'discussion'
 
-    # Configuration options
     automatic_forum_tags = ListOption('discussion', 'automatic_forum_tags',
       'name,author', doc = "Tags that will be created automatically from "
       "discussion forums fields. Possible values are: name, author.")
+
     automatic_topic_tags = ListOption('discussion', 'automatic_topic_tags',
       'author,status', doc = "Tags that will be created automatically from "
       "discussion topics fields. Possible values are: author, status.")

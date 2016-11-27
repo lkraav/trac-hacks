@@ -182,6 +182,7 @@ class DiscussionApi(DiscussionDb):
                 return 'DISCUSSION_VIEW' in perm(resource.parent)
 
     # IPermissionRequestor method
+
     def get_permission_actions(self):
         action = ('DISCUSSION_VIEW', 'DISCUSSION_APPEND',
                   'DISCUSSION_ATTACH', 'DISCUSSION_MODERATE')
@@ -238,7 +239,7 @@ class DiscussionApi(DiscussionDb):
         type, id = self._parse_resource_id(resource)
         if type in ('forum', 'topic', 'message'):
             return self.get_item(None, type, ('id',), where='id=%s',
-                                 values=(id,)) != None
+                                 values=(id,)) is not None
 
     # Main request processing function.
 
@@ -1046,9 +1047,10 @@ class DiscussionApi(DiscussionDb):
                                                    context.resource)
 
                 # Display list of messages for topic.
-                context.data['messages'] = self.get_flat_messages(context,
-                  context.topic['id'], desc = True, limit =
-                  self.messages_per_page);
+                context.data['messages'] = \
+                    self.get_flat_messages(context, context.topic['id'],
+                                           desc=True,
+                                           limit=self.messages_per_page)
 
             elif action == 'topic-add':
                 context.req.perm.assert_permission('DISCUSSION_APPEND',
@@ -1179,16 +1181,16 @@ class DiscussionApi(DiscussionDb):
                 # Important flag is implemented as integer priority.
                 if name == 'important':
                     name = 'priority'
-                    value = (value in ('true', 'yes', True) and 1 or 0);
+                    value = value in ('true', 'yes', True) and 1 or 0
 
                 # Attributes that can be changed only by administrator.
                 topic = {}
                 if name in ('id', 'time'):
                     context.req.perm.assert_permission('DISCUSSION_ADMIN')
-                    topic[name] = value;
+                    topic[name] = value
                 # Attributes that can be changed by moderator.
                 elif name in ('forum', 'author', 'subscribers', 'priority',
-                  'status.locked', 'status'):
+                              'status.locked', 'status'):
                     context.req.perm.assert_permission('DISCUSSION_MODERATE',
                                                        context.resource)
                     if not context.moderator:
@@ -1202,7 +1204,7 @@ class DiscussionApi(DiscussionDb):
                         else:
                             topic['status'] -= set(['locked'])
                     else:
-                        topic[name] = value;
+                        topic[name] = value
 
                 # Attributes that can be changed by owner of the topic or the
                 # moderator.
@@ -1227,7 +1229,7 @@ class DiscussionApi(DiscussionDb):
                             topic['status'] |= set(['unsolved'])
                             topic['status'] -= set(['solved'])
                     else:
-                        topic[name] = value;
+                        topic[name] = value
                 else:
                     raise PermissionError("Topic editing")
 
@@ -1551,7 +1553,7 @@ class DiscussionApi(DiscussionDb):
             messages_count = 0
             messages = self.get_messages(context, topic['id'])
         else:
-            raise TracError('Unsupported display mode: %s' % (display))
+            raise TracError('Unsupported display mode: %s' % display)
 
         # Create paginator.
         paginator = self._get_paginator(context, page, self.messages_per_page,
