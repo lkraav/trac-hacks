@@ -1,0 +1,437 @@
+<html xmlns:xi="http://www.w3.org/2001/XInclude"
+  xmlns:py="http://genshi.edgewall.org/" py:strip="">
+  <!--!
+    Copyright (C) 2007-2011 Radek Bartoň <blackhex@post.cz>
+    Copyright (C) 2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+    Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
+
+    This software is licensed as described in the file COPYING, which
+    you should have received as part of this distribution.
+  -->
+
+  <py:def function="sortable_th(order, desc, Class, title, href)">
+    <th class="${Class}${order == Class and (desc and ' desc' or ' asc') or ''}">
+      <a title="Sort by ${Class}${(order == Class and desc) and ' (descending)'
+        or ''}" href="${href}?order=${Class}&amp;desc=${(Class == order and
+        desc) and '0' or '1'}">
+        $title
+      </a>
+    </th>
+  </py:def>
+
+  <py:def function="display_discussion(discussion, href)">
+    <py:with vars="is_topic_edit = not req.args.message and
+      (req.args.discussion_action in ('edit', 'post-edit')) and not
+      req.args.submit; is_topic_add = not req.args.message and
+      (req.args.discussion_action in ('add', 'quote', 'post-add')) and not
+      req.args.submit">
+      <div class="topic ${(discussion.topic.time > discussion.visit_time) and
+        'new' or None}">
+        <a name="topic"></a>
+        <div class="header" py:choose="">
+          <py:when test="is_topic_edit">
+            <a name="preview"></a>
+            <div class="subject">
+              ${wiki_to_oneliner(context, req.args.subject) or '&nbsp;'}
+            </div>
+          </py:when>
+          <div py:otherwise="" class="subject">
+            ${wiki_to_oneliner(context, discussion.topic.subject) or '&nbsp;'}
+            ${display_topic_status(discussion.topic.status)}
+          </div>
+        </div>
+
+        <div class="message" py:choose="">
+          <div py:when="is_topic_edit" class="body">
+            ${wiki_to_html(context, req.args.body) or '&nbsp;'}
+          </div>
+          <div py:otherwise="" class="body">
+            ${wiki_to_html(context, discussion.topic.body) or '&nbsp;'}
+          </div>
+
+          <div class="controls">
+            <py:if test="'DISCUSSION_APPEND' in perm">
+              <a style="${'locked' in discussion.topic.status and 'display: none;'
+                or ''}" class="reply"
+                href="${href}?discussion_action=add;#reply">Reply</a>
+              <a style="${'locked' in discussion.topic.status and 'display: none;'
+                or ''}" class="quote"
+                href="${href}?discussion_action=quote;#reply">Quote</a>
+              <a py:if="discussion.moderator or ((discussion.authname ==
+                discussion.topic.author) and (not 'locked' in
+                discussion.topic.status) and (discussion.authname != 'anonymous'))"
+                href="${href}?discussion_action=edit;#topic">Edit</a>
+            </py:if>
+          </div>
+
+          <div class="footer">
+            <div class="author">
+              ${discussion.format_to_oneliner_no_links(context, format_author(discussion.topic.author))}
+            </div>
+            <div class="time">
+              ${format_datetime(discussion.topic.time)}
+              (${pretty_timedelta(discussion.topic.time)} ago)
+            </div>
+          </div>
+        </div>
+
+        <py:if test="is_topic_edit">
+          ${display_form(href, 'Edit:', 'edit_form', 'post-edit')}
+        </py:if>
+      </div>
+
+      <div py:if="len(discussion.messages) or is_topic_add"
+        class="replies ${(discussion.topic.time > discussion.visit_time) and
+       'new' or None}">
+
+        ${display_set_display(href)}
+
+        <ul class="reply">
+          <py:if test="is_topic_add">
+            ${display_preview()}
+            ${display_form(href, 'Reply:', 'add_form', 'post-add')}
+          </py:if>
+
+          <py:if test="len(discussion.messages)">
+            ${display_messages(href, discussion.messages)}
+          </py:if>
+          <li></li>
+        </ul>
+        <xi:include py:with="paginator = discussion.paginator"
+          href="page_index.html" />
+      </div>
+
+      <py:if test="len(discussion.messages) or is_topic_add">
+        ${display_set_display(href)}
+      </py:if>
+
+      <div py:if="discussion.moderator or discussion.authemail"
+        class="subscription">
+        <a name="subscription"></a>
+        <form method="post" action="${href}">
+          <fieldset id="subscription">
+            <legend>Subscription</legend>
+
+            <div py:if="discussion.moderator">
+              <label for="subscribers">Registered users:</label>
+              <br/>
+              <py:choose>
+                <select py:when="(len(discussion.users) > 0) and (7 >
+                  len(discussion.users))" id="subscribers"
+                  name="subscribers" multiple="on">
+                  <py:for each="user in discussion.users">
+                    <py:choose>
+                      <option py:when="user in discussion.topic.subscribers"
+                        value="$user" selected="selected">$user</option>
+                      <option py:otherwise="" value="$user">$user</option>
+                    </py:choose>
+                  </py:for>
+                </select>
+                <select py:when="len(discussion.users) > 6" id="subscribers"
+                  name="subscribers" size="6" multiple="on">
+                  <py:for each="user in discussion.users">
+                    <py:choose>
+                      <option py:when="user in discussion.topic.subscribers"
+                        value="$user" selected="selected">$user</option>
+                      <option py:otherwise="" value="$user">$user</option>
+                    </py:choose>
+                  </py:for>
+                </select>
+              </py:choose>
+              <br/>
+            </div>
+
+            <div py:if="discussion.moderator">
+              <label for="unregistered_subscribers">Unregistered users
+                (e-mails):</label>
+              <br/>
+              <input type="text" id="unregistered_subscribers"
+                name="unregistered_subscribers"
+                value="${' '.join(discussion.topic.unregistered_subscribers)}"/>
+              <br/>
+            </div>
+
+            <div py:if="discussion.authemail">
+              <label for="subscribe">
+                <input py:if="discussion.authname in
+                  discussion.topic.subscribers" type="checkbox"
+                  name="subscribe" id="subscribe"  checked="yes" value="1"
+                  onchange="subscribe_user('${req.href.discussion('ajax', 'topic',
+                  discussion.topic.id)}', '${discussion.authname}', this.checked)"/>
+                <input py:if="not (discussion.authname in
+                  discussion.topic.subscribers)" type="checkbox"
+                  name="subscribe" id="subscribe" value="0"
+                  onchange="subscribe_user('${req.href.discussion('ajax', 'topic',
+                  discussion.topic.id)}', '${discussion.authname}', this.checked)"/>
+                Subscribe to topic.
+              </label><br/>
+            </div>
+
+            <div py:if="discussion.moderator" class="buttons">
+              <input type="hidden" name="discussion_action"
+                value="subscriptions-post-edit"/>
+              <input type="submit" name="editsubscribers"
+                value="Edit subscribers"/>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+
+      <div py:if="discussion.moderator or ((discussion.authname ==
+        discussion.topic.author) and (not 'locked' in discussion.topic.status)
+        and (discussion.authname != 'anonymous'))" class="moderation">
+        <a name="moderation"></a>
+        <form method="post" action="${req.href.discussion('topic',
+          discussion.topic.id)}">
+          <fieldset id="moderation">
+            <legend>Moderation</legend>
+            <div py:if="discussion.moderator">
+              <label for="important">
+                <input py:if="discussion.topic.priority > 0" type="checkbox"
+                  name="important" id="important" checked="yes" value="1"
+                  onchange="change_attribute('${req.href.discussion('ajax',
+                    'topic', discussion.topic.id)}', 'important',
+                    this.checked);"/>
+                <input py:if="not (discussion.topic.priority > 0)" type="checkbox"
+                  name="important" id="important" value="0"
+                  onchange="change_attribute('${req.href.discussion('ajax',
+                    'topic', discussion.topic.id)}', 'important',
+                    this.checked);"/>
+                Make topic important (listed at the top).
+              </label><br/>
+            </div>
+            <div>
+              <label for="solved">
+                <input py:if="'solved' in discussion.topic.status" type="checkbox"
+                  name="solved" id="solved" checked="yes" value="1"
+                  onchange="change_attribute('${req.href.discussion('ajax',
+                    'topic', discussion.topic.id)}', 'status.solved',
+                    this.checked);"/>
+                <input py:if="not 'solved' in discussion.topic.status" type="checkbox"
+                  name="solved" id="solved" value="0"
+                  onchange="change_attribute('${req.href.discussion('ajax',
+                    'topic', discussion.topic.id)}', 'status.solved',
+                    this.checked);"/>
+                Solve topic.
+              </label><br/>
+            </div>
+            <div py:if="discussion.moderator">
+              <label for="locked">
+                <input py:if="'locked' in discussion.topic.status" type="checkbox"
+                  name="locked" id="locked" checked="yes" value="1"
+                  onchange="change_attribute('${req.href.discussion('ajax',
+                    'topic', discussion.topic.id)}', 'status.locked',
+                    this.checked); lock_topic(this.checked);"/>
+                <input py:if="not 'locked' in discussion.topic.status"
+                  type="checkbox" name="locked" id="locked" value="0"
+                  onchange="change_attribute('${req.href.discussion('ajax',
+                    'topic', discussion.topic.id)}', 'status.locked',
+                    this.checked); lock_topic(this.checked);"/>
+                Lock topic.
+              </label>
+            </div>
+            <input type="hidden" name="discussion_action" value="edit-attribute"/>
+          </fieldset>
+        </form>
+      </div>
+
+      <div class="attachments">
+        <a name="attachments"></a>
+        <py:choose>
+          <py:when test="not len(discussion.attachments.attachments)">
+            <h3>Attachments</h3>
+            <p>No attachments created.</p>
+            <xi:include href="attach_file_form.html"
+                        py:with="alist = discussion.attachments" />
+          </py:when>
+          <py:otherwise>
+            <xi:include href="list_of_attachments.html"
+                        py:with="alist = discussion.attachments; compact = True" />
+            <xi:include href="attach_file_form.html"
+                        py:with="alist = discussion.attachments" />
+          </py:otherwise>
+        </py:choose>
+      </div>
+
+    </py:with>
+  </py:def>
+
+  <py:def function="display_form(href, title, Class, action)">
+    <a name="reply" ></a>
+    <form class="${Class}" method="post" action="${href}#${discussion.message.id
+      and ('message_' + unicode(discussion.message.id)) or 'topic'}">
+      <fieldset>
+        <legend>
+          ${title}
+        </legend>
+
+        <div class="field">
+          <label for="author">Author:</label><br/>
+          <py:choose>
+            <input py:when="req.authname == 'anonymous'" type="text" id="author"
+              name="author" value="${format_author(req.args.author or req.authname)}"/>
+            <input py:otherwise="" type="text" id="author" name="author"
+              value="${format_author(req.authname)}" readonly="readonly"/>
+          </py:choose><br/>
+        </div>
+
+        <div py:if="is_topic_edit" class="field">
+          <label for="subject">Subject:</label><br/>
+          <py:choose>
+            <input py:when="discussion.realm == 'discussion-wiki'" type="text"
+              id="subject" name="subject" value="${req.args.subject}"
+              readonly="readonly"/>
+            <input py:otherwise="" type="text" id="subject" name="subject"
+              value="${req.args.subject}"/>
+          </py:choose><br/>
+        </div>
+
+        <div class="field">
+          <label for="body">Body:</label><br/>
+          <textarea id="body" class="wikitext" name="body" cols="80" rows="20">${req.args.body or 'Enter your message here...'}</textarea>
+        </div>
+
+        <div class="buttons">
+          <input type="submit" name="preview" value="Preview"/>
+          <input type="submit" name="submit" value="Submit changes"/>
+          <input type="button" name="cancel" value="Cancel"
+            onclick="location.replace('${href}')"/>
+        </div>
+
+        <input py:if="req.args.message" type="hidden" name="message"
+          value="${req.args.message}"/>
+        <input type="hidden" name="discussion_action" value="${action}"/>
+      </fieldset>
+    </form>
+  </py:def>
+
+  <py:def function="display_preview()">
+    <li py:if="req.args.preview" class="preview">
+     <div class="message">
+      <div class="id">
+        Message #??
+      </div>
+      <div class="body">
+        ${wiki_to_html(context, req.args.body or '&nbsp;')}
+      </div>
+      <div class="footer">
+        <div class="author">
+          ${format_author(req.authname)}
+        </div>
+        <div class="time">
+          ${format_datetime(discussion.time)} (${pretty_timedelta(
+            discussion.time)} ago)
+        </div>
+      </div>
+     </div>
+    </li>
+  </py:def>
+
+  <py:def function="display_set_display(href)">
+    <div class="set-display">
+      <a py:strip="discussion.display == 'tree'"
+        href="${href}?discussion_action=set-display;display=tree#topic">
+        Tree View</a>
+      <a py:strip="discussion.display == 'flat-desc'"
+        href="${href}?discussion_action=set-display;display=flat-desc#topic">
+        Flat View (newer first)</a>
+      <a py:strip="discussion.display == 'flat-asc'"
+        href="${href}?discussion_action=set-display;display=flat-asc#topic">
+        Flat View (older first)</a>
+    </div>
+  </py:def>
+
+  <py:def function="display_messages(href, messages)">
+    <li py:for="message in messages" class="${(message.time >
+      discussion.visit_time) and 'new' or None}">
+      <py:with vars="is_message_edit = (str(req.args.message) == str(
+        message.id)) and (req.args.discussion_action in ('edit', 'post-edit'))
+        and not req.args.submit;">
+       <div class="message">
+        <a name="message_${message.id}"></a>
+        <div class="id">
+          Message #${message.id}
+        </div>
+
+        <a py:if="is_message_edit" name="preview"></a>
+        <div class="body" py:choose="">
+          <py:when test="is_message_edit">
+            ${wiki_to_html(context, req.args.body or '&nbsp;')}
+          </py:when>
+          <py:otherwise>
+            ${wiki_to_html(context, message.body or '&nbsp;')}
+          </py:otherwise>
+        </div>
+
+        <div class="controls">
+          <py:if test="'DISCUSSION_APPEND' in perm">
+            <a style="${'locked' in discussion.topic.status and 'display: none;'
+              or ''}" class="reply"
+              href="${href}?discussion_action=add;message=${message.id}#message_${message.id}">
+              Reply</a>
+            <a style="${'locked' in discussion.topic.status and 'display: none;'
+              or ''}" class="quote"
+              href="${href}?discussion_action=quote;message=${message.id}#message_${message.id}">
+              Quote</a>
+            <a py:if="discussion.moderator or ((discussion.authname ==
+              message.author) and (not 'locked' in discussion.topic.status) and
+              (discussion.authname != 'anonymous'))"
+              href="${href}?discussion_action=edit;message=${message.id}#message_${message.id}">
+              Edit</a>
+          </py:if>
+          <a py:if="discussion.moderator"
+            href="${href}?discussion_action=delete;message=${message.id}#${message.replyto
+              == -1 and 'topic' or ('message' + unicode(message.replyto))}"
+            onclick="return confirm('Do you really want to delete this reply and all its descendants?')">
+          Delete</a>
+        </div>
+
+        <div class="footer">
+          <div class="author">
+            ${format_author(is_message_edit and discussion.author or
+              message.author)}
+          </div>
+          <div class="time">
+            ${is_message_edit and format_datetime(discussion.time) or \
+              format_datetime(message.time)} (${is_message_edit and \
+              pretty_timedelta(discussion.time) or \
+              pretty_timedelta(message.time)} ago)
+          </div>
+        </div>
+       </div>
+      </py:with>
+
+      <ul class="reply">
+        <py:if test="(str(req.args.message) == str(message.id)) and (not
+          req.args.submit)">
+          <py:if test="req.args.discussion_action in ('add', 'quote',
+            'post-add')">
+            ${display_preview()}
+            <li>
+              ${display_form(href, 'Reply:', 'add_form', 'post-add')}
+            </li>
+          </py:if>
+
+          <py:if test="req.args.discussion_action in ('edit', 'post-edit')">
+            <li>
+              ${display_form(href, 'Edit:', 'edit_form', 'post-edit')}
+            </li>
+          </py:if>
+        </py:if>
+
+        <py:if test="message.replies and len(message.replies)">
+          ${display_messages(href, message.replies)}
+        </py:if>
+        <li></li>
+      </ul>
+
+    </li>
+  </py:def>
+
+ <py:def function="display_topic_status(status)">
+   <div py:for="state in status" class="icon ${state}">
+     &nbsp;<span class="icon-text ${state}">${state}</span>
+   </div>
+ </py:def>
+
+</html>

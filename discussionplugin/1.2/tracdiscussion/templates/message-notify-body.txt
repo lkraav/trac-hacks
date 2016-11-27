@@ -1,0 +1,13 @@
+Message #${discussion.message.id} - ${discussion.topic.subject}
+----------------------------------------------------------------------------
+Author:     ${format_author(discussion.message.author)}
+Created:    ${format_datetime(discussion.message.time)}
+Moderators: ${', '.join(discussion.forum.moderators)}
+----------------------------------------------------------------------------
+
+${discussion.message.body}
+
+--
+Message URL: <${abs_href.discussion('topic', discussion.topic.id)}#message_${discussion.message.id}>
+$project.name <${project.url or abs_href()}>
+$project.descr

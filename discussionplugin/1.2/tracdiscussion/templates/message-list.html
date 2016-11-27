@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  xmlns:py="http://genshi.edgewall.org/" py:strip="">
+  <!--!
+    Copyright (C) 2007-2011 Radek Bartoň <blackhex@post.cz>
+
+    This software is licensed as described in the file COPYING, which
+    you should have received as part of this distribution.
+  -->
+  <xi:include href="layout.html"/>
+  <xi:include href="discussion-macros.html"/>
+  <head>
+    <title>${discussion.topic.subject} &ndash; Message List &ndash; Discussion</title>
+    <script type="text/javascript">
+      $(document).ready(function() {
+        $("#content").find("h1,h2,h3,h4,h5,h6").addAnchor("Link to this section");
+      });
+    </script>
+  </head>
+
+  <body>
+    <xi:include href="discussion-header.html"/>
+
+    <div id="content" class="discussion searchable">
+      <div id="${discussion.mode}" class="${discussion.mode}">
+
+        <h1>${wiki_to_oneliner(context, discussion.forum.name)} (#${discussion.forum.id}) - ${wiki_to_oneliner(context, discussion.topic.subject)} (#${discussion.topic.id}) - Message List</h1>
+
+        ${display_discussion(discussion, href.discussion('topic', discussion.topic.id))}
+
+        <div py:if="discussion.moderator"
+          class="buttons">
+          <form method="post" action="${href.discussion('topic', discussion.topic.id)}">
+            <input type="submit" name="deletetopic" value="Delete topic" onclick="return confirm('Do you realy want to delete this topic?')"/>
+            <input type="hidden" name="discussion_action" value="delete"/>
+          </form>
+          <form method="post" action="${href.discussion('topic', discussion.topic.id)}">
+            <input type="submit" name="movetopic" value="Move topic"/>
+            <input type="hidden" name="discussion_action" value="move"/>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+  </body>
+</html>

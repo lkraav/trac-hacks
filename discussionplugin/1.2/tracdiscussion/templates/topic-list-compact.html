@@ -1,0 +1,66 @@
+<html xmlns:py="http://genshi.edgewall.org/" py:strip="">
+  <!--!
+    Copyright (C) 2009-2011 Radek Bartoň <blackhex@post.cz>
+    Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
+
+    This software is licensed as described in the file COPYING, which
+    you should have received as part of this distribution.
+  -->
+  <py:choose>
+    <table py:when="len(discussion.topics)" class="listing">
+      <thead>
+        <tr>
+          <th class="status">&nbsp;</th>
+          ${sortable_th(discussion.order, discussion.desc, 'id', 'ID', href.discussion('forum', discussion.forum.id))}
+          ${sortable_th(discussion.order, discussion.desc, 'subject', 'Subject', href.discussion('forum', discussion.forum.id))}
+          ${sortable_th(discussion.order, discussion.desc, 'author', 'Author', href.discussion('forum', discussion.forum.id))}
+          ${sortable_th(discussion.order, discussion.desc, 'replies', 'Replies', href.discussion('forum', discussion.forum.id))}
+          ${sortable_th(discussion.order, discussion.desc, 'lastreply', 'Last Reply', href.discussion('forum', discussion.forum.id))}
+          <th class="new_replies">New Replies</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr py:for="line, topic in enumerate(discussion.topics)" class="${('even', 'odd')[line % 2]} ${topic.priority > 0 and 'important' or ''}">
+          <td class="status">
+            <div class="status">
+              ${display_topic_status(topic.status)}
+            </div>
+          </td>
+          <td colspan="3" class="subject">
+            <div class="subject">
+              <a href="${href.discussion('topic', topic.id)}">
+                <strong>${discussion.format_to_oneliner_no_links(context, topic.subject) or '&nbsp;'}</strong>
+              </a> (#${topic.id})<br/>
+              by ${wiki_to_oneliner(context, format_author(topic.author))} - ${format_datetime(topic.time)} (${pretty_timedelta(topic.time)} ago)
+            </div>
+          </td>
+          <td class="replies">
+            <div class="replies">
+              <a href="${href.discussion('topic', topic.id)}">
+                <span>${topic.replies or '0'}</span>
+              </a>
+            </div>
+          </td>
+          <td class="lastreply">
+            <div class="lastreply">
+              <a href="${href.discussion('topic', topic.id)}">
+                <span>
+                ${topic.lastreply and format_datetime(topic.lastreply) or 'no replies'}<br/>
+                ${topic.lastreply and pretty_timedelta(topic.lastreply) + ' ago' or '&nbsp;'}
+                </span>
+              </a>
+            </div>
+          </td>
+          <td class="new_replies">
+            <div class="new_replies">
+              <a href="${href.discussion('topic', topic.id)}">
+                <span>${topic.new_replies or '0'}</span>
+              </a>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p py:otherwise="" class="help">There are no topics created in this forum.</p>
+  </py:choose>
+</html>

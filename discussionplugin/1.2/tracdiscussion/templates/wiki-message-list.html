@@ -1,0 +1,30 @@
+<div xmlns:xi="http://www.w3.org/2001/XInclude"
+  xmlns:py="http://genshi.edgewall.org/"
+  class="discussion" py:strip="">
+  <!--!
+    Copyright (C) 2007-2011 Radek Bartoň <blackhex@post.cz>
+
+    This software is licensed as described in the file COPYING, which
+    you should have received as part of this distribution.
+  -->
+  <xi:include href="discussion-macros.html"/>
+  <div id="${discussion.mode}" class="discussion ${discussion.mode}">
+    <py:choose>
+      <py:when test="'DISCUSSION_VIEW' in perm and discussion.topic">
+        <xi:include href="wiki-discussion-header.html"/>
+        ${display_discussion(discussion, href.wiki(discussion.page_name))}
+        <xi:include href="wiki-discussion-footer.html"/>
+      </py:when>
+      <py:when test="'DISCUSSION_VIEW' in perm and not discussion.topic">
+        <xi:include href="wiki-discussion-header.html"/>
+        <xi:include href="wiki-discussion-missing.html"/>
+        <xi:include href="wiki-discussion-footer.html"/>
+      </py:when>
+      <py:otherwise>
+        <xi:include href="wiki-discussion-header.html"/>
+        <xi:include otherwise="" href="wiki-discussion-denied.html"/>
+        <xi:include href="wiki-discussion-footer.html"/>
+      </py:otherwise>
+    </py:choose>
+  </div>
+</div>

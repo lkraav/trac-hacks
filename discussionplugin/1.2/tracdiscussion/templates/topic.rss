@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:py="http://genshi.edgewall.org/"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:xi="http://www.w3.org/2001/XInclude">
+  <!--!
+    Copyright (C) 2009 Radek Bartoň <blackhex@post.cz>
+    Copyright (C) 2014 Steffen Hoffmann <hoff.st@web.de>
+
+    This software is licensed as described in the file COPYING, which
+    you should have received as part of this distribution.
+  -->
+  <channel>
+    <title>[${project.name}] Topic #${discussion.topic.id} - ${discussion.topic.subject}</title>
+    <link>${abs_href.discussion('topic', discussion.topic.id)}</link>
+    <description>${unicode(wiki_to_html(context, discussion.topic.subject))}</description>
+    <language>en-us</language>
+    <image py:if="chrome.logo.src_abs">
+      <title>${project.name}</title>
+      <url>${chrome.logo.src_abs}</url>
+      <link>${abs_href.discussion('topic', discussion.topic.id)}</link>
+    </image>
+    <generator>Trac $trac.version - DiscussionPlugin</generator>
+    <item>
+      <xi:include href="author_or_creator.rss"
+                  py:with="author = discussion.topic.author" />
+      <pubDate>${http_date(discussion.topic.time)}</pubDate>
+      <title>Topic #${discussion.topic.id} - ${discussion.topic.subject}</title>
+      <link>${abs_href.discussion('topic', discussion.topic.id)}#topic</link>
+      <guid isPermaLink="false">${abs_href.discussion('topic', discussion.topic.id)}#topic</guid>
+      <description>
+        ${unicode(wiki_to_html(context('discussion', 'topic/%s' % (discussion.topic.id)), discussion.topic.body))}
+      </description>
+      <category>Topic</category>
+    </item>
+    <item py:for="message in discussion.messages">
+      <xi:include href="author_or_creator.rss"
+                  py:with="author = message.author" />
+      <pubDate>${http_date(message.time)}</pubDate>
+      <title>Reply #${message.id} to topic #${discussion.topic.id} - ${discussion.topic.subject}</title>
+      <link>${abs_href.discussion('message', message.id)}#message_${message.id}</link>
+      <guid isPermaLink="false">${abs_href.discussion('message', message.id)}#message_${message.id}</guid>
+      <description>
+        ${unicode(wiki_to_html(context('discussion', 'message_%s' % (message.id)), message.body))}
+      </description>
+      <category>Message</category>
+    </item>
+ </channel>
+</rss>
