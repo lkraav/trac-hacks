@@ -13,7 +13,7 @@ from trac.mimeview import Context
 from trac.resource import Resource
 from trac.search import search_to_sql, shorten_result
 from trac.util import shorten_line
-from trac.util.datefmt import to_datetime, to_timestamp, utc
+from trac.util.datefmt import datetime_now, to_datetime, to_timestamp, utc
 
 from tracdiscussion.util import topic_status_to_list
 
