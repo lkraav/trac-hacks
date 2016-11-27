@@ -8,6 +8,8 @@
 # you should have received as part of this distribution.
 #
 
+from trac.util.text import to_unicode
+
 try:
     from trac.util.text import exception_to_unicode
 # Provide the function for compatibility (available since Trac 0.11.3).
