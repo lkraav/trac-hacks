@@ -52,9 +52,8 @@ class DiscussionInit(Component):
                                           locals(), [script_name])
                     script = getattr(upgrades, script_name)
                 except AttributeError:
-                    raise TracError("No upgrade module for version %(num)i "
-                                    "(%(version)s.py)", num=i,
-                                    version=script_name)
+                    raise TracError("No upgrade module for version %s "
+                                    "(%s.py)" % (i, script_name))
                 script.do_upgrade(self.env, cursor)
 
             self.log.info("Upgraded TracDiscussion db schema from version "

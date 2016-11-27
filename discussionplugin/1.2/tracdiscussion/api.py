@@ -178,7 +178,7 @@ class DiscussionApi(DiscussionDb):
         if resource.parent.realm == 'discussion':
             if action in ('ATTACHMENT_CREATE', 'ATTACHMENT_DELETE'):
                 return 'DISCUSSION_ATTACH' in perm(resource.parent)
-            elif action in ('ATTACHMENT_VIEW'):
+            elif action == 'ATTACHMENT_VIEW':
                 return 'DISCUSSION_VIEW' in perm(resource.parent)
 
     # IPermissionRequestor method
@@ -1197,7 +1197,7 @@ class DiscussionApi(DiscussionDb):
                         raise PermissionError("Topic editing")
 
                     # Decode status flag to status list.
-                    if name in ('status.locked'):
+                    if name == 'status.locked':
                         topic['status'] = context.topic['status'].copy()
                         if value in ('true', 'yes', True):
                             topic['status'] |= set(['locked'])
@@ -1220,7 +1220,7 @@ class DiscussionApi(DiscussionDb):
                         raise PermissionError("Topic editing")
 
                     # Decode status flag to status list.
-                    if name in ('status.solved'):
+                    if name == 'status.solved':
                         topic['status'] = context.topic['status'].copy()
                         if value in ('true', 'yes', True):
                             topic['status'] |= set(['solved'])
