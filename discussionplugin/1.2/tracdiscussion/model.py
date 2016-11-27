@@ -33,7 +33,7 @@ class DiscussionDb(Component):
                     'body')
     msg_cols = ('id', 'replyto', 'time', 'author', 'body')
 
-    def _get_item(self, context, table, columns, where='', values=()):
+    def get_item(self, context, table, columns, where='', values=()):
         """Universal single item getter method."""
         if not context:
             # Prepare generic context for database access.
@@ -52,7 +52,7 @@ class DiscussionDb(Component):
             return dict(zip(columns, row))
         return None
 
-    def _get_items_count(self, context, table, where='', values = ()):
+    def get_items_count(self, context, table, where='', values = ()):
         """Versatile item counter method."""
 
         sql_values = {
@@ -69,8 +69,8 @@ class DiscussionDb(Component):
 
     # List getter methods.
 
-    def _get_items(self, context, table, columns, where='', values=(),
-                   order_by='', desc=False, limit=0, offset=0):
+    def get_items(self, context, table, columns, where='', values=(),
+                  order_by='', desc=False, limit=0, offset=0):
         """Universal dataset getter method."""
 
         sql_values = {
@@ -103,7 +103,7 @@ class DiscussionDb(Component):
 
         # Count forums without group assignment.
         unassigned = [dict(id=0, name='None', description='No Group',
-                      forums=self._get_items_count(context, 'forum',
+                      forums=self.get_items_count(context, 'forum',
                                                    'forum_group=0', []))]
         # Get all grouped forums.
         columns = ('id', 'name', 'description', 'forums')
@@ -369,7 +369,7 @@ class DiscussionDb(Component):
 
     # Item manipulation methods.
 
-    def _add_item(self, context, table, item):
+    def add_item(self, context, table, item):
         fields = tuple(item.keys())
         values = tuple(item.values())
         if not 'forum_group' == table:
@@ -389,7 +389,7 @@ class DiscussionDb(Component):
             cursor.execute(sql, values)
             return db.get_last_id(cursor, table)
 
-    def _delete_item(self, context, table, where='', values=()):
+    def delete_item(self, context, table, where='', values=()):
         sql_values = {
             'table': table,
             'where': where and ' '.join(['WHERE', where]) or ''
@@ -398,7 +398,7 @@ class DiscussionDb(Component):
 
         self.env.db_transaction(sql, values)
 
-    def _edit_item(self, context, table, id, item):
+    def edit_item(self, context, table, id, item):
         sql_values = {
             'table': table,
             'fields' : ', '.join([('%s=%%s' % field)
@@ -410,7 +410,7 @@ class DiscussionDb(Component):
 
         self.env.db_transaction(sql, item.values())
 
-    def _set_item(self, context, table, column, value, where='', values=()):
+    def set_item(self, context, table, column, value, where='', values=()):
         sql_values = {
             'table': table,
             'column': column,

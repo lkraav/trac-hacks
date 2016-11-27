@@ -96,18 +96,18 @@ class DiscussionDbTestCase(unittest.TestCase):
 
     def test_get_item(self):
         context = self._prepare_context(self.req)
-        self.assertEqual(self.ddb._get_item(context, 'topic', ('id',)),
+        self.assertEqual(self.ddb.get_item(context, 'topic', ('id',)),
                          dict(id=1))
 
     def test_get_items(self):
         context = self._prepare_context(self.req)
         cols = ('forum', 'subject')
         # Empty result list case.
-        self.assertEqual(self.ddb._get_items(context, 'topic', cols,
+        self.assertEqual(self.ddb.get_items(context, 'topic', cols,
                                              'forum=%s', (3,)), [])
         # Ordered result list by subject (reversed).
-        self.assertEqual(self.ddb._get_items(context, 'topic', cols,
-                                             order_by=cols[1], desc=True),
+        self.assertEqual(self.ddb.get_items(context, 'topic', cols,
+                                            order_by=cols[1], desc=True),
                          [dict(forum=1, subject='top2'),
                           dict(forum=1, subject='top1')])
 
@@ -161,8 +161,8 @@ class DiscussionDbTestCase(unittest.TestCase):
     def test_add_item(self):
         body = "txt"
         context = self._prepare_context(self.req)
-        id = self.ddb._add_item(context, 'message', dict(body=body, topic=3,
-                                                         replyto=-1,))
+        id = self.ddb.add_item(context, 'message', dict(body=body, topic=3,
+                                                        replyto=-1, ))
         self.assertEqual(5, id)
         self.assertEqual(body, self.ddb.get_messages(context, 3,
                                                      desc=True)[0]['body'])
@@ -170,19 +170,19 @@ class DiscussionDbTestCase(unittest.TestCase):
     def test_delete_item(self):
         context = self._prepare_context(self.req)
         self.assertEqual(1, len(self.ddb.get_messages(context, 1)))
-        self.ddb._delete_item(context, 'message', 'topic=%s', (1,))
+        self.ddb.delete_item(context, 'message', 'topic=%s', (1,))
         self.assertEqual(0, len(self.ddb.get_messages(context, 1)))
 
     def test_edit_item(self):
         context = self._prepare_context(self.req)
         self.assertEqual('msg1', self.ddb.get_messages(context, 1)[0]['body'])
-        self.ddb._edit_item(context, 'message', 1, dict(body='msg0'))
+        self.ddb.edit_item(context, 'message', 1, dict(body='msg0'))
         self.assertEqual('msg0', self.ddb.get_messages(context, 1)[0]['body'])
 
     def test_set_item(self):
         context = self._prepare_context(self.req)
         self.assertEqual(1, len(self.ddb.get_messages(context, 1)))
-        self.ddb._set_item(context, 'message', 'topic', 1, 'topic=%s', (2,))
+        self.ddb.set_item(context, 'message', 'topic', 1, 'topic=%s', (2,))
         self.assertEqual(2, len(self.ddb.get_messages(context, 1)))
 
 

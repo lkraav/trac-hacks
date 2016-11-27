@@ -215,7 +215,7 @@ class DiscussionWiki(Component):
 
         elif 'last-forum' == namespace:
             columns = ('id', 'subject')
-            forum = self.api._get_items(context, 'forum', columns,
+            forum = self.api.get_items(context, 'forum', columns,
                                         'forum_group=%s', (id,),
                                         'time', True, limit=1)
             if forum:
@@ -227,8 +227,8 @@ class DiscussionWiki(Component):
 
         elif 'topic' == namespace:
             columns = ('forum', 'subject')
-            topic = self.api._get_item(context, 'topic', columns, 'id=%s',
-                                       (id,))
+            topic = self.api.get_item(context, 'topic', columns, 'id=%s',
+                                      (id,))
             if topic:
                 forum_subject = self.api.get_forum_subject(context,
                                                            topic['forum'])
@@ -242,7 +242,7 @@ class DiscussionWiki(Component):
 
         elif 'last-topic' == namespace:
             columns = ('id', 'forum', 'subject')
-            topic = self.api._get_items(context, 'topic', columns,
+            topic = self.api.get_items(context, 'topic', columns,
                                         'forum=%s', (id,),
                                         'time', True, limit=1)
             if topic:

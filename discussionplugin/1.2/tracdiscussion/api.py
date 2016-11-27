@@ -213,8 +213,8 @@ class DiscussionApi(DiscussionDb):
     def get_resource_description(self, resource, format=None, **kwargs):
         type, id = self._parse_resource_id(resource)
         if 'forum' == type:
-            forum = self._get_item(None, 'forum', ('id', 'name', 'subject'),
-                                   where='id=%s', values=(id,))
+            forum = self.get_item(None, 'forum', ('id', 'name', 'subject'),
+                                  where='id=%s', values=(id,))
             if 'compact' == format:
                 return '#%s' % forum['id']
             elif 'summary' == format:
@@ -222,8 +222,8 @@ class DiscussionApi(DiscussionDb):
             else:
                 return 'Forum %s' % forum['name']
         elif 'topic' == type:
-            topic = self._get_item(None, 'topic', ('id', 'subject'),
-                                   where='id=%s', values=(id,))
+            topic = self.get_item(None, 'topic', ('id', 'subject'),
+                                  where='id=%s', values=(id,))
             if 'compact' == format:
                 return '#%s' % topic['id']
             elif 'summary' == format:
@@ -239,8 +239,8 @@ class DiscussionApi(DiscussionDb):
     def resource_exists(self, resource):
         type, id = self._parse_resource_id(resource)
         if type in ('forum', 'topic', 'message'):
-            return self._get_item(None, type, ('id',), where='id=%s',
-                                  values=(id,)) != None
+            return self.get_item(None, type, ('id',), where='id=%s',
+                                 values=(id,)) != None
 
     # Main request processing function.
 
@@ -998,7 +998,7 @@ class DiscussionApi(DiscussionDb):
                 columns = ('id',)
                 forum_id = context.forum['id']
                 href = Href('discussion')
-                topic = self._get_items(context, 'topic', columns,
+                topic = self.get_items(context, 'topic', columns,
                                         'forum=%s', (forum_id,),
                                         'time', True, limit=1)
                 if topic:
@@ -1617,15 +1617,15 @@ class DiscussionApi(DiscussionDb):
 
     def get_group(self, context, id):
         # Get forum group.
-        return self._get_item(context, 'forum_group',
-                              ('id', 'name', 'description'), 'id=%s', (id,)
-               ) or dict(id=0, name='None', description='No Group')
+        return self.get_item(context, 'forum_group',
+                             ('id', 'name', 'description'), 'id=%s', (id,)
+                             ) or dict(id=0, name='None', description='No Group')
 
     def get_forum(self, context, forum_id):
         """Get forum by ID."""
         context.resource = Resource(self.realm, 'forum/%s' % forum_id)
-        forum = self._get_item(context, 'forum', self.forum_cols, 'id=%s',
-                               (context.resource.id.split('/')[-1],))
+        forum = self.get_item(context, 'forum', self.forum_cols, 'id=%s',
+                              (context.resource.id.split('/')[-1],))
         # Unpack list of moderators and subscribers and get forum tags.
         if forum:
             forum['moderators'] = as_list(forum['moderators'])
@@ -1643,7 +1643,7 @@ class DiscussionApi(DiscussionDb):
         def _new_replies_count(context, forum_id):
             # Get IDs of topics in this forum.
             where = "forum=%s"
-            topics = [topic['id'] for topic in self._get_items(
+            topics = [topic['id'] for topic in self.get_items(
                          context, 'topic', ('id',), where, (forum_id,))]
             # Count unseen messages.
             count = 0
@@ -1651,15 +1651,15 @@ class DiscussionApi(DiscussionDb):
                 values = (topic_id, topic_id in context.visited_topics and
                                     int(context.visited_topics[topic_id]) or 0)
                 where = "topic=%s AND time>%s"
-                count += self._get_items_count(context, 'message', where,
-                                               values)
+                count += self.get_items_count(context, 'message', where,
+                                              values)
             return count
 
         def _new_topic_count(context, forum_id):
             values = (forum_id, forum_id in context.visited_forums and
                                 int(context.visited_forums[forum_id]) or 0)
             where = "forum=%s AND time>%s"
-            return self._get_items_count(context, 'topic', where, values)
+            return self.get_items_count(context, 'topic', where, values)
 
         forums = self._get_forums(context, order_by, desc)
         # Add some more forum attributes and convert others.
@@ -1688,17 +1688,17 @@ class DiscussionApi(DiscussionDb):
         columns = ('id', 'name', 'author', 'time', 'subject', 'description')
         where = "time BETWEEN %s AND %s"
         values = (to_timestamp(start), to_timestamp(stop))
-        return self._get_items(context, 'forum', columns, where, values)
+        return self.get_items(context, 'forum', columns, where, values)
 
     def get_topic(self, context, id):
         """Get topic by ID."""
-        topic = self._get_item(context, 'topic', self.topic_cols, 'id=%s',
-                               (id,))
+        topic = self.get_item(context, 'topic', self.topic_cols, 'id=%s',
+                              (id,))
         return prepare_topic(self.get_users(context), topic)
 
     def get_topic_by_subject(self, context, subject):
         """Get topic by subject."""
-        topic = self._get_item(context, 'topic', self.topic_cols,
+        topic = self.get_item(context, 'topic', self.topic_cols,
                                'subject=%s', (subject,))
         return prepare_topic(self.get_users(context), topic)
 
@@ -1709,7 +1709,7 @@ class DiscussionApi(DiscussionDb):
             values = (topic_id, topic_id in context.visited_topics and
                                 int(context.visited_topics[topic_id]) or 0)
             where = "topic=%s AND time>%s"
-            return self._get_items_count(context, 'message', where, values)
+            return self.get_items_count(context, 'message', where, values)
 
         topics = self._get_topics(context, forum_id, order_by, desc,
                                   limit, offset, with_body)
@@ -1726,51 +1726,51 @@ class DiscussionApi(DiscussionDb):
 
     def get_message(self, context, id):
         """Get message by ID."""
-        return self._get_item(context, 'message', self.message_cols, 'id=%s',
-                              (id,))
+        return self.get_item(context, 'message', self.message_cols, 'id=%s',
+                             (id,))
 
     def get_flat_messages(self, context, id, order_by='time', desc=False,
                           limit=0, offset=0):
         # Return messages of specified topic.
-        return self._get_items(context, 'message', self.msg_cols, 'topic=%s',
-                               (id,), order_by, desc, limit, offset)
+        return self.get_items(context, 'message', self.msg_cols, 'topic=%s',
+                              (id,), order_by, desc, limit, offset)
 
     def get_flat_messages_by_forum(self, context, id, order_by='time',
                                    desc=False, limit=0, offset=0):
         # Return messages of specified topic.
-        return self._get_items(context, 'message', ('id', 'replyto', 'topic',
+        return self.get_items(context, 'message', ('id', 'replyto', 'topic',
                                                     'time', 'author', 'body'),
                                'forum=%s', (id,), order_by, desc, limit,
-                               offset)
+                              offset)
 
     def get_replies(self, context, id, order_by='time', desc=False):
         # Return replies of specified message.
-        return self._get_items(context, 'message', self.msg_cols,
+        return self.get_items(context, 'message', self.msg_cols,
                                'replyto=%s', (id,), order_by, desc)
 
     # Attribute getter methods.
 
     def get_forum_subject(self, context, id):
         """Get subject of the forum."""
-        forum = self._get_item(context, 'forum', ('subject',), 'id=%s', (id,))
+        forum = self.get_item(context, 'forum', ('subject',), 'id=%s', (id,))
         if forum:
             return forum['subject']
 
     def get_topic_subject(self, context, id):
         """Get subject of the topic."""
-        topic = self._get_item(context, 'topic', ('subject',), 'id=%s', (id,))
+        topic = self.get_item(context, 'topic', ('subject',), 'id=%s', (id,))
         if topic:
             return topic['subject']
 
     # Counter methods.
 
     def get_topics_count(self, context, forum_id):
-        return self._get_items_count(context, 'topic', 'forum=%s',
-                                     (forum_id,))
+        return self.get_items_count(context, 'topic', 'forum=%s',
+                                    (forum_id,))
 
     def get_messages_count(self, context, topic_id):
-        return self._get_items_count(context, 'message', 'topic=%s',
-                                     (topic_id,))
+        return self.get_items_count(context, 'message', 'topic=%s',
+                                    (topic_id,))
 
     def get_users(self, context, action='DISCUSSION_VIEW'):
         try:
@@ -1785,7 +1785,7 @@ class DiscussionApi(DiscussionDb):
     # Add item methods.
 
     def add_group(self, context, group):
-        return self._add_item(context, 'forum_group', group)
+        return self.add_item(context, 'forum_group', group)
 
     def add_forum(self, context, forum):
         tmp_forum = deepcopy(forum)
@@ -1799,7 +1799,7 @@ class DiscussionApi(DiscussionDb):
             # DEVEL: Store tags instead of discarging them.
             del tmp_forum['tags']
 
-        return self._add_item(context, 'forum', tmp_forum)
+        return self.add_item(context, 'forum', tmp_forum)
 
     def add_topic(self, context, topic):
         tmp_topic = deepcopy(topic)
@@ -1810,41 +1810,41 @@ class DiscussionApi(DiscussionDb):
         tmp_topic['status'] = topic_status_from_list(
             'status' in tmp_topic and tmp_topic['status'] or [])
 
-        return self._add_item(context, 'topic', tmp_topic)
+        return self.add_item(context, 'topic', tmp_topic)
 
     def add_message(self, context, message):
-        return self._add_item(context, 'message', message)
+        return self.add_item(context, 'message', message)
 
     # Delete item methods
 
     def delete_group(self, context, id):
         # Assing forums of this group to 'None' group first.
-        self._set_item(context, 'forum', 'forum_group', '0','forum_group=%s',
-                       (id,))
-        self._delete_item(context, 'forum_group', 'id=%s', (id,))
+        self.set_item(context, 'forum', 'forum_group', '0', 'forum_group=%s',
+                      (id,))
+        self.delete_item(context, 'forum_group', 'id=%s', (id,))
 
     def delete_forum(self, context, id):
         # Delete all forum messages and topics first.
-        self._delete_item(context, 'message', 'forum=%s', (id,))
-        self._delete_item(context, 'topic', 'forum=%s', (id,))
-        self._delete_item(context, 'forum', 'id=%s', (id,))
+        self.delete_item(context, 'message', 'forum=%s', (id,))
+        self.delete_item(context, 'topic', 'forum=%s', (id,))
+        self.delete_item(context, 'forum', 'id=%s', (id,))
 
     def delete_topic(self, context, id):
         # Delete all topic messages first.
-        self._delete_item(context, 'message', 'topic=%s', (id,))
-        self._delete_item(context, 'topic', 'id=%s', (id,))
+        self.delete_item(context, 'message', 'topic=%s', (id,))
+        self.delete_item(context, 'topic', 'id=%s', (id,))
 
     def delete_message(self, context, id):
         # Delete all replies to this message first.
         for reply in self.get_replies(context, id):
             self.delete_message(context, reply['id'])
-        self._delete_item(context, 'message', 'id=%s', (id,))
+        self.delete_item(context, 'message', 'id=%s', (id,))
 
     # Edit item methods
 
     def edit_group(self, context, id, group):
         # Edit forum group.
-        self._edit_item(context, 'forum_group', id, group)
+        self.edit_item(context, 'forum_group', id, group)
 
     def edit_forum(self, context, id, forum):
         tmp_forum = deepcopy(forum)
@@ -1855,7 +1855,7 @@ class DiscussionApi(DiscussionDb):
         if 'subscribers' in tmp_forum:
             tmp_forum['subscribers'] = ' '.join(tmp_forum['subscribers'])
 
-        self._edit_item(context, 'forum', id, tmp_forum)
+        self.edit_item(context, 'forum', id, tmp_forum)
 
     def edit_topic(self, context, id, topic):
         tmp_topic = deepcopy(topic)
@@ -1867,21 +1867,21 @@ class DiscussionApi(DiscussionDb):
         if 'status' in tmp_topic:
             tmp_topic['status'] = topic_status_from_list(tmp_topic['status'])
 
-        self._edit_item(context, 'topic', id, tmp_topic)
+        self.edit_item(context, 'topic', id, tmp_topic)
 
     def edit_message(self, context, id, message):
-        self._edit_item(context, 'message', id, message)
+        self.edit_item(context, 'message', id, message)
 
     # Set item methods
 
     def set_group(self, context, forum_id, group_id):
         # Change group of specified forum.
-        self._set_item(context, 'forum', 'forum_group', group_id or '0',
+        self.set_item(context, 'forum', 'forum_group', group_id or '0',
                        'id=%s', (forum_id,))
 
     def set_forum(self, context, topic_id, forum_id):
         # Change forum of all topics and messages.
-        self._set_item(context, 'topic', 'forum', forum_id, 'id=%s',
-                       (topic_id,))
-        self._set_item(context, 'message', 'forum', forum_id, 'topic=%s',
-                       (topic_id,))
+        self.set_item(context, 'topic', 'forum', forum_id, 'id=%s',
+                      (topic_id,))
+        self.set_item(context, 'message', 'forum', forum_id, 'topic=%s',
+                      (topic_id,))
