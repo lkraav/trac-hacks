@@ -1,22 +1,27 @@
 # -*- coding: utf-8 -*-
 
-import os
+import datetime
 import os.path
+import unicodedata
 
-from trac.core import *
+from trac.config import Option
+from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.admin import AdminCommandError
 from trac.perm import PermissionCache
 from trac.mimeview import Context
 from trac.util.translation import _
-from trac.util.text import to_unicode, print_table, pretty_size
+from trac.util.datefmt import format_datetime, to_timestamp, utc
+from trac.util.text import print_table, pretty_size
 
 from trac.admin import IAdminCommandProvider
 
-from tracdownloads.api import *
+from tracdownloads.api import DownloadsApi, IDownloadChangeListener
+
 
 class FakeRequest(object):
     def __init__(self, env, authname):
         self.perm = PermissionCache(env, authname)
+
 
 class DownloadsConsoleAdmin(Component):
     """
@@ -31,6 +36,7 @@ class DownloadsConsoleAdmin(Component):
     # Configuration options.
     path = Option('downloads', 'path', '/var/lib/trac/downloads',
       doc = 'Directory to store uploaded downloads.')
+
     consoleadmin_user = Option('downloads', 'consoleadmin_user', 'anonymous',
       doc = 'User whos permissons will be used to upload download. He/she'
         ' should have TAGS_MODIFY permissons.')
@@ -83,7 +89,7 @@ class DownloadsConsoleAdmin(Component):
         # Create download dictionary from arbitrary attributes.
         download = {'file' : filename,
                     'size' : file_size,
-                    'time' : to_timestamp(datetime.now(utc)),
+                    'time' : to_timestamp(datetime.datetime.now(utc)),
                     'count' : 0}
 
         # Read optional attributes from arguments.

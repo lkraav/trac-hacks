@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from trac.core import *
+from trac.core import Component, implements
 from trac.admin import IAdminPanelProvider
 from trac.web.chrome import web_context
 
-from tracdownloads.api import *
+from tracdownloads.api import DownloadsApi
+
 
 class DownloadsWebAdmin(Component):
     """
@@ -19,7 +20,7 @@ class DownloadsWebAdmin(Component):
         if req.perm.has_permission('DOWNLOADS_ADMIN'):
             yield ('downloads', 'Downloads System', 'downloads', 'Downloads')
             yield ('downloads', 'Downloads System', 'architectures',
-              'Architectures')
+                   'Architectures')
             yield ('downloads', 'Downloads System', 'platforms', 'Platforms')
             yield ('downloads', 'Downloads System', 'types', 'Types')
 

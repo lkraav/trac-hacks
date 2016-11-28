@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import os
 import shutil
 import unicodedata
-from datetime import *
 
-from trac.core import *
+from trac.core import Component, ExtensionPoint, Interface, TracError
 from trac.config import Option, IntOption, BoolOption, ListOption, PathOption
 from trac.resource import Resource
 from trac.mimeview import Mimeview
@@ -30,6 +30,7 @@ class IDownloadChangeListener(Interface):
     def download_deleted(context, download):
         """Called when a download is deleted. `download` argument is
         a dictionary with values of fields of just deleted download."""
+
 
 class DownloadsApi(Component):
 
@@ -357,7 +358,7 @@ class DownloadsApi(Component):
 
         # Fill up the template data.
         self.data['authname'] = context.req.authname
-        self.data['time'] = format_datetime(datetime.now(utc))
+        self.data['time'] = format_datetime(datetime.datetime.now(utc))
         self.data['realm'] = context.resource.realm
 
         # Add CSS styles
@@ -567,7 +568,7 @@ class DownloadsApi(Component):
                 download = {'file' : filename,
                             'description' : context.req.args.get('description'),
                             'size' : file_size,
-                            'time' : to_timestamp(datetime.now(utc)),
+                            'time' : to_timestamp(datetime.datetime.now(utc)),
                             'count' : 0,
                             'author' : context.req.authname,
                             'tags' : context.req.args.get('tags'),
@@ -871,8 +872,8 @@ class DownloadsApi(Component):
         # Try to normalize the filename to unicode NFC if we can.
         # Files uploaded from OS X might be in NFD.
         self.log.debug('input filename: %s', (file.filename,))
-        filename = unicodedata.normalize('NFC', to_unicode(file.filename,
-          'utf-8'))
+        filename = unicodedata.normalize('NFC',
+                                         to_unicode(file.filename, 'utf-8'))
         filename = filename.replace('\\', '/').replace(':', '/')
         filename = os.path.basename(filename)
         self.log.debug('output filename: %s', (filename,))

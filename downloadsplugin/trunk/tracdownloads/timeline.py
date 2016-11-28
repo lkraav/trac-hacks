@@ -2,16 +2,15 @@
 
 from genshi.builder import tag
 
-from trac.core import *
+from trac.core import Component, implements
 from trac.resource import Resource, get_resource_url, get_resource_name, \
-  get_resource_description
-from trac.util.text import pretty_size
-from trac.wiki.formatter import format_to_oneliner
+                          get_resource_description
 from trac.util.datefmt import to_datetime, to_timestamp, utc
 
 from trac.timeline import ITimelineEventProvider
 
-from tracdownloads.api import *
+from tracdownloads.api import DownloadsApi
+
 
 class DownloadsTimeline(Component):
     """
@@ -42,7 +41,7 @@ class DownloadsTimeline(Component):
         # Decompose event data.
         id = event[3]
 
-        # Return apropriate content.
+        # Return appropriate content.
         resource = Resource('downloads', id)
         if field == 'url':
             if context.req.perm.has_permission('DOWNLOADS_VIEW', resource):

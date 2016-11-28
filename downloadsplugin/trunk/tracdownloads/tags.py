@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# Trac imports.
+from trac.config import ListOption
 from trac.core import *
 from trac.resource import Resource
-from trac.mimeview import Context
-
-# TagsPlugin imports.
 from tractags.api import DefaultTagProvider, TagSystem
 
-# Local imports.
-from tracdownloads.api import *
+from tracdownloads.api import DownloadsApi, IDownloadChangeListener
 from tracdownloads.core import _
+
 
 class DownloadsTagProvider(DefaultTagProvider):
     """

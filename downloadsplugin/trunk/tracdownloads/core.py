@@ -2,7 +2,8 @@
 
 import re
 
-from trac.core import *
+from trac.config import Option
+from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager
 from trac.util.html import html
@@ -12,8 +13,7 @@ from trac.web.main import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             web_context
 
-# Local imports.
-from tracdownloads.api import *
+from tracdownloads.api import DownloadsApi
 
 # Bring in dedicated Trac plugin i18n helper.
 add_domain, _, tag_ = domain_functions('tracdownloads',

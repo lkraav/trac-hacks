@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from trac.core import *
-from trac.db import *
+from trac.core import Component, implements
 from trac.env import IEnvironmentSetupParticipant
 
-# Last screenshots database shcema version
 last_db_version = 1
+
 
 class DownloadsInit(Component):
     """
@@ -14,7 +13,7 @@ class DownloadsInit(Component):
     """
     implements(IEnvironmentSetupParticipant)
 
-    # IEnvironmentSetupParticipanttr
+    # IEnvironmentSetupParticipant
     def environment_created(self):
         pass
 

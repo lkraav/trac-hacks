@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from trac.core import *
+import re
+
+from trac.config import ListOption
+from trac.core import Component, implements
 from trac.resource import Resource
 from trac.util.html import html
+from trac.util.text import pretty_size, to_unicode
 from trac.web.chrome import Chrome
-
 from trac.wiki import IWikiSyntaxProvider, IWikiMacroProvider
 
-from tracdownloads.api import *
+from tracdownloads.api import DownloadsApi
+
 
 class DownloadsWiki(Component):
     """
@@ -19,7 +23,6 @@ class DownloadsWiki(Component):
     downloads_count_macro_doc = """ """
     list_downloads_macro_doc = """ """
 
-    # Configuration options
     visible_fields = ListOption('downloads', 'visible_fields',
       'id,file,description,size,time,count,author,tags,component,version,'
       'architecture,platform,type', doc = 'List of downloads table fields that'
