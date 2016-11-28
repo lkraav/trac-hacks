@@ -21,7 +21,7 @@ jQuery(document).ready(function($){
             
             // sum up each row
             jQuery('.${field}', this).each(function(){
-                var num = parseFloat($(this).text());
+                var num = parseFloat($(this).text().replace(',', '.'));
                 if (!isNaN(num)){
                     sums['${field}'] += num;
                 }
