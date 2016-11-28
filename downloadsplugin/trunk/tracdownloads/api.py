@@ -37,9 +37,6 @@ class DownloadsApi(Component):
     # Download change listeners.
     change_listeners = ExtensionPoint(IDownloadChangeListener)
 
-    # Configuration options.
-    title = Option('downloads', 'title', 'Downloads',
-      doc = 'Main navigation bar button title.')
     path = PathOption('downloads', 'path', '../downloads',
       doc = 'Path where to store uploaded downloads.')
     ext = ListOption('downloads', 'ext', 'zip,gz,bz2,rar',

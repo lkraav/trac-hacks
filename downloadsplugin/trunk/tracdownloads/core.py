@@ -28,9 +28,6 @@ class DownloadsCore(Component):
     implements(INavigationContributor, IPermissionRequestor, IRequestHandler,
                IResourceManager, ITemplateProvider)
 
-    title = Option('downloads', 'title', 'Downloads',
-                   doc="Main navigation bar button title.")
-
     # INavigationContributor methods.
 
     def get_active_navigation_item(self, req):
@@ -39,7 +36,7 @@ class DownloadsCore(Component):
     def get_navigation_items(self, req):
         if 'DOWNLOADS_VIEW' in req.perm:
             yield ('mainnav', 'downloads',
-                   html.a(self.title, href = req.href.downloads()))
+                   html.a('Downloads', href = req.href.downloads()))
 
     # IPermissionRequestor methods.
 
