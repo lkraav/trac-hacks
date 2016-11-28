@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from trac.core import *
-from trac.mimeview import Context
 from trac.admin import IAdminPanelProvider
+from trac.web.chrome import web_context
 
 from tracdownloads.api import *
 
@@ -25,7 +25,7 @@ class DownloadsWebAdmin(Component):
 
     def render_admin_panel(self, req, category, page, path_info):
         # Create request context.
-        context = Context.from_request(req)('downloads-admin')
+        context = web_context(req, 'downloads-admin')
 
         # Set page name to request.
         req.args['page'] = page

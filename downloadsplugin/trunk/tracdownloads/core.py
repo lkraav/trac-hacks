@@ -3,14 +3,14 @@
 import re
 
 from trac.core import *
-from trac.mimeview import Context
 from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager
 from trac.util.html import html
 from trac.util.text import pretty_size
 from trac.util.translation import domain_functions
 from trac.web.main import IRequestHandler
-from trac.web.chrome import INavigationContributor, ITemplateProvider
+from trac.web.chrome import INavigationContributor, ITemplateProvider, \
+                            web_context
 
 # Local imports.
 from tracdownloads.api import *
@@ -68,7 +68,7 @@ class DownloadsCore(Component):
         return False
 
     def process_request(self, req):
-        context = Context.from_request(req)('downloads-core')
+        context = web_context(req, 'downloads-core')
         api = self.env[DownloadsApi]
         return api.process_downloads(context) + (None,)
 
