@@ -22,8 +22,8 @@ add_domain, _, tag_ = domain_functions('tracdownloads',
 
 class DownloadsCore(Component):
     """
-        The core module implements plugin's ability to download files, provides
-        permissions and templates.
+        The core module implements plugin's ability to download files,
+        provides permissions and templates.
     """
     implements(INavigationContributor, IPermissionRequestor, IRequestHandler,
                IResourceManager, ITemplateProvider)

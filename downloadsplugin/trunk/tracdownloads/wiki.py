@@ -24,9 +24,10 @@ class DownloadsWiki(Component):
     list_downloads_macro_doc = """ """
 
     visible_fields = ListOption('downloads', 'visible_fields',
-      'id,file,description,size,time,count,author,tags,component,version,'
-      'architecture,platform,type', doc = 'List of downloads table fields that'
-      ' should be visible to users on Downloads section.')
+        'id,file,description,size,time,count,author,tags,component,version,'
+        'architecture,platform,type',
+        doc="List of downloads table fields that should be visible to users "
+            "on Downloads section.")
 
     # IWikiSyntaxProvider
     def get_link_resolvers(self):
@@ -67,15 +68,15 @@ class DownloadsWiki(Component):
                         else:
                             # Any zero ID means all downloads.
                             download_ids = []
-                            break;
+                            break
                     except ValueError:
                         # If it wasn't ID resolve filename.
                         download_id = api.get_download_id_from_file(item)
                         if download_id:
                             download_ids.append(download_id)
                         else:
-                            self.log.debug('Could not resolve download filename'
-                              ' to ID.')
+                            self.log.debug("Could not resolve download "
+                                           "filename to ID.")
 
             # Empty list mean all.
             if len(download_ids) == 0:
@@ -102,19 +103,20 @@ class DownloadsWiki(Component):
             desc = req.args.get('desc')
 
             # Prepare template data.
-            data = {}
-            data['order'] = order
-            data['desc'] = desc
-            data['has_tags'] = self.env.is_component_enabled(
-              'tractags.api.TagEngine')
-            data['downloads'] = api.get_downloads(order, desc)
-            data['visible_fields'] = [visible_field for visible_field in
-              self.visible_fields]
-            data['page_name'] = page_name
+            data = {
+                'order': order,
+                'desc': desc,
+                'has_tags':
+                    self.env.is_component_enabled('tractags.api.TagEngine'),
+                'downloads': api.get_downloads(order, desc),
+                'visible_fields': [visible_field
+                                   for visible_field in self.visible_fields],
+                'page_name': page_name
+            }
 
             # Return rendered template.
             return to_unicode(Chrome(self.env).render_template(formatter.req,
-              'wiki-downloads-list.html', {'downloads' : data}, 'text/html',
+              'wiki-downloads-list.html', {'downloads': data}, 'text/html',
               True))
 
     # Internal functions
@@ -134,9 +136,11 @@ class DownloadsWiki(Component):
                     resource = Resource('downloads', download['id'])
                     if 'DOWNLOADS_VIEW' in formatter.req.perm(resource):
                         # Return link to existing file.
-                        return html.a(label, href = formatter.href.downloads(
-                          params), title = '%s (%s)' % (download['file'],
-                          pretty_size(download['size'])))
+                        return html.a(label,
+                                      href=formatter.href.downloads(params),
+                                      title='%s (%s)'
+                                            % (download['file'],
+                                               pretty_size(download['size'])))
                     else:
                         # File exists but no permission to download it.
                         html.a(label, href = '#', title = '%s (%s)' % (
@@ -144,9 +148,9 @@ class DownloadsWiki(Component):
                           class_ = 'missing')
                 else:
                     # Return link to non-existing file.
-                    return html.a(label, href = '#', title = 'File not found.',
-                      class_ = 'missing')
+                    return html.a(label, href='#', title='File not found.',
+                                  class_='missing')
             else:
                 # Return link to file to which is no permission. 
-                return html.a(label, href = '#', title = 'No permission to file.',
-                   class_ = 'missing')
+                return html.a(label, href='#', title='No permission to file.',
+                              class_='missing')

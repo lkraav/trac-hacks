@@ -19,11 +19,12 @@ class DownloadsTagProvider(DefaultTagProvider):
 
     def check_permission(self, perm, operation):
         # Permission table for download tags.
-        permissions = {'view' : 'DOWNLOADS_VIEW', 'modify' : 'DOWNLOADS_ADD'}
+        permissions = {'view': 'DOWNLOADS_VIEW', 'modify': 'DOWNLOADS_ADD'}
 
         # First check permissions in default provider then for downloads.
         return super(DownloadsTagProvider, self).check_permission(perm,
           operation) and permissions[operation] in perm
+
 
 class DownloadsTags(Component):
     """
@@ -98,11 +99,11 @@ class DownloadsTags(Component):
     # Private methods
 
     def _has_tags_changed(self, download):
-        # Return True if there is any attribute that generate tags in download.
-        return download.has_key('author') or download.has_key('component') or \
-          download.has_key('version') or download.has_key('architecture') or \
-          download.has_key('platform') or download.has_key('type') or \
-          download.has_key('tags')
+        # Return True for any attribute that generate tags in download.
+        return 'author' in download or 'component' in download or \
+               'version' in download or 'architecture' in download or \
+               'platform' in download or 'type' in download or \
+               'tags' in download
 
     def _get_tags(self, download):
         # Translate architecture, platform and type ID to its names.

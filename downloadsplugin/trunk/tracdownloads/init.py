@@ -25,9 +25,9 @@ class DownloadsInit(Component):
 
         # Perform incremental upgrades
         for I in range(db_version + 1, last_db_version + 1):
-            script_name  = 'db%i' % (I)
-            module = __import__('tracdownloads.db.%s' % (script_name),
-            globals(), locals(), ['do_upgrade'])
+            script_name = 'db%i' % I
+            module = __import__('tracdownloads.db.%s' % script_name,
+                                globals(), locals(), ['do_upgrade'])
             cursor = db.cursor()
             module.do_upgrade(self.env, cursor)
 

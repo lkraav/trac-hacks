@@ -100,7 +100,7 @@ class DownloadsApi(Component):
         # Add IDs to versions according to selected sorting.
         id = 0
         for version in versions:
-            id = id + 1
+            id += 1
             version['id'] = id
         return versions
 
@@ -110,10 +110,10 @@ class DownloadsApi(Component):
                                                    'description'),
                                      order_by=order_by, desc=desc)
 
-        # Add IDs to versions according to selected sorting.
+        # Add IDs to versions according to selected sorting.
         id = 0
         for component in components:
-            id = id + 1
+            id += 1
             component['id'] = id
         return components
 
@@ -272,8 +272,9 @@ class DownloadsApi(Component):
     def _edit_item(self, table, id, item):
         fields = item.keys()
         values = item.values()
-        sql = "UPDATE %s SET " % (table,) + ", ".join([("%s = %%s" % (field))
-          for field in fields]) + " WHERE id = %s"
+        sql = "UPDATE %s SET " % (table,) + \
+              ", ".join([("%s = %%s" % field) for field in fields]) + \
+              " WHERE id = %s"
         self.env.db_transaction(sql, tuple(values + [id]))
 
     def edit_download(self, id, download):
@@ -503,7 +504,7 @@ class DownloadsApi(Component):
 
                 # Get form values.
                 order = context.req.args.get('order') or self.download_sort
-                if context.req.args.has_key('desc'):
+                if 'desc' in context.req.args:
                     desc = context.req.args.get('desc') == '1'
                 else:
                     desc = self.download_sort_direction == 'desc'
@@ -533,7 +534,7 @@ class DownloadsApi(Component):
 
                 # Get form values
                 order = context.req.args.get('order') or self.download_sort
-                if context.req.args.has_key('desc'):
+                if 'desc' in context.req.args:
                     desc = context.req.args.get('desc') == '1'
                 else:
                     desc = self.download_sort_direction == 'desc'
@@ -582,7 +583,7 @@ class DownloadsApi(Component):
                             'type' : context.req.args.get('type')}
 
                 # Upload file to DB and file storage.
-                self._add_download(context, download, file)
+                self.add_download(context, download, file)
 
                 # Close input file.
                 file.close()
@@ -628,7 +629,7 @@ class DownloadsApi(Component):
 
                 # Get form values
                 order = context.req.args.get('order') or self.architecture_sort
-                if context.req.args.has_key('desc'):
+                if 'desc' in context.req.args:
                     desc = context.req.args.get('desc') == '1'
                 else:
                     desc = self.architecture_sort_direction == 'desc'
@@ -681,7 +682,7 @@ class DownloadsApi(Component):
 
                 # Get form values.
                 order = context.req.args.get('order') or self.platform_sort
-                if context.req.args.has_key('desc'):
+                if 'desc'in context.req.args:
                     desc = context.req.args.get('desc') == '1'
                 else:
                     desc = self.platform_sort_direction == 'desc'
@@ -732,7 +733,7 @@ class DownloadsApi(Component):
 
                 # Get form values
                 order = context.req.args.get('order') or self.type_sort
-                if context.req.args.has_key('desc'):
+                if 'desc' in context.req.args:
                     desc = context.req.args.get('desc') == '1'
                 else:
                     desc = self.type_sort_direction == 'desc'
@@ -780,7 +781,7 @@ class DownloadsApi(Component):
 
     """ Full implementation of download addition. It creates DB entry for
     download <download> and stores download file <file> to file system. """
-    def _add_download(self, context, download, file):
+    def add_download(self, context, download, file):
         # Check for file name uniqueness.
         if self.unique_filename:
             if self.get_download_by_file(download['file']):
@@ -794,9 +795,9 @@ class DownloadsApi(Component):
             raise TracError('Unsupported file type.')
 
         # Check for maximum file size.
-        if self.max_size >= 0 and download['size'] > self.max_size:
-            raise TracError('Maximum file size: %s bytes' % (self.max_size),
-              'Upload failed')
+        if 0 <= self.max_size < download['size']:
+            raise TracError('Maximum file size: %s bytes' % self.max_size,
+                            'Upload failed')
 
         # Add new download to DB.
         self.add_download(download)
@@ -809,8 +810,8 @@ class DownloadsApi(Component):
           download['id'])))
         filepath = os.path.normpath(os.path.join(path, download['file']))
 
-        self.log.debug('path: %s' % ((path,)))
-        self.log.debug('filepath: %s' % ((filepath,)))
+        self.log.debug("path: %s", path)
+        self.log.debug("filepath: %s", filepath)
 
         # Store uploaded image.
         try:
