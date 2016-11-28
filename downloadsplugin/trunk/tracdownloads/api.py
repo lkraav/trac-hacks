@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 
-# Standard imports.
-import os, shutil, re, mimetypes, unicodedata
+import os
+import shutil
+import unicodedata
 from datetime import *
 
-# Trac imports
 from trac.core import *
 from trac.config import Option, IntOption, BoolOption, ListOption, PathOption
 from trac.resource import Resource
-from trac.mimeview import Mimeview, Context
+from trac.mimeview import Mimeview
 from trac.web.chrome import add_stylesheet, add_script
-from trac.wiki.formatter import format_to_html, format_to_oneliner
-from trac.util.datefmt import to_timestamp, to_datetime, utc, \
-  format_datetime, pretty_timedelta
-from trac.util.text import to_unicode, unicode_unquote, unicode_quote, \
-  pretty_size
+from trac.util.datefmt import format_datetime, to_timestamp, utc
+from trac.util.text import to_unicode
+
 
 class IDownloadChangeListener(Interface):
     """Extension point interface for components that require notification
@@ -82,23 +80,21 @@ class DownloadsApi(Component):
 
     # Get list functions.
 
-    def _get_items(self, context, table, columns, where = '', values = (),
-      order_by = '', desc = False):
+    def _get_items(self, table, columns, where='', values=(), order_by='',
+                   desc=False):
         sql = 'SELECT ' + ', '.join(columns) + ' FROM ' + table + (where
           and (' WHERE ' + where) or '') + (order_by and (' ORDER BY ' +
           order_by + (' ASC', ' DESC')[bool(desc)]) or '')
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
         items = []
-        for row in context.cursor:
+        for row in self.env.db_query(sql, values):
             row = dict(zip(columns, row))
             items.append(row)
         return items
 
-    def get_versions(self, context, order_by = 'name', desc = False):
+    def get_versions(self, order_by='name', desc=False):
         # Get versions from table.
-        versions = self._get_items(context, 'version', ('name', 'description'),
-          order_by = order_by, desc = desc)
+        versions = self._get_items('version', ('name', 'description'),
+                                   order_by=order_by, desc=desc)
 
         # Add IDs to versions according to selected sorting.
         id = 0
@@ -107,10 +103,11 @@ class DownloadsApi(Component):
             version['id'] = id
         return versions
 
-    def get_components(self, context, order_by = '', desc = False):
+    def get_components(self, order_by='', desc=False):
         # Get components from table.
-        components = self._get_items(context, 'component', ('name', 
-          'description'), order_by = order_by, desc = desc)
+        components = self._get_items('component', ('name',
+                                                   'description'),
+                                     order_by=order_by, desc=desc)
 
         # Add IDs to versions according to selected sorting.
         id = 0
@@ -119,227 +116,237 @@ class DownloadsApi(Component):
             component['id'] = id
         return components
 
-    def get_downloads(self, context, order_by = 'id', desc = False):
+    def get_downloads(self, order_by='id', desc=False):
         # Get downloads from table.
-        downloads = self._get_items(context, 'download', ('id', 'file',
-          'description', 'size', 'time', 'count', 'author', 'tags', 'component',
-          'version', 'architecture', 'platform', 'type'), order_by = order_by,
-          desc = desc)
+        downloads = self._get_items('download', ('id', 'file',
+                                                 'description', 'size',
+                                                 'time', 'count', 'author',
+                                                 'tags', 'component',
+                                                 'version', 'architecture',
+                                                 'platform', 'type'),
+                                    order_by=order_by, desc=desc)
 
         # Replace field IDs with apropriate objects.
         for download in downloads:
-            download['architecture'] = self.get_architecture(context,
-              download['architecture'])
-            download['platform'] = self.get_platform(context,
-              download['platform'])
-            download['type'] = self.get_type(context, download['type'])
+            download['architecture'] = self.get_architecture(
+                download['architecture'])
+            download['platform'] = self.get_platform(download['platform'])
+            download['type'] = self.get_type(download['type'])
         return downloads
 
-    def get_new_downloads(self, context, start, stop, order_by = 'time',
-        desc = False):
-        return self._get_items(context, 'download', ('id', 'file',
-          'description', 'size', 'time', 'count', 'author', 'tags', 'component',
-          'version', 'architecture', 'platform', 'type'), 'time BETWEEN %s AND'
-          ' %s', (start, stop), order_by = order_by, desc = desc)
+    def get_new_downloads(self, start, stop, order_by='time', desc=False):
+        return self._get_items('download', ('id', 'file',
+                                            'description', 'size', 'time',
+                                            'count', 'author', 'tags',
+                                            'component',
+                                            'version', 'architecture',
+                                            'platform', 'type'),
+                               'time BETWEEN %s AND'
+                               ' %s', (start, stop), order_by=order_by,
+                               desc=desc)
 
-    def get_architectures(self, context, order_by = 'id', desc = False):
-        return self._get_items(context, 'architecture', ('id', 'name',
-           'description'), order_by = order_by, desc = desc)
+    def get_architectures(self, order_by='id', desc=False):
+        return self._get_items('architecture', ('id', 'name',
+                                                'description'),
+                               order_by=order_by, desc=desc)
 
-    def get_platforms(self, context, order_by = 'id', desc = False):
-        return self._get_items(context, 'platform', ('id', 'name',
-          'description'), order_by = order_by, desc = desc)
+    def get_platforms(self, order_by='id', desc=False):
+        return self._get_items('platform', ('id', 'name',
+                                            'description'), order_by=order_by,
+                               desc=desc)
 
-    def get_types(self, context, order_by = 'id', desc = False):
-        return self._get_items(context, 'download_type', ('id', 'name',
-          'description'), order_by = order_by, desc = desc)
+    def get_types(self, order_by='id', desc=False):
+        return self._get_items('download_type', ('id', 'name',
+                                                 'description'),
+                               order_by=order_by, desc=desc)
 
     # Get one item functions.
 
-    def _get_item(self, context, table, columns, where = '', values = ()):
+    def _get_item(self, table, columns, where='', values=()):
         sql = 'SELECT ' + ', '.join(columns) + ' FROM ' + table + (where
           and (' WHERE ' + where) or '')
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
-        for row in context.cursor:
+        for row in self.env.db_query(sql, values):
             row = dict(zip(columns, row))
             return row
         return None
 
-    def get_download(self, context, id):
-        return self._get_item(context, 'download', ('id', 'file', 'description',
-          'size', 'time', 'count', 'author', 'tags', 'component', 'version',
-          'architecture', 'platform', 'type'), 'id = %s', (id,))
+    def get_download(self, id):
+        return self._get_item('download', ('id', 'file', 'description',
+                                           'size', 'time', 'count', 'author',
+                                           'tags', 'component', 'version',
+                                           'architecture', 'platform',
+                                           'type'), 'id = %s', (id,))
 
-    def get_download_by_time(self, context, time):
-        return self._get_item(context, 'download', ('id', 'file', 'description',
-          'size', 'time', 'count', 'author', 'tags', 'component', 'version',
-          'architecture', 'platform', 'type'), 'time = %s', (time,))
+    def get_download_by_time(self, time):
+        return self._get_item('download', ('id', 'file', 'description',
+                                           'size', 'time', 'count', 'author',
+                                           'tags', 'component', 'version',
+                                           'architecture', 'platform',
+                                           'type'), 'time = %s', (time,))
 
-    def get_download_by_file(self, context, file):
-        return self._get_item(context, 'download', ('id', 'file', 'description',
-          'size', 'time', 'count', 'author', 'tags', 'component',  'version',
-          'architecture', 'platform', 'type'), 'file = %s', (file,))
+    def get_download_by_file(self, file):
+        return self._get_item('download', ('id', 'file', 'description',
+                                           'size', 'time', 'count', 'author',
+                                           'tags', 'component', 'version',
+                                           'architecture', 'platform',
+                                           'type'), 'file = %s', (file,))
 
-    def get_architecture(self, context, id):
-        architecture = self._get_item(context, 'architecture', ('id', 'name',
-          'description'), 'id = %s', (id,))
+    def get_architecture(self, id):
+        architecture = self._get_item('architecture', ('id', 'name',
+                                                       'description'),
+                                      'id = %s', (id,))
         if not architecture:
             architecture = {'id' : 0, 'name' : '', 'description' : ''}
         return architecture
 
-    def get_architecture_by_name(self, context, name):
-        architecture = self._get_item(context, 'architecture', ('id', 'name',
-          'description'), 'name = %s', (name,))
+    def get_architecture_by_name(self, name):
+        architecture = self._get_item('architecture', ('id', 'name',
+                                                       'description'),
+                                      'name = %s', (name,))
         if not architecture:
             architecture = {'id' : 0, 'name' : '', 'description' : ''}
         return architecture
 
-    def get_platform(self, context, id):
-        platform = self._get_item(context, 'platform', ('id', 'name',
-          'description'), 'id = %s', (id,))
+    def get_platform(self, id):
+        platform = self._get_item('platform', ('id', 'name',
+                                               'description'), 'id = %s',
+                                  (id,))
         if not platform:
             platform = {'id' : 0, 'name' : '', 'description' : ''}
         return platform
 
-    def get_platform_by_name(self, context, name):
-        platform = self._get_item(context, 'platform', ('id', 'name',
-          'description'), 'name = %s', (name,))
+    def get_platform_by_name(self, name):
+        platform = self._get_item('platform', ('id', 'name',
+                                               'description'), 'name = %s',
+                                  (name,))
         if not platform:
             platform = {'id' : 0, 'name' : '', 'description' : ''}
         return platform
 
-    def get_type(self, context, id):
-        type = self._get_item(context, 'download_type', ('id', 'name',
-          'description'), 'id = %s', (id,))
+    def get_type(self, id):
+        type = self._get_item('download_type', ('id', 'name',
+                                                'description'), 'id = %s',
+                              (id,))
         if not type:
             type = {'id' : 0, 'name' : '', 'description' : ''}
         return type
 
-    def get_type_by_name(self, context, name):
-        type = self._get_item(context, 'download_type', ('id', 'name',
-          'description'), 'name = %s', (name,))
+    def get_type_by_name(self, name):
+        type = self._get_item('download_type', ('id', 'name',
+                                                'description'), 'name = %s',
+                              (name,))
         if not type:
             type = {'id' : 0, 'name' : '', 'description' : ''}
         return type
 
-    def get_description(self, context):
-        sql = "SELECT value FROM system WHERE name = 'downloads_description'"
-        self.log.debug(sql)
-        context.cursor.execute(sql)
-        for row in context.cursor:
-            return row[0]
+    def get_description(self):
+        for value, in self.env.db_query("""
+                SELECT value FROM system WHERE name = 'downloads_description'
+                """):
+            return value
 
     # Add item functions.
 
-    def _add_item(self, context, table, item):
+    def _add_item(self, table, item):
         fields = item.keys()
         values = item.values()
         sql = "INSERT INTO %s (" % (table,) + ", ".join(fields) + ") VALUES (" \
           + ", ".join(["%s" for I in xrange(len(fields))]) + ")"
-        self.log.debug(sql % tuple(values))
-        context.cursor.execute(sql, tuple(values))
+        self.env.db_transaction(sql, tuple(values))
 
-    def add_download(self, context, download):
-        self._add_item(context, 'download', download)
+    def add_download(self, download):
+        self._add_item('download', download)
 
-    def add_architecture(self, context, architecture):
-        self._add_item(context, 'architecture', architecture)
+    def add_architecture(self, architecture):
+        self._add_item('architecture', architecture)
 
-    def add_platform(self, context, platform):
-        self._add_item(context, 'platform', platform)
+    def add_platform(self, platform):
+        self._add_item('platform', platform)
 
-    def add_type(self, context, type):
-        self._add_item(context, 'download_type', type)
+    def add_type(self, type):
+        self._add_item('download_type', type)
 
     # Edit item functions.
 
-    def _edit_item(self, context, table, id, item):
+    def _edit_item(self, table, id, item):
         fields = item.keys()
         values = item.values()
         sql = "UPDATE %s SET " % (table,) + ", ".join([("%s = %%s" % (field))
           for field in fields]) + " WHERE id = %s"
-        self.log.debug(sql % tuple(values + [id]))
-        context.cursor.execute(sql, tuple(values + [id]))
+        self.env.db_transaction(sql, tuple(values + [id]))
 
-    def edit_download(self, context, id, download):
-        self._edit_item(context, 'download', id, download)
+    def edit_download(self, id, download):
+        self._edit_item('download', id, download)
 
-    def edit_architecture(self, context, id, architecture):
-        self._edit_item(context, 'architecture', id, architecture)
+    def edit_architecture(self, id, architecture):
+        self._edit_item('architecture', id, architecture)
 
-    def edit_platform(self, context, id, platform):
-        self._edit_item(context, 'platform', id, platform)
+    def edit_platform(self, id, platform):
+        self._edit_item('platform', id, platform)
 
-    def edit_type(self, context, id, type):
-        self._edit_item(context, 'download_type', id, type)
+    def edit_type(self, id, type):
+        self._edit_item('download_type', id, type)
 
-    def edit_description(self, context, description):
-        sql = "UPDATE system SET value = %s WHERE name = 'downloads_description'"
-        self.log.debug(sql % (description,))
-        context.cursor.execute(sql, (description,))
+    def edit_description(self, description):
+        self.env.db_transaction("""
+                UPDATE system SET value = %s
+                WHERE name = 'downloads_description'
+                """, (description,))
 
     # Delete item functions.
 
-    def _delete_item(self, context, table, id):
-        sql = "DELETE FROM " + table + " WHERE id = %s"
-        self.log.debug(sql % (id,))
-        context.cursor.execute(sql, (id,))
+    def _delete_item(self, table, id):
+        with self.env.db_transaction as db:
+            db("DELETE FROM %s WHERE id = %%s" % db.quote(table), (id,))
 
-    def _delete_item_ref(self, context, table, column, id):
-        sql = "UPDATE " + table + " SET " + column + " = NULL WHERE " + column + " = %s"
-        self.log.debug(sql % (id,))
-        context.cursor.execute(sql, (id,))
+    def _delete_item_ref(self, table, column, id):
+        with self.env.db_transaction as db:
+            db("UPDATE %s SET %s=NULL WHERE %s=%%s"
+               % (db.quote(table), db.quote(column), db.quote(column)),
+               (id,))
 
-    def delete_download(self, context, id):
-        self._delete_item(context, 'download', id)
+    def delete_download(self, id):
+        self._delete_item('download', id)
 
-    def delete_architecture(self, context, id):
-        self._delete_item(context, 'architecture', id)
-        self._delete_item_ref(context, 'download', 'architecture', id)
+    def delete_architecture(self, id):
+        self._delete_item('architecture', id)
+        self._delete_item_ref('download', 'architecture', id)
 
-    def delete_platform(self, context, id):
-        self._delete_item(context, 'platform', id)
-        self._delete_item_ref(context, 'download', 'platform', id)
+    def delete_platform(self, id):
+        self._delete_item('platform', id)
+        self._delete_item_ref('download', 'platform', id)
 
-    def delete_type(self, context, id):
-        self._delete_item(context, 'download_type', id)
-        self._delete_item_ref(context, 'download', 'type', id)
+    def delete_type(self, id):
+        self._delete_item('download_type', id)
+        self._delete_item_ref('download', 'type', id)
 
     # Misc database access functions.
 
-    def _get_attribute(self, context, table, column, where = '', values = ()):
-        sql = 'SELECT ' + column + ' FROM ' + table + (where and (' WHERE ' +
-          where) or '')
-        self.log.debug(sql % values)
-        context.cursor.execute(sql, values)
-        for row in context.cursor:
-            return row[0]
+    def _get_attribute(self, table, column, where='', values=()):
+        where = "WHERE %s" % where if where else ""
+        with self.env.db_query as db:
+            for row in db("""
+                    SELECT %s FROM %s %s
+                    """ % (db.quote(column), db.quote(table), where), values):
+                return row[0]
         return None
 
-    def get_download_id_from_file(self, context, file):
-        return self._get_attribute(context, 'download', 'file', 'id = %s',
-          (file,))
+    def get_download_id_from_file(self, file):
+        return self._get_attribute('download', 'file', 'id = %s', (file,))
 
-    def get_number_of_downloads(self, context, download_ids = None):
+    def get_number_of_downloads(self, download_ids=None):
         sql = 'SELECT SUM(count) FROM download' + (download_ids and
           (' WHERE id in (' + ', '.join([to_unicode(download_id) for download_id
           in download_ids]) + ')') or '')
-        self.log.debug(sql)
-        context.cursor.execute(sql)
-        for row in context.cursor:
+        for row in self.env.db_query(sql):
             return row[0]
         return None
 
-    # Proces request functions.
+    # Process request methods
 
     def process_downloads(self, context):
         # Clear data for next request.
         self.data = {}
-
-        # Get database access.
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
 
         # Get request mode
         modes = self._get_modes(context)
@@ -363,8 +370,6 @@ class DownloadsApi(Component):
         add_script(context.req, 'common/js/wikitoolbar.js')
 
         # Commit database changes and return template and data.
-        db.commit()
-        self.env.log.debug('data: %s' % (self.data,))
         return modes[-1] + '.html', {'downloads' : self.data}
 
     # Internal functions.
@@ -414,11 +419,10 @@ class DownloadsApi(Component):
                     return ['types-delete', 'admin-types-list']
                 else:
                     return ['admin-types-list']
-        elif context.resource.realm  == 'downloads-core':
+        elif context.resource.realm == 'downloads-core':
             if action == 'get-file':
                 return ['get-file']
-        elif context.resource.realm == 'downloads-downloads':
-            if action == 'post-add':
+            elif action == 'post-add':
                 return ['downloads-post-add', 'downloads-list']
             elif action == 'edit':
                 return ['description-edit', 'downloads-list']
@@ -440,9 +444,9 @@ class DownloadsApi(Component):
 
                 # Get download.
                 if download_id:
-                    download = self.get_download(context, download_id)
+                    download = self.get_download(download_id)
                 else:
-                    download = self.get_download_by_file(context, download_file)
+                    download = self.get_download_by_file(download_file)
 
                 # Check if requested download exists.
                 if not download:
@@ -450,7 +454,7 @@ class DownloadsApi(Component):
 
                 # Check resource based permission.
                 context.req.perm.require('DOWNLOADS_VIEW',
-                  Resource('downloads', download['id']))
+                Resource('downloads', download['id']))
 
                 # Get download file path.
                 path = os.path.normpath(os.path.join(self.path, to_unicode(
@@ -461,16 +465,12 @@ class DownloadsApi(Component):
                 new_download = {'count' : download['count'] + 1}
 
                 # Edit download.
-                self.edit_download(context, download['id'], new_download)
+                self.edit_download(download['id'], new_download)
 
                 # Notify change listeners.
                 for listener in self.change_listeners:
                     listener.download_changed(context, new_download,
                       download)
-
-                # Commit DB before file send.
-                db = self.env.get_db_cnx()
-                db.commit()
 
                 # Guess mime type.
                 file = open(path.encode('utf-8'), "r")
@@ -510,20 +510,19 @@ class DownloadsApi(Component):
                   'tractags.api.TagEngine')
                 self.data['visible_fields'] = self.visible_fields
                 self.data['title'] = self.title
-                self.data['description'] = self.get_description(context)
-                self.data['downloads'] = self.get_downloads(context, order,
-                  desc)
+                self.data['description'] = self.get_description()
+                self.data['downloads'] = self.get_downloads(order, desc)
                 self.data['visible_fields'] = [visible_field for visible_field
                   in self.visible_fields]
 
                 # Component, versions, etc. are needed only for new download
                 # add form.
                 if context.req.perm.has_permission('DOWNLOADS_ADD'):
-                    self.data['components'] = self.get_components(context)
-                    self.data['versions'] = self.get_versions(context)
-                    self.data['architectures'] = self.get_architectures(context)
-                    self.data['platforms'] = self.get_platforms(context)
-                    self.data['types'] = self.get_types(context)
+                    self.data['components'] = self.get_components()
+                    self.data['versions'] = self.get_versions()
+                    self.data['architectures'] = self.get_architectures()
+                    self.data['platforms'] = self.get_platforms()
+                    self.data['types'] = self.get_types()
 
             elif action == 'admin-downloads-list':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -540,15 +539,13 @@ class DownloadsApi(Component):
                 self.data['desc'] = desc
                 self.data['has_tags'] = self.env.is_component_enabled(
                   'tractags.api.TagEngine')
-                self.data['download'] = self.get_download(context,
-                  download_id)
-                self.data['downloads'] = self.get_downloads(context,
-                  order, desc)
-                self.data['components'] = self.get_components(context)
-                self.data['versions'] = self.get_versions(context)
-                self.data['architectures'] = self.get_architectures(context)
-                self.data['platforms'] = self.get_platforms(context)
-                self.data['types'] = self.get_types(context)
+                self.data['download'] = self.get_download(download_id)
+                self.data['downloads'] = self.get_downloads(order, desc)
+                self.data['components'] = self.get_components()
+                self.data['versions'] = self.get_versions()
+                self.data['architectures'] = self.get_architectures()
+                self.data['platforms'] = self.get_platforms()
+                self.data['types'] = self.get_types()
 
             elif action == 'description-edit':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -560,7 +557,7 @@ class DownloadsApi(Component):
                 description = context.req.args.get('description')
 
                 # Set new description.
-                self.edit_description(context, description)
+                self.edit_description(description)
 
             elif action == 'downloads-post-add':
                 context.req.perm.require('DOWNLOADS_ADD')
@@ -591,7 +588,7 @@ class DownloadsApi(Component):
 
                 # Get form values.
                 download_id = context.req.args.get('id')
-                old_download = self.get_download(context, download_id)
+                old_download = self.get_download(download_id)
                 download = {'description' : context.req.args.get('description'),
                             'tags' : context.req.args.get('tags'),
                             'component' : context.req.args.get('component'),
@@ -601,7 +598,7 @@ class DownloadsApi(Component):
                             'type' : context.req.args.get('type')}
 
                 # Edit Download.
-                self.edit_download(context, download_id, download)
+                self.edit_download(download_id, download)
 
                 # Notify change listeners.
                 for listener in self.change_listeners:
@@ -618,7 +615,7 @@ class DownloadsApi(Component):
                 # Delete download.
                 if selection:
                     for download_id in selection:
-                        download = self.get_download(context, download_id)
+                        download = self.get_download(download_id)
                         self.log.debug('download: %s' % (download,))
                         self._delete_download(context, download)
 
@@ -636,10 +633,10 @@ class DownloadsApi(Component):
                 # Display architectures.
                 self.data['order'] = order
                 self.data['desc'] = desc
-                self.data['architecture'] = self.get_architecture(context,
-                  architecture_id)
-                self.data['architectures'] = self.get_architectures(context,
-                  order, desc)
+                self.data['architecture'] = self.get_architecture(
+                    architecture_id)
+                self.data['architectures'] = self.get_architectures(order,
+                                                                    desc)
 
             elif action == 'architectures-post-add':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -649,7 +646,7 @@ class DownloadsApi(Component):
                                 'description' : context.req.args.get('description')}
 
                 # Add architecture.
-                self.add_architecture(context, architecture)
+                self.add_architecture(architecture)
 
             elif action == 'architectures-post-edit':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -660,7 +657,7 @@ class DownloadsApi(Component):
                                 'description' : context.req.args.get('description')}
 
                 # Add architecture.
-                self.edit_architecture(context, architecture_id, architecture)
+                self.edit_architecture(architecture_id, architecture)
 
             elif action == 'architectures-delete':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -673,7 +670,7 @@ class DownloadsApi(Component):
                 # Delete architectures.
                 if selection:
                     for architecture_id in selection:
-                        self.delete_architecture(context, architecture_id)
+                        self.delete_architecture(architecture_id)
 
             elif action == 'admin-platforms-list':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -689,10 +686,8 @@ class DownloadsApi(Component):
                 # Display platforms.
                 self.data['order'] = order
                 self.data['desc'] = desc
-                self.data['platform'] = self.get_platform(context,
-                  platform_id)
-                self.data['platforms'] = self.get_platforms(context, order,
-                  desc)
+                self.data['platform'] = self.get_platform(platform_id)
+                self.data['platforms'] = self.get_platforms(order, desc)
 
             elif action == 'platforms-post-add':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -702,7 +697,7 @@ class DownloadsApi(Component):
                             'description' : context.req.args.get('description')}
 
                 # Add platform.
-                self.add_platform(context, platform)
+                self.add_platform(platform)
 
             elif action == 'platforms-post-edit':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -713,7 +708,7 @@ class DownloadsApi(Component):
                             'description' : context.req.args.get('description')}
 
                 # Add platform.
-                self.edit_platform(context, platform_id, platform)
+                self.edit_platform(platform_id, platform)
 
             elif action == 'platforms-delete':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -726,7 +721,7 @@ class DownloadsApi(Component):
                 # Delete platforms.
                 if selection:
                     for platform_id in selection:
-                        self.delete_platform(context, platform_id)
+                        self.delete_platform(platform_id)
 
             elif action == 'admin-types-list':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -742,8 +737,8 @@ class DownloadsApi(Component):
                 # Display platforms.
                 self.data['order'] = order
                 self.data['desc'] = desc
-                self.data['type'] = self.get_type(context, platform_id)
-                self.data['types'] = self.get_types(context, order, desc)
+                self.data['type'] = self.get_type(platform_id)
+                self.data['types'] = self.get_types(order, desc)
 
             elif action == 'types-post-add':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -753,7 +748,7 @@ class DownloadsApi(Component):
                         'description' : context.req.args.get('description')}
 
                 # Add type.
-                self.add_type(context, type)
+                self.add_type(type)
 
             elif action == 'types-post-edit':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -764,7 +759,7 @@ class DownloadsApi(Component):
                         'description' : context.req.args.get('description')}
 
                 # Add platform.
-                self.edit_type(context, type_id, type)
+                self.edit_type(type_id, type)
 
             elif action == 'types-delete':
                 context.req.perm.require('DOWNLOADS_ADMIN')
@@ -777,14 +772,14 @@ class DownloadsApi(Component):
                 # Delete types.
                 if selection:
                     for type_id in selection:
-                        self.delete_type(context, type_id)
+                        self.delete_type(type_id)
 
     """ Full implementation of download addition. It creates DB entry for
     download <download> and stores download file <file> to file system. """
     def _add_download(self, context, download, file):
         # Check for file name uniqueness.
         if self.unique_filename:
-            if self.get_download_by_file(context, download['file']):
+            if self.get_download_by_file(download['file']):
                 raise TracError('File with same name is already uploaded and'
                   ' unique file names are enabled.')
 
@@ -800,10 +795,10 @@ class DownloadsApi(Component):
               'Upload failed')
 
         # Add new download to DB.
-        self.add_download(context, download)
+        self.add_download(download)
 
         # Get inserted download by time to get its ID.
-        download = self.get_download_by_time(context, download['time'])
+        download = self.get_download_by_time(download['time'])
 
         # Prepare file paths.
         path = os.path.normpath(os.path.join(self.path, to_unicode(
@@ -821,7 +816,7 @@ class DownloadsApi(Component):
             shutil.copyfileobj(file, out_file)
             out_file.close()
         except Exception, error:
-            self.delete_download(context, download['id'])
+            self.delete_download(download['id'])
             self.log.debug(error)
             try:
                 os.remove(filepath.encode('utf-8'))
@@ -841,7 +836,7 @@ class DownloadsApi(Component):
 
     def _delete_download(self, context, download):
         try:
-            self.delete_download(context, download['id'])
+            self.delete_download(download['id'])
             path = os.path.join(self.path, to_unicode(download['id']))
             filepath = os.path.join(path, download['file'])
             path = os.path.normpath(path)

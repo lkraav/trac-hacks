@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
   name = 'TracDownloads',
-  version = '0.3',
+  version = '1.0.0',
   packages = ['tracdownloads', 'tracdownloads.db'],
   package_data = {'tracdownloads' : ['templates/*.html', 'htdocs/css/*.css']},
   entry_points = {'trac.plugins': ['TracDownloads.api = tracdownloads.api',
@@ -24,5 +24,6 @@ setup(
   maintainer_email = "ryan.j.ollos@gmail.com",
   url = 'http://trac-hacks.org/wiki/DownloadsPlugin',
   description = 'Project release downloads plugin for Trac',
-  license = '''GPL'''
+  license = '''GPL''',
+  install_requires = ['Trac'],
 )

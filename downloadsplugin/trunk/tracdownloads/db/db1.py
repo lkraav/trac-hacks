@@ -53,8 +53,9 @@ values = ["INSERT INTO architecture (name) VALUES ('alpha')",
   "INSERT INTO system (name, value) VALUES ('downloads_description', 'Here is a list of available downloads:')"
 ]
 
+
 def do_upgrade(env, cursor):
-    db_connector, _ = DatabaseManager(env)._get_connector()
+    db_connector = DatabaseManager(env)._get_connector()[0]
 
     # Create tables
     for table in tables:
@@ -66,5 +67,6 @@ def do_upgrade(env, cursor):
         cursor.execute(statement)
 
     # Set database schema version.
-    cursor.execute("INSERT INTO system (name, value) VALUES"
-      " ('downloads_version', '1')")
+    cursor.execute("""
+        INSERT INTO system (name, value) VALUES ('downloads_version', '1')
+        """)

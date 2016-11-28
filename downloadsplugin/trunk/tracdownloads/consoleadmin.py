@@ -55,13 +55,8 @@ class DownloadsConsoleAdmin(Component):
         # Get downloads API component.
         api = self.env[DownloadsApi]
 
-        # Create context.
-        context = Context('downloads-consoleadmin')
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
-
         # Print uploded download
-        downloads = api.get_downloads(context)
+        downloads = api.get_downloads()
         print_table([(download['id'], download['file'], pretty_size(
           download['size']), format_datetime(download['time']),
           download['component'],  download['version'],
@@ -76,8 +71,6 @@ class DownloadsConsoleAdmin(Component):
 
         # Create context.
         context = Context('downloads-consoleadmin')
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
         context.req = FakeRequest(self.env, self.consoleadmin_user)
 
         # Convert relative path to absolute.
@@ -110,11 +103,11 @@ class DownloadsConsoleAdmin(Component):
 
             # Transform architecture, platform and type name to ID.
             if name == 'architecture':
-                value = api.get_architecture_by_name(context, value)['id']
+                value = api.get_architecture_by_name(value)['id']
             elif name == 'platform':
-                value = api.get_platform_by_name(context, value)['id']
+                value = api.get_platform_by_name(value)['id']
             elif name == 'type':
-                value = api.get_type_by_name(context, value)['id']
+                value = api.get_type_by_name(value)['id']
 
             # Add attribute to download.
             download[name] = value
@@ -124,9 +117,7 @@ class DownloadsConsoleAdmin(Component):
         # Upload file to DB and file storage.
         api._add_download(context, download, file)
 
-        # Close input file and commit changes in DB.
         file.close()
-        db.commit()
 
     def _do_remove(self, identifier):
         # Get downloads API component.
@@ -134,16 +125,14 @@ class DownloadsConsoleAdmin(Component):
 
         # Create context.
         context = Context('downloads-consoleadmin')
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
         context.req = FakeRequest(self.env, self.consoleadmin_user)
 
         # Get download by ID or filename.
         try:
             download_id = int(identifier)
-            download = api.get_download(context, download_id)
+            download = api.get_download(download_id)
         except ValueError:
-            download = api.get_download_by_file(context, identifier)
+            download = api.get_download_by_file(identifier)
 
         # Check if download exists.
         if not download:
@@ -151,10 +140,7 @@ class DownloadsConsoleAdmin(Component):
               value = identifier))
 
         # Delete download by ID.
-        api.delete_download(context, download_id)
-
-        # Commit changes in DB.
-        db.commit()
+        api.delete_download(download_id)
 
     def _get_file(self, filename):
         # Open file and get its size

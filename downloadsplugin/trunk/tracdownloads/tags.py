@@ -70,7 +70,7 @@ class DownloadsTags(Component):
 
         # Check if tags has to be updated.
         if not self._has_tags_changed(download):
-           return
+            return
 
         # Update old download with new values.
         old_download.update(download)
@@ -137,16 +137,11 @@ class DownloadsTags(Component):
         return sorted(tags)
 
     def _resolve_ids(self, download):
-        # Create context.
-        context = Context('downloads-core')
-        db = self.env.get_db_cnx()
-        context.cursor = db.cursor()
-
         # Resolve architecture platform and type names.
         api = self.env[DownloadsApi]
-        architecture = api.get_architecture(context, download['architecture'])
-        platform = api.get_platform(context, download['platform'])
-        type = api.get_type(context, download['type'])
+        architecture = api.get_architecture(download['architecture'])
+        platform = api.get_platform(download['platform'])
+        type = api.get_type(download['type'])
         download['architecture'] = architecture['name']
         download['platform'] = platform['name']
         download['type'] = type['name']

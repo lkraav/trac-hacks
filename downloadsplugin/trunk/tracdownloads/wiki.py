@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from trac.core import *
-from trac.mimeview import Context
 from trac.resource import Resource
 from trac.util.html import html
 from trac.web.chrome import Chrome
@@ -47,14 +46,6 @@ class DownloadsWiki(Component):
 
     def expand_macro(self, formatter, name, content):
         if name == 'DownloadsCount':
-            # Create request context.
-            context = Context.from_request(formatter.req)('downloads-wiki')
-
-            # Get database access.
-            db = self.env.get_db_cnx()
-            context.cursor = db.cursor()
-
-            # Get API component.
             api = self.env[DownloadsApi]
 
             # Check empty macro content.
@@ -76,8 +67,7 @@ class DownloadsWiki(Component):
                             break;
                     except ValueError:
                         # If it wasn't ID resolve filename.
-                        download_id = api.get_download_id_from_file(context,
-                          item)
+                        download_id = api.get_download_id_from_file(item)
                         if download_id:
                             download_ids.append(download_id)
                         else:
@@ -90,7 +80,7 @@ class DownloadsWiki(Component):
 
             # Ask for aggregated downloads count.
             self.log.debug(download_ids)
-            count = api.get_number_of_downloads(context, download_ids)
+            count = api.get_number_of_downloads(download_ids)
 
             # Return simple <span> with result.
             return html.span(to_unicode(count), class_ = "downloads_count")
@@ -101,19 +91,12 @@ class DownloadsWiki(Component):
             # Determine wiki page name.
             page_name = formatter.req.path_info[6:] or 'WikiStart'
 
-            # Create request context.
-            context = Context.from_request(formatter.req)('downloads-wiki')
-
-            # Get database access.
-            db = self.env.get_db_cnx()
-            context.cursor = db.cursor()
-
-            # Get API object.
             api = self.env[DownloadsApi]
 
             # Get form values.
-            order = context.req.args.get('order') or 'id'
-            desc = context.req.args.get('desc')
+            req = formatter.req
+            order = req.args.get('order') or 'id'
+            desc = req.args.get('desc')
 
             # Prepare template data.
             data = {}
@@ -121,7 +104,7 @@ class DownloadsWiki(Component):
             data['desc'] = desc
             data['has_tags'] = self.env.is_component_enabled(
               'tractags.api.TagEngine')
-            data['downloads'] = api.get_downloads(context, order, desc)
+            data['downloads'] = api.get_downloads(order, desc)
             data['visible_fields'] = [visible_field for visible_field in
               self.visible_fields]
             data['page_name'] = page_name
@@ -136,19 +119,13 @@ class DownloadsWiki(Component):
     def _download_link(self, formatter, ns, params, label):
         if ns == 'download':
             if formatter.req.perm.has_permission('DOWNLOADS_VIEW'):
-                # Create context.
-                context = Context.from_request(formatter.req)('downloads-wiki')
-                db = self.env.get_db_cnx()
-                context.cursor = db.cursor()
-
-                # Get API component.
                 api = self.env[DownloadsApi]
 
                 # Get download.
                 if re.match(r'\d+', params): 
-                    download = api.get_download(context, params)
+                    download = api.get_download(params)
                 else:
-                    download = api.get_download_by_file(context, params)
+                    download = api.get_download_by_file(params)
 
                 if download:
                     if formatter.req.perm.has_permission('DOWNLOADS_VIEW',
