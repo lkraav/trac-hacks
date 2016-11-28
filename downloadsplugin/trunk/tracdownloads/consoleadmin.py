@@ -4,16 +4,15 @@ import datetime
 import os.path
 import unicodedata
 
+from trac.admin import AdminCommandError, IAdminCommandProvider
 from trac.config import Option
 from trac.core import Component, ExtensionPoint, TracError, implements
-from trac.admin import AdminCommandError
-from trac.perm import PermissionCache
 from trac.mimeview import Context
-from trac.util.translation import _
+from trac.perm import PermissionCache
+from trac.util import as_int
 from trac.util.datefmt import format_datetime, to_timestamp, utc
-from trac.util.text import print_table, pretty_size, to_unicode
-
-from trac.admin import IAdminCommandProvider
+from trac.util.text import pretty_size, print_table, to_unicode
+from trac.util.translation import _
 
 from tracdownloads.api import DownloadsApi, IDownloadChangeListener
 
@@ -63,12 +62,18 @@ class DownloadsConsoleAdmin(Component):
         # Print uploaded download
         downloads = api.get_downloads()
         print_table([
-            (download['id'], download['file'], pretty_size(download['size']),
-             format_datetime(download['time']), download['component'],
-             download['version'], download['architecture']['name'],
-             download['platform']['name'], download['type']['name'])
+            (download['id'],
+             download['file'],
+             pretty_size(download['size']),
+             format_datetime(download['time']),
+             download['component'],
+             download['version'],
+             download['architecture']['name'],
+             download['platform']['name'],
+             download['type']['name'])
             for download in downloads], [
-            'ID', 'Filename', 'Size', 'Uploaded', 'Component', 'Version',
+            'ID', 'Filename', 'Size', 'Uploaded', 'Component',
+            'Version',
             'Architecture', 'Platform', 'Type'
         ])
 
@@ -79,11 +84,6 @@ class DownloadsConsoleAdmin(Component):
         # Create context.
         context = Context('downloads-consoleadmin')
         context.req = FakeRequest(self.env, self.consoleadmin_user)
-
-        # Convert relative path to absolute.
-        if not os.path.isabs(filename):
-            path = self.config.get('downloads', 'path')
-            filename = os.path.join(path, filename)
 
         # Open file object.
         fileobj, filename, file_size = self._get_file(filename)
@@ -102,14 +102,14 @@ class DownloadsConsoleAdmin(Component):
             argument = argument.split("=")
             if len(argument) != 2:
                 AdminCommandError(_("Invalid format of download attribute: "
-                                    "%(value)s", value = argument))
+                                    "%(value)s", value=argument))
             name, value = argument
 
             # Check known arguments.
             if name not in ('description', 'author', 'tags', 'component',
                             'version', 'architecture', 'platform', 'type'):
                 raise AdminCommandError(_("Invalid download attribute: "
-                                          "%(value)s", value = name))
+                                          "%(value)s", value=name))
 
             # Transform architecture, platform and type name to ID.
             if name == 'architecture':
@@ -125,12 +125,11 @@ class DownloadsConsoleAdmin(Component):
         self.log.debug(download)
 
         # Upload file to DB and file storage.
-        api.add_download(context, download, fileobj)
+        api._add_download(context, download, fileobj)
 
         fileobj.close()
 
     def _do_remove(self, identifier):
-        # Get downloads API component.
         api = self.env[DownloadsApi]
 
         # Create context.
@@ -138,10 +137,10 @@ class DownloadsConsoleAdmin(Component):
         context.req = FakeRequest(self.env, self.consoleadmin_user)
 
         # Get download by ID or filename.
-        try:
-            download_id = int(identifier)
+        download_id = as_int(identifier, None)
+        if download_id is not None:
             download = api.get_download(download_id)
-        except ValueError:
+        else:
             download = api.get_download_by_file(identifier)
 
         # Check if download exists.
@@ -160,7 +159,7 @@ class DownloadsConsoleAdmin(Component):
 
         # Check non-empty file.
         if size == 0:
-            raise TracError('Can\'t upload empty file.')
+            raise TracError("Can't upload empty file.")
 
         # Try to normalize the filename to unicode NFC if we can.
         # Files uploaded from OS X might be in NFD.

@@ -2,16 +2,15 @@
 
 import re
 
-from trac.config import Option
 from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager
 from trac.util.html import html
 from trac.util.text import pretty_size
 from trac.util.translation import domain_functions
-from trac.web.main import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             web_context
+from trac.web.main import IRequestHandler
 
 from tracdownloads.api import DownloadsApi
 

@@ -2,13 +2,13 @@
 
 import re
 
-from trac.config import ListOption
 from trac.core import Component, implements
 from trac.resource import Resource
+from trac.util import to_list
 from trac.util.html import html
 from trac.util.text import pretty_size, to_unicode
 from trac.web.chrome import Chrome
-from trac.wiki import IWikiSyntaxProvider, IWikiMacroProvider
+from trac.wiki import IWikiMacroProvider, IWikiSyntaxProvider
 
 from tracdownloads.api import DownloadsApi
 
@@ -23,15 +23,9 @@ class DownloadsWiki(Component):
     downloads_count_macro_doc = """ """
     list_downloads_macro_doc = """ """
 
-    visible_fields = ListOption('downloads', 'visible_fields',
-        'id,file,description,size,time,count,author,tags,component,version,'
-        'architecture,platform,type',
-        doc="List of downloads table fields that should be visible to users "
-            "on Downloads section.")
-
     # IWikiSyntaxProvider
     def get_link_resolvers(self):
-        yield ('download', self._download_link)
+        yield 'download', self._download_link
 
     def get_wiki_syntax(self):
         return []
@@ -54,9 +48,9 @@ class DownloadsWiki(Component):
 
             # Check empty macro content.
             download_ids = []
-            if content.strip() != '':
+            if content and content.strip() != '':
                 # Get download IDs or filenames from content.
-                items = [item.strip() for item in content.split(',')]
+                items = to_list(content)
 
                 # Resolve filenames to IDs.
                 for item in items:
@@ -87,11 +81,9 @@ class DownloadsWiki(Component):
             count = api.get_number_of_downloads(download_ids)
 
             # Return simple <span> with result.
-            return html.span(to_unicode(count), class_ = "downloads_count")
+            return html.span(to_unicode(count), class_="downloads_count")
 
         elif name == 'ListDownloads':
-            self.log.debug("Rendering ListDownloads macro...")
-
             # Determine wiki page name.
             page_name = formatter.req.path_info[6:] or 'WikiStart'
 
@@ -101,23 +93,26 @@ class DownloadsWiki(Component):
             req = formatter.req
             order = req.args.get('order') or 'id'
             desc = req.args.get('desc')
+            has_tags = self.env.is_component_enabled('tractags.api.TagEngine')
+            visible_fields = self.config.getlist('downloads',
+                                                 'visible_fields')
 
             # Prepare template data.
             data = {
                 'order': order,
                 'desc': desc,
-                'has_tags':
-                    self.env.is_component_enabled('tractags.api.TagEngine'),
+                'has_tags': has_tags,
                 'downloads': api.get_downloads(order, desc),
-                'visible_fields': [visible_field
-                                   for visible_field in self.visible_fields],
+                'visible_fields': visible_fields,
                 'page_name': page_name
             }
 
             # Return rendered template.
-            return to_unicode(Chrome(self.env).render_template(formatter.req,
-              'wiki-downloads-list.html', {'downloads': data}, 'text/html',
-              True))
+            return to_unicode(Chrome(self.env)
+                              .render_template(formatter.req,
+                                               'wiki-downloads-list.html', {
+                                                    'downloads': data
+                                               }, 'text/html', True))
 
     # Internal functions
 
@@ -127,7 +122,7 @@ class DownloadsWiki(Component):
                 api = self.env[DownloadsApi]
 
                 # Get download.
-                if re.match(r'\d+', params): 
+                if re.match(r'\d+', params):
                     download = api.get_download(params)
                 else:
                     download = api.get_download_by_file(params)
@@ -143,9 +138,9 @@ class DownloadsWiki(Component):
                                                pretty_size(download['size'])))
                     else:
                         # File exists but no permission to download it.
-                        html.a(label, href = '#', title = '%s (%s)' % (
-                          download['file'], pretty_size(download['size'])),
-                          class_ = 'missing')
+                        html.a(label, href='#', title='%s (%s)' % (
+                            download['file'], pretty_size(download['size'])),
+                               class_='missing')
                 else:
                     # Return link to non-existing file.
                     return html.a(label, href='#', title='File not found.',

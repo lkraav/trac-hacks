@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from trac.config import ListOption
-from trac.core import *
+from trac.core import Component, implements
 from trac.resource import Resource
 from tractags.api import DefaultTagProvider, TagSystem
 
 from tracdownloads.api import DownloadsApi, IDownloadChangeListener
-from tracdownloads.core import _
 
 
 class DownloadsTagProvider(DefaultTagProvider):
@@ -15,15 +14,14 @@ class DownloadsTagProvider(DefaultTagProvider):
     """
     realm = 'downloads'
 
-    # Other methods.
-
     def check_permission(self, perm, operation):
         # Permission table for download tags.
         permissions = {'view': 'DOWNLOADS_VIEW', 'modify': 'DOWNLOADS_ADD'}
 
         # First check permissions in default provider then for downloads.
-        return super(DownloadsTagProvider, self).check_permission(perm,
-          operation) and permissions[operation] in perm
+        return super(DownloadsTagProvider, self)\
+                   .check_permission(perm, operation) and \
+               permissions[operation] in perm
 
 
 class DownloadsTags(Component):
@@ -35,14 +33,14 @@ class DownloadsTags(Component):
 
     realm = 'downloads'
 
-    # Configuration options.
-
     additional_tags = ListOption('downloads', 'additional_tags',
-      'author,component,version,architecture,platform,type', doc = _(
-      "Additional tags that will be created for submitted downloads. Possible "
-      "values are: author, component, version, architecture, platform, type."))
+        'author,component,version,architecture,platform,type', doc="""
+        Additional tags that will be created for submitted downloads.
+        Possible values are: author, component, version, architecture,
+        platform, type.
+        """)
 
-    # IDownloadChangeListener methods.
+    # IDownloadChangeListener methods
 
     def download_created(self, context, download):
         # Check proper permissions to modify tags.
@@ -58,7 +56,7 @@ class DownloadsTags(Component):
 
         # Add tags of new download.
         new_tags = self._get_tags(download)
-        self.log.debug('tags: %s' % (new_tags,))
+        self.log.debug("tags: %s", new_tags)
         tag_system.add_tags(context.req, resource, new_tags)
 
     def download_changed(self, context, download, old_download):
@@ -110,19 +108,25 @@ class DownloadsTags(Component):
         self._resolve_ids(download)
 
         # Prepare tag names.
-        self.log.debug("additional_tags: %s" % (self.additional_tags,))
+        self.log.debug("additional_tags: %s", self.additional_tags)
         tags = []
-        if 'author' in self.additional_tags and download['author']:
+        if 'author' in self.additional_tags and \
+                download['author']:
             tags += [download['author']]
-        if 'component' in self.additional_tags and download['component']:
+        if 'component' in self.additional_tags and \
+                download['component']:
             tags += [download['component']]
-        if 'version' in self.additional_tags and download['version']:
+        if 'version' in self.additional_tags and \
+                download['version']:
             tags += [download['version']]
-        if 'architecture' in self.additional_tags and download['architecture']:
+        if 'architecture' in self.additional_tags and \
+                download['architecture']:
             tags += [download['architecture']]
-        if 'platform' in self.additional_tags and download['platform']:
+        if 'platform' in self.additional_tags and \
+                download['platform']:
             tags += [download['platform']]
-        if 'type' in self.additional_tags and download['type']:
+        if 'type' in self.additional_tags and \
+                download['type']:
             tags += [download['type']]
         if download['tags']:
             tags += download['tags'].split()

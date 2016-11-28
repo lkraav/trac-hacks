@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from genshi.builder import tag
-
 from trac.core import Component, implements
-from trac.resource import Resource, get_resource_url, get_resource_name, \
-                          get_resource_description
-from trac.util.datefmt import to_datetime, to_timestamp, utc
-
+from trac.resource import Resource, get_resource_description, \
+                          get_resource_name, get_resource_url
 from trac.timeline import ITimelineEventProvider
+from trac.util.datefmt import to_datetime, to_timestamp, utc
+from trac.util.html import html
 
 from tracdownloads.api import DownloadsApi
 
@@ -49,8 +47,8 @@ class DownloadsTimeline(Component):
             else:
                 return '#'
         elif field == 'title':
-            return tag('New download ',
-                       tag.em(get_resource_name(self.env, resource)),
-                       ' created')
+            return html('New download ',
+                        html.em(get_resource_name(self.env, resource)),
+                        ' created')
         elif field == 'description':
             return get_resource_description(self.env, resource, 'summary')

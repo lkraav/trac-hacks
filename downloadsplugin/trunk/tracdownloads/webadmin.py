@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from trac.core import Component, implements
 from trac.admin import IAdminPanelProvider
+from trac.core import Component, implements
 from trac.web.chrome import web_context
 
 from tracdownloads.api import DownloadsApi
@@ -9,8 +9,7 @@ from tracdownloads.api import DownloadsApi
 
 class DownloadsWebAdmin(Component):
     """
-        The webadmin module implements downloads plugin administration
-        via WebAdminPlugin.
+        The WebAdmin module implements downloads plugin administration.
     """
     implements(IAdminPanelProvider)
 
