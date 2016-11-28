@@ -32,9 +32,6 @@ class DownloadsConsoleAdmin(Component):
 
     change_listeners = ExtensionPoint(IDownloadChangeListener)
 
-    path = Option('downloads', 'path', '/var/lib/trac/downloads',
-        doc="Directory to store uploaded downloads.")
-
     consoleadmin_user = Option('downloads', 'consoleadmin_user', 'anonymous',
         doc="""User who's permissions will be used to upload download.
                He/she should have TAGS_MODIFY permissions.""")
@@ -85,7 +82,8 @@ class DownloadsConsoleAdmin(Component):
 
         # Convert relative path to absolute.
         if not os.path.isabs(filename):
-            filename = os.path.join(self.path, filename)
+            path = self.config.get('downloads', 'path')
+            filename = os.path.join(path, filename)
 
         # Open file object.
         fileobj, filename, file_size = self._get_file(filename)
