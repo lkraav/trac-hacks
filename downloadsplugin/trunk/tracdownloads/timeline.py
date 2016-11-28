@@ -44,7 +44,7 @@ class DownloadsTimeline(Component):
         # Return appropriate content.
         resource = Resource('downloads', id)
         if field == 'url':
-            if context.req.perm.has_permission('DOWNLOADS_VIEW', resource):
+            if 'DOWNLOADS_VIEW' in context.req.perm(resource):
                 return get_resource_url(self.env, resource, context.req.href)
             else:
                 return '#'

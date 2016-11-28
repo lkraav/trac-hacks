@@ -17,7 +17,7 @@ class DownloadsWebAdmin(Component):
     # IAdminPageProvider
 
     def get_admin_panels(self, req):
-        if req.perm.has_permission('DOWNLOADS_ADMIN'):
+        if 'DOWNLOADS_ADMIN' in req.perm:
             yield ('downloads', 'Downloads System', 'downloads', 'Downloads')
             yield ('downloads', 'Downloads System', 'architectures',
                    'Architectures')

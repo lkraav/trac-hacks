@@ -69,7 +69,7 @@
                 <tr class="${line % 2 and 'even' or 'odd'}">
                   <py:for each="field in downloads.visible_fields">
                     <py:choose>
-                      <py:when test="perm.has_permission('DOWNLOADS_VIEW', Resource('downloads', download.id))">
+                      <py:when test="'DOWNLOADS_VIEW' in perm(Resource('downloads', download.id))">
                         <py:choose>
                           <td py:when="field == 'id'" class="id">
                             <div class="id">

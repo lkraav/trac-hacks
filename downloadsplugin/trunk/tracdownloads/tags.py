@@ -45,7 +45,7 @@ class DownloadsTags(Component):
 
     def download_created(self, context, download):
         # Check proper permissions to modify tags.
-        if not context.req.perm.has_permission('TAGS_MODIFY'):
+        if 'TAGS_MODIFY' not in context.req.perm:
             return
 
         # Create temporary resource.
@@ -62,7 +62,7 @@ class DownloadsTags(Component):
 
     def download_changed(self, context, download, old_download):
         # Check proper permissions to modify tags.
-        if not context.req.perm.has_permission('TAGS_MODIFY'):
+        if 'TAGS_MODIFY' not in context.req.perm:
             return
 
         # Check if tags has to be updated.
@@ -85,7 +85,7 @@ class DownloadsTags(Component):
 
     def download_deleted(self, context, download):
         # Check proper permissions to modify tags.
-        if not context.req.perm.has_permission('TAGS_MODIFY'):
+        if 'TAGS_MODIFY' not in context.req.perm:
             return
 
         # Create temporary resource.

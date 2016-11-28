@@ -121,7 +121,7 @@ class DownloadsWiki(Component):
 
     def _download_link(self, formatter, ns, params, label):
         if ns == 'download':
-            if formatter.req.perm.has_permission('DOWNLOADS_VIEW'):
+            if 'DOWNLOADS_VIEW' in formatter.req.perm:
                 api = self.env[DownloadsApi]
 
                 # Get download.
@@ -131,8 +131,8 @@ class DownloadsWiki(Component):
                     download = api.get_download_by_file(params)
 
                 if download:
-                    if formatter.req.perm.has_permission('DOWNLOADS_VIEW',
-                      Resource('downloads', download['id'])):
+                    resource = Resource('downloads', download['id'])
+                    if 'DOWNLOADS_VIEW' in formatter.req.perm(resource):
                         # Return link to existing file.
                         return html.a(label, href = formatter.href.downloads(
                           params), title = '%s (%s)' % (download['file'],

@@ -521,7 +521,7 @@ class DownloadsApi(Component):
 
                 # Component, versions, etc. are needed only for new download
                 # add form.
-                if context.req.perm.has_permission('DOWNLOADS_ADD'):
+                if 'DOWNLOADS_ADD' in context.req.perm:
                     self.data['components'] = self.get_components()
                     self.data['versions'] = self.get_versions()
                     self.data['architectures'] = self.get_architectures()
