@@ -458,9 +458,12 @@ class DownloadsApi(Component):
                 Resource('downloads', download['id']))
 
                 # Get download file path.
-                path = os.path.normpath(os.path.join(self.path, to_unicode(
-                  download['id']), download['file']))
-                self.log.debug('path: %s' % (path,))
+                filename = os.path.basename(download['file'])
+                filepath = os.path.join(self.path,
+                                        to_unicode(download['id']),
+                                        filename)
+                filepath = os.path.normpath(filepath)
+                self.log.debug('path: %s', filepath)
 
                 # Increase downloads count.
                 new_download = {'count' : download['count'] + 1}
@@ -474,11 +477,11 @@ class DownloadsApi(Component):
                       download)
 
                 # Guess mime type.
-                file = open(path.encode('utf-8'), "r")
+                file = open(filepath.encode('utf-8'), "r")
                 file_data = file.read(1000)
                 file.close()
                 mimeview = Mimeview(self.env)
-                mime_type = mimeview.get_mimetype(path, file_data)
+                mime_type = mimeview.get_mimetype(filepath, file_data)
                 if not mime_type:
                     mime_type = 'application/octet-stream'
                 if 'charset=' not in mime_type:
@@ -491,7 +494,7 @@ class DownloadsApi(Component):
                   download['file'])))
                 context.req.send_header('Content-Description',
                   download['description'])
-                context.req.send_file(path.encode('utf-8'), mime_type)
+                context.req.send_file(filepath.encode('utf-8'), mime_type)
 
             elif action == 'downloads-list':
                 context.req.perm.require('DOWNLOADS_VIEW')
