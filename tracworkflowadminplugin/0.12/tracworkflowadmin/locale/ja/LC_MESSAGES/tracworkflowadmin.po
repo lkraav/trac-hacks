@@ -192,16 +192,16 @@ msgstr "%(num)d行目: ステータス '%(status)s' は正しくありません�
 
 #: tracworkflowadmin/web_ui.py:582
 #, python-format
-msgid "Line %(num)d: Unknown operator."
+msgid "Line %(num)d: Unknown operator '%(name)s'"
 msgstr ""
-"%(num)d行目: 未知の操作です。trac.ini の [workflow-admin] セクションにおける、 operations "
-"で指定されている物の中から選択してください。"
+"%(num)d行目: 未知の操作 '%(name)s' です。trac.ini の [workflow-admin] セクションの "
+"operations で指定されている物の中から選択してください。"
 
 #: tracworkflowadmin/web_ui.py:587
 #, python-format
-msgid "Line %(num)d: Unknown permission."
+msgid "Line %(num)d: Unknown permission '%(name)s'"
 msgstr ""
-"%(num)d行目: 未知の権限です。'TICKET_VIEW', "
+"%(num)d行目: 未知の権限 '%(name)s' です。'TICKET_VIEW', "
 "'TRAC_ADMIN'等、tracが認識可能な権限名をカンマで区切って指定してください。"
 
 #: tracworkflowadmin/web_ui.py:592

@@ -611,16 +611,18 @@ class TracWorkflowAdminModule(Component):
                                 "Line %(num)d: Status '%(status)s' is invalid.",
                                 num=lineInfo[tempName], status=stat))
 
-                if 'operations' in act:
-                    lineErrors.extend(_("Line %(num)d: Unknown operator.",
-                                        num=lineInfo[tempName + '.operations'])
-                                      for operation in act['operations']
-                                      if operation not in operations)
-                if 'permissions' in act:
-                    lineErrors.extend(_("Line %(num)d: Unknown permission.",
-                                        num=lineInfo[tempName + '.permissions'])
-                                      for perm in act['permissions']
-                                      if not perm in perms)
+                lineErrors.extend(_("Line %(num)d: Unknown operator "
+                                    "'%(name)s'", name=operation,
+                                    num=lineInfo[tempName + '.operations'])
+                                  for operation in act.get('operations', ())
+                                  if operation not in operations)
+
+                lineErrors.extend(_("Line %(num)d: Unknown permission "
+                                    "'%(name)s'", name=perm,
+                                    num=lineInfo[tempName + '.permissions'])
+                                  for perm in act.get('permissions', ())
+                                  if not perm in perms)
+
                 if 'default' in act and act['default'] == -1:
                     lineErrors.append(_(
                         "Line %(num)d: specify a numerical value to 'default'.",

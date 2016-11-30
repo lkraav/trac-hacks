@@ -200,12 +200,12 @@ msgstr ""
 
 #: tracworkflowadmin/web_ui.py:582
 #, python-format
-msgid "Line %(num)d: Unknown operator."
+msgid "Line %(num)d: Unknown operator '%(name)s'"
 msgstr ""
 
 #: tracworkflowadmin/web_ui.py:587
 #, python-format
-msgid "Line %(num)d: Unknown permission."
+msgid "Line %(num)d: Unknown permission '%(name)s'"
 msgstr ""
 
 #: tracworkflowadmin/web_ui.py:592
