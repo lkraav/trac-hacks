@@ -7,7 +7,7 @@ import os
 import re
 import time
 from cStringIO import StringIO
-from pkg_resources import resource_filename
+from pkg_resources import resource_filename, parse_version
 from subprocess import Popen, PIPE
 from tempfile import mkstemp
 try:
@@ -15,6 +15,7 @@ try:
 except ImportError:
     import simplejson as json
 
+from trac import __version__
 from trac.core import Component, implements
 from trac.admin import IAdminPanelProvider
 from trac.config import Configuration, Option, BoolOption, ListOption, \
@@ -61,6 +62,13 @@ ChoiceOption = _option_with_tx(ChoiceOption)
 __all__ = ['TracWorkflowAdminModule']
 
 
+_default_operations = ['del_owner', 'set_owner', 'set_owner_to_self',
+                       'del_resolution', 'set_resolution', 'leave_status']
+if parse_version(__version__) >= parse_version('1.2'):
+    _default_operations.append('may_set_owner')
+_default_operations = ', '.join(_default_operations)
+
+
 def _msgjs_locales(dir=None):
     if dir is None:
         dir = resource_filename(__name__, 'htdocs')
@@ -75,9 +83,7 @@ class TracWorkflowAdminModule(Component):
                IEnvironmentSetupParticipant)
 
     operations = ListOption('workflow-admin', 'operations',
-        'del_owner, set_owner, set_owner_to_self, del_resolution, '
-        'set_resolution, leave_status',
-        doc=N_("Operations in workflow admin"))
+        _default_operations, doc=N_("Operations in workflow admin"))
     dot_path = Option('workflow-admin', 'dot_path', 'dot',
         doc=N_("Path to the dot executable"))
     diagram_cache = BoolOption('workflow-admin', 'diagram_cache', 'false',
