@@ -29,8 +29,8 @@ from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
                             add_script, add_script_data
 
 
-_, N_, add_domain = domain_functions('tracworkflowadmin',
-                                     '_', 'N_', 'add_domain')
+_, gettext, N_, add_domain = domain_functions(
+    'tracworkflowadmin', '_', 'gettext', 'N_', 'add_domain')
 
 
 if 'doc_domain' not in inspect.getargspec(Option.__init__)[0]:
@@ -497,47 +497,49 @@ class TracWorkflowAdminModule(Component):
                 pass
             os.rename(tmp, path)
 
-    def _get_init_workflow(self):
-        config = {
-            'leave': 'new,assigned,accepted,reopened,closed -> *',
-            'leave.default': '9',
-            'leave.name': _("Leave"),
-            'leave.operations': 'leave_status',
-            'accept': 'new,assigned,accepted,reopened -> accepted',
-            'accept.default': '7',
-            'accept.name': _("Accept"),
-            'accept.operations': 'set_owner_to_self',
-            'accept.permissions': 'TICKET_MODIFY',
-            'reassign': 'new,assigned,accepted,reopened -> assigned',
-            'reassign.default': '5',
-            'reassign.name': _("Reassign"),
-            'reassign.operations': 'set_owner',
-            'reassign.permissions': 'TICKET_MODIFY',
-            'reopen': 'closed -> reopened',
-            'reopen.default': '3',
-            'reopen.name': _("Reopen"),
-            'reopen.operations': 'del_resolution',
-            'reopen.permissions': 'TICKET_CREATE',
-            'resolve': 'new,assigned,accepted,reopened -> closed',
-            'resolve.default': '1',
-            'resolve.name': _("Resolve"),
-            'resolve.operations': 'set_resolution',
-            'resolve.permissions': 'TICKET_MODIFY',
-        }
-        return config.iteritems()
+    _default_workflow = (
+        ('leave', 'new,assigned,accepted,reopened,closed -> *'),
+        ('leave.default', '9'),
+        ('leave.name', N_("Leave")),
+        ('leave.operations', 'leave_status'),
+        ('accept', 'new,assigned,reopened -> accepted'),
+        ('accept.default', '7'),
+        ('accept.name', N_("Accept")),
+        ('accept.operations', 'set_owner_to_self'),
+        ('accept.permissions', 'TICKET_MODIFY'),
+        ('reassign', 'new,accepted,reopened -> assigned'),
+        ('reassign.default', '5'),
+        ('reassign.name', N_("Reassign")),
+        ('reassign.operations', 'set_owner'),
+        ('reassign.permissions', 'TICKET_MODIFY'),
+        ('reopen', 'closed -> reopened'),
+        ('reopen.default', '3'),
+        ('reopen.name', N_("Reopen")),
+        ('reopen.operations', 'del_resolution'),
+        ('reopen.permissions', 'TICKET_CREATE'),
+        ('resolve', 'new,assigned,accepted,reopened -> closed'),
+        ('resolve.default', '1'),
+        ('resolve.name', N_("Resolve")),
+        ('resolve.operations', 'set_resolution'),
+        ('resolve.permissions', 'TICKET_MODIFY'),
+    )
 
-    def _initialize_workflow(self, req):
-        for (name, value) in self.config.options('ticket-workflow'):
-            self.config.remove('ticket-workflow', name)
-
+    def _get_default_workflow(self):
         has_init = False
-        for (name, value) in self.config.options('workflow-admin-init'):
-            self.config.set('ticket-workflow', name, value)
+        for name, value in self.config.options('workflow-admin-init'):
+            yield name, value
             has_init = True
         if not has_init:
-            for (name, value) in self._get_init_workflow():
-                self.config.set('ticket-workflow', name, value)
+            for name, value in self._default_workflow:
+                if name.endswith('.name'):
+                    value = gettext(value)
+                yield name, value
 
+    def _initialize_workflow(self, req):
+        for name, value in self.config.options('ticket-workflow'):
+            self.config.remove('ticket-workflow', name)
+        for name, value in self._get_default_workflow():
+            self.config.set('ticket-workflow', name, value)
         self.config.save()
 
     def _validate_workflow(self, req, params):
