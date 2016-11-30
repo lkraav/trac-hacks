@@ -1,11 +1,10 @@
 jQuery(document).ready(function($) {
 
-/* variables */
+    /* variables */
     var sorterHtml =
         '<div class="sorter">' +
         '<span class="up ui-icon ui-icon-arrowthick-1-n">↑</span>' +
         '<span class="down ui-icon ui-icon-arrowthick-1-s">↓</span></div>';
-    var imagePath = $('#image-area img').attr('src');
     var inputBackup = '';
     var uiOpened = false;
     var ajaxNow = false;
@@ -15,13 +14,7 @@ jQuery(document).ready(function($) {
     var backup = '';
     var formToken = $('#main-form [name="__FORM_TOKEN"]').val();
 
-/* functions */
-    var escape = (function(){
-      var map = {"<":"&lt;", ">":"&gt;", "&":"&amp;", "'":"&#39;", "\"":"&quot;"};
-      var repl = function(s){ return map[s]; };
-      return function(str) { return str.replace(/[<>&'"]/g, repl) };
-    })();
-
+    /* functions */
     function restoreDropDown(td, multi, value) {
         if ($('button', td).length) {
             var options = $('select option', td);
@@ -35,19 +28,19 @@ jQuery(document).ready(function($) {
                 html = '<select multiple="multiple">';
                 for (i = 0; i < options.length; i++) {
                     var name = $(options[i]).text();
-                    var selected = $(checks[i]).attr('checked') ? 'selected="selected"' : '';
-                    html += '<option ' + selected + ' >' + escape(name) + '</option>';
+                    var selected = checks[i].checked ? 'selected="selected"' : '';
+                    html += '<option ' + selected + ' >' + $.htmlEscape(name) + '</option>';
                 }
                 html += '</select>';
             } else {
                 html = '<select>';
                 if (value === false) {
-                    value = $('select', td).multiselect('getChecked').val()
+                    value = $('select', td).multiselect('getChecked').val();
                 }
                 for (i = 0; i < options.length; i++) {
                     var name = $(options[i]).text();
                     var selected = name == value ? 'selected="selected"' : '';
-                    html += '<option ' + selected + ' >' + escape(name) + '</option>';
+                    html += '<option ' + selected + ' >' + $.htmlEscape(name) + '</option>';
                 }
                 html += '</select>';
             }
@@ -74,18 +67,14 @@ jQuery(document).ready(function($) {
             position: {of: td, my: 'left top', at: 'left bottom'}});
         $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
         var ul = $('div.ui-multiselect-menu ul.ui-multiselect-checkboxes', td);
-        if ($('li:first input', ul).attr('checked')) {
-            $('li input', ul).attr('disabled', 'disabled');
-            $('li input:first', ul).attr('disabled', false);
-        }
-        $('li:first input', ul).click(function() {
-            if (!$(this).attr('checked')) {
-                $('li input', ul).attr('disabled', false);
-            } else {
-                $('li input', ul).attr('disabled', 'disabled');
-                $('li input:first', ul).attr('disabled', false);
-            }
-        });
+        var checkboxes = $('li input', ul);
+        var handler = function() {
+            checkboxes.each(checkboxes[0].checked ?
+                            function(idx) { this.disabled = idx !== 0 } :
+                            function(idx) { this.disabled = false });
+        };
+        handler();
+        $(checkboxes[0]).click(handler);
     }
 
     function setupNextStatus(tr) {
@@ -162,8 +151,8 @@ jQuery(document).ready(function($) {
         var html = '';
         for (i = 0; i < checks.length; i++) {
             var name = $(options[i]).text();
-            var selected = $(checks[i]).attr('checked') ? 'selected="selected"' : '';
-            html += '<option ' + selected + ' >' + name + '</option>';
+            var selected = checks[i].checked ? 'selected="selected"' : '';
+            html += '<option ' + selected + ' >' + $.htmlEscape(name) + '</option>';
         }
         var sel = $('select', obj.closest('td'));
         sel.html(html);
@@ -192,11 +181,11 @@ jQuery(document).ready(function($) {
         if ($('#editor-mode').val() == 'text') {
             out['text'] = $('#text-data').val();
         }
-        $('#status-editor-1 th input').each(function(){
+        $('#status-editor-1 th input').each(function() {
             out.status.push($(this).val());
         });
         var count = 0;
-        $('#elements tbody tr').each(function(){
+        $('#elements tbody tr').each(function() {
             var tmp = {};
             tmp['action'] = $('.col-action input', this).val();
             tmp['name'] = $('.col-logname input', this).val();
@@ -214,7 +203,7 @@ jQuery(document).ready(function($) {
             tmp['default'] = 1000 - count;
             tmp['before'] = [];
             var colNo = 0;
-            $('.col-before-status', this).each(function(){
+            $('.col-before-status', this).each(function() {
                 if ($(this).hasClass('status-checked')) {
                     tmp['before'].push(out.status[colNo]);
                 }
@@ -231,14 +220,16 @@ jQuery(document).ready(function($) {
 
     function _updateChart(force) {
         function uiEnabled() {
-            $('#chart-update-button').css('display', 'inline');
-            $('#chart-update-status').css('display', 'none');
+            button.disabled = false;
+            indicator.css('display', 'none');
         }
         function uiDisabled() {
-            $('#chart-update-button').css('display', 'none');
-            $('#chart-update-status').css('display', 'inline');
+            button.disabled = true;
+            indicator.css('display', '');
         }
 
+        var button = $('#chart-update-button')[0];
+        var indicator = $('#chart-update-status');
         var jsonstr = $.toJSON(createParams({mode: 'update-chart'}));
         if (!force && lastRequestJson === jsonstr)
             return;
@@ -246,36 +237,42 @@ jQuery(document).ready(function($) {
         ajaxNow = true;
         var editor = $('#editor-mode').val();
         $.ajax({
-            url      : location.href,
-            type     : "POST",
-            cache    : false,
-            dataType : 'json',
-            data     : {'editor_mode': editor, 'params': jsonstr,
-                        '__FORM_TOKEN': formToken},
-            success  : (
-                function(result) {
-                    var msg = $('#tabcontent .system-message');
-                    msg.hide().empty();
-                    if (!result['result']) {
-                        var src = result.image_url;
-                        $('#image-area').empty();
-                        $('#image-area').append($('<img>').attr('src', src));
-                        uiEnabled();
-                        $('#image-area').show();
-                    } else {
-                        uiEnabled();
-                        var errors = $('<ul>');
-                        $.each(result.errors, function(idx, val) {
-                            errors.append($('<li>').text(val));
-                        });
-                        msg.append($('<p>').text(_("There was an error.")),
-                                   errors);
-                        msg.show();
-                    }
+            url:       location.href,
+            type:      'POST',
+            cache:     false,
+            dataType:  'json',
+            data:      {editor_mode: editor, params: jsonstr,
+                        __FORM_TOKEN: formToken},
+            success:   function(result) {
+                var msg = $('#tabcontent .system-message');
+                msg.hide().empty();
+                if (!result['result']) {
+                    var area = $('#image-area');
+                    var image = $('<img>');
+                    var replace = function() {
+                        area.css('height', '');
+                        area.find('img').replaceWith(this);
+                    };
+                    image.bind({load: replace, error: replace});
+                    var height = area.css('height');
+                    if (parseInt(height, 10) !== 0)
+                        area.css('height', height);
+                    image.attr('src', result.image_url);
+                    uiEnabled();
+                    area.show();
+                } else {
+                    uiEnabled();
+                    var errors = $('<ul>');
+                    $.each(result.errors, function(idx, val) {
+                        errors.append($('<li>').text(val));
+                    });
+                    msg.append($('<p>').text(_("There was an error.")),
+                               errors);
+                    msg.show();
                 }
-            ),
-            error    : ajaxErrorFunc,
-            complete : function(XMLHttpRequest, textStatus){
+            },
+            error:     ajaxErrorFunc,
+            complete:  function(XMLHttpRequest, textStatus) {
                 ajaxNow = false;
                 lastUpdateTime = new Date().getTime();
             }
@@ -292,7 +289,7 @@ jQuery(document).ready(function($) {
         var newText = $(input).val();
 
         var others = {'*': true};
-        $('#status-editor-1 th input').each(function(){
+        $('#status-editor-1 th input').each(function() {
             if (this != input) {
                 others[$(this).val()] = true;
             }
@@ -308,7 +305,7 @@ jQuery(document).ready(function($) {
             curValue = $('.col-next-status select', this).multiselect('getChecked').val();
             if (curValue == oldText) curValue = newText;
             restoreDropDown($('td.col-next-status', this), true, '');
-            $('.col-next-status select option').each(function(){
+            $('.col-next-status select option').each(function() {
                 if ($(this).text() == oldText) {
                     $(this).text(newText);
                 }
@@ -339,7 +336,7 @@ jQuery(document).ready(function($) {
         alert(_("There was an internal error.\nresult status code=") + xmlHttpRequest.status + _("\n\n Please check log file of server."));
     }
 
-/* start setting */
+    /* start setting */
 
     // 何もない所をクリックしたら、UIを閉じる
     $('body').click(function() {
@@ -370,7 +367,7 @@ jQuery(document).ready(function($) {
         } else {
             try {
                 cols(this).css('display', 'table-cell');
-            } catch(e) {
+            } catch (e) {
                 cols(this).css('display', 'block');
             }
         }
@@ -439,7 +436,7 @@ jQuery(document).ready(function($) {
         } else if (ev.keyCode == 27) {
             var el = this;
             // firefoxの場合、一度イベントの外に出ないと $(this).val() で値を設定できなかったので以下のようにした
-            setTimeout(function(){
+            setTimeout(function() {
                 var resetText = $(el).val();
                 $(el).val(inputBackup);
                 $('span', $(el).closest('th')).text(resetText);
@@ -513,7 +510,7 @@ jQuery(document).ready(function($) {
         disabled: true,
         title: _("Add new action; Enter new action that consists of alphabet or digits."),
         buttons: {
-            'Ok': function(){
+            'Ok': function() {
                 $('#new-action-input-dialog').dialog('close');
                 var actionName = $('#new-action-input-dialog input').val();
                 if (!actionName) return false;
@@ -543,7 +540,7 @@ jQuery(document).ready(function($) {
                 updateChart();
                 return false;
             },
-            'Cancel': function(){
+            'Cancel': function() {
                 $('#new-action-input-dialog').dialog('close');
                 return false;
             }
@@ -557,12 +554,12 @@ jQuery(document).ready(function($) {
             actionName = 'new-action';
             if (no != 1)
                 actionName += '-' + no;
-            $('#elements tbody td.col-action input').each(function(){
+            $('#elements tbody td.col-action input').each(function() {
                 if ($(this).val() == actionName) {
                     ok = false;
                     return false;
                 }
-            })
+            });
             if (ok) break;
         }
         $('#new-action-input-dialog input').val(actionName);
@@ -570,9 +567,9 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-    $('#new-action-input-dialog input').focus(function(){
+    $('#new-action-input-dialog input').focus(function() {
         this.select();
-    })
+    });
 
 
     // ステータスを右に移動
@@ -662,7 +659,7 @@ jQuery(document).ready(function($) {
         disabled: true,
         title: _("Add new status; Enter new status name that consists of alphabet or digits."),
         buttons: {
-            'Ok': function(){
+            'Ok': function() {
                 $('#new-status-input-dialog').dialog('close');
                 var colspan = $('#status-header-bar').attr('colspan');
                 colspan = parseInt(colspan || '1', 10);
@@ -676,20 +673,20 @@ jQuery(document).ready(function($) {
                 el = $($('#status-editor-2 th')[0]).clone(true);
                 $('#status-editor-2').append(el);
                 $('#elements tbody tr').each(function() {
-                    el = $($('.col-before-status', this)[0]).clone(true);
+                    var el = $($('.col-before-status', this)[0]).clone(true);
                     el.addClass('status-checked');
                     $(this).append(el);
                     restoreDropDown($('.col-next-status', this), false, false);
-                    newOpt = $('<option>');
-                    newOpt.text(statusName);
-                    $('.col-next-status select', this).append(newOpt);
+                    var opt = $('<option>');
+                    opt.text(statusName);
+                    $('.col-next-status select', this).append(opt);
                     setupNextStatus(this);
                 });
                 closeUi();
                 updateChart();
                 return false;
             },
-            'Cancel': function(){
+            'Cancel': function() {
                 $('#new-status-input-dialog').dialog('close');
             }
         }
@@ -707,25 +704,25 @@ jQuery(document).ready(function($) {
             var ok = true;
             statusName = 'new status';
             if (no != 1) statusName += ' ' + no;
-            $('#elements tr#status-editor-1 input').each(function(){
+            $('#elements tr#status-editor-1 input').each(function() {
                 if ($(this).val() == statusName) {
                     ok = false;
                     return false;
                 }
-            })
+            });
             if (ok) break;
         }
-        $('#new-status-input-dialog input').val(statusName)
+        $('#new-status-input-dialog input').val(statusName);
         $('#new-status-input-dialog').dialog('open');
         return false;
     });
 
-    $('#new-status-input-dialog input').focus(function(){
+    $('#new-status-input-dialog input').focus(function() {
         this.select();
-    })
+    });
 
     // ステータスの移動可能、不可能の設定
-    $('.col-before-status').click(function(){
+    $('.col-before-status').click(function() {
         $(this).toggleClass('status-checked');
         updateChart();
     });
@@ -782,24 +779,25 @@ jQuery(document).ready(function($) {
     });
 
     // 「保存して完了」
-    $('#submit-button').click(function(){
+    $('#submit-button').click(function() {
         var jsonstr = $.toJSON(createParams({mode: 'update'}));
         ajaxNow = true;
         $.ajax({
-            url      : location.href,
-            type     : "POST",
-            cache    : false,
-            dataType : 'json',
-            data     : {'editor_mode': $('#editor-mode').val(), 'params': jsonstr, '__FORM_TOKEN': $('#main-form [name="__FORM_TOKEN"]').val()},
-            success  : saveSucceeded,
-            error    : ajaxErrorFunc,
-            complete : function(XMLHttpRequest, textStatus){ ajaxNow = false; }
+            url:       location.href,
+            type:      "POST",
+            cache:     false,
+            dataType:  'json',
+            data:      {editor_mode: $('#editor-mode').val(),
+                        params: jsonstr, __FORM_TOKEN: formToken},
+            success:   saveSucceeded,
+            error:     ajaxErrorFunc,
+            complete:  function(XMLHttpRequest, textStatus) { ajaxNow = false }
         });
         return false;
     });
 
     // 「編集内容を破棄する」
-    $('#reset-button').click(function(){
+    $('#reset-button').click(function() {
         if (!confirm(_("Are you sure you want to cancel?")))
             return false;
         var jsonstr = $.toJSON({mode: 'reset'});
@@ -809,7 +807,7 @@ jQuery(document).ready(function($) {
     });
 
     // 「初期状態に戻す」
-    $('#init-button').click(function(){
+    $('#init-button').click(function() {
         if (!confirm(_("Are you sure you want to restore initial workflow?")))
             return false;
         var jsonstr = $.toJSON({mode: 'init'});
@@ -819,7 +817,7 @@ jQuery(document).ready(function($) {
     });
 
     // 「テキストモードに切り替え」
-    $('#textmode-button').click(function(){
+    $('#textmode-button').click(function() {
         if (isDirty() && !confirm(_(
                 "Your changes have not been saved and will be discarded if " +
                 "you continue. Are you sure that you want to switch to " +
@@ -832,7 +830,7 @@ jQuery(document).ready(function($) {
     });
 
     // 「GUIモードに切り替え」
-    $('#guimode-button').click(function(){
+    $('#guimode-button').click(function() {
         if (isDirty() && !confirm(_(
                 "Your changes have not been saved and will be discarded if " +
                 "you continue. Are you sure that you want to switch to " +
@@ -849,7 +847,7 @@ jQuery(document).ready(function($) {
 
     // 画面初期化
     $('#table-wrapper').css('display', 'block'); // IEでは初期化に時間が掛かるので初期化後に表示するようにしている
-    if ($('#image-area').size() > 0)
+    if ($('#image-area').length > 0)
         updateChartForce();
 
     // 開始時のデータを保存しておく
@@ -859,14 +857,17 @@ jQuery(document).ready(function($) {
     if ($('#editor-mode').val() == 'text' && auto_update_interval != 0) {
 
         // テキスト編集時にタイマリセット
-        $('#text-data').keydown(function(){
+        $('#text-data').keydown(function() {
             lastUpdateTime = new Date().getTime();
         });
 
-        setInterval(function(){
+        setInterval(function() {
             var now = new Date().getTime();
-            // 最終更新から一定時間(auto_update_interval)経過していて、テキストに変更があり、ajaxの実行中でないならダイアグラムを更新する
-            if (now - lastUpdateTime > auto_update_interval && lastUpdateText != $('#text-data').val() && !ajaxNow) {
+            // 最終更新から一定時間(auto_update_interval)経過していて
+            // テキストに変更がありajaxの実行中でないならダイアグラムを更新する
+            if (now - lastUpdateTime > auto_update_interval &&
+                lastUpdateText != $('#text-data').val() && !ajaxNow)
+            {
                 lastUpdateTime = new Date().getTime();
                 updateChart();
             }

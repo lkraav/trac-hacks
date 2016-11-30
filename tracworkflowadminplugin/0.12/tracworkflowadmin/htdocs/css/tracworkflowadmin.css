@@ -1,4 +1,4 @@
-a {
+#tabcontent a {
  overflow: hidden; /* for text-indent of firefox */
 }
 
@@ -115,5 +115,4 @@ table#elements tbody tr:hover button {
 #main-form { clear: both }
 #main-form p { display: none }
 fieldset#chart-area { padding: 0 1em }
-#chart-update-button { display:none }
 #text-data { width: 640px }
