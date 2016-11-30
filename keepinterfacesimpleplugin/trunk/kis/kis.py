@@ -67,20 +67,16 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
         # The optional second argument specifies a particular user.
         def expand(group, expanded=set()):
             expanded.add(group)
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-            cursor.execute('SELECT DISTINCT username FROM permission '
-                'WHERE action = "%s"' % group)
-            for username in cursor:
-                inner_cursor = db.cursor()
-                inner_cursor.execute('SELECT COUNT(*) FROM permission '
-                    'WHERE action = "%s"' % username[0])
-                if inner_cursor.fetchone()[0]:
-                    if username[0] not in expanded:
-                        for user in expand(username[0], expanded):
-                            yield user
-                else:
-                    yield username[0]
+            with self.env.db_query as db:
+                for username in db('SELECT DISTINCT username FROM permission '
+                                   'WHERE action = "%s"' % group):
+                    if db('SELECT COUNT(*) FROM permission '
+                          'WHERE action = "%s"' % username[0])[0][0]:
+                        if username[0] not in expanded:
+                            for user in expand(username[0], expanded):
+                                yield user
+                    else:
+                        yield username[0]
 
         if len(args) < 1 or len(args) > 2:
             raise ConfigurationError('has_role() called with %s arguments' %
@@ -107,11 +103,9 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
             ticket = args[0].lstrip('#')
         else:
             ticket = req.args['id']
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute('SELECT COUNT(*) FROM ticket_custom WHERE '
-            'name="parent" AND value = "#%s"' % ticket)
-        return cursor.fetchone()[0] > 0
+        with self.env.db_query as db:
+            return db('SELECT COUNT(*) FROM ticket_custom WHERE '
+                'name="parent" AND value = "#%s"' % ticket)[0][0] > 0
 
 ###############################################################################
 
