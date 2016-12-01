@@ -31,7 +31,6 @@ class SumFieldsModule(Component):
                 (req.path_info.startswith(('/query', '/report')) and
                  'REPORT_VIEW' in req.perm):
             add_script(req, 'sumfields/sumfields.js')
-            print(self.fields)
             add_script_data(req, fields=self.fields)
         return template, data, content_type
 
