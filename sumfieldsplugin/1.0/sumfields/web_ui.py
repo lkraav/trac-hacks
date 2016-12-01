@@ -17,7 +17,7 @@ class SumFieldsModule(Component):
     """A module that sums fields/columns using JS/jQuery."""
 
     fields = ListOption('sumfields', 'fields', default=[],
-            doc="fields to sum in custom query reports.")
+                        doc="Fields to sum in custom query reports.")
 
     implements(IRequestFilter, ITemplateProvider)
 

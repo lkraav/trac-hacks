@@ -11,24 +11,22 @@
 from setuptools import setup
 
 setup(
-    name = 'TracSumFields',
-    version = '2.0.0',
-    packages = ['sumfields'],
-    package_data = {'sumfields': ['htdocs/*.js']},
+    name='TracSumFields',
+    version='2.0.0',
+    packages=['sumfields'],
+    package_data={'sumfields': ['htdocs/*.js']},
 
-    author = 'Rob Guttman',
-    author_email = 'guttman@alum.mit.edu',
-    description = 'Sum fields in Trac custom queries.',
-    license = '3-Clause BSD',
-    keywords = 'trac plugin sum',
-    url = 'https://trac-hacks.org/wiki/SumFieldsPlugin',
-    classifiers = [
+    author='Rob Guttman',
+    author_email='guttman@alum.mit.edu',
+    description='Sum fields in Trac custom queries.',
+    license='3-Clause BSD',
+    keywords='trac plugin sum',
+    url='https://trac-hacks.org/wiki/SumFieldsPlugin',
+    classifiers=[
         'Framework :: Trac',
     ],
-
-    install_requires = ['Trac'],
-
-    entry_points = {
+    install_requires=['Trac'],
+    entry_points={
         'trac.plugins': [
             'sumfields.web_ui = sumfields.web_ui',
         ]
