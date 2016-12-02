@@ -11,22 +11,22 @@
 from setuptools import setup
 
 setup(
-    name = 'teamcalendar',
-    author = 'Martin Aspeli',
-    author_email = 'optilude@gmail.com',
-    maintainer = 'Chris Nelson',
-    maintainer_email = 'Chris.Nelson@SIXNET.com',
-    description = 'Trac plugin for managing team availability',
-    version = '0.1',
+    name='teamcalendar',
+    author='Martin Aspeli',
+    author_email='optilude@gmail.com',
+    maintainer='Chris Nelson',
+    maintainer_email='Chris.Nelson@SIXNET.com',
+    description='Trac plugin for managing team availability',
+    version='1.0.0',
     license='3-Clause BSD',
+    url='https://trac-hacks.org/wiki/TeamCalendarPlugin',
     packages=['teamcalendar'],
     package_data={'teamcalendar': ['templates/*.html',
-                                   'htdocs/css/*.css',]},
-    entry_points = {
+                                   'htdocs/css/*.css', ]},
+    entry_points={
         'trac.plugins': [
-            'teamcalendar = teamcalendar'
+            'teamcalendar = teamcalendar.calendar'
         ]
     },
-    install_requires = [
-    ],
+    install_requires=['Trac'],
 )
