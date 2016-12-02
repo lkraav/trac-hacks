@@ -1,2 +1,0 @@
-from cmtekniktheme import *
-
