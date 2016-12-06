@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import inspect
 import re
 import types
 from datetime import datetime
@@ -118,14 +119,18 @@ class BulkFetchTicket(Ticket):
         self.env = env
         if tkt_id is not None:
             tkt_id = int(tkt_id)
-        self.resource = Resource('ticket', tkt_id, version)
         self.fields = fields
         self.time_fields = time_fields
         self.id = tkt_id
+        self.version = version
         self._values = values
         self.values = values.copy()
         self._changelog = changelog
         self._old = {}
+
+    @property
+    def resource(self):
+        return Resource('ticket', self.id, self.version)
 
     def _fetch_ticket(self, tkt_id, db=None):
         self.values = self._values.copy()
@@ -182,7 +187,10 @@ class ExcelTicketModule(Component):
         try:
             query._count = types.MethodType(lambda self, sql, args, db=None: 0,
                                             query, query.__class__)
-            tickets = query.execute(req, db)
+            if 'db' in inspect.getargspec(query.execute)[0]:
+                tickets = query.execute(req, db)
+            else:
+                tickets = query.execute(req)
             query.num_items = len(tickets)
         finally:
             query._count = saved_count_prop

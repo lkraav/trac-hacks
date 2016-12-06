@@ -28,6 +28,7 @@ setup(
             'locale/*.*', 'locale/*/LC_MESSAGES/*.mo',
         ],
     },
+    test_suite = 'tracexceldownload.tests.suite',
     install_requires = ['Trac', 'xlwt'],
     entry_points = {
         'trac.plugins': [
