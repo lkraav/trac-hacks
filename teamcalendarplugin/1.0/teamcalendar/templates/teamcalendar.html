@@ -22,8 +22,6 @@
 
     <h1>Team Calendar</h1>
 
-    <div class="message" py:content="message" ></div>
-
     <p>Please indicate your availability by ticking the boxes
        under your name, below. To display a different date range,
        use the date selectors below.
@@ -32,17 +30,16 @@
     <form id="teamcalendar" method="post" action="">
 
       <label for="from_date">From:</label>
-        <input id="from_date" type="text" name="from_date"
-          py:attrs="dict(value=from_date.isoformat())"/>
+      <input id="from_date" class="trac-datepicker" type="text"
+             name="from_date" value="${format_date(from_date)}" />
       <label for="to_date">To:</label>
-        <input id="to_date" type="text" name="to_date"
-          py:attrs="dict(value=to_date.isoformat())"/>
-          <input type="submit" name="change_view" value="Change"/>
-
+      <input id="to_date" class="trac-datepicker" type="text"
+             name="to_date" value="${format_date(to_date)}" />
+      <input type="submit" name="change_view" value="Change" />
       <input id="orig_form_date" type="hidden" name="orig_from_date"
-          py:attrs="dict(value=from_date.isoformat())"/>
+             value="${format_date(from_date)}" />
       <input id="orig_to_date" type="hidden" name="orig_to_date"
-          py:attrs="dict(value=to_date.isoformat())"/>
+             value="${format_date(to_date)}" />
 
       <table id="calendar">
         <thead>
@@ -54,23 +51,24 @@
           </tr>
         </thead>
         <tbody>
-          <tr py:for="day in timetable"
-            py:attrs="{'class': (day['date'].isoweekday() in (6,7) and 'weekend' or 'weekday')}">
-            <td py:attrs="{'class': day['date'] == today and 'date today' or 'date'}"
-              py:content="day['date'].strftime('%a %d/%m/%Y')">Date</td>
-            <td class="status" py:for="person in people">
-              <input
-                 py:attrs="dict(name='%s.%s' % (day['date'].isoformat(), person),
-                        checked=(day['people'][person] > 0) and 'checked' or None,
-                        disabled=(not ((can_update_own and person == authname) or can_update_others) and 'disabled' or None))"
-                type="checkbox" value="1" />
+          <tr py:for="date in dates"
+              py:with="isweekend = date.isoweekday() in (6,7)"
+              py:attrs="{'class': 'weekend' if isweekend else 'weekday'}">
+            <td py:attrs="{'class': date == today and 'date today' or 'date'}"
+                py:content="format_date(date)">Date</td>
+            <td class="status" py:for="person in people"
+                py:with="default = not isweekend;
+                         availability = timetable.get(date_at_utc(date), {}).get(person, default);">
+              <input type="checkbox" name="${'%s.%s' % (date, person)}"
+                     disabled="${not (can_update_own and person == authname or can_update_others) or None}"
+                     checked="${availability or None}" />
             </td>
           </tr>
         </tbody>
       </table>
 
       <div class="buttons" py:if="can_update">
-            <input type="submit" name="update_calendar" value="Apply changes"/>
+        <input type="submit" name="update_calendar" value="Apply changes" />
       </div>
     </form>
     </div>

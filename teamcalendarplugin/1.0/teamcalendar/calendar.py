@@ -7,40 +7,66 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-import time
 import re
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 from pkg_resources import resource_filename
 
-from trac.config import ListOption, Option
+import teamcalendar.compat
+from trac.config import IntOption, ListOption
+from trac.db.api import DatabaseManager
+from trac.db.schema import Column, Table
+from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor, PermissionSystem
 from trac.core import Component, implements
+from trac.util.datefmt import from_utimestamp, parse_date, to_utimestamp, \
+                              user_time, utc
 from trac.util.html import html
 from trac.web.api import IRequestHandler
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_stylesheet
+from trac.web.chrome import Chrome, INavigationContributor, \
+                            ITemplateProvider, add_stylesheet
+
+
+schema_name = 'teamcalendar_version'
+schema_version = 2
+schema = [
+    Table('team_calendar', key=('username', 'time'))[
+        Column('username'),
+        Column('time', type='int64'),
+        Column('availability', type='int')]
+]
 
 
 class TeamCalendar(Component):
 
-    implements(INavigationContributor, IPermissionRequestor, IRequestHandler,
-               ITemplateProvider)
+    implements(IEnvironmentSetupParticipant, INavigationContributor,
+               IPermissionRequestor, IRequestHandler, ITemplateProvider)
 
-    table_name = Option('team-calendar', 'table_name', 'team_availability',
-                        doc="The table that contains team availability "
-                            "information")
+    weeks_prior = IntOption('team-calendar', 'weeks_prior', '1',
+                            doc="Number of weeks before the current week to "
+                                "show by default.")
 
-    weeks_prior = Option('team-calendar', 'weeks_prior', '1',
-                         doc="Defines how many weeks before the current week "
-                             "to show by default")
+    weeks_after = IntOption('team-calendar', 'weeks_after', '3',
+                            doc="Number of weeks after the current week to "
+                                "show by default.")
 
-    weeks_after = Option('team-calendar', 'weeks_after', '3',
-                         doc="Defines how many weeks before the current week "
-                             "to show by default")
+    work_days = ListOption('team-calendar', 'work_days', [0, 1, 2, 3, 4],
+                           doc="Days of week that are worked. Defaults to "
+                               "Monday through Friday. 0 is Monday.")
 
-    work_days = ListOption('team-calendar', 'work_days', [],
-                           doc="Lists days of week that are worked. "
-                               "Defaults to none.  0 is Monday.")
+    # IEnvironmentSetupParticipant methods
+
+    def environment_created(self):
+        with self.env.db_transaction as db:
+            self.upgrade_environment(db)
+
+    def environment_needs_upgrade(self, db):
+        return DatabaseManager(self.env).needs_upgrade(schema_version,
+                                                       schema_name)
+
+    def upgrade_environment(self, db):
+        dbm = DatabaseManager(self.env)
+        dbm.create_tables(schema)
+        dbm.set_database_version(schema_version, schema_name)
 
     # INavigationContributor methods
 
@@ -71,6 +97,76 @@ class TeamCalendar(Component):
     def match_request(self, req):
         return re.match(r'/teamcalendar(?:_trac)?(?:/.*)?$', req.path_info)
 
+    def process_request(self, req):
+        req.perm.require('TEAMCALENDAR_VIEW')
+
+        def parse_date_str(date_str, default):
+            if not date_str:
+                return default
+            return user_time(req, parse_date, date_str)
+
+        today = datetime_as_date(datetime.now(req.tz))
+        offset = today.isoweekday() - 1 + 7 * self.weeks_prior - 1
+        default_start = today - timedelta(offset)
+        offset = 7 - today.isoweekday() + 7 * self.weeks_after
+        default_end = today + timedelta(offset)
+
+        from_date = parse_date_str(req.args.get('from_date'), default_start)
+        to_date = parse_date_str(req.args.get('to_date'), default_end)
+
+        data = {'authname': req.authname}
+
+        # Can we update?
+        data['can_update_own'] = can_update_own = \
+            'TEAMCALENDAR_UPDATE_OWN' in req.perm
+        data['can_update_others'] = can_update_others = \
+            'TEAMCALENDAR_UPDATE_OTHERS' in req.perm
+        data['can_update'] = can_update_own or can_update_others
+
+        # Get all people
+        data['people'] = people = self.get_people()
+
+        num_days = (to_date - from_date).days + 1
+        date_range = [from_date + timedelta(days=d)
+                      for d in range(0, num_days)]
+
+        # Store dates
+        data['today'] = today
+        data['from_date'] = date_range[0]
+        data['to_date'] = date_range[-1]
+
+        # Update timetable if required
+        if 'update_calendar' in req.args:
+            req.perm.require('TEAMCALENDAR_UPDATE_OWN')
+
+            # deliberately override dates: want to show result of update
+            from_date = parse_date_str(req.args['orig_from_date'],
+                                       default_start)
+            to_date = parse_date_str(req.args['orig_to_date'],
+                                     default_end)
+            tuples = []
+            for date in date_range:
+                if can_update_others:
+                    for person in people:
+                        status = bool(req.args.get('%s.%s' % (date, person), 0))
+                        tuples.append((date_at_utc(date), person, status))
+                elif can_update_own:
+                    authname = req.authname
+                    status = bool(req.args.get('%s.%s' % (date, authname), 0))
+                    tuples.append((date_at_utc(date), authname, status))
+
+            self.update_timetable(tuples)
+
+        data['timetable'] = self.get_timetable(from_date, to_date, people)
+        data['dates'] = date_range
+        data['date_at_utc'] = date_at_utc
+
+        Chrome(self.env).add_jquery_ui(req)
+        add_stylesheet(req, 'teamcalendar/css/calendar.css')
+        return 'teamcalendar.html', data, None
+
+    # Internal methods
+
     def get_people(self):
         perm = PermissionSystem(self.env)
         people = \
@@ -78,34 +174,18 @@ class TeamCalendar(Component):
         return sorted(people)
 
     def get_timetable(self, from_date, to_date, people):
-        db = self.env.get_db_cnx()
-        timetable_cursor = db.cursor()
-        timetable_cursor.execute('SELECT ondate, username, availability '
-                                 'FROM %s '
-                                 'WHERE ondate >= %%s AND ondate <= %%s '
-                                 'GROUP BY ondate, username, availability' %
-                                 self.table_name,
-                                 (from_date.isoformat(),
-                                  to_date.isoformat(),))
-
-        empty_day = dict([(p, 0.0) for p in people])
-        full_day = dict([(p, 1.0) for p in people])
-
         timetable = {}
-        current_date = from_date
-        while current_date <= to_date:
-            # work_days contains strings because ListOption returns a
-            # list of strings.  Even if it had numbers, we couldn't
-            # include Monday (0) because of
-            # http://trac.edgewall.org/ticket/10541
-            if str(current_date.weekday()) in self.work_days:
-                timetable[current_date] = full_day.copy()
-            else:
-                timetable[current_date] = empty_day.copy()
-            current_date += timedelta(1)
-
-        for row in timetable_cursor:
-            timetable[row[0]][row[1]] = row[2]
+        for row in self.env.db_query("""
+                SELECT time, username, availability
+                FROM team_calendar
+                WHERE time >= %s AND time <= %s
+                ORDER BY time ASC, username ASC
+                """, (to_utc_utimestamp(from_date),
+                      to_utc_utimestamp(to_date))):
+            if row[1] in people:
+                date = from_utimestamp(row[0])
+                timetable.setdefault(date, {})
+                timetable[date].update({row[1]: row[2]})
 
         return timetable
 
@@ -120,166 +200,78 @@ class TeamCalendar(Component):
     # It appears -- though I don't know that it is guaranteed -- that
     # the items are in date order and there are no gaps in the dates.
     def update_timetable(self, tuples):
-        db = self.env.get_db_cnx()
-
         # See what's already in the database for the same date range.
+        print(tuples)
         from_date = tuples[1][0]
         to_date = tuples[-1][0]
         users = []
         for date_, user, avail in tuples:
             if user not in users:
                 users.append(user)
-        cursor = db.cursor()
-        # In 0.12, we could do
-        #
-        #   ','.join([db.quote(user) for user in users])
-        #
-        # but 0.11 doesn't have db.quote() so we build up enough
-        # instances of %s to accomodate all the users then let
-        # cursor.execute() quote the items from the list.
-        in_clause = "username IN (%s)" % ','.join(('%s',) * len(users))
-        cursor.execute("SELECT ondate, username, availability FROM %s " %
-                       self.table_name +
-                       "WHERE ondate >= %s AND ondate <= %s " +
-                       "AND " + in_clause,
-                       [from_date.isoformat(), to_date.isoformat()] + users)
 
         updates = []
         keys = [(t[0], t[1]) for t in tuples]
-        for row in cursor:
-            key = (row[0], row[1])
-            # If the whole db row is in tuples (date, person, and
-            # availability match) take it out of tuples, we don't need
-            # to do anything to the db
-            if row in tuples:
-                tuples.remove(row)
-                keys.remove(key)
-            # If the db key in this row has a value in tuples, we need
-            # to update availability
-            elif key in keys:
-                index = keys.index(key)
-                updates.append(tuples.pop(index))
-                keys.pop(index)
-            # The query results should cover the same date range as
-            # tuples.  We might get here if tuples has more users than
-            # the db.  We fall through and add any tuples that don't
-            # match the DB so this is OK
-            else:
-                self.env.log.info("UI and db inconsistent.")
+        with self.env.db_transaction as db:
+            in_clause = "username IN (%s)" \
+                        % ','.join("'%s'" % u for u in users)
+            for row in db("""
+                    SELECT time, username, availability
+                    FROM team_calendar
+                    WHERE time >= %%s AND time <= %%s AND %s
+                    ORDER BY time
+                    """ % in_clause, (to_utc_utimestamp(from_date),
+                                      to_utc_utimestamp(to_date))):
+                item = from_utimestamp(row[0]), row[1], bool(row[2])
+                key = item[0], item[1]
+                # If the whole db row is in tuples (date, person, and
+                # availability match) take it out of tuples, we don't need
+                # to do anything to the db
+                if item in tuples:
+                    tuples.remove(item)
+                    keys.remove(key)
+                # If the db key in this row has a value in tuples, we need
+                # to update availability
+                elif key in keys:
+                    index = keys.index(key)
+                    updates.append(tuples.pop(index))
+                    keys.pop(index)
+                # The query results should cover the same date range as
+                # tuples.  We might get here if tuples has more users than
+                # the db.  We fall through and add any tuples that don't
+                # match the DB so this is OK
+                else:
+                    self.env.log.info("UI and db inconsistent.")
 
         # Duplicates and updates have been removed from tuples so
         # what's left is things to insert.
         inserts = tuples
 
-        if len(inserts):
-            insert_cursor = db.cursor()
-            values_clause = ','.join(('(%s,%s,%s)',) * len(inserts))
-            # FIXME - we likely want to do this earlier on all of tuples.
-            inserts = [(t[0], t[1], t[2] and 1 or 0) for t in inserts]
-            # Quickly flatten the list.  List comprehension is always
-            # weird.  See http://stackoverflow.com/questions/952914
-            flat = [item for sublist in inserts for item in sublist]
-            insert_cursor.execute("INSERT INTO %s " % self.table_name +
-                                  "(ondate, username, availability) " +
-                                  "VALUES %s" % values_clause, flat)
+        with self.env.db_transaction as db:
+            if len(inserts):
+                db.executemany("""
+                    INSERT INTO team_calendar (time,username,availability)
+                    VALUES (%s,%s,%s)
+                    """, [(to_utc_utimestamp(t[0]), t[1], t[2] and 1 or 0)
+                          for t in inserts])
+            if len(updates):
+                for t in updates:
+                    db("""UPDATE team_calendar SET availability=%s
+                        WHERE time=%s AND username=%s
+                        """, (t[2] and 1 or 0, to_utc_utimestamp(t[0]), t[1]))
 
-        if len(updates):
-            update_cursor = db.cursor()
-            for t in updates:
-                update_cursor.execute("UPDATE %s " % self.table_name +
-                                      "SET availability = %d " %
-                                      (t[2] and 1 or 0) +
-                                      "WHERE ondate = %s "
-                                      "AND username = %s;",
-                                      (t[0], t[1]))
 
-        if len(inserts) or len(updates):
-            db.commit()
+def datetime_as_date(dt):
+    """Return datetime with truncated time."""
+    return datetime(year=dt.year, month=dt.month, day=dt.day,
+                    tzinfo=dt.tzinfo)
 
-    def string_to_date(self, date_str, fallback=None):
-        try:
-            date_tuple = time.strptime(date_str, '%Y-%m-%d')
-            return date(date_tuple[0], date_tuple[1], date_tuple[2])
-        except ValueError:
-            return fallback
 
-    def find_default_start(self):
-        today = date.today()
-        offset = (today.isoweekday() - 1) + (7 * int(self.weeks_prior))
-        return today - timedelta(offset)
+def date_at_utc(dt):
+    """Return current date in UTC from datetime."""
+    utc_dt = dt.astimezone(utc)
+    return datetime_as_date(utc_dt)
 
-    def find_default_end(self):
-        today = date.today()
-        offset = 7 - today.isoweekday() + 7 * int(self.weeks_after)
-        return today + timedelta(offset)
 
-    def process_request(self, req):
-        req.perm.require('TEAMCALENDAR_VIEW')
-
-        data = {}
-
-        from_date = self.string_to_date(req.args.get('from_date', ''),
-                                        self.find_default_start())
-        to_date = self.string_to_date(req.args.get('to_date', ''),
-                                      self.find_default_end())
-
-        # Message
-        data['message'] = ""
-
-        # Current user
-        data['authname'] = authname = req.authname
-
-        # Can we update?
-
-        data['can_update_own'] = can_update_own = \
-            'TEAMCALENDAR_UPDATE_OWN' in req.perm
-        data['can_update_others'] = can_update_others = \
-            'TEAMCALENDAR_UPDATE_OTHERS' in req.perm
-        data['can_update'] = can_update_own or can_update_others
-
-        # Store dates
-        data['today'] = date.today()
-        data['from_date'] = from_date
-        data['to_date'] = to_date
-
-        # Get all people
-        data['people'] = people = self.get_people()
-
-        # Update timetable if required
-        if 'update_calendar' in req.args:
-            req.perm.require('TEAMCALENDAR_UPDATE_OWN')
-
-            # deliberately override dates: want to show result of update
-            from_date = current_date = self.string_to_date(
-                req.args['orig_from_date'])
-            to_date = self.string_to_date(req.args['orig_to_date'])
-            tuples = []
-            while current_date <= to_date:
-                if can_update_others:
-                    for person in people:
-                        status = bool(req.args.get(
-                            u'%s.%s' % (current_date.isoformat(), person,),
-                            False))
-                        tuples.append((current_date, person, status,))
-                elif can_update_own:
-                    status = bool(req.args.get(
-                        u'%s.%s' % (current_date.isoformat(), authname,),
-                        False))
-                    tuples.append((current_date, authname, status,))
-                current_date += timedelta(1)
-
-            self.update_timetable(tuples)
-            data['message'] = "Updated database."
-
-        # Get the current timetable
-        timetable = self.get_timetable(from_date, to_date, people)
-
-        data['timetable'] = []
-        current_date = from_date
-        while current_date <= to_date:
-            data['timetable'].append(
-                dict(date=current_date, people=timetable[current_date]))
-            current_date += timedelta(1)
-
-        add_stylesheet(req, 'teamcalendar/css/calendar.css')
-        return 'teamcalendar.html', data, None
+def to_utc_utimestamp(dt):
+    """Return timestamp representing current date in UTC from datetime."""
+    return to_utimestamp(date_at_utc(dt))

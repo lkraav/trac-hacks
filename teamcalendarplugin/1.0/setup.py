@@ -11,7 +11,7 @@
 from setuptools import setup
 
 setup(
-    name='teamcalendar',
+    name='TeamCalendar',
     author='Martin Aspeli',
     author_email='optilude@gmail.com',
     maintainer='Chris Nelson',
