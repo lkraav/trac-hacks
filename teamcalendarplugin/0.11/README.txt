@@ -9,18 +9,36 @@ permissions can change the state of the tick boxes under their own name,
 and save the results. Users with TEAMCALENDAR_UPDATE_OTHERS permission can
 update everyone's.
 
-The table is populated form the database, where the following table must be 
-created:
+The plugin requires a table `team_availability` that needs to be created manually and goes into the same database that Trac is using.
+
+For MySQL, the table can be created as follows:
 
     CREATE TABLE `team_availability` (
-      `username` varchar(255) NOT NULL DEFAULT '',
-      `ondate` date NOT NULL DEFAULT '0000-00-00',
-      `availability` float unsigned DEFAULT NULL,
-      PRIMARY KEY (`username`,`ondate`)
+      `username` VARCHAR(255) NOT NULL DEFAULT '',
+      `ondate` DATE NOT NULL DEFAULT '0000-00-00',
+      `availability` FLOAT UNSIGNED DEFAULT NULL,
+      PRIMARY KEY (`username`, `ondate`)
     );
 
-Note that the plugin is currently tied to MySQL. Updates to make it more 
-database agnostic would be welcome.
+For PostgreSQL, the table can be created as follows:
+
+    CREATE TABLE team_availability (
+       username VARCHAR(255) NOT NULL DEFAULT '',
+       ondate DATE NOT NULL,
+       availability FLOAT DEFAULT NULL,
+       PRIMARY KEY (username, ondate)
+    );
+
+For Sqlite3, the database and table can be created as follows:
+
+    $ sqlite3 trac.db
+
+    CREATE TABLE team_availability (
+       username TEXT NOT NULL DEFAULT '', 
+       ondate DATE NOT NULL DEFAULT (DATETIME('now')), 
+       availability FLOAT DEFAULT NULL, 
+       PRIMARY KEY (username, ondate)
+    );
 
 The 'availability' column will contain 0 or 1 if populated through the GUI.
 It is left as a float to make it possible to store more granular availability,
