@@ -14,7 +14,7 @@
 from setuptools import setup
 
 PACKAGE = 'TracDirectoryAuth'
-VERSION = '2.0.1'
+VERSION = '2.0.2'
 
 setup(
     name=PACKAGE,
@@ -36,5 +36,5 @@ setup(
         ],
     },
     namespace_packages=['tracext'],
-    install_requires=['Trac >=1.0', 'TracAccountManager', 'python-ldap'],
+    install_requires=['Trac', 'TracAccountManager', 'python-ldap'],
 )
