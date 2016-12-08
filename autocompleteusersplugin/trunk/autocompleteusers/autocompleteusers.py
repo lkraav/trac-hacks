@@ -6,21 +6,12 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-import fnmatch
-
 from trac.config import ListOption
 from trac.core import Component, implements
+from trac.util.text import obfuscate_email_address
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import Chrome, ITemplateProvider, ITemplateStreamFilter
-from trac.web.chrome import add_script, add_stylesheet
-
-
-try:
-    from trac.web.chrome import add_script_data
-except ImportError:
-    # for Trac-0.11 compatibility
-    add_script_data = None
-    from compat import to_json
+from trac.web.chrome import Chrome, ITemplateProvider
+from trac.web.chrome import add_script, add_script_data, add_stylesheet
 
 
 USER = 0
@@ -33,8 +24,7 @@ SCRIPT_FIELD_NAME = 'autocomplete_fields'
 
 
 class AutocompleteUsers(Component):
-    implements(IRequestFilter, IRequestHandler,
-               ITemplateProvider, ITemplateStreamFilter)
+    implements(IRequestFilter, IRequestHandler, ITemplateProvider)
 
     complement_fields = ListOption(
         SECTION_NAME, FIELDS_OPTION, default='',
@@ -84,10 +74,7 @@ class AutocompleteUsers(Component):
             add_script(req, 'autocomplete/js/format_item.js')
 
             custom_fields = self.config.getlist(SECTION_NAME, FIELDS_OPTION)
-            if add_script_data:
-                add_script_data(req, {SCRIPT_FIELD_NAME: custom_fields})
-            else:
-                setattr(req, SCRIPT_FIELD_NAME, custom_fields)
+            add_script_data(req, {SCRIPT_FIELD_NAME: custom_fields})
 
             if template == 'ticket.html':
                 if req.path_info.rstrip() == '/newticket':
@@ -101,27 +88,6 @@ class AutocompleteUsers(Component):
 
         return template, data, content_type
 
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if not add_script_data and method == 'xhtml' and filename and \
-           data and hasattr(req, SCRIPT_FIELD_NAME):
-            def script():
-                from genshi.builder import tag
-                data = getattr(req, SCRIPT_FIELD_NAME)
-                text = 'var %s = %s;' % (SCRIPT_FIELD_NAME, to_json(data))
-                return tag.script(text, type='text/javascript')
-            from genshi.filters.transform import Transformer
-            stream |= Transformer('//head').append(script)
-
-        if filename == 'ticket.html':
-            fields = [field['name'] for field in data['ticket'].fields
-                      if field['type'] == 'select']
-            fields = set(sum([fnmatch.filter(fields, pattern)
-                              for pattern in self.complement_fields], []))
-
-        return stream
-
     # Private methods
 
     def _get_groups(self, req):
@@ -130,12 +96,14 @@ class AutocompleteUsers(Component):
         # returning users without session data, but there currently seems
         # to be no other way to handle this.
         query = req.args.get('q', '').lower()
-        db = self.env.get_db_cnx()
+        db = self.env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("""SELECT DISTINCT username FROM permission""")
-        usernames = [user[0] for user in self.env.get_known_users()]
-        return sorted([row[0] for row in cursor if not row[0] in usernames
-                       and row[0].lower().startswith(query)])
+        cursor.execute("SELECT DISTINCT username FROM permission")
+        perm_users = [row[0] for row in cursor]
+        known_users = set(item[0] for item in self.env.get_known_users())
+        return sorted(user for user in perm_users
+                      if user not in known_users and
+                      user.lower().startswith(query))
 
     def _get_users(self, req):
         # instead of known_users, could be
@@ -147,11 +115,13 @@ class AutocompleteUsers(Component):
         query = req.args.get('q', '').lower()
 
         # user names, email addresses, full names
+        can_view = Chrome(self.env).show_email_addresses or \
+            'EMAIL_VIEW' in req.perm
         users = []
         for user_data in self.env.get_known_users():
-            user_data = [user is not None
-                         and Chrome(self.env).format_author(req, user) or ''
-                         for user in user_data]
+            user_data = [value or '' for value in user_data]
+            if not can_view and user_data[EMAIL]:
+                user_data[EMAIL] = obfuscate_email_address(user_data[EMAIL])
             for index, field in enumerate((USER, EMAIL, NAME)):  # ordered by how they appear
                 value = user_data[field].lower()
 
