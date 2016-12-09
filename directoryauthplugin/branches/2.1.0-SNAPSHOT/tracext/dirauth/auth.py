@@ -104,6 +104,9 @@ class DirAuthStore(Component):
     
     group_spaces2underscore = BoolOption('account-manager', 'group_spaces2underscore', True,
                              "Replace spaces in group names with underscores.")
+    
+    group_nameattr = Option('account-manager', 'group_nameattr', 'cn',
+                             "Specify the attribute to read the group name. Defaults to 'cn'. For full group names use 'dn'.")
 
     cache_ttl = IntOption('account-manager', 'cache_timeout', 60,
                           "cache timeout in seconds")
@@ -158,9 +161,9 @@ class DirAuthStore(Component):
         """Given a group name, enumerate all members"""
         if group.startswith('@'):
             group = group[1:]
-            self.log.debug("search groups cn=%s,%s"
-                           % (group, self.group_basedn))
-        g = self._ldap_search(ldapCtx, "cn=%s,%s" % (group, self.group_basedn),
+        group = "cn=%s,%s" % (group, self.group_basedn) if self.group_nameattr == 'cn' else group
+        self.log.debug("search groups %s" % group)
+        g = self._ldap_search(ldapCtx, group,
                          ldap.SCOPE_BASE,
                          attrlist=[to_utf8(self.member_attr)])
         self.log.debug(g)
@@ -356,10 +359,10 @@ class DirAuthStore(Component):
         basedn = self.group_basedn or self.dir_basedn
         group_filter = ('(&(objectClass=%s)(%s=%s))') % (self.group_class_attr, self.member_attr, user_dn)
         user_groups = self._dir_search(basedn, self.dir_scope,
-                                       group_filter, ['cn'])
+                                       group_filter, [self.group_nameattr])
         for entry in user_groups:
             groupdn = entry[0]
-            group = entry[1]['cn'][0]
+            group = entry[1][self.group_nameattr][0]
             if self.group_spaces2underscore:
                 group = group.replace(' ', '_')
             group = '%s%s' % (GROUP_PREFIX, group.lower())
@@ -379,11 +382,11 @@ class DirAuthStore(Component):
         group_filter = '(&(objectClass=%s)(%s=%s)' % (self.group_class_attr, self.member_attr, group_dn)
         basedn = self.group_basedn or self.dir_basedn
         ldap_groups = self._dir_search(basedn, self.dir_scope,
-                                       group_filter, ['cn'])
+                                       group_filter, [self.group_nameattr])
         if ldap_groups:
             for entry in ldap_groups:
                 groupdn = entry[0]
-                group = entry[1]['cn'][0]
+                group = entry[1][self.group_nameattr][0]
                 if self.group_spaces2underscore:
                     group = group.replace(' ', '_')
                 group = group.lower()
@@ -626,7 +629,11 @@ class DirAuthStore(Component):
 
         basedn = self.group_basedn or self.dir_basedn
         group_filter = ('(objectClass=%s)') % self.group_class_attr
-        all_groups = self._dir_search(basedn, self.dir_scope, group_filter, ['cn'])
+        all_groups = self._dir_search(basedn, self.dir_scope, group_filter, [self.group_nameattr])
+        
+        if self.group_spaces2underscore:
+            for index, item in enumerate(all_groups):
+                item[index]['cn'] = item[index][self.group_nameattr].replace(' ', '_')
 
         self.log.debug("all groups: %s" % all_groups)
         return all_groups
