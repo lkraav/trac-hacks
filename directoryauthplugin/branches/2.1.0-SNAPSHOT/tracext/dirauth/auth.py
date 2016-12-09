@@ -14,13 +14,15 @@ import hashlib
 import ldap
 import time
 
+from ldap.controls import SimplePagedResultsControl
+
+from acct_mgr.api import IPasswordStore
 from trac.config import IntOption, Option
 from trac.core import Component, TracError, implements
 from trac.perm import IPermissionGroupProvider
 from trac.util.text import to_unicode
 from trac.util.translation import _
 
-from acct_mgr.api import IPasswordStore
 
 GROUP_PREFIX = '@'
 NOCACHE = 0
@@ -64,6 +66,9 @@ class DirAuthStore(Component):
 
     dir_basedn = Option('account-manager', 'dir_basedn', None,
                         "Base DN used for account searches")
+    
+    dir_pagesize = IntOption('account-manager', 'dir_pagesize', 1000,
+                             "Page size for ldap queries.")
 
     user_attr = Option('account-manager', 'user_attr', 'sAMAccountName',
                        "Attribute of the user in the directory")
@@ -128,13 +133,13 @@ class DirAuthStore(Component):
             return all_users
 
         # Cache miss
-        lcnx = self._bind_dir()
+        ldapCtx = self._bind_dir()
         self.log.info('get users')
-        if lcnx:
+        if ldapCtx:
             if self.group_validusers:
-                userinfo = self.expand_group_users(lcnx, self.group_validusers)
+                userinfo = self.expand_group_users(ldapCtx, self.group_validusers)
             else:
-                users = lcnx.search_s(self.dir_basedn, ldap.SCOPE_SUBTREE,
+                users = self._ldap_search(ldapCtx, self.dir_basedn, ldap.SCOPE_SUBTREE,
                                       "objectClass=person",
                                       [to_utf8(self.user_attr),
                                        to_utf8(self.email_attr),
@@ -146,13 +151,13 @@ class DirAuthStore(Component):
         self.log.info('get users: ' + str(userinfo))
         return [u[0] for u in userinfo]
 
-    def expand_group_users(self, cnx, group):
+    def expand_group_users(self, ldapCtx, group):
         """Given a group name, enumerate all members"""
         if group.startswith('@'):
             group = group[1:]
             self.log.debug("search groups cn=%s,%s"
                            % (group, self.group_basedn))
-        g = cnx.search_s("cn=%s,%s" % (group, self.group_basedn),
+        g = self._ldap_search(ldapCtx, "cn=%s,%s" % (group, self.group_basedn),
                          ldap.SCOPE_BASE,
                          attrlist=[to_utf8(self.member_attr)])
         self.log.debug(g)
@@ -161,12 +166,12 @@ class DirAuthStore(Component):
             for m in g[0][1][str(self.member_attr)]:
                 self.log.debug("group expand: " + m)
                 try:
-                    e = cnx.search_s(m, ldap.SCOPE_BASE)
+                    e = self._ldap_search(ldapCtx, m, ldap.SCOPE_BASE)
                     if e:
                         if 'person' in e[0][1]['objectClass']:
                             users.append(self._get_userinfo(e[0][1]))
                         elif str(self.group_class_attr) in e[0][1]['objectClass']:
-                            users.extend(self.expand_group_users(cnx, e[0][0]))
+                            users.extend(self.expand_group_users(ldapCtx, e[0][0]))
                         else:
                             self.log.debug('The group member (%s) is neither a group nor a person' % e[0][0])
                     else:
@@ -263,7 +268,7 @@ class DirAuthStore(Component):
             raise TracError(_("The dir_uri ini option must be set."))
 
         if not self.dir_uri.lower().startswith('ldap'):
-            raise TracError(_("The dir_uri URI must start with ldaps."))
+            raise TracError(_("The dir_uri URI must start with ldap: %s", self.dir_uri))
 
         if user_dn and passwd:
             user_ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri, 0,
@@ -403,67 +408,68 @@ class DirAuthStore(Component):
         # already there.
         uname, displayname, email = userinfo
 
-        db = self.env.get_db_cnx()
-        cur = db.cursor()
-        try:
-            cur.execute("""
-                DELETE FROM session
-                  WHERE sid=%s AND authenticated=1
-                """, (uname,))
-            cur.execute("""
-                INSERT INTO session
-                  (sid, authenticated, last_visit)
-                VALUES (%s, 1, %s)""", (uname, 0))
-        except:
-            self.log.debug("Session for %s exists.", uname)
+        with self._get_db() as db:
 
-        # Assume enabled if we get this far self.env.get_known_users()
-        # needs this..
-        # TODO need to have it updated by the get_dn stuff long term so the
-        # db matches the auth source.
-        cur = db.cursor()
-        try:
-            cur.execute("""
-                DELETE FROM session_attribute
-                  WHERE sid=%s AND authenticated=1 AND name='enabled'
-                """, (uname,))
-            cur.execute("""
-                INSERT INTO session_attribute
-                  (sid, authenticated, name, value)
-                VALUES (%s, 1, 'enabled', '1')
-                """, (uname,))
-        except:
-            self.log.debug("Session for %s exists.", uname)
-
-        if email:
             cur = db.cursor()
-            cur.execute("""
-                DELETE FROM session_attribute
-                  WHERE sid=%s AND authenticated=1 AND name='email'
-                """, (uname,))
-            cur.execute("""
-                INSERT INTO session_attribute
-                  (sid, authenticated, name, value)
-                VALUES (%s, 1, 'email', %s)
-                """, (uname, to_unicode(email)))
-            self.log.info("updating user session email info for %s (%s)",
-                          uname, to_unicode(email))
-
-        if displayname:
+            try:
+                cur.execute("""
+                    DELETE FROM session
+                      WHERE sid=%s AND authenticated=1
+                    """, (uname,))
+                cur.execute("""
+                    INSERT INTO session
+                      (sid, authenticated, last_visit)
+                    VALUES (%s, 1, %s)""", (uname, 0))
+            except:
+                self.log.debug("Session for %s exists.", uname)
+    
+            # Assume enabled if we get this far self.env.get_known_users()
+            # needs this..
+            # TODO need to have it updated by the get_dn stuff long term so the
+            # db matches the auth source.
             cur = db.cursor()
-            cur.execute("""
-                DELETE FROM session_attribute
-                  WHERE sid=%s AND authenticated=1 AND name='name'
-                """, (uname,))
-            cur.execute("""
-                INSERT INTO session_attribute
-                  (sid, authenticated, name, value)
-                VALUES (%s, 1, 'name', %s)
-                """, (uname, to_unicode(displayname)))
-            self.log.info("updating user session displayname info for %s (%s)",
-                          uname, to_unicode(displayname))
-        db.commit()
-        return db.close()
+            try:
+                cur.execute("""
+                    DELETE FROM session_attribute
+                      WHERE sid=%s AND authenticated=1 AND name='enabled'
+                    """, (uname,))
+                cur.execute("""
+                    INSERT INTO session_attribute
+                      (sid, authenticated, name, value)
+                    VALUES (%s, 1, 'enabled', '1')
+                    """, (uname,))
+            except:
+                self.log.debug("Session for %s exists.", uname)
+    
+            if email:
+                cur = db.cursor()
+                cur.execute("""
+                    DELETE FROM session_attribute
+                      WHERE sid=%s AND authenticated=1 AND name='email'
+                    """, (uname,))
+                cur.execute("""
+                    INSERT INTO session_attribute
+                      (sid, authenticated, name, value)
+                    VALUES (%s, 1, 'email', %s)
+                    """, (uname, to_unicode(email)))
+                self.log.info("updating user session email info for %s (%s)",
+                              uname, to_unicode(email))
+    
+            if displayname:
+                cur = db.cursor()
+                cur.execute("""
+                    DELETE FROM session_attribute
+                      WHERE sid=%s AND authenticated=1 AND name='name'
+                    """, (uname,))
+                cur.execute("""
+                    INSERT INTO session_attribute
+                      (sid, authenticated, name, value)
+                    VALUES (%s, 1, 'name', %s)
+                    """, (uname, to_unicode(displayname)))
+                self.log.info("updating user session displayname info for %s (%s)",
+                              uname, to_unicode(displayname))
+                
+            return self._close_db(db)
 
     def _cache_get(self, key=None, ttl=None):
         """Get an item from memory cache"""
@@ -531,77 +537,78 @@ class DirAuthStore(Component):
         self.log.debug("_dir_search: searching %s for %s(%s)",
                        basedn, lfilter, key)
 
-        db = self.env.get_db_cnx()
-
-        # Check mem cache.
-        if check_cache:
-            ret = self._cache_get(key)
-            if ret:
-                return ret
-
-            # --  Check database
-            cur = db.cursor()
-            cur.execute("""
-                SELECT lut,data FROM dir_cache WHERE id=%s
-                """, (key,))
-            row = cur.fetchone()
-            if row:
-                lut, data = row
-
-                if current_time < lut + self.cache_ttl:
-                    self.log.debug("dbcache hit for %s", lfilter)
-                    ret = cPickle.loads(str(data))
-                    self._cache_set(key, ret, lut)
+        with self._get_db() as db:
+            # Check mem cache.
+            if check_cache:
+                ret = self._cache_get(key)
+                if ret:
                     return ret
-            else:
-                # Old data, delete it and anything else that's old.
-                lut = current_time - self.cache_ttl
+    
+                # --  Check database
+                cur = db.cursor()
                 cur.execute("""
-                    DELETE FROM dir_cache WHERE lut < %s
-                    """, (lut,))
-                db.commit()
-        else:
-            self.log.debug("_dir_search: skipping cache.")
-
-        d = self._bind_dir()
-        self.log.debug("_dir_search: starting LDAP search of %s %s using %s "
-                       "for %s", self.dir_uri, basedn, lfilter, attrs)
-
-        res = []
-        try:
-            res = d.search_s(basedn.encode(self.dir_charset), scope,
-                             lfilter, attrs)
-        except ldap.LDAPError, e:
-            self.log.error("Error searching %s using %s: %s",
-                           basedn, lfilter, e)
-
-        if res:
-            self.log.debug("_dir_search: dir hit, %d entries.", len(res))
-        else:
-            self.log.debug("_dir_search: dir miss.")
-
-        if not check_cache:
-            return res
-
-        # Set the db cache for the next search, even if results are empty.
-        res_str = cPickle.dumps(res, 0)
-        try:
-            cur = db.cursor()
-            cur.execute("""
-                DELETE FROM dir_cache WHERE id=%s
-                """, (key,))
-            self.log.debug("INSERT VALUES (%s, %s, %s)"
-                           % (key, current_time, buffer(res_str)))
-            cur.execute("""
-                INSERT INTO dir_cache (id, lut, data)
-                VALUES (%s, %s, %s)
-                """, (key, current_time, buffer(res_str)))
-            db.commit()
-        except Exception, e:
-            db.rollback()
-            self.log.warn("_dir_search: db cache update failed. %s" % e)
-
-        self._cache_set(key, res)
+                    SELECT lut,data FROM dir_cache WHERE id=%s
+                    """, (key,))
+                row = cur.fetchone()
+                if row:
+                    lut, data = row
+    
+                    if current_time < lut + self.cache_ttl:
+                        self.log.debug("dbcache hit for %s", lfilter)
+                        ret = cPickle.loads(str(data))
+                        self._cache_set(key, ret, lut)
+                        return ret
+                else:
+                    # Old data, delete it and anything else that's old.
+                    lut = current_time - self.cache_ttl
+                    cur.execute("""
+                        DELETE FROM dir_cache WHERE lut < %s
+                        """, (lut,))
+#                    db.commit()
+            else:
+                self.log.debug("_dir_search: skipping cache.")
+    
+            ldapCtx = self._bind_dir()
+            self.log.debug("_dir_search: starting LDAP search of %s %s using %s "
+                           "for %s", self.dir_uri, basedn, lfilter, attrs)
+    
+            res = []
+            try:
+                res = self._ldap_search(ldapCtx, basedn.encode(self.dir_charset), scope,
+                                 lfilter, attrs)
+            except ldap.LDAPError, e:
+                self.log.error("Error searching %s using %s: %s",
+                               basedn, lfilter, e)
+    
+            if res:
+                self.log.debug("_dir_search: dir hit, %d entries.", len(res))
+            else:
+                self.log.debug("_dir_search: dir miss.")
+    
+            if not check_cache:
+                return res
+    
+            # Set the db cache for the next search, even if results are empty.
+            res_str = cPickle.dumps(res, 0)
+            try:
+                cur = db.cursor()
+                cur.execute("""
+                    DELETE FROM dir_cache WHERE id=%s
+                    """, (key,))
+                self.log.debug("INSERT VALUES (%s, %s, %s)"
+                               % (key, current_time, buffer(res_str)))
+                cur.execute("""
+                    INSERT INTO dir_cache (id, lut, data)
+                    VALUES (%s, %s, %s)
+                    """, (key, current_time, buffer(res_str)))
+#                db.commit()
+            except Exception, e:
+                db.rollback()
+                self.log.warn("_dir_search: db cache update failed. %s" % e)
+                
+            self._close_db(db)
+    
+            self._cache_set(key, res)
 
         return res
 
@@ -637,3 +644,57 @@ class DirAuthStore(Component):
         for val in l:
             newlist.append(val.encode('ascii', 'ignore'))
         return newlist
+
+    def _get_db(self):
+        """ Obtain a writeable db connection """
+        if "get_db_cnx" in self.env:
+            return self.env.get_db_cnx()
+        else:
+            dbx = self.env.db_transaction
+            return dbx
+
+    def _close_db(self, db):
+        """ close the database connection. """
+        if "get_db_cnx" in self.env:
+            db.commit()
+            return db.close()
+        
+        return True
+
+
+    def _ldap_search(self, context, base, scope, filterstr = '(objectClass=*)', attrlist = None):
+        """Perform a LDAP search."""
+        
+        sz = int(self.dir_pagesize)
+        self.log.debug("### using page size %s", sz)
+        
+        lc = SimplePagedResultsControl(True, sz, '') if sz > 0 else None
+
+        r = []
+
+        while True:
+            msgid = context.search_ext(base, scope, filterstr, attrlist, 0, [lc], None, -1, sz);
+            
+            resp_type, resp_data, resp_msgid, decoded_resp_ctrls = context.result3(msgid)
+    
+            r += resp_data
+            
+            self.log.debug("serverControls: %s", decoded_resp_ctrls)
+            
+            pctrls = [
+                c
+                for c in decoded_resp_ctrls
+                if c.controlType == ldap.CONTROL_PAGEDRESULTS
+            ]
+            if pctrls:
+                cookie = pctrls[0].cookie
+                if cookie:
+                    self.log.debug("cookie: %s", cookie)
+                    lc = SimplePagedResultsControl(True, sz, cookie)
+                else:
+                    break
+            else:
+                break
+
+        return r;
+    
