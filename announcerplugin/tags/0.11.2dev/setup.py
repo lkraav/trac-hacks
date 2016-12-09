@@ -3,13 +3,13 @@
 # Copyright (c) 2008, Stephen Hansen
 # Copyright (c) 2009, Robert Corsaro
 # Copyright (c) 2010, Steffen Hoffmann
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-#     * Redistributions of source code must retain the above copyright 
+#
+#     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
@@ -17,7 +17,7 @@
 #     * Neither the name of the <ORGANIZATION> nor the names of its
 #       contributors may be used to endorse or promote products derived from
 #       this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -59,7 +59,7 @@ except ImportError, e:
 
 setup(
     name = 'TracAnnouncer',
-    version = '0.11.1.9',
+    version = '0.11.2',
     author = 'Robert Corsaro',
     author_email = 'rcorsaro@gmail.com',
     description = 'Customizable notification system',
