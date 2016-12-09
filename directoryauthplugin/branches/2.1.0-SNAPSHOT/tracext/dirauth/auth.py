@@ -17,7 +17,7 @@ import time
 from ldap.controls import SimplePagedResultsControl
 
 from acct_mgr.api import IPasswordStore
-from trac.config import IntOption, Option
+from trac.config import IntOption, Option, BoolOption
 from trac.core import Component, TracError, implements
 from trac.perm import IPermissionGroupProvider
 from trac.util.text import to_unicode
@@ -101,6 +101,9 @@ class DirAuthStore(Component):
 
     group_expand = IntOption('account-manager', 'group_expand', 1,
                              "binary: expand ldap_groups into trac groups.")
+    
+    group_spaces2underscore = BoolOption('account-manager', 'group_spaces2underscore', True,
+                             "Replace spaces in group names with underscores.")
 
     cache_ttl = IntOption('account-manager', 'cache_timeout', 60,
                           "cache timeout in seconds")
@@ -357,7 +360,9 @@ class DirAuthStore(Component):
         for entry in user_groups:
             groupdn = entry[0]
             group = entry[1]['cn'][0]
-            group = '%s%s' % (GROUP_PREFIX, group.replace(' ', '_').lower())
+            if self.group_spaces2underscore:
+                group = group.replace(' ', '_')
+            group = '%s%s' % (GROUP_PREFIX, group.lower())
             groups.append(group)  # dn
             if group not in groups:
                 groups.append(self._get_parent_groups(groups, groupdn))
@@ -379,7 +384,9 @@ class DirAuthStore(Component):
             for entry in ldap_groups:
                 groupdn = entry[0]
                 group = entry[1]['cn'][0]
-                group = group.replace(' ', '_').lower()
+                if self.group_spaces2underscore:
+                    group = group.replace(' ', '_')
+                group = group.lower()
                 if group not in groups:
                     groups.append(group)
                     groups.append(self._get_parent_groups(groups, groupdn))
