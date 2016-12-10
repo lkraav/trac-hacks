@@ -50,7 +50,7 @@ class DirAuthStore(Component):
                          "Text encoding used by the LDAP or Active "
                          "Directory Server")
 
-    dir_scope = IntOption('account-manager', 'dir_scope', 1,
+    dir_scope = IntOption('account-manager', 'dir_scope', 2,
                           "0=Base, 1=OneLevel, 2=Subtree")
 
     dir_binddn = Option('account-manager', 'dir_binddn', '',
