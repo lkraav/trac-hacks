@@ -95,10 +95,6 @@ class DirAuthStore(Component):
                               "CN of group containing valid users. If None, "
                               "any AD user is valid")
 
-    group_tracadmin = Option('account-manager', 'group_tracadmin', None,
-                             "CN of group containing TRAC_ADMIN users (can "
-                             "also assign TRAC_ADMIN to an LDAP group.)")
-
     group_expand = IntOption('account-manager', 'group_expand', 1,
                              "binary: expand ldap_groups into trac groups.")
     
@@ -166,7 +162,7 @@ class DirAuthStore(Component):
         g = self._ldap_search(ldapCtx, group,
                          ldap.SCOPE_BASE,
                          attrlist=[to_utf8(self.member_attr)])
-        self.log.debug(g)
+
         if g and self.member_attr in g[0][1]:
             users = []
             for m in g[0][1][str(self.member_attr)]:
@@ -184,8 +180,8 @@ class DirAuthStore(Component):
                         self.log.debug('Unable to find user listed in group: %s' % str(m))
                         self.log.debug('This is very strange and you should probably check '
                                        'the consistency of your LDAP directory.' % str(m))
-                except Exception:
-                    self.log.debug('Unable to find ldap user listed in group: %s' % str(m))
+                except Exception, e:
+                    self.log.debug('%s: Unable to find ldap user listed in group: %s' % (e, str(m)))
 #                    users.append(m)
             return users
         else:
@@ -632,8 +628,9 @@ class DirAuthStore(Component):
         all_groups = self._dir_search(basedn, self.dir_scope, group_filter, [self.group_nameattr])
         
         if self.group_spaces2underscore:
+            self.log.debug("all groups: %s" % all_groups)
             for index, item in enumerate(all_groups):
-                item[index]['cn'] = item[index][self.group_nameattr].replace(' ', '_')
+                all_groups[index] = (item[0].replace(' ', '_'), item[1])
 
         self.log.debug("all groups: %s" % all_groups)
         return all_groups
@@ -680,7 +677,8 @@ class DirAuthStore(Component):
         """Perform a LDAP search."""
         
         sz = int(self.dir_pagesize)
-        self.log.debug("### using page size %s", sz)
+        if sz > 0:
+            self.log.debug("ldap query with page size %s", sz)
         
         lc = SimplePagedResultsControl(True, sz, '') if sz > 0 else None
 
