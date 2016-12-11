@@ -97,9 +97,9 @@ class ThemeSystemTestCase(unittest.TestCase):
 
 
 def test_suite():
-    test_suite = unittest.TestSuite()
-    test_suite.addTest(unittest.makeSuite(ThemeSystemTestCase, 'test'))
-    return test_suite
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(ThemeSystemTestCase, 'test'))
+    return suite
 
 if __name__ == '__main__':
-    unittest.main(suite=test_suite)
+    unittest.main(defaultTest='test_suite')

@@ -71,7 +71,7 @@ setup(
     ],
 
     install_requires = ['Trac'],
-    test_suite='themeengine.tests',
+    test_suite='themeengine.tests.test_suite',
 
     entry_points = {
         'trac.plugins': [
