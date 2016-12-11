@@ -33,7 +33,7 @@ except ImportError:
 
 setup(
     name = 'TracThemeEngine',
-    version = '2.2.3',
+    version = '2.2.4',
     packages = ['themeengine'],
     package_data = { 'themeengine': ['templates/*.html', 'htdocs/*.js',
                                      'htdocs/*.css', 'htdocs/*.png',
@@ -71,6 +71,7 @@ setup(
     ],
 
     install_requires = ['Trac'],
+    test_suite='themeengine.tests',
 
     entry_points = {
         'trac.plugins': [
