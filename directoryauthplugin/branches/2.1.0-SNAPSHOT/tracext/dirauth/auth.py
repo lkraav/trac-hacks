@@ -98,8 +98,11 @@ class DirAuthStore(Component):
     group_expand = IntOption('account-manager', 'group_expand', 1,
                              "binary: expand ldap_groups into trac groups.")
     
+    group_nested = BoolOption('account-manager', 'group_nested', False,
+                             "Boolean: also add all parent groups of each group containing the user.")
+    
     group_spaces2underscore = BoolOption('account-manager', 'group_spaces2underscore', True,
-                             "Replace spaces in group names with underscores.")
+                             "Boolean:Replace spaces in group names with underscores.")
     
     group_nameattr = Option('account-manager', 'group_nameattr', 'cn',
                              "Specify the attribute to read the group name. Defaults to 'cn'. For full group names use 'dn'.")
@@ -160,7 +163,7 @@ class DirAuthStore(Component):
         group = "cn=%s,%s" % (group, self.group_basedn) if self.group_nameattr == 'cn' else group
         self.log.debug("search groups %s" % group)
         g = self._ldap_search(ldapCtx, group,
-                         ldap.SCOPE_BASE,
+                         ldap.SCOPE_SUBTREE if self.group_nested else ldap.SCOPE_BASE,
                          attrlist=[to_utf8(self.member_attr)])
 
         if g and self.member_attr in g[0][1]:
@@ -365,6 +368,19 @@ class DirAuthStore(Component):
             groups.append(group)  # dn
             if group not in groups:
                 groups.append(self._get_parent_groups(groups, groupdn))
+                
+        if self.group_nested and self.group_nameattr == 'dn':
+            gg = []
+            for g in groups:
+                g = g[1:]
+                while True:
+                    if g == self.group_basedn:
+                        break
+                    if g in gg:
+                        break
+                    gg.append(GROUP_PREFIX + g)
+                    g = g[(g.index(',') + 1):]
+            groups = gg
 
         self._cache_set('usergroups:%s' % user, groups)
         if groups:
@@ -373,6 +389,7 @@ class DirAuthStore(Component):
         else:
             self.log.info("username: %s has no groups.", user)
             return []
+
 
     def _get_parent_groups(self, groups, group_dn):
         group_filter = '(&(objectClass=%s)(%s=%s)' % (self.group_class_attr, self.member_attr, group_dn)
@@ -631,6 +648,8 @@ class DirAuthStore(Component):
             self.log.debug("all groups: %s" % all_groups)
             for index, item in enumerate(all_groups):
                 all_groups[index] = (item[0].replace(' ', '_'), item[1])
+
+        all_groups
 
         self.log.debug("all groups: %s" % all_groups)
         return all_groups
