@@ -45,8 +45,9 @@ class ComponentHierarchyEnvironmentSetupParticipant(Component):
         """Get currently installed database schema version."""
         cursor = db.cursor()
         try:
-            cursor.execute("SELECT value FROM system WHERE name=%s",
-                           (db_version_key,))
+            cursor.execute("""
+                SELECT value FROM system WHERE name=%s
+                """, (db_version_key,))
             version = int(cursor.fetchone()[0])
         except:
             version = 0
