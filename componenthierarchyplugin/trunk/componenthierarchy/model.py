@@ -7,8 +7,8 @@ from trac import __version__ as VERSION
 from trac.core import *
 from trac.db import with_transaction
 
-class ComponentHierarchyModel(Component):
 
+class ComponentHierarchyModel(Component):
     # DB Method
     def __start_transaction(self):
         if VERSION < '0.12':
@@ -23,7 +23,9 @@ class ComponentHierarchyModel(Component):
             db = self.env.get_read_db()
         cursor = db.cursor()
 
-        query = "SELECT parent_component FROM component_hierarchy WHERE component='%s'" % component
+        query = """SELECT parent_component FROM component_hierarchy
+                WHERE component='%s'
+                """ % component
         cursor.execute(query)
         result = cursor.fetchone()
 
@@ -33,16 +35,26 @@ class ComponentHierarchyModel(Component):
             return None
 
     def has_parent_component(self, component):
-        return self.get_parent_component(component) != None
+        return self.get_parent_component(component) is not None
 
     def set_parent_component(self, component, parent_component):
-        if parent_component == None or parent_component == "":
-            query = "DELETE FROM component_hierarchy WHERE component='%s'" % component
+        if parent_component is None or parent_component == "":
+            query = """
+                DELETE FROM component_hierarchy
+                WHERE component='%s'
+                """ % component
         else:
             if self.has_parent_component(component):
-                query = "UPDATE component_hierarchy SET parent_component='%s' WHERE component='%s'" % (parent_component, component)
+                query = """
+                    UPDATE component_hierarchy SET parent_component='%s'
+                    WHERE component='%s'
+                    """ % (parent_component, component)
             else:
-                query = "INSERT INTO component_hierarchy (component, parent_component) VALUES ('%s', '%s')" % (component, parent_component)
+                query = """
+                    INSERT INTO component_hierarchy
+                     (component, parent_component)
+                    VALUES ('%s', '%s')
+                    """ % (component, parent_component)
 
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
@@ -56,8 +68,14 @@ class ComponentHierarchyModel(Component):
                 cursor.execute(query)
 
     def rename_component(self, component, new_name):
-        query1 = "UPDATE component_hierarchy SET component='%s' WHERE component='%s'" % (new_name, component)
-        query2 = "UPDATE component_hierarchy SET parent_component='%s' WHERE parent_component='%s'" % (new_name, component)
+        query1 = """
+            UPDATE component_hierarchy SET component='%s'
+            WHERE component='%s'
+            """ % (new_name, component)
+        query2 = """
+            UPDATE component_hierarchy SET parent_component='%s'
+            WHERE parent_component='%s'
+            """ % (new_name, component)
 
         if VERSION < '0.12':
             db = self.env.get_db_cnx()
@@ -77,7 +95,7 @@ class ComponentHierarchyModel(Component):
 
     def is_child(self, parent_component, child_component):
         parent = self.get_parent_component(child_component)
-        if parent == None:
+        if parent is None:
             return False
         elif parent == parent_component:
             return True
@@ -91,7 +109,10 @@ class ComponentHierarchyModel(Component):
             db = self.env.get_read_db()
         cursor = db.cursor()
 
-        query = "SELECT component FROM component_hierarchy WHERE parent_component='%s'" % component
+        query = """
+            SELECT component FROM component_hierarchy
+            WHERE parent_component='%s'
+            """ % component
         cursor.execute(query)
 
         result = cursor.fetchall()
@@ -99,4 +120,3 @@ class ComponentHierarchyModel(Component):
             result = [row[0] for row in sorted(result)]
 
         return result
-

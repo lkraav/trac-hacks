@@ -7,17 +7,17 @@ from trac.core import *
 from trac.db import Column, DatabaseManager, Table
 from trac.env import IEnvironmentSetupParticipant
 
-
 # Database schema variables
 db_version_key = 'component_hierarchy'
 db_version = 1
 
 tables_v1 = [
-    Table('component_hierarchy', key = 'component') [
-        Column('component', type = 'varchar'),
-        Column('parent_component',type = 'varchar')
+    Table('component_hierarchy', key='component')[
+        Column('component', type='varchar'),
+        Column('parent_component', type='varchar')
     ],
 ]
+
 
 class ComponentHierarchyEnvironmentSetupParticipant(Component):
 
@@ -43,7 +43,6 @@ class ComponentHierarchyEnvironmentSetupParticipant(Component):
 
     def _get_db_version(self, db):
         """Get currently installed database schema version."""
-        version = 0
         cursor = db.cursor()
         try:
             cursor.execute("SELECT value FROM system WHERE name=%s",

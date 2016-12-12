@@ -5,11 +5,10 @@
 
 from pkg_resources import resource_filename
 
-from trac.core import *
+from trac.ticket import model
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, \
                             add_script_data, add_stylesheet
-from trac.ticket import model
 
 from componenthierarchy.model import *
 
@@ -22,6 +21,7 @@ class ComponentHierarchyTicket(Component):
         self._ChModel = ComponentHierarchyModel(self.env)
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -35,10 +35,12 @@ class ComponentHierarchyTicket(Component):
                 if comp_children:
                     component_children[comp.name] = comp_children
 
-            component_children = { 'component_children' : component_children }
+            component_children = {'component_children': component_children}
             add_script_data(req, component_children)
-            add_stylesheet(req, 'componenthierarchy/css/component_hierarchy.css')
-            add_script(req, 'componenthierarchy/create_component_hierarchy.js')
+            add_stylesheet(req,
+                           'componenthierarchy/css/component_hierarchy.css')
+            add_script(req,
+                       'componenthierarchy/create_component_hierarchy.js')
 
         return template, data, content_type
 
