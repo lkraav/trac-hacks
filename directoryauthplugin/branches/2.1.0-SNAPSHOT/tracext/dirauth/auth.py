@@ -13,6 +13,7 @@ import cPickle
 import hashlib
 import ldap
 import time
+import sys
 
 from ldap.controls import SimplePagedResultsControl
 
@@ -124,6 +125,8 @@ class DirAuthStore(Component):
     def __init__(self, ldap=None):
         self._ldap = ldap
         self._cache = {}
+        reload(sys)
+        sys.setdefaultencoding('utf8')
 
     # IPasswordStore methods
 
