@@ -3,7 +3,7 @@
 # Copyright (C) 2012 Thomas Doering, falkb
 #
 
-from trac.core import *
+from trac.core import Component, implements
 from trac.db import Column, DatabaseManager, Table
 from trac.env import IEnvironmentSetupParticipant
 

@@ -5,6 +5,7 @@
 
 from pkg_resources import resource_filename
 
+from trac.core import Component, implements
 from trac.ticket import model
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, \

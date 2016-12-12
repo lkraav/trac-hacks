@@ -4,7 +4,7 @@
 #
 
 from trac import __version__ as VERSION
-from trac.core import *
+from trac.core import Component
 from trac.db import with_transaction
 
 

@@ -6,6 +6,7 @@ import re
 
 from genshi.builder import tag
 from genshi.filters.transform import InjectorTransformation, Transformer
+from trac.core import Component, implements
 from trac.ticket import model
 from trac.util.translation import _
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
