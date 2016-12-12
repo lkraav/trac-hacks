@@ -154,7 +154,10 @@ class DirAuthStore(Component):
         else:
             raise TracError('Unable to bind to Active Directory')
         self.log.info('get users: ' + str(userinfo))
-        return [u[0] for u in userinfo]
+        
+        all_users = [u[0] for u in userinfo]
+        self._cache_set('allusers', all_users)
+        return all_users
 
     def expand_group_users(self, ldapCtx, group):
         """Given a group name, enumerate all members"""
