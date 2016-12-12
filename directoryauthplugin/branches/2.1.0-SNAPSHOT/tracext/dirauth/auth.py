@@ -161,6 +161,10 @@ class DirAuthStore(Component):
 
     def expand_group_users(self, ldapCtx, group):
         """Given a group name, enumerate all members"""
+        
+        if self.group_expand == 0:
+            return []
+        
         if group.startswith('@'):
             group = group[1:]
         group = "cn=%s,%s" % (group, self.group_basedn) if self.group_nameattr == 'cn' else group
@@ -179,8 +183,7 @@ class DirAuthStore(Component):
                         if 'person' in e[0][1]['objectClass']:
                             users.append(self._get_userinfo(e[0][1]))
                         elif str(self.group_class_attr) in e[0][1]['objectClass']:
-                            if self.group_expand == 1:
-                                users.extend(self.expand_group_users(ldapCtx, e[0][0]))
+                            users.extend(self.expand_group_users(ldapCtx, e[0][0]))
                         else:
                             self.log.debug('The group member (%s) is neither a group nor a person' % e[0][0])
                     else:
@@ -346,6 +349,9 @@ class DirAuthStore(Component):
         """Get a list of all groups this user belongs to. This recurses up
         to make sure we get them all.
         """
+
+        if self.group_expand == 0:
+            return []
 
         if use_cache:
             groups = self._cache_get('usergroups:%s' % user)
@@ -643,6 +649,9 @@ class DirAuthStore(Component):
     def get_all_groups(self):
         """Get all groups. Returns an array containing arrays [dn, cn]
         """
+
+        if self.group_expand == 0:
+            return []
 
         basedn = self.group_basedn or self.dir_basedn
         group_filter = ('(objectClass=%s)') % self.group_class_attr
