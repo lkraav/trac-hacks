@@ -350,9 +350,6 @@ class DirAuthStore(Component):
         to make sure we get them all.
         """
 
-        if self.group_expand == 0:
-            return []
-
         if use_cache:
             groups = self._cache_get('usergroups:%s' % user)
             if groups:
@@ -365,21 +362,29 @@ class DirAuthStore(Component):
             self.log.debug("username: %s has no dn.", user)
             return []
 
-        basedn = self.group_basedn or self.dir_basedn
-        group_filter = ('(&(objectClass=%s)(%s=%s))') % (self.group_class_attr, self.member_attr, user_dn)
-        user_groups = self._dir_search(basedn, self.dir_scope,
-                                       group_filter, [self.group_nameattr])
-        for entry in user_groups:
-            groupdn = entry[0]
-            group = entry[1][self.group_nameattr][0]
-            if self.group_spaces2underscore:
-                group = group.replace(' ', '_')
-            group = '%s%s' % (GROUP_PREFIX, group.lower())
-            groups.append(group)  # dn
-            if group not in groups:
-                groups.append(self._get_parent_groups(groups, groupdn))
+        if self.group_expand or self.group_validusers:
+            basedn = self.group_basedn or self.dir_basedn if self.group_expand else self.group_validusers[1:]
+            group_filter = ('(&(objectClass=%s)(%s=%s))') % (self.group_class_attr, self.member_attr, user_dn)
+            user_groups = self._dir_search(basedn, self.dir_scope,
+                                           group_filter, [self.group_nameattr])
+            for entry in user_groups:
+                groupdn = entry[0]
+                group = entry[1][self.group_nameattr][0]
+                if self.group_spaces2underscore:
+                    group = group.replace(' ', '_')
+                group = '%s%s' % (GROUP_PREFIX, group.lower())
+                groups.append(group)  # dn
+                if group not in groups:
+                    groups.append(self._get_parent_groups(groups, groupdn))
                 
-        if self.group_nested and self.group_nameattr == 'dn':
+        if self.group_expand == 0:
+            gg = []
+            if use_cache == 0:
+                for g in groups:
+                    if g == self.group_validusers:
+                        gg.append(g)
+            groups = gg
+        elif self.group_nested and self.group_nameattr == 'dn':
             gg = []
             for g in groups:
                 g = g[1:]
@@ -392,7 +397,8 @@ class DirAuthStore(Component):
                     g = g[(g.index(',') + 1):]
             groups = gg
 
-        self._cache_set('usergroups:%s' % user, groups)
+        if use_cache:
+            self._cache_set('usergroups:%s' % user, groups)
         if groups:
             self.log.debug("username %s has groups %s", user, ', '.join(groups))
             return sorted(groups)
