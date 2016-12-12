@@ -179,7 +179,8 @@ class DirAuthStore(Component):
                         if 'person' in e[0][1]['objectClass']:
                             users.append(self._get_userinfo(e[0][1]))
                         elif str(self.group_class_attr) in e[0][1]['objectClass']:
-                            users.extend(self.expand_group_users(ldapCtx, e[0][0]))
+                            if self.group_expand == 1:
+                                users.extend(self.expand_group_users(ldapCtx, e[0][0]))
                         else:
                             self.log.debug('The group member (%s) is neither a group nor a person' % e[0][0])
                     else:
