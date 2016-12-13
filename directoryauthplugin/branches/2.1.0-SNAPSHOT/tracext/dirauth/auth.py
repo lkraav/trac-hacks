@@ -96,6 +96,9 @@ class DirAuthStore(Component):
                               "CN of group containing valid users. If None, "
                               "any AD user is valid")
 
+    group_knownusers = BoolOption('account-manager', 'group_knownusers', False,
+                             "Boolean: Display only the already known users.")
+
     group_expand = IntOption('account-manager', 'group_expand', 1,
                              "binary: expand ldap_groups into trac groups.")
     
@@ -144,7 +147,9 @@ class DirAuthStore(Component):
         ldapCtx = self._bind_dir()
         self.log.info('get users')
         if ldapCtx:
-            if self.group_validusers:
+            if self.group_knownusers:
+                userinfo = self.env.get_known_users()
+            elif self.group_validusers:
                 userinfo = self.expand_group_users(ldapCtx, self.group_validusers)
             else:
                 users = self._ldap_search(ldapCtx, self.dir_basedn, ldap.SCOPE_SUBTREE,
