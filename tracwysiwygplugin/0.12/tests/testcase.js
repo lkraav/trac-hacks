@@ -669,7 +669,13 @@ addEvent(window, "load", function() {
             var dom = fragment(
                 element("p",
                     a("wiki:CamelCase", "CamelCase"),
-                    " CamelCase FooBarA FOo FoobarA OneÅngström Oneångström setTextColor"),
+                    " CamelCase FooBarA FOo FoobarA ",
+                    a("wiki:OneÅngström", "OneÅngström"),
+                    " ",
+                    "Oneångström setTextColor"),
+                element("p",
+                    a("wiki:FooBar", "FooBar"),
+                    " FooBar_ FooBar1"),
                 element("p",
                     a("wiki:WikiStart", "WikiStart"),
                     " Wiki",
@@ -681,6 +687,8 @@ addEvent(window, "load", function() {
                     "Wiki"));
             generate.call(this, dom, [
                 "CamelCase !CamelCase FooBarA FOo FoobarA OneÅngström Oneångström setTextColor",
+                "",
+                "FooBar FooBar_ FooBar1",
                 "",
                 "WikiStart Wiki[wiki:Start] [wiki:Wiki]Start Wiki[wiki:Start]Wiki" ].join("\n"));
         });
