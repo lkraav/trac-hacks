@@ -11,27 +11,25 @@ The hook scrips are located in the hooks directory of the svn repository. The ho
 
 == Global Configuration File ==
 The plugin has a configuration file that must be edited with the proper settings before it's installed as an egg. The configuration file is named '''svnpolicy.conf''' and is in the root of the plugin. The settings that have to be configured are:
- * PYTHON_SITE_DIR - the path to the directory in which is installed the trac egg. This setting is used to set the PYTHONPATH environment variable of the scripts that run at commit time. 
- * TRAC_CODE_PATH - the path to the directory in which the trac code is stored. This setting is used to find on the file system the trac-post-commit-hook file, from the contrib directory. 
  * AUTHOR_URL_TEMPLATE - this string is used to create the URL at which the author of the commit has it's profile. 
- * CHANGESET_URL - this string is used to create the URL at which the chageset with the commit can be found. 
+ * CHANGESET_URL - this string is used to create the URL at which the chageset with the commit can be found.
  * SVNNOTIFY - path on the file system where the '''svnnotify''' script can be found.
  * SVNLOOK - - path on the file system where the '''svnlook''' script can be found.
  * SMTP_HOST - the server that sends emails for trac.
  * SMTP_USER - the user with whom the trac authenticates to the mail server.
  * SMTP_PASSWORD - the password with whom the trac authenticates to the mail server.
+ * TRAC_ADMIN - path to the trac-admin executable.
 
 The configuration file must be a valid python file.
 {{{
-PYTHON_SITE_DIR="/usr/local/lib/python2.4/site-packages/";
-TRAC_CODE_PATH="/etf/trunk/vendor/trac-0.2dev";
-AUTHOR_URL_TEMPLATE= "https://optaros.com/user/%s";
-CHANGESET_URL= "https://optaros.com/trac/%s/changeset/%s";
+AUTHOR_URL_TEMPLATE= "https://optaros.com/user/%s"
+CHANGESET_URL= "https://optaros.com/trac/%s/changeset/%s"
 SVNNOTIFY= "/usr/bin/svnnotify"
 SVNLOOK= "/usr/bin/svnlook"
 SMTP_HOST= "optaros.com"
 SMTP_USER= "mail_user"
 SMTP_PASSWORD= "mail_password"
+TRAC_ADMIN = /usr/bin/trac-admin
 }}}
 
 == Features ==
