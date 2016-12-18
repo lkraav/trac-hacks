@@ -1,9 +1,9 @@
-from trac.core import *
 from trac.admin import IAdminPanelProvider
+from trac.core import *
+from trac.util.text import exception_to_unicode
+from trac.util.translation import _
 from trac.web.chrome import ITemplateProvider
 from trac.web.chrome import add_notice, add_warning, add_stylesheet
-from trac.util.text import exception_to_unicode
-from trac.util.translation import _, get_available_locales, ngettext
 
 
 def _save_config(config, req, log):
@@ -24,16 +24,20 @@ class ChildTicketsAdminPanel(Component):
 
     implements(IAdminPanelProvider, ITemplateProvider)
 
-
     # Class variables 'static'
-    HEADERS = ('type', 'status', 'owner', 'summary', 'priority', 'component', 'version', 'resolution', 'milestone', 'parent', 'keywords', 'reporter', 'cc')
-    INHERITED = ('summary', 'priority', 'component', 'version', 'milestone', 'keywords', 'cc')
+    HEADERS = (
+    'type', 'status', 'owner', 'summary', 'priority', 'component', 'version',
+    'resolution', 'milestone', 'parent', 'keywords', 'reporter', 'cc')
+    INHERITED = (
+    'summary', 'priority', 'component', 'version', 'milestone', 'keywords',
+    'cc')
 
-    # IAdminPanelProvidermethods
+    # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
         if 'TRAC_ADMIN' in req.perm:
-            yield ('childticketsplugin', _('Child Tickets Plugin'), 'types', _('Parent Types'))
+            yield ('childticketsplugin', _('Child Tickets Plugin'), 'types',
+                   _('Parent Types'))
 
     def render_admin_panel(self, req, cat, page, parenttype):
 
@@ -41,9 +45,12 @@ class ChildTicketsAdminPanel(Component):
         req.perm.require('TRAC_ADMIN')
 
         for t in self._types():
-            x = self.config.getlist('childtickets', 'parent.%s.table_headers' % t, default=['rrr','ppp'])
-            y = self.config.getlist('childtickets', 'parent.%s.inherit' % t, default=['ddd','cweeeowner'])
-            self.env.log.debug("XXXXX %s --- %s ---" % (x,y))
+            x = self.config.getlist('childtickets',
+                                    'parent.%s.table_headers' % t,
+                                    default=['rrr', 'ppp'])
+            y = self.config.getlist('childtickets', 'parent.%s.inherit' % t,
+                                    default=['ddd', 'cweeeowner'])
+            self.env.log.debug("XXXXX %s --- %s ---" % (x, y))
 
         # Detail view?
         if parenttype:
@@ -51,26 +58,33 @@ class ChildTicketsAdminPanel(Component):
                 changed = False
 
                 allow_child_tickets = req.args.get('allow_child_tickets')
-                self.config.set('childtickets','parent.%s.allow_child_tickets' % parenttype, allow_child_tickets)
+                self.config.set('childtickets',
+                                'parent.%s.allow_child_tickets' % parenttype,
+                                allow_child_tickets)
 
                 # NOTE: 'req.arg.get()' returns a string if only one of the multiple options is selected.
                 headers = req.args.get('headers') or []
                 if not isinstance(headers, list):
                     headers = [headers]
-                self.config.set('childtickets','parent.%s.table_headers' % parenttype, ','.join(headers))
+                self.config.set('childtickets',
+                                'parent.%s.table_headers' % parenttype,
+                                ','.join(headers))
 
                 restricted = req.args.get('restricted') or []
                 if not isinstance(restricted, list):
                     restricted = [restricted]
-                self.config.set('childtickets','parent.%s.restrict_child_type' % parenttype, ','.join(restricted))
+                self.config.set('childtickets',
+                                'parent.%s.restrict_child_type' % parenttype,
+                                ','.join(restricted))
 
                 inherited = req.args.get('inherited') or []
                 if not isinstance(inherited, list):
                     inherited = [inherited]
-                self.config.set('childtickets','parent.%s.inherit' % parenttype, ','.join(inherited))
+                self.config.set('childtickets',
+                                'parent.%s.inherit' % parenttype,
+                                ','.join(inherited))
 
                 changed = True
-
 
                 if changed:
                     _save_config(self.config, req, self.log),
@@ -79,25 +93,25 @@ class ChildTicketsAdminPanel(Component):
             # Convert to object.
             parenttype = ParentType(self.config, parenttype)
 
-            data =  {
-                    'view': 'detail',
-                    'parenttype': parenttype,
-                    'table_headers': self._headers(parenttype),
-                    'parent_types': self._types(parenttype),
-                    'inherited_fields': self._inherited(parenttype),
-                    }
+            data = {
+                'view': 'detail',
+                'parenttype': parenttype,
+                'table_headers': self._headers(parenttype),
+                'parent_types': self._types(parenttype),
+                'inherited_fields': self._inherited(parenttype),
+            }
         else:
-            data =  {
-                    'view': 'list',
-                    'base_href': req.href.admin(cat, page),
-                    'ticket_types': [ ParentType(self.config, p) for p in self._types() ],
-                    }
+            data = {
+                'view': 'list',
+                'base_href': req.href.admin(cat, page),
+                'ticket_types': [ParentType(self.config, p) for p in
+                                 self._types()],
+            }
 
         # Add our own styles for the ticket lists.
         add_stylesheet(req, 'ct/css/childtickets.css')
 
         return 'admin_childtickets.html', data
-
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
@@ -109,21 +123,25 @@ class ChildTicketsAdminPanel(Component):
         return [('ct', resource_filename(__name__, 'htdocs'))]
 
     # Custom methods
-    def _headers(self,ptype):
+    def _headers(self, ptype):
         """Returns a list of valid headers for the given parent type.
         """
         HEADERS = dict.fromkeys(self.__class__.HEADERS, None)
-        HEADERS.update( dict.fromkeys( map(lambda x:x.lower(),ptype.table_headers), 'checked' ))
+        HEADERS.update(
+            dict.fromkeys(map(lambda x: x.lower(), ptype.table_headers),
+                          'checked'))
         return HEADERS
 
-    def _inherited(self,ptype):
+    def _inherited(self, ptype):
         """Returns a list of inherited fields.
         """
         INHERITED = dict.fromkeys(self.__class__.INHERITED, None)
-        INHERITED.update( dict.fromkeys( map(lambda x:x.lower(),ptype.inherited_fields), 'checked' ))
+        INHERITED.update(
+            dict.fromkeys(map(lambda x: x.lower(), ptype.inherited_fields),
+                          'checked'))
         return INHERITED
 
-    def _types(self,ptype=None):
+    def _types(self, ptype=None):
         """
         Get list of valid ticket type to work with, or of a parenttype is given, return a dictionary
         with info as to whether the parent type is already selected as an avaible child type.
@@ -137,35 +155,47 @@ class ChildTicketsAdminPanel(Component):
         else:
             # With parent type, return a dictionary.
             TYPES = dict.fromkeys(x for x, in types)
-            TYPES.update(dict.fromkeys(map(lambda x: x.lower(), ptype.restrict_to_child_types), 'checked'))
+            TYPES.update(dict.fromkeys(
+                map(lambda x: x.lower(), ptype.restrict_to_child_types),
+                'checked'))
             return TYPES
 
 
 class ParentType(object):
-
     def __init__(self, config, name):
         self.name = name
         self.config = config
 
     @property
     def allow_child_tickets(self):
-        return self.config.getbool('childtickets','parent.%s.allow_child_tickets' % self.name, default=False)
+        return self.config.getbool('childtickets',
+                                   'parent.%s.allow_child_tickets' % self.name,
+                                   default=False)
 
     @property
     def table_headers(self):
-        return self.config.getlist('childtickets', 'parent.%s.table_headers' % self.name, default=['summary','owner'])
+        return self.config.getlist('childtickets',
+                                   'parent.%s.table_headers' % self.name,
+                                   default=['summary', 'owner'])
 
     @property
     def restrict_to_child_types(self):
-        return self.config.getlist('childtickets', 'parent.%s.restrict_child_type' % self.name, default=[])
+        return self.config.getlist('childtickets',
+                                   'parent.%s.restrict_child_type' % self.name,
+                                   default=[])
 
     @property
     def inherited_fields(self):
-        return self.config.getlist('childtickets','parent.%s.inherit' % self.name, default=[])
+        return self.config.getlist('childtickets',
+                                   'parent.%s.inherit' % self.name,
+                                   default=[])
 
     @property
     def default_child_type(self):
-        return self.config.get('childtickets', 'parent.%s.default_child_type' % self.name, default=self.config.get('ticket','default_type'))
+        return self.config.get('childtickets',
+                               'parent.%s.default_child_type' % self.name,
+                               default=self.config.get('ticket',
+                                                       'default_type'))
 
     @property
     def table_row_class(self):

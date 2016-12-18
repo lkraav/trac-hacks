@@ -1,7 +1,5 @@
-div#childtickets  {
-    border-width: 1px;
-    border-style: outset;
-    border-color: #999966;
+div#childtickets {
+    border: 1px outset #999966;
     padding: 1em;
 }
 
@@ -14,7 +12,10 @@ table.childtickets_listing {
     width: 80%;
 }
 
-table.childtickets_listing thead tr { background: #f7f7f0 }
+table.childtickets_listing thead tr {
+    background: #f7f7f0
+}
+
 table.childtickets_listing thead th {
     border: 1px solid #d7d7d7;
     border-bottom-color: #999;
@@ -32,15 +33,17 @@ table.childtickets_listing tbody td {
     vertical-align: top;
 }
 
-table.childtickets_listing tbody tr { border-top: 1px solid #ddd }
-table.childtickets_listing tbody tr.disabled { color: lightgray }
+table.childtickets_listing tbody tr {
+    border-top: 1px solid #ddd
+}
+
+table.childtickets_listing tbody tr.disabled {
+    color: lightgray
+}
 
 #parenttype div {
     float: left;
     min-width: 13em;
     max-width: 33%;
-    padding-top: 0pt;
-    padding-right: 2em;
-    padding-bottom: 0pt;
-    padding-left: 0pt;
+    padding: 0 2em 0 0;
 }
