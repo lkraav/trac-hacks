@@ -80,7 +80,7 @@ def query_chart_data(env, kw):
             ) cumulative ON xaxis.date %s cumulative.date
             GROUP BY xaxis.date
             ORDER BY xaxis.date
-            """ % (xaxis_where_clause, where_clause, join_operator), where_params + xaxis_where_params)
+            """ % (xaxis_where_clause, where_clause, join_operator), xaxis_where_params + where_params)
     ld = [(format_date(date), cumulative_spent_hours) for date, cumulative_spent_hours in rows]
     return ([label for label, value in ld],
             [value for label, value in ld])
