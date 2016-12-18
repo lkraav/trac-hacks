@@ -62,12 +62,14 @@ class MarkdownMacro(WikiMacroBase):
                     out_value = out_value[:idx-1] + out_value[idx+7:]
                 return out_value
             else:
-                url = re.search(HREF, out_value).groups()[0]
-                # Trac creates relative links, which Markdown won't touch
-                # inside <autolinks> because they look like HTML
-                if pre == '<' and url != target:
-                    pre += abs_href
-                return pre + str(url) + suf
+                match = re.search(HREF, out_value)
+                if match:
+                    url = match.group(1)
+                    # Trac creates relative links, which Markdown won't touch
+                    # inside <autolinks> because they look like HTML
+                    if pre == '<' and url != target:
+                        pre += abs_href
+                    return pre + str(url) + suf
 
         try:
             from markdown import markdown
