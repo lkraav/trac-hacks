@@ -13,8 +13,8 @@ from trac.core import Component, implements
 from trac.util import as_bool, as_int
 from trac.util.translation import _
 from trac.versioncontrol.api import RepositoryManager
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, \
-                            add_notice, add_warning
+from trac.web.chrome import ITemplateProvider, add_notice, add_script, \
+                            add_stylesheet, add_warning
 from trac.wiki.formatter import wiki_to_html
 
 from svnpolicies import api
