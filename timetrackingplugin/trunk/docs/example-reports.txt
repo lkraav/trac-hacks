@@ -1,4 +1,4 @@
-== TimeTracking Project Overview 2014
+== TimeTracking Project Overview $YEAR
 
 Description:
 {{{
@@ -34,9 +34,10 @@ FROM (
   SELECT
     t.category as category,
     t.project as project,
-    SUM(t.estimated_hours) AS estimated_hours,
+    SUM(e.estimated_hours) AS estimated_hours,
     SUM(COALESCE(s.spent_hours, 0)) as logged_hours
   FROM timetrackingtasks t
+  LEFT OUTER JOIN timetrackingestimates e ON t.id == e.task_id AND e.name == $ESTIMATE
   LEFT OUTER JOIN (
     SELECT 
       SUM(e.spent_hours) as spent_hours,
@@ -44,29 +45,26 @@ FROM (
     FROM timetrackinglogs e
     GROUP BY e.task_id
   ) s ON t.id == s.task_id
-  WHERE t.year == 2014
+  WHERE t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)
   GROUP BY t.category, t.project
 ) row, (
   SELECT
     (days.now - days.start) / (days.end - days.start) AS bygone
   FROM (
     SELECT
-      julianday('2014-01-01') AS start,
-      julianday('2014-12-31') AS end,
+      julianday((CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END) || '-01-01') AS start,
+      julianday((CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END) || '-12-31') AS end,
       julianday('now') AS now
     ) days
 ) factors
 
 }}}
 
-== TimeTracking Users Overview 2014
+== TimeTracking Users Overview $YEAR
 
 Description:
 {{{
-Scanco Target:
-* 1.8 FTE
-* 1.8 * 160 hours per month * 12 monts = 3456 hours total
-* 3456 / 3 = 1152 hours per person
+Per user hours
 }}}
 
 {{{#!sql
@@ -74,16 +72,16 @@ Scanco Target:
 SELECT
   total.user AS "User",
   total.hours AS "Total Logged Hours",
-  scanco.hours AS "Logged Scanco Hours",
-  1152 - scanco.hours AS "Remaining Scanco hours",
-  (1152 - scanco.hours) / 8 AS "Remaining Scanco days"
+  target.hours AS "Logged Target Hours",
+  $TARGET_HOURS - target.hours AS "Remaining Target Hours",
+  ($TARGET_HOURS - target.hours) / 8 AS "Remaining Target Days"
 FROM (
   SELECT
     l.user as user,
     SUM(l.spent_hours) as hours
   FROM timetrackinglogs l
   JOIN timetrackingtasks t ON t.id == l.task_id
-  WHERE t.year == 2014
+  WHERE t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)
   GROUP BY l.user
 ) total
 JOIN (
@@ -92,11 +90,10 @@ JOIN (
     SUM(l.spent_hours) as hours
   FROM timetrackinglogs l
   JOIN timetrackingtasks t ON t.id == l.task_id
-  WHERE t.year == 2014 AND
-        t.category == 'Scanco'
+  WHERE t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)AND
+        t.category == $TARGET_CATEGORY
   GROUP BY l.user
-) scanco ON total.user == scanco.user
-
+) target ON total.user == target.user
 
 }}}
 
@@ -168,19 +165,11 @@ WHERE NOT EXISTS (
 
 }}}
 
-== TimeTracking Unplanned 2014 
+== TimeTracking Unplanned $YEAR 
 
 Description:
 {{{
-Scanco Target:
-* 1.8 FTE
-* 1.8 * 160 hours per month * 12 months = 3456 hours total
-
-Year:
-* 3.0 FTE
-* (3.0 * 160 hours per month * 12 months  = 5760 hours total, without vacations etc.)
-* 3.0 * 365 days * 5/7 weekdays * 8 hours per day ~= 6257 hours total
-* minus days between old and new year (via Excel NETWORKDAYS) = 6072 hours total
+Unplanned hours
 }}}
 
 {{{#!sql
@@ -192,22 +181,23 @@ SELECT
   row.total - row.planned AS "Unplanned"
 FROM (
   SELECT
-      (CASE WHEN t.category == 'Scanco' THEN 'Scanco'
-                                        ELSE 'Other' END) AS label,
+      (CASE WHEN t.category == $TARGET_CATEGORY THEN $TARGET_CATEGORY
+                                                ELSE 'Other' END) AS label,
 
-      (CASE WHEN t.category == 'Scanco' THEN 3456 
-                                        ELSE (6072 - 3456) END) AS total,
+      (CASE WHEN t.category == $TARGET_CATEGORY THEN $TARGET_CATEGORY_HOURS
+                                                ELSE ($TARGET_TOTAL_HOURS - $TARGET_CATEGORY_HOURS) END) AS total,
 
-      SUM(t.estimated_hours) AS planned
+      SUM(e.estimated_hours) AS planned
   FROM timetrackingtasks t
-  WHERE t.year == 2014
-  GROUP BY t.category == 'Scanco'
+  LEFT OUTER JOIN timetrackingestimates e ON t.id == e.task_id AND e.name == $ESTIMATE
+  WHERE t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)
+  GROUP BY t.category == $TARGET_CATEGORY
 ) row
 ORDER BY row.label DESC
 
 }}}
 
-== TimeTracking Category Overview 2014 
+== TimeTracking Category Overview $YEAR 
 
 Description:
 {{{
@@ -241,9 +231,10 @@ SELECT
 FROM (
   SELECT
     t.category as category,
-    SUM(t.estimated_hours) AS estimated_hours,
+    SUM(e.estimated_hours) AS estimated_hours,
     SUM(COALESCE(s.spent_hours, 0)) as logged_hours
   FROM timetrackingtasks t
+  LEFT OUTER JOIN timetrackingestimates e ON t.id == e.task_id AND e.name == $ESTIMATE
   LEFT OUTER JOIN (
     SELECT 
       SUM(e.spent_hours) as spent_hours,
@@ -251,22 +242,22 @@ FROM (
     FROM timetrackinglogs e
     GROUP BY e.task_id
   ) s ON t.id == s.task_id
-  WHERE t.year == 2014
+  WHERE t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)
   GROUP BY t.category
 ) row, (
   SELECT
     (days.now - days.start) / (days.end - days.start) AS bygone
   FROM (
     SELECT
-      julianday('2014-01-01') AS start,
-      julianday('2014-12-31') AS end,
+      julianday((CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END) || '-01-01') AS start,
+      julianday((CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END) || '-12-31') AS end,
       julianday('now') AS now
     ) days
 ) factors
 
 }}}
 
-== TimeTracking Task Estimates 2014 
+== TimeTracking Task Estimates $YEAR 
 
 Description:
 {{{
@@ -304,9 +295,10 @@ FROM (
     t.category as category,
     t.project as project,
     t.name as task,
-    t.estimated_hours AS estimated_hours,
+    e.estimated_hours AS estimated_hours,
     SUM(COALESCE(s.spent_hours, 0)) as logged_hours
   FROM timetrackingtasks t
+  LEFT OUTER JOIN timetrackingestimates e ON t.id == e.task_id AND e.name == $ESTIMATE
   LEFT OUTER JOIN (
     SELECT 
       SUM(e.spent_hours) as spent_hours,
@@ -314,7 +306,7 @@ FROM (
     FROM timetrackinglogs e
     GROUP BY e.task_id
   ) s ON t.id == s.task_id
-  WHERE t.year == 2014
+  WHERE t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)
   GROUP BY t.id
   ORDER BY t.category, t.project
 ) row, (
@@ -322,10 +314,45 @@ FROM (
     (days.now - days.start) / (days.end - days.start) AS bygone
   FROM (
     SELECT
-      julianday('2014-01-01') AS start,
-      julianday('2014-12-31') AS end,
+      julianday((CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END) || '-01-01') AS start,
+      julianday((CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END) || '-12-31') AS end,
       julianday('now') AS now
     ) days
 ) factors
+
+}}}
+
+== TimeTracking Vacations $YEAR
+
+Description:
+{{{
+Shows the number of days spent on vacation.
+}}}
+
+{{{#!sql
+
+SELECT
+    t.name as "Name",
+    sum(l.spent_hours)/8.0 as "Vacation days taken"
+FROM timetrackingtasks t
+INNER JOIN timetrackinglogs l ON t.id == l.task_id
+WHERE t.project == 'Vacations' AND t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)
+GROUP BY l.user
+
+}}}
+
+== TimeTracking Vacations $YEAR Details
+
+Description:
+{{{
+Shows the vacation entries
+}}}
+
+{{{#!sql
+
+SELECT l.user as __group__, t.name, l.date, l.spent_hours
+FROM timetrackingtasks t
+INNER JOIN timetrackinglogs l ON t.id == l.task_id
+WHERE t.project == 'Vacations' AND t.year == (CASE WHEN $YEAR == '' THEN '2016' ELSE $YEAR END)
 
 }}}
