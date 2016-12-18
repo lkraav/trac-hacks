@@ -253,6 +253,29 @@ class LogEntryAdminPanel(Component):
         else:
             year = int(req.args.get('year', datetime.now().year)) if self.use_year else self.unused_year
             estimate_name = req.args.get('estimate', 'current')
+
+            action = req.args.get('action')
+            if action == 'copy-estimates':
+                if req.method == 'POST':
+                    if req.args.get('copy-estimates'):
+                        new_name = req.args.get('new_estimate_name')
+
+                        estimates_to_copy = Estimate.select_by_year_and_name(self.env, year, estimate_name)
+                        for estimate_to_copy in estimates_to_copy:
+                            new_estimate = Estimate(estimate_to_copy.task_id, new_name, estimate_to_copy.comment, estimate_to_copy.estimated_hours)
+                            Estimate.add(self.env, new_estimate)
+
+                        add_notice(req, 'Estimates have been copied.')
+                        req.redirect(req.href.admin(category, panel, year=year, estimate=new_name))
+                    elif req.args.get('cancel'):
+                        req.redirect(req.href.admin(category, panel, year=year, estimate=estimate_name))
+                data = {
+                    'selected_year': year,
+                    'estimate_name': estimate_name,
+                }
+                return 'timetracking_copyestimates.html', data
+
+
             if req.method == 'POST':
                 if req.args.get('add'):
                     # Add Task

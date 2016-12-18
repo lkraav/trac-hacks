@@ -197,6 +197,17 @@ class Estimate(object):
                     for task_id, comment, estimated_hours in rows)
 
     @classmethod
+    def select_by_year_and_name(cls, env, year, name):
+        rows = env.db_query("""
+                SELECT e.task_id, e.comment, e.estimated_hours
+                FROM timetrackingestimates e
+                JOIN timetrackingtasks t
+                WHERE e.task_id=t.id AND t.year=%s AND e.name=%s
+                """, (year, name))
+        return [Estimate(task_id, name, comment, estimated_hours)
+                for task_id, comment, estimated_hours in rows]
+
+    @classmethod
     def get_known_names(cls, env):
         rows = env.db_query("""
                 SELECT DISTINCT name
