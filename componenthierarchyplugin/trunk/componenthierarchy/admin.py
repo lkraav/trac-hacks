@@ -137,6 +137,7 @@ class ComponentHierarchyAdminPanelFilter(Component):
 
             select = tag.select(id='parent_component',
                                 name='parent_component')
+            select.append(tag.option('', value=''))
             for comp in sorted(all_components):
                 if comp != component and \
                         not self._ChModel.is_child(component, comp):

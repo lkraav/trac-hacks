@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='ComponentHierarchy',
-    version='0.0.1',
+    version='0.2',
     packages=['componenthierarchy'],
     package_data={
         'componenthierarchy': [
