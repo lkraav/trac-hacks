@@ -12,7 +12,7 @@ from timetracking.model import SCHEMA
 
 
 PLUGIN_NAME = 'TimeTrackingPlugin'
-PLUGIN_VERSION = 4
+PLUGIN_VERSION = 5
 
 
 class TimeTrackingModule(Component):

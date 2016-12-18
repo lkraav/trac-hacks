@@ -11,7 +11,7 @@ from trac.util.datefmt import format_date, parse_date, utc
 from trac.util.presentation import Paginator
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet, add_notice, add_warning
 
-from timetracking.model import LogEntry, Task
+from timetracking.model import LogEntry, Task, Estimate
 
 
 class LogEntryAdminPanel(Component):
@@ -214,9 +214,11 @@ class LogEntryAdminPanel(Component):
         # Detail view?
         if path_info:
             id = path_info
+            estimate_name = req.args.get('estimate', 'current')
             task = Task.select_by_id(self.env, id)
             if task is None:
                 raise TracError("Task does not exist!")
+            estimate = Estimate.select_by_task_id_and_name(self.env, id, estimate_name)
             if req.method == 'POST':
                 if req.args.get('save'):
                     task.name = req.args.get('name')
@@ -224,9 +226,18 @@ class LogEntryAdminPanel(Component):
                     task.project = req.args.get('project')
                     task.category = req.args.get('category')
                     task.year = int(req.args.get('year')) if self.use_year else self.unused_year
-                    task.estimated_hours = int(req.args.get('estimated_hours'))
-                    task.comment = req.args.get('comment')
                     Task.update(self.env, task)
+
+                    if estimate is None:
+                        estimate = Estimate(id, estimate_name, None, None)
+                        estimate.estimated_hours = int(req.args.get('estimated_hours'))
+                        estimate.comment = req.args.get('comment')
+                        Estimate.add(self.env, estimate)
+                    else:                        
+                        estimate.comment = req.args.get('comment')
+                        estimate.estimated_hours = int(req.args.get('estimated_hours'))
+                        Estimate.update(self.env, estimate)
+
                     add_notice(req, 'Your changes have been saved.')
                     req.redirect(req.href.admin(category, panel))
                 elif req.args.get('cancel'):
@@ -234,23 +245,23 @@ class LogEntryAdminPanel(Component):
             Chrome(self.env).add_wiki_toolbars(req)
             data = {'view': 'detail',
                     'task': task,
+                    'estimate': estimate if estimate is not None else Estimate(id, estimate_name, '', 0),
                     'use_year': self.use_year,
                     'label_category': self.label_category,
                     'label_project': self.label_project,
             }
         else:
             year = int(req.args.get('year', datetime.now().year)) if self.use_year else self.unused_year
+            estimate_name = req.args.get('estimate', 'current')
             if req.method == 'POST':
                 if req.args.get('add'):
                     # Add Task
-                    task = Task(None, None, None, None, None, None, None, None)
+                    task = Task(None, None, None, None, None, None)
                     task.name = req.args.get('name')
                     task.description = req.args.get('description')
                     task.project = req.args.get('project')
                     task.category = req.args.get('category')
                     task.year = year
-                    task.estimated_hours = int(req.args.get('estimated_hours'))
-                    task.comment = req.args.get('comment')
                     Task.add(self.env, task)
                     add_notice(req, 'The task has been added.')
                     req.redirect(req.href.admin(category, panel, year=year))
@@ -262,11 +273,12 @@ class LogEntryAdminPanel(Component):
                     if not isinstance(task_ids, list):
                         task_ids = [task_ids]
                     Task.delete_by_ids(self.env, task_ids)
+                    Estimate.delete_by_task_ids(self.env, task_ids)
                     add_notice(req, 'The tasks have been removed.')
                     orphaned_entries = LogEntry.select_by_task_ids(self.env, task_ids)
                     if orphaned_entries:
                         add_warning(req, tag('Orphaned log entries: ', tag.ul(tag.li(tag.a("log:%s" % e.id, href=req.href.admin('timetracking', 'log', e.id))) for e in orphaned_entries)))
-                    req.redirect(req.href.admin(category, panel, year=year))
+                    req.redirect(req.href.admin(category, panel, year=year, estimate=estimate_name))
 
             years = Task.get_known_years(self.env) if self.use_year else [self.unused_year]
             if year not in years:
@@ -274,11 +286,30 @@ class LogEntryAdminPanel(Component):
 
             tasks = Task.select_by_year(self.env, year) if self.use_year else Task.select_all(self.env)
 
+            estimate_names = Estimate.get_known_names(self.env)
+            if estimate_name not in estimate_names:
+                estimate_names.append(estimate_name)
+
+            estimates_by_task_id = Estimate.select_by_task_ids_and_name(self.env, [task.id for task in tasks], estimate_name)
+            def estimated_hours(task):
+                if task.id in estimates_by_task_id:
+                    return estimates_by_task_id[task.id].estimated_hours
+                return 0
+
+            def estimate_comment(task):
+                if task.id in estimates_by_task_id:
+                    return estimates_by_task_id[task.id].comment
+                return ''
+
             data = {'view': 'list',
                     'tasks': tasks,
                     'selected_year': year,
                     'years': years,
                     'use_year': self.use_year,
+                    'estimate_names': estimate_names,
+                    'estimated_hours': estimated_hours,
+                    'estimate_comment': estimate_comment,
+                    'selected_estimate': estimate_name,
                     'label_category': self.label_category,
                     'label_project': self.label_project,
             }

@@ -37,18 +37,19 @@
             <label>Description:<br /><input type="text" name="description" class="trac-autofocus" value="$task.description" /></label>
           </div>
           <div class="field">
-            <label>Estimated hours:<br /><input type="text" name="estimated_hours" value="$task.estimated_hours" /></label>
+            <label>Estimated hours:<br /><input type="text" name="estimated_hours" value="$estimate.estimated_hours" /></label>
           </div>
           <div class="field">
             <fieldset>
-              <label for="timetracking_taskcomment">Comment:</label>
+              <label for="timetracking_taskcomment">Estimate Comment:</label>
               <p>
                 <textarea id="timetracking_taskcomment" name="comment" class="wikitext trac-resizable"
-                          rows="6" cols="60">$task.comment</textarea>
+                          rows="6" cols="60">$estimate.comment</textarea>
               </p>
             </fieldset>
           </div>
           <div class="buttons">
+            <input type="hidden" name="estimate" value="$estimate.name" />
             <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
             <input type="submit" name="cancel" value="${_('Cancel')}" />
           </div>
@@ -56,12 +57,19 @@
       </form>
 
       <py:otherwise>
-        <form  py:if="use_year" id="prefs" method="get" action="">
+        <form  id="prefs" method="get" action="">
           <fieldset>
-            <div class="field">
+            <div class="field" py:if="use_year">
               <label>Year:
                 <select name="year">
                     <option py:for="year in years" value="$year" selected="${'selected' if selected_year == year else None}">$year</option>
+                </select>
+              </label>
+            </div>
+            <div class="field">
+              <label>Estimate:
+                <select name="estimate">
+                    <option py:for="name in estimate_names" value="$name" selected="${'selected' if selected_estimate == name else None}">$name</option>
                 </select>
               </label>
             </div>
@@ -86,12 +94,6 @@
             <div class="field">
               <label>Description: <input type="text" name="description" /></label>
             </div>
-            <div class="field">
-              <label>Estimated hours:<br /><input type="text" name="estimated_hours" /></label>
-            </div>
-            <div class="field">
-              <label>Comment: <input type="text" name="comment" /></label>
-            </div>
             <div class="buttons">
               <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
             </div>
@@ -113,15 +115,16 @@
                 </td>
                 <td>$task.category</td>
                 <td>$task.project</td>
-                <td><a href="${panel_href(task.id)}">$task.name</a></td>
+                <td><a href="${panel_href(task.id, estimate=selected_estimate)}">$task.name</a></td>
                 <td>$task.description</td>
-                <td>$task.estimated_hours</td>
-                <td>${wiki_to_html(context, task.comment)}</td>
+                <td>${estimated_hours(task)}</td>
+                <td>${wiki_to_html(context, estimate_comment(task))}</td>
               </tr>
             </tbody>
           </table>
           <div class="buttons">
             <input type="hidden" name="year" value="$selected_year" />
+            <input type="hidden" name="estimate" value="$selected_estimate" />
             <input type="submit" name="remove" class="trac-disable trac-disable-on-submit" value="${_('Remove selected tasks')}" />
           </div>
         </form>
