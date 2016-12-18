@@ -55,6 +55,11 @@ class LogEntryAdminPanel(Component):
         def format_date_utc(t):
             return format_date(t, tzinfo=utc, locale=getattr(req, 'lc_time', None))
 
+        def format_task_label(task):
+            if task.description:
+                return "%s: %s: %s (%s)" % (task.category, task.project, task.name, task.description)
+            return "%s: %s: %s" % (task.category, task.project, task.name)
+
         # Detail view?
         if path_info:
             id = path_info
@@ -102,6 +107,7 @@ class LogEntryAdminPanel(Component):
                     'show_location': self.show_location,
                     'label_location': self.label_location,
                     'format_date_utc': format_date_utc,
+                    'format_task_label': format_task_label,
             }
 
         else:
@@ -196,6 +202,7 @@ class LogEntryAdminPanel(Component):
                     'label_location': self.label_location,
                     'allow_user_switching': allow_user_switching,
                     'format_date_utc': format_date_utc,
+                    'format_task_label': format_task_label,
             }
 
         Chrome(self.env).add_jquery_ui(req)
@@ -218,6 +225,7 @@ class LogEntryAdminPanel(Component):
                     task.category = req.args.get('category')
                     task.year = int(req.args.get('year')) if self.use_year else self.unused_year
                     task.estimated_hours = int(req.args.get('estimated_hours'))
+                    task.comment = req.args.get('comment')
                     Task.update(self.env, task)
                     add_notice(req, 'Your changes have been saved.')
                     req.redirect(req.href.admin(category, panel))
@@ -235,13 +243,14 @@ class LogEntryAdminPanel(Component):
             if req.method == 'POST':
                 if req.args.get('add'):
                     # Add Task
-                    task = Task(None, None, None, None, None, None, None)
+                    task = Task(None, None, None, None, None, None, None, None)
                     task.name = req.args.get('name')
                     task.description = req.args.get('description')
                     task.project = req.args.get('project')
                     task.category = req.args.get('category')
                     task.year = year
                     task.estimated_hours = int(req.args.get('estimated_hours'))
+                    task.comment = req.args.get('comment')
                     Task.add(self.env, task)
                     add_notice(req, 'The task has been added.')
                     req.redirect(req.href.admin(category, panel, year=year))

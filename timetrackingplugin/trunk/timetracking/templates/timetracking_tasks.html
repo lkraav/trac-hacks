@@ -34,14 +34,17 @@
             <label>Name:<br /><input type="text" name="name" class="trac-autofocus" value="$task.name" /></label>
           </div>
           <div class="field">
+            <label>Description:<br /><input type="text" name="description" class="trac-autofocus" value="$task.description" /></label>
+          </div>
+          <div class="field">
             <label>Estimated hours:<br /><input type="text" name="estimated_hours" value="$task.estimated_hours" /></label>
           </div>
           <div class="field">
             <fieldset>
-              <label for="timetracking_taskdescription">Description:</label>
+              <label for="timetracking_taskcomment">Comment:</label>
               <p>
-                <textarea id="timetracking_taskdescription" name="description" class="wikitext trac-resizable"
-                          rows="6" cols="60">$task.description</textarea>
+                <textarea id="timetracking_taskcomment" name="comment" class="wikitext trac-resizable"
+                          rows="6" cols="60">$task.comment</textarea>
               </p>
             </fieldset>
           </div>
@@ -81,10 +84,13 @@
               <label>Name: <input type="text" name="name" /></label>
             </div>
             <div class="field">
+              <label>Description: <input type="text" name="description" /></label>
+            </div>
+            <div class="field">
               <label>Estimated hours:<br /><input type="text" name="estimated_hours" /></label>
             </div>
             <div class="field">
-              <label>Description: <input type="text" name="description" /></label>
+              <label>Comment: <input type="text" name="comment" /></label>
             </div>
             <div class="buttons">
               <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
@@ -96,7 +102,7 @@
           <table class="listing">
             <thead>
               <tr><th class="sel">&nbsp;</th>
-                <th>$label_category</th><th>$label_project</th><th>Name</th><th>Estimated hours</th><th>Description</th>
+                <th>$label_category</th><th>$label_project</th><th>Name</th><th>Description</th><th>Estimated hours</th><th>Comment</th>
               </tr>
             </thead>
             <tbody>
@@ -108,8 +114,9 @@
                 <td>$task.category</td>
                 <td>$task.project</td>
                 <td><a href="${panel_href(task.id)}">$task.name</a></td>
+                <td>$task.description</td>
                 <td>$task.estimated_hours</td>
-                <td>${wiki_to_html(context, task.description)}</td>
+                <td>${wiki_to_html(context, task.comment)}</td>
               </tr>
             </tbody>
           </table>

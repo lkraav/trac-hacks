@@ -9,6 +9,7 @@ SCHEMA = [
         Column('id', auto_increment=True),
         Column('name'),
         Column('description'),
+        Column('comment'),
         Column('project'),
         Column('category'),
         Column('year', type='int'),
@@ -31,10 +32,11 @@ SCHEMA = [
 
 class Task(object):
 
-    def __init__(self, id, name, description, project, category, year, estimated_hours):
+    def __init__(self, id, name, description, comment, project, category, year, estimated_hours):
         self.id = id
         self.name = name
         self.description = description
+        self.comment = comment
         self.project = project
         self.category = category
         self.year = year
@@ -46,9 +48,9 @@ class Task(object):
             cursor = db.cursor()
             cursor.execute("""
             INSERT INTO timetrackingtasks
-                        (name, description, project, category, year, estimated_hours)
-                 VALUES (%s, %s, %s, %s, %s, %s)
-            """, (task.name, task.description, task.project, task.category, task.year, task.estimated_hours))
+                        (name, description, comment, project, category, year, estimated_hours)
+                 VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (task.name, task.description, task.comment, task.project, task.category, task.year, task.estimated_hours))
             task.id = db.get_last_id(cursor, 'timetrackingtasks')
 
     @classmethod
@@ -68,21 +70,21 @@ class Task(object):
             cursor = db.cursor()
             cursor.execute("""
                 UPDATE timetrackingtasks
-                SET name=%s, description=%s, project=%s, category=%s, year=%s, estimated_hours=%s
+                SET name=%s, description=%s, comment=%s, project=%s, category=%s, year=%s, estimated_hours=%s
                 WHERE id=%s
-            """, (task.name, task.description, task.project, task.category, task.year, task.estimated_hours, task.id))
+            """, (task.name, task.description, task.comment, task.project, task.category, task.year, task.estimated_hours, task.id))
 
     @classmethod
     def select_by_id(cls, env, id):
         rows = env.db_query("""
-                SELECT id, name, description, project, category, year, estimated_hours
+                SELECT id, name, description, comment, project, category, year, estimated_hours
                 FROM timetrackingtasks
                 WHERE id=%s
                 """, (id,))
         if not rows:
             return None
-        id, name, description, project, category, year, estimated_hours = rows[0]
-        return Task(id, name, description, project, category, year, estimated_hours)
+        id, name, description, comment, project, category, year, estimated_hours = rows[0]
+        return Task(id, name, description, comment, project, category, year, estimated_hours)
 
     @classmethod
     def select_by_ids(cls, env, ids):
@@ -90,33 +92,33 @@ class Task(object):
             return []
         id_holder = ','.join(['%s'] * len(ids))
         rows = env.db_query("""
-                SELECT id, name, description, project, category, year, estimated_hours
+                SELECT id, name, description, comment, project, category, year, estimated_hours
                 FROM timetrackingtasks
                 WHERE id in (%s)
                 """ % id_holder, list(ids))
-        return dict((id, Task(id, name, description, project, category, year, estimated_hours))
-                    for id, name, description, project, category, year, estimated_hours in rows)
+        return dict((id, Task(id, name, description, comment, project, category, year, estimated_hours))
+                    for id, name, description, comment, project, category, year, estimated_hours in rows)
 
     @classmethod
     def select_by_year(cls, env, year):
         rows = env.db_query("""
-                SELECT id, name, description, project, category, estimated_hours
+                SELECT id, name, description, comment, project, category, estimated_hours
                 FROM timetrackingtasks
                 WHERE year=%s
                 ORDER BY category ASC, project ASC, name ASC
                 """, (year,))
-        return [Task(id, name, description, project, category, year, estimated_hours)
-                for id, name, description, project, category, estimated_hours in rows]
+        return [Task(id, name, description, comment, project, category, year, estimated_hours)
+                for id, name, description, comment, project, category, estimated_hours in rows]
 
     @classmethod
     def select_all(cls, env):
         rows = env.db_query("""
-                SELECT id, name, description, project, category, year, estimated_hours
+                SELECT id, name, description, comment, project, category, year, estimated_hours
                 FROM timetrackingtasks
                 ORDER BY category ASC, project ASC, name ASC
                 """)
-        return [Task(id, name, description, project, category, year, estimated_hours)
-                for id, name, description, project, category, year, estimated_hours in rows]
+        return [Task(id, name, description, comment, project, category, year, estimated_hours)
+                for id, name, description, comment, project, category, year, estimated_hours in rows]
 
     @classmethod
     def get_known_years(cls, env):

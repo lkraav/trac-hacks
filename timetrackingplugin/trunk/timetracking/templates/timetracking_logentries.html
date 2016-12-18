@@ -25,7 +25,7 @@
           <div class="field">
             <label>Task:<br />
               <select name="task_id" class="chosen-select">
-                <option py:for="task in tasks" value="$task.id" selected="${'selected' if task.id == entry.task_id else None}">$task.category: $task.project: $task.name</option>
+                <option py:for="task in tasks" value="$task.id" selected="${'selected' if task.id == entry.task_id else None}">${format_task_label(task)}</option>
               </select>
             </label>
           </div>
@@ -89,7 +89,7 @@
             <div class="field">
               <label>Task:
                 <select name="task_id" class="chosen-select">
-                    <option py:for="task in tasks" value="$task.id">$task.category: $task.project: $task.name</option>
+                    <option py:for="task in tasks" value="$task.id">${format_task_label(task)}</option>
                 </select>
               </label>
             </div>
