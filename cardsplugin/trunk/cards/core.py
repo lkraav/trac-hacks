@@ -126,60 +126,21 @@ class CardsModule(Component):
     # IEnvironmentSetupParticipant
 
     def environment_created(self):
-        db_connector, _ = DatabaseManager(self.env).get_connector()
-        with self.env.db_transaction as db:
-            cursor = db.cursor()
-            for table in SCHEMA:
-                for stmt in db_connector.to_sql(table): 
-                    cursor.execute(stmt) 
-            cursor.execute(""" 
-                INSERT INTO system (name, value) 
-                VALUES (%s, %s) 
-                """, (PLUGIN_NAME, PLUGIN_VERSION)) 
+        dbm = DatabaseManager(self.env)
+        dbm.create_tables(SCHEMA)
+        dbm.set_database_version(PLUGIN_VERSION, PLUGIN_NAME)
 
-    def environment_needs_upgrade(self, db):
-        dbver = self.get_db_version()
-        if dbver == PLUGIN_VERSION:
-            return False
-        elif dbver > PLUGIN_VERSION:
-            self.env.log.info("%s database schema version is %s, should be %s",
-                         PLUGIN_NAME, dbver, PLUGIN_VERSION)
-        return True
+    def environment_needs_upgrade(self):
+        dbm = DatabaseManager(self.env)
+        return dbm.needs_upgrade(PLUGIN_VERSION, PLUGIN_NAME)
 
-    def upgrade_environment(self, db):
-        db_connector, _ = DatabaseManager(self.env).get_connector() 
-        cursor = db.cursor()
-        dbver = self.get_db_version()
-        if dbver == 0:
-            self.env.log.info("Initialize %s database schema to version %s",
-                         PLUGIN_NAME, PLUGIN_VERSION)
-            for table in SCHEMA:
-                for stmt in db_connector.to_sql(table):
-                    cursor.execute(stmt)
-            cursor.execute("""
-                INSERT INTO system (name, value)
-                VALUES (%s, %s)
-                """, (PLUGIN_NAME, PLUGIN_VERSION))
+    def upgrade_environment(self):
+        dbm = DatabaseManager(self.env)
+        if dbm.get_database_version(PLUGIN_NAME) == 0:
+            dbm.create_tables(SCHEMA)
+            dbm.set_database_version(PLUGIN_VERSION, PLUGIN_NAME)
         else:
-            while dbver != PLUGIN_VERSION:
-                dbver = dbver + 1
-                self.env.log.info("Upgrade %s database schema to version %s",
-                         PLUGIN_NAME, dbver)
-                modulename = 'db%i' % dbver
-                upgrades = __import__('cards.upgrades', globals(), locals(), [modulename])
-                script = getattr(upgrades, modulename)
-                script.do_upgrade(self.env, dbver, cursor)
-            cursor.execute("""
-                UPDATE system
-                SET value=%s
-                WHERE name=%s
-                """, (PLUGIN_VERSION, PLUGIN_NAME))
-
-    def get_db_version(self):
-        rows = self.env.db_query("""
-                SELECT value FROM system WHERE name='%s'
-                """ % PLUGIN_NAME)
-        return int(rows[0][0]) if rows else 0
+            dbm.upgrade(PLUGIN_VERSION, PLUGIN_NAME, 'cards.upgrades')
 
     # ITemplateProvider methods
     
