@@ -13,10 +13,8 @@ new_table = Table('weekplan', key='id')[
 def do_upgrade(env, ver, cursor):
     cursor.execute("CREATE TEMPORARY TABLE weekplan_old AS SELECT * FROM weekplan")
     cursor.execute("DROP TABLE weekplan")
-    
-    connector, _ = DatabaseManager(env)._get_connector()
-    for stmt in connector.to_sql(new_table):
-        cursor.execute(stmt)
+
+    DatabaseManager(env).create_tables([new_table])
 
     # Round start and end to full days (integer division is truncate, so add half a day to get rounding instead)
     # Add one day to end as this is now "exclusive"
