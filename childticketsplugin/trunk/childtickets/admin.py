@@ -35,14 +35,14 @@ class ChildTicketsAdminPanel(Component):
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
-        if 'TRAC_ADMIN' in req.perm:
+        if 'TICKET_ADMIN' in req.perm('admin', 'childticketsplugin/types'):
             yield ('childticketsplugin', _('Child Tickets Plugin'), 'types',
                    _('Parent Types'))
 
     def render_admin_panel(self, req, cat, page, parenttype):
 
         # Only for trac admins.
-        req.perm.require('TRAC_ADMIN')
+        req.perm('admin', 'childticketsplugin/types').require('TICKET_ADMIN')
 
         for t in self._types():
             x = self.config.getlist('childtickets',
