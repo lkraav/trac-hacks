@@ -23,6 +23,7 @@
     
         function render(date) {
             var weeks = opt('weeks');
+            var weeksperrow = opt('weeksperrow');
             var start = date.clone().stripTime().subtract('days', (date.day() - opt('firstDay') + 7) % 7);
             var end = start.clone().add('days', weeks * 7);
 
@@ -32,8 +33,8 @@
             t.start = t.skipHiddenDays(t.intervalStart);
             t.end = t.skipHiddenDays(t.intervalEnd, -1, true);
 
-            var colCnt = getCellsPerWeek();
-            var rowCnt = weeks;
+            var colCnt = getCellsPerWeek() * weeksperrow;
+            var rowCnt = Math.ceil(weeks / weeksperrow);
 
             t.title = formatRange(
                 t.start,

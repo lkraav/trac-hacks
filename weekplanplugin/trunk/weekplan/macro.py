@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import math
 
 from genshi.builder import tag
 
@@ -22,6 +23,7 @@ class WeekPlanMacro(WikiMacroBase):
       * Can be a `|`-separated list of multiple plans.
     * `start`: A date  in the first week shown. (Defaults to today.)
     * `weeks`: Number of weeks shown. (Defaults to one.)
+    * `weeksperrow`: Number of weeks per row. (Defaults to one.)
     * `width`: Width of the calendar. (Defaults to 400.)
     * `rowheight`: Height of one row of the calendar. (Defaults to 100.)
     * `showweekends`: Show Saturdays and Sundays (Defaults to hidden.)
@@ -56,6 +58,7 @@ class WeekPlanMacro(WikiMacroBase):
         else:
             start = parse_date(start, utc).date()
         weeks = int(kw.get('weeks', 1))
+        weeksperrow = int(kw.get('weeksperrow', 1))
 
         width = int(kw.get('width', 400))
         rowheight = int(kw.get('rowheight', 100))
@@ -80,7 +83,8 @@ class WeekPlanMacro(WikiMacroBase):
                 'defaultView': 'multiWeek', # Custom extension of "basicWeek" view!
                 'defaultDate': start.isoformat(),
                 'weeks': weeks, # New option for custom "multiWeek" view
-                'contentHeight': weeks * rowheight,
+                'weeksperrow': weeksperrow, # New option for custom "multiWeek" view
+                'contentHeight': math.ceil(weeks / weeksperrow) * rowheight,
                 'header': { # Title and navigation buttons 
                     'left': '',
                     'center': 'title',
