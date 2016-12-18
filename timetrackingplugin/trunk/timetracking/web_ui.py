@@ -252,7 +252,11 @@ class LogEntryAdminPanel(Component):
             }
         else:
             year = int(req.args.get('year', datetime.now().year)) if self.use_year else self.unused_year
-            estimate_name = req.args.get('estimate', 'current')
+
+            estimate_names = Estimate.get_known_names(self.env)
+            estimate_name = req.args.get('estimate', estimate_names[-1] if estimate_names else 'current')
+            if estimate_name not in estimate_names:
+                estimate_names.append(estimate_name)
 
             action = req.args.get('action')
             if action == 'copy-estimates':
@@ -308,10 +312,6 @@ class LogEntryAdminPanel(Component):
                 years.append(year)
 
             tasks = Task.select_by_year(self.env, year) if self.use_year else Task.select_all(self.env)
-
-            estimate_names = Estimate.get_known_names(self.env)
-            if estimate_name not in estimate_names:
-                estimate_names.append(estimate_name)
 
             estimates_by_task_id = Estimate.select_by_task_ids_and_name(self.env, [task.id for task in tasks], estimate_name)
             def estimated_hours(task):
