@@ -21,10 +21,8 @@ new_table = Table('timetrackingtasks', key='id')[
 def do_upgrade(env, ver, cursor):
     cursor.execute("CREATE TEMPORARY TABLE timetrackingtasks_old AS SELECT * FROM timetrackingtasks")
     cursor.execute("DROP TABLE timetrackingtasks")
-    
-    connector, _ = DatabaseManager(env)._get_connector()
-    for stmt in connector.to_sql(new_table):
-        cursor.execute(stmt)
+
+    DatabaseManager(env).create_tables([new_table])
 
     cursor.execute("""
         INSERT INTO timetrackingtasks (id, name, description, comment, project, category, year, estimated_hours)
