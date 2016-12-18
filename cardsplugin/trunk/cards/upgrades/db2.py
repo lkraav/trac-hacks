@@ -8,6 +8,4 @@ new_table = Table('cards_stacks', key='name')[
 
 
 def do_upgrade(env, ver, cursor):
-    connector, _ = DatabaseManager(env)._get_connector()
-    for stmt in connector.to_sql(new_table):
-        cursor.execute(stmt)
+    DatabaseManager(env).create_tables([new_table])
