@@ -153,11 +153,13 @@ class HtmlNotificationModule(Component):
                    'trac.base_url': self.env.abs_href()}
         if languages:
             environ['HTTP_ACCEPT_LANGUAGE'] = ','.join(languages)
+        session = FakeSession()
+        session['dateinfo'] = 'absolute'
         req = Request(environ, lambda *args, **kwargs: None)
         req.arg_list = ()
         req.args = {}
         req.authname = 'anonymous'
-        req.session = FakeSession({'dateinfo': 'absolute'})
+        req.session = session
         req.perm = MockPerm()
         req.href = req.abs_href
         req.locale = locale
