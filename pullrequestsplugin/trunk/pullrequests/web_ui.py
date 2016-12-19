@@ -117,7 +117,7 @@ class PullRequestsModule(Component):
     def post_process_request(self, req, template, data, content_type):
         path = req.path_info
         if path.startswith('/ticket/'):
-            if data and 'ticket' in data:
+            if data and 'ticket' in data and 'fields' in data:
                 self._append_pr_links(req, data)
         return template, data, content_type
 
