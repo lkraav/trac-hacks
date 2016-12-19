@@ -14,6 +14,7 @@ from trac.ticket.api import ITicketManipulator
 from trac.util import get_reporter_id
 from trac.util.datefmt import format_datetime, utc
 from trac.util.presentation import Paginator
+from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet, add_notice, add_warning, web_context
 from trac.wiki.formatter import format_to_oneliner
 from trac.wiki.macros import WikiMacroBase
@@ -24,7 +25,7 @@ from pullrequests.model import PullRequest
 
 class PullRequestsModule(Component):
 
-    implements(IAdminPanelProvider, ITicketManipulator)
+    implements(IAdminPanelProvider, IRequestFilter, ITicketManipulator)
 
     create_commands = ListOption('pullrequests', 'create_commands', 'open')
     update_commands = ListOption('pullrequests', 'update_commands', 'reviewed, closed')
@@ -107,6 +108,34 @@ class PullRequestsModule(Component):
             }
 
         return 'pullrequests.html', data
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        path = req.path_info
+        if path.startswith('/ticket/'):
+            if data and 'ticket' in data:
+                self._append_pr_links(req, data)
+        return template, data, content_type
+
+    def _append_pr_links(self, req, data):
+        ticket = data['ticket']
+        items = PullRequest.select(self.env, ticket=str(ticket.id))
+        results = []
+        for pr in reversed(items):
+            label = 'PR:%s (%s)' % (pr.id, pr.status)
+            href = req.href.ticket(pr.ticket) + '#comment:%s' % (pr.comment,)
+            link = tag.a(label, href=href)
+            results.append(link)
+        rendered = tag.span(*[e for pair in zip(results, [' '] * len(results)) for e in pair][:-1])
+        data['fields'].append({
+            'name': 'PRs',
+            'rendered': rendered,
+            'type': 'textarea', # Full row
+        })
 
     # ITicketManipulator methods
 
