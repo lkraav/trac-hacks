@@ -122,15 +122,18 @@ class PullRequestsModule(Component):
         return template, data, content_type
 
     def _append_pr_links(self, req, data):
+        rendered = ''
         ticket = data['ticket']
         items = PullRequest.select(self.env, ticket=str(ticket.id))
-        results = []
-        for pr in reversed(items):
-            label = 'PR:%s (%s)' % (pr.id, pr.status)
-            href = req.href.ticket(pr.ticket) + '#comment:%s' % (pr.comment,)
-            link = tag.a(label, href=href)
-            results.append(link)
-        rendered = tag.span(*[e for pair in zip(results, [' '] * len(results)) for e in pair][:-1])
+        if items:
+            ticket.values['PRs'] = True # Activates field
+            results = []
+            for pr in reversed(items):
+                label = 'PR:%s (%s)' % (pr.id, pr.status)
+                href = req.href.ticket(pr.ticket) + '#comment:%s' % (pr.comment,)
+                link = tag.a(label, href=href)
+                results.append(link)
+            rendered = tag.span(*[e for pair in zip(results, [' '] * len(results)) for e in pair][:-1])
         data['fields'].append({
             'name': 'PRs',
             'rendered': rendered,
