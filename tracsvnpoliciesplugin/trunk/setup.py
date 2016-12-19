@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2009 Andrei Culapov <aculapov@optaros.com>
+# Copyright (C) 2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from setuptools import setup
 
@@ -11,7 +18,7 @@ setup(name=PACKAGE, version=VERSION,
       author_email='aculapov@optaros.com',
       url='https://trac-hacks.org/wiki/TracSvnPoliciesPlugin',
       description='Policy management for SVN repositories',
-      license='BSD',
+      license='3-Clause BSD',
       packages=['svnpolicies'],
       package_data={
           'svnpolicies': [

@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2009 Andrei Culapov <aculapov@optaros.com>
+# Copyright (C) 2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import os
 import re
@@ -29,7 +36,7 @@ def epopen(cmd):
 
 def run_command(command):
     """
-    This function tries to run a command on to the sistem
+    This function tries to run a command on to the system
     and returns a tuple composed from the exit status and
     the output of the command.
     """
@@ -48,8 +55,8 @@ def run_command(command):
 
 def build_log_command(repos, txn):
     """
-    This function returnes the command used for getting the
-    log message for a, in progress, svn commit.
+    This function returns the command used for getting the
+    log message for an in-progress svn commit.
     """
     global SVNLOOK
     return [SVNLOOK, 'log', '-t', str(txn), str(repos)]
@@ -57,7 +64,7 @@ def build_log_command(repos, txn):
 
 def check_log(log, settings):
     """
-    This function checks if a log message from a in progress
+    This function checks if a log message from an in-progress
     svn commit is validated according to the policies
     described in the settings.
     """

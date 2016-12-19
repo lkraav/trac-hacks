@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 #
-
+# Copyright (C) 2009 Andrei Culapov <aculapov@optaros.com>
+# Copyright (C) 2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import os
 import re
@@ -15,10 +20,7 @@ def get_site_packages():
 
 def validate_email(email):
     """
-    This function tries to validate a email address.
-
-    @param email: String
-    @return: boolean
+    This function tries to validate an email address.
     """
     if len(email) > 7:
         if re.match('^.+@(\\[?)[a-zA-Z0-9\\-.]+\\.'
@@ -31,8 +33,6 @@ def get_global_configurations(variable_name=None):
     """
     Reads the plugin configuration file and returns all the values
     in a dictionary or the variable_name passed as parameter.
-
-    @param variable_name: String
     """
     global_conf = resource_string(Requirement.parse('TracSVNPoliciesPlugin'),
                                   '/svnpolicies/svnpolicy.conf')
@@ -171,10 +171,6 @@ class IniReader(object):
         This method returns the path on the system where the
         svn server expects the hook file to be present. The trac
         configuration file provides the svn repository information.
-
-        @return: String
-        If an error occurs in the process of getting the path, None
-        is returned.
         """
         if self.config.get('trac', 'repository_type') == 'svn':
             repository = self.config.get('trac', 'repository_dir')

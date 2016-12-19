@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2009 Andrei Culapov <aculapov@optaros.com>
+# Copyright (C) 2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from __future__ import with_statement
 
@@ -417,12 +423,9 @@ class SVNPoliciesAdminPlugin(Component):
         # clean file content from windows cr character
         file_content = file_content.replace('\r', '')
         try:
-            # if the file exists ... delete it
             self._delete_file(file_name)
-            # create the file
             with file(file_name, 'w') as fh:
                 fh.write(file_content)
-            # make it executable
             os.chmod(file_name, stat.S_IRWXU)
         except Exception, e:
             self.log.error(e, exc_info=True)

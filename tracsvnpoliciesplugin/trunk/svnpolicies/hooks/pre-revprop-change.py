@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2009 Andrei Culapov <aculapov@optaros.com>
+# Copyright (C) 2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 import os
 import sys
@@ -38,7 +45,7 @@ def run_command(command):
 
 def build_author_command(repos, rev):
     """This function returns the command used for getting the author
-    for a, in progress, svn commit.
+    for an in-progress svn commit.
     """
     global SVNLOOK
     return [SVNLOOK, '-r', str(rev), 'author', str(repos)]
@@ -83,7 +90,7 @@ if __name__ == '__main__':
         sys.exit(4)
 
     # STEP 2 - Get the Trac ini SETTINGS
-    # read the ini file of the trac enviroment
+    # read the ini file of the trac environment
     config = api.IniReader(get_trac_path(__file__))
 
     # STEP 3 - Try to get the log message
