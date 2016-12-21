@@ -1,0 +1,150 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="admin.html" />
+  <head>
+    <title>Time Log</title>
+    <script type="text/javascript">
+      jQuery(document).ready(function($) {
+        $(".chosen-select").chosen({});
+        $(".trac-datepicker").datepicker(); // Not needed in Trac 1.1.2 after http://trac.edgewall.org/changeset/12373
+      });
+    </script>
+  </head>
+
+  <body>
+    <h2>Log <span py:if="view == 'list' and paginator.has_more_pages"> (${paginator.displayed_items()})</span></h2>
+    <py:choose test="view">
+      <form py:when="'detail'" class="mod" id="timetracking_modifyentry" method="post" action="">
+        <fieldset>
+          <input type="hidden" name="user" value="$selected_user" />
+          <legend>Modify Log Entry:</legend>
+          <div class="field">
+            <label>Task:<br />
+              <select name="task_id" class="chosen-select">
+                <option py:for="task in tasks" value="$task.id" selected="${'selected' if task.id == entry.task_id else None}">$task.category: $task.project: $task.name</option>
+              </select>
+            </label>
+          </div>
+          <div class="field">
+            <label>Spent hours:<br /><input type="text" name="spent_hours" value="$entry.spent_hours" /></label>
+          </div>
+          <div class="field">
+            <label>Date:<br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(entry.date)}" /></label>
+          </div>
+          <div py:if="show_location" class="field">
+            <label>$label_location:<br /><input type="text" name="location" value="$entry.location" /></label>
+          </div>
+          <div class="field">
+            <fieldset>
+              <label for="timetracking_entrycomment">Comment:</label>
+              <p>
+                <textarea id="timetracking_entrycomment" name="comment" class="wikitext trac-resizable"
+                          rows="6" cols="60">$entry.comment</textarea>
+              </p>
+            </fieldset>
+          </div>
+          <div class="buttons">
+            <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
+            <input type="submit" name="cancel" value="${_('Cancel')}" />
+          </div>
+        </fieldset>
+      </form>
+
+      <py:otherwise>
+        <form id="prefs" method="get" action="">
+          <fieldset>
+            <div py:if="allow_user_switching" class="field">
+              <label>User:
+                <select name="user">
+                    <option py:for="user in users" value="$user" selected="${'selected' if selected_user == user else None}">$user</option>
+                </select>
+              </label>
+            </div>
+            <div py:if="use_year" class="field">
+              <label>Year:
+                <select name="year">
+                    <option py:for="year in years" value="$year" selected="${'selected' if selected_year == year else None}">$year</option>
+                </select>
+              </label>
+            </div>
+            <div class="field">
+              <label>Max items per page:
+                <input type="text" name="max" size="10" value="${max_per_page}" />
+              </label>
+            </div>
+            <div class="buttons">
+              <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
+            </div>
+          </fieldset>
+        </form>
+        <form class="addnew" id="timetracking_addentry" method="post" action="">
+          <fieldset>
+            <legend>Add Log Entry:</legend>
+            <input type="hidden" name="user" value="$selected_user" />
+            <input type="hidden" name="year" value="$selected_year" />
+            <div class="field">
+              <label>Task:
+                <select name="task_id" class="chosen-select">
+                    <option py:for="task in tasks" value="$task.id">$task.category: $task.project: $task.name</option>
+                </select>
+              </label>
+            </div>
+            <div class="field">
+              <label>Spent hours: <input type="text" name="spent_hours" /></label>
+            </div>
+            <div class="field">
+              <label>Date: <br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(datetime.utcnow())}"/></label>
+            </div>
+            <div py:if="show_location" class="field">
+              <label>$label_location: <br /><input type="text" name="location" value=""/></label>
+            </div>
+            <div class="field">
+              <label>Comment: <input type="text" name="comment" /></label>
+            </div>
+            <div class="buttons">
+              <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
+            </div>
+          </fieldset>
+        </form>
+
+        <xi:include py:if="paginator.show_index" href="page_index.html" />
+        <form id="timetracking_entrylist" method="post" action="">
+          <table class="listing">
+            <thead>
+              <tr><th class="sel">&nbsp;</th>
+                <th>Task</th><th>Spent hours</th><th>Date</th><th py:if="show_location">$label_location</th><th>Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr py:for="entry in entries">
+                <td class="sel">
+                  <input type="checkbox" class="trac-disable-determinant"
+                         name="sel" value="$entry.id" />
+                </td>
+                <td py:with="task = tasks_by_id.get(entry.task_id)"><a href="${panel_href(entry.id)}">${"%s: %s: %s" % (task.category, task.project, task.name) if task else '?'}</a></td>
+                <td>$entry.spent_hours</td>
+                <td>${format_date_utc(entry.date)}</td>
+                <td py:if="show_location">$entry.location</td>
+                <td>${wiki_to_html(context, entry.comment)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="buttons">
+            <input type="hidden" name="user" value="$selected_user" />
+            <input type="hidden" name="year" value="$selected_year" />
+            <input type="submit" name="remove" class="trac-disable trac-disable-on-submit" value="${_('Remove selected entries')}" />
+          </div>
+        </form>
+        <xi:include py:if="paginator.show_index" href="page_index.html" />
+
+      </py:otherwise>
+    </py:choose>
+    
+    <div id="help"><strong>Note:</strong> See <a href="${href.report()}">Available Reports</a> for reporting features.</div>
+  </body>
+
+</html>
