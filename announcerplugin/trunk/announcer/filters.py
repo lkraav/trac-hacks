@@ -25,7 +25,6 @@ from trac.config import ListOption
 from trac.perm import PermissionCache
 
 from announcer.api import IAnnouncementSubscriptionFilter
-from announcer.api import _, N_
 from announcer.util import get_target_id
 
 
@@ -38,15 +37,14 @@ class DefaultPermissionFilter(Component):
     """
     implements(IAnnouncementSubscriptionFilter)
 
-    exception_realms = ListOption(
-            'announcer', 'filter_exception_realms', 'acct_mgr', doc=N_(
-            """The PermissionFilter will filter announcements, for which the
-            user doesn't have ${REALM}_VIEW permission.  If there is some
-            realm that doesn't use a permission called ${REALM}_VIEW, then
-            you should add it to this list and create a custom filter to
-            enforce it's permissions.  Be careful, or permissions could be
-            bypassed using the AnnouncerPlugin.
-            """))
+    exception_realms = ListOption('announcer', 'filter_exception_realms',
+        'acct_mgr', doc="""The PermissionFilter will filter announcements,
+        for which the user doesn't have ${REALM}_VIEW permission.  If there
+        is some realm that doesn't use a permission called ${REALM}_VIEW,
+        then you should add it to this list and create a custom filter to
+        enforce it's permissions.  Be careful, or permissions could be
+        bypassed using the AnnouncerPlugin.
+        """)
 
     def filter_subscriptions(self, event, subscriptions):
         action = '%s_VIEW' % event.realm.upper()
@@ -62,15 +60,10 @@ class DefaultPermissionFilter(Component):
                 sid = 'anonymous'
             perm = PermissionCache(self.env, sid)
             resource_id = get_target_id(event.target)
-            self.log.debug(
-                'Checking *_VIEW permission on event for resource %s:%s'
-                % (event.realm, resource_id)
-            )
-            if perm.has_permission(action) and action in perm(event.realm,
-                                                              resource_id):
+            self.log.debug("Checking *_VIEW permission on event for resource "
+                           "%s:%s", event.realm, resource_id)
+            if action in perm and action in perm(event.realm, resource_id):
                 yield subscription
             else:
-                self.log.debug(
-                    "Filtering %s because of %s rule"
-                    % (sid, self.__class__.__name__)
-                )
+                self.log.debug("Filtering %s because of %s rule", sid,
+                               self.__class__.__name__)

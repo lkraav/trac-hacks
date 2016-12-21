@@ -13,22 +13,20 @@ import difflib
 
 from genshi import HTML
 from genshi.template import NewTextTemplate, MarkupTemplate, TemplateLoader
-
 from trac.config import BoolOption, ListOption
 from trac.core import implements
 from trac.mimeview import Context
 from trac.test import Mock, MockPerm
 from trac.ticket.api import TicketSystem
-from trac.util.text import wrap, to_unicode
-from trac.versioncontrol.diff import diff_blocks, unified_diff
+from trac.util import as_int
+from trac.util.text import exception_to_unicode, to_unicode, wrap
+from trac.versioncontrol.diff import unified_diff
 from trac.web.chrome import Chrome
 from trac.web.href import Href
 from trac.wiki.formatter import HtmlFormatter
 from trac.wiki.model import WikiPage
 
-from announcer.api import IAnnouncementFormatter
-from announcer.api import _, N_
-from announcer.compat import exception_to_unicode
+from announcer.api import _, IAnnouncementFormatter
 from announcer.pref import AnnouncerTemplateProvider
 
 
@@ -43,6 +41,7 @@ def diff_cleanup(gen):
         else:
             yield value
 
+
 def lineup(gen):
     for value in gen:
         yield ' ' + value
@@ -53,15 +52,15 @@ class TicketFormatter(AnnouncerTemplateProvider):
     implements(IAnnouncementFormatter)
 
     ticket_email_header_fields = ListOption('announcer',
-            'ticket_email_header_fields',
-            'owner, reporter, milestone, priority, severity',
-            doc=N_("""Comma-separated list of fields to appear in tickets.
-            Use * to include all headers."""))
+        'ticket_email_header_fields',
+        'owner, reporter, milestone, priority, severity',
+        doc="""Comma-separated list of fields to appear in tickets. Use *
+        to include all headers.
+        """)
 
     ticket_link_with_comment = BoolOption('announcer',
-            'ticket_link_with_comment',
-            'false',
-            N_("""Include last change anchor in the ticket URL."""))
+        'ticket_link_with_comment', 'false',
+        """Include last change anchor in the ticket URL.""")
 
     def styles(self, transport, realm):
         if realm == "ticket":
@@ -81,11 +80,11 @@ class TicketFormatter(AnnouncerTemplateProvider):
 
     def _ticket_link(self, ticket):
         ticket_link = self.env.abs_href('ticket', ticket.id)
-        if self.ticket_link_with_comment == False:
+        if not self.ticket_link_with_comment:
             return ticket_link
 
         cnum = self._ticket_last_comment(ticket)
-        if cnum != None:
+        if cnum is not None:
             ticket_link += "#comment:%s" % str(cnum)
 
         return ticket_link
@@ -95,12 +94,11 @@ class TicketFormatter(AnnouncerTemplateProvider):
 
         for entry in ticket.get_changelog():
             (time, author, field, oldvalue, newvalue, permanent) = entry
-            if field != "comment":
+            if field != 'comment':
                 continue
 
-            try:
-                n = int(oldvalue)
-            except:
+            n = as_int(oldvalue, None)
+            if n is None:
                 continue
 
             if cnum < n:
@@ -115,30 +113,30 @@ class TicketFormatter(AnnouncerTemplateProvider):
         ticket = event.target
         short_changes = {}
         long_changes = {}
-        changed_items = [(field, to_unicode(old_value)) for \
-                field, old_value in event.changes.items()]
+        changed_items = [(field, to_unicode(old_value))
+                         for field, old_value in event.changes.items()]
         for field, old_value in changed_items:
             new_value = to_unicode(ticket[field])
-            if ('\n' in new_value) or ('\n' in old_value):
-                long_changes[field.capitalize()] = '\n'.join(
-                    lineup(wrap(new_value, cols=67).split('\n')))
+            if '\n' in new_value or '\n' in old_value:
+                long_changes[field.capitalize()] = \
+                    '\n'.join(lineup(wrap(new_value, cols=67).split('\n')))
             else:
                 short_changes[field.capitalize()] = (old_value, new_value)
 
         data = dict(
-            ticket = ticket,
-            author = event.author,
-            comment = event.comment,
-            fields = self._header_fields(ticket),
-            category = event.category,
-            ticket_link = self._ticket_link(ticket),
-            project_name = self.env.project_name,
-            project_desc = self.env.project_description,
-            project_link = self.env.project_url or self.env.abs_href(),
-            has_changes = short_changes or long_changes,
-            long_changes = long_changes,
-            short_changes = short_changes,
-            attachment= event.attachment
+            ticket=ticket,
+            author=event.author,
+            comment=event.comment,
+            fields=self._header_fields(ticket),
+            category=event.category,
+            ticket_link=self._ticket_link(ticket),
+            project_name=self.env.project_name,
+            project_desc=self.env.project_description,
+            project_link=self.env.project_url or self.env.abs_href(),
+            has_changes=short_changes or long_changes,
+            long_changes=long_changes,
+            short_changes=short_changes,
+            attachment=event.attachment
         )
         chrome = Chrome(self.env)
         dirs = []
@@ -146,11 +144,10 @@ class TicketFormatter(AnnouncerTemplateProvider):
             dirs += provider.get_templates_dirs()
         templates = TemplateLoader(dirs, variable_lookup='lenient')
         template = templates.load('ticket_email_plaintext.txt',
-                cls=NewTextTemplate)
+                                  cls=NewTextTemplate)
         if template:
             stream = template.generate(**data)
-            output = stream.render('text')
-        return output
+            return stream.render('text')
 
     def _header_fields(self, ticket):
         headers = self.ticket_email_header_fields
@@ -158,6 +155,7 @@ class TicketFormatter(AnnouncerTemplateProvider):
         if len(headers) and headers[0].strip() != '*':
             def _filter(i):
                 return i['name'] in headers
+
             fields = filter(_filter, fields)
         return fields
 
@@ -166,7 +164,6 @@ class TicketFormatter(AnnouncerTemplateProvider):
         attachment = event.attachment
         short_changes = {}
         long_changes = {}
-        chrome = Chrome(self.env)
         for field, old_value in event.changes.items():
             new_value = ticket[field]
             if (new_value and '\n' in new_value) or \
@@ -203,14 +200,14 @@ class TicketFormatter(AnnouncerTemplateProvider):
                     ),
                     args={}
                 )
-                context = Context.from_request(req, event.realm, event.target.id)
+                context = Context.from_request(req, event.realm,
+                                               event.target.id)
                 formatter = HtmlFormatter(self.env, context, wikitext)
                 return formatter.generate(True)
             except Exception, e:
-                raise
                 self.log.error("Failed to render %s", repr(wikitext))
                 self.log.error(exception_to_unicode(e, traceback=True))
-                return wikitext
+                raise
 
         description = wiki_to_html(event, ticket['description'])
 
@@ -220,21 +217,21 @@ class TicketFormatter(AnnouncerTemplateProvider):
             comment = wiki_to_html(event, event.comment)
 
         data = dict(
-            ticket = ticket,
-            description = description,
-            author = event.author,
-            fields = self._header_fields(ticket),
-            comment = comment,
-            category = event.category,
-            ticket_link = self._ticket_link(ticket),
-            project_name = self.env.project_name,
-            project_desc = self.env.project_description,
-            project_link = self.env.project_url or self.env.abs_href(),
-            has_changes = short_changes or long_changes,
-            long_changes = long_changes,
-            short_changes = short_changes,
-            attachment = event.attachment,
-            attachment_link = self.env.abs_href('attachment/ticket',ticket.id)
+            ticket=ticket,
+            description=description,
+            author=event.author,
+            fields=self._header_fields(ticket),
+            comment=comment,
+            category=event.category,
+            ticket_link=self._ticket_link(ticket),
+            project_name=self.env.project_name,
+            project_desc=self.env.project_description,
+            project_link=self.env.project_url or self.env.abs_href(),
+            has_changes=short_changes or long_changes,
+            long_changes=long_changes,
+            short_changes=short_changes,
+            attachment=event.attachment,
+            attachment_link=self.env.abs_href('attachment/ticket', ticket.id)
         )
         chrome = Chrome(self.env)
         dirs = []
@@ -242,52 +239,51 @@ class TicketFormatter(AnnouncerTemplateProvider):
             dirs += provider.get_templates_dirs()
         templates = TemplateLoader(dirs, variable_lookup='lenient')
         template = templates.load('ticket_email_mimic.html',
-                cls=MarkupTemplate)
+                                  cls=MarkupTemplate)
         if template:
             stream = template.generate(**data)
-            output = stream.render()
-        return output
+            return stream.render()
 
 
 class WikiFormatter(AnnouncerTemplateProvider):
 
     implements(IAnnouncementFormatter)
 
-    wiki_email_diff = BoolOption('announcer', 'wiki_email_diff',
-            "true",
-            N_("""Should a wiki diff be sent with emails?"""))
+    wiki_email_diff = BoolOption('announcer', 'wiki_email_diff', 'true',
+        """Should a wiki diff be sent with emails?""")
 
     def styles(self, transport, realm):
-        if realm == "wiki":
-            yield "text/plain"
+        if realm == 'wiki':
+            yield 'text/plain'
 
     def alternative_style_for(self, transport, realm, style):
-        if realm == "wiki" and style != "text/plain":
-            return "text/plain"
+        if realm == 'wiki' and style != 'text/plain':
+            return 'text/plain'
 
     def format(self, transport, realm, style, event):
-        if realm == "wiki" and style == "text/plain":
+        if realm == 'wiki' and style == 'text/plain':
             return self._format_plaintext(event)
 
     def _format_plaintext(self, event):
         page = event.target
         data = dict(
-            action = event.category,
-            attachment = event.attachment,
-            page = page,
-            author = event.author,
-            comment = event.comment,
-            category = event.category,
-            page_link = self.env.abs_href('wiki', page.name),
-            project_name = self.env.project_name,
-            project_desc = self.env.project_description,
-            project_link = self.env.project_url or self.env.abs_href(),
+            action=event.category,
+            attachment=event.attachment,
+            page=page,
+            author=event.author,
+            comment=event.comment,
+            category=event.category,
+            page_link=self.env.abs_href('wiki', page.name),
+            project_name=self.env.project_name,
+            project_desc=self.env.project_description,
+            project_link=self.env.project_url or self.env.abs_href(),
         )
         old_page = WikiPage(self.env, page.name, page.version - 1)
         if page.version:
-            data["changed"] = True
-            data["diff_link"] = self.env.abs_href('wiki', page.name,
-                    action="diff", version=page.version)
+            data['changed'] = True
+            data['diff_link'] = self.env.abs_href('wiki', page.name,
+                                                  action='diff',
+                                                  version=page.version)
             if self.wiki_email_diff:
                 # DEVEL: Formatter needs req object to get preferred language.
                 diff_header = _("""
@@ -298,14 +294,15 @@ Index: %(name)s
 """)
 
                 diff = "\n"
-                diff += diff_header % { 'name': page.name,
-                                       'version': page.version,
-                                       'oldversion': page.version - 1
-                                     }
+                diff += diff_header % {
+                    'name': page.name,
+                    'version': page.version,
+                    'oldversion': page.version - 1
+                }
                 for line in unified_diff(old_page.text.splitlines(),
                                          page.text.splitlines(), context=3):
                     diff += "%s\n" % line
-                data["diff"] = diff
+                data['diff'] = diff
         chrome = Chrome(self.env)
         dirs = []
         for provider in chrome.template_providers:
@@ -315,5 +312,4 @@ Index: %(name)s
                                   cls=NewTextTemplate)
         if template:
             stream = template.generate(**data)
-            output = stream.render('text')
-        return output
+            return stream.render('text')

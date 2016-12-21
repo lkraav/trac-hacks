@@ -14,12 +14,9 @@
 # checking for unauthenticated users should be done against the 'anonymous'
 # user.
 
-from datetime import datetime
+import datetime
 
-from trac.util.datefmt import utc
-
-from announcer.compat import to_utimestamp
-
+from trac.util.datefmt import to_utimestamp, utc
 
 __all__ = ['Subscription', 'SubscriptionAttribute']
 
@@ -46,22 +43,23 @@ class Subscription(object):
     @classmethod
     def add(cls, env, subscription, db=None):
         """ID and priority get overwritten."""
+
         @env.with_transaction(db)
         def do_insert(db):
             cursor = db.cursor()
-            priority = len(cls.find_by_sid_and_distributor(env,
-                subscription['sid'], subscription['authenticated'],
+            priority = len(cls.find_by_sid_and_distributor(
+                env, subscription['sid'], subscription['authenticated'],
                 subscription['distributor'], db)) + 1
-            now = to_utimestamp(datetime.now(utc))
+            now = to_utimestamp(datetime.datetime.now(utc))
             cursor.execute("""
                 INSERT INTO subscription
                        (time,changetime,sid,authenticated,
                         distributor,format,priority,adverb,class)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """, (now, now, subscription['sid'], subscription['authenticated'],
-                  subscription['distributor'], subscription['format'],
-                  int(priority), subscription['adverb'], subscription['class'])
-            )
+            """, (now, now, subscription['sid'],
+                  subscription['authenticated'], subscription['distributor'],
+                  subscription['format'], int(priority),
+                  subscription['adverb'], subscription['class']))
 
     @classmethod
     def delete(cls, env, rule_id, db=None):
@@ -82,7 +80,7 @@ class Subscription(object):
             for s in cls.find_by_sid_and_distributor(env, sid, authenticated,
                                                      distributor, db):
                 s['priority'] = i
-                s._update_priority(db)
+                s.update_priority(db)
                 i += 1
 
     @classmethod
@@ -96,23 +94,23 @@ class Subscription(object):
                  WHERE id=%s
             """, (rule_id,))
             sid, authenticated, distributor = cursor.fetchone()
-            if priority > len(cls.find_by_sid_and_distributor(env,
-                                  sid, authenticated, distributor, db)):
+            if priority > len(cls.find_by_sid_and_distributor(
+                    env, sid, authenticated, distributor, db)):
                 return
             i = 1
             for s in cls.find_by_sid_and_distributor(env, sid, authenticated,
                                                      distributor, db):
                 if int(s['id']) == int(rule_id):
                     s['priority'] = priority
-                    s._update_priority(db)
+                    s.update_priority(db)
                     i -= 1
                 elif i == priority:
                     i += 1
                     s['priority'] = i
-                    s._update_priority(db)
+                    s.update_priority(db)
                 else:
                     s['priority'] = i
-                    s._update_priority(db)
+                    s.update_priority(db)
                 i += 1
 
     @classmethod
@@ -233,11 +231,11 @@ class Subscription(object):
             self.values['adverb']
         )
 
-    def _update_priority(self, db=None):
+    def update_priority(self, db=None):
         @self.env.with_transaction(db)
         def do_update(db):
             cursor = db.cursor()
-            now = to_utimestamp(datetime.now(utc))
+            now = to_utimestamp(datetime.datetime.now(utc))
             cursor.execute("""
                 UPDATE subscription
                    SET changetime=%s,
@@ -267,6 +265,7 @@ class SubscriptionAttribute(object):
     @classmethod
     def add(cls, env, sid, authenticated, klass, realm, attributes, db=None):
         """id and priority overwritten."""
+
         @env.with_transaction(db)
         def do_insert(db):
             cursor = db.cursor()

@@ -8,10 +8,9 @@
 # you should have received as part of this distribution.
 #
 
+import operator
 import re
-
 from genshi.filters.transform import Transformer
-from operator import itemgetter
 from pkg_resources import resource_filename
 
 from trac.core import Component, ExtensionPoint, implements
@@ -19,14 +18,11 @@ from trac.prefs.api import IPreferencePanelProvider
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
 
-from announcer.api import _, tag_, N_
-from announcer.api import IAnnouncementDefaultSubscriber
-from announcer.api import IAnnouncementDistributor
-from announcer.api import IAnnouncementFormatter
-from announcer.api import IAnnouncementPreferenceProvider
-from announcer.api import IAnnouncementSubscriber
+from announcer.api import _, IAnnouncementDefaultSubscriber, \
+                          IAnnouncementDistributor, IAnnouncementFormatter, \
+                          IAnnouncementPreferenceProvider, \
+                          IAnnouncementSubscriber
 from announcer.model import Subscription
-from announcer.util.settings import encode, decode
 
 
 def truth(v):
@@ -67,23 +63,23 @@ class AnnouncerPreferences(AnnouncerTemplateProvider):
 
     def get_preference_panels(self, req):
         if self.preference_boxes:
-            yield ('announcer', _('Announcements'))
+            yield ('announcer', _("Announcements"))
 
     def _get_boxes(self, req):
         for pr in self.preference_boxes:
             boxes = pr.get_announcement_preference_boxes(req)
-            boxdata = {}
             if boxes:
                 for boxname, boxlabel in boxes:
                     if boxname == 'general_wiki' and \
-                            not req.perm.has_permission('WIKI_VIEW'):
+                            'WIKI_VIEW' not in req.perm:
                         continue
                     if (boxname == 'legacy' or
-                        boxname == 'joinable_groups') and \
-                            not req.perm.has_permission('TICKET_VIEW'):
+                            boxname == 'joinable_groups') and \
+                            'TICKET_VIEW' not in req.perm:
                         continue
                     yield ((boxname, boxlabel) +
-                        pr.render_announcement_preference_box(req, boxname))
+                           pr.render_announcement_preference_box(req,
+                                                                 boxname))
 
     def render_preference_panel(self, req, panel, path_info=None):
         streams = []
@@ -102,8 +98,7 @@ class AnnouncerPreferences(AnnouncerTemplateProvider):
 
 class SubscriptionManagementPanel(AnnouncerTemplateProvider):
 
-    implements(IPreferencePanelProvider,
-               ITemplateStreamFilter)
+    implements(IPreferencePanelProvider, ITemplateStreamFilter)
 
     subscribers = ExtensionPoint(IAnnouncementSubscriber)
     default_subscribers = ExtensionPoint(IAnnouncementDefaultSubscriber)
@@ -121,7 +116,7 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
     # IPreferencePanelProvider methods
 
     def get_preference_panels(self, req):
-        yield ('subscriptions', _('Subscriptions'))
+        yield 'subscriptions', _("Subscriptions")
 
     def render_preference_panel(self, req, panel, path_info=None):
         if req.method == 'POST':
@@ -139,10 +134,9 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
             # Refresh page after saving changes.
             req.redirect(req.href.prefs('subscriptions'))
 
-        data = {'rules':{}, 'subscribers':[]}
-        data['formatters'] = ('text/plain', 'text/html')
-        data['selected_format'] = {}
-        data['adverbs'] = ('always', 'never')
+        data = {'rules': {}, 'subscribers': [],
+                'formatters': ('text/plain', 'text/html'),
+                'selected_format': {}, 'adverbs': ('always', 'never')}
 
         desc_map = {}
 
@@ -160,8 +154,9 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
         for i in self.distributors:
             for j in i.transports():
                 data['rules'][j] = []
-                for r in Subscription.find_by_sid_and_distributor(self.env,
-                        req.session.sid, req.session.authenticated, j):
+                for r in Subscription.find_by_sid_and_distributor(
+                        self.env, req.session.sid,
+                        req.session.authenticated, j):
                     if desc_map.get(r['class']):
                         data['rules'][j].append({
                             'id': r['id'],
@@ -176,7 +171,7 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
         for i in self.default_subscribers:
             defaults.extend(i.default_subscriptions())
 
-        for r in sorted(defaults, key=itemgetter(2)):
+        for r in sorted(defaults, key=operator.itemgetter(2)):
             klass, dist, _, adverb = r
             if not data['default_rules'].get(dist):
                 data['default_rules'][dist] = []
@@ -187,9 +182,10 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
                 })
 
         add_stylesheet(req, 'announcer/css/announcer_prefs.css')
-        return "prefs_announcer_manage_subscriptions.html", dict(data=data)
+        return 'prefs_announcer_manage_subscriptions.html', dict(data=data)
 
     # ITemplateStreamFilter method
+
     def filter_stream(self, req, method, filename, stream, data):
         if re.match(r'/prefs/subscription', req.path_info):
             xpath_match = '//form[@id="userprefs"]//div[@class="buttons"]'
@@ -201,9 +197,9 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
         rule['sid'] = req.session.sid
         rule['authenticated'] = req.session.authenticated and 1 or 0
         rule['distributor'] = arg
-        rule['format'] = req.args.get('format-%s'%arg, '')
-        rule['adverb'] = req.args['new-adverb-%s'%arg]
-        rule['class'] = req.args['new-rule-%s'%arg]
+        rule['format'] = req.args.get('format-%s' % arg, '')
+        rule['adverb'] = req.args['new-adverb-%s' % arg]
+        rule['class'] = req.args['new-rule-%s' % arg]
         Subscription.add(self.env, rule)
 
     def _delete_rule(self, arg, req):
@@ -215,6 +211,6 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
             Subscription.move(self.env, rule_id, int(new_priority))
 
     def _set_format(self, arg, req):
-        Subscription.update_format_by_distributor_and_sid(self.env, arg,
-                req.session.sid, req.session.authenticated,
-                req.args['format-%s' % arg])
+        Subscription.update_format_by_distributor_and_sid(
+            self.env, arg, req.session.sid, req.session.authenticated,
+            req.args['format-%s' % arg])

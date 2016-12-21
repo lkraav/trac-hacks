@@ -1,4 +1,15 @@
-from trac.db import Table, Column, Index, DatabaseManager
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2008, Stephen Hansen
+# Copyright (c) 2009, Robert Corsaro
+# Copyright (c) 2010-2012, Steffen Hoffmann
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
+from trac.db.api import DatabaseManager
+from trac.db.schema import Column, Index, Table
 
 schema = [
     Table('subscriptions', key='id')[
@@ -15,6 +26,7 @@ schema = [
         Index(['realm', 'category', 'enabled']),
     ]
 ]
+
 
 def do_upgrade(env, ver, cursor):
     """Changes to subscription db table:

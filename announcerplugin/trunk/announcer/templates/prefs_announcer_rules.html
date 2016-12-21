@@ -7,10 +7,12 @@
     The rule-based subscription module is for advanced users, and allows you to use filters to specify which events you are interested in hearing about.
   </p>
   <p i18n:msg="">
-    Every rule is in the form of: 
-      <div class="syntax"><span class="realm">realm</span>, <span class="category">category</span>: <span class="rule">query rule</span></div>
+    Every rule is in the form of:
+    <div class="syntax">
+      <span class="realm">realm</span>, <span class="category">category</span>: <span class="rule">query rule</span>
+    </div>
   </p>
-  <div py:for="rulenum, rule in enumerate(rules)" style="padding: 0.5 em">
+  <div py:for="rulenum, rule in enumerate(rules)" style="padding: 0.5em">
       <input type="hidden" name="rule_${rulenum}_id" value="${rule['id']}" />
       <input type="checkbox" name="rule_${rulenum}_enabled" checked="${rule['enabled']}" value="1" />
       <select name="rule_${rulenum}_category">

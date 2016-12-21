@@ -14,7 +14,6 @@ from trac.db.api import DatabaseManager
 from trac.test import EnvironmentStub
 from trac.web.chrome import Chrome
 
-from announcer.pref import AnnouncerTemplateProvider
 from announcer.pref import AnnouncerPreferences
 from announcer.pref import SubscriptionManagementPanel
 
@@ -28,11 +27,8 @@ class AnnouncerPreferencesTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
-
-    # Tests
 
     def test_init(self):
         # Test just to confirm that IPreferencePanelProviders initialize
@@ -46,7 +42,7 @@ class AnnouncerTemplateProviderTestCase(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(
-                enable=['trac.*', 'announcer.pref.*'])
+            enable=['trac.*', 'announcer.pref.*'])
         self.env.path = tempfile.mkdtemp()
 
         # AnnouncerTemplateProvider is abstract, test using a subclass.
@@ -59,11 +55,12 @@ class AnnouncerTemplateProviderTestCase(unittest.TestCase):
         self.assertTrue(self.sm_panel in Chrome(self.env).template_providers)
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(AnnouncerPreferencesTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(AnnouncerTemplateProviderTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(AnnouncerPreferencesTestCase))
+    suite.addTest(unittest.makeSuite(AnnouncerTemplateProviderTestCase))
     return suite
 
+
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

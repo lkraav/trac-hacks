@@ -9,20 +9,17 @@
 
 import Queue
 import time
+import threading
 
-from threading import Thread
+from trac.config import Option, BoolOption, IntOption, OrderedExtensionsOption
+from trac.core import Component, ExtensionPoint, implements
 from xmpp import Client
 from xmpp.protocol import Message, JID
 
-from trac.config import Option, BoolOption, IntOption, OrderedExtensionsOption
-from trac.core import *
-from trac.util.compat import set
-
-from announcer.api import IAnnouncementDistributor
-from announcer.api import IAnnouncementPreferenceProvider
-from announcer.api import IAnnouncementAddressResolver
-from announcer.api import IAnnouncementFormatter
-from announcer.api import IAnnouncementProducer
+from announcer.api import _, IAnnouncementAddressResolver, \
+                          IAnnouncementDistributor, IAnnouncementFormatter, \
+                          IAnnouncementPreferenceProvider, \
+                          IAnnouncementProducer
 from announcer.resolvers import SpecifiedXmppResolver
 from announcer.util.settings import SubscriptionSetting
 
@@ -42,8 +39,7 @@ class XmppDistributor(Component):
         """)
 
     default_format = Option('announcer', 'default_xmpp_format',
-            'text/plain',
-            """Default format for xmpp messages.""")
+        'text/plain', """Default format for xmpp messages.""")
 
     server = Option('xmpp', 'server', None,
         """XMPP server hostname to use for jabber notifications.""")
@@ -61,20 +57,20 @@ class XmppDistributor(Component):
         """Password for XMPP server.""")
 
     use_threaded_delivery = BoolOption('announcer', 'use_threaded_delivery',
-            False,
-            """If true, the actual delivery of the message will occur
-            in a separate thread.  Enabling this will improve responsiveness
-            for requests that end up with an announcement being sent over
-            email. It requires building Python with threading support
-            enabled-- which is usually the case. To test, start Python and
-            type 'import threading' to see if it raises an error.
-            """)
+        False,
+        """If true, the actual delivery of the message will occur
+        in a separate thread.  Enabling this will improve responsiveness
+        for requests that end up with an announcement being sent over
+        email. It requires building Python with threading support
+        enabled-- which is usually the case. To test, start Python and
+        type 'import threading' to see if it raises an error.
+        """)
 
     def __init__(self):
         self.connections = {}
         self.delivery_queue = None
-        self.xmpp_format_setting = SubscriptionSetting(self.env, 'xmpp_format',
-                self.default_format)
+        self.xmpp_format_setting = \
+            SubscriptionSetting(self.env, 'xmpp_format', self.default_format)
 
     def get_delivery_queue(self):
         if not self.delivery_queue:
@@ -83,92 +79,87 @@ class XmppDistributor(Component):
             thread.start()
         return self.delivery_queue
 
-    # IAnnouncementDistributor
+    # IAnnouncementDistributor methods
+
     def transports(self):
-        yield "xmpp"
+        yield 'xmpp'
 
     def distribute(self, transport, recipients, event):
-        self.log.info('XmppDistributor called')
+        self.log.info("XmppDistributor called")
         if transport != 'xmpp':
             return
         fmtdict = self._formats(transport, event.realm)
         if not fmtdict:
-            self.log.error(
-                "XmppDistributor No formats found for %s %s"%(
-                    transport, event.realm))
+            self.log.error("XmppDistributor No formats found for %s %s",
+                           transport, event.realm)
             return
         msgdict = {}
-        for name, authed, addr in recipients:
-            fmt = name and \
-                self._get_preferred_format(name, event.realm)
+        for name, authed, address in recipients:
+            fmt = name and self._get_preferred_format(name, event.realm)
+            old_fmt = fmt
             if fmt not in fmtdict:
-                self.log.debug(("XmppDistributor format %s not available " +
-                    "for %s %s, looking for an alternative")%(
-                        fmt, transport, event.realm))
+                self.log.debug("XmppDistributor format %s not available "
+                               "for %s %s, looking for an alternative",
+                               fmt, transport, event.realm)
                 # If the fmt is not available for this realm, then try to find
                 # an alternative
-                oldfmt = fmt
                 fmt = None
                 for f in fmtdict.values():
                     fmt = f.alternative_style_for(
-                            transport, event.realm, oldfmt)
-                    if fmt: break
+                        transport, event.realm, old_fmt)
+                    if fmt:
+                        break
             if not fmt:
-                self.log.error(
-                    "XmppDistributor was unable to find a formatter " +
-                    "for format %s"%k
-                )
+                self.log.error("XmppDistributor was unable to find a "
+                               "formatter for format %s", old_fmt)
                 continue
             # TODO:  This won't work with multiple distributors
-            #rslvr = None
+            # rslvr = None
             # figure out what the addr should be if it's not defined
-            #for rslvr in self.resolvers:
+            # for rslvr in self.resolvers:
             #    addr = rslvr.get_address_for_name(name, authed)
             #    if addr: break
-            rslvr = SpecifiedXmppResolver(self.env)
-            addr = rslvr.get_address_for_name(name, authed)
-            if addr:
-                self.log.debug("XmppDistributor found the " \
-                        "address '%s' for '%s (%s)' via: %s"%(
-                        addr, name, authed and \
-                        'authenticated' or 'not authenticated',
-                        rslvr.__class__.__name__))
+            resolver = SpecifiedXmppResolver(self.env)
+            address = resolver.get_address_for_name(name, authed)
+            if address:
+                self.log.debug("XmppDistributor found the address '%s' for "
+                               "'%s (%s)' via: %s", address, name, authed and
+                               'authenticated' or 'not authenticated',
+                               resolver.__class__.__name__)
                 # ok, we found an addr, add the message
-                msgdict.setdefault(fmt, set()).add((name, authed, addr))
+                msgdict.setdefault(fmt, set()).add((name, authed, address))
             else:
-                self.log.debug("XmppDistributor was unable to find an " \
-                        "address for: %s (%s)"%(name, authed and \
-                        'authenticated' or 'not authenticated'))
+                self.log.debug("XmppDistributor was unable to find an "
+                               "address for: %s (%s)", name, authed and
+                               'authenticated' or 'not authenticated')
         for k, v in msgdict.items():
-            if not v or not fmtdict.get(k):
+            fmt = fmtdict.get(k)
+            if not v or not fmt:
                 continue
-            self.log.debug(
-                "XmppDistributor is sending event as '%s' to: %s"%(
-                    fmt, ', '.join(x[2] for x in v)))
-            self._do_send(transport, event, k, v, fmtdict[k])
+            self.log.debug("XmppDistributor is sending event as '%s' to: %s",
+                           fmt, ', '.join(x[2] for x in v))
+            self._do_send(transport, event, k, v, fmt)
 
     def _formats(self, transport, realm):
-        "Find valid formats for transport and realm"
+        """Find valid formats for transport and realm."""
         formats = {}
         for f in self.formatters:
             for style in f.styles(transport, realm):
                 formats[style] = f
-        self.log.debug(
-            "XmppDistributor has found the following formats capable "
-            "of handling '%s' of '%s': %s"%(transport, realm,
-                ', '.join(formats.keys())))
+        self.log.debug("XmppDistributor has found the following formats "
+                       "capable of handling '%s' of '%s': %s", transport,
+                       realm, ', '.join(formats.keys()))
         if not formats:
-            self.log.error("XmppDistributor is unable to continue " \
-                    "without supporting formatters.")
+            self.log.error("XmppDistributor is unable to continue without "
+                           "supporting formatters.")
         return formats
 
     def _get_preferred_format(self, sid, realm=None):
         if realm:
-            name = 'xmpp_format_%s'%realm
+            name = 'xmpp_format_%s' % realm
         else:
             name = 'xmpp_format'
-        setting = SubscriptionSetting(self.env, name,
-                self.xmpp_format_setting.default)
+        SubscriptionSetting(self.env, name, self.xmpp_format_setting.default)
         return self.xmpp_format_setting.get_user_setting(sid)[0]
 
     def _do_send(self, transport, event, format, recipients, formatter):
@@ -182,8 +173,8 @@ class XmppDistributor(Component):
         else:
             self.send(*package)
         stop = time.time()
-        self.log.debug("XmppDistributor took %s seconds to send."\
-                %(round(stop-start,2)))
+        self.log.debug("XmppDistributor took %s seconds to send.",
+                       round(stop - start, 2))
 
     def send(self, recipients, message):
         """Send message to recipients via xmpp."""
@@ -194,17 +185,16 @@ class XmppDistributor(Component):
             server = jid.getDomain()
         cl = Client(server, port=self.port, debug=[])
         if not cl.connect():
-            raise IOError("Couldn't connect to xmpp server %s"%server)
-        if not cl.auth(jid.getNode(), self.password,
-                resource=self.resource):
+            raise IOError("Couldn't connect to xmpp server %s" % server)
+        if not cl.auth(jid.getNode(), self.password, resource=self.resource):
             cl.Connection.disconnect()
-            raise IOError("Xmpp auth erro using %s to %s"%(jid, server))
-        default_domain = jid.getDomain()
+            raise IOError("Xmpp auth erro using %s to %s", jid, server)
         for recip in recipients:
             cl.send(Message(recip[2], message))
 
 
 class XmppPreferencePanel(Component):
+
     implements(IAnnouncementPreferenceProvider)
 
     formatters = ExtensionPoint(IAnnouncementFormatter)
@@ -212,7 +202,7 @@ class XmppPreferencePanel(Component):
     distributors = ExtensionPoint(IAnnouncementDistributor)
 
     def get_announcement_preference_boxes(self, req):
-        yield "xmpp", "XMPP Formats"
+        yield 'xmpp', _("XMPP Formats")
 
     def render_announcement_preference_box(self, req, panel):
         supported_realms = {}
@@ -228,34 +218,33 @@ class XmppPreferencePanel(Component):
 
         settings = {}
         for realm in supported_realms:
-            name = 'xmpp_format_%s'%realm
-            settings[realm] = SubscriptionSetting(self.env, name,
-                XmppDistributor(self.env).xmpp_format_setting.default)
-        if req.method == "POST":
+            name = 'xmpp_format_%s' % realm
+            dist = XmppDistributor(self.env).xmpp_format_setting.default
+            settings[realm] = SubscriptionSetting(self.env, name, dist)
+        if req.method == 'POST':
             for realm, setting in settings.items():
-                name = 'xmpp_format_%s'%realm
+                name = 'xmpp_format_%s' % realm
                 setting.set_user_setting(req.session, req.args.get(name),
-                    save=False)
+                                         save=False)
             req.session.save()
         prefs = {}
         for realm, setting in settings.items():
             prefs[realm] = setting.get_user_setting(req.session.sid)[0]
         data = dict(
-            realms = supported_realms,
-            preferences = prefs,
+            realms=supported_realms,
+            preferences=prefs,
         )
-        return "prefs_announcer_xmpp.html", data
+        return 'prefs_announcer_xmpp.html', data
 
 
-class DeliveryThread(Thread):
-
+class DeliveryThread(threading.Thread):
     def __init__(self, queue, sender):
-        Thread.__init__(self)
+        threading.Thread.__init__(self)
         self._sender = sender
         self._queue = queue
         self.setDaemon(True)
 
     def run(self):
         while 1:
-            sendfrom, recipients, message = self._queue.get()
-            self._sender(sendfrom, recipients, message)
+            send_from, recipients, message = self._queue.get()
+            self._sender(send_from, recipients, message)

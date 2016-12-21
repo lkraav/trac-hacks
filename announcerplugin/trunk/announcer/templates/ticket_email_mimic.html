@@ -17,8 +17,7 @@
         background-color: #fefcd3;
         width: 90%;
         padding: .5em 1em;
-        border-style: outset;
-        border-width: 1px;
+        border: 1px outset;
         margin: 2px;
       }
 
@@ -86,13 +85,11 @@
       }
 
       .htmldiff {
-        margin-left: 2em;
         padding: 1em;
         width: 90%;
         background-color: #f3f3f3;
         margin: 5px;
-        border-style: outset;
-        border-width: 1px;
+        border: 1px outset;
       }
 
       .commentstitle {
@@ -112,7 +109,7 @@
   </head>
   <body bgcolor="white" style='font: medium "Lucida Grande", Lucida, Verdana, sans-serif'>
     <span class="header" style="font-size: large;">Ticket #${ticket.id} (${ticket['status']} ${ticket['type']})</span>
-    <div class="ticketbox" style="background-color: #fefcd3; width: 90%; padding: .5em 1em; border-style: outset; border-width: 1px; margin: 2px;">
+    <div class="ticketbox" style="background-color: #fefcd3; width: 90%; padding: .5em 1em; border: 1px outset;margin: 2px;">
       <div class="title" style="font-weight: bold; border-bottom: 1pt inset #dfdfdf; padding-bottom: .5em;">${ticket['summary']}</div>
       <table class="header" width="100%">
         <tr py:for="field in fields">
@@ -139,7 +136,7 @@
       <ul>
         <li py:for="(change, content) in long_changes.items()" class="longchange" style="font-size: small;">
           <span class="fieldname" style="font-weight: bold; font-style: italic;">${change}:</span>
-          <div class="htmldiff" style="margin-left: 2em; padding: 1em; width: 90%; background-color: #f3f3f3; margin: 5px; border-style: outset; border-width: 1px;">${content}</div>
+          <div class="htmldiff" style="padding: 1em; width: 90%; background-color: #f3f3f3; margin: 5px;border: 1px outset;">${content}</div>
         </li>
       </ul>
     </py:if>

@@ -13,13 +13,14 @@ import unittest
 from trac.db.api import DatabaseManager
 from trac.test import EnvironmentStub
 
-from announcer.subscribers import CarbonCopySubscriber
-from announcer.subscribers import TicketOwnerSubscriber
-from announcer.subscribers import TicketReporterSubscriber
-from announcer.subscribers import TicketUpdaterSubscriber
+from announcer.subscribers import CarbonCopySubscriber, \
+                                  TicketOwnerSubscriber, \
+                                  TicketReporterSubscriber, \
+                                  TicketUpdaterSubscriber
 
 
 class SubscriberTestCase(unittest.TestCase):
+
     def setUp(self):
         self.env = EnvironmentStub(
             enable=['trac.*', 'announcer.subscribers.*'])
@@ -29,7 +30,6 @@ class SubscriberTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
@@ -68,14 +68,14 @@ class TicketUpdaterSubscriberTestCase(SubscriberTestCase):
         pass
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(CarbonCopySubscriberTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(TicketOwnerSubscriberTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(TicketReporterSubscriberTestCase,
-                                     'test'))
-    suite.addTest(unittest.makeSuite(TicketUpdaterSubscriberTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(CarbonCopySubscriberTestCase))
+    suite.addTest(unittest.makeSuite(TicketOwnerSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(TicketReporterSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(TicketUpdaterSubscriberTestCase))
     return suite
 
+
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

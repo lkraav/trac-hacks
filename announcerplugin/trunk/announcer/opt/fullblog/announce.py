@@ -9,26 +9,25 @@
 
 import re
 
+from genshi.template import NewTextTemplate, TemplateLoader
+from tracfullblog.api import IBlogChangeListener
+from tracfullblog.model import BlogPost, BlogComment
 from trac.config import BoolOption, Option
-from trac.core import *
+from trac.core import Component, implements
+from trac.util.html import html
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import Chrome, add_notice, add_ctxtnav
 
-from genshi.builder import tag
-from genshi.template import NewTextTemplate, TemplateLoader
-
-from announcer.api import AnnouncementSystem, AnnouncementEvent
-from announcer.api import IAnnouncementFormatter, IAnnouncementSubscriber
-from announcer.api import IAnnouncementPreferenceProvider
-from announcer.api import _
+from announcer.api import _, AnnouncementSystem, AnnouncementEvent,\
+                          IAnnouncementFormatter, IAnnouncementSubscriber, \
+                          IAnnouncementPreferenceProvider
 from announcer.distributors.mail import IAnnouncementEmailDecorator
 from announcer.model import Subscription, SubscriptionAttribute
 from announcer.util.mail import set_header, next_decorator
 
-from tracfullblog.api import IBlogChangeListener
-from tracfullblog.model import BlogPost, BlogComment
 
 class BlogChangeEvent(AnnouncementEvent):
+
     def __init__(self, blog_post, category, url, blog_comment=None):
         AnnouncementEvent.__init__(self, 'blog', category, blog_post)
         if blog_comment:
@@ -49,6 +48,7 @@ class BlogChangeEvent(AnnouncementEvent):
         self.blog_post = blog_post
         self.blog_comment = blog_comment
 
+
 class FullBlogAllSubscriber(Component):
     """Subscriber for any blog changes."""
 
@@ -57,12 +57,9 @@ class FullBlogAllSubscriber(Component):
     def matches(self, event):
         if event.realm != 'blog':
             return
-        if not event.category in ('post created',
-                                  'post changed',
-                                  'post deleted',
-                                  'comment created',
-                                  'comment changed',
-                                  'comment deleted'):
+        if event.category not in ('post created', 'post changed',
+                                  'post deleted', 'comment created',
+                                  'comment changed', 'comment deleted'):
             return
 
         klass = self.__class__.__name__
@@ -71,7 +68,7 @@ class FullBlogAllSubscriber(Component):
 
     def description(self):
         return _("notify me when any blog is modified, "
-                "changed, deleted or commented on.")
+                 "changed, deleted or commented on.")
 
 
 class FullBlogNewSubscriber(Component):
@@ -99,95 +96,93 @@ class FullBlogMyPostSubscriber(Component):
     implements(IAnnouncementSubscriber)
 
     always_notify_author = BoolOption('fullblog-announcement',
-            'always_notify_author', 'true',
-            """Notify the blog author of any changes to her blogs,
-            including changes to comments.
-            """)
+        'always_notify_author', True,
+        """Notify the blog author of any changes to her blogs,
+        including changes to comments.
+        """)
 
     def matches(self, event):
         if event.realm != 'blog':
             return
-        if not event.category in ('post changed',
-                                  'post deleted',
-                                  'comment created',
-                                  'comment changed',
+        if event.category not in ('post changed', 'post deleted',
+                                  'comment created', 'comment changed',
                                   'comment deleted'):
             return
 
-        sids = ((event.blog_post.author,1),)
+        sids = ((event.blog_post.author, 1),)
         klass = self.__class__.__name__
         for i in Subscription.find_by_sids_and_class(self.env, sids, klass):
             yield i.subscription_tuple()
 
     def description(self):
         return _("notify me when any blog that I posted "
-            "is modified or commented on.")
+                 "is modified or commented on.")
+
 
 class FullBlogWatchSubscriber(Component):
     """Subscriber to watch individual blogs."""
 
-    implements(IAnnouncementSubscriber)
-    implements(IRequestFilter)
-    implements(IRequestHandler)
+    implements(IAnnouncementSubscriber, IRequestFilter, IRequestHandler)
 
-    # IAnnouncementSubscriber
+    # IAnnouncementSubscriber methods
+
     def matches(self, event):
         if event.realm != 'blog':
             return
-        if not event.category in ('post created',
-                                  'post changed',
-                                  'post deleted',
-                                  'comment created',
-                                  'comment changed',
-                                  'comment deleted'):
+        if event.category not in ('post created', 'post changed',
+                                  'post deleted', 'comment created',
+                                  'comment changed', 'comment deleted'):
             return
 
         klass = self.__class__.__name__
 
-        attrs = SubscriptionAttribute.find_by_class_realm_and_target(self.env,
-                klass, 'blog', event.blog_post.name)
-        sids = set(map(lambda x: (x['sid'],x['authenticated']), attrs))
+        attrs = SubscriptionAttribute.\
+            find_by_class_realm_and_target(self.env, klass, 'blog',
+                                           event.blog_post.name)
+        sids = set(map(lambda x: (x['sid'], x['authenticated']), attrs))
 
         for i in Subscription.find_by_sids_and_class(self.env, sids, klass):
             yield i.subscription_tuple()
 
     def description(self):
-        return "notify me when a blog that I'm watching changes."
+        return _("notify me when a blog that I'm watching changes.")
 
-    # IRequestFilter
+    # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
         if 'BLOG_VIEW' not in req.perm:
-            return (template, data, content_type)
+            return template, data, content_type
 
         if '_blog_watch_message_' in req.session:
             add_notice(req, req.session['_blog_watch_message_'])
             del req.session['_blog_watch_message_']
 
-        if req.authname == "anonymous":
-            return (template, data, content_type)
+        if req.authname == 'anonymous':
+            return template, data, content_type
 
         # FullBlogPlugin sets the blog_path arg in pre_process_request
         name = req.args.get('blog_path')
         if not name:
-            return (template, data, content_type)
+            return template, data, content_type
 
         klass = self.__class__.__name__
 
         attrs = SubscriptionAttribute.find_by_sid_class_and_target(
             self.env, req.session.sid, req.session.authenticated, klass, name)
         if attrs:
-            add_ctxtnav(req, tag.a(_('Unwatch This'),
-                href=req.href.blog_watch(name)))
+            add_ctxtnav(req, html.a(_("Unwatch This"),
+                                    href=req.href.blog_watch(name)))
         else:
-            add_ctxtnav(req, tag.a(_('Watch This'),
-                href=req.href.blog_watch(name)))
+            add_ctxtnav(req, html.a(_("Watch This"),
+                                    href=req.href.blog_watch(name)))
 
-        return (template, data, content_type)
+        return template, data, content_type
 
-    # IRequestHandler
+    # IRequestHandler methods
+
     def match_request(self, req):
         return re.match(r'^/blog_watch/(.*)', req.path_info)
 
@@ -207,50 +202,49 @@ class FullBlogWatchSubscriber(Component):
                     self.env, req.session.sid, req.session.authenticated,
                     klass, name)
                 req.session['_blog_watch_message_'] = \
-                    _('You are no longer watching this blog post.')
+                    _("You are no longer watching this blog post.")
             else:
                 SubscriptionAttribute.add(
                     self.env, req.session.sid, req.session.authenticated,
                     klass, 'blog', (name,))
                 req.session['_blog_watch_message_'] = \
-                        _('You are now watching this blog post.')
+                    _("You are now watching this blog post.")
+
         req.redirect(req.href.blog(name))
 
 
 class FullBlogBloggerSubscriber(Component):
     """Subscriber for any blog changes to bloggers that I follow."""
 
-    implements(IAnnouncementSubscriber)
-    implements(IAnnouncementPreferenceProvider)
+    implements(IAnnouncementPreferenceProvider, IAnnouncementSubscriber)
 
     def matches(self, event):
         if event.realm != 'blog':
             return
-        if not event.category in ('post created',
-                                  'post changed',
-                                  'post deleted',
-                                  'comment created',
-                                  'comment changed',
-                                  'comment deleted'):
+        if event.category not in ('post created', 'post changed',
+                                  'post deleted', 'comment created',
+                                  'comment changed', 'comment deleted'):
             return
 
         klass = self.__class__.__name__
 
         sids = set(map(lambda x: (x['sid'], x['authenticated']),
-            SubscriptionAttribute.find_by_class_realm_and_target(
-                self.env, klass, 'blog', event.blog_post.author)))
+                       SubscriptionAttribute.find_by_class_realm_and_target(
+                           self.env, klass, 'blog', event.blog_post.author)))
 
         for i in Subscription.find_by_sids_and_class(self.env, sids, klass):
             yield i.subscription_tuple()
 
     def description(self):
-        return "notify me when any blogger that I follow has a blog update."
+        return _("notify me when any blogger that I follow has a blog "
+                 "update.")
 
-    # IAnnouncementPreferenceProvider interface
+    # IAnnouncementPreferenceProvider methods
+
     def get_announcement_preference_boxes(self, req):
-        if req.authname == "anonymous" and 'email' not in req.session:
+        if req.authname == 'anonymous' and 'email' not in req.session:
             return
-        yield "bloggers", _("Followed Bloggers")
+        yield 'bloggers', _("Followed Bloggers")
 
     def render_announcement_preference_box(self, req, panel):
         klass = self.__class__.__name__
@@ -259,34 +253,37 @@ class FullBlogBloggerSubscriber(Component):
             @self.env.with_transaction()
             def do_update(db):
                 SubscriptionAttribute.delete_by_sid_and_class(
-                    self.env, req.session.sid, req.session.authenticated, klass)
+                    self.env, req.session.sid, req.session.authenticated,
+                    klass)
                 blogs = set(map(lambda x: x.strip(),
-                    req.args.get('announcer_watch_bloggers').split(',')))
+                                req.args.get(
+                                    'announcer_watch_bloggers').split(',')))
                 SubscriptionAttribute.add(self.env, req.session.sid,
-                        req.session.authenticated, klass, 'blog', blogs)
+                                          req.session.authenticated, klass,
+                                          'blog', blogs)
 
-        attrs = SubscriptionAttribute.find_by_sid_and_class(self.env,
-                req.session.sid, req.session.authenticated, klass)
+        attrs = SubscriptionAttribute.\
+            find_by_sid_and_class(self.env, req.session.sid,
+                                  req.session.authenticated, klass)
         data = {'sids': ','.join(set(map(lambda x: x['target'], attrs)))}
-        return "prefs_announcer_watch_bloggers.html", dict(data=data)
+        return 'prefs_announcer_watch_bloggers.html', dict(data=data)
 
 
 class FullBlogAnnouncement(Component):
     """Send announcements on blog events."""
 
-    implements(IBlogChangeListener)
-    implements(IAnnouncementFormatter)
-    implements(IAnnouncementEmailDecorator)
+    implements(IAnnouncementEmailDecorator, IAnnouncementFormatter,
+               IBlogChangeListener)
 
     blog_email_subject = Option('fullblog-announcement', 'blog_email_subject',
-            _("Blog: ${blog.name} ${action}"),
-            """Format string for the blog email subject.
+        _("Blog: ${blog.name} ${action}"),
+        """Format string for the blog email subject.
 
-            This is a mini genshi template and it is passed the blog_post and
-            action objects.
-            """)
+        This is a mini genshi template and it is passed the blog_post and
+        action objects.
+        """)
 
-    # IBlogChangeListener interface
+    # IBlogChangeListener methods
     def blog_post_changed(self, postname, version):
         """Called when a new blog post 'postname' with 'version' is added.
 
@@ -345,8 +342,8 @@ class FullBlogAnnouncement(Component):
         number==0 denotes all comments is deleted and fields will be empty.
         (usually follows a delete of the blog post).
 
-        number>0 denotes a specific comment is deleted, and fields will contain
-        the values of the fields as they existed pre-delete.
+        number>0 denotes a specific comment is deleted, and fields will
+        contain the values of the fields as they existed pre-delete.
         """
         blog_post = BlogPost(self.env, postname, 0)
         announcer = AnnouncementSystem(self.env)
@@ -359,8 +356,8 @@ class FullBlogAnnouncement(Component):
             )
         )
 
+    # IAnnouncementEmailDecorator methods
 
-    # IAnnouncementEmailDecorator
     def decorate_message(self, event, message, decorates=None):
         if event.realm == "blog":
             template = NewTextTemplate(self.blog_email_subject.encode('utf8'))
@@ -371,7 +368,8 @@ class FullBlogAnnouncement(Component):
             set_header(message, 'Subject', subject)
         return next_decorator(event, message, decorates)
 
-    # IAnnouncementFormatter interface
+    # IAnnouncementFormatter methods
+
     def styles(self, transport, realm):
         if realm == 'blog':
             yield 'text/plain'
@@ -384,20 +382,18 @@ class FullBlogAnnouncement(Component):
         if realm == 'blog' and style == 'text/plain':
             return self._format_plaintext(event)
 
-
     def _format_plaintext(self, event):
         blog_post = event.blog_post
-        blog_comment = event.blog_comment
         data = dict(
-            name = blog_post.name,
-            author = event.author,
-            time = event.timestamp,
-            category = event.category,
-            version = event.version,
-            link = event.remote_addr,
-            title = blog_post.title,
-            body = blog_post.body,
-            comment = event.comment,
+            name=blog_post.name,
+            author=event.author,
+            time=event.timestamp,
+            category=event.category,
+            version=event.version,
+            link=event.remote_addr,
+            title=blog_post.title,
+            body=blog_post.body,
+            comment=event.comment,
         )
         chrome = Chrome(self.env)
         dirs = []
@@ -410,5 +406,4 @@ class FullBlogAnnouncement(Component):
         )
         if template:
             stream = template.generate(**data)
-            output = stream.render('text')
-        return output
+            return stream.render('text')

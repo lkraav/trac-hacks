@@ -10,14 +10,17 @@ import pickle
 
 from announcer.api import istrue
 
+
 def encode(*args):
     return pickle.dumps(args)
+
 
 def decode(v):
     try:
         return pickle.loads(str(v))
-    except Exception, e:
-        return (tuple(),None)
+    except Exception:
+        return tuple(), None
+
 
 class SubscriptionSetting(object):
     """Encapsulate user text subscription and filter settings.
@@ -27,7 +30,8 @@ class SubscriptionSetting(object):
     then the default value will be returned.
     """
 
-    def __init__(self, env, name, default_value=None, default_dists=('email',)):
+    def __init__(self, env, name, default_value=None,
+                 default_dists=('email',)):
         self.default = {
             'value': default_value,
             'dists': default_dists
@@ -35,9 +39,10 @@ class SubscriptionSetting(object):
         self.env = env
         self.name = name
 
-    def set_user_setting(self, session, value=None, dists=('email',), save=True):
+    def set_user_setting(self, session, value=None, dists=('email',),
+                         save=True):
         """Sets session attribute."""
-        session[self._attr_name()] = encode(dists,value)
+        session[self._attr_name()] = encode(dists, value)
         if save:
             session.save()
 
@@ -84,10 +89,10 @@ class SubscriptionSetting(object):
             for dist in dists:
                 if match(dist, val):
                     authenticated = istrue(result[1])
-                    yield  (dist, result[0], authenticated, None)
+                    yield (dist, result[0], authenticated, None)
 
     def _attr_name(self):
-        return "sub_%s"%(self.name)
+        return 'sub_%s' % self.name
 
 
 class BoolSubscriptionSetting(object):
@@ -98,7 +103,8 @@ class BoolSubscriptionSetting(object):
     then the default value will be returned.
     """
 
-    def __init__(self, env, name, default_value=None, default_dists=('email',)):
+    def __init__(self, env, name, default_value=None,
+                 default_dists=('email',)):
         self.default = {
             'value': default_value,
             'dists': default_dists
@@ -106,7 +112,8 @@ class BoolSubscriptionSetting(object):
         self.env = env
         self.name = name
 
-    def set_user_setting(self, session, value=None, dists=('email',), save=True):
+    def set_user_setting(self, session, value=None, dists=('email',),
+                         save=True):
         """Sets session attribute to 1 or 0."""
         if istrue(value):
             session[self._attr_name()] = encode(dists, '1')
@@ -141,7 +148,7 @@ class BoolSubscriptionSetting(object):
 
         # We use None here so that Genshi templates check their checkboxes
         # properly and without confusion.
-        return (dists, value and True or None, authenticated)
+        return dists, value and True or None, authenticated
 
     def get_subscriptions(self):
         """Generates tuples of (distributor, sid, authenticated, email).
@@ -161,7 +168,7 @@ class BoolSubscriptionSetting(object):
             for dist in dists:
                 if istrue(val):
                     authenticated = istrue(result[1])
-                    yield  (dist, result[0], authenticated, None)
+                    yield (dist, result[0], authenticated, None)
 
     def _attr_name(self):
-        return "sub_%s"%(self.name)
+        return 'sub_%s' % self.name

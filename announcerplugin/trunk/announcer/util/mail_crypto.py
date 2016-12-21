@@ -7,15 +7,15 @@
 #
 
 import re
+import time
 
-from time import time
-
-from trac.core import *
-from trac.config import Option, BoolOption
+try:
+    from gnupg import GPG
+except ImportError:
+    GPG = None
+from trac.core import TracError
 from trac.util.translation import _
 
-
-__all__ = ['CryptoTxt',]
 
 class CryptoTxt:
     """Crypto operation provider for plaintext.
@@ -29,20 +29,17 @@ class CryptoTxt:
 
         self.gpg_binary = gpg_binary
         self.gpg_home = gpg_home
-        try:
-            from gnupg import GPG
-        except ImportError:
-            raise TracError(_("Unable to load the python-gnupg module. " \
+        if not GPG:
+            raise TracError(_("Unable to load the python-gnupg module. "
                               "Please check and correct your installation."))
         try:
             self.gpg = GPG(gpgbinary=self.gpg_binary, gnupghome=self.gpg_home)
-            # get list of available public keys once for later use
-            self.pubkeys = self.gpg.list_keys() # same as gpg.list_keys(False)
         except ValueError:
-            raise TracError(_("Missing the crypto binary. " \
-                              "Please check and set full path " \
-                              "with option 'gpg_binary'."))
-
+            raise TracError(_("Missing the crypto binary. Please check and "
+                              "set full path with option 'gpg_binary'."))
+        else:
+            # get list of available public keys once for later use
+            self.pub_keys = self.gpg.list_keys()
 
     def sign(self, content, private_key=None):
         private_key = self._get_private_key(private_key)
@@ -63,23 +60,22 @@ class CryptoTxt:
                                   sign=private_key, passphrase='')
         return str(cipher)
 
-
     def get_pubkey_ids(self, addr):
         """Find public key with UID matching address to encrypt to."""
 
         pubkey_ids = []
-        if len(self.pubkeys) > 0 and self.pubkeys[-1].has_key('uids') and \
-                self.pubkeys[-1].has_key('fingerprint'):
+        if self.pub_keys and 'uids' in self.pub_keys[-1] and \
+                'fingerprint' in self.pub_keys[-1]:
             # compile pattern before use for better performance
-            RCPT_RE = re.compile(addr)
-            for k in self.pubkeys:
+            rcpt_re = re.compile(addr)
+            for k in self.pub_keys:
                 for uid in k['uids']:
-                    match = RCPT_RE.search(uid)
+                    match = rcpt_re.search(uid)
                     if match is not None:
                         # check for key expiration
                         if k['expires'] == '':
                             pubkey_ids.append(k['fingerprint'][-16:])
-                        elif (time()+60) < float(k['expires']):
+                        elif (time.time() + 60) < float(k['expires']):
                             pubkey_ids.append(k['fingerprint'][-16:])
                         break
         return pubkey_ids
@@ -88,8 +84,8 @@ class CryptoTxt:
         """Find private (secret) key to sign with."""
 
         # read private keys from keyring
-        privkeys = self.gpg.list_keys(True) # True => private keys
-        if len(privkeys) > 0 and privkeys[-1].has_key('fingerprint'):
+        privkeys = self.gpg.list_keys(True)  # True => private keys
+        if privkeys > 0 and 'fingerprint' in privkeys[-1]:
             fingerprints = []
             for k in privkeys:
                 fingerprints.append(k['fingerprint'])
@@ -100,7 +96,7 @@ class CryptoTxt:
         if privkey:
             # check for existence of private key received as argument
             # DEVEL: check for expiration as well
-            if len(privkey) > 7 and len(privkey) <= 40:
+            if 7 < len(privkey) <= 40:
                 for fp in fingerprints:
                     if fp.endswith(privkey):
                         # work with last 16 significant chars internally,

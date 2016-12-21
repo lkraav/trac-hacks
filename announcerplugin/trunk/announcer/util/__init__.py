@@ -6,7 +6,6 @@
 # you should have received as part of this distribution.
 #
 
-# DEVEL: Add unit testing.
 
 def get_target_id(target):
     """Extract the resource ID from event targets."""

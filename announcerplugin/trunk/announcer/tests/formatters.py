@@ -12,7 +12,6 @@
 import shutil
 import tempfile
 import unittest
-
 from pkg_resources import resource_filename
 
 from trac.attachment import Attachment
@@ -26,7 +25,8 @@ from announcer.producers import TicketChangeEvent
 
 class FormatterTestCase(unittest.TestCase):
     def setUp(self):
-        self.env = EnvironmentStub(enable=['trac.*', 'announcer.formatters.*'])
+        self.env = EnvironmentStub(
+            enable=['trac.*', 'announcer.formatters.*'])
         self.env.path = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -34,12 +34,9 @@ class FormatterTestCase(unittest.TestCase):
 
 
 class TicketFormatterTestCase(FormatterTestCase):
-
     def setUp(self):
         FormatterTestCase.setUp(self)
         self.tf = TicketFormatter(self.env)
-
-    # Tests
 
     def test_add_attachment_html_notification(self):
         ticket = Ticket(self.env)
@@ -57,9 +54,8 @@ class TicketFormatterTestCase(FormatterTestCase):
         actual = self.tf.format([], 'ticket', 'text/html', event)
 
         filename = resource_filename(__name__, 'attachment_notification.html')
-        file = open(filename, 'r')
-        expected = file.read()
-        file.close()
+        with open(filename, 'r') as fobj:
+            expected = fobj.read()
         self.assertEqual(expected, actual)
 
     def test_styles(self):
@@ -81,16 +77,13 @@ class TicketFormatterTestCase(FormatterTestCase):
 
 
 class WikiFormatterTestCase(FormatterTestCase):
-
     def setUp(self):
         FormatterTestCase.setUp(self)
         self.wf = WikiFormatter(self.env)
 
-    # Tests
-
     def test_styles(self):
-        # HMTL format for email notifications is yet unsupported for wiki.
-        #self.assertTrue('text/html' in self.tf.styles('email', 'wiki'))
+        # HTML format for email notifications is yet unsupported for wiki.
+        # self.assertTrue('text/html' in self.tf.styles('email', 'wiki'))
         self.assertTrue('text/plain' in self.wf.styles('email', 'wiki'))
         self.assertFalse('text/plain' in self.wf.styles('email', 'ticket'))
         self.assertEqual('text/plain',
@@ -107,11 +100,12 @@ class WikiFormatterTestCase(FormatterTestCase):
         self.assertTrue(self.wf in Chrome(self.env).template_providers)
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TicketFormatterTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(WikiFormatterTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(TicketFormatterTestCase))
+    suite.addTest(unittest.makeSuite(WikiFormatterTestCase))
     return suite
 
+
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

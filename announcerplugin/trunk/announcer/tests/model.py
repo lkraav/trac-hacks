@@ -29,7 +29,6 @@ class SubscriptionTestSetup(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
@@ -48,7 +47,7 @@ class SubscriptionTestCase(SubscriptionTestSetup):
         self.sub['class'] = 'GeneralWikiSubscriber'
 
     def test_init(self):
-        # Examine properties of the initialized objekt.
+        # Examine properties of the initialized object.
         fields = ('id', 'sid', 'authenticated', 'distributor', 'format',
                   'priority', 'adverb', 'class')
         sub = Subscription(self.env)
@@ -57,9 +56,9 @@ class SubscriptionTestCase(SubscriptionTestSetup):
         # Check basic class method for subscription presentation too.
         sub = self.sub
         self.assertEqual(sub.subscription_tuple(),
-                             (sub['class'], sub['distributor'], sub['sid'],
-                              sub['authenticated'], None, sub['format'],
-                              sub['priority'], sub['adverb']))
+                         (sub['class'], sub['distributor'], sub['sid'],
+                          sub['authenticated'], None, sub['format'],
+                          sub['priority'], sub['adverb']))
 
     def test_add_move_delete(self):
         sub = self.sub
@@ -97,13 +96,13 @@ class SubscriptionTestCase(SubscriptionTestSetup):
         # Can't delete the same subscription twice.
         self.assertRaises(TypeError, sub.delete, self.env, 1)
 
-    #def test_update_format_by_distributor_and_sid(self):
+        # def test_update_format_by_distributor_and_sid(self):
 
-    #def test_find_by_sid_and_distributor(self):
+        # def test_find_by_sid_and_distributor(self):
 
-    #def test_find_by_sids_and_class(self):
+        # def test_find_by_sids_and_class(self):
 
-    #def test_find_by_class(self):
+        # def test_find_by_class(self):
 
 
 class SubscriptionAttributeTestCase(SubscriptionTestSetup):
@@ -116,7 +115,7 @@ class SubscriptionAttributeTestCase(SubscriptionTestSetup):
 
     def test_add_delete(self):
         attr = SubscriptionAttribute(self.env)
-        attr.add(self.env, 'user', 1, 'GeneralWikiSubscriber','wiki',
+        attr.add(self.env, 'user', 1, 'GeneralWikiSubscriber', 'wiki',
                  ('TracWiki', 'TracWiki'))
         cursor = self.db.cursor()
         cursor.execute("SELECT COUNT(*) FROM subscription_attribute")
@@ -134,28 +133,29 @@ class SubscriptionAttributeTestCase(SubscriptionTestSetup):
         # Deleting non-existent subscriptions is handled gracefully.
         attr.delete(self.env, 1)
 
-    #def test_delete_by_sid_and_class(self):
+        # def test_delete_by_sid_and_class(self):
 
-    #def test_delete_by_sid_class_and_target(self):
+        # def test_delete_by_sid_class_and_target(self):
 
-    #def test_delete_by_class_realm_and_target(self):
+        # def test_delete_by_class_realm_and_target(self):
 
-    #def test_find_by_sid_and_class(self):
+        # def test_find_by_sid_and_class(self):
 
-    #def test_find_by_sid_class_and_target(self):
+        # def test_find_by_sid_class_and_target(self):
 
-    #def test_find_by_sid_class_realm_and_target(self):
+        # def test_find_by_sid_class_realm_and_target(self):
 
-    #def test_find_by_class_realm_and_target(self):
+        # def test_find_by_class_realm_and_target(self):
 
-    #def test_find_by_class_and_realm(self):
+        # def test_find_by_class_and_realm(self):
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SubscriptionTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(SubscriptionAttributeTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(SubscriptionTestCase))
+    suite.addTest(unittest.makeSuite(SubscriptionAttributeTestCase))
     return suite
 
+
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

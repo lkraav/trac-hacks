@@ -10,18 +10,18 @@
 
 import unittest
 
-from announcer.tests import api, filters, formatters, model, pref, subscribers
 from announcer.opt.tests import test_suite as opt_test_suite
+from announcer.tests import api, filters, formatters, model, pref, subscribers
 
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(api.suite())
-    suite.addTest(filters.suite())
-    suite.addTest(formatters.suite())
-    suite.addTest(model.suite())
-    suite.addTest(pref.suite())
-    suite.addTest(subscribers.suite())
+    suite.addTest(api.test_suite())
+    suite.addTest(filters.test_suite())
+    suite.addTest(formatters.test_suite())
+    suite.addTest(model.test_suite())
+    suite.addTest(pref.test_suite())
+    suite.addTest(subscribers.test_suite())
 
     suite.addTest(opt_test_suite())
 

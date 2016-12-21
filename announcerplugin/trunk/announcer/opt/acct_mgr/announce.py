@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2010, Robert Corsaro
 # Copyright (c) 2010,2012, Steffen Hoffmann
@@ -7,23 +7,20 @@
 # you should have received as part of this distribution.
 #
 
+from acct_mgr.api import IAccountChangeListener
 from genshi.template import NewTextTemplate, TemplateLoader
-
 from trac.config import BoolOption, ListOption
 from trac.core import Component, implements
 from trac.perm import PermissionCache
 from trac.web.chrome import Chrome
 
-from announcer.api import AnnouncementEvent, AnnouncementSystem
-from announcer.api import IAnnouncementDefaultSubscriber
-from announcer.api import IAnnouncementFormatter, IAnnouncementSubscriber
-from announcer.api import IAnnouncementSubscriptionFilter
-from announcer.api import _
+from announcer.api import _, AnnouncementEvent, AnnouncementSystem,\
+                          IAnnouncementDefaultSubscriber,\
+                          IAnnouncementFormatter, IAnnouncementSubscriber,\
+                          IAnnouncementSubscriptionFilter
 from announcer.distributors.mail import IAnnouncementEmailDecorator
 from announcer.model import Subscription
 from announcer.util.mail import set_header, next_decorator
-
-from acct_mgr.api import IAccountChangeListener
 
 
 class AccountChangeEvent(AnnouncementEvent):
@@ -37,14 +34,9 @@ class AccountChangeEvent(AnnouncementEvent):
 class AccountManagerAnnouncement(Component):
     """Send announcements on account changes."""
 
-    implements(
-        IAccountChangeListener, # from AccountManagerPlugin
-        IAnnouncementEmailDecorator,
-        IAnnouncementFormatter,
-        IAnnouncementDefaultSubscriber,
-        IAnnouncementSubscriber,
-        IAnnouncementSubscriptionFilter
-    )
+    implements(IAccountChangeListener, IAnnouncementDefaultSubscriber,
+               IAnnouncementEmailDecorator, IAnnouncementFormatter,
+               IAnnouncementSubscriber, IAnnouncementSubscriptionFilter)
 
     categories = ('created', 'change', 'delete', 'reset', 'verify', 'approve')
 
@@ -52,10 +44,11 @@ class AccountManagerAnnouncement(Component):
         """Sent user account notification to admin users per default, so they
         may opt-out individually instead of requiring everyone to opt-in.
         """)
-    default_distributor = ListOption("announcer",
-        "always_notify_user_admins_distributor", "email",
+
+    default_distributor = ListOption('announcer',
+        'always_notify_user_admins_distributor', 'email',
         doc="""Comma-separated list of distributors to send the message to
-        by default.  ex. email, xmpp
+        by default (ex: email, xmpp).
         """)
 
     # IAccountChangeListener methods
@@ -83,19 +76,20 @@ class AccountManagerAnnouncement(Component):
     def user_registration_approval_required(self, username):
         self._notify('approve', username)
 
-    # IAnnouncementDefaultSubscriber method
+    # IAnnouncementDefaultSubscriber methods
+
     def default_subscriptions(self):
         if self.default_on:
             for d in self.default_distributor:
-                yield (self.__class__.__name__, d, 101, 'always')
+                yield self.__class__.__name__, d, 101, 'always'
 
     # IAnnouncementSubscriber methods
 
     def subscriptions(self, event):
         if event.realm == 'acct_mgr':
             for subscriber in self._get_membership(event):
-                self.log.debug("AccountManagerAnnouncement added '%s " \
-                        "(%s)'", subscriber[1], subscriber[2])
+                self.log.debug("AccountManagerAnnouncement added '%s "
+                               "(%s)'", subscriber[1], subscriber[2])
                 yield subscriber
 
     def matches(self, event):
@@ -103,7 +97,7 @@ class AccountManagerAnnouncement(Component):
             return
         # DEVEL: Need a better plan, because the real issue is a missing
         #   user_* method on AccountManager changes.
-        if not event.category in self.categories:
+        if event.category not in self.categories:
             return
 
         klass = self.__class__.__name__
@@ -111,15 +105,15 @@ class AccountManagerAnnouncement(Component):
             yield i.subscription_tuple()
 
     def description(self):
-        return _(
-            """notify me on user account changes (`ACCTMGR_USER_ADMIN`
-            required)""")
+        return _("notify me on user account changes (`ACCTMGR_USER_ADMIN` "
+                 "required)")
 
     def requires_authentication(self):
         # Unauthenticated users must never see that.
         return True
 
-    # IAnnouncementSubscriptionFilter method
+    # IAnnouncementSubscriptionFilter methods
+
     def filter_subscriptions(self, event, subscriptions):
         action = 'ACCTMGR_USER_ADMIN'
 
@@ -134,13 +128,11 @@ class AccountManagerAnnouncement(Component):
             if not auth:
                 sid = 'anonymous'
             perm = PermissionCache(self.env, sid)
-            if perm.has_permission(action):
+            if action in perm:
                 yield subscription
             else:
-                self.log.debug(
-                    "Filtering %s because of %s rule"
-                    % (sid, self.__class__.__name__)
-                )
+                self.log.debug("Filtering %s because of %s rule", sid,
+                               self.__class__.__name__)
 
     # IAnnouncementFormatter methods
 
@@ -156,23 +148,25 @@ class AccountManagerAnnouncement(Component):
         if realm == 'acct_mgr' and style == 'text/plain':
             return self._format_plaintext(event)
 
-    # IAnnouncementEmailDecorator method
+    # IAnnouncementEmailDecorator methods
+
     def decorate_message(self, event, message, decorates=None):
         if event.realm == "acct_mgr":
             prjname = self.env.project_name
-            subject = '[%s] %s: %s' % (prjname, event.category, event.username)
+            subject = '[%s] %s: %s' \
+                      % (prjname, event.category, event.username)
             set_header(message, 'Subject', subject)
         return next_decorator(event, message, decorates)
 
     # Private methods
 
     def _notify(self, category, username, password=None, token=None):
+        announcer = AnnouncementSystem(self.env)
         try:
-            announcer = AnnouncementSystem(self.env)
             announcer.send(
                 AccountChangeEvent(category, username, password, token)
             )
-        except Exception, e:
+        except Exception:
             self.log.exception("Failure creating announcement for account "
                                "event %s: %s", username, category)
 
@@ -214,5 +208,4 @@ class AccountManagerAnnouncement(Component):
                                   cls=NewTextTemplate)
         if template:
             stream = template.generate(**data)
-            output = stream.render('text')
-        return output
+            return stream.render('text')

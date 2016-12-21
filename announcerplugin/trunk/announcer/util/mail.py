@@ -7,10 +7,9 @@
 #
 
 from base64 import b32encode, b32decode
-
 try:
     from email.header import Header
-except:
+except ImportError:
     from email.Header import Header
 
 from announcer.util import get_target_id
@@ -23,23 +22,25 @@ def next_decorator(event, message, decorates):
     Helper method for IAnnouncerEmailDecorators.  Call the next decorator
     or return.
     """
-    if decorates and len(decorates) > 0:
-        next = decorates.pop()
-        return next.decorate_message(event, message, decorates)
+    if decorates:
+        next_ = decorates.pop()
+        return next_.decorate_message(event, message, decorates)
+
 
 def set_header(message, key, value, charset=None):
     if not charset:
         charset = message.get_charset() or 'ascii'
     # Don't encode pure ASCII headers.
     try:
-        value = Header(value, 'ascii', MAXHEADERLEN-(len(key)+2))
+        value = Header(value, 'ascii', MAXHEADERLEN - (len(key) + 2))
     except:
-        value = Header(value, charset, MAXHEADERLEN-(len(key)+2))
-    if message.has_key(key):
+        value = Header(value, charset, MAXHEADERLEN - (len(key) + 2))
+    if key in message:
         message.replace_header(key, value)
     else:
         message[key] = value
     return message
+
 
 def uid_encode(projurl, realm, target):
     """
@@ -52,6 +53,7 @@ def uid_encode(projurl, realm, target):
     uid = ','.join((projurl, realm, get_target_id(target)))
     return b32encode(uid.encode('utf8'))
 
+
 def uid_decode(encoded_uid):
     """
     Returns a tuple of projurl, realm, id and change_num.
@@ -59,9 +61,10 @@ def uid_decode(encoded_uid):
     uid = b32decode(encoded_uid).decode('utf8')
     return uid.split(',')
 
+
 def msgid(uid, host='localhost'):
     """
     Formatted id for email headers.
     ie. <UIDUIDUIDUIDUID@localhost>
     """
-    return "<%s@%s>"%(uid, host)
+    return '<%s@%s>' % (uid, host)

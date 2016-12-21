@@ -38,13 +38,11 @@ class SubscriberTestCase(unittest.TestCase):
         self.env.db_transaction("DROP table 'subscription'")
         self.env.db_transaction("DROP table 'subscription_attribute'")
         self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
 
 class AllTicketSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that AllTicketSubscriber initializes cleanly.
         AllTicketSubscriber(self.env)
@@ -52,7 +50,6 @@ class AllTicketSubscriberTestCase(SubscriberTestCase):
 
 
 class GeneralWikiSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that GeneralWikiSubscriber initializes cleanly.
         GeneralWikiSubscriber(self.env)
@@ -60,7 +57,6 @@ class GeneralWikiSubscriberTestCase(SubscriberTestCase):
 
 
 class JoinableGroupSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that JoinableGroupSubscriber initializes
         #   cleanly.
@@ -69,7 +65,6 @@ class JoinableGroupSubscriberTestCase(SubscriberTestCase):
 
 
 class TicketComponentOwnerSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that TicketComponentOwnerSubscriber initializes
         #   cleanly.
@@ -78,7 +73,6 @@ class TicketComponentOwnerSubscriberTestCase(SubscriberTestCase):
 
 
 class TicketComponentSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that TicketComponentSubscriber initializes
         #   cleanly.
@@ -87,7 +81,6 @@ class TicketComponentSubscriberTestCase(SubscriberTestCase):
 
 
 class TicketCustomFieldSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that TicketCustomFieldSubscriber initializes
         #   cleanly.
@@ -96,7 +89,6 @@ class TicketCustomFieldSubscriberTestCase(SubscriberTestCase):
 
 
 class UserChangeSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that UserChangeSubscriber initializes cleanly.
         UserChangeSubscriber(self.env)
@@ -104,7 +96,6 @@ class UserChangeSubscriberTestCase(SubscriberTestCase):
 
 
 class WatchSubscriberTestCase(SubscriberTestCase):
-
     def test_init(self):
         # Test just to confirm that WatchSubscriber initializes cleanly.
         WatchSubscriber(self.env)
@@ -112,7 +103,6 @@ class WatchSubscriberTestCase(SubscriberTestCase):
 
 
 class WikiWatchSubscriberTestCase(SubscriberTestCase):
-
     def test_rename_wiki_page(self):
         sid = 'subscriber'
         page = WikiPage(self.env)
@@ -129,21 +119,19 @@ class WikiWatchSubscriberTestCase(SubscriberTestCase):
         self.assertTrue(ws.is_watching(sid, 1, 'wiki', new_name))
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(AllTicketSubscriberTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(GeneralWikiSubscriberTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(JoinableGroupSubscriberTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(TicketComponentOwnerSubscriberTestCase,
-                                     'test'))
-    suite.addTest(unittest.makeSuite(TicketComponentSubscriberTestCase,
-                                     'test'))
-    suite.addTest(unittest.makeSuite(TicketCustomFieldSubscriberTestCase,
-                                     'test'))
-    suite.addTest(unittest.makeSuite(UserChangeSubscriberTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(WatchSubscriberTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(AllTicketSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(GeneralWikiSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(JoinableGroupSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(TicketComponentOwnerSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(TicketComponentSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(TicketCustomFieldSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(UserChangeSubscriberTestCase))
+    suite.addTest(unittest.makeSuite(WatchSubscriberTestCase))
     suite.addTest(unittest.makeSuite(WikiWatchSubscriberTestCase))
     return suite
 
+
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

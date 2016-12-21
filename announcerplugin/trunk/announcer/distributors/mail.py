@@ -13,38 +13,35 @@
 #       flexible, since it's in the subscription table.
 
 import Queue
+import hashlib
 import random
 import re
 import smtplib
 import sys
 import threading
 import time
-
-from email.Charset import Charset, QP, BASE64
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEText import MIMEText
-from email.Utils import formatdate, formataddr
 try:
     from email.header import Header
-except:
+    from email.charset import Charset, QP, BASE64
+    from email.mimemultipart import MIMEMultipart
+    from email.mimetext import MIMEText
+    from email.utils import formatdate, formataddr
+except ImportError:
     from email.Header import Header
+    from email.Charset import Charset, QP, BASE64
+    from email.MIMEMultipart import MIMEMultipart
+    from email.MIMEText import MIMEText
+    from email.Utils import formatdate, formataddr
 from subprocess import Popen, PIPE
 
 from trac.config import BoolOption, ExtensionOption, IntOption, Option, \
                         OrderedExtensionsOption
-from trac.core import *
-from trac.util import get_pkginfo, md5
-from trac.util.compat import set, sorted
-from trac.util.datefmt import to_timestamp
-from trac.util.text import CRLF, to_unicode
+from trac.core import Component, ExtensionPoint, Interface, TracError, \
+                      implements
+from trac.util.text import CRLF
 
-from announcer.api import AnnouncementSystem
-from announcer.api import IAnnouncementAddressResolver
-from announcer.api import IAnnouncementDistributor
-from announcer.api import IAnnouncementFormatter
-from announcer.api import IAnnouncementPreferenceProvider
-from announcer.api import IAnnouncementProducer
-from announcer.api import _
+from announcer.api import _, IAnnouncementAddressResolver, \
+                          IAnnouncementDistributor, IAnnouncementFormatter
 from announcer.model import Subscription
 from announcer.util.mail import set_header
 from announcer.util.mail_crypto import CryptoTxt
@@ -58,6 +55,7 @@ class IEmailSender(Interface):
 
 
 class IAnnouncementEmailDecorator(Interface):
+
     def decorate_message(event, message, decorators):
         """Manipulate the message before it is sent on it's way.  The callee
         should call the next decorator by popping decorators and calling the
@@ -70,12 +68,12 @@ class EmailDistributor(Component):
     implements(IAnnouncementDistributor)
 
     formatters = ExtensionPoint(IAnnouncementFormatter)
-    # Make ordered
     decorators = ExtensionPoint(IAnnouncementEmailDecorator)
 
-    resolvers = OrderedExtensionsOption('announcer', 'email_address_resolvers',
-        IAnnouncementAddressResolver, 'SpecifiedEmailResolver, '\
-        'SessionEmailResolver, DefaultDomainEmailResolver',
+    resolvers = OrderedExtensionsOption('announcer',
+        'email_address_resolvers', IAnnouncementAddressResolver,
+        'SpecifiedEmailResolver, SessionEmailResolver, '
+        'DefaultDomainEmailResolver',
         """Comma seperated list of email resolver components in the order
         they will be called.  If an email address is resolved, the remaining
         resolvers will not be called.
@@ -89,7 +87,7 @@ class EmailDistributor(Component):
         Currently, `SmtpEmailSender` and `SendmailEmailSender` are provided.
         """)
 
-    enabled = BoolOption('announcer', 'email_enabled', 'true',
+    enabled = BoolOption('announcer', 'email_enabled', True,
         """Enable email notification.""")
 
     email_from = Option('announcer', 'email_from', 'trac@localhost',
@@ -105,9 +103,9 @@ class EmailDistributor(Component):
         """Specifies the MIME encoding scheme for emails.
 
         Valid options are 'base64' for Base64 encoding, 'qp' for
-        Quoted-Printable, and 'none' for no encoding. Note that the no encoding
-        means that non-ASCII characters in text are going to cause problems
-        with notifications.
+        Quoted-Printable, and 'none' for no encoding. Note that the no
+        encoding means that non-ASCII characters in text are going to cause
+        problems with notifications.
         """)
 
     use_public_cc = BoolOption('announcer', 'use_public_cc', 'false',
@@ -118,7 +116,7 @@ class EmailDistributor(Component):
 
     # used in email decorators, but not here
     subject_prefix = Option('announcer', 'email_subject_prefix',
-                                 '__default__',
+        '__default__',
         """Text to prepend to subject line of notification emails.
 
         If the setting is not defined, then the [$project_name] prefix.
@@ -130,7 +128,7 @@ class EmailDistributor(Component):
     to = Option('announcer', 'email_to', to_default, 'Default To: field')
 
     use_threaded_delivery = BoolOption('announcer', 'use_threaded_delivery',
-        'false',
+        False,
         """Do message delivery in a separate thread.
 
         Enabling this will improve responsiveness for requests that end up
@@ -189,16 +187,16 @@ class EmailDistributor(Component):
         """)
 
     private_key = Option('announcer', 'gpg_signing_key', None,
-        """Keyid of private key (last 8 chars or more) used for signing.
+         """Keyid of private key (last 8 chars or more) used for signing.
 
-        If unset, a private key will be selected from keyring automagicly.
-        The password must be available i.e. provided by running gpg-agent
-        or empty (bad security). On failing to unlock the private key,
-        msg body will get emptied.
-        """)
-
+         If unset, a private key will be selected from keyring automagicly.
+         The password must be available i.e. provided by running gpg-agent
+         or empty (bad security). On failing to unlock the private key,
+         msg body will get emptied.
+         """)
 
     def __init__(self):
+        self.enigma = None
         self.delivery_queue = None
         self._init_pref_encoding()
 
@@ -209,23 +207,23 @@ class EmailDistributor(Component):
             thread.start()
         return self.delivery_queue
 
-    # IAnnouncementDistributor
+    # IAnnouncementDistributor methods
+
     def transports(self):
-        yield "email"
+        yield 'email'
 
     def formats(self, transport, realm):
-        "Find valid formats for transport and realm"
+        """Find valid formats for transport and realm."""
         formats = {}
         for f in self.formatters:
             for style in f.styles(transport, realm):
                 formats[style] = f
-        self.log.debug(
-            "EmailDistributor has found the following formats capable "
-            "of handling '%s' of '%s': %s"%(transport, realm,
-                ', '.join(formats.keys())))
+        self.log.debug("EmailDistributor has found the following formats "
+                       "capable of handling '%s' of '%s': %s",
+                       transport, realm, ', '.join(formats.keys()))
         if not formats:
-            self.log.error("EmailDistributor is unable to continue " \
-                    "without supporting formatters.")
+            self.log.error("EmailDistributor is unable to continue without "
+                           "supporting formatters.")
         return formats
 
     def distribute(self, transport, recipients, event):
@@ -234,107 +232,109 @@ class EmailDistributor(Component):
             if supported_transport == transport:
                 found = True
         if not self.enabled or not found:
-            self.log.debug("EmailDistributer email_enabled set to false")
+            self.log.debug("EmailDistributor email_enabled set to false")
             return
-        fmtdict = self.formats(transport, event.realm)
-        if not fmtdict:
-            self.log.error(
-                "EmailDistributer No formats found for %s %s"%(
-                    transport, event.realm))
+        formats = self.formats(transport, event.realm)
+        if not formats:
+            self.log.error("EmailDistributor No formats found for %s %s",
+                           transport, event.realm)
             return
         msgdict = {}
         msgdict_encrypt = {}
         msg_pubkey_ids = []
         # compile pattern before use for better performance
-        RCPT_ALLOW_RE = re.compile(self.rcpt_allow_regexp)
-        RCPT_LOCAL_RE = re.compile(self.rcpt_local_regexp)
+        rcpt_allow_re = re.compile(self.rcpt_allow_regexp)
+        rcpt_local_re = re.compile(self.rcpt_local_regexp)
 
         if self.crypto != '':
             self.log.debug("EmailDistributor attempts crypto operation.")
             self.enigma = CryptoTxt(self.gpg_binary, self.gpg_home)
 
-        for name, authed, addr in recipients:
+        for name, authed, address in recipients:
             fmt = name and \
-                self._get_preferred_format(event.realm, name, authed) or \
-                self._get_default_format()
-            if fmt not in fmtdict:
-                self.log.debug(("EmailDistributer format %s not available " +
-                    "for %s %s, looking for an alternative")%(
-                        fmt, transport, event.realm))
+                  self._get_preferred_format(event.realm, name, authed) or \
+                  self._get_default_format()
+            old_fmt = fmt
+            if fmt not in formats:
+                self.log.debug("EmailDistributor format %s not available "
+                               "for %s %s, looking for an alternative",
+                               fmt, transport, event.realm)
                 # If the fmt is not available for this realm, then try to find
                 # an alternative
-                oldfmt = fmt
                 fmt = None
-                for f in fmtdict.values():
+                for f in formats.values():
                     fmt = f.alternative_style_for(
-                            transport, event.realm, oldfmt)
-                    if fmt: break
+                        transport, event.realm, old_fmt)
+                    if fmt:
+                        break
             if not fmt:
-                self.log.error(
-                    "EmailDistributer was unable to find a formatter " +
-                    "for format %s"%k
-                )
+                self.log.error("EmailDistributor was unable to find a "
+                               "formatter for format %s", old_fmt)
                 continue
-            rslvr = None
-            if name and not addr:
+            resolver = None
+            if name and not address:
                 # figure out what the addr should be if it's not defined
-                for rslvr in self.resolvers:
-                    addr = rslvr.get_address_for_name(name, authed)
-                    if addr: break
-            if addr:
-                self.log.debug("EmailDistributor found the " \
-                        "address '%s' for '%s (%s)' via: %s"%(
-                        addr, name, authed and \
-                        'authenticated' or 'not authenticated',
-                        rslvr.__class__.__name__))
+                for resolver in self.resolvers:
+                    address = resolver.get_address_for_name(name, authed)
+                    if address:
+                        break
+            if address:
+                self.log.debug("EmailDistributor found the address '%s' "
+                               "for '%s (%s)' via: %s", address, name,
+                               authed and 'authenticated' or
+                               'not authenticated',
+                               resolver.__class__.__name__)
 
                 # ok, we found an addr, add the message
                 # but wait, check for allowed rcpt first, if set
-                if RCPT_ALLOW_RE.search(addr) is not None:
+                if rcpt_allow_re.search(address) is not None:
                     # check for local recipients now
-                    local_match = RCPT_LOCAL_RE.search(addr)
+                    local_match = rcpt_local_re.search(address)
                     if self.crypto in ['encrypt', 'sign,encrypt'] and \
                             local_match is None:
                         # search available public keys for matching UID
-                        pubkey_ids = self.enigma.get_pubkey_ids(addr)
-                        if len(pubkey_ids) > 0:
-                            msgdict_encrypt.setdefault(fmt, set()).add((name,
-                                                            authed, addr))
+                        pubkey_ids = self.enigma.get_pubkey_ids(address)
+                        if pubkey_ids > 0:
+                            msgdict_encrypt.setdefault(fmt, set())\
+                                .add((name, authed, address))
                             msg_pubkey_ids[len(msg_pubkey_ids):] = pubkey_ids
-                            self.log.debug("EmailDistributor got pubkeys " \
-                                "for %s: %s" % (addr, pubkey_ids))
+                            self.log.debug("EmailDistributor got pubkeys "
+                                           "for %s: %s", address, pubkey_ids)
                         else:
-                            self.log.debug("EmailDistributor dropped %s " \
-                                "after missing pubkey with corresponding " \
-                                "address %s in any UID" % (name, addr))
+                            self.log.debug("EmailDistributor dropped %s "
+                                           "after missing pubkey with "
+                                           "corresponding address %s in any "
+                                           "UID", name, address)
                     else:
-                        msgdict.setdefault(fmt, set()).add((name, authed,
-                                                            addr))
+                        msgdict.setdefault(fmt, set())\
+                            .add((name, authed, address))
                         if local_match is not None:
-                            self.log.debug("EmailDistributor expected " \
-                                "local delivery for %s to: %s" % (name, addr))
+                            self.log.debug("EmailDistributor expected local "
+                                           "delivery for %s to: %s", name,
+                                           address)
                 else:
-                    self.log.debug("EmailDistributor dropped %s for " \
-                        "not matching allowed recipient pattern %s" % \
-                        (addr, self.rcpt_allow_regexp))
+                    self.log.debug("EmailDistributor dropped %s for not "
+                                   "matching allowed recipient pattern %s",
+                                   address, self.rcpt_allow_regexp)
             else:
-                self.log.debug("EmailDistributor was unable to find an " \
-                        "address for: %s (%s)"%(name, authed and \
-                        'authenticated' or 'not authenticated'))
+                self.log.debug("EmailDistributor was unable to find an "
+                               "address for: %s (%s)", name, authed and
+                               'authenticated' or 'not authenticated')
         for k, v in msgdict.items():
-            if not v or not fmtdict.get(k):
+            if not v or not formats.get(k):
                 continue
-            self.log.debug(
-                "EmailDistributor is sending event as '%s' to: %s"%(
-                    fmt, ', '.join(x[2] for x in v)))
-            self._do_send(transport, event, k, v, fmtdict[k])
+            fmt = formats[k]
+            self.log.debug("EmailDistributor is sending event as '%s' to: "
+                           "%s", fmt, ', '.join(x[2] for x in v))
+            self._do_send(transport, event, k, v, fmt)
         for k, v in msgdict_encrypt.items():
-            if not v or not fmtdict.get(k):
+            if not v or not formats.get(k):
                 continue
-            self.log.debug(
-                "EmailDistributor is sending encrypted info on event " \
-                "as '%s' to: %s"%(fmt, ', '.join(x[2] for x in v)))
-            self._do_send(transport, event, k, v, fmtdict[k], msg_pubkey_ids)
+            fmt = formats[k]
+            self.log.debug("EmailDistributor is sending encrypted info on "
+                           "event as '%s' to: %s", fmt,
+                           ', '.join(x[2] for x in v))
+            self._do_send(transport, event, k, v, formats[k], msg_pubkey_ids)
 
     def _get_default_format(self):
         return self.default_email_format
@@ -344,12 +344,12 @@ class EmailDistributor(Component):
             authenticated = 0
         # Format is unified for all subscriptions of a user.
         result = Subscription.find_by_sid_and_distributor(
-                 self.env, sid, authenticated, 'email')
+            self.env, sid, authenticated, 'email')
         if result:
             chosen = result[0]['format']
-            self.log.debug("EmailDistributor determined the preferred format" \
-                    " for '%s (%s)' is: %s"%(sid, authenticated and \
-                    'authenticated' or 'not authenticated', chosen))
+            self.log.debug("EmailDistributor determined the preferred format"
+                           " for '%s (%s)' is: %s", sid, authenticated and
+                           'authenticated' or 'not authenticated', chosen)
             return chosen
         else:
             return self._get_default_format()
@@ -376,16 +376,17 @@ class EmailDistributor(Component):
             self._charset.input_codec = None
             self._charset.output_charset = 'ascii'
         else:
-            raise TracError(_('Invalid email encoding setting: %s'%pref))
+            raise TracError(_("Invalid email encoding setting: %(pref)s",
+                              pref=pref))
 
     def _message_id(self, realm):
         """Generate a predictable, but sufficiently unique message ID."""
         modtime = time.time()
-        rand = random.randint(0,32000)
+        rand = random.randint(0, 32000)
         s = '%s.%d.%d.%s' % (self.env.project_url,
-                          modtime, rand,
-                          realm.encode('ascii', 'ignore'))
-        dig = md5(s).hexdigest()
+                             modtime, rand,
+                             realm.encode('ascii', 'ignore'))
+        dig = hashlib.md5(s).hexdigest()
         host = self.email_from[self.email_from.find('@') + 1:]
         msgid = '<%03d.%s@%s>' % (len(s), dig, host)
         return msgid
@@ -394,8 +395,8 @@ class EmailDistributor(Component):
         return rcpt
 
     def _do_send(self, transport, event, format, recipients, formatter,
-                 pubkey_ids=[]):
-
+                 pubkey_ids=None):
+        pubkey_ids = pubkey_ids or []
         # Prepare sender for use in IEmailSender component and message header.
         from_header = formataddr(
             (self.from_name and self.from_name or self.env.project_name,
@@ -414,40 +415,37 @@ class EmailDistributor(Component):
         else:
             # Use localized Bcc: hint for default To: content.
             if self.to == self.to_default:
-                headers['To'] = _('undisclosed-recipients: ;')
+                headers['To'] = _("undisclosed-recipients: ;")
             else:
                 headers['To'] = '"%s"' % self.to
                 if self.to:
                     recip_adds += [self.to]
         if not recip_adds:
-            self.log.debug(
-                "EmailDistributor stopped (no recipients)."
-            )
+            self.log.debug("EmailDistributor stopped (no recipients).")
             return
-        self.log.debug("All email recipients: %s" % recip_adds)
+        self.log.debug("All email recipients: %s", recip_adds)
 
-        rootMessage = MIMEMultipart("related")
-        # TODO: Is this good? (from jabber branch)
-        #rootMessage.set_charset(self._charset)
+        root_message = MIMEMultipart('related')
 
         # Write header data into message object.
         for k, v in headers.iteritems():
-            set_header(rootMessage, k, v)
+            set_header(root_message, k, v)
 
         output = formatter.format(transport, event.realm, format, event)
 
         # DEVEL: Currently crypto operations work with format text/plain only.
-        if self.crypto != '' and pubkey_ids != []:
+        alternate_output = None
+        alternate_style = []
+        if self.crypto != '' and pubkey_ids:
             if self.crypto == 'sign':
                 output = self.enigma.sign(output, self.private_key)
             elif self.crypto == 'encrypt':
                 output = self.enigma.encrypt(output, pubkey_ids)
             elif self.crypto == 'sign,encrypt':
                 output = self.enigma.sign_encrypt(output, pubkey_ids,
-                                                     self.private_key)
+                                                  self.private_key)
             self.log.debug(output)
             self.log.debug("EmailDistributor crypto operation successful.")
-            alternate_output = None
         else:
             alternate_style = formatter.alternative_style_for(
                 transport,
@@ -461,61 +459,59 @@ class EmailDistributor(Component):
                     alternate_style,
                     event
                 )
-            else:
-                alternate_output = None
 
         # Sanity check for suitable encoding setting.
         if not self._charset.body_encoding:
             try:
-                dummy = output.encode('ascii')
+                output.encode('ascii')
             except UnicodeDecodeError:
-                raise TracError(_("Ticket contains non-ASCII chars. " \
-                                  "Please change encoding setting"))
+                raise TracError(_("Ticket contains non-ASCII chars. Please "
+                                  "change encoding setting"))
 
-        rootMessage.preamble = 'This is a multi-part message in MIME format.'
+        root_message.preamble = "This is a multi-part message in MIME format."
         if alternate_output:
-            parentMessage = MIMEMultipart('alternative')
-            rootMessage.attach(parentMessage)
+            parent_message = MIMEMultipart('alternative')
+            root_message.attach(parent_message)
 
             alt_msg_format = 'html' in alternate_style and 'html' or 'plain'
             if isinstance(alternate_output, unicode):
                 alternate_output = alternate_output.encode('utf-8')
-            msgText = MIMEText(alternate_output, alt_msg_format)
-            msgText.set_charset(self._charset)
-            parentMessage.attach(msgText)
+            msg_text = MIMEText(alternate_output, alt_msg_format)
+            msg_text.set_charset(self._charset)
+            parent_message.attach(msg_text)
         else:
-            parentMessage = rootMessage
+            parent_message = root_message
 
         msg_format = 'html' in format and 'html' or 'plain'
         if isinstance(output, unicode):
             output = output.encode('utf-8')
-        msgText = MIMEText(output, msg_format)
-        del msgText['Content-Transfer-Encoding']
-        msgText.set_charset(self._charset)
+        msg_text = MIMEText(output, msg_format)
+        del msg_text['Content-Transfer-Encoding']
+        msg_text.set_charset(self._charset)
         # According to RFC 2046, the last part of a multipart message is best
         #   and preferred.
-        parentMessage.attach(msgText)
+        parent_message.attach(msg_text)
 
         # DEVEL: Decorators can interfere with crypto operation here. Fix it.
         decorators = self._get_decorators()
-        if len(decorators) > 0:
+        if decorators:
             decorator = decorators.pop()
-            decorator.decorate_message(event, rootMessage, decorators)
+            decorator.decorate_message(event, root_message, decorators)
 
-        package = (from_header, recip_adds, rootMessage.as_string())
+        package = (from_header, recip_adds, root_message.as_string())
         start = time.time()
         if self.use_threaded_delivery:
             self.get_delivery_queue().put(package)
         else:
             self.send(*package)
         stop = time.time()
-        self.log.debug("EmailDistributor took %s seconds to send."
-                       % (round(stop - start, 2)))
+        self.log.debug("EmailDistributor took %s seconds to send.",
+                       round(stop - start, 2))
 
     def send(self, from_addr, recipients, message):
         """Send message to recipients via e-mail."""
         # Ensure the message complies with RFC2822: use CRLF line endings
-        message = CRLF.join(re.split("\r?\n", message))
+        message = CRLF.join(re.split('\r?\n', message))
         self.email_sender.send(from_addr, recipients, message)
 
     def _get_decorators(self):
@@ -536,21 +532,18 @@ class SmtpEmailSender(Component):
     port = IntOption('smtp', 'port', 25,
         """SMTP server port to use for email notification.""")
 
-    user = Option('smtp', 'user', '',
-        """Username for SMTP server.""")
+    user = Option('smtp', 'user', '', "Username for SMTP server.")
 
-    password = Option('smtp', 'password', '',
-        """Password for SMTP server.""")
+    password = Option('smtp', 'password', '', "Password for SMTP server.")
 
-    use_tls = BoolOption('smtp', 'use_tls', 'false',
+    use_tls = BoolOption('smtp', 'use_tls', False,
         """Use SSL/TLS to send notifications over SMTP.""")
 
-    use_ssl = BoolOption('smtp', 'use_ssl', 'false',
+    use_ssl = BoolOption('smtp', 'use_ssl', False,
         """Use ssl for smtp connection.""")
 
     debuglevel = IntOption('smtp', 'debuglevel', 0,
         """Set to 1 for useful smtp debugging on stdout.""")
-
 
     def send(self, from_addr, recipients, message):
         # use defaults to make sure connect() is called in the constructor
@@ -571,9 +564,9 @@ class SmtpEmailSender(Component):
         smtp.set_debuglevel(self.debuglevel)
         if self.use_tls:
             smtp.ehlo()
-            if not smtp.esmtp_features.has_key('starttls'):
-                raise TracError(_("TLS enabled but server does not support " \
-                        "TLS"))
+            if 'starttls' not in smtp.esmtp_features:
+                raise TracError(_("TLS enabled but server does not support "
+                                  "TLS"))
             smtp.starttls()
             smtp.ehlo()
         if self.user:
@@ -606,21 +599,22 @@ class SendmailEmailSender(Component):
         """)
 
     def send(self, from_addr, recipients, message):
-        self.log.info("Sending notification through sendmail at %s to %s"
-                      % (self.sendmail_path, recipients))
-        cmdline = [self.sendmail_path, "-i", "-f", from_addr]
+        self.log.info("Sending notification through sendmail at %s to %s",
+                      self.sendmail_path, recipients)
+        cmdline = [self.sendmail_path, '-i', '-f', from_addr]
         cmdline.extend(recipients)
-        self.log.debug("Sendmail command line: %s" % ' '.join(cmdline))
+        self.log.debug("Sendmail command line: %s", ' '.join(cmdline))
         try:
             child = Popen(cmdline, bufsize=-1, stdin=PIPE, stdout=PIPE,
                           stderr=PIPE)
             (out, err) = child.communicate(message)
             if child.returncode or err:
-                raise Exception("Sendmail failed with (%s, %s), command: '%s'"
-                                % (child.returncode, err.strip(), cmdline))
+                raise Exception("Sendmail failed with (%s, %s), command: "
+                                "'%s'", child.returncode, err.strip(),
+                                cmdline)
         except OSError, e:
-            self.log.error("Failed to run sendmail[%s] with error %s"%\
-                    (self.sendmail_path, e))
+            self.log.error("Failed to run sendmail[%s] with error %s",
+                           self.sendmail_path, e)
 
 
 class DeliveryThread(threading.Thread):
@@ -632,5 +626,5 @@ class DeliveryThread(threading.Thread):
 
     def run(self):
         while 1:
-            sendfrom, recipients, message = self._queue.get()
-            self._sender(sendfrom, recipients, message)
+            send_from, recipients, message = self._queue.get()
+            self._sender(send_from, recipients, message)

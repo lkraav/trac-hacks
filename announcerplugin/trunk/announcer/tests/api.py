@@ -10,10 +10,9 @@ import shutil
 import tempfile
 import unittest
 
-from trac import __version__ as trac_version
 from trac.core import Component, implements
-from trac.db import Table, Column, Index
 from trac.db.api import DatabaseManager
+from trac.db.schema import Table, Column, Index
 from trac.test import EnvironmentStub
 
 from announcer import db_default
@@ -26,12 +25,11 @@ class AnnouncementEventTestCase(unittest.TestCase):
     def setUp(self):
         self.event = AnnouncementEvent('realm', 'category', 'target')
 
-    # Tests
-
     def test_init(self):
-        # Examine properties of the initialized objekt.
+        # Examine properties of the initialized object.
         event = self.event
-        event_props = [event.realm, event.category, event.target, event.author]
+        event_props = [event.realm, event.category, event.target,
+                       event.author]
         self.assertEquals(event_props, ['realm', 'category', 'target', ''])
 
     def test_get_basic_terms(self):
@@ -56,18 +54,10 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
     # Helpers
-
-    def _get_cursor_description(self, cursor):
-        # Cursors don't look the same across Trac versions
-        if trac_version < '0.12':
-            return cursor.description
-        else:
-            return cursor.cursor.description
 
     def _schema_init(self, schema=None):
         # Current announcer schema is setup with enabled component anyway.
@@ -88,7 +78,7 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self.assertFalse(self.an_sys.environment_needs_upgrade(self.db))
         cursor = self.db.cursor()
         cursor.execute("SELECT * FROM subscription_attribute")
-        columns = [col[0] for col in self._get_cursor_description(cursor)]
+        columns = [col[0] for col in cursor.cursor.description]
         self.assertTrue('name' not in columns)
         self.assertTrue('value' not in columns)
         self.assertEquals(
@@ -111,8 +101,6 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
              WHERE name='announcer_version'
         """)
         self.assertFalse(cursor.fetchone())
-
-    # Tests
 
     def test_new_install(self):
         # Just do db table clean-up.
@@ -149,20 +137,20 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
             INSERT INTO session
                    (sid,authenticated,last_visit)
             VALUES (%s,%s,%s)
-        """, (('somebody','0','0'), ('user','1','0')))
+        """, (('somebody', '0', '0'), ('user', '1', '0')))
         cursor.executemany("""
             INSERT INTO session_attribute
                    (sid,authenticated,name,value)
             VALUES (%s,1,%s,%s)
-        """, (('user','announcer_email_format_ticket','text/html'),
-              ('user','announcer_specified_email','')))
+        """, (('user', 'announcer_email_format_ticket', 'text/html'),
+              ('user', 'announcer_specified_email', '')))
         cursor.executemany("""
             INSERT INTO subscriptions
                    (sid,enabled,managed,
                     realm,category,rule,destination,format)
             VALUES (%s,%s,0,%s,%s,%s,%s,%s)
-        """, (('somebody',1,'ticket','changed','1','1','email'),
-              ('user',1,'ticket','attachment added','1','1','email')))
+        """, (('somebody', 1, 'ticket', 'changed', '1', '1', 'email'),
+              ('user', 1, 'ticket', 'attachment added', '1', '1', 'email')))
 
         self.assertEquals(1, self.an_sys.get_schema_version(self.db))
         target = 6
@@ -197,20 +185,20 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
             INSERT INTO session
                    (sid,authenticated,last_visit)
             VALUES (%s,%s,%s)
-        """, (('somebody','0','0'), ('user','1','0')))
+        """, (('somebody', '0', '0'), ('user', '1', '0')))
         cursor.executemany("""
             INSERT INTO session_attribute
                    (sid,authenticated,name,value)
             VALUES (%s,1,%s,%s)
-        """, (('user','announcer_email_format_ticket','text/html'),
-              ('user','announcer_specified_email','')))
+        """, (('user', 'announcer_email_format_ticket', 'text/html'),
+              ('user', 'announcer_specified_email', '')))
         cursor.executemany("""
             INSERT INTO subscriptions
                    (sid,enabled,managed,
                     realm,category,rule,destination,format)
             VALUES (%s,%s,0,%s,%s,%s,%s,%s)
-        """, (('somebody',1,'ticket','changed','1','1','email'),
-              ('user',1,'ticket','attachment added','1','1','email')))
+        """, (('somebody', 1, 'ticket', 'changed', '1', '1', 'email'),
+              ('user', 1, 'ticket', 'attachment added', '1', '1', 'email')))
 
         self.assertEquals(1, self.an_sys.get_schema_version(self.db))
         target = 2
@@ -227,11 +215,11 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._verify_version_unregistered()
         cursor = self.db.cursor()
         cursor.execute("SELECT * FROM subscriptions")
-        columns = [col[0] for col in self._get_cursor_description(cursor)]
+        columns = [col[0] for col in cursor.cursor.description]
         self.assertEquals(['id', 'sid', 'authenticated', 'enabled', 'managed',
                            'realm', 'category', 'rule', 'transport'],
                           columns
-        )
+                          )
 
     def test_upgrade_to_schema_v3(self):
         # Schema from r3047 - 13-Jan-2008 for announcer-0.2 by Stephen Hansen.
@@ -258,16 +246,16 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
             INSERT INTO session_attribute
                    (sid,authenticated,name,value)
             VALUES (%s,1,%s,%s)
-        """, (('user','announcer_email_format_ticket','text/html'),
-              ('user','announcer_email_format_wiki','text/plain'),
-              ('user','announcer_specified_email','')))
+        """, (('user', 'announcer_email_format_ticket', 'text/html'),
+              ('user', 'announcer_email_format_wiki', 'text/plain'),
+              ('user', 'announcer_specified_email', '')))
         cursor.executemany("""
             INSERT INTO subscriptions
                    (sid,authenticated,enabled,managed,
                     realm,category,rule,transport)
             VALUES (%s,%s,1,%s,%s,%s,%s,%s)
-        """, (('user',1,'watcher','ticket','changed','1','email'),
-              ('user',1,'watcher','wiki','*','WikiStart','email')))
+        """, (('user', 1, 'watcher', 'ticket', 'changed', '1', 'email'),
+              ('user', 1, 'watcher', 'wiki', '*', 'WikiStart', 'email')))
 
         self.assertEquals(2, self.an_sys.get_schema_version(self.db))
         target = 3
@@ -331,9 +319,9 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
             INSERT INTO subscription_attribute
                    (sid,class,name,value)
             VALUES (%s,%s,%s,%s)
-        """, (('somebody','GeneralWikiSubscriber','wiki', '*'),
-              ('somebody','UserChangeSubscriber','wiki','created'),
-              ('user','GeneralWikiSubscriber','wiki', 'TracWiki')))
+        """, (('somebody', 'GeneralWikiSubscriber', 'wiki', '*'),
+              ('somebody', 'UserChangeSubscriber', 'wiki', 'created'),
+              ('user', 'GeneralWikiSubscriber', 'wiki', 'TracWiki')))
 
         self.assertEquals(3, self.an_sys.get_schema_version(self.db))
         target = 4
@@ -386,14 +374,14 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
             INSERT INTO session
                    (sid,authenticated,last_visit)
             VALUES (%s,%s,%s)
-        """, (('somebody','0','0'), ('user','1','0')))
+        """, (('somebody', '0', '0'), ('user', '1', '0')))
         cursor.executemany("""
             INSERT INTO subscription_attribute
                    (sid,class,realm,target)
             VALUES (%s,%s,%s,%s)
-        """, (('somebody','GeneralWikiSubscriber','wiki', '*'),
-              ('somebody','UserChangeSubscriber','wiki','created'),
-              ('user','GeneralWikiSubscriber','wiki', 'TracWiki')))
+        """, (('somebody', 'GeneralWikiSubscriber', 'wiki', '*'),
+              ('somebody', 'UserChangeSubscriber', 'wiki', 'created'),
+              ('user', 'GeneralWikiSubscriber', 'wiki', 'TracWiki')))
 
         self.assertEquals(4, self.an_sys.get_schema_version(self.db))
         target = 5
@@ -408,7 +396,7 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._verify_version_unregistered()
         cursor = self.db.cursor()
         cursor.execute("SELECT * FROM subscription_attribute")
-        columns = [col[0] for col in self._get_cursor_description(cursor)]
+        columns = [col[0] for col in cursor.cursor.description]
         self.assertTrue('name' not in columns)
         self.assertTrue('value' not in columns)
         self.assertEquals(
@@ -416,7 +404,7 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
             columns
         )
         # Check authenticated attribute for session IDs.
-        subscriptions = [(row[1],(row[2])) for row in cursor]
+        subscriptions = [(row[1], (row[2])) for row in cursor]
         for sub in subscriptions:
             self.assertTrue((sub[0] == 'user' and sub[1] == 1) or sub[1] == 0)
 
@@ -479,11 +467,8 @@ class SubscriptionResolverTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
-
-    # Tests
 
     def test_init(self):
         # Test just to confirm that SubscriptionResolver initializes cleanly
@@ -502,13 +487,11 @@ class AnnouncementSystemSendTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
-    # Tests
-
     def test_filter_added(self):
+
         class DummySubscriptionFilter(Component):
             """Test implementation for checking the filter ExtensionPoint."""
             implements(IAnnouncementSubscriptionFilter)
@@ -521,13 +504,14 @@ class AnnouncementSystemSendTestCase(unittest.TestCase):
         self.assertTrue(dummy in self.an_sys.subscription_filters)
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(AnnouncementEventTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(AnnouncementSystemSetupTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(AnnouncementSystemSendTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(SubscriptionResolverTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(AnnouncementEventTestCase))
+    suite.addTest(unittest.makeSuite(AnnouncementSystemSetupTestCase))
+    suite.addTest(unittest.makeSuite(AnnouncementSystemSendTestCase))
+    suite.addTest(unittest.makeSuite(SubscriptionResolverTestCase))
     return suite
 
+
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

@@ -7,20 +7,15 @@
 # you should have received as part of this distribution.
 #
 
-from trac.db import Table, Column, Index
+from trac.db import Table, Column
 
 schema_version = 6
 
-## Database schema
-#
-
-"""The 'subscriptions' db table has been dropped in favor of the new
-subscriber interface, that uses two other tables.
-
-TODO: We still need to create an upgrade script, that will port subscriptions
-from 'subscriptions' and 'session_attribute' db tables to 'subscription' and
-'subscription_attribute'.
-"""
+# The 'subscriptions' db table has been dropped in favor of the new
+# subscriber interface, that uses two other tables.
+# TODO: We still need to create an upgrade script, that will port
+# subscriptions from 'subscriptions' and 'session_attribute' db tables to
+# 'subscription' and 'subscription_attribute'.
 
 schema = [
     Table('subscription', key='id')[
@@ -45,11 +40,8 @@ schema = [
     ]
 ]
 
-## Default database values
-#
 
-# (table, (column1, column2), ((row1col1, row1col2), (row2col1, row2col2)))
 def get_data(db):
     return (('system',
-              ('name', 'value'),
-                (('announcer_version', str(schema_version)),)),)
+             ('name', 'value'),
+             (('announcer_version', str(schema_version)),)),)

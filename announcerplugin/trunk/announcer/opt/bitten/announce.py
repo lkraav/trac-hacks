@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2010, Robert Corsaro
 # Copyright (c) 2010, Steffen Hoffmann
@@ -7,44 +7,39 @@
 # you should have received as part of this distribution.
 #
 
-from trac.core import *
+from bitten.api import IBuildListener
+from bitten.model import Build, BuildStep, BuildLog
+from genshi.template import NewTextTemplate, TemplateLoader
+from trac.core import Component, implements
 from trac.web.chrome import Chrome
 
-from genshi.template import NewTextTemplate, TemplateLoader
-
-from announcer.api import AnnouncementSystem, AnnouncementEvent
-from announcer.api import IAnnouncementFormatter, IAnnouncementSubscriber
-from announcer.api import IAnnouncementPreferenceProvider
-from announcer.api import _
+from announcer.api import _, AnnouncementSystem, AnnouncementEvent, \
+                          IAnnouncementFormatter, IAnnouncementSubscriber, \
+                          IAnnouncementPreferenceProvider
 from announcer.distributors.mail import IAnnouncementEmailDecorator
 from announcer.util.mail import set_header, next_decorator
 from announcer.util.settings import BoolSubscriptionSetting
-
-from bitten.api import IBuildListener
-from bitten.model import Build, BuildStep, BuildLog
 
 
 class BittenAnnouncedEvent(AnnouncementEvent):
     def __init__(self, build, category):
         AnnouncementEvent.__init__(self, 'bitten', category, build)
 
+
 class BittenAnnouncement(Component):
     """Send announcements on build status."""
 
-    implements(
-        IBuildListener,
-        IAnnouncementSubscriber,
-        IAnnouncementFormatter,
-        IAnnouncementEmailDecorator,
-        IAnnouncementPreferenceProvider
-    )
+    implements(IAnnouncementEmailDecorator, IAnnouncementFormatter,
+               IAnnouncementPreferenceProvider, IAnnouncementSubscriber,
+               IBuildListener)
 
     readable_states = {
-        Build.SUCCESS: _('Successful'),
-        Build.FAILURE: _('Failed'),
+        Build.SUCCESS: _("Successful"),
+        Build.FAILURE: _("Failed"),
     }
 
-    # IBuildListener interface
+    # IBuildListener methods
+
     def build_started(self, build):
         """build started"""
         self._notify(build, 'started')
@@ -57,23 +52,26 @@ class BittenAnnouncement(Component):
         """build completed"""
         self._notify(build, 'completed')
 
-    # IAnnouncementSubscriber interface
+    # IAnnouncementSubscriber methods
+
     def subscriptions(self, event):
         if event.realm == 'bitten':
             settings = self._settings()
             if event.category in settings.keys():
-                for subscriber in settings[event.category].get_subscriptions():
-                    self.log.debug("BittenAnnouncementSubscriber added '%s " \
-                            "(%s)'", subscriber[1], subscriber[2])
+                for subscriber in \
+                        settings[event.category].get_subscriptions():
+                    self.log.debug("BittenAnnouncementSubscriber added '%s "
+                                   "(%s)'", subscriber[1], subscriber[2])
                     yield subscriber
 
     def matches(self, event):
         yield None
 
     def description(self):
-        return 'notify me bitten changes NOT IMPLEMENTED'
+        return _("notify me bitten changes NOT IMPLEMENTED")
 
-    # IAnnouncementFormatter interface
+    # IAnnouncementFormatter methods
+
     def styles(self, transport, realm):
         if realm == 'bitten':
             yield 'text/plain'
@@ -86,7 +84,8 @@ class BittenAnnouncement(Component):
         if realm == 'bitten' and style == 'text/plain':
             return self._format_plaintext(event)
 
-    # IAnnouncementEmailDecorator
+    # IAnnouncementEmailDecorator methods
+
     def decorate_message(self, event, message, decorates=None):
         if event.realm == "bitten":
             build_id = str(event.target.id)
@@ -105,31 +104,36 @@ class BittenAnnouncement(Component):
             set_header(message, 'Subject', subject)
         return next_decorator(event, message, decorates)
 
-    # IAnnouncementPreferenceProvider interface
+    # IAnnouncementPreferenceProvider methods
+
     def get_announcement_preference_boxes(self, req):
-        if req.authname == "anonymous" and 'email' not in req.session:
+        if req.authname == 'anonymous' and 'email' not in req.session:
             return
-        yield "bitten_subscription", _("Bitten Subscription")
+        yield 'bitten_subscription', _("Bitten Subscription")
 
     def render_announcement_preference_box(self, req, panel):
         settings = self._settings()
-        if req.method == "POST":
+        if req.method == 'POST':
             for k, setting in settings.items():
                 setting.set_user_setting(req.session,
-                    value=req.args.get('bitten_%s_subscription'%k), save=False)
+                                         value=req.args.get(
+                                             'bitten_%s_subscription' % k),
+                                         save=False)
             req.session.save()
         data = {}
         for k, setting in settings.items():
             data[k] = setting.get_user_setting(req.session.sid)[1]
-        return "prefs_announcer_bitten.html", data
+        return 'prefs_announcer_bitten.html', data
 
-    # private methods
+    # Private methods
+
     def _notify(self, build, category):
-        self.log.info('BittenAnnouncedEventProducer invoked for build %r', build)
-        self.log.debug('build status: %s', build.status)
-        self.log.info('Creating announcement for build %r', build)
+        self.log.info("BittenAnnouncedEventProducer invoked for build %r",
+                      build)
+        self.log.debug("build status: %s", build.status)
+        self.log.info("Creating announcement for build %s", build)
+        announcer = AnnouncementSystem(self.env)
         try:
-            announcer = AnnouncementSystem(self.env)
             announcer.send(BittenAnnouncedEvent(build, category))
         except Exception, e:
             self.log.exception("Failure creating announcement for build "
@@ -138,7 +142,7 @@ class BittenAnnouncement(Component):
     def _settings(self):
         ret = {}
         for p in ('started', 'aborted', 'completed'):
-            ret[p] = BoolSubscriptionSetting(self.env, 'bitten_%s'%p)
+            ret[p] = BoolSubscriptionSetting(self.env, 'bitten_%s' % p)
         return ret
 
     def _format_plaintext(self, event):
@@ -159,7 +163,8 @@ class BittenAnnouncement(Component):
                     'description': step.description,
                     'errors': step.errors,
                     'log_messages':
-                       self._get_all_log_messages_for_step(event.target, step),
+                        self._get_all_log_messages_for_step(event.target,
+                                                            step),
                 } for step in failed_steps],
             },
             'change': {
@@ -179,11 +184,10 @@ class BittenAnnouncement(Component):
             dirs += provider.get_templates_dirs()
         templates = TemplateLoader(dirs, variable_lookup='lenient')
         template = templates.load('bitten_plaintext.txt',
-                cls=NewTextTemplate)
+                                  cls=NewTextTemplate)
         if template:
             stream = template.generate(**data)
-            output = stream.render('text')
-        return output
+            return stream.render('text')
 
     def _build_link(self, build):
         return self.env.abs_href.build(build.config, build.id)

@@ -10,17 +10,13 @@
 
 import time
 
-from operator import itemgetter
+from announcer import db_default
 from pkg_resources import resource_filename
-
-from trac import __version__ as trac_version
 from trac.config import ExtensionOption
 from trac.core import Component, ExtensionPoint, Interface, TracError, \
                       implements
 from trac.db import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
-
-from announcer import db_default
 
 
 class IAnnouncementProducer(Interface):
@@ -260,6 +256,7 @@ class AnnouncementEvent(object):
     is all that matters and there's no possible data you could conceivably
     get beyond just the message.
     """
+
     def __init__(self, realm, category, target, author=""):
         self.realm = realm
         self.category = category
@@ -267,7 +264,7 @@ class AnnouncementEvent(object):
         self.author = author
 
     def get_basic_terms(self):
-        return (self.realm, self.category)
+        return self.realm, self.category
 
     def get_session_terms(self, session_id):
         return tuple()
@@ -295,9 +292,7 @@ class SubscriptionResolver(Component):
 
         subscriptions = []
         for sp in self.subscribers:
-            subscriptions.extend(
-                [x for x in sp.matches(event) if x]
-            )
+            subscriptions.extend([x for x in sp.matches(event) if x])
 
         """
         This logic is meant to generate a list of subscriptions for each
@@ -308,24 +303,22 @@ class SubscriptionResolver(Component):
         Only users highest priority rule is used and all others are skipped.
         """
         # sort by dist, sid, authenticated, priority
-        subscriptions.sort(key=lambda i:(i[1],i[2],i[3],i[6]))
+        subscriptions.sort(key=lambda i: (i[1], i[2], i[3], i[6]))
 
         resolved_subs = []
 
         # collect highest priority for each (sid, dist) pair
-        state = {
-            'last': None
-        }
+        state = {'last': None}
         for s in subscriptions:
             if (s[1], s[2], s[3]) == state['last']:
                 continue
             if s[-1] == 'always':
                 self.log.debug("Adding (%s [%s]) for 'always' on rule (%s) "
-                    "for (%s)"%(s[2], s[3], s[0], s[1]))
+                               "for (%s)", s[2], s[3], s[0], s[1])
                 resolved_subs.append(s[1:6])
             else:
                 self.log.debug("Ignoring (%s [%s]) for 'never' on rule (%s) "
-                    "for (%s)"%(s[2], s[3], s[0], s[1]))
+                               "for (%s)", s[2], s[3], s[0], s[1])
 
             # if s[1] is None, then the subscription is for a raw email
             # address that has been set in some field and we shouldn't skip
@@ -339,21 +332,28 @@ class SubscriptionResolver(Component):
 
 _TRUE_VALUES = ('yes', 'true', 'enabled', 'on', 'aye', '1', 1, True)
 
+
 def istrue(value, otherwise=False):
     return True and (value in _TRUE_VALUES) or otherwise
 
 
-# Import i18n methods.  Fallback modules maintain compatibility to Trac 0.11
-# by keeping Babel optional here.
+# Import i18n methods. Fallback to keep Babel optional.
 try:
     from trac.util.translation import domain_functions
-    add_domain, _, N_ , tag_= \
+
+    add_domain, _, N_, tag_ = \
         domain_functions('announcer', ('add_domain', '_', 'N_', 'tag_'))
 except ImportError:
-    from  genshi.builder         import  tag as tag_
-    from  trac.util.translation  import  gettext
+    from genshi.builder import tag as tag_
+    from trac.util.translation import gettext
+
     _ = gettext
-    N_ = lambda text: text
+
+
+    def N_(text):
+        return text
+
+
     def add_domain(a, b, c=None):
         pass
 
@@ -393,10 +393,11 @@ class AnnouncementSystem(Component):
     distributors = ExtensionPoint(IAnnouncementDistributor)
 
     resolver = ExtensionOption('announcer', 'subscription_resolvers',
-        IAnnouncementSubscriptionResolver, 'SubscriptionResolver',
-        """Comma-separated list of subscription resolver components in the
-        order they will be called.
-        """)
+                               IAnnouncementSubscriptionResolver,
+                               'SubscriptionResolver',
+                               """Comma-separated list of subscription resolver components in the
+                               order they will be called.
+                               """)
 
     def __init__(self):
         # Bind the 'announcer' catalog to the specified locale directory.
@@ -415,8 +416,8 @@ class AnnouncementSystem(Component):
         if schema_ver > db_default.schema_version:
             raise TracError(_("""A newer plugin version has been installed
                               before, but downgrading is unsupported."""))
-        self.log.info("TracAnnouncer db schema version is %d, should be %d"
-                      % (schema_ver, db_default.schema_version))
+        self.log.info("TracAnnouncer db schema version is %d, should be %d",
+                      schema_ver, db_default.schema_version)
         return True
 
     def upgrade_environment(self, db):
@@ -441,40 +442,31 @@ class AnnouncementSystem(Component):
             if 'subscription' in tables:
                 # Version > 2
                 cursor.execute("SELECT * FROM subscription_attribute")
-                columns = [col[0] for col in
-                           self._get_cursor_description(cursor)]
+                columns = [col[0] for col in cursor.cursor.description]
                 if 'authenticated' in columns:
-                    self.env.log.debug(
-                        "TracAnnouncer needs to register schema version")
+                    self.log.debug("TracAnnouncer needs to register schema "
+                                   "version")
                     return 5
                 if 'realm' in columns:
-                    self.env.log.debug(
-                        "TracAnnouncer needs to change a table")
+                    self.log.debug("TracAnnouncer needs to change a table")
                     return 4
-                self.env.log.debug("TracAnnouncer needs to change tables")
+                self.log.debug("TracAnnouncer needs to change tables")
                 return 3
             if 'subscriptions' in tables:
                 cursor.execute("SELECT * FROM subscriptions")
-                columns = [col[0] for col in
-                           self._get_cursor_description(cursor)]
-                if not 'format' in columns:
-                    self.env.log.debug("TracAnnouncer needs to add new tables")
+                columns = [col[0] for col in cursor.cursor.description]
+                if 'format' not in columns:
+                    self.log.debug("TracAnnouncer needs to add new tables")
                     return 2
-                self.env.log.debug("TracAnnouncer needs to add/change tables")
+                self.log.debug("TracAnnouncer needs to add/change tables")
                 return 1
             # This is a new installation.
             return 0
         # The expected outcome for any up-to-date installation.
         return row and int(row[0]) or 0
 
-    def _get_cursor_description(self, cursor):
-        # Cursors don't look the same across Trac versions
-        if trac_version < '0.12':
-            return cursor.description
-        else:
-            return cursor.cursor.description
-
-    def _get_tables(self, dburi, cursor):
+    @staticmethod
+    def _get_tables(dburi, cursor):
         """Code from TracMigratePlugin by Jun Omae (see tracmigrate.admin)."""
         if dburi.startswith('sqlite:'):
             sql = """
@@ -495,7 +487,7 @@ class AnnouncementSystem(Component):
             raise TracError('Unsupported database type "%s"'
                             % dburi.split(':')[0])
         cursor.execute(sql)
-        return sorted([row[0] for row in cursor])
+        return sorted(row[0] for row in cursor)
 
     def _upgrade_db(self, db):
         """Each schema version should have its own upgrade module, named
@@ -514,13 +506,14 @@ class AnnouncementSystem(Component):
                 for stmt in connector.to_sql(table):
                     cursor.execute(stmt)
             for table, cols, vals in db_default.get_data(db):
-                cursor.executemany("INSERT INTO %s (%s) VALUES (%s)" % (table,
-                                   ','.join(cols),
-                                   ','.join(['%s' for c in cols])), vals)
+                cursor.executemany("""
+                    INSERT INTO %s (%s) VALUES (%s)
+                    """ % (table, ','.join(cols),
+                           ','.join('%s' for c in cols)), vals)
         else:
             # Perform incremental upgrades.
             for i in range(schema_ver + 1, db_default.schema_version + 1):
-                name  = 'db%i' % i
+                name = 'db%i' % i
                 try:
                     upgrades = __import__('announcer.upgrades', globals(),
                                           locals(), [name])
@@ -535,8 +528,8 @@ class AnnouncementSystem(Component):
                SET value=%s
              WHERE name='announcer_version'
             """, (db_default.schema_version,))
-        self.log.info("Upgraded TracAnnouncer db schema from version %d to %d"
-                      % (schema_ver, db_default.schema_version))
+        self.log.info("Upgraded TracAnnouncer db schema from version %d to "
+                      "%d", schema_ver, db_default.schema_version)
         db.commit()
 
     # AnnouncementSystem core methods
@@ -545,8 +538,8 @@ class AnnouncementSystem(Component):
         start = time.time()
         self._real_send(evt)
         stop = time.time()
-        self.log.debug("AnnouncementSystem sent event in %s seconds."
-                       % (round(stop - start, 2)))
+        self.log.debug("AnnouncementSystem sent event in %s seconds.",
+                       round(stop - start, 2))
 
     def _real_send(self, evt):
         """Accepts a single AnnouncementEvent instance (or subclass), and
@@ -559,28 +552,27 @@ class AnnouncementSystem(Component):
         try:
             subscriptions = self.resolver.subscriptions(evt)
             for sf in self.subscription_filters:
-                subscriptions = set(
-                    sf.filter_subscriptions(evt, subscriptions)
-            )
+                subscriptions = \
+                    set(sf.filter_subscriptions(evt, subscriptions))
 
-            self.log.debug(
-                "AnnouncementSystem has found the following subscriptions: " \
-                        "%s"%(', '.join(['[%s(%s) via %s]' % ((s[1] or s[3]),\
-                        s[2] and 'authenticated' or 'not authenticated',s[0])\
-                        for s in subscriptions]
-                    )
-                )
-            )
+            self.log.debug("AnnouncementSystem has found the following "
+                           "subscriptions: %s",
+                           ', '.join('[%s(%s) via %s]'
+                                     % (s[1] or s[3],
+                                        s[2] if 'authenticated'
+                                        else 'not authenticated',
+                                        s[0])
+                                     for s in subscriptions))
             packages = {}
             for transport, sid, authenticated, address, subs_format \
                     in subscriptions:
                 if transport not in packages:
                     packages[transport] = set()
-                packages[transport].add((sid,authenticated,address))
+                packages[transport].add((sid, authenticated, address))
             for distributor in self.distributors:
                 for transport in distributor.transports():
                     if transport in packages:
                         distributor.distribute(transport, packages[transport],
-                                evt)
-        except:
+                                               evt)
+        except Exception:
             self.log.error("AnnouncementSystem failed.", exc_info=True)

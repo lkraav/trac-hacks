@@ -17,7 +17,6 @@ from announcer.filters import DefaultPermissionFilter
 
 
 class DefaultPermissionFilterTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'announcer.filters.*'])
         self.env.path = tempfile.mkdtemp()
@@ -26,15 +25,16 @@ class DefaultPermissionFilterTestCase(unittest.TestCase):
         shutil.rmtree(self.env.path)
 
     def test_init(self):
-        # Test just to confirm that DefaultPermissionFilter initializes cleanly
-        #   and that setUp and tearDown both work.
+        # Test just to confirm that DefaultPermissionFilter initializes
+        # cleanly and that setUp and tearDown both work.
         DefaultPermissionFilter(self.env)
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DefaultPermissionFilterTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DefaultPermissionFilterTestCase))
     return suite
 
+
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

@@ -8,17 +8,13 @@
 # you should have received as part of this distribution.
 #
 
-# TODO: Test all anonymous subscribers
-# TODO: Subscriptions admin page
-
 import re
 
-from trac.config import BoolOption, Option, ListOption
+from trac.config import BoolOption, ListOption
 from trac.core import Component, implements
 
-from announcer.api import IAnnouncementDefaultSubscriber
-from announcer.api import IAnnouncementSubscriber
-from announcer.api import _
+from announcer.api import _, IAnnouncementDefaultSubscriber, \
+                          IAnnouncementSubscriber
 from announcer.model import Subscription
 
 """Subscribers should return a list of subscribers based on event rules.
@@ -46,9 +42,9 @@ Here's what I can think of:
  * Ticket owner
  * Ticket reporter
 
-The final thing to consider is unauthenticated users, who have entered an email
-address in the preferences panel.  To me this is the least important case and
-will probably be lowest priority.
+The final thing to consider is unauthenticated users, who have entered an
+email address in the preferences panel.  To me this is the least important
+case and will probably be lowest priority.
 
 """
 
@@ -59,18 +55,17 @@ __all__ = ['CarbonCopySubscriber', 'TicketOwnerSubscriber',
 class CarbonCopySubscriber(Component):
     """Carbon copy subscriber for cc ticket field."""
 
-    implements(IAnnouncementDefaultSubscriber,
-               IAnnouncementSubscriber)
+    implements(IAnnouncementDefaultSubscriber, IAnnouncementSubscriber)
 
-    default_on = BoolOption("announcer", "always_notify_cc", 'true',
+    default_on = BoolOption('announcer', 'always_notify_cc', 'true',
         """The always_notify_cc will notify users in the cc field by default
         when a ticket is modified.
         """)
 
-    default_distributor = ListOption("announcer",
-        "always_notify_cc_distributor", "email",
+    default_distributor = ListOption('announcer',
+        'always_notify_cc_distributor', 'email',
         doc="""Comma-separated list of distributors to send the message to
-        by default.  ex. email, xmpp
+        by default (ex: email, xmpp).
         """)
 
     # IAnnouncementSubscriber methods
@@ -99,7 +94,7 @@ class CarbonCopySubscriber(Component):
             for s in self.default_subscriptions():
                 yield (s[0], s[1], sid, auth, addr, None, s[2], s[3])
             if sid:
-                sids.add((sid,auth))
+                sids.add((sid, auth))
 
         for s in Subscription.find_by_sids_and_class(self.env, sids, klass):
             yield s.subscription_tuple()
@@ -111,45 +106,45 @@ class CarbonCopySubscriber(Component):
     def requires_authentication(self):
         return True
 
-    # IAnnouncementDefaultSubscriber method
+    # IAnnouncementDefaultSubscriber methods
+
     def default_subscriptions(self):
         if self.default_on:
             for d in self.default_distributor:
-                yield (self.__class__.__name__, d, 101, 'always')
+                yield self.__class__.__name__, d, 101, 'always'
 
 
 class TicketOwnerSubscriber(Component):
     """Allows ticket owners to subscribe to their tickets."""
 
-    implements(IAnnouncementDefaultSubscriber,
-               IAnnouncementSubscriber)
+    implements(IAnnouncementDefaultSubscriber, IAnnouncementSubscriber)
 
-    default_on = BoolOption("announcer", "always_notify_owner", 'true',
+    default_on = BoolOption('announcer', 'always_notify_owner', 'true',
         """The always_notify_owner option mimics the option of the same name
         in the notification section, except users can override it in their
         preferences.
         """)
 
-    default_distributor = ListOption("announcer",
-        "always_notify_owner_distributor", "email",
+    default_distributor = ListOption('announcer',
+        'always_notify_owner_distributor', 'email',
         doc="""Comma-separated list of distributors to send the message to
-        by default.  ex. email, xmpp
+        by default (ex: email, xmpp).
         """)
 
     # IAnnouncementSubscriber methods
 
     def matches(self, event):
-        if event.realm != "ticket":
+        if event.realm != 'ticket':
             return
         if event.category not in ('created', 'changed', 'attachment added'):
             return
         ticket = event.target
 
         if (not ticket['owner'] or ticket['owner'] == 'anonymous') and \
-                not 'owner' in event.changes:
+                'owner' not in event.changes:
             return
 
-        sid = sid_old = None
+        sid = sid_old = auth = addr = auth_old = addr_old = None
         if ticket['owner'] and ticket['owner'] != 'anonymous':
             if re.match(r'^[^@]+@.+', ticket['owner']):
                 sid, auth, addr = None, 0, ticket['owner']
@@ -165,19 +160,20 @@ class TicketOwnerSubscriber(Component):
         # Default subscription
         for s in self.default_subscriptions():
             if sid:
-                yield (s[0], s[1], sid, auth, addr, None, s[2], s[3])
+                yield s[0], s[1], sid, auth, addr, None, s[2], s[3]
             if sid_old:
                 yield (s[0], s[1], sid_old, auth_old, addr_old, None, s[2],
                        s[3])
         if sid:
             klass = self.__class__.__name__
-            for s in Subscription.find_by_sids_and_class(self.env,
-                    ((sid, auth),), klass):
+            for s in Subscription.\
+                    find_by_sids_and_class(self.env, ((sid, auth),), klass):
                 yield s.subscription_tuple()
         if sid_old:
             klass = self.__class__.__name__
-            for s in Subscription.find_by_sids_and_class(self.env,
-                    ((sid_old, auth_old),), klass):
+            for s in Subscription\
+                    .find_by_sids_and_class(self.env, ((sid_old, auth_old),),
+                                            klass):
                 yield s.subscription_tuple()
 
     def description(self):
@@ -186,28 +182,28 @@ class TicketOwnerSubscriber(Component):
     def requires_authentication(self):
         return True
 
-    # IAnnouncementDefaultSubscriber method
+    # IAnnouncementDefaultSubscriber methods
+
     def default_subscriptions(self):
         if self.default_on:
             for d in self.default_distributor:
-                yield (self.__class__.__name__, d, 101, 'always')
+                yield self.__class__.__name__, d, 101, 'always'
 
 
 class TicketReporterSubscriber(Component):
     """Allows the users to subscribe to tickets that they report."""
 
-    implements(IAnnouncementDefaultSubscriber,
-               IAnnouncementSubscriber)
+    implements(IAnnouncementDefaultSubscriber, IAnnouncementSubscriber)
 
-    default_on = BoolOption("announcer", "always_notify_reporter", 'true',
+    default_on = BoolOption('announcer', 'always_notify_reporter', 'true',
         """The always_notify_reporter will notify the ticket reporter when a
         ticket is modified by default.
         """)
 
-    default_distributor = ListOption("announcer",
-        "always_notify_reporter_distributor", "email",
+    default_distributor = ListOption('announcer',
+        'always_notify_reporter_distributor', 'email',
         doc="""Comma-separated list of distributors to send the message to
-        by default.  ex. email, xmpp
+        by default (ex: email, xmpp).
         """)
 
     # IAnnouncementSubscriber methods
@@ -233,8 +229,8 @@ class TicketReporterSubscriber(Component):
 
         if sid:
             klass = self.__class__.__name__
-            for s in Subscription.find_by_sids_and_class(self.env,
-                    ((sid,auth),), klass):
+            for s in Subscription.\
+                    find_by_sids_and_class(self.env, ((sid, auth),), klass):
                 yield s.subscription_tuple()
 
     def description(self):
@@ -243,28 +239,28 @@ class TicketReporterSubscriber(Component):
     def requires_authentication(self):
         return True
 
-    # IAnnouncementDefaultSubscriber method
+    # IAnnouncementDefaultSubscriber methods
+
     def default_subscriptions(self):
         if self.default_on:
             for d in self.default_distributor:
-                yield (self.__class__.__name__, d, 101, 'always')
+                yield self.__class__.__name__, d, 101, 'always'
 
 
 class TicketUpdaterSubscriber(Component):
     """Allows updaters to subscribe to their own updates."""
 
-    implements(IAnnouncementDefaultSubscriber,
-               IAnnouncementSubscriber)
+    implements(IAnnouncementDefaultSubscriber, IAnnouncementSubscriber)
 
-    default_on = BoolOption("announcer", "never_notify_updater", 'false',
-        """The never_notify_updater stops users from recieving announcements
+    default_on = BoolOption('announcer', 'never_notify_updater', 'false',
+        """The never_notify_updater stops users from receiving announcements
         when they update tickets.
         """)
 
-    default_distributor = ListOption("announcer",
-        "never_notify_updater_distributor", "email",
+    default_distributor = ListOption('announcer',
+        'never_notify_updater_distributor', 'email',
         doc="""Comma-separated list of distributors to send the message to
-        by default.  ex. email, xmpp
+        by default (ex: email, xmpp).
         """)
 
     # IAnnouncementSubscriber methods
@@ -288,8 +284,8 @@ class TicketUpdaterSubscriber(Component):
 
         if sid:
             klass = self.__class__.__name__
-            for s in Subscription.find_by_sids_and_class(self.env,
-                    ((sid,auth),), klass):
+            for s in Subscription.\
+                    find_by_sids_and_class(self.env, ((sid, auth),), klass):
                 yield s.subscription_tuple()
 
     def description(self):
@@ -299,7 +295,8 @@ class TicketUpdaterSubscriber(Component):
         return True
 
     # IAnnouncementDefaultSubscriber method
+
     def default_subscriptions(self):
         if self.default_on:
             for d in self.default_distributor:
-                yield (self.__class__.__name__, d, 100, 'never')
+                yield self.__class__.__name__, d, 100, 'never'
