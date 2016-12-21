@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2012 Thomas Doering, falkb
-#
-
 from admin import *
 from environmentSetup import *
 from model import *

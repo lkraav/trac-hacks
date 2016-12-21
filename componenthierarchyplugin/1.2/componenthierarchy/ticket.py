@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012 Thomas Doering, falkb
+# Copyright (C) 2015-2016 falkb
+# Copyright (C) 2016 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
 #
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
 
 from pkg_resources import resource_filename
 
