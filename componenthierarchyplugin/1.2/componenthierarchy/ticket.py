@@ -11,7 +11,7 @@ from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, \
                             add_script_data, add_stylesheet
 
-from componenthierarchy.model import *
+from componenthierarchy.model import ComponentHierarchyModel
 
 
 class ComponentHierarchyTicket(Component):

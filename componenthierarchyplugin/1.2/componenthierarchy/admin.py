@@ -4,14 +4,14 @@
 #
 import re
 
-from genshi.builder import tag
 from genshi.filters.transform import InjectorTransformation, Transformer
 from trac.core import Component, implements
 from trac.ticket import model
+from trac.util.html import html
 from trac.util.translation import _
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 
-from componenthierarchy.model import *
+from componenthierarchy.model import ComponentHierarchyModel
 
 
 class InsertParentTd(InjectorTransformation):
@@ -36,10 +36,11 @@ class InsertParentTd(InjectorTransformation):
                     self._td += 1
                     if self._td == 3:
                         try:
-                            self.content = tag.td(self._all_comp[self._value],
-                                                  class_='parent')
+                            self.content = \
+                                html.td(self._all_comp[self._value],
+                                        class_='parent')
                         except KeyError:
-                            self.content = tag.td(class_='parent')
+                            self.content = html.td(class_='parent')
                         self._value = None
                         self._td = 0
                         for n, ev in self._inject():
@@ -96,7 +97,7 @@ class ComponentHierarchyAdminPanelFilter(Component):
     def filter_stream(self, req, method, filename, stream, data):
 
         if req.path_info.startswith('/admin/ticket/components/'):
-            trans = Transformer('//form[@id="modcomp"]/fieldset/div[1]')
+            trans = Transformer('//form[@id="edit"]/fieldset/div[1]')
             stream = stream | trans.after(
                 self._parent_component_select(req, data))
 
@@ -104,7 +105,7 @@ class ComponentHierarchyAdminPanelFilter(Component):
             # add a "parent component" column to the components table
             stream = stream | Transformer(
                 '//table[@id="complist"]/thead/tr/th[3]').\
-                after(tag.th('Parent'))
+                after(html.th('Parent'))
 
             all_comp = {}
             for comp in [comp.name for comp in
@@ -131,22 +132,23 @@ class ComponentHierarchyAdminPanelFilter(Component):
             else:
                 cur_parent = None
 
-            div = tag.div(class_='field')
-            label = tag.label('%s:' % _("Parent Component"))
-            label.append(tag.br())
+            div = html.div(class_='field')
+            label = html.label('%s:' % _("Parent Component"))
+            label.append(html.br())
 
-            select = tag.select(id='parent_component',
-                                name='parent_component')
-            select.append(tag.option('', value=''))
+            select = html.select(id='parent_component',
+                                 name='parent_component')
+            select.append(html.option('', value=''))
             for comp in sorted(all_components):
                 if comp != component and \
                         not self._ChModel.is_child(component, comp):
                     # Show components that aren't children of the current one
                     if cur_parent and comp == cur_parent:
                         select.append(
-                            tag.option(comp, value=comp, selected='selected'))
+                            html.option(comp, value=comp,
+                                        selected='selected'))
                     else:
-                        select.append(tag.option(comp, value=comp))
+                        select.append(html.option(comp, value=comp))
 
             label.append(select)
             div.append(label)
