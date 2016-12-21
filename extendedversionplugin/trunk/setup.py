@@ -19,14 +19,15 @@ setup(
     author_email='mestudd@gmail.com',
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
-    url='http://trac-hacks.org/wiki/ExtendedVersionPlugin',
+    url='https://trac-hacks.org/wiki/ExtendedVersionPlugin',
     keywords='trac plugin',
-    license='BSD 3-Clause',
+    license='3-Clause BSD',
     packages=find_packages(exclude=['*.tests']),
     include_package_data=True,
     package_data={
         'extendedversion': ['templates/*.html', 'htdocs/css/*.css']
     },
+    install_requires=['Trac'],
     zip_safe=False,
     entry_points="""
       [trac.plugins]

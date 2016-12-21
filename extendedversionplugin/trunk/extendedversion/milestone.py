@@ -12,11 +12,12 @@ from genshi.builder import tag
 from genshi.filters.transform import StreamBuffer, Transformer
 from trac.core import Component, implements
 from trac.mimeview.api import Context
-from trac.resource import Resource
+from trac.resource import Resource, ResourceNotFound
+from trac.ticket.api import IMilestoneChangeListener
+from trac.ticket.model import Milestone
 from trac.util.datefmt import to_timestamp
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import INavigationContributor
-from trac.wiki.formatter import format_to_oneliner
 
 from extendedversion.version import VisibleVersion
 
@@ -25,7 +26,8 @@ class MilestoneVersion(Component):
     """Add a 'Version' attribute to milestones.
     """
 
-    implements(INavigationContributor, IRequestFilter, ITemplateStreamFilter)
+    implements(IMilestoneChangeListener, INavigationContributor,
+               IRequestFilter, ITemplateStreamFilter)
 
     # INavigationContributor methods
 
@@ -39,23 +41,31 @@ class MilestoneVersion(Component):
 
     def pre_process_request(self, req, handler):
         action = req.args.get('action', 'view')
+        name = req.args.get('name')
+        version = req.args.get('version')
         if req.path_info.startswith('/milestone') \
                 and req.method == 'POST' \
-                and action == 'edit' or action == 'delete':
+                and action == 'edit':
+            # Removal is handled in change listener
+            if name:
+                self._delete_milestone_version(name)
+                if version and action == 'edit':
+                    self._insert_milestone_version(name, version)
 
-            old_name = req.args.get('id')
-            new_name = req.args.get('name')
-            db = self.env.get_db_cnx()
-
-            if old_name and old_name != new_name:
-                self._delete_milestone_version(db, old_name)
-            if new_name:
-                self._delete_milestone_version(db, new_name)
-                version_id = req.args.get('version')
-                if version_id and action == 'edit':
-                    self._insert_milestone_version(db, new_name, version_id)
-
-            db.commit()  # is called when milestone save succeeds
+        if req.path_info.startswith('/admin/ticket/milestones') and \
+                req.method == 'POST' and \
+                req.args.get('__FORM_TOKEN') == req.form_token:
+            # Removal is handled in change listener
+            if 'add' in req.args:
+                # 'Add' button on main milestone panel
+                if not self._get_milestone(name) and version:
+                    self._insert_milestone_version(name, version)
+            elif 'save' in req.args:
+                # 'Save' button on 'Manage milestone' panel
+                old_name = req.args.get('path_info')
+                self._delete_milestone_version(old_name)
+                if version:
+                    self._insert_milestone_version(name, version)
 
         return handler
 
@@ -80,22 +90,45 @@ class MilestoneVersion(Component):
                                                                  milestone))
         elif filename == 'roadmap.html':
             return self._milestone_versions(stream, req)
-
+        elif filename == 'admin_milestones.html':
+            if req.args['path_info']:
+                xformer = Transformer('//fieldset/div[1]')
+                return stream | xformer.after(self._version_edit(data))
+            else:
+                xformer = Transformer('//form[@id="addmilestone"]'
+                                      '/fieldset/div[1]')
+                return stream | xformer.after(self._version_edit(data))
         return stream
+
+    # IMilestoneChangeListener methods
+
+    def milestone_created(self, milestone):
+        pass
+
+    def milestone_changed(self, milestone, old_values):
+        pass
+
+    def milestone_deleted(self, milestone):
+        self._delete_milestone_version(milestone.name)
 
     # Internal methods
 
-    def _delete_milestone_version(self, db, milestone):
-        cursor = db.cursor()
-        cursor.execute("""
+    def _get_milestone(self, name):
+        try:
+            return Milestone(self.env, name)
+        except ResourceNotFound:
+            return None
+
+    def _delete_milestone_version(self, milestone):
+        self.env.db_transaction("""
             DELETE FROM milestone_version WHERE milestone=%s
             """, (milestone,))
 
-    def _insert_milestone_version(self, db, milestone, version):
-        cursor = db.cursor()
-        cursor.execute("INSERT INTO milestone_version "
-                       "(milestone, version) VALUES (%s, %s)",
-                       (milestone, version))
+    def _insert_milestone_version(self, milestone, version):
+        self.env.db_transaction("""
+                INSERT INTO milestone_version (milestone, version)
+                VALUES (%s, %s)
+                """, (milestone, version))
 
     def _milestone_versions(self, stream, req):
         buffer = StreamBuffer()
@@ -127,7 +160,10 @@ class MilestoneVersion(Component):
             return []
 
     def _version_edit(self, data):
-        milestone = data.get('milestone').name
+        if data.get('milestone'):
+            milestone = data.get('milestone').name
+        else:
+            milestone = ""
         db = self.env.get_db_cnx()
         cursor = db.cursor()
         cursor.execute("""
