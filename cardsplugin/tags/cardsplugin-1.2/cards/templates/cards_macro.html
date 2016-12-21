@@ -1,0 +1,31 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+
+  <div class='trac-cards-board'
+       id='trac-cards-${board_data_id}'
+       style='width:${width}px'>
+    <div class='trac-cards-board-buttons inlinebuttons'>
+      <input class="trac-cards-reload" type="submit" name="add" value="Refresh"/>
+    </div>
+    <div class='trac-cards-stack-titles'>
+      <h2 py:for="stack in stack_names">${labels[stack]}</h2>
+    </div>
+    <div class='trac-cards-stacks'>
+      <div py:for="stack in stack_names"
+           id='trac-card-stack-${stack}'
+           class='trac-cards-stack'>
+        <div class='trac-cards-stack-sorter'>
+
+        </div>
+        <div class="inlinebuttons">        
+          <input class="trac-card-add" type="submit" name="add" value="Add card"/>
+        </div>
+      </div>
+    </div>
+  </div>
+</html>
