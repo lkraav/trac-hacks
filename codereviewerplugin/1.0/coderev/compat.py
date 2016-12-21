@@ -100,6 +100,7 @@ if not hasattr(DatabaseManager, 'get_table_names'):
         else:
             raise TracError('Unsupported %s database' % dburi.split(':')[0])
         return sorted(row[0] for row in self.env.db_transaction(query))
+    DatabaseManager.get_table_names = get_table_names
 
 
 if not hasattr(DatabaseManager, 'needs_upgrade'):
