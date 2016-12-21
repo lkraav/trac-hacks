@@ -1,0 +1,20 @@
+.indention_level_1 {
+    font-weight: bold;
+}
+
+.indention_level_2 {
+    padding-left: 20px;
+    font-style: italic;
+}
+
+.indention_level_3 {
+    padding-left: 40px;
+}
+
+.indention_level_4 {
+    padding-left: 60px;
+}
+
+.indention_level_5 {
+    padding-left: 80px;
+}
