@@ -19,13 +19,13 @@ setup(
     author_email = 'franz.mayer@gefasoft.de',
     description = 'Possibility to add budgeting information (estimation, cost, user) to tickets',
     license = "BSD 3-Clause",
-    url = 'http://trac-hacks.org/wiki/BudgetingPlugin',
-    download_url = 'https://trac-hacks.org/wiki/BudgetingPlugin',
+    url = 'https://trac-hacks.org/wiki/BudgetingPlugin',
     packages=find_packages(exclude=['*.tests*']),
     entry_points = """
         [trac.plugins]
         ticketbudgeting = ticketbudgeting
     """,
+    install_requires = ['Trac'],
     package_data={'ticketbudgeting': ['htdocs/js/*.js',
                                       'locale/*.*',
                                       'locale/*/LC_MESSAGES/*.*']},
