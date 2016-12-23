@@ -477,7 +477,7 @@ class TicketBudgetingView(Component):
         for row in self.env.db_query("""
                 SELECT t.%s, SUM(b.cost), SUM(b.estimation), AVG(b.status)
                 FROM budgeting b, ticket t
-                WHERE b.ticket=t.id AND t.milestone=%s
+                WHERE b.ticket=t.id AND t.milestone=%%s
                 GROUP BY t.%s ORDER BY t.%s
                 """ % (group_by, group_by, group_by), (ms,)):
             status_bar = self._get_progress_html(row[1], row[2], row[3], 75)
