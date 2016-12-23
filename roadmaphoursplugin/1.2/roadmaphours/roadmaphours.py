@@ -25,6 +25,7 @@ from trac.config import IntOption
 from trac.core import Component, implements
 from trac.ticket.roadmap import ITicketGroupStatsProvider, TicketGroupStats, \
                                 TicketSystem
+from trac.util.translation import _
 
 
 class RoadmapHoursTicketGroupStatsProvider(Component):
@@ -84,16 +85,16 @@ class RoadmapHoursTicketGroupStatsProvider(Component):
         stat = TicketGroupStats('ticket status', 'hour')
         query_cols = ['summary', 'owner', 'type', 'priority',
                       'component', 'estimatedhours', 'totalhours']
-        stat.qry_args = {"col": query_cols}
+        stat.qry_args = {'col': query_cols}
         query_args = {}
         query_args.setdefault('col', query_cols)
         query_args.setdefault('status', []).append('closed')
-        stat.add_interval('Worked',
+        stat.add_interval(_("Worked"),
                           int(round(worked_hours)), query_args,
                           'closed', True)
         query_args = {'status': [s for s in all_statuses if s != 'closed']}
         query_args.setdefault('col', query_cols)
-        stat.add_interval('Remaining',
+        stat.add_interval(_("Remaining"),
                           int(round(expected_hours - worked_hours)),
                           query_args,
                           'open', False)
