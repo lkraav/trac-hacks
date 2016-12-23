@@ -123,13 +123,11 @@ class Budget:
                 setVals.append(value)
 
             self._diff[''] = (self._toStr(), '')
-#            env.log.debug('### diff: %s, setVals: %s, setAttrs: %s' % (self._diff, setVals, setAttrs) )
-
             sql = ("INSERT INTO %s (%s) VALUES (%s)" %
                     (BUDGETING_TABLE.name, setAttrs, setValsSpace))
             env.db_transaction(sql, setVals)
             env.log.debug("Added Budgeting-row at positon %s to ticket %s:"
-                          "\n%s" % (position, ticket_id, self._toStr()))
+                          "\n%s", position, ticket_id, self._toStr())
 
         elif self._action == "Update":
 
@@ -171,8 +169,8 @@ class Budget:
                 setVals.append(position)
                 env.db_transaction(sql, setVals)
                 env.log.debug("Updated Budgeting-row for ticket %s"
-                              " at positon %s:\n%s" %
-                              (ticket_id, position, self._toStr()))
+                              " at positon %s:\n%s",
+                              ticket_id, position, self._toStr())
 
         elif self._action == "Delete":
             self._diff[''] = ('', self._toStr())
@@ -182,10 +180,10 @@ class Budget:
             env.db_transaction(sql, (ticket_id, position))
 
             env.log.debug("Deleted Budgeting-row for ticket %s"
-                          " at positon %s:\n%s" %
-                          (ticket_id, position, self._toStr()))
+                          " at positon %s:\n%s",
+                          ticket_id, position, self._toStr())
         else:
-            env.log.error('no appropriate action found! _action is: %s' % self._action)
+            env.log.error('no appropriate action found! _action is: %s', self._action)
 
 
     def get_values(self):
@@ -288,20 +286,20 @@ class TicketBudgetingView(Component):
             self.env.db_query("SELECT ticket FROM %s where ticket is null" %
                               BUDGETING_TABLE.name)
             self.log.debug ("[TicketBudgetingView.__init__] table '%s' " \
-                            "already exists" % BUDGETING_TABLE.name)
+                            "already exists", BUDGETING_TABLE.name)
         except Exception:
             self.log.debug ("[TicketBudgetingView.__init__] table '%s' " \
-                            "does not exists" % BUDGETING_TABLE.name)
+                            "does not exists", BUDGETING_TABLE.name)
             try:
                 self.create_table()
-                self.log.info("[__init__] table '%s' successfully created"
-                              % BUDGETING_TABLE.name)
+                self.log.info("[__init__] table '%s' successfully created",
+                              BUDGETING_TABLE.name)
                 self.create_reports()
-                self.log.info("[__init__] report '%s' successfully created"
-                              % BUDGET_REPORT_ALL_ID)
+                self.log.info("[__init__] report '%s' successfully created",
+                              BUDGET_REPORT_ALL_ID)
             except Exception, e:
                 self.log.error("[__init__] ERROR when creating table" \
-                               " or report: %s" % e )
+                               " or report: %s", e)
 
 
     def filter_stream(self, req, method, filename, stream, data):
@@ -392,7 +390,7 @@ class TicketBudgetingView(Component):
                         '</table>' \
                         '</span>' \
                         '</fieldset>')
-        self.log.debug('fieldset: %s' % fieldset)
+        self.log.debug('fieldset: %s', fieldset)
         return fieldset
 
     def _get_budget_preview(self):
@@ -539,12 +537,12 @@ class TicketBudgetingView(Component):
         if not self._type_list:
             types_str = self.config.get(self._CONFIG_SECTION, 'types')
             self._type_list = re.sub(r'\|', ';', types_str)
-            self.log.debug("INIT self._type_list: %s" % self._type_list)
+            self.log.debug("INIT self._type_list: %s", self._type_list)
         types = self._type_list.split(';')
 
         if not self._name_list:
             self._name_list = self.get_user_list()
-            self.log.debug("INIT self._name_list: %s" % self._name_list)
+            self.log.debug("INIT self._name_list: %s", self._name_list)
             for user in self._name_list:
                 if not self._name_list_str:
                     self._name_list_str = str(user)
@@ -639,7 +637,7 @@ class TicketBudgetingView(Component):
                     budget.set(i, col)
             pos = int (row[0])
             self._budgets[pos] = budget
-            self.log.debug("[_load_budget] loaded budget: %s" %
+            self.log.debug("[_load_budget] loaded budget: %s",
                            budget.get_values())
 
     def _save_budget(self, tkt):
@@ -648,7 +646,7 @@ class TicketBudgetingView(Component):
             self._changed_by_author = None
             for pos, budget in self._budgets.iteritems():
                 budget.do_action(self.env, tkt.id, int(pos), self._def_cost)
-                self.log.debug("saved budget of position: %s" % pos)
+                self.log.debug("saved budget of position: %s", pos)
             self._log_changes(tkt, user)
             self._budgets = None
 
@@ -668,7 +666,7 @@ class TicketBudgetingView(Component):
                         self.env.db_transaction(sql ,
                             (tkt.id, cur_time, change_user, 'budgeting.%s%s' % (pos, key), old, new))
         except Exception, ex:
-            self.log.error("Error while logging change: %s" % ex)
+            self.log.error("Error while logging change: %s", ex)
 
     def _get_current_time(self):
         return (time.time() - 1) * 1000000
@@ -683,10 +681,10 @@ class TicketBudgetingView(Component):
         try:
             self._budgets = self._get_fields(req)
             self._changed_by_author = req.authname or 'anonymous'
-            self.log.info("[validate] budget has changed by author: %s"
-                           % self._changed_by_author)
+            self.log.info("[validate] budget has changed by author: %s",
+                           self._changed_by_author)
         except Exception, ex:
-            self.log.error("Error while validating: %s" % ex)
+            self.log.error("Error while validating: %s", ex)
             fld, e = ex
             errors.append([fld, str(e)])
 
@@ -706,14 +704,15 @@ class TicketBudgetingView(Component):
                             stmt = re.sub(r'CREATE TABLE ', 'CREATE TABLE "'
                                           + db.schema + '".', stmt)
                     except Exception, e:
-                        self.log.warn('[INIT table] substituting schema throws error: %s' % e)
+                        self.log.warn("[INIT table] substituting schema "
+                                      "throws error: %s", e)
                     stmt = re.sub(r'(?i)bigint', 'NUMERIC(10,2)', stmt)
-                    self.log.info("[INIT table] executing sql: %s" % stmt)
+                    self.log.info("[INIT table] executing sql: %s", stmt)
                     db(stmt)
-                    self.log.info("[INIT table] successfully created table %s"
-                                   % BUDGETING_TABLE.name)
+                    self.log.info("[INIT table] successfully created table %s",
+                                   BUDGETING_TABLE.name)
         except Exception, e:
-            self.log.error("[INIT table] Error executing SQL Statement \n %s" % e)
+            self.log.error("[INIT table] Error executing SQL Statement \n %s", e)
 
     def create_reports(self):
         for report in self.BUDGET_REPORTS:
