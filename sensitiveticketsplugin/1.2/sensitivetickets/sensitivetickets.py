@@ -175,33 +175,29 @@ class SensitiveTicketsPolicy(Component):
             ts_start = to_utimestamp(start)
             ts_stop = to_utimestamp(stop)
 
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-
             if 'ticket_details' in filters:
                 # Only show sensitive ticket changes (edits, closure) if
                 # the 'ticket_details' filter is on.
-                cursor.execute("""
-                    SELECT DISTINCT t.id,tc.time,tc.oldvalue
-                    FROM ticket_change tc 
-                     INNER JOIN ticket t ON t.id = tc.ticket
-                      AND tc.time >= %s AND tc.time <= %s  AND tc.field = %s
-                     INNER JOIN ticket_custom td ON t.id = td.ticket
-                      AND td.name = %s AND td.value = %s
-                    ORDER BY tc.time
-                    """, (ts_start, ts_stop, 'comment', 'sensitive', '1'))
-                for tid, t, cid in cursor:
+                for tid, t, cid in self.env.db_query("""
+                        SELECT DISTINCT t.id,tc.time,tc.oldvalue
+                        FROM ticket_change tc
+                         INNER JOIN ticket t ON t.id = tc.ticket
+                          AND tc.time >= %s AND tc.time <= %s  AND tc.field = %s
+                         INNER JOIN ticket_custom td ON t.id = td.ticket
+                          AND td.name = %s AND td.value = %s
+                        ORDER BY tc.time
+                        """,
+                        (ts_start, ts_stop, 'comment', 'sensitive', '1')):
                     yield ('sensitive_activity', from_utimestamp(t),
                            'redacted', (tid, cid))
             # Always show new sensitive tickets.
-            cursor.execute("""
-               SELECT DISTINCT id, time FROM
-                ticket t INNER JOIN ticket_custom tc ON t.id = tc.ticket
-                 AND t.time >= %s AND t.time <= %s
-                 AND tc.name = %s AND tc.value = %s
-               ORDER BY time
-               """, (ts_start, ts_stop, 'sensitive', '1'))
-            for tid, t in cursor:
+            for tid, t in self.env.db_query("""
+                    SELECT DISTINCT id, time FROM
+                    ticket t INNER JOIN ticket_custom tc ON t.id = tc.ticket
+                     AND t.time >= %s AND t.time <= %s
+                     AND tc.name = %s AND tc.value = %s
+                    ORDER BY time
+                    """, (ts_start, ts_stop, 'sensitive', '1')):
                 yield ('sensitive_activity', from_utimestamp(t), 'redacted',
                        (tid, None))
 
