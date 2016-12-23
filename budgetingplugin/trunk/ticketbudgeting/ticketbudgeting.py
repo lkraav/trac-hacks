@@ -359,7 +359,7 @@ class TicketBudgetingView(Component):
             if 'by' in req.args:
                 by = req.args['by']
             budget_stats, stats_by = self._get_milestone_html(req, by)
-            stats_by = "<fieldset><legend>Budget</legend><table>%s</table></fieldset>" % stats_by
+            stats_by = u"<fieldset><legend>Budget</legend><table>%s</table></fieldset>" % stats_by
             stream |= Transformer('//form[@id="stats"]').append(HTML(stats_by))
             stream |= Transformer('//div[@class="info"]').append(HTML(budget_stats))
         return stream
