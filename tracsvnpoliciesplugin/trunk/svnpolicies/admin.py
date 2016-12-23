@@ -102,12 +102,12 @@ class SVNPoliciesAdminPlugin(Component):
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
-        if 'TRAC_ADMIN' in req.perm('general', 'svnpolicies'):
+        if 'TRAC_ADMIN' in req.perm('admin', 'general/svnpolicies'):
             yield ('versioncontrol', _("Version Control"),
                    'svnpolicies', _("SVN Policies"))
 
     def render_admin_panel(self, req, cat, page, path_info):
-        req.perm.require('TRAC_ADMIN')
+        req.perm('admin', 'general/svnpolicies').require('TRAC_ADMIN')
 
         # Create hooks directory, if needed.
         env_hooks_path = self._get_env_hooks_path()
@@ -140,7 +140,7 @@ class SVNPoliciesAdminPlugin(Component):
                     if re.compile(value):
                         self.config.set('svnpolicies', option, value)
                     else:
-                        self._add_warning(req, 
+                        self._add_warning(req,
                             "%s was not saved because %s is not a valid "
                             "python regex.", option, value)
                 elif option == 'log_message.minimum':
@@ -148,7 +148,7 @@ class SVNPoliciesAdminPlugin(Component):
                     if value:
                         self.config.set('svnpolicies', option, value)
                     else:
-                        self._add_warning(req, 
+                        self._add_warning(req,
                             "%s was not saved because %s is not a valid "
                             "python integer.", option, req.args.get(option))
                         self.config.set('svnpolicies', option, '')
@@ -268,7 +268,7 @@ class SVNPoliciesAdminPlugin(Component):
             if self._add_post_commit_hook(req):
                 add_notice(req, _("The post-commit file was generated"))
             else:
-                self._add_warning(req, 
+                self._add_warning(req,
                     "The post-commit file couldn't be generated")
         else:
             # Delete the hook symlinks because the feature is disabled.
@@ -295,10 +295,10 @@ class SVNPoliciesAdminPlugin(Component):
                     add_notice(req, _("The advanced pre commit file was "
                                       "generated."))
                 else:
-                    self._add_warning(req, 
+                    self._add_warning(req,
                         "The advanced pre-commit file couldn't be generated.")
             else:
-                self._add_warning(req, 
+                self._add_warning(req,
                     "The advanced pre commit file couldn't be generated.")
 
         # Create the post-commit advanced script.
@@ -310,11 +310,11 @@ class SVNPoliciesAdminPlugin(Component):
                     add_notice(req, _("The advanced post commit file was "
                                       "generated."))
                 else:
-                    self._add_warning(req, 
+                    self._add_warning(req,
                         "The advanced post commit file couldn't be "
                         "generated.")
             else:
-                self._add_warning(req, 
+                self._add_warning(req,
                     "The advanced post commit file couldn't be generated.")
 
         # Create the pre-revprop-change links.
@@ -322,7 +322,7 @@ class SVNPoliciesAdminPlugin(Component):
             if self._add_pre_revprop_change_hook(req):
                 add_notice(req, "A pre-revprop-change file was generated")
             else:
-                self._add_warning(req, 
+                self._add_warning(req,
                     "The pre-revprop-change file couldn't be generated")
         else:
             # delete the hook symlinks because the feature is disabled
@@ -377,7 +377,7 @@ class SVNPoliciesAdminPlugin(Component):
                             self.config.set('svnpolicies',
                                             'email_from_address', email)
                         else:
-                            self._add_warning(req, 
+                            self._add_warning(req,
                                 "The from email address is not valid.")
                     else:
                         self.config.set('svnpolicies', 'email_from_enabled',
