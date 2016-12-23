@@ -66,11 +66,12 @@ function addBudgetRow() {
 	tBodyContainer.append(tableRow);
 	// Adding column by column to the row element
 	for (column = 1; column <= columnCount; column++) {
-		if (column != 4 && def_cost == "-1") {
-			var td = document.createElement('td');
-			tableRow.appendChild(td);
+		if (column == 4 && def_cost == "-1") {
+			continue;
 		}
+		var td = document.createElement('td');
 		var columnElement;
+		tableRow.appendChild(td);
 		switch (column) {
 		case 1:
 			// Select NAME Column Position 1
