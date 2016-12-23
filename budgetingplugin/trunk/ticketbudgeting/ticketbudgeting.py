@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2012-2015 Franz Mayer Gefasoft AG
@@ -462,45 +461,35 @@ class TicketBudgetingView(Component):
         stats_by = ''
         ms = req.args['id']
 
-        sql = ("SELECT SUM(b.cost), SUM(b.estimation), AVG(b.status)"
-               " FROM budgeting b, ticket t"
-               " WHERE b.ticket=t.id AND t.milestone='%s'" % ms)
-
-        try:
-            result = self.env.db_query(sql)
-            for row in result:
-                html = '<dl><dt>' + _('Budget in hours') + ':</dt><dd> </dd>' \
-                        '<dt>' + _('Cost') + ': <dd>%.2f</dd></dt>' \
-                        '<dt>' + _('Estimation') + ': <dd>%.2f</dd></dt>' \
-                        '<dt>' + _('Status') + ': <dd>%.1f%%</dd></dt></dl>'
-                html = html % (row[0], row[1], row[2])
-                html = self._get_progress_html(row[0], row[1], row[2]) + html
-        except Exception, e:
-            self.log.error("Error executing SQL Statement \n %s" % e)
+        for row in self.env.db_query("""
+                SELECT SUM(b.cost), SUM(b.estimation), AVG(b.status)
+                FROM budgeting b, ticket t
+                WHERE b.ticket=t.id AND t.milestone=%s
+                """, (ms,)):
+            html = '<dl><dt>' + _('Budget in hours') + ':</dt><dd> </dd>' \
+                    '<dt>' + _('Cost') + ': <dd>%.2f</dd></dt>' \
+                    '<dt>' + _('Estimation') + ': <dd>%.2f</dd></dt>' \
+                    '<dt>' + _('Status') + ': <dd>%.1f%%</dd></dt></dl>'
+            html = html % (row[0], row[1], row[2])
+            html = self._get_progress_html(row[0], row[1], row[2]) + html
 
         if not group_by:
             return html, stats_by
 
-        sql = ("SELECT t.%s, SUM(b.cost), SUM(b.estimation), AVG(b.status)"
-               " FROM budgeting b, ticket t"
-               " WHERE b.ticket=t.id AND t.milestone='%s'" \
-               " GROUP BY t.%s ORDER BY t.%s" %
-               (group_by, ms, group_by, group_by))
+        for row in self.env.db_query("""
+                SELECT t.%s, SUM(b.cost), SUM(b.estimation), AVG(b.status)
+                FROM budgeting b, ticket t
+                WHERE b.ticket=t.id AND t.milestone=%s
+                GROUP BY t.%s ORDER BY t.%s
+                """ % (group_by, group_by, group_by), (ms,)):
+            status_bar = self._get_progress_html(row[1], row[2], row[3], 75)
+            link = req.href.query({'milestone': ms, group_by: row[0]})
+            if group_by == 'component':
+                link = req.href.report(BUDGET_REPORT_ALL_ID, {'MILESTONE': ms, 'COMPONENT': row[0], 'OWNER': '%'})
 
-        try:
-            result = self.env.db_query(sql)
-            for row in result:
-                status_bar = self._get_progress_html(row[1], row[2], row[3], 75)
-                link = req.href.query({'milestone': ms, group_by: row[0]})
-                if group_by == 'component':
-                    link = req.href.report(BUDGET_REPORT_ALL_ID, {'MILESTONE': ms, 'COMPONENT': row[0], 'OWNER': '%'})
-
-                stats_by += '<tr><th scope="row"><a href="%s">' \
-                    '%s</a></th>' % (link, row[0])
-                stats_by += '<td>%s</td></tr>' % status_bar
-        except Exception, e:
-            self.log.error("Error executing SQL Statement \n %s" % e)
-
+            stats_by += '<tr><th scope="row"><a href="%s">' \
+                '%s</a></th>' % (link, row[0])
+            stats_by += '<td>%s</td></tr>' % status_bar
 
         return html, stats_by
 
@@ -640,24 +629,18 @@ class TicketBudgetingView(Component):
         if not ticket_id:
             return
 
-        sql = ("SELECT position, username, type, estimation, cost, status,"
-               " comment FROM budgeting WHERE ticket=%s ORDER BY position")
-
-        try:
-            result = self.env.db_query(sql, (ticket_id,))
-            for row in result:
-                budget = Budget()
-                for i, col in enumerate(row):
-                    if i > 0:
-                        budget.set(i, col)
-                pos = int (row[0])
-                self._budgets[pos] = budget
-                self.log.debug("[_load_budget] loaded budget: %s" %
-                               budget.get_values())
-        except Exception, e:
-            self.log.error("Error executing SQL Statement %s \n Error: %s" %
-                           (sql % ticket_id, e))
-            raise e
+        for row in self.env.db_query("""
+                SELECT position,username,type,estimation,cost,status,comment
+                FROM budgeting WHERE ticket=%s ORDER BY position
+                """, (ticket_id,)):
+            budget = Budget()
+            for i, col in enumerate(row):
+                if i > 0:
+                    budget.set(i, col)
+            pos = int (row[0])
+            self._budgets[pos] = budget
+            self.log.debug("[_load_budget] loaded budget: %s" %
+                           budget.get_values())
 
     def _save_budget(self, tkt):
         if self._budgets and tkt and tkt.id:
@@ -779,14 +762,10 @@ class TicketBudgetingView(Component):
             sql = "SELECT DISTINCT username FROM permission"
             if self.config.get(self._CONFIG_SECTION, 'exclude_users'):
                 excl_user = self.config.get(self._CONFIG_SECTION, 'exclude_users')
-                sql = "%s WHERE username not in (%s)" % (sql, excl_user)
+                sql = "%s WHERE username NOT IN (%s)" % (sql, excl_user)
             sql += " ORDER BY username"
-        try:
-            result = self.env.db_query(sql)
-            for row in result:
-                sqlResult.append(row[0])
-        except Exception, e:
-            self.log.error("Error executing SQL Statement \n %s" % e)
+        for row in self.env.db_query(sql):
+            sqlResult.append(row[0])
         return sqlResult
 
 
