@@ -52,7 +52,7 @@ _VALUE_NAMES_LIST = _VALUE_NAMES.split(',')
 def get_float(value, fld='UNKNOWN FIELD'):
     ret_val = 0
     try:
-        if value == '':
+        if not value:
             ret_val = 0
         else:
             try:
