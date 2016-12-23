@@ -46,18 +46,16 @@ class RoadmapHoursTicketGroupStatsProvider(Component):
         worked_hours = 0.0
         expected_hours = 0.0
         if total_cnt:
-            cursor = self.env.get_db_cnx().cursor()
-            str_ids = [str(x) for x in sorted(ticket_ids)]
-            cursor.execute("""
-                SELECT status,est.value,act.value
-                FROM ticket t
-                LEFT OUTER JOIN ticket_custom est
-                 ON (t.id=est.ticket AND est.name='estimatedhours')
-                LEFT OUTER JOIN ticket_custom act
-                 ON (t.id=act.ticket AND act.name='totalhours')
-                WHERE t.id IN (%s)
-                """ % ','.join(str_ids))
-            for status, est, act in cursor:
+            for status, est, act in self.env.db_query("""
+                    SELECT status,est.value,act.value
+                    FROM ticket t
+                    LEFT OUTER JOIN ticket_custom est
+                     ON (t.id=est.ticket AND est.name='estimatedhours')
+                    LEFT OUTER JOIN ticket_custom act
+                     ON (t.id=act.ticket AND act.name='totalhours')
+                    WHERE t.id IN (%s)
+                    """ % ','.join(('%s',) * len(ticket_ids)),
+                    sorted(ticket_ids)):
                 if act:
                     act = float(act)
                 else:
