@@ -18,6 +18,7 @@ from trac.db.schema import Table, Column
 from trac.perm import IPermissionRequestor
 from trac.ticket.api import ITicketManipulator
 from trac.ticket.model import Ticket
+from trac.util import exception_to_unicode
 from trac.util.translation import domain_functions
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script
@@ -250,33 +251,34 @@ class TicketBudgetingView(Component):
 
 
     BUDGET_REPORTS = [(BUDGET_REPORT_ALL_ID, 'report_title_90', 'report_description_90',
-    u"""SELECT t.id, t.summary, t.milestone AS __group__, ''../milestone/'' || t.milestone AS __grouplink__,
-    t.owner, t.reporter, t.status, t.type, t.priority, t.component,
-    count(b.ticket) AS Anz, sum(b.cost) AS Aufwand, sum(b.estimation) AS Schaetzung,
-    floor(avg(b.status)) || ''%'' AS "Status",
-    (CASE t.status
-      WHEN ''closed'' THEN ''color: #777; background: #ddd; border-color: #ccc;''
-      ELSE
-        (CASE sum(b.cost) > sum(b.estimation) WHEN true THEN ''font-weight: bold; background: orange;'' END)
-    END) AS __style__
-    from ticket t
-    left join budgeting b ON b.ticket = t.id
-    where t.milestone like
+    u"""SELECT t.id, t.summary, t.milestone AS __group__, '../milestone/' ||
+               t.milestone AS __grouplink__, t.owner, t.reporter, t.status,
+               t.type, t.priority, t.component, COUNT(b.ticket) AS Count,
+               SUM(b.cost) AS Cost, SUM(b.estimation) AS Effort,
+               %(status)s || '%%' AS "Status",
+     (CASE
+       WHEN t.status='closed' THEN 'color: #777; background: #ddd; border-color: #ccc;'
+       WHEN SUM(b.cost) > SUM(b.estimation) THEN 'font-weight: bold; background: orange;'
+      END) AS __style__
+    FROM ticket t
+    LEFT JOIN budgeting b ON b.ticket = t.id
+    WHERE t.milestone LIKE
     (CASE $MILESTONE
-              WHEN '''' THEN ''%''
+              WHEN '' THEN '%%'
               ELSE $MILESTONE END) and
-    (t.component like (CASE $COMPONENT
-              WHEN '''' THEN ''%''
+    (t.component LIKE (CASE $COMPONENT
+              WHEN '' THEN '%%'
               ELSE $COMPONENT END) or t.component is null) and
-    (t.owner like (CASE $OWNER
+    (t.owner LIKE (CASE $OWNER
               WHEN '''' THEN $USER
               ELSE $OWNER END) or t.owner is null or
-     b.username like (CASE $OWNER
+     b.username LIKE (CASE $OWNER
               WHEN '''' THEN $USER
               ELSE $OWNER END) )
-    group by t.id, t.type, t.priority, t.summary, t.owner, t.reporter, t.component, t.status, t.milestone
-    having count(b.ticket) > 0
-    order by t.milestone desc, t.status, t.id desc""")
+    GROUP BY t.id, t.type, t.priority, t.summary, t.owner, t.reporter,
+             t.component, t.status, t.milestone
+    HAVING COUNT(b.ticket) > 0
+    ORDER BY t.milestone DESC, t.status, t.id DESC""")
     ]
 
     def __init__(self):
@@ -732,23 +734,22 @@ class TicketBudgetingView(Component):
 
     def create_reports(self):
         for report in self.BUDGET_REPORTS:
+            sql = """
+                INSERT INTO report (id, author, title, query, description)
+                VALUES (%s, NULL, %s, %s, %s)
+            """
             try:
-                descr = _(report[2])
-                descr = re.sub(r"'", "''", descr)
-                title = _(report[1])
-                self.log.debug("report description (translated): %s" % descr)
-                self.log.debug( "report - id, title (translated):  %s, '%s'" %
-                                (report[0], title) )
-
-                sql = "INSERT INTO report " \
-                      "(id, author, title, query, description)" \
-                      " VALUES(%s, null, '%s', '%s', '%s');" \
-                      % (report[0], title, report[3], descr)
-                self.log.debug("[INIT reports] executing sql: %s" % sql)
-                self.env.db_transaction(sql)
-                self.log.info("[INIT reports] successfully created report with id %s" % report[0])
+                with self.env.db_transaction as db:
+                    query = report[3] \
+                            % {'status': db.cast('AVG(b.status)', 'int')}
+                    db(sql, (report[0], _(report[1]), query, _(report[2])))
             except Exception, e:
-                self.log.error("[INIT reports] Error executing SQL Statement \n %s" % e)
+                self.log.error("[INIT reports] Error executing SQL "
+                               "Statement%s",
+                               exception_to_unicode(e, traceback=True))
+            else:
+                self.log.info("[INIT reports] successfully created report "
+                              "with id %s", report[0])
 
 
     def get_col_list(self, ignore_cols=None):
