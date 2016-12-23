@@ -21,7 +21,7 @@ function addBudgetRow() {
 	if ($('#def_type').length != 0) {
 		var def_type = $('#def_type').html();
 		if (def_type != -1) {
-			for ( var i = 0; i < types.length; i++) {
+			for (var i = 0; i < types.length; i++) {
 				if (types[i] == def_type) {
 					def_type_index = i;
 					break;
@@ -38,7 +38,7 @@ function addBudgetRow() {
 	var def_name_index = 0;
 	if ($('#def_name').length != 0)
 		var def_name = $('#def_name').html();
-	for ( var i = 0; i < names.length; i++) {
+	for (var i = 0; i < names.length; i++) {
 		if (names[i] == def_name) {
 			def_name_index = i;
 			break;
@@ -65,7 +65,7 @@ function addBudgetRow() {
 	tableRow.id = 'row-' + rowCounter;
 	tBodyContainer.append(tableRow);
 	// Adding column by column to the row element
-	for (column = 1; column <= columnCount; column++) {
+	for (var column = 1; column <= columnCount; column++) {
 		if (column == 4 && def_cost == "-1") {
 			continue;
 		}
@@ -86,7 +86,7 @@ function addBudgetRow() {
 		case 3:
 			// Estimation
 			columnElement = document.createElement('input');
-			columnElement.setAttribute('value', def_est)
+			columnElement.setAttribute('value', def_est);
 			columnElement.size = 10;
 			break;
 		case 4:
@@ -95,18 +95,18 @@ function addBudgetRow() {
 				columnElement = document.createElement('input');
 				columnElement.size = 10;
 				//columnElement.disabled = "disabled"
-				columnElement.type = "hidden"
-				columnElement.setAttribute('value', 0)
+				columnElement.type = "hidden";
+				columnElement.setAttribute('value', '0')
 			} else {
 				columnElement = document.createElement('input');
-				columnElement.setAttribute('value', def_cost)
+				columnElement.setAttribute('value', def_cost);
 				columnElement.size = 10;
 			}
 			break;
 		case 5:
 			// State
 			columnElement = document.createElement('input');
-			columnElement.setAttribute('value', def_state)
+			columnElement.setAttribute('value', def_state);
 			columnElement.size = 10;
 			break;
 		case 6:
@@ -121,7 +121,7 @@ function addBudgetRow() {
 		td.appendChild(columnElement);
 	}
 	// Adding a Delete Button to the end of the row
-	deleteButtonElement = document.createElement('td');
+	var deleteButtonElement = document.createElement('td');
 	deleteButtonElement.innerHTML = '<div class="inlinebuttons">'
 			+ '<input type="button" style="border-radius: 1em 1em 1em 1em;'
 			+ ' font-size: 100%" name="deleteRow' + rowCounter
@@ -141,8 +141,8 @@ function getSelect(optionArray) {
 		return null;
 
 	var columnElement = document.createElement('select');
-	for (arrayPosition = 0; arrayPosition < optionArray.length; arrayPosition++) {
-		newOption = document.createElement('option');
+	for (var arrayPosition = 0; arrayPosition < optionArray.length; arrayPosition++) {
+		var newOption = document.createElement('option');
 		newOption.text = optionArray[arrayPosition];
 		try {// standards compliant; doesn't work in IE
 			columnElement.add(newOption, null);
@@ -167,13 +167,13 @@ function deleteRow(rowID) {
 	var row = $("#row-" + rowID);
 	row.hide();
 	var rowElems = row.find("select , input");
-	for ( var i in rowElems) {
+	for (var i in rowElems) {
 		rowElems[i].name = (rowElems[i].name + "").match(/\d+-\d+/) + "-Delete";
 	}
 
 	// This logic ist responsible for hidding the complete tbody element, if no
 	// further row ist visible or rather not deleted
-	if ($('#budget_container tr[style!="display: none;"]').length == 0) {
+	if ($('#budget_container').find('tr[style!="display: none;"]').length == 0) {
 		hideTable();
 	}
 }
@@ -182,6 +182,6 @@ function update(row, column) {
 	if (row < 0 || column < 0)
 		return;
 
-	var ename = row + "-" + column
+	var ename = row + "-" + column;
 	$("[name='" + ename + "']").attr('name', ename + '-Update');
 }
