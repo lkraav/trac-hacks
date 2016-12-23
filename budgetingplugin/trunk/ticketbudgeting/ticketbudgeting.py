@@ -279,8 +279,12 @@ class TicketBudgetingView(Component):
     ]
 
     def __init__(self):
-        locale_dir = resource_filename(__name__, 'locale')
-        add_domain(self.env.path, locale_dir)
+        try:
+            locale_dir = resource_filename(__name__, 'locale')
+        except KeyError:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
 
         try:
             self.env.db_query("SELECT ticket FROM %s where ticket is null" %
