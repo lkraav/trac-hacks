@@ -11,13 +11,14 @@
 import re
 
 from trac.core import Component, implements
-from trac.db import Column, Index, Table
+from trac.db.api import DatabaseManager
+from trac.db.schema import Column, Index, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Ticket
 
-from coderev.compat import DatabaseManager
+import coderev.compat
 from coderev.model import get_reviews_for_ticket
 
 DB_NAME = 'coderev'

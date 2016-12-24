@@ -51,7 +51,8 @@ class CodeReviewerModuleTestCase(unittest.TestCase):
                     redirect=redirect, **kw)
 
     def test_save_status(self):
-        repos = Mock(reponame='repos1', short_rev=lambda c: int(c))
+        repos = Mock(reponame='repos1', short_rev=lambda c: int(c),
+                     db_rev=lambda rev: '%010d' % rev)
         changeset = Mock(rev=1, repos=repos)
         args = _RequestArgs(tickets=None, status='PASSED',
                             summary='the summary')

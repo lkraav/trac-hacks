@@ -48,7 +48,7 @@ class CodeReviewerSystemTestCase(unittest.TestCase):
         database version 1.
         """
         dbm = DatabaseManager(self.env)
-        with self.env.db_transaction as db:
+        with self.env.db_transaction:
             db1.do_upgrade(self.env, 1, None)
             dbm.set_database_version(1, api.DB_NAME)
 

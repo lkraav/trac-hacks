@@ -8,15 +8,22 @@
 # you should have received as part of this distribution.
 #
 
+import sys
 import functools
 from subprocess import Popen, STDOUT, PIPE
 
 from genshi.builder import tag
+from trac.admin.api import IAdminCommandProvider
 from trac.core import *
 from trac.config import ListOption, Option
 from trac.resource import Resource
-from trac.util.datefmt import format_datetime, to_utimestamp, user_time
-from trac.versioncontrol.api import IRepositoryChangeListener, RepositoryManager
+from trac.util.datefmt import format_datetime, from_utimestamp, \
+                              to_utimestamp, user_time
+from trac.util.text import printout
+from trac.util.translation import _, ngettext
+from trac.versioncontrol.admin import VersionControlAdmin
+from trac.versioncontrol.api import (Changeset, IRepositoryChangeListener,
+    RepositoryManager, is_default)
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
     add_stylesheet, pretty_timedelta, web_context)
@@ -46,7 +53,7 @@ class CodeReviewerModule(Component):
         default=[], doc="Ticket field changes on a FAILED submit.")
 
     completeness = ListOption('codereviewer', 'completeness',
-        default=[], doc="Ticket field values that enable ticket completeness.")
+        default=[], doc="Ticket field values enabling ticket completeness.")
 
     command = Option('codereviewer', 'command',
         default='', doc="Command to execute upon ticket completeness.")
@@ -66,11 +73,13 @@ class CodeReviewerModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        diff_mode = data and 'changeset' in data and data['changeset'] is False
+        diff_mode = data and 'changeset' in data and \
+                    data['changeset'] is False
         if req.path_info.startswith('/changeset') and not diff_mode:
             changeset = data['changeset']
-            repos, rev = changeset.repos.reponame, changeset.rev
-            review = CodeReview(self.env, repos, rev)
+            repos = changeset.repos
+            reponame, rev = repos.reponame, repos.db_rev(changeset.rev)
+            review = CodeReview(self.env, reponame, rev)
             tickets = req.args.getlist('tickets')
             if req.method == 'POST':
                 status_changed = \
@@ -98,7 +107,7 @@ class CodeReviewerModule(Component):
                             ('pretty_timedelta', pretty_timedelta(r['when'])),
                             ('reviewer', r['reviewer']),
                             ('status', r['status'])
-                        ]) for r in CodeReview.select(self.env, repos, rev)
+                        ]) for r in CodeReview.select(self.env, reponame, rev)
                     ],
                 },
                 'tickets': tickets,
@@ -206,9 +215,9 @@ class CodeReviewerModule(Component):
         p = Popen(self.command, shell=True, stderr=STDOUT, stdout=PIPE)
         out = p.communicate()[0]
         if p.returncode == 0:
-            self.log.info('command: %s' % self.command)
+            self.log.info('command: %s', self.command)
         else:
-            self.log.error('command error: %s\n%s' % (self.command, out))
+            self.log.error('command error: %s\n%s', self.command, out)
 
 
 class CommitTicketReferenceMacro(WikiMacroBase):
@@ -224,10 +233,11 @@ class CommitTicketReferenceMacro(WikiMacroBase):
         reponame = args.get('repository') or ''
         rev_str = args.get('revision')
         repos = RepositoryManager(self.env).get_repository(reponame)
+        rev = None
         try:
             changeset = repos.get_changeset(repos.normalize_rev(rev_str))
             message = changeset.message
-            rev = changeset.rev
+            rev = repos.db_rev(changeset.rev)
             resource = repos.resource
 
             # add review status to commit message (
@@ -266,7 +276,61 @@ class ChangesetTicketMapper(Component):
     """Maintains a mapping of changesets to tickets in a codereviewer_map
     table. Invoked for each changeset addition or modification."""
 
-    implements(IRepositoryChangeListener)
+    implements(IAdminCommandProvider, IRepositoryChangeListener)
+
+    # IAdminCommandProvider methods
+
+    def get_admin_commands(self):
+        yield ('codereviewer resync', '<repos>',
+               """Re-synchronize coderev with repositories
+
+               To synchronize all repositories, specify "*" as the repository.
+               """,
+               self._complete_repos, self._do_resync)
+
+    def _complete_repos(self, args):
+        if len(args) == 1:
+            return VersionControlAdmin(self.env).get_reponames()
+
+    def _do_resync(self, reponame):
+        rm = RepositoryManager(self.env)
+        if reponame == '*':
+            repositories = rm.get_real_repositories()
+        else:
+            if is_default(reponame):
+                reponame = ''
+            repos = rm.get_repository(reponame)
+            if repos is None:
+                raise TracError(_("Repository '%(repo)s' not found",
+                                  repo=reponame or '(default)'))
+            repositories = [repos]
+
+        for repos in sorted(repositories, key=lambda r: r.reponame):
+            printout(_('Resyncing repository history for %(reponame)s... ',
+                       reponame=repos.reponame or '(default)'))
+            with self.env.db_transaction as db:
+                db("""
+                    DELETE FROM codereviewer_map WHERE repo=%s
+                    """, (repos.reponame,))
+                for time, author, message, rev in db("""
+                        SELECT time, author, message, rev FROM revision
+                        WHERE repos=%s ORDER BY time
+                        """, (repos.id,)):
+                    cset = Changeset(repos, rev, message, author,
+                                     from_utimestamp(time))
+                    self._map(repos.reponame, cset)
+                    self._sync_feedback(rev)
+
+            for cnt, in self.env.db_query(
+                    "SELECT count(rev) FROM revision WHERE repos=%s",
+                    (repos.id,)):
+                printout(ngettext('%(num)s revision cached.',
+                                  '%(num)s revisions cached.', num=cnt))
+        printout(_("Done."))
+
+    def _sync_feedback(self, rev):
+        sys.stdout.write(' [%s]\r' % rev)
+        sys.stdout.flush()
 
     # IRepositoryChangeListener methods
 

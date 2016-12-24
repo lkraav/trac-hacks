@@ -14,6 +14,7 @@ from trac.resource import ResourceNotFound
 from trac.util.datefmt import to_utimestamp, utc
 from trac.util.translation import _
 
+
 class CodeReview(object):
     """A review for a single changeset."""
 
