@@ -115,9 +115,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
     """
     implements(ITicketActionController)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         # This call creates self.actions
-        super(MultipleWorkflowPlugin, self).__init__(args, kwargs)
+        super(MultipleWorkflowPlugin, self).__init__()
         self.type_actions = {}
         # for all ticket types do
         for t in [enum.name for enum in model.Type.select(self.env)]:
