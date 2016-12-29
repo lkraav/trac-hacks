@@ -13,7 +13,8 @@ from api import IWikiToPdfFormat
 
 
 class WikiToPdfAdmin(Component):
-    """A plugin allowing the export of multiple wiki pages in a single file."""
+    """A plugin allowing the export of multiple wiki pages in a single file.
+    """
 
     formats = ExtensionPoint(IWikiToPdfFormat)
 
@@ -65,7 +66,13 @@ class WikiToPdfAdmin(Component):
             pdfbookname = pdfbookname.replace(':', '')
             pdfbookname = pdfbookname.replace(',', '')
 
-            return formats[format]['provider'].process_wikitopdf(req, format, title, subject, rightpages, date, version, pdfbookname)
+            return formats[format]['provider'].process_wikitopdf(req, format,
+                                                                 title,
+                                                                 subject,
+                                                                 rightpages,
+                                                                 date,
+                                                                 version,
+                                                                 pdfbookname)
 
         data = {
             'allpages': allpages,
