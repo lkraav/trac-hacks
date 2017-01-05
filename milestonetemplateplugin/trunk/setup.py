@@ -12,7 +12,7 @@ setup(
     name='MilestoneTemplatePlugin',
     description='Use templates when creating milestones.',
     long_description='Use templates when creating milestones.',
-    version='0.1.1',
+    version='0.1.2',
     url='http://trac-hacks.org/wiki/MilestoneTemplatePlugin',
     license="New BSD",
     author='Cinc-th',

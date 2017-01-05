@@ -7,7 +7,7 @@ from trac.resource import ResourceNotFound
 from trac.ticket.admin import MilestoneAdminPanel
 from trac.ticket.model import Milestone
 from trac.util.datefmt import parse_date
-from trac.util.text import _
+from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, \
     ITemplateProvider, ITemplateStreamFilter
