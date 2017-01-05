@@ -26,7 +26,9 @@ from trac.web.api import HTTPBadRequest, IRequestFilter
 from trac.util.datefmt import format_date
 from trac.util.html import html
 from trac.util import get_reporter_id
-from trac.util.text import _, unicode_quote, unicode_from_base64, unicode_to_base64
+from trac.util.text import unicode_quote, unicode_from_base64, unicode_to_base64
+from trac.util.translation import _
+
 
 from multiprojectbacklog.schema import schema_version, schema
 try:
@@ -40,7 +42,7 @@ class MultiProjectBacklog(Component):
                IEnvironmentSetupParticipant, ITemplateProvider,
                ITicketChangeListener, IPermissionRequestor)
 
-    _ticket_fields = [ 
+    _ticket_fields = [
         u'id', u'summary', u'component', u'version', u'type', u'owner', u'status',
         u'time_created'
     ]
@@ -246,7 +248,7 @@ $proj
         return False
 
     def process_request(self, req):
-        
+
         req.perm.require('TICKET_VIEW')
         if req.method == 'POST':
             req.perm.require('BACKLOG_ADMIN')
