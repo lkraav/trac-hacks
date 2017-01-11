@@ -8,13 +8,16 @@
 
 import urllib2
 import uuid
-from genshi.core import escape
+
 from trac.core import implements
-from trac.web.chrome import add_script, add_script_data, Chrome, ITemplateProvider
+from trac.util.html import escape
+from trac.web.chrome import (add_script, add_script_data,
+                             Chrome, ITemplateProvider)
 from trac.web.main import IRequestHandler
 from trac.wiki.api import IWikiPageManipulator
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
+
 
 class MermaidMacro(WikiMacroBase):
     implements(ITemplateProvider, IRequestHandler, IWikiPageManipulator)
@@ -33,18 +36,23 @@ class MermaidMacro(WikiMacroBase):
                     'form_token': req.form_token,
                 }
         )
-        if args == None or 'id' not in args:
+        if args is None or 'id' not in args:
             id_attr = ''
         else:
             id_attr = 'id=%s' % args['id']
         url_escaped_content = urllib2.quote(content)
-        div = """<div class="mermaid"
-                      %s
-                      data-mermaidresourcerealm="%s"
-                      data-mermaidresourceid="%s"
-                      data-mermaidresourceversion="%s"
-                      data-mermaidsource="%s">%s</div>"""
-        return div % (
+        return """\
+            <div class="mermaid"
+                       %s
+                       data-mermaidresourcerealm="%s"
+                       data-mermaidresourceid="%s"
+                       data-mermaidresourceversion="%s"
+                       data-mermaidsource="%s">%s
+            </div>
+            <script type="text/javascript">
+                if (typeof mermaid !== 'undefined')
+                    mermaid.init(); // ok to call repeatedly (data-processed)
+            </script>""" % (
                 id_attr,
                 formatter.context.resource.realm,
                 formatter.context.resource.id,
