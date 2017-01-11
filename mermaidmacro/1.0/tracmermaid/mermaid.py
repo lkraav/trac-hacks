@@ -10,7 +10,7 @@ import urllib2
 import uuid
 from genshi.core import escape
 from trac.core import implements
-from trac.web.chrome import add_script, add_script_data, ITemplateProvider
+from trac.web.chrome import add_script, add_script_data, Chrome, ITemplateProvider
 from trac.web.main import IRequestHandler
 from trac.wiki.api import IWikiPageManipulator
 from trac.wiki.macros import WikiMacroBase
@@ -21,13 +21,16 @@ class MermaidMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content, args=None):
         self.log.debug("content=%s" % content)
-        add_script(formatter.req, 'mermaid/mermaid.min.js')
-        add_script(formatter.req, 'mermaid/tracmermaid.js')
-        add_script_data(formatter.req,
+        req = formatter.req
+        Chrome(self.env).add_jquery_ui(req)
+        add_script(req, 'mermaid/mermaid.min.js')
+        add_script(req, 'mermaid/tracmermaid.js')
+        add_script_data(req,
                 {
                     '_tracmermaid': {
-                        'submit': formatter.req.href + '/mermaid/submit',
-                    }
+                        'submit': req.href + '/mermaid/submit',
+                    },
+                    'form_token': req.form_token,
                 }
         )
         if args == None or 'id' not in args:
