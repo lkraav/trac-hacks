@@ -10,8 +10,8 @@ from setuptools import setup, find_packages
 
 setup (
     name = 'graphviz',
-    version = '1.0.0.9',
-    install_requires='Trac',
+    version = '1.3.0.1',
+    install_requires='Trac >=1.3dev',
     packages = find_packages(),
     package_data = { 'graphviz' : ['examples/*',],
     },

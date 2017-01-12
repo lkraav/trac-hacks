@@ -39,14 +39,14 @@ import sys
 
 from StringIO import StringIO
 
-from genshi.builder import Element, tag
-from genshi.core import Markup, Stream
+from genshi.core import  Stream
 from genshi.input import HTMLParser
 
 from trac.config import BoolOption, IntOption, Option
 from trac.core import *
-from trac.mimeview.api import Context, IHTMLPreviewRenderer, MIME_MAP
-from trac.util.html import TracHTMLSanitizer, escape, find_element
+from trac.mimeview.api import RenderingContext, IHTMLPreviewRenderer, MIME_MAP
+from trac.util.html import (TracHTMLSanitizer, escape, find_element,
+                            Element, tag, Markup)
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
@@ -254,7 +254,7 @@ class Graphviz(Component):
         """Return the HTML output of the macro.
 
         :param formatter_or_context: a Formatter when called as a macro,
-               a Context when called by `GraphvizPlugin.render`
+               a RenderingContext when called by `GraphvizPlugin.render`
 
         :param name: Wiki macro command that resulted in this method being
                called. In this case, it should be 'graphviz', followed
@@ -346,7 +346,7 @@ class Graphviz(Component):
                 content = self._sanitize_html_labels(content)
 
             if URL_in_graph: # translate wiki TracLinks in URL
-                if isinstance(formatter_or_context, Context):
+                if isinstance(formatter_or_context, RenderingContext):
                     context = formatter_or_context
                 else:
                     context = formatter_or_context.context
