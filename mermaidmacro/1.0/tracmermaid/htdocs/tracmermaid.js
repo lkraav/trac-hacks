@@ -1,4 +1,5 @@
 mermaid.init();
+$(".mermaid g[title]").css('cursor', 'pointer');
 
 var tracMermaidDialog = $(
     "<div title='" + "preview" + "'>" +
@@ -15,6 +16,7 @@ function updateMermaid(target, source) {
     target.text(source);
     target.removeAttr('data-processed');
     mermaid.init(undefined, target);
+    $("g[title]", target).css('cursor', 'pointer');
 }
 
 $(function() {
