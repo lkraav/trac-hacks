@@ -32,7 +32,7 @@ class MermaidMacro(WikiMacroBase):
         if args is None or 'id' not in args:
             id_attr = ''
         else:
-            id_attr = 'id=%s' % args['id']
+            id_attr = 'id="%s"' % escape(args['id'])
         if not req:
             # Off-line rendering (there's a command line API for mermaid)
             return '<img alt="not-yet-implemented"/>'
@@ -64,9 +64,9 @@ class MermaidMacro(WikiMacroBase):
                 }
             </script>""" % (
                 id_attr,
-                context.resource.realm,
-                context.resource.id,
-                context.resource.version or '',
+                escape(context.resource.realm),
+                escape(context.resource.id),
+                escape(context.resource.version or ''),
                 escape(unicode_quote(content)),
                 escape(content))
 
