@@ -34,17 +34,17 @@ from ticketchangesets.translation import _, init_translation
 
 class TicketChangesetsMacro(WikiMacroBase):
     """Insert all changesets referencing a ticket into the output.
-    
+
     This macro must be called using wiki processor syntax as follows:
     {{{
     [[TicketChangesets(ticket)]]
     where ticket is a ticket id
     }}}
     """
-    
+
     def __init__(self):
         init_translation(self.env.path)
-    
+
     def expand_macro(self, formatter, name, content, args={}):
         if args:
             tkt_id = args.get('ticket')
@@ -57,21 +57,21 @@ class TicketChangesetsMacro(WikiMacroBase):
 
 class ViewTicketChangesets(Component):
     """View changesets referencing the ticket in a box on the ticket page.
-    
+
     Changesets are presented just above the description.
     """
-    
+
     collapsed = BoolOption('ticket-changesets', 'collapsed', 'false',
         """Show section on ticket page as initially collapsed.""")
-    
+
     compact = BoolOption('ticket-changesets', 'compact', 'true',
         """Make compact presentation of revision ranges, for example ![1-3]
         instead of ![1] ![2] ![3].""")
-    
+
     hide_when_none = BoolOption('ticket-changesets', 'hide_when_none', 'false',
         """Hide section on ticket page when no changesets relates to the
         ticket.""")
-    
+
     implements(ITemplateStreamFilter)
 
     def __init__(self):
@@ -98,7 +98,7 @@ class ViewTicketChangesets(Component):
             message = self.changesets.format()
             return tag.div(tag.h3(_("Repository Changesets"),
                                   class_='foldable'),
-                           tag.div(message, id='changelog'),
+                           tag.div(message, id='changesets'),
                            class_=self.collapsed and 'collapsed')
         else:
             message = _("(none)")
@@ -121,11 +121,11 @@ class TicketChangesetsFormatter(object):
 
     def exists(self):
         return self.changesets or False
-        
+
     def format(self):
         if not self.changesets:
             message = _("No changesets for #%s" % self.tkt_id)
-            yield tag.span(format_to_oneliner(self.env, self.context, message, 
+            yield tag.span(format_to_oneliner(self.env, self.context, message,
                                               shorten=False),
                            class_='ticketchangesets hint')
             return
@@ -151,7 +151,7 @@ class TicketChangesetsFormatter(object):
 
 class CommitMessageMacro(WikiMacroBase):
     """Insert a changeset message into the output.
-    
+
     This macro must be called using wiki processor syntax as follows:
     {{{
     {{{
@@ -163,15 +163,15 @@ class CommitMessageMacro(WikiMacroBase):
     [[CommitMessage(repository, revision)]]
     }}}
     where the arguments are the following:
-    - `repository`: the repository containing the changeset, 
+    - `repository`: the repository containing the changeset,
                     default repository if omitted
     - `revision`: the revision of the desired changeset
     Arguments can be stated in any order.
     """
-    
+
     def __init__(self):
         init_translation(self.env.path)
-    
+
     def expand_macro(self, formatter, name, content, args={}):
         if args:
             reponame = args.get('repository', '')

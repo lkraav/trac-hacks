@@ -46,17 +46,17 @@ setup(
             'locale/*/LC_MESSAGES/*.mo'
         ],
     },
-    
+
     keywords = 'trac plugin ticket commit message changesets',
-    
+
     zip_safe = True,
-    
+
     install_requires = ['Trac >= 0.12dev'],
-    
+
     extras_require = {
         'Babel': ['Babel>=0.9.5'],
     },
-    
+
     entry_points = """
         [trac.plugins]
         ticketchangesets.admin = ticketchangesets.admin
@@ -64,6 +64,6 @@ setup(
         ticketchangesets.commit_updater = ticketchangesets.commit_updater
         ticketchangesets.web_ui = ticketchangesets.web_ui
     """,
-    
+
     **extra
 )
