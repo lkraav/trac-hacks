@@ -54,7 +54,7 @@ setup(
       description='Gives a whiteboard view of active tickets',
       keywords='trac plugin tickets whiteboard ticketsboard',
       version=VERSION,
-      url='http://www.trac-hacks.org/wiki/TicketsBoardPlugin',
+      url='https://www.trac-hacks.org/wiki/TicketsBoardPlugin',
       license=read_file('LICENSE'),
       author='Jean-Philippe Save',
       author_email='jp.save@gmail.com',
