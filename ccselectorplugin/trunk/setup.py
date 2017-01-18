@@ -25,14 +25,14 @@ except ImportError:
     pass
 
 
-VERSION = '0.0.4'
+VERSION = '0.1.0'
 
 setup(
     name=PACKAGE,
     version=VERSION,
     description='Visual Cc ticket field editor for Trac',
     keywords='trac cc ticket editor',
-    url='http://trac-hacks.org/wiki/CcSelectorPlugin',
+    url='https://trac-hacks.org/wiki/CcSelectorPlugin',
     author='Vladislav Naumov',
     author_email='vnaum@vnaum.com',
     license='GPL',
@@ -48,7 +48,7 @@ setup(
         'trac.plugins': [
             'cc_selector.cc_selector=cc_selector.cc_selector'
         ]},
-    install_requires=['Genshi >=0.5', 'Trac >=0.11'],
-    extras_require={'Babel': 'Babel>=0.9.5', 'Trac': 'Trac >=0.12'},
+    install_requires=['Trac'],
+    extras_require={'Babel': 'Babel>=0.9.5'},
     **extra
 )
