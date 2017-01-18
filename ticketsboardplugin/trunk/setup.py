@@ -47,7 +47,7 @@ if sys.version_info >= (3,):
 
 
 PACKAGE = 'ticketsboardplugin'
-VERSION = '1.2.2-trac0.12'
+VERSION = '1.2.3-trac0.12'
 
 setup(
       name=PACKAGE,
