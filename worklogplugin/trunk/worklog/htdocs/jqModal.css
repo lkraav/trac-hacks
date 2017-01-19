@@ -2,10 +2,7 @@
 	Brice Burgess <bhb@iceburg.net> */
 
 /* The Window's CSS z-index value is respected (takes priority). If none is supplied,
-	the Window's z-index value will be set to 3000 by default (in jqModal.js). You
-	can change this value by either;
-	  a) supplying one via CSS
-	  b) passing the "zIndex" parameter. E.g.  (window).jqm({zIndex: 500}); */
+	the Window's z-index value will be set to 3000 by default (via jqModal.js). */
 	
 .jqmWindow {
     display: none;
