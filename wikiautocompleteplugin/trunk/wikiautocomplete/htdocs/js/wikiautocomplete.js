@@ -1,4 +1,7 @@
 jQuery(document).ready(function($) {
+    if (Array.prototype.forEach === undefined)
+        return;
+
     var cache = {};
 
     function escape_newvalue(value) {
