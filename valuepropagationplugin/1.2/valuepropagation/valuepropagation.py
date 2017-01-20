@@ -6,15 +6,15 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-import datetime
-import dateutil.tz
 import re
 
 from trac.core import *
 from trac.resource import ResourceNotFound
-from trac.ticket import ITicketChangeListener, Ticket
+from trac.ticket.api import ITicketChangeListener
+from trac.ticket.model import Priority, Ticket
 from trac.ticket.web_ui import TicketModule
 from trac.util import get_reporter_id
+from trac.util.datefmt import datetime_now, utc
 from trac.util.html import html as tag
 
 
@@ -89,16 +89,9 @@ class ValuePropagationPlugin(Component):
     def __init__(self):
         # Cache enum lookups (just priority for now)
         # FIXME - get all enums?
-        self.p_values = {}
         self.enums = {'priority_value': 'priority'}
-
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("SELECT name," +
-                       db.cast('value', 'int') +
-                       " FROM enum WHERE type=%s", ('priority',))
-        for name, value in cursor:
-            self.p_values[name] = value
+        self.p_values = \
+            dict((p.name, p.value) for p in Priority.select(self.env))
 
         # A propagation method is called from a ticket change listener
         # and takes the following arguments:
@@ -117,7 +110,7 @@ class ValuePropagationPlugin(Component):
         def _method_sum(ticket, old_values, f, t, old_other, new_other,
                         options):
             # When creating a ticket, there's no old value to subtract.
-            if f in old_values and old_values[f]:
+            if old_values.get(f):
                 old_other[t] = str(float(old_other[t]) - float(old_values[f]))
             new_other[t] = str(float(new_other[t]) + float(ticket[f]))
 
@@ -227,9 +220,7 @@ class ValuePropagationPlugin(Component):
         # the dependent ticket.
         # FIXME - iterate over f as a list for blockedby, etc.
         f = self.config.get('value_propagation', '%s.link' % r, default=None)
-        if f is None:
-            self.log.debug("%s has no link field configured", r)
-        else:
+        if f:
             if ticket[f]:
                 new_other_id = ticket[f]
                 # If the linking field changed, get the old other ticket
@@ -242,28 +233,28 @@ class ValuePropagationPlugin(Component):
                                 new_other_id)
             else:
                 self.log.debug("%s is empty", f)
+        else:
+            self.log.debug("%s has no link field configured", r)
 
     # Update other tickets based on a query which returns their IDs,
     # for example from the mastertickets or subtickets tables.
     def _handle_query(self, r, ticket, old_values):
         # Get the query string
         q = self.config.get('value_propagation', '%s.query' % r, default=None)
-        if q is None:
-            self.log.debug("%s has no query configured", r)
-        else:
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-            cursor.execute(q, (ticket.id,))
-            for id in [int(row[0]) for row in cursor]:
+        if q:
+            for id in [int(row[0])
+                       for row in self.env.db_query(q, (ticket.id,))]:
                 self._propagate(r, ticket, old_values, id, id)
+        else:
+            self.log.debug("%s has no query configured", r)
 
     # Propagate values from ticket to the ticket whose ID is
-    # newOtherID.  For link type propagation, oldOtherID may be
-    # different than newOtherID if the link field changes value.
+    # new_other_id. For link type propagation, old_other_id may be
+    # different than new_other_id if the link field changes value.
     def _propagate(self, relation, ticket, old_values, old_other_id,
                    new_other_id):
         new_other = Ticket(self.env, new_other_id)
-        if new_other_id == old_other_id or otherID == '':
+        if new_other_id == old_other_id or old_other_id == '':
             old_other = new_other
         else:
             old_other = Ticket(self.env, old_other_id)
@@ -313,29 +304,17 @@ class ValuePropagationPlugin(Component):
                         old_values[f] = None
 
         if changed:
-            def _update_ticket(ticket):
-                # Determine sequence number.
-                cnum = 0
-                tm = TicketModule(self.env)
-                db = self.env.get_db_cnx()
-                for change in tm.grouped_changelog_entries(ticket, db):
-                    # FIXME - should this say "and change['cnum'] > cnum?
-                    if change['permanent']:
-                        cnum = change['cnum']
+            def _update_ticket(ticket, when):
                 # FIXME - Put something in the message?
                 # FIXME - the ticket_changed method gets an author, should
                 # this say "value propagation on behalf of <author>"?
-                ticket.save_changes('value propagation', '', when, db,
-                                    cnum + 1)
+                ticket.save_changes('value propagation', '', when)
 
             # All the propagation is done, save the new values
-            when = datetime.datetime.now()
-            tzlocal = dateutil.tz.tzlocal()
-            when = when.replace(tzinfo=tzlocal)
-
-            _update_ticket(new_other)
+            when = datetime_now(utc)
+            _update_ticket(new_other, when)
             if new_other != old_other:
-                _update_ticket(old_other)
+                _update_ticket(old_other, when)
 
     # ITicketChangeListener methods
 
@@ -346,10 +325,8 @@ class ValuePropagationPlugin(Component):
     def ticket_changed(self, ticket, comment, author, old_values):
         # Find the configured propagation (anything in
         # [value_propagation] that has a name like "*.type").
-
-        options = self.config.options('value_propagation')
-        for n, v in options:
-            p = n.split(".")
+        for n, v in self.config.options('value_propagation'):
+            p = n.split('.')
             if len(p) == 2 and p[1] == 'type':
                 if v in self.types:
                     self.types[v](p[0], ticket, old_values)
