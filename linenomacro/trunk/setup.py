@@ -17,7 +17,8 @@ setup(
     author_email = 'anton@adamansky.com',
     description = 'Prints line numbered code listings',
     license = 'Apache License, Version 2.0',
-    url = 'http://trac-hacks.org/wiki/LinenoMacro',
+    url = 'https://trac-hacks.org/wiki/LinenoMacro',
+    install_requires=['Trac'],
     packages = find_packages(exclude=['tests*']),
     package_data = { 'lineno' : [ 'htdocs/css/*.css' ] },
     entry_points = """
