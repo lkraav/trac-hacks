@@ -20,9 +20,9 @@ setup(
     license='Modified BSD',
     author='MATOBA Akihiro',
     author_email='matobaa+trac-hacks@gmail.com',
-    url='http://trac-hacks.org/wiki/matobaa',
+    url='https://trac-hacks.org/wiki/matobaa',
     description='On Query page, flip checkbox status on double click it\'s label',
-    install_requires=['Trac >= 0.12'],
+    install_requires=['Trac'],
     packages=find_packages(exclude=['*.tests*']),
     package_data={
         'uiassist': ['htdocs/*/*'],
