@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="tracscreenshots">
+  <xi:include href="layout.html"/>
+  <?python
+    from tracscreenshots.core import _
+  ?>
+  <head>
+    <title>Screenshots</title>
+  </head>
+
+  <body>
+    <div id="content" class="screenshots">
+      <div class="title">
+        <h1>${screenshots.title}</h1>
+      </div>
+
+      <xi:include href="${screenshots.content_template}"/>
+
+      <div py:if="('SCREENSHOTS_ADD' in perm) or ('SCREENSHOTS_EDIT' in perm) or ('SCREENSHOTS_DELETE' in perm)" class="buttons screenshot_buttons">
+        <form py:if="'SCREENSHOTS_ADD' in perm" method="post" action="${href.screenshots()}">
+          <div>
+            <input type="submit" name="add" value="${_('Add')}"></input>
+            <input type="hidden" name="action" value="add"></input>
+            <input type="hidden" name="index" value="${screenshots.index}"></input>
+          </div>
+        </form>
+        <form py:if="('SCREENSHOTS_EDIT' in perm) and (len(screenshots) > 0) and index" method="post" action="${href.screenshots()}">
+          <div>
+            <input type="submit" name="edit" value="${_('Edit')}"></input>
+            <input type="hidden" name="action" value="edit"></input>
+            <input type="hidden" name="id" value="${screenshots.id}"></input>
+            <input type="hidden" name="index" value="${screenshots.index}"></input>
+          </div>
+        </form>
+        <form py:if="('SCREENSHOTS_DELETE' in perm) and (len(screenshots) > 0) and index" method="post" action="${href.screenshots()}">
+          <div>
+            <input type="submit" name="delete" value="${_('Delete')}"></input>
+            <input type="hidden" name="id" value="${screenshots.id}"></input>
+            <input type="hidden" name="index" value="${screenshots.index}"></input>
+            <input type="hidden" name="action" value="delete"></input>
+          </div>
+        </form>
+      </div>
+
+      <div py:if="'SCREENSHOTS_ORDER' in perm" class="order">
+        <form method="post" action="${href.screenshots()}">
+          <fieldset>
+            <legend>Order</legend>
+
+            <fieldset py:for="index, order in enumerate(screenshots.orders)" class="order">
+              <legend i18n:msg="index">
+                 ${index + 1}. field
+              </legend>
+              $order
+              <div>
+                <input id="order_id" type="radio" name="order_$index"
+                       value="id" checked="${order[0] == 'id' or None}" />
+                <label for="order_id">ID</label>
+                <br/>
+                <input id="order_name" type="radio" name="order_$index"
+                       value="name" checked="${order[0] == 'name' or None}" />
+                <label for="order_name">Name</label>
+                <br/>
+                <input id="order_author" type="radio" name="order_$index"
+                       value="author" checked="${order[0] == 'author' or None}" />
+                <label for="order_author">Author</label>
+                <br/>
+                <input id="order_time" type="radio" name="order_$index"
+                       value="time" checked="${order[0] == 'time' or None}" />
+                <label for="order_time">Time</label>
+                <br/>
+                <input id="order_description" type="radio" name="order_$index"
+                       value="description" checked="${order[0] == 'description' or None}" />
+                <label for="order_description">Description</label>
+                <br/>
+                <input id="order_priority" type="radio" name="order_$index"
+                       value="priority" checked="${order[0] == 'priority' or None}" />
+                <label for="order_priority">Priority</label>
+                <br/>
+
+                <hr/>
+                <input id="order_direction_asc" type="radio" name="order_direction_$index"
+                       value="asc" checked="${order[1] == 'asc' or None}" />
+                <label for="order_direction_asc">Ascending</label>
+                <input id="order_direction_desc" type="radio" name="order_direction_$index"
+                       value="desc" checked="${order[1] == 'desc' or None}" />
+                <label for="order_direction_desc">Descending</label>
+              </div>
+            </fieldset>
+
+            <div class="buttons">
+              <input type="submit" name="filter" value="${_('Apply order')}"/>
+              <input type="hidden" name="action" value="order"/>
+            </div>
+
+          </fieldset>
+        </form>
+      </div>
+
+      <div py:if="'SCREENSHOTS_FILTER' in perm" class="filter">
+        <form method="post" action="${href.screenshots()}">
+          <fieldset>
+            <legend>Display filter</legend>
+
+            <fieldset>
+              <legend>Components</legend>
+
+              <div>
+                <py:choose py:for="component in screenshots.components">
+                  <input type="checkbox" id="component_${component.name}"
+                         name="components" value="${component.name}"
+                         checked="${component.name in screenshots.enabled_components or None}" />
+                  <label for="component_${component.name}">${component.name}</label>
+                </py:choose>
+                <input type="button" name="all" value="${_('All')}" onclick="checkAll('components', true)"/>
+                <input type="button" name="none" value="${_('None')}" onclick="checkAll('components', false)"/>
+              </div>
+            </fieldset>
+
+            <div>
+              <input type="radio" id="filter_relation_and"
+                     name="filter_relation" value="and"
+                     checked="${screenshots.filter_relation == 'and' or None}" />
+              <label for="filter_relation_and">AND</label>
+              <input type="radio" id="filter_relation_or"
+                     name="filter_relation" value="or"
+                     checked="${screenshots.filter_relation == 'or' or None}" />
+              <label for="filter_relation_or">OR</label>
+            </div>
+
+            <fieldset>
+              <legend>Versions</legend>
+
+              <div>
+                <py:choose py:for="version in screenshots.versions">
+                  <input id="version_${version.name}" type="checkbox"
+                         name="versions" value="${version.name}"
+                         checked="${version.name in screenshots.enabled_versions or None}" />
+                  <label for="version_${version.name}">${version.name}</label>
+                </py:choose>
+                <input type="button" name="all" value="${_('All')}" onclick="checkAll('versions', true)"/>
+                <input type="button" name="none" value="${_('None')}" onclick="checkAll('versions', false)"/>
+              </div>
+            </fieldset>
+
+            <div class="buttons">
+              <input type="submit" name="filter" value="${_('Apply filter')}"/>
+              <input type="hidden" name="action" value="filter"/>
+            </div>
+
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
