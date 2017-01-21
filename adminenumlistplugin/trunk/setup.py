@@ -19,7 +19,7 @@ setup(name='TracAdminEnumListPlugin',
       author_email='trac@nonplus.net',
       maintainer='Ryan J Ollos',
       maintainer_email='ryan.j.ollos@gmail.com',
-      url='http://trac-hacks.org/wiki/AdminEnumListPlugin',
+      url='https://trac-hacks.org/wiki/AdminEnumListPlugin',
       keywords='trac plugin',
       license='3-Clause BSD',
       classifiers=[
@@ -35,6 +35,7 @@ setup(name='TracAdminEnumListPlugin',
       package_dir={'adminenumlistplugin': 'adminenumlistplugin'},
       include_package_data=True,
       package_data={'adminenumlistplugin': ['htdocs/*.js', 'htdocs/*/*.js']},
+      install_requires=['Trac'],
       zip_safe=False,
       entry_points="""
       [trac.plugins]
