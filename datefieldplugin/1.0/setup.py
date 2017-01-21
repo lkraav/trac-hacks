@@ -25,6 +25,7 @@ setup(
         'htdocs/css/*.css',
         'htdocs/js/*.js', 'htdocs/css/images/*.png'
     ]},
+    install_requires=['Trac'],
     classifiers=[
         'Framework :: Trac',
     ],
