@@ -342,12 +342,16 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
             values = []
             for val in row:
                 if val:
-                    cell = Cell(self.sheet, column='A', row=1, value=val.value)
+                    value = val.value
+                    cell = Cell(self.sheet, column='A', row=1, value=value)
+                    if isinstance(value, basestring):
+                        cell.set_explicit_value(value, data_type='s')
                     cell.style = val.style
                 else:
                     cell = val
                 values.append(cell)
             self.sheet.append(values)
+        self._rows[:] = ()
 
 
 class OpenpyxlCell(object):
