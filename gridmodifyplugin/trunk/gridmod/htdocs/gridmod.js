@@ -41,7 +41,7 @@ jQuery(document).ready(function ($) {
     });
   });
   // INPUT CHECKBOX
-  $("#table_inits_holder").find("input[type='checkbox']").each(function () {
+  $table_inits_holder.find("input[type='checkbox']").each(function () {
     var field = $(this).attr("name");
     console.log("CHECKBOX field name: " + field);
     var checkbox = $(this);
