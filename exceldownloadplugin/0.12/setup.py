@@ -19,7 +19,7 @@ except ImportError:
 
 setup(
     name = 'ExcelDownloadPlugin',
-    version = '0.12.0.5',
+    version = '0.12.0.6',
     description = 'Allow to download query and report page as Excel',
     license = 'BSD', # the same as Trac
     packages = find_packages(exclude=['*.tests*']),
@@ -29,9 +29,11 @@ setup(
         ],
     },
     test_suite = 'tracexceldownload.tests.suite',
-    install_requires = ['Trac', 'xlwt'],
+    install_requires = ['Trac'],
+    extras_require = {'openpyxl': 'openpyxl', 'xlwt': 'xlwt'},
     entry_points = {
         'trac.plugins': [
+            'tracexceldownload.api = tracexceldownload.api',
             'tracexceldownload.ticket = tracexceldownload.ticket',
             'tracexceldownload.translation = tracexceldownload.translation',
         ],

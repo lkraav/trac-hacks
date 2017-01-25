@@ -5,7 +5,6 @@ import re
 import types
 from datetime import datetime
 from itertools import chain, groupby
-from xlwt import Workbook, Formula
 
 from trac.core import Component, implements
 from trac.env import Environment
@@ -27,8 +26,8 @@ except ImportError:
     _epoc = datetime(1970, 1, 1, tzinfo=utc)
     from_utimestamp = lambda ts: _epoc + timedelta(seconds=ts or 0)
 
-from tracexceldownload.api import WorksheetWriter, get_workbook_content, \
-                                  get_literal
+from tracexceldownload.api import (get_excel_format, get_excel_mimetype,
+                                   get_workbook_writer)
 from tracexceldownload.translation import _, dgettext, dngettext
 
 
@@ -144,12 +143,14 @@ class ExcelTicketModule(Component):
     implements(IContentConverter)
 
     def get_supported_conversions(self):
-        yield ('excel', _("Excel"), 'xls',
-               'trac.ticket.Query', 'application/vnd.ms-excel', 8)
-        yield ('excel-history', _("Excel including history"), 'xls',
-               'trac.ticket.Query', 'application/vnd.ms-excel', 8)
-        yield ('excel-history', _("Excel including history"), 'xls',
-               'trac.ticket.Ticket', 'application/vnd.ms-excel', 8)
+        format = get_excel_format(self.env)
+        mimetype = get_excel_mimetype(format)
+        yield ('excel', _("Excel"), format,
+               'trac.ticket.Query', mimetype, 8)
+        yield ('excel-history', _("Excel including history"), format,
+               'trac.ticket.Query', mimetype, 8)
+        yield ('excel-history', _("Excel including history"), format,
+               'trac.ticket.Ticket', mimetype, 8)
 
     def convert_content(self, req, mimetype, content, key):
         if key == 'excel':
@@ -167,6 +168,8 @@ class ExcelTicketModule(Component):
 
     def _convert_query(self, req, query, sheet_query=True,
                        sheet_history=False):
+        book = get_workbook_writer(self.env, req)
+
         # no paginator
         query.max = 0
         query.has_more_pages = False
@@ -202,12 +205,11 @@ class ExcelTicketModule(Component):
         cols.extend([name for name in custom_fields if name not in cols])
         data = query.template_data(context, tickets)
 
-        book = Workbook(encoding='utf-8')
         if sheet_query:
             self._create_sheet_query(req, context, data, book)
         if sheet_history:
             self._create_sheet_history(req, context, data, book)
-        return get_workbook_content(book), 'application/vnd.ms-excel'
+        return book.dumps(), book.mimetype
 
     def _fill_custom_fields(self, tickets, fields, custom_fields, db):
         if not tickets or not custom_fields:
@@ -246,8 +248,7 @@ class ExcelTicketModule(Component):
 
         sheet_count = 1
         sheet_name = dgettext("messages", "Custom Query")
-        sheet = book.add_sheet(sheet_name)
-        writer = WorksheetWriter(sheet, req)
+        writer = book.create_sheet(sheet_name)
         write_headers(writer, query)
 
         for groupname, results in groups:
@@ -259,8 +260,8 @@ class ExcelTicketModule(Component):
 
             if writer.row_idx + len(results) + 3 > writer.MAX_ROWS:
                 sheet_count += 1
-                sheet = book.add_sheet('%s (%d)' % (sheet_name, sheet_count))
-                writer = WorksheetWriter(sheet, req)
+                writer = book.create_sheet('%s (%d)' % (sheet_name,
+                                                        sheet_count))
                 write_headers(writer, query)
 
             if groupname:
@@ -305,9 +306,8 @@ class ExcelTicketModule(Component):
         ]
 
         sheet_name = dgettext("messages", "Change History")
-        sheet = book.add_sheet(sheet_name)
         sheet_count = 1
-        writer = WorksheetWriter(sheet, req)
+        writer = book.create_sheet(sheet_name)
         write_headers(writer, headers)
 
         tkt_ids = [result['id']
@@ -325,7 +325,7 @@ class ExcelTicketModule(Component):
             values = ticket.values.copy()
             changes = []
 
-            for change in mod.rendered_changelog_entries(req, ticket):
+            for change in mod.grouped_changelog_entries(ticket, None):
                 if change['permanent']:
                     changes.append(change)
             for change in reversed(changes):
@@ -340,8 +340,8 @@ class ExcelTicketModule(Component):
 
             if writer.row_idx + len(changes) >= writer.MAX_ROWS:
                 sheet_count += 1
-                sheet = book.add_sheet('%s (%d)' % (sheet_name, sheet_count))
-                writer = WorksheetWriter(sheet, req)
+                writer = book.create_sheet('%s (%d)' % (sheet_name,
+                                                        sheet_count))
                 write_headers(writer, headers)
 
             for change in changes:
@@ -374,7 +374,6 @@ class ExcelTicketModule(Component):
             url = self.env.abs_href.ticket(value)
             value = '#%d' % value
             width = len(value)
-            value = Formula('HYPERLINK("%s",%s)' % (url, get_literal(value)))
             return value, 'id', width, 1
 
         if isinstance(value, datetime):
@@ -389,10 +388,12 @@ class ExcelTicketModule(Component):
             return value, name, None, None
 
         if name == 'milestone':
-            url = self.env.abs_href.milestone(value)
-            width, line = writer.get_metrics(value)
-            value = Formula('HYPERLINK("%s",%s)' % (url, get_literal(value)))
-            return value, name, width, line
+            if value:
+                url = self.env.abs_href.milestone(value)
+                width, line = writer.get_metrics(value)
+                return value, name, width, line
+            else:
+                return '', name, None, None
 
         return value, name, None, None
 
@@ -405,27 +406,26 @@ class ExcelReportModule(Component):
 
     def pre_process_request(self, req, handler):
         if self._PATH_INFO_MATCH(req.path_info) \
-                and req.args.get('format') == 'xls' \
+                and req.args.get('format') in ('xlsx', 'xls') \
                 and handler.__class__.__name__ == 'ReportModule':
             req.args['max'] = 0
         return handler
 
     def post_process_request(self, req, template, data, content_type):
         if template == 'report_view.html' and req.args.get('id'):
-            format = req.args.get('format')
-            if format == 'xls':
+            format = req.args.getfirst('format')
+            if format in ('xlsx', 'xls'):
                 resource = Resource('report', req.args['id'])
                 data['context'] = Context.from_request(req, resource,
                                                        absurls=True)
-                self._convert_report(req, data)
+                self._convert_report(format, req, data)
             elif not format:
                 self._add_alternate_links(req)
         return template, data, content_type
 
-    def _convert_report(self, req, data):
-        book = Workbook(encoding='utf-8')
-        sheet = book.add_sheet(dgettext('messages', 'Report'))
-        writer = WorksheetWriter(sheet, req)
+    def _convert_report(self, format, req, data):
+        book = get_workbook_writer(self.env, req)
+        writer = book.create_sheet(dgettext('messages', 'Report'))
 
         writer.write_row([(
             '%s (%s)' % (data['title'],
@@ -457,18 +457,18 @@ class ExcelReportModule(Component):
                             continue
                         col = cell_header['col'].strip('_').lower()
                         value, style, width, line = \
-                                self._get_cell_data(req, col, cell, row, writer)
+                            self._get_cell_data(req, col, cell, row, writer)
                         cells.append((value, style, width, line))
                     writer.write_row(cells)
 
         writer.set_col_widths()
 
-        content = get_workbook_content(book)
+        content = book.dumps()
         req.send_response(200)
-        req.send_header('Content-Type', 'application/vnd.ms-excel')
+        req.send_header('Content-Type', book.mimetype)
         req.send_header('Content-Length', len(content))
         req.send_header('Content-Disposition',
-                        'filename=report_%s.xls' % req.args['id'])
+                        'filename=report_%s.%s' % (req.args['id'], format))
         req.end_headers()
         req.write(content)
         raise RequestDone
@@ -479,20 +479,18 @@ class ExcelReportModule(Component):
         if col == 'report':
             url = self.env.abs_href.report(value)
             width, line = writer.get_metrics(value)
-            value = Formula('HYPERLINK("%s",%s)' % (url, get_literal(value)))
             return value, col, width, line
 
         if col in ('ticket', 'id'):
-            value = '#%s' % cell['value']
+            id_value = cell['value']
+            value = '#%s' % id_value
             url = get_resource_url(self.env, row['resource'], self.env.abs_href)
             width = len(value)
-            value = Formula('HYPERLINK("%s",%s)' % (url, get_literal(value)))
-            return value, 'id', width, 1
+            return id_value, 'id', width, 1
 
         if col == 'milestone':
             url = self.env.abs_href.milestone(value)
             width, line = writer.get_metrics(value)
-            value = Formula('HYPERLINK("%s",%s)' % (url, get_literal(value)))
             return value, col, width, line
 
         if col == 'time':
@@ -526,5 +524,7 @@ class ExcelReportModule(Component):
         href = ''
         if params:
             href = '&' + unicode_urlencode(params)
-        add_link(req, 'alternate', '?format=xls' + href, _("Excel"),
-                 'application/vnd.ms-excel')
+        format = get_excel_format(self.env)
+        mimetype = get_excel_mimetype(format)
+        add_link(req, 'alternate', '?format=' + format + href,
+                 _("Excel"), mimetype)

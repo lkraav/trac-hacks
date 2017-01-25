@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ExcelDownloadPlugin 0.12.0.1\n"
 "Report-Msgid-Bugs-To: jun66j5@gmail.com\n"
-"POT-Creation-Date: 2015-03-18 16:11+0900\n"
+"POT-Creation-Date: 2017-01-25 10:27+0000\n"
 "PO-Revision-Date: 2012-05-21 03:55+0900\n"
 "Last-Translator: Genie <386@mail.com>\n"
 "Language-Team: ko <LL@li.org>\n"
@@ -18,15 +18,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: tracexceldownload/api.py:42
-msgid "Number of rows in the Excel sheet exceeded the limit of 65536 rows"
-msgstr "엑셀 시트의 행 수가 65,536 행 범위를 초과하였습니다."
+#: tracexceldownload/api.py:64
+msgid "Specifies the format of Excel file to download."
+msgstr ""
 
-#: tracexceldownload/ticket.py:141 tracexceldownload/ticket.py:519
+#: tracexceldownload/api.py:556
+#, python-format
+msgid "Number of rows in the Excel sheet exceeded the limit of %(num)d row"
+msgid_plural "Number of rows in the Excel sheet exceeded the limit of %(num)d rows"
+msgstr[0] ""
+
+#: tracexceldownload/ticket.py:148 tracexceldownload/ticket.py:530
 msgid "Excel"
 msgstr "Excel"
 
-#: tracexceldownload/ticket.py:143 tracexceldownload/ticket.py:145
+#: tracexceldownload/ticket.py:150 tracexceldownload/ticket.py:152
 msgid "Excel including history"
 msgstr "Excel (변경 이력 포함)"
 
