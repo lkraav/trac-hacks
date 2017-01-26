@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime, timedelta
 import unittest
 
 from trac.test import EnvironmentStub, MockRequest
 from trac.ticket.model import Ticket
 from trac.ticket.query import Query
 from trac.ticket.report import ReportModule
+from trac.util.datefmt import utc
 from trac.web.api import RequestDone
 
 from tracexceldownload.ticket import ExcelTicketModule, ExcelReportModule
@@ -13,9 +15,25 @@ from tracexceldownload.ticket import ExcelTicketModule, ExcelReportModule
 
 class AbstractExcelTicketTestCase(unittest.TestCase):
 
+    _data_options = ['', 'foo', 'bar', 'baz', 'qux']
+    _data_texts = [
+        ''.join(map(unichr, xrange(256))),
+        ''.join(map(unichr, xrange(0xff00, 0x10100))),
+    ]
+
     def setUp(self):
+        options = self._data_options
+        texts = self._data_texts
+
         self.env = EnvironmentStub(default_data=True)
         self.env.config.set('exceldownload', 'format', self._format)
+        self.env.config.set('ticket-custom', 'col_text', 'text')
+        self.env.config.set('ticket-custom', 'col_checkbox', 'checkbox')
+        self.env.config.set('ticket-custom', 'col_select', 'select')
+        self.env.config.set('ticket-custom', 'col_select.options',
+                            '|'.join(options))
+        self.env.config.set('ticket-custom', 'col_time', 'time')
+        self.env.config.set('ticket-custom', 'col_time.format', 'datetime')
         @self.env.with_transaction()
         def fn(db):
             for idx in xrange(20):
@@ -25,6 +43,12 @@ class AbstractExcelTicketTestCase(unittest.TestCase):
                 ticket['status'] = 'new'
                 ticket['milestone'] = 'milestone%d' % ((idx % 4) + 1)
                 ticket['component'] = 'component%d' % ((idx % 2) + 1)
+                ticket['col_text'] = texts[idx % len(texts)]
+                ticket['col_checkbox'] = str(idx % 2)
+                ticket['col_select'] = options[idx % len(options)]
+                ticket['col_time'] = \
+                    datetime(2016, 12, 31, 13, 45, 59, 98765, utc) + \
+                    timedelta(days=idx, seconds=idx * 2)
                 ticket.insert()
 
     def tearDown(self):

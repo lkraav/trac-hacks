@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import inspect
+import re
+import sys
 from cStringIO import StringIO
 from datetime import datetime
 from decimal import Decimal
@@ -56,6 +58,32 @@ def get_workbook_writer(env, req):
     ext = get_excel_format(env)
     cls = _writer(ext)
     return cls(env, req)
+
+
+def _max_rows_error(num):
+    message = ngettext(
+        "Number of rows in the Excel sheet exceeded the limit of %(num)d row",
+        "Number of rows in the Excel sheet exceeded the limit of %(num)d rows",
+        num)
+    return WorksheetWriterError(message)
+
+
+def _make_invalid_chars_re():
+    ranges = [(0x00, 0x08), (0x0b, 0x0c), (0x0e, 0x1f), (0x7f, 0x84),
+              (0x86, 0x9f), (0xfdd0, 0xfddf), (0xfffe, 0xffff)]
+    if sys.maxunicode >= 0x10000:
+        ranges.extend(((0x1fffe, 0x1ffff), (0x2fffe, 0x2ffff),
+                       (0x3fffe, 0x3ffff), (0x4fffe, 0x4ffff),
+                       (0x5fffe, 0x5ffff), (0x6fffe, 0x6ffff),
+                       (0x7fffe, 0x7ffff), (0x8fffe, 0x8ffff),
+                       (0x9fffe, 0x9ffff), (0xafffe, 0xaffff),
+                       (0xbfffe, 0xbffff), (0xcfffe, 0xcffff),
+                       (0xdfffe, 0xdffff), (0xefffe, 0xeffff),
+                       (0xffffe, 0xfffff), (0x10fffe, 0x10ffff)))
+    pattern = u'[' + \
+              u''.join(u'%s-%s' % (unichr(low), unichr(high))
+                       for low, high in ranges) + u']'
+    return re.compile(pattern)
 
 
 class ExcelDownloadConfig(Component):
@@ -137,7 +165,7 @@ class AbstractWorksheetWriter(object):
     def move_row(self):
         self.row_idx += 1
         if self.row_idx >= self.MAX_ROWS:
-            raise max_rows_error(self.MAX_ROWS)
+            raise _max_rows_error(self.MAX_ROWS)
 
     def get_metrics(self, value):
         return self.writer.get_metrics(value)
@@ -151,9 +179,12 @@ class AbstractWorksheetWriter(object):
     def set_col_widths(self):
         raise NotImplemented
 
+    _invalid_chars_re = _make_invalid_chars_re()
+
     def _normalize_text(self, value):
         if isinstance(value, str):
             value = to_unicode(value)
+        value = self._invalid_chars_re.sub(u'\ufffd', value)
         value = '\n'.join(line.rstrip() for line in value.splitlines())
         if len(value) > self.MAX_CHARS:
             value = value[:self.MAX_CHARS - 1] + u'\u2026'
@@ -334,6 +365,7 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
     def set_col_widths(self):
         from openpyxl.utils.cell import get_column_letter
         from openpyxl.cell import Cell
+        TYPE_STRING = Cell.TYPE_STRING
 
         for idx, width in sorted(self._col_widths.iteritems()):
             letter = get_column_letter(idx + 1)
@@ -343,9 +375,11 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
             for val in row:
                 if val:
                     value = val.value
-                    cell = Cell(self.sheet, column='A', row=1, value=value)
+                    cell = Cell(self.sheet, column='A', row=1)
                     if isinstance(value, basestring):
-                        cell.set_explicit_value(value, data_type='s')
+                        cell.set_explicit_value(value, data_type=TYPE_STRING)
+                    else:
+                        cell.value = value
                     cell.style = val.style
                 else:
                     cell = val
@@ -554,11 +588,3 @@ class XlwtWorksheetWriter(AbstractWorksheetWriter):
     def set_col_widths(self):
         for idx, width in self._col_widths.iteritems():
             self.sheet.col(idx).width = (1 + min(width, 50)) * 256
-
-
-def max_rows_error(num):
-    message = ngettext(
-        "Number of rows in the Excel sheet exceeded the limit of %(num)d row",
-        "Number of rows in the Excel sheet exceeded the limit of %(num)d rows",
-        num)
-    return WorksheetWriterError(message)
