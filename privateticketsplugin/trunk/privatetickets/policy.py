@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2008 Noah Kantrowitz
-# Copyright (C) 2012 Ryan J Ollos
+# Copyright (C) 2012-2017 Ryan J Ollos
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -9,7 +9,7 @@
 
 
 from trac.config import ListOption
-from trac.core import *
+from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import IPermissionGroupProvider, IPermissionPolicy, \
                       IPermissionRequestor, PermissionSystem
 from trac.ticket.model import Ticket
@@ -26,8 +26,8 @@ class PrivateTicketsPolicy(Component):
     
     blacklist = ListOption('privatetickets', 'group_blacklist',
                            default='anonymous, authenticated',
-                           doc='Groups that do not affect the common'
-                               ' membership check.')
+                           doc="Groups that do not affect the common "
+                               "membership check.")
     
     ignore_permissions = set([
         'TRAC_ADMIN',
@@ -39,12 +39,12 @@ class PrivateTicketsPolicy(Component):
         'TICKET_VIEW_CC_GROUP',
     ])
     
-    # IPermissionPolicy(Interface)
+    # IPermissionPolicy methods
+
     def check_permission(self, action, username, resource, perm):
         if username == 'anonymous' or \
-           action in self.ignore_permissions or \
-           'TRAC_ADMIN' in perm:
-            # In these three cases, checking makes no sense
+                action in self.ignore_permissions or \
+                'TRAC_ADMIN' in perm:
             return None
         
         # Look up the resource parentage for a ticket.
@@ -57,75 +57,73 @@ class PrivateTicketsPolicy(Component):
         return None
     
     # IPermissionRequestor methods
+
     def get_permission_actions(self):
         actions = ['TICKET_VIEW_REPORTER', 'TICKET_VIEW_OWNER',
                    'TICKET_VIEW_CC']
         group_actions = ['TICKET_VIEW_REPORTER_GROUP',
                          'TICKET_VIEW_OWNER_GROUP',
                          'TICKET_VIEW_CC_GROUP']
-        all_actions = actions + [(a+'_GROUP', [a]) for a in actions]
+        all_actions = actions + [(a + '_GROUP', [a]) for a in actions]
         return all_actions + [('TICKET_VIEW_SELF', actions),
                               ('TICKET_VIEW_GROUP', group_actions)]
     
-    # Public methods
-    def check_ticket_access(self, perm, res):
+    # Internal methods
+
+    def check_ticket_access(self, perm, resource):
         """Return if this req is permitted access to the given ticket ID."""
         try:
-            tkt = Ticket(self.env, res.id)
+            tkt = Ticket(self.env, resource.id)
         except TracError:
             return None  # Ticket doesn't exist
         
-        had_any = False
+        has_any = False
         
-        if perm.has_permission('TICKET_VIEW_REPORTER'):
-            had_any = True
+        if 'TICKET_VIEW_REPORTER' in perm:
+            has_any = True
             if tkt['reporter'] == perm.username:
                 return None
         
-        if perm.has_permission('TICKET_VIEW_CC'):
-            had_any = True
+        if 'TICKET_VIEW_CC' in perm:
+            has_any = True
             cc_list = Chrome(self.env).cc_list(tkt['cc'])
             if perm.username in cc_list:
                 return None
         
-        if perm.has_permission('TICKET_VIEW_OWNER'):
-            had_any = True
+        if 'TICKET_VIEW_OWNER' in perm:
+            has_any = True
             if perm.username == tkt['owner']:
                 return None
         
-        if perm.has_permission('TICKET_VIEW_REPORTER_GROUP'):
-            had_any = True
+        if 'TICKET_VIEW_REPORTER_GROUP' in perm:
+            has_any = True
             if self._check_group(perm.username, tkt['reporter']):
                 return None
         
-        if perm.has_permission('TICKET_VIEW_OWNER_GROUP'):
-            had_any = True
+        if 'TICKET_VIEW_OWNER_GROUP' in perm:
+            has_any = True
             if self._check_group(perm.username, tkt['owner']):
                 return None
         
-        if perm.has_permission('TICKET_VIEW_CC_GROUP'):
-            had_any = True
+        if 'TICKET_VIEW_CC_GROUP' in perm:
+            has_any = True
             cc_list = Chrome(self.env).cc_list(tkt['cc'])
             for user in cc_list:
-                #self.log.debug('Private: CC check: %s, %s', req.authname, user.strip())
                 if self._check_group(perm.username, user):
                     return None
         
-        # No permissions assigned, punt
-        if not had_any:
+        # No permissions assigned.
+        if not has_any:
             return None
         
         return False
 
-    # Internal methods
     def _check_group(self, user1, user2):
         """Check if user1 and user2 share a common group."""
         user1_groups = self._get_groups(user1)
         user2_groups = self._get_groups(user2)
         both = user1_groups.intersection(user2_groups)
         both -= set(self.blacklist)
-        
-        #self.log.debug('PrivateTicket: %s&%s = (%s)&(%s) = (%s)', user1, user2, ','.join(user1_groups), ','.join(user2_groups), ','.join(both))
         return bool(both)
     
     def _get_groups(self, user):
