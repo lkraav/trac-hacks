@@ -6,8 +6,8 @@
 
 if (!window.console)
   window.console = {};
-console.log = console.log || function () {
-  };
+  console.log = console.log || function () {
+};
 
 jQuery(document).ready(function ($) {
 
@@ -36,7 +36,7 @@ jQuery(document).ready(function ($) {
       $(this).html(text.clone().get(0));
       console.log("  gridmod_default: " + gridmod_default);
       if (gridmod_default != '') {
-        $(this).contents('input').attr('value', gridmod_default);
+        $(this).contents('input').val(gridmod_default);
       }
     });
   });
@@ -50,10 +50,10 @@ jQuery(document).ready(function ($) {
       $(this).html(checkbox.clone().get(0));
       console.log("  gridmod_default: " + gridmod_default);
       if (gridmod_default == 'True' || gridmod_default == '1') {
-        $(this).contents('input').attr('value', 'True');
+        $(this).contents('input').val('True');
         $(this).contents('input').attr('checked', 'checked');
       } else {
-        $(this).contents('input').attr('value', 'False');
+        $(this).contents('input').val('False');
         $(this).contents('input').removeAttr('checked');
       }
     });
@@ -88,10 +88,10 @@ jQuery(document).ready(function ($) {
       if ($(this).is('select')) {
         new_value = $(this).find('option:selected').text();
       } else if ($(this).attr('type') == 'text') {
-        new_value = $(this).attr('value');
+        new_value = $(this).val();
       } else if ($(this).attr('type') == 'checkbox') {
         // force toggle - this needs investigating, shouldn't the browser do it? why do we need to do it here?
-        new_value = $(this).attr('value');
+        new_value = $(this).val();
         if (new_value == 'True') {
           new_value = 'False';
         } else {
