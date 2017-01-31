@@ -4,21 +4,32 @@
 # Licensed under the same license as Trac - http://trac.edgewall.org/wiki/TracLicense
 #
 
+from datetime import datetime
 import codecs
 import csv
-import datetime
 try:
     import xlrd
 except ImportError:
     xlrd = None
+try:
+    import openpyxl
+except ImportError:
+    openpyxl = None
 
 from trac.core import TracError
 from trac.util.text import to_unicode
 
 
 def get_reader(filename, sheet_index, datetime_format, encoding='utf-8'):
-    # NOTE THAT the sheet index is 1-based !
-    # KISS - keep it simple: if it can be opened as XLS, do, otherwise try as CSV.
+    if openpyxl:
+        try:
+            return XLSXReader(filename, sheet_index, datetime_format)
+        except IndexError:
+            raise TracError('The sheet index (%s) does not seem to correspond to an existing sheet in the spreadsheet'
+                            % sheet_index)
+        except Exception:
+            pass
+
     if xlrd:
         try:
             return XLSReader(filename, sheet_index, datetime_format)
@@ -117,33 +128,87 @@ class XLSReader(object):
     def readers(self):
         # TODO: do something with sh.name. Probably add it as a column. 
         # TODO: read the other sheets. What if they don't have the same columns ?
-        header = [to_unicode(self.sh.cell_value(rowx=0, colx=cx))
-                  for cx in xrange(self.sh.ncols)]
 
+        def to_s(val, cell_type):
+            if cell_type == xlrd.XL_CELL_NUMBER:
+                return '%g' % val
+            if cell_type == xlrd.XL_CELL_DATE:
+                val = datetime(*xlrd.xldate_as_tuple(val, self.book.datemode))
+                return val.strftime(self._datetime_format)
+            if cell_type == xlrd.XL_CELL_BOOLEAN:
+                return ('FALSE', 'TRUE')[val]
+            if cell_type == xlrd.XL_CELL_ERROR:
+                return xlrd.error_text_from_code.get(val) or '#ERR%d' % val
+            return val
+
+        sh = self.sh
+        header = [to_s(sh.cell_value(0, cx), sh.cell_type(0, cx))
+                  for cx in xrange(sh.ncols)]
         data = []
-        for rx in xrange(self.sh.nrows):
+        for rx in xrange(sh.nrows):
             if rx == 0:
                 continue
             row = {}
             i = 0
-            for cx in xrange(self.sh.ncols):
-                val = self.sh.cell_value(rx, cx)
-                cell_type = self.sh.cell_type(rx, cx)
-                if cell_type == xlrd.XL_CELL_NUMBER:
-                    val = '%g' % val
-                elif cell_type == xlrd.XL_CELL_DATE:
-                    val = datetime.datetime(*xlrd.xldate_as_tuple(val, self.book.datemode))
-                    val = val.strftime(self._datetime_format)
-                elif cell_type == xlrd.XL_CELL_BOOLEAN:
-                    val = ('FALSE', 'TRUE')[val]
-                elif cell_type == xlrd.XL_CELL_ERROR:
-                    val = xlrd.error_text_from_code.get(val) or '#ERR%d' % val
-                row[header[i]] = val
-
+            for cx in xrange(sh.ncols):
+                val = sh.cell_value(rx, cx)
+                cell_type = sh.cell_type(rx, cx)
+                row[header[i]] = to_s(val, cell_type)
                 i += 1
             data.append(row)
 
         return header, data
+
+    def close(self):
+        pass
+
+
+class XLSXReader(object):
+
+    def __init__(self, filename, sheet_index, datetime_format):
+        self.book = openpyxl.load_workbook(filename=filename, read_only=True)
+        worksheets = self.book.worksheets
+        self.sheets_count = len(worksheets)
+        self.sheet = worksheets[sheet_index - 1]
+        self._datetime_format = datetime_format
+
+    def get_sheet_count(self):
+        return self.sheets_count
+
+    def readers(self):
+        def to_s(cell):
+            val = cell.value
+            if isinstance(val, unicode):
+                return val
+            if val is None:
+                return ''
+            if val is True:
+                return 'TRUE'
+            if val is False:
+                return 'FALSE'
+            if isinstance(val, datetime):
+                return val.strftime(self._datetime_format)
+            if isinstance(val, (long, int, float)):
+                return '%g' % val
+            return to_unicode(val)
+
+        def iter_data(iter_row, header):
+            for row in iter_row:
+                values = {}
+                for idx, cell in enumerate(row):
+                    if idx >= len(header):
+                        break
+                    values[header[idx]] = to_s(cell)
+                yield values
+
+        iter_row = iter(self.sheet.rows)
+        try:
+            row = next(iter_row)
+        except StopIteration:
+            return [], []
+        else:
+            header = [to_s(cell) for cell in row]
+            return header, iter_data(iter_row, header)
 
     def close(self):
         pass

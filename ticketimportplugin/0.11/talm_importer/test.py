@@ -25,6 +25,7 @@ from trac.web.api import Request
 
 from talm_importer.compat import get_read_db, with_transaction
 from talm_importer.importer import ImportModule
+from talm_importer.readers import get_reader
 
 
 if parse_version(VERSION) >= parse_version('0.12'):
@@ -532,6 +533,28 @@ class ImporterTestCase(ImporterBaseTestCase):
         except TracError, e:
             self.assertEquals('Error while reading from line 4 to 6',
                               unicode(e).split(':', 1)[0])
+
+    def test_same_results_between_xls_and_xlsx(self):
+        names = ['celltypes-ticket-8804', 'datetimes', 'datetimes_formatted',
+                 'same-summary-different-owners-for-reconcilation-with-owner',
+                 'test_10188', 'ticket-13', 'various-charsets']
+        format = '%Y-%m-%d %H:%M:%S'
+        for name in names:
+            xls_reader = xlsx_reader = None
+            try:
+                xls_reader = get_reader(os.path.join(TESTDIR, name + '.xls'),
+                                        1, format)
+                xlsx_reader = get_reader(os.path.join(TESTDIR, name + '.xlsx'),
+                                         1, format)
+                xls_header, xls_data = xls_reader.readers()
+                xlsx_header, xlsx_data = xlsx_reader.readers()
+                self.assertEquals(xls_header, xlsx_header)
+                self.assertEquals(list(xls_data), list(xlsx_data))
+            finally:
+                if xls_reader:
+                    xls_reader.close()
+                if xlsx_reader:
+                    xlsx_reader.close()
 
 
 class MasterTicketsPluginTestCase(ImporterBaseTestCase):
