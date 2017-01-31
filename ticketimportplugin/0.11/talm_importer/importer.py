@@ -119,31 +119,34 @@ class ImportModule(Component):
         return str(self.config.get('importer', 'datetime_format', '%x')) # default is Locale's appropriate date representation
 
     def _do_preview(self, uploadedfile, sheet, req, encoding=None):
-        filereader = get_reader(uploadedfile, sheet, self._datetime_format(),
-                                encoding=encoding)
+        reader = self._get_reader(uploadedfile, sheet, encoding)
         try:
             result = [None]
             @with_transaction(self.env)
             def fn(db):
                 processor = PreviewProcessor(self.env, db, req)
-                result[0] = self._process(filereader, processor)
+                result[0] = self._process(reader, processor)
             return result[0]
         finally:
-            filereader.close()
+            reader.close()
 
-    def _do_import(self, uploadedfile, sheet, req, uploadedfilename, tickettime, encoding=None):
-        filereader = get_reader(uploadedfile, sheet, self._datetime_format(),
-                                encoding=encoding)
+    def _do_import(self, uploadedfile, sheet, req, uploadedfilename,
+                   tickettime, encoding=None):
+        reader = self._get_reader(uploadedfile, sheet, encoding)
         try:
             result = [None]
             @with_transaction(self.env)
             def fn(db):
                 processor = ImportProcessor(self.env, db, req,
                                             uploadedfilename, tickettime)
-                result[0] = self._process(filereader, processor)
+                result[0] = self._process(reader, processor)
             return result[0]
         finally:
-            filereader.close()
+            reader.close()
+
+    def _get_reader(self, filename, sheet_index, encoding='utf-8'):
+        return get_reader(self.env, filename, sheet_index,
+                          self._datetime_format(), encoding)
 
     def _save_uploaded_file(self, req):
         req.perm.assert_permission('IMPORT_EXECUTE')

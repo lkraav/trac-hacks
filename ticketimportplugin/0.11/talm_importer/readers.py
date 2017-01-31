@@ -17,18 +17,20 @@ except ImportError:
     openpyxl = None
 
 from trac.core import TracError
-from trac.util.text import to_unicode
+from trac.util.text import exception_to_unicode, to_unicode
 
 
-def get_reader(filename, sheet_index, datetime_format, encoding='utf-8'):
+def get_reader(env, filename, sheet_index, datetime_format, encoding='utf-8'):
+    errors = {}
+
     if openpyxl:
         try:
             return XLSXReader(filename, sheet_index, datetime_format)
         except IndexError:
             raise TracError('The sheet index (%s) does not seem to correspond to an existing sheet in the spreadsheet'
                             % sheet_index)
-        except Exception:
-            pass
+        except Exception, e:
+            errors['XLSXReader'] = exception_to_unicode(e)
 
     if xlrd:
         try:
@@ -36,15 +38,17 @@ def get_reader(filename, sheet_index, datetime_format, encoding='utf-8'):
         except IndexError:
             raise TracError('The sheet index (%s) does not seem to correspond to an existing sheet in the spreadsheet'
                             % sheet_index)
-        except Exception:
-            pass
+        except Exception, e:
+            errors['XLSReader'] = exception_to_unicode(e)
 
     try:
         return CSVReader(filename, encoding)
     except UnicodeDecodeError:
         raise TracError('Unable to read the CSV file with "%s"' % encoding)
-    except:
-        if xlrd:
+    except Exception, e:
+        errors['CSVReader'] = exception_to_unicode(e)
+        env.log.warning('Exception caught while reading the file (%r)', errors)
+        if xlrd or openpyxl:
             message = 'Unable to read this file, does not seem to be a valid Excel or CSV file.'
         else:
             message = 'XLS reading is not configured, and this file is not a valid CSV file: unable to read file.'
@@ -166,7 +170,9 @@ class XLSReader(object):
 class XLSXReader(object):
 
     def __init__(self, filename, sheet_index, datetime_format):
-        self.book = openpyxl.load_workbook(filename=filename, read_only=True)
+        self.fileobj = open(filename, 'rb')
+        self.book = openpyxl.load_workbook(filename=self.fileobj,
+                                           read_only=True)
         worksheets = self.book.worksheets
         self.sheets_count = len(worksheets)
         self.sheet = worksheets[sheet_index - 1]
@@ -211,4 +217,6 @@ class XLSXReader(object):
             return header, iter_data(iter_row, header)
 
     def close(self):
-        pass
+        if self.fileobj:
+            self.fileobj.close()
+            self.fileobj = None

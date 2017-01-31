@@ -110,6 +110,10 @@ class ImporterBaseTestCase(unittest.TestCase):
     def _pformat(self, data):
         return PrettyPrinter(indent=4).pformat(data)
 
+    def _get_reader(self, filename, sheet_index, datetime_format):
+        filename = os.path.join(TESTDIR, filename)
+        return get_reader(self.env, filename, sheet_index, datetime_format)
+
     def _test_preview(self, filename):
         req = Request({'SERVER_PORT': 0, 'SERVER_NAME': 'any',
                        'wsgi.url_scheme': 'any', 'wsgi.input': 'any',
@@ -542,10 +546,8 @@ class ImporterTestCase(ImporterBaseTestCase):
         for name in names:
             xls_reader = xlsx_reader = None
             try:
-                xls_reader = get_reader(os.path.join(TESTDIR, name + '.xls'),
-                                        1, format)
-                xlsx_reader = get_reader(os.path.join(TESTDIR, name + '.xlsx'),
-                                         1, format)
+                xls_reader = self._get_reader(name + '.xls', 1, format)
+                xlsx_reader = self._get_reader(name + '.xlsx', 1, format)
                 xls_header, xls_data = xls_reader.readers()
                 xlsx_header, xlsx_data = xlsx_reader.readers()
                 self.assertEquals(xls_header, xlsx_header)
