@@ -19,6 +19,7 @@ from trac.test import EnvironmentStub, Mock, MockPerm
 from trac.ticket.model import Ticket
 from trac.web.href import Href
 from trac.wiki.model import WikiPage
+from trac.versioncontrol.api import Changeset
 
 from tracbookmark import BookmarkSystem
 
@@ -59,7 +60,8 @@ class BookmarkSystemTestCase(unittest.TestCase):
         self.assertEquals('', data['name'])
 
     def test_format_name_wiki_versioned(self):
-        data = self.bmsys._format_name(self.req, '/wiki/Page/SubPage?version=42')
+        data = self.bmsys._format_name(self.req,
+                                       '/wiki/Page/SubPage?version=42')
         self.assertEquals('wiki', data['class_'])
         self.assertEquals('/trac.cgi/wiki/Page/SubPage?version=42',
                           data['href'])
@@ -78,7 +80,8 @@ class BookmarkSystemTestCase(unittest.TestCase):
         self.assertEquals('new ticket', data['class_'])
         self.assertEquals('/trac.cgi/ticket/%d' % tkt_id, data['href'])
         self.assertEquals('#%d' % tkt_id, data['linkname'])
-        self.assertEquals('enhancement: This is a summary (new)', data['name'])
+        self.assertEquals('enhancement: This is a summary (new)',
+                          data['name'])
 
     def test_format_name_closed_ticket(self):
         ticket = Ticket(self.env)
@@ -140,6 +143,9 @@ class BookmarkSystemTestCase(unittest.TestCase):
         self.assertEquals('Changeset 42', data['name'])
 
     def test_format_name_attachment(self):
+        page = WikiPage(self.env, 'WikiStart')
+        page.text = 'the text'
+        page.save('user1', 'Create page', '::1')
         attachment = Attachment(self.env, 'wiki', 'WikiStart')
         attachment.insert('foo.txt', StringIO(''), 1)
         data = self.bmsys._format_name(self.req,
@@ -173,11 +179,12 @@ class BookmarkSystemTestCase(unittest.TestCase):
     def test_format_name_attachment_list(self):
         pass
 
-def suite():
+
+def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BookmarkSystemTestCase))
     return suite
 
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

@@ -13,17 +13,22 @@ from setuptools import setup
 
 setup(
     name='TracBookmark',
-    version='0.1',
-    packages=['tracbookmark'],
-    package_data={'tracbookmark' : [
-        'templates/*.html', 'htdocs/*.*', 'htdocs/js/*.js', 'htdocs/css/*.css']},
-    exclude_package_data={'': ['tests/*']},
-    test_suite = 'tracbookmark.tests.suite',
+    version='0.2',
     author='Yoshiyuki Sugimoto',
-    maintainer = 'Yoshiyuki Sugimoto',
-    maintainer_email = 's.yosiyuki@gmail.com',
+    maintainer='Yoshiyuki Sugimoto',
+    maintainer_email='s.yosiyuki@gmail.com',
     license='BSD 3-clause',
-    url='http://trac-hacks.org/wiki/BookmarkPlugin',
+    url='https://trac-hacks.org/wiki/BookmarkPlugin',
+    packages=['tracbookmark'],
+    package_data={'tracbookmark': [
+        'templates/*.html',
+        'htdocs/*.*',
+        'htdocs/js/*.js',
+        'htdocs/css/*.css'
+    ]},
+    install_requires=['Trac'],
+    exclude_package_data={'': ['tests/*']},
+    test_suite = 'tracbookmark.tests.test_suite',
     description='A plugin bookmark Trac resources.',
     entry_points = {'trac.plugins': ['tracbookmark = tracbookmark']},
-    )
+)
