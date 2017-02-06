@@ -164,7 +164,7 @@ jQuery(document).ready(function($) {
         },
 
         { // Tickets
-            match: /((?:^|[^{])#|\bticket:)(\d*)$/,
+            match: /((?:^|[^{])#|\bticket:|\bbug:|\bissue:)(\d*)$/,
             search: search('ticket'),
             index: 2,
             template: function (ticket, term) {
@@ -208,7 +208,7 @@ jQuery(document).ready(function($) {
         },
 
         { // Source
-            match: /\b(source:|log:)([^@\s]*(?:@\S*)?)$/,
+            match: /\b(source:|browser:|repos:|log:)([^@\s]*(?:@\S*)?)$/,
             search: search('source'),
             index: 2,
             template: template,
