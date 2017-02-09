@@ -4,14 +4,15 @@
 from setuptools import find_packages, setup
 
 setup(
-    name = "MilestoneQuery",
-    version = 1.0,
-    packages = find_packages(exclude=['*.tests']),
-    author = "Nic Ferrier",
-    description = "List milestones.",
-    keywords = "trac macro milestone",
-    url = "http://trac-hacks.org/wiki/MilestoneQueryMacro",
-    entry_points = {
+    name="MilestoneQuery",
+    version=1.0.1,
+    packages=find_packages(exclude=['*.tests']),
+    author="Nic Ferrier",
+    description="List milestones.",
+    keywords="trac macro milestone",
+    url="https://trac-hacks.org/wiki/MilestoneQueryMacro",
+    install_requires=['Trac'],
+    entry_points={
         "trac.plugins": [
             "MilestoneQuery = milestonequery.macro"
         ]

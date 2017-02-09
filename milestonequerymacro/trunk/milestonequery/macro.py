@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from genshi.core import Markup
+import StringIO
+
+from trac.util.html import Markup
 from trac.wiki.formatter import Formatter
 from trac.wiki.macros import WikiMacroBase, parse_args
-from StringIO import StringIO
+
 
 class MilestoneQueryMacro(WikiMacroBase):
-    """Display a ticket query based on the milestone name for each matching milestone.
+    """Display a ticket query based on the milestone name for each
+    matching milestone.
 
     Specify a pattern to match the milestones and optionally
     'completed' and 'desc' (or 'asc' which is the default):
@@ -44,7 +47,7 @@ class MilestoneQueryMacro(WikiMacroBase):
             """ % (db.like(), completed, ordering), (pattern,)
         )
 
-        out = StringIO()
+        out = StringIO.StringIO()
         for name, in cursor.fetchall():
             wikitext = """
                 == [milestone:%(milestonename)s %(milestonename)s] ==
