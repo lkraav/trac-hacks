@@ -158,8 +158,19 @@ if json:
             if not json:
                 self.log.debug("RPC(json) call ignored (not available).")
                 raise JsonProtocolException("Error: JSON-RPC not available.\n")
+
             try:
                 data = json.load(req, cls=TracRpcJSONDecoder)
+            except Exception, e:
+                self.log.warning("RPC(json) decode error: %s",
+                                 exception_to_unicode(e))
+                raise JsonProtocolException(e, -32700)
+            if not isinstance(data, dict):
+                self.log.warning("RPC(json) decode error (not a dict)")
+                raise JsonProtocolException('JSON object is not a dict',
+                                            -32700)
+
+            try:
                 self.log.info("RPC(json) JSON-RPC request ID : %s.", data.get('id'))
                 if data.get('method') == 'system.multicall':
                     # Prepare for multicall
@@ -171,8 +182,8 @@ if json:
                 return data
             except Exception, e:
                 # Abort with exception - no data can be read
-                self.log.error("RPC(json) decode error %s", 
-                                  exception_to_unicode(e, traceback=True))
+                self.log.warning("RPC(json) decode error: %s",
+                                 exception_to_unicode(e))
                 raise JsonProtocolException(e, -32700)
 
         def send_rpc_result(self, req, result):

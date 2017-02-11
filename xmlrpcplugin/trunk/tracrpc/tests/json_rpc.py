@@ -65,7 +65,9 @@ else:
         def _anon_req(self, data):
             req = urllib2.Request(rpc_testenv.url_anon,
                         headers={'Content-Type': 'application/json'})
-            req.data = json.dumps(data)
+            if not isinstance(data, basestring):
+                data = json.dumps(data)
+            req.data = data
             resp = urllib2.urlopen(req)
             return json.loads(resp.read())
 
@@ -78,7 +80,9 @@ else:
                           passwd=user)
             req = urllib2.Request(rpc_testenv.url_auth,
                         headers={'Content-Type': 'application/json'})
-            req.data = json.dumps(data)
+            if not isinstance(data, basestring):
+                data = json.dumps(data)
+            req.data = data
             resp = urllib2.build_opener(handler).open(req)
             return json.loads(resp.read())
 
@@ -232,6 +236,24 @@ else:
             self.assertEquals(result['error']['code'], 404)
             self.assertEquals(result['error']['message'],
                      'Wiki page "Test" does not exist at version 10')
+
+        def test_invalid_json(self):
+            result = self._anon_req('invalid-json')
+            self.assertEquals(result['id'], None)
+            self.assertEquals(result['error']['code'], -32700)
+            self.assertEquals(result['error']['name'], 'JSONRPCError')
+            self.assertEquals(result['error']['message'],
+                              'JsonProtocolException details : No JSON object '
+                              'could be decoded')
+
+        def test_not_a_dict(self):
+            result = self._anon_req('42')
+            self.assertEquals(result['id'], None)
+            self.assertEquals(result['error']['code'], -32700)
+            self.assertEquals(result['error']['name'], 'JSONRPCError')
+            self.assertEquals(result['error']['message'],
+                              'JsonProtocolException details : JSON object is '
+                              'not a dict')
 
 def test_suite():
     test_suite = unittest.TestSuite()

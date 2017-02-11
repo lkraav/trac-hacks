@@ -29,7 +29,7 @@ from trac.wiki.formatter import wiki_to_oneliner
 
 from tracrpc.api import XMLRPCSystem, IRPCProtocol, ProtocolException, \
                           RPCError, ServiceException
-from tracrpc.util import accepts_mimetype
+from tracrpc.util import accepts_mimetype, exception_to_unicode
 
 __all__ = ['RPCWeb']
 
@@ -158,17 +158,23 @@ class RPCWeb(Component):
                 result = (XMLRPCSystem(self.env).get_method(method_name)(req, args))[0]
                 if isinstance(result, GeneratorType):
                     result = list(result)
-            except (RPCError, PermissionError, ResourceNotFound), e:
+            except (TracError, PermissionError, ResourceNotFound), e:
                 raise
             except Exception:
                 e, tb = sys.exc_info()[-2:]
+                self.log.error("RPC(%s) [%s] Exception caught while calling "
+                               "%s(*%r) by %s%s", proto_id, req.remote_addr,
+                               method_name, args, req.authname,
+                               exception_to_unicode(e, traceback=True))
                 raise ServiceException(e), None, tb
             else :
                 protocol.send_rpc_result(req, result)
         except RequestDone :
             raise
-        except (RPCError, PermissionError, ResourceNotFound), e:
-            self.log.exception("RPC(%s) Error", proto_id)
+        except (TracError, PermissionError, ResourceNotFound), e:
+            if type(e) is not ServiceException:
+                self.log.warning("RPC(%s) [%s] %s", proto_id, req.remote_addr,
+                                 exception_to_unicode(e))
             try :
                 protocol.send_rpc_error(req, e)
             except RequestDone :
