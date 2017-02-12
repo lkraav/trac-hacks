@@ -277,7 +277,7 @@ class TracHacksHandler(Component):
         #if match.group(1):
         #    view = match.group(1)
 
-        authz_file = self.env.config.getpath('trac', 'authz_file')
+        authz_file = self.env.config.getpath('svn', 'authz_file')
         if not authz_file:
             raise ConfigurationError(
                 tag_("The configuration option %(option)s is empty or "
@@ -548,7 +548,7 @@ class TracHacksHandler(Component):
                 # Step 2: Add permissions
                 from svnauthz.model import User, Path, PathAcl
 
-                authz_file = self.config.getpath('trac', 'authz_file')
+                authz_file = self.config.getpath('svn', 'authz_file')
                 authz = AuthzFile(authz_file).read()
 
                 svn_path_acl = PathAcl(User(req.authname), r=True, w=True)
@@ -594,7 +594,7 @@ class TracHacksHandler(Component):
                     if 'component' in steps_done:
                         TicketComponent(self.env, page_name).delete()
                     if 'permissions' in steps_done:
-                        authz_file = self.env.config.getpath('trac',
+                        authz_file = self.env.config.getpath('svn',
                                                              'authz_file')
                         authz = AuthzFile(authz_file).read()
                         if authz.find_path(hack_path):
