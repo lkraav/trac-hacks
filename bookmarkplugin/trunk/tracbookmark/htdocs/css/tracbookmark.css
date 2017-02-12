@@ -1,5 +1,5 @@
 #ctxtnav #bookmark_menu {
-    *position: relative;
+    position: relative;
 }
 #ctxtnav #bookmark_menu > ul {
     display: none;
