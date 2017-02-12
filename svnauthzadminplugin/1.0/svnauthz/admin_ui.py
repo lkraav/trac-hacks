@@ -31,7 +31,9 @@ class SvnAuthzAdminPage(Component):
 
     def __init__(self):
         # Retrieve info for all repositories associated with this project
-        self.authz_file = self.config.getpath('trac', 'authz_file')
+        self.authz_file = self.config.getpath('svn', 'authz_file')
+        if not self.authz_file:  # < Trac 1.2
+            self.authz_file = self.config.getpath('trac', 'authz_file')
         rm = RepositoryManager(self.env)
         self.project_repos = []
         for reponame in rm.get_all_repositories().iterkeys():
