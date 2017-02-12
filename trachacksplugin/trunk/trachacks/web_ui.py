@@ -98,7 +98,7 @@ class HackDoesntExist(Aspect):
                 'Resulting component "%s" already exists.' % page_name
             )
 
-        authz_file = self.env.config.getpath('trac', 'authz_file')
+        authz_file = self.env.config.getpath('svn', 'authz_file')
         authz = AuthzFile(authz_file).read()
         authz_paths = [p.get_path() for p in authz.get_paths()]
         for ap in authz_paths:
@@ -629,7 +629,7 @@ class TracHacksHandler(Component):
                               "'/%(path)s'", path=hack_path))
 
         # Remove from authz file.
-        authz_file = self.config.getpath('trac', 'authz_file')
+        authz_file = self.config.getpath('svn', 'authz_file')
         authz = AuthzFile(authz_file).read()
         authz.del_path('/%s' % hack_path)
         AuthzFile(authz_file).write(authz)
