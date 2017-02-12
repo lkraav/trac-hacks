@@ -19,7 +19,7 @@
         <hr py:if="milestones" />
           <py:for each="idx, milestone in enumerate(milestones)">
             <div py:if="proj[0] in milestone.id_project" class="milestone">
-              <div class="info" py:with="mstats = milestone_stats[idx]">
+              <div class="info trac-progress" py:with="mstats = milestone_stats[idx]">
                 <h3><a href="${href.milestone(milestone.name)}">
                   Milestone: <em>${milestone.name}</em>
                 </a></h3>
@@ -59,7 +59,7 @@
         <hr py:if="versions" />
           <py:for each="idx, item in enumerate(versions)">
             <div py:if="proj[0] in item.id_project" class="milestone">
-              <div class="info" py:with="mstats = version_stats[idx]">
+              <div class="info trac-progress" py:with="mstats = version_stats[idx]">
                 <h3><a href="${href.version(item.name)}">
                   Version: <em>${item.name}</em>
                 </a></h3>
