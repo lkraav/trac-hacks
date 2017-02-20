@@ -383,7 +383,7 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
 
         # Update ticket
         t.populate(values)
-        t.save_changes(req.authname)
+        t.save_changes(req.authname, '')
 
     return error_msg
 
