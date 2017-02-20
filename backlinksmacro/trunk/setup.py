@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'BackLinksMacro',
-    version = '7.0',
+    version = '8.0',
     author = "Trapanator",
     author_email = "trap@trapanator.com",
     description = """A wiki macro to show links to other wiki pages which link \
@@ -20,8 +20,9 @@ setup(
     long_description = """A wiki macro to show links to other wiki pages which link \
                      to the page the macro is called from.""",
     license = "GPLv3",
-    url = 'http://trac-hacks.org/wiki/BackLinksMacro',
+    url = 'https://trac-hacks.org/wiki/BackLinksMacro',
     packages=find_packages(exclude=['*.tests']),
+    install_requires = ['Trac'],
     entry_points = {
         'trac.plugins': [
             'BackLinksMacro = backlinks.macro'

@@ -77,19 +77,18 @@ class BackLinksMenuMacro(WikiMacroBase):
 
 def _get_backlinked_pages(env, caller_page, backlinks_page):
 
-    db = env.get_db_cnx()
-    cursor = db.cursor()
-    cursor.execute("""SELECT w1.name, w1.text FROM wiki AS w1,
-        (SELECT name, MAX(version) AS version FROM wiki GROUP BY name) AS w2
-        WHERE w1.version = w2.version AND w1.name = w2.name AND
-        (w1.text %s)""" % db.like(),
-        ('%' + db.like_escape(backlinks_page) + '%',))
-
-    pattern = re.compile(r'\b%s\b' % re.escape(backlinks_page), re.UNICODE)
     backlinked_pages = []
-    for page, text in cursor:
-        if page != backlinks_page and page != caller_page \
-                and pattern.search(text):
-            backlinked_pages.append(page)
+    pattern = re.compile(r'\b%s\b' % re.escape(backlinks_page), re.UNICODE)
+    with env.db_query as db:
+        for page, text in db("""
+                SELECT w1.name, w1.text FROM wiki AS w1,
+                 (SELECT name, MAX(version) AS version
+                  FROM wiki GROUP BY name) AS w2
+                WHERE w1.version = w2.version AND w1.name = w2.name AND
+                (w1.text %s)""" % db.like(),
+                ('%' + db.like_escape(backlinks_page) + '%',)):
+            if page != backlinks_page and page != caller_page \
+                    and pattern.search(text):
+                backlinked_pages.append(page)
 
     return backlinked_pages
