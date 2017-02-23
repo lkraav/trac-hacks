@@ -15,7 +15,7 @@ setup(
     long_description = open(os.path.join(os.path.dirname(__file__), 'README')).read(),
     license = 'BSD',
     keywords = 'trac plugin macro news flash',
-    url = 'http://trac-hacks.org/wiki/NewsFlashMacro',
+    url = 'https://trac-hacks.org/wiki/NewsFlashMacro',
     classifiers = [
         'Framework :: Trac',
         'Development Status :: 5 - Production/Stable',
@@ -25,7 +25,7 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
-    
+
     install_requires = ['Trac'],
 
     entry_points = {
