@@ -177,7 +177,7 @@ class PollMacro(WikiMacroBase):
                     priority = Priority(self.env, ticket['priority']).value
                 except ResourceNotFound:  # priority has been removed
                     priority = 0
-                summary = format_to_oneliner(self.env, ctxt, vote)
+                summary = format_to_oneliner(self.env, ctxt, summary)
 
                 all_votes.append(
                     (str(id), "ticket prio%s%s%s" %
