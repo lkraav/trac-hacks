@@ -9,14 +9,17 @@
 # Originally based on MilestoneQueryMacro code of Nic Ferrier.
 #
 
+import pkg_resources
 from StringIO import StringIO
 from datetime import datetime
 
-from genshi.core import Markup
-from trac import __version__ as VERSION
 from trac.util.datefmt import format_date, from_utimestamp, utc
+from trac.util.html import Markup
 from trac.wiki.formatter import Formatter
 from trac.wiki.macros import WikiMacroBase
+
+
+pkg_resources.require('Trac >= 1.0')
 
 
 class UpcomingMilestonesChartMacro(WikiMacroBase):
@@ -31,17 +34,17 @@ class UpcomingMilestonesChartMacro(WikiMacroBase):
         option_list = text.split(",")
         pattern, max_displayed, title, overdue_color = text.split(",")
 
-        cursor = self.env.get_db_cnx().cursor()
-        cursor.execute(
-            "SELECT name, due FROM milestone WHERE name like %s AND completed = 0 ORDER BY due ASC;", [pattern]
-            )
-        milestone_names = [mn[0] for mn in cursor]
-
-        cursor = self.env.get_db_cnx().cursor()
-        cursor.execute(
-            "SELECT due FROM milestone WHERE name like %s AND completed = 0 ORDER BY due ASC;", [pattern]
-            )
-        milestone_dues =  [md[0] for md in cursor]
+        with self.env.db_query as db:
+            milestone_names = [name for name, due in db("""
+                    SELECT name, due FROM milestone
+                    WHERE name %s AND completed = 0
+                    ORDER BY due ASC
+                    """ % db.like(), (pattern,))]
+            milestone_dues = [due for due, in db("""
+                    SELECT due FROM milestone
+                    WHERE name %s AND completed = 0
+                    ORDER BY due ASC
+                    """ % db.like(), (pattern,))]
 
         out = StringIO()
         wikitext = "=== %s ===\n" % title
@@ -54,11 +57,9 @@ class UpcomingMilestonesChartMacro(WikiMacroBase):
                         "milestonename": m
                         }
 
-                    date = ''
-                    if VERSION < '1.0':
-                        date = "(%s)" % format_date(milestone_dues[cur_idx])
-                    else:
-                        date = "(%s)" % format_date(milestone_dues[cur_idx], tzinfo=formatter.req.tz, locale=formatter.req.locale)
+                    date = "(%s)" % format_date(milestone_dues[cur_idx],
+                                                tzinfo=formatter.req.tz,
+                                                locale=formatter.req.locale)
 
                     if overdue_color and datetime.now(utc) > from_utimestamp(milestone_dues[cur_idx]):
                         wikitext += ' [[span(style=background-color: ' + overdue_color + ',' + date + ')]]'
