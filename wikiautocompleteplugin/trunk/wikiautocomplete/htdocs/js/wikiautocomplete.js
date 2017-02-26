@@ -110,7 +110,7 @@ jQuery(document).ready(function($) {
         }
     });
 
-    $('textarea.wikitext').textcomplete([
+    var strategies = [
         { // Attachment
             match: /(\b(?:raw-)?attachment:|\[\[Image\()(\S*)$/,
             search: search('attachment'),
@@ -253,11 +253,14 @@ jQuery(document).ready(function($) {
             cache: true
         }
 
-    ], {
+    ];
+    var options = {
         appendTo: $('body'),
         adapter: Adapter,
         maxCount: 10000
-    });
+    };
+    $('textarea.wikitext').textcomplete(strategies, options);
+    $('input[type="text"].wikitext').textcomplete(strategies, options);
 
     if (/^1\.[78]\./.test($.fn.jquery) && $.browser.mozilla &&
         navigator.userAgent.indexOf('like Gecko') === -1 /* is not IE 11 */)
