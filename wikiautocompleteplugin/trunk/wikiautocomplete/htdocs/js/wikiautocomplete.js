@@ -81,6 +81,11 @@ jQuery(document).ready(function($) {
         return match_string(report.id.toString(), term);
     }
 
+    function context(text) {
+        return text.replace(/\{{3}(?:.|\n)*?(?:\}{3}|$)/g, '{{{}}}')
+                   .replace(/`[^`\n]*(?:`|$)/gm, '``');
+    }
+
     function template(text, term) {
         return $.htmlEscape(text);
     }
@@ -111,19 +116,6 @@ jQuery(document).ready(function($) {
     });
 
     var strategies = [
-        { // Attachment
-            match: /(\b(?:raw-)?attachment:|\[\[Image\()(\S*)$/,
-            search: search('attachment'),
-            index: 2,
-            template: template,
-            replace: function (name) {
-                if (/\s/.test(name))
-                    name = '"' + name + '"';
-                return '$1' + escape_newvalue(name);
-            },
-            cache: true
-        },
-
         { // Processors
             match: /^(\s*\{{3}#!)(.*)(?!\n)$/m,
             search: search_macro('processor'),
@@ -146,12 +138,27 @@ jQuery(document).ready(function($) {
             cache: true
         },
 
+        { // Attachment
+            match: /(\b(?:raw-)?attachment:|\[\[Image\()(\S*)$/,
+            search: search('attachment'),
+            index: 2,
+            context: context,
+            template: template,
+            replace: function (name) {
+                if (/\s/.test(name))
+                    name = '"' + name + '"';
+                return '$1' + escape_newvalue(name);
+            },
+            cache: true
+        },
+
         { // TracLinks, InterTrac and InterWiki
             match: /(^|[^[])\[(\w*)$/,
             search: search_cache('linkresolvers', function(resolver, term) {
                 return match_string(resolver.name, term);
             }),
             index: 2,
+            context: context,
             template: function (resolver, term) {
                 var descr = resolver.name !== resolver.title ?
                             resolver.title : resolver.url;
@@ -167,6 +174,7 @@ jQuery(document).ready(function($) {
             match: /((?:^|[^{])#|\bticket:|\bbug:|\bissue:)(\d*)$/,
             search: search('ticket'),
             index: 2,
+            context: context,
             template: function (ticket, term) {
                 return template_descr('#' + ticket.id, ticket.summary);
             },
@@ -180,6 +188,7 @@ jQuery(document).ready(function($) {
             match: /\bwiki:(\S*)$/,
             search: search_cache('wikipage', match_string),
             index: 1,
+            context: context,
             template: template,
             replace: function (wikipage) {
                 return 'wiki:' + escape_newvalue(wikipage);
@@ -191,6 +200,7 @@ jQuery(document).ready(function($) {
             match: /\[\[(\w*)(?:\(([^)]*))?$/,
             search: search_macro('macro'),
             index: 1,
+            context: context,
             template: function (macro) {
                 var name = $.htmlEscape(macro.name);
                 var descr = macro.description;
@@ -211,6 +221,7 @@ jQuery(document).ready(function($) {
             match: /\b(source:|browser:|repos:|log:)([^@\s]*(?:@\S*)?)$/,
             search: search('source'),
             index: 2,
+            context: context,
             template: template,
             replace: function (path) {
                 return '$1' + escape_newvalue(path);
@@ -222,6 +233,7 @@ jQuery(document).ready(function($) {
             match: /\bmilestone:(\S*)$/,
             search: search_cache('milestone', match_string),
             index: 1,
+            context: context,
             template: template,
             replace: function (name) {
                 if (/\s/.test(name))
@@ -235,6 +247,7 @@ jQuery(document).ready(function($) {
             match: /(^|[^{])\{(\d*)$/,
             search: search_cache('report', match_report),
             index: 2,
+            context: context,
             template: template_report,
             replace: function (report) {
                 return ['$1{' + report.id, '}'];
@@ -246,6 +259,7 @@ jQuery(document).ready(function($) {
             match: /\breport:(\d*)$/,
             search: search_cache('report', match_report),
             index: 1,
+            context: context,
             template: template_report,
             replace: function (report) {
                 return 'report:' + report.id;
