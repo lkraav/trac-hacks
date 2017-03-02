@@ -10,8 +10,8 @@
 from setuptools import setup
 
 setup(
-    name='DuplicateTicketSearch',
-    version='1.0.3',
+    name='TracDuplicateTicketSearch',
+    version='1.0.4',
     author='gregmac',
     license='BSD',
     description='Adds XMLRPC-based check from ticket entry page for potential duplicate tickets.',
