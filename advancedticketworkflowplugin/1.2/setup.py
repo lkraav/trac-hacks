@@ -9,7 +9,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='AdvancedTicketWorkflowPlugin',
+    name='TracAdvancedTicketWorkflow',
     version='1.2.0',
     author='Eli Carter',
     author_email='elicarter@retracile.net',
