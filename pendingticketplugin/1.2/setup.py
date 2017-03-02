@@ -11,8 +11,8 @@ from setuptools import setup
 
 setup(
     name='PendingTicket',
-    version='1.2',
-    packages=['removepending'],
+    version='1.2.0',
+    packages=['TracPendingTicket'],
 
     author='Daniel Atallah',
     author_email='datallah@pidgin.im',
