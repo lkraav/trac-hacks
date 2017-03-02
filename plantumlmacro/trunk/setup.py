@@ -12,8 +12,8 @@
 from setuptools import setup
 
 setup(
-    name = "PlantUML",
-    version = 2.1,
+    name = "TracPlantUml",
+    version = 2.2,
     packages = ['plantuml'],
     author = "Alvaro J. Iradier",
     author_email = "alvaro.iradier@polartech.es",
@@ -23,6 +23,7 @@ setup(
     license = "3-Clause BSD",
     keywords = "trac macro uml plantuml embed include",
     url = "https://trac-hacks.org/wiki/PlantUmlMacro",
+    install_requires = ['Trac'],
     entry_points = {
         "trac.plugins": [
             "plantuml.macro = plantuml.macro"
