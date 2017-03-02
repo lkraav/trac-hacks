@@ -13,16 +13,15 @@ workflows.
 import os
 from datetime import datetime
 from subprocess import call
-from genshi.builder import tag
 
 from trac.core import implements, Component
 from trac.ticket import model
 from trac.ticket.api import ITicketActionController, TicketSystem
 from trac.ticket.default_workflow import ConfigurableTicketWorkflow
-from trac.ticket.model import Milestone
 from trac.ticket.notification import TicketNotifyEmail
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
+from trac.util.html import html
 from trac.web.chrome import add_warning
 
 
@@ -60,7 +59,7 @@ class TicketWorkflowOpBase(Component):
         """Returns the action control"""
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
-        return label, tag(''), ''
+        return label, html(''), ''
 
     def get_ticket_changes(self, req, ticket, action):
         """Must be implemented in subclasses"""
@@ -95,7 +94,7 @@ class TicketWorkflowOpOwnerReporter(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         hint = 'The owner will change to %s' % ticket['reporter']
-        control = tag('')
+        control = html('')
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -124,7 +123,7 @@ class TicketWorkflowOpOwnerComponent(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         hint = 'The owner will change to %s' % self._new_owner(ticket)
-        control = tag('')
+        control = html('')
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -161,7 +160,7 @@ class TicketWorkflowOpOwnerField(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         hint = 'The owner will change to %s' % self._new_owner(action, ticket)
-        control = tag('')
+        control = html('')
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -199,7 +198,7 @@ class TicketWorkflowOpOwnerPrevious(TicketWorkflowOpBase):
             hint = 'The owner will change to %s' % new_owner
         else:
             hint = 'The owner will be deleted.'
-        control = tag('')
+        control = html('')
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -238,7 +237,7 @@ class TicketWorkflowOpStatusPrevious(TicketWorkflowOpBase):
             hint = 'The status will change to %s' % new_status
         else:
             hint = ''
-        control = tag('')
+        control = html('')
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -301,7 +300,7 @@ class TicketWorkflowOpRunExternal(TicketWorkflowOpBase):
                                action + '.run_external').strip()
         if hint is None:
             hint = "Will run external script."
-        return label, tag(''), hint
+        return label, html(''), hint
 
     def get_ticket_changes(self, req, ticket, action):
         """No changes to the ticket"""
@@ -354,7 +353,7 @@ class TicketWorkflowOpTriage(TicketWorkflowOpBase):
             hint = 'The status will change to %s.' % new_status
         else:
             hint = ''
-        control = tag('')
+        control = html('')
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -407,7 +406,7 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
         hint = actions[action].get('xref_hint',
                                    'The specified ticket will be '
                                    'cross-referenced with this ticket')
-        control = tag.input(type='text', id=id, name=id, value=ticketnum)
+        control = html.input(type='text', id=id, name=id, value=ticketnum)
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -460,7 +459,7 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
         format_string = actions[action].get('xref', "Ticket %s is related "
                                                     "to this ticket")
         comment = format_string % ('#%s' % ticket.id)
-        # FIXME: we need a cnum to avoid messing up 
+        # FIXME: we need a cnum to avoid messing up
         xticket = model.Ticket(self.env, ticketnum)
         # FIXME: We _assume_ we have sufficient permissions to comment on the
         # other ticket.
@@ -501,17 +500,17 @@ class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         # check if the assigned milestone has been completed
-        milestone = Milestone(self.env, ticket['milestone'])
+        milestone = model.Milestone(self.env, ticket['milestone'])
         if milestone.is_completed:
             hint = 'The milestone will be reset'
         else:
             hint = ''
-        control = tag('')
+        control = html('')
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of milestone, if needed."""
-        milestone = Milestone(self.env, ticket['milestone'])
+        milestone = model.Milestone(self.env, ticket['milestone'])
         if milestone.is_completed:
             return {'milestone': ''}
         return {}
