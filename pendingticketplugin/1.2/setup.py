@@ -10,9 +10,9 @@
 from setuptools import setup
 
 setup(
-    name='PendingTicket',
+    name='TracPendingTicket',
     version='1.2.0',
-    packages=['TracPendingTicket'],
+    packages=['removepending'],
 
     author='Daniel Atallah',
     author_email='datallah@pidgin.im',
