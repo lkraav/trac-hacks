@@ -11,11 +11,11 @@ import sys
 from setuptools import setup, find_packages
 
 try :
-  import crypt
+    import crypt
 except ImportError :
-  test_deps = ['twill', 'fcrypt']
+    test_deps = ['twill', 'fcrypt']
 else :
-  test_deps = ['twill']
+    test_deps = ['twill']
 
 setup(
     name='TracXMLRPC',
@@ -25,7 +25,7 @@ setup(
     author_email='alec@swapoff.org',
     maintainer='Odd Simon Simonsen',
     maintainer_email='simon-code@bvnetwork.no',
-    url='http://trac-hacks.org/wiki/XmlRpcPlugin',
+    url='https://trac-hacks.org/wiki/XmlRpcPlugin',
     description='RPC interface to Trac',
     zip_safe=True,
     test_suite = 'tracrpc.tests.test_suite',

@@ -6,6 +6,10 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
+import pkg_resources
+
+pkg_resources.require('Trac >= 0.11')
+
 from tracrpc.api import *
 from tracrpc.json_rpc import *
 from tracrpc.xml_rpc import *
