@@ -17,7 +17,7 @@ from tracrpc.xml_rpc import to_xmlrpc_datetime
 from tracrpc.tests import rpc_testenv, TracRpcTestCase
 
 class RpcTicketTestCase(TracRpcTestCase):
-    
+
     def setUp(self):
         TracRpcTestCase.setUp(self)
         self.anon = xmlrpclib.ServerProxy(rpc_testenv.url_anon)
@@ -37,7 +37,8 @@ class RpcTicketTestCase(TracRpcTestCase):
         self.admin.ticket.delete(tid)
 
     def test_getActions(self):
-        tid = self.admin.ticket.create("ticket_getActions", "kjsald", {})
+        tid = self.admin.ticket.create("ticket_getActions", "kjsald",
+                                        {'owner': ''})
         try:
             actions = self.admin.ticket.getActions(tid)
         finally:
@@ -62,14 +63,14 @@ class RpcTicketTestCase(TracRpcTestCase):
         # Adjust for trac:changeset:11778
         if actions[0][2] != '.':
             default[0][2] = 'The ticket will remain with no owner.'
-        # Adjust for trac:changeset:13203
+        # Adjust for trac:changeset:13203 and trac:changeset:14393
         if '<span class=' in actions[2][2]:
             default[2][2] = default[2][2].replace(' (none)',
                     ' <span class="trac-author-none">(none)</span>')
             default[3][2] = default[3][2].replace(' (none)',
                     ' <span class="trac-author-none">(none)</span>')
             default[3][2] = default[3][2].replace(' admin',
-                    ' <span class="trac-author">admin</span>')
+                    ' <span class="trac-author-user">admin</span>')
         self.assertEquals(actions, default)
 
     def test_getAvailableActions_DeleteTicket(self):
@@ -330,7 +331,8 @@ class RpcTicketTestCase(TracRpcTestCase):
 
     def test_update_action(self):
         # Updating with 'action' in attributes
-        tid = self.admin.ticket.create('test_update_action', 'ss')
+        tid = self.admin.ticket.create('test_update_action', 'ss',
+                                       {'owner': ''})
         current = self.admin.ticket.get(tid)
         self.assertEqual('', current[3].get('owner', ''))
         updated = self.admin.ticket.update(tid, "comment1",
@@ -409,7 +411,7 @@ class RpcTicketTestCase(TracRpcTestCase):
 
 
 class RpcTicketVersionTestCase(TracRpcTestCase):
-    
+
     def setUp(self):
         TracRpcTestCase.setUp(self)
         self.anon = xmlrpclib.ServerProxy(rpc_testenv.url_anon)
