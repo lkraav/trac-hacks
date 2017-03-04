@@ -29,7 +29,7 @@ except ImportError:
 
 setup(
     name='TracHacks',
-    version='3.0.2',
+    version='3.0.3',
     author='Alex Thomas',
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',

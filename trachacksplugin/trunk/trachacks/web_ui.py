@@ -375,6 +375,21 @@ class TracHacksHandler(Component):
                         # Component with no wiki page should be removed.
                         self.env.log.warn('No wiki page for component "%s"',
                                           component)
+        if template == 'wiki_view.html':
+            page = data['page']
+            try:
+                component = TicketComponent(self.env, page.name)
+            except ResourceNotFound:
+                pass
+            else:
+                if not component.owner:
+                    notice = """\
+{{{#!box note
+**Notice:** This plugin is unmaintained and available
+for [wiki:AdoptingHacks adoption].
+}}}
+"""
+                    data['text'] = notice + data['text']
         add_stylesheet(req, 'hacks/css/style.css')
         return template, data, content_type
 
