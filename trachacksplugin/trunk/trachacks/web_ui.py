@@ -215,8 +215,9 @@ class TracHacksHandler(Component):
         "Path to the Subversion client executable.")
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
+    title_sub = re.compile(r'(^\s*=\s.*?\s=?\s*$)', re.MULTILINE | re.UNICODE)
 
-UNMAINTAINED_NOTICE = """\
+    UNMAINTAINED_NOTICE = """\
 {{{#!box note
 **Notice:** This plugin is unmaintained and available
 for [wiki:AdoptingHacks adoption].
@@ -392,7 +393,9 @@ for [wiki:AdoptingHacks adoption].
                     pass
                 else:
                     if not component.owner:
-                        data['text'] = self.UNMAINTAINED_NOTICE + data['text']
+                        repl = r'\1' + self.UNMAINTAINED_NOTICE
+                        data['text'] = re.sub(self.title_sub, repl,
+                                              data['text'])
 
         add_stylesheet(req, 'hacks/css/style.css')
         return template, data, content_type
