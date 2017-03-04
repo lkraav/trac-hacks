@@ -51,13 +51,6 @@ _SVN_CONFIG_DIR = os.environ.get('TRACHACKS_SVN_CONFIG_DIR',
 # Default component that serves as a placeholder for the field.
 _default_component = "SELECT A HACK"
 
-unmaintained_notice = """\
-{{{#!box note
-**Notice:** This plugin is unmaintained and available
-for [wiki:AdoptingHacks adoption].
-}}}
-"""
-
 
 def pluralise(n, word):
     """Return a (naively) pluralised phrase from a count and a singular
@@ -223,6 +216,12 @@ class TracHacksHandler(Component):
 
     path_match = re.compile(r'/(?:hacks/?(cloud|list)?|newhack)')
 
+UNMAINTAINED_NOTICE = """\
+{{{#!box note
+**Notice:** This plugin is unmaintained and available
+for [wiki:AdoptingHacks adoption].
+}}}
+"""
     def __init__(self):
         # Validate form
         form = Form('content')
@@ -393,7 +392,7 @@ class TracHacksHandler(Component):
                     pass
                 else:
                     if not component.owner:
-                        data['text'] = unmaintained_notice + data['text']
+                        data['text'] = self.UNMAINTAINED_NOTICE + data['text']
 
         add_stylesheet(req, 'hacks/css/style.css')
         return template, data, content_type
