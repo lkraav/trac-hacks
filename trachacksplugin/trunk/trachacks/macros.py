@@ -15,8 +15,7 @@ from trac.ticket.model import Component
 from trac.util.html import html
 from trac.web.chrome import add_stylesheet
 from trac.web.session import DetachedSession
-from trac.wiki.formatter import format_to_html, format_to_oneliner, \
-                                system_message
+from trac.wiki.formatter import MacroError, format_to_html, format_to_oneliner
 from trac.wiki.macros import WikiMacroBase, parse_args
 from trac.wiki.model import WikiPage
 
@@ -293,8 +292,7 @@ class MaintainerMacro(WikiMacroBase):
     def expand_macro(self, formatter, name, args):
         largs = parse_args(args)[0]
         if len(largs) > 1:
-            return system_message(_("Maintainer macro error"),
-                                  _("Invalid number of arguments"))
+            raise MacroError(_("Invalid number of arguments"))
         context = formatter.context
         resource = context.resource
 
@@ -329,7 +327,6 @@ class MaintainerMacro(WikiMacroBase):
                     session = DetachedSession(self.env, username)
                     fullname = session.get('name', username)
         else:
-            return system_message(_("Maintainer macro error"),
-                                  _("Hack name must be specified as argument "
-                                    "when the context realm is not 'wiki'"))
+            raise MacroError(_("Hack name must be specified as argument "
+                               "when the context realm is not 'wiki'"))
         return format_name(username, fullname)

@@ -77,6 +77,7 @@ Better.
 """
 
 import re
+
 from genshi.filters.transform import Transformer
 
 from trac.util.html import html

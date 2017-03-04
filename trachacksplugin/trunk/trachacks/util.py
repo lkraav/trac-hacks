@@ -9,6 +9,7 @@
 #
 
 import re
+
 from trac.perm import PermissionCache
 
 
