@@ -20,9 +20,6 @@ class TracchildticketsModule(Component):
 
     @cached
     def childtickets(self):
-        # NOTE: Ignore the above 'db' arg that is supplied to '@cached'
-        # decorated functions - should this be removed now?
-
         x = {}  # { parent -> children } - 1:n
 
         for child, parent in self.env.db_query("""
