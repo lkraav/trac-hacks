@@ -8,45 +8,42 @@ html, body {
   padding: 0;
 }
 
-body :link, body :link:hover, body :visited {
-  /*background: transparent no-repeat;*/
-  border-bottom: 1px dashed #cccccc;
+body :link, body :link:hover, body :visited, :link {
   color: #0000aa;
+  border-radius: 0 !important;
 }
 
 img {
   border: 0;
 }
 
-h1, h2, h3, h4, h5 {
-  font-family: Georgia, "Bitstream Vera Serif", "New York", Palatino, serif;
-  font-weight: normal;
+body h1, body h2, body h3, body h4, body h5 {
+    letter-spacing: normal;
 }
 
 h1 {
   color: #234764;
-  font-size: 162%;
-/*  margin: 0.7em 0 0.7em 0;*/
+  font-size: 140%;
   text-decoration: none;
 }
 
 h2 {
   color: #366d9c;
-  font-size: 140%;
-/*  margin: 0.7em 0 0.7em 0;*/
+  font-size: 125%;
 }
 
 h3 {
   color: #366d9c;
-  font-size: 135%;
-  font-style: italic;
-/*  margin: 0.4em 0 0.4em 0;*/
+  font-size: 115%;
 }
 
-h4 {
+body h4 {
   color: #366d9c;
   font-size: 125%;
-/*  margin: 0.4em 0 0.4em 0;*/
+  letter-spacing: normal !important;
+  margin-top: 0.4em;
+  margin-bottom: 0.1em;
+  font-weight: normal;
 }
 
 #banner {
@@ -74,7 +71,7 @@ h4 {
 
 #mainnav {
   background-color: transparent;
-  background-image: none;
+  background-image: none !important;
   border: 0;
   font-size: 75%;
   left: 3%;
@@ -82,8 +79,10 @@ h4 {
   padding: 0;
   position: absolute;
   top: 100px;
-  width: 16em;
+  width: 11em !important;
   z-index: 1;
+  box-shadow: none !important;
+  min-height: 22em;
 }
 
 #mainnav ul {
@@ -96,18 +95,25 @@ h4 {
   text-align: left;
 }
 
-#mainnav li {
-  color: #3c4b7b;
-  display: inline;
+#mainnav .active {
+  border: 0;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
 }
 
-#mainnav :link, #mainnav :visited {
-  background: transparent;
+#mainnav ul li, #mainnav ul li .active {
+  color: #3c4b7b !important;
+  display: block !important;
   border: 0;
-  border-top: 1px solid #dddddd;
-  display: block;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+#mainnav ul li :link, #mainnav ul li :visited {
+  background: transparent !important;
+  border: 0 !important;
   font-family: Arial, Verdana, Geneva, "Bitstream Vera Sans", Helvetica, sans-serif;
-  margin: 2px 0px 0px 2px;
+  margin: 2px 0 0 2px;
   padding: 0.1em 0.1em 0.1em 0.1em;
   text-align: left;
   text-transform: none;
@@ -115,13 +121,12 @@ h4 {
   width /**/: 11.2em;
 }
 
-/*
-#mainnav .first :link, #mainnav .first :visited {
-  border-top: 0;
+#mainnav ul li .first, #mainnav ul li .first :link {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
-*/
 
-#mainnav :link {
+#mainnav ul li :link {
   color: #3c4b7b;
 }
 
@@ -129,26 +134,31 @@ h4 {
   color: #4c3b5b;
 }
 
-#mainnav :link:hover, #mainnav :visited:hover {
+#mainnav ul li :link, #mainnav ul li :visited {
+  box-shadow: none;
+}
+
+#mainnav ul li:hover {
+  border: 0;
+}
+
+#mainnav ul li :link:hover, #mainnav ul li :visited:hover {
   background-color: transparent;
   border: 0;
-  border-top: 1px solid #dddddd;
   color: black;
+  box-shadow: none !important;
   text-decoration: underline;
 }
 
-#mainnav .active :link, #mainnav .active :visited {
-  background: none;
+#mainnav ul li .active :link, #mainnav ul li .active :visited {
   border: 0;
-  border-top: 1px solid #dddddd;
   color: black;
 }
 
-#mainnav .active :link:hover, #mainnav .active :visited:hover {
+#mainnav .active :link:hover, #mainnav .active :visited:hover, #mainnav ul li .active :link {
   border: 0;
   border-top: 1px solid #dddddd;
 }
-
 
 * html #mainnav :link, * html #mainnav :visited {
   color: #4b5a6a;
@@ -176,11 +186,17 @@ div.system-message {
     margin-right: 10px;
 }
 
+body #ctxtnav {
+  margin-left: 13em;
+  padding: 0.1em;
+  min-height: 0;
+}
+
 #content {
   font-family: Arial, Verdana, Geneva, "Bitstream Vera Sans", Helvetica, sans-serif;
   left: 0;
   line-height: 1.2em;
-  margin-left: 16.5em;
+  margin-left: 13em;
   margin-right: 10px;
   padding: 0;
   z-index: 0;
@@ -242,10 +258,6 @@ div.system-message {
   padding: 0 0.55em 40px 0.0em;
 }
 
-/*.wikipage h1, .wikipage h2, .wikipage h3 {
-  margin: 0;
-}*/
-
 #content.query :link, #content.query :link:hover, #content.query :visited,
 #content.report :link, #content.report :link:hover, #content.report :visited  {
   border-bottom: 0;
@@ -284,20 +296,56 @@ div.system-message {
   margin-right: 0;
 }
 
-input[type="Submit"], input[type="Submit"]:hover {
+input[type=button], input[type=submit], input[type=reset], .trac-button{
   background-color: #f8f7f7;
-  background-image: url(button-on-bg.png);
-  background-repeat: no-repeat;
   border-bottom: 1px solid #6f7777;
   border-left: 1px solid #c4cccc;
   border-right: 1px solid #6f7777;
   border-top: 1px solid #c4cccc;
   color: #223344;
-  font-family: Arial, Verdana, Geneva, "Bitstream Vera Sans", Helvetica, sans-serif;
-  font-size: 110%;
+  font-size: 100%;
   font-weight: bold;
   margin: 3px 0.4em 0px 0.4em;
-  padding: 0px 0.2em 0px 0.2em;
+  padding: 0.1em 0.2em 0.1em 0.2em;
   text-transform: lowercase;
+
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
 }
 
+.trac-content, .plugin {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+fieldset {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background-color: #ffffff;
+}
+
+#changelog {
+  padding: 1em;
+  border: 1px solid #dddddd;
+}
+
+#prefs {
+  border-radius: 0 !important;
+  box-shadow: none;
+}
+
+#tabs, #tabs li li.active {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.foldable :link, .foldable :visited {
+  box-shadow: none !important;
+}
+
+div.system-message {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
