@@ -77,8 +77,9 @@ Better.
 """
 
 import re
-from genshi.builder import tag
 from genshi.filters.transform import Transformer
+
+from trac.util.html import html
 
 
 class ValidationError(Exception):
@@ -219,10 +220,10 @@ class Field(object):
         return Aspect.apply(context, value, self.aspect)
 
     def format_error(self, message=None):
-        return tag.div(message or self.message, class_='error')
+        return html.div(message or self.message, class_='error')
 
     def format_hint(self, hint=None):
-        return tag.div(hint or self.hint, class_='hint')
+        return html.div(hint or self.hint, class_='hint')
 
 
 class Context(object):

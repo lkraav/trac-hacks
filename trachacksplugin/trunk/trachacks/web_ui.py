@@ -15,13 +15,13 @@ import urlparse
 from pkg_resources import resource_filename, resource_listdir
 from string import Template
 
-from genshi.builder import tag as builder
 from trac.core import Component, TracError, implements
 from trac.config import ConfigurationError, IntOption, Option
 from trac.perm import IPermissionPolicy, IPermissionRequestor, \
                       PermissionSystem
 from trac.resource import Resource, ResourceNotFound, resource_exists
 from trac.ticket.model import Component as TicketComponent
+from trac.util.html import html
 from trac.wiki.formatter import wiki_to_html
 from trac.wiki.model import WikiPage
 from trac.web.api import (
@@ -281,12 +281,12 @@ class TracHacksHandler(Component):
         if not authz_file:
             raise ConfigurationError(
                 tag_("The configuration option %(option)s is empty or "
-                     "missing.", option=builder.code("[trac] authz_file")))
+                     "missing.", option=html.code("[trac] authz_file")))
 
         if not os.path.exists(authz_file):
             raise ConfigurationError(
                 tag_("The authz file is not found at %(path)s.",
-                     path=builder.code(authz_file)))
+                     path=html.code(authz_file)))
 
         # Hack types and their description
         types = []
@@ -324,7 +324,7 @@ class TracHacksHandler(Component):
         #    for v in views:
         #        if v != view:
         #            args = req.args
-        #            add_ctxtnav(req, builder.a(v.title(),
+        #            add_ctxtnav(req, html.a(v.title(),
         #                        href=req.href.hacks(v, **args)))
         #        else:
         #            add_ctxtnav(req, v.title())
@@ -390,6 +390,7 @@ for [wiki:AdoptingHacks adoption].
 }}}
 """
                     data['text'] = notice + data['text']
+
         add_stylesheet(req, 'hacks/css/style.css')
         return template, data, content_type
 
@@ -403,10 +404,10 @@ for [wiki:AdoptingHacks adoption].
 
     def get_navigation_items(self, req):
         #yield ('mainnav', 'hacks',
-        #        builder.a('View Hacks', href=req.href.hacks(), accesskey='H'))
+        #        html.a('View Hacks', href=req.href.hacks(), accesskey='H'))
         if 'HACK_CREATE' in req.perm:
             yield ('mainnav', 'newhack',
-                   builder.a('New Hack', href=req.href.newhack()))
+                   html.a('New Hack', href=req.href.newhack()))
 
     # ITemplateProvider methods
 
@@ -460,8 +461,8 @@ for [wiki:AdoptingHacks adoption].
 
         def cloud_renderer(tag, count, percent):
             self.env.log.debug("cloud: %s = %2.2f%%" % (tag, percent * 100))
-            return builder.a(tag, href='#', style='font-size: %ipx' %
-                             int(min_px + percent * (max_px - min_px)))
+            return html.a(tag, href='#', style='font-size: %ipx' %
+                          int(min_px + percent * (max_px - min_px)))
 
         data['cloud'] = TagWikiMacros(self.env). \
                         render_cloud(req, cloud, cloud_renderer)
@@ -694,12 +695,11 @@ for [wiki:AdoptingHacks adoption].
                 add_warning(req, warning)
 
     def render_list(self, req, data, hacks):
-        ul = builder.ul()
+        ul = html.ul()
         for votes, rank, resource, tags, title \
                 in sorted(hacks, key=lambda h: h[2].id):
-            li = builder.li(builder.a(resource.id,
-                                      href=req.href.wiki(resource.id)),
-                            ' - ', title)
+            li = html.li(html.a(resource.id, href=req.href.wiki(resource.id)),
+                         ' - ', title)
             ul(li)
         data['body'] = ul
         # TODO Top-n + sample
@@ -714,9 +714,9 @@ for [wiki:AdoptingHacks adoption].
             font_size = 10.0 + (percent * 20.0)
             colour = 128.0 - (percent * 128.0)
             colour = '#%02x%02x%02x' % ((colour,) * 3)
-            a = builder.a(tag, rel='tag', title=title, href=href, class_='tag',
-                          style='font-size: %ipx; color: %s'
-                                % (font_size, colour))
+            a = html.a(tag, rel='tag', title=title, href=href, class_='tag',
+                       style='font-size: %ipx; color: %s'
+                             % (font_size, colour))
             return a
 
         # TODO Top-n + sample
@@ -777,22 +777,22 @@ for [wiki:AdoptingHacks adoption].
 
         # Navigation
         #if len(hacks) >= limit:
-        #    add_ctxtnav(req, builder.a('More', href='?action=more'))
+        #    add_ctxtnav(req, html.a('More', href='?action=more'))
         #    limit = len(hacks)
         #    data['limit'] = data['limit_message'] = limit
         #else:
         #    add_ctxtnav(req, 'More')
         #if q or limit != self.limit:
-        #    add_ctxtnav(req, builder.a('Default', href='?action=default'))
+        #    add_ctxtnav(req, html.a('Default', href='?action=default'))
         #else:
         #    add_ctxtnav(req, 'Default')
         #if total_hack_count > limit:
-        #    add_ctxtnav(req, builder.a('All', href='?action=all'))
+        #    add_ctxtnav(req, html.a('All', href='?action=all'))
         #else:
         #    add_ctxtnav(req, 'All')
         #if limit > 10:
         #    limit = min(limit, len(hacks))
-        #    add_ctxtnav(req, builder.a('Less', href='?action=less'))
+        #    add_ctxtnav(req, html.a('Less', href='?action=less'))
         #else:
         #    add_ctxtnav(req, 'Less')
         #for i, hack in enumerate(hacks):

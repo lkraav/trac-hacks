@@ -10,9 +10,9 @@
 
 import re
 
-from genshi.builder import tag as builder
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.ticket.model import Component
+from trac.util.html import html
 from trac.web.chrome import add_stylesheet
 from trac.web.session import DetachedSession
 from trac.wiki.formatter import format_to_html, format_to_oneliner, \
@@ -117,24 +117,24 @@ class ListHacksMacro(WikiMacroBase):
                             if th_releases_filter is not None \
                             else latest_major_release
 
-        output = builder.tag()
+        output = html.tag()
         if not hide_release_picker:
             style = "text-align:right; padding-top:1em; margin-right:5em;"
-            form = builder.form('\n', style=style, method="get")
+            form = html.form('\n', style=style, method="get")
 
             style = "font-size:xx-small;"
-            span = builder.span("Show hacks for releases:", style=style)
+            span = html.span("Show hacks for releases:", style=style)
 
             for version in releases:
-                inp = builder.input(type_="checkbox", name="release",
-                                    value=version)
+                inp = html.input(type_="checkbox", name="release",
+                                 value=version)
                 if version in show_releases:
                     inp(checked="checked")
-                span(builder.label(inp, version), '\n')
+                span(html.label(inp, version), '\n')
 
             style = "font-size:xx-small; padding:0; border:solid 1px black;"
-            span(builder.input(name="update_th_filter", type_="submit",
-                               style=style, value="Update"), '\n')
+            span(html.input(name="update_th_filter", type_="submit",
+                            style=style, value="Update"), '\n')
             form('\n', span, '\n')
             output.append(form)
 
@@ -155,16 +155,15 @@ class ListHacksMacro(WikiMacroBase):
 
             style = 'padding:1em; margin:0em 5em 2em 5em; ' \
                     'border:1px solid #999;'
-            fieldset = builder.fieldset('\n', style=style)
+            fieldset = html.fieldset('\n', style=style)
             if not hide_fieldset_legend:
-                legend = builder.legend(style="color: #999;")
-                legend(builder.a(cat_title, href=self.env.href.wiki(category)))
+                legend = html.legend(style="color: #999;")
+                legend(html.a(cat_title, href=self.env.href.wiki(category)))
                 fieldset(legend, '\n')
             if not hide_fieldset_description:
-                fieldset(builder.p(format_to_html(self.env, context,
-                                                  cat_body)))
+                fieldset(html.p(format_to_html(self.env, context, cat_body)))
 
-            ul = builder.ul('\n', class_='listtagged')
+            ul = html.ul('\n', class_='listtagged')
             query = 'realm:wiki (%s) %s %s' % \
                 (' or '.join(show_releases), category, ' '.join(other))
 
@@ -176,7 +175,7 @@ class ListHacksMacro(WikiMacroBase):
                     continue
 
                 lines += 1
-                li = builder.li(link(resource), ': ')
+                li = html.li(link(resource), ': ')
 
                 page = WikiPage(self.env, resource)
                 match = title_extract.search(page.text)
@@ -196,7 +195,7 @@ class ListHacksMacro(WikiMacroBase):
                     rendered_tags = [link(resource('tag', tag))
                                      for tag in natural_sort(tags)]
 
-                    span = builder.span(style="font-size:xx-small;")
+                    span = html.span(style="font-size:xx-small;")
                     span(' (tags: ', rendered_tags[0],
                          [(', ', tag) for tag in rendered_tags[1:]], ')')
                     li(span)
@@ -207,7 +206,7 @@ class ListHacksMacro(WikiMacroBase):
             else:
                 message = "No results for %s." % \
                     (hide_release_picker and "this version" or "your selection")
-                fieldset(builder.p(builder.em(message)), '\n')
+                fieldset(html.p(html.em(message)), '\n')
             output.append(fieldset)
 
         return output
@@ -232,7 +231,7 @@ class ListHackTypesMacro(WikiMacroBase):
             return render_resource_link(self.env, context, resource,
                                         'compact')
 
-        dl = builder.dl(class_='hacktypesmacro')
+        dl = html.dl(class_='hacktypesmacro')
         for category in categories:
             page = WikiPage(self.env, category)
             match = title_extract.search(page.text)
@@ -243,8 +242,8 @@ class ListHackTypesMacro(WikiMacroBase):
                 cat_title = '%s' % category
                 cat_body = page.text
             cat_body = self.self_extract.sub('', cat_body).strip()
-            dl(builder.dt(link(Resource('wiki', category))))
-            dl(builder.dd(format_to_html(self.env, context, cat_body)))
+            dl(html.dt(link(Resource('wiki', category))))
+            dl(html.dd(format_to_html(self.env, context, cat_body)))
 
         return dl
 
@@ -265,7 +264,7 @@ class ListTracReleasesMacro(WikiMacroBase):
             return render_resource_link(self.env, context, resource,
                                         'compact')
 
-        dl = builder.dl(class_='tracreleasesmacro')
+        dl = html.dl(class_='tracreleasesmacro')
         for release in releases:
             page = WikiPage(self.env, release)
             match = title_extract.search(page.text)
@@ -274,8 +273,8 @@ class ListTracReleasesMacro(WikiMacroBase):
             else:
                 rel_title = '%s' % release
 
-            dl(builder.dt(link(Resource('wiki', release))))
-            dl(builder.dd(format_to_html(self.env, context, rel_title)))
+            dl(html.dt(link(Resource('wiki', release))))
+            dl(html.dd(format_to_html(self.env, context, rel_title)))
 
         return dl
 
@@ -313,8 +312,8 @@ class MaintainerMacro(WikiMacroBase):
             try:
                 component = Component(self.env, id)
             except ResourceNotFound:
-                return builder.em(_('Component "%(name)s" does not exist',
-                                    name=id))
+                return html.em(_('Component "%(name)s" does not exist',
+                                 name=id))
             else:
                 username = component.owner
                 if not username:
