@@ -19,7 +19,7 @@ setup(
                  'check against an LDAP server.'),
     license='BSD',
     keywords='trac plugin accountmanager',
-    url='http://trac-hacks.org/wiki/TracLdapAuthPlugin',
+    url='https://trac-hacks.org/wiki/TracLdapAuthPlugin',
     classifiers=[
         'Framework :: Trac',
     ],
