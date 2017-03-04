@@ -63,8 +63,8 @@ setup(
     install_requires=[
         'Trac',
         'TracAccountManager',
-        'TracTags >= 0.7',
-        'TracVote >= 0.3',
+        'TracTags >= 0.9',
+        'TracVote >= 0.5',
         'TracWikiExtras',
         'SvnAuthzAdminPlugin',
     ],
