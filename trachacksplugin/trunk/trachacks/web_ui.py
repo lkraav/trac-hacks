@@ -51,6 +51,13 @@ _SVN_CONFIG_DIR = os.environ.get('TRACHACKS_SVN_CONFIG_DIR',
 # Default component that serves as a placeholder for the field.
 _default_component = "SELECT A HACK"
 
+unmaintained_notice = """\
+{{{#!box note
+**Notice:** This plugin is unmaintained and available
+for [wiki:AdoptingHacks adoption].
+}}}
+"""
+
 
 def pluralise(n, word):
     """Return a (naively) pluralised phrase from a count and a singular
@@ -377,19 +384,16 @@ class TracHacksHandler(Component):
                                           component)
         if template == 'wiki_view.html':
             page = data['page']
-            try:
-                component = TicketComponent(self.env, page.name)
-            except ResourceNotFound:
-                pass
-            else:
-                if not component.owner:
-                    notice = """\
-{{{#!box note
-**Notice:** This plugin is unmaintained and available
-for [wiki:AdoptingHacks adoption].
-}}}
-"""
-                    data['text'] = notice + data['text']
+            page_tags = self._page_tags(req, page)
+            if 'deprecated' not in page_tags and \
+                    'pending-deletion' not in page_tags:
+                try:
+                    component = TicketComponent(self.env, page.name)
+                except ResourceNotFound:
+                    pass
+                else:
+                    if not component.owner:
+                        data['text'] = unmaintained_notice + data['text']
 
         add_stylesheet(req, 'hacks/css/style.css')
         return template, data, content_type
@@ -659,6 +663,11 @@ for [wiki:AdoptingHacks adoption].
             warnings.append(_("Failed to delete wiki page '%(name)s'",
                               name=name))
         return warnings
+
+    def _page_tags(self, req, page):
+        resource = page.resource
+        tags = sorted(TagSystem(self.env).get_tags(req, resource))
+        return tags
 
     def _run_command(self, args):
         from subprocess import Popen, PIPE
