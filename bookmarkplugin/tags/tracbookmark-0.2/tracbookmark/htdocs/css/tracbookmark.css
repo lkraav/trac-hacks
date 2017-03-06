@@ -1,0 +1,69 @@
+#ctxtnav #bookmark_menu {
+    position: relative;
+}
+#ctxtnav #bookmark_menu > ul {
+    display: none;
+}
+#ctxtnav #bookmark_menu > ul li {
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+#ctxtnav #bookmark_menu > ul a {
+    display: block;
+    text-align: left;
+    padding: 0 3px;
+    font-size: 100%;
+    line-height: 1.8;
+    text-overflow: ellipsis;
+}
+#ctxtnav #bookmark_menu:hover > ul {
+    display: block;
+    min-width: 10em;
+    max-width: 40em;
+    overflow: hidden;
+    position: absolute;
+    z-index: 2;
+    right: 0.75em;
+    *top: 1.2em;
+    *right: 0;
+}
+
+#bookmark_this {
+    display: inline-block;
+    *display: inline;
+    *zoom: 1;
+    width: 12px;
+    height: 12px;
+    background-image: url(../bookmark.png);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    vertical-align: middle;
+    border-width: 0;
+}
+#bookmark_this.bookmark_off { background-position: -12px 100% }
+
+ul.bookmarks li {
+    padding-left: 1.5em;
+    background-repeat: no-repeat;
+    background-position: left center;
+    line-height: 160%;
+}
+ul.bookmarks li.wiki {
+    background-image: url(../../common/wiki.png);
+}
+ul.bookmarks li.report,
+ul.bookmarks li.ticket {
+    background-image: url(../../common/newticket.png);
+}
+ul.bookmarks li.browser,
+ul.bookmarks li.changeset {
+    background-image: url(../../common/changeset.png);
+}
+ul.bookmarks li.attachment {
+    background-image: url(../../common/attachment.png);
+}
+ul.bookmarks li.roadmap,
+ul.bookmarks li.milestone {
+    background-image: url(../../common/milestone.png);
+}
