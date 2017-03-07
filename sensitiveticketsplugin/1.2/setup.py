@@ -16,7 +16,7 @@ from setuptools import find_packages, setup
 
 version = '1.2.0'
 
-setup(name='sensitivetickets',
+setup(name='TracSensitiveTickets',
       version=version,
       description="A trac plugin that lets you mark tickets as 'sensitive' "
                   "with a check box.  Those tickets can only be seen with "
