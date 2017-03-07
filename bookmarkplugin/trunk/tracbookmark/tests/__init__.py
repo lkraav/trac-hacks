@@ -13,7 +13,6 @@ import unittest
 from StringIO import StringIO
 from pkg_resources import parse_version
 
-from trac import __version__ as TRAC_VERSION
 from trac.attachment import Attachment
 from trac.test import EnvironmentStub, Mock, MockPerm
 from trac.ticket.model import Ticket
@@ -107,11 +106,13 @@ class BookmarkSystemTestCase(unittest.TestCase):
         self.assertEquals('', data['name'])
 
     def test_format_name_report(self):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("INSERT INTO report (title,query,description) "
-                       "VALUES ('Active Tickets','SELECT 1','')")
-        report_id = db.get_last_id(cursor, 'report')
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                INSERT INTO report (title,query,description)
+                VALUES ('Active Tickets','SELECT 1','')
+                """)
+            report_id = db.get_last_id(cursor, 'report')
 
         data = self.bmsys._format_name(self.req, '/report/%d' % report_id)
         self.assertEquals('report', data['class_'])
@@ -131,10 +132,7 @@ class BookmarkSystemTestCase(unittest.TestCase):
         self.assertEquals('changeset', data['class_'])
         self.assertEquals('/trac.cgi/changeset/42/trunk', data['href'])
         self.assertEquals('[42]', data['linkname'])
-        if parse_version(TRAC_VERSION) < parse_version('0.12'):
-            self.assertEquals('Changeset 42', data['name'])
-        else:
-            self.assertEquals('Changeset 42 in trunk', data['name'])
+        self.assertEquals('Changeset 42 in trunk', data['name'])
 
         data = self.bmsys._format_name(self.req, '/changeset/42')
         self.assertEquals('changeset', data['class_'])

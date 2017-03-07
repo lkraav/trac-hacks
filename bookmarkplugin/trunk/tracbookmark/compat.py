@@ -1,110 +1,97 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2005-2009 Edgewall Software
-# Copyright (C) 2005-2006 Christopher Lenz <cmlenz@gmx.de>
+# Copyright (C) 2005-2017 Edgewall Software
+# Copyright (C) 2017 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
-# you should have received as part of this distribution. The terms
-# are also available at http://trac.edgewall.org/wiki/TracLicense.
+# you should have received as part of this distribution.
 #
-# This software consists of voluntary contributions made by many
-# individuals. For the exact contribution history, see the revision
-# history and logs, available at http://trac.edgewall.org/log/.
-#
-# Author: Christopher Lenz <cmlenz@gmx.de>
 
-from trac.resource import ResourceSystem
-from trac.util import unquote
+# Methods backported from Trac 1.2
+
+from trac.core import TracError
+from trac.db.api import DatabaseManager
+from trac.db.schema import Table
+from trac.util.translation import _
 
 
-class _RequestArgs(dict):
-    """Dictionary subclass that provides convenient access to request
-    parameters that may contain multiple values."""
+if not hasattr(DatabaseManager, 'get_database_version'):
+    def get_database_version(self, name='database_version'):
+        """Returns the database version from the SYSTEM table as an int,
+        or `False` if the entry is not found.
 
-    def getfirst(self, name, default=None):
-        """Return the first value for the specified parameter, or `default` if
-        the parameter was not provided.
+        :param name: The name of the entry that contains the database version
+                     in the SYSTEM table. Defaults to `database_version`,
+                     which contains the database version for Trac.
         """
-        if name not in self:
-            return default
-        val = self[name]
-        if isinstance(val, list):
-            val = val[0]
-        return val
+        rows = self.env.db_query("""
+                SELECT value FROM system WHERE name=%s
+                """, (name,))
+        return int(rows[0][0]) if rows else False
+    DatabaseManager.get_database_version = get_database_version
 
-    def getlist(self, name):
-        """Return a list of values for the specified parameter, even if only
-        one value was provided.
+
+if not hasattr(DatabaseManager, 'set_database_version'):
+    def set_database_version(self, version, name='database_version'):
+        """Sets the database version in the SYSTEM table.
+
+        :param version: an integer database version.
+        :param name: The name of the entry that contains the database version
+                     in the SYSTEM table. Defaults to `database_version`,
+                     which contains the database version for Trac.
         """
-        if name not in self:
-            return []
-        val = self[name]
-        if not isinstance(val, list):
-            val = [val]
-        return val
-
-def parse_arg_list(query_string):
-    """Parse a query string into a list of `(name, value)` tuples."""
-    args = []
-    if not query_string:
-        return args
-    for arg in query_string.split('&'):
-        nv = arg.split('=', 1)
-        if len(nv) == 2:
-            (name, value) = nv
+        current_database_version = self.get_database_version(name)
+        if current_database_version is False:
+            self.env.db_transaction("""
+                    INSERT INTO system (name, value) VALUES (%s, %s)
+                    """, (name, version))
         else:
-            (name, value) = (nv[0], empty)
-        name = unquote(name.replace('+', ' '))
-        if isinstance(name, str):
-            name = unicode(name, 'utf-8')
-        value = unquote(value.replace('+', ' '))
-        if isinstance(value, str):
-            value = unicode(value, 'utf-8')
-        args.append((name, value))
-    return args
+            self.env.db_transaction("""
+                    UPDATE system SET value=%s WHERE name=%s
+                    """, (version, name))
+            self.log.info("Upgraded %s from %d to %d",
+                          name, current_database_version, version)
+    DatabaseManager.set_database_version = set_database_version
 
 
-def arg_list_to_args(arg_list):
-    """Convert a list of `(name, value)` tuples into into a `_RequestArgs`."""
-    args = _RequestArgs()
-    for name, value in arg_list:
-        if name in args:
-            if isinstance(args[name], list):
-                args[name].append(value)
-            else:
-                args[name] = [args[name], value]
+if not hasattr(DatabaseManager, 'get_table_names'):
+    def get_table_names(self):
+        dburi = self.config.get('trac', 'database')
+        if dburi.startswith('sqlite:'):
+            query = "SELECT name FROM sqlite_master" \
+                    " WHERE type='table' AND NOT name='sqlite_sequence'"
+        elif dburi.startswith('postgres:'):
+            query = "SELECT tablename FROM pg_tables" \
+                    " WHERE schemaname = ANY (current_schemas(false))"
+        elif dburi.startswith('mysql:'):
+            query = "SHOW TABLES"
         else:
-            args[name] = value
-    return args
+            raise TracError('Unsupported %s database' % dburi.split(':')[0])
+        return sorted(row[0] for row in self.env.db_transaction(query))
+    DatabaseManager.get_table_names = get_table_names
 
 
-def resource_exists(env, resource):
-    """Checks for resource existence without actually instantiating a model.
+if not hasattr(DatabaseManager, 'needs_upgrade'):
+    def needs_upgrade(self, version, name='database_version'):
+        """Checks the database version to determine if an upgrade is needed.
 
-        :return: `True` if the resource exists, `False` if it doesn't
-        and `None` in case no conclusion could be made (i.e. when
-        `IResourceManager.resource_exists` is not implemented).
+        :param version: the expected integer database version.
+        :param name: the name of the entry in the SYSTEM table that contains
+                     the database version. Defaults to `database_version`,
+                     which contains the database version for Trac.
 
-        >>> from trac.test import EnvironmentStub
-        >>> env = EnvironmentStub()
-
-        >>> resource_exists(env, Resource('dummy-realm', 'dummy-id')) is None
-        True
-        >>> resource_exists(env, Resource('dummy-realm'))
-        False
-    """
-    manager = ResourceSystem(env).get_resource_manager(resource.realm)
-    if manager and hasattr(manager, 'resource_exists'):
-        return manager.resource_exists(resource)
-    elif resource.id is None:
-        return False
-
-
-class Empty(unicode):
-    """A special tag object evaluating to the empty string"""
-    __slots__ = []
-
-empty = Empty()
-
-del Empty # shouldn't be used outside of Trac core
+        :return: `True` if the stored version is less than the expected
+                  version, `False` if it is equal to the expected version.
+        :raises TracError: if the stored version is greater than the expected
+                           version.
+        """
+        dbver = self.get_database_version(name)
+        if dbver == version:
+            return False
+        elif dbver > version:
+            raise TracError(_("Need to downgrade %(name)s.", name=name))
+        self.log.info("Need to upgrade %s from %d to %d",
+                      name, dbver, version)
+        return True
+    DatabaseManager.needs_upgrade = needs_upgrade

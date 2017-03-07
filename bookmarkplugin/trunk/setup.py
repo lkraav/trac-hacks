@@ -17,7 +17,7 @@ setup(
     author='Yoshiyuki Sugimoto',
     maintainer='Yoshiyuki Sugimoto',
     maintainer_email='s.yosiyuki@gmail.com',
-    license='BSD 3-clause',
+    license='3-clause BSD',
     url='https://trac-hacks.org/wiki/BookmarkPlugin',
     packages=['tracbookmark'],
     package_data={'tracbookmark': [

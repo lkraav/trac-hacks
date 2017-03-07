@@ -25,17 +25,12 @@ from trac.util.html import html
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import (
     ITemplateProvider, add_ctxtnav, add_notice, add_script, add_stylesheet)
-try:
-    from trac.web.api import arg_list_to_args, parse_arg_list
-except ImportError:
-    from compat import arg_list_to_args, parse_arg_list
-try:
-    from trac.resource import resource_exists  # Trac > 0.11.7
-except ImportError:
-    from compat import resource_exists
+from trac.web.api import arg_list_to_args, parse_arg_list
+from trac.resource import resource_exists
 
+import tracbookmark.compat
 
-pkg_resources.require('Trac >= 0.11')
+pkg_resources.require('Trac >= 1.0')
 
 
 class BookmarkSystem(Component):
@@ -47,6 +42,9 @@ class BookmarkSystem(Component):
     bookmarkable_paths = ListOption('bookmark', 'paths', '/*', doc="""
         List of URL paths to allow bookmarking on. Globs are supported.
         """)
+
+    schema_version = 1
+    schema_version_name = 'tracbookmark_version'
 
     schema = [
         Table('bookmarks', key=('resource', 'name', 'username'))[
@@ -62,26 +60,20 @@ class BookmarkSystem(Component):
 
     def get_bookmarks(self, req):
         """Return the current users bookmarks."""
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT resource, name, username FROM bookmarks
-            WHERE username=%s
-            """, (get_reporter_id(req),))
-        for row in cursor:
+        for row in self.env.db_query("""
+                SELECT resource, name, username FROM bookmarks
+                WHERE username=%s
+                """, (get_reporter_id(req),)):
             yield row
 
     def get_bookmark(self, req, resource):
         """Return the current users bookmark for a resource."""
 #        resource = self.normalise_resource(resource)
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT resource FROM bookmarks
-            WHERE username=%s AND resource = %s
-            """, (get_reporter_id(req), resource))
-        row = cursor.fetchone()
-        return row and row[0]
+        for resource, in self.env.db_query("""
+                SELECT resource FROM bookmarks
+                WHERE username=%s AND resource = %s
+                """, (get_reporter_id(req), resource)):
+            return resource
 
     def set_bookmark(self, req, resource):
         """Bookmark a resource."""
@@ -89,23 +81,17 @@ class BookmarkSystem(Component):
         if self.get_bookmark(req, resource):
             return
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
+        self.env.db_transaction("""
             INSERT INTO bookmarks (resource,name,username)
             VALUES (%s,%s,%s)
             """, (resource, '', get_reporter_id(req)))
-        db.commit()
 
     def delete_bookmark(self, req, resource):
         """Bookmark a resource."""
 #        resource = self.normalise_resource(resource)
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
+        self.env.db_transaction("""
             DELETE FROM bookmarks WHERE resource = %s AND username = %s
             """, (resource, get_reporter_id(req)))
-        db.commit()
 
     # IPermissionRequestor method
 
@@ -199,26 +185,23 @@ class BookmarkSystem(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        self.upgrade_environment(self.env.get_db_cnx())
+        self.upgrade_environment()
 
-    def environment_needs_upgrade(self, db):
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT COUNT(*) FROM bookmarks")
-            cursor.fetchone()
-            return False
-        except:
-            cursor.connection.rollback()
-            return True
+    def environment_needs_upgrade(self, db=None):
+        return DatabaseManager(self.env). \
+               needs_upgrade(self.schema_version, self.schema_version_name)
 
-    def upgrade_environment(self, db):
-        db_backend = DatabaseManager(self.env)._get_connector()[0]
-        cursor = db.cursor()
-        for table in self.schema:
-            for stmt in db_backend.to_sql(table):
-                self.env.log.debug(stmt)
-                cursor.execute(stmt)
-        db.commit()
+    def upgrade_environment(self, db=None):
+        dbm = DatabaseManager(self.env)
+        db_backend = dbm.get_connector()[0]
+        with self.env.db_transaction as db:
+            if 'bookmarks' not in dbm.get_table_names():
+                for table in self.schema:
+                    for stmt in db_backend.to_sql(table):
+                        self.env.log.debug(stmt)
+                        db(stmt)
+            dbm.set_database_version(self.schema_version,
+                                     self.schema_version_name)
 
     # Internal methods
 
@@ -314,13 +297,9 @@ class BookmarkSystem(Component):
         }
 
     def _format_report_name(self, id):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT id, title from report WHERE id=%s
-            """, (id,))
-        row = cursor.fetchone()
-        if row:
+        for row in self.env.db_query("""
+                SELECT id, title from report WHERE id=%s
+                """, (id,)):
             return row[1]
         else:
             return ''
