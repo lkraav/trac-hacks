@@ -12,7 +12,8 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from trac.util import TracError
+from trac.core import TracError
+from trac.util.html import html
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
 
@@ -40,21 +41,24 @@ class PageVariable(WikiMacroBase):
     def expand_macro(self, formatter, name, args):
         args = parse_args(args)[0]
         req = formatter.req
+        if not hasattr(req, 'page_variables'):
+            req.page_variables = {}
         if len(args) == 1:
-            val = req.args.get(name)
+            key = args[0]
+            val = req.page_variables.get(key)
             if val is None:
-                return 'ERROR: Variable %s not declared' % name
+                return html.code('ERROR: Variable %s not declared' % key)
             return val
         else:
             if len(args) == 2:
                 key = args[0]
-                val = req.args.get(key)
+                val = req.page_variables.get(key)
                 if val is not None:
-                    return 'ERROR: Variable %s already set or present in ' \
-                           'the url' % name
+                    return html.code('ERROR: Variable %s already set or present '
+                                     'in the url' % key)
                 else:
-                    req.args[name] = args[1]
+                    req.page_variables[key] = args[1]
                 return ''
             else:
-                return 'ERROR: Invalid number of arguments supplied to ' \
-                       'PageVariable macro: %s' % args
+                return html.code('ERROR: Invalid number of arguments supplied '
+                                 'to PageVariable macro: %s' % args)
