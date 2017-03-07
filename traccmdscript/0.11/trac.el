@@ -1,14 +1,14 @@
 ;; trac.el a simple wrapper around a command line trac tool
 ;; Nic Ferrier <nferrier@woome.com>
 
-;; Todo:: 
+;; Todo::
 ;;
-;; define derived mode from text-mode 
+;; define derived mode from text-mode
 ;;    with a keybinding of C-x C-w for save to trac
 ;;
 ;; delete the put buffer after the put has finished
 ;;    need another sentinel
-;; 
+;;
 ;; setup a customizable variable for traccmd.py path.
 
 
@@ -19,8 +19,8 @@
 ;; xmlrpc interface for trac.
 
 ;; Usage
-;; 
-;; Login first with 
+;;
+;; Login first with
 ;;
 ;;   traccmd.py loginemacs
 ;;
@@ -47,10 +47,10 @@
     (goto-char (point-min))
     (let ((meta-data (read (current-buffer))))
       (if (listp meta-data)
-	  (progn
-	    (goto-char (point-min))
-	    (kill-sexp)
-	    (kill-line)))
+    (progn
+      (goto-char (point-min))
+      (kill-sexp)
+      (kill-line)))
       (text-mode)
       ;; (auto-fill-mode)
       ;; Has to be set here because mode-sets trash them
@@ -67,16 +67,16 @@ to use a buffer that was the result of that call."
   (if (not page-meta)
       (error "not in a trac page buffer!")
     (let ((page-name (plist-get
-		      (plist-get page-meta :tracwikiproperties)
-		      :name)))
-      (let ((p (start-process-shell-command 
-		"trac-wiki-put"
-		(concat "*trac-wiki-put-channel-" page-name "*")
-		"/home/nferrier/woome/sysops/dev/trac.py"
-		"wikiput"
-		page-name)))
-	(process-send-region p (point-min) (point-max))
-	(process-send-eof p)))))
+          (plist-get page-meta :tracwikiproperties)
+          :name)))
+      (let ((p (start-process-shell-command
+    "trac-wiki-put"
+    (concat "*trac-wiki-put-channel-" page-name "*")
+    "/home/nferrier/woome/sysops/dev/trac.py"
+    "wikiput"
+    page-name)))
+  (process-send-region p (point-min) (point-max))
+  (process-send-eof p)))))
 
 (defun trac-get (page)
   "Get the wiki page specified into a buffer
@@ -86,14 +86,14 @@ content and made into a buffer local variable."
   (interactive "Mtrac page:")
   (let ((wiki-page-buffer-name (concat "*trac-wiki-channel-" page "*")))
     (if (get-buffer wiki-page-buffer-name)
-	(with-current-buffer (get-buffer wiki-page-buffer-name)
-	  (delete-region (point-min) (point-max))))
-    (let ((p (start-process-shell-command 
-	      "trac-wiki-get"
-	      wiki-page-buffer-name
-	      "~/trac.py"
-	      "wiki"
-	      page)))
+  (with-current-buffer (get-buffer wiki-page-buffer-name)
+    (delete-region (point-min) (point-max))))
+    (let ((p (start-process-shell-command
+        "trac-wiki-get"
+        wiki-page-buffer-name
+        "~/trac.py"
+        "wiki"
+        page)))
       (set-process-sentinel p 'trac-get-sentinel)
       )))
 

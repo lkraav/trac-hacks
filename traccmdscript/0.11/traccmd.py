@@ -28,7 +28,7 @@ environment variable (and your auth details) is gone.
 === Ini file authentication ===
 
 If you don't want this level of security and are happy to store auth
-details in ini files you can setup $TRAC_CMD_INI or ~/.trac_cmd.ini 
+details in ini files you can setup $TRAC_CMD_INI or ~/.trac_cmd.ini
 thusly:
 
 {{{
@@ -66,13 +66,13 @@ When a ticket has been created the ticket number is printed.
  * wiki     - get the specified wiki page.
               The page is prefaced with an s-expression of attributes
  * wikiput  - update the specified wiki page with stdin
- * wikiedit - edit the specified page in $EDITOR  
+ * wikiedit - edit the specified page in $EDITOR
  * ticket   - get the specified tickets.
  * ticketdetail
-            - specify a ticket number and some detail types 
+            - specify a ticket number and some detail types
               and you'll get a list of those details.
  * ticketupdate
-            - specify a ticketnumber, a field and a value and 
+            - specify a ticketnumber, a field and a value and
               traccmd will update your ticket.
  * milestonenew
             - make a new milestone so that you can attach tickets to it.
@@ -91,6 +91,7 @@ from ConfigParser import ConfigParser
 import traceback
 from os.path import expanduser as expanduserpath
 from os.path import exists as path_exists
+
 
 def _get_ini_file(section, trac_instance=None):
     """Read in the trac_cmd ini file and return a dict of the specified section.
@@ -111,13 +112,13 @@ def _get_ini_file(section, trac_instance=None):
      password = plain
 
     The location of the ini file can be overridden with an environment
-    variable TRAC_INI. 
+    variable TRAC_INI.
 
     By default the ini file is found in ~
     """
 
     trac_ini_file = os.environ.get(
-        "TRAC_INI", 
+        "TRAC_INI",
         expanduserpath("~/.trac_cmd.ini")
         )
     if not path_exists(trac_ini_file):
@@ -128,7 +129,7 @@ def _get_ini_file(section, trac_instance=None):
         cp.readfp(fd)
         return dict(cp.items(
                 section if not trac_instance else "%s.%s" % (
-                    section, 
+                    section,
                     trac_instance
                     )
                 ))
@@ -143,12 +144,12 @@ def _login_auth(username, password, trac_url):
     token = re.sub("(http[s]*)://(.*)", "\\1://%s:%s@\\2" % (username, password), trac_url)
     os.environ["TRAC_URL"] = token
     return os.environ["TRAC_URL"]
-    
+
 def _login(username=None, password=None, trac_url=None, trac_instance=None):
     """Do login filling in gaps from ini file if necessary"""
     auth_details = {
-        "username": username, 
-        "password": password, 
+        "username": username,
+        "password": password,
         "trac_url": trac_url
         }
     if None in auth_details.values():
@@ -160,7 +161,7 @@ def _login(username=None, password=None, trac_url=None, trac_instance=None):
 def loginemacs(username, password, trac_url=None):
     """Return the environment settings for doing trac env in emacs"""
     print """(setenv "TRAC_URL" \"%s\")""" % _login(username, password, trac_url)
-    
+
 def shell(username, trac_url=None, command=None):
     """Make some script to export your username/password to your current session environment.
 
@@ -176,7 +177,7 @@ def shell(username, trac_url=None, command=None):
     os.execl(os.environ["SHELL"])
 
 
-## RPC management 
+## RPC management
 
 def _get_trac_url(trac_instance=None):
     trac_url = os.environ.get("TRAC_URL", None)
@@ -267,9 +268,9 @@ def wikiedit(page_name, trac_instance=None):
         else:
             fd.close()
             os.spawnlp(
-                os.P_WAIT, 
-                os.environ["EDITOR"], 
-                os.environ["EDITOR"], 
+                os.P_WAIT,
+                os.environ["EDITOR"],
+                os.environ["EDITOR"],
                 file_name)
             try:
                 fd = open(file_name)
@@ -280,7 +281,7 @@ def wikiedit(page_name, trac_instance=None):
             else:
                 fd.close()
                 server.wiki.putPage(page_name, content, {})
-            
+
 
 
 ## Ticket handling methods
@@ -354,7 +355,7 @@ def ticket(*ticks, **kwargs): ##kwargs specifically support trac_instance
 
 def ticketdetail(ticket_num, *details, **kwargs):
     """Print all the detail about the ticket specified
-    
+
     Optionally filter to the specified detail"""
     trac_instance = kwargs.get("trac_instance", None)
     server = _get_xmlrpc(trac_instance=trac_instance)
@@ -394,10 +395,10 @@ def ticketnew(to, summary, tickettype, component, description, trac_instance=Non
         if component not in componenttypes:
             raise ValidationError(component, "component", componenttypes)
 
-        ticket_number = server.ticket.create(summary, 
-                                             description, 
+        ticket_number = server.ticket.create(summary,
+                                             description,
                                              { "owner": to,
-                                               "type": tickettype, 
+                                               "type": tickettype,
                                                "component": component },
                                              True)
         print ticket_number
@@ -449,7 +450,7 @@ def ticketupdate(ticket, field, value, description="", trac_instance=None):
             fieldname = _force_guard(field, current[3])
             if not(fieldname):
                 print >>sys.stderr, "you can't set %s=%s on %s without specifying force like force:milestone milestonename" % (
-                    field, 
+                    field,
                     value,
                     t
                     )
@@ -469,7 +470,7 @@ def milestones(trac_instance):
     server = _get_xmlrpc(trac_instance=trac_instance)
     for m in server.ticket.milestone.getAll():
         print m
-    
+
 def milestonenew(tag, trac_instance=None):
     """Make a new milestone.
 
@@ -492,7 +493,7 @@ def milestoneupdate(tag, name, value, trac_instance=None):
     server = _get_xmlrpc(trac_instance=trac_instance)
     server.ticket.milestone.update(tag, {name:value})
     print value
-    
+
 
 ## More admin stuff
 
@@ -520,7 +521,7 @@ def ticket_or_milestone(str):
 
     return str
 
-    
+
 from cmd import Cmd
 class SysArgsCmd(Cmd):
     """Let's you use cmd with arg lists"""
@@ -675,8 +676,8 @@ if __name__ == "__main__":
         help="specify the name of the trac instance in your .trac_cmd.ini file",
         default=None,
         )
-        
-    o,a = p.parse_args(sys.argv[1:])
+
+    o, a = p.parse_args(sys.argv[1:])
     cmdproc.trac_instance = o.trac_instance
     ret = cmdproc.onecmd(a)
 
