@@ -28,7 +28,7 @@ class QuietEmailDistributor(EmailDistributor):
     def distribute(self, transport, recipients, event):
         if hasattr(event, 'author') and self._is_quiet_mode(event.author):
             self.log.debug("QuietEmailDistributor skipping distribution of "
-                           "%s for %s because quiet mode is enabled",
+                           "%s because quiet mode is enabled for %s",
                            event.__class__.__name__, event.author)
             return
         super(QuietEmailDistributor, self).distribute(transport, recipients,
