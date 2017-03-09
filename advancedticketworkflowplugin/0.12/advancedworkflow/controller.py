@@ -127,7 +127,7 @@ class TicketWorkflowOpOwnerComponent(TicketWorkflowOpBase):
     def _new_owner(self, ticket):
         """Determines the new owner"""
         component = model.Component(self.env, name=ticket['component'])
-        self.env.log.debug("component %s, owner %s" % (component, component.owner))
+        self.log.debug("component %s, owner %s", component, component.owner)
         return component.owner
 
 
@@ -320,11 +320,14 @@ class TicketWorkflowOpRunExternal(TicketWorkflowOpBase):
                 script += extension
                 break
         else:
-            self.env.log.error("Error in ticket workflow config; could not find external command to run for %s in %s" % (action, os.path.join(self.env.path, 'hooks')))
+            self.log.error("Error in ticket workflow config; could not find "
+                           "external command to run for %s in %s",
+                           action, os.path.join(self.env.path, 'hooks'))
             return
         retval = call([script, str(ticket.id), req.authname])
         if retval:
-            self.env.log.error("External script %r exited with return code %s." % (script, retval))
+            self.log.error("External script %r exited with return code %s.",
+                           script, retval)
 
 
 class TicketWorkflowOpTriage(TicketWorkflowOpBase):
@@ -373,7 +376,8 @@ class TicketWorkflowOpTriage(TicketWorkflowOpBase):
             if value == ticket[field].strip():
                 break
         else:
-            self.env.log.error("Bad configuration for 'triage' operation in action '%s'" % action)
+            self.log.error("Bad configuration for 'triage' operation in "
+                           "action '%s'", action)
             status = 'new'
         return status
 
@@ -469,7 +473,7 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
             tn.notify(xticket, newticket=False, modtime=now)
         except Exception, e:
             self.log.exception("Failure sending notification on change to "
-                               "ticket #%s: %s" % (ticketnum, e))
+                               "ticket #%s: %s", ticketnum, e)
 
 
 class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
