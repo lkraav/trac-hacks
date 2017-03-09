@@ -39,6 +39,7 @@ setup(
             'locale/*/LC_MESSAGES/*.mo',
         ],
     },
+    test_suite='advancedworkflow.tests.test_suite',
     entry_points={'trac.plugins': [
         'advancedworkflow.controller = advancedworkflow.controller'
     ]},
