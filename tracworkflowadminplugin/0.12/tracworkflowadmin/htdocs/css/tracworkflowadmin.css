@@ -6,7 +6,7 @@
 #elements { border: 1px solid #d7d7d7; border-collapse: collapse }
 
 #elements .ui-icon {
- display: inline;
+ display: inline-block;
  vertical-align: middle;
  cursor: pointer;
  width: 16px;
@@ -19,6 +19,29 @@
  user-select: none;
 }
 
+#elements .editable { position: relative }
+#elements .editable input[type=text] {
+ font-family: inherit;
+ font-size: 100%;
+ width: 100%;
+ padding: 0.2em 0;
+ border: 0;
+ margin: 0;
+ box-sizing: border-box;
+}
+#elements .editable input[type=text]:focus {
+ outline: 2px solid #ace;
+}
+#elements #status-editor-1 .editable input[type=text] { text-align: center }
+#elements .editable a {
+ position: absolute;
+ display: block;
+ height: 100%;
+ line-height: 1.6;
+ padding: 0 2px;
+ top: 0;
+ right: 0;
+}
 #elements .ui-widget { font-size: 100% }
 #elements .editable input,
 #elements .editable a,
@@ -56,28 +79,26 @@
 #elements th, #elements td { padding: 0 }
 
 div.ui-multiselect-menu ul { overflow-x: hidden }
+div.ui-multiselect-menu ul li label { position: relative }
 div.ui-multiselect-menu ul li label div.sorter {
- display: block;
+ position: absolute;
  visibility: hidden;
- width: 40px;
- height; 16px;
- float: right;
- margin: 0 0 0 4px;
+ width: 32px;
+ height: 16px;
+ white-space: nowrap;
+ top: 3px;
+ right: 3px;
 }
 div.ui-multiselect-menu ul li label.ui-state-hover div.sorter {
  visibility: visible;
 }
-div.ui-multiselect-menu ul li div.sorter span {
- display: block;
- float: left;
- width: 16px;
- height: 16px;
- text-indent: -1000em;
+div.ui-multiselect-menu ul li div.sorter .ui-icon {
  cursor: pointer;
  background-repeat: no-repeat;
 }
-div.ui-multiselect-menu ul li div.sorter span:hover {
- background-color: #ffffcc;
+div.ui-multiselect-menu ul li div.sorter .ui-icon:hover {
+ background-color: #ffffff;
+ background-color: rgba(255,255,255,0.9);
 }
 table#elements .col-line-select { padding: 0 1px }
 table#elements .col-line-select .ui-icon { visibility: hidden }

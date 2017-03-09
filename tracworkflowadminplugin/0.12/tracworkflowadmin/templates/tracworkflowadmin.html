@@ -82,8 +82,8 @@
               --><img class="ui-icon ui-icon-play"
                       src="${href.chrome('tracworkflowadmin/transparent.gif')}"
               /></td>
-            <td class="editable col-action"><span>action</span><input value="action" /><a href="#top">×</a></td>
-            <td class="editable col-logname"><span >${dgettext('tracworkflowadmin', 'Action name')}</span><input value="${dgettext('tracworkflowadmin', 'Action name')}" /><a href="#top">×</a></td>
+            <td class="editable col-action"><span>action</span><input type="text" value="action" /><a href="#top">×</a></td>
+            <td class="editable col-logname"><span >${dgettext('tracworkflowadmin', 'Action name')}</span><input type="text" value="${dgettext('tracworkflowadmin', 'Action name')}" /><a href="#top">×</a></td>
             <td class="col-operations selectable">
               <select multiple="multiple">
                 <option py:for="op in operations">${op}</option>
@@ -113,8 +113,8 @@
               --><img class="ui-icon ui-icon-play"
                       src="${href.chrome('tracworkflowadmin/transparent.gif')}"
               /></td>
-            <td class="editable col-action"><span>${action['action']}</span><input value="${action['action']}" /><a href="#top">×</a></td>
-            <td class="editable col-logname"><span>${action['name']}</span><input value="${action['name']}" /><a href="#top">×</a></td>
+            <td class="editable col-action"><span>${action['action']}</span><input type="text" value="${action['action']}" /><a href="#top">×</a></td>
+            <td class="editable col-logname"><span>${action['name']}</span><input type="text" value="${action['name']}" /><a href="#top">×</a></td>
             <td class="col-operations selectable">
               <select multiple="multiple">
                 <option py:for="op in action['operations']" selected="selected">${op}</option>

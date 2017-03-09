@@ -1,10 +1,10 @@
 jQuery(document).ready(function($) {
 
     /* variables */
-    var sorterHtml =
+    var sorter = $(
         '<div class="sorter">' +
         '<span class="up ui-icon ui-icon-arrowthick-1-n">↑</span>' +
-        '<span class="down ui-icon ui-icon-arrowthick-1-s">↓</span></div>';
+        '<span class="down ui-icon ui-icon-arrowthick-1-s">↓</span></div>');
     var inputBackup = '';
     var uiOpened = false;
     var ajaxNow = false;
@@ -16,36 +16,36 @@ jQuery(document).ready(function($) {
 
     /* functions */
     function restoreDropDown(td, multi, value) {
-        if ($('button', td).length) {
-            var options = $('select option', td);
-            var html = '';
-            if (multi) {
-                var checks = $("div ul input[type='checkbox']", td);
-
-                // <select>要素には値が反映されていないので、リフレッシュする前にチェックの値を書き戻す
-                // DOM操作ライクな方法で行いたかったが、innerHTMLを操作する方法以外の方法では、selected
-                // 属性を変化させる事ができない。なぜ？
-                html = '<select multiple="multiple">';
-                for (i = 0; i < options.length; i++) {
-                    var name = $(options[i]).text();
-                    var selected = checks[i].checked ? 'selected="selected"' : '';
-                    html += '<option ' + selected + ' >' + $.htmlEscape(name) + '</option>';
-                }
-                html += '</select>';
-            } else {
-                html = '<select>';
-                if (value === false) {
-                    value = $('select', td).multiselect('getChecked').val();
-                }
-                for (i = 0; i < options.length; i++) {
-                    var name = $(options[i]).text();
-                    var selected = name == value ? 'selected="selected"' : '';
-                    html += '<option ' + selected + ' >' + $.htmlEscape(name) + '</option>';
-                }
-                html += '</select>';
+        if ($('button', td).length === 0)
+            return;
+        var options = $('select option', td);
+        var html = '';
+        if (multi) {
+            var checks = $('div ul', td)
+                         .find('input[type=checkbox], input[type=radio]');
+            // <select>要素には値が反映されていないので、リフレッシュする前にチェックの値を書き戻す
+            // DOM操作ライクな方法で行いたかったが、innerHTMLを操作する方法以外の方法では、selected
+            // 属性を変化させる事ができない。なぜ？
+            html = '<select multiple="multiple">';
+            for (i = 0; i < options.length; i++) {
+                var name = $(options[i]).text();
+                var selected = checks[i].checked ? 'selected="selected"' : '';
+                html += '<option ' + selected + ' >' + $.htmlEscape(name) + '</option>';
             }
-            td.html(html);
+            html += '</select>';
+        } else {
+            html = '<select>';
+            if (value === false) {
+                value = $('select', td).multiselect('getChecked').val();
+            }
+            for (i = 0; i < options.length; i++) {
+                var name = $(options[i]).text();
+                var selected = name == value ? 'selected="selected"' : '';
+                html += '<option ' + selected + ' >' + $.htmlEscape(name) + '</option>';
+            }
+            html += '</select>';
         }
+        td.html(html);
     }
 
     function setupOperations(tr) {
@@ -53,9 +53,9 @@ jQuery(document).ready(function($) {
         restoreDropDown(td, true);
         var select = td.find('select');
         select.multiselect({
-            header: false, selectedList: 1, minWidth: 180, close: updateChart,
+            header: false, selectedList: 1, close: updateChart,
             appendTo: td, position: {of: td, my: 'left top', at: 'left bottom'}});
-        $('div.ui-multiselect-menu ul li label', td).prepend(sorterHtml);
+        $('div.ui-multiselect-menu ul li label', td).append(sorter.clone());
         $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
     }
 
@@ -63,7 +63,7 @@ jQuery(document).ready(function($) {
         var td = $('td.col-permissions', tr);
         restoreDropDown(td, true);
         $('select', td).multiselect({
-            header: false, selectedList: 1, minWidth: 180, appendTo: td,
+            header: false, selectedList: 1, appendTo: td,
             position: {of: td, my: 'left top', at: 'left bottom'}});
         $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
         var ul = $('div.ui-multiselect-menu ul.ui-multiselect-checkboxes', td);
@@ -99,8 +99,7 @@ jQuery(document).ready(function($) {
     function closeUi() {
         $('#elements .editable input').css('display', 'none');
         $('#elements .editable a').css('display', 'none');
-        $('#elements td span').css('display', 'inline');
-        $('#elements th span').css('display', 'inline');
+        $('#elements .editable span').css('display', '');
         uiOpened = false;
     }
 
@@ -163,7 +162,7 @@ jQuery(document).ready(function($) {
         $(options[idx1]).replaceWith(op2);
         var td = obj.closest('td');
         $('select', td).multiselect('refresh');
-        $('div.ui-multiselect-menu ul li label', td).prepend(sorterHtml);
+        $('div.ui-multiselect-menu ul li label', td).append(sorter.clone());
         $('div.ui-multiselect-menu', td).css('min-width', td.css('width'));
     }
 
@@ -375,40 +374,33 @@ jQuery(document).ready(function($) {
 
     // 「操作」「表示名」を編集可能に
     $('td.editable').click(function() {
-        if ($('input', this).css('display') != 'inline') {
+        var input = $('input', this);
+        if (input.css('display') != 'inline') {
             closeUi();
-            $('input', this).css('display', 'inline');
+            var span = $('span:first', this);
+            input.css({display: 'inline', 'min-width': span.width()});
             $('a', this).css('display', 'inline');
-            $('input', this).focus();
-            $('input', this)[0].select();
-            $('span:first', this).css('display', 'none');
-            inputBackup = $('input', this).val();
+            input.focus();
+            input[0].select();
+            span.css('display', 'none');
+            inputBackup = input.val();
             uiOpened = true;
             return false;
         }
     });
-    $('td.editable a').click(function() {
-        $('input', $(this).closest('td')).val(inputBackup);
-        $('span', $(this).closest('td')).text(inputBackup);
-        closeUi();
-        updateChart();
-        return false;
-    });
-    $('td.editable input').change(function() {
-        $('span:first', $(this).parent()).text($(this).val());
-        updateChart();
-    });
 
     // 取り得るステータスを編集可能に
     $('th.editable').click(function() {
-        if ($('input', this).css('display') != 'inline') {
+        var input = $('input', this);
+        if (input.css('display') != 'inline') {
             closeUi();
-            $('input', this).css('display', 'inline');
+            var span = $('span:first', this);
+            input.css({display: 'inline', 'min-width': span.width()});
             $('a', this).css('display', 'inline');
-            $('input', this).focus();
-            $('input', this)[0].select();
-            $('span:first', this).css('display', 'none');
-            inputBackup = $('input', this).val();
+            input.focus();
+            input[0].select();
+            span.css('display', 'none');
+            inputBackup = input.val();
             uiOpened = true;
             return false;
         }
@@ -422,8 +414,31 @@ jQuery(document).ready(function($) {
         updateChart();
         return false;
     });
-    $('th.editable input').change(function() {
-        changeStatus(this);
+
+    // Cancel editting
+    $('#elements').delegate('.editable a', 'click', function() {
+        return false;
+    });
+    $('#elements').delegate(
+        '.editable input[type=text]', 'blur', function(event)
+    {
+        var self = $(this);
+        var related = event.relatedTarget;
+        var parent = this.parentNode;
+        if (related && related.tagName === 'A' &&
+            parent === related.parentNode)
+        {
+            var cell = self.closest('.editable');
+            cell.find('input').val(inputBackup);
+            cell.find('span').text(inputBackup);
+        }
+        else if (parent.tagName === 'TD') {
+            $('span:first', parent).text(self.val());
+        }
+        else {
+            changeStatus(this);
+        }
+        closeUi();
         updateChart();
     });
 
