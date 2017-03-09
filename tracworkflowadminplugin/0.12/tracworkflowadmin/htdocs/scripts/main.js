@@ -443,19 +443,21 @@ jQuery(document).ready(function($) {
     });
 
     // テキスト入力のキーボード処理
-    $('.editable input').keypress(function(ev) {
-        if (ev.keyCode == 13) {
-            closeUi();
-            $(this).trigger('change');
+    $('#elements').delegate(
+        '.editable input[type=text]', 'keypress', function(event)
+    {
+        switch (event.keyCode) {
+        case 13:  // ENTER
+            $(this).trigger('blur');
             return false;
-        } else if (ev.keyCode == 27) {
-            var el = this;
+        case 27:  // ESCAPE
+            var self = $(this);
             // firefoxの場合、一度イベントの外に出ないと $(this).val() で値を設定できなかったので以下のようにした
             setTimeout(function() {
-                var resetText = $(el).val();
+                var resetText = self.val();
                 $(el).val(inputBackup);
-                $('span', $(el).closest('th')).text(resetText);
-                changeStatus(el);
+                $('span', self.closest('th')).text(resetText);
+                changeStatus(self[0]);
                 closeUi();
                 updateChart();
             }, 1);
