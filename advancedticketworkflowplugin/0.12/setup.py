@@ -26,12 +26,13 @@ setup(
         long_description = 'Provides more advanced workflow operations for Trac 0.12',
         url = 'http://trac-hacks.org/wiki/AdvancedTicketWorkflowPlugin',
 
-        packages = find_packages(),
+        packages = find_packages(exclude=['*.tests*']),
         package_data = {
             'advancedworkflow': [
                 'locale/*/LC_MESSAGES/*.mo',
             ],
         },
+        test_suite = 'advancedworkflow.tests.test_suite',
         entry_points = {'trac.plugins':['advancedworkflow.controller = advancedworkflow.controller']},
         install_requires = [],
         #zip_safe = False,

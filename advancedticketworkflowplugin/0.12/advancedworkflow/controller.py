@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """Trac plugin that provides a number of advanced operations for customizable
 workflows.
 """
 
 import os
-import time
 from datetime import datetime
 from pkg_resources import resource_filename
 from subprocess import call
@@ -449,7 +450,7 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
             ticketnum = req.args.get(id).strip('#')
 
             try:
-                xticket = model.Ticket(self.env, ticketnum)
+                model.Ticket(self.env, ticketnum)
             except ValueError:
                 req.args['preview'] = True
                 add_warning(req, 'The cross-referenced ticket number "%s" was not a number' % ticketnum)
