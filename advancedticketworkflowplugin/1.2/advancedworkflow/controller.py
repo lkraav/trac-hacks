@@ -22,6 +22,7 @@ from trac.ticket.notification import TicketNotifyEmail
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
 from trac.util.html import html
+from trac.util.text import to_unicode
 from trac.web.chrome import add_warning
 
 
@@ -132,10 +133,12 @@ class TicketWorkflowOpOwnerComponent(TicketWorkflowOpBase):
 
     def _new_owner(self, ticket):
         """Determines the new owner"""
-        component = model.Component(self.env, name=ticket['component'])
-        self.env.log.debug("component %s, owner %s",
-                           component, component.owner)
-        return component.owner
+        try:
+            component = model.Component(self.env, name=ticket['component'])
+            return component.owner
+        except ResourceNotFound, e:
+            self.log.warning("In %s, %s", self._op_name, to_unicode(e))
+            return None
 
 
 class TicketWorkflowOpOwnerField(TicketWorkflowOpBase):
@@ -500,8 +503,8 @@ class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         # check if the assigned milestone has been completed
-        milestone = model.Milestone(self.env, ticket['milestone'])
-        if milestone.is_completed:
+        milestone = self._fetch_milestone(ticket)
+        if milestone and milestone.is_completed:
             hint = 'The milestone will be reset'
         else:
             hint = ''
@@ -510,7 +513,15 @@ class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of milestone, if needed."""
-        milestone = model.Milestone(self.env, ticket['milestone'])
-        if milestone.is_completed:
+        milestone = self._fetch_milestone(ticket)
+        if milestone and milestone.is_completed:
             return {'milestone': ''}
         return {}
+
+    def _fetch_milestone(self, ticket):
+        if ticket['milestone']:
+            try:
+                return model.Milestone(self.env, ticket['milestone'])
+            except ResourceNotFound, e:
+                self.log.warning("In %s, %s", self._op_name, to_unicode(e))
+        return None
