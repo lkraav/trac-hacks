@@ -207,11 +207,11 @@ class TicketWorkflowOpOwnerPrevious(TicketWorkflowOpBase):
 
     def _new_owner(self, ticket):
         """Determines the new owner"""
-        row = self.env.db_query("""
-          SELECT oldvalue FROM ticket_change WHERE ticket=%s
-          AND field='owner' ORDER BY -time
-          """, (ticket.id, ))
-        return row[0][0] if row else ticket['owner']
+        rows = self.env.db_query("""
+            SELECT oldvalue FROM ticket_change WHERE ticket=%s
+            AND field='owner' ORDER BY time DESC LIMIT 1
+            """, (ticket.id, ))
+        return rows[0][0] if rows else ticket['owner']
 
 
 class TicketWorkflowOpStatusPrevious(TicketWorkflowOpBase):
@@ -250,11 +250,11 @@ class TicketWorkflowOpStatusPrevious(TicketWorkflowOpBase):
 
     def _new_status(self, ticket):
         """Determines the new status"""
-        row = self.env.db_query("""
-          SELECT oldvalue FROM ticket_change WHERE ticket=%s
-          AND field='status' ORDER BY -time
+        rows = self.env.db_query("""
+            SELECT oldvalue FROM ticket_change WHERE ticket=%s
+            AND field='status' ORDER BY time DESC LIMIT 1
           """, (ticket.id, ))
-        return row[0][0] if row else 'new'
+        return rows[0][0] if rows else 'new'
 
 
 class TicketWorkflowOpRunExternal(TicketWorkflowOpBase):
