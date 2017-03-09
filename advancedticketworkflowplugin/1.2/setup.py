@@ -8,6 +8,21 @@
 
 from setuptools import setup, find_packages
 
+extra = {}
+try:
+    import babel
+    del babel
+    extra['message_extractors'] = {
+        'advancedworkflow': [
+            ('**.py', 'python', None),
+            ('**.html', 'genshi', None),
+        ],
+    }
+    from trac.util.dist import get_l10n_js_cmdclass
+    extra['cmdclass'] = get_l10n_js_cmdclass()
+except ImportError:
+    pass
+
 setup(
     name='TracAdvancedTicketWorkflow',
     version='1.2.0',
@@ -19,10 +34,14 @@ setup(
     url='https://trac-hacks.org/wiki/AdvancedTicketWorkflowPlugin',
 
     packages=find_packages(),
-    package_data={},
+    package_data={
+        'advancedworkflow': [
+            'locale/*/LC_MESSAGES/*.mo',
+        ],
+    },
     entry_points={'trac.plugins': [
         'advancedworkflow.controller = advancedworkflow.controller'
     ]},
     install_requires=['Trac'],
     # zip_safe = False,
-)
+    **extra)

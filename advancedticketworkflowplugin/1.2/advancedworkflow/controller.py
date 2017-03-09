@@ -12,6 +12,7 @@ workflows.
 
 import os
 from datetime import datetime
+from pkg_resources import resource_filename
 from subprocess import call
 
 from trac.core import implements, Component
@@ -23,7 +24,12 @@ from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
 from trac.util.html import html
 from trac.util.text import to_unicode
-from trac.web.chrome import add_warning
+from trac.util.translation import domain_functions
+from trac.web.chrome import Chrome, add_warning
+
+
+_, tag_, add_domain = domain_functions('advancedworkflow',
+                                       '_', 'tag_', 'add_domain')
 
 
 class TicketWorkflowOpBase(Component):
@@ -33,6 +39,14 @@ class TicketWorkflowOpBase(Component):
     abstract = True
 
     _op_name = None  # Must be specified.
+
+    def __init__(self):
+        try:
+            locale_dir = resource_filename(__name__, 'locale')
+        except:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
 
     def get_configurable_workflow(self):
         controllers = TicketSystem(self.env).action_controllers
@@ -60,7 +74,7 @@ class TicketWorkflowOpBase(Component):
         """Returns the action control"""
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
-        return label, html(''), ''
+        return label, '', ''
 
     def get_ticket_changes(self, req, ticket, action):
         """Must be implemented in subclasses"""
@@ -69,6 +83,20 @@ class TicketWorkflowOpBase(Component):
     def apply_action_side_effects(self, req, ticket, action):
         """No side effects"""
         pass
+
+    # Internal methods
+
+    def _get_hint_to_change_owner(self, req, ticket, new_owner):
+        if new_owner:
+            return _("The owner will be changed from %(current_owner)s to "
+                     "%(selected_owner)s.",
+                     current_owner=self._format_author(req, ticket['owner']),
+                     selected_owner=self._format_author(req, new_owner))
+        else:
+            return _("The owner will be deleted.")
+
+    def _format_author(self, req, author):
+        return Chrome(self.env).format_author(req, author)
 
 
 class TicketWorkflowOpOwnerReporter(TicketWorkflowOpBase):
@@ -94,9 +122,8 @@ class TicketWorkflowOpOwnerReporter(TicketWorkflowOpBase):
         """Returns the action control"""
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
-        hint = 'The owner will change to %s' % ticket['reporter']
-        control = html('')
-        return label, control, hint
+        hint = self._get_hint_to_change_owner(req, ticket, ticket['reporter'])
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of owner."""
@@ -123,9 +150,9 @@ class TicketWorkflowOpOwnerComponent(TicketWorkflowOpBase):
         """Returns the action control"""
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
-        hint = 'The owner will change to %s' % self._new_owner(ticket)
-        control = html('')
-        return label, control, hint
+        hint = self._get_hint_to_change_owner(req, ticket,
+                                              self._new_owner(ticket))
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of owner."""
@@ -162,9 +189,9 @@ class TicketWorkflowOpOwnerField(TicketWorkflowOpBase):
         """Returns the action control"""
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
-        hint = 'The owner will change to %s' % self._new_owner(action, ticket)
-        control = html('')
-        return label, control, hint
+        new_owner = self._new_owner(action, ticket)
+        hint = self._get_hint_to_change_owner(req, ticket, new_owner)
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of owner."""
@@ -197,12 +224,8 @@ class TicketWorkflowOpOwnerPrevious(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         new_owner = self._new_owner(ticket)
-        if new_owner:
-            hint = 'The owner will change to %s' % new_owner
-        else:
-            hint = 'The owner will be deleted.'
-        control = html('')
-        return label, control, hint
+        hint = self._get_hint_to_change_owner(req, ticket, new_owner)
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of owner."""
@@ -237,11 +260,11 @@ class TicketWorkflowOpStatusPrevious(TicketWorkflowOpBase):
         label = actions[action]['name']
         new_status = self._new_status(ticket)
         if new_status != self._old_status(ticket):
-            hint = 'The status will change to %s' % new_status
+            hint = _("The status will be changed to %(status)s.",
+                     status=new_status)
         else:
             hint = ''
-        control = html('')
-        return label, control, hint
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of status."""
@@ -301,9 +324,9 @@ class TicketWorkflowOpRunExternal(TicketWorkflowOpBase):
         label = actions[action]['name']
         hint = self.config.get('ticket-workflow',
                                action + '.run_external').strip()
-        if hint is None:
-            hint = "Will run external script."
-        return label, html(''), hint
+        if not hint:
+            hint = _("Will run external script.")
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """No changes to the ticket"""
@@ -353,11 +376,11 @@ class TicketWorkflowOpTriage(TicketWorkflowOpBase):
         label = actions[action]['name']
         new_status = self._new_status(ticket, action)
         if new_status != ticket['status']:
-            hint = 'The status will change to %s.' % new_status
+            hint = _("The status will be changed to %(status)s.",
+                     status=new_status)
         else:
             hint = ''
-        control = html('')
-        return label, control, hint
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of status."""
@@ -406,9 +429,9 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
         ticketnum = req.args.get(id, '')
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
-        hint = actions[action].get('xref_hint',
-                                   'The specified ticket will be '
-                                   'cross-referenced with this ticket')
+        hint = actions[action].get('xref_hint') or \
+               _("The specified ticket will be cross-referenced with this "
+                 "ticket.")
         control = html.input(type='text', id=id, name=id, value=ticketnum)
         return label, control, hint
 
@@ -505,11 +528,10 @@ class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
         # check if the assigned milestone has been completed
         milestone = self._fetch_milestone(ticket)
         if milestone and milestone.is_completed:
-            hint = 'The milestone will be reset'
+            hint = _("The milestone will be reset.")
         else:
             hint = ''
-        control = html('')
-        return label, control, hint
+        return label, '', hint
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of milestone, if needed."""
