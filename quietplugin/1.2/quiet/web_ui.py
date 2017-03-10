@@ -27,10 +27,12 @@ class QuietEmailDistributor(EmailDistributor):
     """Specializes Announcer's email distributor to honor quiet mode."""
     def distribute(self, transport, recipients, event):
         if hasattr(event, 'author') and self._is_quiet_mode(event.author):
-            self.log.debug("QuietEmailDistributor skipping distribution of "
-                           "%s because quiet mode is enabled for %s",
+            self.log.debug("%s skipping distribution of %s because quiet "
+                           "mode is enabled for %s", self.__class__.__name__,
                            event.__class__.__name__, event.author)
             return
+        self.log.debug("%s dispatching to EmailDistributor",
+                       self.__class__.__name__)
         super(QuietEmailDistributor, self).distribute(transport, recipients,
                                                       event)
 
