@@ -7,16 +7,18 @@
 #
 
 import unittest
+import StringIO
 
+from trac.attachment import Attachment
 from trac.perm import PermissionCache, PermissionSystem
 from trac.test import EnvironmentStub, MockRequest
+from trac.ticket import model
 from trac.web.api import RequestDone
 from trac.web.main import RequestDispatcher
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
-from trac.wiki.web_ui import WikiModule
 
-from trachacks.web_ui import ReadonlyHelpPolicy
+import trachacks.web_ui
 
 
 class MockBoxMacro(WikiMacroBase):
@@ -109,9 +111,160 @@ class ReadonlyHelpPolicyTestCase(unittest.TestCase):
                          req.response_sent.getvalue())
 
 
+class TracHacksPolicyTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = EnvironmentStub(enable=('trac.*', 'trachacks.*'))
+        self.env.config.set('trac', 'permission_policies',
+                            'TracHacksPolicy, DefaultPermissionPolicy, '
+                            'LegacyAttachmentPolicy')
+        self._create_component('Project1', 'maintainer')
+        self._create_component('Project2', 'othermaintainer')
+
+    def tearDown(self):
+        self.env.reset_db()
+
+    def _create_ticket(self, reporter, component):
+        ticket = model.Ticket(self.env)
+        ticket['reporter'] = reporter
+        ticket['summary'] = 'The summary'
+        ticket['description'] = 'The text.'
+        ticket['component'] = component
+        ticket.insert()
+        return ticket
+
+    def _create_component(self, name, owner):
+        component = model.Component(self.env)
+        component.name = name
+        component.owner = owner
+        component.insert()
+
+    def _create_page(self, name):
+        page = WikiPage(self.env, name)
+        page.text = 'The text'
+        page.save('somebody', 'Page created')
+        return page
+
+    def _insert_attachment(self, author, parent_resource):
+        attachment = Attachment(self.env, parent_resource.realm,
+                                parent_resource.id)
+        attachment.author = author
+        attachment.insert('file.txt', StringIO.StringIO(''), 0)
+        return attachment
+
+    def test_reporter_can_edit_own_ticket_description(self):
+        """Authenticated user can modify description of ticket they
+        reported.
+        """
+        ticket = self._create_ticket('somebody', 'Project1')
+
+        perm_cache = PermissionCache(self.env, 'somebody')
+        self.assertIn('TICKET_EDIT_DESCRIPTION', perm_cache(ticket.resource))
+
+    def test_reporter_no_edit_other_ticket_description(self):
+        """Authenticated user cannot modify description of ticket they
+        didn't report.
+        """
+        ticket = self._create_ticket('somebodyelse', 'Project1')
+
+        perm_cache = PermissionCache(self.env, 'somebody')
+        self.assertNotIn('TICKET_EDIT_DESCRIPTION',
+                         perm_cache(ticket.resource))
+
+    def test_maintainer_can_edit_ticket_description_for_own_project(self):
+        """Maintainer can edit ticket cc, comment and description for
+        their own project.
+        """
+        ticket = self._create_ticket('somebody', 'Project1')
+
+        perm_cache = PermissionCache(self.env, 'maintainer')
+        self.assertIn('TICKET_EDIT_CC', perm_cache(ticket.resource))
+        self.assertIn('TICKET_EDIT_COMMENT', perm_cache(ticket.resource))
+        self.assertIn('TICKET_EDIT_DESCRIPTION', perm_cache(ticket.resource))
+
+    def test_maintainer_no_edit_ticket_description_for_other_project(self):
+        """Maintainer cannot edit ticket cc, comment and description for
+        other project.
+        """
+        ticket = self._create_ticket('somebody', 'Project2')
+
+        perm_cache = PermissionCache(self.env, 'maintainer')
+        self.assertNotIn('TICKET_EDIT_CC', perm_cache(ticket.resource))
+        self.assertNotIn('TICKET_EDIT_COMMENT', perm_cache(ticket.resource))
+        self.assertNotIn('TICKET_EDIT_DESCRIPTION',
+                         perm_cache(ticket.resource))
+
+    def test_user_can_delete_their_own_ticket_attachments(self):
+        """Authenticated user can delete their own ticket attachments.
+        """
+        ticket = self._create_ticket('somebody', 'Project1')
+        attachment = self._insert_attachment('somebody', ticket.resource)
+
+        perm_cache = PermissionCache(self.env, 'somebody')
+        self.assertIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_user_no_delete_other_ticket_attachments(self):
+        """Authenticated user cannot delete other ticket attachments."""
+        ticket = self._create_ticket('somebody', 'Project1')
+        attachment = self._insert_attachment('somebodyelse', ticket.resource)
+
+        perm_cache = PermissionCache(self.env, 'somebody')
+        self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_maintainer_can_delete_ticket_attachments_for_own_project(self):
+        """Maintainer can delete ticket attachments for their own project."""
+        ticket = self._create_ticket('somebody', 'Project1')
+        attachment = self._insert_attachment('somebody', ticket.resource)
+
+        perm_cache = PermissionCache(self.env, 'maintainer')
+        self.assertIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_maintainer_no_delete_ticket_attachments_for_other_project(self):
+        """Maintainer cannot delete ticket attachments for other project.
+        """
+        ticket = self._create_ticket('somebody', 'Project2')
+        attachment = self._insert_attachment('somebody', ticket.resource)
+
+        perm_cache = PermissionCache(self.env, 'maintainer')
+        self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_user_can_delete_their_own_wiki_attachments(self):
+        """Authenticated user can delete their own wiki attachments."""
+        page = self._create_page('Project1')
+        attachment = self._insert_attachment('somebody', page.resource)
+
+        perm_cache = PermissionCache(self.env, 'somebody')
+        self.assertIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_user_no_delete_other_wiki_attachments(self):
+        """Authenticated user cannot delete other wiki attachments."""
+        page = self._create_page('Project1')
+        attachment = self._insert_attachment('somebodyelse', page.resource)
+
+        perm_cache = PermissionCache(self.env, 'somebody')
+        self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_maintainer_can_delete_wiki_attachments_for_own_project(self):
+        """Maintainer can delete wiki attachments for their own project."""
+        page = self._create_page('Project1')
+        attachment = self._insert_attachment('somebody', page.resource)
+
+        perm_cache = PermissionCache(self.env, 'maintainer')
+        self.assertIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_maintainer_no_delete_wiki_attachments_for_other_project(self):
+        """Maintainer cannot delete wiki attachments for other project."""
+        page = self._create_page('Project2')
+        attachment = self._insert_attachment('somebody', page.resource)
+
+        perm_cache = PermissionCache(self.env, 'maintainer')
+        self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ReadonlyHelpPolicyTestCase))
+    suite.addTest(unittest.makeSuite(TracHacksPolicyTestCase))
     return suite
 
 

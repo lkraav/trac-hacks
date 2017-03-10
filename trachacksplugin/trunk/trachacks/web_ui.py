@@ -16,6 +16,7 @@ from pkg_resources import resource_filename, resource_listdir
 from string import Template
 
 from genshi.filters.transform import Transformer
+from trac.attachment import Attachment
 from trac.core import Component, TracError, implements
 from trac.config import ConfigurationError, IntOption, Option
 from trac.perm import IPermissionPolicy, IPermissionRequestor, \
@@ -195,6 +196,65 @@ class ReadonlyHelpPolicy(Component):
                 resource.id and resource.id in self.help_pages and \
                 action != 'WIKI_VIEW':
             return False
+
+
+class TracHacksPolicy(Component):
+
+    implements(IPermissionPolicy)
+
+    # IPermissionPolicy methods
+
+    def check_permission(self, action, username, resource, perm):
+        # Allow ticket reporter to modify description of their ticket.
+        # Allow project maintainers to edit cc, comments and description
+        #  of their project tickets.
+        allowed_actions = ('TICKET_EDIT_CC', 'TICKET_EDIT_COMMENT',
+                           'TICKET_EDIT_DESCRIPTION')
+        if action in allowed_actions and \
+                resource is not None and \
+                resource.realm == 'ticket' and \
+                resource.id is not None:
+            ticket = model.Ticket(self.env, resource.id)
+            if action == 'TICKET_EDIT_DESCRIPTION' and \
+                    username == ticket['reporter']:
+                return True
+            try:
+                component = model.Component(self.env, ticket['component'])
+            except ResourceNotFound:
+                pass
+            else:
+                if username == component.owner:
+                    return True
+
+        # Allow users to delete their own attachments.
+        # Allow project maintainers to delete attachments associated with
+        #  their projects.
+        if action == 'ATTACHMENT_DELETE' and \
+                resource is not None and \
+                resource.realm == 'attachment' and \
+                resource.id is not None and \
+                resource.parent is not None:
+            try:
+                attachment = Attachment(self.env, resource)
+            except ResourceNotFound:
+                pass
+            else:
+                if username == attachment.author:
+                    return True
+            id_ = None
+            if resource.parent.realm == 'wiki':
+                id_ = resource.parent.id
+            elif resource.parent.realm == 'ticket':
+                ticket = model.Ticket(self.env, resource.parent.id)
+                id_ = ticket['component']
+            if id_:
+                try:
+                    component = model.Component(self.env, id_)
+                except ResourceNotFound:
+                    pass
+                else:
+                    if username == component.owner:
+                        return True
 
 
 class TracHacksHandler(Component):
