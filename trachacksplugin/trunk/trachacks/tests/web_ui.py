@@ -9,12 +9,12 @@
 import unittest
 
 from trac.perm import PermissionCache, PermissionSystem
-from trac.test import EnvironmentStub, Mock, MockPerm, locale_en
-from trac.util.datefmt import utc
+from trac.test import EnvironmentStub, MockRequest
 from trac.web.api import RequestDone
 from trac.web.main import RequestDispatcher
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
+from trac.wiki.web_ui import WikiModule
 
 from trachacks.web_ui import ReadonlyHelpPolicy
 
@@ -31,8 +31,9 @@ class MockBoxMacro(WikiMacroBase):
 class ReadonlyHelpPolicyTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub(enable=('trac.*', 'trachacks.*',
-                                           MockBoxMacro))
+        self.env = EnvironmentStub(
+            enable=('trac.*', 'trachacks.web_ui.ReadonlyHelpPolicy',
+                    MockBoxMacro))
         self.env.config.set('trac', 'permission_policies',
                             'ReadonlyHelpPolicy, DefaultPermissionPolicy, '
                             'LegacyAttachmentPolicy')
@@ -45,24 +46,9 @@ class ReadonlyHelpPolicyTestCase(unittest.TestCase):
             page = WikiPage(self.env, name)
             page.text = "The Text"
             page.save('the creator', 'the comment')
-        self.content = None
 
     def tearDown(self):
         self.env.reset_db()
-
-    def create_request(self, authname='anonymous', **kwargs):
-        kw = {'perm': PermissionCache(self.env, authname),
-              'args': {}, 'callbacks': {}, 'path_info': '',
-              'form_token': None, 'href': self.env.href,
-              'abs_href': self.env.abs_href, 'tz': utc, 'locale': None,
-              'lc_time': locale_en, 'session': {}, 'authname': authname,
-              'chrome': {'notices': [], 'warnings': []},
-              'method': None, 'get_header': lambda v: None, 'is_xhr': False}
-        kw.update(kwargs)
-        def send(content, content_type='text/html', status=200):
-            self.content = content
-            raise RequestDone
-        return Mock(send=send, **kw)
 
     def test_wiki_view_permission(self):
         """User with WIKI_VIEW can view any page."""
@@ -94,33 +80,33 @@ class ReadonlyHelpPolicyTestCase(unittest.TestCase):
 
     def test_help_page_has_notice(self):
         """Help page has notice inserted into top of page content."""
-        req = self.create_request('user_with_view',
-                                  path_info='/wiki/TracGuide')
+        req = MockRequest(self.env, authname='user_with_view',
+                          path_info='/wiki/TracGuide')
         dispatcher = RequestDispatcher(self.env)
         self.assertRaises(RequestDone, dispatcher.dispatch, req)
         self.assertIn("The TracGuide is not editable on this site.",
-                      self.content)
+                      req.response_sent.getvalue())
 
     def test_non_help_page_has_no_notice(self):
         """Non-help page doesn't have notice inserted into top of page
         content."""
-        req = self.create_request('user_with_view',
-                                  path_info='/wiki/WikiStart')
+        req = MockRequest(self.env, authname='user_with_view',
+                          path_info='/wiki/WikiStart')
         dispatcher = RequestDispatcher(self.env)
         self.assertRaises(RequestDone, dispatcher.dispatch, req)
         self.assertNotIn("The TracGuide is not editable on this site.",
-                         self.content)
+                         req.response_sent.getvalue())
 
     def test_only_view_page_has_notice(self):
         """Help page history doesn't have a notice inserted into top
         of page content. Regression test for #12613."""
-        req = self.create_request('user_with_view',
-                                  args={'action': 'history'},
-                                  path_info='/wiki/TracGuide')
+        req = MockRequest(self.env, authname='user_with_view',
+                          path_info='/wiki/TracGuide',
+                          args={'action': 'history'})
         dispatcher = RequestDispatcher(self.env)
         self.assertRaises(RequestDone, dispatcher.dispatch, req)
         self.assertNotIn("The TracGuide is not editable on this site.",
-                         self.content)
+                         req.response_sent.getvalue())
 
 
 def test_suite():

@@ -13,8 +13,10 @@ from trac.ticket.model import Component, Ticket
 from trac.web.session import DetachedSession
 from trac.wiki.model import WikiPage
 from trac.wiki.tests import formatter
+from trac.wiki.test import wikisyntax_test_suite
 
 import trachacks.macros
+from tractags.api import TagSystem
 from tractags.db import TagSetup
 from tractags.model import tag_resource
 
@@ -54,20 +56,22 @@ MAINTAINER_MACRO_WIKI_TEST_CASE = u"""
 [[Maintainer(MilestoneMacro)]]
 ------------------------------
 <p>
-<em>none ([tag:needsadoption])</em>
+<em>none (<a href="/tags/needsadoption">needsadoption</a>)</em>
 </p>
 ==============================
 [[Maintainer(TracHacksPlugin, owner)]]
 ------------------------------
 <p>
-</p><div class="system-message"><strong>Maintainer macro error</strong>\
-<pre>Invalid number of arguments</pre></div><p>
+<div class="system-message">\
+<strong>Macro Maintainer(TracHacksPlugin, owner) failed</strong>\
+<pre>Invalid number of arguments</pre>\
+</div>
 </p>
 ==============================
 [[Maintainer(DeprecatedMacro)]]
 ------------------------------
 <p>
-<em>none ([tag:deprecated])</em>
+<em>none (<a href="/tags/deprecated">deprecated</a>)</em>
 </p>
 ==============================
 [[Maintainer(DeprecatedPlugin)]]
@@ -83,9 +87,10 @@ MAINTAINER_MACRO_TICKET_TEST_CASE = u"""
 [[Maintainer]]
 ------------------------------
 <p>
-</p><div class="system-message"><strong>Maintainer macro error</strong>\
+<div class="system-message">\
+<strong>Macro Maintainer(None) failed</strong>\
 <pre>Hack name must be specified as argument when the context realm is not \'wiki\'</pre>\
-</div><p>
+</div>
 </p>
 ==============================
 [[Maintainer(TracHacksPlugin)]]
@@ -119,10 +124,9 @@ MAINTAINER_MACRO_NEWHACK_TEST_CASE = u"""
 
 
 def setup(tc):
-    tc.env = EnvironmentStub(enable=['trac.*', 'trachacks.*'])
-    tc.context.req.path_info = '/wiki/WikiStart'
     with tc.env.db_transaction as db:
         TagSetup(tc.env).upgrade_environment(db)
+    tc.context.req.environ['PATH_INFO'] = '/wiki/WikiStart'
     component1 = Component(tc.env)
     component1.name = 'TracHacksPlugin'
     component1.owner = 'mrenzmann'
@@ -151,31 +155,34 @@ def setup(tc):
     ticket.insert()
     page1 = WikiPage(tc.env, 'osimons')
     page1.text = 'osimons'
-    page1.save('osimons', '', '127.0.0.1')
+    page1.save('osimons', '')
     page2 = WikiPage(tc.env, 'DeprecatedMacro')
     page2.text = 'The macro is deprecated'
-    page2.save('admin', '', '127.0.0.1')
+    page2.save('admin', '')
     tag_resource(tc.env, page2.resource, tags=['deprecated'])
     page3 = WikiPage(tc.env, 'DeprecatedPlugin')
     page3.text = 'The plugin is deprecated'
-    page3.save('the-departed', '', '127.0.0.1')
+    page3.save('the-departed', '')
     page4 = WikiPage(tc.env, 'jun66j5')
     page4.text = 'jun66j5'
-    page4.save('jun66j5', '', '127.0.0.1')
+    page4.save('jun66j5', '')
+    page5 = WikiPage(tc.env, 'MilestoneMacro')
+    page5.text = 'The macro needsadoption'
+    page5.save('admin', '')
+    tag_resource(tc.env, page5.resource, tags=['needsadoption'])
     session = DetachedSession(tc.env, 'jun66j5')
     session.set('name', 'Jun Omae')
     session.save()
 
 
 def setup_newhack(tc):
-    tc.env = EnvironmentStub(enable=['trac.*', 'trachacks.*'])
-    tc.context.req.path_info = '/newhack'
-    tc.context.req.authname = 'jun66j5'
     with tc.env.db_transaction as db:
         TagSetup(tc.env).upgrade_environment(db)
+    tc.context.req.environ['PATH_INFO'] ='/newhack'
+    tc.context.req.authname = 'jun66j5'
     page = WikiPage(tc.env, 'jun66j5')
     page.text = 'jun66j5'
-    page.save('jun66j5', '', '127.0.0.1')
+    page.save('jun66j5', '')
     session = DetachedSession(tc.env, 'jun66j5')
     session.set('name', 'Jun Omae')
     session.save()
@@ -192,15 +199,16 @@ def teardown(tc):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(formatter.suite(MAINTAINER_MACRO_WIKI_TEST_CASE, setup,
-                                  __file__, teardown,
-                                  ('wiki', 'TracHacksPlugin')))
-    suite.addTest(formatter.suite(MAINTAINER_MACRO_TICKET_TEST_CASE,
-                                  setup, __file__, teardown,
-                                  ('ticket', 1)))
-    suite.addTest(formatter.suite(MAINTAINER_MACRO_NEWHACK_TEST_CASE,
-                                  setup_newhack, __file__, teardown,
-                                  (None, None)))
+    components = ('trac.*', 'tractags.*', 'trachacks.*')
+    suite.addTest(wikisyntax_test_suite(
+        MAINTAINER_MACRO_WIKI_TEST_CASE, setup, __file__, teardown,
+        ('wiki', 'TracHacksPlugin'), enable_components=components))
+    suite.addTest(wikisyntax_test_suite(
+        MAINTAINER_MACRO_TICKET_TEST_CASE, setup, __file__, teardown,
+        ('ticket', 1), enable_components=components))
+    suite.addTest(wikisyntax_test_suite(
+        MAINTAINER_MACRO_NEWHACK_TEST_CASE, setup_newhack, __file__, teardown,
+        (None, None), enable_components=components))
     return suite
 
 

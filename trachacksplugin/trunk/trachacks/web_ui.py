@@ -15,35 +15,37 @@ import urlparse
 from pkg_resources import resource_filename, resource_listdir
 from string import Template
 
+from genshi.filters.transform import Transformer
 from trac.core import Component, TracError, implements
 from trac.config import ConfigurationError, IntOption, Option
 from trac.perm import IPermissionPolicy, IPermissionRequestor, \
                       PermissionSystem
 from trac.resource import Resource, ResourceNotFound, resource_exists
-from trac.ticket.model import Component as TicketComponent
+from trac.ticket import model
 from trac.util.html import html
-from trac.wiki.formatter import wiki_to_html
+from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
 from trac.web.api import (
     IRequestFilter, IRequestHandler, ITemplateStreamFilter, RequestDone
 )
 from trac.web.chrome import (
     Chrome, INavigationContributor, ITemplateProvider, add_ctxtnav,
-    add_notice, add_script, add_stylesheet, add_warning
+    add_notice, add_script, add_stylesheet, add_warning, web_context
 )
 
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
 from acct_mgr.htfile import HtPasswdStore
 from svnauthz.io import AuthzFile
-from trachacks import _, add_domain, tag_
-from trachacks.macros import title_extract
-from trachacks.validate import *
-from trachacks.util import FakeRequest, natural_sort
 from tractags.api import TagSystem
 from tractags.macros import TagWikiMacros
 from tractags.query import Query
 from tracvote import VoteSystem
 
+from trachacks import _, add_domain, tag_
+from trachacks.macros import title_extract
+from trachacks.validate import Aspect, Chain, Form, MinLength, Pattern, \
+                               ValidationError
+from trachacks.util import FakeRequest, natural_sort
 
 _SVN_CONFIG_DIR = os.environ.get('TRACHACKS_SVN_CONFIG_DIR',
                                  '/var/www/trac-hacks.org/trac/.subversion')
@@ -90,7 +92,7 @@ class HackDoesntExist(Aspect):
             )
 
         try:
-            TicketComponent(self.env, page_name)
+            model.Component(self.env, page_name)
         except ResourceNotFound:
             pass
         else:
@@ -130,8 +132,7 @@ class ReleasesExist(Aspect):
                            context.data.get('type', '').title()
                     self.env.log.error(
                         "Invalid release %s selected for new hack %s"
-                        % (s, hack)
-                    )
+                        % (s, hack))
                     raise ValidationError('Selected release "%s" invalid.'
                                           % str(s))
         return selected
@@ -198,19 +199,23 @@ class ReadonlyHelpPolicy(Component):
 
 class TracHacksHandler(Component):
     """Trac-Hacks request handler."""
-    implements(INavigationContributor, IRequestHandler, IRequestFilter,
-               ITemplateProvider, IPermissionRequestor, ITemplateStreamFilter)
+    implements(INavigationContributor, IPermissionRequestor, IRequestFilter,
+               IRequestHandler, ITemplateProvider, ITemplateStreamFilter)
 
     limit = IntOption('trachacks', 'limit', 25,
         "Default maximum number of hacks to display.")
+
     template = Option('trachacks', 'template', 'NewHackTemplate',
         "Name of wiki page that serves as template for new hacks.")
+
     lock_file = Option('trachacks', 'lock_file', '/var/tmp/newhack.lock',
         "Path and name of lock file to secure new hack creation")
+
     latest_major_release = Option('trachacks', 'latest_major_release', '1.0',
         doc="""The latest major Trac release, used as the default selection
             in the release filter form displayed by the `ListHacksMacro`
             and on the `NewHack` form.""")
+
     svn_path = Option('trachacks', 'svn_path', 'svn',
         "Path to the Subversion client executable.")
 
@@ -223,6 +228,7 @@ class TracHacksHandler(Component):
 for [wiki:AdoptingHacks adoption].
 }}}
 """
+
     def __init__(self):
         # Validate form
         form = Form('content')
@@ -272,17 +278,17 @@ for [wiki:AdoptingHacks adoption].
     # IRequestHandler methods
 
     def match_request(self, req):
-        #return self.path_match.match(req.path_info)
+        # return self.path_match.match(req.path_info)
         return req.path_info == '/newhack'
 
     def process_request(self, req):
         data = {}
         tag_system = TagSystem(self.env)
 
-        #match = self.path_match.match(req.path_info)
-        #view = 'cloud'
-        #if match.group(1):
-        #    view = match.group(1)
+        # match = self.path_match.match(req.path_info)
+        # view = 'cloud'
+        # if match.group(1):
+        #     view = match.group(1)
 
         authz_file = self.env.config.getpath('svn', 'authz_file')
         if not authz_file:
@@ -297,8 +303,8 @@ for [wiki:AdoptingHacks adoption].
 
         # Hack types and their description
         types = []
-        for category in sorted([r.id for r, _ in
-                                tag_system.query(req, 'realm:wiki type')]):
+        for category in sorted(r.id for r, _ in
+                               tag_system.query(req, 'realm:wiki type')):
             page = WikiPage(self.env, category)
             match = title_extract.search(page.text)
             title = '%s' % match.group(1).strip() \
@@ -326,19 +332,19 @@ for [wiki:AdoptingHacks adoption].
 
         if req.path_info == '/newhack':
             return self.render_new(req, data, hacks)
-        #else:
-        #    views = ['cloud', 'list']
-        #    for v in views:
-        #        if v != view:
-        #            args = req.args
-        #            add_ctxtnav(req, html.a(v.title(),
-        #                        href=req.href.hacks(v, **args)))
-        #        else:
-        #            add_ctxtnav(req, v.title())
-        #    if view == 'list':
-        #        return self.render_list(req, data, hacks)
-        #    else:
-        #        return self.render_cloud(req, data, hacks)
+        # else:
+        #     views = ['cloud', 'list']
+        #     for v in views:
+        #         if v != view:
+        #             args = req.args
+        #             add_ctxtnav(req, html.a(v.title(),
+        #                         href=req.href.hacks(v, **args)))
+        #         else:
+        #             add_ctxtnav(req, v.title())
+        #     if view == 'list':
+        #         return self.render_list(req, data, hacks)
+        #     else:
+        #         return self.render_cloud(req, data, hacks)
 
     # IRequestFilter methods
 
@@ -349,15 +355,15 @@ for [wiki:AdoptingHacks adoption].
             args = req.args
 
             if not (req.method == 'GET'):
-                self.env.log.debug('Hacks: no notice: no GET request')
+                self.log.debug('Hacks: no notice: no GET request')
             elif not (path.startswith('/wiki/') or path == '/wiki'):
-                self.env.log.debug('Hacks: no notice: not a wiki path')
+                self.log.debug('Hacks: no notice: not a wiki path')
             elif 'hack' not in args:
-                self.env.log.debug('Hacks: no notice: hack= missing')
+                self.log.debug('Hacks: no notice: hack= missing')
             elif args['hack'] != 'created':
-                self.env.log.debug('Hacks: no notice: hack=%s' % args['hack'])
+                self.log.debug('Hacks: no notice: hack=%s' % args['hack'])
             else:
-                self.env.log.debug('Hacks: notice added')
+                self.log.debug('Hacks: notice added')
                 add_notice(req, 'Your hack has been created successfully.')
         elif req.path_info == '/admin/ticket/components' and \
                 req.method == 'POST' and 'remove' in req.args:
@@ -375,20 +381,20 @@ for [wiki:AdoptingHacks adoption].
                                 _("Go to Project's Wiki Page"))
                 elif component != _default_component:
                     try:
-                        TicketComponent(self.env, component)
+                        model.Component(self.env, component)
                     except ResourceNotFound:
                         pass
                     else:
                         # Component with no wiki page should be removed.
-                        self.env.log.warn('No wiki page for component "%s"',
-                                          component)
+                        self.log.warn('No wiki page for component "%s"',
+                                      component)
         if template == 'wiki_view.html':
             page = data['page']
             page_tags = self._page_tags(req, page)
             if 'deprecated' not in page_tags and \
                     'pending-deletion' not in page_tags:
                 try:
-                    component = TicketComponent(self.env, page.name)
+                    component = model.Component(self.env, page.name)
                 except ResourceNotFound:
                     pass
                 else:
@@ -403,13 +409,13 @@ for [wiki:AdoptingHacks adoption].
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
-        #if req.path_info == '/newhack':
+        # if req.path_info == '/newhack':
         return 'newhack'
-        #else:
-        #    return 'hacks'
+        # else:
+        #     return 'hacks'
 
     def get_navigation_items(self, req):
-        #yield ('mainnav', 'hacks',
+        # yield ('mainnav', 'hacks',
         #        html.a('View Hacks', href=req.href.hacks(), accesskey='H'))
         if 'HACK_CREATE' in req.perm:
             yield ('mainnav', 'newhack',
@@ -466,7 +472,7 @@ for [wiki:AdoptingHacks adoption].
         max_px = 20
 
         def cloud_renderer(tag, count, percent):
-            self.env.log.debug("cloud: %s = %2.2f%%" % (tag, percent * 100))
+            self.log.debug("cloud: %s = %2.2f%%" % (tag, percent * 100))
             return html.a(tag, href='#', style='font-size: %ipx' %
                           int(min_px + percent * (max_px - min_px)))
 
@@ -501,10 +507,10 @@ for [wiki:AdoptingHacks adoption].
             except AttributeError:
                 raise TracError(_("URL for repository must be set."))
             vars['SOURCEURL'] = parsed_url.path
-            vars['DESCRIPTION'] = data.setdefault('description',
-                                                  'No description available')
-            vars['INSTALLATION'] = data.setdefault('installation',
-                                                   'No installation available')
+            vars['DESCRIPTION'] = \
+                data.setdefault('description', 'No description available')
+            vars['INSTALLATION'] = \
+                data.setdefault('installation', 'No installation available')
 
             if 'create' in req.args and not context.errors:
                 success, message = self.create_hack(req, data, vars)
@@ -524,7 +530,8 @@ for [wiki:AdoptingHacks adoption].
                 template = re.sub(r'\[\[ChangeLog[^\]]*\]\]',
                                   'No changes yet', template)
                 add_stylesheet(req, 'common/css/wiki.css')
-                data['page_preview'] = wiki_to_html(template, self.env, req)
+                data['page_preview'] = \
+                    format_to_html(self.env, web_context(req), template)
         else:
             data['form_context'] = None
             data['type'] = 'plugin'
@@ -542,7 +549,7 @@ for [wiki:AdoptingHacks adoption].
         messages = []
         created = False
         have_lock = False
-        lock_file = open(self.lock_file, "w")
+        lock_file = open(self.lock_file, 'w')
         try:
             rv = fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
             if rv:
@@ -557,10 +564,10 @@ for [wiki:AdoptingHacks adoption].
 
         if have_lock:
             steps_done = []
+            page_name = vars['WIKINAME']
+            hack_path = vars['LCNAME']
+            selected_releases = data['selected_releases']
             try:
-                page_name = vars['WIKINAME']
-                hack_path = vars['LCNAME']
-                selected_releases = data['selected_releases']
 
                 # Step 1: create repository paths
                 self._create_repository_paths(req, page_name, hack_path,
@@ -579,7 +586,7 @@ for [wiki:AdoptingHacks adoption].
                 steps_done.append('permissions')
 
                 # Step 3: Add component
-                component = TicketComponent(self.env)
+                component = model.Component(self.env)
                 component.name = page_name
                 component.owner = req.authname
                 component.insert()
@@ -593,7 +600,8 @@ for [wiki:AdoptingHacks adoption].
                 page = WikiPage(self.env, page_name)
                 page.text = Template(template_page.text).substitute(vars)
                 page.save(req.authname, 'New hack %s, created by %s'
-                                        % (page_name, req.authname), '0.0.0.0')
+                                        % (page_name, req.authname),
+                          '0.0.0.0')
                 steps_done.append('wiki')
 
                 # Step 5: Tag the new wiki page
@@ -614,7 +622,7 @@ for [wiki:AdoptingHacks adoption].
                     if 'wiki' in steps_done:
                         WikiPage(self.env, page_name).delete()
                     if 'component' in steps_done:
-                        TicketComponent(self.env, page_name).delete()
+                        model.Component(self.env, page_name).delete()
                     if 'permissions' in steps_done:
                         authz_file = self.env.config.getpath('svn',
                                                              'authz_file')
@@ -625,9 +633,9 @@ for [wiki:AdoptingHacks adoption].
                     # TODO: rollback subversion path creation
                     fcntl.flock(lock_file, fcntl.LOCK_UN)
                 except:
-                    self.env.log.error("Rollback failed")
+                    self.log.error("Rollback failed")
                     fcntl.flock(lock_file, fcntl.LOCK_UN)
-                self.env.log.error(e, exc_info=True)
+                self.log.error(e, exc_info=True)
                 raise TracError(str(e))
         return created, messages
 
@@ -747,7 +755,7 @@ for [wiki:AdoptingHacks adoption].
 
         query = 'realm:wiki (%s) (%s)' % \
                 (' or '.join(releases), ' or '.join(types))
-        self.env.log.debug(query)
+        self.log.debug(query)
         tagged = tag_system.query(req, query)
 
         # Limit
@@ -780,34 +788,34 @@ for [wiki:AdoptingHacks adoption].
             hacks.append([count, None, resource, tags, title])
 
         # Rank
-        total_hack_count = len(hacks)
         hacks = sorted(hacks, key=lambda i: -i[0])
         remainder = hacks[limit:]
         hacks = hacks[:limit] + random.sample(remainder,
                                               min(limit, len(remainder)))
 
         # Navigation
-        #if len(hacks) >= limit:
-        #    add_ctxtnav(req, html.a('More', href='?action=more'))
-        #    limit = len(hacks)
-        #    data['limit'] = data['limit_message'] = limit
-        #else:
-        #    add_ctxtnav(req, 'More')
-        #if q or limit != self.limit:
-        #    add_ctxtnav(req, html.a('Default', href='?action=default'))
-        #else:
-        #    add_ctxtnav(req, 'Default')
-        #if total_hack_count > limit:
-        #    add_ctxtnav(req, html.a('All', href='?action=all'))
-        #else:
-        #    add_ctxtnav(req, 'All')
-        #if limit > 10:
-        #    limit = min(limit, len(hacks))
-        #    add_ctxtnav(req, html.a('Less', href='?action=less'))
-        #else:
-        #    add_ctxtnav(req, 'Less')
-        #for i, hack in enumerate(hacks):
-        #    hack[1] = i
+        # if len(hacks) >= limit:
+        #     add_ctxtnav(req, html.a('More', href='?action=more'))
+        #     limit = len(hacks)
+        #     data['limit'] = data['limit_message'] = limit
+        # else:
+        #     add_ctxtnav(req, 'More')
+        # if q or limit != self.limit:
+        #     add_ctxtnav(req, html.a('Default', href='?action=default'))
+        # else:
+        #     add_ctxtnav(req, 'Default')
+        # total_hack_count = len(hacks)
+        # if total_hack_count > limit:
+        #     add_ctxtnav(req, html.a('All', href='?action=all'))
+        # else:
+        #     add_ctxtnav(req, 'All')
+        # if limit > 10:
+        #     limit = min(limit, len(hacks))
+        #     add_ctxtnav(req, html.a('Less', href='?action=less'))
+        # else:
+        #     add_ctxtnav(req, 'Less')
+        # for i, hack in enumerate(hacks):
+        #     hack[1] = i
         return hacks
 
 
@@ -827,14 +835,14 @@ class TracHacksHtPasswdStore(HtPasswdStore):
         perm = PermissionSystem(self.env)
         all_perms = [p[0] for p in perm.get_all_permissions()]
         if user in all_perms:
-            raise TracError('%s is a reserved name that can not be registered.'
-                            % user)
+            raise TracError('%s is a reserved name that can not be '
+                            'registered.' % user)
 
         needles = [':', '[', ']']
         for needle in needles:
             if needle in user:
-                raise TracError('Character "%s" may not be used in user names.'
-                                % needle)
+                raise TracError('Character "%s" may not be used in user '
+                                'names.' % needle)
 
         if len(user) < 3:
             raise TracError("User name must be at least 3 characters long.")
@@ -853,7 +861,8 @@ class TracHacksHtPasswdStore(HtPasswdStore):
     def delete_user(self, user):
         HtPasswdStore.delete_user(self, user)
 
-    # IAccountChangeListener
+    # IAccountChangeListener methods
+
     def user_created(self, user, password):
         page = WikiPage(self.env, user)
 
@@ -864,7 +873,7 @@ class TracHacksHtPasswdStore(HtPasswdStore):
         page.text = USER_PAGE_TEMPLATE % {'user': user}
         page.save(user, 'New user //%s// registered' % user, None)
 
-        self.env.log.debug("New user %s registered" % user)
+        self.log.debug("New user %s registered" % user)
 
     def user_password_changed(self, user, password):
         pass
