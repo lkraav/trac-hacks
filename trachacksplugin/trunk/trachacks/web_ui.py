@@ -205,6 +205,9 @@ class TracHacksPolicy(Component):
     # IPermissionPolicy methods
 
     def check_permission(self, action, username, resource, perm):
+        if username == 'anonymous':
+            return
+
         # Allow ticket reporter to modify description of their ticket.
         # Allow project maintainers to edit cc, comments and description
         #  of their project tickets.
@@ -213,7 +216,8 @@ class TracHacksPolicy(Component):
         if action in allowed_actions and \
                 resource is not None and \
                 resource.realm == 'ticket' and \
-                resource.id is not None:
+                resource.id is not None and \
+                'TICKET_CHGPROP' in perm:
             ticket = model.Ticket(self.env, resource.id)
             if action == 'TICKET_EDIT_DESCRIPTION' and \
                     username == ticket['reporter']:

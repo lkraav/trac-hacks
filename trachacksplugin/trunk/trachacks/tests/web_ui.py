@@ -120,6 +120,8 @@ class TracHacksPolicyTestCase(unittest.TestCase):
                             'LegacyAttachmentPolicy')
         self._create_component('Project1', 'maintainer')
         self._create_component('Project2', 'othermaintainer')
+        PermissionSystem(self.env).grant_permission('authenticated',
+                                                    'TICKET_CHGPROP')
 
     def tearDown(self):
         self.env.reset_db()
@@ -171,6 +173,16 @@ class TracHacksPolicyTestCase(unittest.TestCase):
         self.assertNotIn('TICKET_EDIT_DESCRIPTION',
                          perm_cache(ticket.resource))
 
+    def test_anonymous_no_edit_ticket_description(self):
+        """Anonymous user cannot modify description of ticket they
+        reported.
+        """
+        ticket = self._create_ticket('anonymous', 'Project1')
+
+        perm_cache = PermissionCache(self.env, 'anonymous')
+        self.assertNotIn('TICKET_EDIT_DESCRIPTION',
+                         perm_cache(ticket.resource))
+
     def test_maintainer_can_edit_ticket_description_for_own_project(self):
         """Maintainer can edit ticket cc, comment and description for
         their own project.
@@ -211,6 +223,14 @@ class TracHacksPolicyTestCase(unittest.TestCase):
         perm_cache = PermissionCache(self.env, 'somebody')
         self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
 
+    def test_anonymous_cannot_delete_ticket_attachments(self):
+        """Anonymous cannot delete ticket attachments."""
+        ticket = self._create_ticket('anonymous', 'Project1')
+        attachment = self._insert_attachment('anonymous', ticket.resource)
+
+        perm_cache = PermissionCache(self.env, 'anonymous')
+        self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
     def test_maintainer_can_delete_ticket_attachments_for_own_project(self):
         """Maintainer can delete ticket attachments for their own project."""
         ticket = self._create_ticket('somebody', 'Project1')
@@ -242,6 +262,14 @@ class TracHacksPolicyTestCase(unittest.TestCase):
         attachment = self._insert_attachment('somebodyelse', page.resource)
 
         perm_cache = PermissionCache(self.env, 'somebody')
+        self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
+
+    def test_anonymous_cannot_delete_wiki_attachments(self):
+        """Anonymous cannot delete wiki attachments."""
+        page = self._create_page('Project1')
+        attachment = self._insert_attachment('anonymous', page.resource)
+
+        perm_cache = PermissionCache(self.env, 'anonymous')
         self.assertNotIn('ATTACHMENT_DELETE', perm_cache(attachment.resource))
 
     def test_maintainer_can_delete_wiki_attachments_for_own_project(self):
