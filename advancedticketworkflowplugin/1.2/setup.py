@@ -18,8 +18,8 @@ try:
             ('**.html', 'genshi', None),
         ],
     }
-    from trac.util.dist import get_l10n_js_cmdclass
-    extra['cmdclass'] = get_l10n_js_cmdclass()
+    from trac.util.dist import get_l10n_cmdclass
+    extra['cmdclass'] = get_l10n_cmdclass()
 except ImportError:
     pass
 
