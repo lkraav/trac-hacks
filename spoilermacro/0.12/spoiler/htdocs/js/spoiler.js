@@ -2,18 +2,19 @@ jQuery(document).ready(function() {
   jQuery("div.spoiler").hide();
   jQuery("span.spoiler").hide();
   jQuery('<a class="reveal">Reveal Spoiler &gt;&gt;</a>').insertBefore('.spoiler');
-  jQuery('<a class="revealall">Reveal All Spoilers&gt;&gt;</a>').insertAfter('div.wikipage');
+  jQuery('#content').prepend('<a class="revealall">Reveal All Spoilers&gt;&gt;</a>');
+  jQuery('#content').append('<a class="revealall">Reveal All Spoilers&gt;&gt;</a>');
   jQuery('<a class="hideall">Hide All Spoilers&gt;&gt;</a>').insertAfter('a.revealall');
   jQuery('a.hideall').css('display', 'none');
   jQuery("a.revealall").click(function(){
-    jQuery(this).fadeOut(600);
+    jQuery('a.revealall').fadeOut(600);
     jQuery('a.hideall').fadeIn(1200);
     jQuery('a.reveal').each(function(index) {
       jQuery(this).click()
     });
   });
   jQuery("a.hideall").click(function(){
-    jQuery(this).fadeOut(600);
+    jQuery('a.hideall').fadeOut(600);
     jQuery('a.revealall').fadeIn(1200);
     jQuery('.spoiler').each(function(index) {
       jQuery(this).click()
