@@ -12,6 +12,7 @@ import re
 
 from trac.resource import Resource, ResourceNotFound, render_resource_link
 from trac.ticket.model import Component
+from trac.util import to_list
 from trac.util.html import html
 from trac.web.chrome import add_stylesheet
 from trac.web.session import DetachedSession
@@ -102,19 +103,15 @@ class ListHacksMacro(WikiMacroBase):
             categories = all_categories
             releases = all_releases
 
-        latest_major_release = self.env.config.get('trachacks',
-                                                   'latest_major_release')
+        default_filters = ('1.0', '1.2', 'anyrelease')
         if 'update_th_filter' in req.args:
-            show_releases = req.args.get('release', latest_major_release)
-            if isinstance(show_releases, basestring):
-                show_releases = [show_releases]
+            show_releases = req.args.getlist('release') or default_filters
             req.session['th_release_filter'] = ','.join(show_releases)
         else:
-            th_releases_filter = req.session.get('th_release_filter',
-                                                 latest_major_release)
-            show_releases = th_releases_filter.split(',') \
+            th_releases_filter = req.session.get('th_release_filter')
+            show_releases = to_list(th_releases_filter) \
                             if th_releases_filter is not None \
-                            else latest_major_release
+                            else default_filters
 
         output = html.tag()
         if not hide_release_picker:

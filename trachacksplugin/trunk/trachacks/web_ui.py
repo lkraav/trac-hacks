@@ -275,7 +275,7 @@ class TracHacksHandler(Component):
     lock_file = Option('trachacks', 'lock_file', '/var/tmp/newhack.lock',
         "Path and name of lock file to secure new hack creation")
 
-    latest_major_release = Option('trachacks', 'latest_major_release', '1.0',
+    latest_major_release = Option('trachacks', 'latest_major_release', '1.2',
         doc="""The latest major Trac release, used as the default selection
             in the release filter form displayed by the `ListHacksMacro`
             and on the `NewHack` form.""")
@@ -384,7 +384,7 @@ for [wiki:AdoptingHacks adoption].
         data['releases'] = releases
 
         selected_releases = req.args.getlist('release') or \
-                            ('0.12', '1.0', 'anyrelease')
+                            ('1.0', '1.2', 'anyrelease')
         data['selected_releases'] = selected_releases
 
         hacks = self.fetch_hacks(req, data, [t[0] for t in types],

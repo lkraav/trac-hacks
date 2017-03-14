@@ -17,13 +17,13 @@
       <form id="query" method="post">
         <div>
           <input type="text" id="tag-query" name="q" size="40" accesskey="t"
-            value="${query}"/>
+                 value="${query}"/>
           <input type="submit" value="Search Hacks"/>
         </div>
         <div>
           <py:for each="release in releases">
             <input type="checkbox" name="release" value="${release}"
-              checked="${release in selected_releases or None}"/> ${release}
+                   checked="${release in selected_releases or None}"/> ${release}
           </py:for>
         </div>
         <div py:if="query_error" id="query-error">
