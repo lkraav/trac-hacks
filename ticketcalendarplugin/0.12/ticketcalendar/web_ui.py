@@ -7,13 +7,13 @@
 # you should have received as part of this distribution.
 #
 
+import inspect
 import time
 from datetime import datetime, date, timedelta
 
 from genshi.builder import tag
 
 from trac.core import Component, implements
-from trac.mimeview.api import Context
 from trac.ticket.model import Ticket, Milestone
 from trac.ticket.query import Query, QueryModule
 from trac.ticket.web_ui import TicketModule
@@ -26,6 +26,13 @@ from trac.web.chrome import (
     add_script, add_ctxtnav, add_script_data,
 )
 from trac.wiki.api import IWikiMacroProvider, parse_args
+
+try:
+    from trac.web.chrome import web_context
+except ImportError:
+    from trac.mimeview.api import Context
+    def web_context(*args, **kwargs):
+        return Context.from_request(*args, **kwargs)
 
 from ticketcalendar.api import (
     Locale, LOCALE_ALIASES, UnknownLocaleError,
@@ -292,11 +299,18 @@ class TicketCalendar(object):
         return query
 
     def template_data(self, req, query, kwargs=None):
-        db = self.env.get_read_db()
-        tickets = query.execute(req, db)
-        context = Context.from_request(req, 'query')
+        tickets = self._query_execute(query, req)
+        context = web_context(req, 'query')
         return query.template_data(context, tickets, None,
                                    datetime.now(req.tz), req)
+
+    if 'db' in inspect.getargspec(Query.execute)[0]:
+        def _query_execute(self, query, req):
+            db = self.env.get_read_db()
+            return query.execute(req, db)
+    else:
+        def _query_execute(self, query, req):
+            return query.execute(req)
 
     def gen_calendar(self, tickets, query, month, width=None, nav=True):
         milestones = self._get_milestones()
