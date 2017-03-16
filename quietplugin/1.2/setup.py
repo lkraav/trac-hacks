@@ -16,7 +16,7 @@ VERSION = '1.2.0'
 setup(
     name=PACKAGE,
     version=VERSION,
-    description='Toggles quiet (no email) mode for Announcer plugin',
+    description='Toggles quiet (no email) mode for Trac notifications',
     author="Rob Guttman",
     author_email="guttman@alum.mit.edu",
     license='3-Clause BSD',
