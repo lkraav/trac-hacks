@@ -34,7 +34,7 @@ setup(name='TracSensitiveTickets',
       zip_safe=False,
       entry_points="""
       [trac.plugins]
-      sensitivetickets = sensitivetickets
+      sensitivetickets = sensitivetickets.sensitivetickets
       """,
       install_requires=['Trac'],
       )
