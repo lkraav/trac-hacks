@@ -14,7 +14,7 @@
 
 from setuptools import find_packages, setup
 
-version = '1.2.0'
+version = '1.2.1'
 
 setup(name='TracSensitiveTickets',
       version=version,
