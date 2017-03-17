@@ -12,6 +12,7 @@ from trac.wiki.formatter import format_to_oneliner, system_message
 from trac.wiki.macros import WikiMacroBase, parse_args
 from trac.wiki.model import WikiPage
 
+
 class WikinfoMacro(WikiMacroBase):
     """
     Output wiki page info.

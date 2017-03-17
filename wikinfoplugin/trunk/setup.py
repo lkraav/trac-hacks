@@ -19,7 +19,7 @@ setup(
     description="Provides a few useful macros to get data about wiki pages",
     license="3-Clause BSD",
     keywords="trac wiki info macro",
-    url="http://trac-hacks.org/WikinfoPlugin",
+    url="https://trac-hacks.org/WikinfoPlugin",
     entry_points={
         'trac.plugins': [
             'wikinfo.macro = wikinfo.macro'
