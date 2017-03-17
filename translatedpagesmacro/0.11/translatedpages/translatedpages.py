@@ -93,7 +93,7 @@ The Macro accepts arguments as well:
         for line in text.replace('\r','').split(u'\n'):
             regres = self.langpage_re.search(line)
             if regres == None:
-                if not line.startswith(u'||=') and len(line) > 0:
+                if not line.startswith(u'||=') and line.strip():
                     self.env.log.warn(
                         u"Wrong line syntax while parsing languages list: %s", line)
             else:
