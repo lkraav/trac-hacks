@@ -10,7 +10,7 @@
 from setuptools import setup
 
 setup(
-    name='Wikinfo',
+    name='TracWikinfo',
     version='0.2',
     packages=['wikinfo'],
     package_data={},
