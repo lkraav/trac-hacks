@@ -16,8 +16,16 @@ class TranslatedPagesMacro(Component):
     """
     Macro to show the translated pages list.
     """
-
     implements(IWikiMacroProvider)
+
+    lang_page_name = Option('translatedpages', 'languages_page', u'TracLanguages',
+        """Page name of table containing available languages""")
+
+    page_code = Option('translatedpages', 'template', u'{lang}:{page}',
+        """Page name template of translated pages""")
+
+    base_lang = Option('translatedpages', 'base_language', u'En',
+        """Base language to be used without prefix/suffix""")
 
     # IWikiMacroProvider methods
 
@@ -53,17 +61,6 @@ The Macro accepts arguments as well:
 
  * '''label_outdated'''   label to display when using the showoutdated option"""
 
-    def parse_macro(self, parser, name, content):
-        raise NotImplementedError
-
-    # --
-
-    lang_page_name = Option('translatedpages', 'languages_page', u'TracLanguages',
-        """Page name of table containing available languages""")
-    page_code = Option('translatedpages', 'template', u'{lang}:{page}',
-        """Page name template of translated pages""")
-    base_lang = Option('translatedpages', 'base_language', u'En',
-        """Base language to be used without prefix/suffix""")
     # Language forms:
     # De:
     # De_DE:
