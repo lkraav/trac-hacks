@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 
-""" Macro to show the translated pages list. """
-
-from trac.core import *
-from trac.wiki.api import IWikiMacroProvider
-from trac.util.text import to_unicode
-from StringIO import StringIO
-from trac.wiki.formatter import Formatter
-from trac.wiki.model import WikiPage
-from trac.wiki.api import WikiSystem, parse_args
-from trac.config import Option
 import re
 import inspect
+from StringIO import StringIO
+
+from trac.config import Option
+from trac.core import *
+from trac.util.text import to_unicode
+from trac.wiki.api import IWikiMacroProvider, WikiSystem, parse_args
+from trac.wiki.formatter import Formatter
+from trac.wiki.model import WikiPage
+
 
 class TranslatedPagesMacro(Component):
     """
@@ -44,14 +43,14 @@ The Macro accepts arguments as well:
  * '''revision=<num>'''   to specify the version of the base page when last translated, a negative revision indicates that a page needs updating in the status overview table
  * '''outdated=<text>'''  mark the page as outdated with given comment
  * '''silent'''           don't output empty chapter for show options when nothing is shown
-    
+
  * '''showoutdated'''     to show all pages, where revision does not match base revision
  * '''showmissing'''      to show all pages, where translation is missing
  * '''showproblems'''     to show all pages which have problems
  * '''showuntranslated''' to show all untranslated pages
  * '''showstatus'''       to show one big status table
  * '''lang=<code>'''      to restrict output of show outdated, status or missing to a specific language
- 
+
  * '''label_outdated'''   label to display when using the showoutdated option"""
 
     def parse_macro(self, parser, name, content):
@@ -96,14 +95,14 @@ The Macro accepts arguments as well:
             if regres == None:
                 if not line.startswith(u'||=') and len(line) > 0:
                     self.env.log.warn(
-                        u"Wrong line syntax while parsing languages list: %s" % line)
+                        u"Wrong line syntax while parsing languages list: %s", line)
             else:
                 code = regres.group(1)
                 name = regres.group(2)
                 engname = regres.group(3)
                 desc = regres.group(4)
-                self.env.log.debug("Adding language %s -> %s [%s] (%s)" \
-                    % (code, name, engname, desc))
+                self.env.log.debug("Adding language %s -> %s [%s] (%s)", code,
+                                   name, engname, desc)
                 langs[code] = name
                 descr[code] = desc
                 langse[code] = engname
@@ -112,7 +111,7 @@ The Macro accepts arguments as well:
     def _update_languages(self):
         languages_page = WikiPage(self.env, self.lang_page_name)
         if not languages_page.exists:
-            self.env.log.warn(u"Can't find page %s" % self.lang_page_name)
+            self.env.log.warn(u"Can't find page %s", self.lang_page_name)
             self.languages = {}
             self.languages_page_version = 0
         else:
@@ -332,12 +331,12 @@ The Macro accepts arguments as well:
                              pass
                 else:
                     respages += "||[[wiki:/%s]]||Translated page misses macro 'TranslatedPages'||\n" % transpage
-        
+
         if len(resargs):
             res += u"=== Errors in supplied arguments ===\n||= Page =||= Arguments =||= Issue =||\n"+resargs
         if len(respages):
             res += u"=== Errors in page structure ===\n||= Page =||= Issue =||\n"+respages
-        
+
         if not len(res):
             if(silent):
                 return u" "
@@ -363,7 +362,7 @@ The Macro accepts arguments as well:
                         errors.append(page)
                     if not lang_code in langs:
                         langs.append(lang_code)
-        
+
         if lang != None:
             langs = [lang]
         else:
@@ -409,7 +408,7 @@ The Macro accepts arguments as well:
                 else:
                     res += "||$$$%s$$$[[wiki:/%s|%s]]" % (color, transpage, l)
             res +="||\n"
-        
+
         return res
 
     def expand_macro(self, formatter, name, args):
