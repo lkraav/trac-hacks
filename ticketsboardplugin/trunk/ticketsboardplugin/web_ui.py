@@ -20,14 +20,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from pkg_resources import resource_filename
+from pkg_resources import parse_version, resource_filename
 
+from trac import __version__ as trac_version
 from trac.env import IEnvironmentSetupParticipant
 from trac.config import ListOption
 from trac.core import implements, Component
 from trac.util import Markup
 from trac.web import IRequestHandler
-from trac.web.chrome import add_stylesheet, add_script, \
+from trac.web.chrome import add_script, add_stylesheet, Chrome, \
     INavigationContributor, ITemplateProvider
 from trac.ticket.query import *
 from trac.ticket.api import TicketSystem
@@ -189,7 +190,10 @@ class TicketsboardPage(Component):
 
         # Interaction and style needed for the ticketsboard.html page
         # (JQuery-ui is for drag/drop functionality)
-        add_script(req, '%s/js/jquery-ui.js' % SCRIPTS_PATH)
+        if parse_version(trac_version) < parse_version('1.0'):
+            add_script(req, '%s/js/jquery-ui.js' % SCRIPTS_PATH)
+        else:
+            Chrome(self.env).add_jquery_ui(req)
         add_script(req, '%s/js/ticketsboard.js' % SCRIPTS_PATH)
         add_stylesheet(req, "%s/css/ticketsboard.css" % SCRIPTS_PATH)
 
@@ -346,7 +350,7 @@ def _update_tickets_changes(env, req, assign_reviewer, states_actions):
             status = values['status']
 
         # For some status you have restrictions to check
-        for operation in states_actions[status]['operations']:
+        for operation in states_actions[status].get('operations', []):
             if operation == 'set_reviewer' and assign_reviewer:
                 # To have a ticket in this state the reviewer field has to be
                 # set (if assignReviewer part is enable)
