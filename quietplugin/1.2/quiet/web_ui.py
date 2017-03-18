@@ -12,7 +12,7 @@ import json
 from trac.config import Option
 from trac.core import Component, implements
 from trac.notification.mail import EmailDistributor
-from trac.perm import IPermissionRequestor
+from trac.perm import IPermissionRequestor, PermissionCache
 from trac.util.html import html
 from trac.util.translation import _
 from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_script, \
@@ -26,7 +26,9 @@ LISTEN = 'quietlisten'
 class QuietEmailDistributor(EmailDistributor):
     """Specializes Announcer's email distributor to honor quiet mode."""
     def distribute(self, transport, recipients, event):
-        if hasattr(event, 'author') and self._is_quiet_mode(event.author):
+        if hasattr(event, 'author') and \
+                self._is_quiet_mode(event.author) and \
+                'QUIET_MODE' in PermissionCache(self.env, event.author):
             self.log.debug("%s skipping distribution of %s because quiet "
                            "mode is enabled for %s", self.__class__.__name__,
                            event.__class__.__name__, event.author)
@@ -39,7 +41,7 @@ class QuietEmailDistributor(EmailDistributor):
     def _is_quiet_mode(self, user):
         for val, in self.env.db_query("""
                 SELECT value FROM session_attribute
-                WHERE sid=%s AND name=%s
+                WHERE sid=%s AND authenticated=1 AND name=%s
                 """, (user, MODE)):
             return val == '1'
         else:
