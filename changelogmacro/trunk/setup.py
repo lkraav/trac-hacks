@@ -12,7 +12,7 @@
 from setuptools import setup
 
 setup(
-    name = 'ChangeLogMacro',
+    name = 'TracChangeLog',
     version = '0.4',
     packages = ['changelog'],
     author = 'Alec Thomas',

@@ -11,10 +11,10 @@
 import re
 from StringIO import StringIO
 
-from genshi.builder import tag
 from trac.core import *
 from trac.mimeview import *
 from trac.util import format_datetime, Markup
+from trac.util.html import html
 from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchNode
 from trac.web.chrome import web_context
@@ -152,7 +152,7 @@ class ChangeLogMacro(WikiMacroBase):
             message = _remove_p(format_to_html(self.env, context,
                 change.message, escape_newlines=True))
             out.write('\n<dd>\n%s\n</dd>' % message)
-        out.write(tag.small(tag.a(_("(more)"), href=req.href.log(path))))
+        out.write(html.small(html.a(_("(more)"), href=req.href.log(path))))
         out.write('\n</dl>\n</div>')
         out.write('\n<p>') # re-open surrounding paragraph
         return out.getvalue()
