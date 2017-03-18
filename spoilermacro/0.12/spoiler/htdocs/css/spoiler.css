@@ -3,7 +3,7 @@ a.reveal {
   padding: 3px;
   background: #990000;
   color: white;
-  font-family: Georgia,serif;                                            
+  font-family: Georgia,serif;
   font-style: italic;
   cursor: pointer;
 }
@@ -13,7 +13,7 @@ a.revealall {
   padding: 3px;
   background: #990000;
   color: white;
-  font-family: Georgia,serif;                                            
+  font-family: Georgia,serif;
   font-style: italic;
   cursor: pointer;
 }
@@ -23,7 +23,7 @@ a.hideall {
   padding: 3px;
   background: #000099;
   color: white;
-  font-family: Georgia,serif;                                            
+  font-family: Georgia,serif;
   font-style: italic;
   cursor: pointer;
 }
@@ -97,6 +97,3 @@ div.spoiler {
   background-origin: padding-box;
   background-size: auto auto;
 }
-  
-
-

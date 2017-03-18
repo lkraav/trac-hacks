@@ -1,44 +1,35 @@
-# vim: expandtab
-import re, time
-from StringIO import StringIO
-
-from genshi.builder import tag
-from genshi.core import Markup
+# -*- coding: utf-8 -*-
 
 from trac.core import *
-from trac.wiki.formatter import format_to_oneliner, format_to_html
-from trac.util import TracError
-from trac.util.text import to_unicode
-from trac.web.chrome import add_stylesheet, add_script, ITemplateProvider
-from trac.wiki.api import parse_args, IWikiMacroProvider
+from trac.util.html import html
+from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
+from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.wiki.macros import WikiMacroBase
-from trac.wiki.model import WikiPage
-from trac.wiki.web_ui import WikiModule
-from trac.wiki import Formatter
+
 
 class SpoilerMacro(WikiMacroBase):
-    """A macro to add spoilers to a page. Usage:
+    """A macro to add spoilers to a page.
     """
-    implements(IWikiMacroProvider, ITemplateProvider)
-    
+    implements(ITemplateProvider)
+
     #REHIDE SPOILER WHEN CLICKING ON SPOILER TEXT... set the text background to some "spoiler color"
 
     def expand_macro(self, formatter, name, content, args):
-        self.log.debug("SpoilerMacro: expand_macro")
         add_stylesheet(formatter.req, 'spoiler/css/spoiler.css')
         add_script(formatter.req, 'spoiler/js/spoiler.js')
         if '\n' in content:
-            output = tag.div(class_="spoiler")(format_to_html(self.env, formatter.context,content))
+            output = html.div(class_="spoiler") \
+                     (format_to_html(self.env, formatter.context, content))
         else:
-            output = tag.span(class_="spoiler")(format_to_oneliner(self.env, formatter.context,content))
-        self.log.debug("SpoilerMacro: expand_macro output")
+            output = html.span(class_="spoiler") \
+                     (format_to_oneliner(self.env, formatter.context, content))
         return output
-    
-    ## ITemplateProvider
-            
+
+    # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename                             
-        return [('spoiler', resource_filename(__name__, 'htdocs'))]   
-                                      
+        from pkg_resources import resource_filename
+        return [('spoiler', resource_filename(__name__, 'htdocs'))]
+
     def get_templates_dirs(self):
         return []
