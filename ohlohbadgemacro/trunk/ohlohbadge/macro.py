@@ -6,18 +6,17 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.builder import tag 
+from trac.util.html import html
 from trac.wiki.macros import WikiMacroBase
-from trac.wiki.formatter import system_message
 
 
 class OhlohBadgeMacro(WikiMacroBase):
     """A small macro for displaying Ohloh (http://ohloh.net)
     statistics badges."""
-    
-    SCRIPT_LOCATION = 'http://www.ohloh.net/p/%s/widgets/project_thin_badge'
-    
+
+    SCRIPT_LOCATION = 'https://www.ohloh.net/p/%s/widgets/project_thin_badge'
+
     def expand_macro(self, formatter, name, content, args=None):
         content = content.strip()
-        return tag.script('', src=self.SCRIPT_LOCATION % content,
-                          type='text/javascript')
+        return html.script('', src=self.SCRIPT_LOCATION % content,
+                           type='text/javascript')

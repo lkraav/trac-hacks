@@ -20,7 +20,7 @@ setup(
     description='A Trac wiki macro to display Ohloh project badges.',
     license='BSD 3-Clause',
     keywords='trac plugin macro ohloh badge',
-    url='http://trac-hacks.org/wiki/OhlohBadgeMacro',
+    url='https://trac-hacks.org/wiki/OhlohBadgeMacro',
     classifiers=[
         'Framework :: Trac',
     ],
