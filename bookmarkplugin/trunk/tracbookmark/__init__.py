@@ -136,7 +136,7 @@ class BookmarkSystem(Component):
                         content = content.encode('utf-8')
                     req.send(content)
 
-                req.redirect(resource)
+                req.redirect(req.href(resource))
 
             # delete bookmark
             elif action == 'delete' or action == 'delete_in_page':
@@ -155,7 +155,7 @@ class BookmarkSystem(Component):
                         content = content.encode('utf-8')
                     req.send(content)
 
-                req.redirect(resource)
+                req.redirect(req.href(resource))
 
         # listing bookmarks
         if self._is_ajax(req):
