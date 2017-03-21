@@ -22,39 +22,32 @@
 import sys
 import getopt
 
+from trac.env import Environment
+
+
 def rename_user(envpath, oldname, newname):
     """Deletes all watchlist DB entries => Uninstaller"""
-    from  trac.env   import  Environment
     try:
         env = Environment(envpath)
     except:
         print "Given path '%s' seems not to be a Trac environment." % envpath
         sys.exit(3)
 
-    db = env.get_db_cnx()
-    cursor = db.cursor()
+    with env.db_transaction as db:
+        try:
+            db("""
+                UPDATE watchlist SET wluser=%s WHERE wluser=%s
+                """, (newname, oldname))
+            db("""
+                UPDATE watchlist_settings SET wluser=%s WHERE wluser=%s
+                """, (newname, oldname))
+            print("Renamed user '%s' to '%s'." % (oldname, newname))
+        except Exception as e:
+            print("Could not rename user: %s" % e)
+            print("Does the new user already exists?")
+            sys.exit(3)
 
-    try:
-        cursor.execute("""
-            UPDATE watchlist
-            SET wluser=%s
-            WHERE wluser=%s
-        """, (newname,oldname))
-        cursor.execute("""
-            UPDATE watchlist_settings
-            SET wluser=%s
-            WHERE wluser=%s
-        """, (newname,oldname))
-        print "Renamed user '%s' to '%s'." % (oldname,newname)
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        print "Could not rename user: " + unicode(e)
-        print "Does the new user already exists?"
-        sys.exit(3)
-
-    db.commit()
-    print "Finished."
+    print("Finished.")
 
 
 def usage():
@@ -64,16 +57,14 @@ def usage():
        -h,--help      This help text
        -V,--version   Prints version number and copyright statement
     """
-    print usage.__doc__
+    print(usage.__doc__)
 
 
 def main(argv):
-    envpath = None
     try:
-        opts, args = getopt.gnu_getopt(argv, 'hV',
-                ['help', 'version'])
+        opts, args = getopt.gnu_getopt(argv, 'hV', ['help', 'version'])
     except getopt.GetoptError as e:
-        print unicode(e)
+        print(unicode(e))
         usage()
         sys.exit(2)
     for opt, arg in opts:
@@ -81,17 +72,17 @@ def main(argv):
             usage()
             sys.exit()
         elif opt in ('-V', '--version'):
-            print __doc__
+            print(__doc__)
             sys.exit()
     if len(args) != 3:
-        print "ERROR: wrong number of arguments!"
+        print("ERROR: wrong number of arguments!")
         usage()
         sys.exit(2)
     else:
         envpath = args[0]
         oldname, newname = args[1:]
 
-    print "This will rename watchlist user '%s' to '%s'" % (oldname,newname)
+    print("This will rename watchlist user '%s' to '%s'" % (oldname, newname))
     sys.stdout.write("Are you sure? y/N: ")
     if sys.stdin.readline().strip().lower() == 'y':
         rename_user(envpath, oldname, newname)

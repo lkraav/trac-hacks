@@ -125,16 +125,10 @@ class BasicWatchlist(Component):
             r = realm.capitalize()
         else:
             r = realm
-        if n_plural == 1:
-            return r
-        else:
-            return r + 's'
+        return r if n_plural == 1 else r + 's'
 
     def resources_exists(self, realm, resids):
-        if isinstance(resids, basestring):
-            return False
-        else:
-            return []
+        return False if isinstance(resids, basestring) else []
 
     def watched_resources(self, realm, resids, user, wl, fuzzy=0):
         return []
@@ -143,9 +137,8 @@ class BasicWatchlist(Component):
         return []
 
     def has_perm(self, realm, perm):
-        if realm not in self.realms:
-            return False
-        return realm.upper() + '_VIEW' in perm
+        return False if realm not in self.realms \
+                     else realm.upper() + '_VIEW' in perm
 
     def get_list(self, realm, wl, req, fields=None):
         return [], {}

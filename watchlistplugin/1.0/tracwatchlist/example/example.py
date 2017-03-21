@@ -45,17 +45,11 @@ class ExampleWatchlist(Component):
         return True
 
     def get_list(self, realm, wl, req):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
         user = req.authname
         examplelist = []
-        cursor.execute("""
-          SELECT resid
-            FROM watchlist
-           WHERE wluser=%s AND realm='example'
-        """, (user,)
-                       )
-        examples = cursor.fetchall()
-        for (name,) in examples:
+        for name, in self.env.db_query("""
+                SELECT resid FROM watchlist
+                WHERE wluser=%s AND realm='example'
+                """, (user,)):
             examplelist.append({'name': name})
         return examplelist

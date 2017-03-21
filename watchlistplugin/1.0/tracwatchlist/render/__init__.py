@@ -125,8 +125,7 @@ def render_property_diff(env, req, ticket, field, old, new,
         remvd = remvd and tagn_("%(items)s removed", "%(items)s removed",
                                 len(remvd), items=separated(remvd, sep))
         if added or remvd:
-            rendered = tag(added, added and remvd and _("; "), remvd)
-            return rendered
+            return tag(added, added and remvd and _("; "), remvd)
     if field in ('reporter', 'owner'):
         if not (Chrome(env).show_email_addresses or
                         'EMAIL_VIEW' in req.perm(

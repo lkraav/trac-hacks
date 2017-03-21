@@ -162,77 +162,60 @@ class WatchlistPlugin(Component):
         return settings
 
     def _delete_user_settings(self, user):
-        """Deletes all user settings in 'watchlist_settings' table.
-           This can be done to reset all settings to the default values
-           and to resolve possible errors with wrongly stored settings.
-           This can happen while using the develop version of this plugin."""
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        cursor.execute("""
-          DELETE
-            FROM watchlist_settings
-           WHERE wluser=%s
-        """, (user,))
-        db.commit()
-        return
+        """Deletes all user settings in 'watchlist_settings' table. This 
+        can be done to reset all settings to the default values and to 
+        resolve possible errors with wrongly stored settings. This can 
+        happen while using the develop version of this plugin.
+        """
+        self.env.db_transaction("""
+            DELETE FROM watchlist_settings WHERE wluser=%s
+            """, (user,))
 
     def _save_user_settings(self, user, settings):
         """Saves user settings in 'watchlist_settings' table.
            Only saving of all user settings is supported at the moment."""
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
         options = settings['booloptions']
+        settings_str = '&'.join('='.join([k, unicode(v)])
+                                for k, v in options.iteritems())
 
-        settingsstr = '&'.join('='.join([k, unicode(v)])
-                               for k, v in options.iteritems())
+        with self.env.db_transaction as db:
+            db("""
+                DELETE FROM watchlist_settings WHERE wluser=%s
+                """, (user,))
 
-        cursor.execute("""
-          DELETE
-            FROM watchlist_settings
-           WHERE wluser=%s
-        """, (user,))
+            db("""
+                INSERT INTO watchlist_settings (wluser,name,type,settings)
+                VALUES (%s,'booloptions','ListOfBool',%s)
+                """, (user, settings_str))
 
-        cursor.execute("""
-          INSERT
-            INTO watchlist_settings (wluser,name,type,settings)
-          VALUES (%s,'booloptions','ListOfBool',%s)
-          """, (user, settingsstr))
+            db.executemany("""
+                INSERT INTO watchlist_settings (wluser,name,type,settings)
+                VALUES (%s,%s,'ListOfStrings',%s)
+                """, [(user, realm + '_fields',
+                       ','.join(settings[realm + '_fields']))
+                      for realm in self.realms
+                      if realm + '_fields' in settings])
 
-        cursor.executemany("""
-          INSERT
-            INTO watchlist_settings (wluser,name,type,settings)
-          VALUES (%s,%s,'ListOfStrings',%s)
-          """, [
-            (user, realm + '_fields', ','.join(settings[realm + '_fields']))
-            for realm in self.realms if realm + '_fields' in settings])
+            db.executemany("""
+                INSERT INTO watchlist_settings (wluser,name,type,settings)
+                VALUES (%s,%s,'ListOfStrings',%s)
+                """, [(user, name, ','.join(value))
+                      for name, value
+                      in settings.get('listoptions', {}).iteritems()])
 
-        cursor.executemany("""
-          INSERT
-            INTO watchlist_settings (wluser,name,type,settings)
-          VALUES (%s,%s,'ListOfStrings',%s)
-          """, [(user, name, ','.join(value))
-                for name, value in
-                settings.get('listoptions', {}).iteritems()])
-
-        db.commit()
         return True
 
     def _get_user_settings(self, user):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-          SELECT name,type,settings
-            FROM watchlist_settings
-           WHERE wluser=%s
-        """, (user,))
 
         settings = dict()
-        for name, type, settingsstr in cursor.fetchall():
+        for name, type, settingsstr in self.env.db_query("""
+                SELECT name,type,settings FROM watchlist_settings
+                WHERE wluser=%s
+                """, (user,)):
             if type == 'ListOfBool':
                 settings[name] = dict([
                     (k, v == 'True') for k, v in
-                    [kv.split('=') for kv in settingsstr.split("&")]])
+                    [kv.split('=') for kv in settingsstr.split('&')]])
             elif type == 'ListOfStrings':
                 settings[name] = filter(None, settingsstr.split(','))
             else:
@@ -243,100 +226,69 @@ class WatchlistPlugin(Component):
 
     def has_watchlist(self, user):
         """Checks if user has a non-empty watchlist."""
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-          SELECT count(*)
-            FROM watchlist
-           WHERE wluser=%s;
-        """, (user,)
-                       )
-        count = cursor.fetchone()
-        if not count or not count[0]:
-            return False
-        else:
-            return True
+        for count, in self.env.db_query("""
+                SELECT count(*) FROM watchlist WHERE wluser=%s; 
+                """, (user,)):
+            if count:
+                return True
+        return False
 
-    def get_watched_resources(self, realm, user, db=None):
+    def get_watched_resources(self, realm, user):
         """Returns list of resources watched by the given user in the given realm.
            The list contains a list with the resource id and the last time it
            got visited."""
-        db = db or self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT resid,lastvisit
-                FROM watchlist
+        return self.env.db_query("""
+            SELECT resid,lastvisit FROM watchlist
             WHERE realm=%s AND wluser=%s
-        """, (realm, user))
-        return cursor.fetchall()
+            """, (realm, user))
 
-    def is_watching(self, realm, resid, user, db=None):
+    def is_watching(self, realm, resid, user):
         """Checks if user watches the given resource(s).
            Returns True/False for a single resource or
            a list of watched resources."""
-        db = db or self.env.get_db_cnx()
-        cursor = db.cursor()
         if getattr(resid, '__iter__', False):
             reses = list(resid)
             if not reses:
                 return []
-            cursor.execute("""
-                SELECT resid
-                FROM watchlist
-                WHERE wluser=%s AND realm=%s AND
-                        resid IN (
-            """ + ",".join(("%s",) * len(reses)) + ")",
-                           [user, realm] + reses)
-            return [res[0] for res in cursor.fetchall()]
+            return [res[0] for res in self.env.db_query("""
+                    SELECT resid FROM watchlist
+                    WHERE wluser=%%s AND realm=%%s AND resid IN (%s)
+                    """ % ','.join(('%s',) * len(reses)),
+                    [user, realm] + reses)]
         else:
-            cursor.execute("""
-                SELECT count(*)
-                  FROM watchlist
-                 WHERE realm=%s AND resid=%s AND wluser=%s;
-            """, (realm, to_unicode(resid), user)
-                           )
-            count = cursor.fetchone()
-            if not count or not count[0]:
-                return False
-            else:
-                return True
+            for count, in self.env.db_query("""
+                    SELECT count(*) FROM watchlist
+                    WHERE realm=%s AND resid=%s AND wluser=%s;
+                    """, (realm, to_unicode(resid), user)):
+                if count:
+                    return True
+            return False
 
-    def watch(self, realm, resid, user, lastvisit=0, db=None):
-        """Adds given resources to watchlist.
-           They must not be watched already."""
-        db = db or self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.executemany("""
-            INSERT
-            INTO watchlist (wluser, realm, resid, lastvisit)
-            VALUES (%s,%s,%s,%s)
-        """, [(user, realm, res, lastvisit) for res in ensure_iter(resid)])
+    def watch(self, realm, resid, user, lastvisit=0):
+        """Adds given resources to watchlist. They must not be watched 
+        already.
+        """
+        with self.env.db_transaction as db:
+            db.executemany("""
+                INSERT INTO watchlist (wluser, realm, resid, lastvisit)
+                VALUES (%s,%s,%s,%s)
+            """, [(user, realm, res, lastvisit)
+                  for res in ensure_iter(resid)])
 
-    def unwatch(self, realm, resid, user, db=None):
-        db = db or self.env.get_db_cnx()
-        cursor = db.cursor()
+    def unwatch(self, realm, resid, user):
         reses = list(ensure_iter(resid))
-        cursor.execute("""
-            DELETE
-            FROM watchlist
-            WHERE wluser=%s AND realm=%s AND
-                    resid IN (
-        """ + ",".join(("%s",) * len(reses)) + ")",
-                       [user, realm] + reses)
+        self.env.db_transaction("""
+            DELETE FROM watchlist
+            WHERE wluser=%%s AND realm=%%s AND resid IN (%s)
+            """ % ','.join(('%s',) * len(reses)), [user, realm] + reses)
 
-    def visiting(self, realm, resid, user, db=None):
+    def visiting(self, realm, resid, user):
         """Marks the given resource as visited just now."""
-        db = db or self.env.get_db_cnx()
-        cursor = db.cursor()
         now = current_timestamp()
-        cursor.execute("""
-          UPDATE watchlist
-             SET lastvisit=%s
-           WHERE realm=%s AND resid=%s AND wluser=%s;
-        """, (now, realm, to_unicode(resid), user)
-                       )
-        db.commit()
-        return
+        self.env.db_transaction("""
+            UPDATE watchlist SET lastvisit=%s
+            WHERE realm=%s AND resid=%s AND wluser=%s;
+            """, (now, realm, to_unicode(resid), user))
 
     # Change/access notification status
 
@@ -411,8 +363,6 @@ class WatchlistPlugin(Component):
             req.send(unicode(u'\n'.join(result) + u'\n').encode("utf-8"),
                      'text/plain', 200)
 
-        db = self.env.get_db_cnx()
-
         wldict = dict()
         for k, v in req.args.iteritems():
             try:
@@ -463,7 +413,6 @@ class WatchlistPlugin(Component):
                 raise HTTPNotFound(t_("Page %(name)s not found", name=resid))
             elif self.wsub and options['notifications']:
                 self.set_notify(req, realm, resid)
-                db.commit()
             if redirectback_notify:
                 if options['show_messages_on_resource_page']:
                     req.session['watchlist_notify_message'] = _(
@@ -480,7 +429,6 @@ class WatchlistPlugin(Component):
         elif action == "notifyoff":
             if self.wsub and options['notifications']:
                 self.unset_notify(req, realm, resid)
-                db.commit()
             if redirectback_notify:
                 if options['show_messages_on_resource_page']:
                     req.session['watchlist_notify_message'] = _(
@@ -521,8 +469,7 @@ class WatchlistPlugin(Component):
             wldict['not_found_res'] = not_found_res
 
             if new_res:
-                self.watch(realm, new_res, user, db=db)
-                db.commit()
+                self.watch(realm, new_res, user)
 
             if options['show_messages_on_resource_page'] and \
                     not onwatchlistpage and redirectback:
@@ -532,7 +479,6 @@ class WatchlistPlugin(Component):
                     options['notify_by_default']:
                 for res in new_res:
                     self.set_notify(req, realm, res)
-                db.commit()
             if redirectback and len(new_res) == 1:
                 req.redirect(req.href(realm, new_res.pop()))
             action = 'view'
@@ -565,19 +511,18 @@ class WatchlistPlugin(Component):
             wldict['not_found_res'] = sorted(not_found_res, cmp=comp, key=key)
 
             if del_res:
-                self.unwatch(realm, del_res, user, db=db)
+                self.unwatch(realm, del_res, user)
             elif len(resids) == 1:
                 # If there where no maches and only own resid try to delete it
                 # anyway. Might be a delete wiki page.
                 self.log.debug("resid = %s", resid)
-                self.unwatch(realm, [resid], user, db=db)
+                self.unwatch(realm, [resid], user)
 
             # Unset notification
             if self.wsub and options['notifications'] and \
                     options['notify_by_default']:
                 for res in del_res:
                     self.unset_notify(req, realm, res)
-            db.commit()
             # Send an empty response for asynchronous requests
             if async:
                 req.send("", 'text/plain', 200)
@@ -700,7 +645,6 @@ class WatchlistPlugin(Component):
                 self.realm_handler[realm].has_perm(realm, req.perm):
             return template, data, content_type
 
-        notify = 'False'
         # The notification setting is stored in the session to avoid rereading
         # the whole user settings for every page displayed
         try:
