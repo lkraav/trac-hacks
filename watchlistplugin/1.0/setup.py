@@ -24,34 +24,35 @@ from setuptools import setup
 extra = {}
 
 try:
-    from trac.util.dist  import  get_l10n_cmdclass
+    from trac.util.dist import get_l10n_cmdclass
+except ImportError:
+    pass
+else:
     cmdclass = get_l10n_cmdclass()
     if cmdclass:
         extra['cmdclass'] = cmdclass
         extractors = [
-            ('*.py',              'python', None),
+            ('*.py', 'python', None),
             ('templates/**.html', 'genshi', None),
         ]
         extra['message_extractors'] = {
             'tracwatchlist': extractors,
         }
-except ImportError:
-    pass
 
 setup(
-    name = 'TracWatchlistPlugin',
-    version = '3.0.0',
-    description = "Watchlist Plugin for Trac 0.12/1.0",
-    keywords = 'trac watchlist wiki plugin',
-    author = 'Martin Scharrer',
-    author_email = 'martin@scharrer-online.de',
-    url = 'https://www.trac-hacks.org/wiki/WatchlistPlugin',
-    license      = 'GPLv3',
-    classifiers = ['Framework :: Trac'],
-    install_requires = ['Trac'],
-    packages = ['tracwatchlist'],
-    package_data = {
-        'tracwatchlist' : [
+    name='TracWatchlistPlugin',
+    version='3.0.0',
+    description="Watchlist Plugin for Trac 0.12/1.0",
+    keywords='trac watchlist wiki plugin',
+    author='Martin Scharrer',
+    author_email='martin@scharrer-online.de',
+    url='https://www.trac-hacks.org/wiki/WatchlistPlugin',
+    license='GPLv3',
+    classifiers=['Framework :: Trac'],
+    install_requires=['Trac'],
+    packages=['tracwatchlist'],
+    package_data={
+        'tracwatchlist': [
             'render/*.py',
             'templates/*.html',
             'htdocs/ico/*',
@@ -62,19 +63,18 @@ setup(
             'manuals/attachments/*/*',
         ],
     },
-    zip_safe     = False,
-    entry_points = {'trac.plugins':
-      [
-        'tracwatchlist = tracwatchlist',
-        'tracwatchlist.plugin = tracwatchlist.plugin',
-        'tracwatchlist.ticket = tracwatchlist.ticket',
-        'tracwatchlist.wiki = tracwatchlist.wiki',
-        'tracwatchlist.util = tracwatchlist.util',
-        'tracwatchlist.db = tracwatchlist.db',
-        'tracwatchlist.nav = tracwatchlist.nav',
-        'tracwatchlist.render = tracwatchlist.render',
-        'tracwatchlist.translation = tracwatchlist.translation',
-        'tracwatchlist.manual = tracwatchlist.manual',
-      ]},
+    zip_safe=False,
+    entry_points={'trac.plugins': [
+            'tracwatchlist = tracwatchlist',
+            'tracwatchlist.plugin = tracwatchlist.plugin',
+            'tracwatchlist.ticket = tracwatchlist.ticket',
+            'tracwatchlist.wiki = tracwatchlist.wiki',
+            'tracwatchlist.util = tracwatchlist.util',
+            'tracwatchlist.db = tracwatchlist.db',
+            'tracwatchlist.nav = tracwatchlist.nav',
+            'tracwatchlist.render = tracwatchlist.render',
+            'tracwatchlist.translation = tracwatchlist.translation',
+            'tracwatchlist.manual = tracwatchlist.manual',
+        ]},
     **extra
 )

@@ -1,53 +1,53 @@
 table {
-    border-bottom: medium solid;
-    border-top: medium solid;
-    /* width: 100%; */
-    table-layout: auto;
-    margin: 0.5ex 0ex;
+ border-bottom: medium solid;
+ border-top: medium solid;
+ /* width: 100%; */
+ table-layout: auto;
+ margin: 0.5ex 0;
 }
 
 thead th {
-    border-bottom: thin solid;
-    font-weight: bold;
+ border-bottom: thin solid;
+ font-weight: bold;
 }
 
 tfoot {
-/*    display: none; */
+ /*    display: none; */
 }
 
 tfoot th {
-    border-top: thin solid;
+ border-top: thin solid;
 }
 
 th, td {
-    padding: 2px 0.5em;
-    white-space: nowrap;
+ padding: 2px 0.5em;
+ white-space: nowrap;
 }
 
 th.comment, th.changes, th.description {
-    text-align: left;
-    min-width: 15em;
-    max-width: 100%;
+ text-align: left;
+ min-width: 15em;
+ max-width: 100%;
 }
 
 table.watchlist {
-    clear: both;
+ clear: both;
 }
 
 table#wikilist td.comment {
-    /* width: 100%; */
-    white-space: normal;
+ /* width: 100%; */
+ white-space: normal;
 }
 
 table#ticketlist td.comment,
 table#ticketlist td.changes,
 table#ticketlist td.cc,
 table#ticketlist td.description {
-    white-space: normal;
+ white-space: normal;
 }
 
 td.version, td.commentnum, td.id, td.notify, td.unwatch, td.diff, td.history {
-    text-align: center;
+ text-align: center;
 }
 
 /*
@@ -59,129 +59,130 @@ td.name, td.version, td.changetime, td.author, td.commentnum, td.id, td.notify, 
 
 /* Switched on for ungoing tested */
 .itime {
-    margin-right: 1ex;
-    /* display:none; */
+ margin-right: 1ex;
+ /* display:none; */
 }
 
 span.notifyon {
-    color:green;
+ color: green;
 }
 
 span.notifyoff {
-    color:red;
+ color: red;
 }
 
 td.unwatch img {
-  position: relative;
-  top: 2pt;
+ position: relative;
+ top: 2pt;
 }
 
 td.diff img {
-  position: relative;
-  top: 2pt;
+ position: relative;
+ top: 2pt;
 }
 
 td.history img {
-  position: relative;
-  top: 2pt;
+ position: relative;
+ top: 2pt;
 }
 
 .watchlist a:link, .watchlist a:visited,
 .watchlist a:link:hover, .watchlist a:visited:hover {
-  background-color: none;
-  color: none;
-/*  text-decoration: none; */
-  border: none;
+ /*  text-decoration: none; */
+ border: none;
 }
 
 div.modwatch {
-  padding-top: 1ex;
-  clear: both;
+ padding-top: 1ex;
+ clear: both;
 }
 
 form.addtowatch, form.remfromwatch {
-  padding-right: 2em;
-  display: inline;
+ padding-right: 2em;
+ display: inline;
 }
 
 div.watchlist h2 {
-  margin-top: 2em;
+ margin-top: 2em;
 }
 
 div.watchlist h3 {
-  margin-top: 0.5ex;
-  margin-bottom: 1ex;
+ margin-top: 0.5ex;
+ margin-bottom: 1ex;
 }
 
 div.watchlist div#message-box ul {
-    margin-top: 1em;
-    margin-bottom: 1em;
+ margin-top: 1em;
+ margin-bottom: 1em;
 }
+
 div.watchlist div#message-box li {
-    float: left;
-    margin-right: 3em;
-    margin-bottom: 1em;
+ float: left;
+ margin-right: 3em;
+ margin-bottom: 1em;
 }
 
 div.watchlist div#message-box div {
-    clear:both;
+ clear: both;
 }
 
 .ackmsg {
-  margin-top: 2ex;
-  clear:both;
+ margin-top: 2ex;
+ clear: both;
 }
 
 input#ackmsg {
-  font-size: medium;
+ font-size: medium;
 }
 
 .noentrymessage {
-  display: none;
+ display: none;
 }
 
 div#preferences {
-  margin-top: 4ex;
+ margin-top: 4ex;
 }
 
 div#preferences fieldset {
-  float: left;
-  margin-right: 2ex;
+ float: left;
+ margin-right: 2ex;
 }
 
 .clear {
-  clear: both;
+ clear: both;
 }
-
 
 .orderadd fieldset, fieldset.orderadd {
-  float: left;
+ float: left;
 }
+
 .orderadd button[type=button] {
-  width: 3em;
-  padding: .25ex 1ex;
+ width: 3em;
+ padding: .25ex 1ex;
 }
+
 .orderadd table {
-  border: none;
+ border: none;
 }
+
 .orderadd table td {
-  text-align: center;
-  vertical-align: top;
+ text-align: center;
+ vertical-align: top;
 }
 
 .orderadd select {
-  min-width: 12em;
+ min-width: 12em;
 }
 
 td .moretext, td .less {
-  display: none;
+ display: none;
 }
 
 input#resettodefault {
-  margin-left: 5em;
+ margin-left: 5em;
 }
 
 .hidden {
-    display: none;
+ display: none;
 }
 

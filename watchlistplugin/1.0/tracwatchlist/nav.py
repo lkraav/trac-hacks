@@ -18,26 +18,26 @@
 # For a copy of the GNU General Public License see
 # <http://www.gnu.org/licenses/>.
 
-from  genshi.builder        import  tag
-from  trac.core             import  *
-from  trac.web.chrome       import  INavigationContributor
-from  tracwatchlist.translation   import  _
+from trac.core import Component, implements
+from trac.util.html import tag
+from trac.web.chrome import INavigationContributor
+
+from tracwatchlist.translation import _
 
 
 class WatchlistNavigation(Component):
     """Navigation entries for the Trac WatchlistPlugin."""
-    implements( INavigationContributor )
+    implements(INavigationContributor)
 
+    # INavigationContributor methods
 
-    ### methods for INavigationContributor
     def get_active_navigation_item(self, req):
         if req.path_info.startswith("/watchlist"):
             return 'watchlist'
         return ''
 
-
     def get_navigation_items(self, req):
         user = req.authname
         if user and user != 'anonymous':
-            yield ('mainnav', 'watchlist', tag.a(_("Watchlist"),
-                   href=req.href("watchlist")))
+            yield ('mainnav', 'watchlist',
+                   tag.a(_("Watchlist"), href=req.href("watchlist")))

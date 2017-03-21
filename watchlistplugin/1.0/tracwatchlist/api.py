@@ -19,12 +19,15 @@
 # <http://www.gnu.org/licenses/>.
 
 import copy
-from  trac.core                  import  *
-from  tracwatchlist.translation  import  gettext
+
+from trac.core import Component, Interface, implements
+
+from tracwatchlist.translation import gettext
 
 
 class IWatchlistProvider(Interface):
     """Interface for watchlist providers."""
+
     def get_realms():
         """ Must return list or tuple of realms provided. """
         pass
@@ -46,23 +49,25 @@ class IWatchlistProvider(Interface):
     def unwatched_resources(self, realm, resids, user, wl, fuzzy=0):
         pass
 
-    #def res_list_exists(realm, reslist):
+    # def res_list_exists(realm, reslist):
     #    pass
 
-    #def res_pattern_exists(realm, pattern):
+    # def res_pattern_exists(realm, pattern):
     #    pass
 
     def has_perm(realm, perm):
         pass
 
     def get_list(realm, wl, req, fields=None):
-        """Returns list of watched elements as dictionaries plus an extra dictionary of extra
-           template data, which will be available in the template under the name "<realm>data"
-           Example:
-                data = [ {'name':'example', 'changetime': <DT Object> }, { ... } ]
-                extradict = { 'somethingspecial':42, ... }
-                return data, extradict
-           """
+        """Returns list of watched elements as dictionaries plus an extra 
+        dictionary of extra template data, which will be available in the 
+        template under the name "<realm>data"
+        
+        Example:
+            data = [ {'name':'example', 'changetime': <DT Object> }, { ... } ]
+            extradict = { 'somethingspecial':42, ... }
+            return data, extradict
+        """
         pass
 
     def get_href(realm, resid=None):
@@ -73,23 +78,23 @@ class IWatchlistProvider(Interface):
 
     def get_fields(realm):
         """ Returns fields (table columns)
-          Format: ( {Field:Label, Field:Label, ...}, (DEFAULT list) )
+            Format: ( {Field:Label, Field:Label, ...}, (DEFAULT list) )
         """
         pass
 
     def get_sort_key(realm):
         """Returns a sort `key` function for the argument of the same name of
-           `sorted` or `list.sort`. By default this can be `None` for normal
-           sorting.
-           Providers with numeric resource ids should return `int` or a similar
-           function to enable numeric sorting.
-           """
+        `sorted` or `list.sort`. By default this can be `None` for normal
+        sorting. Providers with numeric resource ids should return `int` or 
+        a similar function to enable numeric sorting.
+        """
         pass
 
     def get_sort_cmp(realm):
         """Returns a sort `cmp` function for the argument of the same name of
-           `sorted` or `list.sort`. By default this can be `None` for normal
-           sorting. """
+        `sorted` or `list.sort`. By default this can be `None` for normal
+        sorting.
+        """
         pass
 
 
@@ -98,7 +103,8 @@ class BasicWatchlist(Component):
     This class provides default implementations of all interface methods.
     Watchlist provider can inherit from it to simply their implementation.
     """
-    implements( IWatchlistProvider )
+    implements(IWatchlistProvider)
+
     realms = []
     default_fields = {}
     fields = {}
@@ -125,7 +131,7 @@ class BasicWatchlist(Component):
             return r + 's'
 
     def resources_exists(self, realm, resids):
-        if isinstance(resids,basestring):
+        if isinstance(resids, basestring):
             return False
         else:
             return []
@@ -148,21 +154,19 @@ class BasicWatchlist(Component):
         if resid is None:
             return self.env.href.__get_attr__(realm)
         else:
-            return self.env.href(realm,resid,**kwargs)
+            return self.env.href(realm, resid, **kwargs)
 
     def get_abs_href(self, realm, resid=None, **kwargs):
         if resid is None:
             return self.env.abs_href.__get_attr__(realm)
         else:
-            return self.env.abs_href(realm,resid,**kwargs)
+            return self.env.abs_href(realm, resid, **kwargs)
 
     def get_fields(self, realm):
         # Needed to re-localise after locale changed:
         # See also ticket.api: get_ticket_fields
-        fields = copy.deepcopy(self.fields.get(realm,{}))
-        col = 'col' # workaround gettext extraction bug
+        fields = copy.deepcopy(self.fields.get(realm, {}))
+        col = 'col'  # workaround gettext extraction bug
         for col in fields:
             fields[col] = gettext(fields[col])
-        return ( fields, self.default_fields.get(realm,[]) )
-
-# EOF
+        return fields, self.default_fields.get(realm, [])

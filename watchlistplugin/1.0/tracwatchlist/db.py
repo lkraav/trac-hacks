@@ -18,42 +18,41 @@
 # For a copy of the GNU General Public License see
 # <http://www.gnu.org/licenses/>.
 
-from  trac.core  import  *
-from  trac.db    import  Table, Column, DatabaseManager
-from  trac.env   import  IEnvironmentSetupParticipant
+from trac.core import Component, TracError, implements
+from trac.db import Table, Column, DatabaseManager
+from trac.env import IEnvironmentSetupParticipant
 
 
 class WatchlistDataBaseUpgrader(Component):
     """DataBase module for the Trac WatchlistPlugin.
        Handles creation and upgrading of watchlist DB tables."""
 
-    implements( IEnvironmentSetupParticipant )
+    implements(IEnvironmentSetupParticipant)
 
     latest_version = 4
 
-    watchlist_table = Table('watchlist', key=['wluser','realm','resid'])[
+    watchlist_table = Table('watchlist', key=['wluser', 'realm', 'resid'])[
         Column('wluser'),
         Column('realm'),
         Column('resid'),
         Column('lastvisit', type='int64'),
     ]
-    settings_table = Table('watchlist_settings', key=['wluser','name'])[
+    settings_table = Table('watchlist_settings', key=['wluser', 'name'])[
         Column('wluser'),
         Column('name'),
         Column('type'),
         Column('settings'),
     ]
 
-
     def environment_created(self):
-        """Creates watchlist tables when a new Trac environment is created."""
+        """Creates watchlist tables when a new Trac environment is created.
+        """
         db = self.env.get_db_cnx()
         self.create_watchlist_table(db)
         self.create_settings_table(db)
         self.set_version(self.latest_version, db)
         self.upgrade_manual()
         return
-
 
     def environment_needs_upgrade(self, db):
         """Tests if watchlist tables must be upgraded."""
@@ -65,9 +64,9 @@ class WatchlistDataBaseUpgrader(Component):
         if version < self.latest_version:
             return True
         elif version > self.latest_version:
-            raise TracError("Watchlist DB table version newer than plug-in version")
+            raise TracError(
+                "Watchlist DB table version newer than plug-in version")
         return False
-
 
     def upgrade_environment(self, db):
         """Upgrades all watchlist tables to current version."""
@@ -75,14 +74,14 @@ class WatchlistDataBaseUpgrader(Component):
         db.commit()
         old_version = self.get_version(db)
         self.upgrade_watchlist_table(old_version, self.latest_version, db)
-        self.upgrade_settings_table (old_version, self.latest_version, db)
+        self.upgrade_settings_table(old_version, self.latest_version, db)
         self.set_version(self.latest_version, db)
         return
 
-
     def upgrade_watchlist_table(self, old_version, new_version, db=None):
         """Upgrades watchlist table to current version."""
-        self.log.info("Attempting upgrade of watchlist table from v%i to v%i" % (old_version,new_version))
+        self.log.info("Attempting upgrade of watchlist table from v%i to v%i"
+                      % (old_version, new_version))
         db = db or self.env.get_db_cnx()
         if not self.table_exists('watchlist', db):
             self.create_watchlist_table(db)
@@ -90,17 +89,19 @@ class WatchlistDataBaseUpgrader(Component):
         if old_version == new_version:
             return
         try:
-            upgrader = getattr(self, 'upgrade_watchlist_table_from_v%i_to_v%i' % (old_version, new_version))
+            upgrader = getattr(self, 'upgrade_watchlist_table_from_v%i_to_v%i'
+                                     % (old_version, new_version))
         except AttributeError:
-            raise TracError("Requested watchlist table version " + unicode(new_version) + " not supported for upgrade")
+            raise TracError("Requested watchlist table version " + unicode(
+                new_version) + " not supported for upgrade")
 
         upgrader(db)
         return
 
-
     def upgrade_settings_table(self, old_version, new_version, db=None):
         """Upgrades watchlist_settings table to current version."""
-        self.log.info("Attempting upgrade of watchlist table from v%i to v%i" % (old_version,new_version))
+        self.log.info("Attempting upgrade of watchlist table from v%i to v%i"
+                      % (old_version, new_version))
         db = db or self.env.get_db_cnx()
 
         if not self.table_exists('watchlist_settings', db):
@@ -118,16 +119,19 @@ class WatchlistDataBaseUpgrader(Component):
 
         # Code for future versions > 4
         try:
-            upgrader = getattr(self, 'upgrade_settings_table_from_v%i_to_v%i' % (old_version, new_version))
+            upgrader = getattr(self, 'upgrade_settings_table_from_v%i_to_v%i'
+                                     % (old_version, new_version))
         except AttributeError:
-            raise TracError("Requested settings table version " + unicode(new_version) + " not supported for upgrade")
+            raise TracError("Requested settings table version " + unicode(
+                new_version) + " not supported for upgrade")
 
         upgrader(db)
         raise NotImplemented
 
-
     def get_version(self, db=None):
-        """Returns watchlist table version from system table or 0 if not present."""
+        """Returns watchlist table version from system table or 0 if not 
+        present.
+        """
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
         try:
@@ -139,20 +143,23 @@ class WatchlistDataBaseUpgrader(Component):
             valuelist = cursor.fetchone()
             return int(valuelist[0])
         except (AttributeError, TypeError):
-            self.log.info("No value for 'watchlist_version' found in 'system' table")
+            self.log.info(
+                "No value for 'watchlist_version' found in 'system' table")
             return 0
         except ValueError, e:
-            self.log.error("Invalid value found for 'watchlist_version' found in system table: " + unicode(e))
+            self.log.error("Invalid value found for 'watchlist_version' "
+                           "found in system table: " + unicode(e))
             self.log.info("Value for 'watchlist_version' will be set to 0")
             self.set_version(0, db)
             return 0
         except Exception, e:
             db.rollback()
-            self.log.error("Unknown error when trying to read 'watchlist_version' from 'system' table: " + unicode(e))
+            self.log.error("Unknown error when trying to read "
+                           "'watchlist_version' from 'system' table: " +
+                           unicode(e))
             self.log.info("Value for 'watchlist_version' will be set to 0")
             self.set_version(0, db)
             return 0
-
 
     def set_version(self, version, db=None):
         """Sets watchlist table version in the system table."""
@@ -176,7 +183,7 @@ class WatchlistDataBaseUpgrader(Component):
                 INSERT
                 INTO system (name,value)
                 VALUES ('watchlist_version',%s)
-            """, (unicode(version),) )
+            """, (unicode(version),))
         except Exception as e:
             db.rollback()
             self.log.error("Could not set watchlist_version: " + unicode(e))
@@ -184,24 +191,24 @@ class WatchlistDataBaseUpgrader(Component):
         db.commit()
         return
 
-
     def create_watchlist_table(self, db=None):
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
-        db_connector, _ = DatabaseManager(self.env)._get_connector()
-        self.log.info("Creating 'watchlist' table in version " + unicode(self.latest_version))
+        db_connector = DatabaseManager(self.env).get_connector()[0]
+        self.log.info("Creating 'watchlist' table in version " +
+                      unicode(self.latest_version))
 
         for statement in db_connector.to_sql(self.watchlist_table):
             cursor.execute(statement)
         db.commit()
         return
 
-
     def create_settings_table(self, db=None):
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
-        db_connector, _ = DatabaseManager(self.env)._get_connector()
-        self.log.info("Creating 'watchlist_setting' table in version " + unicode(self.latest_version))
+        db_connector = DatabaseManager(self.env).get_connector()[0]
+        self.log.info("Creating 'watchlist_setting' table in version " +
+                      unicode(self.latest_version))
 
         for statement in db_connector.to_sql(self.settings_table):
             cursor.execute(statement)
@@ -221,36 +228,35 @@ class WatchlistDataBaseUpgrader(Component):
         self.upgrade_watchlist_table_to_v4('*', db)
         return
 
-
     def upgrade_watchlist_table_from_v1_to_v4(self, db=None):
         self.upgrade_watchlist_table_to_v4('*', db)
         return
 
-
     def upgrade_watchlist_table_from_v2_to_v4(self, db=None):
-        """Upgrades watchlist table from v2 which has four columns.
-           The forth was 'notify' which was dropped again quickly."""
+        """Upgrades watchlist table from v2 which has four columns. The 
+        forth was 'notify' which was dropped again quickly.
+        """
         self.upgrade_watchlist_table_to_v4('wluser,realm,resid', db)
         return
-
 
     def upgrade_watchlist_table_from_v3_to_v4(self, db=None):
         self.upgrade_watchlist_table_to_v4('*', db)
         return
 
-
     def upgrade_watchlist_table_to_v4(self, selection, db=None):
-        """Upgrade 'watchlist' table to v4. The data is copied into a temporary
-           table and then back into the newly created table."""
+        """Upgrade 'watchlist' table to v4. The data is copied into a 
+        temporary table and then back into the newly created table.
+        """
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
-        db_connector, _ = DatabaseManager(self.env)._get_connector()
+        db_connector = DatabaseManager(self.env).get_connector()[0]
 
         # Temporary name for new watchlist table
         new_table = self.watchlist_table
         new_table.name = 'watchlist_new'
 
-        # Delete new table if it should exists because of a aborted previous upgrade attempt
+        # Delete new table if it should exists because of a aborted previous
+        # upgrade attempt
         try:
             cursor.execute("DROP TABLE watchlist_new")
         except:
@@ -285,16 +291,16 @@ class WatchlistDataBaseUpgrader(Component):
         self.log.info("Upgraded 'watchlist' table to version 4")
         return
 
-
     def upgrade_settings_table_to_v4(self, db=None):
         """Upgrades 'watchlist_settings' table to v4.
            This table did not existed in v0-v2, so there is only v3
            to handle."""
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
-        db_connector, _ = DatabaseManager(self.env)._get_connector()
+        db_connector = DatabaseManager(self.env).get_connector()[0]
 
-        # Delete new table if it should exists because of a aborted previous upgrade attempt
+        # Delete new table if it should exists because of a aborted previous
+        # upgrade attempt
         try:
             cursor.execute("DROP TABLE watchlist_settings_new")
         except:
@@ -360,6 +366,4 @@ class WatchlistDataBaseUpgrader(Component):
             raise TracError('Unsupported database type "%s"'
                             % dburi.split(':')[0])
         cursor.execute(sql)
-        return sorted([row[0] for row in cursor])
-
-# EOF
+        return sorted(row[0] for row in cursor)

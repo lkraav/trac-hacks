@@ -18,43 +18,39 @@
 # For a copy of the GNU General Public License see
 # <http://www.gnu.org/licenses/>.
 
-from  pkg_resources          import  resource_filename
-from  datetime               import  datetime
-import os
 import functools
+import os
+import pkg_resources
 
-from  trac.core              import  *
-from  genshi.builder         import  tag
-from  trac.web.api           import  IRequestHandler, HTTPNotFound
-from  trac.web.chrome        import  web_context
-from  trac.wiki.formatter    import  format_to_html
-from  trac.util.text         import  unicode_unquote, to_unicode
-from  tracwatchlist.util     import  LC_TIME
+from trac.core import Component, implements
+from trac.util.text import to_unicode
+from trac.web.api import IRequestHandler, HTTPNotFound
+from trac.web.chrome import web_context
+from trac.wiki.formatter import format_to_html
 
 
 class WatchlistManual(Component):
-    implements( IRequestHandler )
+    implements(IRequestHandler)
 
     manuals = {}
 
     def __init__(self):
-        dir = resource_filename('tracwatchlist', 'manuals')
-        for page in os.listdir(dir):
+        dir_ = pkg_resources.resource_filename('tracwatchlist', 'manuals')
+        for page in os.listdir(dir_):
             if page == '.svn':
                 continue
-            language = page.strip('.txt').replace('_','-')
-            filename = os.path.join(dir, page)
+            language = page.strip('.txt').replace('_', '-')
+            filename = os.path.join(dir_, page)
             if os.path.isfile(filename):
                 self.manuals[language] = filename
 
+    # IRequestHandler methods
 
-    ## Methods for IRequestHandler ##########################################
     def match_request(self, req):
         return req.path_info.startswith("/watchlist/manual")
 
-
     def process_request(self, req):
-        path = req.path_info[ len("/watchlist/manual") : ].strip('/')
+        path = req.path_info[len("/watchlist/manual"):].strip('/')
         if path.startswith('attachments'):
             return self.handle_attachment(req, path)
 
@@ -68,7 +64,7 @@ class WatchlistManual(Component):
             # Try to find a main language,
             # e.g. 'xy' instead of 'xy-ZV'
             l = language.split('-')[0]
-            language = 'en-US' # fallback if no other is found
+            language = 'en-US'  # fallback if no other is found
             if l in self.manuals:
                 language = l
             else:
@@ -83,11 +79,11 @@ class WatchlistManual(Component):
                         if lang.startswith(l):
                             language = lang
                             break
-            req.redirect(req.href.watchlist('manual',language))
+            req.redirect(req.href.watchlist('manual', language))
 
         try:
-            f = open(self.manuals[language], 'r')
-            text = to_unicode( f.read() )
+            with open(self.manuals[language]) as f:
+                text = to_unicode(f.read())
         except Exception as e:
             raise HTTPNotFound(e)
 
@@ -97,13 +93,13 @@ class WatchlistManual(Component):
             'format_text': format_text,
             'text': text,
         }
-        return ("watchlist_manual.html", wldict, "text/html")
-
+        return "watchlist_manual.html", wldict, "text/html"
 
     def handle_attachment(self, req, path):
-        path = path[ len('attachments') : ].strip('/')
-        dir = resource_filename('tracwatchlist', 'manuals/attachments')
-        filename = os.path.join(dir, path)
+        path = path[len('attachments'):].strip('/')
+        dir_ = pkg_resources.resource_filename('tracwatchlist',
+                                               'manuals/attachments')
+        filename = os.path.join(dir_, path)
         if os.path.isfile(filename):
             req.send_file(filename)
         else:

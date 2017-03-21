@@ -20,22 +20,26 @@
 
 # Import translation functions. Fallbacks are provided for Trac 0.11.
 try:
-    from  trac.util.translation  import  domain_functions
-    add_domain, _, N_, tag_, gettext, ngettext = \
-        domain_functions('watchlist', ('add_domain', '_', 'N_', 'tag_', 'gettext', 'ngettext'))
-    i18n_enabled = True
+    from trac.util.translation import domain_functions
 except ImportError:
-    from  trac.util.translation  import  gettext, ngettext
-    _, N_, tag_  = gettext, gettext, None
-    def add_domain(a,b,c=None):
-        pass
-    i18n_enabled = False
+    from trac.util.translation import gettext, ngettext
+    _, N_, tag_ = gettext, gettext, None
 
-# Import tracs `N_` as `T_` to mark strings already translated by trac.
+    def add_domain(a, b, c=None):
+        pass
+
+    i18n_enabled = False
+else:
+    add_domain, _, N_, tag_, gettext, ngettext = \
+        domain_functions('watchlist', ('add_domain', '_', 'N_', 'tag_',
+                                       'gettext', 'ngettext'))
+    i18n_enabled = True
+
+# Import `N_` as `T_` to mark strings already translated by trac.
 # Note: Later this might also be needed for `_`.
 try:
-    from  trac.util.translation  import  N_ as T_
-    from  trac.util.translation  import   _ as t_
+    from trac.util.translation import N_ as T_
+    from trac.util.translation import _ as t_
 except:
     T_ = N_
-    t_ =  _
+    t_ = _

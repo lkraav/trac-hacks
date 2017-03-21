@@ -18,17 +18,16 @@
 # For a copy of the GNU General Public License see
 # <http://www.gnu.org/licenses/>.
 
-from  trac.core                 import  *
-from  tracwatchlist.api         import  BasicWatchlist, IWatchlistProvider
-from  tracwatchlist.translation import  add_domain, _, N_, T_, t_, tag_, gettext
+from trac.core import Component, implements
+from tracwatchlist.api import IWatchlistProvider
 
 
 class ExampleWatchlist(Component):
     """Example watchlist provider."""
-    implements( IWatchlistProvider )
+    implements(IWatchlistProvider)
 
     def get_realms(self):
-        return ('example',)
+        return 'example',
 
     def get_realm_label(self, realm, plural=False):
         return plural and 'examples' or 'example'
@@ -55,8 +54,8 @@ class ExampleWatchlist(Component):
             FROM watchlist
            WHERE wluser=%s AND realm='example'
         """, (user,)
-        )
+                       )
         examples = cursor.fetchall()
         for (name,) in examples:
-            examplelist.append({'name':name})
+            examplelist.append({'name': name})
         return examplelist
