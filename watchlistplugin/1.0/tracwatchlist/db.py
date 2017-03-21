@@ -80,8 +80,8 @@ class WatchlistDataBaseUpgrader(Component):
 
     def upgrade_watchlist_table(self, old_version, new_version, db=None):
         """Upgrades watchlist table to current version."""
-        self.log.info("Attempting upgrade of watchlist table from v%i to v%i"
-                      % (old_version, new_version))
+        self.log.info("Attempting upgrade of watchlist table from v%i to v%i",
+                      old_version, new_version)
         db = db or self.env.get_db_cnx()
         if not self.table_exists('watchlist', db):
             self.create_watchlist_table(db)
@@ -100,8 +100,8 @@ class WatchlistDataBaseUpgrader(Component):
 
     def upgrade_settings_table(self, old_version, new_version, db=None):
         """Upgrades watchlist_settings table to current version."""
-        self.log.info("Attempting upgrade of watchlist table from v%i to v%i"
-                      % (old_version, new_version))
+        self.log.info("Attempting upgrade of watchlist table from v%i to v%i",
+                      old_version, new_version)
         db = db or self.env.get_db_cnx()
 
         if not self.table_exists('watchlist_settings', db):
@@ -143,20 +143,19 @@ class WatchlistDataBaseUpgrader(Component):
             valuelist = cursor.fetchone()
             return int(valuelist[0])
         except (AttributeError, TypeError):
-            self.log.info(
-                "No value for 'watchlist_version' found in 'system' table")
+            self.log.info("No value for 'watchlist_version' found in "
+                          "'system' table")
             return 0
         except ValueError, e:
             self.log.error("Invalid value found for 'watchlist_version' "
-                           "found in system table: " + unicode(e))
+                           "found in system table: %s", e)
             self.log.info("Value for 'watchlist_version' will be set to 0")
             self.set_version(0, db)
             return 0
         except Exception, e:
             db.rollback()
             self.log.error("Unknown error when trying to read "
-                           "'watchlist_version' from 'system' table: " +
-                           unicode(e))
+                           "'watchlist_version' from 'system' table: %s", e)
             self.log.info("Value for 'watchlist_version' will be set to 0")
             self.set_version(0, db)
             return 0
@@ -186,7 +185,7 @@ class WatchlistDataBaseUpgrader(Component):
             """, (unicode(version),))
         except Exception as e:
             db.rollback()
-            self.log.error("Could not set watchlist_version: " + unicode(e))
+            self.log.error("Could not set watchlist_version: %s", e)
             raise
         db.commit()
         return
@@ -195,8 +194,8 @@ class WatchlistDataBaseUpgrader(Component):
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
         db_connector = DatabaseManager(self.env).get_connector()[0]
-        self.log.info("Creating 'watchlist' table in version " +
-                      unicode(self.latest_version))
+        self.log.info("Creating 'watchlist' table in version %s",
+                      self.latest_version)
 
         for statement in db_connector.to_sql(self.watchlist_table):
             cursor.execute(statement)
@@ -207,8 +206,8 @@ class WatchlistDataBaseUpgrader(Component):
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
         db_connector = DatabaseManager(self.env).get_connector()[0]
-        self.log.info("Creating 'watchlist_setting' table in version " +
-                      unicode(self.latest_version))
+        self.log.info("Creating 'watchlist_setting' table in version %s",
+                      self.latest_version)
 
         for statement in db_connector.to_sql(self.settings_table):
             cursor.execute(statement)

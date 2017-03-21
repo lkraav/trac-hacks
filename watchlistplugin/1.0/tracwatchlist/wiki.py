@@ -119,7 +119,6 @@ class WikiWatchlist(BasicWatchlist):
             return []
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.log = self.log
         cursor.execute("""
             SELECT resid
             FROM watchlist

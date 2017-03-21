@@ -116,8 +116,8 @@ class WatchlistPlugin(Component):
                 # Import fallback methods for AnnouncerPlugin 1.0
                 from announcer.opt.subscribers import WatchSubscriber
             except Exception, ee:
-                self.log.debug("WS! " + str(e))
-                self.log.debug("WS! " + str(ee))
+                self.log.debug("WS! %s", e)
+                self.log.debug("WS! %s", ee)
                 self.wsub = None
             else:
                 self.wsub = self.env[WatchSubscriber]
@@ -315,8 +315,6 @@ class WatchlistPlugin(Component):
     def unwatch(self, realm, resid, user, db=None):
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.log = self.log
-        self.log.debug("resid = " + unicode(resid))
         reses = list(ensure_iter(resid))
         cursor.execute("""
             DELETE
@@ -348,7 +346,7 @@ class WatchlistPlugin(Component):
         except AttributeError:
             return False
         except Exception, e:
-            self.log.error("is_notify error: " + str(e))
+            self.log.error("is_notify error: %s", e)
             return False
 
     def set_notify(self, req, realm, resid):
@@ -357,7 +355,7 @@ class WatchlistPlugin(Component):
         except AttributeError:
             return False
         except Exception, e:
-            self.log.error("set_notify error: " + str(e))
+            self.log.error("set_notify error: %s", e)
 
     def unset_notify(self, req, realm, resid):
         try:
@@ -365,7 +363,7 @@ class WatchlistPlugin(Component):
         except AttributeError:
             return False
         except Exception, e:
-            self.log.error("unset_notify error: " + str(e))
+            self.log.error("unset_notify error: %s", e)
 
     # IRequestHandler methods
 
@@ -571,7 +569,7 @@ class WatchlistPlugin(Component):
             elif len(resids) == 1:
                 # If there where no maches and only own resid try to delete it
                 # anyway. Might be a delete wiki page.
-                self.log.debug("resid = " + unicode(resid))
+                self.log.debug("resid = %s", resid)
                 self.unwatch(realm, [resid], user, db=db)
 
             # Unset notification
