@@ -811,6 +811,8 @@ Usage:
     def _render_query_form_filters(self, req, data):
         if 'query_href' not in req.session:
             req.session['query_href'] = ''  # workaround crashing in batchmod
+        data = data.copy()
+        data['headers'] = data['groups'] = data['tickets'] = ()
         fragment = Chrome(self.env).render_template(req, 'query.html', data,
                                                     None, fragment=True)
         return fragment.select('//fieldset[@id="filters"]')
