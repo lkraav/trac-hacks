@@ -1,28 +1,6 @@
 /*! Javascript code for Trac Watchlist Plugin
  * $Id$
- * */
-
-
-/*! From http://chris-barr.com/entry/disable_text_selection_with_jquery/  */
-$(function () {
-  $.extend($.fn.disableTextSelect = function () {
-    return this.each(function () {
-      if ($.browser.mozilla) {//Firefox
-        $(this).css('MozUserSelect', 'none');
-      } else if ($.browser.msie) {//IE
-        $(this).bind('selectstart', function () {
-          return false;
-        });
-      } else {//Opera, etc.
-        $(this).mousedown(function () {
-          return false;
-        });
-      }
-    });
-  });
-  $('.noSelect').disableTextSelect();//No text selection on elements with a class of 'noSelect'
-});
-/*! */
+ */
 
 function wlremoveempty(child) {
   var tdiv = $(child).parents('div.watchlist-parent').get(0);
@@ -38,17 +16,12 @@ function wldeleterow(tr, table) {
   $(tr).remove();
 }
 
-function wlresettodefault() {
-}
-///
-
 function wlremmsgbox() {
   $('#message-box').remove();
 }
 
 jQuery(document).ready(function () {
   $("input.ackmsg").each(function () {
-    $(this).disableTextSelect();
     $(this).click(function () {
       $(this).parents('div.system-message').hide(5).remove();
       return false;
