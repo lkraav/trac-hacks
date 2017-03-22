@@ -1,25 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='TracDoxygen',
     description='Doxygen plugin for Trac',
     keywords='trac doxygen',
-    version='0.7.4',
+    version='0.7.5',
     url='https://trac-hacks.org/wiki/DoxygenPlugin',
     author='Emmanuel Saint-James, Jason Parks, Radek Bartoň',
     author_email='esj@rezo.net',
-    maintainer = "Committo-Ergo-Sum",
-    maintainer_email = "esj@rezo.net",
+    maintainer="Committo-Ergo-Sum",
+    maintainer_email="esj@rezo.net",
     long_description="""
     """,
     zip_safe=True,
     packages=['doxygentrac'],
-    package_data={'doxygentrac': ['templates/*.html', 'htdocs/css/*.css', 'htdocs/js/*.js']},
+    package_data={'doxygentrac': ['templates/*.html', 'htdocs/css/*.css',
+                                  'htdocs/js/*.js']},
+    install_requires=['Trac'],
     entry_points={'trac.plugins': 'doxygentrac = doxygentrac.doxygentrac'},
-    license = """
+    license="""
 Copyright (C) 2016 Emmanuel Saint-James <esj@rezo.net>
 Copyright (C) 2005 Jason Parks <jparks@jparks.net>
 All rights reserved.

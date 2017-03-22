@@ -13,28 +13,28 @@
   <body>
     <div class="toparea">
       <div py:if="msg">
-	<span class="arrow" onclick="toggle_display_next(this)">► ${msg}
-	</span><pre style='display: none'>
-	  ${trace}
-	</pre>
+  <span class="arrow" onclick="toggle_display_next(this)">► ${msg}
+  </span><pre style='display: none'>
+    ${trace}
+  </pre>
       </div>
       <h2 class="doxygenplugin">Doxyfile Generator</h2>
       <div id="select_section_form" py:if="fieldsets">
         <form action=""
-	      method="post"
-	      onsubmit="return !(!check_dir(this, 'OUTPUT_DIRECTORY') || !check_dir(this, 'INPUT'))"
-	      enctype="multipart/form-data;charset=UTF-8" >
-	  <fieldset py:for="k,d in fieldsets.iteritems()">
-	    <legend class="doxygenplugin arrow" onclick="toggle_display_next(this)">► ${k}</legend>
-	    <div style='display:${d.display}'>
-	      <div py:for="id,s in d.opt.iteritems()" class="labelinput ${s.atclass}">
-		<label for="${id}" class="arrow" onclick="toggle_display_next(this)">► ${id}
-		</label><pre style='display:none'>${s.label}</pre>
-		<span py:if="s.default"
-		      >${s.default}</span><input id="${id}" name="${id}" value="${s.value}" size="${s.size}" />
-	      </div>
-	    </div>
-	  </fieldset>
+        method="post"
+        onsubmit="return !(!check_dir(this, 'OUTPUT_DIRECTORY') || !check_dir(this, 'INPUT'))"
+        enctype="multipart/form-data;charset=UTF-8" >
+    <fieldset py:for="k,d in fieldsets.iteritems()">
+      <legend class="doxygenplugin arrow" onclick="toggle_display_next(this)">► ${k}</legend>
+      <div style='display:${d.display}'>
+        <div py:for="id,s in d.opt.iteritems()" class="labelinput ${s.atclass}">
+    <label for="${id}" class="arrow" onclick="toggle_display_next(this)">► ${id}
+    </label><pre style='display:none'>${s.label}</pre>
+    <span py:if="s.default"
+          >${s.default}</span><input id="${id}" name="${id}" value="${s.value}" size="${s.size}" />
+        </div>
+      </div>
+    </fieldset>
           <div><input type="submit" /></div>
         </form>
       </div>
