@@ -1,29 +1,31 @@
+import re
+from pkg_resources import resource_filename
+
 from trac.core import *
+from trac.perm import IPermissionRequestor
+from trac.util.html import tag
+from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import add_script, add_stylesheet, INavigationContributor, ITemplateProvider
-from trac.perm import IPermissionRequestor
-from trac.util.translation import _
-
-from genshi.builder import tag
-
-from pkg_resources import resource_filename
-import re
 
 from model import Contact, ContactIterator
+
 
 class ContactsAdminPanel(Component):
     """ Pages for adding/editing contacts. """
     implements(INavigationContributor, ITemplateProvider, IRequestHandler, IPermissionRequestor)
 
-    #   INavigationContributor methods
+    # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         """This method is only called for the `IRequestHandler` processing the
         request.
-        
+
         It should return the name of the navigation item that should be
         highlighted as active/current.
         """
         return 'contacts'
+
     def get_navigation_items(self, req):
         """Should return an iterable object over the list of navigation items to
         add, each being a tuple in the form (category, name, text).
@@ -31,20 +33,24 @@ class ContactsAdminPanel(Component):
         if 'CONTACTS_VIEW' in req.perm('contacts'):
             yield('mainnav', 'contacts', tag.a(_('Contacts'), href=req.href.contacts()))
 
-    #   ITemplateProvider
+    # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         return [('contacts', resource_filename('contacts', 'htdocs'))]
+
     def get_templates_dirs(self):
         """Return a list of directories containing the provided template
         files.
         """
         return [resource_filename('contacts', 'templates')]
 
-    #   IRequestHandler methods
+    # IRequestHandler methods
+
     def match_request(self, req):
         """Return whether the handler wants to process the given request."""
         if re.match(r'^/contact', req.path_info):
             return True
+
     def process_request(self, req):
         """Process the request. For ClearSilver, return a (template_name,
         content_type) tuple, where `template` is the ClearSilver template to use
@@ -63,10 +69,10 @@ class ContactsAdminPanel(Component):
 
         add_stylesheet(req, 'common/css/admin.css')
         if re.match(r'^/contacts$', req.path_info):
-            return ('contacts.html', 
-                {   'contacts': ContactIterator(self.env),
-                    'can_edit': 'CONTACTS_ADMIN' in req.perm('contacts')
-                }, None)
+            return ('contacts.html', {
+                'contacts': ContactIterator(self.env),
+                'can_edit': 'CONTACTS_ADMIN' in req.perm('contacts')
+            }, None)
 
         req.perm('contacts').assert_permission('CONTACTS_ADMIN')
 
@@ -74,7 +80,7 @@ class ContactsAdminPanel(Component):
         #   Get Contact ID
         params = req.path_info.split('/')
         contact_id = None
-        if (len(params) > 2 and params[2].isdigit()):
+        if len(params) > 2 and params[2].isdigit():
             contact_id = params[2]
         contact = Contact(self.env, contact_id)
 
@@ -104,10 +110,11 @@ class ContactsAdminPanel(Component):
 
         return ('contact.html', template, None)
 
-    #   IPermissionRequest methods
+    # IPermissionRequest methods
+
     def get_permission_actions(self):
         """Return a list of actions defined by this component.
-        
+
         The items in the list may either be simple strings, or
         `(string, sequence)` tuples. The latter are considered to be "meta
         permissions" that group several simple actions under one name for

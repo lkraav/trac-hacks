@@ -9,7 +9,7 @@ setup(
     description='Plugin which keeps trac of Contact data',
     keywords='trac plugin contact person address addressbook address-book',
     version='0.2',
-    url='http://trac-hacks.org/wiki/ContactsPlugin',
+    url='https://trac-hacks.org/wiki/ContactsPlugin',
     license='http://www.opensource.org/licenses/mit-license.php',
     author='CM Lubinski',
     author_email='clubinski@networkninja.com',

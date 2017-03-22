@@ -1,5 +1,6 @@
 from trac.core import *
 
+
 class Contact(object):
     def __init__(self, env, id=None):
         self.env = env

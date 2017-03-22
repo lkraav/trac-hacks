@@ -1,14 +1,13 @@
-jQuery(document).ready(function() {
-    jQuery('.static, .field label').click(function() {
-        p = jQuery(this).parent()
+jQuery(document).ready(function($) {
+    $('.static, .field label').click(function() {
+        p = $(this).parent()
         p.children('.edit').show()
         p.children('.static').hide()
     });
-    jQuery('input.revert').click(function() {
-        p = jQuery(this).parent()
+    $('input.revert').click(function() {
+        p = $(this).parent()
         p.children('.edit').hide()
         p.children('.static').show()
-        
-        p.children('.edit.value').attr('value', jQuery(this).next('.static').text())
+        p.children('.edit.value').attr('value', $(this).next('.static').text())
     });
 })
