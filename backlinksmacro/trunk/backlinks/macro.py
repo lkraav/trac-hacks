@@ -78,7 +78,7 @@ class BackLinksMenuMacro(WikiMacroBase):
 def _get_backlinked_pages(env, caller_page, backlinks_page):
 
     backlinked_pages = []
-    pattern = re.compile(r'\b%s\b' % re.escape(backlinks_page), re.UNICODE)
+    pattern = re_search_pattern(backlinks_page)
     with env.db_query as db:
         for page, text in db("""
                 SELECT w1.name, w1.text FROM wiki AS w1,
@@ -92,3 +92,33 @@ def _get_backlinked_pages(env, caller_page, backlinks_page):
                 backlinked_pages.append(page)
 
     return backlinked_pages
+
+
+def sql_search_pattern(backlinks_page):
+    if is_camel_case(backlinks_page):
+        return backlinks_page
+    else:
+        return r'wiki:%s' % backlinks_page
+
+
+def re_search_pattern(backlinks_page):
+    if is_camel_case(backlinks_page):
+        pattern = r'\b%s\b' % re.escape(backlinks_page)
+    else:
+        pattern = r'(\b|\[)wiki:%s(\b|\])' % re.escape(backlinks_page)
+    return re.compile(pattern, re.UNICODE)
+
+
+def is_camel_case(backlinks_page):
+    words = camel_case_split(backlinks_page)
+    if len(words) < 2:
+        return False
+    for word in words:
+        if len(word) < 2:
+            return False
+    return True
+
+
+def camel_case_split(identifier):
+    matches = re.finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)', identifier)
+    return [m.group(0) for m in matches]
