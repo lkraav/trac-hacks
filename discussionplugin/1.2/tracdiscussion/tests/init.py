@@ -99,8 +99,10 @@ class DiscussionInitTestCase(unittest.TestCase):
         else:
             raise TracError('Unsupported database type "%s"'
                             % dburi.split(':')[0])
-        cursor.execute(sql)
-        return sorted([row[0] for row in cursor])
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute(sql)
+            return sorted(name for name, in cursor.fetchall())
 
     def _get_cursor_description(self, cursor):
         # Cursors don't look the same across Trac versions.

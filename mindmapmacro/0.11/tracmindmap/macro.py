@@ -99,8 +99,10 @@ class MindMapMacro(Component):
         else:
             raise TracError('Unsupported database type "%s"'
                             % dburi.split(':')[0])
-        cursor.execute(sql)
-        return sorted([row[0] for row in cursor])
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute(sql)
+            return sorted(name for name, in cursor.fetchall())
 
     # IHTMLPreviewRenderer methods
     supported_mimetypes = {
