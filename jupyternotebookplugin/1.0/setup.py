@@ -13,6 +13,7 @@ setup(
     version = '1.0',
     packages = find_packages(exclude = ['*.tests*']),
     license = "BSD 3-Clause",
+    url = 'https://trac-hacks.org/wiki/JupyterNotebookPlugin',
     entry_points = {
         'trac.plugins': [
             'TracJupyterNotebook = tracjupyternotebook.renderer',
