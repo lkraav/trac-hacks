@@ -27,16 +27,16 @@ class CiteCodeMacro(WikiMacroBase):
         self.mimeview = Mimeview(self.env)
 
     def expand_macro(self, formatter, name, content):
-        self.log.debug("content=%s" % content)
+        self.log.debug("content=%s", content)
 
         add_stylesheet(formatter.req, 'citecode/citecode.css')
 
         # parse the argument
         scheme, netloc, path, params, query, fragment = urlparse.urlparse(content)
-        self.log.debug("scheme=%s, netloc=%s, path=%s, params=%s, query=%s, fragment=%s"
-                % (scheme, netloc, path, params, query, fragment))
+        self.log.debug("scheme=%s, netloc=%s, path=%s, params=%s, query=%s, fragment=%s",
+                       scheme, netloc, path, params, query, fragment)
         qs = urlparse.parse_qs(query)
-        self.log.debug("qs=%s" % qs)
+        self.log.debug("qs=%s", qs)
 
         reponame, repo, path = self.repoman.get_repository_by_path(path)
         try:
@@ -44,7 +44,7 @@ class CiteCodeMacro(WikiMacroBase):
                 rev = qs['rev'][0].encode()
             else:
                 rev = None
-            self.log.debug("rev=%s" % rev)
+            self.log.debug("rev=%s", rev)
             node = repo.get_node(path, rev = rev)
             content = node.get_content()
             if content == None:
@@ -53,7 +53,7 @@ class CiteCodeMacro(WikiMacroBase):
             else:
                 context = Context.from_request(formatter.req)
                 content_type = node.get_content_type() or mimetypes.guess_type(path)[0]
-                self.log.debug("content_type=%s" % str(content_type))
+                self.log.debug("content_type=%s", content_type)
                 content = content.read()
                 if fragment != "" and not is_binary(content):
                     m = re.match("L(\d+)(-L?(\d+))?", fragment)
@@ -133,9 +133,9 @@ class CiteCodeAndCreateTicket(Component):
         ))
 
 from trac.mimeview.api import IHTMLPreviewAnnotator
-from trac.util.translation import _
 from trac.util import Ranges
-from genshi.builder import tag
+from trac.util.html import tag
+from trac.util.translation import _
 
 # Just copied from trunk of Trac core and renamed annotation_type
 # since 'lineno' hint is not available in Trac 1.0
