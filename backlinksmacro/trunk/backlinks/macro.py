@@ -78,7 +78,8 @@ class BackLinksMenuMacro(WikiMacroBase):
 def _get_backlinked_pages(env, caller_page, backlinks_page):
 
     backlinked_pages = []
-    pattern = re_search_pattern(backlinks_page)
+    re_pattern = re_search_pattern(backlinks_page)
+    like_pattern = sql_search_pattern(backlinks_page)
     with env.db_query as db:
         for page, text in db("""
                 SELECT w1.name, w1.text FROM wiki AS w1,
@@ -86,9 +87,9 @@ def _get_backlinked_pages(env, caller_page, backlinks_page):
                   FROM wiki GROUP BY name) AS w2
                 WHERE w1.version = w2.version AND w1.name = w2.name AND
                 (w1.text %s)""" % db.like(),
-                ('%' + db.like_escape(backlinks_page) + '%',)):
+                ('%' + db.like_escape(like_pattern) + '%',)):
             if page != backlinks_page and page != caller_page \
-                    and pattern.search(text):
+                    and re_pattern.search(text):
                 backlinked_pages.append(page)
 
     return backlinked_pages
