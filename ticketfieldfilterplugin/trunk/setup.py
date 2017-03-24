@@ -21,7 +21,7 @@ setup(
     permissions of the user. Shown fields can be made read only.""",
     license='3-Clause BSD',
     keywords='trac plugin filter ticket field',
-    url='https://trac-hacks.org/wiki/',
+    url='https://trac-hacks.org/wiki/TicketFieldFilterPlugin',
     classifiers=[
         'Framework :: Trac',
     ],

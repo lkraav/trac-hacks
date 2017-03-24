@@ -15,7 +15,7 @@ from trac.core import Component, implements
 from trac.perm import PermissionSystem
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Type
-from trac.util.text import _
+from trac.util.translation import _
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
 
