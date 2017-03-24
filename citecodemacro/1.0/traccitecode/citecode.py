@@ -107,17 +107,10 @@ class CiteCodeAndCreateTicket(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        self.log.debug('match_request: path_info=' + req.path_info)
-        return req.path_info.startswith('/citecode/newticket/')
+        return req.path_info == '/citecode/newticket'
 
     def process_request(self, req):
-        self.log.debug('process_request: path_info=' + req.path_info)
-        self.log.debug('process_request: query_string=' + req.query_string)
-        self.log.debug('process_request: browser()=' + self.env.href.browser())
-
-        path = os.path.relpath(req.path_info, '/citecode/newticket')
-        path = os.path.relpath(path, self.env.href.browser())
-
+        path = req.args.get('path')
         at_rev = ""
         query = ""
         line = ""
@@ -131,8 +124,9 @@ class CiteCodeAndCreateTicket(Component):
 
         req.redirect(req.href.newticket(
                 summary = 'Comment on %s' % os.path.basename(path),
-                description = """source:/%s%s%s:
-[[CiteCode(/%s%s%s)]]
+                description = """source:%s%s%s:
+
+[[CiteCode(%s%s%s)]]
 
 """ % (path, at_rev, line, path, query, line),
                 preview = True,
