@@ -11,14 +11,15 @@ import urlparse
 import mimetypes
 import os
 
-from genshi.core import escape
 from trac.core import Component, implements
 from trac.mimeview import Mimeview, Context
 from trac.mimeview.api import is_binary
-from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider, Chrome
+from trac.util.html import escape
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
 from trac.web.main import IRequestFilter, IRequestHandler
 from trac.wiki.macros import WikiMacroBase
 from trac.versioncontrol import RepositoryManager
+
 
 class CiteCodeMacro(WikiMacroBase):
     def __init__(self):
@@ -73,13 +74,14 @@ class CiteCodeMacro(WikiMacroBase):
         finally:
             repo.close()
 
-class CiteCodeAndCreateTicket(Chrome):
+class CiteCodeAndCreateTicket(Component):
+
     implements(IRequestFilter, IRequestHandler, ITemplateProvider)
-        
+
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename 
+        from pkg_resources import resource_filename
         return [('citecode', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
@@ -88,7 +90,7 @@ class CiteCodeAndCreateTicket(Chrome):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        return handler 
+        return handler
 
     def post_process_request(self, req, template, data, content_type):
         #Chrome(self.env).add_jquery_ui(req)
@@ -116,8 +118,8 @@ class CiteCodeAndCreateTicket(Chrome):
         path = os.path.relpath(req.path_info, '/citecode/newticket')
         path = os.path.relpath(path, self.env.href.browser())
 
-        at_rev = "" 
-        query = "" 
+        at_rev = ""
+        query = ""
         line = ""
         qs = urlparse.parse_qs(req.query_string)
         if 'rev' in qs:
@@ -126,7 +128,7 @@ class CiteCodeAndCreateTicket(Chrome):
             query = '?rev=' + rev
         if 'L' in qs:
             line = '#L' + qs['L'][0].encode()
-        
+
         req.redirect(req.href.newticket(
                 summary = 'Comment on %s' % os.path.basename(path),
                 description = """source:/%s%s%s:
