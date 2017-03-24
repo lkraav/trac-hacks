@@ -20,6 +20,7 @@ setup(
         ],
     },
     install_requires = [
+        'jupyter',
         'ipython',
         'nbformat',
         'nbconvert',
