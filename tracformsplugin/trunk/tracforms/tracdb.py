@@ -55,7 +55,7 @@ class DBComponent(Component):
 
     implements(IEnvironmentSetupParticipant)
 
-    applySchema = False
+    apply_schema = False
     plugin_name = 'forms'
 
     # IEnvironmentSetupParticipant methods
@@ -63,64 +63,58 @@ class DBComponent(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db):
-        if not type(self).__dict__.get('applySchema', False):
-            self.log.debug("""Not checking schema for \"%s\",
-                           since applySchema is not defined or is False.
-                           """ % type(self).__name__)
+    def environment_needs_upgrade(self, db=None):
+        if not type(self).__dict__.get('apply_schema', False):
+            self.log.debug("Not checking schema for \"%s\", since "
+                           "apply_schema is not defined or is False.",
+                           type(self).__name__)
             return False
-        installed = self.get_installed_version(db)
+        installed = self.get_installed_version()
         for version, fn in self.get_schema_functions():
             if version > installed:
-                self.log.debug(
-                    '"%s" requires a schema upgrade.' % type(self).__name__)
+                self.log.debug('"%s" requires a schema upgrade.',
+                               type(self).__name__)
                 return True
         else:
-            self.log.debug(
-                '"%s" does not need a schema upgrade.' % type(self).__name__)
+            self.log.debug('"%s" does not need a schema upgrade.',
+                           type(self).__name__)
             return False
 
-    def upgrade_environment(self, db):
-        if not type(self).__dict__.get('applySchema', False):
-            self.log.debug("""Not updating schema for \"%s\",
-                           since applySchema is not defined or is False.
-                           """ % type(self).__name__)
+    def upgrade_environment(self, db=None):
+        if not type(self).__dict__.get('apply_schema', False):
+            self.log.debug("Not updating schema for \"%s\" since "
+                           "apply_schema is not defined or is False.",
+                           type(self).__name__)
             return
-        installed = self.get_installed_version(db)
+        installed = self.get_installed_version()
         if installed is None:
-            self.log.info(
-                'Installing TracForm plugin schema %s' % db_version)
+            self.log.info("Installing TracForm plugin schema %s", db_version)
             db_connector = DatabaseManager(self.env).get_connector()[0]
-            db = self._get_db(db)
-            cursor = db.cursor()
-            for table in schema:
-                for stmt in db_connector.to_sql(table):
-                    cursor.execute(stmt)
-                self.set_installed_version(db, db_version)
-            self.log.info('Installation of %s successful.' % db_version)
+            with self.env.db_transaction as db:
+                for table in schema:
+                    for stmt in db_connector.to_sql(table):
+                        db(stmt)
+                self.set_installed_version(db_version)
+            self.log.info("Installation of %s successful.", db_version)
             return
         self.log.debug(
             'Upgrading schema for "%s".' % type(self).__name__)
         for version, fn in self.get_schema_functions():
             if version > installed:
-                self.log.info(
-                    'Upgrading TracForm plugin schema to %s' % version)
+                self.log.info("Upgrading TracForm plugin schema to %s",
+                              version)
                 self.log.info('- %s: %s' % (fn.__name__, fn.__doc__))
-                db = self._get_db(db)
-                cursor = db.cursor()
-                fn(self.env, cursor)
-                self.set_installed_version(db, version)
+                self.set_installed_version(version)
                 installed = version
-                self.log.info('Upgrade to %s successful.' % version)
+                self.log.info("Upgrade to %s successful.", version)
 
     # TracForms db schema management methods
 
-    def get_installed_version(self, db):
-        version = self.get_system_value(db, self.plugin_name + '_version')
+    def get_installed_version(self):
+        version = self.get_system_value(self.plugin_name + '_version')
         if version is None:
             # check for old naming schema
-            oldversion = self.get_system_value(db,
-                                               'TracFormDBComponent:version')
+            oldversion = self.get_system_value('TracFormDBComponent:version')
             version = _db_oldversion_dict.get(oldversion)
         if version is None:
             return version
@@ -138,33 +132,31 @@ class DBComponent(Component):
         fns.sort()
         return tuple(fns)
 
-    def set_installed_version(self, db, version):
-        self.set_system_value(db, self.plugin_name + '_version', version)
+    def set_installed_version(self, version):
+        self.set_system_value(self.plugin_name + '_version', version)
 
     # Trac db 'system' table management methods for TracForms entry
 
-    def get_system_value(self, db, key):
-        db = self._get_db(db)
-        cursor = db.cursor()
-        cursor.execute("SELECT value FROM system WHERE name=%s", (key,))
-        row = cursor.fetchone()
-        return row and row[0]
+    def get_system_value(self, key):
+        for value, in self.env.db_query("""
+                SELECT value FROM system WHERE name=%s
+                """, (key,)):
+            return value
 
-    def set_system_value(self, db, key, value):
+    def set_system_value(self, key, value):
         """Atomic UPSERT db transaction to save TracForms version."""
-        db = self._get_db(db)
-        cursor = db.cursor()
-        cursor.execute(
-            "UPDATE system SET value=%s WHERE name=%s", (value, key))
-        cursor.execute("SELECT value FROM system WHERE name=%s", (key,))
-        if not cursor.fetchone():
-            cursor.execute(
-                "INSERT INTO system(name, value) VALUES(%s, %s)", (key,
-                                                                   value))
-
-    # Low level database connection management
-    def _get_db(self, db=None):
-        return db or self.env.get_db_cnx()
+        with self.env.db_transaction as db:
+            for value, in db("""
+                    SELECT value FROM system WHERE name=%s
+                    """, (key,)):
+                db("""
+                    UPDATE system SET value=%s WHERE name=%s
+                    """, (value, key))
+                break
+            else:
+                db("""
+                    INSERT INTO system(name, value) VALUES(%s, %s)
+                    """, (key, value))
 
 
 _db_oldversion_dict = {

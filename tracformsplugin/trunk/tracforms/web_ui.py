@@ -212,7 +212,7 @@ class FormUI(FormDBUser):
         if 'form' not in filters:
             return
         env = self.env
-        results = self.search_tracforms(env, terms)
+        results = self.search_tracforms(terms)
 
         for id_, realm, parent, subctxt, state, author, updated_on in results:
             # DEVEL: support for handling form revisions not implemented yet

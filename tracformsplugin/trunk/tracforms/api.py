@@ -48,16 +48,17 @@ class IFormChangeListener(Interface):
 
 
 class IFormDBObserver(Interface):
-    def get_tracform_ids(self, src, cursor=None):
+
+    def get_tracform_ids(self, src):
         pass
 
-    def get_tracform_meta(self, src, cursor=None):
+    def get_tracform_meta(self, src):
         pass
 
-    def get_tracform_state(self, src, cursor=None):
+    def get_tracform_state(self, src):
         pass
 
-    def get_tracform_history(self, src, cursor=None):
+    def get_tracform_history(self, src):
         pass
 
     def save_tracform_allowed(self, path_or_realm, resource_id):
@@ -65,20 +66,19 @@ class IFormDBObserver(Interface):
 
     def save_tracform(self, src, state, updater,
                       base_version=None, keep_history=False,
-                      track_fields=False, cursor=None):
+                      track_fields=False):
         pass
 
-    def get_tracform_fields(self, src, cursor=None):
+    def get_tracform_fields(self, src):
         pass
 
-    def get_tracfrom_fieldinfo(self, src, field, cursor=None):
+    def get_tracfrom_fieldinfo(self, src, field):
         pass
 
-    def reset_tracform(self, src, field=None, author=None, step=0,
-                       cursor=None):
+    def reset_tracform(self, src, field=None, author=None, step=0):
         pass
 
-    def search_tracforms(self, env, terms, cursor=None):
+    def search_tracforms(self, terms):
         pass
 
 
