@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from trac.core import implements, Component
+from trac.core import Component, implements
 from trac.ticket.api import ITicketActionController
 from trac.ticket.default_workflow import parse_workflow_config
 from trac.util.html import tag
@@ -32,8 +32,7 @@ class CannedResponseActionController(Component):
     """
     implements(ITicketActionController)
 
-    def __init__(self, *args, **kwargs):
-        Component.__init__(self, *args, **kwargs)
+    def __init__(self):
         self.canned_responses = self.get_canned_response_config()
         self.all_actions = set([])
         for resp in self.canned_responses:
@@ -43,8 +42,8 @@ class CannedResponseActionController(Component):
                self.all_actions.union(action['oldstates'])
            if not '*' in action['newstate']:
                self.all_actions.add(action['newstate'])
-        self.log.debug('Canned Responses at initialization: %s\n' %
-                       str(self.canned_responses))
+        self.log.debug('Canned Responses at initialization: %s\n',
+                       self.canned_responses)
 
     # ITicketActionController methods
 
@@ -104,20 +103,20 @@ class CannedResponseActionController(Component):
         if status != '*':
             updated['status'] = status
 
-        if this_action.has_key('comment'):
+        if 'comment' in this_action:
             oldcomment = req.args.get('comment')
             if not oldcomment or oldcomment.find(this_action['comment']) == -1:
                 req.args['comment'] = "%s%s%s" % (this_action['comment'], oldcomment and "[[BR]]" or "", oldcomment or "")
 
-        if this_action.has_key('resolution'):
+        if 'resolution' in this_action:
             if this_action['resolution']:
                updated['resolution'] = this_action['resolution']
 
-        if this_action.has_key('milestone'):
+        if 'milestone' in this_action:
             if this_action['milestone']:
                updated['milestone'] = this_action['milestone']
 
-        if this_action.has_key('type'):
+        if 'type' in this_action:
             if this_action['type']:
                updated['type'] = this_action['type']
 

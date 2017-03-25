@@ -4,8 +4,8 @@
 from setuptools import setup
 
 setup(
-    name = 'CannedResponsesPlugin',
-    version = '0.11.1',
+    name = 'TracCannedResponses',
+    version = '0.11.2',
     packages = ['CannedResponsesPlugin'],
 
     author = "Daniel Atallah",
