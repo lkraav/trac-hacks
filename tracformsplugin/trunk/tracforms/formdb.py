@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
-#import copy
 import re
 import time
-import unittest
+import urlparse
 
 from trac.config import BoolOption, ListOption, Option
-from trac.core import Component, implements
+from trac.core import implements
 from trac.db import Column, DatabaseManager, Index, Table
-from trac.resource import Resource
+from trac.resource import Resource, resource_exists
 from trac.search.api import search_to_sql
 from trac.web.chrome import Chrome
 
 from api import IFormDBObserver, _
-from compat import json, parse_qs, resource_exists
+from compat import json
 from tracdb import DBComponent
 from util import is_number, parse_history, resource_from_page, xml_unescape
 
@@ -90,16 +89,10 @@ class FormDBComponent(DBComponent):
         db = self._get_db(db)
         cursor = db.cursor()
         sql = """
-            SELECT  id,
-                    realm,
-                    resource_id,
-                    subcontext,
-                    author,
-                    time,
-                    keep_history,
-                    track_fields
-            FROM    forms
-            """
+                SELECT id, realm, resource_id, subcontext, author, time,
+                       keep_history, track_fields
+                FROM forms
+                """
         if not is_number(src):
             sql += """
                 WHERE   realm=%s
@@ -118,7 +111,7 @@ class FormDBComponent(DBComponent):
             realm, resource_id, subcontext = src
         else:
             form_id = src
-            src = tuple([src],)
+            src = tuple([src], )
         cursor.execute(sql, src)
         return cursor.fetchone() or \
                (form_id, realm, resource_id, subcontext,
@@ -141,7 +134,7 @@ class FormDBComponent(DBComponent):
             sql += """
                 WHERE   id=%s
                 """
-            src = tuple([src],)
+            src = tuple([src], )
         cursor.execute(sql, src)
         row = cursor.fetchone()
         return row and row[0]
@@ -151,7 +144,7 @@ class FormDBComponent(DBComponent):
             if path_or_realm not in self.parent_blacklisted.get('paths', []):
                 return True
         else:
-            if not path_or_realm in self.parent_blacklisted.keys():
+            if path_or_realm not in self.parent_blacklisted.keys():
                 return True
             else:
                 for pattern in self.parent_blacklisted[path_or_realm]:
@@ -161,11 +154,11 @@ class FormDBComponent(DBComponent):
         return False
 
     def save_tracform(self, src, state, author,
-                        base_version=None, keep_history=False,
-                        track_fields=False, db=None):
+                      base_version=None, keep_history=False,
+                      track_fields=False, db=None):
         (form_id, realm, resource_id, subcontext, last_updater,
-            last_updated_on, form_keep_history,
-            form_track_fields) = self.get_tracform_meta(src, db=db)
+         last_updated_on, form_keep_history,
+         form_track_fields) = self.get_tracform_meta(src, db=db)
 
         if form_keep_history is not None:
             keep_history = form_keep_history
@@ -177,7 +170,7 @@ class FormDBComponent(DBComponent):
             base_version = int(base_version or 0)
 
         if ((base_version is None and last_updated_on is None) or
-            (base_version == last_updated_on)):
+                (base_version == last_updated_on)):
             if state != old_state and self.save_tracform_allowed(realm,
                                                                  resource_id):
                 updated_on = int(time.time())
@@ -190,8 +183,8 @@ class FormDBComponent(DBComponent):
                             state, author, time)
                             VALUES (%s, %s, %s, %s, %s, %s)
                         """, (realm, resource_id, subcontext,
-                        state, author, updated_on))
-                    form_id = db.get_last_id(cursor, 'forms') 
+                              state, author, updated_on))
+                    form_id = db.get_last_id(cursor, 'forms')
                 else:
                     cursor.execute("""
                         UPDATE  forms
@@ -206,7 +199,7 @@ class FormDBComponent(DBComponent):
                                     (id, time, author, old_state)
                                     VALUES (%s, %s, %s, %s)
                             """, (form_id, last_updated_on,
-                                last_updater, old_state))
+                                  last_updater, old_state))
                 if track_fields:
                     # Break down old version and new version.
                     old_fields = json.loads(old_state)
@@ -244,9 +237,9 @@ class FormDBComponent(DBComponent):
                 updated_on = last_updated_on
                 author = last_updater
             return ((form_id, realm, resource_id, subcontext, state,
-                    author, updated_on),
+                     author, updated_on),
                     (form_id, realm, resource_id, subcontext, old_state,
-                    last_updater, last_updated_on))
+                     last_updater, last_updated_on))
         else:
             raise ValueError(_("Conflict"))
 
@@ -323,7 +316,7 @@ class FormDBComponent(DBComponent):
             form_id = form_ids[0]
             now = int(time.time())
             author, updated_on, old_state = self.get_tracform_history(
-                                            form_id, db=db)[0] or \
+                form_id, db=db)[0] or \
                                             (author, now, '{}')
             if updated_on == now:
                 # no history recorded, so only form values can be reset
@@ -414,7 +407,7 @@ class FormDBComponent(DBComponent):
     def get_known_users(self):
         # A reference is enough, as long as we ensure strictly read-only
         # access and short lifetime of the reference. Change later, if needed.
-        #users = copy.deepcopy(self.known_users)
+        # users = copy.deepcopy(self.known_users)
         users = self.known_users
         return users
 
@@ -453,12 +446,11 @@ class FormDBComponent(DBComponent):
                 users.append(tuple([username, name, email]))
             return users
 
-    ##########################################################################
     # TracForms schemas
     # Hint: See older versions of this file for the original SQL statements.
     #   Most of them have been rewritten to imrove compatibility with Trac.
 
-    #def dbschema_2008_06_14_0000(self, cursor):
+    # def dbschema_2008_06_14_0000(self, cursor):
     #    """This was a simple test for the schema base class."""
 
     def db00(self, env, cursor):
@@ -476,7 +468,7 @@ class FormDBComponent(DBComponent):
                 Column('updated_on', type='int'),
                 Column('old_states')]
         ]
-        db_connector, _ = DatabaseManager(env)._get_connector()
+        db_connector = DatabaseManager(env).get_connector()[0]
         for table in tables:
             for stmt in db_connector.to_sql(table):
                 cursor.execute(stmt)
@@ -557,7 +549,7 @@ class FormDBComponent(DBComponent):
             Column('updated_on', type='int'),
             Index(['tracform_id', 'field'], unique=True)
         ]
-        db_connector, _ = DatabaseManager(env)._get_connector()
+        db_connector = DatabaseManager(env).get_connector()[0]
         for stmt in db_connector.to_sql(table):
             cursor.execute(stmt)
 
@@ -565,7 +557,7 @@ class FormDBComponent(DBComponent):
         """Convert state serialization type to be more readable.
 
         Migrate to slicker named major tables and associated indexes too.
-        """ 
+        """
         table = Table('forms', key='id')[
             Column('id', auto_increment=True),
             Column('context'),
@@ -578,7 +570,7 @@ class FormDBComponent(DBComponent):
             Index(['author']),
             Index(['time'])
         ]
-        db_connector, _ = DatabaseManager(env)._get_connector()
+        db_connector = DatabaseManager(env).get_connector()[0]
         for stmt in db_connector.to_sql(table):
             cursor.execute(stmt)
 
@@ -606,8 +598,9 @@ class FormDBComponent(DBComponent):
             fields = form.keys()
             values = form.values()
             sql = "INSERT INTO forms (" + ", ".join(fields) + \
-              ") VALUES (" + ", ".join(["%s" for I in xrange(len(fields))]) \
-              + ")"
+                  ") VALUES (" + ", ".join(
+                ["%s" for I in xrange(len(fields))]) \
+                  + ")"
             cursor.execute(sql, values)
 
         cursor.execute("""
@@ -648,7 +641,7 @@ class FormDBComponent(DBComponent):
 
         for row in history:
             sql = "UPDATE forms_history SET old_state=%s " + \
-              "WHERE id=%s AND time=%s"
+                  "WHERE id=%s AND time=%s"
             cursor.execute(sql, (row['old_state'], row['id'], row['time']))
 
         cursor.execute("""
@@ -697,7 +690,7 @@ class FormDBComponent(DBComponent):
             """)
 
     def db14(self, env, cursor):
-        """Split context into proper Trac resource descriptors.""" 
+        """Split context into proper Trac resource descriptors."""
         cursor.execute("""
             CREATE TABLE forms_old
                 AS SELECT *
@@ -720,7 +713,7 @@ class FormDBComponent(DBComponent):
             Index(['author']),
             Index(['time'])
         ]
-        db_connector, _ = DatabaseManager(env)._get_connector()
+        db_connector = DatabaseManager(env).get_connector()[0]
         for stmt in db_connector.to_sql(table):
             cursor.execute(stmt)
 
@@ -741,8 +734,9 @@ class FormDBComponent(DBComponent):
             fields = form.keys()
             values = form.values()
             sql = "INSERT INTO forms (" + ", ".join(fields) + \
-              ") VALUES (" + ", ".join(["%s" for I in xrange(len(fields))]) \
-              + ")"
+                  ") VALUES (" + ", ".join(
+                ["%s" for I in xrange(len(fields))]) \
+                  + ")"
             cursor.execute(sql, values)
 
         cursor.execute("""
@@ -763,9 +757,10 @@ def format_author(env, req, author=None, position='macro'):
                 author = name
     return Chrome(env).format_author(req, author)
 
+
 def _url_to_json(state_url):
     """Convert urlencoded state serial to JSON state serial."""
-    state = parse_qs(state_url)
+    state = urlparse.parse_qs(state_url)
     for name, value in state.iteritems():
         if isinstance(value, (list, tuple)):
             for item in value:
@@ -773,6 +768,7 @@ def _url_to_json(state_url):
         else:
             state[name] = xml_unescape(value)
     return json.dumps(state, separators=(',', ':'))
+
 
 def _context_to_resource(env, context):
     """Find parent realm and resource_id and optional TracForms subcontext.
@@ -805,19 +801,3 @@ def _context_to_resource(env, context):
         resource_id = context
         realm = ''
     return realm, resource_id, subcontext
-
-
-if __name__ == '__main__':
-    from trac.test import EnvironmentStub
-    env = EnvironmentStub()
-    db = FormDBComponent(env)
-    db.upgrade_environment(None)
-    updated_on_1 = db.save_tracform('/', 'hello world', 'me')[0][4]
-    assert db.get_tracform_state('/') == 'hello world'
-    updated_on_2 = \
-        db.save_tracform('/', 'ack oop', 'you', updated_on_1)[0][4]
-    assert db.get_tracform_state('/') == 'ack oop'
-    assert tuple(db.get_tracform_history('/')) == (
-        ('me', updated_on_1, 'hello world'),
-        )
-

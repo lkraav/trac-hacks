@@ -1,49 +1,30 @@
 # -*- coding: utf-8 -*-
 
-from genshi.builder import Markup, tag
-from pkg_resources import resource_filename
 from urllib import unquote_plus
+
+from pkg_resources import resource_filename
 
 from trac.core import Component, ExtensionPoint, Interface, implements
 from trac.perm import IPermissionRequestor
-from trac.resource import IResourceManager, Resource, ResourceNotFound, \
+from trac.resource import IResourceManager, ResourceNotFound, \
                           get_resource_name, get_resource_shortname, \
                           get_resource_url
-
-# Import i18n methods.  Fallback modules maintain compatibility to Trac 0.11
-# by keeping Babel optional here.
-try:
-    from trac.util.translation import domain_functions
-    add_domain, _, tag_ = \
-        domain_functions('tracforms', ('add_domain', '_', 'tag_'))
-    dgettext = None
-except ImportError:
-    from genshi.builder import tag as tag_
-    from trac.util.translation import gettext
-    _ = gettext
-    def add_domain(a,b,c=None):
-        pass
-    def dgettext(domain, string, **kwargs):
-        return safefmt(string, kwargs)
-    def safefmt(string, kwargs):
-        if kwargs:
-            try:
-                return string % kwargs
-            except KeyError:
-                pass
-        return string
-
+from trac.util.html import Markup, tag
+from trac.util.translation import domain_functions
 from trac.web import IRequestHandler
-from trac.web.api import HTTPBadRequest, HTTPUnauthorized
+from trac.web.api import HTTPBadRequest
 
-# Import AccountManagerPlugin methods, if plugin is installed.
 try:
     from acct_mgr.api import IPasswordStore
-    can_check_user = True
 except ImportError:
     can_check_user = False
-
+else:
+    can_check_user = True
 from compat import json
+
+add_domain, _, tag_ = \
+    domain_functions('tracforms', ('add_domain', '_', 'tag_'))
+dgettext = None
 
 
 class IFormChangeListener(Interface):
@@ -63,7 +44,7 @@ class IFormChangeListener(Interface):
 
     def form_deleted(form):
         """Called when a form is deleted."""
-    # DEVEL: not implemented yet
+        # DEVEL: not implemented yet
 
 
 class IFormDBObserver(Interface):
@@ -83,8 +64,8 @@ class IFormDBObserver(Interface):
         pass
 
     def save_tracform(self, src, state, updater,
-                        base_version=None, keep_history=False,
-                        track_fields=False, cursor=None):
+                      base_version=None, keep_history=False,
+                      track_fields=False, cursor=None):
         pass
 
     def get_tracform_fields(self, src, cursor=None):
@@ -94,7 +75,7 @@ class IFormDBObserver(Interface):
         pass
 
     def reset_tracform(self, src, field=None, author=None, step=0,
-                        cursor=None):
+                       cursor=None):
         pass
 
     def search_tracforms(self, env, terms, cursor=None):
@@ -105,6 +86,7 @@ def tracob_first(fn=None, default=None):
     if fn is None:
         def builder(fn):
             return tracob_first(fn, default)
+
         return builder
     else:
         def wrapper(self, *_args, **_kw):
@@ -115,6 +97,7 @@ def tracob_first(fn=None, default=None):
                     return result
             else:
                 return default
+
         wrapper.__name__ = fn.__name__
         wrapper.__doc__ = fn.__doc__
         return wrapper
@@ -202,7 +185,7 @@ class FormSystem(FormBase, FormDBUser):
         parent = parent_url is not None and \
                  tag.a(parent_name, href=parent_url) or parent_name
         # DEVEL: resource description not implemented yet
-        #if format == 'summary':
+        # if format == 'summary':
         #    return Form(self.env, resource).description
         if resource.id:
             if format == 'compact':
@@ -210,7 +193,7 @@ class FormSystem(FormBase, FormDBUser):
                          parent=get_resource_shortname(env, resource.parent))
             # TRANSLATOR: Most verbose title, i.e. for form history page
             return tag(Markup(_("Form %(form_id)s (in %(parent)s)",
-                        form_id=resource.id, parent=parent)))
+                                form_id=resource.id, parent=parent)))
         else:
             # TRANSLATOR: Title printed i.e. in form select page
             if format == 'compact':
@@ -219,12 +202,12 @@ class FormSystem(FormBase, FormDBUser):
 
     def get_resource_url(self, resource, href, **kwargs):
         # use parent's url instead
-        return get_resource_url(self.env, resource.parent, href)        
+        return get_resource_url(self.env, resource.parent, href)
 
     def resource_exists(self, resource):
         try:
             if get_tracform_meta(resource.id)[1] is not None:
-               return True
+                return True
         except ResourceNotFound:
             return False
 
@@ -257,7 +240,7 @@ class FormUpdater(FormDBUser, PasswordStoreUser):
             args = dict(req.args)
             backpath = args.pop('__backpath__', None)
             context = json.loads(unquote_plus(
-                          args.pop('__context__', '[null, null, null]')))
+                args.pop('__context__', '[null, null, null]')))
             if None in context:
                 # TRANSLATOR: HTTP error message
                 raise HTTPBadRequest(_("__context__ is required"))
@@ -278,8 +261,8 @@ class FormUpdater(FormDBUser, PasswordStoreUser):
             who = req.authname
             result = json.dumps(args, separators=(',', ':'))
             self.save_tracform(context, result, who, basever,
-                                keep_history=keep_history,
-                                track_fields=track_fields)
+                               keep_history=keep_history,
+                               track_fields=track_fields)
             buffer = 'OK'
             if backpath is not None:
                 req.send_response(302)
@@ -301,4 +284,3 @@ class FormUpdater(FormDBUser, PasswordStoreUser):
             req.send_header('Content-Length', str(len(buffer)))
             req.end_headers()
             req.write(buffer)
-

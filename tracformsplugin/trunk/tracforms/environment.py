@@ -41,21 +41,22 @@ for pseudo-variables.
     """
 
     def __init__(self, base=None, prefixes=()):
+        super(FormEnvironment, self).__init__()
         if base is not None:
             self.update(base)
         self.base = base
         self.prefixes = prefixes + ('',)
 
-    def __getitem__(self, key, NOT_FOUND=KeyError):
-        obj = self.get(key, NOT_FOUND)
-        if obj is NOT_FOUND:
+    def __getitem__(self, key, default=KeyError):
+        obj = self.get(key, default)
+        if obj is default:
             raise KeyError(key)
         else:
             return obj
 
     def get(self, search, default=None, singleton=True, all=False):
         values = tuple(dict.__getitem__(self, key)
-                        for key in sorted(self.keyset(search, all)))
+                       for key in sorted(self.keyset(search, all)))
         if singleton:
             if not values:
                 return default
@@ -92,6 +93,7 @@ for pseudo-variables.
         return values
 
     _sorted = None
+
     @property
     def sorted_keys(self):
         keys = self._sorted
@@ -107,4 +109,3 @@ for pseudo-variables.
             keys = [prefix + ':' + name for prefix in self.prefixes]
             for key in keys:
                 self[key] = tuple(value)
-

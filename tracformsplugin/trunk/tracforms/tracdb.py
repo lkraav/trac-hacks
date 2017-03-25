@@ -89,8 +89,8 @@ class DBComponent(Component):
         installed = self.get_installed_version(db)
         if installed is None:
             self.log.info(
-                    'Installing TracForm plugin schema %s' % db_version)
-            db_connector, _ = DatabaseManager(self.env)._get_connector()
+                'Installing TracForm plugin schema %s' % db_version)
+            db_connector = DatabaseManager(self.env).get_connector()[0]
             db = self._get_db(db)
             cursor = db.cursor()
             for table in schema:
@@ -116,11 +116,11 @@ class DBComponent(Component):
     # TracForms db schema management methods
 
     def get_installed_version(self, db):
-        version = self.get_system_value(db, self.plugin_name + '_version', -1)
+        version = self.get_system_value(db, self.plugin_name + '_version')
         if version is None:
             # check for old naming schema
-            oldversion = self.get_system_value(
-                db, 'TracFormDBComponent:version', -1)
+            oldversion = self.get_system_value(db,
+                                               'TracFormDBComponent:version')
             version = _db_oldversion_dict.get(oldversion)
         if version is None:
             return version
@@ -143,7 +143,7 @@ class DBComponent(Component):
 
     # Trac db 'system' table management methods for TracForms entry
 
-    def get_system_value(self, db, key, default=None):
+    def get_system_value(self, db, key):
         db = self._get_db(db)
         cursor = db.cursor()
         cursor.execute("SELECT value FROM system WHERE name=%s", (key,))
@@ -155,7 +155,7 @@ class DBComponent(Component):
         db = self._get_db(db)
         cursor = db.cursor()
         cursor.execute(
-                "UPDATE system SET value=%s WHERE name=%s", (value, key))
+            "UPDATE system SET value=%s WHERE name=%s", (value, key))
         cursor.execute("SELECT value FROM system WHERE name=%s", (key,))
         if not cursor.fetchone():
             cursor.execute(
@@ -172,5 +172,4 @@ _db_oldversion_dict = {
     'dbschema_2008_06_14_0002': 2, 'dbschema_2008_06_15_0003': 3,
     'dbschema_2008_06_15_0004': 4, 'dbschema_2008_06_15_0010': 10,
     'dbschema_2008_06_15_0011': 11, 'dbschema_2008_06_15_0012': 12,
-    }
-
+}

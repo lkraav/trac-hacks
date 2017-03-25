@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-
-from genshi.builder import Markup, tag
 from pkg_resources import resource_filename
 
 from trac.core import implements
@@ -10,6 +8,7 @@ from trac.resource import get_resource_description, \
                           get_resource_shortname, get_resource_url
 from trac.search.api import ISearchSource, shorten_result
 from trac.util.datefmt import to_datetime
+from trac.util.html import Markup, tag
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_stylesheet
 
@@ -19,7 +18,7 @@ from formdb import format_author
 from model import Form
 from util import parse_history, resource_from_page
 
-tfpageRE = re.compile('/form(/\d+|$)')
+tf_page_re = re.compile('/form(/\d+|$)')
 
 
 class FormUI(FormDBUser):
@@ -43,14 +42,14 @@ class FormUI(FormDBUser):
         page = req.path_info
         realm, resource_id = resource_from_page(env, page)
         # break (recursive) search for form in forms realm
-        if tfpageRE.match(page) == None and resource_id is not None:
+        if tf_page_re.match(page) is None and resource_id is not None:
             if page == '/wiki' or page == '/wiki/':
                 page = '/wiki/WikiStart'
             form = Form(env, realm, resource_id)
             if 'FORM_VIEW' in req.perm(form.resource):
                 if len(form.siblings) == 0:
                     # no form record found for this parent resource
-                    return (template, data, content_type)
+                    return template, data, content_type
                 elif form.resource.id is not None:
                     # single form record found
                     href = req.href.form(form.resource.id)
@@ -67,7 +66,7 @@ class FormUI(FormDBUser):
                 href = req.href.form(action='select', realm=parent.realm,
                                      resource_id=parent.id)
                 add_ctxtnav(req, _("Back to forms list"), href=href)
-        return (template, data, content_type)
+        return template, data, content_type
 
     # ITemplateProvider methods
 
@@ -107,8 +106,8 @@ class FormUI(FormDBUser):
             return self._do_view(env, req, form)
 
         if req.args.get('action') == 'select':
-            realm=req.args.get('realm')
-            resource_id=req.args.get('resource_id')
+            realm = req.args.get('realm')
+            resource_id = req.args.get('resource_id')
             if realm is not None and resource_id is not None:
                 form = Form(env, realm, resource_id)
                 req.perm(form.resource).require('FORM_VIEW')
@@ -138,32 +137,36 @@ class FormUI(FormDBUser):
         data['history'] = parse_history(history)
         # show reset button in case of existing data and proper permission
         data['allow_reset'] = req.perm(form.resource) \
-                              .has_permission('FORM_RESET') and form.has_data
+                                  .has_permission(
+            'FORM_RESET') and form.has_data
         add_stylesheet(req, 'tracforms/tracforms.css')
         return 'form.html', data, None
 
     def _do_switch(self, env, req, form):
-        data = {'_dgettext': dgettext}
-        data['page_title'] = get_resource_description(env, form.resource,
-                                                      href=req.href)
-        data['title'] = get_resource_shortname(env, form.resource)
-        data['siblings'] = []
+        data = {
+            '_dgettext': dgettext,
+            'page_title': get_resource_description(env, form.resource,
+                                                   href=req.href),
+            'title': get_resource_shortname(env, form.resource),
+            'siblings': []
+        }
         for sibling in form.siblings:
             form_id = tag.strong(tag.a(
-                          _("Form %(form_id)s", form_id=sibling[0]),
-                            href=req.href.form(sibling[0])))
+                _("Form %(form_id)s", form_id=sibling[0]),
+                href=req.href.form(sibling[0])))
             if sibling[1] == '':
                 data['siblings'].append(form_id)
             else:
                 # TRANSLATOR: Form list entry for form select page
                 data['siblings'].append(tag(Markup(_(
-                              "%(form_id)s (subcontext = '%(subcontext)s')",
-                              form_id=form_id, subcontext = sibling[1]))))
+                    "%(form_id)s (subcontext = '%(subcontext)s')",
+                    form_id=form_id, subcontext=sibling[1]))))
         add_stylesheet(req, 'tracforms/tracforms.css')
         return 'switch.html', data, None
 
     def _do_reset(self, env, req, form):
         author = req.authname
+        step = None
         if 'rewind' in req.args:
             step = -1
         elif 'reset' in req.args:
@@ -206,15 +209,15 @@ class FormUI(FormDBUser):
             yield ('form', _("Forms"))
 
     def get_search_results(self, req, terms, filters):
-        if not 'form' in filters:
+        if 'form' not in filters:
             return
         env = self.env
         results = self.search_tracforms(env, terms)
 
-        for id, realm, parent, subctxt, state, author, updated_on in results:
+        for id_, realm, parent, subctxt, state, author, updated_on in results:
             # DEVEL: support for handling form revisions not implemented yet
-            #form = Form(env, realm, parent, subctxt, id, version)
-            form = Form(env, realm, parent, subctxt, id)
+            # form = Form(env, realm, parent, subctxt, id, version)
+            form = Form(env, realm, parent, subctxt, id_)
             if 'FORM_VIEW' in req.perm(form.resource):
                 form = form.resource
                 # build a more human-readable form values representation,
@@ -231,4 +234,3 @@ def _render_values(state, delimiter=': '):
     for name, value in json.loads(state or '{}').iteritems():
         fields.append(''.join([name, delimiter, value]))
     return '; '.join(fields)
-

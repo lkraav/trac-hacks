@@ -5,46 +5,43 @@ import fnmatch
 import re
 import time
 import traceback
-
 from math import modf
-
-from trac.util.datefmt import format_datetime
-from trac.util.text import to_unicode
-from trac.wiki.macros import WikiMacroBase
-from trac.wiki.formatter import Formatter
 
 from api import FormDBUser, PasswordStoreUser, _
 from compat import json
-from environment import FormEnvironment
 from errors import FormError, FormTooManyValuesError
 from formdb import format_author
+from trac.util.datefmt import format_datetime
+from trac.util.text import to_unicode
+from trac.wiki.formatter import Formatter
+from trac.wiki.macros import WikiMacroBase
 from util import resource_from_page, xml_escape
 
 argRE = re.compile('\s*(".*?"|\'.*?\'|\S+)\s*')
 argstrRE = re.compile('%(.*?)%')
 tfRE = re.compile('\['
-    'tf(?:\.([a-zA-Z_]+?))?'
-    '(?::([^\[\]]*?))?'
-    '\]')
+                  'tf(?:\.([a-zA-Z_]+?))?'
+                  '(?::([^\[\]]*?))?'
+                  '\]')
 chartrans = {
-    u'"'        : u'&#34;',
-    u'\t'       : u'&#x9;',
-    u'\n'       : u'&#xA;',
-    u'\r'       : u'&#xD;',
-    }
+    u'"': u'&#34;',
+    u'\t': u'&#x9;',
+    u'\n': u'&#xA;',
+    u'\r': u'&#xD;',
+}
 kwtrans = {
-    'class'     : '_class',
-    'id'        : '_id',
-    'mode'      : '_mode',
-    'title'     : '_title',
-    }
+    'class': '_class',
+    'id': '_id',
+    'mode': '_mode',
+    'title': '_title',
+}
 
 
 class TracFormMacro(WikiMacroBase, FormDBUser, PasswordStoreUser):
     """Docs for TracForms macro..."""
 
-    def expand_macro(self, formatter, name, args):
-        processor = FormProcessor(self, formatter, name, args)
+    def expand_macro(self, formatter, name, content, args=None):
+        processor = FormProcessor(self, formatter, name, content)
         return processor.execute()
 
 
@@ -71,11 +68,22 @@ class FormProcessor(object):
         self.formatter = formatter
         self.args = args
         self.name = name
+        self.env = None
+        self.context = None
+        self.subform = None
+        self.updated = None
+        self.form_realm = None
+        self.form_resource_id = None
+        self.form_subcontext = None
+        self.form_updater = None
+        self.form_updated_on = None
+        self.form_keep_history = None
+        self.form_track_fields = None
+        self.form_id = None
 
     def execute(self):
         formatter = self.formatter
         args = self.args
-        name = self.name
 
         # Look in the formatter req object for evidence we are executing.
         self.subform = getattr(formatter.req, type(self).__name__, False)
@@ -112,7 +120,7 @@ class FormProcessor(object):
                                 fn(*args, **kw)
                             except FormError, e:
                                 errors.append(str(e))
-                            except Exception, e:
+                            except Exception:
                                 errors.append(traceback.format_exc())
             else:
                 if self.showErrors:
@@ -122,7 +130,7 @@ class FormProcessor(object):
 
         # Determine our destination context and load the current state.
         self.context = tuple([realm, resource_id,
-                              self.subcontext is not None and \
+                              self.subcontext is not None and
                               self.subcontext or ''])
         state = self.macro.get_tracform_state(self.context)
         self.formatter.env.log.debug(
@@ -135,8 +143,8 @@ class FormProcessor(object):
                 self.env[self.subcontext + ':' + name] = value
         self.sorted_env = None
         (self.form_id, self.form_realm, self.form_resource_id,
-            self.form_subcontext, self.form_updater, self.form_updated_on,
-            self.form_keep_history, self.form_track_fields) = \
+         self.form_subcontext, self.form_updater, self.form_updated_on,
+         self.form_keep_history, self.form_track_fields) = \
             self.macro.get_tracform_meta(self.context)
         self.form_id = self.form_id is not None and int(self.form_id) or None
 
@@ -169,17 +177,17 @@ class FormProcessor(object):
             form_name = self.form_name or self.subcontext
             dest = self.formatter.req.href('/form/update')
             yield ('<FORM class="printableform" ' +
-                    'method="POST" action=%r' % str(dest) +
-                    (form_cssid is not None 
-                        and ' id="%s"' % form_cssid
-                        or '') +
-                    (form_name is not None 
-                        and ' name="%s"' % form_name
-                        or '') +
-                    (form_class is not None 
-                        and ' class="%s"' % form_class
-                        or '') +
-                    '>')
+                   'method="POST" action=%r' % str(dest) +
+                   (form_cssid is not None
+                    and ' id="%s"' % form_cssid
+                    or '') +
+                   (form_name is not None
+                    and ' name="%s"' % form_name
+                    or '') +
+                   (form_class is not None
+                    and ' class="%s"' % form_class
+                    or '') +
+                   '>')
             yield text
             if self.allow_submit:
                 # TRANSLATOR: Default submit button label
@@ -204,13 +212,13 @@ class FormProcessor(object):
             context = json.dumps(
                 self.context, separators=(',', ':'))
             yield '<INPUT type="hidden" ' + \
-                'name="__context__" value=%r>' % context
+                  'name="__context__" value=%r>' % context
             backpath = self.formatter.req.href(self.formatter.req.path_info)
             yield '<INPUT type="hidden" ' \
-                    'name="__backpath__" value=%s>' % str(backpath)
+                  'name="__backpath__" value=%s>' % str(backpath)
             form_token = self.formatter.req.form_token
             yield '<INPUT type="hidden" ' \
-                    'name="__FORM_TOKEN" value=%r>' % str(form_token)
+                  'name="__FORM_TOKEN" value=%r>' % str(form_token)
             yield '</FORM>'
         else:
             yield text
@@ -225,7 +233,7 @@ class FormProcessor(object):
                 try:
                     arg = (str(float(arg)))
                     yield arg
-                except ValueError, e:
+                except ValueError:
                     name, value = (arg[1:].split('=', 1) + [True])[:2]
                     kw[str(kwtrans.get(name, name))] = value
                     pass
@@ -290,7 +298,7 @@ class FormProcessor(object):
             if isinstance(value, (list, tuple)):
                 return tuple(value)
             else:
-                return (value,)
+                return value,
         else:
             if isinstance(value, (list, tuple)):
                 return ' '.join(
@@ -359,7 +367,7 @@ class FormProcessor(object):
         self.submit_label = label
 
     def cmd_submit_name(self, name):
-        self.submit_name
+        self.submit_name = name
 
     def cmd_setenv(self, name, value):
         self.env[name] = value
@@ -369,12 +377,13 @@ class FormProcessor(object):
         self.env[name] = tuple(values)
         self.sorted_env = None
 
-    def cmd_operation(_self, _name, _op, *_args, **_kw):
+    def cmd_operation(self, _name, _op, *_args, **_kw):
         if _op in ('is', 'as'):
             _op, _args = _args[0], _args[1:]
-        op = getattr(_self, 'op_' + _op, None)
+        op = getattr(self, 'op_' + _op, None)
         if op is None:
             raise FormTooManyValuesError(str(_name))
+
         def partial(*_newargs, **_newkw):
             if _kw or _newkw:
                 kw = dict(_kw)
@@ -382,11 +391,13 @@ class FormProcessor(object):
             else:
                 kw = {}
             return op(*(_newargs + _args), **kw)
-        _self.env['op:' + _name] = partial
+
+        self.env['op:' + _name] = partial
 
     def wiki(self, text):
         out = StringIO.StringIO()
-        Formatter(self.formatter.env, self.formatter.context).format(text, out)
+        Formatter(self.formatter.env, self.formatter.context).format(text,
+                                                                     out)
         return out.getvalue()
 
     def process(self, m):
@@ -413,7 +424,7 @@ class FormProcessor(object):
                     return to_unicode(fn(*args, **kw))
             except FormError, e:
                 return '<PRE>' + str(e) + '</PRE>'
-            except Exception, e:
+            except Exception:
                 return '<PRE>' + traceback.format_exc() + '</PRE>'
 
     def op_test(self, *args):
@@ -449,7 +460,7 @@ class FormProcessor(object):
                 (_title is not None and ' title="%s"' % _title or '') +
                 (readonly is True and ' readonly="readonly"' or '') +
                 (content is not None and (' value="%s"'
-                                           % xml_escape(content)) or '') +
+                                          % xml_escape(content)) or '') +
                 '>')
 
     def op_checkbox(self, field, value=None, _title=None, _id=None,
@@ -482,17 +493,16 @@ class FormProcessor(object):
         _class = kw.pop('_class', None)
         _title = kw.pop('_title', None)
         current = self.get_field(field)
-        result = []
-        result.append("<SELECT name='%s'" % field +
-                (_id is not None and ' id="%s"' % _id or '') +
-                (_class is not None and ' class="%s"' % _class or '') +
-                (_title is not None and ' title="%s"' % _title or '') +
-                '>')
+        result = ["<SELECT name='%s'" % field +
+                  (_id is not None and ' id="%s"' % _id or '') +
+                  (_class is not None and ' class="%s"' % _class or '') +
+                  (_title is not None and ' title="%s"' % _title or '') +
+                  '>']
         for value in values:
             value, label = (value.split('//', 1) + [value])[:2]
             result += ("<OPTION value='%s'" % value.strip() +
-                    (current == value and ' selected' or '') +
-                    '>' + label.strip() + '</OPTION>')
+                       (current == value and ' selected' or '') +
+                       '>' + label.strip() + '</OPTION>')
         result.append("</SELECT>")
         return ''.join(result)
 
@@ -504,7 +514,7 @@ class FormProcessor(object):
         readonly = False
         if _mode == 'ro' or (_mode == 'once' and current is not None):
             readonly = True
-        return ((_mode != 'rd' and "<TEXTAREA name='%s'" % field or \
+        return ((_mode != 'rd' and "<TEXTAREA name='%s'" % field or
                  "<TEXTAREA ") +
                 (cols is not None and ' cols="%s"' % cols or '') +
                 (rows is not None and ' rows="%s"' % rows or '') +
@@ -521,16 +531,16 @@ class FormProcessor(object):
     def op_who(self, field):
         # TRANSLATOR: Default updater name
         who = self.macro.get_tracform_fieldinfo(
-                self.form_id is not None and self.form_id or self.context,
-                field)[0] or _("unknown")
+            self.form_id is not None and self.form_id or self.context,
+            field)[0] or _("unknown")
         return format_author(self.formatter.env, self.formatter.req, who)
-        
+
     def op_when(self, field, format='%m/%d/%Y %H:%M:%S'):
         when = self.macro.get_tracform_fieldinfo(
-            self.form_id is not None and self.form_id or \
+            self.form_id is not None and self.form_id or
             self.context, field)[1]
         return (when is not None and format_datetime(
-                when, format=str(format)) or _("unknown"))
+            when, format=str(format)) or _("unknown"))
 
     def op_id(self):
         return id(self)
@@ -555,9 +565,9 @@ class FormProcessor(object):
         """Full precision summation using multiple floats for intermediate
            values
         """
-        ## msum() from http://code.activestate.com/recipes/393090/ (r5)
+        # msum() from http://code.activestate.com/recipes/393090/ (r5)
         # Depends on IEEE-754 arithmetic guarantees.
-        partials = []               # sorted, non-overlapping partial sums
+        partials = []  # sorted, non-overlapping partial sums
         for x in values:
             x = float(x)
             i = 0
@@ -628,6 +638,7 @@ class FormProcessor(object):
             result.append('%s = %s<BR>' % (key, self.env[key]))
         return ''.join(result)
 
+
 def _xml_escape(text):
     """Escape literal '&' first to prevent evaluation of valid HTML escape
     sequences from user input.
@@ -637,4 +648,3 @@ def _xml_escape(text):
     for k in chartrans.keys():
         text = text.replace(k, chartrans[k])
     return text
-

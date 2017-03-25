@@ -7,6 +7,7 @@
  margin-left: auto;
  margin-right: auto;
 }
+
 #content.tracforms #form {
  background: #eef;
  border: 1px outset #996;
@@ -22,28 +23,41 @@
  table-layout: fixed;
  width: 100%;
 }
+
 #form table.properties td {
  width: 40%;
 }
+
 #form table.properties th {
  width: 20%;
 }
+
 #form table.properties td, #form table.properties th {
  font-size: 80%;
  padding: 0.5em 1em;
  text-align: left;
  vertical-align: top;
 }
+
 #form table.properties .author, #form table.properties .date {
  color: #990;
 }
 
-#changelog { border: 1px outset #996; padding: 1em }
+#changelog {
+ border: 1px outset #996;
+ padding: 1em
+}
+
 #changelog h3, #ticketchange h3 {
  border-bottom: 1px solid #d7d7d7;
  color: #999;
  font-size: 100%;
  font-weight: normal;
 }
-#changelog .changes { list-style: square; margin-left: 2em; padding: 0 }
+
+#changelog .changes {
+ list-style: square;
+ margin-left: 2em;
+ padding: 0
+}
 

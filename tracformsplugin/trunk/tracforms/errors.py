@@ -32,4 +32,3 @@ class FormNoCommandError(FormError):
         FormError.__init__(self, name)
 
     message = _("ERROR: No TracForms command '%r'")
-
