@@ -8,11 +8,11 @@ from trac.resource import get_resource_description, \
                           get_resource_shortname, get_resource_url
 from trac.search.api import ISearchSource, shorten_result
 from trac.util.datefmt import to_datetime
-from trac.util.html import Markup, tag
+from trac.util.html import tag
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_stylesheet
 
-from api import FormDBUser, _, dgettext
+from api import FormDBUser, _, dgettext, tag_
 from compat import json
 from formdb import format_author
 from model import Form
@@ -158,9 +158,9 @@ class FormUI(FormDBUser):
                 data['siblings'].append(form_id)
             else:
                 # TRANSLATOR: Form list entry for form select page
-                data['siblings'].append(tag(Markup(_(
+                data['siblings'].append(tag_(
                     "%(form_id)s (subcontext = '%(subcontext)s')",
-                    form_id=form_id, subcontext=sibling[1]))))
+                    form_id=form_id, subcontext=sibling[1]))
         add_stylesheet(req, 'tracforms/tracforms.css')
         return 'switch.html', data, None
 
@@ -186,7 +186,7 @@ class FormUI(FormDBUser):
                 value = _("checked (checkbox)")
             elif value == '':
                 value = _("empty (text field)")
-            elif isinstance(value, str):
+            elif isinstance(value, basestring):
                 value = "'".join(['', value, ''])
             else:
                 # Still try to display something useful instead of corrupting

@@ -9,8 +9,8 @@ import codecs
 from trac.resource import ResourceSystem
 from trac.util.html import tag
 from trac.util.text import to_unicode
-from trac.util.translation import tag_
 
+from api import tag_
 from compat import json
 
 __all__ = ['parse_history', 'resource_from_page', 'xml_escape',

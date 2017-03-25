@@ -9,7 +9,7 @@ from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager, ResourceNotFound, \
                           get_resource_name, get_resource_shortname, \
                           get_resource_url
-from trac.util.html import Markup, tag
+from trac.util.html import tag
 from trac.util.translation import domain_functions
 from trac.web import IRequestHandler
 from trac.web.api import HTTPBadRequest
@@ -192,13 +192,13 @@ class FormSystem(FormBase, FormDBUser):
                 return _("Form %(form_id)s (%(parent)s)", form_id=resource.id,
                          parent=get_resource_shortname(env, resource.parent))
             # TRANSLATOR: Most verbose title, i.e. for form history page
-            return tag(Markup(_("Form %(form_id)s (in %(parent)s)",
-                                form_id=resource.id, parent=parent)))
+            return tag_("Form %(form_id)s (in %(parent)s)",
+                        form_id=resource.id, parent=parent)
         else:
             # TRANSLATOR: Title printed i.e. in form select page
             if format == 'compact':
-                return tag(Markup(_("Forms (%(parent)s)", parent=parent)))
-            return tag(Markup(_("Forms in %(parent)s", parent=parent)))
+                return tag_("Forms (%(parent)s)", parent=parent)
+            return tag_("Forms in %(parent)s", parent=parent)
 
     def get_resource_url(self, resource, href, **kwargs):
         # use parent's url instead
@@ -206,10 +206,12 @@ class FormSystem(FormBase, FormDBUser):
 
     def resource_exists(self, resource):
         try:
-            if get_tracform_meta(resource.id)[1] is not None:
-                return True
+            meta = self.get_tracform_meta(resource.id)
         except ResourceNotFound:
             return False
+        else:
+            if meta[2] is not None:
+                return True
 
 
 class PasswordStoreUser(Component):
