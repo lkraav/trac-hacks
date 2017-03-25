@@ -1,3 +1,0 @@
-[trac.plugins]
-latex.latexmacro = latex.latexmacro
-
