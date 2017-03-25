@@ -1,8 +1,0 @@
-MileMixViewAdmin 0.2 (May 14, 2008)
- * Rename to MileMixView
-
-RelaTicketAdmin 0.1 (April 22, 2008)
-
- * First release
- * Support add/remove milestones for rela ticket
- * Support display keylist in main nav bar

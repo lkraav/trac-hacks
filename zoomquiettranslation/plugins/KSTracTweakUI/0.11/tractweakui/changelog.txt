@@ -1,2 +1,0 @@
-Trac Tweak UI 0.1 (2008-09-25)
- * First release
