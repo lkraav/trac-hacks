@@ -7,13 +7,15 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.builder import tag
+from pkg_resources import ResourceManager
+
 from genshi.core import QName
 from genshi.filters.transform import START, END
-from pkg_resources import ResourceManager
 from trac.cache import cached
 from trac.core import Component, implements
 from trac.mimeview import Context
+from trac.util import arity
+from trac.util.html import tag
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 from trac.wiki.api import IWikiChangeListener, WikiSystem
@@ -88,17 +90,17 @@ class FieldTooltip(Component):
 
     _wiki_prefix = 'help/'
 
-    def __init__(self):
-        pass
-
     @cached
-    def pages(self, db):
+    def pages(self, db=None):
         # retrieve wiki contents for field help
         pages = {}
         prefix_len = len(FieldTooltip._wiki_prefix)
         wiki_pages = WikiSystem(self.env).get_pages(FieldTooltip._wiki_prefix)
         for page in wiki_pages:
-            text = WikiPage(self.env, page, db=db).text
+            if arity(WikiPage.__init__) == 5:
+                text = WikiPage(self.env, page, db=db).text
+            else:  # == 4
+                text = WikiPage(self.env, page).text
             pages[page[prefix_len:]] = text[0:text.find('----')]
         return pages
 
@@ -113,6 +115,7 @@ class FieldTooltip(Component):
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html':
             # jquery tools tooltip ... tested
+            add_script(req, 'fieldtooltip/jquery-migrate-1.4.1.min.js')
             add_script(req, 'fieldtooltip/jquerytools/jquery.tools.min.js')
             add_script(req, 'fieldtooltip/jquerytools/enabler.js')
             add_stylesheet(req, 'fieldtooltip/jquerytools/jquery_tools_tooltip.css')
@@ -153,7 +156,7 @@ class FieldTooltip(Component):
 
 class FieldTooltipFilter(object):
     """ Add description in 'title' attribute as title="ZZZZZ | zzzzzz",
-        add 'rel' attribute as rel="#tooltip-ZZZZZ", 
+        add 'rel' attribute as rel="#tooltip-ZZZZZ",
         add element as <div id="tooltip-ZZZZZ"> zzzzz </div>,
         for <label for="field-ZZZZZ"> and <th id="h_ZZZZZ"> element in a stream.
         The content in the div will be HTML-formatted, we can use bold, italic, link or so.
