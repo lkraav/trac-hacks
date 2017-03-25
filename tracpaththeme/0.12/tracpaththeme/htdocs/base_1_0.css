@@ -15,7 +15,7 @@ input[type=button]:hover, input[type=submit]:hover, input[type=reset]:hover {
  box-shadow: none;
 }
 #mainnav li {
- border: 0;  
+ border: 0;
 }
 #mainnav .first, #mainnav .first :link {
  border-radius: 0;
@@ -32,7 +32,7 @@ input[type=button]:hover, input[type=submit]:hover, input[type=reset]:hover {
 #mainnav :link:hover, #mainnav :visited:hover {
  box-shadow: none;
  color: inherit;
-} 
+}
 #mainnav .active {
  border: 0;
 }
@@ -67,7 +67,7 @@ input[type=button]:hover, input[type=submit]:hover, input[type=reset]:hover {
 }
 h2 .trac-count, h3 .trac-count {
  color: #eee;
-} 
+}
 #attachments > div.attachments {
  padding-top: 1em;
 }
