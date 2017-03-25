@@ -7,10 +7,10 @@ import re
 import codecs
 
 from trac.resource import ResourceSystem
-from trac.util.html import Markup, tag
+from trac.util.html import tag
 from trac.util.text import to_unicode
+from trac.util.translation import tag_
 
-from api import _
 from compat import json
 
 __all__ = ['parse_history', 'resource_from_page', 'xml_escape',
@@ -85,21 +85,20 @@ def parse_history(changes, fieldwise=False):
 def _render_change(old, new):
     rendered = None
     if old and not new:
-        rendered = tag(Markup(_("%(value)s reset to default value",
-                                value=tag.em(old))))
+        rendered = tag_("%(value)s reset to default value",
+                        value=tag.em(old))
     elif new and not old:
-        rendered = tag(Markup(_("from default value set to %(value)s",
-                                value=tag.em(new))))
+        rendered = tag_("from default value set to %(value)s",
+                        value=tag.em(new))
     elif old and new:
         if len(old) < 20 and len(new) < 20:
-            rendered = tag(Markup(_("changed from %(old)s to %(new)s",
-                                    old=tag.em(old), new=tag.em(new))))
+            rendered = tag_("changed from %(old)s to %(new)s",
+                            old=tag.em(old), new=tag.em(new))
         else:
             nbsp = tag.br()
             # TRANSLATOR: same as before, but with additional line breaks
-            rendered = tag(Markup(_("changed from %(old)s to %(new)s",
-                                    old=tag.em(nbsp, old),
-                                    new=tag.em(nbsp, new))))
+            rendered = tag_("changed from %(old)s to %(new)s",
+                            old=tag.em(nbsp, old), new=tag.em(nbsp, new))
     return rendered
 
 
