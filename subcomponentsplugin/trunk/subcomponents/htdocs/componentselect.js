@@ -69,7 +69,7 @@ function selectedComponentChanged(e) {
 				prefix += jQuery(this).val();
 			});
 		// Store the path of the previous leafs and end
-		jQuery(this).parent().find("input[type=hidden]").val(prefix);
+		jQuery(this).parent().find("select:hidden").val(prefix).change();
 		return;
 	}
 
@@ -81,7 +81,7 @@ function selectedComponentChanged(e) {
 				prefix += "/";
 			prefix += jQuery(this).val();
 		});
-		jQuery(this).parent().find("input[type=hidden]").val(prefix);
+		jQuery(this).parent().find("select:hidden").val(prefix).change();
 		return;
 	}
 
@@ -128,17 +128,15 @@ function selectedComponentChanged(e) {
 
 	// Update the current selected value. The prefix string has the complete
 	// path of the current selection
-	jQuery(this).parent().find("input[type=hidden]").val(prefix);
+	jQuery(this).parent().find("select:hidden").val(prefix).change();
 }
 
 
 /*
-	This function deletes the <select> box, replaces it with a hidden input
-	box, and as many <select>s as the first/selected component had parts: this
-	new element has an  event that triggers on change, to add or remove
-	<select> boxes
-	original: the <select> field that is to be replaced
-	set: support multiple component fields, can leave null for autoincrement
+	This function hides the <select> box and adds as many <select>s as the
+	first/selected component has parts. The new elements have an event that
+	triggers on change to add or remove <select> boxes.
+	element: the <select> field that is to be visually replaced
 	forceEmptyLeafs: add leafs that contain '', so users can pick super components
 	                 used in the Query
 */
@@ -208,18 +206,11 @@ function convertComponentSelect(element, forceEmptyLeafs)
 	jQuery(currentSelectors[currentItems.length]).nextAll().hide();
 
 	// Hide the highest input if there are no options
-	var foo = jQuery(currentSelectors[currentItems.length]).children();
 	if (jQuery(currentSelectors[currentItems.length]).children().length == 0)
 		jQuery(currentSelectors[currentItems.length]).hide();
 
-	// Replace the current selector with a hidden input field
-	e.replaceWith(
-		$(document.createElement('input'))
-			.attr('id', e.attr('id'))
-			.attr('name', e.attr('name'))
-			.attr('value', e.val())
-			.attr('type', "hidden")
-	);
+	// Hide the original component selector
+	e.hide();
 }
 
 window.gComponentList = new Array( );
