@@ -355,7 +355,7 @@ setrule.setup = function (input, spec) {
   var doit = false;
   if ($field.is('select')) {
     $field.find('option').each(function (i, e) {
-      var option = jQuery(e).text();
+      var option = jQuery(e).text().toLowerCase();
       if (set_to == '!' && option.length) // special non-empty rule
         set_to = option;
       if (option == set_to) {
