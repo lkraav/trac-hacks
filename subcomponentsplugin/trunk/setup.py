@@ -1,28 +1,28 @@
 #!/usr/bin/env python
 
- #
- # Copyright 2009, Niels Sascha Reedijk <niels.reedijk@gmail.com>
- # All rights reserved. Distributed under the terms of the MIT License.
- #
+#
+# Copyright 2009, Niels Sascha Reedijk <niels.reedijk@gmail.com>
+# All rights reserved. Distributed under the terms of the MIT License.
+#
 
 from setuptools import setup
 
 setup(
-    name = 'TracSubcomponents',
-    version = '1.2.1',
-    packages = ['subcomponents'],
-    package_data = { 'subcomponents': ['htdocs/*.js'] },
+    name='TracSubcomponents',
+    version='1.2.1',
+    packages=['subcomponents'],
+    package_data={'subcomponents': ['htdocs/*.js']},
 
-    author = 'Niels Sascha Reedijk',
-    author_email = 'niels.reedijk@gmail.com',
-    description = 'Provides support for subcomponents in the interface.',
-    license = 'MIT',
-    keywords = 'trac plugin ticket query components',
-    url = 'http://hg.haiku-os.org/trac-subcomponents',
-    classifiers = [
+    author='Niels Sascha Reedijk',
+    author_email='niels.reedijk@gmail.com',
+    description='Provides support for subcomponents in the interface.',
+    license='MIT',
+    keywords='trac plugin ticket query components',
+    url='https://trac-hacks.org/wiki/SubcomponentsPlugin',
+    classifiers=[
         'Framework :: Trac',
-        #'Development Status :: 1 - Planning',
-        #'Development Status :: 2 - Pre-Alpha',
+        # 'Development Status :: 1 - Planning',
+        # 'Development Status :: 2 - Pre-Alpha',
         # 'Development Status :: 3 - Alpha',
         # 'Development Status :: 4 - Beta',
         'Development Status :: 5 - Production/Stable',
@@ -35,9 +35,9 @@ setup(
         'Programming Language :: Python',
     ],
 
-    install_requires = ['Trac>=1.0dev',],
+    install_requires=['Trac>=1.0dev', ],
 
-    entry_points = {
+    entry_points={
         'trac.plugins': [
             'subcomponents.web_ui = subcomponents.web_ui',
         ]
