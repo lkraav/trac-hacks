@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# -*- coding: utf-8 -*-
 #
 # Copyright 2009, Niels Sascha Reedijk <niels.reedijk@gmail.com>
 # All rights reserved. Distributed under the terms of the MIT License.
@@ -9,7 +9,7 @@ from setuptools import setup
 
 setup(
     name='TracSubcomponents',
-    version='1.2.2',
+    version='1.3.0',
     packages=['subcomponents'],
     package_data={'subcomponents': ['htdocs/*.js']},
 
@@ -39,6 +39,7 @@ setup(
 
     entry_points={
         'trac.plugins': [
+            'subcomponents.components_view = subcomponents.components_view',
             'subcomponents.web_ui = subcomponents.web_ui',
         ]
     }

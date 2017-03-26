@@ -1,0 +1,77 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
+  <head>
+    <title>Components</title>
+  </head>
+  <body>
+    <h1>Components</h1>
+    <div id="content">
+    <form id="query" method="get" action="">
+      <p class="option">
+        <input type="checkbox" id="hide_description" name="hide_description"
+               checked="${hide_description or None}" />
+        <label for="hide_description">Hide description</label>
+      </p>
+      <p class="option">
+        <input type="checkbox" id="no_milestone" name="no_milestone" checked="${no_milestone or None}"/>
+        <label for="no_milestone">Only tickets without milestone</label>
+      </p>
+      <div class="buttons">
+        <input type="submit" value="Update"/>
+      </div>
+    </form>
+                   
+    <table class="listing subcomponents">
+      <tr>
+        <th>Name</th>
+        <th colspan="2">Tickets</th>
+        <th py:if="not hide_description">Description</th>
+      </tr>
+      
+      <py:for each="idx, component in enumerate(components)">
+        <tr py:def="componentrow(name)" class="${name}">
+          <td>
+            <a style="margin: 0 0 0 ${component.subcomponent_level * 1}em"
+               href="${href('query', component = component.name, status = ['assigned', 'new', 'accepted', 'reopened'])}">
+              <em>${component.subname}</em>
+            </a>
+          </td>
+          <td class="ticketcount">
+            <py:choose test="">
+              <py:when test="no_milestone">
+                ${component.active_tickets_without_milestone}
+              </py:when>
+              <py:otherwise>
+                ${component.active_tickets}
+              </py:otherwise>
+            </py:choose>
+          </td> 
+          <td class="ticketadd">
+            <a href="${href('newticket', component = component.name)}">
+              add ticket
+            </a>
+          </td>
+          <td py:if="not hide_description" class="meta">
+            ${component.description}
+          </td>
+        </tr>
+      
+        <py:choose test="">
+          <py:when test="idx %2 == 0">
+             ${componentrow("even")}
+          </py:when>
+          <py:otherwise>
+            ${componentrow("odd")}
+          </py:otherwise>
+        </py:choose>
+      </py:for>
+    </table>
+    </div>
+  </body>
+</html>
+
