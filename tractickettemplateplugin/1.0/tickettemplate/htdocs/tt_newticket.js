@@ -43,6 +43,12 @@ jQuery(document).ready(function($) {
               elem.selected = true;
             }
           }
+        } else if (targetElem.type == 'hidden') {
+          // for SubcomponentsPlugin
+          var comp_parts = ticketType[field].split('/');
+          for (var i = 1; i <= comp_parts.length; i++) {
+              $('#component-selector1-' + i).val(comp_parts[i - 1]).change();
+          }
         } else {
           targetElem.value = ticketType[field];
         }
