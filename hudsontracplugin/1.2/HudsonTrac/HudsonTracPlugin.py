@@ -15,21 +15,19 @@ import urllib2
 import base64
 from datetime import datetime
 
-from genshi.builder import tag
 from trac.core import *
 from trac.config import Option, BoolOption, ListOption
 from trac.perm import IPermissionRequestor
+from trac.timeline.api import ITimelineEventProvider
 from trac.util import Markup
 from trac.util.datefmt import datetime_now, format_datetime, \
                               pretty_timedelta, user_time, utc
+from trac.util.html import tag
 from trac.util.text import unicode_quote
 from trac.web.chrome import INavigationContributor, ITemplateProvider
 from trac.web.chrome import add_stylesheet
 from trac.wiki.formatter import wiki_to_oneliner
-try:
-    from trac.timeline.api import ITimelineEventProvider
-except ImportError:
-    from trac.Timeline import ITimelineEventProvider
+
 try:
     from ast import literal_eval
 except ImportError:
@@ -251,7 +249,7 @@ class HudsonTracPlugin(Component):
         return 'builds'
 
     def get_navigation_items(self, req):
-        if self.nav_url and req.perm.has_permission('BUILD_VIEW'):
+        if self.nav_url and 'BUILD_VIEW' in req.perm:
             yield ('mainnav', 'builds',
                    tag.a('Builds', href=self.nav_url,
                          target='hudson' if self.disp_tab else None))
@@ -267,7 +265,7 @@ class HudsonTracPlugin(Component):
     # ITimelineEventProvider methods
 
     def get_timeline_filters(self, req):
-        if req.perm.has_permission('BUILD_VIEW'):
+        if 'BUILD_VIEW' in req.perm:
             yield ('build', self.tl_label)
 
     def __fmt_changeset(self, rev, req):
@@ -281,7 +279,7 @@ class HudsonTracPlugin(Component):
             return wiki_to_oneliner('[%s]' % rev, self.env)
 
     def get_timeline_events(self, req, start, stop, filters):
-        if 'build' not in filters or not req.perm.has_permission('BUILD_VIEW'):
+        if 'build' not in filters or 'BUILD_VIEW' not in req.perm:
             return
 
         # Support both Trac 0.10 and 0.11
