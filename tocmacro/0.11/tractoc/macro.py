@@ -22,6 +22,10 @@ from trac.wiki.api import WikiSystem, parse_args
 from trac.wiki.formatter import OutlineFormatter, system_message
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
+try:
+    from trac.wiki.formatter import MacroError
+except ImportError:
+    MacroError = TracError
 
 
 __all__ = ['TOCMacro']
@@ -98,6 +102,7 @@ class TOCMacro(WikiMacroBase):
     || `titleindex`   || Only display the page name and title of each page, similar to TitleIndex. ||
     || `notitle`      || Supress display of page title. ||
     || `reverse`      || Display TOC sorted in reversed order.  ''(Since 11.0.0.4)'' ||
+    || `from=page`|| Obtain the list of pages to show from the content (one page name per line) of another wiki page.  ||
     For `titleindex` argument, an empty pagelist will evaluate to all pages:
     {{{
     [[TOC(titleindex, notitle, heading=All pages)]]
@@ -114,6 +119,25 @@ class TOCMacro(WikiMacroBase):
     {{{
     [[TOC(sectionindex, notitle, heading=This section pages)]]
     }}}
+    
+    The 'from' option allows you to read the lines of content from
+    another wiki page and use that as the pagelist for the table
+    of contents. The page names listed there are processed as if they
+    are named in the TOC macro (start a line with a # to treat it as a
+    comment). If the wiki page ''TOC/Guide'' contains
+    {{{
+    TracGuide
+    TracInstall
+    TracReports/Active
+    }}}
+    then these two calls to TOC are equivalent:
+    {{{
+    [[TOC(from=TOC/Guide)]]
+    [[TOC(TracGuide, TracInstall, TracReports/Active)]]
+    }}}
+    However, updating page ''TOC/Guide'' changes the TOC in all places
+    that use from= to refer to it. This can be useful instead of
+    custom macros like `[[TracGuideToc]]`.
     """
 
     def expand_macro(self, formatter, name, args):
@@ -161,6 +185,9 @@ class TOCMacro(WikiMacroBase):
 
         if 'depth' in kw:
            params['max_depth'] = int(kw['depth'])
+
+        if 'from' in kw:
+            pagenames += self._get_from_page(formatter, kw['from'])
 
         # Has the user supplied a list of pages?
         if not pagenames:
@@ -222,6 +249,19 @@ class TOCMacro(WikiMacroBase):
         else:
             page = WikiPage(self.env, page_resource)
             return page.text, page.exists
+
+    def _get_from_page(self, formatter, pagename):
+        """Return a list of pages which are named on the given @p pagename.
+        The contents of that page are read and each line is treated as a 
+        page name. Lines starting with a # are treated as comments and
+        skipped.
+        """
+        resource = formatter.context.resource(id=pagename)
+        page_text, page_exists = self.get_page_text(formatter, resource)
+        if not page_exists:
+            raise MacroError("Indirect page '%s' does not exist." % pagename)
+        return [l.strip()
+                for l in page_text.split('\n') if not l.startswith('#')]
 
     def _render_title_index(self, formatter, ol, page_resource, active,
                             show_title):
