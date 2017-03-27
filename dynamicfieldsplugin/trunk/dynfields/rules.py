@@ -10,6 +10,7 @@ import re
 
 from trac.core import *
 from trac.perm import IPermissionGroupProvider, PermissionSystem
+from trac.util import to_list
 
 # Import translation functions.
 # Fallbacks make Babel still optional and provide Trac 0.11 compatibility.
@@ -431,15 +432,15 @@ class SetRule(Component, Rule):
     implements(IRule)
 
     def get_trigger(self, req, target, key, opts):
-        rule_re = re.compile(r"%s.set_to_(.*)_when_(?P<trigger>.+)" % target)
+        rule_re = re.compile(r"%s.set_to_(.*)_when_(?P<not>not_)?"
+                             r"(?P<trigger>.+)" % target)
         match = rule_re.match(key)
         if match:
             return match.groupdict()['trigger']
-        return None
 
     def update_spec(self, req, key, opts, spec):
         target, trigger = spec['target'], spec['trigger']
-        spec_re = re.compile(r"%s.set_to_(?P<to>.*)_when_%s"
+        spec_re = re.compile(r"%s.set_to_(?P<to>.*)_when_(?P<not>not_)?%s"
                              % (target, trigger))
         match = spec_re.match(key)
         if not match:
@@ -449,14 +450,28 @@ class SetRule(Component, Rule):
             spec['set_to'] = 'true'
         elif spec['set_to'].lower() in ('0', 'false'):
             spec['set_to'] = 'false'
-        spec['trigger_value'], spec['overwrite'] = \
+        elif spec['set_to'] == '?' and 'value' in spec:
+            spec['set_to'] = spec['value']
+        trigger_value, spec['overwrite'] = \
             self._extract_overwrite(target, key, opts)
+        spec['trigger_value'] = []
+        spec['trigger_not_value'] = []
+        for val in to_list(trigger_value, '|'):
+            if match.groupdict()['not']:
+                spec['trigger_not_value'].append(val)
+            else:
+                spec['trigger_value'].append(val)
 
     def update_pref(self, req, trigger, target, key, opts, pref):
         spec = {'target': target, 'trigger': trigger}
         self.update_spec(req, key, opts, spec)
         # "When trigger = value set target to"
-        trigval = spec['trigger_value'].replace('|', ' or ')
+        if spec['trigger_value']:
+            comp = '='
+            trigval = ' or '.join(spec['trigger_value'])
+        else:
+            comp = '!='
+            trigval = ' or '.join(spec['trigger_not_value'])
         if spec['set_to'] == '?':
             set_to = ''
             pref['type'] = 'select' if opts.get(target) == 'select' else 'text'
@@ -466,5 +481,5 @@ class SetRule(Component, Rule):
             set_to = '(empty)'
         else:
             set_to = spec['set_to']
-        pref['label'] = "When %s = %s, set %s to %s"\
-                        % (trigger, trigval, target, set_to)
+        pref['label'] = "When %s %s %s, set %s to %s"\
+                        % (trigger, comp, trigval, target, set_to)

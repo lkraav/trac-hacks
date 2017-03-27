@@ -340,7 +340,13 @@ setrule.setup = function (input, spec) {
     return;
 
   // ensure trigger field's new value is in spec's list
-  if (jQuery.inArray(input.val(), spec.trigger_value.split('|')) == -1) // supports list of trigger values
+  // supports list of trigger values
+  if (spec.trigger_value.length != 0 &&
+      jQuery.inArray(input.val(), spec.trigger_value) == -1)
+    return;
+
+  if (spec.trigger_not_value.length != 0 &&
+      jQuery.inArray(input.val(), spec.trigger_not_value) > -1)
     return;
 
   var $field = jQuery(get_selector(spec.target));
