@@ -134,7 +134,7 @@ class CiteCodeAndCreateTicket(Component):
 
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util import Ranges
-from trac.util.html import tag
+from trac.util.html import html as tag
 from trac.util.translation import _
 
 # Just copied from trunk of Trac core and renamed annotation_type
