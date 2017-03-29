@@ -47,7 +47,7 @@ setup(
     install_requires=['Trac'],
     entry_points={
         'trac.plugins': [
-            'mathcaptcha = mathcaptcha.MatchCaptcha'
+            'mathcaptcha = mathcaptcha.MathCaptcha'
         ]
     }
 )

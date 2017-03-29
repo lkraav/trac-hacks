@@ -17,11 +17,13 @@ at Sandia National Labs.  See http://trac-hacks.org/wiki/TicketModeratorPlugin
 Author: Rob McMullen <robm@users.sourceforge.net>
 License: Same as Trac itself
 """
-import re
 import random
+import re
 import time
 
+from genshi.filters.transform import Transformer
 from trac.core import Component, TracError, implements
+from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.ticket.api import ITicketManipulator
@@ -29,11 +31,7 @@ from trac.util.html import html as tag
 from trac.web.api import IRequestHandler, ITemplateStreamFilter
 from trac.wiki.api import IWikiPageManipulator
 
-from genshi.filters.transform import Transformer
-
 schema = [
-    # Table to hold pending math captcha elements as we wait for the web
-    # server to post the results of the user's action
     Table('mathcaptcha_history', key='id')[
         Column('id', auto_increment=True),  # captcha ID
         Column('ip'),  # submitter IP address
@@ -45,24 +43,15 @@ schema = [
         Column('incorrect_solution'),  # incorrect guess
         Column('author'),  # author of incorrect guess
         Column('summary'),  # description included with failed guess
-        Column(
-            'text'),  # combined field with any text typed by the spambot
+        Column('text'),  # field with any text typed by spambot
         Column('href'),  # url used in captcha
-        Column('solved', type='boolean'),
-        # whether or not it was successfully solved
+        Column('solved', type='boolean'),  # successfully solved?
     ],
 ]
 
 
-def to_sql(env, table):
-    """ Convenience function to get the to_sql for the active connector."""
-    from trac.db.api import DatabaseManager
-    dm = env.components[DatabaseManager]
-    dc = dm.get_connector()[0]
-    return dc.to_sql(table)
-
-
 class MathCaptchaPlugin(Component):
+
     implements(IEnvironmentSetupParticipant, IRequestHandler,
                ITemplateStreamFilter, ITicketManipulator,
                IWikiPageManipulator)
@@ -77,6 +66,8 @@ class MathCaptchaPlugin(Component):
     # The current version for our portion of the database
     db_version = 2
 
+    db_version_key = 'mathcaptcha_version'
+
     # Offset value for database id.  This is a large integer that is used to
     # modify the database row id so that the real database id is not stored
     # raw in the HTML.  Because the database ids may be small numbers, I don't
@@ -88,100 +79,41 @@ class MathCaptchaPlugin(Component):
     ban_after_failed_attempts = 4
 
     # IEnvironmentSetupParticipant methods
+
     def environment_created(self):
-        db = self.env.get_db_cnx()
-        self.upgrade_environment(db)
+        self.upgrade_environment()
 
-    def environment_needs_upgrade(self, db=None):
-        """Called when Trac checks whether the environment needs to be 
-        upgraded.  Returns `True` if upgrade is needed, `False` otherwise."""
-        cursor = db.cursor()
-        return self._get_version(cursor) != self.db_version
+    def environment_needs_upgrade(self):
+        dbm = DatabaseManager(self.env)
+        return dbm.needs_upgrade(self.db_version, self.db_version_key)
 
-    def upgrade_environment(self, db=None):
-        """Actually perform an environment upgrade, but don't commit as that
-        is done by the common upgrade procedure when all plugins are done."""
-        cursor = db.cursor()
-        ver = self._get_version(cursor)
-        if ver == self.db_version:
-            return
+    def upgrade_environment(self):
+        dbm = DatabaseManager(self.env)
+        ver = dbm.get_database_version(self.db_version_key)
 
-        if ver == 0:
-            self._create_tables(cursor, self.env)
-            cursor.execute("INSERT INTO system VALUES " +
-                           "('mathcaptcha_version', '%s')"
-                           % (self.db_version,))
-            # When the database is created in this manner, it will always be
-            # the current schema so we can return here without going through
-            # the upgrade process
-            return
+        with self.env.db_transaction as db:
+            if ver == 0:
+                dbm.create_tables(schema)
 
-        # do database schema upgrades here...
+            if ver == 1:
+                db("""
+                    ALTER TABLE mathcaptcha_history RENAME TO 
+                    mathcaptcha_history_temp
+                    """)
+                dbm.create_tables(schema)
+                old_fields = [col.name for col in schema[0].columns]
+                new_fields = old_fields[:]
+                old_fields[old_fields.index('author')] = 'incorrect_author'
+                old_fields[old_fields.index('summary')] = 'incorrect_summary'
+                old_fields[old_fields.index('text')] = 'incorrect_text'
+                db("""
+                    INSERT INTO mathcaptcha_history (%s) 
+                    SELECT %s FROM mathcaptcha_history_temp
+                    """ % (new_fields, old_fields))
+                dbm.drop_tables('mathcaptcha_history_temp')
 
-        if ver == 1:
-            # Version 1 of the schema used a prefix called 'incorrect_' on
-            # author, summary, and text.  But version 2 of the schema stores
-            # every attempt in the schema so the prefix is misleading.  The
-            # prefix is therefore removed in version 2.
-            table_v2 = Table('mathcaptcha_history', key='id')[
-                Column('id', auto_increment=True),  # captcha ID
-                Column('ip'),  # submitter IP address
-                Column('submitted', type='int'),  # original submission time
-                Column('left_operand', type='int'),  # left operand
-                Column('operator'),  # operator (text string, "+", "-", etc)
-                Column('right_operand', type='int'),  # right operand
-                Column('solution', type='int'),  # solution
-                Column('incorrect_solution'),  # incorrect guess
-                Column('author'),  # author of incorrect guess
-                Column('summary'),  # description included with failed guess
-                Column('text'),  # field with any text typed by spambot
-                Column('href'),  # url used in captcha
-                Column('solved', type='boolean'),
-                # whether or not it was successfully solved
-            ]
-            cursor.execute("""
-                ALTER TABLE mathcaptcha_history RENAME TO 
-                mathcaptcha_history_OLD
-                """)
-            for stmt in to_sql(self.env, table_v2):
-                cursor.execute(stmt)
-            old_fields = ', '.join(
-                ['ip', 'submitted', 'left_operand', 'operator',
-                 'right_operand', 'solution', 'incorrect_solution',
-                 'incorrect_author', 'incorrect_summary', 'incorrect_text'])
-            new_fields = ', '.join(
-                ['ip', 'submitted', 'left_operand', 'operator',
-                 'right_operand', 'solution', 'incorrect_solution',
-                 'author', 'summary', 'text'])
-            cursor.execute("""
-                INSERT INTO mathcaptcha_history (%s) 
-                SELECT %s FROM mathcaptcha_history_OLD
-                """ % (new_fields, old_fields))
-            cursor.execute("DROP TABLE mathcaptcha_history_OLD")
-            ver += 1
-
-        # Record the current version of the db environment
-        cursor.execute("UPDATE system SET value=%s WHERE "
-                       "name='mathcaptcha_version'" % (ver,))
-        if ver != self.db_version:
-            raise TracError("MathCaptcha failed to upgrade environment.")
-
-    def _get_version(self, cursor):
-        try:
-            sql = "SELECT value FROM system WHERE name=" + \
-                  "'mathcaptcha_version'"
-            self.log.debug(sql)
-            cursor.execute(sql)
-            return int(cursor.fetchone()[0] or 0)
-        except:
-            return 0
-
-    def _create_tables(self, cursor, env):
-        """ Creates the basic tables as defined by schema.
-        using the active database connector. """
-        for table in schema:
-            for stmt in to_sql(env, table):
-                cursor.execute(stmt)
+            # Record the current version of the db environment
+            dbm.set_database_version(self.db_version, self.db_version_key)
 
     def create_math_problem(self, values):
         """Hook for generation of the math problem.
@@ -216,15 +148,14 @@ class MathCaptchaPlugin(Component):
         # web servers, because there may be many different processes handling
         # the request and there's no guarantee that the same web server will
         # handle both the form display and the form submit.
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
         fields = values.keys()
-        cursor.execute("INSERT INTO mathcaptcha_history (%s) VALUES (%s)"
-                       % (','.join(fields),
-                          ','.join(['%s'] * len(fields))),
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                INSERT INTO mathcaptcha_history (%s) VALUES (%s)
+                """ % (','.join(fields), ','.join(['%s'] * len(fields))),
                        [values[name] for name in fields])
-        id_ = db.get_last_id(cursor, 'mathcaptcha_history')
-        db.commit()
+            id_ = db.get_last_id(cursor, 'mathcaptcha_history')
         self.log.debug(
             "%s %s %s%s: generating math solution: id=%d, %d %s %d = %d",
             req.remote_addr, req.remote_user, req.base_path, req.path_info,
@@ -252,17 +183,14 @@ class MathCaptchaPlugin(Component):
         Currently, only anonymous users get shown the captcha, but this could
         be modified for local purposes.
         """
-        return req.authname == "anonymous"
+        return req.authname == 'anonymous'
 
     def is_banned(self, req):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT id, solved FROM mathcaptcha_history WHERE ip=%s
-            """, (req.remote_addr,))
         failed = 0
-        for row in cursor:
-            if row[1] is not None and not row[1]:
+        for solved, in self.env.db_query("""
+                SELECT solved FROM mathcaptcha_history WHERE ip=%s
+                """, (req.remote_addr,)):
+            if solved is False:
                 failed += 1
         return failed > self.ban_after_failed_attempts
 
@@ -275,30 +203,18 @@ class MathCaptchaPlugin(Component):
         # The database key is named 'url' as described in get_content
         id = int(req.args.get('url')) - self.id_offset
 
-        # Ban IP addresses after repeated failures
-        if self.is_banned(req):
-            self.log.error(
-                "%s %s %s%s: Banned after %d failed attempts",
-                req.remote_addr, req.remote_user, req.base_path,
-                req.path_info, self.ban_after_failed_attempts)
-            self.store_failed_attempt(req, id, "IP IS NOW BANNED!")
-            raise RuntimeError("Too many failed attempts")
-
         # Look up previously stored data to compare the solution
-        db = self.env.get_db_cnx()
         fields = ['ip', 'submitted', 'left_operand', 'operator',
                   'right_operand', 'solution']
-        cursor = db.cursor()
-        cursor.execute("SELECT %s FROM mathcaptcha_history WHERE id=%%s " %
-                       ','.join(fields), (id,))
-        row = cursor.fetchone()
-        if not row:
-            self.log.error("id=%d not found in mathcaptcha_history", id)
-            return [(None, "Invalid key in HTML")]
-
         values = {}
-        for i in range(len(fields)):
-            values[fields[i]] = row[i]
+        for row in self.env.db_query("""
+                SELECT %s FROM mathcaptcha_history WHERE id=%%s
+                """ % ','.join(fields), (id,)):
+            if not row:
+                self.log.error("id=%d not found in mathcaptcha_history", id)
+                return [(None, "Invalid key in HTML")]
+            for i in range(len(fields)):
+                values[fields[i]] = row[i]
 
         if values['submitted'] + self.timeout < time.time():
             return [
@@ -319,6 +235,15 @@ class MathCaptchaPlugin(Component):
             self.clean_history()
         else:
             self.store_successful_attempt(req, id)
+
+        # Ban IP addresses after repeated failures
+        if self.is_banned(req):
+            self.log.error(
+                "%s %s %s%s: Banned after %d failed attempts",
+                req.remote_addr, req.remote_user, req.base_path,
+                req.path_info, self.ban_after_failed_attempts)
+            self.store_failed_attempt(req, id, "IP IS NOW BANNED!")
+            raise TracError("Too many failed attempts")
 
         return error
 
@@ -355,9 +280,7 @@ class MathCaptchaPlugin(Component):
         return error
 
     def store_failed_attempt(self, req, id, user_solution):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
+        self.env.db_transaction("""
             UPDATE mathcaptcha_history 
             SET incorrect_solution=%s,author=%s,summary=%s,TEXT=%s,solved=%s 
             WHERE id=%s
@@ -365,14 +288,11 @@ class MathCaptchaPlugin(Component):
                   req.args.get('field_summary'),
                   self.get_failed_attempt_text(req),
                   False, id))
-        db.commit()
 
     def store_successful_attempt(self, req, id):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("UPDATE mathcaptcha_history SET solved=%s WHERE id=%s",
-                       (True, id))
-        db.commit()
+        self.env.db_transaction("""
+            UPDATE mathcaptcha_history SET solved=%s WHERE id=%s
+            """, (True, id))
 
     def get_failed_attempt_text(self, req):
         text = ""
@@ -390,14 +310,12 @@ class MathCaptchaPlugin(Component):
             days = self.clearout_days
         older_than = time.time() - (days * 24 * 60 * 60)
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("DELETE FROM mathcaptcha_history "
-                       "WHERE submitted<%s", (older_than,))
-        db.commit()
+        self.env.db_transaction("""
+            DELETE FROM mathcaptcha_history WHERE submitted<%s
+            """, (older_than,))
 
     def show_banned(self, req):
-        raise RuntimeError("Too many failed attempts")
+        raise TracError("Too many failed attempts")
 
     # ITemplateStreamFilter interface
 
@@ -475,7 +393,7 @@ class MathCaptchaPlugin(Component):
             req.path_info)
 
     def process_request(self, req):
-        req.perm.assert_permission('TRAC_ADMIN')
+        req.perm.require('TRAC_ADMIN')
 
         matches = re.match(r'/mathcaptcha-clear(?:_trac)?(?:/.*)?$',
                            req.path_info)
@@ -496,17 +414,14 @@ class MathCaptchaPlugin(Component):
         req.send_response(200)
         req.send_header('Content-Type', 'text/html')
 
-        db = self.env.get_db_cnx()
         fields = ['ip', 'submitted', 'href', 'incorrect_solution', 'author',
                   'summary', 'text', 'solved']
-        cursor = db.cursor()
-        cursor.execute(
-            "SELECT %s FROM mathcaptcha_history ORDER BY submitted" %
-            ','.join(fields))
-        html = "<table border><tr><th>%s</th></tr>\n" % "</th><th>".join(
-            fields)
+        html = "<table border><tr><th>%s</th></tr>\n" \
+               % "</th><th>".join(fields)
         lines = []
-        for row in cursor:
+        for row in self.env.db_query("""
+                SELECT %s FROM mathcaptcha_history ORDER BY submitted
+                """ % ','.join(fields)):
             if row[-1] is not None and not row[-1]:
                 lines.append("<tr><td>%s</td></tr>\n" % "</td><td>".join(
                     [str(i) for i in row]))
@@ -519,17 +434,14 @@ class MathCaptchaPlugin(Component):
         req.send_response(200)
         req.send_header('Content-Type', 'text/html')
 
-        db = self.env.get_db_cnx()
         fields = ['ip', 'submitted', 'href', 'solution', 'author', 'summary',
                   'text', 'solved']
-        cursor = db.cursor()
-        cursor.execute(
-            "SELECT %s FROM mathcaptcha_history ORDER BY submitted" %
-            ','.join(fields))
-        html = "<table border><tr><th>%s</th></tr>\n" % "</th><th>".join(
-            fields[:-1])
+        html = "<table border><tr><th>%s</th></tr>\n" \
+               % "</th><th>".join(fields[:-1])
         lines = []
-        for row in cursor:
+        for row in self.env.db_query("""
+                SELECT %s FROM mathcaptcha_history ORDER BY submitted
+                """ % ','.join(fields)):
             if row[-1]:
                 values = list(row[:-1])
                 values[1] = time.asctime(time.localtime(values[1]))
