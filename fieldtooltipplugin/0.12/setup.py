@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='FieldTooltip',
-    version='0.7',
+    version='0.7.1',
     license="""Modified BSD, except including libraries follows:
     - jQuery clueTip Plugin: the MIT License
      - hoverIntent jQuery Plug-in: the MIT or GPL License

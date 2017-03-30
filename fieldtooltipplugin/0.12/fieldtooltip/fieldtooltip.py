@@ -101,7 +101,10 @@ class FieldTooltip(Component):
                 text = WikiPage(self.env, page, db=db).text
             else:  # == 4
                 text = WikiPage(self.env, page).text
-            pages[page[prefix_len:]] = text[0:text.find('----')]
+            if '----' in text:
+                pages[page[prefix_len:]] = text[0:text.find('----')]
+            else:
+                pages[page[prefix_len:]] = text
         return pages
 
     # ITemplateProvider methods
