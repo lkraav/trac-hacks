@@ -39,40 +39,38 @@ class CiteCodeMacro(WikiMacroBase):
         self.log.debug("qs=%s", qs)
 
         reponame, repo, path = self.repoman.get_repository_by_path(path)
-        try:
-            if 'rev' in qs:
-                rev = qs['rev'][0].encode()
-            else:
-                rev = None
-            self.log.debug("rev=%s", rev)
-            node = repo.get_node(path, rev = rev)
-            content = node.get_content()
-            if content == None:
-                self.log.debug("node is directory")
-                return "<p>%s</p>" % escape(content)
-            else:
-                context = Context.from_request(formatter.req)
-                content_type = node.get_content_type() or mimetypes.guess_type(path)[0]
-                self.log.debug("content_type=%s", content_type)
-                content = content.read()
-                if fragment != "" and not is_binary(content):
-                    m = re.match("L(\d+)(-L?(\d+))?", fragment)
-                    if m != None:
-                        start, _, end = m.groups()
-                        end = end or start
-                        lines = content.splitlines()[int(start)-1:int(end)]
-                        content = "\n".join(lines)
-                        context.set_hints(lineno = int(start))
-                xhtml = self.mimeview.render(
-                        context = context,
-                        mimetype = content_type,
-                        content = content,
-                        filename = "",
-                        annotations=['citecode_lineno'],
-                        )
-                return xhtml
-        finally:
-            repo.close()
+        if 'rev' in qs:
+            rev = qs['rev'][0].encode()
+        else:
+            rev = None
+        self.log.debug("rev=%s", rev)
+        node = repo.get_node(path, rev = rev)
+        content = node.get_content()
+        if content == None:
+            self.log.debug("node is directory")
+            return "<p>%s</p>" % escape(content)
+        else:
+            context = Context.from_request(formatter.req)
+            content_type = node.get_content_type() or mimetypes.guess_type(path)[0]
+            self.log.debug("content_type=%s", content_type)
+            content = content.read()
+            if fragment != "" and not is_binary(content):
+                m = re.match("L(\d+)(-L?(\d+))?", fragment)
+                if m != None:
+                    start, _, end = m.groups()
+                    end = end or start
+                    lines = content.splitlines()[int(start)-1:int(end)]
+                    content = "\n".join(lines)
+                    context.set_hints(lineno = int(start))
+            xhtml = self.mimeview.render(
+                    context = context,
+                    mimetype = content_type,
+                    content = content,
+                    filename = "",
+                    annotations=['citecode_lineno'],
+                    )
+            return xhtml
+
 
 class CiteCodeAndCreateTicket(Component):
 
