@@ -6,188 +6,76 @@ from genshi.builder import tag
 
 from trac.core import *
 from trac.wiki.formatter import format_to_html, format_to_oneliner
-from trac.util import TracError
+from trac.util import salt, TracError
 from trac.util.text import to_unicode
-from trac.web.chrome import add_stylesheet, ITemplateProvider
+from trac.web.chrome import add_stylesheet, add_script, Chrome, ITemplateProvider
 from trac.wiki.api import parse_args, IWikiMacroProvider
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 from trac.wiki.web_ui import WikiModule
+from pkg_resources import resource_filename
+import random
+import string
 
-import xml.etree.ElementTree as ElementTree
-import xml.etree.cElementTree as cElementTree
+import fdx2fountain
 
 class ScrippetMacro(WikiMacroBase):
     """A macro to add scrippets to a page. Usage:
     """
     implements(IWikiMacroProvider, ITemplateProvider)
 
-    def render_inline_content(self, _env, _context, _content,mode):
-        #Sceneheaders must start with INT, EXT, or EST
-        sceneheader_re = re.compile('\n(INT|EXT|[^a-zA-Z0-9]EST)([\.\-\s]+?)(.+?)([A-Za-z0-9\)\s\.])\n')
-        #Transitions
-        transitions_re = re.compile('\n([^<>\na-z]*?:|FADE TO BLACK\.|FADE OUT\.|CUT TO BLACK\.)[\s]??\n')
-        #action blocks
-        actions_re = re.compile('\n{2}(([^a-z\n\:]+?[\.\?\,\s\!]*?)\n{2}){1,2}')
-        #character cues    
-        characters_re = re.compile('\n{1}(\w+[\.-]*[\s]*\w+?[^\!\)\?\.\s])\n{1}')
-#        characters_re = re.compile('\n([^<>a-z\s][^a-z:\!\?]*?[^a-z\(\!\?:,][\s]??)\n{1}')
-        #parentheticals
-        parentheticals_re = re.compile('(\([^<>]*?\)[\s]??)\n')
-        #dialog
-        dialog_re = re.compile('(<p class="character">.*<\/p>|<p class="parenthetical">.*<\/p>)\n{0,1}(.+?)\n')
-        #default
-        default_re = re.compile('([^<>]*?)\n')
-        #clean up
-        cleanup_re = re.compile('<p class="action">[\n\s]*?<\/p>')
-        cleanup_parentheticals_re = re.compile('<p class="dialogue"><p class="parenthetical">(.*?)<\/p>(.*?)<\/p>\n')
-        cleanup_dialogs_re = re.compile('(<p class="parenthetical">.*<\/p>)\n<p class="action">(.*?)<\/p>')
-        cleanup_empty_dialogs_re = re.compile('<p class="dialogue"></p>\n')
-        #styling
-#        bold_re = re.compile('(\*{2}|\[b\])(.*?)(\*{2}|\[\/b\])')
-#        italic_re = re.compile('(\*{1}|\[i\])(.*?)(\*{1}|\[\/i\])')
-#        underline_re = re.compile('(_|\[u\])(.*?)(_|\[\/u\])')
-        
-        theoutput = tag.div(class_="scrippet"+mode)        
-#        self.log.debug("BEFORE SCENE: %s" % _content)
-        _content = sceneheader_re.sub(r'<p class="sceneheader">\1\2\3\4</p>' + "\n",_content)
-#        self.log.debug("BEFORE TRANSITIONS: %s" % _content)
-        _content = transitions_re.sub(r'<p class="transition">\1</p>' + "\n",_content)
-#        self.log.debug("BEFORE ACTIONS: %s" % _content)
-        _content = actions_re.sub("\n" + r'<p class="action">\2</p>' + "\n",_content)
-#        self.log.debug("BEFORE CHARACTERS: %s" % _content)
-#        self.log.debug(_content);
-        _content = characters_re.sub(r'<p class="character">\1</p>' + "\n",_content)
-#        self.log.debug(characters_re.sub(r'<p class="character">\1</p>',_content));
-        _content = parentheticals_re.sub(r'<p class="parenthetical">\1</p>',_content); #format_to_oneliner(_env, _context, _content))
-        _content = dialog_re.sub(r'\1' + "\n" + r'<p class="dialogue">\2</p>' + "\n",_content); #format_to_oneliner(_env, _context, _content))
-        _content = cleanup_parentheticals_re.sub(r'<p class="parenthetical">\1</p>' + "\n" + r'<p class="dialogue">\2</p>' + "\n",_content)
-        _content = default_re.sub(r'<p class="action">\1</p>' + "\n",_content)
-        _content = cleanup_dialogs_re.sub(r'\1' + "\n" + r'<p class="dialogue">\2</p>' + "\n",_content)
-        _content = cleanup_re.sub("",_content)
-        _content = cleanup_empty_dialogs_re.sub("",_content)
-#        _content = bold_re.sub(r'<b>\2</b>',_content)
-#        _content = italic_re.sub(r'<i>\2</i>',_content)
-#        _content = underline_re.sub(r'<u>\2</u>',_content)
-        para_re = re.compile(r'<p class="(?P<_class>.*?)">(?P<_body>.*?)</p>')
-        for line in _content.splitlines():
-#            self.log.debug("LINE: %s" % line)
-            m = para_re.search(line)
-            if m != None:
-#                self.log.debug("BODY: %s" % m.group('_body'))
-#                self.log.debug("CLASS: %s" % m.group('_class'))
-                if "FADE IN" in m.group('_body') and m.group('_class') == "transition":
-                    theoutput.append(tag.p(format_to_oneliner(_env, _context,m.group('_body')),class_="action"+mode))
-                else:
-                    theoutput.append(tag.p(format_to_oneliner(_env, _context,m.group('_body')),class_=m.group('_class')+mode))
-        return theoutput
-    
-    def render_fdx_subset(self,fdx,start_with_scene,end_with_scene,mode,formatter):
-        theoutput = tag.div(class_="scrippet"+mode)
-#        self.log.debug("FDX: %s START: %d END %d" % (fdx,start_with_scene,end_with_scene))
+    def render_fdx_subset(self,fdx,start_with_scene,end_with_scene,formatter):
         fdx_obj = self._get_src(self.env, formatter.req, *fdx)
-        fd_doc = cElementTree.fromstring(fdx_obj.getStream().read())
-        renderParagraphs = False
-        for fd_content in fd_doc.findall("Content"):
-            for fd_paragraph in fd_content.findall("Paragraph"):
-                ptype = fd_paragraph.get('Type')
-                if ptype == "Action":
-                    ptype = "action"
-                elif ptype == "Character":
-                    ptype = "character"
-                elif ptype == "Dialogue":
-                    ptype = "dialogue"
-                elif ptype == "Parenthetical":
-                    ptype = "parenthetical"
-                elif ptype == "Shot":
-                    ptype = "shot"
-                elif ptype == "Scene Heading":
-                    if int(fd_paragraph.get('Number')) == start_with_scene:
-                        renderParagraphs = True
-                    if int(fd_paragraph.get('Number')) == end_with_scene:
-                        renderParagraphs = False
-                    ptype = "sceneheader"
-                elif ptype == "Transition":
-                    ptype = "transition"
-                elif ptype == "Teaser/Act One":
-                    ptype = "header"
-                elif ptype == "New Act":
-                    ptype = "header"
-                elif ptype == "End Of Act":
-                    ptype = "header"
-                else:
-                    ptype = "action"
-                #UNHANDLED FOR THE MOMENT
-                #Show/Ep. Title
-                ptext = []
-                for fd_text in fd_paragraph.findall("Text"):
-                    text_style = fd_text.get('Style')
-                    if fd_text.text != None:
-                        if "FADE IN:" in fd_text.text.upper():
-                            fd_text.text = fd_text.text.upper()
-                        if ptype in ["character","transition","sceneheader","header","shot"]:
-                            fd_text.text = fd_text.text.upper()
-                        #clean smart quotes
-                        fd_text.text = fd_text.text.replace(u"\u201c", "\"").replace(u"\u201d", "\"") #strip double curly quotes
-                        fd_text.text  = fd_text.text.replace(u"\u2018", "'").replace(u"\u2019", "'").replace(u"\u02BC", "'") #strip single curly quotes
-                        ptext.append({"style":text_style,"text":fd_text.text})
-                content = []
-                for block in ptext:
-                    if block["style"] == "Italic":
-                        
-                        content.append(tag.i(block["text"]))
-                    elif block["style"] == "Underline":
-                        content.append(tag.u(block["text"]))
-                    elif block["style"] == "Bold":
-                        content.append(tag.b(block["text"]))
-                    elif block["style"] == "Bold+Underline":
-                        content.append(tag.b(tag.u(block["text"])))
-                    else:
-                        content.append(block["text"])
-                if renderParagraphs:
-                    theoutput.append(tag.p(content,class_=ptype+mode))
-        return theoutput
-
+        fountain_content = fdx2fountain.Fdx2Fountain().fountain_from_fdx(fdx_obj.getStream().read(),start_with_scene,end_with_scene)
+        data = {
+          'fountain': to_unicode(fountain_content),
+          'inline': True,
+          'fnid': "fn" + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+        }
+        return Chrome(self.env).render_template(formatter.req,
+                                                'fountain.html', data=data, fragment=True)
+        
     def expand_macro(self, formatter, name, content, args):
-        fdx = False
-        start_with_scene = False
-        end_with_scene = False
-#        self.log.debug("EXPAND ARGUMENTS: %s " % args)
-#        self.log.debug("EXPAND INITIAL CONTENT: %s" % content)
         req = formatter.req
+        add_stylesheet(req, 'scrippets/css/fountain-js.css')
+        add_stylesheet(req, 'scrippets/css/normalize.min.css')
+        add_script(req, 'scrippets/js/fountain.min.js')
+        add_script(req, 'scrippets/js/fountain-reader.js')
         if content:
             args2,kw = parse_args(content)
-#            self.log.debug("RENDER ARGUMENTS: %s " % args2)
-#            self.log.debug("RENDER KW: %s " % kw)
+            self.log.debug("RENDER ARGUMENTS: %s " % args2)
+            self.log.debug("RENDER KW: %s " % kw)
             if 'fdx' in kw:
                 fdx = self._parse_filespec(kw['fdx'].strip(), formatter.context, self.env)
+                self.log.debug("FDX: {0}".format(fdx))
             if 'start_with_scene' in kw:
                 start_with_scene = int(kw['start_with_scene'])
+                self.log.debug("START: %s" % start_with_scene)
             if 'end_with_scene' in kw:
                 end_with_scene = int(kw['end_with_scene'])
+                self.log.debug("END: %s" % end_with_scene)
             elif 'start_with_scene' in kw:
                 end_with_scene = int(kw['start_with_scene']) + 1
+                self.log.debug("END: %s" % end_with_scene)
                 
-        if args != {} and args != None and args['mode'] == "full":
-            add_stylesheet(req, 'scrippets/css/scrippets-full.css')
-            mode = "-full"
-        elif kw != {} and fdx:
-            add_stylesheet(req, 'scrippets/css/scrippets.css')
-            mode = ""
-            return self.render_fdx_subset(fdx,start_with_scene,end_with_scene,mode,formatter)
-        else:
-            add_stylesheet(req, 'scrippets/css/scrippets.css')
-            mode = ""
-            return self.render_inline_content(self.env, formatter.context, content,mode)
+            if kw != {} and fdx:
+                self.log.debug("RENDER SUBSET")
+                return self.render_fdx_subset(fdx,start_with_scene,end_with_scene,formatter)
+            else:
+                data = {
+                  'fountain': to_unicode(content),
+                  'inline': True,
+                  'fnid': "fn" + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+                }
+                return Chrome(self.env).render_template(req,
+                      'fountain.html', data=data, fragment=True)
     
     ## ITemplateProvider
-            
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('scrippets', resource_filename(__name__, 'htdocs'))]
+        return [resource_filename('scrippets', 'htdocs')]
                                       
     def get_templates_dirs(self):
-        return []
+        return [resource_filename('scrippets', 'templates')]
 
     def _parse_filespec(self, filespec, context, env):
         # parse filespec argument to get module and id if contained.
