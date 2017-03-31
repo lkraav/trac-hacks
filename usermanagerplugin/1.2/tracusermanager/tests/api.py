@@ -32,16 +32,12 @@ class SessionUserStoreTestCase(unittest.TestCase):
                  email='cbalan@optaros.com'))
 
         # test
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        cursor.execute("SELECT name, value "
-                       "FROM session_attribute "
-                       "WHERE sid='cbalan' "
-                       "AND name IN ('enabled', 'name', 'email') "
-                       "ORDER BY name")
         result = {}
-        for name, value in cursor:
+        for name, value in self.env.db_query("""
+                SELECT name, value FROM session_attribute
+                WHERE sid='cbalan' AND name IN ('enabled', 'name', 'email')
+                ORDER BY name
+                """):
             result[name] = value
 
         self.assertEqual(result['name'], 'Catalin Balan')
@@ -61,17 +57,11 @@ class SessionUserStoreTestCase(unittest.TestCase):
         UserManager(self.env).create_user(user)
 
         # test
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        cursor.execute("SELECT name, value "
-                       "FROM session_attribute "
-                       "WHERE sid='cbalan' "
-                       "AND name IN ('enabled', 'name', 'email') "
-                       "ORDER BY name")
-        result = {}
-        for name, value in cursor:
-            result[name] = value
+        result = dict((name, value) for name, value in self.env.db_query("""
+            SELECT name, value FROM session_attribute
+            WHERE sid='cbalan' AND name IN ('enabled', 'name', 'email')
+            ORDER BY name
+            """))
 
         self.assertEqual(result['name'], 'Catalin Balan')
         self.assertEqual(result['email'], 'cbalan@optaros.com')
@@ -180,16 +170,10 @@ class SessionUserStoreTestCase(unittest.TestCase):
                  email='aculapov@optaros.com', company='ros'))
 
         # test before
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        cursor.execute("SELECT name, value "
-                       "FROM session_attribute "
-                       "WHERE sid='cbalan' "
-                       "ORDER BY name")
-        result = {}
-        for name, value in cursor:
-            result[name] = value
+        result = dict((name, value) for name, value in self.env.db_query("""
+                SELECT name, value FROM session_attribute
+                WHERE sid='cbalan' ORDER BY name
+                """))
         self.assertEqual(len(result), 4)
 
         # delete attribute
@@ -199,16 +183,11 @@ class SessionUserStoreTestCase(unittest.TestCase):
         user.save()
 
         # test after
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
 
-        cursor.execute("SELECT name, value "
-                       "FROM session_attribute "
-                       "WHERE sid='cbalan' "
-                       "ORDER BY name")
-        result = {}
-        for name, value in cursor:
-            result[name] = value
+        result = dict((name, value) for name, value in self.env.db_query("""
+            SELECT name, value FROM session_attribute
+            WHERE sid='cbalan' ORDER BY name
+            """))
         self.assertEqual(len(result), 2)
 
 

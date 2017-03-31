@@ -8,11 +8,9 @@ except ImportError:
     import dummy_threading as threading
 
 import time
-import traceback
-from StringIO import StringIO
 
 from trac.core import Component, ExtensionPoint, Interface, TracError, \
-    implements
+                      implements
 from trac.config import ExtensionOption
 from trac.env import IEnvironmentSetupParticipant
 from trac.util.translation import _
@@ -273,170 +271,72 @@ class SessionUserStore(Component):
         return True
 
     def create_user(self, username):
-        db = self.env.get_db_cnx()
-
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "INSERT INTO session (sid, last_visit, authenticated)"
-                " VALUES(%s,%s,1)", [username, int(time.time())])
-            db.commit()
-        except Exception:
-            db.rollback()
-            self.log.debug(
-                "Session for %s exists, no need to re-create it." % (
-                    username))
-
-        cursor = db.cursor()
-        try:
-            # clean up
-            cursor.execute("DELETE "
-                           "FROM session_attribute "
-                           "WHERE sid=%s AND authenticated=1 "
-                           "AND name='enabled'",
-                           [username])
-
-            # register active user
-            cursor.execute("INSERT "
-                           "INTO session_attribute "
-                           "(sid,authenticated,name,value) "
-                           "VALUES(%s,1,'enabled','1')", [username])
-            # and .. commit
-            db.commit()
+        with self.env.db_transaction as db:
+            db("""
+                INSERT INTO session (sid, last_visit, authenticated)
+                VALUES(%s,%s,1)
+                """, (username, int(time.time())))
+            db("""
+                DELETE FROM session_attribute 
+                WHERE sid=%s AND authenticated=1 AND name='enabled'
+                """, (username,))
+            db("""
+                INSERT INTO session_attribute (sid,authenticated,name,value)
+                VALUES(%s,1,'enabled','1')
+                """, (username,))
             return True
-
-        except Exception, e:
-            db.rollback()
-            out = StringIO()
-            traceback.print_exc(file=out)
-            self.log.error("%s: %s\n%s", self.__class__.__name__, e,
-                           out.getvalue())
-            raise TracError(_("Unable to create user %(user)s.",
-                              user=username))
 
     def search_users(self, username_pattern=None):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        search_result = []
-
-        try:
-            if username_pattern is None:
-                cursor.execute("SELECT sid FROM session_attribute "
-                               "WHERE name='enabled' AND value='1'")
-            else:
-                cursor.execute("SELECT sid FROM session_attribute "
-                               "WHERE sid LIKE %s "
-                               "AND name='enabled' "
-                               "AND value='1'", (username_pattern,))
-            for username, in cursor:
-                search_result.append(username)
-
-        except Exception, e:
-            out = StringIO()
-            traceback.print_exc(file=out)
-            self.log.error("%s: %s\n%s", self.__class__.__name__, e,
-                           out.getvalue())
-            raise TracError(_("Unable to find username from pattern "
-                              "%(pattern)s.", pattern=username_pattern))
-
-        return search_result
+        if username_pattern is None:
+            return [username for username, in self.env.db_query("""
+                SELECT sid FROM session_attribute
+                WHERE name='enabled' AND value='1'
+                """)]
+        else:
+            return [username for username, in self.env.db_query("""
+                SELECT sid FROM session_attribute 
+                WHERE sid LIKE %s AND name='enabled' AND value='1'
+                """, (username_pattern,))]
 
     def delete_user(self, username):
-
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        try:
-            cursor.execute("DELETE "
-                           "FROM session_attribute "
-                           "WHERE sid=%s AND name='enabled'", (username,))
-            db.commit()
-            return True
-
-        except Exception, e:
-            out = StringIO()
-            traceback.print_exc(file=out)
-            self.log.error('%s: %s\n%s' % (
-                self.__class__.__name__, str(e), out.getvalue()))
-            raise TracError(_("Unable to delete user %(user)s.",
-                              user=username))
+        self.env.db_transaction("""
+            DELETE FROM session_attribute
+            WHERE sid=%s AND name='enabled'
+            """, (username,))
+        return True
 
 
 class SessionAttributeProvider(Component):
     implements(IAttributeProvider)
 
     def get_user_attribute(self, username, attribute):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT value "
-                           "FROM session_attribute "
-                           "WHERE sid=%s AND name=%s ", (username, attribute))
-
-            _result = list(cursor)
-            if _result:
-                return _result[0][0]
-        except Exception, e:
-            out = StringIO()
-            traceback.print_exc(file=out)
-            self.log.error("%s: %s\n%s", self.__class__.__name__, str(e),
-                           out.getvalue())
-            raise TracError(
-                _("Unable to load attribute %(attribute)s for user "
-                  "%(username)s.", attribute=attribute, username=username))
-
-        return None
+        for value, in self.env.db_query("""
+                SELECT value FROM session_attribute
+                WHERE sid=%s AND name=%s
+                """, (username, attribute)):
+            return value
 
     def set_user_attribute(self, username, attribute, value):
         """Sets user's attribute value.
         """
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        try:
-
-            cursor.execute("DELETE FROM session_attribute "
-                           "WHERE sid=%s AND name=%s", (username, attribute))
-            cursor.execute("INSERT INTO session_attribute "
-                           "(sid, authenticated, name, value) "
-                           "VALUES (%s, 1, %s, %s)",
-                           (username, attribute, value))
-            db.commit()
-
+        with self.env.db_transaction as db:
+            db("""
+                DELETE FROM session_attribute WHERE sid=%s AND name=%s
+                """, (username, attribute))
+            db("""
+                INSERT INTO session_attribute
+                 (sid, authenticated, name, value)
+                VALUES (%s, 1, %s, %s)
+                """, (username, attribute, value))
             return True
-        except Exception, e:
-            out = StringIO()
-            traceback.print_exc(file=out)
-            self.log.error("%s: %s\n%s", self.__class__.__name__, e,
-                           out.getvalue())
-            raise TracError(_("Unable to set attribute %(attribute)s for "
-                              "user %(user)s.", attribute=attribute,
-                              user=username))
 
     def delete_user_attribute(self, username, attribute):
         """Removes user attribute.
-
-        @param username: str
-        @param attribute: str
-        @return: bool
         """
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        try:
-            cursor.execute("DELETE FROM session_attribute "
-                           "WHERE sid=%s AND name=%s", (username, attribute))
-            db.commit()
-
-            return True
-        except Exception, e:
-            out = StringIO()
-            traceback.print_exc(file=out)
-            self.log.error("%s: %s\n%s", self.__class__.__name__, e,
-                           out.getvalue())
-            raise TracError(_("Unable to delete attribute %(attribute)s for "
-                              "user %(user)s.", attribute=attribute,
-                              user=username))
+        self.env.db_transaction("""
+            DELETE FROM session_attribute WHERE sid=%s AND name=%s
+            """, (username, attribute))
+        return True
 
     def get_usernames_with_attributes(self, attributes_dict=None):
         """ Returns all usernames matching attributes_dict.
@@ -447,55 +347,33 @@ class SessionAttributeProvider(Component):
         @param attributes_dict: dict
         @return: list
         """
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
+        if attributes_dict is None:
+            return [sid for sid, in self.env.db_query("""
+                    SELECT sid FROM session_attribute WHERE name='enabled'
+                    """)]
+        else:
+            # dict to list attr_dict = { k1:v1, k2:v2, ... } ->
+            # [k1,v1,k2,v2..., len(attr_dict)]
+            attributes_list = []
+            for k, v in attributes_dict.items():
+                attributes_list.append(
+                    k.startswith('NOT_') and k[4:] or k)
+                attributes_list.append(v)
 
-        try:
-            if attributes_dict is None:
-                cursor.execute(
-                    "SELECT sid FROM session_attribute WHERE name='enabled'")
-            else:
-                """ The following line executes a query that should look like this:
+            attributes_list.append(len(attributes_dict))
 
-                    #for attributes_dict = dict(name='John%', 
-                                                email='%@exemple.com')):
-                        SELECT  sid
-                        FROM session_attribute
-                        WHERE name='name' AND value like 'John%'
-                           OR name='email' AND value like '%@exemple.com'
-                        GROUP BY sid
-                        HAVING count(*)=2
-                """
-
-                # dict to list attr_dict = { k1:v1, k2:v2, ... } ->
-                # [k1,v1,k2,v2..., len(attr_dict)]
-                attributes_list = []
-                for k, v in attributes_dict.items():
-                    attributes_list.append(
-                        k.startswith('NOT_') and k[4:] or k)
-                    attributes_list.append(v)
-
-                attributes_list.append(len(attributes_dict))
-
+            with self.env.db_query as db:
                 def _get_condition(k, v):
                     return "name=%s AND value " + \
                            (k.startswith('NOT_') and 'NOT' or '') + \
-                           " LIKE %s"
+                           " %s" % db.like()
 
-                cursor.execute("SELECT sid"
-                               " FROM session_attribute"
-                               " WHERE " +
-                               " OR ".join(_get_condition(k, v) for k, v
-                                           in attributes_dict.items()) +
-                               " GROUP BY sid"
-                               " HAVING count(*)=%s", attributes_list)
-            return [id for id, in cursor]
-        except Exception, e:
-            out = StringIO()
-            traceback.print_exc(file=out)
-            self.log.error("%s: %s\n%s", self.__class__.__name__, e,
-                           out.getvalue())
-            return []
+                return [id for id, in db("""
+                        SELECT sid FROM session_attribute
+                        WHERE %s GROUP BY sid HAVING count(*)=%%s
+                        """ % ' OR '.join(_get_condition(k, v)
+                                          for k, v in attributes_dict.items()),
+                        attributes_list)]
 
 
 class CachedSessionAttributeProvider(SessionAttributeProvider):
@@ -514,14 +392,13 @@ class CachedSessionAttributeProvider(SessionAttributeProvider):
                     CachedSessionAttributeProvider.CACHE_UPDATE_INTERVAL \
                     or username not in self._attribute_cache \
                     or force:
-                db = self.env.get_db_cnx()
-                cursor = db.cursor()
-                cursor.execute("""
-                    SELECT name, value FROM session_attribute WHERE sid=%s
-                    """, (username,))
                 self._attribute_cache[username] = {}
-                for name, value in cursor:
-                    self._attribute_cache[username][name] = value
+                self._attribute_cache[username] = \
+                    dict((name, value)
+                         for name, value in self.env.db_query("""
+                            SELECT name, value FROM session_attribute 
+                            WHERE sid=%s
+                            """, (username,)))
                 self._attribute_cache_last_update[username] = now
                 self.log.debug("Updating SessionAttributeProvider attribute "
                                "cache for user <%s>", username)
@@ -556,17 +433,18 @@ class EnvironmentFixKnownUsers(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db=None):
-        def inline_overwrite_get_known_users(environment=None, cnx=None):
+    def environment_needs_upgrade(self):
+        def inline_overwrite_get_known_users(as_dict=False):
             users = UserManager(self.env).get_active_users()
             if users:
-                for user in users:
-                    yield user.username, user['name'], user['email']
+                if as_dict:
+                    return dict((user.username, (user['name'], user['email']))
+                                for user in users)
+                else:
+                    return iter((user.username, user['name'], user['email'])
+                                for user in users)
             else:
-                # No users defined, so we're returning the original list
-                for user, name, email in \
-                        self.env.__class__.get_known_users(self.env):
-                    yield user, name, email
+                return self.env.__class__.get_known_users(self.env)
 
         self.env.get_known_users = inline_overwrite_get_known_users
 

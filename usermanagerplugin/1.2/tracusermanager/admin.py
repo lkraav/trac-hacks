@@ -233,20 +233,13 @@ class UserManagementAdminPage(Component):
         if req.method == 'POST' and 'um_session_delete_selected' in req.args:
             sel = req.args.getlist('sel')
             if sel:
-                db = self.env.get_db_cnx()
-                cursor = db.cursor()
-                try:
-                    cursor.executemany(
-                        "DELETE FROM session_attribute WHERE sid=%s",
-                        [(sid,) for sid in sel])
-                    cursor.executemany("DELETE FROM session WHERE sid=%s",
-                                       [(sid,) for sid in sel])
-                    db.commit()
-                except Exception, e:
-                    db.rollback()
-                    self.log(e)
-                    raise TracError("Unable to delete selected users. [%s]"
-                                    % e)
+                with self.env.db_transaction as db:
+                    db.executemany("""
+                        DELETE FROM session_attribute WHERE sid=%s
+                        """, [(sid,) for sid in sel])
+                    db.executemany("""
+                        DELETE FROM session WHERE sid=%s
+                        """, [(sid,) for sid in sel])
                 add_notice(req, "Succesfully removed [%s] sessions."
                            % (",".join(sel)))
             else:
@@ -260,13 +253,10 @@ class UserManagementAdminPage(Component):
             sessions[username] = dict(username=username,
                                       name=name,
                                       email=email, in_team=username in team)
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("SELECT sid,last_visit "
-                       "FROM session "
-                       "WHERE authenticated=1")
 
-        for username, last_visit in cursor:
+        for username, last_visit in self.env.db_query("""
+                SELECT sid,last_visit FROM session WHERE authenticated=1
+                """):
             if username in sessions and last_visit:
                 sessions[username]['last_visit'] = format_datetime(last_visit)
 
