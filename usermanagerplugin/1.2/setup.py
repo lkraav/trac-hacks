@@ -18,10 +18,11 @@ setup(name="TracUserManagerPlugin",
       description="Trac User Manager",
       license="BSD",
       install_requires=['Trac'],
+      extras_require={'account': 'TracAccountManager'},
       entry_points={'trac.plugins': [
           'tracusermanager.api = tracusermanager.api',
           'tracusermanager.admin = tracusermanager.admin',
-          'tracusermanager.account = tracusermanager.account',
+          'tracusermanager.account = tracusermanager.account[account]',
           'tracusermanager.permissions = tracusermanager.permissions',
           'tracusermanager.profile = tracusermanager.profile'
       ]},
