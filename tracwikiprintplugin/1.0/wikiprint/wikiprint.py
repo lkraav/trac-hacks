@@ -164,6 +164,7 @@ class WikiPrint(Component):
     httpauth_user = Option('wikiprint', 'httpauth_user')
     httpauth_password = Option('wikiprint', 'httpauth_password')
     omit_links = BoolOption('wikiprint', 'omit_links')
+    local_anchor = BoolOption('wikiprint', 'local_anchor', False)
     omit_macros = ListOption('wikiprint', 'omit_macros')
     rebase_links = Option('wikiprint', 'rebase_links')
     default_charset = Option('trac', 'default_charset', 'utf-8')
@@ -241,8 +242,17 @@ class WikiPrint(Component):
         page = format_to_html(self.env, context, text)
         self.env.log.debug('WikiPrint => Wiki to HTML output: %r', page)
 
-        self.env.log.debug('WikiPrint => HTML output for WikiPrint is: %r',
+        # Link to internal sections of document.
+        # This needs further development for section headings (th:#11024)
+        if self.local_anchor:
+            page = Markup('<a name=' + page_name + '></a>') + page
+            r = re.compile(re.escape(req.abs_href.wiki()) + r'/(.*?)(#\w+)')
+            page = r.sub('#\g<1>', page)
+            r1 = re.compile(r'(span class="wikianchor" id=")(.*)(/span)')
+            page = r1.sub('a name="' + page_name + '\g<2>/a', page)
+        self.env.log.debug("WikiPrint => HTML input to html_to_pdf is: %r",
                            page)
+
         self.env.log.debug('WikiPrint => Finish function wikipage_to_html')
 
         return page
