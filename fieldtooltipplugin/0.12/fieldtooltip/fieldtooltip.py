@@ -13,7 +13,6 @@ from genshi.core import QName
 from genshi.filters.transform import START, END
 from trac.cache import cached
 from trac.core import Component, implements
-from trac.mimeview import Context
 from trac.util import arity
 from trac.util.html import tag
 from trac.web.api import ITemplateStreamFilter
@@ -21,6 +20,12 @@ from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 from trac.wiki.api import IWikiChangeListener, WikiSystem
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
+
+try:
+    from trac.web.chrome import web_context
+except ImportError:
+    from trac.mimeview.api import Context
+    web_context = Context.from_request
 
 
 class FieldTooltip(Component):
@@ -185,7 +190,7 @@ class FieldTooltipFilter(object):
 
     def __init__(self, parent, req):
         self.parent = parent
-        self.context = Context.from_request(req)
+        self.context = web_context(req)
         self.locale = self.context.req.locale
 
     def __call__(self, stream):
