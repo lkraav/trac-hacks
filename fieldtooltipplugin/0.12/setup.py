@@ -20,7 +20,7 @@ setup(
     zip_safe=True,
     packages=find_packages(exclude=['*.tests']),
     package_data={
-        'fieldtooltip': ['htdocs/*/*']
+        'fieldtooltip': ['htdocs/*', 'htdocs/*/*']
         },
     entry_points={
         'trac.plugins': 'FieldTooltip = fieldtooltip'
