@@ -48,7 +48,7 @@
                   <label>${attributes.label}:</label>
                   <py:choose>
                     <span py:when="attributes.type=='wikitext'">
-                      ${users.wiki_to_html(user[field])}
+                      ${wiki_to_html(context, user[field])}
                     </span>
                     <span py:when="attributes.type=='multichecks'">
                       ${user[field] and str(user[field]).replace('|',',') or _('[Blank]')}

@@ -10,7 +10,6 @@ from trac.util.translation import _
 from trac.web.chrome import Chrome, add_script, add_stylesheet
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
-from trac.wiki.formatter import wiki_to_html
 
 from tracusermanager.api import UserManager, User
 from tracusermanager.profile.api import (
@@ -32,7 +31,7 @@ Usage:
 # Returns cbalan's profile and user profiles with role='%arh%'
 [[UserProfilesList({id='cbalan'},{role='%arh%'})]]
 # Adds style and class attributes to box layout
-[[UserProfilesList(|class=someCSS_Class, 
+[[UserProfilesList(|class=someCSS_Class,
                    style=border:1px solid green;padding:12px)]]
 }}}
     """
@@ -75,11 +74,6 @@ Usage:
 
         # removing picture_href
         data['user_profile_fields'].pop('picture_href')
-
-        def inline_wiki_to_html(text):
-            return wiki_to_html(text, env, req)
-
-        data['wiki_to_html'] = inline_wiki_to_html
 
         if user_profile_templates:
             data['user_profiles'] = \
@@ -129,9 +123,9 @@ class DefaultUserProfilesListCellContributor(Component):
 class TeamRosterMacro(UserProfilesListMacro):
     """Returns project's team roster.
     Usage:
-    
+
     {{{
-    # Without arguments returns current active user profiles 
+    # Without arguments returns current active user profiles
     # (with enabled='1')
     [[TeamRoster]]
     # Returns all userProfiles with role='developer' and enabled='1'
@@ -141,10 +135,10 @@ class TeamRosterMacro(UserProfilesListMacro):
     # Returns cbalan's profile and user profiles with role='%arh%'
     [[TeamRoster({id='cbalan'},{role='%arh%'})]]
     # Adds style and class attributes to box layout
-    [[TeamRoster(|class=someCSS_Class, 
+    [[TeamRoster(|class=someCSS_Class,
                  style=border:1px solid green;padding:12px)]]
     }}}
-    
+
     Please use UserProfilesList macro insted of TeamRoster macro.
     Keeping this for backward compatibility with !TeamRosterPlugin.
     """
