@@ -13,16 +13,17 @@ from trac.web.main import IRequestFilter
 from trac.wiki.api import WikiSystem
 from trac.wiki.model import WikiPage
 
+
 class TicketStencil(Component):
     implements(IRequestFilter, ITemplateProvider)
-        
+
     def __init__(self):
         self.wiki_system = WikiSystem(self.env)
 
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename 
+        from pkg_resources import resource_filename
         return [('ticketstencil', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
@@ -31,7 +32,7 @@ class TicketStencil(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        return handler 
+        return handler
 
     def post_process_request(self, req, template, data, content_type):
         if not req.path_info.startswith('/newticket'):

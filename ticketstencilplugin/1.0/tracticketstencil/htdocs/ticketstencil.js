@@ -1,4 +1,4 @@
-$(function() {
+jQuery(function($) {
     $('#field-type').change(function () {
         var prev_type = $(this).data('prev') || '_ticketstencil_default_type';
         var prev_desc = $('#field-description').val().trim().replace(/\r\n/g, "\n");
