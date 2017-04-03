@@ -9,6 +9,7 @@
 
 import re
 from pkg_resources import resource_filename
+
 try:
     import json
 except ImportError:
@@ -16,7 +17,7 @@ except ImportError:
 
 from genshi.filters.transform import Transformer
 from trac.config import IntOption, Option
-from trac.core import *
+from trac.core import Component, implements
 from trac.mimeview.api import Context
 from trac.resource import Resource
 from trac.versioncontrol.api import RepositoryManager
@@ -30,7 +31,6 @@ from i18n_domain import add_domain
 
 
 class TicketlogModule(Component):
-
     implements(ITemplateProvider, ITemplateStreamFilter)
 
     max_message_length = IntOption('ticketlog', 'log_message_maxlength',
@@ -54,15 +54,16 @@ class TicketlogModule(Component):
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'ticket.html' \
-                and req.path_info.startswith('/ticket/'):
+        if filename == 'ticket.html' and \
+                req.path_info.startswith('/ticket/'):
             ticket_id = req.args.get('id')
             resource = Resource('ticket', ticket_id)
             if 'LOG_VIEW' in req.perm(resource):
                 add_stylesheet(req, 'ticketlog/ticketlog.css')
                 revisions = self._get_ticket_revisions(req, ticket_id)
-                template = Chrome(self.env).load_template('ticketlog.html') \
-                                           .generate(revisions=revisions)
+                template = Chrome(self.env)\
+                    .load_template('ticketlog.html')\
+                    .generate(revisions=revisions)
                 stream |= Transformer('//div[@id="ticket"]').after(template)
         return stream
 

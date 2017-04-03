@@ -7,13 +7,15 @@
 # you should have received as part of this distribution.
 #
 
+"""Automated upgrades for the TracTicketChangelogPlugin database tables, 
+and other data stored in the Trac environment.
+"""
 
-"""Automated upgrades for the TracTicketChangelogPlugin database tables, and other data stored
-in the Trac environment."""
 
 def add_ticketlog_table(env, db):
     """Migrate db."""
     pass
+
 
 map = {
     1: [add_ticketlog_table],

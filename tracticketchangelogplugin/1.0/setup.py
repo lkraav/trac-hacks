@@ -31,11 +31,11 @@ else:
 
 setup(
     name='TracTicketChangelogPlugin',
-    version="1.0.0",
+    version='1.0.0',
     description="Show changelogs in trac ticket",
     author="Richard Liao",
     author_email="richard.liao.i@gmail.com",
-    url="http://trac-hacks.org/wiki/TracTicketChangelogPlugin",
+    url="https://trac-hacks.org/wiki/TracTicketChangelogPlugin",
     license="3-Clause BSD",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
     include_package_data=True,
@@ -47,7 +47,8 @@ setup(
     classifiers=[
         'Framework :: Trac',
     ],
-    install_requires=[sys.version_info < (2, 6) and 'simplejson' or ''],
+    install_requires=['Trac',
+                      sys.version_info < (2, 6) and 'simplejson' or ''],
     entry_points="""
     [trac.plugins]
     ticketlog = ticketlog.web_ui
