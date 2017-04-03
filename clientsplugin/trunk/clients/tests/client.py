@@ -15,7 +15,6 @@ from clients.model import Client
 
 
 class ClientModuleTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'clients.*'])
         self.cm = ClientModule(self.env)
@@ -31,11 +30,12 @@ class ClientModuleTestCase(unittest.TestCase):
         from trac.ticket.web_ui import TicketModule
         self.assertTrue(self.cm in TicketModule(self.env).ticket_manipulators)
 
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ClientModuleTestCase, 'test'))
     return suite
 
+
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')
-

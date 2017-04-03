@@ -11,9 +11,8 @@ import unittest
 
 def test_suite():
     suite = unittest.TestSuite()
-    
+
     import clients.tests.client
     suite.addTest(clients.tests.client.test_suite())
-    
-    return suite
 
+    return suite
