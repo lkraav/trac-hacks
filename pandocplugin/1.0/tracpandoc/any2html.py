@@ -11,12 +11,15 @@ import pypandoc
 
 from_formats, to_formats = pypandoc.get_pandoc_formats()
 
+
 class Any2HtmlTemp:
     """Translate some format into HTML using pandoc through a temporary file."""
     def get_from(self):
         raise NotImplementedError('Use a subclass of Any2HtmlTemp instead')
+
     def get_tmpdir(self):
         return None
+
     def get_text(self):
         """True if the temporary file should be opened in text mode."""
         return False

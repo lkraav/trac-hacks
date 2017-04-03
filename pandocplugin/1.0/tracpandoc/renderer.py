@@ -8,6 +8,7 @@
 
 from trac.core import *
 from trac.mimeview.api import IHTMLPreviewRenderer
+
 from tracpandoc.any2html import Docx2Html
 
 extensions_docx = ['.docx', '.docm', '.dotx', '.dotm']
@@ -19,6 +20,7 @@ def has_docx_extension(filename):
         if filename.endswith(extension):
             return True
     return False
+
 
 class DocxRenderer(Component):
     """HTML renderer for docx. Add application/vnd.openxmlformats-officedocument.wordprocessingml.document:docx to mime_map in trac.ini """
