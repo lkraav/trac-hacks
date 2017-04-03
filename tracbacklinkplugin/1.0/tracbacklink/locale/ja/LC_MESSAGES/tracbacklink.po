@@ -1,0 +1,23 @@
+# Japanese translations for TracBackLinkPlugin.
+# Copyright (C) 2017 OpenGroove,Inc.
+# This file is distributed under the same license as the
+# TracBackLinkPlugin project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TracBackLinkPlugin 1.0.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2017-04-03 18:57+0900\n"
+"PO-Revision-Date: 2017-03-29 17:42+0900\n"
+"Last-Translator: Jun Omae <jun66j5@gmail.com>\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: tracbacklink/web_ui.py:66
+msgid "Back Links"
+msgstr "バックリンク"
+
