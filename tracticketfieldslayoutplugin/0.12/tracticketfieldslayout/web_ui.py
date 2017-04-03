@@ -243,14 +243,15 @@ class TicketFieldsLayoutTransformer(object):
             for event in cell['buffer']:
                 kind, data, pos = event
                 if kind is START and data[0].localname in ('th', 'td'):
-                    col = 'col%d' % (idx % 2 + 1)
                     attrs = data[1]
                     class_ = attrs.get('class') or ''
-                    if col not in class_:
+                    if class_:
+                        col = 'col%d' % (idx % 2 + 1)
                         class_ = set(class_.split())
-                        class_.discard('col%d' % ((idx + 1) % 2 + 1))
-                        class_.add(col)
-                        attrs |= [(qname_class, ' '.join(class_))]
+                        if 'fullrow' not in class_ and col not in class_:
+                            class_.discard('col%d' % ((idx + 1) % 2 + 1))
+                            class_.add(col)
+                            attrs |= [(qname_class, ' '.join(sorted(class_)))]
                     data = (data[0], attrs)
                 yield kind, data, pos
             if idx % 2 == 1:

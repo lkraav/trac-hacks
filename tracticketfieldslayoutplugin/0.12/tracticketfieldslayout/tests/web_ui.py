@@ -267,6 +267,25 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
         self.assertEqual(None, tbody[2][1][1].get('class'))
         self.assertEqual(3, len(tbody))
 
+    def test_fullrow(self):
+        self.config.set('ticket-custom', 'foo', 'textarea')
+        tktsys = TicketSystem(self.env)
+        self.config.set('ticketfieldslayout', 'fields',
+                        ','.join(f['name'] for f in tktsys.fields))
+
+        req = self._make_req('/newticket')
+        stream = self._render(req)
+        cells = [data for kind, data, pos
+                      in stream.select('//fieldset[@id="properties"]'
+                                       '//td[@colspan="3"]')
+                      if kind is START and data[0].localname == 'td']
+        for idx, data in enumerate(cells):
+            if idx != 3:
+                self.assertEqual('fullrow', data[1].get('class'))
+            else:
+                self.assertEqual('col1', data[1].get('class'))
+        self.assertEqual(4, len(cells))
+
 
 def test_suite():
     suite = unittest.TestSuite()
