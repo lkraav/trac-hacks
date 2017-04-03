@@ -10,9 +10,10 @@ from setuptools import find_packages, setup
 
 setup(
     name = 'TracPerlPod',
-    version = '0.1.0',
+    version = '0.1.1',
     packages = find_packages(exclude = ['*.tests*']),
     license = "BSD 3-Clause",
+    url = 'https://trac-hacks.org/wiki/PerlPodPlugin',
     entry_points = {
         'trac.plugins': [
             'TracPerlPod = tracperlpod.renderer',

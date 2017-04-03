@@ -6,13 +6,14 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.core import escape
+import os
+from subprocess import Popen, PIPE
+
+from pod2html import Pod2Html
 from trac.core import *
 from trac.mimeview.api import IHTMLPreviewRenderer
-from pod2html import Pod2Html
+from trac.util.html import escape
 
-from subprocess import Popen, PIPE
-import os
 
 class PerlPodRenderer(Component):
     """HTML renderer for Plain Old Document. Add application/x-perlpod:pod to mime_map in trac.ini"""
@@ -20,9 +21,9 @@ class PerlPodRenderer(Component):
 
     def __init__(self):
         self.pod2html = Pod2Html()
-        self.cachedir = os.path.join(os.path.abspath(self.env.path), 'cache/perlpod') 
+        self.cachedir = os.path.join(os.path.abspath(self.env.path), 'cache/perlpod')
         if not os.path.isdir(self.cachedir):
-            os.makedirs(self.cachedir) 
+            os.makedirs(self.cachedir)
 
     # IHTMLPreviewRenderer methods
 
