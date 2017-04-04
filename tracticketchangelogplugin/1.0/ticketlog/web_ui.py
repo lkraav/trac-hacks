@@ -26,8 +26,10 @@ from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
 from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.util.datefmt import format_datetime, from_utimestamp, user_time
 from trac.util.text import shorten_line
+from trac.util.translation import domain_functions
 
-from i18n_domain import add_domain
+gettext, _, tag_, N_, add_domain = \
+    domain_functions('ticketlog', 'gettext', '_', 'tag_', 'N_', 'add_domain')
 
 
 class TicketlogModule(Component):
