@@ -1,8 +1,8 @@
 #
 # Narcissus plugin for Trac
 #
-# Copyright (C) 2008 Kim Upton	
-# All rights reserved.	
+# Copyright (C) 2008 Kim Upton
+# All rights reserved.
 #
 
 from narcissus import *

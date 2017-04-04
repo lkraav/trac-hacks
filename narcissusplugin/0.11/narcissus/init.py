@@ -1,7 +1,7 @@
 #
 # Narcissus plugin for Trac
 #
-# Copyright (C) 2008 Kim Upton	
+# Copyright (C) 2008 Kim Upton
 # All rights reserved.
 #
 # Parts of this class were modified from the peerreview plugin, Copyright (C) Team5
@@ -21,7 +21,7 @@ class NarcissusInit(Component):
     def environment_created(self):
         self.found_db_version = 0
         self.upgrade_environment(self.env.get_db_cnx())
-    
+
     def environment_needs_upgrade(self, db):
         cursor = db.cursor()
         cursor.execute("SELECT value FROM system WHERE name = 'narcissus_version'")
@@ -56,19 +56,19 @@ class NarcissusInit(Component):
         for tbl in db_default.tables:
             for sql in db_manager.to_sql(tbl):
                 cursor.execute(sql)
-        
+
         # Insert default settings
         cursor.execute("INSERT INTO narcissus_settings VALUES ('resource', 'wiki')")
         cursor.execute("INSERT INTO narcissus_settings VALUES ('resource', 'svn')")
         cursor.execute("INSERT INTO narcissus_settings VALUES ('resource', 'ticket')")
-        
+
         settings = NarcissusSettings(db)
-        
+
         bounds = settings.DEFAULT_BOUNDS
         for b in bounds:
             for i, threshold in enumerate(bounds[b]):
                 cursor.execute("INSERT INTO narcissus_bounds VALUES ('%s', %s, %s)" % (b, i + 1, threshold))
-        
+
         credits = settings.DEFAULT_CREDITS
         for c in credits:
             cursor.execute("INSERT INTO narcissus_credits VALUES ('%s', %s)" % (c, credits[c]))

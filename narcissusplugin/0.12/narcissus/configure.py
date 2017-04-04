@@ -50,7 +50,7 @@ class NarcissusPlugin(Component):
                     thresh_a, thresh_b, thresh_c = self._settings.bounds[b]
                 if thresh_a < thresh_b < thresh_c:
                     for i, thresh in enumerate([thresh_a, thresh_b, thresh_c]):
-                        sql = '''update narcissus_bounds set threshold = %s where 
+                        sql = '''update narcissus_bounds set threshold = %s where
                             resource = "%s" and level = %s''' % (thresh, b, i + 1)
                         cursor.execute(sql)
                         self._settings.bounds[b][i] = thresh
@@ -65,14 +65,14 @@ class NarcissusPlugin(Component):
                 cursor.execute(sql)
                 self._settings.credits[c] = new_credit
         self.db.commit()
-        
+
         # refresh/populate configuration fields
         params['users'] = []
         self._settings = NarcissusSettings(self.db)
         for u, _, _ in self.env.get_known_users():
             if u not in self._settings.members:
                 params['users'].append(u)
-        
+
         params['members'] = []
         for m in self._settings.members:
             params['members'].append(m)
@@ -83,7 +83,7 @@ class NarcissusPlugin(Component):
             for i, threshold in enumerate(self._settings.bounds[b]):
                 l.append(i)
             params['bounds'][b] = l
-        
+
         params['credits'] = {}
         for c in self._settings.credits:
             params['credits'][c] = self._settings.credits[c]
@@ -98,4 +98,3 @@ class NarcissusPlugin(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('nar', resource_filename(__name__, 'htdocs'))]
-

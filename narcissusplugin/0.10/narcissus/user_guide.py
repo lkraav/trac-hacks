@@ -27,7 +27,7 @@ class NarcissusPlugin(Component):
         req.hdf['main'] = "no"
         req.hdf['config'] = "no"
         req.hdf['user_guide'] = "yes"
-        
+
         return 'user_guide.cs', None
 
     # ITemplateProvider methods

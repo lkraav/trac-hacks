@@ -10,16 +10,16 @@ from trac.util import escape, Markup
 from trac.ticket.model import Ticket
 from trac.wiki.model import WikiPage
 
-ticket_query = '''select time, id, reporter, "created" from ticket where %s union all 
-    select time, ticket, author, "commented on" from ticket_change where field = "comment" 
-    and %s group by time union all select time, ticket, author, "updated" from 
-    ticket_change where field != "resolution" and field != "comment" and newvalue != 
-    "closed" and newvalue != "reopened" and %s group by time union all select time, ticket, 
-    author, "closed" from ticket_change where newvalue = "closed" and %s union all select 
-    time, ticket, author, "reopened" from ticket_change where newvalue = "reopened" and %s 
+ticket_query = '''select time, id, reporter, "created" from ticket where %s union all
+    select time, ticket, author, "commented on" from ticket_change where field = "comment"
+    and %s group by time union all select time, ticket, author, "updated" from
+    ticket_change where field != "resolution" and field != "comment" and newvalue !=
+    "closed" and newvalue != "reopened" and %s group by time union all select time, ticket,
+    author, "closed" from ticket_change where newvalue = "closed" and %s union all select
+    time, ticket, author, "reopened" from ticket_change where newvalue = "reopened" and %s
     order by time'''
 _DSQL = {'wiki': ('select time, name, author, version from wiki where time >= %s and time < %s',  1),
-        'svn': ('select time, rev, author from revision where time >= %s and time < %s', 1), 
+        'svn': ('select time, rev, author from revision where time >= %s and time < %s', 1),
         'ticket': (ticket_query % (('time >= %s and time < %s',) * 5), 5),
         'tid': (ticket_query % (('id = %s',) + ('ticket = %s',) * 4), 5)
        }
@@ -77,7 +77,7 @@ class NarcissusPlugin(Component):
         member = req.args.get('member', None)
         resource = req.args.get('resource', None)
         date = req.args.get('date', None)
-        tid = req.args.get('tid', None)        
+        tid = req.args.get('tid', None)
         cursor = self.db.cursor()
 
         # ticket view will request ticket details according to tid
@@ -88,7 +88,7 @@ class NarcissusPlugin(Component):
             next_date = float(date) + 24 * 60 * 60
             cursor.execute(_DSQL[resource][0] % ((date, next_date) * _DSQL[resource][1]))
             self._score(req)
-        
+
         # not casting row to separate variables, as result will be different for each query
         for i, row in enumerate(cursor):
             # group view will request activity details for a group member
@@ -132,7 +132,7 @@ class NarcissusPlugin(Component):
             metric = 'credit%s'
 
         if member:
-            sql = '''select * from narcissus_data where member = "%s" 
+            sql = '''select * from narcissus_data where member = "%s"
                 and resource = "%s" and dtime >= %s and dtime < %s'''\
                 % (member, resource, date, next_date)
         else:
@@ -140,7 +140,7 @@ class NarcissusPlugin(Component):
                 and dtime >= %s and dtime < %s''' % (resource, date, next_date)
 
         cursor.execute(sql)
-        
+
         i = 0
         for member, dtime, eid, resource, type, value in cursor:
             req.hdf['score.%s.eid' % i] = eid
@@ -148,10 +148,10 @@ class NarcissusPlugin(Component):
             activity = '%s %s' % (value, metric % ('','s')[int(value) > 1])
             req.hdf['score.%s.activity' % i] = activity
             i += 1
-        
+
         settings = NarcissusSettings(self.db)
         bounds = settings.bounds[resource]
-        
+
         metric = 'added lines'
         if resource == 'ticket':
             metric = 'credits'
@@ -169,6 +169,6 @@ class NarcissusPlugin(Component):
         return d.strftime('%H:%M')
 
     def _datetimestr(self, timestamp):
-        # Given a timestamp, return the datetime string format 
+        # Given a timestamp, return the datetime string format
         d = datetime.datetime.fromtimestamp(timestamp)
         return d.strftime('%d/%m/%y %H:%M')

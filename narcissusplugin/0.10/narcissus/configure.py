@@ -28,7 +28,7 @@ class NarcissusPlugin(Component):
         req.hdf['main'] = "no"
         req.hdf['config'] = "yes"
         req.hdf['user_guide'] = "no"
-        
+
         self.db = self.env.get_db_cnx()
         cursor = self.db.cursor()
         self._settings = NarcissusSettings(self.db)
@@ -52,7 +52,7 @@ class NarcissusPlugin(Component):
                     thresh_a, thresh_b, thresh_c = self._settings.bounds[b]
                 if thresh_a < thresh_b < thresh_c:
                     for i, thresh in enumerate([thresh_a, thresh_b, thresh_c]):
-                        sql = '''update narcissus_bounds set threshold = %s where 
+                        sql = '''update narcissus_bounds set threshold = %s where
                             resource = "%s" and level = %s''' % (thresh, b, i + 1)
                         cursor.execute(sql)
                         self._settings.bounds[b][i] = thresh
@@ -67,20 +67,20 @@ class NarcissusPlugin(Component):
                 cursor.execute(sql)
                 self._settings.credits[c] = new_credit
         self.db.commit()
-        
+
         # refresh/populate configuration fields
         self._settings = NarcissusSettings(self.db)
         for u, _, _ in self.env.get_known_users():
             if u not in self._settings.members:
                 req.hdf['user.%s' % u] = u
-        
+
         for m in self._settings.members:
             req.hdf['member.%s' % m] = m
 
         for b in self._settings.bounds:
             for i, threshold in enumerate(self._settings.bounds[b]):
                 req.hdf['bound.%s.%s' % (b, i)] = threshold
-        
+
         for c in self._settings.credits:
             req.hdf['credit.%s' % c] = self._settings.credits[c]
 

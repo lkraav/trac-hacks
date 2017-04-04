@@ -2,8 +2,8 @@
 #
 # Narcissus plugin for Trac
 #
-# Copyright (C) 2008 Kim Upton    
-# All rights reserved.    
+# Copyright (C) 2008 Kim Upton
+# All rights reserved.
 #
 
 import os
@@ -82,7 +82,7 @@ class NarcissusPlugin(Component):
             self._load_config()
             img_path = os.path.join(self.cache_dir, img)
             return req.send_file(img_path, mimeview.get_mimetype(img_path))
-        
+
 ###        add_stylesheet(req, 'nar/css/narcissus.css')
 ###        add_script(req, 'nar/js/narcissus.js')
 
@@ -93,17 +93,17 @@ class NarcissusPlugin(Component):
         params['href_user_guide'] = self.env.href.narcissus('user_guide')
         params['error'] = None
         params['msg'] = ""
-        
+
         self.db = self.env.get_db_cnx()
 
         self._settings = NarcissusSettings(self.db)
-        
+
         # Ensure Narciussus has been configured to incluude some group members
         if not self._settings.members:
             params['msg'] = '''No group members have been selected for visualisation.
                 Please add group members using the configuration page.'''
             return 'narcissus.xhtml', params, None
-        
+
         # Parse the from date and adjust the timestamp to the last second of
         # the day (taken from Timeline.py, (c) Edgewall Software)
         t = time.localtime()
@@ -121,10 +121,10 @@ class NarcissusPlugin(Component):
         params['date_end'] = fromdate
         params['date_from'] = format_date(fromdate)
         params['date_daysback'] = daysback
-        
+
         self._update_data(req)
         self._create_legend(req, params)
-        
+
         trouble, msg = self._get_font()
         if trouble:
             params['error'] = msg.getvalue()
@@ -163,7 +163,7 @@ class NarcissusPlugin(Component):
             start_rev += 1
         last_update = datetime.date.fromtimestamp(last_update)
         members = self._settings.members
-        
+
         # populate table with wiki activity
         cursor.execute('''select name, min(version), count(version), min(time) from wiki
             where time > %f group by name order by min(time)''' % self._to_time(last_update))
@@ -174,7 +174,7 @@ class NarcissusPlugin(Component):
                 new_page = WikiPage(self.env, page, 1)
                 add = len(new_page.text.splitlines())
                 if (new_page.author in members) and (new_page.time.date() > last_update):
-                    self._insert_data(new_page.author, new_page.time, 
+                    self._insert_data(new_page.author, new_page.time,
                         new_page.name, 'wiki', 'add', add)
                 start_version += 1
             for i in xrange(start_version, versions):
@@ -184,7 +184,7 @@ class NarcissusPlugin(Component):
                     changes = self._my_diff(old_page.text, edit_page.text)
                     edit = self._edit_newlines(changes)
                     if edit:
-                        self._insert_data(edit_page.author, edit_page.time, 
+                        self._insert_data(edit_page.author, edit_page.time,
                             edit_page.name, 'wiki', 'edit', edit)
 
         # populate table with ticket activity
@@ -194,17 +194,17 @@ class NarcissusPlugin(Component):
             ticket = Ticket(self.env, row[0])
             # ticket has been opened
             if ticket['reporter'] in members and ticket.time_created.date() > last_update:
-                self._insert_data(ticket['reporter'], ticket.time_created, 
+                self._insert_data(ticket['reporter'], ticket.time_created,
                     ticket.id, 'ticket', 'open', 1) # FIXME
             for dtime, author, field, _, newvalue, _ in ticket.get_changelog():
                 if author in members and dtime.date() > last_update:
                     if field == 'comment':
                         # ticket has received comment
-                        self._insert_data(author, dtime, ticket.id, 
+                        self._insert_data(author, dtime, ticket.id,
                             'ticket', 'comment', credits['comment'])
                     elif newvalue == 'assigned':
                         # ticket has been accepted
-                        self._insert_data(author, dtime, ticket.id, 
+                        self._insert_data(author, dtime, ticket.id,
                             'ticket', 'accept', credits['accept'])
                     elif field == 'resolution':
                         # ticket has been closed, reopened closures only count as a change
@@ -213,18 +213,18 @@ class NarcissusPlugin(Component):
                             if inner_time > dtime and field == 'resolution':
                                 reopened = True
                         if reopened:
-                            self._insert_data(author, dtime, ticket.id, 
+                            self._insert_data(author, dtime, ticket.id,
                                 'ticket', 'update', credits['update'])
                         else:
                             if ticket['owner'] in members:
-                                self._insert_data(ticket['owner'], dtime, 
+                                self._insert_data(ticket['owner'], dtime,
                                     ticket.id, 'ticket', 'close', credits['close'])
                             if author != ticket['owner']:
-                                self._insert_data(author, dtime, ticket.id, 
+                                self._insert_data(author, dtime, ticket.id,
                                     'ticket', 'proxy close', credits['update'])
                     else:
                         # ticket has been changed
-                        self._insert_data(author, dtime, ticket.id, 
+                        self._insert_data(author, dtime, ticket.id,
                             'ticket', 'update', 1) # FIXME
 
         # populate table with svn activity
@@ -244,8 +244,8 @@ class NarcissusPlugin(Component):
                     add += self._svn_add_newlines(repos, path, rev)
                 elif change == 'edit':
                     diff_args = {'old_path': base_path,
-                                 'old_rev': base_rev, 
-                                 'new_path': path or '/', 
+                                 'old_rev': base_rev,
+                                 'new_path': path or '/',
                                  'new_rev': rev
                                 }
                     changes = self._my_svn_diff(repos, diff_args)
@@ -332,8 +332,8 @@ class NarcissusPlugin(Component):
             for i in range(days):
                 for j, res in enumerate(resources):
                     statement = '''select sum(value) from narcissus_data where
-                        member = "%s" and resource = "%s" and dtime >= %s and 
-                        dtime < %s''' % (mem, res, self._to_time(idate), 
+                        member = "%s" and resource = "%s" and dtime >= %s and
+                        dtime < %s''' % (mem, res, self._to_time(idate),
                         self._to_time(idate + datetime.timedelta(days=1)))
                     cursor.execute(statement)
                     total_value = cursor.fetchone()[0]
@@ -375,7 +375,7 @@ class NarcissusPlugin(Component):
             for r, res in enumerate(resources):
                 rx = mx + (r * _SQUARE_SIZE)
                 if totals[mem][r]:
-                    draw.rectangle([rx, y + int(summary_scale * totals[mem][r]), 
+                    draw.rectangle([rx, y + int(summary_scale * totals[mem][r]),
                                    rx + _SQUARE_SIZE - 1, y + 1],
                                    fill=(_RED[r], _GREEN[r], _BLUE[r], 255))
                 if averages[r]:
@@ -407,7 +407,7 @@ class NarcissusPlugin(Component):
                 if value:
                     widths[r] += self._get_score(res, int(value))
                 idate = jdate
-        
+
         total_width = 0
         for i, w in enumerate(widths):
             if w > 0: widths[i] = int((float(w) / days) * 100) + (_SQUARE_SIZE / 2)
@@ -468,7 +468,7 @@ class NarcissusPlugin(Component):
         members = self._settings.members
         resources = self._settings.resources
         cursor = self.db.cursor()
-        
+
         # ids are required for mapping members to their colours
         midx = {}
         for i, m in enumerate(members):
@@ -477,7 +477,7 @@ class NarcissusPlugin(Component):
         # group tickets according to the owner
         mem_tickets, owned_tickets = {}, 0
         for mem in members:
-            statement = '''select id from ticket where owner = "%s" and not 
+            statement = '''select id from ticket where owner = "%s" and not
                 (status = "closed" and changetime <= %s) and not time > %s'''\
                 % (mem, self._to_time(start), self._to_time(end))
             cursor.execute(statement)
@@ -501,7 +501,7 @@ class NarcissusPlugin(Component):
         draw = ImageDraw.Draw(img)
 
         draw = self._write_dates((0, page_height), start, days, draw)
-        
+
         # draw individual tickets
         map = []
         memx = date_offset
@@ -565,13 +565,13 @@ class NarcissusPlugin(Component):
                     draw_days = (end - draw_from).days
                     y = page_height - self._date_y(start, draw_from) - (_SQUARE_SIZE / 2)
                     draw.line([x + (ticket_width / 2), y, x + (ticket_width / 2),
-                        y - (draw_days * _SQUARE_SIZE + (_SQUARE_SIZE / 2))], 
+                        y - (draw_days * _SQUARE_SIZE + (_SQUARE_SIZE / 2))],
                         fill=(128, 128, 128, 255), width=width)
                 for dot in dots:
                     y, i = dot[0] - (_SQUARE_SIZE / 2), dot[1]
                     draw.ellipse([x, y - ticket_width, x + ticket_width, y],
                         fill=(_RED[i%len(_RED)], _GREEN[i%len(_GREEN)], _BLUE[i%len(_BLUE)], 255))
-    
+
                 # default length if there haven't been any changes to the ticket yet
                 last_change = end
                 if ticket['status'] == 'closed':
@@ -595,7 +595,7 @@ class NarcissusPlugin(Component):
             # print member name
             x, y = memx + 10, name_offset * 0.4
             draw.text((x, y), mem, fill=(0, 0, 0, 255), font=self._ttf)
-            
+
             # increment the horizontal point for the next member
             memx += colw + bar_gap
 
@@ -621,7 +621,7 @@ class NarcissusPlugin(Component):
             return None
 
         buf = StringIO()
-        
+
         # Use hash to determine image name for cache
         view = req.args.get('view', 'group')
         sha_text = '%s%s%s' % (view, name, time.time())
@@ -633,7 +633,7 @@ class NarcissusPlugin(Component):
         # Create image if not in cache
         if not os.path.exists(img_path):
             self._clean_cache()
-        
+
         img.save(img_path, 'PNG')
         d = {}
         d['href'] = '%s%s?img=%s' % (req.base_url, req.path_info, img_name)
@@ -789,7 +789,7 @@ class NarcissusPlugin(Component):
         if isinstance(value, basestring):
             value = value.lower() in _TRUE_VALUES
         return bool(value)
-    
+
     def _get_dates(self, params):
         # Determine the dates and number of days to be visualised
         days = int(params['date_daysback']) + 1 # inclusive of start and end dates
@@ -804,7 +804,7 @@ class NarcissusPlugin(Component):
     def _to_time(self, datetime):
         # Given a datetime object, return the timestamp
         return time.mktime(datetime.timetuple())
-    
+
     def _date_y(self, start, idate):
         # Determine the y potision relative the the start date
         return (idate - start).days * _SQUARE_SIZE
@@ -833,7 +833,7 @@ class NarcissusPlugin(Component):
             return 0
         content = node.get_content().read()
         if self._is_binary(content):
-             return 0 # ideally will provide score for binary contributions
+            return 0 # ideally will provide score for binary contributions
         addedlines = len(content.splitlines())
         return addedlines or 0
 
@@ -869,7 +869,7 @@ class NarcissusPlugin(Component):
             return None
         new_content = new_node.get_content().read()
         if self._is_binary(new_content):
-            return None    
+            return None
         return self._my_diff(old_content, new_content)
 
     def _get_score(self, resource, value):
@@ -895,4 +895,3 @@ class NarcissusPlugin(Component):
             return v
         except UnicodeEncodeError:
             return v
-

@@ -1,8 +1,8 @@
 #
 # Narcissus plugin for Trac
 #
-# Copyright (C) 2008 Kim Upton    
-# All rights reserved.    
+# Copyright (C) 2008 Kim Upton
+# All rights reserved.
 #
 
 class NarcissusSettings(object):
@@ -17,7 +17,7 @@ class NarcissusSettings(object):
                        'update': 1,
                        'close': 3
                       }
-    
+
     def __init__(self, db):
         cursor = db.cursor()
 
@@ -30,15 +30,15 @@ class NarcissusSettings(object):
         self.members = []
         for row in cursor:
             self.members.append(row[0])
-        
+
         self.bounds = {}
         for r in self.resources:
-            cursor.execute('''select threshold from narcissus_bounds where 
+            cursor.execute('''select threshold from narcissus_bounds where
                 resource = "%s" order by level''' % r)
             self.bounds[r] = [row[0] for row in cursor]
         if not self.bounds:
             self.bounds = self.DEFAULT_BOUNDS
-        
+
         cursor.execute('select type, credit from narcissus_credits')
         self.credits = {}
         for row in cursor:
