@@ -16,4 +16,3 @@ setup(name=PACKAGE,
       entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)},
       install_requires=['Trac'],
 )
-
