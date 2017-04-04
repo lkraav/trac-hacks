@@ -19,7 +19,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    
+
     #install_requires = ['TracWebAdmin'],
 
     entry_points = {

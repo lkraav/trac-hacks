@@ -13,18 +13,18 @@ __all__ = ['PrivateTicketsViewModule']
 
 class PrivateTicketsViewModule(Component):
     """Allow users to see tickets they are involved in."""
-    
+
     implements(INavigationContributor)
-    
+
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         return ''
-        
+
     def get_navigation_items(self, req):
         # Don't allow this to be exposed
         if 'DO_PRIVATETICKETS_FILTER' in req.args.keys():
             del req.args['DO_PRIVATETICKETS_FILTER']
-        
+
         # Various ways to allow access
         if not req.perm.has_permission('TICKET_VIEW') and \
            (req.perm.has_permission('TICKET_VIEW_REPORTER') or \
@@ -50,7 +50,7 @@ class PrivateTicketsViewModule(Component):
                 self._grant_view(req) # So they can see the query page link
                 if req.args.get('id'):
                     req.args['DO_PRIVATETICKETS_FILTER'] = 'report'
-                    
+
             # NOTE: Send this back here because the button would be hidden otherwise. <NPK t:1129>
             if not self.env.is_component_enabled(ReportModule) or not req.perm.has_permission('REPORT_VIEW'):
                 return [('mainnav', 'tickets',

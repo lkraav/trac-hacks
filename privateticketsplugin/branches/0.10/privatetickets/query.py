@@ -14,16 +14,16 @@ __all__ = ['PrivateTicketsQueryFilter']
 
 class PrivateTicketsQueryFilter(Component):
     """Remove entires from queries if this user shouldn't see them."""
-    
+
     implements(IRequestFilter)
-    
+
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         if isinstance(handler, QueryModule) and req.args.get('format'):
             self.log.debug('PrivateTickets: Intercepting formatted query')
             return self # XXX: Hack due to IContentConverter being b0rked <NPK>
         return handler
-      
+
     def post_process_request(self, req, template, content_type):
         if req.args.get('DO_PRIVATETICKETS_FILTER') == 'query':
             # Extract the data
@@ -32,7 +32,7 @@ class PrivateTicketsQueryFilter(Component):
             if not node:
                 return template, content_type
             node = node.child()
-            
+
             while node:
                 data = {}
                 sub_node = node.child()
@@ -41,20 +41,20 @@ class PrivateTicketsQueryFilter(Component):
                     sub_node = sub_node.next()
                 results.append(data)
                 node = node.next()
-                
+
             self.log.debug('PrivateTickets: results = %r', results)
             # Nuke the old data
             req.hdf.removeTree('query.results')
-            
+
             # Filter down the data
             fn = PrivateTicketsSystem(self.env).check_ticket_access
             new_results = [d for d in results if fn(req, d['id'])]
-            
+
             self.log.debug('PrivateTickets: new_results = %r', new_results)
 
             # Reinsert the data
             req.hdf['query.results'] = new_results
-                
+
         return template, content_type
 
     # Content conversion insanity
@@ -77,14 +77,14 @@ class PrivateTicketsQueryFilter(Component):
                       req.args.has_key('desc'), req.args.get('group'),
                       req.args.has_key('groupdesc'),
                       req.args.has_key('verbose'))
-                      
+
         format = req.args.get('format')
         self.send_converted(req, 'trac.ticket.Query', query, format, 'query')
-    
+
     def get_supported_conversions(self):
         yield ('csv', 'Comma-delimited Text', 'csv',
                'trac.ticket.Query', 'text/csv', 9)
-               
+
     def convert_content(self, req, mimetype, query, key):
         if key == 'rss':
             return self.export_rss(req, query) + ('rss',)
@@ -106,7 +106,7 @@ class PrivateTicketsQueryFilter(Component):
                                                                    ext))
         req.end_headers()
         req.write(content)
-        raise RequestDone 
+        raise RequestDone
 
     # Hacked content converters
     def export_csv(self, req, query, sep=',', mimetype='text/plain'):
@@ -121,7 +121,7 @@ class PrivateTicketsQueryFilter(Component):
             # Filter data
             if not fn(req, result['id']):
                 continue
-        
+
             content.write(sep.join([unicode(result[col]).replace(sep, '_')
                                                         .replace('\n', ' ')
                                                         .replace('\r', ' ')

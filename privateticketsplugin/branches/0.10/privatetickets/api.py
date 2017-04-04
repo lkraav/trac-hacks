@@ -12,18 +12,18 @@ __all__ = ['PrivateTicketsSystem']
 
 class PrivateTicketsSystem(Component):
     """Central tasks for the PrivateTickets plugin."""
-    
+
     implements(IPermissionRequestor)
-    
+
     group_providers = ExtensionPoint(IPermissionGroupProvider)
 
     blacklist = ListOption('privatetickets', 'group_blacklist', default='anonymous, authenticated',
                            doc='Groups that do not affect the common membership check.')
-    
+
     # IPermissionRequestor methods
     def get_permission_actions(self):
         actions = ['TICKET_VIEW_REPORTER', 'TICKET_VIEW_OWNER', 'TICKET_VIEW_CC']
-        group_actions = ['TICKET_VIEW_REPORTER_GROUP', 'TICKET_VIEW_OWNER_GROUP', 'TICKET_VIEW_CC_GROUP'] 
+        group_actions = ['TICKET_VIEW_REPORTER_GROUP', 'TICKET_VIEW_OWNER_GROUP', 'TICKET_VIEW_CC_GROUP']
         all_actions = actions + [(a+'_GROUP', [a]) for a in actions]
         return all_actions + [('TICKET_VIEW_SELF', actions), ('TICKET_VIEW_GROUP', group_actions)]
 
@@ -34,7 +34,7 @@ class PrivateTicketsSystem(Component):
             tkt = Ticket(self.env, id)
         except TracError:
             return False # Ticket doesn't exist
-            
+
         if req.perm.has_permission('TICKET_VIEW_REPORTER') and \
            tkt['reporter'] == req.authname:
             return True
@@ -45,8 +45,8 @@ class PrivateTicketsSystem(Component):
 
         if req.perm.has_permission('TICKET_VIEW_OWNER') and \
            req.authname == tkt['owner']:
-            return True            
-            
+            return True
+
         if req.perm.has_permission('TICKET_VIEW_REPORTER_GROUP') and \
            self._check_group(req.authname, tkt['reporter']):
             return True
@@ -54,13 +54,13 @@ class PrivateTicketsSystem(Component):
         if req.perm.has_permission('TICKET_VIEW_OWNER_GROUP') and \
            self._check_group(req.authname, tkt['owner']):
             return True
-            
+
         if req.perm.has_permission('TICKET_VIEW_CC_GROUP'):
             for user in tkt['cc'].split(','):
                 #self.log.debug('Private: CC check: %s, %s', req.authname, user.strip())
                 if self._check_group(req.authname, user.strip()):
                     return True
-                    
+
         return False
 
     # Internal methods
@@ -80,7 +80,7 @@ class PrivateTicketsSystem(Component):
         for provider in self.group_providers:
             for group in provider.get_permission_groups(user):
                 groups.add(group)
-                
+
         perms = PermissionSystem(self.env).get_all_permissions()
         repeat = True
         while repeat:
@@ -88,7 +88,6 @@ class PrivateTicketsSystem(Component):
             for subject, action in perms:
                 if subject in groups and action.islower() and action not in groups:
                     groups.add(action)
-                    repeat = True 
-                    
+                    repeat = True
+
         return groups
-        
