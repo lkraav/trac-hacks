@@ -40,8 +40,12 @@ class TicketlogModule(Component):
         "Regex to determine which changesets reference the ticket.")
 
     def __init__(self):
-        locale_dir = resource_filename(__name__, 'locale')
-        add_domain(self.env.path, locale_dir)
+        try:
+            locale_dir = resource_filename(__name__, 'locale')
+        except KeyError:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
 
     # ITemplateProvider methods
 
@@ -77,22 +81,26 @@ class TicketlogModule(Component):
 
         p = re.compile(self.log_pattern % ticket_id, re.M + re.S + re.U)
 
+        rm = RepositoryManager(self.env)
         intermediate = {}
-        for repos_name, rev, author, timestamp, message in self.env.db_query(
-                """
+        for row in self.env.db_query("""
                 SELECT p.value, v.rev, v.author, v.time, v.message
                 FROM revision v
-                  LEFT JOIN repository p
-                  ON v.repos = p.id AND p.name='name'
+                  LEFT JOIN repository p ON v.repos = p.id AND p.name='name'
                 WHERE message LIKE %s
                 """, ('%#' + ticket_id + '%',)):
+            repos_name = row[0]
+            rev = row[1]
+            author = row[2]
+            timestamp = row[3]
+            message = row[4]
 
             if not p.match(message):
                 continue
 
-            repos = RepositoryManager(self.env).get_repository(repos_name)
+            repos = rm.get_repository(repos_name)
             rev = repos.display_rev(rev)
-            link = str(rev)
+            link = unicode(rev)
             if repos_name:
                 link += '/%s' % repos_name
             # Using (rev, author, time, message) as the key
