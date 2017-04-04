@@ -9,21 +9,21 @@ from setuptools import find_packages, setup
 ##
 setup_l10n = {}
 try:
-  from trac.util.dist import get_l10n_cmdclass
-  cmdclass = get_l10n_cmdclass()
-  if cmdclass:
-    setup_l10n = {
-      'cmdclass': cmdclass,
-      'message_extractors': { 'projectplan': [
-        ('**.py',                'python', None), # generic python extractor
-        ('**/templates/**.html', 'genshi', None), # genshi (x)html Template extractor
-        ('**/templates/**.txt',  'genshi', {      # genshi Text Template extractor
-          'template_class': 'genshi.template:TextTemplate'
-        }),
-      ]}
-    }
+    from trac.util.dist import get_l10n_cmdclass
+    cmdclass = get_l10n_cmdclass()
+    if cmdclass:
+        setup_l10n = {
+          'cmdclass': cmdclass,
+          'message_extractors': { 'projectplan': [
+            ('**.py',                'python', None), # generic python extractor
+            ('**/templates/**.html', 'genshi', None), # genshi (x)html Template extractor
+            ('**/templates/**.txt',  'genshi', {      # genshi Text Template extractor
+              'template_class': 'genshi.template:TextTemplate'
+            }),
+          ]}
+        }
 except ImportError:
-  pass
+    pass
 
 ##
 # create setup instance

@@ -10,21 +10,21 @@ pppackagedir = u'projectplan'
 pppackage = 'projectplan'
 templatesdir = u'templates'
 htdocsdir = u'htdocs'
-htdocsubdirmapping = { 
-		       u'css': u'*.*',
-		       u'images': u'*.*',
-		       u'images/*': u'*.*',
-		       u'images/*/*': u'*.*',
-		       u'images/*/*/*': u'*.*',
-		       u'js': u'*.js',
-		       u'js/jquery-tablesorter': u'*.*',
-		       u'js/jquery-tooltip': u'*.*',
-		       u'js/jquery-tooltip/lib': u'*.js',
-		       u'js/jquery-burndown': u'*.*',
-		        }
+htdocsubdirmapping = {
+                       u'css': u'*.*',
+                       u'images': u'*.*',
+                       u'images/*': u'*.*',
+                       u'images/*/*': u'*.*',
+                       u'images/*/*/*': u'*.*',
+                       u'js': u'*.js',
+                       u'js/jquery-tablesorter': u'*.*',
+                       u'js/jquery-tooltip': u'*.*',
+                       u'js/jquery-tooltip/lib': u'*.js',
+                       u'js/jquery-burndown': u'*.*',
+                        }
 pptemplatesglob = [ os.path.join( templatesdir, u'*.html' ) ]
 pphtdocsglob = [ os.path.join( htdocsdir, subdir, globmap )
-		 for subdir, globmap in htdocsubdirmapping.items() ]
+                 for subdir, globmap in htdocsubdirmapping.items() ]
 pppackagedataglobs = pphtdocsglob + pptemplatesglob
 
 # create setup instance - done
