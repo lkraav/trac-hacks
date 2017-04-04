@@ -11,17 +11,17 @@ class PermRedirectModule(Component):
     """Redirect users to the login screen on PermissionError."""
 
     implements(IRequestFilter)
-    
+
     def __init__(self):
         old_exc_info = sys.exc_info
         def new_exc_info():
             return list(old_exc_info())
         sys.exc_info = new_exc_info
-    
+
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-            
+
     def post_process_request(self, req, template, content_type):
         if template is None:
             # Some kind of exception in progress
@@ -37,7 +37,7 @@ class PermRedirectModule(Component):
                     req.redirect(req.href.login())
                 except RequestDone:
                     pass # Mask the raise from here, we need to do it later
-                
+
                 for frame in inspect.stack()[1:]:
                     l = frame[0].f_locals
                     co = frame[0].f_code
@@ -48,7 +48,5 @@ class PermRedirectModule(Component):
                         err[1] = None
                         err[2] = None
                         break
-            
+
         return template, content_type
-
-
