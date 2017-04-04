@@ -15,4 +15,3 @@ setup(name='estimatorplugin',
                                      'macro=estimatorplugin.macro_provider',
                                      'webui=estimatorplugin.webui']},
 )
-

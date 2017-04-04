@@ -20,7 +20,7 @@ with parameters:%s\nException:%s'%(sql, params, e));
         db.close()
     except:
         pass
-    
+
     return (desc, data)
 
 def execute_non_query(env, sql, *params):
@@ -38,7 +38,7 @@ with parameters:%s\nException:%s'%(sql, params, e));
         db.close()
     except:
         pass
-    
+
 def get_first_row(env, sql,*params):
     """ Returns the first row of the query results as a tuple of values (or None)"""
     db = env.get_db_cnx()
@@ -96,7 +96,7 @@ def db_table_exists(env,  table):
     except Exception, e:
         has_table = False
         db.rollback()
-        
+
     try:
         db.close()
     except:
@@ -112,7 +112,7 @@ def get_system_value(env, key):
 
 def set_system_value(env, key, value):
     if get_system_value(env, key):
-        execute_non_query(env, "UPDATE system SET value=%s WHERE name=%s", value, key)        
+        execute_non_query(env, "UPDATE system SET value=%s WHERE name=%s", value, key)
     else:
         execute_non_query(env, "INSERT INTO system (value, name) VALUES (%s, %s)",
             value, key)
@@ -130,7 +130,7 @@ def get_result_set(env, sql, *params):
 class ResultSet:
     """ the result of calling getResultSet """
     def __init__ (self, (columnDescription, rows)):
-        self.columnDescription, self.rows = columnDescription, rows 
+        self.columnDescription, self.rows = columnDescription, rows
         self.columnMap = self.get_column_map()
 
     def get_column_map ( self ):
@@ -143,7 +143,7 @@ class ResultSet:
                 h[ col[0] ] = i
                 i+=1
         return h;
-    
+
     def value(self, col, row ):
         """ given a row(list or idx) and a column( name or idx ), retrieve the appropriate value"""
         tcol = type(col)
@@ -164,7 +164,7 @@ class ResultSet:
                 print ("rs.value Type Failed col:%s  row:%s" % (type(col), type(row)))
         else:
             print ("rs.value Type Failed col:%s  row:%s" % (type(col), type(row)))
-   
+
     def json_out(self):
         json = "[%s]" % ',\r\n'. join(
             [("{%s}" % ','.join(

@@ -85,11 +85,11 @@ class EstimationsPage(Component):
                             ignore_blank_lines=True,
                             ignore_case=True,
                             ignore_space_changes=True)
-        
+
         chrome = Chrome(self.env)
         loader = TemplateLoader(chrome.get_all_templates_dirs())
         tmpl = loader.load('diff_div.html')
-        
+
         title = "Estimate:%s Changed" %id
         changes=[{'diffs': diffs, 'props': [],
                   'title': title, 'href': req.href('Estimate', id=id),
@@ -132,7 +132,7 @@ class EstimationsPage(Component):
         except Exception, e:
             addMessage('Invalid Id: %s' % id)
             addMessage('Error: %s' % e)
-            
+
     def notify_old_tickets(self, req, id, addMessage, changer, new_text):
         id = int(id)
         estimate_rs = getEstimateResultSet(self.env, id)
@@ -153,7 +153,7 @@ class EstimationsPage(Component):
         for t in tickets:
             Ticket(self.env,t).save_changes(author=req.authname, comment=comment)
         self.log.debug('Done saving estimate diffs to tickets')
-        
+
     def notify_new_tickets(self, req, id, tickets, addMessage):
         try:
             tag = "[[Estimate(%s)]]" % id
@@ -166,10 +166,10 @@ class EstimationsPage(Component):
                     ticket.save_changes(req.authname, 'added estimate')
             return True
         except Exception, e:
-            self.log.error("Error saving new ticket changes: %s" % e)  
+            self.log.error("Error saving new ticket changes: %s" % e)
             addMessage("Error: %s"  % e)
             return None
-                  
+
 
     def create_ticket_for_lineitem (self, req, id, addMesage, lineitem, summary=None):
         #skip line items that have a ticket
@@ -182,7 +182,7 @@ class EstimationsPage(Component):
         # try to split on a newline or space that is less than 80 chars into the string
         idx = lineitem.description.find('\n', 0, 80)
         if idx < 0: idx = lineitem.description.find(' ', 45, 80)
-        if idx < 0: idx = 45            
+        if idx < 0: idx = 45
         summary = lineitem.description[:idx]
         desc = lineitem.description
         desc += "\n\nFrom [/Estimate?id=%s Created From Estimate %s]" % \
@@ -196,18 +196,18 @@ class EstimationsPage(Component):
         t.insert()
         lineitem.description+="\n\nCreated as /ticket/%s" % (t.id, )
         return t
-        
+
 
     def create_tickets_for_lineitems (self, req, id, addMessage, lineitems, summary=None ):
         return [self.create_ticket_for_lineitem(req, id, addMessage, item, summary)
                 for item in lineitems]
-            
-        
+
+
     def line_items_from_args(self, estimate_id ,  args):
         #line items are names like 'nameNum' (so 'description0')
         itemReg = re.compile(r"(\D+)(\d+)")
         lineItems = {}
-        
+
         def lineItemHasher( value, name, id):
             if not lineItems.has_key(id):
                 lineItems[id] = EstimateLineItem(id=id, estimate_id=estimate_id)
@@ -217,7 +217,7 @@ class EstimationsPage(Component):
             if match:
                 lineItemHasher( item[1],  *match.groups())
         return lineItems.values()
-        
+
     def save_from_form (self, req, addMessage, estData):
 
         args = req.args
@@ -245,16 +245,16 @@ class EstimationsPage(Component):
         # we want to delete any rows that were not included in the
         # form request we will not use -1 as a valid id, so this
         # will allow us to use the same sql reguardless of
-        # anything else.  Do this as a function so that if we 
+        # anything else.  Do this as a function so that if we
         # create tickets, that change is reflected
         lineItems = self.line_items_from_args(id, args)
-        ids = ['-1'] 
+        ids = ['-1']
         newLineItemId = nextEstimateLineItemId (self.env)
         for item in lineItems:
-            if item.is_new(): 
+            if item.is_new():
                 item.id = newLineItemId
                 newLineItemId += 1
-            else: 
+            else:
                 ids.append(str(item.id))
 
         def line_item_saver():
@@ -290,8 +290,8 @@ class EstimationsPage(Component):
             addMessage("Estimate Saved!")
             # if we split our preview is out of date, so we will need
             # to save again immediately, so dont do the redirect
-            if arg_is_true(req, "splitIntoTickets"): 
-                return id 
+            if arg_is_true(req, "splitIntoTickets"):
+                return id
             if arg_is_true(req, "shouldRedirect"):
                 ticket = args["tickets"].split(',')[0]
                 req.redirect("%s/%s" % (req.href.ticket(), ticket))
@@ -299,7 +299,7 @@ class EstimationsPage(Component):
                 req.redirect(req.href.Estimate()+'?id=%s&justsaved=true'%id)
         else:
             addMessage("Failed to save! %s" % result)
-   
+
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         if re.search('/Estimate', req.path_info):
@@ -319,7 +319,7 @@ class EstimationsPage(Component):
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/Estimate')
-     
+
     def process_request(self, req):
         if not req.perm.has_permission("TICKET_MODIFY"):
             req.redirect(req.href.wiki())
@@ -345,7 +345,7 @@ class EstimationsPage(Component):
             # if we didnt redirect, lets make sure all our data gets to the page
             if est_id: self.load(est_id, addMessage, data, req)
 
-        
+
         def int_arg(name):
             if req.args.has_key(name) and req.args[name].strip() != '':
                 return convertint(req.args[name])
@@ -353,14 +353,14 @@ class EstimationsPage(Component):
         estimateid = int_arg('id')
         copy = int_arg('copy')
         match = re.search('/Estimate/(\d*)', req.path_info)
-        
+
         if not estimateid and match:
             estimateid = match.group(1)
-        if estimateid: 
+        if estimateid:
             self.load(estimateid, addMessage, data, req)
         elif copy:
             self.load(copy, addMessage, data, req, copy=True)
-            
+
         if req.args.has_key('justsaved'):
             tickets =  ['<a href="%s/%s">#%s</a>' % (req.href.ticket(), i.strip(), i.strip())
                         for i in data['estimate']['tickets'].split(',')]
@@ -418,5 +418,3 @@ class EstimateLineItem (object):
 
     def get_sql_pair(self):
         return (self.get_sql(), self.to_tuple())
-
-

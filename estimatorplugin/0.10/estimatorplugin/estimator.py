@@ -37,7 +37,7 @@ DELETE FROM estimate_line_item
 WHERE estimate_id=%%s and id not in (%s)
 """
 
-    
+
 def getHtmlEstimate(env, id):
     return dbhelper.get_scalar(env, "SELECT COMMENT FROM estimate WHERE ID=%s", 0, id)
 

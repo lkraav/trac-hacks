@@ -6,11 +6,11 @@ from trac.web.chrome import add_stylesheet
 class EstimatorMacroProvider(Component):
     implements(IWikiMacroProvider)
     """Extension point interface for components that provide Wiki macros."""
-    
+
     def get_macros(self):
         """Return an iterable that provides the names of the provided macros."""
         return ['Estimate']
-        
+
     def get_macro_description(self, name):
         """Return a plain text description of the macro with the specified name.
         """
@@ -25,18 +25,18 @@ class EstimatorMacroProvider(Component):
         else:
             html = "Estimate Does Not Exist: %s" % (id,)
         return html
-    
+
     def render_macro(self, req, name, content):
         """Return the HTML output of the macro (deprecated)"""
         #try:
         return self.estimate_macro(int(content), req)
         #except:
         #    return "Estimate Does Not Exist"
-                                     
+
 
     def expand_macro(self, formatter, name, content):
         """Called by the formatter when rendering the parsed wiki text.
-        
+
         (since 0.11)
         """
         #try:

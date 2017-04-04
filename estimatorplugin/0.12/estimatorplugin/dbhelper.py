@@ -14,13 +14,13 @@ def get_all(env, sql, *params):
     except Exception, e:
         env.log.error('There was a problem executing sql:%s \n \
 with parameters:%s\nException:%s'%(sql, params, e));
-   
+
     return (desc, data)
 
 def execute_non_query(env, sql, *params):
     """Executes the query on the given project"""
     execute_in_trans(env, (sql, params))
-   
+
 def get_first_row(env, sql,*params):
     """ Returns the first row of the query results as a tuple of values (or None)"""
     db = env.get_read_db()
@@ -51,7 +51,7 @@ def execute_in_trans(env, *args):
         def fn(db):
             cur = db.cursor()
             for thing in args:
-                if isinstance(thing, types.FunctionType): 
+                if isinstance(thing, types.FunctionType):
                     c_sql[0] = thing
                     c_params[0] = None
                     thing()
@@ -87,7 +87,7 @@ def get_system_value(env, key):
 
 def set_system_value(env, key, value):
     if get_system_value(env, key):
-        execute_non_query(env, "UPDATE system SET value=%s WHERE name=%s", value, key)        
+        execute_non_query(env, "UPDATE system SET value=%s WHERE name=%s", value, key)
     else:
         execute_non_query(env, "INSERT INTO system (value, name) VALUES (%s, %s)",
             value, key)
@@ -105,7 +105,7 @@ def get_result_set(env, sql, *params):
 class ResultSet:
     """ the result of calling getResultSet """
     def __init__ (self, (columnDescription, rows)):
-        self.columnDescription, self.rows = columnDescription, rows 
+        self.columnDescription, self.rows = columnDescription, rows
         self.columnMap = self.get_column_map()
 
     def get_column_map ( self ):
@@ -118,7 +118,7 @@ class ResultSet:
                 h[ col[0] ] = i
                 i+=1
         return h;
-    
+
     def value(self, col, row ):
         """ given a row(list or idx) and a column( name or idx ), retrieve the appropriate value"""
         tcol = type(col)
@@ -139,7 +139,7 @@ class ResultSet:
                 print ("rs.value Type Failed col:%s  row:%s" % (type(col), type(row)))
         else:
             print ("rs.value Type Failed col:%s  row:%s" % (type(col), type(row)))
-   
+
     def json_out(self, excluded_columns=None):
         if not excluded_columns: excluded_columns = []
         json = "[%s]" % ',\r\n'. join(

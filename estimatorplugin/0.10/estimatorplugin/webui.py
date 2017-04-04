@@ -34,7 +34,7 @@ class EstimationsPage(Component):
         except Exception, e:
             addMessage('Invalid Id: %s' % id)
             addMessage('Error: %s' % e)
-            
+
     def line_item_hash_from_args(self, args):
         not_line_items=['__FORM_TOKEN','tickets','variability','communication',
                         'rate', 'id', 'comment']
@@ -68,7 +68,7 @@ class EstimationsPage(Component):
             self.log.error("Error saving old ticket changes: %s" % e)
             addMessage("Tickets must be numbers")
             return None
-        
+
     def notify_new_tickets(self, req, id, tickets, addMessage):
         try:
             tag = "[[Estimate(%s)]]" % id
@@ -81,80 +81,80 @@ class EstimationsPage(Component):
                     ticket.save_changes(req.authname, 'added estimate')
             return True
         except Exception, e:
-            self.log.error("Error saving new ticket changes: %s" % e)  
+            self.log.error("Error saving new ticket changes: %s" % e)
             addMessage("Error: %s"  % e)
             return None
-                  
-        
+
+
     def save_from_form (self, req, addMessage):
         #try:
-            args = req.args
-            tickets = args["tickets"]
-            if args.has_key("id"):
-                id = args['id']
-            else:
-                id = None
-            old_tickets = None
-            if id == None or id == '' :
-                self.log.debug('Saving new estimate')
-                sql = estimateInsert
-                id = nextEstimateId (self.env)
-            else:
-                self.log.debug('Saving edited estimate')
-                old_tickets = self.notify_old_tickets(req, id, addMessage, req.authname)
-                sql = estimateUpdate
-            self.log.debug('Old Tickets to Update: %r' % old_tickets)
-            estimate_args = [args['rate'], args['variability'],
-                             args['communication'], tickets,
-                             args['comment'], id]
-            saveEstimate = (sql, estimate_args)
-            saveLineItems = []
-            newLineItemId = nextEstimateLineItemId (self.env)
+        args = req.args
+        tickets = args["tickets"]
+        if args.has_key("id"):
+            id = args['id']
+        else:
+            id = None
+        old_tickets = None
+        if id == None or id == '' :
+            self.log.debug('Saving new estimate')
+            sql = estimateInsert
+            id = nextEstimateId (self.env)
+        else:
+            self.log.debug('Saving edited estimate')
+            old_tickets = self.notify_old_tickets(req, id, addMessage, req.authname)
+            sql = estimateUpdate
+        self.log.debug('Old Tickets to Update: %r' % old_tickets)
+        estimate_args = [args['rate'], args['variability'],
+                         args['communication'], tickets,
+                         args['comment'], id]
+        saveEstimate = (sql, estimate_args)
+        saveLineItems = []
+        newLineItemId = nextEstimateLineItemId (self.env)
 
-            # we want to delete any rows that were not included in the form request
-            # we will not use -1 as a valid id, so this will allow us to use the same sql reguardless of anything else
-            ids = ['-1'] 
-            lineItems = self.line_item_hash_from_args(args).items()
-            lineItems.sort()
-            for item in lineItems:
-                itemId = item[0]
-                if int(itemId) < 400000000:# new ids on the HTML are this number and above
-                    ids.append(str(itemId))
-                    sql = lineItemUpdate
-                else:
-                    itemId = newLineItemId
-                    newLineItemId += 1
-                    sql = lineItemInsert
-                itemargs = [id,
-                            item[1]['description'],
-                            item[1]['low'],
-                            item[1]['high'],
-                            itemId]
-                saveLineItems.append((sql, itemargs))
-
-            sql = removeLineItemsNotInListSql % ','.join(ids)
-            #addMessage("Deleting NonExistant Estimate Rows: %r - %s" % (sql , id))
-
-            sqlToRun = [saveEstimate,
-                        (sql, [id]),]
-            sqlToRun.extend(saveLineItems)
-            if old_tickets:
-                sqlToRun.extend(old_tickets)
-            
-            result = dbhelper.execute_in_trans(self.env, *sqlToRun)
-            #will be true or Exception
-            if result == True:
-                if self.notify_new_tickets( req, id, tickets, addMessage):
-                    addMessage("Estimate Saved!")
-                    req.redirect(req.href.Estimate()+'?id=%s&justsaved=true'%id)
+        # we want to delete any rows that were not included in the form request
+        # we will not use -1 as a valid id, so this will allow us to use the same sql reguardless of anything else
+        ids = ['-1']
+        lineItems = self.line_item_hash_from_args(args).items()
+        lineItems.sort()
+        for item in lineItems:
+            itemId = item[0]
+            if int(itemId) < 400000000:# new ids on the HTML are this number and above
+                ids.append(str(itemId))
+                sql = lineItemUpdate
             else:
-                addMessage("Failed to save! %s" % result)
-            
+                itemId = newLineItemId
+                newLineItemId += 1
+                sql = lineItemInsert
+            itemargs = [id,
+                        item[1]['description'],
+                        item[1]['low'],
+                        item[1]['high'],
+                        itemId]
+            saveLineItems.append((sql, itemargs))
+
+        sql = removeLineItemsNotInListSql % ','.join(ids)
+        #addMessage("Deleting NonExistant Estimate Rows: %r - %s" % (sql , id))
+
+        sqlToRun = [saveEstimate,
+                    (sql, [id]),]
+        sqlToRun.extend(saveLineItems)
+        if old_tickets:
+            sqlToRun.extend(old_tickets)
+
+        result = dbhelper.execute_in_trans(self.env, *sqlToRun)
+        #will be true or Exception
+        if result == True:
+            if self.notify_new_tickets( req, id, tickets, addMessage):
+                addMessage("Estimate Saved!")
+                req.redirect(req.href.Estimate()+'?id=%s&justsaved=true'%id)
+        else:
+            addMessage("Failed to save! %s" % result)
+
         #except Exception, e:
         #    raise e
         #    addMessage("Error Saving Estimate: %s" % e)
-            
-   
+
+
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         if re.search('/Estimate', req.path_info):
@@ -174,7 +174,7 @@ class EstimationsPage(Component):
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/Estimate')
-     
+
     def process_request(self, req):
         if not req.perm.has_permission("TICKET_MODIFY"):
             req.redirect(req.href.wiki())
@@ -195,7 +195,7 @@ class EstimationsPage(Component):
             "variability": self.config.get( 'estimator','default_variability') or 1,
             "communication": self.config.get( 'estimator','default_communication') or 1,
             }
-        
+
         if req.args.has_key('id') and req.args['id'].strip() != '':
             self.load(int(req.args['id']), addMessage, data)
 
@@ -226,4 +226,3 @@ class EstimationsPage(Component):
         """
         rtn = [resource_filename(__name__, 'templates')]
         return rtn
-

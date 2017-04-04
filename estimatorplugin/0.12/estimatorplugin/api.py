@@ -21,7 +21,7 @@ class EstimatorSetupParticipant(Component):
 
     def environment_needs_upgrade(self, db):
         """Called when Trac checks whether the environment needs to be upgraded.
-        
+
         Should return `True` if this participant needs an upgrade to be
         performed, `False` otherwise.
         """
@@ -32,7 +32,7 @@ class EstimatorSetupParticipant(Component):
 
     def upgrade_environment(self, db):
         """Actually perform an environment upgrade.
-        
+
         Implementations of this method should not commit any database
         transactions. This is done implicitly after all participants have
         performed the upgrades they need without an error being raised.
@@ -43,7 +43,7 @@ class EstimatorSetupParticipant(Component):
         self.log.debug('Estimator about to upgrade from ver:%s' % ver)
         if ver < 1:
             self.log.debug('Creating Estimate and Estimate_Line_Item tables (Version 1)')
-            success = success and dbhelper.execute_in_trans(self.env, 
+            success = success and dbhelper.execute_in_trans(self.env,
                 ("""CREATE TABLE estimate(
                      id integer PRIMARY KEY,
                      rate DECIMAL,
@@ -81,4 +81,3 @@ class EstimatorSetupParticipant(Component):
         # SHOULD BE LAST IN THIS FUNCTION
         if success:
             dbhelper.set_system_value(self.env, dbkey, dbversion)
-    

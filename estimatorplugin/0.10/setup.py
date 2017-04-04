@@ -15,4 +15,3 @@ setup(name=PACKAGE,
       package_data={PACKAGE : ['templates/*.cs', 'htdocs/*']},
       entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)},
 )
-
