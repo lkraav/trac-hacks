@@ -36,7 +36,7 @@ class TicketlogModule(Component):
     max_message_length = IntOption('ticketlog', 'log_message_maxlength',
         doc="""Maximum length of log message to display.""")
 
-    log_pattern = Option('ticketlog', 'log_pattern', '\s*#%s[:\s]+.*',
+    log_pattern = Option('ticketlog', 'log_pattern', '^\s*#%s[:\s]+.*$',
         "Regex to determine which changesets reference the ticket.")
 
     def __init__(self):
@@ -79,7 +79,7 @@ class TicketlogModule(Component):
         if not ticket_id:
             return revisions
 
-        p = re.compile(self.log_pattern % ticket_id, re.M + re.S + re.U)
+        p = re.compile(self.log_pattern % ticket_id, re.M + re.U)
 
         rm = RepositoryManager(self.env)
         intermediate = {}
@@ -95,7 +95,7 @@ class TicketlogModule(Component):
             timestamp = row[3]
             message = row[4]
 
-            if not p.match(message):
+            if not p.search(message):
                 continue
 
             repos = rm.get_repository(repos_name)
