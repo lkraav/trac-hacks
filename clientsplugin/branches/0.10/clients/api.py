@@ -4,7 +4,7 @@ from reportmanager import CustomReportManager
 
 class ClientsSetupParticipant(Component):
     implements(IEnvironmentSetupParticipant)
-    
+
     version = 1
     installed_version = 0
     name = "clients_plugin_version"
@@ -26,7 +26,7 @@ class ClientsSetupParticipant(Component):
 
     def system_needs_upgrade(self):
         return self.installed_version < self.version
-        
+
     def do_db_upgrade(self):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
@@ -54,10 +54,10 @@ class ClientsSetupParticipant(Component):
     def ticket_fields_need_upgrade(self):
         section = 'ticket-custom'
         return not (self.config.get(section, 'client'))
-    
+
     def do_ticket_field_upgrade(self):
         section = 'ticket-custom'
-        
+
         self.config.set(section,'client', 'select')
         if not self.config.get(section, 'client.order'):
             self.config.set(section, 'client.order', '1')
@@ -73,10 +73,10 @@ class ClientsSetupParticipant(Component):
         """Called when a new Trac environment is created."""
         if self.environment_needs_upgrade(None):
             self.upgrade_environment(None)
-    
+
     def environment_needs_upgrade(self, db):
         """Called when Trac checks whether the environment needs to be upgraded.
-        
+
         Should return `True` if this participant needs an upgrade to be
         performed, `False` otherwise.
 
@@ -86,7 +86,7 @@ class ClientsSetupParticipant(Component):
 
     def upgrade_environment(self, db):
         """Actually perform an environment upgrade.
-        
+
         Implementations of this method should not commit any database
         transactions. This is done implicitly after all participants have
         performed the upgrades they need without an error being raised.
@@ -102,4 +102,3 @@ class ClientsSetupParticipant(Component):
             self.do_ticket_field_upgrade()
 
         print 'Done Upgrading'
-

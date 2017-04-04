@@ -72,7 +72,7 @@ class Client(object):
             cursor = db.cursor()
             self.log.info('Updating client "%s"', self.name)
             cursor.execute("""
-                UPDATE client 
+                UPDATE client
                 SET name=%s,description=%s, default_rate=%s, currency=%s
                 WHERE name=%s
                 """, (self.name, self.description,
@@ -81,7 +81,7 @@ class Client(object):
             if self.name != self._old_name:
                 # Update tickets
                 cursor.execute("""
-                    UPDATE ticket_custom SET value=%s 
+                    UPDATE ticket_custom SET value=%s
                     WHERE name=%s AND value=%s
                     """, (self.name, 'client', self._old_name))
                 # Update event options

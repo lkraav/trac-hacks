@@ -10,7 +10,7 @@ billing_reports = [{
     'description': '',
     'version':     1,
     'sql':         """
-SELECT 
+SELECT
   __group__, __style__,  ticket, summary, newvalue as Work_added,
   time, _ord
 FROM(
@@ -19,30 +19,30 @@ FROM(
     MAX(ticket_change.time) as time, client.value as __group__, 0 as _ord
   FROM ticket_change
   JOIN ticket t on t.id = ticket_change.ticket
-  LEFT JOIN ticket_custom as billable on billable.ticket = t.id 
+  LEFT JOIN ticket_custom as billable on billable.ticket = t.id
     and billable.name = 'billable'
   LEFT JOIN ticket_custom as client on client.ticket = t.id
     and client.name = 'client'
   WHERE field = 'hours' and
-    t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED) 
+    t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED)
       AND billable.value in ($BILLABLE, $UNBILLABLE)
       AND ticket_change.time >= $STARTDATE
       AND ticket_change.time < $ENDDATE
   GROUP BY client.value, t.id, t.summary
-  
-  UNION 
-  
+
+  UNION
+
   SELECT 'background-color:#DFE;' as __style__, NULL as ticket,
     sum(CAST(newvalue as DECIMAL)) as newvalue, 'Total work done' as summary,
     NULL as time, client.value as __group__, 1 as _ord
   FROM ticket_change
   JOIN ticket t on t.id = ticket_change.ticket
-  LEFT JOIN ticket_custom as billable on billable.ticket = t.id 
+  LEFT JOIN ticket_custom as billable on billable.ticket = t.id
     and billable.name = 'billable'
   LEFT JOIN ticket_custom as client on client.ticket = t.id
     and client.name = 'client'
   WHERE field = 'hours' and
-    t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED) 
+    t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED)
       AND billable.value in ($BILLABLE, $UNBILLABLE)
       AND ticket_change.time >= $STARTDATE
       AND ticket_change.time < $ENDDATE
@@ -77,11 +77,11 @@ SELECT p.value AS __color__,
        description AS _description_,                    -- ## Uses a full row
        changetime AS _changetime,
        reporter AS _reporter
-       ,0 as _ord                                        
-	
+       ,0 as _ord
+
   FROM ticket as t
   JOIN enum as p ON p.name=t.priority AND p.type='priority'
-  
+
 LEFT JOIN ticket_custom as estimatedhours ON estimatedhours.name='estimatedhours'
       AND estimatedhours.ticket = t.id
 LEFT JOIN ticket_custom as totalhours ON totalhours.name='totalhours'
@@ -91,16 +91,16 @@ LEFT JOIN ticket_custom as billable ON billable.name='billable'
 LEFT JOIN ticket_custom as client ON client.name='client'
       AND client.ticket = t.id
 
-  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED) 
+  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED)
     AND billable.value in ($BILLABLE, $UNBILLABLE)
-  
 
-UNION 
+
+UNION
 
 SELECT '1' AS __color__,
        client.value AS __group__,
        'background-color:#DFE;' as __style__,
-       NULL as ticket, 'Total work' AS summary,             
+       NULL as ticket, 'Total work' AS summary,
        t.component as __component__, NULL as version, NULL as severity,
        NULL as  milestone, NULL as status,
        NULL as owner,
@@ -116,7 +116,7 @@ SELECT '1' AS __color__,
        ,1 as _ord
   FROM ticket as t
   JOIN enum as p ON p.name=t.priority AND p.type='priority'
-  
+
 LEFT JOIN ticket_custom as estimatedhours ON estimatedhours.name='estimatedhours'
       AND estimatedhours.ticket = t.id
 
@@ -125,11 +125,11 @@ LEFT JOIN ticket_custom as totalhours ON totalhours.name='totalhours'
 
 LEFT JOIN ticket_custom as billable ON billable.name='billable'
       AND billable.ticket = t.id
-  
+
 LEFT JOIN ticket_custom as client ON client.name='client'
       AND client.ticket = t.id
-  
-  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED) 
+
+  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED)
     AND billable.value in ($BILLABLE, $UNBILLABLE)
   GROUP BY client.value
 )  as tbl
@@ -160,11 +160,11 @@ SELECT p.value AS __color__,
        description AS _description_,                    -- ## Uses a full row
        changetime AS _changetime,
        reporter AS _reporter
-       ,0 as _ord                                        
-	
+       ,0 as _ord
+
   FROM ticket as t
   JOIN enum as p ON p.name=t.priority AND p.type='priority'
-  
+
 LEFT JOIN ticket_custom as estimatedhours ON estimatedhours.name='estimatedhours'
       AND estimatedhours.ticket = t.id
 LEFT JOIN ticket_custom as totalhours ON totalhours.name='totalhours'
@@ -174,16 +174,16 @@ LEFT JOIN ticket_custom as billable ON billable.name='billable'
 LEFT JOIN ticket_custom as client ON client.name='client'
       AND client.ticket = t.id
 
-  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED) 
+  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED)
     AND billable.value in ($BILLABLE, $UNBILLABLE)
-  
 
-UNION 
+
+UNION
 
 SELECT '1' AS __color__,
        client.value AS __group__,
        'background-color:#DFE;' as __style__,
-       NULL as ticket, 'Total work' AS summary,             
+       NULL as ticket, 'Total work' AS summary,
        t.component as __component__, NULL as version, NULL as severity,
        NULL as  milestone, NULL as status,
        NULL as owner,
@@ -199,7 +199,7 @@ SELECT '1' AS __color__,
        ,1 as _ord
   FROM ticket as t
   JOIN enum as p ON p.name=t.priority AND p.type='priority'
-  
+
 LEFT JOIN ticket_custom as estimatedhours ON estimatedhours.name='estimatedhours'
       AND estimatedhours.ticket = t.id
 
@@ -208,11 +208,11 @@ LEFT JOIN ticket_custom as totalhours ON totalhours.name='totalhours'
 
 LEFT JOIN ticket_custom as billable ON billable.name='billable'
       AND billable.ticket = t.id
-  
+
 LEFT JOIN ticket_custom as client ON client.name='client'
       AND client.ticket = t.id
-  
-  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED) 
+
+  WHERE t.status IN ($NEW, $ASSIGNED, $REOPENED, $CLOSED)
     AND billable.value in ($BILLABLE, $UNBILLABLE)
   GROUP BY client.value
 )  as tbl
@@ -228,4 +228,3 @@ reports = [{
     'title':   'Ticket/Hour Reports',
     'reports': ticket_hours_reports
     }]
-    

@@ -4,7 +4,7 @@ from webadmin.ticket import AbstractEnumAdminPage
 
 class Client(AbstractEnum):
     type = 'client'
-    custom = True  
+    custom = True
 
 
 class ClientAdminPage(AbstractEnumAdminPage):

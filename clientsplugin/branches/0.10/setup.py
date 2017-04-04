@@ -23,7 +23,7 @@ setup(name=PACKAGE,
             'clients.client = clients.client'
         ]
     },
-    install_requires=[ 'TracWebAdmin' ])   
+    install_requires=[ 'TracWebAdmin' ])
     #entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)})
 
 

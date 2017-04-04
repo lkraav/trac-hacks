@@ -121,12 +121,12 @@ class CustomReportManager:
                         self.log.debug("Updating report with uuid '%s' to "
                                        "version %s", uuid, version)
                         cursor.execute("""
-                            UPDATE report 
+                            UPDATE report
                             SET title=%s, author=%s, description=%s, QUERY=%s
                             WHERE id=%s
                             """, (title, author, description, query, id))
                         cursor.execute("""
-                            UPDATE custom_report 
+                            UPDATE custom_report
                             SET version=%s, maingroup=%s, subgroup=%s
                             WHERE id=%s
                             """, (version, maingroup, subgroup, id))
@@ -143,7 +143,7 @@ class CustomReportManager:
         try:
             cursor.execute("""
                 SELECT report.id,report.title FROM custom_report
-                LEFT JOIN report ON custom_report.id=report.id 
+                LEFT JOIN report ON custom_report.id=report.id
                 WHERE custom_report.uuid=%s
                 """, (uuid,))
             row = cursor.fetchone()

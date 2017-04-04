@@ -55,7 +55,7 @@ class ClientsSetupParticipant(Component):
                                ')')
                 # Import old Enums
                 cursor.execute("""
-                    INSERT INTO client (name) 
+                    INSERT INTO client (name)
                     SELECT name FROM enum WHERE type=%s
                     """, ('client',))
                 # Clean them out
@@ -96,25 +96,25 @@ class ClientsSetupParticipant(Component):
                 # NB: Use single quotes for literals for better compat
                 cursor.execute("""
                     INSERT INTO client_events
-                    SELECT 'Weekly Summary', 'Milestone Summary', 
+                    SELECT 'Weekly Summary', 'Milestone Summary',
                            'Send Email', MAX(summary_lastupdate)
                     FROM client
                     """)
                 cursor.execute("""
                     INSERT INTO client_event_action_options
-                    SELECT 'Weekly Summary', name, 
+                    SELECT 'Weekly Summary', name,
                            'Email Addresses', summary_list
                     FROM client WHERE summary_list != ''
                     """)
                 cursor.execute("""
                     INSERT INTO client_events
-                    SELECT 'Ticket Changes', 'Ticket Change Summary', 
+                    SELECT 'Ticket Changes', 'Ticket Change Summary',
                            'Send Email', MAX(changes_lastupdate)
                     FROM client
                     """)
                 cursor.execute("""
                     INSERT INTO client_event_action_options
-                    SELECT 'Ticket Changes', name, 
+                    SELECT 'Ticket Changes', name,
                            'Email Addresses', changes_list
                     FROM client WHERE changes_list != ''
                     """)
@@ -125,7 +125,7 @@ class ClientsSetupParticipant(Component):
                                'currency           TEXT'
                                ')')
                 cursor.execute("""
-                    INSERT INTO client_tmp 
+                    INSERT INTO client_tmp
                     SELECT name, description, default_rate, currency
                     FROM client
                     """)
@@ -137,8 +137,8 @@ class ClientsSetupParticipant(Component):
                                'currency           TEXT'
                                ')')
                 cursor.execute("""
-                    INSERT INTO client 
-                    SELECT name, description, default_rate, currency 
+                    INSERT INTO client
+                    SELECT name, description, default_rate, currency
                     FROM client_tmp
                     """)
                 cursor.execute("DROP TABLE client_tmp")
