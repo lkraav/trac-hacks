@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2011 Richard Liao <richard.liao.i@gmail.com>
+# Copyright (C) 2014-2017 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -29,11 +30,13 @@ else:
     }
 
 setup(
-    name='TracTicketChangelogPlugin',
+    name='TracTicketChangelog',
     version='1.2.0',
     description="Show changelogs in trac ticket",
     author="Richard Liao",
     author_email="richard.liao.i@gmail.com",
+    maintainer="Ryan J Ollos",
+    maintainer_email="ryan.j.ollos@gmail.com",
     url="https://trac-hacks.org/wiki/TracTicketChangelogPlugin",
     license="3-Clause BSD",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
