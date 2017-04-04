@@ -1,3 +1,4 @@
+import ctypes
 import os
 import pickle
 import re
@@ -148,6 +149,9 @@ class PollMacro(WikiMacroBase):
         if 'POLL_VIEW' not in req.perm:
             return ''
 
+        def hash32(s):
+            return ctypes.c_int(hash(s)).value
+
         ctxt = web_context(req)
         all_votes = []
         ticket_count = 0
@@ -163,7 +167,7 @@ class PollMacro(WikiMacroBase):
                 tickets = [q['id'] for q in
                            Query.from_string(self.env, query).execute(req)]
             else:
-                all_votes.append(('%08x' % abs(hash(vote)), None,
+                all_votes.append(('%08x' % abs(hash32(vote)), None,
                                  format_to_oneliner(self.env, ctxt, vote)))
 
             # Make tickets look pretty
