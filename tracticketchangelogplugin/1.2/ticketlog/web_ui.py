@@ -185,12 +185,11 @@ class TicketLogModule(CommitTicketUpdater):
             message = row[4]
 
             repos = rm.get_repository(repos_name)
-            rev = repos.display_rev(rev)
-            link = unicode(rev)
+            drev = repos.display_rev(rev)
             if repos_name:
-                link = '[changeset:"%s/%s"]' % (rev, repos_name)
+                link = '[changeset:"%s/%s"]' % (drev, repos_name)
             else:
-                link = '[changeset:%s]' % rev
+                link = '[changeset:%s]' % drev
             # Using (rev, author, time, message) as the key
             # If branches from the same repo are under Trac system
             # Only one changeset will be in the ticket changelog
@@ -202,6 +201,7 @@ class TicketLogModule(CommitTicketUpdater):
             if self.max_message_length \
                     and len(message) > self.max_message_length:
                 message = shorten_line(message, self.max_message_length)
+            link = intermediate[key]
             revision = {
                 'rev': format_to_oneliner(self.env, ctxt, link),
                 'author': Chrome(self.env).format_author(req, author),
