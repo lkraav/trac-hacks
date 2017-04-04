@@ -1,0 +1,33 @@
+<!--!
+  Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
+  All rights reserved.
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="ticketlog"
+      py:strip="">
+  <script type="text/javascript">
+    jQuery(document).ready(function($) {
+      $("#ticket_log").toggleClass("collapsed");
+    });
+  </script>
+  <div id="ticket_log">
+    <h3 class="foldable">Commit History <span class="trac-count">(${len(revisions)})</span></h3>
+    <table py:if="revisions" id="ticket_revisions" class="listing">
+      <thead>
+        <tr><th class="rev">Changeset</th><th class="author">Author</th><th class="time">Time</th><th class="summary">ChangeLog</th></tr>
+      </thead>
+      <tbody py:for="entry in revisions">
+        <tr><td>${entry['rev']}</td><td>${entry['author']}</td><td>${entry['time']}</td><td>${entry['message']}</td></tr>
+      </tbody>
+    </table>
+    <div py:if="not revisions">
+      <p class="hint">(No commits)</p>
+    </div>
+  </div>
+</html>

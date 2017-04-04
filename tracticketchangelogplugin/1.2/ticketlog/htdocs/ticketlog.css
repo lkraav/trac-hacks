@@ -1,0 +1,19 @@
+#ticket_log th.rev {
+ width: 5em;
+}
+
+#ticket_log th.author {
+ width: 6em;
+}
+
+#ticket_log th.time {
+ width: 8em;
+}
+
+#ticket_log td p {
+ margin-top: 0;
+}
+
+#ticket_log td p {
+ margin-bottom: 0;
+}

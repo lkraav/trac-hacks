@@ -1,0 +1,52 @@
+# Translations template for TracTicketChangelogPlugin.
+# Copyright (C) 2017 ORGANIZATION
+# This file is distributed under the same license as the
+# TracTicketChangelogPlugin project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: TracTicketChangelogPlugin 1.0.0\n"
+"Report-Msgid-Bugs-To: richard.liao.i@gmmail.com\n"
+"POT-Creation-Date: 2017-04-03 19:10-0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.4.0\n"
+
+#: ticketlog/templates/ticketlog.html:20
+msgid "Commit History"
+msgstr ""
+
+#: ticketlog/templates/ticketlog.html:23
+msgid "Changeset"
+msgstr ""
+
+#: ticketlog/templates/ticketlog.html:23
+msgid "Author"
+msgstr ""
+
+#: ticketlog/templates/ticketlog.html:23
+msgid "Time"
+msgstr ""
+
+#: ticketlog/templates/ticketlog.html:23
+msgid "ChangeLog"
+msgstr ""
+
+#: ticketlog/templates/ticketlog.html:30
+msgid "(No commits)"
+msgstr ""
+
+#: ticketlog/templates/ticketlog_admin.html:19
+msgid "TracTicketChangelogPlugin"
+msgstr ""
+
+#: ticketlog/templates/ticketlog_admin.html:21
+msgid "TracTicketChangelogPlugin: Admin"
+msgstr ""
+
