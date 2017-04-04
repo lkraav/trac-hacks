@@ -30,61 +30,34 @@ class TicketlogStore(object):
         method needs to be called.
         """
         self.env = env
-        self.id = None
         self.col1 = col1
 
     @classmethod
-    def delete(cls, env, col1, db=None):
+    def delete(cls, env, col1):
         """Remove the col1 from the database."""
-        if not db:
-            db = env.get_db_cnx()
-            handle_ta = True
-        else:
-            handle_ta = False
-
-        cursor = db.cursor()
-        cursor.execute("""
+        env.db_transaction("""
             DELETE FROM ticketlog_store WHERE col1=%s
             """, (col1,))
 
-        if handle_ta:
-            db.commit()
-
     @classmethod
-    def insert(cls, env, col1, db=None):
+    def insert(cls, env, col1):
         """Insert a new col1 into the database."""
-        if not db:
-            db = env.get_db_cnx()
-            handle_ta = True
-        else:
-            handle_ta = False
 
-        cursor = db.cursor()
-        cursor.execute("""
-            INSERT INTO ticketlog_store (col1, ) VALUES (%s,)
-            """, (col1,))
-        id_ = db.get_last_id(cursor, 'ticketlog_store')
-
-        if handle_ta:
-            db.commit()
-
-        return id_
+        with env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                INSERT INTO ticketlog_store (col1, ) VALUES (%s,)
+                """, (col1,))
+            return db.get_last_id(cursor, 'ticketlog_store')
 
     @classmethod
-    def get(cls, env, db=None):
+    def get(cls, env):
         """Retrieve from the database that match
         the specified criteria.
         """
-        if not db:
-            db = env.get_db_cnx()
-
-        cursor = db.cursor()
-
-        cursor.execute("""
-            SELECT col1 FROM ticketlog_store ORDER BY col1
-            """)
-
-        return [m[0] for m in cursor.fetchall()]
+        return [col1 for col1, in env.db_query("""
+                SELECT col1 FROM ticketlog_store ORDER BY col1
+                """)]
 
 
 schema = TicketlogStore._schema
