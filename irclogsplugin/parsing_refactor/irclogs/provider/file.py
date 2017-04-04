@@ -10,9 +10,9 @@ on their timezone.   We must translate the requested timezone to the timezone
 of the log files, find a date range of files to read, and filter out and lines
 that don't fall in the range.
 
-Another challenge is that some systems make multiple, parrellel log files.  
+Another challenge is that some systems make multiple, parrellel log files.
 Gozerbot simple logging creates one log file for messages and another for
-other events.  We must merge these files into a common set of lines before 
+other events.  We must merge these files into a common set of lines before
 yielding them back to the caller.  The caller should get all lines in order.
 To make matters worse, some lines don't have timestamps.  We must assign
 these lines a best guess timestamp equal to the previously logged line.
@@ -41,10 +41,10 @@ OLDDATE = datetime(1977,8,3,0,0,0,tzinfo=timezone('utc'))
 class FileIRCLogProvider(Component):
     """Provide logs from irc log files.  All default regex config parameters
     match the default Supybot log files, where defaults are provided.
-    The gozerbot log format is also supported out of the box by setting 
+    The gozerbot log format is also supported out of the box by setting
     [irclogs]
     format = gozer
-    # or 
+    # or
     channel.test.format = gozer
     """
 
@@ -52,7 +52,7 @@ class FileIRCLogProvider(Component):
 
     # not to be confused with default_format(), which doesn't consider
     # a named format.
-    format = Option('irclogs', 'format', 'supy', 
+    format = Option('irclogs', 'format', 'supy',
             doc="The name of the default format to use.")
 
     basepath = Option('irclogs', 'basepath', '/var/lib/irclogs',
@@ -71,13 +71,13 @@ class FileIRCLogProvider(Component):
        Can be overridden by format.""")
 
     timestamp_format = Option('irclogs', 'timestamp_format', '%Y-%m-%dT%H:%M:%S',
-        doc="""Default format to use when parsing timestamp to datetime. Can 
+        doc="""Default format to use when parsing timestamp to datetime. Can
         be overridden by format.""")
 
-    timestamp_regex = Option('irclogs', 'timestamp_regex', 
+    timestamp_regex = Option('irclogs', 'timestamp_regex',
         '(?P<timestamp>\d{4}-\d{2}-\d{2}.\d{2}:\d{2}:\d{2})',
-        doc="""Default partial regex used at the beginning of all other 
-        regexes.  It is only used if explicitly included in the other regexes 
+        doc="""Default partial regex used at the beginning of all other
+        regexes.  It is only used if explicitly included in the other regexes
         as %(timestamp_regex)s
 
         ex. 2009-05-20T10:10:10
@@ -85,20 +85,20 @@ class FileIRCLogProvider(Component):
 
         Can be overriedden by format.""")
 
-    comment_regex = Option('irclogs', 'comment_regex', 
+    comment_regex = Option('irclogs', 'comment_regex',
         '^%(timestamp_regex)s[ |:]*'\
-        '(?P<message><(?P<nick>[^>]+)>\s(?P<comment>.*))$', 
-        doc="""Default match for COMMENT lines. 
+        '(?P<message><(?P<nick>[^>]+)>\s(?P<comment>.*))$',
+        doc="""Default match for COMMENT lines.
 
         ex. 2009-05-20T10:10:10  <nick> how's it going?
         ex. 2009-05-20 10:10:10 | <nick> how's it going?
-        
+
         Can be overridden by format.""")
 
     action_regex = Option('irclogs', 'action_regex',
         '^%(timestamp_regex)s[ |:]*'\
         '(?P<message>\*\s(?P<nick>[^ ]+)\s(?P<action>.*))$',
-        doc="""Default match for ACTION lines. 
+        doc="""Default match for ACTION lines.
 
         ex. 2009-05-20T10:10:10  * nick hits someone with a fish
         ex. 2009-05-20 10:10:10 | * nick hits someone with a fish
@@ -180,20 +180,20 @@ class FileIRCLogProvider(Component):
         '(?P<message>-(?P<nick>[^-]+)-\s(?P<comment>.*))$',
         doc="""Default match on NOTICE lines.
 
-        ex. 2009-05-20T10:10:10  -nick- hello everyone! 
+        ex. 2009-05-20T10:10:10  -nick- hello everyone!
         ex. 2009-05-20 10:10:10 | -nick- hello everyone!"
 
         Can be overridden by format.""")
 
     match_order = Option('irclogs', 'match_order',
             'comment part join quit action kick mode topic nick notice',
-            doc="""Default order that lines are checked against.  This matters 
-            if a line could match multiple regexes.  Can be overridden by 
+            doc="""Default order that lines are checked against.  This matters
+            if a line could match multiple regexes.  Can be overridden by
             format.""")
 
     # gozer format
-    ListOption('irclogs', 'format.gozer.paths', 
-            ['logs/%(network)s/simple/%(channel)s.%Y%m%d.slog', 
+    ListOption('irclogs', 'format.gozer.paths',
+            ['logs/%(network)s/simple/%(channel)s.%Y%m%d.slog',
                 'logs/%(network)s/simple/%(channel_name)s.%Y%m%d.slog'])
     Option('irclogs', 'format.gozer.timestamp_format', '%Y-%m-%d %H:%M:%S')
 
@@ -250,7 +250,7 @@ class FileIRCLogProvider(Component):
                             target_tz=ttz) for f in files])
                     def _key(x):
                         return x.get('timestamp', OLDDATE)
-                    for l in merge_iseq(parsers, _key): 
+                    for l in merge_iseq(parsers, _key):
                         yield l
                     [f.close() for f in files]
 
@@ -260,11 +260,11 @@ class FileIRCLogProvider(Component):
                     yield line
             else:
                 yield line
-    
+
     def name(self):
         return 'file'
     # end IRCLogsProvider interface
-                
+
     def _get_file_dates(self, start, end, file_tz=UTC):
         """Get files that are within the start-end range, taking into
         account that the file timezone can be different from the start-end
@@ -289,7 +289,7 @@ class FileIRCLogProvider(Component):
         timezone. Generator returns a list of files for each date.
 
         psuedo example:
-        
+
         for fileset in _get_files([1/2, 1/3, 1/4]):
             print "> %s"%(str(fileset))
 
@@ -325,13 +325,13 @@ class FileIRCLogProvider(Component):
               * timestamp_format: format used by strptime to parse timestamp.
               * timestamp_regex:  regex used to parse timestamp out of line,
                                   this is reference by the optionally included
-                                  in the other _regex parameters as 
-                                  %(timestamp_regex)s and is seperate as a 
+                                  in the other _regex parameters as
+                                  %(timestamp_regex)s and is seperate as a
                                   convenience.
               * timezone:         The timezone of the file timestamps.
 
-          * target_tz: optional target timezone.  This is the timezone of the 
-                return data timedate objects.  Will not convert to target_tz 
+          * target_tz: optional target timezone.  This is the timezone of the
+                return data timedate objects.  Will not convert to target_tz
                 if None.
         """
         format = channel.format()
@@ -384,4 +384,3 @@ class FileIRCLogProvider(Component):
             if not matched:
                 yield {'type': 'other', 'message': line}
                 self.log.warn("didn't parse: %s"%line)
-

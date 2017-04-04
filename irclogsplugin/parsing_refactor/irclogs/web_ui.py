@@ -36,15 +36,15 @@ class IrcLogsView(Component):
     charset = Option('irclogs', 'charset', 'utf-8',
                      doc='Channel charset')
 
-    search_db_path = Option('irclogs', 'search_db_path', 
-                            '/tmp/irclogs.idx', 
-                     doc="""A path to the directory where the search index 
+    search_db_path = Option('irclogs', 'search_db_path',
+                            '/tmp/irclogs.idx',
+                     doc="""A path to the directory where the search index
                            resides.  Example: /tmp/irclogs.idx""")
 
-    hidden_users = ListOption('irclogs', 'hidden_users', '', 
+    hidden_users = ListOption('irclogs', 'hidden_users', '',
                      doc='A list of users that should be hidden by default')
 
-    show_msg_types = ListOption('irclogs', 'show_msg_types', 
+    show_msg_types = ListOption('irclogs', 'show_msg_types',
                      [u'comment', u'action'],
                      doc='There are message types to show by default')
 
@@ -73,7 +73,7 @@ class IrcLogsView(Component):
                 else:
                     href = req.href.irclogs()
                 l = html.a(channel.navbutton(), href=href)
-                yield 'mainnav', channel.menuid(), l 
+                yield 'mainnav', channel.menuid(), l
 
     # IPermissionHandler methods
     def get_permission_actions(self):
@@ -109,13 +109,13 @@ class IrcLogsView(Component):
             return ('<tr class="%(type)s %(hidden)s"><td class="time">' + \
                    '[<a name="%(time)s" href="#%(time)s">%(time)s</a>]' + \
                    '</td><td class="left %(nickcls)s">&lt;%(nick)s&gt;' + \
-                   '</td><td class="right">%(comment)s</td></tr>')%line 
+                   '</td><td class="right">%(comment)s</td></tr>')%line
         if line['type'] == 'action':
             return ('<tr class="%(type)s %(hidden)s"><td class="time">' + \
                    '[<a name="%(time)s" href="#%(time)s">%(time)s</a>]' + \
                    '</td><td class="left">*</td><td class="right">' + \
                    '%(action)s</td></tr>')%line
-        else: 
+        else:
             return ('<tr class="%(type)s %(hidden)s"><td class="time">' + \
                    '[<a name="%(time)s" href="#%(time)s">%(time)s</a>]' + \
                    '</td><td class="left"></td><td class=' + \
@@ -141,7 +141,7 @@ class IrcLogsView(Component):
         context = {}
         entries = {}
         today = datetime.now()
-        context['channel'] = req.args['channel'] 
+        context['channel'] = req.args['channel']
         context['calendar'] = req.href.chrome('common', 'ics.png')
         context['year'] = int(req.args.get('year') or today.year)
         context['day'] = int(req.args.get('day') or today.day)
@@ -158,9 +158,9 @@ class IrcLogsView(Component):
         req.perm.assert_permission(channel.perm())
         oneday = timedelta(days=1)
         reqtz = timezone(str(req.tz))
-        start = reqtz.localize(datetime(context['year'], context['month'], 
+        start = reqtz.localize(datetime(context['year'], context['month'],
             context['day'], 0, 0, 0))
-        # cheezy hack to give us enough lines as long as the channel is 
+        # cheezy hack to give us enough lines as long as the channel is
         # somewhat active.  Without this we get a shortage of feed lines
         # at day break.
         end = start + oneday
@@ -169,11 +169,11 @@ class IrcLogsView(Component):
         lines = channel.events_in_range(start, end)
 
         context['viewmode'] = 'day'
-        context['current_date'] = '%02d/%02d/%04d'%(context['month'], 
+        context['current_date'] = '%02d/%02d/%04d'%(context['month'],
                 context['day'], context['year'])
         context['int_month'] = context['month']-1
         context['lines'] = ifilter(
-            lambda x: not x.get('hidden'), 
+            lambda x: not x.get('hidden'),
             imap(self._map_lines, lines)
         )
 
@@ -181,7 +181,7 @@ class IrcLogsView(Component):
             limit = int(req.args.get('feed_count', 10))
             context['lines'] = list(context['lines'])[-limit:]
             context['rows'] = imap(self._render_line, context['lines'])
-            return 'irclogs_feed.html', context, None 
+            return 'irclogs_feed.html', context, None
         else:
             context['rows'] = imap(self._render_line, context['lines'])
             return 'irclogs.html', context, None

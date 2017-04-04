@@ -1,6 +1,6 @@
 #
 # Usage: python <script> <database directory> <directory to index>
-# Example: 
+# Example:
 #   python update_irc_search.py /tmp/irclogs.idx /var/oforge/irclogs/Channel
 #
 import sys
@@ -16,4 +16,3 @@ def update_irc_search():
         chmgr = api.IRCChannelManager(env)
         for indexer in chmgr.indexers:
             indexer.update_index()
-

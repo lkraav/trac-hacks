@@ -28,13 +28,13 @@ framework.close()
 def doArgs():
     """ Look if you can't guess what this function does, just give up now. """
     global VERSION
-  
+
     version = "%%prog %s" % VERSION
     usage ="usage: %prog [options] [site]"
     description="%prog is used to index the irclogs for searching."
-  
+
     parser = OptionParser(usage=usage, version=version, description=description)
-  
+
     parser.add_option("-f", "--file", dest="idxfile", type="string",
                         help="Path to index database file",
                         metavar="<path>")
@@ -49,4 +49,3 @@ def doArgs():
                         default=False)
 
     (options, args) = parser.parse_args()
-

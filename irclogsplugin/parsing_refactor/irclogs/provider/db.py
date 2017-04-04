@@ -1,5 +1,5 @@
 """
-Parse logs from db into structured data. 
+Parse logs from db into structured data.
 """
 
 # Copyright (c) 2009, Robert Corsaro
@@ -19,14 +19,14 @@ ENCODED_FIELDS = ('network', 'channel', 'nick', 'type', 'message', 'comment')
 
 class DBIRCLogProvider(Component):
     """
-    Provide logs from irc log table.  
+    Provide logs from irc log table.
     [irclogs]
     format = gozer
-    # or 
+    # or
     channel.test.channel = #test
     channel.test.provider = db
 
-    The database must contain a table named `chatlog`.  The table definiton 
+    The database must contain a table named `chatlog`.  The table definiton
     should match:
     CREATE TABLE chatlog (
         id      SERIAL PRIMARY KEY,
@@ -38,7 +38,7 @@ class DBIRCLogProvider(Component):
         msg     TEXT NOT NULL
     );
 
-    If using the Gozerbot chatlog plugin, it will create this table 
+    If using the Gozerbot chatlog plugin, it will create this table
     automatically in not already present.
 
     """
@@ -70,13 +70,13 @@ class DBIRCLogProvider(Component):
 
         try:
             self.log.debug("""executing
-              SELECT * FROM chatlog 
+              SELECT * FROM chatlog
               WHERE network = %s AND target = %s AND time >= %s AND
                 time < %s ORDER BY "time" """)
             self.log.debug("with %s, %s, %s, %s"%(ch.network() or '', ch.channel(), start, end))
             cur = cnx.cursor()
             cur.execute("""
-              SELECT * FROM chatlog 
+              SELECT * FROM chatlog
               WHERE network = %s AND target = %s AND time >= %s AND
                 time < %s ORDER BY "time" """,(
                   ch.network() or '',
@@ -104,7 +104,7 @@ class DBIRCLogProvider(Component):
                                                               unicode)
                 if (not ignore_charset) and ch.setting('charset'):
                     for k in ENCODED_FIELDS:
-                        line[k] = unicode(line[k], ch.setting('charset'), 
+                        line[k] = unicode(line[k], ch.setting('charset'),
                                           errors='ignore')
                         continue
                 yield line
@@ -113,7 +113,7 @@ class DBIRCLogProvider(Component):
             cnx.close()
             self.log.error(e)
             raise e
-    
+
     def name(self):
         return 'db'
     # end IRCLogsProvider interface
@@ -124,8 +124,8 @@ class DBIRCLogProvider(Component):
         chan_db = channel.setting('database', irc_db)
         dbm.set_database(chan_db)
         return dbm.get_connection()
-        
-                
+
+
 class IRCLogDatabaseManager(DatabaseManager):
     """ Provide access to chatlog db """
 
@@ -133,4 +133,3 @@ class IRCLogDatabaseManager(DatabaseManager):
 
     def set_database(self, database):
         self.connection_uri = database
-    

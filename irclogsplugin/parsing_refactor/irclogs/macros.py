@@ -12,7 +12,7 @@ from irclogs.web_ui import IrcLogsView
 from irclogs.api import IRCChannelManager
 
 class IrcLogLiveMacro(WikiMacroBase):
-    """Displays a live in-page feed of the current IRC log.  
+    """Displays a live in-page feed of the current IRC log.
     Can take 3 parameters:
      * channel: channel
      * polling_frequency: (seconds) default to 60
@@ -37,17 +37,17 @@ class IrcLogLiveMacro(WikiMacroBase):
                                     generate(**data)
 
 class IrcLogQuoteMacro(WikiMacroBase):
-    """Display contents of a logged IRC chat.  Takes parameters 
+    """Display contents of a logged IRC chat.  Takes parameters
     of the UTC timestamp of the message and the number of messages to show.
     `[[IrcLogsQuote(channel, UTCYYYY-MM-DDTHH:MM:SS, message_count]])`
-    
-    To get the UTC timestamp, click on the time displayed in the IRC 
+
+    To get the UTC timestamp, click on the time displayed in the IRC
     log view page and copy the anchor from your browsers location bar.
     """
 
     date_re = re.compile('^UTC(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})T(?P<time>\d{2}:\d{2}:\d{2})')
     date_format = "UTC%Y-%m-%dT%H:%M:%S"
-    
+
     def expand_macro(self, formatter, name, content):
         _, kw = parse_args(content)
         channel_name = kw.get('channel')
@@ -61,7 +61,7 @@ class IrcLogQuoteMacro(WikiMacroBase):
             return system_message('IrcLogQuote: Invalid timestamp format')
         offset = int(kw.get('offset', 10))
 
-        irclogs = IrcLogsView(self.env)        
+        irclogs = IrcLogsView(self.env)
         ch_mgr = IRCChannelManager(self.env)
         start = datetime(*strptime(utc_dt, self.date_format)[:6])
         start = UTC.localize(start)
@@ -70,13 +70,13 @@ class IrcLogQuoteMacro(WikiMacroBase):
         channel = ch_mgr.channel(channel_name)
         formatter.req.perm.assert_permission(channel.perm())
         lines = channel.events_in_range(start, end)
-        lines = filter(lambda x: not x.get('hidden'), 
+        lines = filter(lambda x: not x.get('hidden'),
                 map(irclogs._map_lines, lines))
         rows = map(irclogs._render_line, lines)
 
         add_stylesheet(formatter.req, 'irclogs/css/irclogs.css')
         data = Chrome(self.env).populate_data(
-            formatter.req, 
+            formatter.req,
             {
                 'channel': channel_name,
                 'lines': lines,
@@ -89,4 +89,3 @@ class IrcLogQuoteMacro(WikiMacroBase):
         )
         return Chrome(self.env).load_template('macro_quote.html') \
                                     .generate(**data)
-

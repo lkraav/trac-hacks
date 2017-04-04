@@ -7,7 +7,7 @@ from pytz import timezone, UTC
 from trac.core import *
 from trac.test import EnvironmentStub, Mock
 
-from irclogs.api import IRCChannelManager 
+from irclogs.api import IRCChannelManager
 
 class ApiTestCase(unittest.TestCase):
     def setUp(self):

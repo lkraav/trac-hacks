@@ -25,11 +25,11 @@ class IrcLogsSearch(Component):
             return text
         if not 'irclogs' in filters:
             return
-        
+
         irclogs = web_ui.IrcLogsView(self.env)
-        
-        framework = Framework('builtin://%s/%s.idx' % 
-                        (quote(irclogs.search_db_path), 
+
+        framework = Framework('builtin://%s/%s.idx' %
+                        (quote(irclogs.search_db_path),
                          quote(irclogs.prefix)), mode=READWRITE)
         framework.add_source('file://%s' % quote(irclogs.path))
         tz = req.tz
@@ -66,7 +66,7 @@ class IrcLogsSearch(Component):
         for l in text.split('\n'):
             for t in terms:
                 if t in l:
-                    d = getattr(irclogs._line_re.search(l), 
+                    d = getattr(irclogs._line_re.search(l),
                                 'groupdict', dummy)()
                     server_dt = irclogs._get_tz_datetime(d['date'], d['time'])
                     return server_dt
@@ -76,10 +76,9 @@ class IrcLogsSearch(Component):
 
     def index_logs(self):
         irclogs = web_ui.IrcLogsView(self.env)
-        framework = Framework('builtin://%s/%s.idx' % 
-                              (quote(irclogs.search_db_path), 
+        framework = Framework('builtin://%s/%s.idx' %
+                              (quote(irclogs.search_db_path),
                                quote(irclogs.prefix)))
         framework.add_source('file://%s' % quote(irclogs.path))
         framework.update()
         framework.close()
-

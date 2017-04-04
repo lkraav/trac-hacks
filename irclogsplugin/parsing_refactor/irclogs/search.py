@@ -31,7 +31,7 @@ if whoosh_loaded:
         implements(IIRCLogIndexer)
 
         TIMESTAMP_FORMAT = '%Y%m%d%H%M%S'
-        SCHEMA = Schema(channel=STORED, timestamp=STORED, 
+        SCHEMA = Schema(channel=STORED, timestamp=STORED,
                 content=TEXT(stored=True))
         PARSER = QueryParser("content", schema=SCHEMA)
 
@@ -55,7 +55,7 @@ if whoosh_loaded:
 
             if not 'irclogs' in filters:
                 return
-            
+
             #logview = web_ui.IrcLogsView(self.env)
             for result in self.search(terms):
                 dt_str = ''
@@ -94,8 +94,8 @@ if whoosh_loaded:
                 chmgr = IRCChannelManager(self.env)
                 for channel in chmgr.channels():
                     for line in channel.events_in_range(last_index_dt, now):
-                        if line['type'] == 'comment': 
-                            content = "<%s> %s"%(line['nick'], 
+                        if line['type'] == 'comment':
+                            content = "<%s> %s"%(line['nick'],
                                     line['comment'])
                             writer.add_document(
                                 channel=channel.name(),

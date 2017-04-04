@@ -7,11 +7,11 @@ from trac.core import *
 from trac.config import Option
 
 class IIRCLogsProvider(Interface):
-    """An interface for different sources of irc logs.  DB and file 
+    """An interface for different sources of irc logs.  DB and file
     implementations are provided."""
 
     def get_events_in_range(self, channel_name, start, end):
-        """Yeilds events, in order, within the range, enclusive.  Channel is 
+        """Yeilds events, in order, within the range, enclusive.  Channel is
         the channel name in config, and not the actual channel name.
 
           {
@@ -150,7 +150,7 @@ class IRCChannel(object):
     def format(self):
         retval = {}
         config = self._chmgr.config
-        default_options = [i for i in config.options('irclogs')] 
+        default_options = [i for i in config.options('irclogs')]
         retval.update(default_options)
         dformat_options = prefix_options('format.%s'%self.setting('format'),
                 default_options)
@@ -172,10 +172,10 @@ class IRCChannelManager(Component):
 
     channel_re = re.compile('^channel\.(?P<channel>[^.]+)\.channel$')
 
-    channel = Option('irclogs', 'channel', 
+    channel = Option('irclogs', 'channel',
             doc="""Default channel.  Can be overriden by channel""")
 
-    network = Option('irclogs', 'network', 
+    network = Option('irclogs', 'network',
             doc="""Default network.  Can be overriden by channel""")
 
     timezone = Option('irclogs', 'timezone', 'utc',
@@ -196,7 +196,7 @@ class IRCChannelManager(Component):
 
     def channel_names(self):
         """
-        Yield all channel names.  None means that there is a default 
+        Yield all channel names.  None means that there is a default
         channel.
         """
         CHANNEL_RE = re.compile('^channel\.(?P<name>[^.]+)\..*$')

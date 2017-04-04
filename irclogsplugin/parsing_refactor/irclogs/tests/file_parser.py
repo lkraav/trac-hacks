@@ -69,12 +69,12 @@ class FileIRCLogProviderTestCase(unittest.TestCase):
         tz = 'America/New_York'
         tzo = timezone(tz)
         results = [i for i in self.out.parse_lines(
-            self.supylines, 
+            self.supylines,
             self.chmgr.channel(None),
             target_tz=tzo
         )]
 
-        
+
         self.assertEquals(self._date('20080502222819', tz), results[0]['timestamp'])
         self.assertEquals(self._date("20080502223022", tz), results[1]['timestamp'])
         self.assertEquals(self._date("20080502223025", tz), results[2]['timestamp'])
@@ -171,7 +171,7 @@ class FileIRCLogProviderTestCase(unittest.TestCase):
 
         self.assertEquals('other', results[13]['type'])
         self.assertEquals('* SOME SPECIAL MESSAGE *', results[13]['message'])
-    
+
     def test_parse_simple_gozerbot(self):
         self.out.config.set('irclogs', 'channel.test.format', 'gozer')
         f = self.chmgr.channel('test')
@@ -248,7 +248,7 @@ class FileIRCLogProviderTestCase(unittest.TestCase):
 
         self.assertEquals('other', results[12]['type'])
         self.assertEquals('* SOME SPECIAL MESSAGE *', results[12]['message'])
-    
+
     # gozerbot in supy emulation mode
     def test_parse_supy_gozerbot(self):
         f = self.chmgr.channel(None)
@@ -453,8 +453,8 @@ class FileIRCLogProviderTestCase(unittest.TestCase):
         self.out.config.set('irclogs', 'channel.test.format', 'gozer')
         df = self.chmgr.channel('test')
         for f in (
-                (self.supygozerlines, self.chmgr.channel(None)), 
-                (self.simplegozerlines, df), 
+                (self.supygozerlines, self.chmgr.channel(None)),
+                (self.simplegozerlines, df),
                 (self.supylines, self.chmgr.channel(None))):
             parsers.append(self.out.parse_lines(f[0], channel=f[1]))
         def _key(x):

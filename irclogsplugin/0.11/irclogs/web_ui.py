@@ -52,17 +52,17 @@ class IrcLogsView(Component):
     path = Option('irclogs', 'path', '',
                   doc='The path where the irc logfiles are')
     navbutton = Option('irclogs', 'navigation_button', '',
-                     doc="""If not empty an button with this value as caption 
-                            is added to the navigation bar, pointing to the 
+                     doc="""If not empty an button with this value as caption
+                            is added to the navigation bar, pointing to the
                             irc plugin""")
     prefix = Option('irclogs', 'prefix', '', doc='IRC Channel name')
 
-    search_db_path = Option('irclogs', 'search_db_path', 
-                            '/tmp/irclogs.idx', 
-                     doc="""A path to the directory where the search index 
+    search_db_path = Option('irclogs', 'search_db_path',
+                            '/tmp/irclogs.idx',
+                     doc="""A path to the directory where the search index
                            resides.  Example: /tmp/irclogs.idx""")
 
-    hidden_users = ListOption('irclogs', 'hidden_users', '', 
+    hidden_users = ListOption('irclogs', 'hidden_users', '',
                      doc='A list of users that should be hidden by default')
 
     # ITemplateProvider methods
@@ -128,7 +128,7 @@ class IrcLogsView(Component):
                     break
             else:
                 continue
-            
+
             if nick in self.hidden_users:
                 hidden = "hidden_user"
             else:
@@ -245,7 +245,7 @@ class IrcLogsView(Component):
         }
 
     def _get_tz_datetime(self, date, time):
-        return datetime(*strptime(date + "T" +  time, 
+        return datetime(*strptime(date + "T" +  time,
                                   "%Y-%m-%dT%H:%M:%S")[0:6]). \
                                   replace(tzinfo=localtz)
 
@@ -271,25 +271,25 @@ class IrcLogsView(Component):
             context['error'] = True
             context['message'] = '%s: %s' % (message, e.filename)
             return 'irclogs.html', context, None
-        
+
         if len(files) == 0:
-           context['error'] = True
-           context['message'] = 'No logs exist yet. ' \
-                                'Contact your system administrator.'
-           return 'irclogs.html', context, None
-        
+            context['error'] = True
+            context['message'] = 'No logs exist yet. ' \
+                                 'Contact your system administrator.'
+            return 'irclogs.html', context, None
+
         files.sort()
         first_found = True
         for fn in files:
             m = file_re.search(fn)
             if m is None:
-                continue 
+                continue
             d = m.groupdict()
             y = entries.setdefault(int(d['year']), {})
             m = y.setdefault(int(d['month']), {})
             m[int(d['day'])] = True
             if first_found is True:
-                context['start_date'] = '%s/%s/%s' % (d['month'], 
+                context['start_date'] = '%s/%s/%s' % (d['month'],
                                                       d['day'],
                                                       d['year'])
                 first_found = False
@@ -337,8 +337,8 @@ class IrcLogsView(Component):
             context['month_name'] = month_name[int(req.args['month'])]
             context['year'] = req.args['year']
             context['viewmode'] = 'day'
-            context['current_date'] = '%s/%s/%s' % (req.args['month'], 
-                                                    req.args['day'], 
+            context['current_date'] = '%s/%s/%s' % (req.args['month'],
+                                                    req.args['day'],
                                                     req.args['year'])
             context['int_month'] = int(req.args['month'])-1
 
@@ -358,6 +358,6 @@ class IrcLogsView(Component):
             if not context['missing']:
                 context['lines'] = context['lines'] \
                                     [:int(req.args.get('feed_count',10))]
-            return 'irclogs_feed.html', context, None 
+            return 'irclogs_feed.html', context, None
         else:
             return 'irclogs.html', context, None

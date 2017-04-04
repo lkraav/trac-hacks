@@ -17,7 +17,7 @@ setup(
         'License :: OSI Approved :: BSD License',
     ],
     package_data={
-        'irclogs' : ['templates/*.html', 'htdocs/*.css', 
+        'irclogs' : ['templates/*.html', 'htdocs/*.css',
                      'htdocs/*.js', 'htdocs/*.png']
     },
     entry_points = {

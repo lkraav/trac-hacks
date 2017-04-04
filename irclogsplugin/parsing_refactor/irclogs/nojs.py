@@ -32,7 +32,7 @@ def generate_nojs_calendar(req, context, entries):
                     'caption':  day,
                     'href':     req.href('irclogs', context['channel'],
                                          context['year'],
-                                         '%02d' % context['month'], 
+                                         '%02d' % context['month'],
                                          '%02d' % day),
                     # today is the selected day, not today..yuk
                     'today':    day == context['day'],
@@ -50,7 +50,7 @@ def generate_nojs_calendar(req, context, entries):
         next_month_year += 1
         next_month = 1
     if context['day'] > -1:
-        next_month_href = req.href('irclogs', context['channel'], 
+        next_month_href = req.href('irclogs', context['channel'],
                 next_month_year, '%02d' % next_month, '%02d' % context['day'])
     else:
         next_month_href = req.href('irclogs', context['channel'],
@@ -62,7 +62,7 @@ def generate_nojs_calendar(req, context, entries):
         prev_month_year -= 1
         prev_month = 12
     if context['day'] > -1:
-        prev_month_href = req.href('irclogs', context['channel'], 
+        prev_month_href = req.href('irclogs', context['channel'],
                 prev_month_year, '%02d' % prev_month, '%02d' % context['day'])
     else:
         prev_month_href = req.href('irclogs', context['channel'],
@@ -76,7 +76,7 @@ def generate_nojs_calendar(req, context, entries):
         },
         'month':        {
             'caption':      context['month_name'],
-            'href':         req.href('irclogs', context['channel'], context['year'], 
+            'href':         req.href('irclogs', context['channel'], context['year'],
                 '%02d' % context['month'])
         },
         'next_year':    {
@@ -96,4 +96,3 @@ def generate_nojs_calendar(req, context, entries):
             'href':         prev_month_href
         },
     }
-

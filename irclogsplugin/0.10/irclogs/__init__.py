@@ -158,8 +158,8 @@ class IrclogsPlugin(Component):
         pos = 0
         for l in text.lower().split('\n'):
             for t in terms:
-                if t in l: 
-                    d = getattr(self._line_re.search(l), 'groupdict', dummy)()            
+                if t in l:
+                    d = getattr(self._line_re.search(l), 'groupdict', dummy)()
                     return '#T%s' % str(d['time'])
                 continue
             continue
@@ -187,10 +187,10 @@ class IrclogsPlugin(Component):
                 anchor = self.find_anchor(hit.current.content, terms)
                 year, month, day = path[-12:-8], path[-8:-6], path[-6:-4]
                 timestamp = time.mktime(datetime(int(year), int(month), int(day)).timetuple())
-                yield (req.href('/irclogs/%s/%s/%s' % (year, month, day)) + anchor, 
-                       '%s logs for %s-%s-%s' % (self.prefix, year, month, day), 
-                       timestamp, 
-                       'irclog', 
+                yield (req.href('/irclogs/%s/%s/%s' % (year, month, day)) + anchor,
+                       '%s logs for %s-%s-%s' % (self.prefix, year, month, day),
+                       timestamp,
+                       'irclog',
                        unicode(hit.excerpt(terms)))
         except Exception, e:
             self.log.debug('pyndexter has a big fat bug.  Give alect crap about it.', exc_info=e)
