@@ -43,7 +43,7 @@ class DiscussionTimeline(Component):
                 else:
                     href = req.href.discussion(forum['id'])
                     message = wiki_to_oneliner('%s - %s' % (forum['subject'],
-                      forum['description']), self.env, db)  
+                      forum['description']), self.env, db)
                 yield kind, href, title, time, author, message
 
             # Get topic events

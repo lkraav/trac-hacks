@@ -135,7 +135,7 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
                  'unregistered_subscribers']),
             set(forum.keys())
         )
-        self.assertEqual('forum1', forum['name']) 
+        self.assertEqual('forum1', forum['name'])
 
     def test_get_forums(self):
         context = self._prepare_context(self.req)
@@ -146,7 +146,7 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         self.assertEqual(
             set(self.api.get_forums(context)[0].keys()),
             set(['id', 'name', 'author', 'time', 'forum_group', 'subject',
-                 'description', 'moderators', 'subscribers', 
+                 'description', 'moderators', 'subscribers',
                  'topics', 'replies', 'lasttopic', 'lastreply',
                  'new_replies', 'new_topics', 'unregistered_subscribers']))
 
@@ -161,11 +161,11 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         context = self._prepare_context(self.req)
         topic = self.api.get_topic(context, 1)
         self.assertEqual(
-            set(['id', 'forum', 'author', 'time', 'status', 'subject', 'body',  
+            set(['id', 'forum', 'author', 'time', 'status', 'subject', 'body',
                  'priority', 'subscribers', 'unregistered_subscribers']),
             set(topic.keys())
         )
-        self.assertEqual('top1', topic['subject']) 
+        self.assertEqual('top1', topic['subject'])
 
     def test_get_forum_subject(self):
         context = self._prepare_context(self.req)

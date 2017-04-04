@@ -17,7 +17,7 @@ from tracdiscussion.admin import DiscussionWebAdmin
 from tracdiscussion.init import DiscussionInit
 
 class DiscussionWebAdminTestCase(unittest.TestCase):
- 
+
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()

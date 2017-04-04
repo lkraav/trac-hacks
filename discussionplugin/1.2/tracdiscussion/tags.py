@@ -9,7 +9,7 @@
 #
 
 from trac.core import implements
-from trac.resource import Resource, get_resource_description, resource_exists 
+from trac.resource import Resource, get_resource_description, resource_exists
 from trac.config import ListOption
 
 from tractags.api import DefaultTagProvider, TagSystem

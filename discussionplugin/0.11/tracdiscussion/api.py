@@ -1137,7 +1137,7 @@ class DiscussionApi(DiscussionDb):
                 context.req.args['body'] = context.topic['body']
 
             elif action == 'topic-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                    context.resource)
 
                 # Check if user can edit topic.
@@ -1168,7 +1168,7 @@ class DiscussionApi(DiscussionDb):
 
             elif action == 'topic-edit-attribute':
                 # Check general topic editing permission.
-                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                    context.resource)
                 if not context.moderator and (context.topic['author'] !=
                   context.req.authname):
@@ -1194,7 +1194,7 @@ class DiscussionApi(DiscussionDb):
                 # Attributes that can be changed by moderator.
                 elif name in ('forum', 'author', 'subscribers', 'priority',
                   'status.locked', 'status'):
-                    context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                    context.req.perm.assert_permission('DISCUSSION_MODERATE',
                                                        context.resource)
                     if not context.moderator:
                         raise PermissionError("Topic editing")
@@ -1214,7 +1214,7 @@ class DiscussionApi(DiscussionDb):
                 elif name in ('subject', 'body', 'status.solved'):
 
                     self.log.debug((context.topic['author'], context.req.authname))
-                    context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                    context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                        context.resource)
 
                     # Check if user can edit topic.
@@ -1240,7 +1240,7 @@ class DiscussionApi(DiscussionDb):
                 self.edit_topic(context, context.topic['id'], topic)
 
             elif action == 'topic-move':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                context.req.perm.assert_permission('DISCUSSION_MODERATE',
                                                    context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
@@ -1249,7 +1249,7 @@ class DiscussionApi(DiscussionDb):
                 context.data['forums'] = self.get_forums(context)
 
             elif action == 'topic-post-move':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                context.req.perm.assert_permission('DISCUSSION_MODERATE',
                                                    context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
@@ -1264,7 +1264,7 @@ class DiscussionApi(DiscussionDb):
                 context.redirect_url = (context.req.path_info, '')
 
             elif action == 'topic-delete':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                context.req.perm.assert_permission('DISCUSSION_MODERATE',
                                                    context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
@@ -1296,7 +1296,7 @@ class DiscussionApi(DiscussionDb):
                 context.req.session['message-list-display'] = display
 
             elif action == 'topic-subscriptions-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                context.req.perm.assert_permission('DISCUSSION_MODERATE',
                                                    context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
@@ -1325,7 +1325,7 @@ class DiscussionApi(DiscussionDb):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'topic-subscriptions-post-add':
-                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
                                                    context.resource)
 
                 # Prepare edited attributes of the forum..
@@ -1349,7 +1349,7 @@ class DiscussionApi(DiscussionDb):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'topic-subscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
                                                    context.resource)
 
                 if context.authemail and not (context.req.authname in
@@ -1374,7 +1374,7 @@ class DiscussionApi(DiscussionDb):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'topic-unsubscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
                                                    context.resource)
 
                 if context.authemail and (context.req.authname in
@@ -1399,7 +1399,7 @@ class DiscussionApi(DiscussionDb):
                 context.redirect_url = (context.req.path_info, '#subscriptions')
 
             elif action == 'message-list':
-                context.req.perm.assert_permission('DISCUSSION_VIEW', 
+                context.req.perm.assert_permission('DISCUSSION_VIEW',
                                                    context.resource)
                 self._prepare_message_list(context, context.topic)
 
@@ -1408,11 +1408,11 @@ class DiscussionApi(DiscussionDb):
                     self._prepare_message_list(context, context.topic)
 
             elif action == 'message-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                    context.resource)
 
             elif action == 'message-quote':
-                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                    context.resource)
 
                 # Prepare old content.
@@ -1422,7 +1422,7 @@ class DiscussionApi(DiscussionDb):
                 context.req.args['body'] = '\n'.join(lines)
 
             elif action == 'message-post-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                    context.resource)
 
                 # Check if user can post to locked topic.
@@ -1466,7 +1466,7 @@ class DiscussionApi(DiscussionDb):
                   context.message['id'],))
 
             elif action == 'message-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                    context.resource)
                 if not context.moderator and (context.message['author'] !=
                   context.req.authname):
@@ -1476,7 +1476,7 @@ class DiscussionApi(DiscussionDb):
                 context.req.args['body'] = context.message['body']
 
             elif action == 'message-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND', 
+                context.req.perm.assert_permission('DISCUSSION_APPEND',
                                                    context.resource)
 
                 # Check if user can edit message.
@@ -1507,7 +1507,7 @@ class DiscussionApi(DiscussionDb):
                   context.message['id'],))
 
             elif action == 'message-delete':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE', 
+                context.req.perm.assert_permission('DISCUSSION_MODERATE',
                                                    context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
@@ -1710,7 +1710,7 @@ class DiscussionApi(DiscussionDb):
 
         def _new_replies_count(context, topic_id):
             values = (topic_id, topic_id in context.visited_topics and
-                                int(context.visited_topics[topic_id]) or 0) 
+                                int(context.visited_topics[topic_id]) or 0)
             where = "topic=%s AND time>%s"
             return self._get_items_count(context, 'message', where, values)
 

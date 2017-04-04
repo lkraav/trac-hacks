@@ -22,7 +22,7 @@ from tracdiscussion.util import topic_status_to_list
 
 
 class _BaseTestCase(unittest.TestCase):
-	
+
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', 'tracdiscussion.*'])

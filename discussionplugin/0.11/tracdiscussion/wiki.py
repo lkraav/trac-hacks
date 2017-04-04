@@ -140,7 +140,7 @@ class DiscussionWiki(Component):
             return tag.div(tag.strong('Redirect: '),
                            ' This page redirects to ',
                            tag.a(href, href=href),
-                           tag.script("window.location = '" + 
+                           tag.script("window.location = '" +
                                       context.req.href('discussion',
                                                        'redirect',
                                                         redirect_url=href) +

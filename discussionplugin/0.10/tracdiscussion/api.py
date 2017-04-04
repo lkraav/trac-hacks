@@ -455,7 +455,7 @@ class DiscussionApi(Component):
                 if not new_moderators:
                     new_moderators = []
                 if not isinstance(new_moderators, list):
-                     new_moderators = [new_moderators]
+                    new_moderators = [new_moderators]
 
                 # Perform new forum add.
                 self.add_forum(cursor, new_name, new_author, new_subject,
