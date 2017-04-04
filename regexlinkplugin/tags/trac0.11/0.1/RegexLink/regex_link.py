@@ -3,7 +3,7 @@ regex_link.py
 ====================
 
 This is a plugin module for Trac.
-  
+
 Description:
 
   This is a wiki syntax provider to make links to external urls out of
@@ -39,7 +39,7 @@ class RegexLinkSyntaxProvider(Component):
                 self.regex_links += [(regex, url)]
 
     def _replace_url(self, url, regex, match):
-      return re.sub(regex, url, match.group(0))
+        return re.sub(regex, url, match.group(0))
 
     # IWikiSyntaxProvider methods
     def get_link_resolvers(self):

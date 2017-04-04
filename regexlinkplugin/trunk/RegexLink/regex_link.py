@@ -13,7 +13,7 @@ Copyright (C) 2008 Roel Harbers
  ----------------------------------------------------------------------------
 
 This is a plugin module for Trac.
-  
+
 Description:
 
   This is a wiki syntax provider to make links to external urls out of
