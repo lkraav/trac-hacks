@@ -19,16 +19,16 @@ from trac.web.main import open_environment
 
 
 class ProjectMenuModule(Component):
-    
+
     implements(INavigationContributor, ITemplateProvider, IRequestFilter)
-    
+
     # INavigationProvider methods
 
     def get_navigation_items(self, req):
         projects = []
         search_path, this_project = os.path.split(self.env.path)
         base_url, _ = posixpath.split(req.abs_href())
-        
+
         for project in os.listdir(search_path):
             if project != this_project:
                 proj_path = os.path.join(search_path, project)
@@ -44,7 +44,7 @@ class ProjectMenuModule(Component):
                                     selected=True, value=''),
                          self.env.project_name,))
         projects.sort(lambda a,b: cmp(a[1],b[1])) # Sort on the project names
-        
+
         yield ('metanav', 'projectmenu',
                tag.select([e for e,_ in projects], name='projectmenu',
                           id='projectmenu',
@@ -58,7 +58,7 @@ class ProjectMenuModule(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('projectmenu', resource_filename(__name__, 'htdocs'))]
-        
+
     def get_templates_dirs(self):
         return []
 
