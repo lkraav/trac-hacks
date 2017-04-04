@@ -8,8 +8,10 @@
 
 from __future__ import with_statement
 
-from genshi.core import Markup
 from genshi.builder import tag
+from genshi.core import Markup
+from genshi.filters.transform import Transformer
+from genshi.path import Path
 
 from trac.core import Component, TracError, implements
 from trac.resource import (
@@ -29,6 +31,28 @@ def dgettext_messages(msgid, **kwargs):
     return dgettext('messages', msgid, **kwargs)
 
 
+class PathOnce(Path):
+
+    def test(self, ignore_context=False):
+        def test_once(event, namespaces, variables, updateonly=False):
+            if match[0] is True:
+                return None
+            rv = test(event, namespaces, variables, updateonly=updateonly)
+            if rv is True:
+                match[0] = True
+            return rv
+
+        match = [False]
+        test = super(PathOnce, self).test(ignore_context=ignore_context)
+        return test_once
+
+
+class TransformerOnce(Transformer):
+
+    def __init__(self, path='.'):
+        super(TransformerOnce, self).__init__(PathOnce(path))
+
+
 class TracBackLinkModule(Component):
 
     implements(ITemplateStreamFilter)
@@ -38,15 +62,20 @@ class TracBackLinkModule(Component):
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html':
             key = 'ticket'
+            xfmr = TransformerOnce('//div[@id="ticket"]').after
         elif filename == 'wiki_view.html':
             key = 'page'
+            xfmr = TransformerOnce('//div[@id="content"]'
+                                   '//div[@class="wikipage searchable"]').after
         elif filename == 'milestone_view.html':
             key = 'milestone'
+            xfmr = TransformerOnce('//div[@id="attachments" or @id="help"]') \
+                   .before
         else:
             return stream
         contents = self._get_backlinks_content(req, data.get(key))
         if contents is not None:
-            stream |= self._insert_backlinks_content(contents)
+            stream |= xfmr(contents)
         return stream
 
     # Internal methods
@@ -109,25 +138,6 @@ class TracBackLinkModule(Component):
                   self._render_milestone_backlinks):
             rendered.update(f(req, sources))
         return rendered
-
-    def _insert_backlinks_content(self, content):
-        def transform(stream, ctxt=None):
-            from genshi.path import Path
-            xpath = Path('//div[@id="attachments"]')
-            namespaces = {}
-            variables = {}
-            test = xpath.test()
-            for event in stream:
-                if test(event, namespaces, variables) is not True:
-                    yield event
-                    continue
-                for subevent in content:
-                    yield subevent
-                yield event
-                for event in stream:
-                    yield event
-                return
-        return transform
 
     def _render_wiki_backlinks(self, req, sources):
         realm = 'wiki'
