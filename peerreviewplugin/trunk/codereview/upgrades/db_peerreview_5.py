@@ -35,4 +35,3 @@ def do_upgrade(env, ver, db_backend, db):
                    "FROM peerreview_old")
 
     cursor.execute("DROP TABLE peerreview_old")
-

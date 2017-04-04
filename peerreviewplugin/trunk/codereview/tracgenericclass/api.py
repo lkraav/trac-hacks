@@ -189,5 +189,3 @@ class GenericClassSystem(Component):
                     if obj is not None:
                         for result in obj.get_search_results(req, terms, filters):
                             yield result
-
-

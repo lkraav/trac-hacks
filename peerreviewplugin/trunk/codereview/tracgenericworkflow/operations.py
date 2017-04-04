@@ -152,4 +152,3 @@ class WorkflowStandardOperations(Component):
                 return True
 
         return False
-

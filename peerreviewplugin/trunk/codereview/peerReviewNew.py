@@ -220,7 +220,7 @@ class NewReviewModule(Component):
         review['name'] = req.args.get('Name')
         review['notes'] = req.args.get('Notes')
         if req.args.get('project'):
-             review['project'] = req.args.get('project')
+            review['project'] = req.args.get('project')
         if oldid:
             # Resubmit or follow up
             if req.args.get('followup'):

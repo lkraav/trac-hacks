@@ -519,8 +519,8 @@ class PeerReviewModelProvider(Component):
 
     # IConcreteClassProvider methods
     def get_realms(self):
-            yield 'peerreview'
-            yield 'peerreviewer'
+        yield 'peerreview'
+        yield 'peerreviewer'
 
     def get_data_models(self):
         return self.SCHEMA

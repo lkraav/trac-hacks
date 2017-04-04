@@ -478,6 +478,3 @@ class ResourceWorkflowSystem(Component):
         """
         from pkg_resources import resource_filename
         return [('tracgenericworkflow', resource_filename(__name__, 'htdocs'))]
-
-
-

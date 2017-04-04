@@ -251,7 +251,7 @@ class AbstractVariableFieldsObject(object):
         result = []
 
         for f in self.get_key_prop_names():
-             result.append(self.values[f])
+            result.append(self.values[f])
 
         return result
 
@@ -697,7 +697,7 @@ class AbstractVariableFieldsObject(object):
 
             # Copy values from key into corresponding self.values field
             for f in self.get_key_prop_names():
-                 self.values[f] = new_key[f]
+                self.values[f] = new_key[f]
 
             self.exists = False
 
@@ -1497,4 +1497,3 @@ def _set_system_value(env, key, value, db=None):
         if not cursor.fetchone():
             cursor.execute(
                 "INSERT INTO system(name, value) VALUES(%s, %s)", (key, value))
-

@@ -30,4 +30,3 @@ def do_upgrade(env, ver, db_backend, db):
     cursor.execute("INSERT INTO peerreviewer (reviewer_id,review_id,reviewer,status,vote) "
                    "SELECT reviewer_id,review_id,reviewer,status,vote FROM peerreviewer_old")
     cursor.execute("DROP TABLE peerreviewer_old")
-
