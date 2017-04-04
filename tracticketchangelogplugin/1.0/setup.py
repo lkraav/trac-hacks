@@ -47,8 +47,7 @@ setup(
     classifiers=[
         'Framework :: Trac',
     ],
-    install_requires=['Trac',
-                      sys.version_info < (2, 6) and 'simplejson' or ''],
+    install_requires=['Trac'],
     entry_points="""
     [trac.plugins]
     ticketlog = ticketlog.web_ui

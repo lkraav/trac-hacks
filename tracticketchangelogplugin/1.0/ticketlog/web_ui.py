@@ -10,11 +10,6 @@
 import re
 from pkg_resources import resource_filename
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 from genshi.filters.transform import Transformer
 from trac.config import IntOption, Option
 from trac.core import Component, implements
