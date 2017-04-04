@@ -10,4 +10,3 @@ class PyDotOrgTheme(ThemeBase):
     """A theme for Trac based on http://www.python.org."""
 
     htdocs = css = screenshot = True
-

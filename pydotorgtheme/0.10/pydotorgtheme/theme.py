@@ -6,7 +6,7 @@ __all__ = ['PyDotOrgTheme']
 
 class PyDotOrgTheme(ThemeBase):
     """A theme based on http://www.python.org."""
-    
+
     css = screenshot = True
 
     header_logo = {

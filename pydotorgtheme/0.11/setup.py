@@ -20,7 +20,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    
+
     install_requires = ['TracThemeEngine'],
 
     entry_points = {
