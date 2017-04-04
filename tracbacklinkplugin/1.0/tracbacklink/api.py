@@ -671,7 +671,7 @@ class LinksGatherer(Formatter):
         elif ns == 'changeset':
             f = self._add_changeset_link
         else:
-            return self._super._make_link(ns, target, match, label, fullmatch)
+            return ''
         f(target)
         return ''
 
