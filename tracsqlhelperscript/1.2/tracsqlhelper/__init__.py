@@ -97,7 +97,7 @@ def create_table(env, table):
     create a table given a component
     """
 
-    db_connector, _ = DatabaseManager(env)._get_connector()
+    db_connector, _ = DatabaseManager(env).get_connector()
     stmts = db_connector.to_sql(table)
     for stmt in stmts:
         execute_non_query(env, stmt)
