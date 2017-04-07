@@ -116,11 +116,16 @@ class GatherLinksTestCase(unittest.TestCase):
                 u'[comment:22:ticket:93 Comment 22 in #93]\n'
                 u'<comment:23:ticket:94>\n'
                 u'[[comment:24:ticket:95|Comment 24 in #95]]\n'
+                u'[=#anchor #102]\n'
+                u'[=#anchor ticket:103]\n'
+                u'[[=#anchor|#104,105]]\n'
+                u'[[=#anchor|ticket:106]]\n'
                 % {'id': tktid})
         actual = set(self._gather(ticket, text))
         expected = set()
         expected.update(Resource('ticket', id_)
-                        for id_ in (42, 43, 44, 52, 53, 54, 55, 62, 72, 82))
+                        for id_ in (42, 43, 44, 52, 53, 54, 55, 62, 72, 82,
+                                    102, 103, 104, 105, 106))
         expected.add(Resource('ticket', 92).child('comment', 21))
         expected.add(Resource('ticket', 93).child('comment', 22))
         expected.add(Resource('ticket', 94).child('comment', 23))
@@ -267,6 +272,7 @@ class GatherLinksTestCase(unittest.TestCase):
         test([], '`#42`')
         test(expected, '= #42')
         test(expected, '===== ticket:42 #anchor')
+        test(expected, '[=#anchor #42]')
         test(expected, ' * #42')
         test(expected, ' - #42')
         test(expected, ' 1. #42')
@@ -279,6 +285,7 @@ class GatherLinksTestCase(unittest.TestCase):
         test(expected, '|| #42 ||')
         test(expected, '||= #42 =||')
         test(expected, '[[Span(#42)]]')
+        test(expected, '[[span(#42)]]')
         test(expected, '{{{#!div\n'
                        '#42\n'
                        '}}}\n')

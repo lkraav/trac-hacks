@@ -633,6 +633,12 @@ class LinksGatherer(Formatter):
         self._gather_resources(definition)
         return self._super._definition_formatter(match, fullmatch)
 
+    def _anchor_formatter(self, match, fullmatch):
+        label = fullmatch.group('anchorlabel')
+        if label:
+            self._gather_resources(label)
+        return ''
+
     def _macrolink_formatter(self, match, fullmatch):
         macro_or_link = match[2:-2]
         if macro_or_link.startswith('=#'):
