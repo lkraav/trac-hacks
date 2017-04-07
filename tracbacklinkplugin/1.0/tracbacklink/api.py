@@ -31,16 +31,19 @@ from trac.ticket.api import IMilestoneChangeListener, ITicketChangeListener, \
 from trac.ticket.model import Ticket
 from trac.util import lazy
 from trac.util.datefmt import to_utimestamp, utc
+from trac.util.text import stripws
 from trac.util.translation import domain_functions
 from trac.versioncontrol.api import Changeset, IRepositoryChangeListener, \
                                     RepositoryManager
 from trac.versioncontrol.cache import CachedChangeset, CachedRepository
+from trac.versioncontrol.web_ui.browser import BrowserModule
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from trac.web.api import Request, arg_list_to_args
 from trac.web.chrome import web_context
 from trac.web.session import Session
 from trac.wiki.api import IWikiChangeListener, WikiSystem
 from trac.wiki.formatter import Formatter
+from trac.wiki.macros import ImageMacro
 from trac.wiki.model import WikiPage
 from trac.wiki.parser import WikiParser
 
@@ -645,9 +648,62 @@ class LinksGatherer(Formatter):
                 return ''
             if name in ('span', 'Span'):
                 self._gather_resources(args)
+            elif name == 'Image':
+                self._gather_resource_from_image_macro(args)
             return ''
         fullmatch = WikiParser._creolelink_re.match(macro_or_link)
         return self._lhref_formatter(match, fullmatch)
+
+    def _gather_resource_from_image_macro(self, args):
+        args = stripws(args or '')
+        if not args:
+            return
+        args = [stripws(args)
+                for arg in ImageMacro._split_args_re.split(args)[1::2]]
+        if not args:
+            return
+        filespec = args[0]
+        if ImageMacro._quoted_re.match(filespec):
+            filespec = filespec.strip('\'"')
+        if not filespec:
+            return
+        parts = [i.strip('''['"]''')
+                 for i in ImageMacro._split_filespec_re.split(filespec)[1::2]]
+        if parts and parts[0] in ('http', 'https', 'ftp', 'data') or \
+                filespec.startswith('/'):
+            return
+        if len(parts) == 3:
+            realm, id_, filename = parts
+            if self.get_intertrac_url(realm, '%s:%s' % (id_, filename)):
+                return
+            if realm == 'ticket':
+                try:
+                    id_ = int(id_)
+                except:
+                    return
+            resource = Resource(realm, id_).child('attachment', filename)
+            self._add_resource(resource)
+            return
+        if len(parts) == 2:
+            part0, filename = parts
+            if part0 in self._browser_links:
+                return
+            if part0.startswith('#'):
+                try:
+                    id_ = int(part0[1:])
+                except:
+                    return
+                resource = Resource('ticket', id_)
+            elif part0 in ('htdocs', 'shared'):
+                return
+            else:
+                resource = Resource('wiki', part0)
+            self._add_resource(resource.child('attachment', filename))
+
+    @lazy
+    def _browser_links(self):
+        mod = BrowserModule(self.env)
+        return set(rv[0] for rv in mod.get_link_resolvers())
 
     def close_quote_block(self, escape_newlines):
         if self._quote_buffer:

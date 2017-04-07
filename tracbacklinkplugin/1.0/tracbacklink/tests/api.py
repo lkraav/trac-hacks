@@ -186,6 +186,15 @@ class GatherLinksTestCase(unittest.TestCase):
         test(expected, '[[attachment:test.txt:wiki:WikiStart|File]]')
         test(expected, '[[raw-attachment:test.txt:wiki:WikiStart|File]]')
         test([], 'attachment:test.txt:wiki:SandBox')  # self-reference
+        test(expected, '[[Image(WikiStart:test.txt)]]')
+        test([], '[[Image(test.txt)]]')
+        test([], '[[Image(SandBox:test.txt)]]')
+        test([], '[[Image(wiki:SandBox:test.txt)]]')
+
+        expected = [Resource('ticket', 42).child('attachment', 'test.txt')]
+        test(expected, '[[Image(#42:test.txt)]]')
+        test(expected, '[[Image(ticket:42:test.txt)]]')
+
 
     def test_milestone_links(self):
         def test(expected, description):
