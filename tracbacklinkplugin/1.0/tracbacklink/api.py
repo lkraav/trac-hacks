@@ -133,7 +133,7 @@ class TracBackLinkSystem(Component):
             for ref in gather_links(self.env, ticket, new):
                 yield changetime, author, comment_resource, ref
         for ref in self._gather_from_extpoints(ticket):
-            yield changetime, author, resource, ref
+            yield changetime, reporter, resource, ref
 
     def gather_links_from_milestone(self, milestone):
         resource = milestone.resource
