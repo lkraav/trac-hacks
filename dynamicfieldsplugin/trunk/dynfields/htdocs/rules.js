@@ -50,7 +50,10 @@ var copyrule = new Rule('CopyRule'); // must match python class name exactly
 
 // apply
 copyrule.apply = function (input, spec) {
-  if (spec.value === undefined || input.attr('id').slice(6) !== spec.trigger)
+  var id = input.attr('id');
+  if (spec.value === undefined ||
+      !((id.endsWith('_reassign_owner') && spec.trigger == 'owner') ||
+        id.slice(6) === spec.trigger))
     return;
 
   var $field = jQuery(get_selector(spec.target));
@@ -350,6 +353,11 @@ setrule.setup = function (input, spec) {
     return;
 
   var $field = jQuery(get_selector(spec.target));
+  // The workflow can have multiple actions that assign owner. The
+  // workaround is to select the first since we haven't defined what the
+  // behavior should be.
+  if (spec.target == 'owner' && $field.length > 1)
+    $field = $field.eq(0)
   if (spec.overwrite.toLowerCase() == 'false' && $field.val() != '')
     return;
 
@@ -361,7 +369,7 @@ setrule.setup = function (input, spec) {
   var doit = false;
   if ($field.is('select')) {
     $field.find('option').each(function (i, e) {
-      var option = jQuery(e).text().toLowerCase();
+      var option = jQuery(e).val().toLowerCase();
       if (set_to == '!' && option.length) // special non-empty rule
         set_to = option;
       if (option == set_to) {
@@ -371,13 +379,13 @@ setrule.setup = function (input, spec) {
   } else {
     doit = true;
   }
-
   if (doit) {
     if ($field.is(':checkbox')) {
       $field.prop('checked', set_to);
     } else if ($field.val() != set_to) {
+      // Select the workflow action.
       if (spec.target == 'owner' && !jQuery('#field-owner').length)
-        jQuery('#action_reassign').click();
+        $field.siblings('input[type="radio"]').click();
       $field.hide().removeAttr('disabled');
       $field.val(set_to).change();
       $field.fadeIn('slow');

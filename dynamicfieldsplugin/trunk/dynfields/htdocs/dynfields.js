@@ -2,18 +2,10 @@ jQuery(document).ready(function ($) {
 
   window.get_selector = function (field_name) {
     var selector = '#field-' + field_name;
-    if (field_name == 'owner') {
-      if ($(selector).length != 1) {
-        if ($('#action_assign_reassign_owner').length) {
-          selector = '#action_assign_reassign_owner';
-        } else {
-          selector = '#action_reassign_reassign_owner';
-        }
-      }
-    } else if (field_name == 'resolution') {
-      if ($(selector).length != 1) {
-        selector = '#action_resolve_resolve_resolution';
-      }
+    if (field_name == 'owner' && $(selector).length != 1) {
+      selector = '[id$="_reassign_owner"]'
+    } else if (field_name == 'resolution' && $(selector).length != 1) {
+      selector = '#action_resolve_resolve_resolution';
     }
     return selector;
   };
@@ -72,7 +64,7 @@ jQuery(document).ready(function ($) {
 
     // collect all input fields that trigger rules
     $.each(triggers, function (trigger, specs) {
-      var input = $(specs.selector).get(0);
+      var input = $(specs.selector).get();
       inputs.push(input);
     });
     inputs = $.unique(inputs);
