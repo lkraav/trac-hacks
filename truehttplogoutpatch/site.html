@@ -1,0 +1,10 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      py:strip="">
+
+  <!--! Add site-specific style sheet -->
+  <head py:match="head" py:attrs="select('@*')">
+    ${select('*|comment()|text()')}
+    <script type="text/javascript" charset="utf-8" src="${href.chrome('site/site.js')}"></script>
+  </head>
+</html>
