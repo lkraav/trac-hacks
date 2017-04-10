@@ -28,6 +28,7 @@ import re
 from StringIO import StringIO
 
 from genshi.builder import tag
+from trac.config import IntOption
 from trac.wiki.formatter import Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
 
@@ -42,6 +43,12 @@ HREF = re.compile(r'href=[\'"]?([^\'" ]*)', re.I)
 class MarkdownMacro(WikiMacroBase):
     """Implements Markdown syntax [WikiProcessors WikiProcessor] as a Trac
        macro."""
+
+    tab_length = IntOption('markdown', 'tab_length', 4, """
+        Specify the length of tabs in the markdown source. This affects
+        the display of multiple paragraphs in list items, including sub-lists,
+        blockquotes, code blocks, etc.
+        """)
 
     def expand_macro(self, formatter, name, content):
 
@@ -73,8 +80,9 @@ class MarkdownMacro(WikiMacroBase):
 
         try:
             from markdown import markdown
-            return markdown(re.sub(LINK, convert, content), ['tables'])
+            return markdown(re.sub(LINK, convert, content),
+                            extensions=['tables'], tab_length=self.tab_length)
         except ImportError:
             msg = 'Error importing Python Markdown, install it from '
-            url = 'http://www.freewisdom.org/projects/python-markdown/'
+            url = 'https://pypi.python.org/pypi/Markdown'
             return system_message(tag(msg, tag.a('here', href="%s" % url), '.'))
