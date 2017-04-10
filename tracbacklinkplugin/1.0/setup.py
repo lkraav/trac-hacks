@@ -12,7 +12,7 @@ def main():
 
     kwargs = {
         'name': 'TracBackLinkPlugin',
-        'version': '1.0.4',
+        'version': '1.0.5',
         'description': 'Provide back links feature to Trac',
         'license': 'BSD',  # the same as Trac
         'url': 'https://trac-hacks.org/wiki/TracBackLinkPlugin',

@@ -16,7 +16,7 @@ from trac.core import Component, TracError, implements
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Milestone, Ticket
 from trac.util.datefmt import from_utimestamp
-from trac.util.text import exception_to_unicode, printerr
+from trac.util.text import console_print, exception_to_unicode
 from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.cache import CachedRepository
 from trac.wiki.model import WikiPage
@@ -74,7 +74,14 @@ class TracBackLinkCommandProvider(Component):
                 mod.add_backlink(date, author, source, ref)
 
     def _gather_links(self, realm, args):
-        isatty = os.isatty(sys.stderr.fileno())
+        out = sys.stderr
+        isatty = hasattr(out, 'fileno') and os.isatty(out.fileno())
+
+        def print_stat(n_links, n_models, realm, newline=True):
+            msg = 'Gathered %d links from %d %s objects%s' % \
+                  (n_links, n_models, realm, '' if newline else '\r')
+            console_print(out, msg, newline=newline)
+
         mod = TracBackLinkSystem(self.env)
         specs = [
             ('wiki',      self._iter_wikis, mod.gather_links_from_wiki),
@@ -96,10 +103,8 @@ class TracBackLinkCommandProvider(Component):
                 n_links += n
                 n_models += 1
                 if isatty:
-                    printerr('Gathered %d links from %d %s objects\r' %
-                             (n_links, n_models, realm_), newline=False)
-            printerr('Gathered %d links from %d %s objects' %
-                     (n_links, n_models, realm_))
+                    print_stat(n_links, n_models, realm_, newline=False)
+            print_stat(n_links, n_models, realm_)
 
     def _iter_wikis(self, args):
         if not args:
