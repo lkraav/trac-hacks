@@ -178,14 +178,15 @@ class Lexer():
             text = '(%s)' % text
         elif self.look[0] == 'F':
             text = self.look[1]
-            v = self.symbol_table[text]
             self.match(text)
-            if v == None:
-                if self.look[1] != '(':
+            if self.look[1] == '(':
+                v = text
+            else:
+                v = self.symbol_table[text]
+                if v == None and not text.startswith('_'):
                     raise ConfigurationError(
-                        "No field named '%s' is defined" % text)
-                else:
-                    v = text
+                        "No field named '%s' is defined" % text,
+                        title='Syntax error in trac.ini [kis_warden]')
         else:
             raise ConfigurationError(
                 'Unexpected terminal %s' % self.look[1],
