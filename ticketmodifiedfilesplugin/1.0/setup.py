@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TicketModifiedFiles',
-    version='1.0.0',
+    version='2.0.0',
     description='Trac plugin that lists the files that have been modified while resolving a ticket.',
     author='Emilien Klein',
     author_email='Emilien Klein <e2jk AT users DOT sourceforge DOT net>',
