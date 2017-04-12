@@ -17,14 +17,14 @@ from genshi.builder import tag
 
 class TicketModifiedFilesPlugin(Component):
     implements(IRequestHandler, IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
-    
+
     # IRequestHandler methods
     def match_request(self, req):
         match = re.match(r'/modifiedfiles/([0-9]+)$', req.path_info)
         if match:
             req.args['id'] = match.group(1)
             return True
-    
+
     def process_request(self, req):
         #Retrieve the information needed to display in the /modifiedfiles/ page
         (id, files, deletedfiles, ticketsperfile, filestatus, conflictingtickets, ticketisclosed, revisions, ticketsdescription) = self.__process_ticket_request(req)
@@ -38,11 +38,11 @@ class TicketModifiedFilesPlugin(Component):
         add_stylesheet(req, 'tmf/css/ticketmodifiedfiles.css')
         add_script(req, 'tmf/js/ticketmodifiedfiles.js')
         return 'ticketmodifiedfiles.html', data, None
-    
+
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         match = re.match(r'/ticket/([0-9]+)$', req.path_info)
         if match:
@@ -50,11 +50,11 @@ class TicketModifiedFilesPlugin(Component):
         return template, data, content_type
 
     # ITemplateProvider methods
-    # Used to add the plugin's templates and htdocs 
+    # Used to add the plugin's templates and htdocs
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
-    
+
     def get_htdocs_dirs(self):
         """Return a list of directories with static resources (such as style
         sheets, images, etc.)
@@ -68,7 +68,7 @@ class TicketModifiedFilesPlugin(Component):
         """
         from pkg_resources import resource_filename
         return [('tmf', resource_filename(__name__, 'htdocs'))]
-    
+
     # ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
         if 'modifiedfiles' in data:
@@ -80,7 +80,7 @@ class TicketModifiedFilesPlugin(Component):
                 else:
                     text = " There are %s tickets in conflict!" % str(numconflictingtickets)
                 stream |= Transformer("//div[@id='changelog']").before(tag.p(tag.strong("Warning:"), text, style='background: #def; border: 2px solid #00d; padding: 3px;'))
-            
+
             #Display the link to this ticket's modifiedfiles page
             stream |= Transformer("//div[@id='changelog']").before(
                        tag.p(
@@ -97,19 +97,19 @@ class TicketModifiedFilesPlugin(Component):
         req.perm('ticket', id, None).require('TICKET_VIEW')
         #Get the list of status that have to be ignored when looking for conflicts
         ignored_statuses = self.__striplist(self.env.config.get("modifiedfiles", "ignored_statuses", "closed").split(","))
-        
+
         #Check if the ticket exists (throws an exception if the ticket does not exist)
         thisticket = Ticket(self.env, id)
-        
+
         #Tickets that are in the ignored states can not be in conflict
         if justnumconflictingtickets and thisticket['status'] in ignored_statuses:
             return 0
-        
+
         files = []
         revisions = []
         ticketsperfile = {}
-        
-        db = self.env.get_db_cnx()
+
+        db = self.env.get_read_db()
         cursor = db.cursor()
         #Retrieve all the revisions which's messages contain "#<TICKETID>"
         cursor.execute("SELECT rev, time, author, message FROM revision WHERE message LIKE '%%#%s%%'" % id)
@@ -127,20 +127,20 @@ class TicketModifiedFilesPlugin(Component):
                     validrevision = False
                 except:
                     pass
-                
+
             if validrevision:
                 if not justnumconflictingtickets:
                     date = "(" + format_time(time, str('%d/%m/%Y - %H:%M')) + ")"
                     revisions.append((rev, author, date))
                 for node_change in repos.get_changeset(rev).get_changes():
                     files.append(node_change[0])
-                    
-        
+
+
         #Remove duplicated values
         files = self.__remove_duplicated_elements_and_sort(files)
-        
+
         filestatus = {}
-        
+
         for file in files:
             #Get the last status of each file
             if not justnumconflictingtickets:
@@ -150,7 +150,7 @@ class TicketModifiedFilesPlugin(Component):
                 except:
                     #If the node doesn't exist (in the last revision) it means that it has been deleted
                     filestatus[file] = "delete"
-        
+
             #Get the list of conflicting tickets per file
             tempticketslist = []
             cursor.execute("SELECT message FROM revision WHERE rev IN (SELECT rev FROM node_change WHERE path='%s')" % file)
@@ -163,7 +163,7 @@ class TicketModifiedFilesPlugin(Component):
                     if ticket != id:
                         tempticketslist.append(ticket)
             tempticketslist = self.__remove_duplicated_elements_and_sort(tempticketslist)
-            
+
             ticketsperfile[file] = []
             #Keep only the active tickets
             for ticket in tempticketslist:
@@ -172,7 +172,7 @@ class TicketModifiedFilesPlugin(Component):
                         ticketsperfile[file].append(ticket)
                 except:
                     pass
-        
+
         #Get the global list of conflicting tickets
         #Only if the ticket is not already closed
         conflictingtickets=[]
@@ -186,17 +186,17 @@ class TicketModifiedFilesPlugin(Component):
                     tick = Ticket(self.env, relticketid)
                     conflictingtickets.append((relticketid, tick['status'], tick['owner']))
                     ticketsdescription[relticketid] = tick['summary']
-    
+
             #Remove duplicated values
             conflictingtickets = self.__remove_duplicated_elements_and_sort(conflictingtickets)
-        
+
         #Close the repository
         repos.close()
-        
+
         #Return only the number of conflicting tickets (if asked for)
         if justnumconflictingtickets:
             return len(conflictingtickets)
-        
+
         #Separate the deleted files from the others
         deletedfiles = []
         for file in files:
@@ -204,14 +204,14 @@ class TicketModifiedFilesPlugin(Component):
                 deletedfiles.append(file)
         for deletedfile in deletedfiles:
             files.remove(deletedfile)
-        
+
         #Return all the needed information
         return (id, files, deletedfiles, ticketsperfile, filestatus, conflictingtickets, ticketisclosed, revisions, ticketsdescription)
-    
+
     def __remove_duplicated_elements_and_sort(self, list):
         d = {}
         for x in list: d[x]=1
         return sorted(d.keys())
-    
+
     def __striplist(self, l):
         return([x.strip() for x in l])
