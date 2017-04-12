@@ -8,15 +8,21 @@ from trac.core import *
 from trac.ticket.model import Ticket
 from trac.web import IRequestHandler
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script, add_ctxtnav
+from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script, add_ctxtnav, add_warning
 from trac.util.datefmt import format_time
+from trac.util.translation import ngettext
+from trac.config import ListOption
 
 #WARNING: genshi.filters.Transformer requires Genshi 0.5+
 from genshi.filters import Transformer
 from genshi.builder import tag
 
 class TicketModifiedFilesPlugin(Component):
-    implements(IRequestHandler, IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
+    implements(IRequestHandler, IRequestFilter, ITemplateProvider)
+
+    ignored_statuses = ListOption('modifiedfiles', 'ignored_statuses',
+        default='closed',
+        doc="""Statuses to ignore when looking for conflicting tickets.""")
 
     # IRequestHandler methods
     def match_request(self, req):
@@ -44,9 +50,14 @@ class TicketModifiedFilesPlugin(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        match = re.match(r'/ticket/([0-9]+)$', req.path_info)
-        if match:
-            data['modifiedfiles'] = int(match.group(1))
+        if template == 'ticket.html':
+            numconflictingtickets = self.__process_ticket_request(req, True)
+            #Display a warning message if there are conflicting tickets
+            if numconflictingtickets > 0:
+                add_warning(req, ngettext("There is %(n)s other ticket which change the same files!",
+                                          "There are %(n)s tickets which change the same files!",
+                                          numconflictingtickets, n=numconflictingtickets))
+            add_ctxtnav(req, tag.a("Modified Files", href=req.href.modifiedfiles(req.args.get('id'))))
         return template, data, content_type
 
     # ITemplateProvider methods
@@ -69,40 +80,16 @@ class TicketModifiedFilesPlugin(Component):
         from pkg_resources import resource_filename
         return [('tmf', resource_filename(__name__, 'htdocs'))]
 
-    # ITemplateStreamFilter methods
-    def filter_stream(self, req, method, filename, stream, data):
-        if 'modifiedfiles' in data:
-            numconflictingtickets = self.__process_ticket_request(req, True)
-            #Display a warning message if there are conflicting tickets
-            if numconflictingtickets > 0:
-                if numconflictingtickets == 1:
-                    text = " There is one ticket in conflict!"
-                else:
-                    text = " There are %s tickets in conflict!" % str(numconflictingtickets)
-                stream |= Transformer("//div[@id='changelog']").before(tag.p(tag.strong("Warning:"), text, style='background: #def; border: 2px solid #00d; padding: 3px;'))
-
-            #Display the link to this ticket's modifiedfiles page
-            stream |= Transformer("//div[@id='changelog']").before(
-                       tag.p(
-                             'Have a look at the ',
-                             tag.a("list of modified files", href="../modifiedfiles/" + str(data["modifiedfiles"])),
-                             ' related to this ticket.'
-                             )
-                       )
-        return stream
-
     # Internal methods
     def __process_ticket_request(self, req, justnumconflictingtickets = False):
         id = int(req.args.get('id'))
         req.perm('ticket', id, None).require('TICKET_VIEW')
-        #Get the list of status that have to be ignored when looking for conflicts
-        ignored_statuses = self.__striplist(self.env.config.get("modifiedfiles", "ignored_statuses", "closed").split(","))
 
         #Check if the ticket exists (throws an exception if the ticket does not exist)
         thisticket = Ticket(self.env, id)
 
         #Tickets that are in the ignored states can not be in conflict
-        if justnumconflictingtickets and thisticket['status'] in ignored_statuses:
+        if justnumconflictingtickets and thisticket['status'] in self.ignored_statuses:
             return 0
 
         files = []
@@ -168,7 +155,7 @@ class TicketModifiedFilesPlugin(Component):
             #Keep only the active tickets
             for ticket in tempticketslist:
                 try:
-                    if Ticket(self.env, ticket)['status'] not in ignored_statuses:
+                    if Ticket(self.env, ticket)['status'] not in self.ignored_statuses:
                         ticketsperfile[file].append(ticket)
                 except:
                     pass
@@ -179,7 +166,7 @@ class TicketModifiedFilesPlugin(Component):
         ticketsdescription={}
         ticketsdescription[id] = thisticket['summary']
         ticketisclosed = True
-        if thisticket['status'] not in ignored_statuses:
+        if thisticket['status'] not in self.ignored_statuses:
             ticketisclosed = False
             for fn, relticketids in ticketsperfile.items():
                 for relticketid in relticketids:
@@ -212,6 +199,3 @@ class TicketModifiedFilesPlugin(Component):
         d = {}
         for x in list: d[x]=1
         return sorted(d.keys())
-
-    def __striplist(self, l):
-        return([x.strip() for x in l])
