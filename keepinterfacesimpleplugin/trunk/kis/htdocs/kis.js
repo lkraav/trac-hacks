@@ -422,17 +422,8 @@ function evaluate(predicate) {
                         reject({ error: errorThrown });
                     },
                     success: function (result) {
-                        evaluate.cache[cache_key] = eval(result);
-                        if (eval(result) !== null) {
-                            resolve({ value: result });
-                        } else {
-                            reject(
-                                { error: 'function "'
-                                         + cache_key.replace(/@.*/, '()')
-                                         + '" not implemented'
-                                }
-                            );
-                        }
+                        evaluate.cache[cache_key] = result;
+                        resolve({ value: result });
                     },
                     timeout: 10000,
                 });

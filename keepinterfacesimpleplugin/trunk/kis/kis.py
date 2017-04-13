@@ -655,10 +655,8 @@ evaluation.available.none = evaluation_template == 'None'
                 config_func = req.args['config_func']
                 if config_func in funcs:
                     result = funcs[config_func].__get__(provider)(req, *args)
-                    if result != None:
-                        if type(result) == type(''):
-                            result = repr(result)
-                        req.send(json.dumps(result).encode('utf-8'),
-                                 'application/json')
+                    req.send(json.dumps(result).encode('utf-8'),
+                             'application/json')
+                    return
             # Send a null response if no handler responded.
             req.send(json.dumps(None).encode('utf-8'), 'application/json')
