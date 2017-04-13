@@ -47,10 +47,7 @@
     <div id="content" class="ticketmodifiedfiles">
     
       <h1>Modified files related to the ticket #${ticketid}</h1>
-      <h3>#${ticketid}: ${ticketsdescription[ticketid]}</h3>
-      
-      <py:choose>
-        <py:when test="len(files) > 0 or len(deletedfiles) > 0">
+
           <py:choose>
             <py:when test="ticketisclosed == False">
               <py:choose>
@@ -63,43 +60,47 @@
                   </ul>
                 </py:when>
                 <py:otherwise>
-                  <h3>No conflicting ticket has been detected.</h3>
+                  <span class="hint">No conflicting ticket has been detected.</span>
                 </py:otherwise>
               </py:choose>
             </py:when>
             <py:otherwise>
-              <h3>Conflicting tickets are not detected for closed tickets.</h3>
+              <span class="hint">Conflicting tickets are not detected for closed tickets.</span>
             </py:otherwise>
           </py:choose>
-          
+
           <!-- List of modified files -->
           ${showfileslist(files, "modified")}
           
           <!-- List of deleted files -->
           ${showfileslist(deletedfiles, "deleted")}
-          
-          <div id="legendsection">
+
+      <py:choose>
+        <py:when test="len(files) > 0 or len(deletedfiles) > 0">
+
+          <div id="legendsection" class="chglist">
             <div><a id="togglecheckboxlink" href="#" onclick="togglevisibility('checkboxes'); return false;">Display the checkboxes</a></div>
             <br/>
             <strong>Legend:</strong>
-            <py:choose><py:when test="'edit' in filestatus.values()"><span class="edit">&nbsp;</span><span class="legendinfo">Edited</span></py:when></py:choose>
-            <py:choose><py:when test="'delete' in filestatus.values()"><span class="delete">&nbsp;</span><span class="legendinfo">Deleted</span></py:when></py:choose>
-            <py:choose><py:when test="'add' in filestatus.values()"><span class="add">&nbsp;</span><span class="legendinfo">Added</span></py:when></py:choose>
-            <py:choose><py:when test="'copy' in filestatus.values()"><span class="copy">&nbsp;</span><span class="legendinfo">Copied</span></py:when></py:choose>
-            <py:choose><py:when test="'move' in filestatus.values()"><span class="move">&nbsp;</span><span class="legendinfo">Moved</span></py:when></py:choose>
+            <br />
+            <py:if test="'edit' in filestatus.values()"><span class="edit">&nbsp;</span><span class="legendinfo">Edited</span></py:if>
+            <py:if test="'delete' in filestatus.values()"><span class="delete">&nbsp;</span><span class="legendinfo">Deleted</span></py:if>
+            <py:if test="'add' in filestatus.values()"><span class="add">&nbsp;</span><span class="legendinfo">Added</span></py:if>
+            <py:if test="'copy' in filestatus.values()"><span class="copy">&nbsp;</span><span class="legendinfo">Copied</span></py:if>
+            <py:if test="'move' in filestatus.values()"><span class="move">&nbsp;</span><span class="legendinfo">Moved</span></py:if>
           </div>
           
           <div id="changesetslist">
             <h3 class="backtonormalflow"><a id="changesetslink" href="#" onclick="togglevisibility('listofchangesets'); return false;">Display the list of changesets relative to this ticket.</a></h3>
             <dl id="listofchangesets">
             <py:for each="rev, author, date in revisions">
-			  <dt class="changeset">
-			    <a href="${href.changeset(rev)}">
-				  Changeset <em>[${rev}]</em> by
-				  <span class="author">${author}</span>
-				  <span class="time">${date}</span>
-			    </a>
-			  </dt>
+        <dt class="changeset">
+          <a href="${href.changeset(rev)}">
+          Changeset <em>[${rev}]</em> by
+          <span class="author">${author}</span>
+          <span class="time">${date}</span>
+          </a>
+        </dt>
             </py:for>
             </dl>
             <div style='clear: both;'></div>
