@@ -81,14 +81,18 @@
           <div id="legendsection" class="chglist">
             <div><a id="togglecheckboxlink" href="#" onclick="togglevisibility('checkboxes'); return false;">Display the checkboxes</a></div>
             <br/>
-            <strong>Legend:</strong>
-            <br />
-            <py:if test="'edit' in filestatus.values()"><span class="edit">&nbsp;</span><span class="legendinfo">Edited</span></py:if>
-            <py:if test="'delete' in filestatus.values()"><span class="delete">&nbsp;</span><span class="legendinfo">Deleted</span></py:if>
-            <py:if test="'add' in filestatus.values()"><span class="add">&nbsp;</span><span class="legendinfo">Added</span></py:if>
-            <py:if test="'copy' in filestatus.values()"><span class="copy">&nbsp;</span><span class="legendinfo">Copied</span></py:if>
-            <py:if test="'move' in filestatus.values()"><span class="move">&nbsp;</span><span class="legendinfo">Moved</span></py:if>
+            <div>
+              <strong>Legend:</strong>
+            </div>
+            <div>
+              <py:if test="'edit' in filestatus.values()"><span class="edit">&nbsp;</span><span class="legendinfo">Edited</span></py:if>
+              <py:if test="'delete' in filestatus.values()"><span class="delete">&nbsp;</span><span class="legendinfo">Deleted</span></py:if>
+              <py:if test="'add' in filestatus.values()"><span class="add">&nbsp;</span><span class="legendinfo">Added</span></py:if>
+              <py:if test="'copy' in filestatus.values()"><span class="copy">&nbsp;</span><span class="legendinfo">Copied</span></py:if>
+              <py:if test="'move' in filestatus.values()"><span class="move">&nbsp;</span><span class="legendinfo">Moved</span></py:if>
+            </div>
           </div>
+          <br />
           
           <div id="changesetslist">
             <h3 class="backtonormalflow"><a id="changesetslink" href="#" onclick="togglevisibility('listofchangesets'); return false;">Display the list of changesets relative to this ticket.</a></h3>
