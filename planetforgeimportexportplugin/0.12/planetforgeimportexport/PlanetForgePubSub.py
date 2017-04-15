@@ -128,14 +128,14 @@ class PlanetForgePubSub(Component):
         """Called when a ticket is created."""
         return
 
-        
+
     def ticket_changed(self, ticket, comment, author, old_values):
         """Called when a ticket is modified.
-        
+
         `old_values` is a dictionary containing the previous values of the
         fields that have changed.
         """
-        
+
         if old_values.has_key('status') :
             data = {'id' : ticket.id,
                     'base_url' : self.env.base_url,
@@ -154,8 +154,8 @@ class PlanetForgePubSub(Component):
                     }
             notify('owner', data)
         return
-        
-	
+
+
     def ticket_deleted(self, ticket):
         """Called when a ticket is deleted."""
         return

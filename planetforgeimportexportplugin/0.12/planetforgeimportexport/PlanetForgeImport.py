@@ -286,4 +286,3 @@ class PlanetForgeImport(Component):
                     ticket.save_changes(author, comment, modified)
 
         return 'OK'
-

@@ -69,8 +69,8 @@ class PlanetForgeExport(Component):
         action = req.args.get('action', '')
         if action == 'export' :
             ticket = req.args.get('ticket', '').strip() == 'on'
-            wiki = req.args.get('wiki', '').strip() == 'on' 
-            revision = req.args.get('revision', '').strip() == 'on' 
+            wiki = req.args.get('wiki', '').strip() == 'on'
+            revision = req.args.get('revision', '').strip() == 'on'
             ticket_change = req.args.get('ticket_change', '').strip() == 'on'
             res = self.web_export(req)
         else : # action == 'report'
@@ -101,7 +101,7 @@ class PlanetForgeExport(Component):
             return {'action': 'debug', 'dump': dump}
 
         tmpname = tempfile.mktemp()
-        out = ZipFile(tmpname, 'w') 
+        out = ZipFile(tmpname, 'w')
         out.writestr('mimetype', 'application/x-planetforge-forge-export-coclicoformat')
         out.writestr('Plucker/JSON_Pluck.txt', dump)
         if todo['attachment']:
@@ -113,7 +113,7 @@ class PlanetForgeExport(Component):
         req.send_file(tmpname, 'application/x-planetforge-forge-export-coclicoformat')
         os.remove(tmpname)
         return {}
-    
+
     def _get_item_count(self) :
         res = {}
         @with_transaction(self.env)
@@ -193,7 +193,7 @@ class PlanetForgeExport(Component):
         return {
             'URL'            : self.base_url,
             'class'          : 'PROJET',
-            'description'    : self.config.get('project', 'descr'), 
+            'description'    : self.config.get('project', 'descr'),
             'forgetype'      : 'Trac',
             'format_version' : 1,
             'homepage'       : self.config.get('project', 'url'),
@@ -223,7 +223,7 @@ class PlanetForgeExport(Component):
             'LOG_VIEW' : 'View revision logs of files and directories in the repository browser',
             'FILE_VIEW' : 'View files in the repository browser',
             'CHANGESET_VIEW' : 'View repository check-ins',
-            
+
             'TICKET_VIEW' : 'View existing tickets and perform ticket queries',
             'TICKET_CREATE' : 'Create new tickets',
             'TICKET_APPEND' : 'Add comments or attachments to tickets',
@@ -233,7 +233,7 @@ class PlanetForgeExport(Component):
             'TICKET_EDIT_DESCRIPTION' : 'Modify description field',
             'TICKET_EDIT_COMMENT' : 'Modify comments',
             'TICKET_ADMIN' : 'All TICKET_* permissions, plus the deletion of ticket attachments and modification of the reporter and description fields. It also allows managing ticket properties in the WebAdmin panel.',
-            
+
             'MILESTONE_VIEW' : 'View milestones and assign tickets to milestones.',
             'MILESTONE_CREATE' : 'Create a new milestone',
             'MILESTONE_MODIFY' : 'Modify existing milestones',
@@ -241,25 +241,25 @@ class PlanetForgeExport(Component):
             'MILESTONE_ADMIN' : 'All MILESTONE_* permissions',
             'ROADMAP_VIEW' : 'View the roadmap page, is not (yet) the same as MILESTONE_VIEW, see #4292',
             'ROADMAP_ADMIN' : 'to be removed with #3022, replaced by MILESTONE_ADMIN',
-            
+
             'REPORT_VIEW' : 'View reports, i.e. the "view tickets" link.',
             'REPORT_SQL_VIEW' : 'View the underlying SQL query of a report',
             'REPORT_CREATE' : 'Create new reports',
             'REPORT_MODIFY' : 'Modify existing reports',
             'REPORT_DELETE' : 'Delete reports',
             'REPORT_ADMIN' : 'All REPORT_* permissions',
-            
+
             'WIKI_VIEW' : 'View existing wiki pages',
             'WIKI_CREATE' : 'Create new wiki pages',
             'WIKI_MODIFY' : 'Change wiki pages',
             'WIKI_RENAME' : 'Rename wiki pages',
             'WIKI_DELETE' : 'Delete wiki pages and attachments',
             'WIKI_ADMIN' : 'All WIKI_* permissions, plus the management of readonly pages.',
-            
+
             'PERMISSION_GRANT' : 'add/grant a permission',
             'PERMISSION_REVOKE' : 'remove/revoke a permission',
             'PERMISSION_ADMIN' : 'All PERMISSION_* permissions',
-            
+
             'TIMELINE_VIEW' : 'View the timeline page',
             'SEARCH_VIEW' : 'View and execute search queries',
             'CONFIG_VIEW' : 'Enables additional pages on About Trac that show the current configuration or the list of installed plugins',
@@ -394,4 +394,3 @@ class PlanetForgeExport(Component):
                 src = os.path.join(self.env.path, 'attachments', att[0], att[1], att[2])
                 arcname = '%s/%s/%s' % (att[0], att[1], att[2])
                 out.write(src, arcname)
-
