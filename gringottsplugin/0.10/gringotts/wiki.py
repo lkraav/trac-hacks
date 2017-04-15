@@ -59,7 +59,7 @@ class GringottMacro(WikiMacroBase):
                 edit = 'Create'
                 text = "<em>No Gringlet called &quot;%s&quot; found</em>" % content
                 acl = ''
-                
+
         if acl:
             if not validate_acl(req, acl):
                 text = "<em>You do not have permission to view the &quot;%s&quot; Gringlet.</em>" % content
@@ -71,7 +71,7 @@ class GringottMacro(WikiMacroBase):
                        '<a href="%s/%s">' + edit + '</a>' + \
                        '</div>') % (req.href.gringotts(), content)
 
-            
+
         # Use eight divs for flexible frame styling
         html = '<div class="gringottframe"><div class="gringott">' + \
                '<div class="gringott"><div class="gringott">' + \

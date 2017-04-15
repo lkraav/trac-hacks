@@ -28,7 +28,7 @@ class GringottsPage(Component):
     def get_navigation_items(self, req):
         # Add Stylesheet here, so that macro's will get it
         add_stylesheet(req, 'gringotts/gringotts.css')
-        
+
         url = req.href.gringotts()
         if req.perm.has_permission("REPORT_VIEW"):
             yield 'mainnav', 'gringotts', \
@@ -84,12 +84,12 @@ class GringottsPage(Component):
                         messages = []
                         messages.append('Your change to the ACL would have locked you out.')
                         messages.append('Please change it accordingly and try again.')
-                        
+
                         req.hdf['messages'] = messages
                         req.hdf['gringlet.version'] = version
                         req.hdf['gringlet.source'] = req.args['text']
                         req.hdf['gringlet.acl'] = req.args['acl']
-                        
+
                         add_stylesheet(req, 'common/css/wiki.css')
                         return 'gringlet.cs', None
 
@@ -103,7 +103,7 @@ class GringottsPage(Component):
                                     req.args['acl']))
                     db.commit()
                     version += 1
-                    
+
                     req.hdf['messages'] = [ 'Gringlet saved successfully.' ]
 
 
@@ -123,7 +123,7 @@ class GringottsPage(Component):
 
             # If we are allowed, then show the edit page, otherwise just show the listing
             if validate_acl(req, acl):
-            
+
                 req.hdf['gringlet.version'] = version
                 req.hdf['gringlet.source'] = source
                 req.hdf['gringlet.acl'] = acl
@@ -143,7 +143,5 @@ class GringottsPage(Component):
 
         req.hdf['gringlets.list'] = names
         req.hdf['gringotts_href'] = req.href.gringotts()
-        
+
         return 'gringotts.cs', None
-
-

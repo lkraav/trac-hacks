@@ -8,4 +8,3 @@ def validate_acl(req, acl):
         if req.authname == aci or req.perm.has_permission(aci):
             return True
     return False
-

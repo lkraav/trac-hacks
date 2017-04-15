@@ -3,7 +3,7 @@ from trac.env import IEnvironmentSetupParticipant
 
 class GringottSetupParticipant(Component):
     implements(IEnvironmentSetupParticipant)
-    
+
     version = 1
     installed_version = 0
     name = "gringott_plugin_version"
@@ -29,9 +29,9 @@ class GringottSetupParticipant(Component):
 
         if not self.config.get('gringotts', 'key'):
             return True
-        
+
         return False
-        
+
     def do_db_upgrade(self):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
@@ -44,16 +44,16 @@ class GringottSetupParticipant(Component):
                                "text       TEXT,"
                                "acl        TEXT,"
                                "UNIQUE(name,version))")
-      
+
             #if self.installed_version < 2:
             #  cursor.execute("...")
-    
+
             # Updates complete, set the version
-            cursor.execute("UPDATE system SET value=%s WHERE name=%s", 
+            cursor.execute("UPDATE system SET value=%s WHERE name=%s",
                            (self.version, self.name))
             db.commit()
             db.close()
-    
+
         except Exception, e:
             self.log.error("Gringott Exception: %s" % (e,));
             db.rollback()
@@ -62,7 +62,7 @@ class GringottSetupParticipant(Component):
         if self.config.get('gringotts', 'key'):
             print '   existing key found - skipping'
             return
-        
+
         import ezPyCrypto
         print '   Generating 2048-bit keypair - could take a while...'
         k = ezPyCrypto.key(2048)
@@ -80,10 +80,10 @@ class GringottSetupParticipant(Component):
         """Called when a new Trac environment is created."""
         if self.environment_needs_upgrade(None):
             self.upgrade_environment(None)
-    
+
     def environment_needs_upgrade(self, db):
         """Called when Trac checks whether the environment needs to be upgraded.
-        
+
         Should return `True` if this participant needs an upgrade to be
         performed, `False` otherwise.
 
@@ -92,7 +92,7 @@ class GringottSetupParticipant(Component):
 
     def upgrade_environment(self, db):
         """Actually perform an environment upgrade.
-        
+
         Implementations of this method should not commit any database
         transactions. This is done implicitly after all participants have
         performed the upgrades they need without an error being raised.
@@ -103,4 +103,3 @@ class GringottSetupParticipant(Component):
         print ' * Initialising Encryption'
         self.do_key_generate()
         print 'Done Upgrading'
-

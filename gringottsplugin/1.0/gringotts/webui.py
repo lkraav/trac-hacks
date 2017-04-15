@@ -86,7 +86,7 @@ class GringottsPage(Component):
                     if not validate_acl(req, req.args['acl']):
                         messages.append('Your change to the ACL would have locked you out.')
                         messages.append('Please change it accordingly and try again.')
-                        
+
                         data = {
                           'action': 'edit',
                           'edit_rows': '20',
@@ -112,7 +112,7 @@ class GringottsPage(Component):
                                     req.args['acl']))
                     db.commit()
                     version += 1
-                    
+
                     messages.append('Gringlet saved successfully.')
                     action = 'view'
 
@@ -134,7 +134,7 @@ class GringottsPage(Component):
             # If we are allowed, then show the edit page, otherwise just show the listing
             if validate_acl(req, acl):
                 if not req.args.has_key('action') or req.args['action'] != 'edit':
-                  action = 'view'
+                    action = 'view'
                 data = {
                   'action': action,
                   'edit_rows': '20',
@@ -172,5 +172,3 @@ class GringottsPage(Component):
           }
         }
         return 'gringotts.html', data, None
-
-

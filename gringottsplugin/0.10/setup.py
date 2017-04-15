@@ -24,7 +24,7 @@ setup(name=PACKAGE,
             'gringotts.wiki = gringotts.wiki'
         ]
     },
-    install_requires=[ 'TracWebAdmin' ])   
+    install_requires=[ 'TracWebAdmin' ])
     #entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)})
 
 
