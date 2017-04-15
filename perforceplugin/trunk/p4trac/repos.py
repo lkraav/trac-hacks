@@ -146,7 +146,7 @@ class P4NodePath(object):
         * Removes trailing slashes.
         * Adds leading '//'.
         * Returns the same object unmodified if already normalised.
-         
+
         @param path: The Perforce repository path to normalise. C{str} paths
         are assumed to be C{unicode} strings encoded using the UTF-8 encoding.
         @type path: C{unicode}, C{str} or C{None}
@@ -182,17 +182,17 @@ class P4NodePath(object):
 
         if not path:
             return None
-        
+
         if not path.startswith(u'//') or path.startswith(u'///'):
             path = u'//%s' % path.lstrip(u'/')
 
         if path == u'//':
             return path
-        
+
         # Remove any trailing slashes
         if path.endswith(u'/'):
             path = _trailingSlashesRE.sub(u'', path)
-        
+
         return path
 
     @staticmethod
@@ -209,7 +209,7 @@ class P4NodePath(object):
 
         if not rev:
             return None
-        
+
         elif rev.startswith(u'#'):
             # A file revision
             return rev
@@ -284,7 +284,7 @@ class P4NodePath(object):
             return u''
         else:
             return self.path[i+1:]
-        
+
     def _get_parent(self):
         """The parent directory of this node path.
 
@@ -302,7 +302,7 @@ class P4NodePath(object):
     def _get_isRoot(self):
         """Boolean flag indicating if this path is the root path (C{u'//'})
         or not.
-        
+
         @type: C{boolean}
         """
         return self.path == u'//'
@@ -310,12 +310,12 @@ class P4NodePath(object):
     def _get_isRepositoryRevision(self):
         """Boolean flag indicating if the revision specifier is a repository
         revision or not.
-        
+
         Repository revisions start with the C{u'@'} character.
-        
+
         @note: The C{None} revision is considered a repository revision as
         well as a file revision.
-        
+
         @type: C{boolean}
         """
         return self.rev is None or self.rev.startswith(u'@')
@@ -323,21 +323,21 @@ class P4NodePath(object):
     def _get_isFileRevision(self):
         """Boolean flag indicating if the revision specifier is a file revision
         or not.
-        
+
         File revisions start with the C{u'#'} character.
-        
+
         @note: The C{None} revision is considered a repository revision as
         well as a file revision.
-        
+
         @type: C{boolean}
         """
         return self.rev is None or self.rev.startswith(u'#')
 
     def _get_change(self):
         """The change number for a change repository revision.
-        
+
         Has the value C{None} if the revision isn't a change revision.
-        
+
         @type: C{int} or C{None}
         """
         if self.rev is not None and self.rev.startswith(u'@'):
@@ -497,7 +497,7 @@ class _P4Changelist(object):
 
         if info.files is None:
             self._repo._runDescribe([self._change])
-            
+
         assert info.files is not None
 
         nodes = []
@@ -629,10 +629,10 @@ class _P4Node(object):
                                  self._nodePath.rev)
         else:
             fileInfo = self._repo._getFileInfo(self._nodePath)
-            
+
         assert fileInfo is not None
 
-        return fileInfo.rev    
+        return fileInfo.rev
 
     def _get_fileSize(self):
         """The size in bytes of this file node.
@@ -780,9 +780,9 @@ class _P4Node(object):
                 self._repo._runFstat(self._nodePath)
             except PerforceError:
                 return False
-            
+
         return fileInfo.attributes
-    
+
     def _get_integrations(self):
         """The set of files that were integrated into this file revision.
 
@@ -804,7 +804,7 @@ class _P4Node(object):
             self._repo._runFileLog(self._nodePath)
 
         return fileInfo.sources
-    
+
     def _get_subDirectories(self):
         """A list of subdirectory nodes of this directory.
 
@@ -981,7 +981,7 @@ class P4Repository(object):
 
         if self._latestChange is not None and change >= self._latestChange:
             return None
-        
+
         # What is the next highest change that we already know about?
         higherKnownChanges = [c
                               for c in self._changes.iterkeys()
@@ -1037,7 +1037,7 @@ class P4Repository(object):
 
         # Didn't find the next change (it doesn't exist)
         return None
-            
+
     def getNode(self, nodePath):
         """Get the _P4Node object corresponding to the node path.
 
@@ -1075,7 +1075,7 @@ class P4Repository(object):
                 changeInfo = self._getChangeInfo(change)
                 assert changeInfo is not None
                 assert changeInfo.files is not None
-                
+
                 for file in changeInfo.files:
                     nodePath = P4NodePath(file, '@%i' % change)
                     fileInfo = self._getFileInfo(nodePath)
@@ -1442,7 +1442,7 @@ class P4Repository(object):
             if dirInfo is not None and dirInfo.files is None:
                 dirInfo.files = [f[f.rfind(u'/')+1:]
                                  for f in output.files]
-            
+
         if output.errors:
             raise PerforceError(output.errors)
 
@@ -1454,9 +1454,9 @@ class P4Repository(object):
         for. If the node is a directory then wildcard parameter is also
         required.
 
-        @param maxRevisions: The maximum number of revisions 
+        @param maxRevisions: The maximum number of revisions
         """
-        
+
         assert nodePath.rev is not None
 
         args = ['-l', '-i']
@@ -1525,7 +1525,7 @@ class P4Repository(object):
         if wildcard == u'...':
             # It's a 'p4 changes //path/to/dir/...' request
             # Populate that directory's change
-            
+
             if output.changes:
                 latestChange = max(output.changes)
                 changeNodePath = P4NodePath(nodePath.path, latestChange)
@@ -1655,7 +1655,7 @@ class _P4DescribeOutputConsumer(object):
     outputText = _doNothing
     finished = _doNothing
 
-    
+
 class _P4DirsOutputConsumer(object):
     protocols.advise(
         instancesProvide=[IOutputConsumer]
@@ -1754,7 +1754,7 @@ class _P4FstatOutputConsumer(object):
     outputText = _doNothing
     finished = _doNothing
 
-    
+
 class _P4PrintOutputConsumer(object):
     """Writes output of a 'p4 print' command to a Python file-like object."""
 

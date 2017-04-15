@@ -48,7 +48,7 @@ class AutoAttributesMeta(type):
                 elif fdel and hasattr(fdel, '__doc__'):
                     doc = fdel.__doc__
             members[prop] = property(fget, fset, fdel, doc)
-            
+
         return type.__new__(cls, name, bases, members)
 
 class FastTemporaryFile(object):
@@ -61,7 +61,7 @@ class FastTemporaryFile(object):
     """
 
     __slots__ = ['_stream', '_isFile', '_smallFileSize']
-    
+
     def __init__(self, smallFileSize=65536):
 
         try:
@@ -72,7 +72,7 @@ class FastTemporaryFile(object):
         self._stream = StringIO.StringIO()
         self._isFile = False
         self._smallFileSize = int(smallFileSize)
-        
+
     def write(self, data):
         if not self._isFile:
             if self._stream.tell() + len(data) > self._smallFileSize:
