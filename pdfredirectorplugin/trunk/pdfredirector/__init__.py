@@ -1,2 +1,2 @@
-# 
+#
 from pdfredirector import *

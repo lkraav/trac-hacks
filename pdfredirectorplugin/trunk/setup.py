@@ -22,4 +22,3 @@ setup(name='PDFRedirector',
           pdfredirector = pdfredirector
       """,
       )
-
