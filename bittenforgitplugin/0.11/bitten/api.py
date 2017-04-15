@@ -20,21 +20,21 @@ __docformat__ = 'restructuredtext en'
 class IBuildListener(Interface):
     """Extension point interface for components that need to be notified of
     build events.
-    
+
     Note that these will be notified in the process running the build master,
     not the web interface.
     """
 
     def build_started(build):
         """Called when a build slave has accepted a build initiation.
-        
+
         :param build: the build that was started
         :type build: `Build`
         """
 
     def build_aborted(build):
         """Called when a build slave cancels a build or disconnects.
-        
+
         :param build: the build that was aborted
         :type build: `Build`
         """
@@ -42,7 +42,7 @@ class IBuildListener(Interface):
     def build_completed(build):
         """Called when a build slave has completed a build, regardless of the
         outcome.
-        
+
         :param build: the build that was completed
         :type build: `Build`
         """
@@ -54,7 +54,7 @@ class ILogFormatter(Interface):
 
     def get_formatter(req, build):
         """Return a function that gets called for every log message.
-        
+
         The function must take four positional arguments, ``step``,
         ``generator``, ``level`` and ``message``, and return the formatted
         message as a string.
@@ -73,17 +73,17 @@ class IReportSummarizer(Interface):
     of some kind."""
 
     def get_supported_categories():
-        """Return a list of strings identifying the types of reports this 
+        """Return a list of strings identifying the types of reports this
         component supports.
         """
 
     def render_summary(req, config, build, step, category):
         """Render a summary for the given report.
-        
+
         This function should return a tuple of the form ``(template, data)``,
         where ``template` is the name of the template to use and ``data`` is
         the data to be passed to the template.
-        
+
         :param req: the request object
         :param config: the build configuration
         :type config: `BuildConfig`
@@ -101,17 +101,17 @@ class IReportChartGenerator(Interface):
     set of reports."""
 
     def get_supported_categories():
-        """Return a list of strings identifying the types of reports this 
+        """Return a list of strings identifying the types of reports this
         component supports.
         """
 
     def generate_chart_data(req, config, category):
         """Generate the data for a report chart.
-        
+
         This function should return a tuple of the form ``(template, data)``,
         where ``template`` is the name of the template to use and ``data`` is
         the data to be passed to the template.
-        
+
         :param req: the request object
         :param config: the build configuration
         :type config: `BuildConfig`

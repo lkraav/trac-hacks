@@ -93,7 +93,7 @@ class XMLTestRunner(TextTestRunner):
                 test_elem.append(xmlio.Element('stdout')[stdout])
             if stderr:
                 test_elem.append(xmlio.Element('stdout')[stderr])
-            if tb:         
+            if tb:
                 test_elem.append(xmlio.Element('traceback')[tb])
             root.append(test_elem)
 

@@ -114,7 +114,7 @@ ORDER BY fixture""", (build.id, step.name))
         fixtures = []
         total_success, total_ignore, total_failure, total_error = 0, 0, 0, 0
         for fixture, file, num_success, num_ignore, num_failure, num_error in cursor:
-            fixtures.append({'name': fixture, 
+            fixtures.append({'name': fixture,
                              'num_success': num_success,
                              'num_ignore': num_ignore,
                              'num_error': num_error,
@@ -163,7 +163,7 @@ WHERE category='test' AND build=%s AND step=%s AND item_status.value<>'success' 
                 fixture['failures'] = failures
 
         data = {'fixtures': fixtures,
-                'totals': {'success': total_success, 
+                'totals': {'success': total_success,
                            'ignore': total_ignore,
                            'failure': total_failure,
                            'error': total_error}

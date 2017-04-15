@@ -33,7 +33,7 @@ class PyLintChartGenerator(Component):
 
         #self.log.debug('config.name=\'%s\'' % (config.name,))
         query = """
-select build.rev, 
+select build.rev,
  (select count(*) from bitten_report_item as item
   where item.report = report.id and item.name='category' and item.value='convention'),
  (select count(*) from bitten_report_item as item

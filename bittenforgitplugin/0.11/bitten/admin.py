@@ -273,7 +273,7 @@ class BuildConfigurationsAdminPageProvider(Component):
 
         branch = req.args.get('branch', '')
         repos = self.env.get_repository(req.authname)
-        try:         
+        try:
             if not (branch in [b[0] for b in repos.git.get_branches()]) and branch != 'master':
                 raise TracError('Invalid Repository Branch "%s".' % branch)
         except (AssertionError, TracError), e:

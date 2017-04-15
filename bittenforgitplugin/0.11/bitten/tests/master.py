@@ -272,7 +272,7 @@ class BuildMasterTestCase(unittest.TestCase):
 
         outheaders = {}
         outbody = StringIO()
-        
+
         req = Mock(method='GET', base_path='',
                    path_info='/builds/%d' % build.id,
                    href=Href('/trac'), remote_addr='127.0.0.1', args={},
@@ -516,8 +516,8 @@ class BuildMasterTestCase(unittest.TestCase):
                          reports[0].generator)
         self.assertEqual(1, len(reports[0].items))
         self.assertEqual({
-            'fixture': 'my.Fixture', 
-            'file': 'my/test/file.py', 
+            'fixture': 'my.Fixture',
+            'file': 'my/test/file.py',
             'stdout': 'Doing my thing',
             'type': 'test',
         }, reports[0].items[0])
@@ -585,7 +585,7 @@ class BuildMasterTestCase(unittest.TestCase):
         from trac.attachment import Attachment
         config_attachments = list(Attachment.select(self.env, 'build', 'test'))
         build_attachments = list(Attachment.select(self.env, 'build', 'test/1'))
-        
+
         self.assertEquals(1, len(build_attachments))
         self.assertEquals('hal', build_attachments[0].author)
         self.assertEquals('bar bar', build_attachments[0].description)
@@ -694,7 +694,7 @@ class BuildMasterTestCase(unittest.TestCase):
         steps = list(BuildStep.select(self.env, build.id))
         self.assertEqual(1, len(steps))
 
-        # invalidate the build. 
+        # invalidate the build.
 
         build = Build.fetch(self.env, build.id)
         build.slave = None
@@ -728,7 +728,7 @@ class BuildMasterTestCase(unittest.TestCase):
 
         self.assertEquals(409, outheaders['Status'])
         self.assertEquals('Build 1 has been invalidated for host 127.0.0.1.',
-                        outbody.getvalue())            
+                        outbody.getvalue())
 
         build = Build.fetch(self.env, build.id)
         self.assertEqual(Build.PENDING, build.status)
@@ -919,7 +919,7 @@ class BuildMasterTestCase(unittest.TestCase):
 
         module = BuildMaster(self.env)
         assert module.match_request(req)
-        
+
         self.assertRaises(RequestDone, module.process_request, req)
 
         self.assertEqual(405, outheaders['Status'])

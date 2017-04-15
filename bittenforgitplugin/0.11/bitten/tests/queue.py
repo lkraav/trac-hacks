@@ -361,7 +361,7 @@ class BuildQueueTestCase(unittest.TestCase):
         queue = BuildQueue(self.env, build_all=True)
 
         self.assertEqual(True, queue.should_delete_build(build1, self.repos))
-        self.assertEqual(True, queue.should_delete_build(build2, self.repos))        
+        self.assertEqual(True, queue.should_delete_build(build2, self.repos))
         self.assert_("outside of the revision range" in messages[0])
         self.assert_("outside of the revision range" in messages[1])
 

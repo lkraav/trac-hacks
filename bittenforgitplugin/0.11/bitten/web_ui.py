@@ -88,13 +88,13 @@ class BittenChrome(Component):
             status = ''
             if BuildMaster(self.env).quick_status:
                 repos = self.env.get_repository(req.authname)
-                for config in BuildConfig.select(self.env, 
+                for config in BuildConfig.select(self.env,
                                                  include_inactive=False):
                     prev_rev = None
                     for platform, rev, build in collect_changes(repos, config):
                         if rev != prev_rev:
                             if prev_rev is not None:
-                               break
+                                break
                             prev_rev = rev
                         if build:
                             build_data = _get_build_data(self.env, req, build)
@@ -105,11 +105,11 @@ class BittenChrome(Component):
                                 status='bitteninprogress'
                             elif not status:
                                 if (build_data['status'] == 'completed'):
-                                    status='bittencompleted'  
+                                    status='bittencompleted'
                 if not status:
                     status='bittenpending'
             yield ('mainnav', 'build',
-                   tag.a('Builds Status', href=req.href.build(), accesskey=5, 
+                   tag.a('Builds Status', href=req.href.build(), accesskey=5,
                          class_=status))
 
     # ITemplatesProvider methods
@@ -163,16 +163,16 @@ class BuildConfigController(Component):
         return 'bitten_config.html', data, None
 
     # IRequestHandler methods
-    
+
     def pre_process_request(self, req, handler):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
         if template:
             add_stylesheet(req, 'bitten/bitten.css')
-        
+
         return template, data, content_type
-        
+
     # Internal methods
 
     def _render_overview(self, req):
@@ -310,7 +310,7 @@ class BuildConfigController(Component):
                 builds.append(build_data)
                 current_builds += 1
 
-            if current_builds == 0: 
+            if current_builds == 0:
                 continue
 
             description = config.description
@@ -355,7 +355,7 @@ class BuildConfigController(Component):
 
         for b in repos.git.get_branches():
             if b[0] == config.branch:
-                rev = b[1]       
+                rev = b[1]
                 break
 
         data['config'] = {
@@ -374,7 +374,7 @@ class BuildConfigController(Component):
                                                db=db))
         data['config']['platforms'] = [
             { 'name': platform.name,
-              'id': platform.id, 
+              'id': platform.id,
               'builds_pending': len(list(Build.select(self.env,
                                                     config=config.name,
                                                     status=Build.PENDING,
@@ -394,12 +394,12 @@ class BuildConfigController(Component):
 
         if has_reports:
             chart_generators = []
-            for generator in ReportChartController(self.env).generators: 
-                for category in generator.get_supported_categories(): 
+            for generator in ReportChartController(self.env).generators:
+                for category in generator.get_supported_categories():
                     chart_generators.append({
-                        'href': req.href.build(config.name, 'chart/' + category) 
+                        'href': req.href.build(config.name, 'chart/' + category)
                     })
-            data['config']['charts'] = chart_generators 
+            data['config']['charts'] = chart_generators
             charts_license = self.config.get('bitten', 'charts_license')
             if charts_license:
                 data['config']['charts_license'] = charts_license
@@ -723,7 +723,7 @@ class SourceFileLinkFormatter(Component):
         cache = {}
 
         def _replace(m):
-	    return m.group(0)
+            return m.group(0)
 #            filepath = posixpath.normpath(m.group('path').replace('\\', '/'))
 #            if not cache.get(filepath) is True:
 #                parts = filepath.split('/')

@@ -186,7 +186,7 @@ class TestCoverageAnnotator(Component):
             add_ctxtnav(req, 'Coverage',
                     title='Annotate file with test coverage '
                           'data (if available)',
-                    href=req.href.browser(resource.id, 
+                    href=req.href.browser(resource.id,
                         annotate='coverage', rev=data.get('rev')))
         return template, data, content_type
 

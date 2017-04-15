@@ -550,7 +550,7 @@ class BuildConfigurationsAdminPageProviderTestCase(unittest.TestCase):
 
         provider = BuildConfigurationsAdminPageProvider(self.env)
         provider.render_admin_panel(req, 'bitten', 'configs', 'foo')
-        
+
         self.failUnless(req.chrome['warnings'], "No warnings?")
         self.assertEquals(req.chrome['warnings'],
                             ['Invalid Repository Path "invalid/path".'])
@@ -581,7 +581,7 @@ class BuildConfigurationsAdminPageProviderTestCase(unittest.TestCase):
 
         provider = BuildConfigurationsAdminPageProvider(self.env)
         provider.render_admin_panel(req, 'bitten', 'configs', 'foo')
-        
+
         self.failUnless(req.chrome['warnings'], "No warnings?")
         self.assertEquals(req.chrome['warnings'],
                     ['Invalid Recipe: Steps must have an "id" attribute.'])

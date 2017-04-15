@@ -52,10 +52,10 @@ temp_net_errors = [errno.ENETUNREACH, errno.ENETDOWN, errno.ETIMEDOUT,
 def _rmtree(root):
     """Catch shutil.rmtree failures on Windows when files are read-only, and only remove if root exists."""
     def _handle_error(fn, path, excinfo):
-       os.chmod(path, 0666)
-       fn(path)
+        os.chmod(path, 0666)
+        fn(path)
     if os.path.exists(root):
-        return shutil.rmtree(root, onerror=_handle_error) 
+        return shutil.rmtree(root, onerror=_handle_error)
     else:
         return False
 
@@ -81,7 +81,7 @@ class BuildSlave(object):
                  poll_interval=300, username=None, password=None,
                  dump_reports=False, no_loop=False, form_auth=False):
         """Create the build slave instance.
-        
+
         :param urls: a list of URLs of the build masters to connect to, or a
                      single-element list containing the path to a build recipe
                      file
@@ -93,7 +93,7 @@ class BuildSlave(object):
         :param build_dir: the pattern to use for naming the build subdir
         :param keep_files: whether files and directories created for build
                            execution should be kept when done
-        :param single_build: whether this slave should exit after completing a 
+        :param single_build: whether this slave should exit after completing a
                              single build, or continue processing builds forever
         :param poll_interval: the time in seconds to wait between requesting
                               builds from the build master (default is five
@@ -201,12 +201,12 @@ class BuildSlave(object):
                                 log.error("Project %s does not support form "
                                           "authentication" % url[:-7])
                                 raise ExitSlave(EX_NOPERM)
-                            values = {'user': self.username, 
+                            values = {'user': self.username,
                                       'password':
                                           self.password_mgr.find_user_password(
                                                                 None, url)[1],
                                       'referer': '',
-                                      '__FORM_TOKEN': match.group(1)} 
+                                      '__FORM_TOKEN': match.group(1)}
                             self.request('POST', url[:-7] + '/login',
                                          body=urllib.urlencode(values))
                         else:
@@ -294,7 +294,7 @@ class BuildSlave(object):
         xml = xmlio.parse(fileobj)
         basedir = ''
         try:
-            recipe = Recipe(xml, os.path.join(self.work_dir, self.build_dir), 
+            recipe = Recipe(xml, os.path.join(self.work_dir, self.build_dir),
                             self.config)
             basedir = recipe.ctxt.basedir
             log.debug('Running build in directory %s' % basedir)
@@ -401,7 +401,7 @@ def main():
         parser.values.password = getpass('Passsword: ')
     parser.add_option('-P', '--ask-password', action='callback',
                       callback=_ask_password, help='Prompt for password')
-    parser.add_option('--form-auth', action='store_true', 
+    parser.add_option('--form-auth', action='store_true',
                       dest='form_auth',
                       help='login using AccountManager HTML form instead of '
                            'HTTP authentication for all urls')
@@ -414,7 +414,7 @@ def main():
                      help='name pattern for the build dir to use inside the '
                           'working dir ["%default"]')
     group.add_option('-k', '--keep-files', action='store_true',
-                     dest='keep_files', 
+                     dest='keep_files',
                      help='don\'t delete files after builds')
     group.add_option('-s', '--single', action='store_true',
                      dest='single_build',

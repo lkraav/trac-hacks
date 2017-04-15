@@ -47,12 +47,12 @@ class Context(object):
 
     def __init__(self, basedir, config=None, vars=None):
         """Initialize the context.
-        
+
         :param basedir: a string containing the working directory for the build.
                         (may be a pattern for replacement ex: 'build_${build}'
         :param config: the build slave configuration
         :type config: `Configuration`
-        """        
+        """
         self.config = config or Configuration()
         self.vars = vars or {}
         self.output = []
@@ -62,7 +62,7 @@ class Context(object):
 
     def run(self, step, namespace, name, attr):
         """Run the specified recipe command.
-        
+
         :param step: the build step that the command belongs to
         :param namespace: the namespace URI of the command
         :param name: the local tag name of the command
@@ -111,21 +111,21 @@ class Context(object):
 
     def error(self, message):
         """Record an error message.
-        
+
         :param message: a string containing the error message.
         """
         self.output.append((Recipe.ERROR, None, self.generator, message))
 
     def log(self, xml):
         """Record log output.
-        
+
         :param xml: an XML fragment containing the log messages
         """
         self.output.append((Recipe.LOG, None, self.generator, xml))
 
     def report(self, category, xml):
         """Record report data.
-        
+
         :param category: the name of category of the report
         :param xml: an XML fragment containing the report data
         """
@@ -133,7 +133,7 @@ class Context(object):
 
     def report_file(self, category=None, file_=None):
         """Read report data from a file and record it.
-        
+
         :param category: the name of the category of the report
         :param file\_: the path to the file containing the report data, relative
                        to the base directory
@@ -164,7 +164,7 @@ class Context(object):
 
     def attach(self, file_=None, description=None, resource=None):
         """Attach a file to the build or build configuration.
-        
+
         :param file\_: the path to the file to attach, relative to
                        base directory.
         :param description: description saved with attachment
@@ -188,7 +188,7 @@ class Context(object):
 
     def resolve(self, *path):
         """Return the path of a file relative to the base directory.
-        
+
         Accepts any number of positional arguments, which are joined using the
         system path separator to form the path.
         """
@@ -204,7 +204,7 @@ class Step(object):
 
     def __init__(self, elem):
         """Create the step.
-        
+
         :param elem: the XML element representing the step
         :type elem: `ParsedElement`
         """
@@ -218,7 +218,7 @@ class Step(object):
 
     def execute(self, ctxt):
         """Execute this step in the given context.
-        
+
         :param ctxt: the build context
         :type ctxt: `Context`
         """
@@ -248,7 +248,7 @@ class Step(object):
 
 class Recipe(object):
     """A build recipe.
-    
+
     Iterate over this object to get the individual build steps in the order
     they have been defined in the recipe file.
     """
@@ -260,7 +260,7 @@ class Recipe(object):
 
     def __init__(self, xml, basedir=os.getcwd(), config=None):
         """Create the recipe.
-        
+
         :param xml: the XML document representing the recipe
         :type xml: `ParsedElement`
         :param basedir: the base directory for the build
@@ -280,7 +280,7 @@ class Recipe(object):
 
     def validate(self):
         """Validate the recipe.
-        
+
         This method checks a number of constraints:
          - the name of the root element must be "build"
          - the only permitted child elements or the root element with the name

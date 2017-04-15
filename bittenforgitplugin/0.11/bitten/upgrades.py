@@ -140,7 +140,7 @@ def add_report_tables(env, db):
 
 def xmldb_to_db(env, db):
     """Migrate report data from Berkeley DB XML to SQL database.
-    
+
     Depending on the number of reports stored, this might take rather long.
     After the upgrade is done, the bitten.dbxml file (and any BDB XML log files)
     may be deleted. BDB XML is no longer used by Bitten.
@@ -344,20 +344,20 @@ def migrate_logs_to_files(env, db):
     env.log.warning("We have dropped the bitten_log_message table - you may want to vaccuum/compress your database to save space")
 
 def recreate_rule_with_int_id(env, db):
-        """Recreates the bitten_rule table with an integer id column rather than a text one."""
-        from trac.db import Table, Column
-        from bitten.model import TargetPlatform
-        cursor = db.cursor()
-        connector, _ = DatabaseManager(env)._get_connector()
+    """Recreates the bitten_rule table with an integer id column rather than a text one."""
+    from trac.db import Table, Column
+    from bitten.model import TargetPlatform
+    cursor = db.cursor()
+    connector, _ = DatabaseManager(env)._get_connector()
 
-        for table in TargetPlatform._schema:
-            if table.name is 'bitten_rule':
-                env.log.info("Migrating bitten_rule table to integer ids")
-                cursor.execute("CREATE TEMPORARY TABLE old_rule AS SELECT * FROM bitten_rule")
-                cursor.execute("DROP TABLE bitten_rule")
-                for stmt in connector.to_sql(table):
-                    cursor.execute(stmt)
-                cursor.execute("INSERT INTO bitten_rule (id,propname,pattern,orderno) SELECT %s,propname,pattern,orderno FROM old_rule" % db.cast('id', 'int'))
+    for table in TargetPlatform._schema:
+        if table.name is 'bitten_rule':
+            env.log.info("Migrating bitten_rule table to integer ids")
+            cursor.execute("CREATE TEMPORARY TABLE old_rule AS SELECT * FROM bitten_rule")
+            cursor.execute("DROP TABLE bitten_rule")
+            for stmt in connector.to_sql(table):
+                cursor.execute(stmt)
+            cursor.execute("INSERT INTO bitten_rule (id,propname,pattern,orderno) SELECT %s,propname,pattern,orderno FROM old_rule" % db.cast('id', 'int'))
 
 def add_config_platform_rev_index_to_build(env, db):
     """Adds a unique index on (config, platform, rev) to the bitten_build table.

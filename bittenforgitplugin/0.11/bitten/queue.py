@@ -33,7 +33,7 @@ __docformat__ = 'restructuredtext en'
 def collect_changes(repos, config, db=None):
     """Collect all changes for a build configuration that either have already
     been built, or still need to be built.
-    
+
     This function is a generator that yields ``(platform, rev, build)`` tuples,
     where ``platform`` is a `TargetPlatform` object, ``rev`` is the identifier
     of the changeset, and ``build`` is a `Build` object or `None`.
@@ -89,14 +89,14 @@ def collect_changes(repos, config, db=None):
 
 class BuildQueue(object):
     """Enapsulates the build queue of an environment.
-    
+
     A build queue manages the the registration of build slaves and detection of
     repository revisions that need to be built.
     """
 
     def __init__(self, env, build_all=False, stabilize_wait=0, timeout=0):
         """Create the build queue.
-        
+
         :param env: the Trac environment
         :param build_all: whether older revisions should be built
         :param stabilize_wait: The time in seconds to wait before considering
@@ -116,7 +116,7 @@ class BuildQueue(object):
     def get_build_for_slave(self, name, properties):
         """Check whether one of the pending builds can be built by the build
         slave.
-        
+
         :param name: the name of the slave
         :type name: `basestring`
         :param properties: the slave configuration
@@ -164,7 +164,7 @@ class BuildQueue(object):
 
     def match_slave(self, name, properties):
         """Match a build slave against available target platforms.
-        
+
         :param name: the name of the slave
         :type name: `basestring`
         :param properties: the slave configuration
@@ -261,7 +261,7 @@ class BuildQueue(object):
     def reset_orphaned_builds(self):
         """Reset all in-progress builds to ``PENDING`` state if they've been
         running so long that the configured timeout has been reached.
-        
+
         This is used to cleanup after slaves that have unexpectedly cancelled
         a build without notifying the master, or are for some other reason not
         reporting back status updates.

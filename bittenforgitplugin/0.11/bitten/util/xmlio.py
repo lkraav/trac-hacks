@@ -174,7 +174,7 @@ class Element(Fragment):
 
     def __init__(self, name_, **attr):
         """Create an XML element using the specified tag name.
-        
+
         The tag name must be supplied as the first positional argument. All
         keyword arguments following it are handled as attributes of the element.
         """
@@ -208,7 +208,7 @@ class ParseError(Exception):
 
 def parse(text_or_file):
     """Parse an XML document provided as string or file-like object.
-    
+
     Returns an instance of `ParsedElement` that can be used to traverse the
     parsed document.
     """
@@ -227,37 +227,37 @@ def parse(text_or_file):
 class ParsedElement(object):
     """Representation of an XML element that was parsed from a string or
     file.
-    
+
     This class should not be used directly. Rather, XML text parsed using
     `xmlio.parse()` will return an instance of this class.
-    
+
     >>> xml = parse('<root/>')
     >>> print xml.name
     root
-    
+
     Parsed elements can be serialized to a string using the `write()` method:
-    
+
     >>> import sys
     >>> parse('<root></root>').write(sys.stdout)
     <root/>
-    
+
     For convenience, this is also done when coercing the object to a string
     using the builtin ``str()`` function, which is used when printing an
     object:
-    
+
     >>> print parse('<root></root>')
     <root/>
-    
+
     (Note that serializing the element will produce a normalized representation
     that may not excatly match the input string.)
-    
+
     Attributes are accessed via the `attr` member:
-    
+
     >>> print parse('<root foo="bar"/>').attr['foo']
     bar
-    
+
     Attributes can also be updated, added or removed:
-    
+
     >>> xml = parse('<root foo="bar"/>')
     >>> xml.attr['foo'] = 'baz'
     >>> print xml
@@ -273,7 +273,7 @@ class ParsedElement(object):
 
     CDATA sections are included in the text content of the element returned by
     `gettext()`:
-    
+
     >>> xml = parse('<root>foo<![CDATA[ <bar> ]]>baz</root>')
     >>> xml.gettext()
     'foo <bar> baz'
@@ -324,7 +324,7 @@ class ParsedElement(object):
 
     def gettext(self):
         """Return the text content of this element.
-        
+
         This concatenates the values of all text and CDATA nodes that are
         immediate children of this element.
         """

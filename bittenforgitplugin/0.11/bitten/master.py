@@ -55,7 +55,7 @@ class BuildMaster(Component):
     build_all = BoolOption('bitten', 'build_all', False, doc=
         """Whether to request builds of older revisions even if a younger
         revision has already been built.""")
-    
+
     stabilize_wait = IntOption('bitten', 'stabilize_wait', 0, doc=
         """The time in seconds to wait for the repository to stabilize before
         queuing up a new build.  This allows time for developers to check in
@@ -70,7 +70,7 @@ class BuildMaster(Component):
          """The directory on the server in which client log files will be stored.""")
 
     quick_status = BoolOption('bitten', 'quick_status', False, doc=
-         """Whether to show the current build status withing the Trac main 
+         """Whether to show the current build status withing the Trac main
             navigation bar""")
 
     def __init__(self):
@@ -150,7 +150,7 @@ class BuildMaster(Component):
         self._send_response(req, code, body=message, headers=headers)
 
     def _process_build_creation(self, req, slave_token):
-        queue = BuildQueue(self.env, build_all=self.build_all, 
+        queue = BuildQueue(self.env, build_all=self.build_all,
                            stabilize_wait=self.stabilize_wait,
                            timeout=self.slave_timeout)
         queue.populate()
@@ -378,7 +378,7 @@ class BuildMaster(Component):
 
 def _parse_iso_datetime(string):
     """Minimal parser for ISO date-time strings.
-    
+
     Return the time as floating point number. Only handles UTC timestamps
     without time zone information."""
     try:

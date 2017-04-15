@@ -115,7 +115,7 @@ class BuildSystem(Component):
         yield 'build', _format_link
 
     # IResourceManager methods
-    
+
     def get_resource_realms(self):
         yield 'build'
 

@@ -3,14 +3,14 @@
 # Copyright (C) 1998 Dinu C. Gherman <gherman@europemail.com>
 # Copyright (C) 2005-2007 Christopher Lenz <cmlenz@gmx.de>
 # Copyright (C) 2007 Edgewall Software
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
 # are also available at http://bitten.edgewall.org/wiki/License.
-# 
+#
 # This module is based on the pycount.py script written by Dinu C.
 # Gherman, and is used here under the following license:
-# 
+#
 #     Permission to use, copy, modify, and distribute this software
 #     and its documentation without fee and for any purpose, except
 #     direct commerial advantage, is hereby granted, provided that
@@ -66,12 +66,12 @@ BLANK, CODE, COMMENT, DOC  = 0, 1, 2, 3
 
 def count(source):
     """Parse the given file-like object as Python source code.
-    
+
     For every line in the code, this function yields a ``(lineno, type, line)``
     tuple, where ``lineno`` is the line number (starting at 0), ``type`` is
     one of `BLANK`, `CODE`, `COMMENT` or `DOC`, and ``line`` is the actual
     content of the line.
-    
+
     :param source: a file-like object containing Python code
     """
 
