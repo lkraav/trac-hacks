@@ -6,19 +6,17 @@
 # you should have received as part of this distribution.
 #
 
-import shutil
 import tempfile
 import unittest
 
 from trac.perm import PermissionCache, PermissionSystem
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub, MockRequest
 
 from tracdiscussion.ajax import DiscussionAjax
 from tracdiscussion.init import DiscussionInit
 
 
 class DiscussionAjaxTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
@@ -27,19 +25,13 @@ class DiscussionAjaxTestCase(unittest.TestCase):
         # Create user reference in the permission system.
         self.perms.grant_permission('user', 'DISCUSSION_VIEW')
         # Prepare a generic request object for view actions.
-        self.req = Mock(authname='user', method='GET',
-                   args=dict(), abs_href=self.env.abs_href,
-                   chrome=dict(notices=[], warnings=[]),
-                   href=self.env.abs_href, locale='',
-                   redirect=lambda x: None, session=dict(), tz=''
-        )
+        self.req = MockRequest(self.env, authname='user', method='GET')
         self.req.perm = PermissionCache(self.env, 'user')
 
         self.da = DiscussionAjax(self.env)
 
     def tearDown(self):
-        self.env.shutdown()
-        shutil.rmtree(self.env.path)
+        self.env.reset_db_and_disk()
 
     # Helpers
 
@@ -51,21 +43,20 @@ class DiscussionAjaxTestCase(unittest.TestCase):
 
     def test_match_request(self):
         path = '/discussion/ajax/%s'
-        req = Mock(path_info='', args=dict())
-        req.path_info = path % 'invalid/0'
+        req = MockRequest(self.env, path_info=path % 'invalid/0')
         self.assertEqual(self.da.match_request(req), None)
 
-        req.path_info = path % 'forum/1'
+        req = MockRequest(self.env, path_info=path % 'forum/1')
         self.assertTrue(self.da.match_request(req))
-        req.path_info = path % 'topic/2'
+        req = MockRequest(self.env, path_info=path % 'topic/2')
         self.assertTrue(self.da.match_request(req))
-        req.path_info = path % 'message/3'
+        req = MockRequest(self.env, path_info=path % 'message/3')
         self.assertTrue(self.da.match_request(req))
 
     def test_process_request(self):
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(None)
+        setup.upgrade_environment()
         template = dict(forum='forum-list.html', topic='topic-list.html')
 
         req = self.req
@@ -77,8 +68,9 @@ class DiscussionAjaxTestCase(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionAjaxTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionAjaxTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

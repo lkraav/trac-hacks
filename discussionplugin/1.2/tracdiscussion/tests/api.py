@@ -12,7 +12,7 @@ from datetime import timedelta
 
 from trac.perm import PermissionCache
 from trac.resource import Resource
-from trac.test import Mock
+from trac.test import MockRequest
 from trac.util.datefmt import to_datetime, utc
 from trac.web.href import Href
 from trac.web.chrome import web_context
@@ -22,16 +22,10 @@ from tracdiscussion.tests.test import DiscussionBaseTestCase
 
 
 class DiscussionApiTestCase(DiscussionBaseTestCase):
-
     def setUp(self):
         DiscussionBaseTestCase.setUp(self)
 
-        self.req = Mock(authname='editor', method='GET',
-                   args=dict(), abs_href=self.env.abs_href,
-                   chrome=dict(notices=[], warnings=[]),
-                   href=self.env.abs_href, locale='',
-                   redirect=lambda x: None, session=dict(), tz=''
-        )
+        self.req = MockRequest(self.env, authname='editor', method='GET')
         self.req.perm = PermissionCache(self.env, 'editor')
 
         self.actions = ('DISCUSSION_ADMIN', 'DISCUSSION_MODERATE',
@@ -93,7 +87,7 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         self.assertEqual(list(self.api.get_resource_realms()), [self.realm])
 
     def test_get_resource_description(self):
-        desc = self.api.get_resource_description # method shorthand
+        desc = self.api.get_resource_description  # method shorthand
         self.assertEqual(desc(self.forum), 'Forum forum1')
         self.assertEqual(desc(self.forum, 'summary'),
                          'Forum forum1 - forum-subject1')
@@ -103,7 +97,7 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         self.assertEqual(desc(self.message, 'summary'), 'Message #3')
 
     def test_get_resource_url(self):
-        url = self.api.get_resource_url # method shorthand
+        url = self.api.get_resource_url  # method shorthand
         self.assertEqual(url(self.forum, Href('/')), '/discussion/forum/1')
         self.assertEqual(url(self.topic, Href('/')), '/discussion/topic/2')
         self.assertEqual(url(self.message, Href('/')),
@@ -118,9 +112,8 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         self.assertFalse(self.api.resource_exists(self.forum(id='message/6')))
 
     def test_get_group(self):
-        context = self._prepare_context(self.req)
         self.assertEqual('forum_group1',
-                         self.api.get_group(context, 1)['name'])
+                         self.api.get_group(1)['name'])
 
     def test_get_forum(self):
         context = self._prepare_context(self.req)
@@ -148,11 +141,10 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
                  'new_replies', 'new_topics', 'unregistered_subscribers']))
 
     def test_get_changed_forums(self):
-        context = self._prepare_context(self.req)
         start = to_datetime(None, tzinfo=utc)
         stop = start - timedelta(seconds=1)
         self.assertEqual(
-            list(self.api.get_changed_forums(context, start, stop)), [])
+            list(self.api.get_changed_forums(start, stop)), [])
 
     def test_get_topic(self):
         context = self._prepare_context(self.req)
@@ -165,13 +157,11 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         self.assertEqual('top1', topic['subject'])
 
     def test_get_forum_subject(self):
-        context = self._prepare_context(self.req)
         self.assertEqual('forum-subject1',
-                         self.api.get_forum_subject(context, 1))
+                         self.api.get_forum_subject(1))
 
     def test_get_topic_subject(self):
-        context = self._prepare_context(self.req)
-        self.assertEqual('top2', self.api.get_topic_subject(context, 2))
+        self.assertEqual('top2', self.api.get_topic_subject(2))
 
     def test_get_topics(self):
         context = self._prepare_context(self.req)
@@ -180,113 +170,107 @@ class DiscussionApiTestCase(DiscussionBaseTestCase):
         context.visited_forums = dict()
         context.visited_topics = dict()
         self.assertEqual(
-            set(self.api.get_topics(context, 1)[0].keys()),
+            set(self.api.get_topics(1, context)[0].keys()),
             set(['id', 'forum', 'author', 'time', 'status', 'subject', 'body',
                  'priority', 'subscribers', 'replies', 'lastreply',
                  'new_replies', 'unregistered_subscribers']))
 
     def test_get_topics_count(self):
-        context = self._prepare_context(self.req)
-        self.assertEqual(self.api.get_topics_count(context, 1), 2)
+        self.assertEqual(self.api.get_topics_count(1), 2)
 
     def test_get_flat_messages(self):
-        context = self._prepare_context(self.req)
         self.assertEqual(
-            self.api.get_flat_messages(context, 1), [{
-            'id': 1, 'author': None, 'body': u'msg1', 'replyto': -1,
-            'time': 1400361500}]
+            self.api.get_flat_messages(1), [{
+                'id': 1, 'author': None, 'body': u'msg1', 'replyto': -1,
+                'time': 1400361500}]
         )
 
     def test_get_flat_messages_by_forum(self):
-        context = self._prepare_context(self.req)
         self.assertEqual(
-            self.api.get_flat_messages_by_forum(context, 2), [{
-            'id': 5, 'topic': 3, 'author': None, 'body': u'msg5',
-            'replyto': -1, 'time': 1400362600}]
+            self.api.get_flat_messages_by_forum(2), [{
+                'id': 5, 'topic': 3, 'author': None, 'body': u'msg5',
+                'replyto': -1, 'time': 1400362600}]
         )
 
     def test_get_message(self):
-        context = self._prepare_context(self.req)
         self.assertEqual(
-            self.api.get_message(context, 1), {
-            'id': 1, 'forum': 1, 'topic': 1, 'author': None, 'body': u'msg1',
-            'replyto': -1, 'time': 1400361500}
+            self.api.get_message(1), {
+                'id': 1, 'forum': 1, 'topic': 1, 'author': None,
+                'body': u'msg1',
+                'replyto': -1, 'time': 1400361500}
         )
 
     def test_get_messages_count(self):
-        context = self._prepare_context(self.req)
-        self.assertEqual(self.api.get_messages_count(context, 2), 3)
+        self.assertEqual(self.api.get_messages_count(2), 3)
 
     def test_get_replies(self):
-        context = self._prepare_context(self.req)
         self.assertEqual(
-            self.api.get_replies(context, 2), [{
-            'id': 3, 'author': None, 'body': u'msg3', 'replyto': 2,
-            'time': 1400362200}]
+            self.api.get_replies(2), [{
+                'id': 3, 'author': None, 'body': u'msg3', 'replyto': 2,
+                'time': 1400362200}]
         )
 
     def test_modify_group(self):
-        context = self._prepare_context(self.req)
-        self.assertEqual('None', self.api.get_group(context, 2)['name'])
-        self.api.add_group(context, dict(name='newgroup', description='desc'))
-        self.assertEqual('newgroup', self.api.get_group(context, 2)['name'])
-        self.api.edit_group(context, 2, dict(description='changed'))
+        self.assertEqual('None', self.api.get_group(2)['name'])
+        self.api.add_group(dict(name='newgroup', description='desc'))
+        self.assertEqual('newgroup', self.api.get_group(2)['name'])
+        self.api.edit_group(2, dict(description='changed'))
         self.assertEqual('changed',
-                         self.api.get_group(context, 2)['description'])
-        self.api.delete_group(context, 2)
-        self.assertEqual('None', self.api.get_group(context, 2)['name'])
+                         self.api.get_group(2)['description'])
+        self.api.delete_group(2)
+        self.assertEqual('None', self.api.get_group(2)['name'])
 
     def test_modify_forum(self):
         context = self._prepare_context(self.req)
         context.has_tags = False
         self.assertEqual(None, self.api.get_forum(context, 3))
-        self.api.add_forum(context, dict(name='newforum',
-                                         description='forum-desc3',
-                                         moderators='', subscribers=''))
+        self.api.add_forum(dict(name='newforum',
+                                description='forum-desc3',
+                                moderators='', subscribers=''))
         self.assertEqual('newforum', self.api.get_forum(context, 3)['name'])
-        self.api.edit_forum(context, 3, dict(description='changed'))
+        self.api.edit_forum(3, dict(description='changed'))
         self.assertEqual('changed',
                          self.api.get_forum(context, 3)['description'])
         self.assertEqual(None, self.api.get_forum(context, 3)['forum_group'])
-        self.api.set_group(context, 3, 1)
+        self.api.set_group(3, 1)
         self.assertEqual(1, self.api.get_forum(context, 3)['forum_group'])
-        self.api.delete_forum(context, 3)
+        self.api.delete_forum(3)
         self.assertEqual(None, self.api.get_forum(context, 3))
 
     def test_modify_topic(self):
         context = self._prepare_context(self.req)
         self.assertEqual(None, self.api.get_topic(context, 4))
-        self.api.add_topic(context, dict(subject='newtopic',
-                                         body='topic-desc4', forum=2,
-                                         status='locked', subscribers=''))
+        self.api.add_topic(dict(subject='newtopic',
+                                body='topic-desc4', forum=2,
+                                status='locked', subscribers=''))
         self.assertEqual('newtopic',
                          self.api.get_topic(context, 4)['subject'])
-        self.api.edit_topic(context, 4, dict(body='changed'))
+        self.api.edit_topic(4, dict(body='changed'))
         self.assertEqual('changed', self.api.get_topic(context, 4)['body'])
-        self.api.set_forum(context, 4, 1)
+        self.api.set_forum(4, 1)
         self.assertEqual(1, self.api.get_topic(context, 4)['forum'])
-        self.api.delete_topic(context, 4)
+        self.api.delete_topic(4)
         self.assertEqual(None, self.api.get_topic(context, 4))
 
     def test_modify_message(self):
-        context = self._prepare_context(self.req)
-        self.assertEqual(None, self.api.get_message(context, 6))
-        self.api.add_message(context, dict(body='msg6', forum=1, topic=2,
-                                           replyto=3))
-        self.assertEqual('msg6', self.api.get_message(context, 6)['body'])
-        self.api.edit_message(context, 6, dict(body='changed'))
-        self.assertEqual('changed', self.api.get_message(context, 6)['body'])
+        self.assertEqual(None, self.api.get_message(6))
+        self.api.add_message(dict(body='msg6', forum=1, topic=2,
+                                  replyto=3))
+        self.assertEqual('msg6', self.api.get_message(6)['body'])
+        self.api.edit_message(6, dict(body='changed'))
+        self.assertEqual('changed', self.api.get_message(6)['body'])
         # Check propagation of topic change into topic message.
-        self.api.set_forum(context, 2, 2)
-        self.assertEqual(2, self.api.get_message(context, 6)['forum'])
-        self.api.delete_message(context, 6)
-        self.assertEqual(None, self.api.get_message(context, 6))
+        self.api.set_forum(2, 2)
+        self.assertEqual(2, self.api.get_message(6)['forum'])
+        self.api.delete_message(6)
+        self.assertEqual(None, self.api.get_message(6))
 
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionApiTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionApiTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

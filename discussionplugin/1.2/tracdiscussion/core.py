@@ -44,9 +44,9 @@ class DiscussionCore(Component):
 
     def get_supported_conversions(self):
         yield ('rss', _('RSS Feed'), 'xml', 'tracdiscussion.topic',
-          'application/rss+xml', 8)
+               'application/rss+xml', 8)
         yield ('rss', _('RSS Feed'), 'xml', 'tracdiscussion.forum',
-          'application/rss+xml', 5)
+               'application/rss+xml', 5)
 
     def convert_content(self, req, mimetype, resource, key):
         if key == 'rss':
@@ -70,7 +70,7 @@ class DiscussionCore(Component):
         return 'discussion'
 
     def get_navigation_items(self, req):
-        if req.perm.has_permission('DISCUSSION_VIEW'):
+        if 'DISCUSSION_VIEW' in req.perm:
             yield 'mainnav', 'discussion', html.a(_(self.title),
                                                   href=req.href.discussion())
 
@@ -83,18 +83,18 @@ class DiscussionCore(Component):
         else:
             # Try to match request pattern to request URL.
             match = re.match(
-                r'''/discussion/forum/(\d+)/latest-topic(?:\?|$)''',
+                r'/discussion/forum/(\d+)/latest-topic(?:\?|$)',
                 req.path_info
-                )
+            )
             if match:
                 req.args.update({'discussion_action': 'topic-last',
                                  'forum': match.group(1)})
                 return True
 
             match = re.match(
-                r'''/discussion(?:/?$|/(forum|topic|message)/(\d+)(?:/?$))''',
+                r'/discussion(?:/?$|/(forum|topic|message)/(\d+)(?:/?$))',
                 req.path_info
-                )
+            )
             if match:
                 resource_type = match.group(1)
                 resource_id = match.group(2)
@@ -102,7 +102,7 @@ class DiscussionCore(Component):
                     req.args['forum'] = resource_id
                 if resource_type == 'topic':
                     req.args['topic'] = resource_id
-                if resource_type== 'message':
+                if resource_type == 'message':
                     req.args['message'] = resource_id
             return match
 
@@ -112,15 +112,15 @@ class DiscussionCore(Component):
 
         # Redirect to content converter if requested.
         if 'format' in req.args:
-            format = req.args.get('format')
+            format_ = req.args.get('format')
             if 'topic' in req.args:
                 in_type = 'tracdiscussion.topic'
                 Mimeview(self.env).send_converted(
-                    req, in_type, context.resource, format, filename=None)
+                    req, in_type, context.resource, format_, filename=None)
             elif 'forum' in req.args:
                 in_type = 'tracdiscussion.forum'
                 Mimeview(self.env).send_converted(
-                    req, in_type, context.resource, format, filename=None),
+                    req, in_type, context.resource, format_, filename=None),
 
         api = DiscussionApi(self.env)
         template, data = api.process_discussion(context)
@@ -128,7 +128,7 @@ class DiscussionCore(Component):
         if context.redirect_url:
             # Redirect, if needed.
             href = req.href(context.redirect_url[0]) + context.redirect_url[1]
-            self.log.debug(_("Redirecting to %s") % href)
+            self.log.debug("Redirecting to %s", href)
             req.redirect(req.href('discussion', 'redirect',
                                   redirect_url=href))
         else:
@@ -136,14 +136,14 @@ class DiscussionCore(Component):
             if context.forum or context.topic or context.message:
                 for conversion in Mimeview(self.env) \
                         .get_supported_conversions('tracdiscussion.topic'):
-                    format, name, extension, in_mimetype, out_mimetype, \
+                    format_, name, extension, in_mimetype, out_mimetype, \
                         quality, component = conversion
                     conversion_href = get_resource_url(self.env,
                                                        context.resource,
-                                                       context.req.href,
-                                                       format=format)
-                    add_link(context.req, 'alternate', conversion_href, name,
-                             out_mimetype, format)
+                                                       req.href,
+                                                       format=format_)
+                    add_link(req, 'alternate', conversion_href, name,
+                             out_mimetype, format_)
             return template, data, None
 
     # ISearchSource methods.
@@ -153,7 +153,7 @@ class DiscussionCore(Component):
             yield ('discussion', self.config.get('discussion', 'title'))
 
     def get_search_results(self, req, terms, filters):
-        if not 'discussion' in filters:
+        if 'discussion' not in filters:
             return
 
         return DiscussionApi(self.env).get_search_results(req.href, terms)

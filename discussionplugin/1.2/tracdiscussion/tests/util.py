@@ -10,31 +10,24 @@ import shutil
 import tempfile
 import unittest
 
-from genshi.builder import tag
-
 from trac.perm import PermissionCache, PermissionSystem
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub, MockRequest
+from trac.util.html import html as tag
 from trac.web.chrome import web_context
 
-from tracdiscussion.util import as_list, format_to_oneliner_no_links
+from tracdiscussion.util import format_to_oneliner_no_links
 from tracdiscussion.util import prepare_topic, topic_status_from_list
 from tracdiscussion.util import topic_status_to_list
 
 
 class _BaseTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
         self.perms = PermissionSystem(self.env)
 
-        self.req = Mock(authname='user', method='GET',
-                   args=dict(), abs_href=self.env.abs_href,
-                   chrome=dict(notices=[], warnings=[]),
-                   href=self.env.abs_href, locale='',
-                   redirect=lambda x: None, session=dict(), tz=''
-        )
+        self.req = MockRequest(self.env, authname='user', method='GET')
         self.req.perm = PermissionCache(self.env, 'user')
 
         self.context = web_context(self.req)
@@ -44,32 +37,18 @@ class _BaseTestCase(unittest.TestCase):
         shutil.rmtree(self.env.path)
 
 
-class AsListTestCase(_BaseTestCase):
-
-    def test_iterable(self):
-        self.assertEqual(['1', '2', '3'], as_list('1 2 3'))
-        self.assertEqual([], as_list(None))
-        self.assertEqual([], as_list([]))
-
-    def test_undefined(self):
-        self.assertRaises(NotImplementedError, as_list, [1])
-        self.assertRaises(NotImplementedError, as_list, self)
-
-
 class FormatToOnlinerNoLinksTestCase(_BaseTestCase):
-
     def test_format_to_oneliner_no_links(self):
         markup = tag('text-only fragment')
         self.assertEqual(format_to_oneliner_no_links(
-                             self.env, self.context, markup), str(markup))
+            self.env, self.context, markup), str(markup))
         self.assertEqual(format_to_oneliner_no_links(
-                             self.env, self.context,
-                             'text fragment with [/ link]'),
-                             'text fragment with link')
+            self.env, self.context,
+            'text fragment with [/ link]'),
+            'text fragment with link')
 
 
 class PrepareTopicTestCase(_BaseTestCase):
-
     def test(self):
         uids = (('a', '1st user', 'a@b.com'), ('b', '2nd user', 'b@d.net'))
         self.assertEqual(dict(status=set(['unsolved']),
@@ -80,7 +59,6 @@ class PrepareTopicTestCase(_BaseTestCase):
 
 
 class TopicStatusTestCase(_BaseTestCase):
-
     def test_status_from_list(self):
         self.assertEqual(0, topic_status_from_list(['unsolved']))
         self.assertEqual(0x01, topic_status_from_list(['solved']))
@@ -104,11 +82,11 @@ class TopicStatusTestCase(_BaseTestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(AsListTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(FormatToOnlinerNoLinksTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(PrepareTopicTestCase, 'test'))
-    suite.addTest(unittest.makeSuite(TopicStatusTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(FormatToOnlinerNoLinksTestCase))
+    suite.addTest(unittest.makeSuite(PrepareTopicTestCase))
+    suite.addTest(unittest.makeSuite(TopicStatusTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

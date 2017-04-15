@@ -17,7 +17,6 @@ from tracdiscussion.init import DiscussionInit
 
 
 class DiscussionBaseTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', 'tracdiscussion.*'])
@@ -28,13 +27,14 @@ class DiscussionBaseTestCase(unittest.TestCase):
 
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(None)
+        setup.upgrade_environment()
         with self.env.db_transaction as db:
             insert_test_data(db)
 
     def tearDown(self):
         self.env.shutdown()
         shutil.rmtree(self.env.path)
+
 
 def insert_test_data(db):
     """Populate tables with initial test data."""
@@ -50,7 +50,7 @@ def insert_test_data(db):
         VALUES (%s,%s,%s,%s,%s)
     """, [(0, 'forum1', 'forum-subject1', 'forum-desc1', 1400361000),
           (1, 'forum2', 'forum-subject2', 'forum-desc2', 1400361100),
-         ])
+          ])
     cursor.executemany("""
         INSERT INTO topic
                (forum, subject, body, time)
@@ -58,7 +58,7 @@ def insert_test_data(db):
     """, [(1, 'top1', 'topic-desc1', 1400361200),
           (1, 'top2', 'Othello ;-)', 1400361300),
           (2, 'top3', 'topic-desc3', 1400361400)
-         ])
+          ])
     cursor.executemany("""
         INSERT INTO message
                (forum, topic, body, replyto, time)
@@ -68,4 +68,4 @@ def insert_test_data(db):
           (1, 2, 'msg3', 2, 1400362200),
           (1, 2, 'msg4', -1, 1400362400),
           (2, 3, 'msg5', -1, 1400362600)
-         ])
+          ])

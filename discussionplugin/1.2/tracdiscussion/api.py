@@ -18,6 +18,7 @@ from trac.core import implements
 from trac.config import IntOption, Option
 from trac.perm import IPermissionRequestor, PermissionError, PermissionSystem
 from trac.resource import IResourceManager, Resource
+from trac.util import as_bool, as_int, to_list
 from trac.util.datefmt import datetime_now, to_timestamp, utc
 from trac.util.presentation import Paginator
 from trac.util.text import to_unicode
@@ -26,7 +27,7 @@ from trac.web.chrome import exception_to_unicode, add_ctxtnav
 from trac.web.href import Href
 
 from tracdiscussion.model import DiscussionDb
-from tracdiscussion.util import as_list, format_to_oneliner_no_links
+from tracdiscussion.util import format_to_oneliner_no_links
 from tracdiscussion.util import prepare_topic, topic_status_from_list
 
 try:
@@ -41,15 +42,15 @@ def is_tags_enabled(env):
 
 
 class IDiscussionFilter(Interface):
-    """Extension point interface for components that want to filter discussion
-    topics and messages before their addition.
+    """Extension point interface for components that want to filter 
+    discussion topics and messages before their addition.
     """
 
     def filter_topic(context, topic):
         """ Called before new topic creation. May return tuple (False,
-        <error_message>) or (True, <topic>) where <error_message> is a message
-        that will be displayed when topic creation will be canceled and <topic>
-        is modified topic that will be added.
+        <error_message>) or (True, <topic>) where <error_message> is a 
+        message that will be displayed when topic creation will be canceled 
+        and <topic> is modified topic that will be added.
         """
 
     def filter_message(context, message):
@@ -110,19 +111,19 @@ class IMessageChangeListener(Interface):
     """
 
     def message_created(context, message):
-        """Called when a message is created. Argument `message` is a dictionary
-        with message attributes.
+        """Called when a message is created. Argument `message` is a 
+        dictionary with message attributes.
         """
 
     def message_changed(context, message, old_message):
         """Called when a message is modified. `old_message` is a dictionary
-        containing the previous values of the message attributes and `message`
-        is a dictionary with new values that has changed.
+        containing the previous values of the message attributes and 
+        `message` is a dictionary with new values that has changed.
         """
 
     def message_deleted(context, message):
-        """Called when a message is deleted. Argument `message` is a dictionary
-        with values of attributes of just deleted message.
+        """Called when a message is deleted. Argument `message` is a 
+        dictionary with values of attributes of just deleted message.
         """
 
 
@@ -133,38 +134,41 @@ class DiscussionApi(DiscussionDb):
     # Hint: Methods for database access within plugin's schema are inherited
     #       from tracdiscussion.model.DiscussionDb.
 
-    implements(ILegacyAttachmentPolicyDelegate, IResourceManager,
-               IPermissionRequestor)
+    implements(ILegacyAttachmentPolicyDelegate, IPermissionRequestor,
+               IResourceManager)
 
-    default_topic_display = Option(
-        'discussion', 'default_topic_display', 'classic',
-        doc='Default display mode for forum topics list.')
-    default_message_display = Option(
-        'discussion', 'default_message_display', 'tree',
-        doc='Default display mode for topic messages list.')
-    forum_sort = Option(
-        'discussion', 'forum_sort', 'lasttopic',
-        doc='Column by which will be sorted forum lists. Possible values '
-            'are: id, group, name, subject, time, moderators, description, '
-            'topics, replies, lasttopic, lastreply.')
-    forum_sort_direction = Option(
-        'discussion', 'forum_sort_direction', 'asc',
-        doc='Direction of forum lists sorting. Possible values are: '
-            'asc, desc.')
-    topic_sort = Option(
-        'discussion', 'topic_sort', 'lastreply',
-        doc='Column by which will be sorted topic lists. Possible values '
-            'are: id, forum, subject, time, author, body, replies, lastreply.')
-    topic_sort_direction = Option(
-        'discussion', 'topic_sort_direction', 'asc',
-        doc='Direction of topic lists sorting. Possible values are: '
-            'asc, desc.')
-    topics_per_page = IntOption(
-        'discussion', 'topics_per_page', 30,
-        doc='Number of topics per page in topic list.')
-    messages_per_page = IntOption(
-        'discussion', 'messages_per_page', 50,
-        doc='Number of messages per page in message list.')
+    default_topic_display = Option('discussion', 'default_topic_display',
+        'classic', doc="""Default display mode for forum topics list.""")
+
+    default_message_display = Option('discussion', 'default_message_display',
+        'tree', doc="""Default display mode for topic messages list.""")
+
+    forum_sort = Option('discussion', 'forum_sort', 'lasttopic',
+        doc="""Column by which will be sorted forum lists. Possible values
+        are: id, group, name, subject, time, moderators, description,
+        topics, replies, lasttopic, lastreply.
+        """)
+
+    forum_sort_direction = Option('discussion', 'forum_sort_direction', 'asc',
+        doc="""Direction of forum lists sorting. Possible values are:
+        asc, desc.
+        """)
+
+    topic_sort = Option('discussion', 'topic_sort', 'lastreply', doc="""
+        Column by which will be sorted topic lists. Possible values are: 
+        id, forum, subject, time, author, body, replies, lastreply.
+        """)
+
+    topic_sort_direction = Option('discussion', 'topic_sort_direction', 'asc',
+        doc="""Direction of topic lists sorting. Possible values are: 
+        asc, desc.
+        """)
+
+    topics_per_page = IntOption('discussion', 'topics_per_page', 30,
+        doc="""Number of topics per page in topic list.""")
+
+    messages_per_page = IntOption('discussion', 'messages_per_page', 50,
+        doc="""Number of messages per page in message list.""")
 
     discussion_filters = ExtensionPoint(IDiscussionFilter)
     forum_change_listeners = ExtensionPoint(IForumChangeListener)
@@ -174,6 +178,7 @@ class DiscussionApi(DiscussionDb):
     realm = 'discussion'
 
     # ILegacyAttachmentPolicyDelegate method
+
     def check_attachment_permission(self, action, username, resource, perm):
         if resource.parent.realm == 'discussion':
             if action in ('ATTACHMENT_CREATE', 'ATTACHMENT_DELETE'):
@@ -210,72 +215,71 @@ class DiscussionApi(DiscussionDb):
             return href(resource.realm, **kwargs)
 
     def get_resource_description(self, resource, format=None, **kwargs):
-        type, id = self._parse_resource_id(resource)
-        if 'forum' == type:
-            forum = self.get_item(None, 'forum', ('id', 'name', 'subject'),
-                                  where='id=%s', values=(id,))
+        type_, id_ = self._parse_resource_id(resource)
+        if 'forum' == type_:
+            forum = self.get_item('forum', ('id', 'name', 'subject'),
+                                  where='id=%s', values=(id_,))
             if 'compact' == format:
                 return '#%s' % forum['id']
             elif 'summary' == format:
                 return 'Forum %s - %s' % (forum['name'], forum['subject'])
             else:
                 return 'Forum %s' % forum['name']
-        elif 'topic' == type:
-            topic = self.get_item(None, 'topic', ('id', 'subject'),
-                                  where='id=%s', values=(id,))
+        elif 'topic' == type_:
+            topic = self.get_item('topic', ('id', 'subject'), where='id=%s',
+                                  values=(id_,))
             if 'compact' == format:
                 return '#%s' % topic['id']
             elif 'summary' == format:
                 return 'Topic #%s (%s)' % (topic['id'], topic['subject'])
             else:
                 return 'Topic #%s' % topic['id']
-        elif 'message' == type:
+        elif 'message' == type_:
             if 'compact' == format:
-                return '#%s' % id
+                return '#%s' % id_
             else:
-                return 'Message #%s' % id
+                return 'Message #%s' % id_
 
     def resource_exists(self, resource):
         type, id = self._parse_resource_id(resource)
         if type in ('forum', 'topic', 'message'):
-            return self.get_item(None, type, ('id',), where='id=%s',
+            return self.get_item(type, ('id',), where='id=%s',
                                  values=(id,)) is not None
 
     # Main request processing function.
 
     def process_discussion(self, context):
-        context.req.perm.require('DISCUSSION_VIEW')
+        req = context.req
+        req.perm.require('DISCUSSION_VIEW')
 
         # Get request items and actions.
         self._prepare_context(context)
         actions = self._get_actions(context)
-        self.log.debug('Discussion actions: %s' % actions)
-        self.log.debug('req.args: %s' % str(context.req.args))
 
         # Get session data.
-        context.visited_forums = eval(context.req.session.get('visited-forums')
-          or '{}')
-        context.visited_topics = eval(context.req.session.get('visited-topics')
-          or '{}')
+        context.visited_forums = eval(req.session.get('visited-forums')
+                                      or '{}')
+        context.visited_topics = eval(req.session.get('visited-topics')
+                                      or '{}')
 
         # Perform actions.
         self._do_actions(context, actions)
 
         # Update session data.
-        context.req.session['visited-topics'] = to_unicode(context.visited_topics)
-        context.req.session['visited-forums'] = to_unicode(context.visited_forums)
+        req.session['visited-topics'] = to_unicode(context.visited_topics)
+        req.session['visited-forums'] = to_unicode(context.visited_forums)
 
         # Fill up template data structure.
         context.data['users'] = context.users
-        context.data['moderators'] = self.get_users(None,
-                                                    'DISCUSSION_MODERATE')
+        context.data['moderators'] = \
+            self.get_users(None, 'DISCUSSION_MODERATE')
         context.data['has_tags'] = context.has_tags
         context.data['group'] = context.group
         context.data['forum'] = context.forum
         context.data['topic'] = context.topic
         context.data['message'] = context.message
         context.data['moderator'] = context.moderator
-        context.data['authname'] = context.req.authname
+        context.data['authname'] = req.authname
         context.data['authemail'] = context.authemail
         context.data['realm'] = context.realm
         context.data['mode'] = actions[-1]
@@ -286,31 +290,34 @@ class DiscussionApi(DiscussionDb):
 
         # Add context navigation.
         if context.forum:
-            add_ctxtnav(context.req, 'Forum Index',
-              context.req.href.discussion())
+            add_ctxtnav(req, 'Forum Index', req.href.discussion())
         if context.topic:
-            add_ctxtnav(context.req, format_to_oneliner_no_links(self.env,
-              context, context.forum['name']), context.req.href.discussion(
-              'forum', context.forum['id']), context.forum['name'])
+            add_ctxtnav(req,
+                        format_to_oneliner_no_links(self.env, context,
+                                                    context.forum['name']),
+                        req.href.discussion('forum', context.forum['id']),
+                        context.forum['name'])
         if context.message:
-            add_ctxtnav(context.req, format_to_oneliner_no_links(self.env,
-              context, context.topic['subject']), context.req.href.discussion(
-              'topic', context.topic['id']), context.topic['subject'])
+            add_ctxtnav(req,
+                        format_to_oneliner_no_links(self.env, context,
+                                                    context.topic['subject']),
+                        req.href.discussion('topic', context.topic['id']),
+                        context.topic['subject'])
 
         # Add CSS styles and scripts.
-        add_stylesheet(context.req, 'common/css/wiki.css')
-        add_stylesheet(context.req, 'discussion/css/discussion.css')
-        add_stylesheet(context.req, 'discussion/css/admin.css')
-        add_script(context.req, 'common/js/trac.js')
-        add_script(context.req, 'common/js/search.js')
-        add_script(context.req, 'common/js/wikitoolbar.js')
-        add_script(context.req, 'discussion/js/discussion.js')
+        add_stylesheet(req, 'common/css/wiki.css')
+        add_stylesheet(req, 'discussion/css/discussion.css')
+        add_stylesheet(req, 'discussion/css/admin.css')
+        add_script(req, 'common/js/trac.js')
+        add_script(req, 'common/js/search.js')
+        add_script(req, 'common/js/wikitoolbar.js')
+        add_script(req, 'discussion/js/discussion.js')
 
         # Determine template name.
         context.template = self._get_template(context, actions)
-        self.log.debug('Discussion template: %s data: %s'
-                       % (context.template, context.data))
-        return context.template, {'discussion' : context.data}
+        self.log.debug("Discussion template: %s data: %s", context.template,
+                       context.data)
+        return context.template, {'discussion': context.data}
 
     # Internal methods.
 
@@ -323,22 +330,24 @@ class DiscussionApi(DiscussionDb):
             r'''(?:/?$|/topic/(\d+)'''
             r'''(?:/?$|/message/(\d+)(?:/?$))))''',
             resource.id)
+        type_ = id_ = None
         if match:
             forum, topic, message = match.groups()
             if message:
-                type = 'message'
-                id = message
+                type_ = 'message'
+                id_ = message
             elif topic:
-                type = 'topic'
-                id = topic
+                type_ = 'topic'
+                id_ = topic
             elif forum:
-                type = 'forum'
-                id = forum
+                type_ = 'forum'
+                id_ = forum
         else:
-            type, id = resource.id.split('/')
-        return type, id
+            type_, id_ = resource.id.split('/')
+        return type_, id_
 
     def _prepare_context(self, context):
+        req = context.req
         # Prepare template data.
         context.data = {}
 
@@ -355,56 +364,52 @@ class DiscussionApi(DiscussionDb):
         context.message = None
 
         realm = Resource(self.realm)
-        if 'message' in context.req.args:
-            message_id = int(context.req.args.get('message') or 0)
-            context.message = self.get_message(context, message_id)
+        if 'message' in req.args:
+            message_id = req.args.getint('message', 0)
+            context.message = self.get_message(message_id)
             if not context.message:
                 raise TracError('Message with ID %s does not exist.'
                                 % message_id)
             # Create request resource.
             context.topic = self.get_topic(context, context.message['topic'])
             context.forum = self.get_forum(context, context.topic['forum'])
-            context.group = self.get_group(context,
-                                           context.forum['forum_group'])
+            context.group = self.get_group(context.forum['forum_group'])
             context.resource = realm(id='forum/%s/topic/%s/message/%s'
                                         % (context.forum['id'],
                                            context.topic['id'],
                                            context.message['id']),
                                      parent=realm(id='forum/%s/topic/%s'
-                                                      % (context.forum['id'],
-                                                         context.topic['id']))
-            )
+                                                     % (context.forum['id'],
+                                                        context.topic['id'])))
 
         # Populate active topic.
-        elif 'topic' in context.req.args:
-            topic_id = int(context.req.args.get('topic') or 0)
+        elif 'topic' in req.args:
+            topic_id = req.args.getint('topic', 0)
             context.topic = self.get_topic(context, topic_id)
             if not context.topic:
-                raise TracError('Topic with ID %s does not exist.' % topic_id)
+                raise TracError("Topic with ID %s does not exist." % topic_id)
 
             # Create request resource.
             context.forum = self.get_forum(context, context.topic['forum'])
-            context.group = self.get_group(context,
-                                           context.forum['forum_group'])
+            context.group = self.get_group(context.forum['forum_group'])
             context.resource = realm(id='forum/%s/topic/%s'
                                         % (context.forum['id'],
                                            context.topic['id']))
 
         # Populate active forum.
-        elif 'forum' in context.req.args:
-            forum_id = int(context.req.args.get('forum') or 0)
+        elif 'forum' in req.args:
+            forum_id = req.args.getint('forum', 0)
             context.forum = self.get_forum(context, forum_id)
             if not context.forum:
                 raise TracError('Forum with ID %s does not exist.' % forum_id)
 
-            context.group = self.get_group(context,
-                                           context.forum['forum_group'])
+            context.group = self.get_group(context.forum['forum_group'])
             context.resource = realm(id='forum/%s' % forum_id)
 
         # Populate active group.
-        elif 'group' in context.req.args:
-            group_id = int(context.req.args.get('group') or 0)
-            context.group = self.get_group(context, group_id)
+        elif 'group' in req.args:
+            group_id = req.args.getint('group', 0)
+            context.group = self.get_group(group_id)
             if not context.group:
                 raise TracError('Group with ID %s does not exist.' % group_id)
 
@@ -413,23 +418,24 @@ class DiscussionApi(DiscussionDb):
 
         # Determine moderator rights.
         context.moderator = context.forum and \
-            (context.req.authname in context.forum['moderators']) and \
-            context.req.perm.has_permission('DISCUSSION_MODERATE')
+                            req.authname in context.forum['moderators'] and \
+                            'DISCUSSION_MODERATE' in req.perm
 
         # Determine if user has e-mail set.
-        context.authemail = context.req.session.get('email')
+        context.authemail = req.session.get('email')
 
         # Prepare other general context attributes.
         context.redirect_url = None
-        context.format = context.req.args.get('format')
+        context.format = req.args.get('format')
 
     def _get_actions(self, context):
-        # Get action.
-        action = context.req.args.get('discussion_action')
-        preview = 'preview' in context.req.args
-        submit = 'submit' in context.req.args
-        self.log.debug('realm: %s, action: %s, format: %s preview: %s, submit:'
-          ' %s' % (context.realm, action, context.format, preview, submit))
+        req = context.req
+        action = req.args.get('discussion_action')
+        preview = 'preview' in req.args
+        submit = 'submit' in req.args
+        self.log.debug("realm: %s, action: %s, format: %s preview: %s, "
+                       "submit: %s", context.realm, action, context.format,
+                       preview, submit)
 
         # Determine mode.
         if context.message:
@@ -504,7 +510,7 @@ class DiscussionApi(DiscussionDb):
                 if action == 'add':
                     return ['message-add', 'wiki-message-list']
                 elif action == 'quote':
-                    return ['topic-quote','wiki-message-list']
+                    return ['topic-quote', 'wiki-message-list']
                 elif action == 'post-add':
                     if preview:
                         return ['wiki-message-list']
@@ -641,125 +647,126 @@ class DiscussionApi(DiscussionDb):
             return actions[-1] + '.html'
 
     def _do_actions(self, context, actions):
+        req = context.req
         for action in actions:
             if action == 'group-list':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                req.perm.require('DISCUSSION_VIEW')
 
                 # Display groups.
-                context.data['groups'] = self.get_groups(context)
+                context.data['groups'] = self.get_groups()
 
             elif action == 'admin-group-list':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get form values.
-                order = context.req.args.get('order') or 'id'
-                desc = context.req.args.get('desc') == '1'
+                order = req.args.get('order') or 'id'
+                desc = req.args.get('desc') == '1'
 
                 # Display groups.
                 context.data['order'] = order
                 context.data['desc'] = desc
-                context.data['groups'] = self.get_groups(context, order, desc)
+                context.data['groups'] = self.get_groups(order, desc)
 
             elif action == 'group-add':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
             elif action == 'group-post-add':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get form values.
-                group = {'name' : context.req.args.get('name'),
-                         'description' : context.req.args.get('description')}
+                group = {'name': req.args.get('name'),
+                         'description': req.args.get('description')}
 
                 # Add new group.
-                self.add_group(context, group)
+                self.add_group(group)
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'group-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get form values.
-                group = {'name' : context.req.args.get('name'),
-                         'description' : context.req.args.get('description')}
+                group = {'name': req.args.get('name'),
+                         'description': req.args.get('description')}
 
                 # Edit group.
-                self.edit_group(context, context.group['id'], group)
+                self.edit_group(context.group['id'], group)
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'group-delete':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'groups-delete':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get selected groups.
-                selection = context.req.args.get('selection')
+                selection = req.args.get('selection')
                 if isinstance(selection, (str, unicode)):
                     selection = [selection]
 
                 # Delete selected groups.
                 if selection:
                     for group_id in selection:
-                        self.delete_group(context, int(group_id))
+                        self.delete_group(int(group_id))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'forum-list':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                req.perm.require('DISCUSSION_VIEW')
 
                 # Get form values.
-                order = context.req.args.get('order') or self.forum_sort
-                if 'desc' in context.req.args:
-                    desc = context.req.args.get('desc') == '1'
+                order = req.args.get('order') or self.forum_sort
+                if 'desc' in req.args:
+                    desc = req.args.get('desc') == '1'
                 else:
                     desc = self.forum_sort_direction == 'desc'
 
                 # Display forums.
                 context.data['order'] = order
                 context.data['desc'] = desc
-                context.data['groups'] = self.get_groups(context)
+                context.data['groups'] = self.get_groups()
                 context.data['forums'] = self.get_forums(context, order, desc)
 
             elif action == 'admin-forum-list':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get ordering arguments values.
-                order = context.req.args.get('order') or self.forum_sort
-                if 'desc' in context.req.args:
-                    desc = context.req.args.get('desc') == '1'
+                order = req.args.get('order') or self.forum_sort
+                if 'desc' in req.args:
+                    desc = req.args.get('desc') == '1'
                 else:
                     desc = self.forum_sort_direction == 'desc'
 
                 # Display forums.
                 context.data['order'] = order
                 context.data['desc'] = desc
-                context.data['groups'] = self.get_groups(context)
+                context.data['groups'] = self.get_groups()
                 context.data['forums'] = self.get_forums(context, order, desc)
 
             elif action == 'forum-rss':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_VIEW', context.resource)
 
-                # Get topics and messges.
-                messages =  self.get_flat_messages_by_forum(context,
-                  context.forum['id'], desc = True, limit =
-                  self.messages_per_page)
-                topics = self.get_topics(context, context.forum['id'],
-                  desc = True, limit = self.topics_per_page)
+                # Get topics and messages.
+                messages = self.get_flat_messages_by_forum(
+                    context.forum['id'], desc=True,
+                    limit=self.messages_per_page)
+                topics = self.get_topics(context.forum['id'], context,
+                                         desc=True,
+                                         limit=self.topics_per_page)
 
                 # Create map of topic subjects.
                 topic_subjects = {}
                 for message in messages:
                     if not message['topic'] in topic_subjects:
                         topic_subjects[message['topic']] = \
-                          self.get_topic_subject(context, message['topic'])
+                            self.get_topic_subject(message['topic'])
 
                 # Prepare list of topics and messages of the forum.
                 context.data['topics'] = topics
@@ -767,58 +774,56 @@ class DiscussionApi(DiscussionDb):
                 context.data['topic_subjects'] = topic_subjects
 
             elif action == 'forum-add':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Display Add Forum form.
-                context.data['groups'] = self.get_groups(context)
+                context.data['groups'] = self.get_groups()
 
             elif action == 'forum-post-add':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get form values
-                forum = {'name' : context.req.args.get('name'),
-                         'author' : context.req.authname,
-                         'subject' : context.req.args.get('subject'),
-                         'description' : context.req.args.get('description'),
-                         'moderators' : context.req.args.get('moderators'),
-                         'subscribers' : context.req.args.get('subscribers'),
-                         'forum_group' : int(context.req.args.get('group') or 0),
-                         'tags': context.req.args.get('tags')}
+                forum = {
+                    'name': req.args.get('name'),
+                    'author': req.authname,
+                    'subject': req.args.get('subject'),
+                    'description': req.args.get('description'),
+                    'moderators': req.args.get('moderators'),
+                    'subscribers': req.args.get('subscribers'),
+                    'forum_group': req.args.getint('group', 0),
+                    'tags': req.args.get('tags')
+                }
 
                 # Fix moderators attribute to be a list.
                 if not forum['moderators']:
                     forum['moderators'] = []
                 if not isinstance(forum['moderators'], list):
-                    forum['moderators'] = [moderator.strip() for moderator in
-                      forum['moderators'].replace(',', ' ').split()]
+                    forum['moderators'] = to_list(forum['moderators'] or '')
 
                 # Fix subscribers attribute to be a list.
                 if not forum['subscribers']:
                     forum['subscribers'] = []
                 if not isinstance(forum['subscribers'], list):
-                    forum['subscribers'] = [subscribers.strip() for subscribers
-                      in forum['subscribers'].replace(',', ' ').split()]
-                forum['subscribers'] += [subscriber.strip() for subscriber in
-                  context.req.args.get('unregistered_subscribers').replace(',',
-                  ' ').split()]
+                    forum['subscribers'] = to_list(forum['subscribers'] or '')
+                forum['subscribers'] += \
+                    req.args.getlist('unregistered_subscribers')
 
                 # Fix tags attribute to be a list
                 if not forum['tags']:
                     forum['tags'] = []
                 if not isinstance(forum['tags'], list):
-                    forum['tags'] = [tag.strip() for tag in forum['tags']
-                      .replace(',', ' ').split()]
+                    forum['tags'] = to_list(forum['tags'] or '')
 
                 # Perform new forum add.
-                forum_id = self.add_forum(context, forum)
+                forum_id = self.add_forum(forum)
                 context.forum = self.get_forum(context, forum_id)
 
                 # Copy tags field which is not stored in the database table.
                 context.forum['tags'] = forum['tags']
 
                 # Notify change listeners.
-                self.log.debug('forum_change_listeners: %s'
-                               % self.forum_change_listeners)
+                self.log.debug("forum_change_listeners: %s",
+                               self.forum_change_listeners)
                 for listener in self.forum_change_listeners:
                     try:
                         listener.forum_created(context, context.forum)
@@ -826,38 +831,37 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'forum-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get form values.
-                forum = {'name' : context.req.args.get('name'),
-                         'subject' : context.req.args.get('subject'),
-                         'description' : context.req.args.get('description'),
-                         'moderators' : context.req.args.get('moderators'),
-                         'subscribers' : context.req.args.get('subscribers'),
-                         'forum_group' : int(context.req.args.get('group') or 0)}
+                forum = {
+                    'name': req.args.get('name'),
+                    'subject': req.args.get('subject'),
+                    'description': req.args.get('description'),
+                    'moderators': req.args.get('moderators'),
+                    'subscribers': req.args.get('subscribers'),
+                    'forum_group': req.args.getint('group', 0),
+                }
 
                 # Fix moderators attribute to be a list.
                 if not forum['moderators']:
                     forum['moderators'] = []
                 if not isinstance(forum['moderators'], list):
-                    forum['moderators'] = [moderator.strip() for moderator in
-                      forum['moderators'].replace(',', ' ').split()]
+                    forum['moderators'] = to_list(forum['moderators'] or '')
 
                 # Fix subscribers attribute to be a list.
                 if not forum['subscribers']:
                     forum['subscribers'] = []
                 if not isinstance(forum['subscribers'], list):
-                    forum['subscribers'] = [subscribers.strip() for subscribers
-                      in forum['subscribers'].replace(',', ' ').split()]
-                forum['subscribers'] += [subscriber.strip() for subscriber in
-                  context.req.args.get('unregistered_subscribers').replace(',',
-                  ' ').split()]
+                    forum['subscribers'] = to_list(forum['subscribers'] or '')
+                forum['subscribers'] += \
+                    req.args.getlist('unregistered_subscribers')
 
                 # Perform forum edit.
-                self.edit_forum(context, context.forum['id'], forum)
+                self.edit_forum(context.forum['id'], forum)
 
                 for listener in self.forum_change_listeners:
                     try:
@@ -866,28 +870,28 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'forum-delete':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Delete forum.
-                self.delete_forum(context, context.forum['id'])
+                self.delete_forum(context.forum['id'])
 
                 for listener in self.forum_change_listeners:
                     try:
-                        listener.forum_deleted(context, context.forum)
+                        listener.forum_deleted(context.forum)
                     except Exception, e:
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'forums-delete':
-                context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                req.perm.require('DISCUSSION_ADMIN')
 
                 # Get selected forums.
-                selection = context.req.args.get('selection')
+                selection = req.args.get('selection')
                 if isinstance(selection, (str, unicode)):
                     selection = [selection]
 
@@ -896,45 +900,42 @@ class DiscussionApi(DiscussionDb):
                     for forum_id in selection:
                         # Retrieve current forum attributes.
                         forum = self.get_forum(context, int(forum_id))
-                        self.delete_forum(context, forum['id'])
+                        self.delete_forum(forum['id'])
 
                         for listener in self.forum_change_listeners:
                             try:
-                                listener.forum_deleted(context, forum)
+                                listener.forum_deleted(forum)
                             except Exception, e:
                                 self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'forum-set-display':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                req.perm.require('DISCUSSION_VIEW')
 
                 # Get form values.
-                display = context.req.args.get('display')
+                display = req.args.get('display')
 
                 # Set message list display mode to session.
-                context.req.session['topic-list-display'] = display
+                req.session['topic-list-display'] = display
 
             elif action == 'forum-subscriptions-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_MODERATE', context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
                 # Prepare edited attributes of the forum.
-                forum = {'subscribers' : context.req.args.get('subscribers')}
+                forum = {'subscribers': req.args.get('subscribers')}
                 if not forum['subscribers']:
                     forum['subscribers'] = []
                 if not isinstance(forum['subscribers'], list):
-                    forum['subscribers'] = [subscribers.strip() for subscribers
-                      in forum['subscribers'].replace(',', ' ').split()]
-                forum['subscribers'] += [subscriber.strip() for subscriber in
-                  context.req.args.get('unregistered_subscribers').replace(',',
-                    ' ').split()]
+                    forum['subscribers'] = to_list(forum['subscribers'] or '')
+                forum['subscribers'] += \
+                    req.args.getlist('unregistered_subscribers')
 
                 # Edit topic.
-                self.edit_forum(context, context.forum['id'], forum)
+                self.edit_forum(context.forum['id'], forum)
 
                 for listener in self.forum_change_listeners:
                     try:
@@ -943,21 +944,19 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#subscriptions')
+                context.redirect_url = (req.path_info, '#subscriptions')
 
             elif action == 'forum-subscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
-                if context.authemail and not (context.req.authname in
-                  context.forum['subscribers']):
-
+                req.perm.require('DISCUSSION_VIEW', context.resource)
+                if context.authemail and \
+                        req.authname not in context.forum['subscribers']:
                     # Prepare edited attributes of the forum.
-                    forum = {'subscribers' : deepcopy(context.forum[
-                      'subscribers'])}
-                    forum['subscribers'].append(context.req.authname)
+                    forum = {'subscribers': deepcopy(context.forum[
+                                                         'subscribers'])}
+                    forum['subscribers'].append(req.authname)
 
                     # Edit topic.
-                    self.edit_forum(context, context.forum['id'], forum)
+                    self.edit_forum(context.forum['id'], forum)
 
                     for listener in self.forum_change_listeners:
                         try:
@@ -967,21 +966,21 @@ class DiscussionApi(DiscussionDb):
                             self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#subscriptions')
+                context.redirect_url = (req.path_info, '#subscriptions')
 
             elif action == 'forum-unsubscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
-                if context.authemail and (context.req.authname in
-                  context.forum['subscribers']):
+                req.perm.require('DISCUSSION_VIEW', context.resource)
+                if context.authemail and \
+                        req.authname in context.forum['subscribers']:
 
                     # Prepare edited attributes of the topic.
-                    forum = {'subscribers' : deepcopy(context.forum[
-                      'subscribers'])}
-                    forum['subscribers'].remove(context.req.authname)
+                    forum = {
+                        'subscribers': deepcopy(context.forum['subscribers'])
+                    }
+                    forum['subscribers'].remove(req.authname)
 
                     # Edit topic.
-                    self.edit_forum(context, context.forum['id'], forum)
+                    self.edit_forum(context.forum['id'], forum)
 
                     for listener in self.forum_change_listeners:
                         try:
@@ -991,15 +990,14 @@ class DiscussionApi(DiscussionDb):
                             self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#subscriptions')
+                context.redirect_url = (req.path_info, '#subscriptions')
 
             elif action == 'topic-last':
                 columns = ('id',)
                 forum_id = context.forum['id']
                 href = Href('discussion')
-                topic = self.get_items(context, 'topic', columns,
-                                        'forum=%s', (forum_id,),
-                                        'time', True, limit=1)
+                topic = self.get_items('topic', columns, 'forum=%s',
+                                       (forum_id,), 'time', True, limit=1)
                 if topic:
                     context.redirect_url = (href('topic', topic[0]['id']), '')
                 else:
@@ -1007,33 +1005,32 @@ class DiscussionApi(DiscussionDb):
                     context.redirect_url = (href('forum', forum_id), '')
 
             elif action == 'topic-list':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_VIEW', context.resource)
 
                 # Update this forum visit time.
                 context.visited_forums[context.forum['id']] = \
                     to_timestamp(datetime_now(utc))
 
                 # Get form values.
-                order = context.req.args.get('order') or self.topic_sort
-                if 'desc' in context.req.args:
-                    desc = context.req.args.get('desc') == '1'
+                order = req.args.get('order') or self.topic_sort
+                if 'desc' in req.args:
+                    desc = req.args.get('desc') == '1'
                 else:
                     desc = self.topic_sort_direction == 'desc'
-                page = int(context.req.args.get('discussion_page') or '1') - 1
+                page = req.args.getint('discussion_page', 1) - 1
 
                 # Get topic list display type from session.
-                display = context.req.session.get('topic-list-display') or \
-                  self.default_topic_display
+                display = req.session.get('topic-list-display') or \
+                          self.default_topic_display
 
                 # Get topics of the current page.
-                topics_count = self.get_topics_count(context,
-                  context.forum['id'])
-                topics = self.get_topics(context, context.forum['id'], order,
-                  desc, self.topics_per_page, page * self.topics_per_page,
-                  False)
+                topics_count = self.get_topics_count(context.forum['id'])
+                topics = self.get_topics(context.forum['id'], context, order,
+                                         desc, self.topics_per_page,
+                                         page * self.topics_per_page, False)
                 paginator = self._get_paginator(context, page,
-                  self.topics_per_page, topics_count)
+                                                self.topics_per_page,
+                                                topics_count)
 
                 # Display the topics.
                 context.data['order'] = order
@@ -1043,71 +1040,66 @@ class DiscussionApi(DiscussionDb):
                 context.data['paginator'] = paginator
 
             elif action == 'topic-rss':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_VIEW', context.resource)
 
                 # Display list of messages for topic.
                 context.data['messages'] = \
-                    self.get_flat_messages(context, context.topic['id'],
-                                           desc=True,
+                    self.get_flat_messages(context.topic['id'], desc=True,
                                            limit=self.messages_per_page)
 
             elif action == 'topic-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
             elif action == 'topic-quote':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
                 # Prepare old content.
                 lines = context.topic['body'].splitlines()
                 for I in xrange(len(lines)):
                     lines[I] = '> %s' % (lines[I])
-                context.req.args['body'] = '\n'.join(lines)
+                req.args['body'] = '\n'.join(lines)
 
             elif action == 'topic-post-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
                 # Get form values.
-                topic = {'forum' : context.forum['id'],
-                         'subject' : context.req.args.get('subject'),
-                         'author' : context.req.args.get('author'),
-                         'subscribers' : context.req.args.get('subscribers'),
-                         'body' : context.req.args.get('body')}
+                topic = {
+                    'forum': context.forum['id'],
+                    'subject': req.args.get('subject'),
+                    'author': req.args.get('author'),
+                    'subscribers': req.args.get('subscribers'),
+                    'body': req.args.get('body')
+                }
 
                 # Fix subscribers attribute to be a list.
                 if not topic['subscribers']:
                     topic['subscribers'] = []
                 if not isinstance(topic['subscribers'], list):
-                    topic['subscribers'] = [subscribers.strip() for subscribers
-                      in topic['subscribers'].replace(',', ' ').split()]
-                topic['subscribers'] += [subscriber.strip() for subscriber in
-                  context.req.args.get('unregistered_subscribers').replace(',',
-                        ' ').split()]
+                    topic['subscribers'] = to_list(topic['subscribers'] or '')
+                topic['subscribers'] += \
+                    req.args.getlist('unregistered_subscribers')
 
                 # Add user e-mail if subscription checked.
-                if context.req.args.get('subscribe') and context.authemail and \
-                  not (context.req.authname in topic['subscribers']):
-                    topic['subscribers'].append(context.req.authname)
+                if req.args.get('subscribe') and context.authemail and \
+                        req.authname not in topic['subscribers']:
+                    topic['subscribers'].append(req.authname)
 
                 # Filter topic.
                 for discussion_filter in self.discussion_filters:
-                    self.log.debug('filtering topic: %s' % (topic,))
+                    self.log.debug("filtering topic: %s", topic)
                     accept, topic_or_error = discussion_filter.filter_topic(
-                      context, topic)
+                        context, topic)
                     if accept:
                         topic = topic_or_error
                     else:
                         raise TracError(topic_or_error)
 
                 # Add new topic.
-                topic_id = self.add_topic(context, topic)
+                topic_id = self.add_topic(topic)
                 context.topic = self.get_topic(context, topic_id)
 
-                self.log.debug('topic_change_listeners: %s'
-                               % self.topic_change_listeners)
+                self.log.debug("topic_change_listeners: %s",
+                               self.topic_change_listeners)
                 for listener in self.topic_change_listeners:
                     try:
                         listener.topic_created(context, context.topic)
@@ -1117,42 +1109,41 @@ class DiscussionApi(DiscussionDb):
                 # Redirect request to prevent re-submit.
                 if context.realm != 'discussion-wiki':
                     href = Href('discussion')
-                    context.redirect_url = (href('topic', context.topic['id']),
-                      '#topic')
+                    context.redirect_url = (
+                        href('topic', context.topic['id']),
+                        '#topic')
                 else:
-                    context.redirect_url = (context.req.path_info, '#topic')
+                    context.redirect_url = (req.path_info, '#topic')
 
             elif action == 'topic-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
-                if not context.moderator and (context.topic['author'] !=
-                  context.req.authname):
+                req.perm.require('DISCUSSION_APPEND', context.resource)
+                if not context.moderator and \
+                        context.topic['author'] != req.authname:
                     raise PermissionError('Topic edit')
 
                 # Prepare form values.
-                context.req.args['subject'] = context.topic['subject']
-                context.req.args['body'] = context.topic['body']
+                req.args['subject'] = context.topic['subject']
+                req.args['body'] = context.topic['body']
 
             elif action == 'topic-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
                 # Check if user can edit topic.
-                if not context.moderator and (context.topic['author'] !=
-                  context.req.authname):
+                if not context.moderator and \
+                        context.topic['author'] != req.authname:
                     raise PermissionError('Topic editing')
 
                 # Check if user can edit locked topic.
-                if not context.moderator and ('locked' in
-                  context.topic['status']):
+                if not context.moderator and \
+                        'locked' in context.topic['status']:
                     raise PermissionError("Locked topic editing")
 
                 # Get form values.
-                topic = {'subject' : context.req.args.get('subject'),
-                         'body' : context.req.args.get('body')}
+                topic = {'subject': req.args.get('subject'),
+                         'body': req.args.get('body')}
 
                 # Edit topic.
-                self.edit_topic(context, context.topic['id'], topic)
+                self.edit_topic(context.topic['id'], topic)
 
                 for listener in self.topic_change_listeners:
                     try:
@@ -1161,45 +1152,42 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#topic')
+                context.redirect_url = (req.path_info, '#topic')
 
             elif action == 'topic-edit-attribute':
                 # Check general topic editing permission.
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
-                if not context.moderator and (context.topic['author'] !=
-                  context.req.authname):
+                req.perm.require('DISCUSSION_APPEND', context.resource)
+                if not context.moderator and \
+                        context.topic['author'] != req.authname:
                     raise PermissionError("Topic editing")
 
                 # Get form values.
-                if 'name' not in context.req.args and \
-                        'value' in context.req.args:
+                if 'name' not in req.args and 'value' in req.args:
                     raise TracError("Missing request arguments.")
-                name = context.req.args.get('name')
-                value = context.req.args.get('value')
+                name = req.args.get('name')
+                value = req.args.get('value')
 
                 # Important flag is implemented as integer priority.
                 if name == 'important':
                     name = 'priority'
-                    value = value in ('true', 'yes', True) and 1 or 0
+                    value = as_bool(value)
 
                 # Attributes that can be changed only by administrator.
                 topic = {}
                 if name in ('id', 'time'):
-                    context.req.perm.assert_permission('DISCUSSION_ADMIN')
+                    req.perm.require('DISCUSSION_ADMIN')
                     topic[name] = value
                 # Attributes that can be changed by moderator.
                 elif name in ('forum', 'author', 'subscribers', 'priority',
                               'status.locked', 'status'):
-                    context.req.perm.assert_permission('DISCUSSION_MODERATE',
-                                                       context.resource)
+                    req.perm.require('DISCUSSION_MODERATE', context.resource)
                     if not context.moderator:
                         raise PermissionError("Topic editing")
 
                     # Decode status flag to status list.
                     if name == 'status.locked':
                         topic['status'] = context.topic['status'].copy()
-                        if value in ('true', 'yes', True):
+                        if as_bool(value):
                             topic['status'] |= set(['locked'])
                         else:
                             topic['status'] -= set(['locked'])
@@ -1209,20 +1197,17 @@ class DiscussionApi(DiscussionDb):
                 # Attributes that can be changed by owner of the topic or the
                 # moderator.
                 elif name in ('subject', 'body', 'status.solved'):
-
-                    self.log.debug((context.topic['author'], context.req.authname))
-                    context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                       context.resource)
+                    req.perm.require('DISCUSSION_APPEND', context.resource)
 
                     # Check if user can edit topic.
-                    if not context.moderator and (context.topic['author'] !=
-                      context.req.authname):
+                    if not context.moderator and \
+                            context.topic['author'] != req.authname:
                         raise PermissionError("Topic editing")
 
                     # Decode status flag to status list.
                     if name == 'status.solved':
                         topic['status'] = context.topic['status'].copy()
-                        if value in ('true', 'yes', True):
+                        if as_bool(value):
                             topic['status'] |= set(['solved'])
                             topic['status'] -= set(['unsolved'])
                         else:
@@ -1234,11 +1219,10 @@ class DiscussionApi(DiscussionDb):
                     raise PermissionError("Topic editing")
 
                 # Update the attribute value.
-                self.edit_topic(context, context.topic['id'], topic)
+                self.edit_topic(context.topic['id'], topic)
 
             elif action == 'topic-move':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_MODERATE', context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
@@ -1246,28 +1230,26 @@ class DiscussionApi(DiscussionDb):
                 context.data['forums'] = self.get_forums(context)
 
             elif action == 'topic-post-move':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_MODERATE', context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
                 # Get form values.
-                forum_id = int(context.req.args.get('new_forum') or 0)
+                forum_id = req.args.getint('new_forum', 0)
 
                 # Move topic.
-                self.set_forum(context, context.topic['id'], forum_id)
+                self.set_forum(context.topic['id'], forum_id)
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '')
+                context.redirect_url = (req.path_info, '')
 
             elif action == 'topic-delete':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_MODERATE', context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
                 # Delete topic.
-                self.delete_topic(context, context.topic['id'])
+                self.delete_topic(context.topic['id'])
 
                 for listener in self.topic_change_listeners:
                     try:
@@ -1279,38 +1261,35 @@ class DiscussionApi(DiscussionDb):
                 if context.realm != 'discussion-wiki':
                     href = Href('discussion')
                     context.redirect_url = (href('forum',
-                      context.topic['forum']), '')
+                                                 context.topic['forum']), '')
                 else:
-                    context.redirect_url = (context.req.path_info, '')
+                    context.redirect_url = (req.path_info, '')
 
             elif action == 'topic-set-display':
-                context.req.perm.assert_permission('DISCUSSION_VIEW')
+                req.perm.require('DISCUSSION_VIEW')
 
                 # Get form values.
-                display = context.req.args.get('display')
+                display = req.args.get('display')
 
                 # Set message list display mode to session.
-                context.req.session['message-list-display'] = display
+                req.session['message-list-display'] = display
 
             elif action == 'topic-subscriptions-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_MODERATE', context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
                 # Prepare edited attributes of the topic.
-                topic = {'subscribers' : context.req.args.get('subscribers')}
+                topic = {'subscribers': req.args.get('subscribers')}
                 if not topic['subscribers']:
                     topic['subscribers'] = []
                 if not isinstance(topic['subscribers'], list):
-                    topic['subscribers'] = [subscribers.strip() for subscribers
-                      in topic['subscribers'].replace(',', ' ').split()]
-                topic['subscribers'] += [subscriber.strip() for subscriber in
-                  context.req.args.get('unregistered_subscribers').replace(',',
-                  ' ').split()]
+                    topic['subscribers'] = to_list(topic['subscribers'] or '')
+                topic['subscribers'] += \
+                    req.args.getlist('unregistered_subscribers')
 
                 # Edit topic.
-                self.edit_topic(context, context.topic['id'], topic)
+                self.edit_topic(context.topic['id'], topic)
 
                 for listener in self.topic_change_listeners:
                     try:
@@ -1319,22 +1298,20 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#subscriptions')
+                context.redirect_url = (
+                    req.path_info, '#subscriptions')
 
             elif action == 'topic-subscriptions-post-add':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_VIEW', context.resource)
 
                 # Prepare edited attributes of the forum..
-                topic = {'subscribers' : context.topic['subscribers']}
-                for subscriber in context.req.args.get('subscribers') \
-                  .replace(',', ' ').split():
-                    subscriber.strip()
-                    if not subscriber in topic['subscribers']:
+                topic = {'subscribers': context.topic['subscribers']}
+                for subscriber in req.args.getlist('subscribers'):
+                    if subscriber not in topic['subscribers']:
                         topic['subscribers'].append(subscriber)
 
                 # Edit topic.
-                self.edit_topic(context, context.topic['id'], topic)
+                self.edit_topic(context.topic['id'], topic)
 
                 for listener in self.topic_change_listeners:
                     try:
@@ -1343,22 +1320,22 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#subscriptions')
+                context.redirect_url = req.path_info, '#subscriptions'
 
             elif action == 'topic-subscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_VIEW', context.resource)
 
-                if context.authemail and not (context.req.authname in
-                  context.topic['subscribers']):
+                if context.authemail and \
+                        req.authname not in context.topic['subscribers']:
 
                     # Prepare edited attributes of the topic.
-                    topic = {'subscribers' : deepcopy(context.topic[
-                      'subscribers'])}
-                    topic['subscribers'].append(context.req.authname)
+                    topic = {
+                        'subscribers': deepcopy(context.topic['subscribers'])
+                    }
+                    topic['subscribers'].append(req.authname)
 
                     # Edit topic.
-                    self.edit_topic(context, context.topic['id'], topic)
+                    self.edit_topic(context.topic['id'], topic)
 
                     for listener in self.topic_change_listeners:
                         try:
@@ -1368,22 +1345,21 @@ class DiscussionApi(DiscussionDb):
                             self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#subscriptions')
+                context.redirect_url = req.path_info, '#subscriptions'
 
             elif action == 'topic-unsubscribe':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_VIEW', context.resource)
 
-                if context.authemail and (context.req.authname in
-                  context.topic['subscribers']):
+                if context.authemail and \
+                        req.authname in context.topic['subscribers']:
 
                     # Prepare edited attributes of the topic.
-                    topic = {'subscribers' : deepcopy(context.topic[
-                      'subscribers'])}
-                    topic['subscribers'].remove(context.req.authname)
+                    topic = {'subscribers': deepcopy(context.topic[
+                                                         'subscribers'])}
+                    topic['subscribers'].remove(req.authname)
 
                     # Edit topic.
-                    self.edit_topic(context, context.topic['id'], topic)
+                    self.edit_topic(context.topic['id'], topic)
 
                     for listener in self.topic_change_listeners:
                         try:
@@ -1393,11 +1369,10 @@ class DiscussionApi(DiscussionDb):
                             self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#subscriptions')
+                context.redirect_url = req.path_info, '#subscriptions'
 
             elif action == 'message-list':
-                context.req.perm.assert_permission('DISCUSSION_VIEW',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_VIEW', context.resource)
                 self._prepare_message_list(context, context.topic)
 
             elif action == 'wiki-message-list':
@@ -1405,53 +1380,51 @@ class DiscussionApi(DiscussionDb):
                     self._prepare_message_list(context, context.topic)
 
             elif action == 'message-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
             elif action == 'message-quote':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
                 # Prepare old content.
                 lines = context.message['body'].splitlines()
                 for I in xrange(len(lines)):
                     lines[I] = '> %s' % (lines[I])
-                context.req.args['body'] = '\n'.join(lines)
+                req.args['body'] = '\n'.join(lines)
 
             elif action == 'message-post-add':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
                 # Check if user can post to locked topic.
-                if not context.moderator and ('locked' in
-                  context.topic['status']):
+                if not context.moderator and \
+                        'locked' in context.topic['status']:
                     raise PermissionError("Locked topic posting")
 
                 # Get form values.
-                message = {'forum' : context.forum['id'],
-                           'topic' : context.topic['id'],
-                           'replyto' : context.message and context.message['id']
-                              or -1,
-                           'author' : context.req.args.get('author'),
-                           'body' : context.req.args.get('body')
+                message = {
+                    'forum': context.forum['id'],
+                    'topic': context.topic['id'],
+                    'replyto': context.message['id']
+                               if context.message else -1,
+                    'author': req.args.get('author'),
+                    'body': req.args.get('body')
                 }
 
                 # Filter message.
                 for discussion_filter in self.discussion_filters:
-                    self.log.debug('filtering message: %s' % (message,))
-                    accept, message_or_error = discussion_filter.filter_message(
-                      context, message)
+                    self.log.debug("filtering message: %s", message)
+                    accept, message_or_error = \
+                        discussion_filter.filter_message(context, message)
                     if accept:
                         message = message_or_error
                     else:
                         raise TracError(message_or_error)
 
                 # Add message.
-                message_id = self.add_message(context, message)
-                context.message = self.get_message(context, message_id)
+                message_id = self.add_message(message)
+                context.message = self.get_message(message_id)
 
-                self.log.debug('message_change_listeners: %s'
-                               % self.message_change_listeners)
+                self.log.debug('message_change_listeners: %s',
+                               self.message_change_listeners)
                 for listener in self.message_change_listeners:
                     try:
                         listener.message_created(context, context.message)
@@ -1459,38 +1432,36 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#message%s' % (
-                  context.message['id'],))
+                context.redirect_url = \
+                    req.path_info, '#message%s' % (context.message['id'],)
 
             elif action == 'message-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
-                if not context.moderator and (context.message['author'] !=
-                  context.req.authname):
+                req.perm.require('DISCUSSION_APPEND', context.resource)
+                if not context.moderator and \
+                        context.message['author'] != req.authname:
                     raise PermissionError('Message edit')
 
                 # Prepare form values.
-                context.req.args['body'] = context.message['body']
+                req.args['body'] = context.message['body']
 
             elif action == 'message-post-edit':
-                context.req.perm.assert_permission('DISCUSSION_APPEND',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_APPEND', context.resource)
 
                 # Check if user can edit message.
-                if not context.moderator and (context.message['author'] !=
-                  context.req.authname):
+                if not context.moderator and \
+                        context.message['author'] != req.authname:
                     raise PermissionError('Message edit')
 
                 # Check if user can edit locked topic.
-                if not context.moderator and ('locked' in
-                  context.topic['status']):
+                if not context.moderator and \
+                        'locked' in context.topic['status']:
                     raise PermissionError("Locked topic editing")
 
                 # Get form values.
-                message = {'body' : context.req.args.get('body')}
+                message = {'body': req.args.get('body')}
 
                 # Edit message.
-                self.edit_message(context, context.message['id'], message)
+                self.edit_message(context.message['id'], message)
 
                 for listener in self.message_change_listeners:
                     try:
@@ -1500,17 +1471,16 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#message%s' % (
-                  context.message['id'],))
+                context.redirect_url = \
+                    req.path_info, '#message%s' % context.message['id']
 
             elif action == 'message-delete':
-                context.req.perm.assert_permission('DISCUSSION_MODERATE',
-                                                   context.resource)
+                req.perm.require('DISCUSSION_MODERATE', context.resource)
                 if not context.moderator:
                     raise PermissionError('Forum moderate')
 
                 # Delete message.
-                self.delete_message(context, context.message['id'])
+                self.delete_message(context.message['id'])
 
                 for listener in self.message_change_listeners:
                     try:
@@ -1519,45 +1489,45 @@ class DiscussionApi(DiscussionDb):
                         self.log.warning(exception_to_unicode(e))
 
                 # Redirect request to prevent re-submit.
-                context.redirect_url = (context.req.path_info, '#message%s' % (
-                  context.message['replyto'],))
+                context.redirect_url = \
+                    req.path_info, '#message%s' % context.message['replyto']
 
         # Redirection is not necessary.
         return None
 
     def _prepare_message_list(self, context, topic):
+        req = context.req
         # Get time when topic was visited from session.
-        visit_time = int(topic['id'] in context.visited_topics and
-                         (context.visited_topics[topic['id']] or 0))
+        visit_time = as_int(context.visited_topics.get(topic['id']), 0)
 
         # Get form values
-        page = int(context.req.args.get('discussion_page') or '1') - 1
+        page = req.args.getint('discussion_page', 1) - 1
 
         # Update this topic visit time.
         context.visited_topics[topic['id']] = to_timestamp(datetime_now(utc))
 
         # Get topic messages for the current page.
-        display = context.req.session.get('message-list-display') or \
-          self.default_message_display
+        display = req.session.get('message-list-display') or \
+                  self.default_message_display
         if display == 'flat-asc':
-            messages_count = self.get_messages_count(context, topic['id'])
-            messages = self.get_flat_messages(context, topic['id'], desc =
-              False, limit = self.messages_per_page, offset = page *
-              self.messages_per_page)
+            messages_count = self.get_messages_count(topic['id'])
+            messages = self.get_flat_messages(topic['id'], desc=False,
+                limit=self.messages_per_page,
+                offset=page * self.messages_per_page)
         elif display in ('flat-desc', 'flat'):
-            messages_count = self.get_messages_count(context, topic['id'])
-            messages = self.get_flat_messages(context, topic['id'], desc =
-              True, limit = self.messages_per_page, offset = page *
-              self.messages_per_page)
+            messages_count = self.get_messages_count(topic['id'])
+            messages = self.get_flat_messages(topic['id'], desc=True,
+                limit=self.messages_per_page,
+                offset=page * self.messages_per_page)
         elif display in ('tree', ''):
             messages_count = 0
-            messages = self.get_messages(context, topic['id'])
+            messages = self.get_messages(topic['id'])
         else:
             raise TracError('Unsupported display mode: %s' % display)
 
         # Create paginator.
         paginator = self._get_paginator(context, page, self.messages_per_page,
-          messages_count, anchor = '#topic')
+                                        messages_count, anchor='#topic')
 
         # Prepare display of messages.
         context.data['visit_time'] = visit_time
@@ -1572,15 +1542,16 @@ class DiscussionApi(DiscussionDb):
         #        Therefore we need to fix the attach_href property.
         if 'topic' != context.resource.id.split('/')[-2]:
             context.resource = Resource('discussion', '/'.join(
-                                        context.resource.id.split('/')[-4:-2]))
+                context.resource.id.split('/')[-4:-2]))
         context.resource = Resource('discussion', '/'.join(
-                                    context.resource.id.split('/')[-2:]))
+            context.resource.id.split('/')[-2:]))
         context.data['attachments'] = AttachmentModule(self.env) \
-                                      .attachment_data(context)
+            .attachment_data(context)
         context.resource = real_resource
 
     def _get_paginator(self, context, page, items_limit, items_count,
-      anchor = ''):
+                       anchor=''):
+        req = context.req
         # Create paginator object.
         paginator = Paginator([], page, items_limit, items_count)
 
@@ -1588,48 +1559,49 @@ class DiscussionApi(DiscussionDb):
         page_data = []
         shown_pages = paginator.get_shown_pages(21)
         for shown_page in shown_pages:
-            page_data.append([context.req.href(context.req.path_info,
-              discussion_page = shown_page, order = context.req.args.get('order'),
-              desc = context.req.args.get('desc')) + anchor, None, to_unicode(shown_page),
-              'page %s' % (shown_page,)])
+            page_data.append([req.href(req.path_info,
+                                       discussion_page=shown_page,
+                                       order=req.args.get('order'),
+                                       desc=req.args.get('desc')) + anchor,
+                              None, to_unicode(shown_page),
+                              'page %s' % (shown_page,)])
         fields = ['href', 'class', 'string', 'title']
         paginator.shown_pages = [dict(zip(fields, p)) for p in page_data]
 
-        paginator.current_page = {'href' : None, 'class' : 'current', 'string':
-          str(page + 1), 'title' : None}
+        paginator.current_page = {'href': None, 'class': 'current', 'string':
+            str(page + 1), 'title': None}
 
         # Prepare links to next or previous page.
         if paginator.has_next_page:
-            add_link(context.req, 'next', context.req.href(
-              context.req.path_info, discussion_page = paginator.page + 2,
-              order = context.req.args.get('order'), desc = context.req.args.get('desc'))
-                     + anchor, 'Next Page')
+            add_link(req, 'next', req.href(req.path_info,
+                                           discussion_page=paginator.page + 2,
+                     order=req.args.get('order'),
+                     desc=req.args.get('desc')) + anchor, 'Next Page')
         if paginator.has_previous_page:
-            add_link(context.req, 'prev', context.req.href(
-              context.req.path_info, discussion_page = paginator.page,
-                        order = context.req.args.get('order'), desc = context.req.args.get('desc'))
-                     + anchor, 'Previous Page')
+            add_link(req, 'prev', req.href(req.path_info,
+                                           discussion_page=paginator.page,
+                     order=req.args.get('order'),
+                     desc=req.args.get('desc')) + anchor, 'Previous Page')
 
         return paginator
 
-    ## Convenience methods wrapping generic db access methods.
     # Item getter methods.
 
-    def get_group(self, context, id):
+    def get_group(self, id):
         # Get forum group.
-        return self.get_item(context, 'forum_group',
-                             ('id', 'name', 'description'), 'id=%s', (id,)
-                             ) or dict(id=0, name='None', description='No Group')
+        return self.get_item('forum_group', ('id', 'name', 'description'),
+                             'id=%s', (id,)) or dict(id=0, name='None',
+                                                     description='No Group')
 
     def get_forum(self, context, forum_id):
         """Get forum by ID."""
         context.resource = Resource(self.realm, 'forum/%s' % forum_id)
-        forum = self.get_item(context, 'forum', self.forum_cols, 'id=%s',
+        forum = self.get_item('forum', self.forum_cols, 'id=%s',
                               (context.resource.id.split('/')[-1],))
         # Unpack list of moderators and subscribers and get forum tags.
         if forum:
-            forum['moderators'] = as_list(forum['moderators'])
-            forum['subscribers'] = as_list(forum['subscribers'])
+            forum['moderators'] = to_list(forum['moderators'] or '')
+            forum['subscribers'] = to_list(forum['subscribers'] or '')
             forum['unregistered_subscribers'] = set(
                 forum['subscribers']).difference(self.get_users(context))
             if context.has_tags:
@@ -1643,25 +1615,24 @@ class DiscussionApi(DiscussionDb):
         def _new_replies_count(context, forum_id):
             # Get IDs of topics in this forum.
             where = "forum=%s"
-            topics = [topic['id'] for topic in self.get_items(
-                         context, 'topic', ('id',), where, (forum_id,))]
+            topics = [topic['id'] for topic in
+                      self.get_items('topic', ('id',), where, (forum_id,))]
             # Count unseen messages.
             count = 0
             for topic_id in topics:
-                values = (topic_id, topic_id in context.visited_topics and
-                                    int(context.visited_topics[topic_id]) or 0)
+                values = (topic_id,
+                          as_int(context.visited_topics.get(topic_id), 0))
                 where = "topic=%s AND time>%s"
-                count += self.get_items_count(context, 'message', where,
-                                              values)
+                count += self.get_items_count('message', where, values)
             return count
 
         def _new_topic_count(context, forum_id):
-            values = (forum_id, forum_id in context.visited_forums and
-                                int(context.visited_forums[forum_id]) or 0)
+            values = (forum_id,
+                      as_int(context.visited_forums.get(forum_id), 0))
             where = "forum=%s AND time>%s"
-            return self.get_items_count(context, 'topic', where, values)
+            return self.get_items_count('topic', where, values)
 
-        forums = self._get_forums(context, order_by, desc)
+        forums = self._get_forums(order_by, desc)
         # Add some more forum attributes and convert others.
         for forum in forums:
             # Compute count of new replies and topics.
@@ -1669,10 +1640,10 @@ class DiscussionApi(DiscussionDb):
             forum['new_replies'] = _new_replies_count(context, forum['id'])
 
             # Convert floating-point result of SUM() above into integer.
-            forum['replies'] = int(forum['replies'] or 0)
+            forum['replies'] = as_int(forum.get('replies'), 0)
             # Unpack list of moderators and subscribers and get forum tags.
-            forum['moderators'] = as_list(forum['moderators'])
-            forum['subscribers'] = as_list(forum['subscribers'])
+            forum['moderators'] = to_list(forum['moderators'] or '')
+            forum['subscribers'] = to_list(forum['subscribers'] or '')
             forum['unregistered_subscribers'] = set(
                 forum['subscribers']).difference(self.get_users(context))
             if context.has_tags:
@@ -1681,38 +1652,36 @@ class DiscussionApi(DiscussionDb):
                     'discussion', 'forum/%s' % forum['id']))
         return forums
 
-    def get_changed_forums(self, context, start, stop, order_by='time',
-                           desc=False):
+    def get_changed_forums(self, start, stop, order_by='time', desc=False):
         """Return forum content for timeline."""
 
         columns = ('id', 'name', 'author', 'time', 'subject', 'description')
         where = "time BETWEEN %s AND %s"
         values = (to_timestamp(start), to_timestamp(stop))
-        return self.get_items(context, 'forum', columns, where, values)
+        return self.get_items('forum', columns, where, values)
 
     def get_topic(self, context, id):
         """Get topic by ID."""
-        topic = self.get_item(context, 'topic', self.topic_cols, 'id=%s',
-                              (id,))
+        topic = self.get_item('topic', self.topic_cols, 'id=%s', (id,))
         return prepare_topic(self.get_users(context), topic)
 
     def get_topic_by_subject(self, context, subject):
         """Get topic by subject."""
-        topic = self.get_item(context, 'topic', self.topic_cols,
-                               'subject=%s', (subject,))
+        topic = self.get_item('topic', self.topic_cols, 'subject=%s',
+                              (subject,))
         return prepare_topic(self.get_users(context), topic)
 
-    def get_topics(self, context, forum_id, order_by='time', desc=False,
+    def get_topics(self, forum_id, context, order_by='time', desc=False,
                    limit=0, offset=0, with_body=True):
 
         def _new_replies_count(context, topic_id):
-            values = (topic_id, topic_id in context.visited_topics and
-                                int(context.visited_topics[topic_id]) or 0)
+            values = (topic_id,
+                      as_int(context.visited_topics.get(topic_id), 0))
             where = "topic=%s AND time>%s"
-            return self.get_items_count(context, 'message', where, values)
+            return self.get_items_count('message', where, values)
 
-        topics = self._get_topics(context, forum_id, order_by, desc,
-                                  limit, offset, with_body)
+        topics = self._get_topics(forum_id, order_by, desc, limit, offset,
+                                  with_body)
         # Add some more topic attributes and convert others.
         for topic in topics:
             topic['new_replies'] = _new_replies_count(context, topic['id'])
@@ -1724,53 +1693,50 @@ class DiscussionApi(DiscussionDb):
                     'discussion', 'topic/%s' % topic['id']))
         return topics
 
-    def get_message(self, context, id):
+    def get_message(self, id):
         """Get message by ID."""
-        return self.get_item(context, 'message', self.message_cols, 'id=%s',
-                             (id,))
+        return self.get_item('message', self.message_cols, 'id=%s', (id,))
 
-    def get_flat_messages(self, context, id, order_by='time', desc=False,
-                          limit=0, offset=0):
+    def get_flat_messages(self, id, order_by='time', desc=False, limit=0,
+                          offset=0):
         # Return messages of specified topic.
-        return self.get_items(context, 'message', self.msg_cols, 'topic=%s',
-                              (id,), order_by, desc, limit, offset)
+        return self.get_items('message', self.msg_cols, 'topic=%s', (id,),
+                              order_by, desc, limit, offset)
 
-    def get_flat_messages_by_forum(self, context, id, order_by='time',
-                                   desc=False, limit=0, offset=0):
+    def get_flat_messages_by_forum(self, id, order_by='time', desc=False,
+                                   limit=0, offset=0):
         # Return messages of specified topic.
-        return self.get_items(context, 'message', ('id', 'replyto', 'topic',
-                                                    'time', 'author', 'body'),
-                               'forum=%s', (id,), order_by, desc, limit,
+        return self.get_items('message', ('id', 'replyto', 'topic',
+                                          'time', 'author', 'body'),
+                              'forum=%s', (id,), order_by, desc, limit,
                               offset)
 
-    def get_replies(self, context, id, order_by='time', desc=False):
+    def get_replies(self, id, order_by='time', desc=False):
         # Return replies of specified message.
-        return self.get_items(context, 'message', self.msg_cols,
-                               'replyto=%s', (id,), order_by, desc)
+        return self.get_items('message', self.msg_cols, 'replyto=%s', (id,),
+                              order_by, desc)
 
     # Attribute getter methods.
 
-    def get_forum_subject(self, context, id):
+    def get_forum_subject(self, id):
         """Get subject of the forum."""
-        forum = self.get_item(context, 'forum', ('subject',), 'id=%s', (id,))
+        forum = self.get_item('forum', ('subject',), 'id=%s', (id,))
         if forum:
             return forum['subject']
 
-    def get_topic_subject(self, context, id):
+    def get_topic_subject(self, id):
         """Get subject of the topic."""
-        topic = self.get_item(context, 'topic', ('subject',), 'id=%s', (id,))
+        topic = self.get_item('topic', ('subject',), 'id=%s', (id,))
         if topic:
             return topic['subject']
 
     # Counter methods.
 
-    def get_topics_count(self, context, forum_id):
-        return self.get_items_count(context, 'topic', 'forum=%s',
-                                    (forum_id,))
+    def get_topics_count(self, forum_id):
+        return self.get_items_count('topic', 'forum=%s', (forum_id,))
 
-    def get_messages_count(self, context, topic_id):
-        return self.get_items_count(context, 'message', 'topic=%s',
-                                    (topic_id,))
+    def get_messages_count(self, topic_id):
+        return self.get_items_count('message', 'topic=%s', (topic_id,))
 
     def get_users(self, context, action='DISCUSSION_VIEW'):
         try:
@@ -1780,14 +1746,14 @@ class DiscussionApi(DiscussionDb):
             # Fallback for pristine Trac context:
             # Return users with satisfying permission.
             return PermissionSystem(self.env) \
-                   .get_users_with_permission(action)
+                .get_users_with_permission(action)
 
     # Add item methods.
 
-    def add_group(self, context, group):
-        return self.add_item(context, 'forum_group', group)
+    def add_group(self, group):
+        return self.add_item('forum_group', group)
 
-    def add_forum(self, context, forum):
+    def add_forum(self, forum):
         tmp_forum = deepcopy(forum)
 
         # Pack moderators and subscribers fields.
@@ -1799,9 +1765,9 @@ class DiscussionApi(DiscussionDb):
             # DEVEL: Store tags instead of discarging them.
             del tmp_forum['tags']
 
-        return self.add_item(context, 'forum', tmp_forum)
+        return self.add_item('forum', tmp_forum)
 
-    def add_topic(self, context, topic):
+    def add_topic(self, topic):
         tmp_topic = deepcopy(topic)
 
         # Pack subscribers field.
@@ -1810,43 +1776,42 @@ class DiscussionApi(DiscussionDb):
         tmp_topic['status'] = topic_status_from_list(
             'status' in tmp_topic and tmp_topic['status'] or [])
 
-        return self.add_item(context, 'topic', tmp_topic)
+        return self.add_item('topic', tmp_topic)
 
-    def add_message(self, context, message):
-        return self.add_item(context, 'message', message)
+    def add_message(self, message):
+        return self.add_item('message', message)
 
     # Delete item methods
 
-    def delete_group(self, context, id):
+    def delete_group(self, id):
         # Assing forums of this group to 'None' group first.
-        self.set_item(context, 'forum', 'forum_group', '0', 'forum_group=%s',
-                      (id,))
-        self.delete_item(context, 'forum_group', 'id=%s', (id,))
+        self.set_item('forum', 'forum_group', '0', 'forum_group=%s', (id,))
+        self.delete_item('forum_group', 'id=%s', (id,))
 
-    def delete_forum(self, context, id):
+    def delete_forum(self, id):
         # Delete all forum messages and topics first.
-        self.delete_item(context, 'message', 'forum=%s', (id,))
-        self.delete_item(context, 'topic', 'forum=%s', (id,))
-        self.delete_item(context, 'forum', 'id=%s', (id,))
+        self.delete_item('message', 'forum=%s', (id,))
+        self.delete_item('topic', 'forum=%s', (id,))
+        self.delete_item('forum', 'id=%s', (id,))
 
-    def delete_topic(self, context, id):
+    def delete_topic(self, id):
         # Delete all topic messages first.
-        self.delete_item(context, 'message', 'topic=%s', (id,))
-        self.delete_item(context, 'topic', 'id=%s', (id,))
+        self.delete_item('message', 'topic=%s', (id,))
+        self.delete_item('topic', 'id=%s', (id,))
 
-    def delete_message(self, context, id):
+    def delete_message(self, id):
         # Delete all replies to this message first.
-        for reply in self.get_replies(context, id):
-            self.delete_message(context, reply['id'])
-        self.delete_item(context, 'message', 'id=%s', (id,))
+        for reply in self.get_replies(id):
+            self.delete_message(reply['id'])
+        self.delete_item('message', 'id=%s', (id,))
 
     # Edit item methods
 
-    def edit_group(self, context, id, group):
+    def edit_group(self, id, group):
         # Edit forum group.
-        self.edit_item(context, 'forum_group', id, group)
+        self.edit_item('forum_group', id, group)
 
-    def edit_forum(self, context, id, forum):
+    def edit_forum(self, id, forum):
         tmp_forum = deepcopy(forum)
 
         # Pack moderators and subscribers fields.
@@ -1855,9 +1820,9 @@ class DiscussionApi(DiscussionDb):
         if 'subscribers' in tmp_forum:
             tmp_forum['subscribers'] = ' '.join(tmp_forum['subscribers'])
 
-        self.edit_item(context, 'forum', id, tmp_forum)
+        self.edit_item('forum', id, tmp_forum)
 
-    def edit_topic(self, context, id, topic):
+    def edit_topic(self, id, topic):
         tmp_topic = deepcopy(topic)
 
         # Pack subscribers field.
@@ -1867,21 +1832,19 @@ class DiscussionApi(DiscussionDb):
         if 'status' in tmp_topic:
             tmp_topic['status'] = topic_status_from_list(tmp_topic['status'])
 
-        self.edit_item(context, 'topic', id, tmp_topic)
+        self.edit_item('topic', id, tmp_topic)
 
-    def edit_message(self, context, id, message):
-        self.edit_item(context, 'message', id, message)
+    def edit_message(self, id, message):
+        self.edit_item('message', id, message)
 
     # Set item methods
 
-    def set_group(self, context, forum_id, group_id):
+    def set_group(self, forum_id, group_id):
         # Change group of specified forum.
-        self.set_item(context, 'forum', 'forum_group', group_id or '0',
-                       'id=%s', (forum_id,))
+        self.set_item('forum', 'forum_group', group_id or '0', 'id=%s',
+                      (forum_id,))
 
-    def set_forum(self, context, topic_id, forum_id):
+    def set_forum(self, topic_id, forum_id):
         # Change forum of all topics and messages.
-        self.set_item(context, 'topic', 'forum', forum_id, 'id=%s',
-                      (topic_id,))
-        self.set_item(context, 'message', 'forum', forum_id, 'topic=%s',
-                      (topic_id,))
+        self.set_item('topic', 'forum', forum_id, 'id=%s', (topic_id,))
+        self.set_item('message', 'forum', forum_id, 'topic=%s', (topic_id,))

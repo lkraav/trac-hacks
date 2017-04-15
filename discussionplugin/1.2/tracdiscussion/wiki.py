@@ -11,8 +11,6 @@
 
 import re
 
-from genshi.builder import tag
-
 from trac.core import Component, TracError, implements
 from trac.resource import Resource, ResourceNotFound
 from trac.web.chrome import Chrome
@@ -20,7 +18,8 @@ from trac.web.main import IRequestFilter
 from trac.wiki import IWikiSyntaxProvider
 from trac.wiki.api import IWikiMacroProvider, parse_args
 from trac.wiki.formatter import format_to_html
-from trac.util import format_date
+from trac.util import as_int, format_date
+from trac.util.html import html as tag
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.web.chrome import web_context
@@ -93,7 +92,7 @@ class DiscussionWiki(Component):
             return self.recent_topics_doc
 
     def expand_macro(self, formatter, name, content):
-        if not formatter.perm.has_permission('DISCUSSION_VIEW'):
+        if 'DISCUSSION_VIEW' not in formatter.perm:
             return
         if name == 'ViewTopic':
             return self._view_topic(formatter, content)
@@ -103,6 +102,7 @@ class DiscussionWiki(Component):
     # Internal methods
 
     def _view_topic(self, formatter, content):
+        req = formatter.req
 
         # Determine topic subject
         page_name = formatter.req.path_info[6:] or 'WikiStart'
@@ -112,14 +112,13 @@ class DiscussionWiki(Component):
         context = web_context(formatter.req)
         context.realm = 'discussion-wiki'
 
-        try:
-            id = int(subject)
+        if as_int(subject, None):
             topic = self.api.get_topic(context, id)
-        except:
+        else:
             topic = self.api.get_topic_by_subject(context, subject)
 
         if topic:
-            context.req.args['topic'] = topic['id']
+            req.args['topic'] = topic['id']
             context.resource = Resource('discussion',
                                         'forum/%s/topic/%s'
                                         % (topic['forum'], topic['id']))
@@ -131,16 +130,15 @@ class DiscussionWiki(Component):
         data['discussion']['page_name'] = page_name
         if context.redirect_url:
             # Generate HTML elements for redirection.
-            href = context.req.href(context.redirect_url[0]) + \
+            href = req.href(context.redirect_url[0]) + \
                    context.redirect_url[1]
-            self.log.debug("Redirecting to %s" % href)
+            self.log.debug("Redirecting to %s", href)
             return tag.div(tag.strong('Redirect: '),
                            ' This page redirects to ',
                            tag.a(href, href=href),
                            tag.script("window.location = '" +
-                                      context.req.href('discussion',
-                                                       'redirect',
-                                                        redirect_url=href) +
+                                      req.href('discussion', 'redirect',
+                                               redirect_url=href) +
                                       "'", language="JavaScript"),
                            class_="system-message")
         else:
@@ -164,7 +162,7 @@ class DiscussionWiki(Component):
         else:
             raise TracError("Invalid number of macro arguments.")
 
-        entries = self.api.get_recent_topics(context, forum_id, limit)
+        entries = self.api.get_recent_topics(forum_id, limit)
         entries_per_date = []
         prevdate = None
         for entry in entries:
@@ -174,7 +172,7 @@ class DiscussionWiki(Component):
                 entries_per_date.append((date, []))
             forum_name = self.api.get_forum(context, entry['forum'])['name']
             topic_subject = \
-                self.api.get_topic_subject(context, entry['topic'])
+                self.api.get_topic_subject(entry['topic'])
             entries_per_date[-1][1].append((entry['forum'], forum_name,
                                             entry['topic'], topic_subject))
         href = formatter.href
@@ -198,24 +196,20 @@ class DiscussionWiki(Component):
 
         href = formatter.href
         title = label.replace('"', '')
-        try:
-            id = int(params)
-        except (TypeError, ValueError):
-            id = -1
+        id_ = as_int(params, -1)
 
         if 'forum' == namespace:
-            forum_subject = self.api.get_forum_subject(context, id)
+            forum_subject = self.api.get_forum_subject(id_)
             if forum_subject:
-                return tag.a(label, href=href.discussion('forum', id),
+                return tag.a(label, href=href.discussion('forum', id_),
                              title=forum_subject.replace('"', ''))
-            return tag.a(label, href=href.discussion('forum', id),
+            return tag.a(label, href=href.discussion('forum', id_),
                          title=title, class_='missing')
 
         elif 'last-forum' == namespace:
             columns = ('id', 'subject')
-            forum = self.api.get_items(context, 'forum', columns,
-                                        'forum_group=%s', (id,),
-                                        'time', True, limit=1)
+            forum = self.api.get_items('forum', columns, 'forum_group=%s',
+                                       (id_,), 'time', True, limit=1)
             if forum:
                 return tag.a(label,
                              href=href.discussion('forum', forum[0]['id']),
@@ -225,27 +219,23 @@ class DiscussionWiki(Component):
 
         elif 'topic' == namespace:
             columns = ('forum', 'subject')
-            topic = self.api.get_item(context, 'topic', columns, 'id=%s',
-                                      (id,))
+            topic = self.api.get_item('topic', columns, 'id=%s', (id_,))
             if topic:
-                forum_subject = self.api.get_forum_subject(context,
-                                                           topic['forum'])
+                forum_subject = self.api.get_forum_subject(topic['forum'])
                 return tag.a(label, href='%s#-1'
-                                         % href.discussion('topic', id),
+                                         % href.discussion('topic', id_),
                              title=('%s: %s' % (forum_subject,
                                                 topic['subject']))
                                    .replace('"', ''))
-            return tag.a(label, href=href.discussion('topic', id),
+            return tag.a(label, href=href.discussion('topic', id_),
                          title=title, class_='missing')
 
         elif 'last-topic' == namespace:
             columns = ('id', 'forum', 'subject')
-            topic = self.api.get_items(context, 'topic', columns,
-                                        'forum=%s', (id,),
-                                        'time', True, limit=1)
+            topic = self.api.get_items('topic', columns, 'forum=%s', (id_,),
+                                       'time', True, limit=1)
             if topic:
-                forum_subject = self.api.get_forum_subject(context,
-                                                           topic[0]['forum'])
+                forum_subject = self.api.get_forum_subject(topic[0]['forum'])
                 return tag.a(label, href='%s#-1'
                                          % (href.discussion('topic',
                                                             topic[0]['id']),),
@@ -256,19 +246,17 @@ class DiscussionWiki(Component):
                          title=title, class_='missing')
 
         elif 'message' == namespace:
-            message = self.api.get_message(context, id)
+            message = self.api.get_message(id_)
             if message:
-                forum_subject = self.api.get_forum_subject(context,
-                                                           message['forum'])
-                topic_subject = self.api.get_topic_subject(context,
-                                                           message['topic'])
+                forum_subject = self.api.get_forum_subject(message['forum'])
+                topic_subject = self.api.get_topic_subject(message['topic'])
                 return tag.a(label, href='%s#message_%s'
                                          % (href.discussion('topic',
                                                             message['topic']),
-                                            id),
+                                            id_),
                              title=('%s: %s' % (forum_subject, topic_subject))
                                    .replace('"', ''))
-            return tag.a(label, href=href.discussion('message', id),
+            return tag.a(label, href=href.discussion('message', id_),
                          title=title, class_='missing')
 
     def _discussion_attachment_link(self, fmt, namespace, params, label):
@@ -276,16 +264,16 @@ class DiscussionWiki(Component):
         context.realm = 'discussion-wiki'
 
         try:
-            id, name = params.split(':')
+            id_, name = params.split(':')
         except (TypeError, ValueError):
             raise ResourceNotFound('Invalid identifier %s' % params)
 
         if 'topic-attachment' == namespace:
             return format_to_html(self.env, context,
                                   '[attachment:discussion:topic/%s:%s %s]'
-                                  % (id, name, label))
+                                  % (id_, name, label))
 
         elif 'raw-topic-attachment' == namespace:
             return format_to_html(self.env, context,
                                   '[raw-attachment:discussion:topic/%s:%s %s]'
-                                  % (id, name, label))
+                                  % (id_, name, label))

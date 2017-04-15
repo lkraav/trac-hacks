@@ -24,9 +24,9 @@ class DiscussionWebAdmin(Component):
     # IAdminPageProvider methods
 
     def get_admin_panels(self, req):
-        if req.perm.has_permission('DISCUSSION_ADMIN'):
-            yield ('discussion', 'Discussion System', 'forum', 'Forums')
-            yield ('discussion', 'Discussion System', 'group', 'Forum Groups')
+        if 'DISCUSSION_ADMIN' in req.perm:
+            yield 'discussion', 'Discussion System', 'forum', 'Forums'
+            yield 'discussion', 'Discussion System', 'group', 'Forum Groups'
 
     def render_admin_panel(self, req, category, page, path_info):
         if page == 'forum':
@@ -49,7 +49,7 @@ class DiscussionWebAdmin(Component):
         if context.redirect_url:
             # Redirect request if needed.
             href = req.href(context.redirect_url[0]) + context.redirect_url[1]
-            self.log.debug("Redirecting to %s" % href)
+            self.log.debug("Redirecting to %s", href)
             req.redirect(req.href('discussion', 'redirect',
                                   redirect_url=href))
         else:

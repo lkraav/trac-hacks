@@ -13,13 +13,11 @@ from trac.core import *
 from trac.config import ListOption
 from trac.web.chrome import Chrome
 from trac.notification import NotifyEmail
-from trac.util.translation import _
 
 from tracdiscussion.api import *
 
 
 class DiscussionNotifyEmail(NotifyEmail):
-
     template_name = 'topic-notify-body.txt'
     forum = None
     topic = None
@@ -33,7 +31,8 @@ class DiscussionNotifyEmail(NotifyEmail):
         NotifyEmail.__init__(self, env)
         self.prev_cc = []
 
-    def notify(self, context, forum = None, topic = None, message = None):
+    def notify(self, context, forum=None, topic=None, message=None):
+        req = context.req
         # Store link to currently notifying forum, topic and message.
         self.forum = forum
         self.topic = topic
@@ -49,29 +48,32 @@ class DiscussionNotifyEmail(NotifyEmail):
         }
         if data['prefix'] == '__default__':
             data['prefix'] = self.env.project_name
-        self.data.update({'discussion' : data})
+        self.data.update({'discussion': data})
 
         # Which item notify about?
         if self.message:
-            self.message['link'] = self.env.abs_href.discussion('message',
-              self.message['id'])
+            self.message['link'] = \
+                self.env.abs_href.discussion('message', self.message['id'])
             self.template_name = 'message-notify-body.txt'
         elif self.topic:
-            self.topic['link'] = self.env.abs_href.discussion('topic',
-              self.topic['id'])
+            self.topic['link'] = \
+                self.env.abs_href.discussion('topic', self.topic['id'])
             self.template_name = 'topic-notify-body.txt'
 
         # Send e-mail to all subscribers.
         self.cc_recipients = forum['subscribers'] + topic['subscribers'] + \
-          self.config.getlist('discussion', 'smtp_always_cc')
+                             self.config.getlist('discussion',
+                                                 'smtp_always_cc')
 
         # Render subject template and send notification.
-        subject = (to_unicode(Chrome(self.env).render_template(context.req,
-          self.message and 'message-notify-subject.txt' or
-          'topic-notify-subject.txt', self.data, 'text/plain'))).strip()
+        message = 'message-notify-subject.txt' if self.message \
+                                               else 'topic-notify-subject.txt'
+        template = Chrome(self.env).render_template(req, message, self.data,
+                                                    'text/plain')
+        subject = (to_unicode(template)).strip()
         NotifyEmail.notify(self, id, subject)
 
-    def invite(self, context, forum = None, topic = None, recipients=None):
+    def invite(self, forum=None, topic=None, recipients=None):
         # Store link to currently notifying forum.
         recipients = recipients or []
         self.forum = forum
@@ -85,26 +87,29 @@ class DiscussionNotifyEmail(NotifyEmail):
         }
         if data['prefix'] == '__default__':
             data['prefix'] = self.env.project_name
-        self.data.update({'discussion' : data})
+        self.data.update({'discussion': data})
 
         # Which item notify about?
         if self.topic:
-            self.topic['link'] = self.env.abs_href.discussion('topic',
-              self.topic['id'])
+            self.topic['link'] = \
+                self.env.abs_href.discussion('topic', self.topic['id'])
             self.template_name = 'topic-invite-body.txt'
         elif self.forum:
-            self.forum['link'] = self.env.abs_href.discussion('forum',
-              self.forum['id'])
+            self.forum['link'] = \
+                self.env.abs_href.discussion('forum', self.forum['id'])
             self.template_name = 'forum-invite-body.txt'
 
         # Send e-mail to all subscribers.
-        self.cc_recipients = recipients + self.config.getlist('discussion',
-          'smtp_always_cc')
+        self.cc_recipients = recipients + \
+                             self.config.getlist('discussion',
+                                                 'smtp_always_cc')
 
         # Render subject template and send notification.
-        subject = (to_unicode(Chrome(self.env).render_template(context.req,
-          self.topic and 'topic-invite-subject.txt' or
-            'forum-invite-subject.txt', self.data, 'text/plain'))).strip()
+        topic = 'topic-invite-subject.txt' if self.topic \
+                                           else 'forum-invite-subject.txt'
+        template = Chrome(self.env).render_template(topic, self.data,
+                                                    'text/plain')
+        subject = (to_unicode(template)).strip()
         NotifyEmail.notify(self, id, subject)
 
     def send(self, to_recipients, cc_recipients):
@@ -113,7 +118,8 @@ class DiscussionNotifyEmail(NotifyEmail):
         # Add item specific e-mail header fields.
         if self.message:
             # ID of the message.
-            header['Message-ID'] = self.get_message_email_id(self.message['id'])
+            header['Message-ID'] = self.get_message_email_id(
+                self.message['id'])
             header['X-Trac-Message-ID'] = to_unicode(self.message['id'])
             header['X-Trac-Discussion-URL'] = self.message['link']
 
@@ -140,9 +146,9 @@ class DiscussionNotifyEmail(NotifyEmail):
 
         # Send e-mail.
         self.template = Chrome(self.env).load_template(self.template_name,
-          method = 'text')
-        self.env.log.debug('to_recipients: %s cc_recipients: %s' % (
-          to_recipients, cc_recipients))
+                                                       method='text')
+        self.env.log.debug('to_recipients: %s cc_recipients: %s',
+                           to_recipients, cc_recipients)
         NotifyEmail.send(self, to_recipients, cc_recipients, header)
 
     def get_recipients(self, item_id):
@@ -172,6 +178,7 @@ class DiscussionNotifyEmail(NotifyEmail):
         email_id = '<%03d.%s@%s>' % (len(s), digest, host)
         return email_id
 
+
 class DiscussionEmailNotification(Component):
     """
         The e-mail notification component implements topic and message change
@@ -184,29 +191,31 @@ class DiscussionEmailNotification(Component):
     # Configuration options.
 
     smtp_always_cc = ListOption('discussion', 'smtp_always_cc', [],
-        doc=_('''Always send discussion notifications to the listed e-mail
-                 addresses.'''))
+    doc="""Always send discussion notifications to the listed e-mail 
+    addresses.
+    """)
 
     # IForumChangeListener methods.
 
     def forum_created(self, context, forum):
         # Send e-mail invitation.
         notifier = DiscussionNotifyEmail(self.env)
-        notifier.invite(context, forum, None, forum['subscribers'])
+        notifier.invite(forum, None, forum['subscribers'])
 
     def forum_changed(self, context, forum, old_forum):
         # Get new subscribers to topic.
-        new_subscribers = [subscriber for subscriber in forum['subscribers']
-          if subscriber not in old_forum['subscribers']]
+        new_subscribers = [subscriber
+                           for subscriber in forum['subscribers']
+                           if subscriber not in old_forum['subscribers']]
 
         # We need to use complete forum dictionary.
         old_forum.update(forum)
 
         # Send e-mail invitation.
         notifier = DiscussionNotifyEmail(self.env)
-        notifier.invite(context, old_forum, None, new_subscribers)
+        notifier.invite(old_forum, None, new_subscribers)
 
-    def forum_deleted(self, context, forum):
+    def forum_deleted(self, forum):
         self.log.debug('DiscussionEmailNotification.forum_deleted()')
 
     # ITopicChangeListener methods.
@@ -223,10 +232,9 @@ class DiscussionEmailNotification(Component):
     def topic_changed(self, context, topic, old_topic):
         if 'subscribers' in topic:
             # Get new subscribers to topic.
-            new_subscribers = [
-                subscriber for subscriber in topic['subscribers']
-                if subscriber not in old_topic['subscribers']
-            ]
+            new_subscribers = [subscriber
+                               for subscriber in topic['subscribers']
+                               if subscriber not in old_topic['subscribers']]
 
             # We need to use complete topic dictionary.
             old_topic.update(topic)
@@ -237,7 +245,7 @@ class DiscussionEmailNotification(Component):
 
             # Send e-mail invitation.
             notifier = DiscussionNotifyEmail(self.env)
-            notifier.invite(context, forum, old_topic, new_subscribers)
+            notifier.invite(forum, old_topic, new_subscribers)
 
     def topic_deleted(self, context, topic):
         pass

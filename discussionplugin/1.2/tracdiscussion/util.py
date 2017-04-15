@@ -8,21 +8,12 @@
 #
 
 from genshi.input import HTML
-from genshi.core import Markup
 from genshi.filters import Transformer
 
+from trac.util import to_list
+from trac.util.html import Markup
 from trac.util.text import to_unicode
 from trac.wiki.formatter import format_to_oneliner
-
-
-def as_list(value):
-    if isinstance(value, basestring):
-        return [s.strip() for s in value.split()]
-    # Handle None value and empty objects gracefully.
-    if not value:
-        return []
-    raise NotImplementedError('Conversion of %r to list is not implemented'
-                              % value)
 
 
 # Formats wiki text to single line HTML but removes all links.
@@ -34,9 +25,9 @@ def format_to_oneliner_no_links(env, context, content):
 def prepare_topic(uids, topic):
     """Unpack list of topic subscribers and get topic status."""
     if topic:
-        topic['subscribers'] = as_list(topic['subscribers'])
-        topic['unregistered_subscribers'] = set(topic['subscribers']) \
-                                            .difference(uids)
+        topic['subscribers'] = to_list(topic['subscribers'] or '', ' ')
+        topic['unregistered_subscribers'] = \
+            set(topic['subscribers']).difference(uids)
         topic['status'] = topic_status_to_list(topic['status'])
     return topic
 

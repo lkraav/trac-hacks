@@ -13,20 +13,19 @@ import tempfile
 import unittest
 
 from trac.perm import PermissionCache, PermissionSystem
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub, MockRequest
 
 from tracdiscussion.timeline import DiscussionTimeline
 
 
 class DiscussionTimelineTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
         self.perms = PermissionSystem(self.env)
 
         user = 'editor'
-        self.req = Mock(authname=user)
+        self.req = MockRequest(self.env, authname=user)
         self.req.authname = user
         self.perms.grant_permission(user, 'DISCUSSION_VIEW')
         self.req.perm = PermissionCache(self.env, username=user)
@@ -46,8 +45,9 @@ class DiscussionTimelineTestCase(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionTimelineTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionTimelineTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

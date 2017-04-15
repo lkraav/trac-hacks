@@ -29,12 +29,14 @@ class DiscussionTagProvider(DefaultTagProvider):
     realm = 'discussion'
 
     automatic_forum_tags = ListOption('discussion', 'automatic_forum_tags',
-      'name,author', doc = "Tags that will be created automatically from "
-      "discussion forums fields. Possible values are: name, author.")
+        'name,author', doc="""Tags that will be created automatically from 
+        discussion forums fields. Possible values are: name, author.
+        """)
 
     automatic_topic_tags = ListOption('discussion', 'automatic_topic_tags',
-      'author,status', doc = "Tags that will be created automatically from "
-      "discussion topics fields. Possible values are: author, status.")
+        'author,status', doc="""Tags that will be created automatically 
+        from discussion topics fields. Possible values are: author, status.
+        """)
 
     # IForumChangeListener methods
 
@@ -74,10 +76,10 @@ class DiscussionTagProvider(DefaultTagProvider):
     # ITagProvider methods
 
     def check_permission(self, perm, action):
-        map = {'view': 'DISCUSSION_VIEW', 'modify': 'DISCUSSION_APPEND'}
+        map_ = {'view': 'DISCUSSION_VIEW', 'modify': 'DISCUSSION_APPEND'}
         # Check tag permissions (in default provider), then for discussion.
         return super(DiscussionTagProvider, self) \
-               .check_permission(perm, action) and map[action] in perm
+                   .check_permission(perm, action) and map_[action] in perm
 
     def describe_tagged_resource(self, req, resource):
         if not self.check_permission(req.perm(resource), 'view'):
@@ -94,7 +96,7 @@ class DiscussionTagProvider(DefaultTagProvider):
         # Replace with new tags, if different.
         if old_tags != new_tags:
             tag_system.set_tags(req, resource, new_tags)
-            self.log.debug("Setting discussion tags: %s" % new_tags)
+            self.log.debug("Setting discussion tags: %s", new_tags)
             return True
         return False
 
@@ -115,10 +117,10 @@ class DiscussionTagProvider(DefaultTagProvider):
         if 'tags' in topic:
             tags += topic['tags']
         if 'author' in self.automatic_topic_tags and topic['author']:
-            if not topic['author'] in tags:
+            if topic['author'] not in tags:
                 tags.append(topic['author'])
         if 'status' in self.automatic_topic_tags and len(topic['status']):
             for status in topic['status']:
-                if not status in tags:
+                if status not in tags:
                     tags.append(status)
         return set(tags)

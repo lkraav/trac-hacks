@@ -12,13 +12,11 @@ import unittest
 
 from trac.test import EnvironmentStub
 
-from tracdiscussion.core import DiscussionCore
 from tracdiscussion.notification import DiscussionNotifyEmail
 from tracdiscussion.notification import DiscussionEmailNotification
 
 
 class DiscussionEmailNotificationTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
@@ -33,7 +31,6 @@ class DiscussionEmailNotificationTestCase(unittest.TestCase):
 
 
 class DiscussionNotifyEmailTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
@@ -49,10 +46,10 @@ class DiscussionNotifyEmailTestCase(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionEmailNotificationTestCase,
-                                     'test'))
-    suite.addTest(unittest.makeSuite(DiscussionNotifyEmailTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionEmailNotificationTestCase))
+    suite.addTest(unittest.makeSuite(DiscussionNotifyEmailTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

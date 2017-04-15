@@ -36,7 +36,7 @@ class DiscussionSpamFilterTestCase(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionSpamFilterTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionSpamFilterTestCase))
     return suite
 
 if __name__ == '__main__':

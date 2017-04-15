@@ -3,20 +3,20 @@
 from trac.db import Table, Column, DatabaseManager
 
 tables = [
-  Table('topic', key = 'id')[
-    Column('id', type = 'integer', auto_increment = True),
-    Column('forum', type = 'integer'),
-    Column('time', type = 'integer'),
-    Column('author'),
-    Column('subscribers'),
-    Column('subject'),
-    Column('body'),
-  ]
+    Table('topic', key='id')[
+        Column('id', type='integer', auto_increment=True),
+        Column('forum', type='integer'),
+        Column('time', type='integer'),
+        Column('author'),
+        Column('subscribers'),
+        Column('subject'),
+        Column('body'),
+    ]
 ]
 
 
 def do_upgrade(env, cursor):
-    db_connector, _ = DatabaseManager(env)._get_connector()
+    db_connector, _ = DatabaseManager(env).get_connector()
 
     # Backup old topic table
     cursor.execute("CREATE TEMPORARY TABLE topic_old AS "
@@ -31,15 +31,17 @@ def do_upgrade(env, cursor):
 
     # Add two columns that uses constraints.
     # TODO: No other way how to do it.
-    cursor.execute("ALTER TABLE topic ADD COLUMN status INT DEFAULT 0 NOT NULL")
-    cursor.execute("ALTER TABLE topic ADD COLUMN priority INT DEFAULT 0 NOT NULL")
+    cursor.execute(
+        "ALTER TABLE topic ADD COLUMN status INT DEFAULT 0 NOT NULL")
+    cursor.execute(
+        "ALTER TABLE topic ADD COLUMN priority INT DEFAULT 0 NOT NULL")
 
     # Copy old topics.
     cursor.execute("INSERT INTO topic "
                    "(id, forum, time, author, subscribers, subject, body, "
-                     "status, priority) "
+                   "status, priority) "
                    "SELECT id, forum, time, author, subscribers, subject, "
-                     "body, 0, 0 "
+                   "body, 0, 0 "
                    "FROM topic_old")
     cursor.execute("DROP TABLE topic_old")
 

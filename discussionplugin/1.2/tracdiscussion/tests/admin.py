@@ -11,14 +11,13 @@ import tempfile
 import unittest
 
 from trac.perm import PermissionCache, PermissionError, PermissionSystem
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub, MockRequest
 
 from tracdiscussion.admin import DiscussionWebAdmin
 from tracdiscussion.init import DiscussionInit
 
 
 class DiscussionWebAdminTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracdiscussion.*'])
         self.env.path = tempfile.mkdtemp()
@@ -27,18 +26,13 @@ class DiscussionWebAdminTestCase(unittest.TestCase):
         # Create admin user reference in the permission system.
         self.perms.grant_permission('admin', 'DISCUSSION_ADMIN')
         # Prepare a generic request object for admin actions.
-        self.req = Mock(authname='admin', method='GET',
-                   args=dict(), abs_href=self.env.abs_href,
-                   chrome=dict(notices=[], warnings=[]),
-                   href=self.env.abs_href, locale='',
-                   redirect=lambda x: None, session=dict(), tz=''
-        )
+        self.req = MockRequest(self.env, authname='admin', method='GET')
         self.req.perm = PermissionCache(self.env, 'admin')
 
         self.dwa = DiscussionWebAdmin(self.env)
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(None)
+        setup.upgrade_environment()
         self.panel_template = dict(forum='admin-forum-list.html',
                                    group='admin-group-list.html')
 
@@ -56,8 +50,7 @@ class DiscussionWebAdminTestCase(unittest.TestCase):
 
     def test_render_admin_panel_no_perm(self):
         # Prepare anonymous request.
-        req = Mock(method='GET', args=dict(), href=self.env.abs_href,
-                   perm=PermissionCache(self.env), session=dict(),)
+        req = MockRequest(self.env, authname='anonymous', method='GET')
         self.assertRaises(PermissionError, self.dwa.render_admin_panel,
                           req, 'discussion', 'forum', '')
 
@@ -78,8 +71,9 @@ class DiscussionWebAdminTestCase(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionWebAdminTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionWebAdminTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

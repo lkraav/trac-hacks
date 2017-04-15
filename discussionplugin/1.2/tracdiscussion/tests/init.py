@@ -23,7 +23,6 @@ INSERT_VERSION_SQL = "INSERT INTO system (name, value) " \
 
 
 class DiscussionInitTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*'])
         self.env.path = tempfile.mkdtemp()
@@ -42,7 +41,7 @@ class DiscussionInitTestCase(unittest.TestCase):
         dburi = self.env.config.get('trac', 'database')
         with self.env.db_query as db:
             cursor = db.cursor()
-            tables = self._get_tables(dburi, cursor)
+            tables = self._get_tables(dburi)
             self.assertTrue('forum_group' in tables)
             cursor.execute("SELECT * FROM forum_group")
             self.assertEquals(
@@ -79,7 +78,7 @@ class DiscussionInitTestCase(unittest.TestCase):
             version = int(cursor.fetchone()[0])
             self.assertEquals(schema_version, version)
 
-    def _get_tables(self, dburi, cursor):
+    def _get_tables(self, dburi):
         """Code from TracMigratePlugin by Jun Omae (see tracmigrate.admin)."""
         if dburi.startswith('sqlite:'):
             sql = """
@@ -92,7 +91,7 @@ class DiscussionInitTestCase(unittest.TestCase):
             sql = """
                 SELECT tablename
                   FROM pg_tables
-                 WHERE schemaname = ANY (current_schemas(false))
+                 WHERE schemaname = ANY (current_schemas(FALSE))
             """
         elif dburi.startswith('mysql:'):
             sql = "SHOW TABLES"
@@ -116,42 +115,42 @@ class DiscussionInitTestCase(unittest.TestCase):
     def test_new_install(self):
         setup = DiscussionInit(self.env)
         self.assertEquals(0, setup._get_schema_version())
-        self.assertTrue(setup.environment_needs_upgrade(None))
+        self.assertTrue(setup.environment_needs_upgrade())
 
-        setup.upgrade_environment(None)
-        self.assertFalse(setup.environment_needs_upgrade(None))
+        setup.upgrade_environment()
+        self.assertFalse(setup.environment_needs_upgrade())
         self._check_schema()
 
     def test_upgrade_schema_v1(self):
         # Initial schema without 'forum_group' table.
         schema = [
-            Table('forum', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
+            Table('forum', key='id')[
+                Column('id', type='integer', auto_increment=True),
                 Column('name'),
-                Column('time', type = 'integer'),
+                Column('time', type='integer'),
                 Column('moderators'),
                 Column('subject'),
                 Column('description')
             ],
-            Table('topic', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('topic', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('subject'),
                 Column('body')
             ],
-            Table('message', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('topic', type = 'integer'),
-                Column('replyto', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('message', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('topic', type='integer'),
+                Column('replyto', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('body')
             ]
         ]
-        connector = self.db_mgr._get_connector()[0]
+        connector = self.db_mgr.get_connector()[0]
         with self.env.db_transaction as db:
             cursor = db.cursor()
             for table in schema:
@@ -161,50 +160,50 @@ class DiscussionInitTestCase(unittest.TestCase):
 
         setup = DiscussionInit(self.env)
         self.assertEquals(1, setup._get_schema_version())
-        self.assertTrue(setup.environment_needs_upgrade(None))
+        self.assertTrue(setup.environment_needs_upgrade())
 
-        setup.upgrade_environment(None)
-        self.assertFalse(setup.environment_needs_upgrade(None))
+        setup.upgrade_environment()
+        self.assertFalse(setup.environment_needs_upgrade())
         self._check_schema()
 
     def test_upgrade_schema_v2(self):
         # More recent schema with all tables, 'forum_group' and 'author'
         # columns added to 'forum' table.
         schema = [
-            Table('forum_group', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
+            Table('forum_group', key='id')[
+                Column('id', type='integer', auto_increment=True),
                 Column('name'),
                 Column('description')
             ],
-            Table('forum', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
+            Table('forum', key='id')[
+                Column('id', type='integer', auto_increment=True),
                 Column('name'),
-                Column('time', type = 'integer'),
-                Column('forum_group', type = 'integer'),
+                Column('time', type='integer'),
+                Column('forum_group', type='integer'),
                 Column('author'),
                 Column('moderators'),
                 Column('subject'),
                 Column('description')
             ],
-            Table('topic', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('topic', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('subject'),
                 Column('body')
             ],
-            Table('message', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('topic', type = 'integer'),
-                Column('replyto', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('message', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('topic', type='integer'),
+                Column('replyto', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('body')
             ]
         ]
-        connector = self.db_mgr._get_connector()[0]
+        connector = self.db_mgr.get_connector()[0]
         with self.env.db_transaction as db:
             cursor = db.cursor()
             for table in schema:
@@ -214,51 +213,51 @@ class DiscussionInitTestCase(unittest.TestCase):
 
         setup = DiscussionInit(self.env)
         self.assertEquals(2, setup._get_schema_version())
-        self.assertTrue(setup.environment_needs_upgrade(None))
+        self.assertTrue(setup.environment_needs_upgrade())
 
-        setup.upgrade_environment(None)
-        self.assertFalse(setup.environment_needs_upgrade(None))
+        setup.upgrade_environment()
+        self.assertFalse(setup.environment_needs_upgrade())
         self._check_schema()
 
     def test_upgrade_schema_v3(self):
         # Schema version including 'subscribers' column in 'forum' table.
         schema = [
-            Table('forum_group', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
+            Table('forum_group', key='id')[
+                Column('id', type='integer', auto_increment=True),
                 Column('name'),
                 Column('description')
             ],
-            Table('forum', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
+            Table('forum', key='id')[
+                Column('id', type='integer', auto_increment=True),
                 Column('name'),
-                Column('time', type = 'integer'),
-                Column('forum_group', type = 'integer'),
+                Column('time', type='integer'),
+                Column('forum_group', type='integer'),
                 Column('author'),
                 Column('moderators'),
                 Column('subscribers'),
                 Column('subject'),
                 Column('description')
             ],
-            Table('topic', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('topic', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('subscribers'),
                 Column('subject'),
                 Column('body')
             ],
-            Table('message', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('topic', type = 'integer'),
-                Column('replyto', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('message', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('topic', type='integer'),
+                Column('replyto', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('body')
             ]
         ]
-        connector = self.db_mgr._get_connector()[0]
+        connector = self.db_mgr.get_connector()[0]
         with self.env.db_transaction as db:
             cursor = db.cursor()
             for table in schema:
@@ -268,25 +267,25 @@ class DiscussionInitTestCase(unittest.TestCase):
 
         setup = DiscussionInit(self.env)
         self.assertEquals(3, setup._get_schema_version())
-        self.assertTrue(setup.environment_needs_upgrade(None))
+        self.assertTrue(setup.environment_needs_upgrade())
 
-        setup.upgrade_environment(None)
-        self.assertFalse(setup.environment_needs_upgrade(None))
+        setup.upgrade_environment()
+        self.assertFalse(setup.environment_needs_upgrade())
         self._check_schema()
 
     def test_upgrade_schema_v4(self):
         # Schema version including indices for forum, topic and message times.
         schema = [
-            Table('forum_group', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
+            Table('forum_group', key='id')[
+                Column('id', type='integer', auto_increment=True),
                 Column('name'),
                 Column('description')
             ],
-            Table('forum', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
+            Table('forum', key='id')[
+                Column('id', type='integer', auto_increment=True),
                 Column('name'),
-                Column('time', type = 'integer'),
-                Column('forum_group', type = 'integer'),
+                Column('time', type='integer'),
+                Column('forum_group', type='integer'),
                 Column('author'),
                 Column('moderators'),
                 Column('subscribers'),
@@ -294,28 +293,28 @@ class DiscussionInitTestCase(unittest.TestCase):
                 Column('description'),
                 Index(['time'])
             ],
-            Table('topic', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('topic', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('subscribers'),
                 Column('subject'),
                 Column('body'),
                 Index(['time'])
             ],
-            Table('message', key = 'id')[
-                Column('id', type = 'integer', auto_increment = True),
-                Column('forum', type = 'integer'),
-                Column('topic', type = 'integer'),
-                Column('replyto', type = 'integer'),
-                Column('time', type = 'integer'),
+            Table('message', key='id')[
+                Column('id', type='integer', auto_increment=True),
+                Column('forum', type='integer'),
+                Column('topic', type='integer'),
+                Column('replyto', type='integer'),
+                Column('time', type='integer'),
                 Column('author'),
                 Column('body'),
                 Index(['time'])
             ]
         ]
-        connector = self.db_mgr._get_connector()[0]
+        connector = self.db_mgr.get_connector()[0]
         with self.env.db_transaction as db:
             cursor = db.cursor()
             for table in schema:
@@ -325,17 +324,18 @@ class DiscussionInitTestCase(unittest.TestCase):
 
         setup = DiscussionInit(self.env)
         self.assertEquals(4, setup._get_schema_version())
-        self.assertTrue(setup.environment_needs_upgrade(None))
+        self.assertTrue(setup.environment_needs_upgrade())
 
-        setup.upgrade_environment(None)
-        self.assertFalse(setup.environment_needs_upgrade(None))
+        setup.upgrade_environment()
+        self.assertFalse(setup.environment_needs_upgrade())
         self._check_schema()
 
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionInitTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionInitTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

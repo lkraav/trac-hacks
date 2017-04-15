@@ -3,31 +3,31 @@
 from trac.db import Table, Column, DatabaseManager
 
 tables = [
-  Table('forum', key = 'id')[
-    Column('id', type = 'integer', auto_increment = True),
-    Column('name'),
-    Column('time', type = 'integer'),
-    Column('forum_group', type = 'integer'),
-    Column('author'),
-    Column('moderators'),
-    Column('subscribers'),
-    Column('subject'),
-    Column('description')
-  ],
-  Table('topic', key = 'id')[
-    Column('id', type = 'integer', auto_increment = True),
-    Column('forum', type = 'integer'),
-    Column('time', type = 'integer'),
-    Column('author'),
-    Column('subscribers'),
-    Column('subject'),
-    Column('body')
-  ]
+    Table('forum', key='id')[
+        Column('id', type='integer', auto_increment=True),
+        Column('name'),
+        Column('time', type='integer'),
+        Column('forum_group', type='integer'),
+        Column('author'),
+        Column('moderators'),
+        Column('subscribers'),
+        Column('subject'),
+        Column('description')
+    ],
+    Table('topic', key='id')[
+        Column('id', type='integer', auto_increment=True),
+        Column('forum', type='integer'),
+        Column('time', type='integer'),
+        Column('author'),
+        Column('subscribers'),
+        Column('subject'),
+        Column('body')
+    ]
 ]
 
 
 def do_upgrade(env, cursor):
-    db_connector, _ = DatabaseManager(env)._get_connector()
+    db_connector, _ = DatabaseManager(env).get_connector()
 
     # Backup old forum table.
     cursor.execute("CREATE TEMPORARY TABLE forum_old AS "
@@ -49,7 +49,7 @@ def do_upgrade(env, cursor):
     # Copy old forums.
     cursor.execute("INSERT INTO forum "
                    "(id, name, time, forum_group, author, moderators, subject, "
-                     "description) "
+                   "description) "
                    "SELECT * "
                    "FROM forum_old")
     cursor.execute("UPDATE forum "

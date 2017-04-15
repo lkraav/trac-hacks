@@ -28,23 +28,24 @@ class DiscussionSpamFilter(Component):
     # IDiscussionFilter methods
 
     def filter_topic(self, context, topic):
+        req = context.req
         try:
-            self._spam_test(context.req, topic['author'],
+            self._spam_test(req, topic['author'],
                             [(None, topic['author']),
                              (None, topic['subject']),
-                             (None, topic['body'])],
-                            context.req.remote_addr)
+                             (None, topic['body'])], req.remote_addr)
         except RejectContent, error:
             # Topic contains SPAM.
             return False, error.message
         return True, topic
 
     def filter_message(self, context, message):
+        req = context.req
         try:
-            self._spam_test(context.req, message['author'],
+            self._spam_test(req, message['author'],
                             [(None, message['author']),
                              (None, message['body'])],
-                            context.req.remote_addr)
+                            req.remote_addr)
         except RejectContent, error:
             # Message contains SPAM.
             return False, error.message

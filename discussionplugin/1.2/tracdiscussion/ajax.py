@@ -25,7 +25,7 @@ class DiscussionAjax(Component):
     def match_request(self, req):
         # Try to match request pattern to request URL.
         match = re.match(
-            r'''/discussion/ajax(?:/(forum|topic|message)/(\d+)(?:/?$))''',
+            r'/discussion/ajax(?:/(forum|topic|message)/(\d+)(?:/?$))',
             req.path_info)
         if match:
             resource_type = match.group(1)
@@ -34,7 +34,7 @@ class DiscussionAjax(Component):
                 req.args['forum'] = resource_id
             if resource_type == 'topic':
                 req.args['topic'] = resource_id
-            if resource_type== 'message':
+            if resource_type == 'message':
                 req.args['message'] = resource_id
         return match
 

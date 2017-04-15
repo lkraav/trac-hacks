@@ -12,7 +12,7 @@ import unittest
 
 from trac.perm import PermissionCache, PermissionSystem
 from trac.resource import Resource
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub, MockRequest
 
 from tracdiscussion.init import DiscussionInit
 from tracdiscussion.tags import DiscussionTagProvider
@@ -21,7 +21,6 @@ from tractags.db import TagSetup
 
 
 class DiscussionTagProviderTestCase(unittest.TestCase):
-
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', 'tracdiscussion.*',
@@ -31,7 +30,7 @@ class DiscussionTagProviderTestCase(unittest.TestCase):
 
         # Accomplish Discussion db schema setup.
         setup = DiscussionInit(self.env)
-        setup.upgrade_environment(None)
+        setup.upgrade_environment()
 
         # Populate tables with initial test data.
         with self.env.db_transaction as db:
@@ -47,7 +46,7 @@ class DiscussionTagProviderTestCase(unittest.TestCase):
                 VALUES (%s,%s,%s)
             """, [(1, 'top1', 'topic-desc1'),
                   (1, 'top2', 'topic-desc2'),
-                 ])
+                  ])
             cursor.executemany("""
                 INSERT INTO message
                        (forum, topic, body)
@@ -56,20 +55,19 @@ class DiscussionTagProviderTestCase(unittest.TestCase):
                   (1, 2, 'msg2'),
                   (1, 2, 'msg3'),
                   (1, 2, 'msg4'),
-                 ])
+                  ])
 
         tag_setup = TagSetup(self.env)
         # Current tractags schema is setup with enabled component anyway.
         #   Revert these changes for getting default permissions inserted.
         self._revert_tractags_schema_init()
-        tag_setup.upgrade_environment(None)
+        tag_setup.upgrade_environment()
 
-        # Mock an anonymous request.
-        self.anon_req = Mock()
+        self.anon_req = MockRequest(self.env)
         self.anon_req.perm = PermissionCache(self.env)
 
         user = 'editor'
-        self.req = Mock(authname=user)
+        self.req = MockRequest(self.env, authname=user)
         self.req.authname = user
         self.perms.grant_permission(user, 'DISCUSSION_VIEW')
         self.req.perm = PermissionCache(self.env, username=user)
@@ -95,10 +93,11 @@ class DiscussionTagProviderTestCase(unittest.TestCase):
             cursor.execute("DELETE FROM system WHERE name='tags_version'")
             cursor.execute("DELETE FROM permission WHERE action %s"
                            % db.like(), ('TAGS_%',))
+
     # Tests
 
     def test_describe_tagged_resource(self):
-        desc = self.dtp.describe_tagged_resource # method shorthand
+        desc = self.dtp.describe_tagged_resource  # method shorthand
         req = self.req
         self.assertEqual(desc(req, self.forum), '#1')
         self.assertEqual(desc(req, self.topic), '#2')
@@ -107,8 +106,9 @@ class DiscussionTagProviderTestCase(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DiscussionTagProviderTestCase, 'test'))
+    suite.addTest(unittest.makeSuite(DiscussionTagProviderTestCase))
     return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

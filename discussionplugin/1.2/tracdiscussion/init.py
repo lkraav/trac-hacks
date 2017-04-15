@@ -25,7 +25,7 @@ class DiscussionInit(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db=None):
+    def environment_needs_upgrade(self):
         schema_ver = self._get_schema_version()
         if schema_ver == schema_version:
             return False
@@ -33,10 +33,10 @@ class DiscussionInit(Component):
             raise TracError("A newer plugin version has been installed "
                             "before, but downgrading is unsupported.")
         self.log.info("TracDiscussion database schema version is %d, "
-                      "should be %d" % (schema_ver, schema_version))
+                      "should be %d", schema_ver, schema_version)
         return True
 
-    def upgrade_environment(self, db=None):
+    def upgrade_environment(self):
         """Each schema version should have its own upgrade module, named
         upgrades/dbN.py, where 'N' is the version number (int).
         """
@@ -57,7 +57,7 @@ class DiscussionInit(Component):
                 script.do_upgrade(self.env, cursor)
 
             self.log.info("Upgraded TracDiscussion db schema from version "
-                          "%d to %d" % (schema_ver, schema_version))
+                          "%d to %d", schema_ver, schema_version)
 
     # Internal methods
 
