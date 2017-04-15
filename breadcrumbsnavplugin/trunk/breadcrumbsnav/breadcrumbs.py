@@ -200,4 +200,3 @@ class BreadCrumbsSystem(Component):
             insert = ''
 
         return stream | Transformer('//div[@id="metanav"]/ul').after(insert)
-
