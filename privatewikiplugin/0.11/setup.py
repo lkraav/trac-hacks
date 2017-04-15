@@ -24,5 +24,5 @@ setup(
         'trac.plugins': [
             'privatewiki = privatewiki',
         ]
-    }    
+    }
 )
