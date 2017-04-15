@@ -806,7 +806,7 @@ class DiscussionApi(DiscussionDb):
                 if not isinstance(forum['subscribers'], list):
                     forum['subscribers'] = to_list(forum['subscribers'] or '')
                 forum['subscribers'] += \
-                    req.args.getlist('unregistered_subscribers')
+                    to_list(req.args.get('unregistered_subscribers'))
 
                 # Fix tags attribute to be a list
                 if not forum['tags']:
@@ -858,7 +858,7 @@ class DiscussionApi(DiscussionDb):
                 if not isinstance(forum['subscribers'], list):
                     forum['subscribers'] = to_list(forum['subscribers'] or '')
                 forum['subscribers'] += \
-                    req.args.getlist('unregistered_subscribers')
+                    to_list(req.args.get('unregistered_subscribers'))
 
                 # Perform forum edit.
                 self.edit_forum(context.forum['id'], forum)
@@ -932,7 +932,7 @@ class DiscussionApi(DiscussionDb):
                 if not isinstance(forum['subscribers'], list):
                     forum['subscribers'] = to_list(forum['subscribers'] or '')
                 forum['subscribers'] += \
-                    req.args.getlist('unregistered_subscribers')
+                    to_list(req.args.get('unregistered_subscribers'))
 
                 # Edit topic.
                 self.edit_forum(context.forum['id'], forum)
@@ -1077,7 +1077,7 @@ class DiscussionApi(DiscussionDb):
                 if not isinstance(topic['subscribers'], list):
                     topic['subscribers'] = to_list(topic['subscribers'] or '')
                 topic['subscribers'] += \
-                    req.args.getlist('unregistered_subscribers')
+                    to_list(req.args.get('unregistered_subscribers'))
 
                 # Add user e-mail if subscription checked.
                 if req.args.get('subscribe') and context.authemail and \
@@ -1286,7 +1286,7 @@ class DiscussionApi(DiscussionDb):
                 if not isinstance(topic['subscribers'], list):
                     topic['subscribers'] = to_list(topic['subscribers'] or '')
                 topic['subscribers'] += \
-                    req.args.getlist('unregistered_subscribers')
+                    to_list(req.args.get('unregistered_subscribers'))
 
                 # Edit topic.
                 self.edit_topic(context.topic['id'], topic)
@@ -1306,7 +1306,7 @@ class DiscussionApi(DiscussionDb):
 
                 # Prepare edited attributes of the forum..
                 topic = {'subscribers': context.topic['subscribers']}
-                for subscriber in req.args.getlist('subscribers'):
+                for subscriber in to_list(req.args.get('subscribers')):
                     if subscriber not in topic['subscribers']:
                         topic['subscribers'].append(subscriber)
 
