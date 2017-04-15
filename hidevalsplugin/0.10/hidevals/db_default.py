@@ -10,5 +10,5 @@ tables = [
         Column('sid'),
         Column('field'),
         Column('value'),
-    ],   
+    ],
 ]

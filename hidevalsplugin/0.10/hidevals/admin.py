@@ -13,7 +13,7 @@ class HideValsAdminModule(Component):
     """WebAdmin sub-page for configuring the TracHideVals plugins."""
 
     implements(IAdminPageProvider, ITemplateProvider)
-    
+
     # IAdminPageProvider methods
     def get_admin_pages(self, req):
         if req.perm.has_permission('TICKET_ADMIN'):
@@ -29,7 +29,7 @@ class HideValsAdminModule(Component):
         cursor.execute('SELECT sid, value FROM hidevals WHERE field = %s', (field['name'],))
         values = cursor.fetchall()
         enabled = field['name'] not in HideValsSystem(self.env).dont_filter
-        
+
         if req.method == 'POST':
             if req.args.get('add'):
                 group = req.args['group']
@@ -48,12 +48,12 @@ class HideValsAdminModule(Component):
                 if enabled:
                     new_val.append(field['name'])
                 else:
-                    new_val.remove(field['name']) 
+                    new_val.remove(field['name'])
                 self.config.set('hidevals', 'dont_filter', ', '.join(sorted(new_val)))
                 self.config.save()
-                    
+
             req.redirect(req.href.admin(cat, page))
-        
+
         req.hdf['hidevals.field'] = field
         req.hdf['hidevals.values'] = [{'group': g, 'value': v} for g,v in values]
         req.hdf['hidevals.enabled'] = enabled
@@ -63,7 +63,7 @@ class HideValsAdminModule(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
-         
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('hidevals', resource_filename(__name__, 'htdocs'))]
