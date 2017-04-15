@@ -60,4 +60,3 @@ class RandomItemMacro(Component):
             out += format_to_html(self.env,formatter.context,page)
 
         return out
-        

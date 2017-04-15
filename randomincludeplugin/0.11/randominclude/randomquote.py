@@ -44,4 +44,3 @@ class RandomQuoteMacro(Component):
             return format_to_html(self.env,formatter.context,pagelist[0])
         else:
             return "Quotes not found"
-        

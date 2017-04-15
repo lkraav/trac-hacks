@@ -6,8 +6,8 @@ class randomwiki():
     def __init__(self,db):
         self.db = db
         return
-    
-    def getentries(self,sourcepage,number): 
+
+    def getentries(self,sourcepage,number):
         '''\
         Return number random bullet items from sourcepage, stored in db.
         '''
@@ -15,7 +15,7 @@ class randomwiki():
         cursor = self.db.cursor()
         cursor.execute('''SELECT text
                           FROM wiki
-                          WHERE name = %(name)s 
+                          WHERE name = %(name)s
                           ORDER BY version desc
                           LIMIT 1''',
                            {'name':sourcepage,})
@@ -33,4 +33,3 @@ class randomwiki():
             return items
         else:
             return random.sample(items,number)
-
