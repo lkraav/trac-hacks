@@ -1,7 +1,7 @@
-"""The aim of the plugin is to transform a wiki page so that it can be 
-imported using the HTML import capability of MS Word. After that, a format 
-template can be applied, and the text might be copied into a 
-document template. 
+"""The aim of the plugin is to transform a wiki page so that it can be
+imported using the HTML import capability of MS Word. After that, a format
+template can be applied, and the text might be copied into a
+document template.
 
 Originally created by 'lei' and posted on trac-hacks.org
 (http://trac-hacks.org/wiki/PageToDocIntegration).
@@ -12,7 +12,7 @@ Currently maintained by Mark Mc Mahon (mark.m.mcmahon@gmail.com)
 from trac.core import *
 from trac.mimeview.api import IContentConverter, Context
 from trac.util.html import Markup
-from trac.wiki.formatter import Formatter 
+from trac.wiki.formatter import Formatter
 from trac.web.chrome import add_warning
 from StringIO import StringIO
 from tempfile import mkdtemp, mkstemp
@@ -53,7 +53,7 @@ class PageToDocPlugin(Component):
         self.img_max_y = self.env.config.get('pagetodoc', 'img_max_y', self.img_max_y)
         self.img_max_y = self.env.config.get('pagetodoc', 'dpi', self.dpi)
 
-        # XSL-Transformation        
+        # XSL-Transformation
         xsltfilepath = self.env.config.get('pagetodoc', 'xsltfile', '')
         # TBD: Fehler ausgeben, wenn xsltfile nicht gelesen werden kann
         # TBD: Parameter aus der trac.ini an zentraler Stelle auslesen
@@ -93,10 +93,10 @@ class PageToDocPlugin(Component):
         # replace href with absolute path and if existing, base auth login
         try:
             # this will work if the authentication type is basic (and not over SSL?)
-            login = base64.b64decode(req.environ['HTTP_AUTHORIZATION'][6:]) + '@'                  
+            login = base64.b64decode(req.environ['HTTP_AUTHORIZATION'][6:]) + '@'
         except (KeyError, TypeError):
             login = ''
-                   
+
         html = re.sub('<img src="(?!\w+://)', '<img src="%s://%s%s:%d' % (req.scheme, login, req.server_name, req.server_port), html)
 
         # save images to disk
@@ -143,12 +143,12 @@ class PageToDocPlugin(Component):
 
         zipfilepath = os.path.join(
             self.tempdir, os.path.basename(str(req.path_info) + '.zip'))
-            
-        # create a zip file and store all files into it      
+
+        # create a zip file and store all files into it
         zipfilehandle = zipfile.ZipFile(zipfilepath, "w")
-        zipfilehandle.write(wordfilepath, os.path.basename(str(req.path_info) + '.htm'))       
+        zipfilehandle.write(wordfilepath, os.path.basename(str(req.path_info) + '.htm'))
         for image in self.images:
-            zipfilehandle.write(image, self.imagesubdir + os.path.basename(image))     
+            zipfilehandle.write(image, self.imagesubdir + os.path.basename(image))
         zipfilehandle.close()
         zip_file = open(zipfilepath, "rb")
         zip = zip_file.read()
@@ -180,7 +180,7 @@ class PageToDocPlugin(Component):
 
         # read stdout and stderr
         # its strange that all output goes to stderr instead of stdout, in both cases (error and no error)
-        # so always use stderr    
+        # so always use stderr
         errptr = file(errFile, "r")
         errData = errptr.read()
         errptr.close()
@@ -197,10 +197,10 @@ class PageToDocPlugin(Component):
 
         # Check the process exit code
         if retval > 1:
-            raise Exception("Error executing command (return code = %s): %s" % (retval, errData))          
+            raise Exception("Error executing command (return code = %s): %s" % (retval, errData))
 
     # remove the xml namespace from the file
-    # to be removed once I find out how to override this 
+    # to be removed once I find out how to override this
     def perform_workarounds(self, htmlfilepath, which=''):
          # Workaround: Entferne die Namespace-Angabe in der HTML-Datei
         htmlfilehandle = open(htmlfilepath, "r")
@@ -211,7 +211,7 @@ class PageToDocPlugin(Component):
         if which == 'html':
             html = re.sub('(<html xmlns="http://www.w3.org/1999/xhtml">)', '<html>', html)
 
-        # remove line feeds in <pre>-tags    
+        # remove line feeds in <pre>-tags
         if which == 'pre':
             html = re.sub(r'<pre[^>]*>\n([^<]*)</pre>', self.remove_line_feeds, html)
 
@@ -241,11 +241,11 @@ class PageToDocPlugin(Component):
         # this has been tested with ImageMagick 6.4.2 and PNG, JPG, TIFF and GIF files
         fileext = ''
 
-        # create temporary file 
+        # create temporary file
         fh, fn = mkstemp(prefix=filename, suffix=fileext, dir=imgdir)
         os.close(fh)
 
-        # If the user has specified to replace the hostname, then 
+        # If the user has specified to replace the hostname, then
         # do as they requested.
         replace_host = self.env.config.get('pagetodoc', 'replace_host', '')
         if replace_host:
@@ -256,7 +256,7 @@ class PageToDocPlugin(Component):
             if host_to_find and replace_host_with:
                 image_url = image_url.replace(host_to_find, replace_host_with)
 
-        urlretrieve(image_url, fn) 
+        urlretrieve(image_url, fn)
 
         # resize images, if wanted, using ImageMagick
         if int(self.img_max_x)/self.cm2inch*int(self.dpi) > 0 and int(self.img_max_y)/self.cm2inch*int(self.dpi) > 0:
@@ -279,7 +279,7 @@ class PageToDocPlugin(Component):
         for f in glob.glob(os.path.join(tempdir ,"*")):
             os.chmod(f, 0777)
 
-    # directory functions        
+    # directory functions
     def create_dir(self, dir):
         if not os.path.isdir(dir):
             os.mkdir(dir)
@@ -302,7 +302,7 @@ def dependency_failure(dependency, path, arguments):
     # verify that the dependency exists and is setup correctly
     # we expect the dependency to return 0 if it works OK
     if os.system("%s %s"% (path, arguments)):
-        error = ("%s could not be found or does not work." 
+        error = ("%s could not be found or does not work."
             " Path used: '%s'")% (dependency, path)
 
     return error
@@ -314,7 +314,7 @@ def raise_dependency_issue(message, req, env):
     exception_text = 'Dependencies not set correctly - ' \
         'please see the documentation at ' \
         'http://trac-hacks.org/wiki/PageToDocIntegration. ' \
-        'or contact your trac administrator.' 
+        'or contact your trac administrator.'
 
     # let the user know (add it to the warning banner)
     add_warning(req, message)

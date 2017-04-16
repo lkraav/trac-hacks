@@ -10,6 +10,3 @@ setup(name='PageToDoc',
       maintainer_email='mark.m.mcmahon@gmail.com',
       description='A plugin for exporting Wiki pages as filtered HTML for import into MS Word',
       entry_points={'trac.plugins': ['pagetodoc.pagetodoc=pagetodoc.pagetodoc']})
-
-
-
