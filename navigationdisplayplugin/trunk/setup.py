@@ -18,7 +18,7 @@ setup(
     author = 'Franz Mayer, Gefasoft AG',
     author_email = 'franz.mayer@gefasoft.de', 
     description = 'Adds user option for displaying navigation menu as fixed menu or other navigation options.',
-	license = "BSD 3-Clause",
+        license = "BSD 3-Clause",
     url = 'http://www.gefasoft-muenchen.de',
     download_url = 'http://trac-hacks.org/wiki/NavigationPlugin',
     packages=find_packages(exclude=['*.tests*']),

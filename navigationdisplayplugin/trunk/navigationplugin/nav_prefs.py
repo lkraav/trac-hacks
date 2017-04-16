@@ -19,43 +19,43 @@ _, tag_, N_, add_domain = \
 
 
 class NavigationPreferences(Component):
-    """This Component enables user to set her / his prefered navigation 
+    """This Component enables user to set her / his prefered navigation
 display."""
     implements(IPreferencePanelProvider, ITemplateProvider)
 
     def __init__(self):
-        # bind the 'tracnav' catalog to the locale directory 
-        locale_dir = resource_filename(__name__, 'locale') 
-        add_domain(self.env.path, locale_dir)    
-        
+        # bind the 'tracnav' catalog to the locale directory
+        locale_dir = resource_filename(__name__, 'locale')
+        add_domain(self.env.path, locale_dir)
+
     ## IPreferencePanelProvider methods
 
     def get_preference_panels(self, req):
 #        if req.authname and req.authname != 'anonymous':
-            yield 'navigation', _("Navigation")
+        yield 'navigation', _("Navigation")
 
     def render_preference_panel(self, req, panel):
         nav = Navigation(self.env)
         if panel == 'navigation':
             nav.save(req)
-            
+
         nav_choices = nav.get_display_choices()
         selected = {'display_nav': nav.get_display(req),
                     'wiki.href': nav.get_wiki_href(req),
                     'tickets.href': nav.get_ticket_href(req)}
-        system_defaults = {'display_nav': nav.get_system_default_display(), 
+        system_defaults = {'display_nav': nav.get_system_default_display(),
                            'wiki.href': nav.get_system_default_wiki_href(),
                            'tickets.href': nav.get_system_default_tickets_href()}
-        
+
         data = {'selected': selected,
                 'nav_choices': nav_choices,
                 'choices_doc': CHOICES_DOC,
                 'system_defaults': system_defaults}
         return 'prefs_display.html', data
-        
+
 
     # ITemplateProvider methods
-    
+
     def get_htdocs_dirs(self):
         """Return the absolute path of a directory containing additional
         static resources (such as images, style sheets, etc).
