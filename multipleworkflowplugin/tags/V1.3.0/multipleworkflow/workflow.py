@@ -170,7 +170,7 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         if not type_status:
             type_status = calc_status(get_workflow_config_default(self.config))
         if status not in type_status and (0, '_reset') not in allowed_actions:
-                allowed_actions.append((0, '_reset'))
+            allowed_actions.append((0, '_reset'))
         return allowed_actions
 
     def get_all_status_for_type(self, t_type):

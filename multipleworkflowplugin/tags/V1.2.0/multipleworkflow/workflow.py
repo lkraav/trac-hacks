@@ -69,7 +69,7 @@ def parse_workflow_config(rawactions):
 
 def get_workflow_config_default(config):
     """return the [ticket-workflow] session """
-    raw_actions = list(config.options('ticket-workflow')) 
+    raw_actions = list(config.options('ticket-workflow'))
     actions = parse_workflow_config(raw_actions)
     if '_reset' not in actions:
         actions['_reset'] = {
@@ -201,7 +201,7 @@ The ticket Workflow is now configurable.
 
 Your environment has been upgraded, but configured to use the original
 workflow. It is recommended that you look at changing this configuration to use
-basic-workflow. 
+basic-workflow.
 
 Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
 
@@ -256,7 +256,7 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
         if not type_status:
             type_status = self._calc_status(get_workflow_config_default(self.config))
         if status not in type_status and (0, '_reset') not in allowed_actions:
-                allowed_actions.append((0, '_reset'))
+            allowed_actions.append((0, '_reset'))
         return allowed_actions
 
 
@@ -370,7 +370,7 @@ Read TracWorkflow for more information (don't forget to 'wiki upgrade' as well)
                     id=id, name=id)]))
                 hints.append(_("The resolution will be set"))
         if 'leave_status' in operations:
-            control.append('as %s ' % ticket._old.get('status', 
+            control.append('as %s ' % ticket._old.get('status',
                                                       ticket['status']))
         else:
             if status != '*':
