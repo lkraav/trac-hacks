@@ -20,4 +20,3 @@ schema = [
     Index(['project']),
   ]
 ]
-
