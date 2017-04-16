@@ -19,7 +19,7 @@ from trac.util import TracError
 """
 PageVariable macro.
 This macro sets or gets a variable that is accessible throughout the entire page.
-	
+        
 Use: [[PageVariable(name,value)]]
 Name signifies the name of the parameter.
 Value signifies the value the parameter should be set to. 
@@ -27,24 +27,24 @@ If a value is supplied, this macro returns an empty string. When trying to set a
 If the parameter value is ommitted, the currently known value is returned. If no value is known, an error is raised.
 """
 def execute(hdf, args, env):
-	arguments = args.split(',')
-	if len(arguments) == 1:
-		return getValue(hdf,arguments[0])
-	else: 
-		if len(arguments) == 2:
-			setValue(hdf,arguments[0],arguments[1])
-			return ''
-		else:
-			return 'ERROR: Invalid number of arguments supplied to PageVariable macro: ' + str(arguments)
+    arguments = args.split(',')
+    if len(arguments) == 1:
+        return getValue(hdf,arguments[0])
+    else: 
+        if len(arguments) == 2:
+            setValue(hdf,arguments[0],arguments[1])
+            return ''
+        else:
+            return 'ERROR: Invalid number of arguments supplied to PageVariable macro: ' + str(arguments)
 
 def getValue(hdf,name):
-	if hdf.has_key(name):
-		return hdf[name]
-	else:
-		return 'ERROR: Variable ' +name+ ' not declared'
+    if hdf.has_key(name):
+        return hdf[name]
+    else:
+        return 'ERROR: Variable ' +name+ ' not declared'
 
 def setValue(hdf,name,value):
-	if hdf.has_key(name):
-		return 'ERROR: Variable ' +name+ ' already set or present in the url'
-	else:
-		hdf[name] = value
+    if hdf.has_key(name):
+        return 'ERROR: Variable ' +name+ ' already set or present in the url'
+    else:
+        hdf[name] = value

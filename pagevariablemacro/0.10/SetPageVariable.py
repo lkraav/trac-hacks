@@ -19,7 +19,7 @@ from trac.util import TracError
 """
 SetPageVariable macro.
 This macro sets a variable that is accessible throughout the entire page with the GetPageVariable macro.
-	
+        
 Use: [[SetPageVariable(name,value)]]
 Name signifies the name of the parameter.
 Value signifies the value the parameter should be set to. 
@@ -27,15 +27,15 @@ If a value is supplied, this macro returns an empty string. When trying to set a
 If the parameter value is ommitted, the currently known value is returned. If no value is known, an error is raised.
 """
 def execute(hdf, args, env):
-	arguments = args.split(',')
-	if len(arguments) == 2:
-		setValue(hdf,arguments[0],arguments[1])
-		return ''
-	else:
-		return 'ERROR: Invalid number of arguments supplied to SetPageVariable macro: ' + str(arguments)
+    arguments = args.split(',')
+    if len(arguments) == 2:
+        setValue(hdf,arguments[0],arguments[1])
+        return ''
+    else:
+        return 'ERROR: Invalid number of arguments supplied to SetPageVariable macro: ' + str(arguments)
 
 def setValue(hdf,name,value):
-	if hdf.has_key(name):
-		return 'ERROR: Variable ' +name+ ' already set or present in the url'
-	else:
-		hdf[name] = value
+    if hdf.has_key(name):
+        return 'ERROR: Variable ' +name+ ' already set or present in the url'
+    else:
+        hdf[name] = value
