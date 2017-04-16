@@ -24,7 +24,7 @@ Paul Baranowski (paul@paulbaranowski.org)
 Based on bugzilla2trac.py by these guys (thank you!):
 Dmitry Yusupov <dmitry_yus@yahoo.com> - bugzilla2trac.py
 Mark Rowe <mrowe@bluewire.net.nz> - original TracDatabase class
-Bill Soudan <bill@soudan.net> - Many enhancements 
+Bill Soudan <bill@soudan.net> - Many enhancements
 
 Example use:
   python mantis2trac.py --db mantis --tracenv /usr/local/trac-projects/myproj/ \
@@ -41,14 +41,14 @@ Changes since version 1.2:
   - added working status->keyword migration for statuses that don't have exact Trac equivalents
 
 Changes since version 1.1:
-  - Made it work against Trac running on MySQL (specifically, changes to the 
+  - Made it work against Trac running on MySQL (specifically, changes to the
     LAST_INSERT_ID() call on line 382 (in the addTicket function))
   - Couple of bugfixes
   - Works fine against 10.2
   - Modified to allow specifying product list on command line
   - Modified to migrate database-stored mantis attachments correctly.
-      Nota Bene!!! The script requires write access to the attachments 
-      directory of the trac env. So, suggested sequence of actions: 
+      Nota Bene!!! The script requires write access to the attachments
+      directory of the trac env. So, suggested sequence of actions:
         - chmod -R 777 /usr/local/trac-projects/myproj/attachments/
         - run the script
         - chown -R apache /usr/local/trac-projects/myproj/attachments/
@@ -62,33 +62,33 @@ Changes since version 1.0:
 
 Notes:
   - Private bugs will become public
-  - Some ticket changes will not be preserved since they have no 
+  - Some ticket changes will not be preserved since they have no
     equivalents in Trac.
   - I consider milestones and versions to be the same thing (actually,
-    I dont really care about the version, because for our project, bugs are 
+    I dont really care about the version, because for our project, bugs are
     only in the 'previous version').
-  - Importing attachments is not implemented (couldnt get it to work, 
+  - Importing attachments is not implemented (couldnt get it to work,
     and we didnt have enough attachments to justify spending time on this)
     "Clean" will not delete your existing attachments.  There is code in here
-    to support adding attachments, but you will have to play with it to 
+    to support adding attachments, but you will have to play with it to
     make it work.  If you search for the word "attachment" you will find
     all the code related to this.
   - Ticket descriptions & comments will be re-wrapped to 70 characters.
     This may mess up your formatting for your bugs.  If you dont want to do
     this, search for textwrap.fill() and fix it.
-  - You will probably want to change "report.css" in trac to handle one more 
+  - You will probably want to change "report.css" in trac to handle one more
     level of priorities (default trac has 6 levels of priorities, while Mantis
     has 7).  When you look at your reports, the color schemes will look wrong.
-    
+
     The lines that control the priority color scheme look like this:
     #tktlist tr.color1-odd  { background: #fdc; border-color: #e88; color: #a22 }
     #tktlist tr.color1-even { background: #fed; border-color: #e99; color: #a22 }
-    
-    I added a new level 2 ("urgent") with an orange color, 
+
+    I added a new level 2 ("urgent") with an orange color,
     and incremented all the rest of the levels:
     #tktlist tr.color2-odd  { background: #FFE08F; border-color: #e88; color: #a22 }
     #tktlist tr.color2-even { background: #FFE59F; border-color: #e99; color: #a22 }
-    
+
 """
 from urllib import quote
 import datetime
@@ -98,7 +98,7 @@ import time
 ### Conversion Settings -- edit these before running if desired
 ###
 
-# Mantis version.  
+# Mantis version.
 #
 # Currently, the following mantis versions are known to work:
 #   0.19.X
@@ -107,7 +107,7 @@ import time
 # please report it to the Trac mailing list so we can update the list.
 MANTIS_VERSION = '0.19'
 
-# MySQL connection parameters for the Mantis database.  These can also 
+# MySQL connection parameters for the Mantis database.  These can also
 # be specified on the command line.
 MANTIS_DB = 'mantis'
 MANTIS_HOST = 'localhost'
@@ -117,11 +117,11 @@ MANTIS_PASSWORD = ''
 # Path to the Trac environment.
 TRAC_ENV = ''
 
-# If true, all existing Trac tickets will be removed 
+# If true, all existing Trac tickets will be removed
 # prior to import.
 TRAC_CLEAN = True
 
-# Enclose imported ticket description and comments in a {{{ }}} 
+# Enclose imported ticket description and comments in a {{{ }}}
 # preformat block?  This formats the text in a fixed-point font.
 PREFORMAT_COMMENTS = False
 
@@ -145,13 +145,13 @@ IGNORE_COMMENTS = [
 ]
 
 # Ticket changes in Trac have the restriction where the
-# bug ID, field, and time must be unique for all entries in the ticket 
+# bug ID, field, and time must be unique for all entries in the ticket
 # changes table.
-# Mantis, for unknown reasons, has fields that can change two states 
+# Mantis, for unknown reasons, has fields that can change two states
 # in under a second (e.g. "milestone":""->"1.0", "milestone":"1.0"->"2.0").
-# Setting this to true will attempt to fix these cases by adjusting the 
+# Setting this to true will attempt to fix these cases by adjusting the
 # time for the 2nd change to be one second more than the original time.
-# I dont know why you'd want to turn this off, but I give you the option 
+# I dont know why you'd want to turn this off, but I give you the option
 # anyhow. :)
 TIME_ADJUSTMENT_HACK = True
 
@@ -173,17 +173,17 @@ IGNORE_VERSION = True
 STATUS_TRANSLATE = {
   10 : 'new',      # 10 == 'new' in mantis
   20 : 'assigned', # 20 == 'feedback'
-  30 : 'new',      # 30 == 'acknowledged' 
+  30 : 'new',      # 30 == 'acknowledged'
   40 : 'new',      # 40 == 'confirmed'
-  50 : 'assigned', # 50 == 'assigned' 
+  50 : 'assigned', # 50 == 'assigned'
   60 : 'assigned', # 60 == 'QA'
-  80 : 'closed',   # 80 == 'resolved' 
+  80 : 'closed',   # 80 == 'resolved'
   90 : 'closed'    # 90 == 'closed'
 }
 
 # Unused:
-# Translate Mantis statuses into Trac keywords.  This provides a way 
-# to retain the Mantis statuses in Trac.  e.g. when a bug is marked 
+# Translate Mantis statuses into Trac keywords.  This provides a way
+# to retain the Mantis statuses in Trac.  e.g. when a bug is marked
 # 'verified' in Mantis it will be assigned a VERIFIED keyword.
 # STATUS_KEYWORDS = {
 #     'confirmed' : 'CONFIRMED',
@@ -213,21 +213,21 @@ RESOLUTION_TRANSLATE = {
 }
 
 # Mantis severities (which will also become equivalent Trac severities)
-##SEVERITY_LIST = (('block', '80'), 
-##                 ('crash', '70'), 
-##                 ('major', '60'), 
+##SEVERITY_LIST = (('block', '80'),
+##                 ('crash', '70'),
+##                 ('major', '60'),
 ##                 ('minor', '50'),
-##                 ('tweak', '40'), 
-##                 ('text', '30'), 
-##                 ('trivial', '20'), 
+##                 ('tweak', '40'),
+##                 ('text', '30'),
+##                 ('trivial', '20'),
 ##                 ('feature', '10'))
-SEVERITY_LIST = (('block', '1'), 
-                 ('crash', '2'), 
-                 ('major', '3'), 
+SEVERITY_LIST = (('block', '1'),
+                 ('crash', '2'),
+                 ('major', '3'),
                  ('minor', '4'),
-                 ('tweak', '5'), 
-                 ('text', '6'), 
-                 ('trivial', '7'), 
+                 ('tweak', '5'),
+                 ('text', '6'),
+                 ('trivial', '7'),
                  ('feature', '8'))
 
 # Translate severity numbers into their text equivalents
@@ -243,26 +243,26 @@ SEVERITY_TRANSLATE = {
 }
 
 # Mantis priorities (which will also become Trac priorities)
-##PRIORITY_LIST = (('immediate', '60'), 
-##                 ('urgent', '50'), 
-##                 ('high', '40'), 
-##                 ('normal', '30'), 
-##                 ('low', '20'), 
+##PRIORITY_LIST = (('immediate', '60'),
+##                 ('urgent', '50'),
+##                 ('high', '40'),
+##                 ('normal', '30'),
+##                 ('low', '20'),
 ##                 ('none', '10'))
-PRIORITY_LIST = (('immediate', '1'), 
-                 ('urgent', '2'), 
-                 ('high', '3'), 
-                 ('normal', '4'), 
-                 ('low', '5'), 
+PRIORITY_LIST = (('immediate', '1'),
+                 ('urgent', '2'),
+                 ('high', '3'),
+                 ('normal', '4'),
+                 ('low', '5'),
                  ('none', '6'))
 
 # Translate priority numbers into their text equivalent
 PRIORITY_TRANSLATE = {
-    60 : 'immediate', 
-    50 : 'urgent', 
+    60 : 'immediate',
+    50 : 'urgent',
     40 : 'high',
-    30 : 'normal', 
-    20 : 'low', 
+    30 : 'normal',
+    20 : 'low',
     10 : 'none'
 }
 
@@ -297,14 +297,14 @@ class Attachment:
     def __init__(self, name, data):
         self.filename = name
         self.file = StringIO.StringIO(data.tostring())
-  
+
 # simple field translation mapping.  if string not in
 # mapping, just return string, otherwise return value
 class FieldTranslator(dict):
     def __getitem__(self, item):
         if not dict.has_key(self, item):
             return item
-            
+
         return dict.__getitem__(self, item)
 
 statusXlator = FieldTranslator(STATUS_TRANSLATE)
@@ -316,10 +316,10 @@ class TracDatabase(object):
         self._db.autocommit = False
         self.loginNameCache = {}
         self.fieldNameCache = {}
-    
+
     def db(self):
         return self._db
-    
+
     def hasTickets(self):
         c = self.db().cursor()
         c.execute('''SELECT count(*) FROM ticket''')
@@ -328,11 +328,11 @@ class TracDatabase(object):
     def assertNoTickets(self):
         if self.hasTickets():
             raise Exception("Will not modify database with existing tickets!")
-    
+
     def setSeverityList(self, s):
         """Remove all severities, set them to `s`"""
         self.assertNoTickets()
-        
+
         c = self.db().cursor()
         c.execute("""DELETE FROM enum WHERE type='severity'""")
         for value, i in s:
@@ -340,11 +340,11 @@ class TracDatabase(object):
             c.execute("""INSERT INTO enum (type, name, value) VALUES (%s, %s, %s)""",
                       ("severity", value.encode('utf-8'), i,))
         self.db().commit()
-    
+
     def setPriorityList(self, s):
         """Remove all priorities, set them to `s`"""
         self.assertNoTickets()
-        
+
         c = self.db().cursor()
         c.execute("""DELETE FROM enum WHERE type='priority'""")
         for value, i in s:
@@ -353,11 +353,11 @@ class TracDatabase(object):
                       ("priority", value.encode('utf-8'), i,))
         self.db().commit()
 
-    
+
     def setComponentList(self, l, key):
         """Remove all components, set them to `l`"""
         self.assertNoTickets()
-        
+
         c = self.db().cursor()
         c.execute("""DELETE FROM component""")
         for comp in l:
@@ -365,11 +365,11 @@ class TracDatabase(object):
             c.execute("""INSERT INTO component (name, owner) VALUES (%s, %s)""",
                       (comp[key].encode('utf-8'), comp['owner'].encode('utf-8'),))
         self.db().commit()
-    
+
     def setVersionList(self, v, key):
         """Remove all versions, set them to `v`"""
         self.assertNoTickets()
-        
+
         c = self.db().cursor()
         c.execute("""DELETE FROM version""")
         for vers in v:
@@ -377,11 +377,11 @@ class TracDatabase(object):
             c.execute("""INSERT INTO version (name) VALUES (%s)""",
                       (vers[key].encode('utf-8'),))
         self.db().commit()
-        
+
     def setMilestoneList(self, m, key):
         """Remove all milestones, set them to `m`"""
         self.assertNoTickets()
-        
+
         c = self.db().cursor()
         c.execute("""DELETE FROM milestone""")
         for ms in m:
@@ -389,19 +389,19 @@ class TracDatabase(object):
             c.execute("""INSERT INTO milestone (name) VALUES (%s)""",
                       (ms[key].encode('utf-8'),))
         self.db().commit()
-    
+
     def addTicket(self, id, time, changetime, component,
                   severity, priority, owner, reporter, cc,
                   version, milestone, status, resolution,
                   summary, description, keywords):
         c = self.db().cursor()
         if IGNORE_VERSION:
-          version=''
-        
+            version=''
+
         desc = description.encode('utf-8')
-        
+
         if PREFORMAT_COMMENTS:
-          desc = '{{{\n%s\n}}}' % desc
+            desc = '{{{\n%s\n}}}' % desc
 
         print "inserting ticket %s -- \"%s\"" % (id, summary[0:40].replace("\n", " "))
         c.execute("""INSERT INTO ticket (id, time, changetime, component,
@@ -418,7 +418,7 @@ class TracDatabase(object):
                   summary.encode('utf-8'), desc, keywords))
 
         self.db().commit()
-        
+
         ## TODO: add database-specific methods to get the last inserted ticket's id...
         ## PostgreSQL:
         # c.execute('''SELECT currval("ticket_id_seq")''')
@@ -431,13 +431,13 @@ class TracDatabase(object):
 
     def convertTime(self,time2):
         return time.mktime(time2.timetuple())+1e-6*time2.microsecond
-    
+
     def addTicketComment(self, ticket, time, author, value):
         print " * adding comment \"%s...\"" % value[0:40]
         comment = value.encode('utf-8')
-        
+
         if PREFORMAT_COMMENTS:
-          comment = '{{{\n%s\n}}}' % comment
+            comment = '{{{\n%s\n}}}' % comment
 
         c = self.db().cursor()
         c.execute("""INSERT INTO ticket_change (ticket, time, author, field, oldvalue, newvalue)
@@ -446,8 +446,8 @@ class TracDatabase(object):
         self.db().commit()
 
     def addTicketChange(self, ticket, time, author, field, oldvalue, newvalue):
-        if (field[0:4]=='doba'): 
-          return
+        if (field[0:4]=='doba'):
+            return
 
         print " * adding ticket change \"%s\": \"%s\" -> \"%s\" (%s)" % (field, oldvalue[0:20], newvalue[0:20], time)
         c = self.db().cursor()
@@ -458,15 +458,15 @@ class TracDatabase(object):
         # Now actually change the ticket because the ticket wont update itself!
         sql = "UPDATE ticket SET %s='%s' WHERE id=%s" % (field, newvalue, ticket)
         c.execute(sql)
-        self.db().commit()        
-        
+        self.db().commit()
+
     # unused in 1.2
     def addAttachment(self, id, attachment, description, author):
         print 'inserting attachment for ticket %s -- %s' % (id, description)
         attachment.filename = attachment.filename.encode('utf-8')
         self.env.create_attachment(self.db(), 'ticket', str(id), attachment, description.encode('utf-8'),
             author, 'unknown')
-        
+
     def getLoginName(self, cursor, userid):
         if userid not in self.loginNameCache:
             cursor.execute("SELECT username,email,realname,last_visit FROM mantis_user_table WHERE id = %i" % int(userid))
@@ -480,26 +480,26 @@ class TracDatabase(object):
                 # check if user is already in the sessions table
                 c.execute("SELECT sid FROM session WHERE sid = '%s'" % result[0]['username'].encode('utf-8'))
                 r = c.fetchall()
-                
+
                 # if there was no user sid in the database already
                 if not r:
                     # pre-populate the session table and the realname/email table with user data
                     try:
                         c.execute(
-                        """INSERT INTO session 
-                            (sid, authenticated, last_visit) 
+                        """INSERT INTO session
+                            (sid, authenticated, last_visit)
                         VALUES (%s, %s, %s)""",(result[0]['username'].encode('utf-8'), '1', self.convertTime(result[0]['last_visit'])))
                     except:
                         print 'failed executing sql: '
-                        print """INSERT INTO session 
-                            (sid, authenticated, last_visit) 
+                        print """INSERT INTO session
+                            (sid, authenticated, last_visit)
                         VALUES """, (result[0]['username'].encode('utf-8'), '1', self.convertTime(result[0]['last_visit']))
                         print 'could not insert %s into sessions table: sql error %s ' % (loginName, self.db().error())
                     self.db().commit()
-                
+
                     # insert the user's real name into session attribute table
                     c.execute(
-                        """INSERT INTO session_attribute 
+                        """INSERT INTO session_attribute
                             (sid, authenticated, name, value)
                         VALUES
                             (%s, %s, %s, %s)""", (result[0]['username'].encode('utf-8'), '1', 'name', result[0]['realname'].encode('utf-8')))
@@ -507,7 +507,7 @@ class TracDatabase(object):
 
                     # insert the user's email into session attribute table
                     c.execute(
-                        """INSERT INTO session_attribute 
+                        """INSERT INTO session_attribute
                             (sid, authenticated, name, value)
                         VALUES
                             (%s, %s, %s, %s)""", (result[0]['username'].encode('utf-8'), '1', 'email', result[0]['email'].encode('utf-8')))
@@ -522,7 +522,7 @@ class TracDatabase(object):
 
     def get_attachments_dir(self,bugid=0):
         if bugid > 0:
-            return self.env.path + 'attachments/ticket/%i/' % bugid        
+            return self.env.path + 'attachments/ticket/%i/' % bugid
         else:
             return self.env.path + 'attachments/ticket/'
 
@@ -549,7 +549,7 @@ def productFilter(fieldName, products):
     first = True
     result = ''
     for product in products:
-        if not first: 
+        if not first:
             result += " or "
         first = False
         result += "%s = '%s'" % (fieldName, product)
@@ -566,8 +566,8 @@ def convert(_db, _host, _user, _password, _env, _force):
 
     # init Mantis environment
     print "Mantis MySQL('%s':'%s':'%s':'%s'): connecting..." % (_db, _host, _user, _password)
-    mysql_con = MySQLdb.connect(host=_host, 
-                user=_user, passwd=_password, db=_db, compress=1, 
+    mysql_con = MySQLdb.connect(host=_host,
+                user=_user, passwd=_password, db=_db, compress=1,
                 cursorclass=MySQLdb.cursors.DictCursor, use_unicode=1)
     mysql_cur = mysql_con.cursor()
 
@@ -599,7 +599,7 @@ def convert(_db, _host, _user, _password, _env, _force):
     for project_id in project_list:
         print "Mantis project name '%s' has project ID %s" % (project_id['name'], project_id['id'])
         project_dict[project_id['id']] = project_id['id']
-        
+
     print
     print "1. import severities..."
     trac.setSeverityList(SEVERITY_LIST)
@@ -608,7 +608,7 @@ def convert(_db, _host, _user, _password, _env, _force):
     print "2. import components..."
     sql = "SELECT category, user_id as owner FROM mantis_project_category_table"
     if PRODUCTS:
-       sql += " WHERE %s" % productFilter('project_id', project_dict)
+        sql += " WHERE %s" % productFilter('project_id', project_dict)
     print "sql: %s" % sql
     mysql_cur.execute(sql)
     components = mysql_cur.fetchall()
@@ -624,7 +624,7 @@ def convert(_db, _host, _user, _password, _env, _force):
     print "4. import versions..."
     sql = "SELECT DISTINCTROW version FROM mantis_project_version_table"
     if PRODUCTS:
-       sql += " WHERE %s" % productFilter('project_id', project_dict)
+        sql += " WHERE %s" % productFilter('project_id', project_dict)
     mysql_cur.execute(sql)
     versions = mysql_cur.fetchall()
     trac.setVersionList(versions, 'version')
@@ -633,7 +633,7 @@ def convert(_db, _host, _user, _password, _env, _force):
     print "5. import milestones..."
     sql = "SELECT version FROM mantis_project_version_table"
     if PRODUCTS:
-       sql += " WHERE %s" % productFilter('project_id', project_dict)
+        sql += " WHERE %s" % productFilter('project_id', project_dict)
     mysql_cur.execute(sql)
     milestones = mysql_cur.fetchall()
     trac.setMilestoneList(milestones, 'version')
@@ -642,11 +642,11 @@ def convert(_db, _host, _user, _password, _env, _force):
     print '6. retrieving bugs...'
     sql = "SELECT * FROM mantis_bug_table "
     if PRODUCTS:
-       sql += " WHERE %s" % productFilter('project_id', project_dict)
+        sql += " WHERE %s" % productFilter('project_id', project_dict)
     sql += " ORDER BY id"
     mysql_cur.execute(sql)
     bugs = mysql_cur.fetchall()
-    
+
     print
     print "7. import bugs and bug activity..."
     totalComments = 0
@@ -656,7 +656,7 @@ def convert(_db, _host, _user, _password, _env, _force):
     timeAdjustmentHacks = []
     for bug in bugs:
         bugid = bug['id']
-        
+
         ticket = {}
         keywords = []
         ticket['id'] = bugid
@@ -669,22 +669,22 @@ def convert(_db, _host, _user, _password, _env, _force):
         ticket['reporter'] = trac.getLoginName(mysql_cur, bug['reporter_id'])
         ticket['version'] = bug['version']
         if IGNORE_VERSION:
-          ticket['version'] = ''
+            ticket['version'] = ''
         ticket['milestone'] = bug['version']
         ticket['summary'] = bug['summary']
         ticket['status'] = STATUS_TRANSLATE[bug['status']]
         ticket['cc'] = ''
         ticket['keywords'] = ''
 
-        # Special case for 'reopened' resolution in mantis - 
+        # Special case for 'reopened' resolution in mantis -
         # it maps to a status type in Trac.
         if (bug['resolution'] == 30):
             ticket['status'] = 'reopened'
         ticket['resolution'] = RESOLUTION_TRANSLATE[bug['resolution']]
-        
+
         # Compose the description from the three text fields in Mantis:
         # 'description', 'steps_to_reproduce', 'additional_information'
-        mysql_cur.execute("SELECT * FROM mantis_bug_text_table WHERE id = %s" % bug['bug_text_id']) 
+        mysql_cur.execute("SELECT * FROM mantis_bug_text_table WHERE id = %s" % bug['bug_text_id'])
         longdescs = list(mysql_cur.fetchall())
 
         # check for empty 'longdescs[0]' field...
@@ -693,15 +693,15 @@ def convert(_db, _host, _user, _password, _env, _force):
         else:
             tmpDescr = longdescs[0]['description']
             if (longdescs[0]['steps_to_reproduce'].strip() != ''):
-               tmpDescr = ('%s\n\nSTEPS TO REPRODUCE:\n%s') % (tmpDescr, longdescs[0]['steps_to_reproduce'])
+                tmpDescr = ('%s\n\nSTEPS TO REPRODUCE:\n%s') % (tmpDescr, longdescs[0]['steps_to_reproduce'])
             if (longdescs[0]['additional_information'].strip() != ''):
-               tmpDescr = ('%s\n\nADDITIONAL INFORMATION:\n%s') % (tmpDescr, longdescs[0]['additional_information'])
+                tmpDescr = ('%s\n\nADDITIONAL INFORMATION:\n%s') % (tmpDescr, longdescs[0]['additional_information'])
             ticket['description'] = tmpDescr
             del longdescs[0]
 
         # Add the ticket to the Trac database
         trac.addTicket(**ticket)
-        
+
         #
         # Add ticket comments
         #
@@ -743,7 +743,7 @@ def convert(_db, _host, _user, _password, _env, _force):
             #  - 'fixed_in_version' -> 'milestone'
             #  - 'category' -> 'component'
             #  - 'version' -> 'milestone'
-            
+
             ticketChange = {}
             ticketChange['ticket'] = bugid
             ticketChange['oldvalue'] = activity['old_value']
@@ -754,7 +754,7 @@ def convert(_db, _host, _user, _password, _env, _force):
 
             add_keywords = []
             remove_keywords = []
-            
+
             if field_name == 'handler_id':
                 ticketChange['field'] = 'owner'
                 ticketChange['oldvalue'] = trac.getLoginName(mysql_cur, int(activity['old_value']))
@@ -772,7 +772,7 @@ def convert(_db, _host, _user, _password, _env, _force):
                     remove_keywords.append(STATUS_KEYWORDS[int(activity['old_value'])])
                 if int(activity['new_value']) in STATUS_KEYWORDS:
                     add_keywords.append(STATUS_KEYWORDS[int(activity['new_value'])])
-                
+
             elif field_name == 'priority':
                 ticketChange['oldvalue'] = PRIORITY_TRANSLATE[int(activity['old_value'])]
                 ticketChange['newvalue'] = PRIORITY_TRANSLATE[int(activity['new_value'])]
@@ -781,7 +781,7 @@ def convert(_db, _host, _user, _password, _env, _force):
                 ticketChange['newvalue'] = RESOLUTION_TRANSLATE[int(activity['new_value'])]
             elif field_name == 'severity':
                 ticketChange['oldvalue'] = SEVERITY_TRANSLATE[int(activity['old_value'])]
-                ticketChange['newvalue'] = SEVERITY_TRANSLATE[int(activity['new_value'])]            
+                ticketChange['newvalue'] = SEVERITY_TRANSLATE[int(activity['new_value'])]
 
             if add_keywords or remove_keywords:
                 # ensure removed ones are in old
@@ -796,14 +796,14 @@ def convert(_db, _host, _user, _password, _env, _force):
                     ticketChangeKw['oldvalue'] = ' '.join(old_keywords)
                     ticketChangeKw['newvalue'] = ' '.join(keywords)
                     ticketChanges.append(ticketChangeKw)
-                                
+
             if field_name in IGNORED_ACTIVITY_FIELDS:
                 continue
 
             # skip changes that have no effect (think translation!)
             if ticketChange['oldvalue'] == ticketChange['newvalue']:
                 continue
-                
+
             ticketChanges.append (ticketChange)
 
         totalTicketChanges += len(ticketChanges)
@@ -830,7 +830,7 @@ def convert(_db, _host, _user, _password, _env, _force):
                     errorStr += "\n          The bug id, field name, and time must be unique"
                     errors.append(errorStr)
                     print errorStr
-                
+
 
         #
         # Add ticket file attachments
@@ -857,8 +857,8 @@ def convert(_db, _host, _user, _password, _env, _force):
                             errorStr = " * ERROR: couldnt create attachment directory in filesystem at %s" % trac.get_attachments_dir(bugid)
                             errors.append(errorStr)
                             print errorStr
-                    # trac stores the files with the special characters like spaces in the filename encoded to the url 
-                    # equivalents, so we have to urllib.quote() the filename we're saving. 
+                    # trac stores the files with the special characters like spaces in the filename encoded to the url
+                    # equivalents, so we have to urllib.quote() the filename we're saving.
                     attachmentFile = open(trac.get_attachments_dir(bugid) + quote(attachment['filename']),'wb')
                     attachmentFile.write(attachment['content'])
                     attachmentFile.close()
@@ -893,7 +893,7 @@ def convert(_db, _host, _user, _password, _env, _force):
         print "Some errors occurred while importing:"
         for error in errors:
             print error
-    else: 
+    else:
         print "Success!"
     print
     print "Total tickets imported: %d" % len(bugs)
@@ -959,7 +959,7 @@ def main():
             iter = iter + 1
     else:
         usage()
-        
+
     convert(MANTIS_DB, MANTIS_HOST, MANTIS_USER, MANTIS_PASSWORD, TRAC_ENV, TRAC_CLEAN)
 
 if __name__ == '__main__':
