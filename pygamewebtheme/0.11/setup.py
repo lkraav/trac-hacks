@@ -34,7 +34,7 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
-    
+
     install_requires = ['Trac'],
 
     entry_points = {

@@ -9,7 +9,7 @@ class PygamewebTheme(ThemeBase):
     """A theme for Trac based on the new http://pygame.org/."""
 
     template = htdocs = css = screenshot = True
-    
+
     colors = [
         ('text', 'color', 'body, .milestone .info h2 *:link, .milestone .info h2 *:visited'),
         ('menubar_bg', 'background-color', '#menubar'),
@@ -20,7 +20,7 @@ class PygamewebTheme(ThemeBase):
         ('submenu_hover', 'color', '#submenu a:hover'),
         ('submenu_active', 'color', '#submenu .active :link, #submenu .active :visited')
     ]
-    
+
     schemes = [
         ('default', {
             'text': '#000000',
@@ -36,7 +36,7 @@ class PygamewebTheme(ThemeBase):
 
 class PygamewebRetroTheme(ThemeBase):
     """A theme for Trac based on the new http://pygame.org/."""
-    
+
     template = htdocs = css = True
-    
+
     #disable_trac_css = True
