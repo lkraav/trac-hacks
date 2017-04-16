@@ -52,9 +52,9 @@ class Macro(Component):
     implements(IWikiMacroProvider)
 
     def get_macros(self):
-            yield "SiblingPage"
-            yield "PreviousPage"
-            yield "NextPage"
+        yield "SiblingPage"
+        yield "PreviousPage"
+        yield "NextPage"
 
     def get_macro_description(self, name):
         return "Generate Previous / Next Page link in place\n" \
