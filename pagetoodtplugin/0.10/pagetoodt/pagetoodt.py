@@ -10,7 +10,7 @@ try:
     import xml.etree.cElementTree as ElementTree
 except:
     # python 2.4
-    import cElementTree as ElementTree 
+    import cElementTree as ElementTree
 
 import os
 import re
@@ -34,7 +34,7 @@ class PageToODTPlugin(Component):
         self.load_conf()
         archive = zipfile.ZipFile(self.template_filename, 'r')
 
-	out = StringIO()
+        out = StringIO()
         out_arc = zipfile.ZipFile(out, 'w')
 
         for fileinfo in archive.infolist():
@@ -65,7 +65,7 @@ class PageToODTPlugin(Component):
         for (text,) in cursor:
             page_content = text
             break
-        
+
         for line in page_content.strip().splitlines():
             if line.find('=') != -1:
                 name, value = [token.strip()
@@ -99,6 +99,6 @@ class PageToODTPlugin(Component):
             text.append(node)
 
         return ElementTree.tostring(document_content)
-            
+
 
 #vim: tabstop=4 shiftwidth=4 expandtab

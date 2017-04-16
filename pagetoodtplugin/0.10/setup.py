@@ -11,4 +11,4 @@ setup(name='TracPageToODT',
       description='A plugin for exporting Wiki pages as Open Documents',
       url='http://trac-hacks.org/wiki/PageToOdtPlugin',
       entry_points={'trac.plugins':
-     	 ['pagetoodt.pagetoodt=pagetoodt.pagetoodt']})
+         ['pagetoodt.pagetoodt=pagetoodt.pagetoodt']})
