@@ -11,7 +11,7 @@ setup (
     description = 'LDAP extensions for Trac 0.10',
     author = 'Emmanuel Blot',
     author_email = 'emmanuel.blot@free.fr',
-    license='BSD', 
+    license='BSD',
     url='http://trac-hacks.org/wiki/LdapPlugin',
     keywords = "trac ldap permission group acl",
     packages = find_packages(exclude=['ez_setup', '*.tests*']),

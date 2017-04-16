@@ -216,7 +216,7 @@ class LdapPermissionStore(Component):
             self._update_cache_actions(username, actions)
         perms = {}
         for action in actions:
-                perms[action] = True
+            perms[action] = True
         return perms
 
     def get_users_with_permissions(self, permissions):

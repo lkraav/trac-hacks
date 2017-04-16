@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # LDAP permission extension tests for Trac
-# 
+#
 # Copyright (C) 2003-2006 Edgewall Software
 # Copyright (C) 2005-2006 Emmanuel Blot <emmanuel.blot@free.fr>
 # All rights reserved.
@@ -86,4 +86,3 @@ def suite():
 
 if __name__ == '__main__':
     unittest.main()
-

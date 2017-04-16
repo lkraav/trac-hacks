@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # LDAP permission extensions for Trac
-# 
+#
 # Copyright (C) 2003-2006 Edgewall Software
 # Copyright (C) 2005-2006 Emmanuel Blot <emmanuel.blot@free.fr>
 # All rights reserved.
@@ -15,7 +15,7 @@
 # history and logs, available at http://projects.edgewall.com/trac/.
 #
 # Warning: this plug in has not been extensively tested, and may have security
-# issues. Do not use this plugin on production servers where security is 
+# issues. Do not use this plugin on production servers where security is
 # a concern.
 # Requires Python-LDAP, available from http://python-ldap.sourceforge.net
 #
@@ -28,7 +28,7 @@ from trac.core import *
 from trac.perm import IPermissionGroupProvider, IPermissionStore
 from trac.config import _TRUE_VALUES
 
-LDAP_MODULE_CONFIG = [ 'enable', 'permfilter', 
+LDAP_MODULE_CONFIG = [ 'enable', 'permfilter',
                        'global_perms', 'manage_groups'
                        'cache_ttl', 'cache_size',
                        'group_bind', 'store_bind',
@@ -38,7 +38,7 @@ LDAP_DIRECTORY_PARAMS = [ 'host', 'port', 'use_tls', 'basedn',
                           'bind_user', 'bind_passwd',
                           'groupname', 'groupmember', 'groupmemberisdn',
                           'groupattr', 'uidattr', 'permattr']
-                          
+
 GROUP_PREFIX = '@'
 
 # regular expression to explode a DN into a (attr, rdn, basedn)
@@ -68,28 +68,28 @@ class LdapPermissionGroupProvider(Component):
         # max time to live for a cache entry
         self._cache_ttl = int(self.config.get('ldap', 'cache_ttl', str(15*60)))
         # max cache entries
-        self._cache_size = min(25, int(self.config.get('ldap', 'cache_size', 
+        self._cache_size = min(25, int(self.config.get('ldap', 'cache_size',
                                                        '100')))
 
     # IPermissionProvider interface
 
     def get_permission_groups(self, username):
-        """Return a list of names of the groups that the user with the 
+        """Return a list of names of the groups that the user with the
         specified name is a member of."""
 
         # anonymous and authenticated groups are set with the default provider
         groups = []
         if not self.enabled:
             return groups
-                        
+
         # stores the current time for the request (used for the cache)
         current_time = time.time()
-        
+
         # test for if username in the cache
         if username in self._cache:
             # cache hit
             lut, groups = self._cache[username]
-        
+
             # ensures that the cache is not too old
             if current_time < lut+self._cache_ttl:
                 # sources the cache
@@ -98,13 +98,13 @@ class LdapPermissionGroupProvider(Component):
                 self.env.log.debug('cached (%s): %s' % \
                                    (username, ','.join(groups)))
                 return groups
-        
+
         # cache miss (either not found or too old)
         if not self._ldap:
             # new LDAP connection
             bind = self.config.getbool('ldap', 'group_bind')
             self._ldap = LdapConnection(self.env.log, bind, **self._ldapcfg)
-        
+
         # retrieves the user groups from LDAP
         ldapgroups = self._get_user_groups(username)
         # if some group is found
@@ -114,7 +114,7 @@ class LdapPermissionGroupProvider(Component):
                 # the cache is becoming too large, discards
                 # the less recently uses entries
                 cache_keys = self._cache.keys()
-                cache_keys.sort(lambda x,y: cmp(self._cache[x][0], 
+                cache_keys.sort(lambda x,y: cmp(self._cache[x][0],
                                                 self._cache[y][0]))
                 # discards the 5% oldest
                 old_keys = cache_keys[:(5*self._cache_size)/100]
@@ -125,10 +125,10 @@ class LdapPermissionGroupProvider(Component):
             # for debug, until a failed LDAP connection returns an error...
             if username in self._cache:
                 del self._cache[username]
-        
+
         # updates the cache
         self._cache[username] = [current_time, ldapgroups]
-        
+
         # returns the user groups
         groups.extend(ldapgroups)
         if groups:
@@ -142,9 +142,9 @@ class LdapPermissionGroupProvider(Component):
             self._cache = {}
         elif self._cache.has_key(username):
             del self._cache[username]
-        
+
     # Private API
-    
+
     def _get_user_groups(self, username):
         """Returns a list of all groups a user belongs to"""
         ldap_groups = self._ldap.get_groups()
@@ -213,8 +213,8 @@ class LdapPermissionStore(Component):
             self.env.log.debug('new: %s' % actions)
             self._update_cache_actions(username, actions)
         perms = {}
-        for action in actions: 
-                perms[action] = True
+        for action in actions:
+            perms[action] = True
         return perms
 
     def get_users_with_permissions(self, permissions):
@@ -275,7 +275,7 @@ class LdapPermissionStore(Component):
                 xaction = self._build_action(action)
                 self._ldap.add_attribute(uid, self._ldap.permattr, xaction)
             if self.util.is_group(username):
-                # flush the cache as group dependencies are not known 
+                # flush the cache as group dependencies are not known
                 self.flush_cache()
             else:
                 self.flush_cache(username)
@@ -300,7 +300,7 @@ class LdapPermissionStore(Component):
                 xaction = self._build_action(action)
                 self._ldap.delete_attribute(uid, self._ldap.permattr, xaction)
                 if self.util.is_group(username):
-                    # flush the cache as group dependencies are not known 
+                    # flush the cache as group dependencies are not known
                     self.flush_cache()
                 else:
                     self.flush_cache(username)
@@ -314,14 +314,14 @@ class LdapPermissionStore(Component):
 
     def _openldap(self):
         """Open a new connection to the LDAP directory"""
-        if self._ldap is None: 
+        if self._ldap is None:
             bind = self.config.getbool('ldap', 'store_bind')
             self._ldap = LdapConnection(self.env.log, bind, **self._ldapcfg)
 
     def _get_permissions(self, uid):
         """Retrieves the permissions from the LDAP directory"""
         self._openldap()
-        actions = self._ldap.get_attribute(uid, self._ldap.permattr) 
+        actions = self._ldap.get_attribute(uid, self._ldap.permattr)
         perms = []
         for action in actions:
             if action not in perms:
@@ -361,13 +361,13 @@ class LdapPermissionStore(Component):
             return
         except ldap.LDAPError, e:
             raise TracError, e[0]['desc']
-        
+
     def _remove_user_from_group(self, user, group):
         groupdn = self.util.create_dn(group)
         userdn = self.util.create_dn(user)
         self._openldap()
         try:
-            self._ldap.delete_attribute(groupdn, self._ldap.groupmember, 
+            self._ldap.delete_attribute(groupdn, self._ldap.groupmember,
                                         userdn)
             self.log.info("user %s removed from group %s" % (user, group))
         except ldap.OBJECT_CLASS_VIOLATION, e:
@@ -375,7 +375,7 @@ class LdapPermissionStore(Component):
             raise TracError, "Ldap error (group %s would be emptied?)" % group
         except ldap.LDAPError, e:
             raise TracError, e[0]['desc']
-        
+
     def _get_cache_actions(self, username):
         """Retrieves the user permissions from the cache, if any"""
         if username in self._cache:
@@ -385,7 +385,7 @@ class LdapPermissionStore(Component):
                                    (username, ','.join(actions)))
                 return actions
         return []
-    
+
     def _add_cache_actions(self, username, newactions):
         """Add new user actions into the cache"""
         self._cleanup_cache()
@@ -396,8 +396,8 @@ class LdapPermissionStore(Component):
                     actions.append(action)
             self._cache[username] = [time.time(), actions]
         else:
-            self._cache[username] = [time.time(), newactions]            
-    
+            self._cache[username] = [time.time(), newactions]
+
     def _del_cache_actions(self, username, delactions):
         """Remove user actions from the cache"""
         if not username in self._cache:
@@ -411,7 +411,7 @@ class LdapPermissionStore(Component):
             del self._cache[username]
         else:
             self._cache[username] = [time.time(), newactions]
-    
+
     def _update_cache_actions(self, username, actions):
         """Set the cache entry for the user with the new actions"""
         # if not action, delete the cache entry
@@ -422,19 +422,19 @@ class LdapPermissionStore(Component):
         self._cleanup_cache()
         # overwrite the cache entry with the new actions
         self._cache[username] = [time.time(), actions]
-    
+
     def _cleanup_cache(self):
         """Make sure the cache is not full or discard oldest entries"""
         # if cache is full, removes the LRU entries
         if len(self._cache) >= self._cache_size:
             cache_keys = self._cache.keys()
-            cache_keys.sort(lambda x,y: cmp(self._cache[x][0], 
+            cache_keys.sort(lambda x,y: cmp(self._cache[x][0],
                                             self._cache[y][0]))
             old_keys = cache_keys[:(5*self._cache_size)/100]
             self.log.info("flushing %d cache entries" % len(old_keys))
             for k in old_keys:
                 del self._cache[k]
-                
+
     def flush_cache(self, username=None):
         """Delete all entries in the cache"""
         if username is None:
@@ -443,7 +443,7 @@ class LdapPermissionStore(Component):
             del self._cache[username]
         # we also need to flush the LDAP permission group provider
         self._flush_group_cache(username)
-            
+
     def _flush_group_cache(self, username=None):
         """Flush the group cache (if in use)"""
         if self.manage_groups:
@@ -453,9 +453,9 @@ class LdapPermissionStore(Component):
 
 class LdapUtil(object):
     """Utilities for LDAP data management"""
-        
+
     def __init__(self, config):
-        for k, default in [('groupattr', 'cn'), 
+        for k, default in [('groupattr', 'cn'),
                            ('uidattr', 'uid'),
                            ('basedn', None),
                            ('user_rdn', None),
@@ -463,10 +463,10 @@ class LdapUtil(object):
             v = config.get('ldap', k, default)
             if v: v = v.encode('ascii').lower()
             self.__setattr__(k, v)
-            
+
     def is_group(self, username):
         return username.startswith(GROUP_PREFIX)
-            
+
     def create_dn(self, username):
         """Create a user or group LDAP DN from his/its name"""
         if username.startswith(GROUP_PREFIX):
@@ -481,7 +481,7 @@ class LdapUtil(object):
                    (self.groupattr, group, self.group_rdn, self.basedn)
         else:
             return "%s=%s,%s" % (self.groupattr, group, self.basedn)
-            
+
     def user_attrdn(self, user):
         """Build the dn for a user"""
         if self.user_rdn:
@@ -489,7 +489,7 @@ class LdapUtil(object):
                    (self.uidattr, user, self.user_rdn, self.basedn)
         else:
             return "%s=%s,%s" % (self.uidattr, user, self.basedn)
-            
+
     def extract_user_from_dn(self, dn):
         m = DN_RE.search(dn)
         if m:
@@ -505,16 +505,16 @@ class LdapUtil(object):
                 if m.group('attr').lower() == self.uidattr:
                     return m.group('rdn')
         return None
-                
+
 class LdapConnection(object):
     """
     Wrapper class for the LDAP directory
     Use only synchronous LDAP calls
     """
-    
+
     _BOOL_VAL = ['groupmemberisdn', 'use_tls']
-    _INT_VAL  = ['port']  
-        
+    _INT_VAL  = ['port']
+
     def __init__(self, log, bind=False, **ldap):
         self.log = log
         self.bind = bind
@@ -543,7 +543,7 @@ class LdapConnection(object):
             raise TracError, "No basedn is defined"
         if self.port is None:
             self.port = self.use_tls and 636 or 389
-            
+
     def close(self):
         """Close the connection with the LDAP directory"""
         self._ds.unbind_s()
@@ -553,17 +553,17 @@ class LdapConnection(object):
         """Return a list of available group dns"""
         groups = self.get_dn(self.basedn, 'objectclass=' + self.groupname)
         return groups
-    
+
     def is_in_group(self, userdn, groupdn):
         """Tell whether the uid is member of the group"""
         if self.groupmemberisdn:
-            udn = userdn 
+            udn = userdn
         else:
             m = re.match('[^=]+=([^,]+)', userdn)
             if m is None:
                 self.log.warn('Malformed userdn: %s' % userdn)
                 return False
-            udn = m.group(1) 
+            udn = m.group(1)
         for attempt in range(2):
             cr = self._compare(groupdn, self.groupmember, udn)
             if self._ds:
@@ -604,7 +604,7 @@ class LdapConnection(object):
         try:
             if not self.__dict__.has_key('_ds') or not self.__dict__['_ds']:
                 self._open()
-            self._ds.modify_s(dn, [(ldap.MOD_ADD, attr, value)]) 
+            self._ds.modify_s(dn, [(ldap.MOD_ADD, attr, value)])
         except ldap.LDAPError, e:
             self.log.error("unable to add attribute '%s' to uid '%s': %s" %
                            (attr, dn, e[0]['desc']))
@@ -616,7 +616,7 @@ class LdapConnection(object):
         try:
             if not self.__dict__.has_key('_ds') or not self.__dict__['_ds']:
                 self._open()
-            self._ds.modify_s(dn, [(ldap.MOD_DELETE, attr, value)]) 
+            self._ds.modify_s(dn, [(ldap.MOD_DELETE, attr, value)])
         except ldap.LDAPError, e:
             self.log.error("unable to remove attribute '%s' from uid '%s': %s" %
                            (attr, dn, e[0]['desc']))
@@ -652,7 +652,7 @@ class LdapConnection(object):
                               self.bind_user)
             raise TracError("Unable to open LDAP cnx: %s" % e[0]['desc'])
 
-    def _search(self, basedn, filterstr='(objectclass=*)', attributes=None, 
+    def _search(self, basedn, filterstr='(objectclass=*)', attributes=None,
                 scope=ldap.SCOPE_ONELEVEL):
         """Search the LDAP directory"""
         try:
@@ -662,7 +662,7 @@ class LdapConnection(object):
             return sr
         except ldap.NO_SUCH_OBJECT, e:
             self.log.warn("LDAP error: %s (%s)", e[0]['desc'], basedn)
-            return False;    
+            return False;
         except ldap.LDAPError, e:
             self.log.error("LDAP error: %s", e[0]['desc'])
             self._ds = False
@@ -677,9 +677,8 @@ class LdapConnection(object):
             return cr
         except ldap.NO_SUCH_OBJECT, e:
             self.log.warn("LDAP error: %s (%s)", e[0]['desc'], dn)
-            return False;    
+            return False;
         except ldap.LDAPError, e:
             self.log.error("LDAP error: %s", e[0]['desc'])
             self._ds = False
             return False
-    
