@@ -39,7 +39,7 @@ class ScrippetMacro(WikiMacroBase):
         req = formatter.req
         add_stylesheet(req, 'scrippets/css/fountain-js.css')
         add_stylesheet(req, 'scrippets/css/normalize.min.css')
-        add_script(req, 'scrippets/js/fountain.min.js')
+        add_script(req, 'scrippets/js/fountain.js')
         add_script(req, 'scrippets/js/fountain-reader.js')
         if content:
             args2,kw = parse_args(content)

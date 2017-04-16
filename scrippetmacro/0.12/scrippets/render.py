@@ -33,7 +33,7 @@ class ScrippetRenderer(Component):
     def render(self, context, mimetype, content, filename=None, url=None):
         add_stylesheet(context.req, 'scrippets/css/fountain-js.css')
         add_stylesheet(context.req, 'scrippets/css/normalize.min.css')
-        add_script(context.req, 'scrippets/js/fountain.min.js')
+        add_script(context.req, 'scrippets/js/fountain.js')
         add_script(context.req, 'scrippets/js/fountain-reader.js')
         if hasattr(content, 'read'):
             content = content.read()
