@@ -162,18 +162,18 @@ import string
 import StringIO
 
 try:
-  import MySQLdb
+    import MySQLdb
 except:
-  print sys.exc_info()[0]
+    print sys.exc_info()[0]
 
 try:
-  from trac.env import Environment
+    from trac.env import Environment
 except:
-  from trac.Environment import Environment
+    from trac.Environment import Environment
 from trac.attachment import Attachment
 
 if not hasattr(sys, 'setdefaultencoding'):
-  reload(sys)
+    reload(sys)
 
 sys.setdefaultencoding('latin1')
 
@@ -186,507 +186,506 @@ sys.setdefaultencoding('latin1')
 # simple field translation mapping.  if string not in
 # mapping, just return string, otherwise return value
 class FieldTranslator(dict):
-  def __getitem__(self, item):
-    if not dict.has_key(self, item):
-      return item
+    def __getitem__(self, item):
+        if not dict.has_key(self, item):
+            return item
 
-    return dict.__getitem__(self, item)
+        return dict.__getitem__(self, item)
 
 statusXlator = FieldTranslator(STATUS_TRANSLATE)
 
 class TracDatabase(object):
-  def __init__(self, path):
-    self.env = Environment(path)
-    self._db = self.env.get_db_cnx()
-    self._db.autocommit = False
-    self.loginNameCache = {}
-    self.fieldNameCache = {}
+    def __init__(self, path):
+        self.env = Environment(path)
+        self._db = self.env.get_db_cnx()
+        self._db.autocommit = False
+        self.loginNameCache = {}
+        self.fieldNameCache = {}
 
-  def db(self):
-    return self._db
+    def db(self):
+        return self._db
 
-  def hasTickets(self):
-    c = self.db().cursor()
-    c.execute("SELECT count(*) FROM Ticket")
-    return int(c.fetchall()[0][0]) > 0
+    def hasTickets(self):
+        c = self.db().cursor()
+        c.execute("SELECT count(*) FROM Ticket")
+        return int(c.fetchall()[0][0]) > 0
 
-  def assertNoTickets(self):
-    if self.hasTickets():
-      raise Exception("Will not modify database with existing tickets!")
+    def assertNoTickets(self):
+        if self.hasTickets():
+            raise Exception("Will not modify database with existing tickets!")
 
-  def setSeverityList(self, s):
-    """Remove all severities, set them to `s`"""
-    self.assertNoTickets()
+    def setSeverityList(self, s):
+        """Remove all severities, set them to `s`"""
+        self.assertNoTickets()
 
-    c = self.db().cursor()
-    c.execute("DELETE FROM enum WHERE type='severity'")
-    for value, i in s:
-      print "  inserting severity '%s' - '%s'" % (value, i)
-      c.execute("""INSERT INTO enum (type, name, value)
-                   VALUES (%s, %s, %s)""",
-            ("severity", value.encode('utf-8'), i))
-    self.db().commit()
+        c = self.db().cursor()
+        c.execute("DELETE FROM enum WHERE type='severity'")
+        for value, i in s:
+            print "  inserting severity '%s' - '%s'" % (value, i)
+            c.execute("""INSERT INTO enum (type, name, value)
+                         VALUES (%s, %s, %s)""",
+                  ("severity", value.encode('utf-8'), i))
+        self.db().commit()
 
-  def setPriorityList(self, s):
-    """Remove all priorities, set them to `s`"""
-    self.assertNoTickets()
+    def setPriorityList(self, s):
+        """Remove all priorities, set them to `s`"""
+        self.assertNoTickets()
 
-    c = self.db().cursor()
-    c.execute("DELETE FROM enum WHERE type='priority'")
-    for value, i in s:
-      print "  inserting priority '%s' - '%s'" % (value, i)
-      c.execute("""INSERT INTO enum (type, name, value)
-                   VALUES (%s, %s, %s)""",
-            ("priority", value.encode('utf-8'), i))
-    self.db().commit()
+        c = self.db().cursor()
+        c.execute("DELETE FROM enum WHERE type='priority'")
+        for value, i in s:
+            print "  inserting priority '%s' - '%s'" % (value, i)
+            c.execute("""INSERT INTO enum (type, name, value)
+                         VALUES (%s, %s, %s)""",
+                  ("priority", value.encode('utf-8'), i))
+        self.db().commit()
 
 
-  def setComponentList(self, l, key):
-    """Remove all components, set them to `l`"""
-    self.assertNoTickets()
+    def setComponentList(self, l, key):
+        """Remove all components, set them to `l`"""
+        self.assertNoTickets()
 
-    c = self.db().cursor()
-    c.execute("DELETE FROM component")
-    for comp in l:
-      if (comp['owner'] == None):
-        comp['owner'] = 'admin' # if doesn't have owner, set to admin
+        c = self.db().cursor()
+        c.execute("DELETE FROM component")
+        for comp in l:
+            if (comp['owner'] == None):
+                comp['owner'] = 'admin' # if doesn't have owner, set to admin
 
-      print "  inserting component '%s', owner '%s'" % \
-              (comp[key], comp['owner'])
-      c.execute("INSERT INTO component (name, owner) VALUES (%s, %s)",
-            (comp[key].encode('utf-8'),comp['owner'].encode('utf-8')))
-    self.db().commit()
+            print "  inserting component '%s', owner '%s'" % \
+                    (comp[key], comp['owner'])
+            c.execute("INSERT INTO component (name, owner) VALUES (%s, %s)",
+                  (comp[key].encode('utf-8'),comp['owner'].encode('utf-8')))
+        self.db().commit()
 
-  def setVersionList(self, v):
-    """Remove all versions, set them to `v`"""
-    self.assertNoTickets()
+    def setVersionList(self, v):
+        """Remove all versions, set them to `v`"""
+        self.assertNoTickets()
 
-    c = self.db().cursor()
-    c.execute("DELETE FROM version")
-    for vers in v:
-      print "  inserting version '%s'" % (vers['name'])
-      c.execute("INSERT INTO version (name,description) VALUES (%s,%s)",
-            (vers['name'].encode('utf-8'),vers['description'].encode('utf-8')))
-    self.db().commit()
+        c = self.db().cursor()
+        c.execute("DELETE FROM version")
+        for vers in v:
+            print "  inserting version '%s'" % (vers['name'])
+            c.execute("INSERT INTO version (name,description) VALUES (%s,%s)",
+                  (vers['name'].encode('utf-8'),vers['description'].encode('utf-8')))
+        self.db().commit()
 
-  def setMilestoneList(self, m, key):
-    """Remove all milestones, set them to `m`"""
-    self.assertNoTickets()
+    def setMilestoneList(self, m, key):
+        """Remove all milestones, set them to `m`"""
+        self.assertNoTickets()
 
-    c = self.db().cursor()
-    c.execute("DELETE FROM milestone")
-    for ms in m:
-      milestone = ms[key]
-      print "  inserting milestone '%s'" % (milestone)
-      c.execute("INSERT INTO milestone (name) VALUES (%s)",
-            (milestone.encode('utf-8'),))
-    self.db().commit()
+        c = self.db().cursor()
+        c.execute("DELETE FROM milestone")
+        for ms in m:
+            milestone = ms[key]
+            print "  inserting milestone '%s'" % (milestone)
+            c.execute("INSERT INTO milestone (name) VALUES (%s)",
+                  (milestone.encode('utf-8'),))
+        self.db().commit()
 
-  def addTicket(self, id, time, changetime, component, severity, priority,
-          owner, reporter, cc, version, milestone, status, resolution,
-          summary, description, keywords):
-    c = self.db().cursor()
+    def addTicket(self, id, time, changetime, component, severity, priority,
+            owner, reporter, cc, version, milestone, status, resolution,
+            summary, description, keywords):
+        c = self.db().cursor()
 
-    desc = description.encode('utf-8')
-    type = "defect"
+        desc = description.encode('utf-8')
+        type = "defect"
 
-    if severity.lower() == "enhancement":
-        severity = "minor"
-        type = "enhancement"
+        if severity.lower() == "enhancement":
+            severity = "minor"
+            type = "enhancement"
 
-    if PREFORMAT_COMMENTS:
-      desc = '{{{\n%s\n}}}' % desc
+        if PREFORMAT_COMMENTS:
+            desc = '{{{\n%s\n}}}' % desc
 
-    if REPLACE_BUG_NO:
-      if BUG_NO_RE.search(desc):
-        desc = re.sub(BUG_NO_RE, BUG_NO_REPL, desc)
+        if REPLACE_BUG_NO:
+            if BUG_NO_RE.search(desc):
+                desc = re.sub(BUG_NO_RE, BUG_NO_REPL, desc)
 
-    if PRIORITIES_MAP.has_key('%s' % priority):
-      priority = PRIORITIES_MAP['%s' % priority]
+        if PRIORITIES_MAP.has_key('%s' % priority):
+            priority = PRIORITIES_MAP['%s' % priority]
 
-    print "Inserting Ticket %s -- %s" % (id, summary)
+        print "Inserting Ticket %s -- %s" % (id, summary)
 
-    c.execute("""INSERT INTO ticket (id, type, time, changetime, component,
-                     severity, priority, owner, reporter,
-                     cc, version, milestone, status,
-                     resolution, summary, description,
-                     keywords)
-                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
-                     %s, %s, %s, %s, %s, %s, %s, %s)""",
-          (id, type, time, changetime, component.encode('utf-8'),
-           severity.encode('utf-8'), priority.encode('utf-8'), owner.encode('utf-8'),
-           reporter.encode('utf-8'), cc.encode('utf-8'), version.encode('utf-8'), milestone,
-           status.encode('utf-8').lower(), resolution.encode('utf-8'), summary.encode('utf-8'), desc,
-           keywords.encode('utf-8')))
+        c.execute("""INSERT INTO ticket (id, type, time, changetime, component,
+                         severity, priority, owner, reporter,
+                         cc, version, milestone, status,
+                         resolution, summary, description,
+                         keywords)
+                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                         %s, %s, %s, %s, %s, %s, %s, %s)""",
+              (id, type, time, changetime, component.encode('utf-8'),
+               severity.encode('utf-8'), priority.encode('utf-8'), owner.encode('utf-8'),
+               reporter.encode('utf-8'), cc.encode('utf-8'), version.encode('utf-8'), milestone,
+               status.encode('utf-8').lower(), resolution.encode('utf-8'), summary.encode('utf-8'), desc,
+               keywords.encode('utf-8')))
 
-    self.db().commit()
-    return self.db().get_last_id(c, 'ticket')
+        self.db().commit()
+        return self.db().get_last_id(c, 'ticket')
 
-  def addTicketComment(self, ticket, time, author, value):
-    comment = value
+    def addTicketComment(self, ticket, time, author, value):
+        comment = value
 
-    if PREFORMAT_COMMENTS:
-      comment = '{{{\n%s\n}}}' % comment
+        if PREFORMAT_COMMENTS:
+            comment = '{{{\n%s\n}}}' % comment
 
-    if LOGIN_MAP.has_key(author):
-      author = LOGIN_MAP[author]
+        if LOGIN_MAP.has_key(author):
+            author = LOGIN_MAP[author]
 
-    if REPLACE_BUG_NO:
-      if BUG_NO_RE.search(comment):
-        comment = re.sub(BUG_NO_RE, BUG_NO_REPL, comment)
+        if REPLACE_BUG_NO:
+            if BUG_NO_RE.search(comment):
+                comment = re.sub(BUG_NO_RE, BUG_NO_REPL, comment)
 
-    print '  Inserting Comment: %s, Time: %s, Author: %s' % (ticket,time,author)
+        print '  Inserting Comment: %s, Time: %s, Author: %s' % (ticket,time,author)
 
-    c = self.db().cursor()
-    c.execute("""INSERT INTO ticket_change (ticket, time, author, field,
-                        oldvalue, newvalue)
-                    VALUES (%s, %s, %s, %s, %s, %s)""",
-          (ticket, time, author, 'comment', '', comment.encode('utf-8')))
-    self.db().commit()
+        c = self.db().cursor()
+        c.execute("""INSERT INTO ticket_change (ticket, time, author, field,
+                            oldvalue, newvalue)
+                        VALUES (%s, %s, %s, %s, %s, %s)""",
+              (ticket, time, author, 'comment', '', comment.encode('utf-8')))
+        self.db().commit()
 
-  def addTicketChange(self, ticket, time, author, field, oldvalue, newvalue):
-    c = self.db().cursor()
+    def addTicketChange(self, ticket, time, author, field, oldvalue, newvalue):
+        c = self.db().cursor()
 
-    if field == "owner":
-      if LOGIN_MAP.has_key(oldvalue):
-        oldvalue = LOGIN_MAP[oldvalue]
-      if LOGIN_MAP.has_key(newvalue):
-        newvalue = LOGIN_MAP[newvalue]
+        if field == "owner":
+            if LOGIN_MAP.has_key(oldvalue):
+                oldvalue = LOGIN_MAP[oldvalue]
+            if LOGIN_MAP.has_key(newvalue):
+                newvalue = LOGIN_MAP[newvalue]
 
-    if field == "priority":
-      if PRIORITIES_MAP.has_key('%s' % oldvalue):
-        oldvalue = PRIORITIES_MAP['%s' % oldvalue]
-      if PRIORITIES_MAP.has_key('%s' % newvalue):
-        newvalue = PRIORITIES_MAP['%s' % newvalue]
+        if field == "priority":
+            if PRIORITIES_MAP.has_key('%s' % oldvalue):
+                oldvalue = PRIORITIES_MAP['%s' % oldvalue]
+            if PRIORITIES_MAP.has_key('%s' % newvalue):
+                newvalue = PRIORITIES_MAP['%s' % newvalue]
 
-    # Doesn't make sense if we go from highest -> highest, for example.
-    if oldvalue == newvalue:
-      return
+        # Doesn't make sense if we go from highest -> highest, for example.
+        if oldvalue == newvalue:
+            return
 
-    if LOGIN_MAP.has_key(author):
-      author = LOGIN_MAP[author]
+        if LOGIN_MAP.has_key(author):
+            author = LOGIN_MAP[author]
 
-    print '  Inserting Change: %s, Time: %s, Author: %s' % (ticket,time,author)
+        print '  Inserting Change: %s, Time: %s, Author: %s' % (ticket,time,author)
 
-    c.execute("""INSERT INTO ticket_change (ticket, time, author, field,
-                        oldvalue, newvalue)
-                    VALUES (%s, %s, %s, %s, %s, %s)""",
-          (ticket, time, author.encode('utf-8'), field.encode('utf-8'),
-           oldvalue.encode('utf-8'), newvalue.encode('utf-8')))
-    self.db().commit()
+        c.execute("""INSERT INTO ticket_change (ticket, time, author, field,
+                            oldvalue, newvalue)
+                        VALUES (%s, %s, %s, %s, %s, %s)""",
+              (ticket, time, author.encode('utf-8'), field.encode('utf-8'),
+               oldvalue.encode('utf-8'), newvalue.encode('utf-8')))
+        self.db().commit()
 
 def convert(_db, __db_prefix, _host, _user, _password, _env, _force):
-  activityFields = FieldTranslator()
+    activityFields = FieldTranslator()
 
-  # init PhpBugTracker environment
-  print "PhpBugTracker Mysql('%s':'%s':'%s':'%s'): connecting..." % \
-      (_db, _host, _user, ("*" * len(_password)))
-  pg_con = MySQLdb.connect(host=_host, user=_user, passwd=_password, db=_db)
+    # init PhpBugTracker environment
+    print "PhpBugTracker Mysql('%s':'%s':'%s':'%s'): connecting..." % \
+        (_db, _host, _user, ("*" * len(_password)))
+    pg_con = MySQLdb.connect(host=_host, user=_user, passwd=_password, db=_db)
 
-  pg_cur = pg_con.cursor()
+    pg_cur = pg_con.cursor()
 
-  # init Trac environment
-  print "Trac SQLite('%s'): connecting..." % (_env)
-  trac = TracDatabase(_env)
+    # init Trac environment
+    print "Trac SQLite('%s'): connecting..." % (_env)
+    trac = TracDatabase(_env)
 
-  # force mode...
-  if _force == 1:
-    print "\nCleaning all tickets..."
-    c = trac.db().cursor()
-    c.execute("DELETE FROM ticket_change")
-    trac.db().commit()
+    # force mode...
+    if _force == 1:
+        print "\nCleaning all tickets..."
+        c = trac.db().cursor()
+        c.execute("DELETE FROM ticket_change")
+        trac.db().commit()
 
-    c.execute("DELETE FROM ticket")
-    trac.db().commit()
+        c.execute("DELETE FROM ticket")
+        trac.db().commit()
 
-    c.execute("DELETE FROM attachment")
-    trac.db().commit()
+        c.execute("DELETE FROM attachment")
+        trac.db().commit()
 
-    print "All tickets cleaned..."
+        print "All tickets cleaned..."
 
-  print "\n1. Import severities..."
-  sql = """ select sort_order
-            , severity_name
-        from %(PREFIX)sseverity
-      order by sort_order """
-  sql = sql%{'PREFIX':__db_prefix}
+    print "\n1. Import severities..."
+    sql = """ select sort_order
+              , severity_name
+          from %(PREFIX)sseverity
+        order by sort_order """
+    sql = sql%{'PREFIX':__db_prefix}
 
-  pg_cur.execute(sql)
-  lines = pg_cur.fetchall()
-  severities_list = []
-
-
-  for line in lines:
-    severities_list.append([line[1], line[0]])
-
-  trac.setSeverityList(severities_list)
-
-  print "\n2. Import components..."
-  sql = """  select component_name
-           , ( select login from %(PREFIX)sauth_user where user_id = %(PREFIX)scomponent.owner ) as owner
-           , component_desc
-          from %(PREFIX)scomponent
-    group by component_name, owner, component_desc
-    order by component_name """
-  sql = sql%{'PREFIX':__db_prefix}
-
-  pg_cur.execute(sql)
-  lines = pg_cur.fetchall()
-  component_list = []
-  for line in lines:
-    owner = ""
-    if LOGIN_MAP.has_key(line[1]):
-      owner = LOGIN_MAP[line[1]]
-    component_list.append({'product': line[0], 'owner': owner})
-
-  trac.setComponentList(component_list, 'product')
-
-  print "\n4. Import versions..."
-  sql = """select distinct version_name as name
-       , version_name as description
-      from %(PREFIX)sversion"""
-  sql = sql%{'PREFIX':__db_prefix}
-
-  pg_cur.execute(sql)
-  lines = pg_cur.fetchall()
-
-  versions_list = []
-
-  for line in lines:
-    versions_list.append({'name': line[0], 'description': line[1]})
-
-  trac.setVersionList(versions_list)
-
-  print "\n6. Retrieving bugs..."
-  sql = """select bug_id
-       , title as summary
-       , created_date
-       , last_modified_date
-       , description as description
-       , priority
-       , ( select component_name from %(PREFIX)scomponent where component_id=%(PREFIX)sbug.component_id ) as component
-       , ( select login from %(PREFIX)sauth_user where user_id=%(PREFIX)sbug.assigned_to ) as owner
-       , ( select login from %(PREFIX)sauth_user where user_id=%(PREFIX)sbug.created_by ) as reporter
-       , ( select version_name from %(PREFIX)sversion where version_id=%(PREFIX)sbug.version_id) as version
-       , ( select severity_name from %(PREFIX)sseverity where severity_id=%(PREFIX)sbug.severity_id) as severity
-       , '' as milestone
-       , ( select status_name from %(PREFIX)sstatus where status_id = %(PREFIX)sbug.status_id ) as status
-       , ( select resolution_name from %(PREFIX)sresolution where resolution_id = %(PREFIX)sbug.resolution_id) as resolution
-       , 'imported, phpbugtracker' as keywords
-      from %(PREFIX)sbug"""
-  sql = sql%{'PREFIX':__db_prefix}
-  pg_cur.execute(sql)
-  bugs = pg_cur.fetchall()
-
-
-  print "\n7. Import bugs and bug activity..."
-
-  for bug in bugs:
-    bugid = bug[0]
-
-    ticket = {}
-    keywords = []
-    ticket['id'] = bugid
-    ticket['time'] = bug[2]
-    ticket['changetime'] = bug[3]
-
-    ticket['component'] = ''
-    if(bug[6] != None):
-      ticket['component'] = bug[6]
-
-    ticket['severity'] = ''
-    if(bug[10] != None):
-      ticket['severity'] = bug[10].lower()
-
-    ticket['priority'] = ''
-    if(bug[5] != None):
-      ticket['priority'] = bug[5]
-
-    ticket['owner'] = ''
-    if(bug[7] != None):
-      ticket['owner'] = bug[7]
-      if LOGIN_MAP.has_key(bug[7]):
-        ticket['owner'] = LOGIN_MAP[bug[7]]
-
-    ticket['reporter'] = ''
-    if(bug[8] != None):
-      ticket['reporter'] = bug[8]
-
-    ticket['version'] = ''
-    if(bug[9] != None):
-      ticket['version'] = bug[9]
-
-    ticket['status'] = ''
-    if(bug[12] != None):
-      ticket['status'] = bug[12].lower()
-
-    ticket['milestone'] = 'Panel 32 3.1'
-
-    # if resolution is NoneType
-    ticket['resolution'] = ''
-    if(bug[13] != None):
-      ticket['resolution'] = bug[13].lower()
-
-    ticket['summary'] = ''
-    if(bug[1] != None):
-      ticket['summary'] = bug[1]
-
-    longdescs = bug[4]
-
-    if len(longdescs) == 0:
-      ticket['description'] = ''
-    else:
-      desc = '{{{\n%s\n}}}' % bug[4]
-      if BUG_NO_RE.search(desc):
-        desc = re.sub(BUG_NO_RE, BUG_NO_REPL, desc)
-      ticket['description'] = desc
-
-    ticket['keywords'] = 'imported,phpbugtracker' # mark imported tickets
-    ticket['cc'] = ''
-
-    ticketid = trac.addTicket(**ticket)
-
-    # ticket changes
-    sql = """   select 0 as ticket
-             , created_date as time
-             , ( select login from %(PREFIX)sauth_user where user_id = %(PREFIX)sbug_history.created_by ) as author
-             , changed_field as field
-             , old_value as oldvalue
-             , new_value as newvalue
-            from %(PREFIX)sbug_history
-           where changed_field
-               in (  'component'
-                ,'resolution'
-                ,'severity'
-                ,'status'
-                ,'version')
-            and bug_id = %(BUGID)s
-          order by created_date asc """
-
-    sql = sql%{'PREFIX':__db_prefix,'BUGID':bug[0]}
     pg_cur.execute(sql)
-    bugs_activity = pg_cur.fetchall()
+    lines = pg_cur.fetchall()
+    severities_list = []
 
-    resolution = ''
-    ticketChanges = []
-    keywords = []
 
-    for activity in bugs_activity:
-      field_name = activity[3].lower()
+    for line in lines:
+        severities_list.append([line[1], line[0]])
 
-      removed = activity[4]
-      added = activity[5]
+    trac.setSeverityList(severities_list)
 
-      # statuses and resolutions are in lowercase in trac
-      if field_name == "resolution" or field_name == "bug_status":
-        removed = removed.lower()
-        added = added.lower()
+    print "\n2. Import components..."
+    sql = """  select component_name
+             , ( select login from %(PREFIX)sauth_user where user_id = %(PREFIX)scomponent.owner ) as owner
+             , component_desc
+            from %(PREFIX)scomponent
+      group by component_name, owner, component_desc
+      order by component_name """
+    sql = sql%{'PREFIX':__db_prefix}
 
-      ticketChange = {}
-      ticketChange['ticket'] = bugid
-      ticketChange['time'] = activity[1]
-
-      if(activity[2]==None):
-        activity[2] = ' '
-      ticketChange['author'] = activity[2]
-
-      if(field_name==None):
-        field_name = ' '
-      ticketChange['field'] = field_name
-
-      if(removed==None):
-        removed = ' '
-      ticketChange['oldvalue'] = removed
-
-      if(added==None):
-        added = ' '
-      ticketChange['newvalue'] = added
-
-      ticketChanges.append (ticketChange)
-
-    for ticketChange in ticketChanges:
-      trac.addTicketChange (**ticketChange)
-
-    # end activity information
-
-    # comments
-    sql = """ select distinct comment_text as comment
-               , created_date as time
-             , 'comment' as field
-             , ( select login from %(PREFIX)sauth_user where user_id = %(PREFIX)scomment.created_by ) as author
-           from %(PREFIX)scomment
-          where bug_id = %(BUGID)s
-         order by created_date asc """
-    sql = sql%{'PREFIX':__db_prefix,'BUGID':bug[0]}
     pg_cur.execute(sql)
-    comments = pg_cur.fetchall()
+    lines = pg_cur.fetchall()
+    component_list = []
+    for line in lines:
+        owner = ""
+        if LOGIN_MAP.has_key(line[1]):
+            owner = LOGIN_MAP[line[1]]
+        component_list.append({'product': line[0], 'owner': owner})
 
-    for comment in comments:
-      trac.addTicketComment(ticket=bugid,
-        time = comment[1],
-        author=comment[3],
-        value = comment[0])
+    trac.setComponentList(component_list, 'product')
 
-  print "\nAll tickets converted."
+    print "\n4. Import versions..."
+    sql = """select distinct version_name as name
+         , version_name as description
+        from %(PREFIX)sversion"""
+    sql = sql%{'PREFIX':__db_prefix}
+
+    pg_cur.execute(sql)
+    lines = pg_cur.fetchall()
+
+    versions_list = []
+
+    for line in lines:
+        versions_list.append({'name': line[0], 'description': line[1]})
+
+    trac.setVersionList(versions_list)
+
+    print "\n6. Retrieving bugs..."
+    sql = """select bug_id
+         , title as summary
+         , created_date
+         , last_modified_date
+         , description as description
+         , priority
+         , ( select component_name from %(PREFIX)scomponent where component_id=%(PREFIX)sbug.component_id ) as component
+         , ( select login from %(PREFIX)sauth_user where user_id=%(PREFIX)sbug.assigned_to ) as owner
+         , ( select login from %(PREFIX)sauth_user where user_id=%(PREFIX)sbug.created_by ) as reporter
+         , ( select version_name from %(PREFIX)sversion where version_id=%(PREFIX)sbug.version_id) as version
+         , ( select severity_name from %(PREFIX)sseverity where severity_id=%(PREFIX)sbug.severity_id) as severity
+         , '' as milestone
+         , ( select status_name from %(PREFIX)sstatus where status_id = %(PREFIX)sbug.status_id ) as status
+         , ( select resolution_name from %(PREFIX)sresolution where resolution_id = %(PREFIX)sbug.resolution_id) as resolution
+         , 'imported, phpbugtracker' as keywords
+        from %(PREFIX)sbug"""
+    sql = sql%{'PREFIX':__db_prefix}
+    pg_cur.execute(sql)
+    bugs = pg_cur.fetchall()
+
+
+    print "\n7. Import bugs and bug activity..."
+
+    for bug in bugs:
+        bugid = bug[0]
+
+        ticket = {}
+        keywords = []
+        ticket['id'] = bugid
+        ticket['time'] = bug[2]
+        ticket['changetime'] = bug[3]
+
+        ticket['component'] = ''
+        if(bug[6] != None):
+            ticket['component'] = bug[6]
+
+        ticket['severity'] = ''
+        if(bug[10] != None):
+            ticket['severity'] = bug[10].lower()
+
+        ticket['priority'] = ''
+        if(bug[5] != None):
+            ticket['priority'] = bug[5]
+
+        ticket['owner'] = ''
+        if(bug[7] != None):
+            ticket['owner'] = bug[7]
+            if LOGIN_MAP.has_key(bug[7]):
+                ticket['owner'] = LOGIN_MAP[bug[7]]
+
+        ticket['reporter'] = ''
+        if(bug[8] != None):
+            ticket['reporter'] = bug[8]
+
+        ticket['version'] = ''
+        if(bug[9] != None):
+            ticket['version'] = bug[9]
+
+        ticket['status'] = ''
+        if(bug[12] != None):
+            ticket['status'] = bug[12].lower()
+
+        ticket['milestone'] = 'Panel 32 3.1'
+
+        # if resolution is NoneType
+        ticket['resolution'] = ''
+        if(bug[13] != None):
+            ticket['resolution'] = bug[13].lower()
+
+        ticket['summary'] = ''
+        if(bug[1] != None):
+            ticket['summary'] = bug[1]
+
+        longdescs = bug[4]
+
+        if len(longdescs) == 0:
+            ticket['description'] = ''
+        else:
+            desc = '{{{\n%s\n}}}' % bug[4]
+            if BUG_NO_RE.search(desc):
+                desc = re.sub(BUG_NO_RE, BUG_NO_REPL, desc)
+            ticket['description'] = desc
+
+        ticket['keywords'] = 'imported,phpbugtracker' # mark imported tickets
+        ticket['cc'] = ''
+
+        ticketid = trac.addTicket(**ticket)
+
+        # ticket changes
+        sql = """   select 0 as ticket
+                 , created_date as time
+                 , ( select login from %(PREFIX)sauth_user where user_id = %(PREFIX)sbug_history.created_by ) as author
+                 , changed_field as field
+                 , old_value as oldvalue
+                 , new_value as newvalue
+                from %(PREFIX)sbug_history
+               where changed_field
+                   in (  'component'
+                    ,'resolution'
+                    ,'severity'
+                    ,'status'
+                    ,'version')
+                and bug_id = %(BUGID)s
+              order by created_date asc """
+
+        sql = sql%{'PREFIX':__db_prefix,'BUGID':bug[0]}
+        pg_cur.execute(sql)
+        bugs_activity = pg_cur.fetchall()
+
+        resolution = ''
+        ticketChanges = []
+        keywords = []
+
+        for activity in bugs_activity:
+            field_name = activity[3].lower()
+
+            removed = activity[4]
+            added = activity[5]
+
+            # statuses and resolutions are in lowercase in trac
+            if field_name == "resolution" or field_name == "bug_status":
+                removed = removed.lower()
+                added = added.lower()
+
+            ticketChange = {}
+            ticketChange['ticket'] = bugid
+            ticketChange['time'] = activity[1]
+
+            if(activity[2]==None):
+                activity[2] = ' '
+            ticketChange['author'] = activity[2]
+
+            if(field_name==None):
+                field_name = ' '
+            ticketChange['field'] = field_name
+
+            if(removed==None):
+                removed = ' '
+            ticketChange['oldvalue'] = removed
+
+            if(added==None):
+                added = ' '
+            ticketChange['newvalue'] = added
+
+            ticketChanges.append (ticketChange)
+
+        for ticketChange in ticketChanges:
+            trac.addTicketChange (**ticketChange)
+
+        # end activity information
+
+        # comments
+        sql = """ select distinct comment_text as comment
+                   , created_date as time
+                 , 'comment' as field
+                 , ( select login from %(PREFIX)sauth_user where user_id = %(PREFIX)scomment.created_by ) as author
+               from %(PREFIX)scomment
+              where bug_id = %(BUGID)s
+             order by created_date asc """
+        sql = sql%{'PREFIX':__db_prefix,'BUGID':bug[0]}
+        pg_cur.execute(sql)
+        comments = pg_cur.fetchall()
+
+        for comment in comments:
+            trac.addTicketComment(ticket=bugid,
+              time = comment[1],
+              author=comment[3],
+              value = comment[0])
+
+    print "\nAll tickets converted."
 
 def log(msg):
-  print "DEBUG: %s" % (msg)
+    print "DEBUG: %s" % (msg)
 
 def usage():
-  print """phpbt2trac - Imports a bug database from PhpBugTracker into Trac.
+    print """phpbt2trac - Imports a bug database from PhpBugTracker into Trac.
 
-Usage: phpbt2trac.py [options]
+  Usage: phpbt2trac.py [options]
 
-Available Options:
-  --db <dbname>                 - PHPBugTracker's database name
-  --db-prefix <prefix>          - PHPBugTracker's table prefix(phpbt)
-  --srv <server_type>           - Database Server Type(mysql|postgres)
-  --tracenv /path/to/trac/env   - Full path to Trac db environment
-  -h | --host <hostname>        - PHPBugTracker's DNS host name
-  -u | --user <username>        - PHPBugTracker's database user
-  -p | --passwd <password>      - PHPBugTracker's user password
-  -c | --clean                  - Remove current Trac tickets before
-                                  importing
-  --help | help                 - This help info
+  Available Options:
+    --db <dbname>                 - PHPBugTracker's database name
+    --db-prefix <prefix>          - PHPBugTracker's table prefix(phpbt)
+    --srv <server_type>           - Database Server Type(mysql|postgres)
+    --tracenv /path/to/trac/env   - Full path to Trac db environment
+    -h | --host <hostname>        - PHPBugTracker's DNS host name
+    -u | --user <username>        - PHPBugTracker's database user
+    -p | --passwd <password>      - PHPBugTracker's user password
+    -c | --clean                  - Remove current Trac tickets before
+                                    importing
+    --help | help                 - This help info
 
-Additional configuration options can be defined directly in the script.
-"""
-  sys.exit(0)
+  Additional configuration options can be defined directly in the script.
+  """
+    sys.exit(0)
 
 def main():
-  global BT_DB, BT_HOST, BT_USER, BT_PASSWORD, BT_PREFIX, TRAC_ENV, TRAC_CLEAN
-  if len (sys.argv) > 1:
-    if sys.argv[1] in ['--help','help'] or len(sys.argv) < 4:
-      usage()
-    iter = 1
-    while iter < len(sys.argv):
-      if sys.argv[iter] in ['--db'] and iter+1 < len(sys.argv):
-        BT_DB = sys.argv[iter+1]
-        iter = iter + 1
-      elif sys.argv[iter] in ['--db-prefix'] and iter+1 < len(sys.argv):
-        BT_PREFIX = sys.argv[iter+1]
-        iter = iter + 1
-      elif sys.argv[iter] in ['-h', '--host'] and iter+1 < len(sys.argv):
-        BT_HOST = sys.argv[iter+1]
-        iter = iter + 1
-      elif sys.argv[iter] in ['-u', '--user'] and iter+1 < len(sys.argv):
-        BT_USER = sys.argv[iter+1]
-        iter = iter + 1
-      elif sys.argv[iter] in ['-p', '--passwd'] and iter+1 < len(sys.argv):
-        BT_PASSWORD = sys.argv[iter+1]
-        iter = iter + 1
-      elif sys.argv[iter] in ['--tracenv'] and iter+1 < len(sys.argv):
-        TRAC_ENV = sys.argv[iter+1]
-        iter = iter + 1
-      elif sys.argv[iter] in ['-c', '--clean']:
-        TRAC_CLEAN = 1
-      else:
-        print "Error: unknown parameter: " + sys.argv[iter]
-        sys.exit(0)
-      iter = iter + 1
+    global BT_DB, BT_HOST, BT_USER, BT_PASSWORD, BT_PREFIX, TRAC_ENV, TRAC_CLEAN
+    if len (sys.argv) > 1:
+        if sys.argv[1] in ['--help','help'] or len(sys.argv) < 4:
+            usage()
+        iter = 1
+        while iter < len(sys.argv):
+            if sys.argv[iter] in ['--db'] and iter+1 < len(sys.argv):
+                BT_DB = sys.argv[iter+1]
+                iter = iter + 1
+            elif sys.argv[iter] in ['--db-prefix'] and iter+1 < len(sys.argv):
+                BT_PREFIX = sys.argv[iter+1]
+                iter = iter + 1
+            elif sys.argv[iter] in ['-h', '--host'] and iter+1 < len(sys.argv):
+                BT_HOST = sys.argv[iter+1]
+                iter = iter + 1
+            elif sys.argv[iter] in ['-u', '--user'] and iter+1 < len(sys.argv):
+                BT_USER = sys.argv[iter+1]
+                iter = iter + 1
+            elif sys.argv[iter] in ['-p', '--passwd'] and iter+1 < len(sys.argv):
+                BT_PASSWORD = sys.argv[iter+1]
+                iter = iter + 1
+            elif sys.argv[iter] in ['--tracenv'] and iter+1 < len(sys.argv):
+                TRAC_ENV = sys.argv[iter+1]
+                iter = iter + 1
+            elif sys.argv[iter] in ['-c', '--clean']:
+                TRAC_CLEAN = 1
+            else:
+                print "Error: unknown parameter: " + sys.argv[iter]
+                sys.exit(0)
+            iter = iter + 1
 
-  convert(BT_DB, BT_PREFIX, BT_HOST, BT_USER, BT_PASSWORD, TRAC_ENV, TRAC_CLEAN)
+    convert(BT_DB, BT_PREFIX, BT_HOST, BT_USER, BT_PASSWORD, TRAC_ENV, TRAC_CLEAN)
 
 if __name__ == '__main__':
     main()
-
