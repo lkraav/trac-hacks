@@ -23,11 +23,11 @@ def get_diffs(self, req, title, old_text, new_text):
                         ignore_blank_lines=True,
                         ignore_case=True,
                         ignore_space_changes=True)
-    
+
     chrome = Chrome(self.env)
     loader = TemplateLoader(chrome.get_all_templates_dirs())
     tmpl = loader.load('diff_div.html')
-    
+
     changes=[{'diffs': diffs, 'props': [],
               'title': title,
               'new': {'path':"", 'rev':'', 'shortrev': '', 'href':''},
@@ -85,7 +85,7 @@ def _validate_ticket(self, req, ticket):
             changes, problems = self.get_ticket_changes(req, ticket, req.args.get('action'))
             if changes.has_key('description'):
                 #req.session[skey] = False;
-                diff = get_diffs(self, req, "Description Changed", 
+                diff = get_diffs(self, req, "Description Changed",
                                  changes['description']['old'],
                                  changes['description']['new'])
 
@@ -106,7 +106,7 @@ def _validate_ticket(self, req, ticket):
     if not ticket['summary']:
         add_warning(req, _('Tickets must contain a summary.'))
         valid = False
-        
+
     # Always validate for known values
     for field in ticket.fields:
         if 'options' not in field:
@@ -172,29 +172,28 @@ class OverrideEditPluginSetupParticipant(Component):
     """
     implements(IEnvironmentSetupParticipant)
     def __init__(self):
-      #only if we should be enabled do we monkey patch
-      if self.compmgr.enabled[self.__class__]:
-        web.TicketModule._validate_ticket = _validate_ticket
+        #only if we should be enabled do we monkey patch
+        if self.compmgr.enabled[self.__class__]:
+            web.TicketModule._validate_ticket = _validate_ticket
 
     def environment_created(self):
-      """Called when a new Trac environment is created."""
-      pass
+        """Called when a new Trac environment is created."""
+        pass
 
     def environment_needs_upgrade(self, db):
-      """Called when Trac checks whether the environment needs to be upgraded.
-      
-      Should return `True` if this participant needs an upgrade to be
-      performed, `False` otherwise.
-      
-      """
-      pass
+        """Called when Trac checks whether the environment needs to be upgraded.
+
+        Should return `True` if this participant needs an upgrade to be
+        performed, `False` otherwise.
+
+        """
+        pass
 
     def upgrade_environment(self, db):
-      """Actually perform an environment upgrade.
+        """Actually perform an environment upgrade.
 
-      Implementations of this method should not commit any database
-      transactions. This is done implicitly after all participants have
-      performed the upgrades they need without an error being raised.
-      """
-      pass
-
+        Implementations of this method should not commit any database
+        transactions. This is done implicitly after all participants have
+        performed the upgrades they need without an error being raised.
+        """
+        pass

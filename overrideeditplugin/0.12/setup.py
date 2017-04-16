@@ -14,4 +14,3 @@ setup(name="OverrideEditPlugin",
       """,
       entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)},
 )
-
