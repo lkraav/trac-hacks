@@ -13,11 +13,11 @@ class SubWikiMacro(WikiMacroBase):
     """
     Inserts an alphabetic list of sub-wiki pages into the output.
     A sub-wiki page is a page that is is deeper in the hierachy than the current page.  e.g. if the current page is People, the this will return a list of all wiki entries that start with "People/"
-    
+
     Accepts a prefix string as parameter: if provided, only pages with names that
     start with the prefix are included in the resulting list. If this parameter is
     omitted, all pages are listed.
-    
+
     This now takes the text of the first heading and displays it as the link name.
     """
 
@@ -53,4 +53,3 @@ class SubWikiMacro(WikiMacroBase):
                 title = md.group(1)
             good_pages.append((p, title))
         return html.UL([html.LI(html.A(p, title=t, href=req.href.wiki(p)), ' ', t) for p,t in good_pages])
-        

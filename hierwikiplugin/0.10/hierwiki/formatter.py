@@ -18,7 +18,7 @@ def error(msg, *args):
 
 class RelativeWikiFormatter(Component):
     """Format links to pages relative to the current page."""
-    
+
     implements(IWikiSyntaxProvider, IWikiChangeListener, IRequestFilter)
 
     def __init__(self):
@@ -31,11 +31,11 @@ class RelativeWikiFormatter(Component):
     def get_wiki_syntax(self):
         self.log.debug('HierWikiPlugin: Adding syntax')
         yield self.pages_re, self._format_syntax
-        
+
     def get_link_resolvers(self):
         yield 'relwiki', self._format_link
         yield 'rwiki', self._format_link
-        
+
     # IWikiChangeListener methods (defeat the page cache)
     def wiki_page_added(self, page):
         self.pages.add(page.name)
@@ -53,14 +53,14 @@ class RelativeWikiFormatter(Component):
 
     def wiki_page_version_deleted(self, page):
         pass
-        
+
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         self.log.debug('HierWikiPlugin: In pre-req filter')
         if req.path_info.startswith('/wiki'):
             self._update(req.args.get('page', 'WikiStart'))
         return handler
-      
+
     def post_process_request(self, req, template, content_type):
         return template, content_type
 
@@ -70,7 +70,7 @@ class RelativeWikiFormatter(Component):
             return error('You can only use relative wiki links on wiki pages')
         if target.startswith('/'):
             return error('"%s" is not a relative path', target)
-            
+
         pagename = formatter.req.args.get('page', 'WikiStart').split('/')[:-1]
         target = target.split('/')
         for val in target:
@@ -85,7 +85,7 @@ class RelativeWikiFormatter(Component):
                 pagename.append(val)
         dest = '/'.join(pagename)
         return formatter.wiki.link_resolvers['wiki'](formatter, 'wiki', dest, label)
-        
+
     def _format_syntax(self, formatter, ns, match):
         page = match.group('relwiki')
         return html.A(escape(page), href=formatter.href.wiki(self.pagebase.rstrip('/'),page), class_='wiki')
@@ -93,7 +93,7 @@ class RelativeWikiFormatter(Component):
     # More cache junk
     def _all_pages(self):
         self.pages = set(WikiSystem(self.env).get_pages())
-        
+
     def _update(self, pagename):
         self.log.debug('HierWikiPlugin: Running an update')
         pagebase = '/'.join(pagename.split('/')[:-1])
