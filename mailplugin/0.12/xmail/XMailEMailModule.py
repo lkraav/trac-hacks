@@ -428,4 +428,3 @@ class XMailTimerThread(Thread):
             if self.log:
                 self.log.debug('sleeping %s secs' % self.sec)
             time.sleep(self.sec)
-            

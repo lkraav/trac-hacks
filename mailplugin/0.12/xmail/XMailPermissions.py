@@ -20,12 +20,12 @@ permissionList = ("TRAC_ADMIN", "XMAIL_ADMIN")
 # the required demands
 #===========================================================================
 def checkPermissions(self,req):
-        for permission in permissionList:
-            if permission in PermissionSystem(self.env).get_user_permissions(req.authname):
-                return True
-        return False
-    
-    
+    for permission in permissionList:
+        if permission in PermissionSystem(self.env).get_user_permissions(req.authname):
+            return True
+    return False
+
+
 #===========================================================================
 # Class to publish an additional Permission Type
 #===========================================================================    
@@ -41,4 +41,3 @@ class XMailPermission(Component):
 
        
     
-        
