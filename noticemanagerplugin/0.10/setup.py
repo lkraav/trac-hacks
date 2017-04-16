@@ -17,7 +17,7 @@ setup(
 
     install_requires = [
         'TracWebAdmin',
-	'LdapPlugin'
+        'LdapPlugin'
     ],
 
     entry_points = {
