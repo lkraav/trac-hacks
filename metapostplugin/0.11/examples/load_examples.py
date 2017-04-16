@@ -12,7 +12,7 @@ def main(trac_env, examples_dir='.'):
     admin.env_set(trac_env)
     for file in os.listdir(examples_dir):
         if 'MetapostExamples' in file:
-            admin._do_wiki_import(os.path.join(examples_dir, file), 
+            admin._do_wiki_import(os.path.join(examples_dir, file),
                                   file.replace('%2F', '/'))
             loaded = True
 
