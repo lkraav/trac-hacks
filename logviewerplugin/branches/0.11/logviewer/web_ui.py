@@ -50,7 +50,7 @@ class LogViewerPage(Component):
         if req.perm.has_permission('TRAC_ADMIN'):
             yield ('general', _('General'), 'logviewer', 'Log Viewer')
             #yield ('accounts', _('Accounts'), 'usersync', 'User Sync')
-        
+
     def render_admin_panel( self, req, cat, page, path_info):
         # here comes the page content, handling, etc.
         self.data = {}
@@ -60,46 +60,46 @@ class LogViewerPage(Component):
         data = {}
         autoload = self.env.config.getbool('logviewer','autoload') or False
         try:
-          logfile = self.api.get_logfile_name()
-          if not logfile:
-            self.env.log.debug('No log file configured.')
-            self.data['err'].append('There is no log file configured for this environment.')
+            logfile = self.api.get_logfile_name()
+            if not logfile:
+                self.env.log.debug('No log file configured.')
+                self.data['err'].append('There is no log file configured for this environment.')
         except IOError:
-          self.env.log.debug('Got IOError - configured log file does not exist!')
-          self.data['err'].append('The configured log file does not exist.')
+            self.env.log.debug('Got IOError - configured log file does not exist!')
+            self.data['err'].append('The configured log file does not exist.')
 
         # OK to process?
         if logfile:
-          params = {}
-          if req.method=="POST":
-            params['level'] = req.args.get('level')
-            params['up']    = req.args.get('up')
-            params['invert']= req.args.get('invertsearch')
-            params['regexp']= req.args.get('regexp')
-            params['tail']  = int(req.args.get('tail') or 0)
-            params['filter']= req.args.get('filter')
-            self._do_process(params, logfile)
-            data['level'] = int(req.args.get('level') or 3)
-            data['up']    = int(req.args.get('up') or 0)
-            data['invert']= int(req.args.get('invertsearch') or 0)
-            data['regexp']= int(req.args.get('regexp') or 0)
-            data['filter']= req.args.get('filter') or ''
-            data['tail']  = req.args.get('tail') or ''
-          elif autoload:
-            data['level'] = int(self.env.config.get('logviewer','autolevel') or 3)
-            data['up']    = int(self.env.config.getbool('logviewer','autoup') or True)
-            data['invert']= 0
-            data['regexp']= 0
-            data['filter']= ''
-            data['tail']  = self.env.config.get('logviewer','autotail') or ''
-            self._do_process(data, logfile)
-          else:
-            data['level'] = int(self.env.config.get('logviewer','defaultlevel') or 3)
-            data['up']    = int(self.env.config.getbool('logviewer','defaultup') or True)
-            data['invert']= 0
-            data['regexp']= 0
-            data['filter']= ''
-            data['tail']  = self.env.config.get('logviewer','defaulttail') or ''
+            params = {}
+            if req.method=="POST":
+                params['level'] = req.args.get('level')
+                params['up']    = req.args.get('up')
+                params['invert']= req.args.get('invertsearch')
+                params['regexp']= req.args.get('regexp')
+                params['tail']  = int(req.args.get('tail') or 0)
+                params['filter']= req.args.get('filter')
+                self._do_process(params, logfile)
+                data['level'] = int(req.args.get('level') or 3)
+                data['up']    = int(req.args.get('up') or 0)
+                data['invert']= int(req.args.get('invertsearch') or 0)
+                data['regexp']= int(req.args.get('regexp') or 0)
+                data['filter']= req.args.get('filter') or ''
+                data['tail']  = req.args.get('tail') or ''
+            elif autoload:
+                data['level'] = int(self.env.config.get('logviewer','autolevel') or 3)
+                data['up']    = int(self.env.config.getbool('logviewer','autoup') or True)
+                data['invert']= 0
+                data['regexp']= 0
+                data['filter']= ''
+                data['tail']  = self.env.config.get('logviewer','autotail') or ''
+                self._do_process(data, logfile)
+            else:
+                data['level'] = int(self.env.config.get('logviewer','defaultlevel') or 3)
+                data['up']    = int(self.env.config.getbool('logviewer','defaultup') or True)
+                data['invert']= 0
+                data['regexp']= 0
+                data['filter']= ''
+                data['tail']  = self.env.config.get('logviewer','defaulttail') or ''
 
         # append the messages
         data['us_message'] = self.data['msg']
@@ -117,7 +117,7 @@ class LogViewerPage(Component):
         static resources (such as images, style sheets, etc).
         """
         from pkg_resources import resource_filename
-        return [('logviewer', resource_filename(__name__, 'htdocs'))] 
+        return [('logviewer', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
         """Return the absolute path of the directory containing the provided
@@ -136,4 +136,3 @@ class LogViewerPage(Component):
         self.env.log.debug('Processing form data')
         log = self.api.get_log(logfile, params)
         self.data['log'] = log
-

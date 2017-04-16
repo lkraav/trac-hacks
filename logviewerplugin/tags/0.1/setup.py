@@ -25,4 +25,3 @@ setup(name='LogViewerPlugin',
             'logviewer.web_ui = logviewer.web_ui'
             ]},
       )
-
