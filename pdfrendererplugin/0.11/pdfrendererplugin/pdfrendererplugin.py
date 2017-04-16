@@ -60,13 +60,11 @@ class PdfRendererPlugin(Component):
         be available through the `filename` or `url` parameters.
         This is useful for renderers that embed objects, using <object> or
         <img> instead of including the content inline.
-        
+
         Can return the generated XHTML text as a single string or as an
         iterable that yields strings. In the latter case, the list will
         be considered to correspond to lines of text in the original content.
-        """        
+        """
         process = subprocess.Popen([self.pdftotext, content.name, '-'], stdout=subprocess.PIPE)
         output = process.communicate()[0]
         return '<textarea cols="80" rows="25" readonly>%s</textarea>' % output
-
-        

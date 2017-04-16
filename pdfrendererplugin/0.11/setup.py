@@ -19,4 +19,3 @@ setup(name='PdfRendererPlugin',
       pdfrendererplugin = pdfrendererplugin
       """,
       )
-

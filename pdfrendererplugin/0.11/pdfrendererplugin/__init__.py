@@ -1,2 +1,2 @@
-# 
+#
 from pdfrendererplugin import *
