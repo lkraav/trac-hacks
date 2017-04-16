@@ -58,36 +58,36 @@ class ListOfWikiPagesComponent(Component):
         return []
 
     def get_macros(self):
-      return ('ListOfWikiPages','LastChangesBy')
+        return ('ListOfWikiPages','LastChangesBy')
 
 
     def timeval(self, name, default):
-      if name in self.kwargs:
-        try:
-          val = self.kwargs[name]
-          try:
-            val = int(val)
-            text = \
-                str(val) + self.tunits_name['s'] + ['s',''][val == 1]
-          except:
-            unit = val[-1].lower()
-            val = float(val[:-1])
-            text = \
-                str(val).strip('.0') + self.tunits_name[unit] \
-                + ['s',''][val == 1]
-            val =  int( val * self.tunits[ unit ] )
-          val = int(unixtime()) - val
-          # mod for trac 0.12
-          nval = to_utimestamp(to_datetime(val))
+        if name in self.kwargs:
+            try:
+                val = self.kwargs[name]
+                try:
+                    val = int(val)
+                    text = \
+                        str(val) + self.tunits_name['s'] + ['s',''][val == 1]
+                except:
+                    unit = val[-1].lower()
+                    val = float(val[:-1])
+                    text = \
+                        str(val).strip('.0') + self.tunits_name[unit] \
+                        + ['s',''][val == 1]
+                    val =  int( val * self.tunits[ unit ] )
+                val = int(unixtime()) - val
+                # mod for trac 0.12
+                nval = to_utimestamp(to_datetime(val))
 
-        except:
-          raise TracError("Invalid value '%s' for argument '%s'! "
-              % (self.kwargs[name],name) )
-        return (nval,text)
-      else:
-        defval, deftext = default
-        ndef = to_utimestamp(to_datetime(defval))
-        return (ndef,deftext)
+            except:
+                raise TracError("Invalid value '%s' for argument '%s'! "
+                    % (self.kwargs[name],name) )
+            return (nval,text)
+        else:
+            defval, deftext = default
+            ndef = to_utimestamp(to_datetime(defval))
+            return (ndef,deftext)
 
 
     def formattime(self,time):
@@ -129,35 +129,35 @@ class ListOfWikiPagesComponent(Component):
 
     def get_macro_description(self,name):
         if name == 'ListOfWikiPages':
-          return self.ListOfWikiPages.__doc__
+            return self.ListOfWikiPages.__doc__
         elif name == 'LastChangesBy':
-          return self.LastChangesBy.__doc__
+            return self.LastChangesBy.__doc__
         else:
-          return ''
+            return ''
 
 
     def expand_macro(self, formatter, name, content):
         if name == 'ListOfWikiPages':
-          return self.ListOfWikiPages(formatter, content)
+            return self.ListOfWikiPages(formatter, content)
         elif name == 'LastChangesBy':
-          return self.LastChangesBy(formatter, content)
+            return self.LastChangesBy(formatter, content)
         else:
-          return tag()
+            return tag()
 
     def _get_sql_exclude(self, list):
-      import re
-      if not list:
-        return ''
-      star  = re.compile(r'(?<!\\)\*')
-      ques  = re.compile(r'(?<!\\)\?')
-      sql_exclude = ''
-      for pattern in list:
-        pattern = pattern.replace('%',r'\%').replace('_',r'\_')
-        pattern = star.sub('%', pattern)
-        pattern = ques.sub('_', pattern)
-        sql_exclude = sql_exclude + " AND name NOT LIKE '%s' " % pattern
-      #sql_exclude = sql_exclude + r" ESCAPE '\\' "
-      return sql_exclude
+        import re
+        if not list:
+            return ''
+        star  = re.compile(r'(?<!\\)\*')
+        ques  = re.compile(r'(?<!\\)\?')
+        sql_exclude = ''
+        for pattern in list:
+            pattern = pattern.replace('%',r'\%').replace('_',r'\_')
+            pattern = star.sub('%', pattern)
+            pattern = ques.sub('_', pattern)
+            sql_exclude = sql_exclude + " AND name NOT LIKE '%s' " % pattern
+        #sql_exclude = sql_exclude + r" ESCAPE '\\' "
+        return sql_exclude
 
     def ListOfWikiPages(self, formatter, content):
         """
@@ -230,7 +230,7 @@ The wildcards '`*`' (matches everything) and '`?`' (matches a single character) 
         long_format = self.env.config.get(section, 'default_format',
             'short').lower() == 'long'
         if 'format' in kwargs:
-          long_format = kwargs['format'].lower() == 'long'
+            long_format = kwargs['format'].lower() == 'long'
         self.long_format = long_format
 
         ignoreusers = self.env.config.getlist(section, 'ignore_users', ['trac'])
@@ -247,7 +247,7 @@ The wildcards '`*`' (matches everything) and '`?`' (matches a single character) 
 
         sql_exclude = ''
         if 'exclude' in kwargs:
-          sql_exclude = self._get_sql_exclude(kwargs['exclude'])
+            sql_exclude = self._get_sql_exclude(kwargs['exclude'])
 
         self.kwargs = kwargs
         dfrom, fromtext = self.timeval('from', (0,''))
@@ -255,14 +255,14 @@ The wildcards '`*`' (matches everything) and '`?`' (matches a single character) 
 
 
         if 'from' in kwargs or 'to' in kwargs:
-          sql_time = " time BETWEEN %d AND %d AND " % (dfrom,dto)
+            sql_time = " time BETWEEN %d AND %d AND " % (dfrom,dto)
         else:
-          sql_time = ''
+            sql_time = ''
 
         if kwargs.get('order','normal') == 'reverse':
-          order = " "
+            order = " "
         else:
-          order = " DESC "
+            order = " DESC "
 
         cursor.execute(
             "SELECT name,time,author,version,comment FROM wiki AS w1 WHERE " \
@@ -274,16 +274,16 @@ The wildcards '`*`' (matches everything) and '`?`' (matches a single character) 
               for n,[name,time,author,version,comment] in enumerate(cursor) ]
 
         if self.long_format:
-          cols = ( "WikiPage", "Last Changed At", "By",
-                   "Version", "Diff", "History", "Comment" )
+            cols = ( "WikiPage", "Last Changed At", "By",
+                     "Version", "Diff", "History", "Comment" )
         else:
-          cols = ( "WikiPage", "Last Changed At", "By" )
+            cols = ( "WikiPage", "Last Changed At", "By" )
 
         if 'headline' in kwargs:
-          headlinetag = tag.tr( tag.th( kwargs['headline'],
-            colspan = len(cols) ) )
+            headlinetag = tag.tr( tag.th( kwargs['headline'],
+              colspan = len(cols) ) )
         else:
-          headlinetag = tag()
+            headlinetag = tag()
 
         head  = tag.thead ( headlinetag, tag.tr(
           map(lambda x: tag.th(x, class_=x.replace(" ", "").lower() ), cols) ) )
@@ -325,7 +325,7 @@ This macro prints a table similar to the `[[ListOfWikiPages]]` only with the
         long_format = self.env.config.get(section, 'default_format',
             'short').lower() == 'long'
         if 'format' in kwargs:
-          long_format = kwargs['format'].lower() == 'long'
+            long_format = kwargs['format'].lower() == 'long'
         self.long_format = long_format
 
         self.kwargs = kwargs
@@ -333,13 +333,13 @@ This macro prints a table similar to the `[[ListOfWikiPages]]` only with the
         dto, totext     = self.timeval('to',   (int(unixtime()),''))
 
         if 'from' in kwargs or 'to' in kwargs:
-          sql_time = " AND time BETWEEN %d AND %d " % (dfrom,dto)
+            sql_time = " AND time BETWEEN %d AND %d " % (dfrom,dto)
         else:
-          sql_time = ''
+            sql_time = ''
 
         sql_exclude = ''
         if 'exclude' in kwargs:
-          sql_exclude = self._get_sql_exclude(kwargs['exclude'])
+            sql_exclude = self._get_sql_exclude(kwargs['exclude'])
 
         author = len(largs) > 0 and largs[0] or formatter.req.authname
         count  = len(largs) > 1 and largs[1] or 5
@@ -354,9 +354,9 @@ This macro prints a table similar to the `[[ListOfWikiPages]]` only with the
         cursor = db.cursor()
 
         if kwargs.get('order','normal') == 'reverse':
-          order = " "
+            order = " "
         else:
-          order = " DESC "
+            order = " DESC "
 
         cursor.execute ( """
               SELECT name,time,version,comment
@@ -374,34 +374,34 @@ This macro prints a table similar to the `[[ListOfWikiPages]]` only with the
             s = 's'
 
         if self.long_format:
-          cols = ( "WikiPage", "Last Changed At",
-                   "Version", "Diff", "History", "Comment" )
+            cols = ( "WikiPage", "Last Changed At",
+                     "Version", "Diff", "History", "Comment" )
         else:
-          cols = ( "WikiPage", "Last Changed At" )
+            cols = ( "WikiPage", "Last Changed At" )
 
         headline = "Last %s change%s by  " % (count,s)
         if sql_time:
-          if fromtext:
-            if totext:
-              timetag = " between %s and %s ago" % (fromtext,totext)
+            if fromtext:
+                if totext:
+                    timetag = " between %s and %s ago" % (fromtext,totext)
+                else:
+                    timetag = " in the last %s" % fromtext
             else:
-              timetag = " in the last %s" % fromtext
-          else:
-            if totext:
-              timetag = " before the last %s" % totext
-            else:
-              timetag = ""
+                if totext:
+                    timetag = " before the last %s" % totext
+                else:
+                    timetag = ""
         else:
-          timetag = ''
+            timetag = ''
 
         if 'headline' in kwargs:
-          headlinetag = tag.tr(
-              tag.th(kwargs['headline'],
-              colspan = len(cols) ))
+            headlinetag = tag.tr(
+                tag.th(kwargs['headline'],
+                colspan = len(cols) ))
         else:
-          headlinetag = tag.tr(
-              tag.th(headline, tag.strong(author), timetag,
-              colspan = len(cols) ))
+            headlinetag = tag.tr(
+                tag.th(headline, tag.strong(author), timetag,
+                colspan = len(cols) ))
 
         head = tag.thead ( headlinetag,
                 tag.tr(
@@ -411,4 +411,3 @@ This macro prints a table similar to the `[[ListOfWikiPages]]` only with the
 
         self.href = None
         return table
-
