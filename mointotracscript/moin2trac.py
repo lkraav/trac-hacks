@@ -7,13 +7,13 @@ usage:
     <moindir> is the original moinmoin directory.
     <tracprojectdir> is the target trac project directory
     <wikimapfile>  A mapping of page name to trac wikis
-    
+
    Optionally you may also include <wikimapfile> which
    is useful if you would like to split your wiki into
    a trac multi-project or if you would prefer to map
    only some of you pages into your wiki.
 
-   The syntax is as follow 
+   The syntax is as follow
    MoinPageName   <tracprojectdir>
 
    If a <wikimapfile> is specified then only
@@ -73,7 +73,7 @@ def convert(moindir, tracdir = None, mapfile = None):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-    	print usage
-	sys.exit()
+        print usage
+        sys.exit()
     args = sys.argv[1:]
     convert(*args)

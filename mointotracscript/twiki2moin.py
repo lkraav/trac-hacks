@@ -39,14 +39,14 @@ def twiki2moin(txt):
     txt = re.compile(r"</pre>").sub("}}}", txt)
     # convert bold fix .. no equivalent
     txt = re.compile(r"\B==\b([^*\n]*?)==\B").sub("{{{\\1}}}", txt)
-    
-    # convert definition list 
+
+    # convert definition list
     # Three spaces, a dollar sign, the term, a colon, a space, followed by the definition ( "   $ term: definition" -> "term:: definition" )
     txt = re.compile("   \$ (.*): (.*)").sub(" \\1:: \\2", txt)
     # convert lists
     txt = re.compile("((?: {3})+)([0-9]+)\s(.*)").sub("\\1\\2. \\3", txt)
     txt = re.compile("(\t+)([0-9]+)\s(.*)").sub("\\1\\2. \\3", txt)
-    
+
     # convert headings
     txt = re.compile("^-?" + re.escape("---+++++") + "\s*(.*)$", re.M).sub("====== \\1 ======", txt)
     txt = re.compile("^-?" + re.escape("---++++") + "\s*(.*)$", re.M).sub("===== \\1 =====", txt)
@@ -136,5 +136,5 @@ if __name__ == '__main__':
 
     if not quiet:
         defaults()
-        
+
     main(twikidir, moinout, twikidata )
