@@ -90,12 +90,12 @@ class KeywordSuggestModule(Component):
         if req.path_info.startswith('/ticket/') or \
            req.path_info.startswith('/newticket') or \
            (tagsplugin_is_installed and req.path_info.startswith('/wiki/')):
-                # In Trac 1.0 and later, jQuery-UI is included from the core.
-                if trac_version >= '1.0':
-                    Chrome(self.env).add_jquery_ui(req)
-                else:
-                    add_script(req, 'keywordsuggest/js/jquery-ui-1.8.16.custom.min.js')
-                    add_stylesheet(req, 'keywordsuggest/css/jquery-ui-1.8.16.custom.css')
+            # In Trac 1.0 and later, jQuery-UI is included from the core.
+            if trac_version >= '1.0':
+                Chrome(self.env).add_jquery_ui(req)
+            else:
+                add_script(req, 'keywordsuggest/js/jquery-ui-1.8.16.custom.min.js')
+                add_stylesheet(req, 'keywordsuggest/css/jquery-ui-1.8.16.custom.css')
 
         return template, data, content_type
 

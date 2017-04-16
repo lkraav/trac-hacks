@@ -42,7 +42,7 @@ class KeywordSuggestModuleTestCase(unittest.TestCase):
         self.env.config.set('keywordsuggest', 'multipleseparator', "' '")
         self.assertEqual(' ', self.ksm.multiple_separator)
 
-    def test_get_keywords_no_keywords(self): 
+    def test_get_keywords_no_keywords(self):
         self.assertEqual('', self.ksm._get_keywords_string(self.req))
 
     def test_get_keywords_define_in_config(self):
@@ -52,7 +52,7 @@ class KeywordSuggestModuleTestCase(unittest.TestCase):
     def test_keywords_are_sorted(self):
         self.env.config.set('keywordsuggest', 'keywords', 'tagb, tagc, taga')
         self.assertEqual("'taga','tagb','tagc'", self.ksm._get_keywords_string(self.req))
-    
+
     def test_keywords_duplicates_removed(self):
         self.env.config.set('keywordsuggest', 'keywords', 'tag1, tag1, tag2')
         self.assertEqual("'tag1','tag2'", self.ksm._get_keywords_string(self.req))
@@ -80,4 +80,3 @@ def test_suite():
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')
-

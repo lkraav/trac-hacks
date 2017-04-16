@@ -11,9 +11,8 @@ import unittest
 
 def test_suite():
     suite = unittest.TestSuite()
-    
+
     import keywordsuggest.tests.web_ui
     suite.addTest(keywordsuggest.tests.web_ui.test_suite())
-    
-    return suite
 
+    return suite
