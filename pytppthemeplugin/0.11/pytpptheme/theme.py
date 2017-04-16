@@ -10,4 +10,3 @@ class PyTppTheme(ThemeBase):
     """Trac theme based on python.org and The Python Papers."""
 
     template = htdocs = css = screenshot = True
-    

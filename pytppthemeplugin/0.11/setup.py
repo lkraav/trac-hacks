@@ -5,10 +5,10 @@ from setuptools import setup
 
 fo = open('./CHANGES', 'r')
 try :
-  DESC = fo.read()
-  DESC = '\n'.join(x.replace('\r', ' ') for x in DESC.splitlines())
+    DESC = fo.read()
+    DESC = '\n'.join(x.replace('\r', ' ') for x in DESC.splitlines())
 finally :
-  fo.close()
+    fo.close()
 
 setup(
     name = 'TracPyTppTheme',
@@ -17,9 +17,9 @@ setup(
     package_dir = {
             'pytpptheme' : 'pytpptheme'
         },
-    package_data = { 'pytpptheme': ['htdocs/*.*', 'templates/*.html', 
+    package_data = { 'pytpptheme': ['htdocs/*.*', 'templates/*.html',
                                     'CHANGES'] },
-    
+
     author = "Jeroen Ruigrok van der Werven & Noah Kantrowitz & Olemis Lang",
     author_email = 'olemis@gmail.com',
     maintainer = 'Olemis Lang',
@@ -32,7 +32,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    
+
     install_requires = ['TracThemeEngine'],
 
     entry_points = {
