@@ -6,7 +6,7 @@ from genshi.builder import tag
 
 from trac.core import *
 from trac.wiki.formatter import format_to_html, format_to_oneliner
-from trac.util import salt, TracError
+from trac.util import as_bool, salt, TracError
 from trac.util.text import to_unicode
 from trac.web.chrome import add_stylesheet, add_script, Chrome, ITemplateProvider
 from trac.wiki.api import parse_args, IWikiMacroProvider
@@ -45,23 +45,35 @@ class ScrippetMacro(WikiMacroBase):
             args2,kw = parse_args(content)
             self.log.debug("RENDER ARGUMENTS: %s " % args2)
             self.log.debug("RENDER KW: %s " % kw)
-            if 'fdx' in kw:
-                fdx = self._parse_filespec(kw['fdx'].strip(), formatter.context, self.env)
-                self.log.debug("FDX: {0}".format(fdx))
-            if 'start_with_scene' in kw:
-                start_with_scene = int(kw['start_with_scene'])
-                self.log.debug("START: %s" % start_with_scene)
-            if 'end_with_scene' in kw:
-                end_with_scene = int(kw['end_with_scene'])
-                self.log.debug("END: %s" % end_with_scene)
-            elif 'start_with_scene' in kw:
-                end_with_scene = int(kw['start_with_scene']) + 1
-                self.log.debug("END: %s" % end_with_scene)
+            self.log.debug("RENDER ARGS: %s " % args)
+            pure = False
+            if args != None:
+                if 'pure' in args:   
+                    pure = as_bool(args['pure'])
+            if kw != None:
+                if 'fdx' in kw:
+                    fdx = self._parse_filespec(kw['fdx'].strip(), formatter.context, self.env)
+                    self.log.debug("FDX: {0}".format(fdx))
+                if 'start_with_scene' in kw:
+                    start_with_scene = int(kw['start_with_scene'])
+                    self.log.debug("START: %s" % start_with_scene)
+                if 'end_with_scene' in kw:
+                    end_with_scene = int(kw['end_with_scene'])
+                    self.log.debug("END: %s" % end_with_scene)
+                elif 'start_with_scene' in kw:
+                    end_with_scene = int(kw['start_with_scene']) + 1
+                    self.log.debug("END: %s" % end_with_scene)
                 
             if kw != {} and fdx:
                 self.log.debug("RENDER SUBSET")
                 return self.render_fdx_subset(fdx,start_with_scene,end_with_scene,formatter)
             else:
+                self.log.debug("PURE: %s" % pure)
+                if not pure:
+                    content = re.sub(r"//(.*?)//","*\g<1>*", content)
+                    content = re.sub(r"'''(.*?)'''","**\g<1>**", content)
+                    content = re.sub(r"''(.*?)''","*\g<1>*", content)
+                    content = re.sub(r"__(.*?)__","_\g<1>_", content)
                 data = {
                   'fountain': to_unicode(content),
                   'inline': True,
