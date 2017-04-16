@@ -15,7 +15,7 @@ class NikoNikoRPC(Component):
     def xmlrpc_methods(self):
         yield ('NIKONIKO_VIEW', ((str, ),), self.getCurrentMood)
         yield ('NIKONIKO_VIEW', ((str, ),), self.getCurrentComment)
-    
+
     def page_info(self, name, time, author, version, comment=''):
         return dict(name=name,
                     lastModified=xmlrpclib.DateTime(int(time)),
@@ -36,7 +36,7 @@ class NikoNikoRPC(Component):
             return 'Ok'
         else:
             return comment
-    
+
     def getField(self, req, field):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
@@ -48,7 +48,7 @@ class NikoNikoRPC(Component):
                      "nikoniko_date = '" + date_time + "'"
         cursor.execute(getMoodSQL)
         row = cursor.fetchone()
-        if row: 
-            return row[0] 
+        if row:
+            return row[0]
         else:
-            return null 
+            return null
