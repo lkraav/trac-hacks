@@ -51,7 +51,7 @@ class TagsRequestHandler(Component):
         tags = sorted(tags.items(), key=lambda x: x[1], reverse=True)
         writeOut=str('\n'.join(['%s|%d' % (name, number) for name, number in tags]))
         req.send_header('Content-length', str(len(writeOut)))
-        req.end_headers() 
+        req.end_headers()
         req.write(writeOut)
 
     ### methods for IRequestFilter
@@ -63,7 +63,7 @@ class TagsRequestHandler(Component):
         """Do any post-processing the request might need; typically adding
         values to the template `data` dictionary, or changing template or
         mime type.
-        
+
         `data` may be update in place.
 
         Always returns a tuple of (template, data, content_type), even if
@@ -80,7 +80,7 @@ class TagsRequestHandler(Component):
     def pre_process_request(self, req, handler):
         """Called after initial handler selection, and can be used to change
         the selected handler or redirect request.
-        
+
         Always returns the request handler, even if unchanged.
         """
         if req.path_info.rstrip() == '/tags' and req.args.get('format') == 'txt':
@@ -88,7 +88,7 @@ class TagsRequestHandler(Component):
         return handler
 
 class AutocompleteTags(Component):
-    
+
     implements(IRequestFilter, ITemplateProvider)
 
     ### methods for IRequestFilter
@@ -100,7 +100,7 @@ class AutocompleteTags(Component):
         """Do any post-processing the request might need; typically adding
         values to the template `data` dictionary, or changing template or
         mime type.
-        
+
         `data` may be update in place.
 
         Always returns a tuple of (template, data, content_type), even if
@@ -123,7 +123,7 @@ class AutocompleteTags(Component):
     def pre_process_request(self, req, handler):
         """Called after initial handler selection, and can be used to change
         the selected handler or redirect request.
-        
+
         Always returns the request handler, even if unchanged.
         """
         return handler
@@ -133,11 +133,11 @@ class AutocompleteTags(Component):
     def get_htdocs_dirs(self):
         """Return a list of directories with static resources (such as style
         sheets, images, etc.)
-        
+
         Each item in the list must be a `(prefix, abspath)` tuple. The
         `prefix` part defines the path in the URL that requests to these
         resources are prefixed with.
-        
+
         The `abspath` is the absolute path to the directory containing the
         resources on the local file system.
         """
@@ -147,4 +147,4 @@ class AutocompleteTags(Component):
         """Return a list of directories containing the provided template
         files.
         """
-        return []                    
+        return []
