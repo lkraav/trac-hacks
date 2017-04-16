@@ -15,8 +15,8 @@ class PledgieMacro(WikiMacroBase):
     """
 
     def expand_macro(self, formatter, name, content):
-	content = content or ''
-	args = content.split(',')
+        content = content or ''
+        args = content.split(',')
 
         # HTML arguments used in Pledgie URL (future maybe...)
         hargs = { 'key': self.env.config.get('pledgie', 'campaign_id', None)}
