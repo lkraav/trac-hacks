@@ -33,11 +33,11 @@ class PageToDocbookPlugin(Component):
         datadir = resource_filename(__name__, 'data')
 
         html = wiki_to_html(source, self.env, req)
-	options = dict(output_xhtml=1, add_xml_decl=1, indent=1, tidy_mark=0, input_encoding='utf8', output_encoding='utf8', doctype='auto', wrap=0, char_encoding='utf8')
-	xhtml = parseString(html.encode("utf-8"), **options)
+        options = dict(output_xhtml=1, add_xml_decl=1, indent=1, tidy_mark=0, input_encoding='utf8', output_encoding='utf8', doctype='auto', wrap=0, char_encoding='utf8')
+        xhtml = parseString(html.encode("utf-8"), **options)
 
-	xhtml2dbXsl = u"""<?xml version="1.0"?>
-<xsl:stylesheet version="1.0" 
+        xhtml2dbXsl = u"""<?xml version="1.0"?>
+<xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
   <xsl:import href=\"file:///""" + urllib.pathname2url(resource_filename(__name__, 'data/html2db/html2db.xsl')) + """\" />
@@ -46,8 +46,8 @@ class PageToDocbookPlugin(Component):
 </xsl:stylesheet>
 """
 
-	normalizedHeadingsXsl = u"""<?xml version="1.0"?>
-<xsl:stylesheet version="1.0" 
+        normalizedHeadingsXsl = u"""<?xml version="1.0"?>
+<xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
   <xsl:import href=\"file:///""" + urllib.pathname2url(resource_filename(__name__, 'data/headingsNormalizer/headingsNormalizer.xsl')) + """\" />
@@ -56,25 +56,23 @@ class PageToDocbookPlugin(Component):
 </xsl:stylesheet>
 """
 
-	xhtml_xmldoc = libxml2.parseDoc(str(xhtml))
+        xhtml_xmldoc = libxml2.parseDoc(str(xhtml))
 
-	normalizedHeadingsXsl_xmldoc = libxml2.parseDoc(normalizedHeadingsXsl)
-	normalizedHeadingsXsl_xsldoc = libxslt.parseStylesheetDoc(normalizedHeadingsXsl_xmldoc)
-	xhtml2_xmldoc = normalizedHeadingsXsl_xsldoc.applyStylesheet(xhtml_xmldoc, None)
+        normalizedHeadingsXsl_xmldoc = libxml2.parseDoc(normalizedHeadingsXsl)
+        normalizedHeadingsXsl_xsldoc = libxslt.parseStylesheetDoc(normalizedHeadingsXsl_xmldoc)
+        xhtml2_xmldoc = normalizedHeadingsXsl_xsldoc.applyStylesheet(xhtml_xmldoc, None)
 
-	nhstring = normalizedHeadingsXsl_xsldoc.saveResultToString(xhtml2_xmldoc)
+        nhstring = normalizedHeadingsXsl_xsldoc.saveResultToString(xhtml2_xmldoc)
 
-	xhtml2dbXsl_xmldoc = libxml2.parseDoc(xhtml2dbXsl)
-	xhtml2dbXsl_xsldoc = libxslt.parseStylesheetDoc(xhtml2dbXsl_xmldoc)
-	docbook_xmldoc = xhtml2dbXsl_xsldoc.applyStylesheet(xhtml2_xmldoc, None)
+        xhtml2dbXsl_xmldoc = libxml2.parseDoc(xhtml2dbXsl)
+        xhtml2dbXsl_xsldoc = libxslt.parseStylesheetDoc(xhtml2dbXsl_xmldoc)
+        docbook_xmldoc = xhtml2dbXsl_xsldoc.applyStylesheet(xhtml2_xmldoc, None)
 
-	dbstring = xhtml2dbXsl_xsldoc.saveResultToString(docbook_xmldoc)
+        dbstring = xhtml2dbXsl_xsldoc.saveResultToString(docbook_xmldoc)
 
-	xhtml_xmldoc.freeDoc()
-	normalizedHeadingsXsl_xsldoc.freeStylesheet()
-	xhtml2dbXsl_xsldoc.freeStylesheet()
-	xhtml2_xmldoc.freeDoc()
-	docbook_xmldoc.freeDoc()
-	return (dbstring, 'text/plain') #application/docbook+xml
-
-
+        xhtml_xmldoc.freeDoc()
+        normalizedHeadingsXsl_xsldoc.freeStylesheet()
+        xhtml2dbXsl_xsldoc.freeStylesheet()
+        xhtml2_xmldoc.freeDoc()
+        docbook_xmldoc.freeDoc()
+        return (dbstring, 'text/plain') #application/docbook+xml

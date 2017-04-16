@@ -31,4 +31,3 @@ setup(name=PACKAGE,
       url = 'http://trac-hacks.org/wiki/Page2DocbookPlugin',
 
 )
-
