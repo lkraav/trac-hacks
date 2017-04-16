@@ -6,7 +6,7 @@ from genshi.builder import tag
 
 from trac.core import *
 from trac.wiki.formatter import format_to_html
-from trac.util import salt, TracError
+from trac.util import TracError
 from trac.util.text import to_unicode
 from trac.util.html import html, plaintext, Markup
 from trac.web.chrome import add_stylesheet, add_script, Chrome, ITemplateProvider
