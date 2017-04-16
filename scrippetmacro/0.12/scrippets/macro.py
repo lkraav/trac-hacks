@@ -287,7 +287,7 @@ class UrlSource(TransformSource):
         lm = self.obj.info().getdate('Last-modified')
         if lm:
             from datetime import datetime
-            from util.datefmt import FixedOffset
+            from trac.util.datefmt import FixedOffset
             return datetime(lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0,
                             FixedOffset(lm[9], 'custom'))
         return to_datetime(None)

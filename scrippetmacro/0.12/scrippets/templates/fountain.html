@@ -25,8 +25,8 @@ var content = `
 ${fountain}
 `;
 var output = fountain.parseToHtml(content.trim());
-$('div[name="${fnid}"]').html(output.html.script);
-$('section[name="workspace${fnid}"]').show();
+jQuery('div[name="${fnid}"]').html(output.html.script);
+jQuery('section[name="workspace${fnid}"]').show();
 });
 /* ]]> */
     </script>
