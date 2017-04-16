@@ -33,14 +33,14 @@ from trac.util.datefmt import to_datetime, utc
 
 
 ##-----------------------------------------------------------------------------
-## ticket creation 
+## ticket creation
 
 
 class EmailToTicket(Component):
     """create a ticket from an email"""
     implements(IEmailHandler)
 
-    
+
     possibleFields = ['owner', 'type', 'status', 'priority', 'milestone', 'component', 'version', 'resolution', 'keywords', 'cc', 'time', 'changetime']
 
     ### methods for IEmailHandler
@@ -52,7 +52,7 @@ class EmailToTicket(Component):
         return bool(re.match(regexp, self.decoded_subject.lower()))
 
 
-    
+
     def invoke(self, message, warnings):
         """make a new ticket on receiving email"""
 
@@ -117,13 +117,13 @@ class EmailToTicket(Component):
         end = mailBody.lower().find('#end')
         if end <> -1 :
             mailBody = mailBody[:end]
-        
+
         mailBody.strip()
 
         res = {}
 
         # we look for all possible fields
-        for fieldName in self.possibleFields : 
+        for fieldName in self.possibleFields :
             matched = re.search(r'(?P<all>^[ \t]*\#[ \t]*%s[ \t]*:[ \t]*(?P<value>.*?))$'%fieldName, mailBody, re.IGNORECASE | re.MULTILINE)
             if matched :
                 res[fieldName] = matched.group('value').strip()
@@ -131,9 +131,9 @@ class EmailToTicket(Component):
 
         #we clean the body mail of "^ *#
         #manage the problem of 'is this field declaration the last line (without \n at end)?'
-        if mailBody[0] <> '\n' : mailBody = '\n' + mailBody 
+        if mailBody[0] <> '\n' : mailBody = '\n' + mailBody
         mailBody = re.sub(r'\n\s*#.*', "", mailBody, re.MULTILINE)
-        
+
         return mailBody.strip(), res
 
 
@@ -146,7 +146,7 @@ class EmailToTicket(Component):
         perm = PermissionSystem(self.env)
         if not perm.check_permission('MAIL2TICKET_CREATE', user) : # None -> 'anoymous'
             raise EmailException("%s does not have MAIL2TRAC_CREATE permissions" % (user or 'anonymous'))
-    
+
         reporter = user or message['from']
         return reporter
 
@@ -161,7 +161,7 @@ class EmailToTicket(Component):
                            summary = subject,
                            status='new',
                            resolution=''), **inBodyFields)
-        
+
         return fields
 
     def post_process(self, ticket):
@@ -170,7 +170,7 @@ class EmailToTicket(Component):
         # ticket notification
         tn = TicketNotifyEmail(self.env)
         tn.notify(ticket)
-    
+
 
 ##-----------------------------------------------------------------------------
 ## ticket update
@@ -178,7 +178,7 @@ class EmailToTicket(Component):
 
 
 class ReplyToTicket(Component):
-    
+
     implements(IEmailHandler)
 
     possibleFields = ['type', 'priority', 'milestone', 'component', 'version', 'keywords', 'cc']
@@ -188,13 +188,13 @@ class ReplyToTicket(Component):
                       'invalid' : {'action' : 'resolve' , 'value' : 'invalid'},
                       }
 
-    
+
     def match(self, message):
         self.decoded_subject = get_decoded_subject(message)
         self.ticket = self._ticket(message, self.decoded_subject)
         return bool(self.ticket)
 
-        
+
     def invoke(self, message, warnings):
         """reply to a ticket"""
         ticket = self.ticket
@@ -224,7 +224,7 @@ class ReplyToTicket(Component):
 
         action = None
         if actions :
-            action = actions.keys()[0] 
+            action = actions.keys()[0]
         controllers = list(tm._get_action_controllers(mockReq, ticket, action))
         all_fields = [field['name'] for field in ts.get_ticket_fields()]
 
@@ -234,7 +234,7 @@ class ReplyToTicket(Component):
             ticket._old[field] = ticket[field]
             ticket.values[field] = inBodyFields[field]
             mockReq.args[field] = inBodyFields[field]
-        if action : 
+        if action :
             mockReq.args['action_%s_reassign_owner' % action] = ticket['owner']
 
 
@@ -244,7 +244,7 @@ class ReplyToTicket(Component):
 
 
         mockReq.args['ts'] = str(ticket.time_changed)
-        
+
         changes, problems = tm.get_ticket_changes(mockReq, ticket, action)
         valid = problems and False or tm._validate_ticket(mockReq, ticket)
 
@@ -255,7 +255,7 @@ class ReplyToTicket(Component):
         add_attachments(self.env, ticket, attachments)
 
         ticket.save_changes(reporter, mailBody)
-        
+
         for controller in controllers:
             controller.apply_action_side_effects(mockReq, ticket, action)
             # Call ticket change listeners
@@ -273,7 +273,7 @@ class ReplyToTicket(Component):
         permissions = []
         args = {}
         chrome = {'warnings' : [] }
-        
+
         def __init__(self, permissions, reporter) :
             self.permissions = [ x for x in permissions if permissions[x] ]
             self.fields = {}
@@ -291,7 +291,7 @@ class ReplyToTicket(Component):
         return a ticket associated with a message subject,
         or None if not available
         """
-        
+
 
         # get and format the subject template
         subject_template = self.env.config.get('notification', 'ticket_subject_template')
@@ -324,7 +324,7 @@ class ReplyToTicket(Component):
         perm = PermissionSystem(self.env)
         if not perm.check_permission('MAIL2TICKET_COMMENT', user) : # None -> 'anoymous'
             raise EmailException("%s does not have MAIL2TRAC_COMMENT permissions" % (user or 'anonymous'))
-        
+
         reporter = user or message['from']
         return reporter
 
@@ -334,13 +334,13 @@ class ReplyToTicket(Component):
         end = mailBody.lower().find('#end')
         if end <> -1 :
             mailBody = mailBody[:end]
-        
+
         mailBody.strip()
 
         res = {}
 
         # we look for all possible fields
-        for fieldName in self.possibleFields : 
+        for fieldName in self.possibleFields :
             matched = re.search(r'(?P<all>^[ \t]*\#[ \t]*%s[ \t]*:[ \t]*(?P<value>.*?))$'%fieldName, mailBody, re.IGNORECASE | re.MULTILINE)
             if matched :
                 res[fieldName] = matched.group('value').strip()
@@ -355,12 +355,12 @@ class ReplyToTicket(Component):
                 matched = re.search(r'(?P<all>^[ \t]*\#[ \t]*%s[ \t]*[ \t]*(?P<value>.*?))$'%action, mailBody, re.IGNORECASE | re.MULTILINE)
             if matched :
                 actions[action] = matched.group('value').strip()
-                break #only one action #should emit a warning FIXME 
+                break #only one action #should emit a warning FIXME
 
 
-        #take care of aliases declared (the real action must be in avail_actions 
+        #take care of aliases declared (the real action must be in avail_actions
 
-        if not actions : 
+        if not actions :
             for action in [ x for x in self.action_aliases if self.action_aliases[x]['action'] in avail_actions ] :
                 matched = re.search(r'(?P<all>^[ \t]*\#[ \t]*%s[ \t]*[ \t]*$)'%action, mailBody, re.IGNORECASE | re.MULTILINE)
                 if matched :
@@ -370,9 +370,9 @@ class ReplyToTicket(Component):
 
         #we clean the body mail of "^ *#
         #manage the problem of 'is this field declaration the last line (without \n at end)?'
-        if mailBody[0] <> '\n' : mailBody = '\n' + mailBody 
+        if mailBody[0] <> '\n' : mailBody = '\n' + mailBody
         mailBody = re.sub(r'\n\s*#.*', "", mailBody, re.MULTILINE)
-        
+
 
 
         if actions :

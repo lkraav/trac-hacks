@@ -48,5 +48,3 @@ class EmailPostHandler(Component):
         else:
             status = 204
         req.send(message, content_type='text/plain', status=status)
-
-        

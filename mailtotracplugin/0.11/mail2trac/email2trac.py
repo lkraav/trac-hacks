@@ -53,7 +53,7 @@ def lookup(env, message):
         accept = set([to])
         cc = message.get('cc','').strip()
         if cc:
-            cc = [email.Utils.parseaddr(i.strip())[1] 
+            cc = [email.Utils.parseaddr(i.strip())[1]
                   for i in cc.split(',') if i.strip()]
             accept.update(cc)
         delivered_to = message.get('delivered-to', '').strip()
@@ -102,7 +102,7 @@ def mail2project(env, message):
             if email_errors and original_message['from']:
                 subject = reply_subject(original_message['subject'])
                 response = 'Subject: %s\n\n%s' % (subject, reply_body(str(e), original_message))
-                send_email(env, 
+                send_email(env,
                            original_message['to'],
                            [ original_message['from'] ],
                            response
@@ -124,13 +124,13 @@ def mail2project(env, message):
             body = warnings[0]
             pass
         else:
-            body = "\n\n".join(["* %s" % warning.strip() 
+            body = "\n\n".join(["* %s" % warning.strip()
                                 for warning in warnings])
-        
+
         # notify the sender
         subject = reply_subject(original_message['subject'])
         response = 'Subject: %s\n\n%s' % (subject, reply_body(body, original_message))
-        send_email(env, 
+        send_email(env,
                    original_message['to'],
                    [ original_message['from'] ],
                    response
@@ -143,16 +143,16 @@ def main(args=sys.argv[1:]):
     # parse the options
     from optparse import OptionParser
     parser = OptionParser()
-    parser.add_option('-p', '--project', '--projects', 
-                      dest='projects', action='append', 
-                      default=[], 
+    parser.add_option('-p', '--project', '--projects',
+                      dest='projects', action='append',
+                      default=[],
                       help='projects to apply to',)
     parser.add_option('-f', '--file', dest='file',
                       help='email file to read;  if not specified, taken from stdin')
-    parser.add_option('-u', '--url', '--urls', 
+    parser.add_option('-u', '--url', '--urls',
                       dest='urls', action='append', default=[],
                       help='urls to post to')
-    parser.add_option('-e', '--parent-env', dest='environment', 
+    parser.add_option('-e', '--parent-env', dest='environment',
                       help='Trac parent environment directory to dispatch TTW')
     parser.add_option('-l', '--logdir', dest='logdir',
                       help='directory to log emails that cause errors')
@@ -180,7 +180,7 @@ def main(args=sys.argv[1:]):
             found = True
             env = open_environment(project)  # open the environment
             mail2project(env, message)  # process the message
-        
+
         if options.environment:
             assert len(options.urls) == 1
             base_url = options.urls[0].rstrip('/')
@@ -217,6 +217,6 @@ def main(args=sys.argv[1:]):
             f.close()
 
         raise
-            
+
 if __name__ == '__main__':
     main()

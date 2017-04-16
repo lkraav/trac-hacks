@@ -18,4 +18,3 @@ setup(name='mail2trac',
       mail2trac = mail2trac
       """,
       )
-

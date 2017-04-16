@@ -37,7 +37,7 @@ def send_email(env, from_addr, recipients, message):
     smtp_user = env.config.get('notification', 'smtp_user')
     smtp_password = env.config.get('notification', 'smtp_password')
 
-    print "smtp_server : %s\n, smtp_port :%s\ni, smtp_user :%s\n,  smtp_password :%s\n"%(smtp_server, smtp_port, smtp_user, smtp_password) 
+    print "smtp_server : %s\n, smtp_port :%s\ni, smtp_user :%s\n,  smtp_password :%s\n"%(smtp_server, smtp_port, smtp_user, smtp_password)
 
 
     # ensure list of recipients
@@ -54,7 +54,7 @@ def send_email(env, from_addr, recipients, message):
 def add_attachments(env, ticket, attachments):
     """add attachments to the ticket"""
     ctr = 1
-    if not attachments : return 
+    if not attachments : return
     for msg in attachments:
         attachment = Attachment(env, 'ticket', ticket.id)
         attachment.author = ticket['reporter']
@@ -90,8 +90,8 @@ def get_decoded_subject(message) :
             decoded_subject += x[0] + u' '
     decoded_subject = decoded_subject.strip()
     return decoded_subject
-        
-    
+
+
 def reply_subject(subject):
     """subject line appropriate to reply"""
     subject = subject.strip()
@@ -118,16 +118,16 @@ def get_body_and_attachments(message, description=None, attachments=[]):
         cdisposition = part.get('content-disposition')
         cdisposition = (cdisposition or '').split(';')[0].strip()
 
-        
+
         if cdisposition != 'attachment':
-            
+
             if ctype not in ('text/plain', 'text/html'):
                 continue
-            
+
             if not contents.has_key(ctype):
                 payload = part.get_payload(decode = True)
                 charset = part.get_charsets('ascii')[0]
-                    
+
                 try:
                     payload = unicode(payload, charset, 'replace')
                 except LookupError:
@@ -161,5 +161,3 @@ def strip_quotes(message):
         body.append(line)
     body = '\n'.join(body)
     return body.strip()
-
-

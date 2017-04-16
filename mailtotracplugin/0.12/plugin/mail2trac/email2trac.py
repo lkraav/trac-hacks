@@ -21,7 +21,7 @@ from trac.core import *
 from trac.env import open_environment
 
 from trac.admin.api import IAdminCommandProvider #new command line
-from trac.perm import IPermissionRequestor # new trac permission 
+from trac.perm import IPermissionRequestor # new trac permission
 
 
 
@@ -42,7 +42,7 @@ class AddressLookupException(Exception):
 
 class Email2Trac(Component) :
 
-    
+
     implements(IAdminCommandProvider, IPermissionRequestor)
 
 
@@ -78,7 +78,7 @@ class Email2Trac(Component) :
         on lookup error, raises AddressLookupException
         """
         message = email.message_from_string(message)
-        
+
         # if the message is not to this project, ignore it
         trac_address = self.env.config.get('mail', 'address')
         if not trac_address:
@@ -87,7 +87,7 @@ class Email2Trac(Component) :
             to = list(email.Utils.parseaddr(message['to']))
             cc = message.get('cc','').strip()
             if cc:
-                cc = [email.Utils.parseaddr(i.strip())[1] 
+                cc = [email.Utils.parseaddr(i.strip())[1]
                       for i in cc.split(',') if i.strip()]
                 to = to + cc
             delivered_to = message.get('delivered-to', '').strip()
@@ -96,24 +96,24 @@ class Email2Trac(Component) :
             original_to = message.get('x-original-to', '').strip()
             if original_to:
                 to.append(original_to)
-    
+
             if trac_address not in to:
                 raise AddressLookupException("Email (to : %s ) does not match Trac address: %s" %(str(to),  trac_address))
-    
+
         return message
-    
+
     def mail2project(self, message) :
         """relays an email message to a project"""
-    
+
         # keep copy of original message for error handling
         original_message = email.message_from_string(message)
-   
-        #keep trac email : 
+
+        #keep trac email :
         trac_mail = self.env.config.get('notification', 'smtp_replyto')
- 
+
         # whether or not to email back on error
         email_errors = self.env.config.getbool('mail', 'email_errors', True)
-    
+
         # lookup the message
         message = self.lookup(message)
         # get the handlers
@@ -127,13 +127,13 @@ class Email2Trac(Component) :
                     if h in handler_dict ]
         # handle the message
         warnings = []
-	#is this email treated ?
-	email_treated = False
+        #is this email treated ?
+        email_treated = False
         for handler in handlers:
             if not handler.match(message) :
                 continue
             try:
-		email_treated = True
+                email_treated = True
 
                 message = handler.invoke(message, warnings)
             except Exception, e:
@@ -156,24 +156,24 @@ class Email2Trac(Component) :
                     return
                 else:
                     raise
-    
+
             # if the message is consumed, quit processing
             if not message:
                 break
-    
-	if not email_treated :
-	    warnings.append("Your email was not treated. It match none of the condition to be treated")
+
+        if not email_treated :
+            warnings.append("Your email was not treated. It match none of the condition to be treated")
         # email warnings
         if warnings:
-    
+
             # format warning message
             if len(warnings) == 1:
                 body = warnings[0]
                 pass
             else:
-                body = "\n\n".join(["* %s" % warning.strip() 
+                body = "\n\n".join(["* %s" % warning.strip()
                                     for warning in warnings])
-            
+
             # notify the sender
             subject = reply_subject(original_message['subject'])
             response = 'Subject: %s\n\n%s' % (subject, reply_body(body, original_message))
@@ -182,5 +182,3 @@ class Email2Trac(Component) :
                        [ original_message['from'] ],
                        response
                        )
-    
-    

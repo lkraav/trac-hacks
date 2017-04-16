@@ -88,12 +88,12 @@ class EmailToTicket(Component):
     def reporter(self, message):
         """return the ticket reporter or updater"""
         user = emailaddr2user(self.env, message['from'])
-        
+
         # check permissions
         perm = PermissionSystem(self.env)
         if not perm.check_permission('TICKET_CREATE', user): # None -> 'anoymous'
             raise EmailException("%s does not have TICKET_CREATE permissions" % (user or 'anonymous'))
-    
+
         reporter = user or message['from']
         return reporter
 
@@ -111,7 +111,7 @@ class EmailToTicket(Component):
         # ticket notification
         tn = TicketNotifyEmail(self.env)
         tn.notify(ticket)
-    
+
 
 class ContactEmailToTicket(EmailToTicket):
     """
@@ -144,7 +144,7 @@ class ContactEmailToTicket(EmailToTicket):
 
 
 class ReplyToTicket(Component):
-    
+
     implements(IEmailHandler)
 
     def match(self, message):
@@ -160,7 +160,7 @@ class ReplyToTicket(Component):
         if not description:
             warnings.append("Seems to be a reply to %s but I couldn't find a comment")
             return message
-        
+
         # save changes to the ticket
         ticket.save_changes(reporter, description)
 
@@ -188,7 +188,7 @@ class ReplyToTicket(Component):
 
         # get the real subject
         subject = strip_res(message['subject'])
-        
+
         # see if it matches the regex
         match = re.match(subject_re, subject)
         if not match:
@@ -211,7 +211,6 @@ class ReplyToTicket(Component):
         perm = PermissionSystem(self.env)
         if not perm.check_permission('TICKET_APPEND', user): # None -> 'anoymous'
             raise EmailException("%s does not have TICKET_APPEND permissions" % (user or 'anonymous'))
-    
+
         reporter = user or message['from']
         return reporter
-

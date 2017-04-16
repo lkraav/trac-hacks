@@ -68,7 +68,7 @@ def add_attachments(env, ticket, attachments):
         # TODO : should probably chown too
 
 ### generic email functions
-    
+
 def reply_subject(subject):
     """subject line appropriate to reply"""
     subject = subject.strip()
@@ -90,7 +90,7 @@ def get_description_and_attachments(message, description=None, attachments=None)
     if isinstance(payload, basestring):
 
         # XXX could instead use .is_multipart
-        if description is None and message.get('Content-Disposition', 'inline') == 'inline' and message.get_content_maintype() == 'text': 
+        if description is None and message.get('Content-Disposition', 'inline') == 'inline' and message.get_content_maintype() == 'text':
 
             description = payload.strip()
             if message.get_content_subtype() == 'html':

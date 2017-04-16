@@ -24,4 +24,3 @@ setup(name='mail2trac',
       emailfilters = mail2trac.filters
       """,
       )
-
