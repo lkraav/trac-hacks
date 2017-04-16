@@ -11,22 +11,22 @@ from trac.wiki.api import IWikiMacroProvider
 from parser import parse
 
 class MediaWikiRenderer(Component):
-        """
-        Renders plain text in MediaWiki format as HTML
-        """
-        implements(IWikiMacroProvider)
+    """
+    Renders plain text in MediaWiki format as HTML
+    """
+    implements(IWikiMacroProvider)
 
-        def get_macros(self):
-                """Return a list of provided macros"""
-                yield 'mediawiki'
+    def get_macros(self):
+        """Return a list of provided macros"""
+        yield 'mediawiki'
 
-        def get_macro_description(self, name):
-                return '''desc'''
+    def get_macro_description(self, name):
+        return '''desc'''
 
-        def expand_macro(self, formatter, name, content):
-                if name == 'mediawiki':
-                        return parse(content)
+    def expand_macro(self, formatter, name, content):
+        if name == 'mediawiki':
+            return parse(content)
 
-        # deprecated interface prior trac 0.11
-        def render_macro(self, req, name, content):
-                return self.expand_macro(None, name, content)
+    # deprecated interface prior trac 0.11
+    def render_macro(self, req, name, content):
+        return self.expand_macro(None, name, content)
