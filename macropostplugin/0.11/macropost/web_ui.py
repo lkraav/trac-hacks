@@ -17,10 +17,10 @@ class MacroPostModule(Component):
     macro_posters = ExtensionPoint(IMacroPoster)
 
     implements(IRequestFilter)
-    
+
     macro_re = re.compile('\[\[(\w+)(?:\([^)]*\))?\]\]')
     proc_re  = re.compile('\{\{\{\n#!(\w+).*?\}\}\}', re.S)
-    
+
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         if req.path_info.startswith('/wiki'):
@@ -55,6 +55,6 @@ class MacroPostModule(Component):
                 req.environ['REQUEST_METHOD'] = 'GET' # Revert back to a GET
 
         return handler
-        
+
     def post_process_request(self, req, template, data, content_type):
         return (template, data, content_type)
