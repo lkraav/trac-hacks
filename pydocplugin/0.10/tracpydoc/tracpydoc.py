@@ -42,7 +42,7 @@ class TracHTMLDoc(pydoc.HTMLDoc):
     _cleanup_html_re = re.compile(r'\.html($|#)')
     _cleanup_inline_re = re.compile(r'<a href=".">index</a>(?:<br>)?|'
                                     r'<a href="file:.*?</a>(?:<br>)?')
-    
+
     def __init__(self, env):
         self.env = env
 
@@ -88,7 +88,7 @@ class TracHTMLDoc(pydoc.HTMLDoc):
     def _pydoc_link(self, target, label=None):
         return '<a href="%s">%s</a>' % \
                (self.env.href.pydoc(target).encode('utf-8'), label or target)
-    
+
     def modulelink(self, obj):
         return self._pydoc_link(obj.__name__)
 
@@ -122,7 +122,7 @@ class TracHTMLDoc(pydoc.HTMLDoc):
     def heading(self, *args):
         return re.sub(self._cleanup_heading_re, r'href="\1"',
                       self._cleanup('heading', *args))
-        
+
     def section(self, *args):
         return self._cleanup('section', *args)
 
@@ -130,10 +130,10 @@ class TracHTMLDoc(pydoc.HTMLDoc):
         return self._cleanup('grey', *args)
 
     def _cleanup(self, kind, *args):
-        return re.sub(self._cleanup_inline_re, '', 
+        return re.sub(self._cleanup_inline_re, '',
                       re.sub(self._cleanup_re, 'class="pydoc%s"' % kind,
                              getattr(pydoc.HTMLDoc, kind)(self, *args)))
-    
+
 
 class PyDoc(Component):
     """ Allow browsing of Python documentation through Trac. """
@@ -269,17 +269,17 @@ class PyDoc(Component):
                 return self.doc.document(object)
         finally:
             self.makedoc_lock.release()
-    
+
     # INavigationContributor methods
-    
+
     def get_active_navigation_item(self, req):
         return 'pydoc'
-                
+
     def get_navigation_items(self, req):
         yield 'mainnav', 'pydoc', html.A('PyDoc', href= req.href.pydoc())
 
     # IRequestHandler methods
-    
+
     def match_request(self, req):
         return req.path_info.startswith('/pydoc')
 
@@ -287,7 +287,7 @@ class PyDoc(Component):
         add_stylesheet(req, 'pydoc/css/pydoc.css')
         target = req.path_info[7:]
         req.hdf['trac.href.pydoc'] = req.href.pydoc()
-        req.hdf['pydoc.trail'] = [Markup(to_unicode(x)) for x in 
+        req.hdf['pydoc.trail'] = [Markup(to_unicode(x)) for x in
                                   self.doc._path_links(target)[:-1]]
         req.hdf['pydoc.trail_last'] = target.split('.')[-1]
         req.hdf['pydoc.content'] = self.generate_help(target)
@@ -295,7 +295,7 @@ class PyDoc(Component):
         return 'pydoc.cs', None
 
     # ITemplateProvider methods
-    
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
@@ -340,7 +340,7 @@ class PyDocMacro(Component):
 
     An optional second argument (`visibility`) can be set in order
     to control the type of documentation that will be shown:
-     * using "public", only show the documentation for exported symbols 
+     * using "public", only show the documentation for exported symbols
      * using "private", all the documentation will be shown
 
     If the `visibility` argument is omitted, the private documentation
@@ -357,7 +357,7 @@ class PyDocMacro(Component):
 
     def get_macro_description(self, name):
         return self.__doc__
-    
+
     def render_macro(self, req, name, content):
         args = content.split(',')
         target = args and args.pop(0)
@@ -394,4 +394,3 @@ class PyDocSearch(Component):
                         return
             pydoc.ModuleScanner().run(callback)
         return results
-
