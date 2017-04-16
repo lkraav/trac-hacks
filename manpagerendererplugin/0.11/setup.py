@@ -8,13 +8,13 @@ VERSION = '0.1'
 setup(  name=PACKAGE, version=VERSION,
         author = "Piers O'Hanlon",
         author_email = 'p.ohanlon@gmail.com',
-	url = 'http://trac-hacks.org/wiki/ManPageRendererPlugin',
+        url = 'http://trac-hacks.org/wiki/ManPageRendererPlugin',
         description = 'Renders Man pages to html',
         license='GPL',
-	packages=['manpagerenderer'],
+        packages=['manpagerenderer'],
         entry_points = """
-	[trac.plugins]
-	manpagerenderer.manpagerenderer = manpagerenderer.manpagerenderer
-	""",
+        [trac.plugins]
+        manpagerenderer.manpagerenderer = manpagerenderer.manpagerenderer
+        """,
         install_requires = ['']
 )
