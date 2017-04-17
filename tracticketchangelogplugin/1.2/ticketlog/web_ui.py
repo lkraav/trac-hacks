@@ -17,11 +17,11 @@ from trac.core import implements
 from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
-from trac.mimeview.api import Context
 from trac.resource import Resource
 from trac.versioncontrol.api import RepositoryManager
 from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
+from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
+                            web_context
 from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.util.datefmt import format_datetime, from_utimestamp, user_time
 from trac.util.text import shorten_line
@@ -174,9 +174,9 @@ class TicketLogModule(CommitTicketUpdater):
                 FROM ticket_revision AS tr
                  LEFT JOIN revision AS r
                   ON r.repos=tr.repos AND r.rev=tr.rev
-                 LEFT JOIN repository AS p 
+                 LEFT JOIN repository AS p
                   ON p.id=tr.repos AND p.name='name'
-                WHERE tr.ticket=%s 
+                WHERE tr.ticket=%s
                 """, (ticket_id,)):
             repos_name = row[0]
             rev = row[1]
@@ -195,7 +195,7 @@ class TicketLogModule(CommitTicketUpdater):
             # Only one changeset will be in the ticket changelog
             intermediate[(rev, author, timestamp, message)] = link
 
-        ctxt = Context.from_request(req)
+        ctxt = web_context(req)
         for key in intermediate:
             rev, author, timestamp, message = key
             if self.max_message_length \
