@@ -10,7 +10,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracCiteCode',
-    version='0.3.4',
+    version='0.3.5',
     packages=find_packages(exclude=['*.tests*']),
     license="BSD 3-Clause",
     url='https://trac-hacks.org/wiki/CiteCodeMacro',

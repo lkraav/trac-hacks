@@ -12,11 +12,11 @@ import re
 import urlparse
 
 from trac.core import Component, implements
-from trac.mimeview import Context, Mimeview
+from trac.mimeview import Mimeview
 from trac.mimeview.api import is_binary
 from trac.util.html import escape
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data, \
-                            add_stylesheet
+                            add_stylesheet, web_context
 from trac.web.main import IRequestFilter, IRequestHandler
 from trac.wiki.macros import WikiMacroBase
 from trac.versioncontrol import RepositoryManager
@@ -54,7 +54,7 @@ class CiteCodeMacro(WikiMacroBase):
             self.log.debug("node is directory")
             return "<p>%s</p>" % escape(content)
         else:
-            context = Context.from_request(formatter.req)
+            context = web_context(formatter.req)
             content_type = node.get_content_type() or \
                            mimetypes.guess_type(path)[0]
             self.log.debug("content_type=%s", content_type)
