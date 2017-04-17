@@ -254,21 +254,17 @@ prototype.createEditable = function(d, textarea, textareaResizable) {
     var self = this;
     var getStyle = TracWysiwyg.getStyle;
     var dimension = getDimension(textarea);
-    if (!dimension.width || !dimension.height) {
+    if (!dimension.height) {
         setTimeout(lazy, 100);
-    }
-    if (!dimension.width) {
-        dimension.width = parseInt(getStyle(textarea, "fontSize"), 10) * (textarea.cols || 10) * 0.5;
     }
     if (!dimension.height) {
         dimension.height = parseInt(getStyle(textarea, "lineHeight"), 10) * (textarea.rows || 3);
     }
     var wrapper = d.createElement("div");
-    wrapper.innerHTML = '<iframe class="wysiwyg" '
-        + 'src="javascript:\'\'" '
-        + 'width="' + dimension.width + '" height="' + dimension.height + '" '
-        + 'frameborder="0" marginwidth="0" marginheight="0">'
-        + '</iframe>';
+    wrapper.innerHTML = jQuery.htmlFormat(''
+        + '<iframe class="wysiwyg" src="javascript:\'\'" width="100%" '
+        + 'height="$1" frameborder="0" marginwidth="0" marginheight="0">'
+        + '</iframe>', dimension.height);
     var frame = this.frame = wrapper.firstChild;
 
     if (textareaResizable) {
@@ -337,15 +333,12 @@ prototype.createEditable = function(d, textarea, textareaResizable) {
 
     function lazy() {
         var dimension = getDimension(textarea);
-        if (dimension.width && dimension.height) {
-            self.frame.width = dimension.width;
+        if (dimension.height) {
             self.frame.height = dimension.height;
-            if (textareaResizable) {
-                grip.style.width = /^[0-9]+$/.exec(dimension.width) ? dimension.width + "px" : dimension.width;
-            }
-            return;
         }
-        setTimeout(lazy, 100);
+        else {
+            setTimeout(lazy, 100);
+        }
     }
 };
 
