@@ -17,7 +17,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
-    
+
 
     entry_points = {
         'trac.plugins': [
