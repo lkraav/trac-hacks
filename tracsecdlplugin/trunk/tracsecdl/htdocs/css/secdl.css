@@ -1,0 +1,188 @@
+/*
+
+Copyright 2010-2011, 2014 Stefan Goebel - <tracsecdl -at- subtype -dot- de>
+
+This file is part of TracSecDl.
+
+TracSecDl is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+TracSecDl is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+TracSecDl. If not, see <http://www.gnu.org/licenses/>.
+
+*******************************************************************************
+
+CSS for the TracSecDl download page.
+
+*/
+
+table#downloads_list
+{
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+table#downloads_list th
+{
+    white-space: nowrap;
+}
+
+table#downloads_list td.ext
+{
+    border-bottom: none;
+    padding: 0px;
+    vertical-align: middle;
+    width: 0.5em;
+}
+
+table#downloads_list td.ext a
+{
+    border: none;
+    display: block;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+table#downloads_list td.name,
+table#downloads_list td.info
+{
+    font-size: 0.9em;
+}
+
+table#downloads_list td.info,
+table#downloads_list th.size
+{
+    width: 1em;
+}
+
+table#downloads_list td.name a.checksum
+{
+    border: none;
+    float: right;
+    font-size: 0.75em;
+    margin-left: 0.4em;
+    margin-right: 0.4em;
+    vertical-align: super;
+}
+
+table#downloads_list th.ext,
+table#downloads_list td.ext,
+table#downloads_list tr.ext-info
+{
+    display: none;
+}
+
+table#downloads_list th a
+{
+    padding: 0px;
+}
+
+table#downloads_list td.size
+{
+    border-right: none;
+}
+
+table#downloads_list td.unit
+{
+    border-left: none;
+    padding-left: 0px;
+}
+
+table#downloads_list td.size,
+table#downloads_list td.version,
+table#downloads_list td.count
+{
+    text-align: right;
+}
+
+table#downloads_list td.time,
+table#downloads_list td.info,
+table#downloads_list td.name
+{
+    white-space: nowrap;
+}
+
+table#downloads_list tr.ext-info,
+table#downloads_list tr.ext-info td
+{
+    border-top: none;
+}
+
+table#downloads_list tr.ext-info td
+{
+    font-size: 0.85em;
+    padding-bottom: 10px;
+    padding-left: 3em;
+    padding-top: 5px;
+}
+
+table#downloads_list tr.ext-info hr
+{
+    margin: 0px;
+    margin-bottom: 5px;
+}
+
+table#downloads_list tr.ext-info span.title
+{
+    display: inline-block;
+    margin-right: 0.5em;
+    text-align: right;
+    width: 9em;
+}
+
+table#downloads_list tr.ext-info span.title a
+{
+    margin-left: 0.5em;
+}
+
+table#downloads_list tr.ext-info span.checksum
+{
+    font-family: monospace;
+}
+
+table#downloads_list tr.ext-info span.checksum a
+{
+    border: none;
+    font-style: italic;
+}
+
+p.help
+{
+    color: #888;
+    margin-bottom: 15px;
+}
+
+div#help
+{
+    margin-bottom: 3em;
+}
+
+div.maindescription
+{
+    margin-bottom: 1em;
+}
+
+div.tmpl-wrapper
+{
+    margin: 0px;
+    padding: 0px;
+}
+
+dt.secdl,
+dt.secdl a
+{
+    background-image: url(../../common/newticket.png) !important;
+}
+
+span.secdlerror {
+    color: #922;
+    font-style: italic;
+}
+
+/* :indentSize=4:tabSize=4:noTabs=true:mode=css:maxLineLen=79: */

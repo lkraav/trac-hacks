@@ -1,0 +1,174 @@
+<!--!
+
+Copyright 2010-2011, 2014 Stefan Goebel - <tracsecdl -at- subtype -dot- de>
+
+This file is part of TracSecDl.
+
+TracSecDl is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+TracSecDl is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+TracSecDl. If not, see <http://www.gnu.org/licenses/>.
+
+-->
+
+<!--! Need to define the prefixes in here, too: -->
+<div xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/" class="tmpl-wrapper">
+
+<!--! ############################################################################################################################################################################################# -->
+<!--! Functions: ################################################################################################################################################################################## -->
+
+<!--! The following function will render a table header cell.
+
+	The parameters are:     field           the name of the field this header belongs to
+				title=None      the title, it defaults to the capitalized field value
+				cols=1          value of the colspan attribute
+				cls=''          the class attribute of the header
+
+	A header cell will only be created if the 'field' is included in the downloads data.
+-->
+<py:def function="th(field,title=None,cols=1,cls='')">
+	<th py:if="field in fields" colspan="${cols}" class="${cls}">
+		<!--! The title text will be a link to sort the table: -->
+		<a href="${href(page_url,order=field in order and '!' + field or field)}">${title or field.capitalize()}</a>
+		<!--! Sort direction will be displayed accordingly: -->
+		<py:choose>
+			<py:when test="field in order">▴</py:when>
+			<py:when test="'!' + field in order">▾</py:when>
+		</py:choose>
+	</th>
+</py:def>
+
+<!--! The following function will render a regular table cell.
+
+	The parameters are:     field           the name of the field it belongs to
+				text            the content of the table cell
+				cls=''          the class attribute of the td element
+
+	A cell will only be created if the 'field' is included in the downloads data.
+-->
+<py:def function="td(field,text,cls='')">
+	<td py:if="field in fields" class="info ${cls or field}">${text}</td>
+</py:def>
+
+<!--! ############################################################################################################################################################################################# -->
+<!--! Content starts here: ######################################################################################################################################################################## -->
+
+<table class="listing" id="downloads_list">
+	<thead>
+		<tr>
+			<!--! The following stuff will only be shown if the admin page is displayed:
+					* selection box column
+					* edit column
+					* hidden and local columns
+				Additionally, some fields will be slightly altered to make the admin page table a bit smaller.
+
+				The extended info column (and row) will only be included if there actually is extended info available for at least one download.
+			-->
+			<th py:if="admin" class="sel">&nbsp;</th>
+			<th py:if="admin" class="edit">&nbsp;</th>
+			<th py:if="extended" class="ext ext-header">ℹ<py:if test="not admin">nfo</py:if></th>
+			<th py:if="admin" class="local">L</th>
+			<py:if test="admin">${th( 'hidden', title='H', cls='hidden')}</py:if>
+			<!--! The following are regular columns: -->
+			${th( 'name'                                                       )}
+			${th( 'size',         cols=2, cls='size'                           )}
+			${th( 'component',    title = (admin and 'Comp' or 'Component')    )}
+			${th( 'milestone'                                                  )}
+			${th( 'version',      title = (admin and 'Ver'  or 'Version')      )}
+			${th( 'architecture', title = (admin and 'Arch' or 'Architecture') )}
+			${th( 'platform'                                                   )}
+			${th( 'type'                                                       )}
+			${th( 'time',         title = 'Uploaded'                           )}
+			${th( 'author',       title = 'By'                                 )}
+			${th( 'count',        title = (admin and '∑'    or 'Downloads')    )}
+		</tr>
+	</thead>
+	<tbody>
+		<py:for each="row, d in enumerate(downloads)">
+			<!--! The following row will always be shown: ############################################################################################################################# -->
+			<tr class="${row % 2 and 'odd' or 'even'}${d.id == new_id and ' created' or ''}">
+				<!--! Checkbox to select downloads to delete on the admin page: -->
+				<td py:if="admin" class="sel"><input type="checkbox" name="sel" value="${d.id}" /></td>
+				<!--! Link to edit a download on the admin page: -->
+				<td py:if="admin" class="info edit"><a href="${href.admin('secdl','downloads',d.id)}">✍</a></td>
+				<!--! Link to display additional information for the download: -->
+				<td py:if="extended" class="ext ext-link">
+					<a py:if="d.extended" href="#" id="ext_link_${d.id}" onclick="toggle_info('${d.id}')">+</a>
+				</td>
+				<!--! Indicate if a download is hidden and/or local, only on the admin page: -->
+				<td py:if="admin" class="info local"><py:if test="not d.url">✔</py:if></td>
+				<td py:if="admin" class="info hidden"><py:if test="d.hidden">✔</py:if></td>
+				<!--! File name of the download: -->
+				<td py:if="'name' in fields" class="name">
+					<!--! If JavaScript is disabled, the following links will provide access to the checksums (if available): -->
+					<a py:if="d.checksum_sha" class="nojs checksum" href="${href('download',d.id,'sha')}">SHA512</a>
+					<a py:if="d.checksum_md5" class="nojs checksum" href="${href('download',d.id,'md5')}">MD5</a>
+					<!--! And the file name will be the link to the actual download: -->
+					<a href="${href(url,d.id)}">${d.name}</a>
+				</td>
+				<!--! Size column is split in two: one for the numeric value and one for the unit: -->
+				<td py:if="'size' in fields" class="info size"><span py:if="d.size">${p_size(int(d.size)).split(' ')[0]}</span></td>
+				<td py:if="'size' in fields" class="info unit"><span py:if="d.size">${p_size(int(d.size)).split(' ')[1]}</span></td>
+				<!--! Everything else is a regular column: -->
+				${td( 'component',    d.component                    )}
+				${td( 'milestone',    d.milestone                    )}
+				${td( 'version',      d.version                      )}
+				${td( 'architecture', d.architecture_name            )}
+				${td( 'platform',     d.platform_name                )}
+				${td( 'type',         d.type_name                    )}
+				${td( 'time',         p_time (int (d.time)) + ' ago' )}
+				${td( 'author',       d.author                       )}
+				${td( 'count',        d.count                        )}
+			</tr>
+			<!--! The next row contains the additional information for the download, it will be displayed only if required: ########################################################### -->
+			<tr py:if="extended and d.extended" id="ext_info_${d.id}" class="${row % 2 and 'odd' or 'even'} ext-info${d.id == new_id and ' created' or ''}">
+				<!--! It's only one column: -->
+				<td colspan="${cols}">
+					<div py:if="d.description">
+						${d.description_html}
+						<!--! Display the <hr> below the description only if there is something else to show below: -->
+						<hr py:if="d.ip or d.last_request or d.url or d.checksum_md5 or d.checksum_sha" />
+					</div>
+					<div py:if="d.ip"><span class="title">Uploaded from:</span> ${d.ip}</div>
+					<div py:if="d.last_request"><span class="title">Last request:</span> ${p_time(int(d.last_request))} ago</div>
+					<div py:if="d.url"><span class="title">URL:</span> <a href="${d.url}">${d.url}</a></div>
+					<!--! The checksums will include two links: one to display the checksum file in the browser window, and one to trigger a download: -->
+					<div py:if="d.checksum_md5">
+						<span class="title">
+							<a href="${href('download',d.id,'md5')}">MD5</a>
+							<a href="${href('download',d.id,'md5',dl=1)}">(⇲)</a>:
+						</span>
+						<span class="checksum" title="${d.checksum_md5}">${d.checksum_md5}</span>
+					</div>
+					<div py:if="d.checksum_sha">
+						<span class="title">
+							<a href="${href('download',d.id,'sha')}">SHA512</a>
+							<a href="${href('download',d.id,'sha',dl=1)}">(⇲)</a>:
+						</span>
+						<!--! SHA512 checksum will be abbreviated to save some space, clicking on the link will expand it: -->
+						<span class="checksum" title="${d.checksum_sha}" id="ext_sha_${d.id}">
+							${d.checksum_sha[:12]}
+							<a href="#" onclick="toggle_sha('${d.id}')">[....]</a>
+							${d.checksum_sha[-12:]}
+						</span>
+					</div>
+				</td>
+			</tr>
+		</py:for>
+	</tbody>
+</table>
+
+<!--! This message will be hidden if JavaScript is enabled: ####################################################################################################################################### -->
+<p class="nojs help" py:if="extended"><b>Note:</b> JavaScript is required to display additional download information, like download descriptions.</p>
+
+<!--! Done. ####################################################################################################################################################################################### -->
+<!--! ############################################################################################################################################################################################# -->
+
+</div>

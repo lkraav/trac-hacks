@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<!--!
+
+Copyright 2010-2011, 2014 Stefan Goebel - <tracsecdl -at- subtype -dot- de>
+
+This file is part of TracSecDl.
+
+TracSecDl is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+TracSecDl is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+TracSecDl. If not, see <http://www.gnu.org/licenses/>.
+
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:py="http://genshi.edgewall.org/">
+
+<xi:include href="admin.html"/>
+
+<head>
+	<title>${titles}</title>
+	<script type="text/javascript">
+		jQuery (document).ready (function ($) { $('#moreinputs').css ('display', 'inline') });
+	</script>
+</head>
+
+<body>
+
+	<h2>Manage ${titles}</h2>
+
+	<py:choose test="view">
+
+		<!--! Form to modify an existing entry: ########################################################################################################################################### -->
+
+		<form py:when="'detail'" class="mod" id="modenum" method="post" action="">
+			<fieldset class="outer">
+				<legend>Modify ${title}:</legend>
+				<div class="field"><label>Name:<br /><input type="text" name="name" value="${enum.name}"/></label></div>
+				<div class="field">
+					<fieldset class="iefix">
+						<label for="description">Description (you may use <a tabindex="42" href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here):</label>
+						<p><textarea id="description" name="description" class="wikitext" rows="6" cols="60">${enum.description}</textarea></p>
+					</fieldset>
+				</div>
+				<div class="buttons"><input type="submit" name="save" value="Save ${name}" /><input type="reset" name="cancel" value="Cancel" /></div>
+			</fieldset>
+		</form>
+
+		<!--! Main page: ################################################################################################################################################################## -->
+
+		<py:otherwise>
+			<form class="addnew" id="addenum" method="post" action="">
+				<fieldset>
+					<legend>Add ${title}:</legend>
+					<div class="field" id="newenums"><label>Name:<br /><span id="inputtemplate"><input type="text" name="name" /></span></label></div>
+					<div class="buttons">
+						<input type="submit" id="submitenums" name="add" value="Add ${name}"/>
+						<input type="button" name="more" id="moreinputs" value="+" onclick="add_enum_input()" />
+						<input type="reset" name="cancel" value="Cancel" onclick="del_enum_input()" />
+					</div>
+					<p class="help">
+						Description¹ can be modified after the ${name} is created, follow the link to the ${name} details in the ${names} table. Note that the names of the
+						${names} must be unique.
+					</p>
+					<p class="help">¹ The description is currently unused, ie. not shown anywhere.</p>
+				</fieldset>
+			</form>
+			<py:choose>
+				<!--! If there are already some entries defined show the table: -->
+				<form py:when="enums" id="enums_table" method="post" action="">
+					<table class="listing" id="enums_list">
+						<thead><tr><th class="sel">&nbsp;</th><th>${title}</th></tr></thead>
+						<tbody>
+							<tr py:for="enum in enums" py:attrs="attrs.get(enum['id'])">
+								<td class="sel"><input type="checkbox" name="sel" value="${enum['id']}" /></td>
+								<td class="name"><a href="${panel_href(enum['id'])}">${enum['name']}</a></td>
+							</tr>
+						</tbody>
+					</table>
+					<div class="buttons">
+						<input type="submit" name="remove" value="Remove selected ${names}" />
+						<input type="submit" name="removeall" value="Remove all ${names}" />
+						<input type="reset" value="Cancel" />
+					</div>
+					<p class="help">
+						If you remove the selected ${names}, the <em>${name}</em> field of downloads using it will be removed, too. The downloads themselves will not be
+						removed.
+					</p>
+				</form>
+				<!--! Else display a short message: -->
+				<py:otherwise><p class="help">No ${names} defined. Use the form at the right to create a new entry.</p></py:otherwise>
+			</py:choose>
+		</py:otherwise>
+
+	</py:choose>
+
+</body>
+
+</html>

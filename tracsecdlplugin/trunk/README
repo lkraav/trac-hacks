@@ -1,0 +1,45 @@
+TracSecDl - File download plugin for Trac 0.11.
+========================================================================
+
+This plugin adds a download section to Trac.
+
+NOTE: This plugin is no longer actively maintained. It has only been
+tested for Trac 0.11, and may or may not work for any later version.
+
+Features:
+
+* Support for local files and remote downloads.
+* Lighttpd's mod_secdownload is supported (but not required).
+* Automatic creation of MD5 and SHA512 checksums.
+* Integrated download counter.
+* Configurable limits for number and size of downloads.
+* Configurable file type restrictions.
+* Hidden downloads (require appropriate user permissions).
+* Wiki and Timeline integration.
+
+See <https://gitlab.com/goeb/tracsecdl/wikis/home> for more details.
+
+
+Contributors
+------------------------------------------------------------------------
+
+* Thanks to guidod for providing some Python 2.4 compatibility fixes.
+
+
+Copyright And License
+------------------------------------------------------------------------
+
+Copyright 2010-2011, 2014 Stefan Göbel - <tracsecdl —@— subtype —•— de>
+
+TracSecDl is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+TracSecDl is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along
+with TracSecDl. If not, see <http://www.gnu.org/licenses/>.

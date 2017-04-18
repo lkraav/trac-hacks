@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<!--!
+
+Copyright 2010-2011, 2014 Stefan Goebel - <tracsecdl -at- subtype -dot- de>
+
+This file is part of TracSecDl.
+
+TracSecDl is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+TracSecDl is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+TracSecDl. If not, see <http://www.gnu.org/licenses/>.
+
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:py="http://genshi.edgewall.org/">
+
+<xi:include href="admin.html"/>
+
+<head>
+	<title>Downloads</title>
+	<script type="text/javascript">
+	//<![CDATA[
+		jQuery (document).ready (
+			function ($) {
+				$(".ext" ).css ('display', 'table-cell');
+				$(".nojs").css ('display', 'none'      );
+			}
+		);
+	//]]>
+	</script>
+</head>
+
+<body>
+
+	<!--! ##################################################################################################################################################################################### -->
+	<!--! Function definitions follow: ######################################################################################################################################################## -->
+
+	<!--! The following function will create an input field.
+
+		Parameters are: name            the name of the field, the id of the field will be 'dl<name>'
+				label           a label for the field
+				help=''         a short help to display below the field
+				type='input'    type of the input field ('input', 'select', 'textarea', 'checkbox', 'file')
+				options=[]      the options to include in a select list
+				value=''        a default value for the field
+
+		If the type is set to 'select' the options list is mandatory and must not be empty (if it is the select will not be displayed). A checkbox will get the 'name' as 'value' attribute.
+
+		The 'value' parameter has slightly different meanings for different input types:
+			* for 'input' and 'textarea' it will simply be used as default text
+			* for 'checkbox' it determines if the checkbox is checked by default (True or False)
+			* for 'select' it may be the value of the default selected option (the value, not the text of the option)
+			* it is ignored for 'file' inputs
+	-->
+	<py:def function="input_field (name, label, help='', type='input', options=[], value='')">
+		<div py:if="type != 'select' or options" class="field">
+			<label for="dl${name}">${label}:</label>
+			<div class="input">
+				<py:choose test="type">
+					<input py:when="'input'" id="dl${name}" name="${name}" type="text" value="${value}" />
+					<py:when test="'checkbox'">
+						<input py:if="value" id="dl${name}" name="${name}" type="checkbox" value="${name}" checked="checked" />
+						<input py:if="not value" id="dl${name}" name="${name}" type="checkbox" value="${name}" />
+					</py:when>
+					<input py:when="'file'" id="dl${name}" name="${name}" type="file" size="35" />
+					<textarea py:when="'textarea'" id="dl${name}" name="${name}" class="wikitext" rows="3">${value}</textarea>
+					<select py:when="'select'" id="dl${name}" name="${name}">
+						<option class="empty" value="">-- leave empty --</option>
+						<optgroup label="${label}:">
+							<py:for each="o in options">
+								<option py:if="value == o.id" value="${o.id}" selected="selected">${o.name}</option>
+								<option py:if="value != o.id" value="${o.id}">${o.name}</option>
+							</py:for>
+						</optgroup>
+					</select>
+				</py:choose>
+				<p py:if="help" class="help">${help}</p>
+			</div><br />
+		</div>
+	</py:def>
+
+	<!--! ##################################################################################################################################################################################### -->
+	<!--! Main page content begins here... #################################################################################################################################################### -->
+
+	<h2>Manage Downloads</h2>
+
+	<py:choose test="view">
+
+		<!--! ############################################################################################################################################################################# -->
+		<!--! The detailed view to change properties of a selected download entry: ######################################################################################################## -->
+
+		<form py:when="'detail'" class="mod" id="moddownload" method="post" action="">
+
+			<!--! Note that local and remote downloads require different forms. -->
+
+			<py:choose test="typ">
+				<py:when test="'local'">
+					<fieldset>
+						<legend>Modify the local download: <b>${dl.name}</b></legend>
+						<!--! File name can not be changed: -->
+						<label class="noinput">File Name:</label><div class="input"><b>${dl.name}</b></div>
+						<!--! The next fields can be changed: -->
+						${input_field ('descr',     'Description',  'Description of the download.',            'textarea',       value=dl.description  )}
+						${input_field ('component', 'Component',    'Component the download belongs to.',      'select',   comp, value=dl.component    )}
+						${input_field ('milestone', 'Milestone',    'Milestone the download belongs to.',      'select',   mlst, value=dl.milestone    )}
+						${input_field ('version',   'Version',      'Version the download belongs to.',        'select',   vers, value=dl.version      )}
+						${input_field ('arch',      'Architecture', 'Download is made for this architecture.', 'select',   arch, value=dl.architecture )}
+						${input_field ('platform',  'Platform',     'Download is made for this platform.',     'select',   pfrm, value=dl.platform     )}
+						${input_field ('type',      'Type',         'Type of the download.',                   'select',   typ_, value=dl.type         )}
+						${input_field ('hidden',    'Hidden',       '',                                        'checkbox',       value=dl.hidden       )}
+						<!--! Align the buttons with the input fields: -->
+						<label class="submit"></label>
+						<div class="input submit"><input type="submit" name="changelocal" value="Modify local download"/> <input type="reset" value="Cancel" /></div>
+						<hr />
+						<!--! List the data that can not be changed below: -->
+						<p class="help bottom">The following data is set automatically and can not be changed for local downloads:</p>
+						<div class="readonly">
+							<label                   class="noinput">ID:       </label> <div                   class="input">${dl.id}                         </div>
+							<label                   class="noinput">File name:</label> <div                   class="input">${dl.name}                       </div>
+							<label py:if="dl.size"   class="noinput">Size:     </label> <div py:if="dl.size"   class="input">${dl.p_size} (${dl.size} bytes)  </div>
+							<label py:if="dl.time"   class="noinput">Uploaded: </label> <div py:if="dl.time"   class="input">${dl.p_time} (${dl.p_time_d} ago)</div>
+							<label py:if="dl.author" class="noinput">By:       </label> <div py:if="dl.author" class="input">${dl.author}                     </div>
+							<label py:if="dl.ip"     class="noinput">IP:       </label> <div py:if="dl.ip"     class="input">${dl.ip}                         </div>
+							<label                   class="noinput">Requests: </label> <div                   class="input">${dl.count}                      </div>
+							<!--! Show last request time only if there was a request: -->
+							<label py:if="dl.last_request" class="noinput">Last request:</label>
+							<div py:if="dl.last_request" class="input">${dl.p_last_request} (${dl.p_last_request_d} ago)</div>
+							<!--! And the checksums only if they exist (they always should, but nevertheless...), including the link to download them: -->
+							<label py:if="dl.checksum_md5" class="noinput"><a href="${href(url,dl.id,'md5')}">MD5:</a></label>
+							<div py:if="dl.checksum_md5" class="input checksum">${dl.checksum_md5}</div>
+							<!--! The SHA512 checksum will be truncated, the link can be used to display the full checksum: -->
+							<label py:if="dl.checksum_sha" class="noinput"><a href="${href(url,dl.id,'sha')}">SHA512:</a></label>
+							<div py:if="dl.checksum_sha" class="input checksum">${dl.checksum_sha[:27]}[...]</div>
+						</div>
+						<p class="help bottom">To change the file name (or the uploaded file itself) you need to create a new download and delete the old one.</p>
+					</fieldset>
+				</py:when>
+				<py:when test="'remote'">
+					<fieldset>
+						<legend>Modify the remote download: <b>${dl.name}</b></legend>
+						<!--! The next fields can be changed: -->
+						${input_field ('name',      'File Name',    'File name of the download (required).',   'input',          value=dl.name         )}
+						<ul class="uploadrules">
+							<li>The file name may only contain characters [<em>a-zA-Z0-9_.-</em>]</li>
+							<li>All leading and trailing dots are removed.</li>
+						</ul>
+						${input_field ('url',       'URL',          'Remote URL of the download (required).',  'input',          value=dl.url          )}
+						<ul class="uploadrules">
+							<li py:if="schemes">URL schemes are restricted to <em>${', '.join (schemes)}</em></li>
+						</ul>
+						${input_field ('descr',     'Description',  'Description of the download.',            'textarea',       value=dl.description  )}
+						${input_field ('size',      'File size',    'File size in bytes.',                     'input',          value=dl.size         )}
+						${input_field ('component', 'Component',    'Component the download belongs to.',      'select',   comp, value=dl.component    )}
+						${input_field ('milestone', 'Milestone',    'Milestone the download belongs to.',      'select',   mlst, value=dl.milestone    )}
+						${input_field ('version',   'Version',      'Version the download belongs to.',        'select',   vers, value=dl.version      )}
+						${input_field ('arch',      'Architecture', 'Download is made for this architecture.', 'select',   arch, value=dl.architecture )}
+						${input_field ('platform',  'Platform',     'Download is made for this platform.',     'select',   pfrm, value=dl.platform     )}
+						${input_field ('type',      'Type',         'Type of the download.',                   'select',   typ_, value=dl.type         )}
+						${input_field ('md5',       'MD5',          'MD5 checksum of the download.',           'input',          value=dl.checksum_md5 )}
+						${input_field ('sha',       'SHA512',       'SHA512 checksum of the download.',        'input',          value=dl.checksum_sha )}
+						${input_field ('hidden',    'Hidden',       '',                                        'checkbox',       value=dl.hidden       )}
+						<!--! Align the buttons with the input fields: -->
+						<label class="submit"></label>
+						<div class="input submit"><input type="submit" name="changeremote" value="Modify remote download"/> <input type="reset" value="Cancel" /></div>
+						<hr />
+						<!--! List the data that can not be changed below: -->
+						<p class="help bottom">The following data is set automatically and can not be changed for remote downloads:</p>
+						<div class="readonly">
+							<label                   class="noinput">ID:      </label> <div                   class="input">${dl.id}                         </div>
+							<label py:if="dl.time"   class="noinput">Uploaded:</label> <div py:if="dl.time"   class="input">${dl.p_time} (${dl.p_time_d} ago)</div>
+							<label py:if="dl.author" class="noinput">By:      </label> <div py:if="dl.author" class="input">${dl.author}                     </div>
+							<label py:if="dl.ip"     class="noinput">IP:      </label> <div py:if="dl.ip"     class="input">${dl.ip}                         </div>
+							<label                   class="noinput">Requests:</label> <div                   class="input">${dl.count}                      </div>
+							<!--! Show last request time only if there was a request: -->
+							<label py:if="dl.last_request" class="noinput">Last request:</label>
+							<div py:if="dl.last_request" class="input">${dl.p_last_request} (${dl.p_last_request_d} ago)</div>
+						</div>
+					</fieldset>
+				</py:when>
+			</py:choose>
+		</form>
+
+		<!--! ############################################################################################################################################################################# -->
+		<!--! The form to create a new local download: #################################################################################################################################### -->
+
+		<form py:when="'local'" class="mod" id="newdownload" method="post" action="${href.admin('secdl','downloads')}" enctype="multipart/form-data">
+			<fieldset>
+				<legend>Create a new local download</legend>
+				${input_field ('file',      'File',         'Select the file you want to upload.',     'file'           )}
+				<ul class="uploadrules">
+					<li py:if="exts">File types are restricted to <em>${', '.join (exts)}</em>.</li>
+					<li py:if="exts or not no_ext">
+						Files without extension are <em><py:choose><py:when test="no_ext">allowed</py:when><py:otherwise>not allowed</py:otherwise></py:choose>.</em>
+					</li>
+					<li>The file name may only contain characters [<em>a-zA-Z0-9_.-</em>].</li>
+					<li>All leading and trailing dots are removed.</li>
+					<li>The name must not start with a dash (<em>-</em>).</li>
+					<li py:if="size">Maximum file size: <em>${size} bytes</em> <py:if test="size >= 512"><em>(${size_p})</em></py:if>.</li>
+				</ul>
+				${input_field ('descr',     'Description',  'Description of the download.',            'textarea'       )}
+				${input_field ('component', 'Component',    'Component the download belongs to.',      'select',   comp )}
+				${input_field ('milestone', 'Milestone',    'Milestone the download belongs to.',      'select',   mlst )}
+				${input_field ('version',   'Version',      'Version the download belongs to.',        'select',   vers )}
+				${input_field ('arch',      'Architecture', 'Download is made for this architecture.', 'select',   arch )}
+				${input_field ('platform',  'Platform',     'Download is made for this platform.',     'select',   pfrm )}
+				${input_field ('type',      'Type',         'Type of the download.',                   'select',   typ_ )}
+				${input_field ('hidden',    'Hidden',       '',                                        'checkbox'       )}
+				<!--! Align the buttons with the input fields: -->
+				<label class="submit"></label>
+				<div class="input submit"><input type="submit" name="createlocal" value="Create local download"/> <input type="reset" value="Cancel" /></div>
+			</fieldset>
+		</form>
+
+		<!--! ############################################################################################################################################################################# -->
+		<!--! The form to create a new remote download: ################################################################################################################################### -->
+
+		<form py:when="'remote'" class="mod" id="newdownload" method="post" action="${href.admin('secdl','downloads')}">
+			<fieldset>
+				<legend>Create a new remote download</legend>
+				${input_field ('name',      'Name',         'File name of the download (required).',             'input'          )}
+				<ul class="uploadrules">
+					<li>The file name may only contain characters [<em>a-zA-Z0-9_.-</em>]</li>
+					<li>All leading and trailing dots are removed.</li>
+				</ul>
+				${input_field ('url',       'URL',          'Remote URL of the download (required).',            'input'          )}
+				<ul class="uploadrules">
+					<li py:if="schemes">URL schemes are restricted to <em>${', '.join (schemes)}</em></li>
+				</ul>
+				${input_field ('descr',     'Description',  'Description of the download.',                      'textarea'       )}
+				${input_field ('size',      'File size',    'File size in bytes.',                               'input'          )}
+				${input_field ('component', 'Component',    'Component the download belongs to.',                'select',   comp )}
+				${input_field ('milestone', 'Milestone',    'Milestone the download belongs to.',                'select',   mlst )}
+				${input_field ('version',   'Version',      'Version the download belongs to.',                  'select',   vers )}
+				${input_field ('arch',      'Architecture', 'Download is made for this architecture.',           'select',   arch )}
+				${input_field ('platform',  'Platform',     'Download is made for this platform.',               'select',   pfrm )}
+				${input_field ('type',      'Type',         'Type of the download.',                             'select',   typ_ )}
+				${input_field ('md5',       'MD5',          'MD5 checksum of the download.',                     'input'          )}
+				${input_field ('sha',       'SHA512',       'SHA512 checksum of the download.',                  'input'          )}
+				${input_field ('hidden',    'Hidden',       '',                                                  'checkbox'       )}
+				<!--! Align the buttons with the input fields: -->
+				<label class="submit"></label>
+				<div class="fields submit"><input type="submit" name="createremote" value="Create remote download"/> <input type="reset" value="Cancel" /></div>
+			</fieldset>
+		</form>
+
+		<!--! ############################################################################################################################################################################# -->
+		<!--! The form to change the description of the download page: #################################################################################################################### -->
+
+		<form py:when="'description'" class="mod" id="moddesc" method="post" action="">
+			<fieldset class="outer">
+				<legend>Modify the main download description:</legend>
+				<div class="field">
+					<fieldset class="iefix">
+						<label for="description">Description (you may use <a tabindex="42" href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here):</label>
+						<textarea id="description" name="description" class="wikitext" rows="6" cols="60">${desc}</textarea>
+					</fieldset>
+				</div>
+				<div class="buttons"><input type="submit" name="savedescr" value="Save description" /> <input type="reset" name="cancel" value="Cancel" /></div>
+			</fieldset>
+		</form>
+
+		<!--! ############################################################################################################################################################################# -->
+		<!--! Nothing of the above means display the main download list (the actual table is defined in the secdl-table.html template): ################################################### -->
+
+		<py:otherwise>
+			<h3>Available downloads</h3>
+			<py:choose>
+				<form py:when="downloads" id="downloads_table" method="post" action="">
+					<xi:include href="secdl-table.html" />
+					<div class="buttons">
+						<input type="submit" name="remove"    value="Remove selected downloads" />
+						<input type="submit" name="removeall" value="Remove all downloads"      />
+						<input type="reset"                   value="Cancel"                    />
+					</div>
+					<p class="help table-help">
+						Click <b>✍</b> to edit an entry. The <b>L</b> column shows if a download is local, the <b>H</b> column shows if a download is hidden, <b>∑</b> shows
+						the number of downloads. Click the file name to download the file, and the table headers to sort the table. If JavaScript is enabled you can toggle the
+						display of additional information by clicking <b>+</b> (or <b>-</b> to hide it again).
+					</p>
+				</form>
+				<p py:otherwise="" class="help">There are currently no downloads available. Use the links below to create new downloads.</p>
+			</py:choose>
+			<h3>New Download</h3>
+			<ul>
+				<li py:if="uploads">
+					<a href="${href.admin('secdl','downloads','local')}">Create new local download</a><br />
+					<p class="help">Upload a file, it will be available for download from this server.</p>
+				</li>
+				<li>
+					<a href="${href.admin('secdl','downloads','remote')}">Create new remote download</a><br />
+					<p class="help">Add a file to the download list that is available on another server.</p>
+				</li>
+			</ul>
+			<p py:if="not uploads" class="help">
+				<b>Note:</b> Either the total number of files or the maximum size of all uploaded files is reached, see below for the current limits. To create a new local download
+				you need to remove existing local downloads first.
+			</p>
+			<h3>Limits</h3>
+			<ul class="limits">
+				<li py:attrs="files_cls">
+					maximum number of local downloads is <em>${max_files or 'unlimited'}</em>, you have already created <em>${cur_files}</em>
+					<div py:if="max_files" class="progress"><div class="bar" style="width:${files_pct}%;">${files_pct}%</div></div>
+				</li>
+				<li py:attrs="total_cls">
+					total size of all local downloads is <py:if test="max_total">limited to <em>${max_total} bytes<py:if test="max_total_p"> (${max_total_p})</py:if></em>,</py:if>
+					<py:if test="not max_total"><em>unlimited</em>,</py:if> you are using <em>${cur_total or 0} bytes <py:if test="cur_total_p">(${cur_total_p})</py:if></em>
+					<div py:if="max_total" class="progress"><div class="bar" style="width:${total_pct}%;">${total_pct}%</div></div>
+				</li>
+			</ul>
+			<h3>Description</h3>
+			<p class="help">The following text will be shown on the download index page above the table. It will not be shown when there are no downloads available.</p>
+			<blockquote class="description">
+				<p class="edit"><a href="${href.admin('secdl','downloads','description')}">✍ Edit description</a></p>
+				${description_html}
+				<p py:if="not description" class="help"><em>(You have not entered any description, use the link above to create it.)</em></p>
+			</blockquote>
+		</py:otherwise>
+
+	</py:choose>
+
+	<!--! Done. ############################################################################################################################################################################### -->
+	<!--! ##################################################################################################################################################################################### -->
+
+</body>
+
+</html>

@@ -1,0 +1,340 @@
+/*
+
+Copyright 2010-2011, 2014 Stefan Goebel - <tracsecdl -at- subtype -dot- de>
+
+This file is part of TracSecDl.
+
+TracSecDl is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+TracSecDl is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+TracSecDl. If not, see <http://www.gnu.org/licenses/>.
+
+*******************************************************************************
+
+TracSecDl admin page specific CSS rules. These are used in addition to
+those defined in htdocs/css/secdl.css.
+
+*/
+
+form#addenum
+{
+    max-width: 20em;
+}
+
+form#addenum input[type="text"]
+{
+    min-width: 19em;
+    width: 90%;
+}
+
+form#addenum input[type="submit"],
+form#addenum input[type="button"],
+form#addenum input[type="reset"],
+form#modenum input[type="submit"],
+form#modenum input[type="reset"],
+form#moddesc input[type="reset"],
+form#moddesc input[type="submit"]
+{
+    float: left;
+    margin-left: 2px;
+    margin-right: 1px;
+    margin-top: 0px;
+}
+
+form#addenum input[type="reset"]
+{
+    float: right;
+    margin-right: 0px;
+}
+
+form#addenum input#moreinputs
+{
+    display: none;
+}
+
+form#modenum fieldset.outer
+{
+    padding-right: 30px;
+}
+
+form#moddesc fieldset.outer
+{
+    padding-right: 20px;
+}
+
+form#modenum input[type="text"],
+form#modenum textarea,
+form#moddesc textarea
+{
+    width: 100%;
+}
+
+form#modenum textarea
+{
+    padding: 0.5em;
+}
+
+form#addenum label,
+form#modenum label,
+form#moddesc label
+{
+    padding-left: 0.1em;
+}
+
+form#addenum p.help
+{
+    clear: both;
+    padding-top: 1em;
+    text-align: justify;
+}
+
+form#enums_table table#enums_list tr.created,
+form#downloads_table table#downloads_list tr.created
+{
+    background-color: #e7ffe7;
+}
+
+form#enums_table table#enums_list tr.created:hover,
+form#downloads_table table#downloads_list tr.created:hover
+{
+    background-color: #d7eed7 !important;
+}
+
+form#enums_table td.sel
+{
+    font-size: 0.5em;
+    line-height: 0.7em;
+    padding: 0px;
+    vertical-align: middle;
+}
+
+form#enums_table td.name
+{
+    padding: 0.2em;
+}
+
+form#enums_table td.sel,
+form#enums_table td.name
+{
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+form table#downloads_list
+{
+    font-size: 0.9em !important;
+    margin-bottom: 0px;
+}
+
+form table#downloads_list th.hidden,
+form table#downloads_list th.local,
+form table#downloads_list th.ext-header
+{
+    text-align: center;
+}
+
+form table#downloads_list td.hidden,
+form table#downloads_list td.local,
+form table#downloads_list td.edit,
+form table#downloads_list td.ext-link
+{
+    font-size: 1.2em;
+    line-height: 0.9em;
+    padding-left: 0px;
+    padding-right: 0px;
+    text-align: center;
+    vertical-align: middle;
+    width: 1.5em;
+}
+
+form table#downloads_list td.sel
+{
+    font-size: 0.5em;
+    line-height: 0.7em;
+    padding: 0px;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    text-align: center;
+    vertical-align: middle;
+}
+
+form table#downloads_list td.edit a
+{
+    border: none;
+}
+
+blockquote.description
+{
+    border-bottom: 1px #ddd solid;
+    border-top: 1px #ddd solid;
+    margin-left: 1em;
+    margin-right: 1em;
+    margin-top: 2em;
+    padding-left: 3em;
+}
+
+blockquote.description p.edit
+{
+    margin-top: -10px;
+    margin-left: -30px;
+}
+
+blockquote.description p.edit a
+{
+    background-color: #fff;
+    border: none;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+}
+
+form#newdownload label,
+form#moddownload label
+{
+    float: left;
+    padding-top: 0.2em;
+    width: 8em;
+}
+
+form#newdownload div.field div.input,
+form#moddownload div.field div.input
+{
+    float: left;
+}
+
+form#newdownload input[type="text"],
+form#moddownload input[type="text"],
+form#newdownload textarea,
+form#moddownload textarea
+{
+    width: 400px;
+}
+
+form#newdownload select,
+form#moddownload select
+{
+    width: 410px;
+}
+
+form#newdownload textarea,
+form#moddownload textarea
+{
+    padding: 0.5em;
+}
+
+form#newdownload option.empty,
+form#moddownload option.empty
+{
+    font-style: italic;
+}
+
+form#newdownload p.help,
+form#moddownload p.help
+{
+    margin-top: 0px;
+    width: 410px;
+}
+
+form#newdownload br,
+form#moddownload br
+{
+    clear: both;
+}
+
+form#newdownload label.submit,
+form#newdownload div.submit,
+form#moddownload label.submit,
+form#moddownload div.submit
+{
+    margin-top: 1em;
+}
+
+form#moddownload fieldset
+{
+    padding-bottom: 1em;
+}
+
+form#moddownload fieldset label.noinput
+{
+    clear: both;
+    padding-top: 0px;
+}
+
+form#moddownload div.checksum
+{
+    font-family: monospace;
+}
+
+form#moddownload div.readonly
+{
+    padding-left: 5em;
+    margin-bottom: 1em;
+}
+
+form#moddownload p.bottom
+{
+    width: auto;
+}
+
+form#downloads_table div.buttons,
+form#moddesc div.buttons
+{
+    margin-top: 0px;
+}
+
+form#downloads_table p.table-help
+{
+    margin-bottom: 30px;
+}
+
+ul.limits
+{
+    margin-bottom: 2em;
+}
+
+ul.limits li.reached
+{
+    color: #c00;
+}
+
+ul.limits div.progress
+{
+    border: 1px solid #ddd;
+    font-size: 0.7em;
+    margin-bottom: 1em;
+    margin-top: 3px;
+    width: 100%;
+}
+
+ul.limits div.progress div.bar
+{
+    background-color: #eee;
+    text-align: center;
+}
+
+ul.limits li.reached div.progress div.bar
+{
+    background-color: #fee;
+}
+
+form fieldset ul.uploadrules
+{
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 8em;
+    margin-top: -0.5em;
+}
+
+.wikitoolbar
+{
+    margin-left: 2px;
+    margin-top: 4px;
+}
+
+/* :indentSize=4:tabSize=4:noTabs=true:mode=css:maxLineLen=79: */

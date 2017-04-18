@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<!--!
+
+Copyright 2010-2011, 2014 Stefan Goebel - <tracsecdl -at- subtype -dot- de>
+
+This file is part of TracSecDl.
+
+TracSecDl is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+TracSecDl is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+TracSecDl. If not, see <http://www.gnu.org/licenses/>.
+
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/" xmlns:xi="http://www.w3.org/2001/XInclude">
+
+<xi:include href="layout.html" />
+
+<head>
+	<title>${title}</title>
+	<script type="text/javascript">
+	//<![CDATA[
+		jQuery (document).ready (
+			function ($) {
+				$(".ext" ).css ('display','table-cell');
+				$(".nojs").css ('display','none'      );
+			}
+		);
+	//]]>
+	</script>
+</head>
+
+<body>
+
+<h1>${title}</h1>
+
+<py:choose>
+	<!--! Description and downloads table is only displayed when there are actually downloads available: -->
+	<py:when test="downloads">
+		<div py:if="description" class="maindescription">${description}</div>
+		<!--! Downloads table is defined in secdl-table.html: -->
+		<xi:include href="secdl-table.html" />
+		<div id="help">
+			<p class="help">Click on a table header to sort by that column, click the same header again to change the direction. Click on a file name to download that file.</p>
+		</div>
+	</py:when>
+	<!--! If not, we display just a short message: -->
+	<py:otherwise>
+		<p class="help">There are currently no downloads available.</p>
+	</py:otherwise>
+</py:choose>
+
+</body>
+
+</html>
