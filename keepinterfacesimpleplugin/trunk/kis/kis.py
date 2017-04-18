@@ -186,7 +186,7 @@ class Lexer():
                 if v == None and not text.startswith('_'):
                     raise ConfigurationError(
                         "No field named '%s' is defined" % text,
-                        title='Syntax error in trac.ini [kis_warden]')
+                        title='Error in trac.ini [kis_warden]')
         else:
             raise ConfigurationError(
                 'Unexpected terminal %s' % self.look[1],
@@ -209,8 +209,12 @@ class Lexer():
                 funcs = provider.__class__.__dict__
                 if text in funcs:
                     v = funcs[text].__get__(provider)(self.req, *args)
-                    if v != None:
-                        break
+                    break
+            else:
+                raise ConfigurationError(
+                    "Function '%s' has no implementation" % text,
+                     title='Missing plugin or error in trac.ini [kis_warden]',
+                     show_traceback=True)
             text = '%s(%s)' % (text, text2)
         return v, text
 
@@ -650,13 +654,17 @@ evaluation.available.none = evaluation_template == 'None'
                 args = []
             if type(args) != type([]):
                 args = [args]
+            config_func = req.args['config_func']
             for provider in self.config_functions:
                 funcs = provider.__class__.__dict__
-                config_func = req.args['config_func']
                 if config_func in funcs:
                     result = funcs[config_func].__get__(provider)(req, *args)
                     req.send(json.dumps(result).encode('utf-8'),
                              'application/json')
-                    return
-            # Send a null response if no handler responded.
-            req.send(json.dumps(None).encode('utf-8'), 'application/json')
+                    break
+            else:
+                raise ConfigurationError(
+                    "Function '%s' has no implementation" % config_func,
+                     title='Missing plugin or error in trac.ini '
+                           '[kis_assistant]',
+                     show_traceback=True)
