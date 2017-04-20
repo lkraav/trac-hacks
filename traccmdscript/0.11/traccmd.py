@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # (C) Copyright WooMedia 2009
 
@@ -87,6 +87,7 @@ import os
 import sys
 import xmlrpclib
 import tempfile
+import urllib
 from ConfigParser import ConfigParser
 import traceback
 from os.path import expanduser as expanduserpath
@@ -141,7 +142,10 @@ def _get_ini_file(section, trac_instance=None):
 ## Authentication and "login" stuff
 
 def _login_auth(username, password, trac_url):
-    token = re.sub("(http[s]*)://(.*)", "\\1://%s:%s@\\2" % (username, password), trac_url)
+    token = re.sub(r'(http[s]+)://(.*)',
+                   r'\1://%s:%s@\2' % (urllib.quote(username),
+                                       urllib.quote(password)),
+                   trac_url)
     os.environ["TRAC_URL"] = token
     return os.environ["TRAC_URL"]
 
@@ -162,7 +166,7 @@ def loginemacs(username, password, trac_url=None):
     """Return the environment settings for doing trac env in emacs"""
     print """(setenv "TRAC_URL" \"%s\")""" % _login(username, password, trac_url)
 
-def shell(username, trac_url=None, command=None):
+def shell(username, trac_instance=None, command=None):
     """Make some script to export your username/password to your current session environment.
 
     Call this in your shell before using the other commands.
@@ -173,7 +177,7 @@ def shell(username, trac_url=None, command=None):
     """
     import getpass
     password = getpass.getpass()
-    _login(username, password, trac_url)
+    _login(username, password, trac_instance)
     os.execl(os.environ["SHELL"])
 
 
@@ -188,7 +192,7 @@ def _get_trac_url(trac_instance=None):
 def _get_xmlrpc(trac_instance=None):
     """Called by everything to actually do the login"""
     trac_url = _get_trac_url(trac_instance=trac_instance)
-    xr = xmlrpclib.ServerProxy("%s/login/xmlrpc" % trac_url)
+    xr = xmlrpclib.ServerProxy("%s/login/rpc" % trac_url.rstrip('/'))
     return xr
 
 ## RPC exposure methods
@@ -606,6 +610,10 @@ class TracCmd(SysArgsCmd):
         """Update the milestone"""
         kwargs = { "trac_instance": self.trac_instance }
         milestoneupdate(*arg, **kwargs)
+
+    def do_shell(self, arg):
+        kwargs = { "trac_instance": self.trac_instance }
+        shell(*arg, **kwargs)
 
     def do_ticketdetail(self, arg):
         """Print specific details about a ticket"""
