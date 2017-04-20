@@ -89,14 +89,13 @@ class TracBackLinkModule(Component):
         if not rendered:
             return None
         keys = self._sort_backlink_keys(rendered, resource.realm)
-        contents = tag.div(tag.ul(tag.li(tag.div(rendered[key]))
-                                  for key in keys),
-                           class_='backlinks')
-        contents = tag.div(tag.h3(_("Back Links"),
-                                  tag.span('(%d)' % len(rendered),
-                                           class_='trac-count'),
-                                  class_='foldable'),
-                           contents, id='backlinks', class_='collapsed')
+        header = tag.h3(_("Back Links"),
+                        tag.span('(%d)' % len(rendered), class_='trac-count'),
+                        class_='foldable')
+        body = tag.div(tag.ul(tag.li(tag.div(rendered[key])) for key in keys),
+                       class_='backlinks')
+        contents = tag.div(header, body, id='backlinks',
+                           class_='collapsed noprint')
         return tag(Markup(contents))
 
     def _get_backlink_sources(self, resource):
