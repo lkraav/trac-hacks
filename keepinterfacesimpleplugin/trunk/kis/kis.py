@@ -448,7 +448,14 @@ only designated approver can approve = !has_role('approver') && approval != _app
                     # This is handled specially, as there may be action
                     # controllers that change or restrict the next status.
                     return self._get_next_state()
-                return self.ticket.get_value_or_default(key)
+                # Return empty string for fields that exist but have no valid
+                # (default) value.
+                value = self.ticket.get_value_or_default(key)
+                if value is None:
+                    existing_fields = TicketSystem(self.env).get_ticket_fields()
+                    if any(x['name'] == key for x in existing_fields):
+                        return ''
+                return value
 
         symbol_table = Symbol_Table(self.env, req, ticket)
         lexer = Lexer(symbol_table, self.config_functions, req)
