@@ -123,17 +123,17 @@
             }
         };
 
-        gantt._key = '__rmgantt_object';
+        var _key = '__rmgantt_object';
 
         gantt.isGantt = function(elem) {
             var dom = $(elem).get(0);
-            var gdata = $.data(dom, this._key);
+            var gdata = $.data(dom, _key);
             return gdata instanceof this;
         };
 
         gantt.getGantt = function(elem) {
             var dom = $(elem).get(0);
-            var gdata = $.data(dom, this._key);
+            var gdata = $.data(dom, _key);
             if(gdata instanceof this) {
                 return gdata;
             } else {
@@ -145,7 +145,7 @@
             var dom = $(elem).get(0);
             var gdata = new gantt(elem, data, opt);
             gdata._init();
-            $.data(dom, this._key, gdata);
+            $.data(dom, _key, gdata);
             return gdata;
         };
 

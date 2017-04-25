@@ -36,9 +36,9 @@ except ImportError:
 
 setup(
     name='WikiGanttChartPlugin',
-    version='0.12.0.1',
+    version='0.12.0.2',
     author='OpenGroove,Inc.',
-    author_email='trac@opengroove.com',
+    author_email='info@opengroove.com',
     maintainer='Jun Omae',
     maintainer_email='jun66j5@gmail.com',
     url='http://trac-hacks.org/wiki/WikiGanttChartPlugin',
