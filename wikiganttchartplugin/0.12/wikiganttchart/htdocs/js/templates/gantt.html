@@ -63,7 +63,7 @@
       </table>
       </td>
       <td>
-        <div style="position:relative; height: {{>tHeight + 1}}px; overflow:auto;" id="gantt_area">
+        <div style="position:relative; height: {{>tHeight + 1}}px; overflow-y:hidden; overflow-x:auto;">
           <div style="width: {{>gWidth - 1}}px; height: {{>headersHeight}}px;" class="gantt_hdr header"> </div>
           {{!-- ###### Months headers ###### --}}
           {{for months}}
@@ -99,7 +99,7 @@
           </div>
           {{/if}}
 
-          <div id="gantt_draw_area" style="position:absolute; height:{{>gHeight}}px; top:{{>headersHeight + 1}}px; left:0px; width:{{>gWidth - 1}}px;">
+          <div style="position:absolute; height:{{>gHeight}}px; top:{{>headersHeight + 1}}px; left:0px; width:{{>gWidth - 1}}px;">
             {{for lines tmpl="gantt-lines" /}}
           </div>
         </div>
