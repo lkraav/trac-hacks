@@ -74,7 +74,7 @@
             , update: _('Update')
             , cancel: _('Cancel')
             , go: _('Go')
-            , months: _('monthes')
+            , months: _('months')
             , color: _('Color')
             , style: _('Style')
             , progress: _('Progress')

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WikiGanttChartPlugin 0.12.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-24 16:59+0900\n"
+"POT-Creation-Date: 2017-04-27 12:46+0900\n"
 "PO-Revision-Date: 2014-03-15 23:29+0900\n"
 "Last-Translator: Jun Omae <jun66j5@gmail.com>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -76,7 +76,7 @@ msgid "Go"
 msgstr "移動"
 
 #: wikiganttchart/htdocs/js/rmgantt.js:77
-msgid "monthes"
+msgid "months"
 msgstr "ヶ月分"
 
 #: wikiganttchart/htdocs/js/rmgantt.js:78
@@ -135,43 +135,43 @@ msgstr "開始日は期限日よりも前の日付にして下さい"
 msgid "Progress must be number between 0 and 100."
 msgstr "進捗は0から100までの数値を入力して下さい"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:698
+#: wikiganttchart/htdocs/js/rmgantt.js:712
 msgid "Insert"
 msgstr "タスクの挿入"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:714
+#: wikiganttchart/htdocs/js/rmgantt.js:728
 msgid "Edit task"
 msgstr "タスクの編集"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:722
+#: wikiganttchart/htdocs/js/rmgantt.js:736
 msgid "Delete task"
 msgstr "タスクの削除"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:732
+#: wikiganttchart/htdocs/js/rmgantt.js:746
 msgid "Insert task"
 msgstr "タスクの挿入"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:740
+#: wikiganttchart/htdocs/js/rmgantt.js:754
 msgid "Insert subtask"
 msgstr "サブタスクの挿入"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:749
+#: wikiganttchart/htdocs/js/rmgantt.js:763
 msgid "Up"
 msgstr "上へ移動"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:760
+#: wikiganttchart/htdocs/js/rmgantt.js:774
 msgid "Down"
 msgstr "下へ移動"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:772
+#: wikiganttchart/htdocs/js/rmgantt.js:786
 msgid "Level up"
 msgstr "レベルを上げる"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:785
+#: wikiganttchart/htdocs/js/rmgantt.js:799
 msgid "Level down"
 msgstr "レベルを下げる"
 
-#: wikiganttchart/htdocs/js/rmgantt.js:800
+#: wikiganttchart/htdocs/js/rmgantt.js:814
 msgid "Create ticket"
 msgstr "チケットの作成"
 

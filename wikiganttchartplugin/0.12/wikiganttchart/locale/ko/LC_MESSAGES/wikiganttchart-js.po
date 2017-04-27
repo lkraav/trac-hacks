@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WikiGanttChartPlugin 0.12.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-29 02:32+0900\n"
+"POT-Creation-Date: 2017-04-27 12:46+0900\n"
 "PO-Revision-Date: 2014-07-29 02:34+0900\n"
 "Last-Translator: Genie <386@mail.com>\n"
 "Language-Team: ko <LL@li.org>\n"
@@ -77,7 +77,7 @@ msgid "Go"
 msgstr "보기"
 
 #: wikiganttchart/htdocs/js/rmgantt.js:77
-msgid "monthes"
+msgid "months"
 msgstr "개월"
 
 #: wikiganttchart/htdocs/js/rmgantt.js:78

@@ -1,15 +1,15 @@
 # Translations template for WikiGanttChartPlugin.
-# Copyright (C) 2014 ORGANIZATION
+# Copyright (C) 2017 ORGANIZATION
 # This file is distributed under the same license as the
 # WikiGanttChartPlugin project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: WikiGanttChartPlugin 0.12.0.1\n"
+"Project-Id-Version: WikiGanttChartPlugin 0.12.0.3\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-24 16:59+0900\n"
+"POT-Creation-Date: 2017-04-27 12:46+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -77,7 +77,7 @@ msgid "Go"
 msgstr ""
 
 #: wikiganttchart/htdocs/js/rmgantt.js:77
-msgid "monthes"
+msgid "months"
 msgstr ""
 
 #: wikiganttchart/htdocs/js/rmgantt.js:78
@@ -136,43 +136,43 @@ msgstr ""
 msgid "Progress must be number between 0 and 100."
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:698
+#: wikiganttchart/htdocs/js/rmgantt.js:712
 msgid "Insert"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:714
+#: wikiganttchart/htdocs/js/rmgantt.js:728
 msgid "Edit task"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:722
+#: wikiganttchart/htdocs/js/rmgantt.js:736
 msgid "Delete task"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:732
+#: wikiganttchart/htdocs/js/rmgantt.js:746
 msgid "Insert task"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:740
+#: wikiganttchart/htdocs/js/rmgantt.js:754
 msgid "Insert subtask"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:749
+#: wikiganttchart/htdocs/js/rmgantt.js:763
 msgid "Up"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:760
+#: wikiganttchart/htdocs/js/rmgantt.js:774
 msgid "Down"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:772
+#: wikiganttchart/htdocs/js/rmgantt.js:786
 msgid "Level up"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:785
+#: wikiganttchart/htdocs/js/rmgantt.js:799
 msgid "Level down"
 msgstr ""
 
-#: wikiganttchart/htdocs/js/rmgantt.js:800
+#: wikiganttchart/htdocs/js/rmgantt.js:814
 msgid "Create ticket"
 msgstr ""
 
