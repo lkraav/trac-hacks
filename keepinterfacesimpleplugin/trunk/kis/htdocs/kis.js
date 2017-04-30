@@ -48,8 +48,10 @@
 //        return true if the item exists, false otherwise;
 //  selected_item()
 //      - return name of the currently selected item;
-//  show_field(bool)
-//      - hide the field if the parameter is false, show if true;
+//  show_field(bool, target)
+//      - hide the field in the target box if the parameter is false,
+//        show if true. Valid values for target are 'property' or 'ticket'. If
+//        the target is omitted, defaults to 'property';
 //  show_item(name, bool)
 //      - hide the named item if the boolean parameter is false, show if true;
 //        return true if the item exists, false otherwise;
@@ -198,9 +200,16 @@ TracInterface.prototype.selected_item = function () {
     return result.val();
 };
 
-TracInterface.prototype.show_field = function (show) {
-    return this.select_field().closest('td').prev().addBack().
-        css('display', show ? '' : 'none');
+TracInterface.prototype.show_field = function (show, target = 'property') {
+    if (target == 'ticket') {
+        return $('#h_' + this.field_name).next().addBack().
+               // Uncomment next line to hide change preview too...
+               // add('#ticketchange .changes .trac-field-' + this.field_name).
+               css('display', show ? '' : 'none');
+    } else {
+        return this.select_field().closest('td').prev().addBack().
+            css('display', show ? '' : 'none');
+    }
 };
 
 TracInterface.prototype.show_item = function (name, show) {
@@ -732,7 +741,9 @@ function Field(field_name) {
     this.options_onchange_attached = false;
     this.template_onchange_attached = false;
     this.update_onchange_attached = false;
-    this.visibility_onchange_attached = false;
+    this.visibility_onchange_attached = [];
+    this.visibility_onchange_attached['property'] = false;
+    this.visibility_onchange_attached['ticket'] = false;
 }
 
 // set_options()
@@ -1004,39 +1015,81 @@ Field.prototype.set_template = function () {
     }.bind(this));
 };
 
-// set_visibility()
+// set_field_visibility(target)
 //
-// Sets the visibility of a field or an action. Called at setup time, then
-// registered as an onchange handler of any field that might affect the
-// contents of this field.
-Field.prototype.set_visibility = function () {
-    function evaluate_success(visibility) {
-        this.ui.show_field(visibility.value);
+// Sets the visibility of a field or an action in the Change Properties box or
+// in the ticket box.
+// Called at setup time, then registered as an onchange handler of any field
+// that might affect the contents of this field.
+Field.prototype.set_field_visibility = function (target) {
+    function evaluate_success(target, visibility) {
+        this.ui.show_field(visibility.value, target);
 
-        if (!this.visibility_onchange_attached) {
+        if (!this.visibility_onchange_attached[target]) {
             // Attach the onchange handlers.
             for (var triggers_index in visibility.depends) {
                 var trigger = visibility.depends[triggers_index];
                 this.ui.attach_change_handler(
                     trigger,
-                    this.set_visibility.bind(this)
+                    this.set_field_visibility.bind(this, target)
                 );
             }
-            this.visibility_onchange_attached = true;
+            this.visibility_onchange_attached[target] = true;
         }
         return visibility;
     }
 
-    function evaluate_error(result) {
-        console.log(this.field_name + '.visible ' + result.error);
+    function evaluate_error(target, result) {
+        console.log(this.field_name + '.visible.' + target +
+                    ' ' + result.error);
         return result;
     }
 
     // Show or hide field according to the value of its visibility predicate.
-    return evaluate(this.operations['visible']['#'].join(', ')).then(
-        evaluate_success.bind(this),
-        evaluate_error.bind(this)
+    return evaluate(this.operations['visible'][target]['#'].join(', ')).then(
+        evaluate_success.bind(this, target),
+        evaluate_error.bind(this, target)
     );
+};
+
+// set_visibility()
+//
+// Calls set_field_visibility() with parameters set depending on whether this
+// field is to have controlled visibility in the Change Properties box, the
+// ticket box, or both.
+Field.prototype.set_visibility = function() {
+    var specific_target = false;
+
+    for (var target in this.operations['visible']) {
+        if (target == 'property') {
+            this.set_field_visibility('property');
+            specific_target = true;
+        }
+        else if (target == 'ticket') {
+            this.set_field_visibility('ticket');
+            specific_target = true;
+        }
+        else if (target == 'all') {
+            this.operations['visible']['property'] = {};
+            this.operations['visible']['property']['#'] = 
+                this.operations['visible']['all']['#'];
+            this.operations['visible']['ticket'] = {};
+            this.operations['visible']['ticket']['#'] = 
+                this.operations['visible']['all']['#'];
+            this.set_field_visibility('property');
+            this.set_field_visibility('ticket');
+            specific_target = true;
+        }
+    }
+    if (!specific_target) {
+        // This field has only a bare '.visible' attribute, which is
+        // interpreted as applying to the Change Properties box only. Make
+        // up a '.property' attribute for it.
+        this.operations['visible']['property'] = {};
+        this.operations['visible']['property']['#'] = 
+            this.operations['visible']['#'];
+        this.set_field_visibility('property');
+    }
 };
 
 // setup()
@@ -1074,11 +1127,18 @@ if ($.fn.addBack === undefined) {
     $.fn.addBack = $.fn.andSelf;
 }
 
-// This function is called when the page has loaded. It initialises the fields.
-$(function () {
+// This function is called at the time the page is initially loaded, but also
+// following a preview rendering. This is needed to hide fields in the preview
+// ticket box.
+function update_fields() {
     for(var field_name in page_info['trac_ini']) {
         var field = new Field(field_name);
         field.setup();
         window.ui[field_name] = field.ui;
     }
+}
+
+// This function is called when the page has loaded. It initialises the fields.
+$(function () {
+    update_fields();
 });

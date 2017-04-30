@@ -19,8 +19,13 @@ from trac.config import ConfigurationError
 from trac.ticket import ITicketManipulator
 from trac.ticket import TicketSystem
 from trac.ticket.model import Ticket
-from trac.web.api import IRequestFilter, IRequestHandler, RequestDone
+from trac.web.api import IRequestFilter, \
+                         IRequestHandler, \
+                         ITemplateStreamFilter, \
+                         RequestDone
 from trac.web.chrome import add_script, add_script_data, ITemplateProvider
+
+from genshi.filters.transform import Transformer
 
 ###############################################################################
 
@@ -595,7 +600,8 @@ evaluation.available.none = evaluation_template == 'None'
 
     implements(IRequestFilter,
                IRequestHandler,
-               ITemplateProvider)
+               ITemplateProvider,
+               ITemplateStreamFilter)
 
     config_functions = ExtensionPoint(IConfigFunction)
 
@@ -675,3 +681,19 @@ evaluation.available.none = evaluation_template == 'None'
                      title='Missing plugin or error in trac.ini '
                            '[kis_assistant]',
                      show_traceback=True)
+
+    # ITemplateStreamFilter
+    def filter_stream(self, req, method, filename, stream, data):
+        ''' Updates auto preview submission to apply filtering of fields.
+        '''
+        fieldRefreshCall = 'update_fields();\n'
+        ticket_preview = '}, "#ticket .trac-loading");'
+        change_preview = '}, "#ticketchange .trac-loading");'
+
+        # Applying changes only on ticket.html.
+        if filename == 'ticket.html':
+            for preview in [ticket_preview, change_preview]:
+                stream = stream | Transformer('.//script').\
+                         substitute(re.escape(preview), fieldRefreshCall +
+                                    preview)
+        return stream
