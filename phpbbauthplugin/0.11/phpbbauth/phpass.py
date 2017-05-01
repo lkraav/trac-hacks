@@ -89,13 +89,13 @@ def crypt_private(passwd, passwd_hash, hash_prefix='$P$'):
     it is recommended to use UTF-8:
 
        passwd_ascii = passwd.encode('utf-8')
-	   is_valid = (crypt_private(passwd_ascii, hash) == hash)
+           is_valid = (crypt_private(passwd_ascii, hash) == hash)
 
-	Here hash is already assumed to be an ASCII string.
+        Here hash is already assumed to be an ASCII string.
 
-	In case of error '*0' is usually returned. But if passwd_hash
-	begins with '*0', then '*1' is returned to prevent false
-	positive results of password check.
+        In case of error '*0' is usually returned. But if passwd_hash
+        begins with '*0', then '*1' is returned to prevent false
+        positive results of password check.
     '''
     itoa64 = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     output = '*0'

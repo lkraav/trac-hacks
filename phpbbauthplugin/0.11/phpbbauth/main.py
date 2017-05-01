@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008 John Hampton <pacopablo@pacopablo.com>
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -37,12 +37,12 @@ class PhpBBAuthStore(Component):
 
     implements(IPasswordStore)
 
-    hash_prefix = Option('account-manager', 'phpbb_hash_prefix', '$H$', 
+    hash_prefix = Option('account-manager', 'phpbb_hash_prefix', '$H$',
                          'Hash prefix used for phpBB passwords.')
 
-    # This is here so that the account manager configuration page will pick 
+    # This is here so that the account manager configuration page will pick
     # it up.
-    database = Option('account-manager', 'phpbb_database', None, 
+    database = Option('account-manager', 'phpbb_database', None,
                       'Database URI for the phpBB database to auth '
                       'against')
 
@@ -153,14 +153,12 @@ class PhpBBAuthStore(Component):
                 cnx.rollback()
             continue
         cnx.close()
-         
+
 
 
 class PhpDatabaseManager(DatabaseManager):
     """ Class providing access to the PHP databse """
 
-    connection_uri = Option('account-manager', 'phpbb_database', None, 
+    connection_uri = Option('account-manager', 'phpbb_database', None,
                             'Database URI for the phpBB database to auth ' \
                             'against')
-
-    
