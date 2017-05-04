@@ -90,7 +90,7 @@ def is_incomplete(env, review, ticket):
             field, rule = criteria.split('=', 1)
             value = tkt[field]
             rule_re = re.compile(rule)
-            if not rule_re.search(value):
+            if value is None or not rule_re.search(value):
                 return "Ticket #%s field %s=%s which violates rule " \
                        "%s" % (tkt.id, field, value, rule)
 

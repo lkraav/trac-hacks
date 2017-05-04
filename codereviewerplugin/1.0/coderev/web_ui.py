@@ -10,20 +10,21 @@
 
 import sys
 import functools
+from collections import namedtuple
 from subprocess import Popen, STDOUT, PIPE
 
-from genshi.builder import tag
 from trac.admin.api import IAdminCommandProvider
 from trac.core import *
 from trac.config import ListOption, Option
 from trac.resource import Resource
 from trac.util.datefmt import format_datetime, from_utimestamp, \
                               to_utimestamp, user_time
+from trac.util.html import html as tag
 from trac.util.text import printout
 from trac.util.translation import _, ngettext
 from trac.versioncontrol.admin import VersionControlAdmin
-from trac.versioncontrol.api import (Changeset, IRepositoryChangeListener,
-    RepositoryManager, is_default)
+from trac.versioncontrol.api import (IRepositoryChangeListener,
+                                     RepositoryManager, is_default)
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from trac.web.chrome import (ITemplateProvider, add_script, add_script_data,
     add_stylesheet, pretty_timedelta, web_context)
@@ -153,7 +154,6 @@ class CodeReviewerModule(Component):
             changes = {}
             if self._is_complete(ticket, review, failed_ok=True):
                 changes = self._get_ticket_changes(tkt, status)
-
             # update ticket if there's a review summary or ticket changes
             if comment or changes:
                 for field, value in changes.items():
@@ -305,6 +305,7 @@ class ChangesetTicketMapper(Component):
                                   repo=reponame or '(default)'))
             repositories = [repos]
 
+        Changeset = namedtuple('changeset', 'repos rev message author date')
         for repos in sorted(repositories, key=lambda r: r.reponame):
             printout(_('Resyncing repository history for %(reponame)s... ',
                        reponame=repos.reponame or '(default)'))

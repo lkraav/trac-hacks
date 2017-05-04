@@ -23,34 +23,29 @@ class CodeReview(object):
     DEFAULT_STATUS = STATUSES[1]
     NOT_PASSED = "(not %s)" % STATUSES[2]
 
-    def __init__(self, env, repo, changeset, time=None):
+    def __init__(self, env, repo, changeset):
         self.env = env
         self.repo = repo or ''
         self.changeset = str(changeset)
         self.status = self.decode(self.DEFAULT_STATUS)
         self.reviewer, self.when, self.summary = '', 0, ''
-        if time is None:
+        for status, reviewer, time, summary in self.env.db_query("""
+                SELECT status, reviewer, time, summary FROM codereviewer
+                WHERE repo=%s AND changeset=%s
+                ORDER BY time DESC LIMIT 1
+                """, (self.repo, self.changeset)):
+            self.status = self.decode(status)
+            self.reviewer = reviewer
+            self.when = time
+            self.summary = summary
+            break
+        else:
             for status, in self.env.db_query("""
                     SELECT status FROM codereviewer
                     WHERE repo=%s AND changeset=%s AND status IS NOT NULL
                     ORDER BY time DESC LIMIT 1
                     """, (self.repo, self.changeset)):
                 self.status = self.decode(status)
-        else:
-            for status, review, time, summary in self.env.db_query("""
-                    SELECT status, reviewer, time, summary FROM codereviewer
-                    WHERE repo=%s AND changeset=%s
-                    ORDER BY time DESC LIMIT 1
-                    """, (self.repo, self.changeset)):
-                self.status = self.decode(status)
-                self.review = review
-                self.when = time
-                self.summary = summary
-                break
-            else:
-                raise ResourceNotFound(
-                    _("CodeReview for changeset %(changeset) does not exist.",
-                      changeset=changeset))
 
         self.tickets = []
         self.changeset_when = 0
