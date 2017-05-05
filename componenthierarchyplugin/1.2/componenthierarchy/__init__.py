@@ -1,5 +1,4 @@
 from admin import *
-from environmentSetup import *
 from model import *
 from ticket import *
 
