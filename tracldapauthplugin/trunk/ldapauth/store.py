@@ -60,6 +60,8 @@ class LDAPStore(Component):
             # For more info see http://www.rfc-editor.org/rfc/rfc4513.txt
             self.log.debug('LDAPAuth: User or password is an empty string.')
             return PASSWORDSTORE_FAILURE
+        if isinstance(password, unicode):
+            password = password.encode("utf-8")
 
         conn = None
         try:
