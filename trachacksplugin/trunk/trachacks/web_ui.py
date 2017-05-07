@@ -465,7 +465,7 @@ for [wiki:AdoptingHacks adoption].
                     if not component.owner:
                         repl = r'\1' + self.UNMAINTAINED_NOTICE
                         data['text'] = re.sub(self.title_sub, repl,
-                                              data['text'])
+                                              data['text'], count=1)
 
         add_stylesheet(req, 'hacks/css/style.css')
         return template, data, content_type
