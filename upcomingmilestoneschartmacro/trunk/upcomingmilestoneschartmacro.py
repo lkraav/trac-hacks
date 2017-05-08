@@ -53,9 +53,7 @@ class UpcomingMilestonesChartMacro(WikiMacroBase):
         for m in milestone_names:
             if not max_displayed or cur_displayed < int(max_displayed):
                 if milestone_dues[cur_idx]:
-                    wikitext += """ * [milestone:\"%(milestonename)s\" %(milestonename)s]""" % {
-                        "milestonename": m
-                        }
+                    wikitext += """ * [[milestone:%s]]""" % m
 
                     date = "(%s)" % format_date(milestone_dues[cur_idx],
                                                 tzinfo=formatter.req.tz,
