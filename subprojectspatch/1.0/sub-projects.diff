@@ -1,0 +1,35 @@
+--- main.py.org	2011-02-15 09:35:41.000000000 +0000
++++ main.py	2011-02-15 10:21:24.000000000 +0000
+@@ -340,6 +340,18 @@ def dispatch_request(environ, start_resp
+             path_info = environ.get('PATH_INFO', '').lstrip('/').split('/')
+             env_name = path_info.pop(0)
+ 
++            if len(path_info) and path_info[0] == 'p':
++                path_info.pop(0) # pop off the p
++                env_parent_dir = os.path.join(env_parent_dir, env_name, 'projects')
++                environ['trac.env_parent_dir'] = env_parent_dir
++                parent_env = env_name
++                if len(path_info):
++                    env_name = path_info.pop(0)
++                else:
++                    env_name = None
++            else:
++                parent_env = None
++
+             if not env_name:
+                 # No specific environment requested, so render an environment
+                 # index page
+@@ -356,7 +368,12 @@ def dispatch_request(environ, start_resp
+             try:
+                 script_name = unicode(script_name, 'utf-8')
+                 # (as Href expects unicode parameters)
+-                environ['SCRIPT_NAME'] = Href(script_name)(env_name)
++
++        	if parent_env:
++            	    environ['SCRIPT_NAME'] = Href(environ['SCRIPT_NAME'])(parent_env, 'p', env_name)
++        	else:
++            	    environ['SCRIPT_NAME'] = Href(environ['SCRIPT_NAME'])(env_name)
++
+                 environ['PATH_INFO'] = '/' + '/'.join(path_info)
+ 
+                 if env_parent_dir:
