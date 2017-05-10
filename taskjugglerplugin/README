@@ -1,0 +1,61 @@
+TO install it properly
+== SETUP == 
+ 1] create new custom fileds see ANNEXE I see http://trac.edgewall.org/wiki/TracTicketsCustomFields
+ 2] change the 2 settings on top of trac2TaskJuggler.php  
+ 3] updload on trac2TaskJuggler.php to your server
+ 4] edit trac.tjp for setting first_milestone macro AND as you want vacation, working hours
+ 5] you can use your show_planning.sh to retrieve automaticly your data
+ 6] the days worked area field will be set by the project manager or by the developper as explain here http://www.taskjuggler.org/manual-2.3.1/attribute_classes.html#TYPE_DATEINTERVAL one interval per line
+ 7] you can add this js script into site_header.cs template to deliver information  see screenshots
+== ANNEXE I : Custom Fields ==
+macro_task=select
+macro_task.label=Macro Task
+macro_task.options=MacroTask 1| MacroTask2 #change <- by your macro Task
+macro_task.order=0
+
+estimatedhours = text
+estimatedhours.label = Plan 
+estimatedhours.value = 0
+estimatedhours.order = 2
+
+hours = text
+hours.label = Add Days
+hours.value = 0
+hours.order = 3
+
+estimatedfinal = text
+estimatedfinal.label = Actual
+estimatedfinal.value = 0
+estimatedfinal.order=4
+
+totalhours = text
+totalhours.label = Nb days worked
+totalhours.value = 0
+totalhours.order = 5
+
+daysworked = textarea
+daysworked.label = days worked
+daysworked.cols = 23
+daysworked.rows = 6
+daysworked.order=6
+
+== ANNEXE II : js script ==
+<script language="javascript" type="text/javascript">
+function AddEventListener( elem, evt, func, capture){
+    capture = capture || false;
+    if(elem.addEventListener) elem.addEventListener( evt, func, capture);
+    else elem.attachEvent('on'+evt, func);
+    return func;
+};
+add_legend = function(){
+    var x = document.getElementById('daysworked');
+    if(x){
+      var p = x.parentNode;
+      var n = document.createElement('div')
+      n.style.float="left";
+      n.innerHTML="Valeurs possibles : <ul><li>yyyy-mm-dd</li><li>yyyy-mm-dd - yyyy-mm-dd &nbsp;&nbsp;<u>/!\\</u> la 2ème valeur n'est pas inclus dans le calcul</li><li>yyyy-mm-dd +?d&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>/!\\</u> ? doit être remplacés par le nb de jour</li></ul>" ;
+      p.appendChild(n);
+    }
+}
+AddEventListener(window, 'load', add_legend)
+</script>

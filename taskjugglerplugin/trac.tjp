@@ -1,0 +1,178 @@
+/*
+ * This file is a TaskJuggler project template. It can be used as a
+ * starting point for planning a rather large project. It is primary
+ * designed for a product development project but can be easily
+ * adapted to other types of projects. The structure of the project
+ * plan was derived from the excellent book "Fundamentals of
+ * Technology Project Managment" by Collen Carton with Erika
+ * McCulloch.
+ *
+ * You can put your own templates in
+ *
+ * ${KDEHOME}/share/apps/taskjuggler/Templates/${LANG}/
+ *
+ * Permission to read, modify and distribute this file without any
+ * restrictions is granted.
+ *
+ * Please see the TaskJuggler manual for a more detailed
+ * description of the various syntax elements. You can find more
+ * information about TaskJuggler at http://www.taskjuggler.org!
+ */
+project yourID "Your Project" "1.0" 2007-01-01 2007-08-29 {
+  # Hide the clock time. Only show the date.
+  timeformat "%Y-%m-%d"
+  # The currency for all money values is EUR.
+  currency "EUR"
+  # We want to compare the baseline scenario, to one with a slightly
+  # delayed start.
+  scenario plan "Plan" {
+
+    scenario actual "actual"{
+      projection { strict }
+    }
+  }
+  workinghours mon - fri 9:00 - 13:00, 14:30 - 19:00
+}
+macro first_milestone [2007-02-05 ]
+#priority
+macro immediate [ 1000 ]
+macro urgent [800 ]
+macro high [ 600 ]
+macro medium [500]
+macro low [300]
+# Put your macros here.
+# Macro with paramater:
+# macro foo [
+#   task foo { }
+# ]
+# Macro with one paramater
+# macro bar [
+#   task ${1} { }
+
+# Put your flag declarations here. You can flag task, resources and
+# accounts to use them as filter criteria when generating reports.
+# flags important, dontcare
+flags team
+
+# The daily default rate of all resources. This can be overriden for each
+# resource. We specify this, so that we can do a good calculation of
+# the costs of the project.
+rate 300.0
+
+# Put company holidays here
+# vacation "Holidays" 2005-12-24 - 2006-01-02
+
+# Put your resource definitions here:
+# resource dev "Developers" {
+#   resource dev1 "Paul Smith" { rate 330.0 }
+#   resource dev2 "Sébastien Bono"
+#   resource dev3 "Klaus Müller" { vacation 2005-02-01 - 2005-02-05 }
+# }
+# This resource does not do any work.
+# resource confRoom "Conference Room" {
+#   efficiency 0.0
+# }
+
+resource dev "Developers" {
+  #vacation 2005-08-15 - 2005-08-16 #RTT
+  #vacation "Labor Day" 2005-09-05
+  resource sredeuil "Stéphane Redeuil"
+  {
+  }
+  resource lmalgras "Laurent Malgras"
+  {
+  }
+  resource mwiatr "Mariush Wiatr"
+  {
+  }
+
+  resource cblin "Christophe Blin" {
+  }
+  resource mdelorme "Maxime Delorme"{
+  }
+  resource bteissier "Bertrand Teissier"{
+  }
+}
+
+macro task_report_by_mt [
+
+taskreport "Plan ${2}" {
+    headline "Project Gantt Chart"
+    columns hierarchindex,id, name, start, end, effort, duration, chart
+    # For this report we like to have the abbreviated weekday in front
+    # of the date. %a is the tag for this.
+    timeformat "%a %Y-%m-%d"
+    hidetask ~isChildOf(trac.mt${1})
+    loadunit days
+    scenario plan
+    sorttasks tree, prioritydown
+    hideresource 1
+  }
+  taskreport "Actual ${2}" {
+    headline "Project Gantt Chart"
+    columns hierarchindex,id, name, start, end, effort, duration, chart
+    # For this report we like to have the abbreviated weekday in front
+    # of the date. %a is the tag for this.
+    timeformat "%a %Y-%m-%d"
+    hidetask ~isChildOf(trac.mt${1})
+    loadunit days
+    scenario actual
+    sorttasks tree, prioritydown
+    hideresource 1
+  }
+]
+
+include "trac.tji"
+
+
+
+resourcereport "Resource Graph" {
+  headline "Resource Allocation Graph"
+  columns no, name, rate, utilization, freeload, chart
+  loadunit days
+  hidetask 1
+}
+
+# A list of all project resources, both human and material resources,
+# together with the costs for each.
+resourcereport "Z Resource Sheet" {
+  headline "Resource Sheet"
+  columns no, name, efficiency, id, maxeffort, rate
+  loadunit days
+  hidetask 1
+}
+
+# A list of resources and each task associated with each resource.
+resourcereport "Resource Usage" {
+  headline "Resource Usage Report"
+  columns no, name, utilization, freeload, cost
+  loadunit days
+  hidetask 0
+}
+
+# This report looks like a regular calendar that shows the tasks by
+# their dates.
+htmlweeklycalendar "Calendar.html" {
+}
+
+# This report is a status report for the current week. It also
+# provides an outlook for the next week.
+htmlstatusreport "Status-Report.html" {
+}
+
+# A P&L report for the project.
+htmlaccountreport "Accounting.html" {
+  # Besides the number of the account and the name we have a column
+  # with the total values (at the end of the project) and the values
+  # for each month of the project.
+  columns no, name, scenario, total, monthly
+  headline "P&L for the Project"
+  caption "The table shows the profit and loss
+           analysis as well as the cashflow situation of the Accounting
+           Software Project."
+  # Since this is a cashflow calculation we show accumulated values
+  # per account.
+  accumulate
+  scenarios plan, actual
+}
+
