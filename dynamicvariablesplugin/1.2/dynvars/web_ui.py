@@ -10,7 +10,9 @@
 import re
 
 from trac.core import *
+from trac.resource import ResourceNotFound
 from trac.ticket import TicketSystem, Milestone
+from trac.ticket.model import Report
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 from trac.web.main import IRequestFilter
 
@@ -38,7 +40,7 @@ class DynamicVariablesModule(Component):
         if self._validate_request(req):
             add_script(req, 'dynvars/dynamic_variables.js')
             dynvars = {}
-            report = self._get_report(req, check_referer=True)
+            report = self._get_report(req)
             for var in self._extract_vars(report):
                 dynvars[var] = self._get_options(var.lower())
             add_script_data(req, {'dynvars': dynvars})
@@ -91,7 +93,11 @@ class DynamicVariablesModule(Component):
                 return match.groupdict()['num']
             return None
 
-        report = extract(req.path_info)
+        id_ = extract(req.path_info)
+        try:
+            report = Report(self.env, id_)
+        except ResourceNotFound:
+            report = None
         if report:
             return report
         if check_referer:
@@ -102,15 +108,10 @@ class DynamicVariablesModule(Component):
         """Return a set of all dynamic variables (if any) found in the
         report.  The special $USER dynamic variable is ignored."""
         args = set([])
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("SELECT query FROM report WHERE id=%s", (report,))
-        result = cursor.fetchone()
-        if result:
-            field_re = re.compile(r"\$([A-Z_]+)")
-            for arg in field_re.findall(result[0]):
-                if arg != 'USER':
-                    args.add(arg)
+        field_re = re.compile(r"\$([A-Z_]+)")
+        for arg in field_re.findall(report.query if report.query else ''):
+            if arg != 'USER':
+                args.add(arg)
         return args
 
     def _get_options(self, field_name):
