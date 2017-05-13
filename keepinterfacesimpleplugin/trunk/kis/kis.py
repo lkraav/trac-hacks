@@ -11,7 +11,6 @@
 
 import json
 import re
-from ConfigParser import NoSectionError
 
 from pkg_resources import resource_filename
 
@@ -467,15 +466,10 @@ only designated approver can approve = !has_role('approver') && approval != _app
         lexer = Lexer(symbol_table, self.config_functions, req)
         errors = []
 
-        try:
-            for rule, predicate in self.config.parser.items('kis_warden'):
-                e, text = lexer.evaluate(predicate)
-                if e:
-                    errors.append(
-                        (None, "Check '%s' failed: %s" % (rule, text)))
-        except NoSectionError:
-            # No Warden rules are defined.
-            pass
+        for rule, predicate in self.config.options('kis_warden'):
+            e, text = lexer.evaluate(predicate)
+            if e:
+                errors.append((None, "Check '%s' failed: %s" % (rule, text)))
         return errors
 
 ###############################################################################
@@ -626,11 +620,7 @@ evaluation.available.none = evaluation_template == 'None'
         if req.path_info.startswith('/newticket') or \
                 req.path_info.startswith('/ticket/'):
             # Create and include the initial data dump.
-            try:
-                items = self.config.parser.items('kis_assistant')
-            except NoSectionError:
-                # No Assistant rules are defined.
-                items = ()
+            items = self.config.options('kis_assistant')
             config = {}
             for dotted_name, value in items:
                 config_traverse = config
