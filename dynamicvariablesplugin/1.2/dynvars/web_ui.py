@@ -40,7 +40,7 @@ class DynamicVariablesModule(Component):
         if self._validate_request(req):
             add_script(req, 'dynvars/dynamic_variables.js')
             dynvars = {}
-            report = self._get_report(req)
+            report = self._get_report(req, check_referer=True)
             for var in self._extract_vars(report):
                 dynvars[var] = self._get_options(var.lower())
             add_script_data(req, {'dynvars': dynvars})
