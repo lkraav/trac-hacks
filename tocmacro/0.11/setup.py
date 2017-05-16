@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name='TracTocMacro',
-    version='11.0.0.6',
+    version='11.0.0.7',
     packages=['tractoc'],
     author="Alec Thomas",
     maintainer="Christian Boos",
@@ -26,7 +26,8 @@ setup(
                         single page, or a collection of pages.""",
     license="BSD 3-Clause",
     keywords="trac plugin table of content macro",
-    url="http://trac-hacks.org/wiki/TocMacro",
+    url="https://trac-hacks.org/wiki/TocMacro",
+    install_requires=['Trac'],
     entry_points={
         'trac.plugins': [
             'tractoc.macro = tractoc.macro'

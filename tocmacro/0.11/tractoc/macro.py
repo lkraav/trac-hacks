@@ -12,12 +12,10 @@
 
 import re
 
-from genshi.core import Markup
-from genshi.builder import tag
-
 from trac.core import *
 from trac.resource import get_resource_url
 from trac.util.compat import sorted
+from trac.util.html import Markup, html as tag
 from trac.wiki.api import WikiSystem, parse_args
 from trac.wiki.formatter import OutlineFormatter, system_message
 from trac.wiki.macros import WikiMacroBase
@@ -28,13 +26,13 @@ except ImportError:
     MacroError = TracError
 
 
-__all__ = ['TOCMacro']
-
 class NullOut(object):
-    def write(self, *args): pass
+    def write(self, *args):
+        pass
 
 
-def outline_tree(env, ol, outline, context, active, min_depth, max_depth):
+def outline_tree(env, ol, outline, context, active, min_depth, max_depth,
+                 no_numbering):
     if min_depth > max_depth:
         min_depth, max_depth = max_depth, min_depth
     max_depth = min(6, max_depth)
@@ -53,7 +51,10 @@ def outline_tree(env, ol, outline, context, active, min_depth, max_depth):
                     li = tag.li()
                     ol.append(li)
                     stack[d] = (li, ol)
-                new_ol = tag.ol()
+                if no_numbering:
+                    new_ol = tag.ul(style='list-style-type:none')
+                else:
+                    new_ol = tag.ol()
                 li.append(new_ol)
                 stack[d+1] = (None, new_ol)
             href = get_resource_url(env, context.resource, context.href)
@@ -102,7 +103,8 @@ class TOCMacro(WikiMacroBase):
     || `titleindex`   || Only display the page name and title of each page, similar to TitleIndex. ||
     || `notitle`      || Supress display of page title. ||
     || `reverse`      || Display TOC sorted in reversed order.  ''(Since 11.0.0.4)'' ||
-    || `from=page`|| Obtain the list of pages to show from the content (one page name per line) of another wiki page.  ||
+    || `from=page`    || Obtain the list of pages to show from the content (one page name per line) of another wiki page.  ||
+    || `nonumbering`  || Suppress automatic numbering for inline TOC //(Since 11.0.0.7)// ||
     For `titleindex` argument, an empty pagelist will evaluate to all pages:
     {{{
     [[TOC(titleindex, notitle, heading=All pages)]]
@@ -157,6 +159,7 @@ class TOCMacro(WikiMacroBase):
         inline = False
         pagenames = []
         reverse = False
+        no_numbering = False
 
         default_heading = 'Table of Contents'
         params = {'min_depth': 1, 'max_depth': 6}
@@ -179,6 +182,8 @@ class TOCMacro(WikiMacroBase):
                 reverse = True
             elif arg == 'nofloat':
                 return ''
+            elif arg == 'nonumbering':
+                no_numbering = True
             elif arg != '':
                 pagenames.append(arg)
         heading = kw.pop('heading', '') or default_heading
@@ -223,7 +228,10 @@ class TOCMacro(WikiMacroBase):
         pagenames = temp_pagenames
 
         base = tag.div(class_=inline and 'wiki-toc-inline' or 'wiki-toc')
-        ol = tag.ol()
+        if no_numbering:
+            ol = tag.ul(style='list-style-type:none')
+        else:
+            ol = tag.ol()
         base.append([heading and tag.h4(heading), ol])
 
         active = len(pagenames) > 1
@@ -239,7 +247,7 @@ class TOCMacro(WikiMacroBase):
                             params['min_depth'] < 2)
             else:
                 self._render_page_outline(formatter, ol, page_resource,
-                                                        active, params)
+                                          active, params, no_numbering)
         return base
 
     def get_page_text(self, formatter, page_resource):
@@ -283,15 +291,15 @@ class TOCMacro(WikiMacroBase):
                                 class_= active and 'active' or None)))
 
     def _render_page_outline(self, formatter, ol, page_resource, active,
-                             params):
+                             params, no_numbering):
         page_text, page_exists = self.get_page_text(formatter, page_resource)
         if page_exists:
             ctx = formatter.context(page_resource)
             fmt = OutlineFormatter(self.env, ctx)
             fmt.format(page_text, NullOut())
             outline_tree(self.env, ol, fmt.outline, ctx,
-                    active and page_resource.id == formatter.context.resource.id,
-                    params['min_depth'], params['max_depth'])
+                         active and page_resource.id == formatter.context.resource.id,
+                         params['min_depth'], params['max_depth'], no_numbering)
         else:
             ol.append(system_message('Error: Page %s does not exist' %
                                      page_resource.id))
