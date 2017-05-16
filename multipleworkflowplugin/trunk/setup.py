@@ -11,17 +11,18 @@ from setuptools import find_packages, setup
 setup(
     name='MultipleWorkflowPlugin',
     description='Ticket workflows based on ticket type. Admin page for editing the workflows.',
-    version='1.3.2',
-    url='http://trac-hacks.org/wiki/MultipleWorkflowPlugin',
+    version='1.3.3',
+    url='https://trac-hacks.org/wiki/MultipleWorkflowPlugin',
     license="New BSD",
     author='ermal',
     maintainer='Cinc-th',
-    #packages=find_packages(exclude=['*.tests*']),
+    # packages=find_packages(exclude=['*.tests*']),
     packages=['multipleworkflow'],
     package_data={'multipleworkflow': ['templates/*', 'htdocs/js/*']},
+    install_requires=['Trac'],
     entry_points="""
         [trac.plugins]
         MultipleWorkflowPlugin = multipleworkflow.workflow
-        MultipleWorkflowPAdminModule = multipleworkflow.web_ui
+        MultipleWorkflowAdmin = multipleworkflow.web_ui
     """,
 )

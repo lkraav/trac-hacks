@@ -6,15 +6,14 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.builder import tag
-
 from trac.core import TracError, implements
 from trac.perm import PermissionSystem
 from trac.ticket import model
-from trac.ticket.default_workflow import ConfigurableTicketWorkflow, parse_workflow_config
+from trac.ticket.default_workflow import ConfigurableTicketWorkflow, \
+                                         parse_workflow_config
 from trac.ticket.api import ITicketActionController, TicketSystem
 from trac.ticket.model import Resolution
-from trac.util.compat import set
+from trac.util.html import html as tag
 from trac.util.text import obfuscate_email_address
 from trac.util.translation import _, tag_
 from trac.web.chrome import Chrome
@@ -53,32 +52,35 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
     """Ticket action controller providing actions according to the ticket type.
 
     == ==
-    The [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] replaces the
-    [TracWorkflow ConfigurableTicketWorkflow] used by Trac to control what actions can be performed on a ticket.
-    The actions are specified in the {{{[ticket-workflow]}}} section of the TracIni file.
+    The [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] 
+    replaces the [TracWorkflow ConfigurableTicketWorkflow] used by Trac to 
+    control what actions can be performed on a ticket. The actions are 
+    specified in the {{{[ticket-workflow]}}} section of the TracIni file.
 
-    With [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] Trac can read the workflow based
-    on the type of a ticket. If a section for that ticket type doesn't exist, then it uses the default workflow.
+    With [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] 
+    Trac can read the workflow based on the type of a ticket. If a section for 
+    that ticket type doesn't exist, then it uses the default workflow.
 
     == Installation
 
     Enable the plugin by adding the following to your trac.ini file:
 
-    {{{
+    {{{#!ini
     [components]
     multipleworkflow.* = enabled
     }}}
     Add the controller to the workflow controller list:
 
-    {{{
+    {{{#!ini
     [ticket]
     workflow = MultipleWorkflowPlugin
     }}}
 
     == Example
-    To define a different workflow for a ticket with type {{{Requirement}}} create a section in ''trac.ini'' called
+    To define a different workflow for a ticket with type {{{Requirement}}} 
+    create a section in ''trac.ini'' called
     {{{[ticket-workflow-Requirement]}}} and add your workflow items:
-    {{{
+    {{{#!ini
     [ticket-workflow-Requirement]
     leave = * -> *
     leave.default = 1
@@ -126,7 +128,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                 self.type_actions[t] = actions
 
     def get_workflow_actions_by_type(self, tkt_type):
-        """Return the ticket actions defined by the workflow for the given ticket type or {}."""
+        """Return the ticket actions defined by the workflow for the given 
+        ticket type or {}.
+        """
         try:
             actions = self.type_actions[tkt_type]
         except KeyError:
@@ -146,7 +150,8 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         # once and get really confused.
         status = ticket._old.get('status', ticket['status']) or 'new'
 
-        # Calculate actions for ticket type. If no wtype workflow exists use the default workflow.
+        # Calculate actions for ticket type. If no wtype workflow exists use
+        # the default workflow.
         tipo_ticket = ticket._old.get('type', ticket['type'])
         actions = self.get_workflow_actions_by_type(tipo_ticket)
         if not actions:
@@ -163,12 +168,13 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                     allowed_actions.append((action_info['default'],
                                             action_name))
         if not (status in ['new', 'closed'] or
-                status in TicketSystem(self.env).get_all_status()) \
+                    status in TicketSystem(self.env).get_all_status()) \
                 and 'TICKET_ADMIN' in ticket_perm:
             # State no longer exists - add a 'reset' action if admin.
             allowed_actions.append((0, '_reset'))
 
-        # Check if the state is valid for the current ticket type. If not offer the action to reset it.
+        # Check if the state is valid for the current ticket type.
+        # If not offer the action to reset it.
         type_status = self.get_all_status_for_type(tipo_ticket)
         if not type_status:
             type_status = calc_status(self.actions)
@@ -261,7 +267,8 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                                "%(current_owner)s",
                                current_owner=current_owner))
         if 'set_owner_to_self' in operations and \
-                ticket._old.get('owner', ticket['owner']) != req.authname:
+                        ticket._old.get('owner',
+                                        ticket['owner']) != req.authname:
             hints.append(_("The owner will be changed from %(current_owner)s "
                            "to %(authname)s", current_owner=current_owner,
                            authname=req.authname))
@@ -285,12 +292,14 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                 hints.append(_("The resolution will be set to %(name)s",
                                name=resolutions[0]))
             else:
-                selected_option = req.args.get(id_, TicketSystem(self.env).default_resolution)
+                selected_option = req.args.get(id_, TicketSystem(
+                    self.env).default_resolution)
                 control.append(tag_('as %(resolution)s',
                                     resolution=tag.select(
-                                    [tag.option(x, value=x, selected=(x == selected_option or None))
-                                     for x in resolutions],
-                                     id=id_, name=id_)))
+                                        [tag.option(x, value=x, selected=(
+                                            x == selected_option or None))
+                                         for x in resolutions],
+                                        id=id_, name=id_)))
                 hints.append(_("The resolution will be set"))
         if 'del_resolution' in operations:
             hints.append(_("The resolution will be deleted"))
@@ -329,7 +338,8 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                 updated['owner'] = ''
             elif operation == 'set_owner':
                 newowner = req.args.get('action_%s_reassign_owner' % action,
-                                        this_action.get('set_owner', '').strip())
+                                        this_action.get('set_owner',
+                                                        '').strip())
                 # If there was already an owner, we get a list, [new, old],
                 # but if there wasn't we just get new.
                 if type(newowner) == list:
@@ -342,10 +352,11 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
             elif operation == 'set_resolution':
                 newresolution = req.args.get('action_%s_resolve_resolution' %
                                              action,
-                                             this_action.get('set_resolution', '').strip())
+                                             this_action.get('set_resolution',
+                                                             '').strip())
                 updated['resolution'] = newresolution
 
-            # leave_status is just a no-op here, so we don't look for it.
+                # leave_status is just a no-op here, so we don't look for it.
         return updated
 
     # Public methods (for other ITicketActionControllers that want to use
