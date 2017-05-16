@@ -3,18 +3,17 @@
 import cPickle
 import re
 
-from genshi.builder import tag
 from genshi.filters.transform import Transformer
 
 from trac.core import Component, TracError, implements
 from trac.config import IntOption, ListOption, Option
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import Resource, get_resource_shortname, \
-                          get_resource_summary
+    get_resource_summary, resource_exists
+from trac.util.html import html as tag
 from trac.web import IRequestFilter
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_stylesheet
-from trac.wiki import parse_args
 
 
 class BreadCrumbsSystem(Component):
@@ -24,24 +23,25 @@ class BreadCrumbsSystem(Component):
                ITemplateProvider, ITemplateStreamFilter)
 
     ignore_pattern = Option('breadcrumbs', 'ignore_pattern', None,
-        doc="""Resource names that match this pattern will not be added to
+                            doc="""Resource names that match this pattern will not be added to
             the breadcrumbs trail.""")
 
     label = Option('breadcrumbs', 'label', '',
-        doc="""Text label to show before breadcrumb list. If empty,
+                   doc="""Text label to show before breadcrumb list. If empty,
             'Breadcrumbs:' is used as default.""")
 
     max_crumbs = IntOption('breadcrumbs', 'max_crumbs', 6,
-        doc="""Indicates maximum number of breadcrumbs to store per user.""")
+                           doc="""Indicates maximum number of breadcrumbs to store per user.""")
 
     supported_paths = ListOption('breadcrumbs', 'paths',
-        '/wiki/,/ticket/,/milestone/',
-        doc="""List of URL paths to allow breadcrumb tracking.
+                                 '/wiki/,/ticket/,/milestone/',
+                                 doc="""List of URL paths to allow breadcrumb tracking.
             Globs are supported.""")
 
     compiled_ignore_pattern = None
 
     # IEnvironmentSetupParticipant methods
+
     def environment_created(self):
         self._upgrade_db(self.env.get_db_cnx())
 
@@ -54,7 +54,7 @@ class BreadCrumbsSystem(Component):
                   FROM session_attribute
                  WHERE name = %s
                 """, ("breadcrumbs list",)
-            )
+                           )
             result = cursor.fetchone()
             if int(result[0]):
                 return True
@@ -69,22 +69,20 @@ class BreadCrumbsSystem(Component):
 
     def _upgrade_db(self, db):
         try:
-            from trac.db import DatabaseManager
-            db_backend, _ = DatabaseManager(self.env)._get_connector()
-
             cursor = db.cursor()
             cursor.execute("""
                 DELETE
                   FROM session_attribute
                  WHERE name = %s
                 """, ("breadcrumbs list",)
-            )
+                           )
         except Exception, e:
             db.rollback()
             self.log.error(e, exc_info=True)
             raise TracError(str(e))
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -109,8 +107,9 @@ class BreadCrumbsSystem(Component):
                 if req.get_header("X-Moz") == "prefetch":
                     supported = False
 
-                if not supported or (self.compiled_ignore_pattern and
-                            self.compiled_ignore_pattern.match(resource_id)):
+                if not supported or \
+                        (self.compiled_ignore_pattern and
+                             self.compiled_ignore_pattern.match(resource_id)):
                     return template, data, content_type
 
                 if '&' in resource_id:
@@ -119,7 +118,7 @@ class BreadCrumbsSystem(Component):
                 sess = req.session
                 crumbs = self._get_crumbs(sess)
 
-                current = '/'.join( (realm, resource_id) )
+                current = '/'.join((realm, resource_id))
                 if current in crumbs:
                     crumbs.remove(current)
                     crumbs.insert(0, current)
@@ -147,6 +146,7 @@ class BreadCrumbsSystem(Component):
         return crumbs
 
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('breadcrumbs', resource_filename(__name__, 'htdocs'))]
@@ -155,6 +155,7 @@ class BreadCrumbsSystem(Component):
         return []
 
     # ITemplateStreamFilter method
+
     def filter_stream(self, req, method, filename, stream, data):
         crumbs = self._get_crumbs(req.session)
         if not crumbs:
@@ -165,22 +166,25 @@ class BreadCrumbsSystem(Component):
 
         path = req.path_info
         if path.count('/') >= 2:
-            _, realm, resource_id = path.split('/', 2)
+            realm, resource_id = path.split('/', 2)[1:]
             if '&' in resource_id:
                 resource_id = resource_id[0:resource_id.index('&')]
-            current = '/'.join( (realm, resource_id) )
+            current = '/'.join((realm, resource_id))
         else:
             current = None
 
-        href = req.href(req.base_path)
         offset = 0
         if crumbs and crumbs[0] == current:
             offset = 1
-        for crumb in crumbs[offset:self.max_crumbs + offset]:
+        for crumb in crumbs[offset: self.max_crumbs + offset]:
             realm, resource_id = crumb.split('/', 1)
             resource = Resource(realm, resource_id)
 
             name = get_resource_shortname(self.env, resource)
+
+            if not resource_exists(self.env, resource):
+                continue
+
             title = get_resource_summary(self.env, resource)
             link = req.href(realm, resource_id)
 
@@ -193,9 +197,8 @@ class BreadCrumbsSystem(Component):
         if ul:
             last = ul.pop()
             ul.append(last(class_="last"))
-            insert = tag.ul(class_="nav", id="breadcrumbs"
-                     )(tag.li(self.label and self.label or \
-                              "Breadcrumbs:"), ul)
+            label = self.label if self.label else "Breadcrumbs:"
+            insert = tag.ul(class_="nav", id="breadcrumbs")(tag.li(label), ul)
         else:
             insert = ''
 

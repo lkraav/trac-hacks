@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2008, Stephen Hansen
@@ -33,23 +34,23 @@
 from setuptools import setup
 
 setup(
-    name = 'BreadCrumbsNav',
-    version = '0.3',
-    author = 'Stephen Hansen',
-    author_email = 'shansen@advpubtech.com',
-    maintainer = 'Steffen Hoffmann',
-    maintainer_email = 'hoff.st@web.de',
-    description = "Shows the last several places that you have been.",
-    license = """
+    name='BreadCrumbsNav',
+    version='0.3',
+    author='Stephen Hansen',
+    author_email='shansen@advpubtech.com',
+    maintainer='Steffen Hoffmann',
+    maintainer_email='hoff.st@web.de',
+    description="Shows the last several places that you have been.",
+    license="""
     Copyright (c) 2008, Stephen Hansen,
     Copyright (c) 2011, Steffen Hoffmann.
     All rights reserved. Released under the 3-clause BSD license.
     """,
-    url = "http://trac-hacks.org/wiki/BreadCrumbsNavPlugin",
-    packages = ['breadcrumbsnav'],
-    package_data = {'breadcrumbsnav': ['htdocs/css/*.css']},
-    install_requires = ['Genshi >= 0.5', 'Trac >= 0.11'],
-    entry_points = {
-        'trac.plugins': ['breadcrumbsnav = breadcrumbsnav']
+    url="https://trac-hacks.org/wiki/BreadCrumbsNavPlugin",
+    packages=['breadcrumbsnav'],
+    package_data={'breadcrumbsnav': ['htdocs/css/*.css']},
+    install_requires=['Trac'],
+    entry_points={
+        'trac.plugins': ['breadcrumbsnav = breadcrumbsnav.breadcrumbs']
     }
 )
