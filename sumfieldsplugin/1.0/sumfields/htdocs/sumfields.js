@@ -9,6 +9,7 @@ jQuery(document).ready(function($){
     // loop through each "listing tickets" table
     $('.listing.tickets tbody').each(function(){
         var sums = {};
+        var $tbody = $(this)
 
         // sum each provided field's column
         for (var i=0; i < fields.length; i++) {
@@ -45,7 +46,7 @@ jQuery(document).ready(function($){
         });
         if (found){
             sumrow.find('td:first').text('sum:');
-            lastrow.after(sumrow);
+            $tbody.after($('<tfoot />').append(sumrow));
         }
     });
 });
