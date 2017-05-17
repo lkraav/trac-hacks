@@ -7,22 +7,22 @@
 */
 jQuery(document).ready(function($){
     // loop through each "listing tickets" table
-    jQuery('.listing.tickets tbody').each(function(){
+    $('.listing.tickets tbody').each(function(){
         var sums = {};
-        
+
         // sum each provided field's column
         for (var i=0; i < fields.length; i++) {
             var field = fields[i];
             sums[field] = 0;
             // sum up each row
-            jQuery('.' + field, this).each(function () {
+            $('.' + field, this).each(function () {
                 var num = parseFloat($(this).text().replace(',', '.'));
                 if (!isNaN(num)) {
                     sums[field] += num;
                 }
             });
         }
-        
+
         // clone the last row in table and replace with the sum(s)
         var lastrow = $(this).find('tr:last');
         var sumrow = lastrow.clone().removeAttr('class');
@@ -35,7 +35,7 @@ jQuery(document).ready(function($){
                 //  2. have GridModify not find the rest of the fields
                 $(this).removeAttr('class');
             }
-            if (jQuery.inArray(field, fields) == -1){
+            if ($.inArray(field, fields) == -1){
                 $(this).text('');
                 $(this).children().remove();
             } else {
