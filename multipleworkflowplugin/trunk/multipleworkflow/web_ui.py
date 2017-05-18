@@ -16,7 +16,6 @@ from genshi.output import HTMLSerializer
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.ticket.model import Type
-from trac.ticket.default_workflow import get_workflow_config
 from trac.util.html import html as tag
 from trac.util.translation import _, dgettext
 from trac.web.api import IRequestHandler
@@ -92,13 +91,13 @@ def create_graph_data(self, req, name=''):
             t = "New custom workflow (not saved)"
         if not actions:
             # We should never end here...
-            actions = get_workflow_config(self.config)
+            actions = get_workflow_config_by_type(self.config)
             t = "Custom workflow is broken. Showing default workflow"
     else:
         t = u""
         print(name)
         if name == 'default':
-            actions = get_workflow_config(self.config)
+            actions = get_workflow_config_by_type(self.config)
         else:
             actions = get_workflow_config_by_type(self.config, name)
 
@@ -107,7 +106,7 @@ def create_graph_data(self, req, name=''):
          for state in action['oldstates']] + [action['newstate'] for action in
                                               actions.itervalues()]))
 
-    action_labels = [action_info['name'] for action_name, action_info in
+    action_labels = [action_info['label'] for action_name, action_info in
                      actions.items()]
     action_names = actions.keys()
 
