@@ -7,10 +7,9 @@
 */
 jQuery(document).ready(function($){
     // loop through each "listing tickets" table
-    $('.listing.tickets tbody').each(function(){
-        var sums = {};
+    $('.listing.tickets tbody').has("tr:not(.trac-group,.trac-columns)").each(function() {
         var $tbody = $(this)
-
+        var sums = {};
         // sum each provided field's column
         for (var i=0; i < fields.length; i++) {
             var field = fields[i];
@@ -46,7 +45,7 @@ jQuery(document).ready(function($){
         });
         if (found){
             sumrow.find('td:first').text('sum:');
-            $tbody.after($('<tfoot />').append(sumrow));
+            $tbody.after($('<tbody />').append(sumrow));
         }
     });
 });
