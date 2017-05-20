@@ -8,6 +8,7 @@ import re
 from trac.core import Component, TracError, implements
 from trac.attachment import Attachment
 from trac.mimeview.api import Mimeview
+from trac.resource import Resource
 from trac.ticket.model import Ticket
 from trac.util import lazy
 from trac.util.text import to_unicode
@@ -170,7 +171,8 @@ class WikiAutoCompleteModule(Component):
         return completions
 
     def _suggest_macro(self, req):
-        context = web_context(req)
+        resource = Resource(req.args.get('realm'), req.args.get('id'))
+        context = web_context(req, resource)
         completions = []
         for name, descr in self._get_macros().iteritems():
             descr = {
@@ -183,7 +185,8 @@ class WikiAutoCompleteModule(Component):
         return sorted(completions, key=lambda entry: entry['name'])
 
     def _suggest_processor(self, req):
-        context = web_context(req)
+        resource = Resource(req.args.get('realm'), req.args.get('id'))
+        context = web_context(req, resource)
         macros = self._get_macros()
         mimetypes = set()
         for name, mimetype in Mimeview(self.env).mime_map.iteritems():

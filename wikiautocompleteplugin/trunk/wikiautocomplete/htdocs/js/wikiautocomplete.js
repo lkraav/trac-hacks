@@ -63,7 +63,11 @@ jQuery(document).ready(function($) {
                 invoke_callback(cache[strategy]);
             }
             else {
-                $.getJSON(wikiautocomplete.url + '/' + strategy)
+                var data = {
+                    realm: wikiautocomplete.realm,
+                    id: wikiautocomplete.id
+                };
+                $.getJSON(wikiautocomplete.url + '/' + strategy, data)
                     .done(function(resp) {
                         cache[strategy] = resp;
                         invoke_callback(resp);
