@@ -45,7 +45,7 @@ jQuery(document).ready(function($){
         });
         if (found){
             sumrow.find('td:first').text('sum:');
-            $tbody.after($('<tbody />').append(sumrow));
+            $tbody.after($('<tbody class="trac-query-summary">').append(sumrow));
         }
     });
 });
