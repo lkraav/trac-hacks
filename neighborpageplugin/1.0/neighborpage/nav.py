@@ -7,13 +7,14 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.builder import tag
 from trac.core import Component, implements
 from trac.mimeview.api import RenderingContext
+from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import prevnext_nav, add_link
-from trac.wiki.api import WikiSystem, IWikiMacroProvider, parse_args
+from trac.wiki.api import WikiSystem, parse_args
+from trac.wiki.macros import WikiMacroBase
 
 
 class NeighborPage(Component):
@@ -47,30 +48,31 @@ class NeighborPage(Component):
         return template, data, content_type
 
 
-class Macro(Component):
-    """ Generate Previous / Next Page link in place."""
-    implements(IWikiMacroProvider)
+class Macro(WikiMacroBase):
+    """Generate Previous / Next Page link in place
+
+    ||= Wiki Markup =||= Display  =||
+    || {{{[[SiblingPage]]}}} || [[SiblingPage]]
+    || {{{[[SiblingPage(Prev, Next)]]}}} || [[SiblingPage(Prev, Next)]]
+    || {{{[[PreviousPage(Prev, Next)]]}}} || [[PreviousPage(Prev, Next)]]
+    || {{{[[SiblingPage($PageName)]]}}} || [[SiblingPage($PageName)]]
+    || {{{[[SiblingPage(Minutes($PageName))]]}}} || [[SiblingPage(Minutes($PageName))]]
+
+    arg **missing**: replacement for {{{$PageName}}} if next/previous page is
+    not found.
+    """
 
     def get_macros(self):
         yield "SiblingPage"
         yield "PreviousPage"
         yield "NextPage"
 
-    def get_macro_description(self, name):
-        return "Generate Previous / Next Page link in place\n" \
-               " ||= Wiki Markup =||= Display  =||\n" \
-               " || {{{[[SiblingPage]]}}} || [[SiblingPage]]\n" \
-               " || {{{[[SiblingPage(Prev, Next)]]}}} || [[SiblingPage(Prev, Next)]]\n" \
-               " || {{{[[PreviousPage(Prev, Next)]]}}} || [[PreviousPage(Prev, Next)]]\n" \
-               " || {{{[[SiblingPage($PageName)]]}}} || [[SiblingPage($PageName)]]\n" \
-               " || {{{[[SiblingPage(Minutes($PageName))]]}}} || [[SiblingPage(Minutes($PageName))]]\n" \
-               " arg **missing**: replacement for {{{$PageName}}} if next/previous page is not found"
-
     def expand_macro(self, formatter, name, content, args=None):
         content, args = parse_args(content)
+
         content = [len(content) == 0 and _('Previous Page') or content[0],
                    len(content) == 0 and _('Next Page') or len(content) == 1 and content[0] or content[1]]
-        page = formatter.context.resource.id
+        page = formatter.resource.id
         prefix = '/' in page and page[:page.rindex('/') + 1] or ''
         tier = prefix.count('/')
         wiki = WikiSystem(self.env)

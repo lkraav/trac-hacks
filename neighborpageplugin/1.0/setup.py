@@ -3,7 +3,7 @@
 
 from setuptools import setup, find_packages
 
-version = '0.2'
+version = '0.3'
 
 setup(
     name='NeighborPagePlugin',
@@ -11,7 +11,7 @@ setup(
     license='Modified BSD',
     author='MATOBA Akihiro',
     author_email='matobaa+trac-hacks@gmail.com',
-    url='http://trac-hacks.org/wiki/matobaa',
+    url='https://trac-hacks.org/wiki/matobaa',
     description='Add wiki navigation links to neighbor page',
     zip_safe=True,
     packages=find_packages(exclude=['*.tests']),
