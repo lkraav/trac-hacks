@@ -6,13 +6,13 @@ from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 class FoldMacro(WikiMacroBase):
     """Expands to a foldable section.
-    
+
     The Wiki processor content is the folded wiki text.
-    
+
     Wiki processor parameters:
     * `title`: The text in the folding header.
     * `tag`: The HTML element used for the title (Default: span)
-    
+
     Example:
     {{{
         {{{#!Fold title="A title for the folded section" tag=h2
