@@ -13,8 +13,8 @@
 from setuptools import setup
 
 setup(
-    name='FootNoteMacro',
-    version='1.05',
+    name='TracFootNoteMacro',
+    version='1.6',
     packages=['footnotemacro'],
     package_data={'footnotemacro': ['htdocs/*.css',
                                     'htdocs/*.js']},
@@ -25,7 +25,7 @@ setup(
     description='Add footnotes to a wiki page',
     license='3-Clause BSD',
     keywords='trac plugin',
-    url='http://trac-hacks.org/wiki/FootNoteMacro',
+    url='https://trac-hacks.org/wiki/FootNoteMacro',
     classifiers=[
         'Framework :: Trac',
     ],
