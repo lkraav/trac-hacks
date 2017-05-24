@@ -6,17 +6,18 @@
 
 from trac.core import Component, implements
 from trac.prefs import IPreferencePanelProvider
+from trac.ticket.api import TicketSystem
 from trac.util.translation import _
 from trac.web.chrome import add_notice, add_stylesheet
-from trac.ticket.api import TicketSystem
+
 
 class MultiProjectBacklogPrefPanel(Component):
     implements(IPreferencePanelProvider)
 
     _ticket_fields = [
-                      (u'id', u'Id'), (u'summary', u'Summary'), (u'component', u'Component'),
-                      (u'version', u'Version'), (u'type', u'Type'), (u'owner', u'Owner'),
-                      (u'status', u'Status'), (u'time_created', u'Created')
+        (u'id', u'Id'), (u'summary', u'Summary'), (u'component', u'Component'),
+        (u'version', u'Version'), (u'type', u'Type'), (u'owner', u'Owner'),
+        (u'status', u'Status'), (u'time_created', u'Created')
     ]
 
     # IPreferencePanelProvider methods
@@ -28,16 +29,15 @@ class MultiProjectBacklogPrefPanel(Component):
         if req.method == 'POST':
             fields = req.args.get('backlog_fields')
             req.session['backlog_fields'] = fields
-            add_notice(req, _('Your backlog preferences have been saved.'))
+            add_notice(req, _("Your backlog preferences have been saved."))
             req.redirect(req.href.prefs(panel or None))
 
-        custom_fields = [(cf["name"], cf["label"]) for cf in TicketSystem(self.env).get_custom_fields()]
+        custom_fields = [(cf['name'], cf['label']) for cf in
+                         TicketSystem(self.env).get_custom_fields()]
         add_stylesheet(req, 'mpbacklog/css/backlog.css')
         return 'prefs_backlog.html', {
             'fields': self._ticket_fields + custom_fields,
             'shown_fields':
-                req.session.get('backlog_fields') or [field[0] for field in self._ticket_fields]
+                req.session.get('backlog_fields') or [field[0] for field in
+                                                      self._ticket_fields]
         }
-
-    # ITemplateProvider methods
-    # These methods are implemented in main plugin

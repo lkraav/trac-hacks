@@ -1,3 +1,7 @@
+import pkg_resources
+
+pkg_resources.require('Trac >= 1.0')
+
 __version__ = (0, 4, 0, 'dev', 0)
 
 def get_version():

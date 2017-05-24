@@ -6,36 +6,38 @@
 # This software is licensed as described in the file LICENSE.txt, which
 # you should have received as part of this distribution.
 
+import json
 import re
-import json as simplejson
 from collections import defaultdict
 from operator import itemgetter
 from pkg_resources import get_distribution, parse_version
+
 from genshi.template.markup import MarkupTemplate
-from genshi.builder import tag
 from trac.core import *
-from trac.db import DatabaseManager
+from trac.db.api import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor
 from trac.ticket.api import ITicketChangeListener, TicketSystem
-from trac.ticket.model import Ticket, Milestone
-from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.web.chrome import add_ctxtnav, add_script, add_script_data, add_stylesheet, Chrome, ResourceNotFound
-from trac.web.main import IRequestHandler
-from trac.web.api import HTTPBadRequest, IRequestFilter
+from trac.ticket.model import Milestone, Ticket
+from trac.util import get_reporter_id
 from trac.util.datefmt import format_date
 from trac.util.html import html
-from trac.util import get_reporter_id
 from trac.util.text import unicode_quote, unicode_from_base64, unicode_to_base64
 from trac.util.translation import _
-
+from trac.web.chrome import Chrome, INavigationContributor, ITemplateProvider, \
+    ResourceNotFound, add_ctxtnav, add_script, add_script_data, add_stylesheet
+from trac.web.api import HTTPBadRequest, IRequestFilter
+from trac.web.main import IRequestHandler
 
 from multiprojectbacklog.schema import schema_version, schema
+
 try:
     from simplemultiproject.model import SmpModel
-    have_smp = True
 except ImportError:
     have_smp = False
+else:
+    have_smp = True
+
 
 class MultiProjectBacklog(Component):
     implements(INavigationContributor, IRequestHandler, IRequestFilter,
@@ -43,7 +45,8 @@ class MultiProjectBacklog(Component):
                ITicketChangeListener, IPermissionRequestor)
 
     _ticket_fields = [
-        u'id', u'summary', u'component', u'version', u'type', u'owner', u'status',
+        u'id', u'summary', u'component', u'version', u'type', u'owner',
+        u'status',
         u'time_created'
     ]
     _ticket_fields_sel = [
@@ -53,15 +56,17 @@ class MultiProjectBacklog(Component):
     ]
 
     trac_version = get_distribution('trac').version
-    trac_0_12 = parse_version(trac_version) < parse_version('1.0.0')  # True if Trac V0.12.x
+    trac_0_12 = parse_version(trac_version) < parse_version(
+        '1.0.0')  # True if Trac V0.12.x
 
     def __init__(self):
         if have_smp:
             self.__SmpModel = SmpModel(self.env)
 
-    # IEnvironmentSetupParticipant
+    # IEnvironmentSetupParticipant methods
+
     def environment_created(self):
-        connector, args = DatabaseManager(self.env)._get_connector()
+        connector, args = DatabaseManager(self.env).get_connector()
         to_sql = connector.to_sql
         db = self.env.get_db_cnx()
         cur = db.cursor()
@@ -72,27 +77,33 @@ class MultiProjectBacklog(Component):
                 cur.execute(stmt)
 
         # Insert version information
-        cur.execute("INSERT INTO system (name,value) "
-                    "VALUES ('mp_backlog_version', %s)" % (
-                        str(schema_version)))
+        cur.execute("""
+            INSERT INTO system (name,value) VALUES ('mp_backlog_version', %s)
+            """, (schema_version,))
 
     def environment_needs_upgrade(self, db):
         cur = db.cursor()
-        cur.execute("SELECT value FROM system WHERE name='mp_backlog_version'")
+        cur.execute("""
+            SELECT value FROM system WHERE name='mp_backlog_version'
+            """)
         row = cur.fetchone()
         if not row or int(row[0]) < schema_version:
             return True
 
-        cur.execute("SELECT COUNT(*) FROM mp_backlog "
-                    "LEFT JOIN ticket ON ticket.id = mp_backlog.ticket_id "
-                    "WHERE ticket.id IS NULL")
+        cur.execute("""
+            SELECT COUNT(*) FROM mp_backlog
+            LEFT JOIN ticket ON ticket.id = mp_backlog.ticket_id
+            WHERE ticket.id IS NULL
+            """)
         num_ranks_without_tickets = cur.fetchone()[0]
         if num_ranks_without_tickets:
             return True
 
-        cur.execute("SELECT COUNT(*) FROM ticket AS t LEFT JOIN mp_backlog "
-                    "ON t.id = mp_backlog.ticket_id WHERE mp_backlog.ticket_id "
-                    "IS NULL")
+        cur.execute("""
+            SELECT COUNT(*) FROM ticket AS t 
+             LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
+            WHERE mp_backlog.ticket_id IS NULL
+            """)
 
         num_tickets_without_ranks = cur.fetchone()[0]
 
@@ -103,20 +114,23 @@ class MultiProjectBacklog(Component):
 
     def upgrade_environment(self, db):
         cur = db.cursor()
-        cur.execute(
-                "SELECT value FROM system WHERE name='mp_backlog_version'")
+        cur.execute("""
+            SELECT value FROM system WHERE name='mp_backlog_version'
+            """)
         row = cur.fetchone()
 
         if not row:
             self.environment_created()
         elif int(row[0]) < schema_version:
-            ### Pass we need to do an upgrade...
-            ### We'll implement that later. :-)
+            # Pass we need to do an upgrade...
+            # We'll implement that later.
             pass
 
         # Clean out any ranks that don't have tickets.
-        cur.execute("DELETE FROM mp_backlog WHERE ticket_id NOT IN "
-                    "(SELECT id FROM ticket)")
+        cur.execute("""
+            DELETE FROM mp_backlog 
+            WHERE ticket_id NOT IN (SELECT id FROM ticket)
+            """)
 
         cur.execute("SELECT MAX(rank) FROM mp_backlog")
         row = cur.fetchone()
@@ -128,9 +142,11 @@ class MultiProjectBacklog(Component):
             rank = 1
 
         # Make sure that all tickets have a rank
-        cur.execute("SELECT t.id FROM ticket AS t LEFT JOIN mp_backlog "
-                    "ON t.id = mp_backlog.ticket_id WHERE mp_backlog.ticket_id "
-                    "IS NULL")
+        cur.execute("""
+            SELECT t.id FROM ticket AS t
+             LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
+            WHERE mp_backlog.ticket_id IS NULL
+            """)
 
         for row in cur.fetchall():
             ticket_id = row[0]
@@ -143,7 +159,7 @@ class MultiProjectBacklog(Component):
 
         db.commit()
 
-    # IRequestFilter
+    # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
         return handler
@@ -163,9 +179,11 @@ $proj
         """Get a dictionary holding milestones for each smp project.
         @param req: Request object
 
-        @return: dictionary with project name as key and a list of milestones as value.
+        @return: dictionary with project name as key and a list of milestones 
+                 as value.
         """
-        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
+        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(
+            req)
         milestones_for_project = defaultdict(list)
 
         for project in sorted(all_projects, key=itemgetter(1)):
@@ -180,15 +198,18 @@ $proj
 
     def post_process_request(self, req, template, data, content_type):
         if have_smp and template == 'backlog.html':
-            all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+            all_proj = self.env.config.getlist('ticket-custom',
+                                               'project.options', sep='|')
 
             if all_proj:
                 sel_proj = req.args.get('mp_proj', '')
                 data['mp_proj'] = sel_proj
                 data['ms_for_proj'] = self.get_milestone_data(req)
                 sel = MarkupTemplate(self.projects_tmpl)
-                add_ctxtnav(req, tag.div(sel.generate(proj=_("Project"), all_projects=all_proj,
-                                                      sel_prj=sel_proj, btn=_("Change"), all_label=_('All'))))
+                add_ctxtnav(req, html.div(
+                    sel.generate(proj=_("Project"), all_projects=all_proj,
+                                 sel_prj=sel_proj, btn=_("Change"),
+                                 all_label=_('All'))))
         return template, data, content_type
 
     # INavigationContributor methods
@@ -201,7 +222,8 @@ $proj
 
     def get_navigation_items(self, req):
         if 'TICKET_VIEW' in req.perm:
-            yield 'mainnav', 'mpbacklog', html.a('Backlog', href=req.href.mpbacklog())
+            yield 'mainnav', 'mpbacklog', html.a('Backlog',
+                                                 href=req.href.mpbacklog())
 
     # ITemplateProvider
 
@@ -213,7 +235,8 @@ $proj
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
 
-    # ITicketChangeListener
+    # ITicketChangeListener methods
+
     def ticket_created(self, ticket):
 
         @self.env.with_transaction()
@@ -240,9 +263,10 @@ $proj
                            (ticket.id,))
 
     # IRequestHandler methods
+
     def match_request(self, req):
-        match = re.match(r'/mpbacklog(?:/(move_after|move_before|assign|milestone/(?:[^/]+)))?/?',
-                         req.path_info)
+        match = re.match(r'/mpbacklog(?:/(move_after|move_before|assign|'
+                         r'milestone/(?:[^/]+)))?/?', req.path_info)
         if match:
             return True
         return False
@@ -284,30 +308,28 @@ $proj
         data['form_token'] = req.form_token
         data['active_milestones'] = self._get_active_milestones(milestone)
         data['base_path'] = req.base_path
-        data['custom_fields'] = [(cf["name"], cf["label"]) for cf in TicketSystem(self.env).get_custom_fields()]
-        data['shown_fields'] = req.session.get('backlog_fields') or self._ticket_fields
-        custom_fields = [(cf["name"], cf["label"]) for cf in TicketSystem(self.env).get_custom_fields()]
+        data['custom_fields'] = [(cf["name"], cf["label"]) for cf in
+                                 TicketSystem(self.env).get_custom_fields()]
+        data['shown_fields'] = req.session.get(
+            'backlog_fields') or self._ticket_fields
+        custom_fields = [(cf["name"], cf["label"]) for cf in
+                         TicketSystem(self.env).get_custom_fields()]
         data['mp_fields'] = self._ticket_fields_sel + custom_fields
-        data['shown_fields_sel'] = req.session.get('backlog_fields') or [field[0] for field in self._ticket_fields_sel]
+        data['shown_fields_sel'] = req.session.get('backlog_fields') or [
+            field[0] for field in self._ticket_fields_sel]
 
         if 'BACKLOG_ADMIN' in req.perm:
             data['allow_sorting'] = True
 
-        if self.trac_0_12:
-            add_script(req, self.env.config.get('trac', 'jquery_ui_location') or
-                           'common/js/jquery-ui.js')
-            add_stylesheet(req, self.env.config.get('trac', 'jquery_ui_theme_location') or
-                           'common/css/jquery-ui/jquery-ui.css')
-        else:
-            Chrome(self.env).add_jquery_ui(req)
+        Chrome(self.env).add_jquery_ui(req)
 
         add_stylesheet(req, 'mpbacklog/css/backlog.css')
-        add_script_data(req, {'mp_post_url': req.base_path+'/mpbacklog',
+        add_script_data(req, {'mp_post_url': req.base_path + '/mpbacklog',
                               'mp_form_token': req.form_token})
         add_script(req, 'mpbacklog/js/backlog.js')
         return 'backlog.html', data, None
 
-    def _get_active_tickets(self, milestone = None):
+    def _get_active_tickets(self, milestone=None):
         db = self.env.get_read_db()
         cursor = db.cursor()
 
@@ -315,23 +337,23 @@ $proj
             # Need a separate unscheduled mp_backlog query since deleting a
             # milestone and re-targeting a ticket can set the milestone field
             # to null, instead of the empty string.
-            UNSCHEDULED_BACKLOG_QUERY = '''SELECT id FROM ticket t
-              LEFT JOIN enum p ON p.name = t.priority AND
-                p.type = 'priority'
-              LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
-              WHERE status <> 'closed' AND
-                (milestone = '' or milestone is null)
-              ORDER BY bp.rank, %s, t.type, time
-            ''' % db.cast('p.value', 'int')
+            UNSCHEDULED_BACKLOG_QUERY = """
+                SELECT id FROM ticket t
+                 LEFT JOIN enum p ON p.name = t.priority AND p.type = 'priority'
+                 LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
+                WHERE status <> 'closed' AND 
+                 (milestone = '' or milestone is null)
+                ORDER BY bp.rank, %s, t.type, time
+                """ % db.cast('p.value', 'int')
             cursor.execute(UNSCHEDULED_BACKLOG_QUERY)
         else:
-            BACKLOG_QUERY = '''SELECT id FROM ticket t
-              LEFT JOIN enum p ON p.name = t.priority AND
-                p.type = 'priority'
-              LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
-              WHERE status <> 'closed' AND milestone = %%s
-              ORDER BY bp.rank, %s, t.type, time
-            ''' % db.cast('p.value', 'int')
+            BACKLOG_QUERY = """
+                SELECT id FROM ticket t
+                 LEFT JOIN enum p ON p.name = t.priority AND p.type = 'priority'
+                 LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
+                WHERE status <> 'closed' AND milestone = %%s
+                ORDER BY bp.rank, %s, t.type, time
+                """ % db.cast('p.value', 'int')
             cursor.execute(BACKLOG_QUERY, (milestone,))
 
         tickets = []
@@ -353,29 +375,33 @@ $proj
             def do_move(db):
                 cursor = db.cursor()
 
-                cursor.execute('SELECT rank FROM mp_backlog WHERE ticket_id = %s',
-                               (ticket_id,))
+                cursor.execute("""
+                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                    """, (ticket_id,))
                 old_rank = cursor.fetchone()[0]
 
-                cursor.execute('SELECT rank FROM mp_backlog WHERE ticket_id = %s',
-                               (before_ticket_id,))
+                cursor.execute("""
+                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                    """,(before_ticket_id,))
                 new_rank = cursor.fetchone()[0]
 
                 if new_rank > old_rank:
-                    cursor.execute(
-                        'UPDATE mp_backlog SET rank = rank - 1 WHERE rank > %s AND rank < %s',
-                        (old_rank, new_rank))
+                    cursor.execute("""
+                        UPDATE mp_backlog SET rank = rank - 1
+                        WHERE rank > %s AND rank < %s
+                        """, (old_rank, new_rank))
                     new_rank -= 1
                 else:
-                    cursor.execute(
-                        'UPDATE mp_backlog SET rank = rank + 1 WHERE rank >= %s AND rank < %s',
-                        (new_rank, old_rank))
+                    cursor.execute("""
+                        UPDATE mp_backlog SET rank = rank + 1 
+                        WHERE rank >= %s AND rank < %s
+                        """, (new_rank, old_rank))
 
-                cursor.execute(
-                    'UPDATE mp_backlog SET rank = %s WHERE ticket_id = %s',
-                    (new_rank, ticket_id))
+                cursor.execute("""
+                    UPDATE mp_backlog SET rank = %s WHERE ticket_id = %s
+                    """, (new_rank, ticket_id))
         except:
-            to_result['msg'] = 'Error trying to update rank'
+            to_result['msg'] = "Error trying to update rank"
 
         if 'msg' in to_result:
             to_result['errorcode'] = 202
@@ -384,12 +410,11 @@ $proj
             to_result['errorcode'] = 200
             req.send_response(200)
 
-        data = simplejson.dumps(to_result)
+        data = json.dumps(to_result)
         req.send_header('Content-Type', 'application/json')
         req.send_header('Content-Length', len(data))
         req.end_headers()
         req.write(data)
-
 
     def _move_after(self, req):
         ticket_id = int(req.args.get('ticket_id', 0))
@@ -402,27 +427,31 @@ $proj
             def do_move(db):
                 cursor = db.cursor()
 
-                cursor.execute('SELECT rank FROM mp_backlog WHERE ticket_id = %s',
-                               (ticket_id,))
+                cursor.execute("""
+                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                    """, (ticket_id,))
                 old_rank = cursor.fetchone()[0]
 
-                cursor.execute('SELECT rank FROM mp_backlog WHERE ticket_id = %s',
-                               (after_ticket_id,))
+                cursor.execute("""
+                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                    """, (after_ticket_id,))
                 new_rank = cursor.fetchone()[0]
 
                 if old_rank < new_rank:
-                    cursor.execute(
-                        'UPDATE mp_backlog SET rank = rank - 1 WHERE rank > %s AND rank <= %s',
-                        (old_rank, new_rank))
+                    cursor.execute("""
+                        UPDATE mp_backlog SET rank = rank - 1 
+                        WHERE rank > %s AND rank <= %s
+                        """, (old_rank, new_rank))
                 elif old_rank >= new_rank:
-                    cursor.execute(
-                        'UPDATE mp_backlog SET rank = rank + 1 WHERE rank > %s AND rank <= %s',
-                        (new_rank, old_rank))
+                    cursor.execute("""
+                        UPDATE mp_backlog SET rank = rank + 1 
+                        WHERE rank > %s AND rank <= %s
+                        """, (new_rank, old_rank))
                     new_rank += 1
 
-                cursor.execute(
-                    'UPDATE mp_backlog SET rank = %s WHERE ticket_id = %s',
-                    (new_rank, ticket_id))
+                cursor.execute("""
+                    UPDATE mp_backlog SET rank = %s WHERE ticket_id = %s
+                    """, (new_rank, ticket_id))
 
                 db.commit()
         except:
@@ -437,7 +466,7 @@ $proj
             to_result['errorcode'] = 200
             req.send_response(200)
 
-        data = simplejson.dumps(to_result)
+        data = json.dumps(to_result)
 
         req.send_header('Content-Type', 'application/json')
         req.send_header('Content-Length', len(data))
@@ -445,12 +474,13 @@ $proj
         req.write(data)
 
     def _get_num_tickets(self, cursor, milestone):
-        cursor.execute(
-                "SELECT COUNT(*) FROM ticket WHERE status <> 'closed'"
-                "AND COALESCE(milestone, '') = %s", (milestone,))
+        cursor.execute("""
+            SELECT COUNT(*) FROM ticket
+            WHERE status <> 'closed' AND COALESCE(milestone, '') = %s
+            """, (milestone,))
         return cursor.fetchone()[0]
 
-    def _get_active_milestones(self, exclude = None):
+    def _get_active_milestones(self, exclude=None):
         '''Retrieve a list of milestones.  If exclude is specified, it
         will exclude that milestone from the list and add in the unscheduled
         milestone.'''
@@ -465,9 +495,10 @@ $proj
             results.append(
                 dict(name='(unscheduled)', due='--', num_tickets=num_tickets))
 
-        cursor.execute('''SELECT name, due FROM milestone
-            WHERE completed = 0
-            ORDER BY (due = 0), due, UPPER(name), name''')
+        cursor.execute("""
+            SELECT name, due FROM milestone WHERE completed = 0
+            ORDER BY (due = 0), due, UPPER(name), name
+            """)
 
         rows = cursor.fetchall()
 
@@ -477,12 +508,13 @@ $proj
 
             num_tickets = self._get_num_tickets(cursor, row[0])
 
-            d = dict(name=row[0],
-                     due=(row[1] and format_date(row[1])) or '--',
-                     num_tickets=num_tickets,
-                     path=unicode_quote(row[0], safe=''),
-                     id='MS'+unicode_to_base64(row[0])  # Make sure element id only contains valid chars
-                     )
+            d = {
+                'name': row[0],
+                'due': (row[1] and format_date(row[1])) or '--',
+                'num_tickets': num_tickets,
+                'path': unicode_quote(row[0], safe=''),
+                'id': 'MS' + unicode_to_base64(row[0])
+            }
             results.append(d)
 
         return results
@@ -509,17 +541,19 @@ $proj
 
             ms_exists = False
             try:
-                ms = Milestone(self.env, milestone)
-                ms_exists = True
+                Milestone(self.env, milestone)
             except ResourceNotFound:
                 to_result['msg'] = "Milestone not found."
+            else:
+                ms_exists = True
 
             if ms_exists:
                 try:
                     ticket['milestone'] = milestone
                     ticket.save_changes(author, "")
 
-                    to_result['num_tickets'] = self._get_num_tickets(cursor, milestone)
+                    to_result['num_tickets'] = self._get_num_tickets(cursor,
+                                                                     milestone)
                 except:
                     to_result['msg'] = "Unable to assign milestone"
 
@@ -530,7 +564,7 @@ $proj
             to_result['errorcode'] = 200
             req.send_response(200)
 
-        data = simplejson.dumps(to_result)
+        data = json.dumps(to_result)
 
         req.send_header('Content-Type', 'application/json')
         req.send_header('Content-Length', len(data))
