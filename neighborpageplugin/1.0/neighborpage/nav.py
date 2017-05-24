@@ -14,6 +14,7 @@ from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import prevnext_nav, add_link
 from trac.wiki.api import WikiSystem, parse_args
+from trac.wiki.formatter import system_message
 from trac.wiki.macros import WikiMacroBase
 
 
@@ -68,6 +69,9 @@ class Macro(WikiMacroBase):
         yield "NextPage"
 
     def expand_macro(self, formatter, name, content, args=None):
+        if formatter.resource.realm != 'wiki':
+            return system_message(_("Macro %(name)s can only be used in wiki "
+                                    "pages", name=name))
         content, args = parse_args(content)
 
         content = [len(content) == 0 and _('Previous Page') or content[0],
