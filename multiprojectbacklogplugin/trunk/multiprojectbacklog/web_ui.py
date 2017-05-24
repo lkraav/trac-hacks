@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
+#
 # Copyright (C) 2009, 2011, 2013 John Szakmeister
 # Copyright (C) 2016 Cinc
-#
 # All rights reserved.
 #
-# This software is licensed as described in the file LICENSE.txt, which
+# This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
 import json
@@ -68,96 +69,84 @@ class MultiProjectBacklog(Component):
     def environment_created(self):
         connector, args = DatabaseManager(self.env).get_connector()
         to_sql = connector.to_sql
-        db = self.env.get_db_cnx()
-        cur = db.cursor()
 
-        for table in schema:
-            sql = to_sql(table)
-            for stmt in sql:
-                cur.execute(stmt)
+        with self.env.db_transaction as db:
+            for table in schema:
+                sql = to_sql(table)
+                for stmt in sql:
+                    db(stmt)
 
-        # Insert version information
-        cur.execute("""
-            INSERT INTO system (name,value) VALUES ('mp_backlog_version', %s)
-            """, (schema_version,))
+            # Insert version information
+            db("""
+                INSERT INTO system (name,value)
+                VALUES ('mp_backlog_version', %s)
+                """, (schema_version,))
 
-    def environment_needs_upgrade(self, db):
-        cur = db.cursor()
-        cur.execute("""
-            SELECT value FROM system WHERE name='mp_backlog_version'
-            """)
-        row = cur.fetchone()
-        if not row or int(row[0]) < schema_version:
-            return True
+    def environment_needs_upgrade(self, db=None):
+        with self.env.db_query:
+            for version, in db("""
+                    SELECT value FROM system WHERE name='mp_backlog_version'
+                    """):
+                if int(version) < schema_version:
+                    return True
+                break
+            else:
+                return True
 
-        cur.execute("""
-            SELECT COUNT(*) FROM mp_backlog
-            LEFT JOIN ticket ON ticket.id = mp_backlog.ticket_id
-            WHERE ticket.id IS NULL
-            """)
-        num_ranks_without_tickets = cur.fetchone()[0]
-        if num_ranks_without_tickets:
-            return True
+            for count, in db("""
+                    SELECT COUNT(*) FROM mp_backlog
+                    LEFT JOIN ticket ON ticket.id = mp_backlog.ticket_id
+                    WHERE ticket.id IS NULL
+                    """):
+                if count:
+                    return True
 
-        cur.execute("""
-            SELECT COUNT(*) FROM ticket AS t 
-             LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
-            WHERE mp_backlog.ticket_id IS NULL
-            """)
+            for count, in db("""
+                    SELECT COUNT(*) FROM ticket AS t 
+                     LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
+                    WHERE mp_backlog.ticket_id IS NULL
+                    """):
+                if count:
+                    return True
 
-        num_tickets_without_ranks = cur.fetchone()[0]
+            return False
 
-        if num_tickets_without_ranks:
-            return True
+    def upgrade_environment(self, db=None):
+        with self.env.db_transaction as db:
+            for version in db("""
+                    SELECT value FROM system WHERE name='mp_backlog_version'
+                    """):
+                if int(version) < schema_version:
+                    # Pass we need to do an upgrade...
+                    # We'll implement that later.
+                    pass
+                break
+            else:
+                self.environment_created()
 
-        return False
+            # Clean out any ranks that don't have tickets.
+            db("""
+                DELETE FROM mp_backlog 
+                WHERE ticket_id NOT IN (SELECT id FROM ticket)
+                """)
 
-    def upgrade_environment(self, db):
-        cur = db.cursor()
-        cur.execute("""
-            SELECT value FROM system WHERE name='mp_backlog_version'
-            """)
-        row = cur.fetchone()
+            for rank, in db("SELECT MAX(rank) FROM mp_backlog"):
+                # If the mp_backlog table is empty, simply start with 1.
+                if rank is not None:
+                    rank += 1
+            else:
+                rank = 1
 
-        if not row:
-            self.environment_created()
-        elif int(row[0]) < schema_version:
-            # Pass we need to do an upgrade...
-            # We'll implement that later.
-            pass
-
-        # Clean out any ranks that don't have tickets.
-        cur.execute("""
-            DELETE FROM mp_backlog 
-            WHERE ticket_id NOT IN (SELECT id FROM ticket)
-            """)
-
-        cur.execute("SELECT MAX(rank) FROM mp_backlog")
-        row = cur.fetchone()
-
-        # If the mp_backlog table is empty, simply start with 1.
-        if row[0] is not None:
-            rank = row[0] + 1
-        else:
-            rank = 1
-
-        # Make sure that all tickets have a rank
-        cur.execute("""
-            SELECT t.id FROM ticket AS t
-             LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
-            WHERE mp_backlog.ticket_id IS NULL
-            """)
-
-        for row in cur.fetchall():
-            ticket_id = row[0]
-
-            # Insert a default rank for the ticket, using the ticket id
-            cur.execute("INSERT INTO mp_backlog VALUES (%s,%s,%s)",
-                        (ticket_id, rank, None))
-
-            rank += 1
-
-        db.commit()
+            # Make sure that all tickets have a rank
+            for ticket_id, in db("""
+                    SELECT t.id FROM ticket AS t
+                     LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
+                    WHERE mp_backlog.ticket_id IS NULL
+                    """):
+                # Insert a default rank for the ticket, using the ticket id
+                db("INSERT INTO mp_backlog VALUES (%s,%s,%s)",
+                   (ticket_id, rank, None))
+                rank += 1
 
     # IRequestFilter methods
 
@@ -239,28 +228,24 @@ $proj
 
     def ticket_created(self, ticket):
 
-        @self.env.with_transaction()
-        def do_created(db):
-            cursor = db.cursor()
-            cursor.execute("SELECT MAX(rank) FROM mp_backlog")
-            rank = cursor.fetchone()[0]
-            if rank is None:
-                rank = 1
-            else:
+        with self.env.db_transaction as db:
+            for rank, in db("SELECT MAX(rank) FROM mp_backlog"):
                 rank += 1
-            cursor.execute("INSERT INTO mp_backlog VALUES (%s, %s, %s)",
-                           (ticket.id, rank, None))
+                break
+            else:
+                rank = 1
+            db("""
+                INSERT INTO mp_backlog VALUES (%s, %s, %s)
+                """, (ticket.id, rank, None))
 
     def ticket_changed(self, ticket, comment, author, old_values):
         pass
 
     def ticket_deleted(self, ticket):
 
-        @self.env.with_transaction()
-        def do_delete(db):
-            cursor = db.cursor()
-            cursor.execute("DELETE FROM mp_backlog WHERE ticket_id = %s",
-                           (ticket.id,))
+        self.env.db_transaction("""
+            DELETE FROM mp_backlog WHERE ticket_id = %s
+            """, (ticket.id,))
 
     # IRequestHandler methods
 
@@ -297,21 +282,17 @@ $proj
             milestone = None
 
         data = {
-            'title': (milestone or "Unscheduled"),
+            'title': milestone or "Unscheduled",
+            'tickets': self._get_active_tickets(milestone),
+            'form_token': req.form_token,
+            'active_milestones': self._get_active_milestones(milestone),
+            'base_path': req.base_path,
+            'custom_fields': [(cf["name"], cf["label"]) for cf in
+                              TicketSystem(self.env).get_custom_fields()],
+            'shown_fields': req.session.get(
+                'backlog_fields') or self._ticket_fields
         }
 
-        class Report(object):
-            def __init__(self):
-                self.id = -1
-
-        data['tickets'] = self._get_active_tickets(milestone)
-        data['form_token'] = req.form_token
-        data['active_milestones'] = self._get_active_milestones(milestone)
-        data['base_path'] = req.base_path
-        data['custom_fields'] = [(cf["name"], cf["label"]) for cf in
-                                 TicketSystem(self.env).get_custom_fields()]
-        data['shown_fields'] = req.session.get(
-            'backlog_fields') or self._ticket_fields
         custom_fields = [(cf["name"], cf["label"]) for cf in
                          TicketSystem(self.env).get_custom_fields()]
         data['mp_fields'] = self._ticket_fields_sel + custom_fields
@@ -330,39 +311,34 @@ $proj
         return 'backlog.html', data, None
 
     def _get_active_tickets(self, milestone=None):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
+        with self.env.db_query as db:
+            if milestone is None:
+                # Need a separate unscheduled mp_backlog query since deleting
+                # a milestone and re-targeting a ticket can set the milestone
+                # field to null, instead of the empty string.
+                query = """
+                    SELECT id FROM ticket t
+                     LEFT JOIN enum p 
+                      ON p.name = t.priority AND p.type = 'priority'
+                     LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
+                    WHERE status <> 'closed' AND 
+                     (milestone = '' or milestone is null)
+                    ORDER BY bp.rank, %s, t.type, time
+                    """ % db.cast('p.value', 'int')
+                args = []
+            else:
+                query = """
+                    SELECT id FROM ticket t
+                     LEFT JOIN enum p
+                      ON p.name = t.priority AND p.type = 'priority'
+                     LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
+                    WHERE status <> 'closed' AND milestone = %%s
+                    ORDER BY bp.rank, %s, t.type, time
+                    """ % db.cast('p.value', 'int')
+                args = (milestone,)
 
-        if milestone is None:
-            # Need a separate unscheduled mp_backlog query since deleting a
-            # milestone and re-targeting a ticket can set the milestone field
-            # to null, instead of the empty string.
-            UNSCHEDULED_BACKLOG_QUERY = """
-                SELECT id FROM ticket t
-                 LEFT JOIN enum p ON p.name = t.priority AND p.type = 'priority'
-                 LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
-                WHERE status <> 'closed' AND 
-                 (milestone = '' or milestone is null)
-                ORDER BY bp.rank, %s, t.type, time
-                """ % db.cast('p.value', 'int')
-            cursor.execute(UNSCHEDULED_BACKLOG_QUERY)
-        else:
-            BACKLOG_QUERY = """
-                SELECT id FROM ticket t
-                 LEFT JOIN enum p ON p.name = t.priority AND p.type = 'priority'
-                 LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
-                WHERE status <> 'closed' AND milestone = %%s
-                ORDER BY bp.rank, %s, t.type, time
-                """ % db.cast('p.value', 'int')
-            cursor.execute(BACKLOG_QUERY, (milestone,))
-
-        tickets = []
-
-        for row in cursor:
-            t = Ticket(self.env, row[0])
-            tickets.append(t)
-
-        return tickets
+            return [Ticket(self.env, row[0])
+                    for row in self.env.db_query(query, args)]
 
     def _move_before(self, req):
         ticket_id = int(req.args.get('ticket_id', 0))
@@ -371,33 +347,32 @@ $proj
         to_result = {}
 
         try:
-            @self.env.with_transaction()
-            def do_move(db):
-                cursor = db.cursor()
+            with self.env.db_transaction as db:
+                old_rank = None
+                for old_rank, in db("""
+                        SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                        """, (ticket_id,)):
+                    break
 
-                cursor.execute("""
-                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
-                    """, (ticket_id,))
-                old_rank = cursor.fetchone()[0]
-
-                cursor.execute("""
-                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
-                    """,(before_ticket_id,))
-                new_rank = cursor.fetchone()[0]
+                new_rank = None
+                for new_rank, in db("""
+                        SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                        """, (before_ticket_id,)):
+                    break
 
                 if new_rank > old_rank:
-                    cursor.execute("""
+                    db("""
                         UPDATE mp_backlog SET rank = rank - 1
                         WHERE rank > %s AND rank < %s
                         """, (old_rank, new_rank))
                     new_rank -= 1
                 else:
-                    cursor.execute("""
+                    db("""
                         UPDATE mp_backlog SET rank = rank + 1 
                         WHERE rank >= %s AND rank < %s
                         """, (new_rank, old_rank))
 
-                cursor.execute("""
+                db("""
                     UPDATE mp_backlog SET rank = %s WHERE ticket_id = %s
                     """, (new_rank, ticket_id))
         except:
@@ -423,37 +398,35 @@ $proj
         to_result = {}
 
         try:
-            @self.env.with_transaction()
-            def do_move(db):
-                cursor = db.cursor()
+            with self.env.db_transaction as db:
+                old_rank = None
+                for old_rank, in db("""
+                        SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                        """, (ticket_id,)):
+                    break
 
-                cursor.execute("""
-                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
-                    """, (ticket_id,))
-                old_rank = cursor.fetchone()[0]
-
-                cursor.execute("""
-                    SELECT rank FROM mp_backlog WHERE ticket_id = %s
-                    """, (after_ticket_id,))
-                new_rank = cursor.fetchone()[0]
+                new_rank = None
+                for new_rank, in db("""
+                        SELECT rank FROM mp_backlog WHERE ticket_id = %s
+                        """, (after_ticket_id,)):
+                    break
 
                 if old_rank < new_rank:
-                    cursor.execute("""
+                    db("""
                         UPDATE mp_backlog SET rank = rank - 1 
                         WHERE rank > %s AND rank <= %s
                         """, (old_rank, new_rank))
                 elif old_rank >= new_rank:
-                    cursor.execute("""
+                    db("""
                         UPDATE mp_backlog SET rank = rank + 1 
                         WHERE rank > %s AND rank <= %s
                         """, (new_rank, old_rank))
                     new_rank += 1
 
-                cursor.execute("""
+                db("""
                     UPDATE mp_backlog SET rank = %s WHERE ticket_id = %s
                     """, (new_rank, ticket_id))
 
-                db.commit()
         except:
             to_result['msg'] = 'Error trying to update rank'
 
@@ -473,47 +446,38 @@ $proj
         req.end_headers()
         req.write(data)
 
-    def _get_num_tickets(self, cursor, milestone):
-        cursor.execute("""
-            SELECT COUNT(*) FROM ticket
-            WHERE status <> 'closed' AND COALESCE(milestone, '') = %s
-            """, (milestone,))
-        return cursor.fetchone()[0]
+    def _get_num_tickets(self, milestone):
+        for count, in self.env.db_query("""
+                SELECT COUNT(*) FROM ticket
+                WHERE status <> 'closed' AND COALESCE(milestone, '') = %s
+                """, (milestone,)):
+            return count
 
     def _get_active_milestones(self, exclude=None):
-        '''Retrieve a list of milestones.  If exclude is specified, it
+        """Retrieve a list of milestones.  If exclude is specified, it
         will exclude that milestone from the list and add in the unscheduled
-        milestone.'''
-        db = self.env.get_read_db()
-
-        cursor = db.cursor()
-
+        milestone."""
         results = []
-
         if exclude:
-            num_tickets = self._get_num_tickets(cursor, '')
+            num_tickets = self._get_num_tickets('')
             results.append(
                 dict(name='(unscheduled)', due='--', num_tickets=num_tickets))
 
-        cursor.execute("""
-            SELECT name, due FROM milestone WHERE completed = 0
-            ORDER BY (due = 0), due, UPPER(name), name
-            """)
-
-        rows = cursor.fetchall()
-
-        for row in rows:
-            if exclude and exclude == row[0]:
+        for name, due in self.env.db_query("""
+                SELECT name, due FROM milestone WHERE completed = 0
+                ORDER BY (due = 0), due, UPPER(name), name
+                """):
+            if exclude and exclude == name:
                 continue
 
-            num_tickets = self._get_num_tickets(cursor, row[0])
+            num_tickets = self._get_num_tickets(name)
 
             d = {
-                'name': row[0],
-                'due': (row[1] and format_date(row[1])) or '--',
+                'name': name,
+                'due': format_date(due) if due else '--',
                 'num_tickets': num_tickets,
-                'path': unicode_quote(row[0], safe=''),
-                'id': 'MS' + unicode_to_base64(row[0])
+                'path': unicode_quote(name, safe=''),
+                'id': 'MS' + unicode_to_base64(name)
             }
             results.append(d)
 
@@ -536,9 +500,6 @@ $proj
             to_result['msg'] = "Couldn't find ticket!"
 
         if ticket:
-            db = self.env.get_read_db()
-            cursor = db.cursor()
-
             ms_exists = False
             try:
                 Milestone(self.env, milestone)
@@ -551,9 +512,7 @@ $proj
                 try:
                     ticket['milestone'] = milestone
                     ticket.save_changes(author, "")
-
-                    to_result['num_tickets'] = self._get_num_tickets(cursor,
-                                                                     milestone)
+                    to_result['num_tickets'] = self._get_num_tickets(milestone)
                 except:
                     to_result['msg'] = "Unable to assign milestone"
 

@@ -1,7 +1,10 @@
-# Copyright (C) 2009, 2012 John Szakmeister
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2009, 2011, 2013 John Szakmeister
+# Copyright (C) 2016 Cinc
 # All rights reserved.
 #
-# This software is licensed as described in the file LICENSE.txt, which
+# This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
 from trac.db import Table, Column, Index
