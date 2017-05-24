@@ -10,12 +10,12 @@
 
 from datetime import datetime
 
-from genshi.builder import tag
 from trac.core import Component, implements
 from trac.resource import Resource
 from trac.ticket.model import Version
 from trac.ticket.roadmap import RoadmapModule
 from trac.util.datefmt import utc
+from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import INavigationContributor, add_stylesheet
@@ -46,14 +46,14 @@ class ReleasesModule(Component):
     def process_request(self, req):
         req.perm.require('VERSION_VIEW')
 
-        showall = req.args.get('show') == 'all'
+        show_all = req.args.get('show') == 'all'
 
         versions = []
         for version in Version.select(self.env):
             resource = Resource('version', version.name)
             is_released = version.time and version.time < datetime.now(utc)
 
-            if (showall or not is_released) and \
+            if (show_all or not is_released) and \
                     'VERSION_VIEW' in req.perm(resource):
                 version.is_released = is_released
                 version.resource = resource
@@ -63,7 +63,7 @@ class ReleasesModule(Component):
 
         data = {
             'versions': versions,
-            'showall': showall,
+            'showall': show_all,
             'roadmapmodule_disabled': not self.env.enabled[RoadmapModule]
         }
         add_stylesheet(req, 'common/css/roadmap.css')

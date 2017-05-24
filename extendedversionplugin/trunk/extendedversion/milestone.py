@@ -8,16 +8,15 @@
 # you should have received as part of this distribution.
 #
 
-from genshi.builder import tag
 from genshi.filters.transform import StreamBuffer, Transformer
 from trac.core import Component, implements
-from trac.mimeview.api import Context
 from trac.resource import Resource, ResourceNotFound
 from trac.ticket.api import IMilestoneChangeListener
 from trac.ticket.model import Milestone
+from trac.util.html import html as tag
 from trac.util.datefmt import to_timestamp
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import INavigationContributor
+from trac.web.chrome import INavigationContributor, web_context
 
 from extendedversion.version import VisibleVersion
 
@@ -43,9 +42,8 @@ class MilestoneVersion(Component):
         action = req.args.get('action', 'view')
         name = req.args.get('name')
         version = req.args.get('version')
-        if req.path_info.startswith('/milestone') \
-                and req.method == 'POST' \
-                and action == 'edit':
+        if req.path_info.startswith('/milestone') and \
+                req.method == 'POST' and action == 'edit':
             # Removal is handled in change listener
             if name:
                 self._delete_milestone_version(name)
@@ -143,17 +141,11 @@ class MilestoneVersion(Component):
         return stream | filter
 
     def _version_display(self, req, milestone):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT version FROM milestone_version
-            WHERE milestone=%s""", (milestone,))
-        row = cursor.fetchone()
-
-        if row:
-            ver = row[0]
-            resource = Resource('milestone', milestone)
-            context = Context.from_request(req, resource)
+        resource = Resource('milestone', milestone)
+        context = web_context(req, resource)
+        for ver, in self.env.db_query("""
+                SELECT version FROM milestone_version WHERE milestone=%s
+                """, (milestone,)):
             link = VisibleVersion(self.env)._render_link(context, ver, ver)
             return tag.span("; For ", link, class_='date')
         else:
@@ -163,19 +155,13 @@ class MilestoneVersion(Component):
         if data.get('milestone'):
             milestone = data.get('milestone').name
         else:
-            milestone = ""
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT version FROM milestone_version
-            WHERE milestone=%s""", (milestone,))
-        row = cursor.fetchone()
-        value = row and row[0]
-
-        cursor.execute("""
-            SELECT name FROM version
-            WHERE time IS NULL OR time = 0 OR time>%s OR name = %s
-            ORDER BY name""", (to_timestamp(None), value))
+            milestone = ''
+        for version, in self.env.db_query("""
+                SELECT version FROM milestone_version WHERE milestone=%s
+                """, (milestone,)):
+            break
+        else:
+            version = None
 
         return tag.div(
             tag.label(
@@ -183,7 +169,10 @@ class MilestoneVersion(Component):
                 tag.br(),
                 tag.select(
                     tag.option(),
-                    [tag.option(row[0], selected=(value == row[0] or None))
-                     for row in cursor],
+                    [tag.option(name, selected=(version == name or None))
+                     for name, in self.env.db_query("""
+                        SELECT name FROM version
+                        WHERE time IS NULL OR time = 0 OR time>%s OR name = %s
+                        ORDER BY name""", (to_timestamp(None), version))],
                     name="version")),
             class_="field")

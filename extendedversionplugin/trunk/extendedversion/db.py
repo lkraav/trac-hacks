@@ -8,8 +8,8 @@
 # you should have received as part of this distribution.
 #
 
-from trac.db.schema import Column, Table
 from trac.core import Component, TracError, implements
+from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.util.translation import _
 
@@ -26,18 +26,18 @@ schema = [
 
 def to_sql(env, table):
     from trac.db.api import DatabaseManager
-    dc = DatabaseManager(env)._get_connector()[0]
+    dc = DatabaseManager(env).get_connector()[0]
     return dc.to_sql(table)
 
 
-def create_tables(env, db):
-    cursor = db.cursor()
-    for table in schema:
-        for stmt in to_sql(env, table):
-            cursor.execute(stmt)
-    cursor.execute("""
-        INSERT into system values (%s, %s)
-        """, (name, db_version))
+def create_tables(env):
+    with env.db_transaction as db:
+        for table in schema:
+            for stmt in to_sql(env, table):
+                db(stmt)
+        db("""
+            INSERT into system values (%s, %s)
+            """, (name, db_version))
 
 
 class ExtendedVersionsSetup(Component):
@@ -47,10 +47,10 @@ class ExtendedVersionsSetup(Component):
 
     def environment_created(self):
         # Don't need to do anything when the environment is created
-        pass
+        self.upgrade_environment()
 
-    def environment_needs_upgrade(self, db):
-        current_version = self._get_version(db)
+    def environment_needs_upgrade(self, db=None):
+        current_version = self._get_version()
 
         if current_version == db_version:
             return False
@@ -61,25 +61,22 @@ class ExtendedVersionsSetup(Component):
                       " be %d", current_version, db_version)
         return True
 
-    def upgrade_environment(self, db):
-        current_version = self._get_version(db)
+    def upgrade_environment(self, db=None):
+        current_version = self._get_version()
 
         if current_version == 0:
-            create_tables(self.env, db)
+            create_tables(self.env)
         else:
             pass
 
     # Internal methods
 
-    def _get_version(self, db):
-        cursor = db.cursor()
+    def _get_version(self):
         try:
-            cursor.execute(
-                """SELECT value FROM system
-                   WHERE name='%s'""" % name)
-            row = cursor.fetchone()
-            if row:
-                return int(row[0])
+            for value, in self.env.db_query("""
+                    SELECT value FROM system WHERE name=%s
+                    """, (name,)):
+                return int(value)
             else:
                 return 0
         except:

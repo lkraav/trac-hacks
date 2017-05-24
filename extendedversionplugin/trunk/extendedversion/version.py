@@ -11,14 +11,10 @@
 import re
 
 from datetime import datetime
-from pkg_resources import parse_version
 
-from genshi.builder import tag
-from trac import __version__ as trac_version
 from trac.attachment import AttachmentModule, ILegacyAttachmentPolicyDelegate
 from trac.config import BoolOption, ExtensionOption, Option
 from trac.core import Component, TracError, implements
-from trac.mimeview.api import Context
 from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager, Resource, ResourceNotFound
 from trac.ticket.model import Milestone, Version
@@ -27,15 +23,17 @@ from trac.ticket.roadmap import (
     ITicketGroupStatsProvider, apply_ticket_permissions,
     get_ticket_stats, get_tickets_for_milestone
 )
-from trac.util.datefmt import get_datetime_format_hint, parse_date, utc
+from trac.util.datefmt import (
+    get_datetime_format_hint, parse_date, user_time, utc
+)
+from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.chrome import (
     Chrome, INavigationContributor, IRequestHandler, ITemplateProvider,
-    add_ctxtnav, add_notice, add_script, add_stylesheet, add_warning
+    add_ctxtnav, add_notice, add_script, add_stylesheet, add_warning,
+    web_context
 )
 from trac.wiki import IWikiSyntaxProvider
-
-from extendedversion.compat import user_time
 
 
 def milestone_stats_data(env, req, stat, name, grouped_by='component',
@@ -153,8 +151,7 @@ class VisibleVersion(Component):
         version_id = req.args.get('id')
         req.perm('version', version_id).require('VERSION_VIEW')
 
-        db = self.env.get_db_cnx()
-        version = Version(self.env, version_id, db)
+        version = Version(self.env, version_id)
         action = req.args.get('action', 'view')
 
         if req.method == 'POST':
@@ -164,19 +161,19 @@ class VisibleVersion(Component):
                 else:
                     req.redirect(req.href.versions())
             elif action == 'edit':
-                return self._do_save(req, db, version)
+                return self._do_save(req, version)
             elif action == 'delete':
-                self._do_delete(req, db, version)
+                self._do_delete(req, version)
         elif action in ('new', 'edit'):
-            return self._render_editor(req, db, version)
+            return self._render_editor(req, version)
         elif action == 'delete':
-            return self._render_confirm(req, db, version)
+            return self._render_confirm(req, version)
 
         if not version.name:
             req.redirect(req.href.versions())
 
         add_stylesheet(req, 'common/css/roadmap.css')
-        return self._render_view(req, db, version)
+        return self._render_view(req, version)
 
     # IResourceManager methods
 
@@ -225,21 +222,21 @@ class VisibleVersion(Component):
 
     # Internal methods
 
-    def _do_delete(self, req, db, version):
+    def _do_delete(self, req, version):
         name = version.name
-        resource = Resource('version', version.name)
+        resource = Resource('version', name)
         req.perm(resource).require('VERSION_DELETE')
 
-        cursor = db.cursor()
-        cursor.execute("DELETE FROM milestone_version WHERE version=%s",
-                       (version.name,))
-        version.delete(db=db)
-        db.commit()
+        with self.env.db_transaction as db:
+            db("""
+                DELETE FROM milestone_version WHERE version=%s
+                """, (name,))
+            version.delete()
         add_notice(req, _('The version "%(name)s" has been deleted.',
                           name=name))
         req.redirect(req.href.versions())
 
-    def _do_save(self, req, db, version):
+    def _do_save(self, req, version):
         resource = Resource('version', version.name)
         if version.exists:
             req.perm(resource).require('VERSION_MODIFY')
@@ -270,7 +267,7 @@ class VisibleVersion(Component):
                 #        (#4130) and should behave like a WikiPage does in
                 #        this respect.
                 try:
-                    Version(self.env, new_name, db)
+                    Version(self.env, new_name)
                     warn(_('Version "%(name)s" already exists, please '
                            'choose another name', name=new_name))
                 except ResourceNotFound:
@@ -289,20 +286,19 @@ class VisibleVersion(Component):
         version.time = time
 
         if warnings:
-            return self._render_editor(req, db, version)
+            return self._render_editor(req, version)
 
         # -- actually save changes
-        if version.exists:
-            if version.name != version._old_name:
-                # Update tickets
-                cursor = db.cursor()
-                cursor.execute("""
-                    UPDATE milestone_version SET version=%s WHERE version=%s
-                    """, (version.name, version._old_name))
-            version.update(db)
-        else:
-            version.insert(db)
-        db.commit()
+        with self.env.db_transaction as db:
+            if version.exists:
+                if version.name != version._old_name:
+                    # Update tickets
+                    db("""
+                        UPDATE milestone_version SET version=%s WHERE version=%s
+                        """, (version.name, version._old_name))
+                version.update()
+            else:
+                version.insert()
 
         req.redirect(req.href.version(version.name))
 
@@ -311,7 +307,7 @@ class VisibleVersion(Component):
         return self._render_link(formatter.context, name, label,
                                  query + fragment)
 
-    def _render_confirm(self, req, db, version):
+    def _render_confirm(self, req, version):
         resource = Resource('version', version.name)
         req.perm(resource).require('VERSION_DELETE')
 
@@ -322,7 +318,7 @@ class VisibleVersion(Component):
         add_stylesheet(req, 'common/css/roadmap.css')
         return 'version_delete.html', data, None
 
-    def _render_editor(self, req, db, version):
+    def _render_editor(self, req, version):
         resource = Resource('version', version.name)
         data = {
             'version': version,
@@ -334,14 +330,13 @@ class VisibleVersion(Component):
 
         if version.exists:
             req.perm(resource).require('VERSION_MODIFY')
-            #versions = [m for m in Version.select(self.env, db=db)
+            #versions = [m for m in Version.select(self.env)
             #              if m.name != version.name
             #              and 'VERSION_VIEW' in req.perm(m.resource)]
         else:
             req.perm(resource).require('VERSION_CREATE')
 
-        if parse_version(trac_version) >= parse_version('1.0'):
-            Chrome(self.env).add_jquery_ui(req)
+        Chrome(self.env).add_jquery_ui(req)
         Chrome(self.env).add_wiki_toolbars(req)
         add_stylesheet(req, 'common/css/roadmap.css')
         return 'version_edit.html', data, None
@@ -364,25 +359,21 @@ class VisibleVersion(Component):
                          rel='nofollow')
         return tag.a(label, class_='missing version')
 
-    def _render_view(self, req, db, version):
-
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT name FROM milestone
-              INNER JOIN milestone_version ON (name = milestone)
-            WHERE version = %s
-            ORDER BY due""", (version.name,))
-
+    def _render_view(self, req, version):
         milestones = []
         tickets = []
         milestone_stats = []
 
-        for row in cursor:
-            milestone = Milestone(self.env, row[0])
+        for name, in self.env.db_query("""
+                SELECT name FROM milestone
+                 INNER JOIN milestone_version ON (name = milestone)
+                WHERE version = %s
+                ORDER BY due
+                """, (version.name,)):
+            milestone = Milestone(self.env, name)
             milestones.append(milestone)
 
-            mtickets = get_tickets_for_milestone(self.env, db, milestone.name,
+            mtickets = get_tickets_for_milestone(self.env, milestone.name,
                                                  'owner')
             mtickets = apply_ticket_permissions(self.env, req, mtickets)
             tickets += mtickets
@@ -396,7 +387,7 @@ class VisibleVersion(Component):
                                                  for milestone in milestones])
 
         version.resource = Resource('version', version.name)
-        context = Context.from_request(req, version.resource)
+        context = web_context(req, version.resource)
 
         version.is_released = version.time \
             and version.time < datetime.now(utc)
@@ -406,8 +397,7 @@ class VisibleVersion(Component):
         version.stats_href = version_stats_href(self.env, req, names)
         data = {
             'version': version,
-            'attachments': AttachmentModule(self.env)
-                           .attachment_data(context),
+            'attachments': AttachmentModule(self.env).attachment_data(context),
             'milestones': milestones,
             'milestone_stats': milestone_stats,
             'show_milestone_description': self.show_milestone_description  # Not implemented yet
