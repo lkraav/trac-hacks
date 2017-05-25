@@ -11,7 +11,7 @@
 
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
-from trac.util.text import _
+from trac.util.translation import _
 from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, add_warning
 from .model import ReviewDataModel, ReviewFileModel
 from .repo import insert_project_files, repo_path_exists

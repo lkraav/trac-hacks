@@ -13,12 +13,12 @@
 # Works with peerReviewMain.html
 
 import itertools
-from genshi.builder import tag
 from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager, Resource, ResourceNotFound
-from trac.util import as_int, format_date, Markup
-from trac.util.text import _
+from trac.util import as_int, format_date
+from trac.util.html import Markup, html as tag
+from trac.util.translation import _
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_ctxtnav
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to

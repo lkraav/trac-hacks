@@ -18,8 +18,7 @@ from trac.db import Table, Column, Index,  DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import to_utimestamp, utc
-from trac.util.text import _
-from trac.util.translation import N_
+from trac.util.translation import N_, _
 from trac.util import format_date
 from tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, \
     need_db_create_for_realm, create_db_for_realm, need_db_upgrade_for_realm, upgrade_db_for_realm

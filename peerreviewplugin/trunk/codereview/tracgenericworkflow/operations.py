@@ -12,9 +12,9 @@
 # Author: Roberto Longobardi <otrebor.dev@gmail.com>
 #
 
-from genshi.builder import tag
 from trac.core import Component, implements
 from trac.perm import PermissionSystem
+from trac.util.html import html as tag
 from trac.util.text import obfuscate_email_address
 from trac.web.chrome import Chrome
 

@@ -12,7 +12,6 @@
 # Works with peerReviewView.html
 
 import itertools
-from genshi.builder import tag
 from string import Template
 from trac.config import ListOption
 from trac.core import Component, implements, TracError
@@ -20,6 +19,7 @@ from trac.mimeview import Context
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
 from trac.util import format_date
+from trac.util.html import html as tag
 from trac.util.text import CRLF, obfuscate_email_address
 from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor
 from trac.web.main import IRequestHandler

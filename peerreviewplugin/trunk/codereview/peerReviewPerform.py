@@ -15,7 +15,6 @@
 # repository browser's line number to indicate what lines are being
 # reviewed and if there are any comments on a particular line.
 
-from genshi.builder import tag
 from genshi.core import QName
 from genshi.filters.transform import Transformer
 from pkg_resources import get_distribution, parse_version
@@ -23,6 +22,7 @@ from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util import format_date
+from trac.util.html import html as tag
 from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_javascript
 from trac.web.main import IRequestHandler

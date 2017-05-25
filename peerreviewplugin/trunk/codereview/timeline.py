@@ -13,9 +13,9 @@ from trac.wiki.formatter import format_to_html
 from trac.resource import Resource
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import to_timestamp
-from trac.util.text import _
+from trac.util.html import html as tag
+from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
-from genshi.builder import tag
 
 from model import PeerReviewModel, PeerReviewerModel
 

@@ -12,12 +12,12 @@
 # Author: Roberto Longobardi <otrebor.dev@gmail.com>
 #
 
-from genshi.builder import tag
 from operator import itemgetter
 from trac.core import Interface, Component, implements, ExtensionPoint, \
     TracError
 from trac.resource import Resource, get_resource_url
 from trac.util import get_reporter_id
+from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import ITemplateProvider

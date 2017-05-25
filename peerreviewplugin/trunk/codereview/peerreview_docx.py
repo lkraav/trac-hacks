@@ -5,7 +5,7 @@ from trac.admin import IAdminPanelProvider
 from trac.config import ListOption
 from trac.core import Component, implements
 from trac.mimeview.api import IContentConverter, Mimeview
-from trac.util.text import _
+from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import add_notice, add_warning
 from model import PeerReviewModel, ReviewDataModel

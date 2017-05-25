@@ -11,14 +11,14 @@
 from __future__ import generators
 import re
 
-from genshi.builder import tag
 from trac import util
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.resource import ResourceNotFound
 from trac.util import embedded_numbers
-from trac.util.text import _
+from trac.util.html import html as tag
+from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchChangeset, NoSuchNode, RepositoryManager
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
