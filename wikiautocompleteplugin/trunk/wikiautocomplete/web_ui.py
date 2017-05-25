@@ -53,10 +53,10 @@ class WikiAutoCompleteModule(Component):
     def post_process_request(self, req, template, data, content_type):
         if template:
             script_data = {'url': req.href('wikiautocomplete')}
-            context = data.get('context')
-            if context and context.resource:
-                script_data['realm'] = context.resource.realm
-                script_data['id'] = context.resource.id
+            context_or_page = data.get('context') or data.get('page')
+            if context_or_page and context_or_page.resource:
+                script_data['realm'] = context_or_page.resource.realm
+                script_data['id'] = context_or_page.resource.id
             add_script_data(req, {'wikiautocomplete': script_data})
             add_script(req, 'wikiautocomplete/js/jquery.textcomplete.min.js')
             add_script(req, 'wikiautocomplete/js/wikiautocomplete.js')
