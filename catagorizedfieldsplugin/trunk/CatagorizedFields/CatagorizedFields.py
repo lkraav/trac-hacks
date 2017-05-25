@@ -333,3 +333,5 @@ class Catagory(object):
         self.fields = []
         self.index = 1
 
+    def __iter__(self):
+        return self.__dict__.iteritems()
