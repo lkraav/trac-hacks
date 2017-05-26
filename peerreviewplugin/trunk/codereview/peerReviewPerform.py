@@ -24,7 +24,7 @@ from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util import format_date
 from trac.util.html import html as tag
 from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, Chrome, \
-                            add_link, add_stylesheet, add_script_data, add_javascript
+                            add_link, add_stylesheet, add_script, add_script_data
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import RepositoryManager
@@ -259,8 +259,8 @@ class PeerReviewPerform(Component):
 
         # For comment dialogs when using Trac 0.12. Otherwise use jQuery coming with Trac
         if self.legacy_trac:
-            add_javascript(req, self.env.config.get('trac', 'jquery_ui_location') or
-                           'hw/js/jquery-ui-1.11.4.min.js')
+            add_script(req, self.env.config.get('trac', 'jquery_ui_location') or
+                            'hw/js/jquery-ui-1.11.4.min.js')
             add_stylesheet(req, self.env.config.get('trac', 'jquery_ui_theme_location') or
                            'hw/css/jquery-ui-1.11.4.min.css')
         else:
@@ -270,8 +270,8 @@ class PeerReviewPerform(Component):
         add_stylesheet(req, 'common/css/diff.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_script_data(req, scr_data)
-        add_javascript(req, 'common/js/auto_preview.js')
-        add_javascript(req, "hw/js/peer_review_perform.js")
+        add_script(req, 'common/js/auto_preview.js')
+        add_script(req, "hw/js/peer_review_perform.js")
         add_ctxt_nav_items(req)
 
         return 'peerReviewPerform.html', data, None

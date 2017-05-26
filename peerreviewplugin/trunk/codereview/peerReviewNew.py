@@ -17,7 +17,7 @@ from pkg_resources import get_distribution, parse_version
 from trac import util
 from trac.core import Component, implements, TracError
 from trac.util.text import CRLF
-from trac.web.chrome import INavigationContributor, add_javascript, add_script_data, \
+from trac.web.chrome import INavigationContributor, add_script, add_script_data, \
     add_warning, add_notice, add_stylesheet, Chrome
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.api import RepositoryManager
@@ -190,8 +190,8 @@ class NewReviewModule(Component):
         data['curproj'] = review['project']
 
         if self.legacy_trac:
-            add_javascript(req, self.env.config.get('trac', 'jquery_ui_location') or
-                           'hw/js/jquery-ui-1.11.4.min.js')
+            add_script(req, self.env.config.get('trac', 'jquery_ui_location') or
+                            'hw/js/jquery-ui-1.11.4.min.js')
             add_stylesheet(req, self.env.config.get('trac', 'jquery_ui_theme_location') or
                            'hw/css/jquery-ui-1.11.4.min.css')
         else:
@@ -199,13 +199,13 @@ class NewReviewModule(Component):
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
-        add_javascript(req, 'common/js/auto_preview.js')
+        add_script(req, 'common/js/auto_preview.js')
         add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser(),
                               'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
                               'form_token': req.form_token,
                               'peer_is_modify': req.args.get('modify', '0')})
-        add_javascript(req, "hw/js/peer_review_new.js")
-        add_javascript(req, 'hw/js/peer_user_list.js')
+        add_script(req, "hw/js/peer_review_new.js")
+        add_script(req, 'hw/js/peer_user_list.js')
         add_ctxt_nav_items(req)
         return 'peerReviewNew.html', data, None
 

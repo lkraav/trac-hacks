@@ -14,7 +14,7 @@ import time
 
 from trac.core import *
 from trac.util import format_date
-from trac.web.chrome import INavigationContributor, add_stylesheet, add_javascript, add_script_data
+from trac.web.chrome import INavigationContributor, add_stylesheet, add_script, add_script_data
 from trac.web.main import IRequestHandler
 
 from dbBackend import *
@@ -75,7 +75,7 @@ class PeerReviewSearch(Component):
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
-        add_javascript(req, 'hw/js/peerReviewSearch.js')
+        add_script(req, 'hw/js/peerReviewSearch.js')
         if req.args.get('doSearch_'):
             add_script_data(req, {'dateIndexSelected': '01',
                                   'monthSelected': data['searchValues_month'],
