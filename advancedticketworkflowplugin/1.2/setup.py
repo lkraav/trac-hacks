@@ -25,7 +25,7 @@ except ImportError:
 
 setup(
     name='TracAdvancedTicketWorkflow',
-    version='1.2.0',
+    version='1.2.1',
     author='Eli Carter',
     author_email='elicarter@retracile.net',
     license='3-Clause BSD',

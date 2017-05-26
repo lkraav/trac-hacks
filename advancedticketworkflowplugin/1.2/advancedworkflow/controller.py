@@ -357,11 +357,11 @@ class TicketWorkflowOpTriage(TicketWorkflowOpBase):
     <someaction> = somestatus -> *
     <someaction>.operations = triage
     <someaction>.triage_field = type
-    <someaction>.traige_split = defect -> new_defect, task -> new_task, enhancement -> new_enhancement
+    <someaction>.triage_split = defect -> new_defect, task -> new_task, enhancement -> new_enhancement
 
     Don't forget to add the `TicketWorkflowOpTriage` to the workflow option in
     [ticket].
-    If there is no workflow option, the line will look like this:
+    If using the default workflow, the line will look like this:
 
     workflow = ConfigurableTicketWorkflow,TicketWorkflowOpTriage
     """
@@ -375,9 +375,10 @@ class TicketWorkflowOpTriage(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         new_status = self._new_status(ticket, action)
-        if new_status != ticket['status']:
-            hint = _("The status will be changed to %(status)s.",
-                     status=new_status)
+        if not ticket.exists:
+            hint = _("The status will be '%(name)s'.", name=new_status)
+        elif new_status != ticket['status']:
+            hint = _("Next status will be '%(name)s'.", name=new_status)
         else:
             hint = ''
         return label, '', hint
