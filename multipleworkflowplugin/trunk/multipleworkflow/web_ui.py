@@ -91,13 +91,13 @@ def create_graph_data(self, req, name=''):
             t = "New custom workflow (not saved)"
         if not actions:
             # We should never end here...
-            actions = get_workflow_config_by_type(self.config)
+            actions = get_workflow_config_by_type(self.config, 'default')
             t = "Custom workflow is broken. Showing default workflow"
     else:
         t = u""
         print(name)
         if name == 'default':
-            actions = get_workflow_config_by_type(self.config)
+            actions = get_workflow_config_by_type(self.config, 'default')
         else:
             actions = get_workflow_config_by_type(self.config, name)
 
@@ -159,7 +159,7 @@ def write_json_response(req, data_dict, httperror=200):
 
 
 class MultipleWorkflowAdminModule(Component):
-    """Implements the admin page for workflow editing. See 'Ticket System' 
+    """Implements the admin page for workflow editing. See 'Ticket System'
     section.
     """
 
@@ -188,7 +188,7 @@ class MultipleWorkflowAdminModule(Component):
     def _get_all_types_with_workflow(self, to_upper=False):
         """Returns a list of all ticket types with custom workflow.
 
-        Note that a ticket type is not necessarily available during ticket 
+        Note that a ticket type is not necessarily available during ticket
         creation if it was deleted in the meantime.
         """
         types = []
