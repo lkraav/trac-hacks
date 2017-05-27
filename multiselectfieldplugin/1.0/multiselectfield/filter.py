@@ -16,16 +16,16 @@ class MultiSelectFieldModule(Component):
 
     implements(IRequestFilter, ITemplateStreamFilter, ITemplateProvider)
 
-    option_simple_selection = BoolOption('multiselectfield', 'simple_selection', False, 
+    option_simple_selection = BoolOption('multiselectfield', 'simple_selection', False,
         doc="Force using a simple standard html multiselect box.")
 
-    option_delimiter = Option('multiselectfield', 'data_delimiter', ' ', 
+    option_delimiter = Option('multiselectfield', 'data_delimiter', ' ',
         doc="The delimiter that is used when storing the data (as the selected options are appended to a "
             "single custom text field). Space is used by default as values separated by space will be "
             "recognized by the custom text field as separate values. "
             "NOTE: changing this option when there is already data saved with other options value is probably not good idea")
 
-    option_strip_whitespace = BoolOption('multiselectfield', 'strip_whitespace', True, 
+    option_strip_whitespace = BoolOption('multiselectfield', 'strip_whitespace', True,
         doc="Defined whether whitespace in the names of the predefined selectable values is removed before saving the data. "
             "This should be enabled when using white space as data delimiter. "
             "NOTE: changing this option when there is already data saved with other options value is probably not good idea")
@@ -33,7 +33,7 @@ class MultiSelectFieldModule(Component):
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-            
+
     def post_process_request(self, req, template, data, content_type):
         mine = ['/newticket', '/ticket', '/simpleticket']
 
@@ -44,7 +44,7 @@ class MultiSelectFieldModule(Component):
                 break
 
         if match:
-            add_script_data(req, {'multiselectfieldDelimiter': self.option_delimiter})
+            add_script_data(req, {'multiselectfieldDelimiter': self.option_delimiter or ' '})
             add_script_data(req, {'multiselectfieldSimple': self.option_simple_selection})
 
             if not self.option_simple_selection:
@@ -76,12 +76,9 @@ class MultiSelectFieldModule(Component):
                     else:
                         options_html(tag.option(option, value=option))
 
-                stream = stream | Transformer('//input[@name="field_' + field + '"]'
-                ).attr(
-                    'style', 'display:none;'
-                ).after(
-                    tag.select(multiple="multiple", class_="multiselect", style="width:100%;")(options_html)
-                )
+                stream = stream | Transformer('//input[@name="field_' + field + '"]') \
+                                  .attr('style', 'display:none;') \
+                                  .after(tag.select(multiple="multiple", class_="multiselect", style="width:100%;")(options_html))
 
         return stream
 
@@ -89,7 +86,7 @@ class MultiSelectFieldModule(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('multiselectfield', resource_filename(__name__, 'htdocs'))]
-    
+
     def get_templates_dirs(self):
         return []
 
