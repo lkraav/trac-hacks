@@ -9,8 +9,8 @@ from trac.ticket.model import Milestone
 from trac.util.datefmt import parse_date
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, \
-    ITemplateProvider, ITemplateStreamFilter
+from trac.web.chrome import Chrome, ITemplateProvider, ITemplateStreamFilter, \
+    add_script, add_script_data, add_notice, add_stylesheet
 from trac.wiki import WikiSystem, WikiPage
 from genshi.filters import Transformer
 from genshi.template.markup import MarkupTemplate
@@ -118,7 +118,7 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         """
         template_page = WikiPage(self.env, self.MILESTONE_TEMPLATES_PREFIX+template)
         if template_page and template_page.exists and \
-           'WIKI_VIEW' in req.perm(template_page.resource):
+                'WIKI_VIEW' in req.perm(template_page.resource):
             return Template(template_page.text).safe_substitute(MILESTONE=ms_name)
         return u""
 
@@ -129,46 +129,47 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         if filename == 'admin_milestones.html':
             # Milestone creation from admin page
             if data:
-                if data.get('view') == 'list':
+                view = data.get('view')
+                if view == 'list':
                     templates = self.get_milestone_templates(req)
                     if templates:
                         filter_ = Transformer('//form[@id="addmilestone"]//div[@class="buttons"]')
                         stream = stream | filter_.before(self.create_templ_select_ctrl(templates, self.admin_page_template))
-                elif data.get('view') == 'detail':
+                elif view == 'detail':
                     # Add preview div
                     tmpl = MarkupTemplate(self.preview_tmpl)
-                    self._add_preview(req, req.base_path+'/wiki_render')
-                    filter_ = Transformer('//form[@id="modifymilestone"]//div[@class="buttons"]')
-                    stream = stream | filter_.before(tmpl.generate())
-        elif req.args.get('action') == 'new' and len(path) > 1 and path[1] == 'milestone':
-            # Milestone creation from roadmap page
-            templates = self.get_milestone_templates(req)
-            self._add_preview(req, 'wiki_render')
-            filter_ = Transformer('//form[@id="edit"]//p')
-            if templates:
-                stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template))
-            tmpl = MarkupTemplate(self.preview_tmpl)
-            stream = stream | filter_.after(tmpl.generate())
-        elif filename == 'milestone_edit.html':
-            self._add_preview(req, req.base_path+'/wiki_render')
-            filter_ = Transformer('//form[@id="edit"]//p')
-            if req.method == "POST":
-                # Milestone creation from roadmap page. Duplicate name redirected to edit page.
+                    self._add_preview(req)
+                    filter_ = Transformer('//form[@id="edit"]//textarea')
+                    stream = stream | filter_.after(tmpl.generate())
+        elif len(path) > 1 and path[1] == 'milestone':
+            action = req.args.get('action')
+            if action == 'new':
+                # Milestone creation from roadmap page
                 templates = self.get_milestone_templates(req)
+                self._add_preview(req)
+                filter_ = Transformer('//form[@id="edit"]//div[contains(@class, "description")]')
                 if templates:
-                    stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template,
-                                                                                  req.args.get('template', None)))
-            tmpl = MarkupTemplate(self.preview_tmpl)
-            stream = stream | filter_.after(tmpl.generate())
+                    stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template))
+                tmpl = MarkupTemplate(self.preview_tmpl)
+                stream = stream | filter_.after(tmpl.generate())
+            elif action == 'edit':
+                self._add_preview(req)
+                filter_ = Transformer('//form[@id="edit"]//textarea')
+                if req.method == "POST":
+                    # Milestone creation from roadmap page. Duplicate name redirected to edit page.
+                    templates = self.get_milestone_templates(req)
+                    if templates:
+                        stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template,
+                                                                                      req.args.get('template', None)))
+                tmpl = MarkupTemplate(self.preview_tmpl)
+                stream = stream | filter_.after(tmpl.generate())
 
         return stream
 
-    def _add_preview(self, req, render_url):
-        scr_data = {'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
-                    'form_token': req.form_token,
-                    'ms_preview_renderer': render_url}
+    def _add_preview(self, req):
+        Chrome(self.env).add_auto_preview(req)
+        scr_data = {'ms_preview_renderer': req.href.wiki_render()}
         add_script_data(req, scr_data)
-        add_script(req, 'common/js/auto_preview.js')
         add_script(req, 'mstemplate/js/ms_preview.js')
         add_stylesheet(req, 'common/css/ticket.css')
         add_stylesheet(req, 'mstemplate/css/ms_preview.css')
@@ -196,9 +197,10 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
 
     # IRequestFilter methods
 
-    # IRequestFilter is used to add the template contents as description when adding from the roadmap page
     def pre_process_request(self, req, handler):
-
+        """Add the template contents as description when adding from the
+        roadmap page.
+        """
         # Fill milestone description with contents of template.
         if req.method == 'POST' and self._is_valid_request(req):
             template = req.args.get('template')
@@ -210,7 +212,8 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
     @staticmethod
     def _is_valid_request(req):
         """Check request for correct path and valid form token"""
-        if req.path_info.startswith('/milestone') and req.args.get('__FORM_TOKEN') == req.form_token:
+        if req.path_info.startswith('/milestone') and \
+                req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 
