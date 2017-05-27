@@ -169,8 +169,7 @@ class ReadonlyHelpPolicy(Component):
 
     help_pages = sorted(name for name in resource_listdir('trac.wiki',
                                                           'default-pages')
-                             if name not in ('PageTemplates', 'InterMapTxt',
-                                             'WikiStart'))
+                             if name not in ('InterMapTxt', 'WikiStart'))
 
     # IRequestFilter methods
 
