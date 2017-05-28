@@ -49,6 +49,11 @@ from trachacks.validate import Aspect, Chain, Form, MinLength, Pattern, \
                                ValidationError
 from trachacks.util import FakeRequest, natural_sort
 
+try:
+    from tracspamfilter.filtersystem import FilterSystem
+except ImportError:
+    FilterSystem = None
+
 _SVN_CONFIG_DIR = os.environ.get('TRACHACKS_SVN_CONFIG_DIR',
                                  '/var/www/trac-hacks.org/trac/.subversion')
 
@@ -611,6 +616,16 @@ for [wiki:AdoptingHacks adoption].
         import fcntl
 
         page_name = vars['WIKINAME']
+        template_page = WikiPage(self.env, self.template)
+        if not template_page.exists:
+            raise TracError(_("New hack template '%(page)s' does not "
+                              "exist.", page=self.template))
+        page_text = Template(template_page.text).substitute(vars)
+        if FilterSystem and 'TRAC_ADMIN' not in req.perm('newhack'):
+            # Pass hack name and page text through the SpamFilter.
+            changes = [(None, page_text), (None, page_name)]
+            FilterSystem(self.env).test(req, req.authname, changes)
+
         hack_path = vars['LCNAME']
         selected_releases = data['selected_releases']
         messages = []
@@ -637,25 +652,20 @@ for [wiki:AdoptingHacks adoption].
                 component.insert()
 
                 # Step 2: Create wiki page
-                template_page = WikiPage(self.env, self.template)
-                if not template_page.exists:
-                    raise TracError(_("New hack template '%(page)s' does not "
-                                      "exist.", page=self.template))
                 page = WikiPage(self.env, page_name)
-                page.text = Template(template_page.text).substitute(vars)
+                page.text = page_text
                 page.save(req.authname, 'New hack %s, created by %s'
                                         % (page_name, req.authname))
 
                 # Step 3: Tag the new wiki page
-                res = Resource('wiki', page_name)
                 tags = sorted(set(data['tags'].split() + selected_releases +
                                   [data['type'], req.authname]))
-                TagSystem(self.env).set_tags(req, res, tags)
+                TagSystem(self.env).set_tags(req, page.resource, tags)
 
             # Step 4: create repository paths
             self._create_repository_paths(req, page_name, hack_path,
                                           selected_releases)
-            raise Exception("you don't know!")
+
             # Step 5: Add permissions
             authz_file = self.config.getpath('svn', 'authz_file')
             authz = AuthzFile(authz_file).read()

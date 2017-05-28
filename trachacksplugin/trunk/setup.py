@@ -67,7 +67,6 @@ setup(
         'TracVote >= 0.5',
         'TracWikiExtras',
         'SvnAuthzAdminPlugin',
-        'TracSpamFilter',
     ],
     test_suite='trachacks.tests.test_suite',
     **extra
