@@ -18,8 +18,9 @@ from pkg_resources import resource_filename
 from trac.util.html import tag
 
 from trac.config import BoolOption, IntOption
-from trac.core import implements, Component
+from trac.core import implements, Component, TracError
 from trac.util.compat import cleandoc
+from trac.util.translation import _
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_stylesheet
 from trac.wiki import IWikiMacroProvider, format_to_html, parse_args
@@ -335,14 +336,19 @@ class Boxes(Component):
             return ''
         if word in self.word2type:
             return self.word2type[word]
-        type = ''
+        type_ = ''
+        word = True
         for w in self.word2type.iterkeys():
-            if w.startswith(word):
-                t = self.word2type[w]
-                if type and type != t:
-                    return # 2nd found, not unique
-                type = t
-        return type
+            try:
+                if w.startswith(word):
+                    t = self.word2type[w]
+                    if type_ and type_ != t:
+                        return # 2nd found, not unique
+                    type_ = t
+            except TypeError as e:
+                raise TracError(_("Invalid argument %(arg)s (%(type)s)",
+                                  arg=word, type=type(word)))
+        return type_
 
     def _has_icon(self, type):
         if type in self.types:
