@@ -29,7 +29,7 @@ except ImportError:
 
 setup(
     name='TracHacks',
-    version='3.0.4',
+    version='3.0.5',
     author='Alex Thomas',
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
@@ -67,6 +67,7 @@ setup(
         'TracVote >= 0.5',
         'TracWikiExtras',
         'SvnAuthzAdminPlugin',
+        'TracSpamFilter',
     ],
     test_suite='trachacks.tests.test_suite',
     **extra

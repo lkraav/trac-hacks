@@ -37,6 +37,7 @@ from trac.web.chrome import (
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
 from acct_mgr.htfile import HtPasswdStore
 from svnauthz.io import AuthzFile
+from svnauthz.model import User, Path, PathAcl
 from tractags.api import TagSystem
 from tractags.macros import TagWikiMacros
 from tractags.query import Query
@@ -609,6 +610,9 @@ for [wiki:AdoptingHacks adoption].
     def create_hack(self, req, data, vars):
         import fcntl
 
+        page_name = vars['WIKINAME']
+        hack_path = vars['LCNAME']
+        selected_releases = data['selected_releases']
         messages = []
         created = False
         have_lock = False
@@ -624,38 +628,15 @@ for [wiki:AdoptingHacks adoption].
                 'Please wait a few seconds, then click the "Create hack" '
                 'button again.'
             )
-
-        if have_lock:
-            steps_done = []
-            page_name = vars['WIKINAME']
-            hack_path = vars['LCNAME']
-            selected_releases = data['selected_releases']
-            try:
-
-                # Step 1: create repository paths
-                self._create_repository_paths(req, page_name, hack_path,
-                                              selected_releases)
-                steps_done.append('repository')
-
-                # Step 2: Add permissions
-                from svnauthz.model import User, Path, PathAcl
-
-                authz_file = self.config.getpath('svn', 'authz_file')
-                authz = AuthzFile(authz_file).read()
-
-                svn_path_acl = PathAcl(User(req.authname), r=True, w=True)
-                authz.add_path(Path("/%s" % hack_path, acls=[svn_path_acl, ]))
-                AuthzFile(authz_file).write(authz)
-                steps_done.append('permissions')
-
-                # Step 3: Add component
+        else:
+            with self.env.db_transaction:
+                # Step 1: Add component
                 component = model.Component(self.env)
                 component.name = page_name
                 component.owner = req.authname
                 component.insert()
-                steps_done.append('component')
 
-                # Step 4: Create wiki page
+                # Step 2: Create wiki page
                 template_page = WikiPage(self.env, self.template)
                 if not template_page.exists:
                     raise TracError(_("New hack template '%(page)s' does not "
@@ -663,43 +644,29 @@ for [wiki:AdoptingHacks adoption].
                 page = WikiPage(self.env, page_name)
                 page.text = Template(template_page.text).substitute(vars)
                 page.save(req.authname, 'New hack %s, created by %s'
-                                        % (page_name, req.authname),
-                          '0.0.0.0')
-                steps_done.append('wiki')
+                                        % (page_name, req.authname))
 
-                # Step 5: Tag the new wiki page
+                # Step 3: Tag the new wiki page
                 res = Resource('wiki', page_name)
                 tags = sorted(set(data['tags'].split() + selected_releases +
                                   [data['type'], req.authname]))
                 TagSystem(self.env).set_tags(req, res, tags)
-                steps_done.append('tags')
 
-                fcntl.flock(lock_file, fcntl.LOCK_UN)
-                created = True
-            except Exception, e:
-                try:
-                    if 'tags' in steps_done:
-                        res = Resource('wiki', page_name)
-                        tags = data['tags'].split() + selected_releases
-                        TagSystem(self.env).delete_tags(req, res, tags)
-                    if 'wiki' in steps_done:
-                        WikiPage(self.env, page_name).delete()
-                    if 'component' in steps_done:
-                        model.Component(self.env, page_name).delete()
-                    if 'permissions' in steps_done:
-                        authz_file = self.env.config.getpath('svn',
-                                                             'authz_file')
-                        authz = AuthzFile(authz_file).read()
-                        if authz.find_path(hack_path):
-                            authz.del_path(Path('/%s' % hack_path))
-                        AuthzFile(authz_file).write(authz)
-                    # TODO: rollback subversion path creation
-                    fcntl.flock(lock_file, fcntl.LOCK_UN)
-                except:
-                    self.log.error("Rollback failed")
-                    fcntl.flock(lock_file, fcntl.LOCK_UN)
-                self.log.error(e, exc_info=True)
-                raise TracError(str(e))
+            # Step 4: create repository paths
+            self._create_repository_paths(req, page_name, hack_path,
+                                          selected_releases)
+            raise Exception("you don't know!")
+            # Step 5: Add permissions
+            authz_file = self.config.getpath('svn', 'authz_file')
+            authz = AuthzFile(authz_file).read()
+
+            svn_path_acl = PathAcl(User(req.authname), r=True, w=True)
+            authz.add_path(Path("/%s" % hack_path, acls=[svn_path_acl, ]))
+            AuthzFile(authz_file).write(authz)
+
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
+            created = True
+
         return created, messages
 
     def delete_hack(self, name, author):
