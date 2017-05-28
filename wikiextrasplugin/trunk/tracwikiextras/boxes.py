@@ -337,7 +337,6 @@ class Boxes(Component):
         if word in self.word2type:
             return self.word2type[word]
         type_ = ''
-        word = True
         for w in self.word2type.iterkeys():
             try:
                 if w.startswith(word):
