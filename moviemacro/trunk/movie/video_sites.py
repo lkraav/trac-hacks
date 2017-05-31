@@ -9,8 +9,8 @@ import mimetypes
 from urllib import urlencode
 from urlparse import urlunparse
 
-from genshi.builder import tag
 from trac.core import TracError
+from trac.util.html import html as tag
 
 from utils import set_default_parameters, xform_style, xform_query
 

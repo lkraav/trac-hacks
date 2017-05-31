@@ -9,11 +9,11 @@ from datetime import datetime
 from os.path import join as pathjoin
 from urlparse import urlparse
 
-from genshi.builder import tag
 from pkg_resources import resource_filename
 from trac.core import TracError
 from trac.core import implements
 from trac.resource import Resource, get_resource_url
+from trac.util.html import html as tag
 from trac.util.presentation import to_json
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
@@ -80,7 +80,7 @@ class MovieMacro(WikiMacroBase):
         except Exception as e:
             raise TracError('Double check the `style` argument: ' + str(e))
 
-        self.log.debug('moviemacro style_dict: ' + repr(style_dict))
+        self.log.debug('moviemacro style_dict: %s', style_dict)
         config = MovieMacroConfig(self.env, self.config)
         style = {
             'width': style_dict.get('width', config.width),
@@ -90,7 +90,7 @@ class MovieMacro(WikiMacroBase):
             'display': 'block',
             'clear': 'both'
         }
-        self.log.debug('moviemacro style: ' + repr(style))
+        self.log.debug('moviemacro style: %s', style)
 
         site_player = get_embed_video_site_player(netloc)
         if site_player is not None:
