@@ -122,7 +122,7 @@ class Lexer():
         self.req = req
         self.look = ['', '']
 
-    # 'tokeniser' looks for tokens at the start of 'rest' and returns with the
+    # 'tokeniser' looks for tokens at the start of 'x' and returns with the
     # token text placed into 'token', and the token type into 'token_type'.
     # There are four types of token, each indicated with a single character:
     #
@@ -130,8 +130,6 @@ class Lexer():
     #    - F - means that the text in 'token' identifies a Field;
     #    - O - means that the text in 'token' is an Operator;
     #    - S - means that the text in 'token' is a String.
-    #
-    # The variable 'rest' is updated to remove the matched token.
 
     def tokeniser(self, x):
         # Ignoring whitespace, split x on numbers,
@@ -158,7 +156,7 @@ class Lexer():
         if not x:
             return None, '', 'EOF'
 
-        return None, 'ERR', x
+        return None, x, ''
 
     def match(self, m):
         if self.look[1] == m:
@@ -194,7 +192,7 @@ class Lexer():
                         title='Error in trac.ini [kis_warden]')
         else:
             raise ConfigurationError(
-                'Unexpected terminal %s' % self.look[1],
+                'Unrecognised token: %s' % self.look[1],
                 title='Syntax error in trac.ini [kis_warden]')
         return v, text
 
@@ -336,7 +334,7 @@ class Lexer():
             v_t, text_t= self.expression()
             if self.look[1] != ':':
                 raise ConfigurationError(
-                    'Unexpected terminal %s' % self.look[1],
+                    'Unexpected terminal: %s' % self.look[1],
                      title='Syntax error in trac.ini [kis_warden]',
                      show_traceback=True)
             else:
