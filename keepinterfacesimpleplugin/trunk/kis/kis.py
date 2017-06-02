@@ -74,9 +74,9 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
             expanded.add(group)
             with self.env.db_query as db:
                 for username in db('SELECT DISTINCT username FROM permission '
-                                   'WHERE action = "%s"' % group):
+                                   'WHERE action = %s', [group]):
                     if db('SELECT COUNT(*) FROM permission '
-                          'WHERE action = "%s"' % username[0])[0][0]:
+                          'WHERE action = %s', [username[0]])[0][0]:
                         if username[0] not in expanded:
                             for user in expand(username[0], expanded):
                                 yield user
@@ -110,7 +110,7 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
             ticket = req.args['id']
         with self.env.db_query as db:
             return db('SELECT COUNT(*) FROM ticket_custom WHERE '
-                'name="parent" AND value = "#%s"' % ticket)[0][0] > 0
+                'name="parent" AND value = %s', ['#' + ticket])[0][0] > 0
 
 ###############################################################################
 
@@ -145,7 +145,8 @@ class Lexer():
         if m:
             return 'F', m.group(1), m.group(2)
 
-        m = re.search('^(,|\|\||\(|\)|&&|==|!=|~=|in|!|\+|-|\*|\/|<|>|<=|>=|\?|:) *(.*)', x)
+        m = re.search('^(,|\|\||\(|\)|&&|==|!=|~=|in|!|'
+                      '\+|-|\*|\/|<|>|<=|>=|\?|:) *(.*)', x)
         if m:
             return 'O', m.group(1), m.group(2)
 
