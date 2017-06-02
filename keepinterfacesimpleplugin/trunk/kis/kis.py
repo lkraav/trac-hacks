@@ -38,8 +38,10 @@ class BuiltInConfigFunctions(Component):
     """ BuiltInConfigFunctions
 
 === Built-in functions ===
+        - `child_open()` - Returns True if the ticket has a child that is not closed. Returns False otherwise. (A "child" ticket is a ticket that has a field named 'parent' that contains the number of the current ticket, prefixed with a '#'. This is the scheme used by !ChildTicketsPlugin.)
         - `has_role(<group_name> [, <user_name>])` - Returns True if the named user is a member of the named permissions group. If no user name is supplied, defaults to the user viewing the page. Returns False otherwise.
-        - `is_parent([<ticket>]) - Returns True if any ticket has a field named "parent" that contains "#<n>" where <n> is the number of the given ticket. If no ticket number is given, defaults to the current ticket. Returns False otherwise.
+        - `is_parent([<ticket>])` - Returns True if any ticket has a field named "parent" that contains "#<n>" where <n> is the number of the given ticket. If no ticket number is given, defaults to the current ticket. Returns False otherwise.
+        - `status_of(<ticket>)` - Returns the current status of the named ticket, or None if the named ticket can't be found. The named ticket can be optionally prefixed with '#'.
 
 === Implementing user-defined functions ===
 User-defined functions that can be called from the configuration file can be implemented by adding a Python file to the Trac plugins folder that implements the `IConfigFunction` interface. For example:
@@ -65,6 +67,24 @@ This example would allow `safety('OK')` to return the string `Safety related - O
 The 'req' parameter is the HTTP request object; the remaining parameters are the parameters of the function call.
     """
     implements(IConfigFunction)
+
+    def child_open(self, req):
+        ''' Returns True if the ticket has a child that is not closed,
+            otherwise False.
+        '''
+        if req.path_info.startswith('/newticket'):
+            return False
+
+        for child, parent in self.env.db_query(
+                'SELECT ticket, value FROM ticket_custom WHERE name="parent"'):
+            parent_match = re.match('#(\d+)', parent or '')
+            if parent_match:
+                parent_id = int(parent_match.group(1))
+                if parent_id == int(req.args['id']):
+                    child_ticket = Ticket(self.env, int(child))
+                    if child_ticket['status'] != 'closed':
+                        return True
+        return False
 
     def has_role(self, req, *args):
         # Returns whether a user is a member of a permissions group.
@@ -95,7 +115,8 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
 
     def is_parent(self, req, *args):
         # Returns True if another ticket has a field named 'parent' that
-        # contains '#<n>', where <n> is the number of the current ticket.
+        # contains '#<n>', where <n> is the number of the current ticket (or
+        # the named ticket if an argument is provided).
         # Returns False otherwise.
         if len(args) > 1:
             raise ConfigurationError('is_parent() called with %s arguments' %
@@ -105,12 +126,27 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
             return False
 
         if len(args) == 1:
-            ticket = args[0].lstrip('#')
+            ticket = args[0]
         else:
-            ticket = req.args['id']
+            ticket = '#' + req.args['id']
         with self.env.db_query as db:
             return db('SELECT COUNT(*) FROM ticket_custom WHERE '
-                'name="parent" AND value = %s', ['#' + ticket])[0][0] > 0
+                'name="parent" AND value = %s', [ticket])[0][0] > 0
+
+    def status_of(self, req, other):
+        ''' Returns the status of another ticket. 'other' is expected to
+            be a string containing the number of the other ticket, optionally
+            prefixed with '#'.
+            Returns None if the other ticket can't be found.
+        '''
+        other_match = re.match('#?(\d+)', other)
+        other_ticket = {'status' : None}
+        if other_match:
+            try:
+                other_ticket = Ticket(self.env, int(other_match.group(1)))
+            except:
+                pass
+        return other_ticket['status']
 
 ###############################################################################
 
