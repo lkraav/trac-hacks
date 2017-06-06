@@ -30,7 +30,7 @@ except ImportError:
 
 setup(
     name='TracAnnouncer',
-    version='1.0',
+    version='1.2.0',
     author='Robert Corsaro',
     author_email='rcorsaro@gmail.com',
     maintainer='Ryan J Ollos',
