@@ -16,15 +16,14 @@ except ImportError:
 
 from trac.mimeview.api import Context
 from trac.perm import PermissionCache, PermissionSystem
-from trac.test import EnvironmentStub, Mock, MockPerm
+from trac.test import EnvironmentStub, MockPerm
 from trac.ticket.model import Ticket
-from trac.util.compat import any, all
 from trac.util.datefmt import utc
 from trac.web.api import Request, RequestDone
-from trac.web.href import Href
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
-from trac.wiki.web_ui import WikiModule
+import trac.wiki.web_ui
+del trac
 
 from wikiganttchart.web_ui import WikiGanttChart, WikiGanttChartError, \
                                   WikiGanttChartModule
@@ -292,6 +291,25 @@ Blah blah blah...
         self.assertEquals(version, result['version'])
         page = WikiPage(self.env, page.name)
         self.assertEquals(version, page.version)
+        expected = _norm_newline("""\
+{{{#!Gantt id="deadbeef" style="red"
+}}}
+""")
+        self.assertEquals(expected, page.text)
+
+    def test_update_tasks_empty_with_old_style(self):
+        page = WikiPage(self.env, 'NewPage')
+        self.assertEquals(False, page.exists)
+        page.text = _norm_newline("""\
+{{{
+#!Gantt id="deadbeef"
+Blah blah blah...
+}}}
+""")
+        page.save('anonymous', '', '::1')
+        self.assertEquals(1, page.version)
+        self._test_update_tasks(page, [])
+        page = WikiPage(self.env, page.name)
         expected = _norm_newline("""\
 {{{#!Gantt id="deadbeef" style="red"
 }}}

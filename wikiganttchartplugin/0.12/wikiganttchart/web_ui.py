@@ -153,7 +153,11 @@ class WikiGanttChart(object):
         return json.dumps(self.export())
 
     _replace_macro_re = re.compile(r"""
-^[ ]*\{\{\{\#!%s(?P<params>[^\n]*)\n
+^[ ]*\{\{\{
+    (?:\r?\n)?
+    \#!%s
+    (?P<params>[^\n]*)
+    \n
 (?P<body>
     (?:(?!^[ ]*\}\}\}[ ]*\n)
        [^\n]*\n)*?

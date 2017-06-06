@@ -36,7 +36,7 @@ except ImportError:
 
 setup(
     name='WikiGanttChartPlugin',
-    version='0.12.0.3',
+    version='0.12.0.4',
     author='OpenGroove,Inc.',
     author_email='info@opengroove.com',
     maintainer='Jun Omae',
