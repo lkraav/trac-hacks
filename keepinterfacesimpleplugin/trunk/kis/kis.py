@@ -504,7 +504,7 @@ only designated approver can approve = !has_role('approver') && approval != _app
         for rule, predicate in self.config.options('kis_warden'):
             e, text = lexer.evaluate(predicate)
             if e:
-                errors.append((None, "Check '%s' failed: %s" % (rule, text)))
+                errors.append((None, "%s (%s)" % (rule, predicate)))
         return errors
 
 ###############################################################################
@@ -723,12 +723,10 @@ evaluation.available.none = evaluation_template == 'None'
         '''
         fieldRefreshCall = 'update_fields();\n'
         ticket_preview = '}, "#ticket .trac-loading");'
-        change_preview = '}, "#ticketchange .trac-loading");'
 
         # Applying changes only on ticket.html.
         if filename == 'ticket.html':
-            for preview in [ticket_preview, change_preview]:
-                stream = stream | Transformer('.//script').\
-                         substitute(re.escape(preview), fieldRefreshCall +
-                                    preview)
+            stream = stream | Transformer('.//script').\
+                 substitute(re.escape(ticket_preview), fieldRefreshCall +
+                            ticket_preview)
         return stream

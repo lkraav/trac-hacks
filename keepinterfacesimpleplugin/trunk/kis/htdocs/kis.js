@@ -431,7 +431,6 @@ function evaluate(predicate) {
                         reject({ error: errorThrown });
                     },
                     success: function (result) {
-                        evaluate.cache[cache_key] = result;
                         resolve({ value: result });
                     },
                     timeout: 10000,
@@ -459,16 +458,17 @@ function evaluate(predicate) {
                     next_token();
                     var cache_key = term_token + '@'
                                     + r.value.join();
-                    if (cache_key in evaluate.cache) {
-                        r.value = evaluate.cache[cache_key];
-                        return r;
-                    } else {
-                        return query_server(
+                    if (!(cache_key in evaluate.cache)) {
+                        evaluate.cache[cache_key] = query_server(
                             term_token,
                             r.value,
                             cache_key
                         );
                     }
+                    return evaluate.cache[cache_key].then(function (c) {
+                        r.value = c.value;
+                        return r;
+                    });
                 });
             } else {
                 return t;
