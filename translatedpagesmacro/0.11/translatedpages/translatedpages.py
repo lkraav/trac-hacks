@@ -7,8 +7,9 @@ from StringIO import StringIO
 from trac.config import Option
 from trac.core import *
 from trac.util.text import to_unicode
+from trac.util.translation import _
 from trac.wiki.api import IWikiMacroProvider, WikiSystem, parse_args
-from trac.wiki.formatter import Formatter
+from trac.wiki.formatter import Formatter, system_message
 from trac.wiki.model import WikiPage
 
 
@@ -414,6 +415,10 @@ The Macro accepts arguments as well:
         The list of languages supported can be configured by adding new
         entries to TracLanguages page. Refer to ISO 639-1 for more information.
         """
+
+        if formatter.resource.realm != 'wiki':
+            return system_message(_("%(name)s macro can only be used in "
+                                    "wiki pages.", name=name))
 
         args, kw = parse_args(args)
 
