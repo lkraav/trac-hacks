@@ -10,14 +10,14 @@
 
 import urllib
 
-from genshi.core import Markup
-
-from trac.admin.api import IAdminPanelProvider
-from trac.core import *
+from trac.admin.api import AdminCommandError, IAdminCommandProvider, \
+    IAdminPanelProvider
+from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
+from trac.util.translation import _
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_notice, \
-                            add_warning
+from trac.wiki.api import WikiSystem
+from trac.web.chrome import ITemplateProvider, add_notice, add_warning
 
 from wikireplace.util import wiki_text_replace
 
@@ -25,14 +25,30 @@ from wikireplace.util import wiki_text_replace
 class WikiReplaceModule(Component):
     """An evil module that adds a replace button to the wiki UI."""
 
-    implements(IAdminPanelProvider, IPermissionRequestor, IRequestFilter,
-               ITemplateProvider)
+    implements(IAdminCommandProvider, IAdminPanelProvider,
+               IPermissionRequestor, IRequestFilter, ITemplateProvider)
 
     # IPermissionRequestor methods
+
     def get_permission_actions(self):
         return ['WIKI_REPLACE', ('WIKI_ADMIN', ['WIKI_REPLACE'])]
 
+    # IAdminCommandProvider
+
+    def get_admin_commands(self):
+        yield ('wiki sub', '<old-text> <new-text> <pages>',
+               "Substitute wiki text",
+               self._complete_sub, self._do_sub)
+
+    def _complete_sub(self, args):
+        if len(args) >= 3:
+            return WikiSystem(self.env).pages
+
+    def _do_sub(self, oldtext, newtext, *wikipages):
+        wiki_text_replace(self.env, oldtext, newtext, wikipages, 'trac')
+
     # IAdminPanelProvider methods
+
     def get_admin_panels(self, req):
         if 'WIKI_REPLACE' in req.perm('wiki'):
             yield 'general', 'General', 'wikireplace', 'Wiki Replace'
@@ -64,8 +80,7 @@ class WikiReplaceModule(Component):
                                 'for modified pages.' % (data['find'],
                                                          data['replace']))
                 wiki_text_replace(self.env, data['find'], data['replace'],
-                                  data['wikipages'], req.authname,
-                                  req.remote_addr, debug=self.log.debug)
+                                  data['wikipages'], req.authname)
 
             # Reset for the next display
             data['find'] = ''
@@ -75,6 +90,7 @@ class WikiReplaceModule(Component):
         return 'admin_wikireplace.html', data
 
     # ITemplateProvider methods
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
@@ -83,6 +99,7 @@ class WikiReplaceModule(Component):
         return []
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -92,5 +109,4 @@ class WikiReplaceModule(Component):
             page = data.get('page')
             if not page:
                 return template, data, content_type
-            perm = req.perm(page.resource)
         return template, data, content_type

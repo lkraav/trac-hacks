@@ -8,9 +8,18 @@
 # you should have received as part of this distribution.
 #
 
+from __future__ import with_statement
+
 import os
 
 from setuptools import setup
+
+
+def readme():
+    """Return README file contents."""
+    with open(os.path.join(os.path.dirname(__file__), 'README')) as fd:
+        return fd.read()
+
 
 setup(
     name='TracWikiReplace',
@@ -21,23 +30,17 @@ setup(
     author='Radu Gasler',
     author_email='miezuit@gmail.com',
     description='Add simple support for replacing text in wiki pages',
-    long_description=open(os.path.join(os.path.dirname(__file__),
-                                       'README')).read(),
+    long_description=readme(),
     license='3-Clause BSD',
-    keywords='trac 0.11 plugin wiki page search replace',
+    keywords='trac plugin wiki page search replace',
     url='https://trac-hacks.org/wiki/WikiReplacePlugin',
     classifiers=[
         'Framework :: Trac',
     ],
-
     install_requires=['Trac'],
-
     entry_points={
         'trac.plugins': [
             'wikireplace.web_ui = wikireplace.web_ui',
-        ],
-        'console_scripts': [
-            'trac-wikireplace = wikireplace.script:run'
         ],
     },
 )
