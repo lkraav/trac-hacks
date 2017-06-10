@@ -8,6 +8,7 @@
 #
 
 import datetime
+import re
 
 from trac.util.datefmt import to_utimestamp, utc
 
@@ -20,6 +21,9 @@ def wiki_text_replace(env, oldtext, newtext, wikipages, user):
     ip = '127.0.0.1'
     with env.db_transaction as db:
         for wikipage in wikipages:
+            wikipage = db.like_escape(wikipage)
+            wikipage = re.sub(r'\*', r'%', wikipage)
+            wikipage = re.sub(r'\?', r'_', wikipage)
             for row in db("""
                     SELECT w1.version, w1.name, w1.text, w1.readonly
                     FROM wiki w1, (SELECT name, MAX(version) AS max_version
@@ -28,7 +32,7 @@ def wiki_text_replace(env, oldtext, newtext, wikipages, user):
                      AND w1.name = w2.name
                      AND w1.name %s AND w1.text %s
                     """ % (db.like(), db.like()),
-                    (wikipage, '%' + db.like_escape(oldtext) + '%')):
+                    (wikipage, '%%%s%%' % db.like_escape(oldtext))):
                 env.log.debug("Found a page with searched text in it: %s "
                               "(v%s)", row[1], row[0])
                 newcontent = row[2].replace(oldtext, newtext)

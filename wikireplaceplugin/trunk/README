@@ -14,7 +14,7 @@ Wiki Pages::
   a list of wiki pages, each page should be on a separate line;
   you may use * and ? wildcards
 
-  examples: \*, Trac\*, Category/\*/Index, Calendar/2009\_??\_02
+  examples: *, Trac*, Category/*/Index, Calendar/2009_??_02
 
 TracAdmin command
 =================
