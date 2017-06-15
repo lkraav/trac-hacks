@@ -118,7 +118,7 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
                 imgcounter += 1
                 page = page[:addrpos + 5] + newimg + page[
                                                      addrpos + 5 + thepos:]
-                simgpos = page.find('<img', addrpos)
+                imgpos = page.find('<img', addrpos)
     else:
         # Use old search for images in path
         page = page.replace('raw-attachment', 'attachments')
