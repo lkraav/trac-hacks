@@ -18,6 +18,7 @@ import string
 
 from trac.util.html import Markup, tag
 
+from trac.util import arity
 from trac.util.compat import sorted
 from trac.util.html import TracHTMLSanitizer
 if hasattr(TracHTMLSanitizer, 'sanitize_attrs'):
@@ -264,7 +265,11 @@ def reduce_names(names, keep=40):
 if sanitizer:
     def sanitize_attrib(env, element):
         if not WikiSystem(env).render_unsafe_content:
-            sanitized = sanitizer.sanitize_attrs(element.attrib)
+            if arity(sanitizer.sanitize_attrs) == 1:
+                sanitized = sanitizer.sanitize_attrs(element.attrib)
+            else:  # Trac 1.3.2+
+                sanitized = sanitizer.sanitize_attrs(element.tag,
+                                                     element.attrib)
             element = Element(element.tag, **sanitized)
         return element
 else:
