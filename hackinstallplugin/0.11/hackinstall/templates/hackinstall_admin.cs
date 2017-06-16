@@ -7,7 +7,7 @@
         <legend>Setting</legend>
         <div class="field">
             <label>URL: <?cs call:help_link("This is the URL to the Trac-Hacks server, you should not need to change it.") ?><br />
-                <input type="text" name="url" value="<?cs var:hackinstall.url ?>" /> 
+                <input type="text" name="url" value="<?cs var:hackinstall.url ?>" />
             </label>
         </div>
         <div class="field">
@@ -29,7 +29,7 @@
                 <?cs each:plugin = hackinstall.updates.plugins ?>
                     <p>
                         <b><?cs name:plugin ?></b><br />
-                        Upgrade from revision <?cs var:plugin.installed ?> to revision <?cs var:plugin.current ?> 
+                        Upgrade from revision <?cs var:plugin.installed ?> to revision <?cs var:plugin.current ?>
                         <a href="http://trac-hacks.org/log/<?cs var:plugin.lowername ?>?rev=<?cs var:plugin.current ?>&stop_rev=<?cs var:plugin.installed+1 ?>&verbose=on">(View changes)</a>
                         <input type="checkbox" name="doupdate_<?cs name:plugin ?>" />
                     </p>
@@ -51,7 +51,7 @@
     var change_override = function() {
         document.getElementById("version_field").disabled = ! override_version.checked;
     };
-    
+
     addEvent(override_version, "change", change_override);
 //-->
 </script>

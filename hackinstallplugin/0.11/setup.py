@@ -4,19 +4,19 @@
 from setuptools import setup
 
 setup(
-    name = 'HackInstall',
-    version = '0.5',
-    packages = ['hackinstall'],
-    package_data = { 'hackinstall': ['templates/*.cs','htdocs/*' ] },
+    name='HackInstall',
+    version='0.5',
+    packages=['hackinstall'],
+    package_data={'hackinstall': ['templates/*.cs', 'htdocs/*']},
 
-    author = "Noah Kantrowitz",
-    author_email = "noah@coderanger.net",
-    description = "A plugin manager for Trac-Hacks plugins.",
-    license = "BSD",
-    keywords = "trac plugin manager hacks",
-    url = "http://trac-hacks.org/",
+    author="Noah Kantrowitz",
+    author_email="noah@coderanger.net",
+    description="A plugin manager for Trac-Hacks plugins.",
+    license="BSD",
+    keywords="trac plugin manager hacks",
+    url="https://trac-hacks.org/wiki/HackInstallPlugin",
 
-    entry_points = {
+    entry_points={
         'trac.plugins': [
             'hackinstall.web_ui = hackinstall.web_ui'
         ]
