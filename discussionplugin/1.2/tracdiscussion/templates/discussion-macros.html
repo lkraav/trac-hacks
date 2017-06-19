@@ -267,12 +267,9 @@
 
         <div class="field">
           <label for="author">Author:</label><br/>
-          <py:choose>
-            <input py:when="req.authname == 'anonymous'" type="text" id="author"
-              name="author" value="${format_author(req.args.author or req.authname)}"/>
-            <input py:otherwise="" type="text" id="author" name="author"
-              value="${format_author(req.authname)}" readonly="readonly"/>
-          </py:choose><br/>
+          <input type="text" id="author" name="author" value="${req.authname}"
+                 readonly="${'readonly' if req.authname != 'anonymous' else None}" />
+          <br/>
         </div>
 
         <div py:if="is_topic_edit" class="field">
