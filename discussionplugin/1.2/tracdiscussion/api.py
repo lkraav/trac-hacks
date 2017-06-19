@@ -42,14 +42,14 @@ def is_tags_enabled(env):
 
 
 class IDiscussionFilter(Interface):
-    """Extension point interface for components that want to filter 
+    """Extension point interface for components that want to filter
     discussion topics and messages before their addition.
     """
 
     def filter_topic(context, topic):
         """ Called before new topic creation. May return tuple (False,
-        <error_message>) or (True, <topic>) where <error_message> is a 
-        message that will be displayed when topic creation will be canceled 
+        <error_message>) or (True, <topic>) where <error_message> is a
+        message that will be displayed when topic creation will be canceled
         and <topic> is modified topic that will be added.
         """
 
@@ -111,18 +111,18 @@ class IMessageChangeListener(Interface):
     """
 
     def message_created(context, message):
-        """Called when a message is created. Argument `message` is a 
+        """Called when a message is created. Argument `message` is a
         dictionary with message attributes.
         """
 
     def message_changed(context, message, old_message):
         """Called when a message is modified. `old_message` is a dictionary
-        containing the previous values of the message attributes and 
+        containing the previous values of the message attributes and
         `message` is a dictionary with new values that has changed.
         """
 
     def message_deleted(context, message):
-        """Called when a message is deleted. Argument `message` is a 
+        """Called when a message is deleted. Argument `message` is a
         dictionary with values of attributes of just deleted message.
         """
 
@@ -155,12 +155,12 @@ class DiscussionApi(DiscussionDb):
         """)
 
     topic_sort = Option('discussion', 'topic_sort', 'lastreply', doc="""
-        Column by which will be sorted topic lists. Possible values are: 
+        Column by which will be sorted topic lists. Possible values are:
         id, forum, subject, time, author, body, replies, lastreply.
         """)
 
     topic_sort_direction = Option('discussion', 'topic_sort_direction', 'asc',
-        doc="""Direction of topic lists sorting. Possible values are: 
+        doc="""Direction of topic lists sorting. Possible values are:
         asc, desc.
         """)
 

@@ -79,7 +79,7 @@ class DiscussionDb(Component):
             values.append(offset)
         return [dict(zip(columns, row))
                 for row in self.env.db_query("""
-                    SELECT %(columns)s 
+                    SELECT %(columns)s
                     FROM %(table)s %(where)s %(order_by)s %(limit)s %(offset)s
                     """ % sql_values, values)]
 
@@ -105,8 +105,8 @@ class DiscussionDb(Component):
                 for row in self.env.db_query("""
                     SELECT g.id, g.name, g.description, f.forums
                     FROM forum_group g
-                    LEFT JOIN (SELECT COUNT(id) AS forums, forum_group 
-                               FROM forum GROUP BY forum_group) f 
+                    LEFT JOIN (SELECT COUNT(id) AS forums, forum_group
+                               FROM forum GROUP BY forum_group) f
                      ON g.id = f.forum_group
                     %(order_by)s
                     """ % sql_values)]
@@ -132,15 +132,15 @@ class DiscussionDb(Component):
                     SELECT %(forum_cols)s, %(topic_cols)s
                     FROM forum f
                     LEFT JOIN
-                     (SELECT COUNT(t.id) AS topics, 
+                     (SELECT COUNT(t.id) AS topics,
                        MAX(t.time) AS lasttopic,
                        SUM(ma.replies) AS replies,
-                       MAX(ma.lastreply) AS lastreply, 
+                       MAX(ma.lastreply) AS lastreply,
                        t.forum AS forum
                       FROM topic t
                       LEFT JOIN
                        (SELECT COUNT(m.id) AS replies,
-                         MAX(m.time) AS lastreply, 
+                         MAX(m.time) AS lastreply,
                          m.topic AS topic
                         FROM message m
                         GROUP BY m.topic) ma
@@ -180,7 +180,7 @@ class DiscussionDb(Component):
                     SELECT %(topic_cols)s, %(message_cols)s
                     FROM topic t
                     LEFT JOIN
-                     (SELECT COUNT(id) AS replies, MAX(time) AS lastreply, 
+                     (SELECT COUNT(id) AS replies, MAX(time) AS lastreply,
                        topic
                       FROM message
                       GROUP BY topic) m
@@ -205,7 +205,7 @@ class DiscussionDb(Component):
         return [dict(zip(columns, row),
                      status=topic_status_to_list(row[idx_status]))
                 for row in self.env.db_query("""
-                    SELECT t.id, t.forum, f.name, t.time, t.author, 
+                    SELECT t.id, t.forum, f.name, t.time, t.author,
                            t.subject, t.status
                     FROM topic t
                     LEFT JOIN
@@ -230,7 +230,7 @@ class DiscussionDb(Component):
                     FROM (SELECT forum, topic, time FROM message
                           UNION
                           SELECT forum, id AS topic, time
-                          FROM topic) 
+                          FROM topic)
                     %(where)s
                     GROUP BY topic
                     ORDER BY max_time DESC %(limit)s
@@ -253,7 +253,7 @@ class DiscussionDb(Component):
         messagemap = {}
         messages = []
         for row in self.env.db_query("""
-                SELECT %(columns)s FROM message 
+                SELECT %(columns)s FROM message
                 WHERE topic=%%s %(order_by)s
                 """ % sql_values, values):
             row = dict(zip(columns, row))
@@ -286,7 +286,7 @@ class DiscussionDb(Component):
 
         return [dict(zip(columns, row))
                 for row in self.env.db_query("""
-                    SELECT m.id, m.forum, f.name, m.topic, t.subject, 
+                    SELECT m.id, m.forum, f.name, m.topic, t.subject,
                            m.time, m.author
                     FROM message m
                     LEFT JOIN
@@ -329,9 +329,9 @@ class DiscussionDb(Component):
                        'subject')
 
             for row in db("""
-                    SELECT %s, t.subject FROM message m 
-                    LEFT JOIN (SELECT subject, id FROM topic) t 
-                     ON t.id=m.topic 
+                    SELECT %s, t.subject FROM message m
+                    LEFT JOIN (SELECT subject, id FROM topic) t
+                     ON t.id=m.topic
                     WHERE %s
                     """ % ('m.' + ', m.'.join(columns[:-1]), query), args):
                 # Class references are valid only in sub-class (api).

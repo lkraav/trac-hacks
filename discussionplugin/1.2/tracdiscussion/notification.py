@@ -191,7 +191,7 @@ class DiscussionEmailNotification(Component):
     # Configuration options.
 
     smtp_always_cc = ListOption('discussion', 'smtp_always_cc', [],
-    doc="""Always send discussion notifications to the listed e-mail 
+    doc="""Always send discussion notifications to the listed e-mail
     addresses.
     """)
 
