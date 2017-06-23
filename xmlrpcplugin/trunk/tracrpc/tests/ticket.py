@@ -36,6 +36,13 @@ class RpcTicketTestCase(TracRpcTestCase):
         self.assertEquals('admin', attributes['reporter'])
         self.admin.ticket.delete(tid)
 
+    def test_create_empty_summary(self):
+        try:
+            tid = self.admin.ticket.create("", "the description", {})
+            self.fail("Exception not raised creating ticket with empty summary")
+        except xmlrpclib.Fault, e:
+            self.assertIn("Tickets must contain a summary.", unicode(e))
+
     def test_getActions(self):
         tid = self.admin.ticket.create("ticket_getActions", "kjsald",
                                         {'owner': ''})

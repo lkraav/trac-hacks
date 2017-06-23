@@ -94,7 +94,7 @@ class TicketRPC(Component):
             db = self.env.get_db_cnx()
             cursor = db.cursor()
             cursor.execute(query, (since,))
-            generator = cursor        
+            generator = cursor
         result = []
         ticket_realm = Resource('ticket')
         for row in generator:
@@ -159,6 +159,8 @@ class TicketRPC(Component):
     def create(self, req, summary, description, attributes={}, notify=False, when=None):
         """ Create a new ticket, returning the ticket ID.
         Overriding 'when' requires admin permission. """
+        if not summary:
+            raise TracError("Tickets must contain a summary.")
         t = model.Ticket(self.env)
         t['summary'] = summary
         t['description'] = description
@@ -355,7 +357,7 @@ class StatusRPC(Component):
     def getAll(self, req):
         """ Returns all ticket states described by active workflow. """
         return TicketSystem(self.env).get_all_status()
-    
+
     def get(self, req, name):
         """ Deprecated no-op method. Do not use. """
         # FIXME: Remove
@@ -456,7 +458,7 @@ def ticketEnumFactory(cls):
             if (cls.__name__ == 'Status'):
                i = cls(self.env)
                x = name
-            else: 
+            else:
                i = cls(self.env, name)
                x = i.value
             return x
