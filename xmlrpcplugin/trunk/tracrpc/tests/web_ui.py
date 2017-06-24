@@ -34,13 +34,13 @@ class DocumentationTestCase(TracRpcTestCase):
         self.assert_rpcdocs_ok(self.opener_user, req)
 
     def test_post_accept(self):
-        req = urllib2.Request(rpc_testenv.url_auth, 
+        req = urllib2.Request(rpc_testenv.url_auth,
                     headers={'Content-Type' : 'text/plain',
                               'Accept': 'application/x-trac-test,text/html'},
                     data='Pass since client accepts HTML')
         self.assert_rpcdocs_ok(self.opener_user, req)
 
-        req = urllib2.Request(rpc_testenv.url_auth, 
+        req = urllib2.Request(rpc_testenv.url_auth,
                     headers={'Content-Type' : 'text/plain'},
                     data='Fail! No content type expected')
         self.assert_unsupported_media_type(self.opener_user, req)
@@ -49,24 +49,24 @@ class DocumentationTestCase(TracRpcTestCase):
         from urllib import urlencode
         # Explicit content type
         form_vars = {'result' : 'Fail! __FORM_TOKEN protection activated'}
-        req = urllib2.Request(rpc_testenv.url_auth, 
+        req = urllib2.Request(rpc_testenv.url_auth,
                     headers={'Content-Type': 'application/x-www-form-urlencoded'},
                     data=urlencode(form_vars))
         self.assert_form_protect(self.opener_user, req)
 
         # Implicit content type
-        req = urllib2.Request(rpc_testenv.url_auth, 
+        req = urllib2.Request(rpc_testenv.url_auth,
                     headers={'Accept': 'application/x-trac-test,text/html'},
                     data='Pass since client accepts HTML')
         self.assert_form_protect(self.opener_user, req)
 
     def test_get_dont_accept(self):
-        req = urllib2.Request(rpc_testenv.url_auth, 
+        req = urllib2.Request(rpc_testenv.url_auth,
                     headers={'Accept': 'application/x-trac-test'})
         self.assert_unsupported_media_type(self.opener_user, req)
 
     def test_post_dont_accept(self):
-        req = urllib2.Request(rpc_testenv.url_auth, 
+        req = urllib2.Request(rpc_testenv.url_auth,
                     headers={'Content-Type': 'text/plain',
                               'Accept': 'application/x-trac-test'},
                     data='Fail! Client cannot process HTML')

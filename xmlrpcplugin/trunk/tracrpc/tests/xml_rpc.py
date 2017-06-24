@@ -14,7 +14,7 @@ import xmlrpclib
 from tracrpc.tests import rpc_testenv, TracRpcTestCase
 
 class RpcXmlTestCase(TracRpcTestCase):
-    
+
     def setUp(self):
         TracRpcTestCase.setUp(self)
         self.anon = xmlrpclib.ServerProxy(rpc_testenv.url_anon)
@@ -94,7 +94,7 @@ class RpcXmlTestCase(TracRpcTestCase):
         # A Ticket resource
         e = self.assertRaises(xmlrpclib.Fault, self.admin.ticket.get, 2147483647)
         self.assertEquals(e.faultCode, 404)
-        self.assertEquals(e.faultString, 
+        self.assertEquals(e.faultString,
                 'Ticket 2147483647 does not exist.')
         # A Wiki resource
         e = self.assertRaises(xmlrpclib.Fault, self.admin.wiki.getPage,

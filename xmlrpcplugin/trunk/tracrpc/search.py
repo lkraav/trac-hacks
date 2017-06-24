@@ -53,7 +53,7 @@ class SearchRPC(Component):
             if filters_provided:
                 return []
             filters = [f[0] for f in available_filters]
-        self.env.log.debug("Searching with %s" % filters)
+        self.env.log.debug("Searching with %s", filters)
 
         results = []
         for source in self.search_sources:

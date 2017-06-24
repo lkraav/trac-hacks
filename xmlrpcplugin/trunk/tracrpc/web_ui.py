@@ -64,8 +64,8 @@ class RPCWeb(Component):
         content_type = req.get_header('Content-Type') or 'text/html'
         if protocol:
             # Perform the method call
-            self.log.debug("RPC incoming request of content type '%s' " \
-                    "dispatched to %s" % (content_type, repr(protocol)))
+            self.log.debug("RPC incoming request of content type '%s' "
+                           "dispatched to %s", content_type, repr(protocol))
             self._rpc_process(req, protocol, content_type)
         elif accepts_mimetype(req, 'text/html') \
                     or content_type.startswith('text/html'):
@@ -112,7 +112,7 @@ class RPCWeb(Component):
         add_stylesheet(req, 'common/css/wiki.css')
         add_stylesheet(req, 'tracrpc/rpc.css')
         add_script(req, 'tracrpc/rpc.js')
-        return ('rpc.html', 
+        return ('rpc.html',
                 {'rpc': {'functions': namespaces,
                          'protocols': [p.rpc_info() + (list(p.rpc_match()),) \
                                   for p in self.protocols],
@@ -143,8 +143,8 @@ class RPCWeb(Component):
             rpcreq = req.rpc = protocol.parse_rpc_request(req, content_type)
             rpcreq['mimetype'] = content_type
 
-            # Important ! Check after parsing RPC request to add 
-            #             protocol-specific fields in response 
+            # Important ! Check after parsing RPC request to add
+            #             protocol-specific fields in response
             #             (e.g. JSON-RPC response `id`)
             req.perm.require('XML_RPC') # Need at least XML_RPC
 
@@ -152,8 +152,8 @@ class RPCWeb(Component):
             if method_name is None :
                 raise ProtocolException('Missing method name')
             args = rpcreq.get('params') or []
-            self.log.debug("RPC(%s) call by '%s' %s", proto_id, \
-                                              req.authname, method_name)
+            self.log.debug("RPC(%s) call by '%s' %s", proto_id,
+                           req.authname, method_name)
             try :
                 result = (XMLRPCSystem(self.env).get_method(method_name)(req, args))[0]
                 if isinstance(result, GeneratorType):

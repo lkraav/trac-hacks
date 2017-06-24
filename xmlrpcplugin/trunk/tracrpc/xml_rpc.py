@@ -74,7 +74,7 @@ class XmlRpcProtocol(Component):
     <param><string>WikiStart</string></param>
     </params>
     </methodCall>
-    
+
     user: ~ > curl -H "Content-Type: application/xml" --data @body.xml ${req.abs_href.rpc()}
     <?xml version='1.0'?>
     <methodResponse>
@@ -82,9 +82,9 @@ class XmlRpcProtocol(Component):
     <param>
     <value><string>= Welcome to....
     }}}
-    
+
     The following snippet illustrates how to perform authenticated calls in Python.
-    
+
     {{{
     >>> from xmlrpclib import ServerProxy
     >>> p = ServerProxy('${req.abs_href.login('rpc').replace('://', '://%s:your_password@' % authname)}')
@@ -102,7 +102,7 @@ class XmlRpcProtocol(Component):
 
     def rpc_match(self):
         # Legacy path xmlrpc provided for backwards compatibility:
-        # Using this order to get better docs 
+        # Using this order to get better docs
         yield ('rpc', 'application/xml')
         yield ('xmlrpc', 'application/xml')
         yield ('rpc', 'text/xml')
@@ -117,8 +117,8 @@ class XmlRpcProtocol(Component):
             self.log.debug("RPC(xml) parse error: %s", to_unicode(e))
             raise ProtocolException(xmlrpclib.Fault(-32700, to_unicode(e)))
         else :
-            self.log.debug("RPC(xml) call by '%s', method '%s' with args: %s" \
-                                        % (req.authname, method, repr(args)))
+            self.log.debug("RPC(xml) call by '%s', method '%s' with args: %s",
+                           req.authname, method, repr(args))
             args = self._normalize_xml_input(args)
             return {'method' : method, 'params' : args}
 
@@ -126,8 +126,7 @@ class XmlRpcProtocol(Component):
         """Send the result of the XML-RPC call back to the client."""
         rpcreq = req.rpc
         method = rpcreq.get('method')
-        self.log.debug("RPC(xml) '%s' result: %s" % (
-                                                    method, repr(result)))
+        self.log.debug("RPC(xml) '%s' result: %s", method, repr(result))
         result = tuple(self._normalize_xml_output([result]))
         self._send_response(req,
                 xmlrpclib.dumps(result, methodresponse=True), rpcreq['mimetype'])

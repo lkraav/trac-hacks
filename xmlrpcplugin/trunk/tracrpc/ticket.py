@@ -172,7 +172,7 @@ class TicketRPC(Component):
         # custom create timestamp?
         if when and not 'TICKET_ADMIN' in req.perm:
             self.log.warn("RPC ticket.create: %r not allowed to create with "
-                    "non-current timestamp (%r)", req.authname, when)
+                          "non-current timestamp (%r)", req.authname, when)
             when = None
         t.insert(when=when)
         if notify:
@@ -181,7 +181,7 @@ class TicketRPC(Component):
                 tn.notify(t, newticket=True)
             except Exception, e:
                 self.log.exception("Failure sending notification on creation "
-                                   "of ticket #%s: %s" % (t.id, e))
+                                   "of ticket #%s: %s", t.id, e)
         return t.id
 
     def update(self, req, id, comment, attributes={}, notify=False, author='', when=None):
@@ -199,13 +199,13 @@ class TicketRPC(Component):
                             or 'TICKET_ADMIN' in req.perm(t.resource)):
             # only allow custom author if anonymous is permitted or user is admin
             self.log.warn("RPC ticket.update: %r not allowed to change author "
-                    "to %r for comment on #%d", req.authname, author, id)
+                          "to %r for comment on #%d", req.authname, author, id)
             author = ''
         author = author or req.authname
         # custom change timestamp?
         if when and not 'TICKET_ADMIN' in req.perm(t.resource):
-            self.log.warn("RPC ticket.update: %r not allowed to update #%d with "
-                    "non-current timestamp (%r)", author, id, when)
+            self.log.warn("RPC ticket.update: %r not allowed to update #%d "
+                          "with non-current timestamp (%r)", author, id, when)
             when = None
         when = when or to_datetime(None, utc)
         # never try to update 'time' and 'changetime' attributes directly
@@ -216,8 +216,8 @@ class TicketRPC(Component):
         # and action...
         if not 'action' in attributes:
             # FIXME: Old, non-restricted update - remove soon!
-            self.log.warning("Rpc ticket.update for ticket %d by user %s " \
-                    "has no workflow 'action'." % (id, req.authname))
+            self.log.warning("Rpc ticket.update for ticket %d by user %s "
+                             "has no workflow 'action'.", id, req.authname)
             req.perm(t.resource).require('TICKET_MODIFY')
             time_changed = attributes.pop('_ts', None)
             if time_changed and \
@@ -262,7 +262,7 @@ class TicketRPC(Component):
                     " ".join([warning for warning in req.chrome['warnings']]))
             else:
                 tm._apply_ticket_changes(t, changes)
-                self.log.debug("Rpc ticket.update save: %s" % repr(t.values))
+                self.log.debug("Rpc ticket.update save: %r", t.values)
                 t.save_changes(author, comment, when=when)
                 # Apply workflow side-effects
                 for controller in controllers:
@@ -273,7 +273,7 @@ class TicketRPC(Component):
                 tn.notify(t, newticket=False, modtime=when)
             except Exception, e:
                 self.log.exception("Failure sending notification on change of "
-                                   "ticket #%s: %s" % (t.id, e))
+                                   "ticket #%s: %s", t.id, e)
         return self.get(req, t.id)
 
     def delete(self, req, id):

@@ -144,7 +144,7 @@ else:
             image_in = StringIO(open(image_url, 'r').read())
             data = {'method': 'wiki.putAttachmentEx',
                 'params': ['TitleIndex', "feed2.png", "test image",
-                {'__jsonclass__': ['binary', 
+                {'__jsonclass__': ['binary',
                             image_in.getvalue().encode("base64")]}]}
             result = self._auth_req(data, user='admin')
             self.assertEquals('feed2.png', result['result'])

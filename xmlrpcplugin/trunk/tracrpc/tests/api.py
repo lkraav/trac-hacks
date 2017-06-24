@@ -55,7 +55,7 @@ class ProtocolProviderTestCase(TracRpcTestCase):
             self.fail("Expected urllib2.HTTPError")
         except urllib2.HTTPError, e:
             self.assertEquals(e.code, 415)
-        # Make a new plugin 
+        # Make a new plugin
         provider = os.path.join(rpc_testenv.tracdir, 'plugins', 'DummyProvider.py')
         open(provider, 'w').write(
             "from trac.core import *\n"

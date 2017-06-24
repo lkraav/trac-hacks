@@ -8,18 +8,18 @@
   <head>
     <title>Remote Procedure Call (RPC)</title>
   </head>
-  
+
   <body>
     <div id="content" class="wiki">
       <div class="wikipage searchable">
         <h1>Remote Procedure Call (RPC)</h1>
         <p><strong>Installed API version :</strong> ${rpc.version} </p>
         <h2 id="Protocols">Protocol reference:</h2>
-        <p>Below you will find a detailed description of all the RPC 
-          protocols installed in this environment. This includes 
-          supported content types as well as target URLs for 
-          anonymous and authenticated access. Use this 
-          information to interact with this environment from 
+        <p>Below you will find a detailed description of all the RPC
+          protocols installed in this environment. This includes
+          supported content types as well as target URLs for
+          anonymous and authenticated access. Use this
+          information to interact with this environment from
           a remote location.
         </p>
         <p>Libraries for remote procedure calls and parsing exists
@@ -35,7 +35,7 @@
                 <py:with vars="ct_group = list(_ct_group)">
                   <ul>
                     <li py:for="h, _ in ct_group">
-                      <a href="${req.abs_href(h)}">${req.abs_href(h)}</a> 
+                      <a href="${req.abs_href(h)}">${req.abs_href(h)}</a>
                       for anonymous access
                     </li>
                     <li py:for="h, _ in ct_group">
@@ -51,9 +51,9 @@
           </div>
           </dd>
         </dl>
-  
+
         <h2 id="Methods">RPC exported functions</h2>
-  
+
         <div id="searchable">
           <dl py:for="key in sorted(rpc.functions)" py:with="namespace = rpc.functions[key]">
             <h3 id="${'rpc.' + to_unicode(namespace.namespace)}">

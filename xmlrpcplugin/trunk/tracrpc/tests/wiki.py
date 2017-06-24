@@ -17,7 +17,7 @@ from tracrpc.tests import rpc_testenv, TracRpcTestCase
 from tracrpc.util import StringIO
 
 class RpcWikiTestCase(TracRpcTestCase):
-    
+
     def setUp(self):
         TracRpcTestCase.setUp(self)
         self.anon = xmlrpclib.ServerProxy(rpc_testenv.url_anon)

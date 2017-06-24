@@ -123,16 +123,16 @@ if json:
         r"""
         Example `POST` request using `curl` with `Content-Type` header
         and body:
- 
+
         {{{
         user: ~ > cat body.json
         {"params": ["WikiStart"], "method": "wiki.getPage", "id": 123}
         user: ~ > curl -H "Content-Type: application/json" --data @body.json ${req.abs_href.rpc()}
         {"id": 123, "error": null, "result": "= Welcome to....
         }}}
-    
+
         Implementation details:
-    
+
           * JSON-RPC has no formalized type system, so a class-hint system is used
             for input and output of non-standard types:
             * `{"__jsonclass__": ["datetime", "YYYY-MM-DDTHH:MM:SS"]} => DateTime (UTC)`
@@ -191,7 +191,7 @@ if json:
             rpcreq = req.rpc
             r_id = rpcreq.get('id')
             try:
-                if rpcreq.get('method') == 'system.multicall': 
+                if rpcreq.get('method') == 'system.multicall':
                     # Custom multicall
                     args = (rpcreq.get('params') or [[]])[0]
                     mcresults = [self._json_result(
@@ -199,19 +199,19 @@ if json:
                                                         value or value[0], \
                                             sig.get('id') or r_id) \
                                   for sig, value in izip(args, result)]
-                
+
                     response = self._json_result(mcresults, r_id)
                 else:
                     response = self._json_result(result, r_id)
                 try: # JSON encoding
-                    self.log.debug("RPC(json) result: %s" % repr(response))
+                    self.log.debug("RPC(json) result: %r", response)
                     response = json.dumps(response, cls=TracRpcJSONEncoder)
                 except Exception, e:
                     response = json.dumps(self._json_error(e, r_id=r_id),
                                             cls=TracRpcJSONEncoder)
             except Exception, e:
-                self.log.error("RPC(json) error %s" % exception_to_unicode(e,
-                                                        traceback=True))
+                self.log.error("RPC(json) error %s",
+                               exception_to_unicode(e, traceback=True))
                 response = json.dumps(self._json_error(e, r_id=r_id),
                                 cls=TracRpcJSONEncoder)
             self._send_response(req, response + '\n', rpcreq['mimetype'])
@@ -227,7 +227,7 @@ if json:
         # Internal methods
 
         def _send_response(self, req, response, content_type='application/json'):
-            self.log.debug("RPC(json) encoded response: %s" % response)
+            self.log.debug("RPC(json) encoded response: %s", response)
             response = to_unicode(response).encode("utf-8")
             req.send_response(200)
             req.send_header('Content-Type', content_type)
