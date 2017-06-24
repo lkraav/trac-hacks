@@ -18,7 +18,7 @@ if cmdclass:
     }
 
 setup(name='TracCustomFieldAdmin',
-      version='0.2.12',
+      version='0.2.13',
       packages=['customfieldadmin'],
       author='CodeResort.com & Optaros.com',
       description='Admin panel for managing Trac ticket custom fields.',
@@ -32,7 +32,7 @@ setup(name='TracCustomFieldAdmin',
       tests_require = [],
       package_data={'customfieldadmin' : ['htdocs/css/*.css',
                                'htdocs/js/*.js',
-                               'templates/*.html', 
+                               'templates/*.html',
                                'locale/*/LC_MESSAGES/*.mo',]},
       install_requires = ['Genshi >= 0.5', 'Trac >= 0.11'],
       extras_require = {'Babel': 'Babel>= 0.9.5', 'Trac': 'Trac >= 0.12'},
