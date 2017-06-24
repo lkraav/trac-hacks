@@ -7,6 +7,7 @@ License: BSD
 """
 
 import inspect
+import re
 import types
 from datetime import datetime
 import xmlrpclib
@@ -15,7 +16,7 @@ from trac.core import *
 from trac.perm import IPermissionRequestor
 
 __all__ = ['expose_rpc', 'IRPCProtocol', 'IXMLRPCHandler', 'AbstractRPCHandler',
-            'Method', 'XMLRPCSystem', 'Binary', 'RPCError', 'MethodNotFound', 
+            'Method', 'XMLRPCSystem', 'Binary', 'RPCError', 'MethodNotFound',
             'ProtocolException', 'ServiceException']
 
 class Binary(xmlrpclib.Binary):
@@ -44,8 +45,8 @@ class _CompositeRpcError(RPCError):
         return u"%s details : %s" % (self.__class__.__name__, self.message)
 
 class ProtocolException(_CompositeRpcError):
-    """Protocol could not handle RPC request. Usually this means 
-    that the request has some sort of syntactic error, a library 
+    """Protocol could not handle RPC request. Usually this means
+    that the request has some sort of syntactic error, a library
     needed to parse the RPC call is not available, or similar errors."""
 
 class ServiceException(_CompositeRpcError):
@@ -68,11 +69,11 @@ def expose_rpc(permission, return_type, *arg_types):
 
 
 class IRPCProtocol(Interface):
-    
+
     def rpc_info():
         """ Returns a tuple of (name, docs). Method provides
         general information about the protocol used for the RPC HTML view.
-        
+
         name: Shortname like 'XML-RPC'.
         docs: Documentation for the protocol.
         """
@@ -80,60 +81,60 @@ class IRPCProtocol(Interface):
     def rpc_match():
         """ Return an iterable of (path_item, content_type) combinations that
         will be handled by the protocol.
-        
+
         path_item: Single word to use for matching against
                    (/login)?/<path_item>. Answer to 'rpc' only if possible.
         content_type: Starts-with check of 'Content-Type' request header. """
 
     def parse_rpc_request(req, content_type):
-        """ Parse RPC requests. 
-        
+        """ Parse RPC requests.
+
         req          :        HTTP request object
         content_type :        Input MIME type
-        
-        Return a dictionary with the following keys set. All the other 
-        values included in this mapping will be ignored by the core 
-        RPC subsystem, will be protocol-specific, and SHOULD NOT be 
+
+        Return a dictionary with the following keys set. All the other
+        values included in this mapping will be ignored by the core
+        RPC subsystem, will be protocol-specific, and SHOULD NOT be
         needed in order to invoke a given method.
 
         method  (MANDATORY): target method name (e.g. 'ticket.get')
         params  (OPTIONAL) : a tuple containing input positional arguments
-        headers (OPTIONAL) : if the protocol supports custom headers set 
-                              by the client, then this value SHOULD be a 
-                              dictionary binding `header name` to `value`. 
-                              However, protocol handlers as well as target 
-                              RPC methods *MUST (SHOULD ?) NOT* rely on 
-                              specific values assigned to a particular 
-                              header in order to send a response back 
+        headers (OPTIONAL) : if the protocol supports custom headers set
+                              by the client, then this value SHOULD be a
+                              dictionary binding `header name` to `value`.
+                              However, protocol handlers as well as target
+                              RPC methods *MUST (SHOULD ?) NOT* rely on
+                              specific values assigned to a particular
+                              header in order to send a response back
                               to the client.
         mimetype           : request MIME-type. This value will be set
                               by core RPC components after calling
                               this method so, please, ignore
 
-        If the request cannot be parsed this method *MUST* raise 
-        an instance of `ProtocolException` optionally wrapping another 
+        If the request cannot be parsed this method *MUST* raise
+        an instance of `ProtocolException` optionally wrapping another
         exception containing details about the failure.
         """
 
     def send_rpc_result(req, result):
-        """Serialize the result of the RPC call and send it back to 
+        """Serialize the result of the RPC call and send it back to
         the client.
-        
-        req     : Request object. The same mapping returned by 
-                  `parse_rpc_request` can be accessed through 
+
+        req     : Request object. The same mapping returned by
+                  `parse_rpc_request` can be accessed through
                   `req.rpc` (see above).
         result  : The value returned by the target RPC method
         """
 
     def send_rpc_error(req, rpcreq, e):
-        """Send a fault message back to the caller. Exception type 
-        and message are used for this purpose. This method *SHOULD* 
-        handle `RPCError`, `PermissionError`, `ResourceNotFound` and 
-        their subclasses. This method is *ALWAYS* called from within 
+        """Send a fault message back to the caller. Exception type
+        and message are used for this purpose. This method *SHOULD*
+        handle `RPCError`, `PermissionError`, `ResourceNotFound` and
+        their subclasses. This method is *ALWAYS* called from within
         an exception handler.
-        
-        req     : Request object. The same mapping returned by 
-                  `parse_rpc_request` can be accessed through 
+
+        req     : Request object. The same mapping returned by
+                  `parse_rpc_request` can be accessed through
                   `req.rpc` (see above).
         e       : exception object describing the failure
         """
@@ -149,7 +150,7 @@ class IXMLRPCHandler(Interface):
         """ Return an iterator of (permission, signatures, callable[, name]),
         where callable is exposed via XML-RPC if the authenticated user has the
         appropriate permission.
-            
+
         The callable itself can be a method or a normal method. The first
         argument passed will always be a request object. The XMLRPCSystem
         performs some extra magic to remove the "self" and "req" arguments when
@@ -276,7 +277,7 @@ class XMLRPCSystem(Component):
         yield ('XML_RPC', ((list,),), self.getAPIVersion)
 
     def get_method(self, method):
-        """ Get an RPC signature by full name. """ 
+        """ Get an RPC signature by full name. """
         for provider in self.method_handlers:
             for candidate in provider.xmlrpc_methods():
                 #self.env.log.debug(candidate)
@@ -284,7 +285,7 @@ class XMLRPCSystem(Component):
                 if p.name == method:
                     return p
         raise MethodNotFound('RPC method "%s" not found' % method)
-        
+
     # Exported methods
     def all_methods(self, req):
         """ List all methods exposed via RPC. Returns a list of Method objects. """
@@ -336,4 +337,5 @@ class XMLRPCSystem(Component):
         indicate API breaking changes, while minor version changes are simple
         additions, bug fixes, etc. """
         import tracrpc
-        return map(int, tracrpc.__version__.split('-')[0].split('.'))
+        match = re.match(r'([0-9]+)\.([0-9]+)\.([0-9]+)', tracrpc.__version__)
+        return map(int, match.groups())
