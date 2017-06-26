@@ -1,15 +1,15 @@
 # Translations template for TracCustomFieldAdmin.
-# Copyright (C) 2012 CodeResort.com (BV Network AS)
+# Copyright (C) 2017 CodeResort.com (BV Network AS)
 # This file is distributed under the same license as the
 # TracCustomFieldAdmin project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2012.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: TracCustomFieldAdmin 0.2.8\n"
+"Project-Id-Version: TracCustomFieldAdmin 0.2.13\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2012-01-24 13:47+0100\n"
+"POT-Creation-Date: 2017-06-26 06:39+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,53 +18,62 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: customfieldadmin/admin.py:33
+#: customfieldadmin/admin.py:34
 msgid "Ticket System"
 msgstr ""
 
-#: customfieldadmin/admin.py:34
+#: customfieldadmin/admin.py:35
 msgid "Custom Fields"
 msgstr ""
 
-#: customfieldadmin/admin.py:65
+#: customfieldadmin/admin.py:66
 #, python-format
 msgid "Custom field %(name)s does not exist."
 msgstr ""
 
-#: customfieldadmin/admin.py:94
+#: customfieldadmin/admin.py:95
 msgid "No custom field selected"
 msgstr ""
 
-#: customfieldadmin/admin.py:123
+#: customfieldadmin/admin.py:125
 msgid ""
 "Custom Fields are not correctly sorted. This may affect appearance "
 "when viewing tickets."
 msgstr ""
 
-#: customfieldadmin/api.py:87
+#: customfieldadmin/api.py:95
 msgid "Custom field requires attributes 'name' and 'type'."
 msgstr ""
 
-#: customfieldadmin/api.py:92
+#: customfieldadmin/api.py:101
+#, python-format
+msgid "Field name '%(name)s' is reserved"
+msgstr ""
+
+#: customfieldadmin/api.py:105
 msgid ""
 "Only alphanumeric characters allowed for custom field name ('a-z' or "
 "'0-9' or '_'), with 'a-z' as first character."
 msgstr ""
 
-#: customfieldadmin/api.py:98
+#: customfieldadmin/api.py:111
 msgid "Custom field name must begin with a character (a-z)."
 msgstr ""
 
-#: customfieldadmin/api.py:102
+#: customfieldadmin/api.py:115
 #, python-format
 msgid "%(field_type)s is not a valid field type"
 msgstr ""
 
-#: customfieldadmin/api.py:107
+#: customfieldadmin/api.py:120
 msgid "Can not create as field already exists."
 msgstr ""
 
-#: customfieldadmin/api.py:157
+#: customfieldadmin/api.py:123
+msgid "Can't create a custom field with the same name as a built-in field."
+msgstr ""
+
+#: customfieldadmin/api.py:174
 #, python-format
 msgid "Custom Field '%(name)s' does not exist. Cannot update."
 msgstr ""
@@ -86,12 +95,12 @@ msgid "Name (cannot modify):"
 msgstr ""
 
 #: customfieldadmin/templates/customfieldadmin.html:28
-#: customfieldadmin/templates/customfieldadmin.html:91
+#: customfieldadmin/templates/customfieldadmin.html:94
 msgid "Type:"
 msgstr ""
 
 #: customfieldadmin/templates/customfieldadmin.html:39
-#: customfieldadmin/templates/customfieldadmin.html:100
+#: customfieldadmin/templates/customfieldadmin.html:103
 msgid "Label:"
 msgstr ""
 
@@ -119,84 +128,84 @@ msgstr ""
 msgid "Columns:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:72
-#: customfieldadmin/templates/customfieldadmin.html:128
+#: customfieldadmin/templates/customfieldadmin.html:74
+#: customfieldadmin/templates/customfieldadmin.html:133
 msgid "Rows:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:76
+#: customfieldadmin/templates/customfieldadmin.html:79
 msgid "Cancel"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:77
+#: customfieldadmin/templates/customfieldadmin.html:80
 msgid "Save"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:84
+#: customfieldadmin/templates/customfieldadmin.html:87
 msgid "Add Custom Field:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:86
+#: customfieldadmin/templates/customfieldadmin.html:89
 msgid "Name:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:105
+#: customfieldadmin/templates/customfieldadmin.html:108
 msgid "Default value:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:110
+#: customfieldadmin/templates/customfieldadmin.html:113
 msgid "Format:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:119
+#: customfieldadmin/templates/customfieldadmin.html:122
 msgid "Options:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:127
+#: customfieldadmin/templates/customfieldadmin.html:130
 msgid "Size of Textarea:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:127
+#: customfieldadmin/templates/customfieldadmin.html:130
 msgid "Cols:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:133
+#: customfieldadmin/templates/customfieldadmin.html:138
 msgid "Add"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:139
+#: customfieldadmin/templates/customfieldadmin.html:144
 msgid "No Custom Fields defined for this project."
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:147
+#: customfieldadmin/templates/customfieldadmin.html:152
 msgid "Name"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:148
+#: customfieldadmin/templates/customfieldadmin.html:153
 msgid "Type"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:149
+#: customfieldadmin/templates/customfieldadmin.html:154
 msgid "Label"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:150
+#: customfieldadmin/templates/customfieldadmin.html:155
 msgid "Order"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:157
+#: customfieldadmin/templates/customfieldadmin.html:162
 msgid "Field cannot be deleted (declared in source code)"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:171
+#: customfieldadmin/templates/customfieldadmin.html:176
 msgid "Currently outside regular range"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:180
+#: customfieldadmin/templates/customfieldadmin.html:185
 msgid "Remove selected items"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:182
+#: customfieldadmin/templates/customfieldadmin.html:187
 msgid "Apply changes"
 msgstr ""
 
