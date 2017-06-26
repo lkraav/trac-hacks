@@ -93,12 +93,13 @@ class CustomFields(Component):
         if not (cfield.get('name') and cfield.get('type')):
             raise TracError(
                     _("Custom field requires attributes 'name' and 'type'."))
+        # Use lowercase custom fieldnames only
+        cfield['name'] = cfield['name'].lower()
+        # Check field name is not reserved
         tktsys = TicketSystem(self.env)
         if cfield['name'] in tktsys.reserved_field_names:
             raise TracError(_("Field name '%(name)s' is reserved",
                               name=cfield['name']))
-        # Use lowercase custom fieldnames only
-        cfield['name'] = cfield['name'].lower()
         # Only alphanumeric characters (and [-_]) allowed for custom fieldname
         if re.search('^[a-z][a-z0-9_]+$', cfield['name']) == None:
             raise TracError(_("Only alphanumeric characters allowed for " \

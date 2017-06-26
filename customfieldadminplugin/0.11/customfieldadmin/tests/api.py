@@ -147,6 +147,14 @@ class CustomFieldApiTestCase(unittest.TestCase):
         except TracError, e:
             self.assertTrue("foo_type" in e.message)
 
+    def test_verify_reserved_names(self):
+        cf = {'name': 'group', 'type': 'text', 'label': 'Group'}
+        self.assertRaises(TracError, self.cf_api.verify_custom_field, cf)
+        cf = {'name': 'Group', 'type': 'text'}
+        self.assertRaises(TracError, self.cf_api.verify_custom_field, cf)
+        cf = {'name': 'group_', 'type': 'text', 'label': 'Group'}
+        self.cf_api.verify_custom_field(cf)  # no errors
+
 
 class CustomFieldL10NTestCase(unittest.TestCase):
 
