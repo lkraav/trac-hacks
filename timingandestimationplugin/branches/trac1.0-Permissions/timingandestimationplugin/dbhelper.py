@@ -12,18 +12,17 @@ def is_db_type(db, typeToVerify):
 
 def get_all(env, sql, *params):
     """Executes the query and returns the (description, data)"""
-    db = env.get_read_db()
-    cur = db.cursor()
-    desc  = None
-    data = None
-    try:
-        cur.execute(sql, params)
-        data = list(cur.fetchall())
-        desc = cur.description
-    except Exception, e:
-        env.log.exception('There was a problem executing sql:%s \n \
-with parameters:%s\nException:%s'%(sql, params, e));
-   
+    with env.db_query as db:
+        cur = db.cursor()
+        desc = None
+        data = None
+        try:
+            cur.execute(sql, params)
+            data = list(cur.fetchall())
+            desc = cur.description
+        except Exception, e:
+            env.log.exception('There was a problem executing sql:%s \n \
+    with parameters:%s\nException:%s' % (sql, params, e))
     return (desc, data)
 
 def execute_non_query(env, sql, *params):
@@ -32,16 +31,16 @@ def execute_non_query(env, sql, *params):
    
 def get_first_row(env, sql,*params):
     """ Returns the first row of the query results as a tuple of values (or None)"""
-    db = env.get_read_db()
-    cur = db.cursor()
-    data = None;
-    try:
-        cur.execute(sql, params)
-        data = cur.fetchone();
-    except Exception, e:
-        env.log.exception('There was a problem executing sql:%s \n \
-        with parameters:%s\nException:%s'%(sql, params, e));
-    return data;
+    data = None
+    with env.db_query as db:
+        cur = db.cursor()
+        try:
+            cur.execute(sql, params)
+            data = cur.fetchone();
+        except Exception, e:
+            env.log.exception('There was a problem executing sql:%s \n \
+            with parameters:%s\nException:%s' % (sql, params, e))
+    return data
 
 def get_scalar(env, sql, col=0, *params):
     """ Gets a single value (in the specified column) from the result set of the query"""
@@ -56,8 +55,7 @@ def execute_in_trans(env, *args):
     c_sql =[None]
     c_params = [None]
     try:
-        @env.with_transaction()
-        def fn(db):
+        with env.db_transaction as db:
             cur = db.cursor()
             for sql, params in args:
                 c_sql[0] = sql
@@ -65,7 +63,7 @@ def execute_in_trans(env, *args):
                 cur.execute(sql, params)
     except Exception, e :
         env.log.exception('There was a problem executing sql:%s \n \
-    with parameters:%s\nException:%s'%(c_sql[0], c_params[0], e));
+    with parameters:%s\nException:%s' % (c_sql[0], c_params[0], e));
         raise e
     return result
 
@@ -73,8 +71,7 @@ def execute_in_nested_trans(env, name, *args):
     result = True
     c_sql =[None]
     c_params = [None]
-    @env.with_transaction()
-    def fn(db):
+    with self.env.db_transaction as db:
         cur = None
         try:
             cur = db.cursor()
@@ -92,13 +89,13 @@ def execute_in_nested_trans(env, name, *args):
     return result
 
 def current_schema (env):
-    db = env.get_read_db()
-    if is_db_type(db, trac.db.sqlite_backend.SQLiteConnection):
-        return None
-    elif is_db_type(db, trac.db.mysql_backend.MySQLConnection):
-        return get_scalar(env, 'SELECT schema();')
-    elif is_db_type(db, trac.db.postgres_backend.PostgreSQLConnection):
-        return get_scalar(env, 'SHOW search_path;')
+    with env.db_query as db:
+        if is_db_type(db, trac.db.sqlite_backend.SQLiteConnection):
+            return None
+        elif is_db_type(db, trac.db.mysql_backend.MySQLConnection):
+            return get_scalar(env, 'SELECT schema();')
+        elif is_db_type(db, trac.db.postgres_backend.PostgreSQLConnection):
+            return get_scalar(env, 'SHOW search_path;')
 
 def _prep_schema(s):
     #remove double quotes, escape single quotes
@@ -107,17 +104,17 @@ def _prep_schema(s):
                      for i in s.split(',')))
 
 def db_table_exists(env,  table):
-    db = env.get_read_db()
-    cnt = None
-    if is_db_type(db, trac.db.sqlite_backend.SQLiteConnection):
-        sql = "select count(*) from sqlite_master where type = 'table' and name = %s"
-        cnt = get_scalar(env, sql, 0, table)
-    else:
-        sql = """SELECT count(*) FROM information_schema.tables 
-                 WHERE table_name = %%s and table_schema in (%s)
-              """ % _prep_schema(current_schema(env))
-        cnt = get_scalar(env, sql, 0, table)
-    return cnt > 0
+    cnt = 0
+    with env.db_query as db:
+        if is_db_type(db, trac.db.sqlite_backend.SQLiteConnection):
+            sql = "select count(*) from sqlite_master where type = 'table' and name = %s"
+            cnt = get_scalar(env, sql, 0, table)
+        else:
+            sql = """SELECT count(*) FROM information_schema.tables
+                     WHERE table_name = %%s and table_schema in (%s)
+                  """ % _prep_schema(current_schema(env))
+            cnt = get_scalar(env, sql, 0, table)
+    return cnt
 
 def get_column_as_list(env, sql, col=0, *params):
     data = get_all(env, sql, *params)[1] or ()

@@ -9,6 +9,10 @@ def identity(x):
 
 def convertfloat(x):
     "some european countries use , as the decimal separator"
+    if not x:
+        return 0.0
+    if isinstance(x, float) or isinstance(x, int):
+        return x
     x = str(x).strip()
     if len(x) > 0:
         return float(x.replace(',','.'))
