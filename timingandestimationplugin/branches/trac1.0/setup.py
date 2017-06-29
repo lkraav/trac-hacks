@@ -31,6 +31,9 @@ setup(name=PACKAGE,
 
 ##
 
+## lkraav
+## Upgrade db interface for v 1.3
+
 ## Alessio Massaro
 ## trac-hacks user: masariello
 ## Helped Get Reports working in postgres
