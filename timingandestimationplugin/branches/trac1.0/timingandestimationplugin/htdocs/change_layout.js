@@ -20,58 +20,52 @@ var TandE_MoveAddHours = function(){
  *   Email: josh@oxideinteractive.com.au
  */
 $.prototype.cleanupTable = function() {
-    // make sure that body
-    if($(this).is('table')) {
-        var bodies = $(this).children('thead, tbody, tfoot');
-    } else if($(this).is('thead, tbody, tfoot')) {
-        var bodies = $(this);
-    } else {
-        return;
-    }
-    // helper to determine if a table cell has visible content
-    var has_contents =function(it){
-      var t=$(it).text();
-      if(t && $.trim(t).length>0 ) return true;
-      return false;
-    };
+  // make sure that body
+  if($(this).is('table')) {
+    var bodies = $(this).children('thead, tbody, tfoot');
+  } else if($(this).is('thead, tbody, tfoot')) {
+    var bodies = $(this);
+  } else {
+    return;
+  }
+  // helper to determine if a table cell has visible content
+  var has_contents =function has_contents(it){
+    if(!it) return it;
+    var t=$(it).text();
+    if(t && $.trim(t).length>0 ) return true;
+    return false;
+  };
+  var push = function push(l, k0, k1){
+    if(has_contents(k0) || has_contents(k1)) l.push([k0, k1]);
+  }
+  $(bodies).each(function(bodyIdx, body){
+    body = $(body);
+    var trs = $(body).children('tr');
+    var leftTds=[], rightTds=[];
+    $(trs).each(function(ind, val){
+      var kids = $(this).children();
 
-    $(bodies).each(function(bodyIdx, body){
-      body = $(body);
-      var trs = $(body).children('tr');
-      var leftTds = [], rightTds = [], extraTDs=[];
-      $(trs).each(function(ind, val){
-        var kids = $(this).children();
-
-        // special case for things that get removed badly (eg: CondFieldsGenshiPlugin)
-        // this is a two cell row in a table full of 4 cell rows
-        if(kids.length == 2 && !$(kids[1]).is('.fullrow')){
-          $(this).detach();
-          extraTDs.push([kids[0], kids[1]]);
-        }
-        else if(kids.length == 4){
-          $(this).detach();
-          if(has_contents(kids[0]) || has_contents(kids[1]))
-            leftTds.push([kids[0], kids[1]]);
-          //else console.log('skipping empty', kids);
-          if(has_contents(kids[2]) || has_contents(kids[3]))
-            rightTds.push([kids[2], kids[3]]);
-          //else console.log('skipping empty', kids);
-        };
-      });
-      //console.log(leftTds,rightTds, extraTDs);
-      while(leftTds.length>0 || rightTds.length>0 || extraTDs.length>0){
-        var tr = $('<tr>');
-        var leftContent = leftTds.shift() || extraTDs.shift() || [$("<td>"),$("<td>")];
-        var rightContent = rightTds.shift() || extraTDs.shift() || [$("<td>"),$("<td>")];
-        tr.append(leftContent[0]).append(leftContent[1])
-          .append(rightContent[0]).append(rightContent[1]);
-        $(body).append(tr);
-      }
+      push(leftTds, kids[0], kids[1]);
+      push(rightTds, kids[2], kids[3]);
+      $(this).detach();
     });
+    //console.log('Reordering Fields: \nleft:', leftTds, '\nright:',rightTds);
+    while(leftTds.length>0 || rightTds.length>0){
+      var tr = $('<tr>');
+      var leftContent = leftTds.shift() || rightTds.shift();
+      tr.append(leftContent[0]).append(leftContent[1]);
+      if($(leftContent[1]).attr('colspan')!="3"){ // dont already have a full row
+        var rightContent = rightTds.shift();
+        if(rightContent) tr.append(rightContent[0]).append(rightContent[1]);
+      }
+      $(body).append(tr);
+    }
+    // console.log('Finished Reordering Fields: \nleft:', leftTds, '\nright:',rightTds);
+  });
 };
 
 $(document).ready(function() {
-   // Give other layout changing functions time to run
+  // Give other layout changing functions time to run
 
   // move add hours input to next to the comment box
   TandE_MoveAddHours();
