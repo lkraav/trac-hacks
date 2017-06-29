@@ -23,7 +23,6 @@ def get_all(env, sql, *params):
         except Exception, e:
             env.log.exception('There was a problem executing sql:%s \n \
     with parameters:%s\nException:%s' % (sql, params, e))
-   
     return (desc, data)
 
 def execute_non_query(env, sql, *params):
@@ -32,15 +31,16 @@ def execute_non_query(env, sql, *params):
    
 def get_first_row(env, sql,*params):
     """ Returns the first row of the query results as a tuple of values (or None)"""
+    data = None
     with env.db_query as db:
         cur = db.cursor()
-        data = None
         try:
             cur.execute(sql, params)
             data = cur.fetchone();
         except Exception, e:
             env.log.exception('There was a problem executing sql:%s \n \
             with parameters:%s\nException:%s' % (sql, params, e))
+    return data
 
 def get_scalar(env, sql, col=0, *params):
     """ Gets a single value (in the specified column) from the result set of the query"""
@@ -104,8 +104,8 @@ def _prep_schema(s):
                      for i in s.split(',')))
 
 def db_table_exists(env,  table):
+    cnt = 0
     with env.db_query as db:
-        cnt = None
         if is_db_type(db, trac.db.sqlite_backend.SQLiteConnection):
             sql = "select count(*) from sqlite_master where type = 'table' and name = %s"
             cnt = get_scalar(env, sql, 0, table)
@@ -114,6 +114,7 @@ def db_table_exists(env,  table):
                      WHERE table_name = %%s and table_schema in (%s)
                   """ % _prep_schema(current_schema(env))
             cnt = get_scalar(env, sql, 0, table)
+    return cnt
 
 def get_column_as_list(env, sql, col=0, *params):
     data = get_all(env, sql, *params)[1] or ()
