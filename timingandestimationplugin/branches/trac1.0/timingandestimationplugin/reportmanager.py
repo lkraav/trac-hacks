@@ -72,8 +72,7 @@ class CustomReportManager:
     """ Adds a row the custom_report_table """
     self.log.debug("Inserting new report '%s' with uuid '%s'" % (title,uuid))
     new_id = []
-    @self.env.with_transaction()
-    def fn(db):
+    with self.env.db_transaction as db:
         cur = db.cursor()
         cur.execute("DELETE FROM custom_report WHERE uuid=%s", (uuid,))
         cur.execute("INSERT INTO report (title, author, description, query) "

@@ -1,2 +1,3 @@
 2017-06-30 - Russ Tyndall
  - Remove defunct, unused macros include in billing.html
+ - Update database access for proper trac 1.1

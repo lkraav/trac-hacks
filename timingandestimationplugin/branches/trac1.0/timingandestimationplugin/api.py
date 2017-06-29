@@ -204,7 +204,7 @@ class TimeTrackingSetupParticipant(Component):
         self.log.debug( "T&E End User Manual Upgrade");
 
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, db=None):
         """Called when Trac checks whether the environment needs to be upgraded.
 
         Should return `True` if this participant needs an upgrade to be
@@ -225,7 +225,7 @@ class TimeTrackingSetupParticipant(Component):
         for i in res: r |= i
         return r
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         """Actually perform an environment upgrade.
 
         Implementations of this method should not commit any database

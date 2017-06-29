@@ -105,8 +105,7 @@ class TimeTrackingTicketObserver(Component):
 
     def watch_hours(self, ticket):
         ticket_id = ticket.id
-        @self.env.with_transaction()
-        def fn(db):
+        with self.env.db_transaction as db:
             update_hours_to_floats(db, ticket_id)
             save_custom_field_value( db, ticket_id, "hours", '0')
             insert_totalhours_changes( db, ticket_id )
