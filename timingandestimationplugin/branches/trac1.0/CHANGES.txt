@@ -3,3 +3,4 @@
  - #13080 Update database access for proper trac 1.1 Thanks lkraav
  - #13219 be more forgiving about what goes through convert float
    in ticket daemon
+ - #11280 Change billing html a bit

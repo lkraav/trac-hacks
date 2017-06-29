@@ -26,6 +26,7 @@
     </py:for>
   </div>
 
+  <h1>Report Criteria</h1>
   <table border="0" cellspacing="0" cellpadding="0" class="minorsection">
     <tr>
       <td colspan="2" >
@@ -80,9 +81,10 @@
       </td>
     </tr>
   </table>
-  <ul id="reportlinks">
+
   <py:for each="key in reports" >
-    <li>${reports[key]["title"]}
+    <div>
+      <h2 class="title">${reports[key]["title"]}</h2>
       <h6 class="description">${reports[key]["description"]}</h6>
       <ul>
         <py:for each="report in reports[key]['reports']">
@@ -91,11 +93,9 @@
           </a></li>     
        </py:for>
       </ul>
-    </li>
+    </div>
   </py:for>
 
-  </ul>
-  <hr />
   <label for="newbilltime">New bill time
     <span class="note">(leave blank for to set to now;  YYYY-MM-DD HH:MM:SS)</span>
   </label>
