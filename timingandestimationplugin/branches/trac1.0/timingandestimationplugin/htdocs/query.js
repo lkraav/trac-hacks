@@ -2,6 +2,7 @@ $(document).ready(function(){
   // Fields we will total
   var columns = ['totalhours','estimatedhours'];
   var tbodies = $('table.listing.tickets tbody');
+  var addFooter = false;
 
   tbodies.each(function(idx, tbody){
     tbody = $(tbody);
@@ -27,10 +28,11 @@ $(document).ready(function(){
       });
 
       //set total text in each footer row
-      $('td.'+field,totalsRow).text(total.toString());
+      if(!isNaN(total) && total ){
+        addFooter = true;
+        $('td.'+field,totalsRow).text(total.toString());
+      }
     });
-
-    // attach footer row
-    tbody.after(tfoot);
+    if(addFooter) tbody.after(tfoot);
   });
 });
