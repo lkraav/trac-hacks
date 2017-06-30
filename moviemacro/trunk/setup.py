@@ -30,7 +30,7 @@ setup(
     author_email='lcordier@gmail.com',
     maintainer='Tetsuya Morimoto',
     maintainer_email='tetsuya dot morimoto at gmail dot com',
-    url='http://trac-hacks.org/wiki/MovieMacro/',
+    url='https://trac-hacks.org/wiki/MovieMacro/',
     license="Apache License 2.0",
     keywords='trac plugin movie video html5 macro',
     platforms=['unix', 'linux', 'osx', 'cygwin', 'win32'],

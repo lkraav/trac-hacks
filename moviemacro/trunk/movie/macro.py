@@ -5,14 +5,14 @@
     Embeds various online movies.
 """
 import mimetypes
-from datetime import datetime
-from os.path import join as pathjoin
+from posixpath import join as pathjoin
 from urlparse import urlparse
 
 from pkg_resources import resource_filename
 from trac.core import TracError
 from trac.core import implements
 from trac.resource import Resource, get_resource_url
+from trac.util import hex_entropy
 from trac.util.html import html as tag
 from trac.util.presentation import to_json
 from trac.web.api import IRequestFilter
@@ -157,8 +157,7 @@ class MovieMacro(WikiMacroBase):
     # Private methods
 
     def _generate_player_id(self):
-        now = datetime.now()
-        return 'player-%s-%s' % (now.strftime('%s'), now.microsecond)
+        return 'player-' + hex_entropy()
 
     def _get_absolute_url(self, req, url):
         """ Generate an absolute url from the url with the special schemes

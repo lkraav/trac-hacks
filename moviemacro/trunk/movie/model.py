@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from os.path import join as pathjoin
+from posixpath import join as pathjoin
 
 
 class MovieMacroConfig(object):
