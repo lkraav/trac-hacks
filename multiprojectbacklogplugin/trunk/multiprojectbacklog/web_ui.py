@@ -102,8 +102,8 @@ class MultiProjectBacklog(Component):
                     return True
 
             for count, in db("""
-                    SELECT COUNT(*) FROM ticket AS t 
-                     LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
+                    SELECT COUNT(*) FROM ticket AS t
+                     LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id
                     WHERE mp_backlog.ticket_id IS NULL
                     """):
                 if count:
@@ -126,7 +126,7 @@ class MultiProjectBacklog(Component):
 
             # Clean out any ranks that don't have tickets.
             db("""
-                DELETE FROM mp_backlog 
+                DELETE FROM mp_backlog
                 WHERE ticket_id NOT IN (SELECT id FROM ticket)
                 """)
 
@@ -140,7 +140,7 @@ class MultiProjectBacklog(Component):
             # Make sure that all tickets have a rank
             for ticket_id, in db("""
                     SELECT t.id FROM ticket AS t
-                     LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id 
+                     LEFT JOIN mp_backlog ON t.id = mp_backlog.ticket_id
                     WHERE mp_backlog.ticket_id IS NULL
                     """):
                 # Insert a default rank for the ticket, using the ticket id
@@ -168,7 +168,7 @@ $proj
         """Get a dictionary holding milestones for each smp project.
         @param req: Request object
 
-        @return: dictionary with project name as key and a list of milestones 
+        @return: dictionary with project name as key and a list of milestones
                  as value.
         """
         all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(
@@ -230,8 +230,9 @@ $proj
 
         with self.env.db_transaction as db:
             for rank, in db("SELECT MAX(rank) FROM mp_backlog"):
-                rank += 1
-                break
+                if rank:
+                    rank += 1
+                    break
             else:
                 rank = 1
             db("""
@@ -318,10 +319,10 @@ $proj
                 # field to null, instead of the empty string.
                 query = """
                     SELECT id FROM ticket t
-                     LEFT JOIN enum p 
+                     LEFT JOIN enum p
                       ON p.name = t.priority AND p.type = 'priority'
                      LEFT JOIN mp_backlog bp ON bp.ticket_id = t.id
-                    WHERE status <> 'closed' AND 
+                    WHERE status <> 'closed' AND
                      (milestone = '' or milestone is null)
                     ORDER BY bp.rank, %s, t.type, time
                     """ % db.cast('p.value', 'int')
@@ -368,7 +369,7 @@ $proj
                     new_rank -= 1
                 else:
                     db("""
-                        UPDATE mp_backlog SET rank = rank + 1 
+                        UPDATE mp_backlog SET rank = rank + 1
                         WHERE rank >= %s AND rank < %s
                         """, (new_rank, old_rank))
 
@@ -413,12 +414,12 @@ $proj
 
                 if old_rank < new_rank:
                     db("""
-                        UPDATE mp_backlog SET rank = rank - 1 
+                        UPDATE mp_backlog SET rank = rank - 1
                         WHERE rank > %s AND rank <= %s
                         """, (old_rank, new_rank))
                 elif old_rank >= new_rank:
                     db("""
-                        UPDATE mp_backlog SET rank = rank + 1 
+                        UPDATE mp_backlog SET rank = rank + 1
                         WHERE rank > %s AND rank <= %s
                         """, (new_rank, old_rank))
                     new_rank += 1
