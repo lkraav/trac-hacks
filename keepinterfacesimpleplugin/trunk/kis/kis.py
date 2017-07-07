@@ -74,13 +74,17 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
         '''
         if req.path_info.startswith('/newticket'):
             return False
+        try:
+            this_ticket_id = int(req.args['id'])
+        except ValueError:
+            return False
 
         for child, parent in self.env.db_query(
                 'SELECT ticket, value FROM ticket_custom WHERE name="parent"'):
             parent_match = re.match('#(\d+)', parent or '')
             if parent_match:
                 parent_id = int(parent_match.group(1))
-                if parent_id == int(req.args['id']):
+                if parent_id == this_ticket_id
                     child_ticket = Ticket(self.env, int(child))
                     if child_ticket['status'] != 'closed':
                         return True
