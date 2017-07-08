@@ -84,7 +84,7 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
             parent_match = re.match('#(\d+)', parent or '')
             if parent_match:
                 parent_id = int(parent_match.group(1))
-                if parent_id == this_ticket_id
+                if parent_id == this_ticket_id:
                     child_ticket = Ticket(self.env, int(child))
                     if child_ticket['status'] != 'closed':
                         return True
