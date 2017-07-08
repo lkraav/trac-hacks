@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 #------------------------------------------------------------------------------
-# Copyright (c) Jonathan Ashley <trac@ifton.co.uk> 2015-2016
+# Copyright (c) Jonathan Ashley <trac@ifton.co.uk> 2015-2017
 #------------------------------------------------------------------------------
 #
 # This file is part of the Keep Interface Simple plugin for Trac.
@@ -230,11 +230,11 @@ class Lexer():
                 if v == None and not text.startswith('_'):
                     raise ConfigurationError(
                         "No field named '%s' is defined" % text,
-                        title='Error in trac.ini [kis_warden]')
+                        title='Error in trac.ini [kis2_warden]')
         else:
             raise ConfigurationError(
                 'Unrecognised token: %s' % self.look[1],
-                title='Syntax error in trac.ini [kis_warden]')
+                title='Syntax error in trac.ini [kis2_warden]')
         return v, text
 
     def func_term(self):
@@ -257,7 +257,7 @@ class Lexer():
             else:
                 raise ConfigurationError(
                     "Function '%s' has no implementation" % text,
-                     title='Missing plugin or error in trac.ini [kis_warden]',
+                     title='Missing plugin or error in trac.ini [kis2_warden]',
                      show_traceback=True)
             text = '%s(%s)' % (text, text2)
         return v, text
@@ -376,7 +376,7 @@ class Lexer():
             if self.look[1] != ':':
                 raise ConfigurationError(
                     'Unexpected terminal: %s' % self.look[1],
-                     title='Syntax error in trac.ini [kis_warden]',
+                     title='Syntax error in trac.ini [kis2_warden]',
                      show_traceback=True)
             else:
                 self.match(':')
@@ -397,7 +397,7 @@ class KisWarden(Component):
 
     The configuration file structure is
 {{{
-[kis_warden]
+[kis2_warden]
 <rule name> = <boolean valued expression>
 }}}
     Expressions describe the state of the ticket after a change has been submitted. If the expression for any rule evaluates to 'true', then the change is blocked.
@@ -505,7 +505,14 @@ only designated approver can approve = !has_role('approver') && approval != _app
         lexer = Lexer(symbol_table, self.config_functions, req)
         errors = []
 
-        for rule, predicate in self.config.options('kis_warden'):
+        warden_rules = self.config.options('kis2_warden')
+        for test_value in self.config.options('kis2_warden'):
+            break
+        else:
+            # No rules defined under 'kis2_warden'; try 'kis_warden'.
+            warden_rules = self.config.options('kis_warden')
+
+        for rule, predicate in warden_rules:
             e, text = lexer.evaluate(predicate)
             if e:
                 errors.append((None, "%s (%s)" % (rule, predicate)))
@@ -519,7 +526,7 @@ class KisAssistant(Component):
 === Configuration file ===
     The configuration file structure is:
 {{{
-[kis_assistant]
+[kis2_assistant]
 <field_or_action_name>.visible = <boolean valued expression>
 <field_name>.available.<option_set_name> = <boolean valued expression>
 <field_name>.options.<option_set_name> = <list of string valued expressions>
@@ -646,7 +653,7 @@ evaluation.available.none = evaluation_template == 'None'
 
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
-        return [('kis', resource_filename(__name__, 'htdocs'))]
+        return [('kis2', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
         return []
@@ -659,7 +666,12 @@ evaluation.available.none = evaluation_template == 'None'
         if req.path_info.startswith('/newticket') or \
                 req.path_info.startswith('/ticket/'):
             # Create and include the initial data dump.
-            items = self.config.options('kis_assistant')
+            items = self.config.options('kis2_assistant')
+            for test_value in self.config.options('kis2_assistant'):
+                break
+            else:
+                # No rules defined under 'kis2_assistant'; try 'kis_assistant'.
+                items = self.config.options('kis_assistant')
             config = {}
             for dotted_name, value in items:
                 config_traverse = config
@@ -689,15 +701,14 @@ evaluation.available.none = evaluation_template == 'None'
             if 'rv:11' in req.environ['HTTP_USER_AGENT'] \
                     or 'MSIE' in req.environ['HTTP_USER_AGENT']:
                 # Provide Promise support for Internet Explorer.
-                add_script(req, 'kis/bluebird.min.js')
-            add_script(req, 'kis/kis.js')
+                add_script(req, 'kis2/bluebird.min.js')
+            add_script(req, 'kis2/kis.js')
 
         return template, data, content_type
 
     # IRequestHandler
     def match_request(self, req):
-        return req.path_info.startswith('/ticket/kis') or \
-            req.path_info.startswith('/kis')
+        return req.path_info.endswith('/2kis_function')
 
     def process_request(self, req):
         if req.args['op'] == 'call_function':
@@ -718,14 +729,14 @@ evaluation.available.none = evaluation_template == 'None'
                 raise ConfigurationError(
                     "Function '%s' has no implementation" % config_func,
                      title='Missing plugin or error in trac.ini '
-                           '[kis_assistant]',
+                           '[kis2_assistant]',
                      show_traceback=True)
 
     # ITemplateStreamFilter
     def filter_stream(self, req, method, filename, stream, data):
         ''' Updates auto preview submission to apply filtering of fields.
         '''
-        fieldRefreshCall = 'update_fields();\n'
+        fieldRefreshCall = 'kis2.update_fields();\n'
         ticket_preview = '}, "#ticketchange .trac-loading");'
 
         # Applying changes only on ticket.html.
