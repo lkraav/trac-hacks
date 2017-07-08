@@ -415,7 +415,7 @@ function evaluate(predicate) {
     });}
 
     function func_term() {
-        function query_server(config_func, args, cache_key) {
+        function query_server(config_func, args) {
             return new Promise(function (resolve, reject) {
                 $.ajax('kis_function', {
                     data: {
@@ -456,13 +456,11 @@ function evaluate(predicate) {
                         return Promise.reject(r);
                     }
                     next_token();
-                    var cache_key = term_token + '@'
-                                    + r.value.join();
+                    var cache_key = term_token + '@' + r.value.join();
                     if (!(cache_key in evaluate.cache)) {
                         evaluate.cache[cache_key] = query_server(
                             term_token,
-                            r.value,
-                            cache_key
+                            r.value
                         );
                     }
                     return evaluate.cache[cache_key].then(function (c) {

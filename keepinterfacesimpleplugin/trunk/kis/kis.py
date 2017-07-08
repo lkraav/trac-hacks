@@ -72,7 +72,7 @@ The 'req' parameter is the HTTP request object; the remaining parameters are the
         ''' Returns True if the ticket has a child that is not closed,
             otherwise False.
         '''
-        if req.path_info.startswith('/newticket'):
+        if req.path_info.startswith('/newticket') or not req.args['id']:
             return False
         try:
             this_ticket_id = int(req.args['id'])
@@ -726,7 +726,7 @@ evaluation.available.none = evaluation_template == 'None'
         ''' Updates auto preview submission to apply filtering of fields.
         '''
         fieldRefreshCall = 'update_fields();\n'
-        ticket_preview = '}, "#ticket .trac-loading");'
+        ticket_preview = '}, "#ticketchange .trac-loading");'
 
         # Applying changes only on ticket.html.
         if filename == 'ticket.html':
