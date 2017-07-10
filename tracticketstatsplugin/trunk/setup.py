@@ -19,7 +19,7 @@ setup(
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
     license='BSD 3-Clause',
-    url='http://trac-hacks.org/wiki/TracTicketStatsPlugin',
+    url='https://trac-hacks.org/wiki/TracTicketStatsPlugin',
     description='Visualize ticket statistics',
     packages=find_packages(exclude=['*.tests']),
     entry_points="""
@@ -27,6 +27,10 @@ setup(
         ticketstats.ticketstats = ticketstats.ticketstats
         ticketstats.macro = ticketstats.macro
     """,
-    install_requires=['Trac >= 0.11', 'TracAdvParseArgsPlugin'],
+    install_requires=['Trac', 'TracAdvParseArgsPlugin'],
+    dependency_links=[
+      'https://trac-hacks.org/svn/advparseargsplugin/0.11'
+      '#egg=TracAdvParseArgsPlugin',
+    ],
     package_data={'ticketstats': ['templates/*.html']},
 )
