@@ -12,19 +12,14 @@ import re
 import random
 from datetime import timedelta, datetime
 
-from trac.config import IntOption, Option
+from tracadvparseargs import parseargs
+from trac.config import Option
 from trac.ticket.query import Query
 from trac.web.chrome import Chrome
 from trac.wiki.macros import WikiMacroBase
-from trac.util.datefmt import utc, format_date
-
-try:
-    from trac.util.datefmt import to_utimestamp as to_timestamp
-except ImportError:
-    from trac.util.datefmt import to_timestamp
+from trac.util.datefmt import format_date, to_utimestamp, utc
 
 from ticketstats import date_range
-from tracadvparseargs import parseargs           # Trac plugin
 
 # BEGIN - Stolen from trac/util/datefmt.py@8546 on trunk
 _REL_TIME_RE = re.compile(
@@ -160,21 +155,17 @@ class TicketStatsMacro(WikiMacroBase):
 
         count = 0
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
-        cursor.execute("""
-            SELECT t.id, tc.field, tc.time, tc.oldvalue, tc.newvalue,
-              t.priority
-            FROM ticket_change tc
-              INNER JOIN ticket t ON t.id = tc.ticket
-              INNER JOIN enum p ON p.name = t.priority AND p.type = 'priority'
-            WHERE tc.time > %s AND tc.time <= %s %s
-            ORDER BY tc.time
-            """ % (to_timestamp(from_date), to_timestamp(at_date),
-                   ticketFilter))
-
-        for tid, field, time, old, status, priority in cursor:
+        for tid, field, time, old, status, priority in self.env.db_query("""
+                SELECT t.id, tc.field, tc.time, tc.oldvalue, tc.newvalue,
+                       t.priority
+                FROM ticket_change tc
+                 INNER JOIN ticket t ON t.id = tc.ticket
+                 INNER JOIN enum p ON p.name = t.priority
+                  AND p.type = 'priority'
+                WHERE tc.time > %%s AND tc.time <= %%s %s
+                ORDER BY tc.time
+                """ % ticketFilter, (to_utimestamp(from_date),
+                                     to_utimestamp(at_date))):
             if field == 'status':
                 if status in ('new', 'assigned', 'reopened', 'closed', 'edit'):
                     count += status_map[status]
@@ -195,30 +186,25 @@ class TicketStatsMacro(WikiMacroBase):
 
         count = 0
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-
         # TODO clean up this query
-        cursor.execute("""
-            SELECT t.type AS type, owner, status, time AS created
-            FROM ticket t
-              INNER JOIN enum p ON p.name = t.priority
-            WHERE p.type = 'priority' AND time <= %s %s
-            """ % (to_timestamp(at_date), ticketFilter))
-
-        for rows in cursor:
+        for rows in self.env.db_query("""
+                SELECT t.type AS type, owner, status, time AS created
+                FROM ticket t
+                  INNER JOIN enum p ON p.name = t.priority
+                WHERE p.type = 'priority' AND time <= %%s %s
+                """ % ticketFilter, (to_utimestamp(at_date),)):
             count += 1
 
-        cursor.execute("""
-            SELECT t.id, tc.field, tc.time, tc.oldvalue, tc.newvalue,
-              t.priority
-            FROM ticket_change tc
-              INNER JOIN ticket t ON t.id = tc.ticket
-              INNER JOIN enum p ON p.name = t.priority AND p.type = 'priority'
-            WHERE tc.time > 0 AND tc.time <= %s %s
-            ORDER BY tc.time""" % (to_timestamp(at_date), ticketFilter))
-
-        for tid, field, time, old, status, priority in cursor:
+        for tid, field, time, old, status, priority in self.env.db_query("""
+                SELECT t.id, tc.field, tc.time, tc.oldvalue, tc.newvalue,
+                       t.priority
+                FROM ticket_change tc
+                 INNER JOIN ticket t ON t.id = tc.ticket
+                 INNER JOIN enum p ON p.name = t.priority
+                  AND p.type = 'priority'
+                WHERE tc.time > 0 AND tc.time <= %%s %s
+                ORDER BY tc.time
+                """ % ticketFilter, (to_utimestamp(at_date),)):
             if field == 'status':
                 if status in ('new', 'assigned', 'reopened', 'closed', 'edit'):
                     count += status_map[status]
@@ -226,13 +212,6 @@ class TicketStatsMacro(WikiMacroBase):
         return count
 
     def expand_macro(self, formatter, name, args):
-        """
-
-        @param formatter:
-        @param name:
-        @param args:
-        @return:
-        """
         args = _parse_args(args)
         args = _get_args_defaults(formatter.env, args)
 
@@ -297,10 +276,6 @@ class TicketStatsMacro(WikiMacroBase):
             'yui_base_url': self.yui_base_url.rstrip('/')
         }
 
-        template = Chrome(self.env).load_template('ticketstats_macro.html')
-
-        return template.generate(**data)
-
-##             "chart_data": """
-## {date: "from1to2", new_tickets:23, closed: 22, open:33 },
-## {date: "from2to3", new_tickets:20, closed: 20, open:3 }"""})
+        return Chrome(self.env).render_template(formatter.req,
+                                                'ticketstats_macro.html',
+                                                data)

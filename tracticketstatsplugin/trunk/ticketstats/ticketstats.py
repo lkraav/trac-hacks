@@ -13,17 +13,12 @@ from datetime import date, datetime, time, timedelta
 
 from genshi.builder import tag
 from trac.config import IntOption, Option
-from trac.core import *
+from trac.core import Component, TracError, implements
 from trac.ticket import Milestone
-from trac.ticket import Component as TicketComponent  # Not to interfere with Component class
-from trac.util.datefmt import format_date, parse_date, utc
+from trac.ticket import Component as TicketComponent
+from trac.util.datefmt import format_date, parse_date, to_utimestamp, utc
 from trac.web.api import IRequestHandler
 from trac.web.chrome import Chrome, INavigationContributor, ITemplateProvider
-
-try:
-    from trac.util.datefmt import to_utimestamp as to_timestamp
-except ImportError:
-    from trac.util.datefmt import to_timestamp
 
 # ************************
 DEFAULT_DAYS_BACK = 30 * 6
@@ -47,7 +42,7 @@ class TicketStatsPlugin(Component):
                                  doc='Number of days between each data point'
                                      ' (resolution) by default')
 
-    ### INavigationContributor methods
+    # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
         return 'ticketstats'
@@ -57,7 +52,7 @@ class TicketStatsPlugin(Component):
             yield ('mainnav', 'ticketstats',
                    tag.a('Ticket Stats', href=req.href.ticketstats()))
 
-    ### IRequestHandler methods
+    # IRequestHandler methods
 
     def match_request(self, req):
         return re.match(r'/ticketstats(?:_trac)?(?:/.*)?$', req.path_info)
@@ -68,7 +63,7 @@ class TicketStatsPlugin(Component):
         milestone = None
         component = None
 
-        if not None in [req.args.get('end_date'), req.args.get('start_date'),
+        if None not in [req.args.get('end_date'), req.args.get('start_date'),
                         req.args.get('resolution')]:
             # form submit
             grab_at_date = req.args.get('end_date')
@@ -121,16 +116,16 @@ class TicketStatsPlugin(Component):
 
         count = []
 
-        db = self.env.get_db_cnx()
-
         # Calculate 0th point
         last_date = from_date - timedelta(graph_res)
-        last_num_open = get_num_open_tix(db, last_date, milestone, component)
+        last_num_open = get_num_open_tix(self.env, last_date, milestone,
+                                         component)
 
         # Calculate remaining points
         for cur_date in date_range(from_date, at_date, graph_res):
-            num_open = get_num_open_tix(db, cur_date, milestone, component)
-            num_closed = get_num_closed_tix(db, last_date, cur_date,
+            num_open = get_num_open_tix(self.env, cur_date, milestone,
+                                        component)
+            num_closed = get_num_closed_tix(self.env, last_date, cur_date,
                                             milestone, component)
             date_str = format_date(cur_date)
             if graph_res != 1:
@@ -192,7 +187,7 @@ class TicketStatsPlugin(Component):
 
             return 'ticketstats.html', data, None
 
-    ### ITemplateProvider methods
+    # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
         return []
@@ -202,13 +197,11 @@ class TicketStatsPlugin(Component):
         return [resource_filename(__name__, 'templates')]
 
 
-def get_num_closed_tix(db, from_date, at_date, milestone, component):
+def get_num_closed_tix(env, from_date, at_date, milestone, component):
     """Returns an integer of the number of close ticket events counted
     between from_date to at_date."""
 
-    cursor = db.cursor()
-
-    args = [to_timestamp(from_date), to_timestamp(at_date)]
+    args = [to_utimestamp(from_date), to_utimestamp(at_date)]
     milestone_str = ''
 
     if milestone:
@@ -222,28 +215,25 @@ def get_num_closed_tix(db, from_date, at_date, milestone, component):
 
     # Count tickets between two dates (note: does not account for tickets
     # that were closed and then reopened between the two dates)
-    cursor.execute("""
-        SELECT newvalue
-        FROM ticket_change tc
-        INNER JOIN ticket t ON t.id = tc.ticket AND tc.time > %%s
-          AND tc.time <= %%s AND tc.field = 'status' %s %s
-        ORDER BY tc.time""" % (milestone_str, component_str), args)
-
     closed_count = 0
-    for (status,) in cursor:
+    for status, in env.db_query("""
+            SELECT newvalue
+            FROM ticket_change tc
+            INNER JOIN ticket t ON t.id = tc.ticket AND tc.time > %%s
+              AND tc.time <= %%s AND tc.field = 'status' %s %s
+            ORDER BY tc.time
+            """ % (milestone_str, component_str), args):
         if status == 'closed':
             closed_count += 1
 
     return closed_count
 
 
-def get_num_open_tix(db, at_date, milestone, component):
+def get_num_open_tix(env, at_date, milestone, component):
     """Returns an integer of the number of tickets currently open on that
     date."""
 
-    cursor = db.cursor()
-
-    args = [to_timestamp(at_date)]
+    args = [to_utimestamp(at_date)]
     milestone_str = ''
     if milestone:
         args.append(milestone)
@@ -256,21 +246,21 @@ def get_num_open_tix(db, at_date, milestone, component):
         component_str += 'AND t.component = %s'
 
     # Count number of tickets created before specified date
-    cursor.execute("""
-        SELECT COUNT(*) FROM ticket t
-        WHERE t.time <= %%s %s %s
-        """ % (milestone_str, component_str), args)
-    open_count = cursor.fetchone()[0]
+    open_count = 0
+    for open_count, in env.db_query("""
+            SELECT COUNT(*) FROM ticket t
+            WHERE t.time <= %%s %s %s
+            """ % (milestone_str, component_str), args):
+        break
 
     # Count closed and reopened tickets
-    cursor.execute("""
-        SELECT newvalue
-        FROM ticket_change tc
-        INNER JOIN ticket t ON t.id = tc.ticket AND tc.time > 0
-          AND tc.time <= %%s AND tc.field = 'status' %s %s
-        ORDER BY tc.time""" % (milestone_str, component_str), args)
-
-    for (status,) in cursor:
+    for status, in env.db_query("""
+            SELECT newvalue
+            FROM ticket_change tc
+            INNER JOIN ticket t ON t.id = tc.ticket AND tc.time > 0
+             AND tc.time <= %%s AND tc.field = 'status' %s %s
+            ORDER BY tc.time
+            """ % (milestone_str, component_str), args):
         if status == 'closed':
             open_count -= 1
         elif status == 'reopened':
