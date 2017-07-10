@@ -46,8 +46,8 @@
                 <tbody id="tickets">
                     <tr py:for="ticket in tickets" py:if="not mp_proj or mp_proj == ticket['project']"
                         id="ticket_${ticket.id}" class="ticket-tr">
-                        <td py:if="'id' in shown_fields" class="id"><a href="${base_path}/ticket/${ticket.id}">#$ticket.id</a></td>
-                        <td py:if="'summary' in shown_fields" class="summary"><a href="${base_path}/ticket/${ticket.id}">$ticket.summary</a></td>
+                        <td py:if="'id' in shown_fields" class="id"><a href="${href.ticket(ticket.id)}">#$ticket.id</a></td>
+                        <td py:if="'summary' in shown_fields" class="summary"><a href="${href.ticket(ticket.id)}">$ticket.summary</a></td>
                         <td py:if="'component' in shown_fields" class="component">$ticket.component</td>
                         <td py:if="'version' in shown_fields" class="version">$ticket.version</td>
                         <td py:if="'type' in shown_fields" class="type">$ticket.type</td>
@@ -67,8 +67,8 @@
                  py:with="show = not mp_proj or milestone.name == '(unscheduled)' or milestone.name in ms_for_proj[mp_proj]"
                  py:attrs="{'class': 'milestone' if show else 'hide-ms-div'}"
                  id="${milestone.id}">
-                <h4><a href="${base_path}/mpbacklog?mp_proj=$mp_proj" py:if="milestone.name == '(unscheduled)'">${milestone.name}</a>
-                    <a href="${base_path}/mpbacklog/milestone/${milestone.path}?mp_proj=$mp_proj" py:if="milestone.name != '(unscheduled)'">${milestone.name}</a></h4>
+                <h4><a href="${href.mpbacklog(mp_proj=mp_proj or None)}" py:if="milestone.name == '(unscheduled)'">${milestone.name}</a>
+                    <a href="${href.mpbacklog('milestone', milestone.name, mp_proj=mp_proj or None)}" py:if="milestone.name != '(unscheduled)'">${milestone.name}</a></h4>
                 <table>
                   <tr><td>Due:</td><td>${milestone.due}</td></tr>
                   <tr><td>Tickets:</td><td class="num_tickets">${milestone.num_tickets}</td></tr>

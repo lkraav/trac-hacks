@@ -287,7 +287,6 @@ $proj
             'tickets': self._get_active_tickets(milestone),
             'form_token': req.form_token,
             'active_milestones': self._get_active_milestones(milestone),
-            'base_path': req.base_path,
             'custom_fields': [(cf["name"], cf["label"]) for cf in
                               TicketSystem(self.env).get_custom_fields()],
             'shown_fields': req.session.get(
@@ -477,7 +476,6 @@ $proj
                 'name': name,
                 'due': format_date(due) if due else '--',
                 'num_tickets': num_tickets,
-                'path': unicode_quote(name, safe=''),
                 'id': 'MS' + unicode_to_base64(name)
             }
             results.append(d)
