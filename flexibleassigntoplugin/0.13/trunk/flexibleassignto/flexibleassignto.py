@@ -10,24 +10,18 @@
 # you should have received as part of this distribution.
 #
 
-## python imports
-from pprint import pprint, pformat
-import time
-
-## trac imports
 from trac.env import Environment
-from trac.core import *
+from trac.core import Component, ExtensionPoint, Interface, implements
 from trac.ticket.default_workflow import get_workflow_config
 from trac.ticket.model import Ticket
 from trac.util import as_bool
 from trac.util.html import html as tag
-from trac.util.translation import _
 from trac.web import IRequestFilter
 
-## versioning crud
 # $Id: flexibleassignto.py 10067 2011-04-11 14:12:41Z gt4329b $
 __version__ = '0.8.13'
-__revision__ = "$Revision: 10067 $".replace('Revision:','').replace('$','').strip()
+__revision__ = "$Revision: 10067 $".replace('Revision:', '') \
+                                   .replace('$', '').strip()
 version = __version__
 fullversion = ".".join([__version__, __revision__])
 
@@ -130,19 +124,18 @@ class FlexibleAssignTo(Component):
         Component.__init__(self, *args, **kwargs)
         self.actions = get_workflow_config(self.config)
         self.ensureUserData = self.config.getbool('flexibleassignto',
-                                                'ensure_user_data', False)
+                                                  'ensure_user_data', False)
         self.use_custom_get_known_users = self.config.getbool(
             'flexibleassignto', 'use_custom_get_known_users', False)
         if self.use_custom_get_known_users:
             self._replace_get_known_users()
 
-
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        _start = time.time()
         if not data or len(self.valid_owner_controllers) == 0:
             return template, data, content_type
         next_action_controls = data.get('action_controls', [])
@@ -158,10 +151,9 @@ class FlexibleAssignTo(Component):
                 operations = next_action_obj['operations']
                 if 'set_owner' in operations:
                     new_fragment = self._build_select(req, next_action_name,
-                                                        next_action_obj)
+                                                      next_action_obj)
                     next_action_controls[i] = (next_action_name, first_label,
-                                                        new_fragment, hints)
-        _finish = time.time()
+                                               new_fragment, hints)
         return template, data, content_type
 
     # "internal" methods
@@ -181,8 +173,8 @@ class FlexibleAssignTo(Component):
         user_objs = {}
         for voc in self.valid_owner_controllers:
             tmpusers = voc.getUsers(nextActionObj)
-            [user_objs.update({str(u.getUsername()).strip():u})
-                                                        for u in tmpusers]
+            [user_objs.update({str(u.getUsername()).strip(): u})
+             for u in tmpusers]
         user_objs = user_objs.values()
         if self.ensureUserData:
             self._ensure_user_data(user_objs)
@@ -199,8 +191,8 @@ class FlexibleAssignTo(Component):
             username = u.getUsername()
             isselected = (username == selected_owner or None)
             option_tags.append(tag.option(u.getOptionDisplay(),
-                                            selected=isselected,
-                                            value=u.getOptionValue()))
+                                          selected=isselected,
+                                          value=u.getOptionValue()))
         # build the final select control -- minus the assumed "to"
         _tag = tag.select(option_tags, id=id, name=id)
         return _tag
@@ -208,16 +200,17 @@ class FlexibleAssignTo(Component):
     def _get_allusers_session_info(self):
         """
         """
-        sql = '''
+        sql = """
             SELECT DISTINCT n.sid AS sid, n.value AS name, e.value AS email
             FROM session_attribute AS n
              LEFT JOIN session_attribute AS e ON (e.sid=n.sid
                 AND e.authenticated=1 AND e.name = 'email')
             WHERE n.authenticated=1
                 AND n.name = 'name'
-            ORDER BY n.sid'''
+            ORDER BY n.sid
+            """
         with self.env.db_query as db:
-            for username,name,email in db(sql):
+            for username, name, email in db(sql):
                 yield username, name, email
 
     def _ensure_user_data(self, users):
@@ -239,7 +232,7 @@ class FlexibleAssignTo(Component):
             _email = str(u.email).strip()
             _fullname = str(u.fullname).strip()
             if u.getUsername() and _username != '' and \
-                                            _username not in known_usernames:
+                    _username not in known_usernames:
                 with self.env.db_transaction as db:
                     cursor = db.cursor()
                     if u.email and _email != '':
@@ -247,19 +240,18 @@ class FlexibleAssignTo(Component):
                     if u.fullname and _fullname != '':
                         cursor.execute(NAME_SQL % (_username, _fullname))
 
-
     # internal method for 'use_custom_get_known_users' option
 
     def _replace_get_known_users(self):
         _wrapfunc(Environment, "get_known_users", fat_get_known_users)
         self.env.log.info("FlexibleAssignTo plugin has replaced"
-            " the default get_known_users() method in"
-            " trac.environment.Environment (per trac.ini directive"
-            " use_custom_get_known_users = true)")
+                          " the default get_known_users() method in"
+                          " trac.environment.Environment (per trac.ini"
+                          " directive use_custom_get_known_users = true)")
 
 
 def fat_get_known_users(original_callable, the_class, cnx=None,
-                                                            *args, **kwargs):
+                        *args, **kwargs):
     """Generator that yields information about all known user info.
     This is markedly different from the default Trac (trac.env) method
     of the same name: whereas the Trac default get_known_users returns
@@ -286,15 +278,9 @@ WHERE n.authenticated=1
     AND n.name = 'name'
 ORDER BY n.sid'''
     with the_class.db_query as db:
-        for username,name,email in db(sql):
+        for username, name, email in db(sql):
             yield username, name, email
 
-
-
-# ===========================================================================
-# Thanks to osimons for this excellent Python method replacement wizardry...
-#
-# ===========================================================================
 
 def _wrapfunc(obj, name, processor, avoid_doublewrap=True):
     """ patch obj.<name> so that calling it actually calls, instead,
@@ -329,8 +315,10 @@ def _wrapfunc(obj, name, processor, avoid_doublewrap=True):
         return
     # get underlying function (if any), and anyway def the wrapper closure
     original_callable = getattr(call, 'im_func', call)
+
     def wrappedfunc(*args, **kwargs):
-        return processor (original_callable, *args, **kwargs)
+        return processor(original_callable, *args, **kwargs)
+
     # set attributes, for future unwrapping and to avoid double-wrapping
     wrappedfunc.original = call
     wrappedfunc.processor = processor
@@ -350,4 +338,3 @@ def _wrapfunc(obj, name, processor, avoid_doublewrap=True):
 def _unwrap(obj, name):
     """ undo the effects of wrapfunc(obj, name, processor) """
     setattr(obj, name, getattr(obj, name).original)
-

@@ -8,20 +8,21 @@ VERSION = flexibleassignto.version
 PACKAGE = 'FlexibleAssignTo'
 
 setup(
-    name = PACKAGE,
-    version = VERSION,
-    description = "A Trac extension point for customizing the Assign To ticket field.",
-    author = "Robert Morris",
-    author_email = "gt4329b@pobox.com",
+    name=PACKAGE,
+    version=VERSION,
+    description="A Trac extension point for customizing the Assign To "
+                "ticket field.",
+    author="Robert Morris",
+    author_email="gt4329b@pobox.com",
     license='BSD',
     url='',
     keywords='',
-    packages=find_packages(exclude=['ez_setup','*.tests*']),
+    packages=find_packages(exclude=['ez_setup', '*.tests*']),
     package_data={},
-    entry_points = \
-"""[trac.plugins]
-flexibleassignto = flexibleassignto
-""",
+    entry_points="""
+    [trac.plugins]
+    flexibleassignto = flexibleassignto.flexibleassignto
+    """,
 )
 
 classifiers = [
