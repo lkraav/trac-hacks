@@ -17,11 +17,12 @@ import time
 ## trac imports
 from trac.env import Environment
 from trac.core import *
+from trac.ticket.default_workflow import get_workflow_config
+from trac.ticket.model import Ticket
 from trac.util import as_bool
 from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web import IRequestFilter
-from trac.ticket.default_workflow import get_workflow_config
 
 ## versioning crud
 # $Id: flexibleassignto.py 10067 2011-04-11 14:12:41Z gt4329b $
@@ -186,9 +187,12 @@ class FlexibleAssignTo(Component):
         if self.ensureUserData:
             self._ensure_user_data(user_objs)
         id = 'action_' + nextActionName + '_reassign_owner'
-        # check to see if the current owner is in the list of valid owners;
-        #  if so, pre-select them in the select control
-        selected_owner = req.args.get(id, req.authname)
+        current_owner = None
+        if 'id' in req.args:
+            # try to select the current ticket owner in the select control
+            ticket = Ticket(self.env, req.args['id'])
+            current_owner = ticket.get_value_or_default('owner')
+        selected_owner = req.args.get(id, current_owner or req.authname)
         # build the actual options tag objects
         option_tags = []
         for u in sorted(user_objs):
