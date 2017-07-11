@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# FlexibleAssignTo - Extension point provider for customizing 
+# FlexibleAssignTo - Extension point provider for customizing
 #   the "Assign To" ticket field.
-# 
+#
 # Copyright (C) 2007 Robert Morris <gt4329b@pobox.com>
 # All rights reserved.
 #
@@ -17,13 +17,11 @@ import time
 ## trac imports
 from trac.env import Environment
 from trac.core import *
-from trac.util.compat import sorted
-from trac.util.compat import set
+from trac.util import as_bool
+from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web import IRequestFilter
 from trac.ticket.default_workflow import get_workflow_config
-from trac.config import _TRUE_VALUES
-from genshi.builder import tag
 
 ## versioning crud
 # $Id: flexibleassignto.py 10067 2011-04-11 14:12:41Z gt4329b $
@@ -46,7 +44,7 @@ class SimpleUser:
      username
      option_value
      option_display
-    Failure to provide a non-None value for these will raise assert 
+    Failure to provide a non-None value for these will raise assert
     exceptions when the related get accessor method is called.
     """
     def __init__(self):
@@ -89,7 +87,7 @@ def getlist(action_obj, name, default=None, sep=',', keep_empty=False):
     A different separator can be specified using the `sep` parameter. If
     the `skip_empty` parameter is set to `True`, empty elements are omitted
     from the list.
-    
+
     Shamelessly copied from Section.getlist() in trac/config.py
     """
     value = action_obj.get(name, default)
@@ -101,43 +99,36 @@ def getlist(action_obj, name, default=None, sep=',', keep_empty=False):
             items = list(value)
         if not keep_empty:
             items = filter(None, items)
-    return items        
+    return items
 
 
 def getbool(action_obj, name, default=None):
     """Return the value of the specified option as boolean.
-
-    This method returns `True` if the option value is one of "yes", "true",
-    "enabled", "on", or "1", ignoring case. Otherwise `False` is returned.
-    
-    Shamelessly copied from Section.getbool() in trac/config.py
     """
     value = action_obj.get(name, default)
-    if isinstance(value, basestring):
-        value = value.lower() in _TRUE_VALUES
-    return bool(value)
+    return as_bool(value)
 
 
 class FlexibleAssignTo(Component):
     """
-    FlexibleAssignTo finally gives long-suffering Trac admins a way to 
-    easily customize the "assign to" field on tickets.  It provides several 
+    FlexibleAssignTo finally gives long-suffering Trac admins a way to
+    easily customize the "assign to" field on tickets.  It provides several
     base classes for you to override and implement your own methods for
-    providing lists of valid users -- you can even customize valid users for 
-    each state in your workflow.  
+    providing lists of valid users -- you can even customize valid users for
+    each state in your workflow.
 
     See the included README for detailed setup and extension instructions.
-    
+
     """
-    
+
     implements(IRequestFilter)
-    
+
     valid_owner_controllers = ExtensionPoint(IValidOwnerProvider)
-    
+
     def __init__(self, *args, **kwargs):
         Component.__init__(self, *args, **kwargs)
         self.actions = get_workflow_config(self.config)
-        self.ensureUserData = self.config.getbool('flexibleassignto', 
+        self.ensureUserData = self.config.getbool('flexibleassignto',
                                                 'ensure_user_data', False)
         self.use_custom_get_known_users = self.config.getbool(
             'flexibleassignto', 'use_custom_get_known_users', False)
@@ -148,7 +139,7 @@ class FlexibleAssignTo(Component):
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         _start = time.time()
         if not data or len(self.valid_owner_controllers) == 0:
@@ -160,12 +151,12 @@ class FlexibleAssignTo(Component):
             next_action_obj = self.actions[next_action_name]
             # look for an optional workflow state param 'use_flexibleassignto'
             #  if present and set to 'false', don't operate on this state
-            operate_on_this_action = getbool(next_action_obj, 
-                                            'use_flexibleassignto', True)
+            operate_on_this_action = \
+                as_bool(next_action_obj.get('use_flexibleassignto', True))
             if operate_on_this_action:
                 operations = next_action_obj['operations']
                 if 'set_owner' in operations:
-                    new_fragment = self._build_select(req, next_action_name, 
+                    new_fragment = self._build_select(req, next_action_name,
                                                         next_action_obj)
                     next_action_controls[i] = (next_action_name, first_label,
                                                         new_fragment, hints)
@@ -176,12 +167,12 @@ class FlexibleAssignTo(Component):
     def _build_select(self, req, nextActionName, nextActionObj):
         """
         Takes a request object, the name of the next action (as a string),
-        and the next action object itself.  Calls each registered 
+        and the next action object itself.  Calls each registered
         IValidOwnerProvider and builds a dictionary of user_objs using
         usernames as keys (which is why usernames are required).  Calls
         _ensure_user_data to insert user data into session_attribute if
         the "ensure user data" capability has been enabled.
-        
+
         Returns a complete select tag object, ready for rendering.
         """
         # get a list of data about owners valid for this next state
@@ -189,7 +180,7 @@ class FlexibleAssignTo(Component):
         user_objs = {}
         for voc in self.valid_owner_controllers:
             tmpusers = voc.getUsers(nextActionObj)
-            [user_objs.update({str(u.getUsername()).strip():u}) 
+            [user_objs.update({str(u.getUsername()).strip():u})
                                                         for u in tmpusers]
         user_objs = user_objs.values()
         if self.ensureUserData:
@@ -198,13 +189,13 @@ class FlexibleAssignTo(Component):
         # check to see if the current owner is in the list of valid owners;
         #  if so, pre-select them in the select control
         selected_owner = req.args.get(id, req.authname)
-        # build the actual options tag objects 
+        # build the actual options tag objects
         option_tags = []
         for u in sorted(user_objs):
             username = u.getUsername()
             isselected = (username == selected_owner or None)
-            option_tags.append(tag.option(u.getOptionDisplay(), 
-                                            selected=isselected, 
+            option_tags.append(tag.option(u.getOptionDisplay(),
+                                            selected=isselected,
                                             value=u.getOptionValue()))
         # build the final select control -- minus the assumed "to"
         _tag = tag.select(option_tags, id=id, name=id)
@@ -215,10 +206,10 @@ class FlexibleAssignTo(Component):
         """
         sql = '''
             SELECT DISTINCT n.sid AS sid, n.value AS name, e.value AS email
-            FROM session_attribute AS n 
+            FROM session_attribute AS n
              LEFT JOIN session_attribute AS e ON (e.sid=n.sid
                 AND e.authenticated=1 AND e.name = 'email')
-            WHERE n.authenticated=1 
+            WHERE n.authenticated=1
                 AND n.name = 'name'
             ORDER BY n.sid'''
         with self.env.db_query as db:
@@ -231,11 +222,11 @@ class FlexibleAssignTo(Component):
         session_attribute.  NOTE: this method will NOT overwrite existing
         values for 'name' or 'email'.
         """
-        EMAIL_SQL = '''INSERT INTO session_attribute 
-            (sid, authenticated, name, value) 
+        EMAIL_SQL = '''INSERT INTO session_attribute
+            (sid, authenticated, name, value)
             VALUES ('%s', 1, 'email' , '%s')'''
-        NAME_SQL = '''INSERT INTO session_attribute 
-            (sid, authenticated, name, value) 
+        NAME_SQL = '''INSERT INTO session_attribute
+            (sid, authenticated, name, value)
             VALUES ('%s', 1, 'name' , '%s')'''
         known_users = self._get_allusers_session_info()
         known_usernames = [u[0] for u in known_users]
@@ -246,12 +237,12 @@ class FlexibleAssignTo(Component):
             if u.getUsername() and _username != '' and \
                                             _username not in known_usernames:
                 with self.env.db_transaction as db:
-                    cursor = db.cursor()                
+                    cursor = db.cursor()
                     if u.email and _email != '':
                         cursor.execute(EMAIL_SQL % (_username, _email))
                     if u.fullname and _fullname != '':
                         cursor.execute(NAME_SQL % (_username, _fullname))
-        
+
 
     # internal method for 'use_custom_get_known_users' option
 
@@ -263,7 +254,7 @@ class FlexibleAssignTo(Component):
             " use_custom_get_known_users = true)")
 
 
-def fat_get_known_users(original_callable, the_class, cnx=None, 
+def fat_get_known_users(original_callable, the_class, cnx=None,
                                                             *args, **kwargs):
     """Generator that yields information about all known user info.
     This is markedly different from the default Trac (trac.env) method
@@ -271,10 +262,10 @@ def fat_get_known_users(original_callable, the_class, cnx=None,
     info only for those users who have logged in, this method returns
     info for every user who has data in the session_attribute table and
     is flagged authenticated (e.g., session_attribute.authenticated = 1).
-    
-    This functionality was designed to work in concert with the 
-    "ensure_user_data" feature, which autopopulates user email & name 
-    in the session_attribute table.  See the README for more about this 
+
+    This functionality was designed to work in concert with the
+    "ensure_user_data" feature, which autopopulates user email & name
+    in the session_attribute table.  See the README for more about this
     capability.
 
     This function generates one tuple for every user, of the form
@@ -284,15 +275,15 @@ def fat_get_known_users(original_callable, the_class, cnx=None,
     """
     sql = '''
 SELECT DISTINCT n.sid AS sid, n.value AS name, e.value AS email
-FROM session_attribute AS n 
+FROM session_attribute AS n
  LEFT JOIN session_attribute AS e ON (e.sid=n.sid
     AND e.authenticated=1 AND e.name = 'email')
-WHERE n.authenticated=1 
+WHERE n.authenticated=1
     AND n.name = 'name'
 ORDER BY n.sid'''
     with the_class.db_query as db:
         for username,name,email in db(sql):
-            yield username, name, email        
+            yield username, name, email
 
 
 
