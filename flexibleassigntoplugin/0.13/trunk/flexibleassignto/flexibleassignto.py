@@ -16,14 +16,7 @@ from trac.ticket.default_workflow import get_workflow_config
 from trac.ticket.model import Ticket
 from trac.util import as_bool
 from trac.util.html import html as tag
-from trac.web import IRequestFilter
-
-# $Id: flexibleassignto.py 10067 2011-04-11 14:12:41Z gt4329b $
-__version__ = '0.8.13'
-__revision__ = "$Revision: 10067 $".replace('Revision:', '') \
-                                   .replace('$', '').strip()
-version = __version__
-fullversion = ".".join([__version__, __revision__])
+from trac.web.api import IRequestFilter
 
 
 class IValidOwnerProvider(Interface):

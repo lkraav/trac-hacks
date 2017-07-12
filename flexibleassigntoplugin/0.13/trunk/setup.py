@@ -2,14 +2,9 @@
 
 from setuptools import find_packages, setup
 
-from flexibleassignto import flexibleassignto
-VERSION = flexibleassignto.version
-
-PACKAGE = 'FlexibleAssignTo'
-
 setup(
-    name=PACKAGE,
-    version=VERSION,
+    name='FlexibleAssignTo',
+    version='0.8.13',
     description="A Trac extension point for customizing the Assign To "
                 "ticket field.",
     author="Robert Morris",
@@ -23,14 +18,13 @@ setup(
     [trac.plugins]
     flexibleassignto = flexibleassignto.flexibleassignto
     """,
+    classifiers=[
+      'Development Status :: 3 - Alpha',
+      'Environment :: Plugins',
+      'Framework :: Trac',
+      'Intended Audience :: Developers',
+      'Intended Audience :: System Administrators',
+      'Natural Language :: English',
+      'Programming Language :: Python'
+    ],
 )
-
-classifiers = [
-  'Development Status :: 3 - Alpha',
-  'Environment :: Plugins',
-  'Framework :: Trac',
-  'Intended Audience :: Developers',
-  'Intended Audience :: System Administrators',
-  'Natural Language :: English',
-  'Programming Language :: Python'
-]
