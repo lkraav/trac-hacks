@@ -1,11 +1,11 @@
 # Copyright (c) 2010, Logica
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-#     * Redistributions of source code must retain the above copyright 
+#
+#     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
@@ -13,7 +13,7 @@
 #     * Neither the name of the <ORGANIZATION> nor the names of its
 #       contributors may be used to endorse or promote products derived from
 #       this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,8 +30,8 @@
 from setuptools import find_packages, setup
 
 setup(
-    name = 'FullTextSearchPlugin', 
-    version = '0.0',
+    name = 'FullTextSearchPlugin',
+    version = '0.1',
     author = 'Mikael Frykholm',
     author_email = 'mikael.frykholm@logica.com',
     description = "Provide full text indexing of all core items like tickets, wiki, attachments, source code.",
@@ -39,11 +39,9 @@ setup(
     """Copyright (c) 2010, Logica. All rights reserved. Released under the 3-clause BSD license. """,
     url = "http://trac-hacks.org/attachment/wiki/FullTextSearchPlugin",
     packages = ['fulltextsearchplugin'],
-    package_data = {'fulltextsearchplugin' : ['htdocs/js/*.js', 'htdocs/css/*.css']}, 
-    install_requires = ['Trac>=0.12', 'Genshi>=0.5',
-                        'sunburnt', 'lxml', 'httplib2',
-                        'TracTags',
-                        'ComponentDependencyPlugin',
+    package_data = {'fulltextsearchplugin' : ['htdocs/js/*.js', 'htdocs/css/*.css']},
+    install_requires = ['Trac>=0.12', 'sunburnt', 'lxml', 'httplib2',
+                        'TracTags>=0.7', 'ComponentDependencyPlugin',
                         ],
     dependency_links = ['http://trac-hacks.org/attachment/wiki/FullTextSearchPlugin/ComponentDependencyPlugin-0.1.tar.gz?format=raw',
                         'http://trac-hacks.org/attachment/wiki/FullTextSearchPlugin/TracTags-0.6.tar.gz?format=raw',
@@ -52,7 +50,7 @@ setup(
         'trac.plugins': [
             'fulltextsearchplugin.fulltextsearch = fulltextsearchplugin.fulltextsearch',
             'fulltextsearchplugin.admin = fulltextsearchplugin.admin',
-        ]    
+        ]
     },
     test_suite = 'fulltextsearchplugin.tests.suite',
     tests_require = ['TracBrowserSvnOperations',

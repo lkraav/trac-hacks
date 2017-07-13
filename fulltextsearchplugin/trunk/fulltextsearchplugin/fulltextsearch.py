@@ -34,7 +34,7 @@ from trac.util.datefmt import to_datetime, to_utimestamp, utc
 from trac.web.chrome import add_warning
 
 from componentdependencies import IRequireComponents
-from tractags.model import TagModelProvider
+from tractags.db import TagSetup
 
 from fulltextsearchplugin.dates import normalise_datetime
 
@@ -142,12 +142,12 @@ class Backend(Queue):
         item.action = 'CREATE'
         self.put(item)
         self.commit(quiet=quiet)
-        
+
     def modify(self, item, quiet=False):
         item.action = 'MODIFY'
         self.put(item)
         self.commit(quiet=quiet)
-    
+
     def delete(self, item, quiet=False):
         item.action = 'DELETE'
         self.put(item)
@@ -160,7 +160,7 @@ class Backend(Queue):
         else:
             self.put(item)
         self.commit(quiet=quiet)
-        
+
     def remove(self, project_id, realms=None):
         '''Delete docs from index where project=project_id AND realm in realms
 
@@ -226,9 +226,9 @@ class Backend(Queue):
 
 
 class FullTextSearch(Component):
-    """Search all ChangeListeners and prepare the output for a full text 
+    """Search all ChangeListeners and prepare the output for a full text
        backend."""
-    implements(ITicketChangeListener, IWikiChangeListener, 
+    implements(ITicketChangeListener, IWikiChangeListener,
                IAttachmentChangeListener, IMilestoneChangeListener,
                IRepositoryChangeListener, ISearchSource,
                IEnvironmentSetupParticipant, IRequireComponents)
@@ -279,7 +279,7 @@ class FullTextSearch(Component):
     def _index(self, realm, resources, check_cb, index_cb,
                feedback_cb, finish_cb):
         """Iterate through `resources` to index `realm`, return index count
-        
+
         realm       Trac realm to which items in resources belong
         resources   Iterable of Trac resources e.g. WikiPage, Attachment
         check_cb    Callable that accepts a resource & status,
@@ -400,7 +400,7 @@ class FullTextSearch(Component):
 
     def _check_realms(self, realms):
         """Check specfied realms are supported by this component
-        
+
         Raise exception if unsupported realms are found.
         """
         if realms is None:
@@ -453,7 +453,7 @@ class FullTextSearch(Component):
 
     # IRequireComponents methods
     def requires(self):
-        return [TagModelProvider]
+        return [TagSetup]
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
@@ -517,7 +517,7 @@ class FullTextSearch(Component):
         self.backend.create(so, quiet=True)
         self._update_ticket(ticket)
         self.log.debug("Ticket added for indexing: %s", ticket)
-        
+
     def ticket_changed(self, ticket, comment, author, old_values):
         self.ticket_created(ticket)
 
@@ -559,7 +559,7 @@ class FullTextSearch(Component):
         #We don't care about old versions
         pass
 
-    def wiki_page_renamed(self, page, old_name): 
+    def wiki_page_renamed(self, page, old_name):
         so = FullTextSearchObject(self.project, page.resource.realm, old_name)
         self.backend.delete(so, quiet=True)
         self.wiki_page_added(page)
@@ -574,7 +574,7 @@ class FullTextSearch(Component):
                            (realm, page))
         except Exception, e:
             # Prior to Trac 0.13 errors from a wrapped cursor are returned as
-            # the native exceptions from the database library 
+            # the native exceptions from the database library
             # http://trac.edgewall.org/ticket/6348
             # sqlite3 raises OperationalError instead of ProgrammingError if
             # a queried table doesn't exist
@@ -598,7 +598,7 @@ class FullTextSearch(Component):
             history = list(attachment.get_history())
             created = history[-1].date
             involved = list(set(a.author for a in history))
-            comments = list(set(a.description for a in history 
+            comments = list(set(a.description for a in history
                                 if a.description))
         else:
             created = attachment.date
@@ -618,7 +618,7 @@ class FullTextSearch(Component):
                 so.body = attachment.open()
             except ResourceNotFound:
                 self.log.warning('Missing attachment file "%s" encountered '
-                                 'whilst indexing full text search', 
+                                 'whilst indexing full text search',
                                  attachment)
         try:
             self.backend.create(so, quiet=True)
@@ -770,7 +770,7 @@ class FullTextSearch(Component):
     def _build_filter_query(self, si, filters):
         """Return a SOLR filter query that matches any of the chosen filters
         (realms).
-        
+
         The filter is of the form realm:realm1 OR realm:realm2 OR ...
         """
         Q = si.query().Q
