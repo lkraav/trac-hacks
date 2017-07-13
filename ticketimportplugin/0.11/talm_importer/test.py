@@ -28,6 +28,20 @@ from talm_importer.importer import ImportModule
 from talm_importer.readers import get_reader
 
 
+try:
+    from openpyxl.writer.write_only import _openpyxl_shutdown
+except ImportError:
+    pass
+else:
+    import atexit
+    for index, entry in enumerate(atexit._exithandlers):
+        if entry[0] == _openpyxl_shutdown:
+            del atexit._exithandlers[index]
+    del index, entry
+    del _openpyxl_shutdown
+    del atexit
+
+
 if parse_version(VERSION) >= parse_version('0.12'):
     CTL_EXT = '-0.12.ctl'
 else:
