@@ -695,7 +695,7 @@ evaluation.available.none = evaluation_template == 'None'
                           'status'   : status,
                           'id'       : ticket_id,
                           'authname' : req.authname }
-            add_script_data(req, {'page_info' : page_data})
+            add_script_data(req, {'kis2_page_info' : page_data})
 
             # Add the client-side support functions.
             if 'rv:11' in req.environ['HTTP_USER_AGENT'] \

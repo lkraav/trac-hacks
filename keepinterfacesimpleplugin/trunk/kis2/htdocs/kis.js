@@ -30,8 +30,7 @@
 // an item is selected or undefined if no item is selected.
 
 // Create a local namespace context named kis2...
-var kis2 = {};
-(function(context) {
+var kis2 = (function() {
 
 // TracInterface
 //
@@ -68,7 +67,7 @@ var kis2 = {};
 //  type - Trac field type; one of 'checkbox', 'field', 'radio' or
 //  'undefined'. (Option-select fields and text fields both show up as type
 //  'field'; there's never been a need to distinguish them.)
-context.TracInterface = function(field_name) {
+var TracInterface = function(field_name) {
     // Caches values of fields at the point they're first queried.
     if (typeof TracInterface.cache == 'undefined') {
         TracInterface.cache = {};
@@ -103,7 +102,6 @@ context.TracInterface = function(field_name) {
         }
     }
 };
-var TracInterface = context.TracInterface;
 
 TracInterface.prototype.select_field = function () {
     return $(this.selector);
@@ -205,7 +203,7 @@ TracInterface.prototype.selected_item = function () {
     return result.val();
 };
 
-TracInterface.prototype.show_field = function (show, target = 'property') {
+TracInterface.prototype.show_field = function (show, target) {
     if (target == 'ticket') {
         return $('#h_' + this.field_name).next().addBack().
                // Uncomment next line to hide change preview too...
@@ -275,7 +273,7 @@ TracInterface.prototype.val = function () {
 //                 predicate to be re-evaluated when necessary;
 //  If rejected:
 //      .error = a description of any error raised during evaluation.
-context.evaluate = function (predicate) {
+var evaluate = function (predicate) {
     var token_type = '';
     var token = '';
     var rest_of_input = predicate;
@@ -724,7 +722,6 @@ context.evaluate = function (predicate) {
         }
     });
 }
-var evaluate = context.evaluate;
 
 // Field()
 //
@@ -735,7 +732,7 @@ var evaluate = context.evaluate;
 // option-sets should be updated. Attaches handlers to every other field
 // that has an affect on this field to re-evaluate these conditions as
 // required.
-context.Field = function (field_name) {
+var Field = function (field_name) {
     this.field_name = field_name;
     this.operations = page_info['trac_ini'][field_name];
     this.ui = new TracInterface(field_name);
@@ -749,7 +746,6 @@ context.Field = function (field_name) {
     this.visibility_onchange_attached['property'] = false;
     this.visibility_onchange_attached['ticket'] = false;
 }
-var Field = context.Field;
 
 // set_options()
 //
@@ -1123,22 +1119,28 @@ Field.prototype.val = function () {
 };
 
 // Page data was provided by the IRequestFilter request post-processing.
-var page_info = window.page_info;
+var page_info = window.kis2_page_info;
 
 // This function is called at the time the page is initially loaded, but also
 // following a preview rendering. This is needed to hide fields in the preview
 // ticket box.
-context.update_fields = function () {
-    context.ui = [];
+var ui = [];
+var update_fields = function () {
     for(var field_name in page_info['trac_ini']) {
         var field = new Field(field_name);
         field.setup();
-        context.ui[field_name] = field.ui;
+        ui[field_name] = field.ui;
     }
 }
 
+return {
+    ev: evaluate,
+    ui: ui,
+    update_fields: update_fields,
+};
+
 // ...close namespace.
-})(kis2);
+})();
 
 // jQuery compatibility patch.
 if ($.fn.addBack === undefined) {
