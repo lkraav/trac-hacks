@@ -561,10 +561,11 @@ class ImporterTestCase(ImporterBaseTestCase):
 
 class MasterTicketsPluginTestCase(ImporterBaseTestCase):
 
+    plugin_dir = os.path.join(TOPDIR, 'test', 'eggs_10188')
+
     def setUp(self):
         self.TICKET_TIME = 1190909220
         path = tempfile.mkdtemp(prefix='ticketimportplugin-')
-        plugin_dir = os.path.join(TOPDIR, 'test', 'eggs_10188')
         self.env = Environment(path, create=True)
         @self.with_transaction
         def do_insert(db):
@@ -572,7 +573,7 @@ class MasterTicketsPluginTestCase(ImporterBaseTestCase):
             cursor.executemany(
                 "INSERT INTO permission VALUES ('anonymous',%s)",
                 [('REPORT_ADMIN',), ('IMPORT_EXECUTE',)])
-        self.env.config.set('inherit', 'plugins_dir', plugin_dir)
+        self.env.config.set('inherit', 'plugins_dir', self.plugin_dir)
         self.env.config.set('components', 'mastertickets.*', 'enabled')
         self._add_custom_field('mycustomfield', 'text', 'My Custom Field', '1')
         self._add_custom_field('blocking', 'text')
@@ -582,7 +583,7 @@ class MasterTicketsPluginTestCase(ImporterBaseTestCase):
         self.env.config.save()
         self.env.shutdown()
         self.env = Environment(path)
-        load_components(self.env, [plugin_dir])
+        load_components(self.env, [self.plugin_dir])
         self.env.upgrade()
         self.env.shutdown()
         self.env = Environment(path)
@@ -618,7 +619,11 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ImporterTestCase))
     if parse_version(VERSION) >= parse_version('0.12'):
-        suite.addTest(unittest.makeSuite(MasterTicketsPluginTestCase))
+        if os.listdir(MasterTicketsPluginTestCase.plugin_dir):
+            suite.addTest(unittest.makeSuite(MasterTicketsPluginTestCase))
+        else:
+            print('SKIP: MasterTicketsPluginTestCase caused by no files in '
+                  'test/eggs_10188 directory')
     return suite
 
 
