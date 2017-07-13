@@ -13,7 +13,14 @@ from trac.util import get_reporter_id
 from trac.util.datefmt import format_datetime
 from trac.util.html import Markup
 from trac.util.text import to_unicode
-from trac.wiki import wiki_to_html
+from trac.wiki.formatter import format_to_html
+
+try:
+    from trac.web.chrome import web_context
+except ImportError:
+    from trac.mimeview.api import Context
+    def web_context(*args, **kwargs):
+        return Context.from_request(*args, **kwargs)
 
 
 _normalize_newline_re = re.compile('\r?\n|\r')
@@ -33,6 +40,10 @@ class ProcessorBase(object):
         if 'db' in inspect.getargspec(Ticket.__init__)[0]:
             kwargs['db'] = self.db
         return PatchedTicket(self.env, **kwargs)
+
+    def format_to_html(self, wikidom, **kwargs):
+        context = web_context(self.req)
+        return format_to_html(self.env, context, wikidom, **kwargs)
 
 
 class ImportProcessor(ProcessorBase):
@@ -297,7 +308,9 @@ class ImportProcessor(ProcessorBase):
 
         message = 'Successfully imported ' + str(numrows) + ' tickets (' + str(len(self.added)) + ' added, ' + str(len(self.modified)) + ' modified, ' + str(notmodifiedcount) + ' unchanged).'
 
-        data['message'] = Markup("<style type=\"text/css\">#report-notfound { display:none; }</style>\n") + wiki_to_html(message, self.env, self.req)
+        data['message'] = \
+            Markup("<style type=\"text/css\">#report-notfound { display:none; }</style>\n") + \
+            self.format_to_html(message)
 
         return 'import_preview.html', data, None
     
@@ -445,7 +458,9 @@ class PreviewProcessor(ProcessorBase):
     def end_process(self, numrows):
         notmodifiedcount = numrows - len(self.added) - len(self.modified)
         self.message = 'Scroll to see a preview of the tickets as they will be imported. If the data is correct, select the \'\'\'Execute Import\'\'\' button.\n' + ' * ' + str(numrows) + ' tickets will be imported (' + str(len(self.added)) + ' added, ' + str(len(self.modified)) + ' modified, ' + str(notmodifiedcount) + ' unchanged).\n' + self.message
-        self.data['message'] = Markup(self.styles) + wiki_to_html(self.message, self.env, self.req) + Markup('<br/>')
+        self.data['message'] = Markup(self.styles) + \
+                               self.format_to_html(self.message) + \
+                               Markup('<br/>')
 
         return 'import_preview.html', self.data, None
 
