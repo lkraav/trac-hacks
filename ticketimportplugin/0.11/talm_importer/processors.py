@@ -10,7 +10,7 @@ import time
 
 from trac.ticket import Ticket, model
 from trac.util import get_reporter_id
-from trac.util.datefmt import format_datetime
+from trac.util.datefmt import format_datetime, to_timestamp
 from trac.util.html import Markup
 from trac.util.text import to_unicode
 from trac.wiki.formatter import format_to_html
@@ -84,19 +84,12 @@ class ImportProcessor(ProcessorBase):
         if ticket_id > 0:
             # existing ticket
             self.ticket = self.new_ticket(tkt_id=ticket_id)
+            changetime = to_timestamp(self.ticket['changetime'])
 
-            # 'Ticket.time_changed' is a datetime in 0.11, and an int in 0.10.
-            # if we have trac.util.datefmt.to_datetime, we're likely with 0.11
-            try:
-                from trac.util.datefmt import to_timestamp
-                time_changed = to_timestamp(self.ticket.time_changed)
-            except ImportError:
-                time_changed = int(self.ticket.time_changed)
-                
-            if time_changed > self.tickettime:
+            if changetime > self.tickettime:
                 # just in case, verify if it wouldn't be a ticket that has been modified in the future
                 # (of course, it shouldn't happen... but who know). If it's the case, don't report it as an error
-                if time_changed < int(time.time()):
+                if changetime < int(time.time()):
                     # TODO: this is not working yet...
                     #
                     #raise TracError("Sorry, can not execute the import. "

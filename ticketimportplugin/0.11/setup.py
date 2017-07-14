@@ -14,7 +14,7 @@ PACKAGE='talm_importer'
 
 setup(
     name='TicketImport',
-    version='0.8.4',
+    version='0.8.5',
     author='Francois Granade',
     author_email='fg@nexb.com',
     url='http://nexb.com',
@@ -24,5 +24,6 @@ setup(
     packages=[PACKAGE],
     package_data={PACKAGE: ['templates/*.html']},
     test_suite='talm_importer.test.suite',
+    install_requires=['Trac'],
     entry_points={'trac.plugins': 'TicketImport = %s' % (PACKAGE)}
     )
