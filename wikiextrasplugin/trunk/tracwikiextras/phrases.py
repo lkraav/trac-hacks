@@ -22,9 +22,9 @@ Activate this component to highlight this: FIXME
 
 from pkg_resources import resource_filename
 
-from trac.util.html import Markup, tag 
+from trac.util.html import Markup, tag
 
-from trac.config import ListOption
+from trac.config import ListOption, ConfigSection
 from trac.core import implements, Component
 from trac.util.compat import cleandoc
 from trac.web.api import IRequestFilter
@@ -41,7 +41,7 @@ class Phrases(Component):
     `trac.ini`. Use the `ShowPhrases` macro to show a list of currently defined
     phrases.
     """
-    
+
     implements(IRequestFilter, ITemplateProvider, IWikiSyntaxProvider,
                IWikiMacroProvider)
 
@@ -65,13 +65,23 @@ class Phrases(Component):
                               doc="Analogous to `FIXME`-phrases, but "
                                   "presentation is less eye-catching.")
 
+    custom_phrases_section = ConfigSection('wikiextras-custom-phrases',
+        """Custom phrases are configurable by providing associations
+        between a CSS class and the list of phrases separated by comma.
+
+        Example:
+        {{{#!ini
+        [wikiextras-custom-phrases]
+        nice = NICE, COOL
+        }}}
+        """)
+
     def __init__(self):
         self.text = {}
         #noinspection PyArgumentList
         html_form = '<span class="wikiextras phrase %s">%s</span>'
-        for (style, phrases) in [('fixme', self.fixme_phrases), 
-                                 ('todo', self.todo_phrases),
-                                 ('done', self.done_phrases)]:
+
+        def add_style(style, phrases):
             for phrase in phrases:
                 html = html_form % (style, phrase)
                 self.text[phrase] = html
@@ -79,6 +89,14 @@ class Phrases(Component):
                     self.text['%s%s%s' % (d1, phrase, d2)] = html
                 for d2 in [':']:
                     self.text['%s%s' % (phrase, d2)] = html
+
+        for style, phrases in [('fixme', self.fixme_phrases),
+                               ('todo', self.todo_phrases),
+                               ('done', self.done_phrases)]:
+            add_style(style, phrases)
+
+        for style, phrases in self.custom_phrases_section.options():
+            add_style(style, phrases.split(','))
 
     # IRequestFilter methods
 
