@@ -10,7 +10,8 @@
        id='trac-cards-${board_data_id}'
        style='width:${width}px'>
     <div class='trac-cards-board-buttons inlinebuttons'>
-      <input class="trac-cards-reload" type="submit" name="add" value="Refresh"/>
+      <input class="trac-cards-reload" type="submit" name="refresh" value="Refresh"/>
+      <input class="trac-cards-export-board" type="submit" name="export-all" value="Export"/>
     </div>
     <div class='trac-cards-stack-titles'>
       <h2 py:for="stack in stack_names">${labels[stack]}</h2>
@@ -24,6 +25,7 @@
         </div>
         <div class="inlinebuttons">        
           <input class="trac-card-add" type="submit" name="add" value="Add card"/>
+          <input class="trac-cards-export-stack" type="submit" name="export-stack" value="Export"/>
         </div>
       </div>
     </div>

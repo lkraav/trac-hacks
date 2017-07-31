@@ -62,6 +62,8 @@ class CardsMacro(WikiMacroBase):
             'api_url': formatter.href('card'),
             'cards_by_id': serialized_cards_by_id(cards, self.env, context),
             'stacks_by_name': serialized_stacks_by_name(stacks, stack_names),
+            'stack_names': stack_names,
+            'labels': labels,
             'auto_refresh': self.auto_refresh,
             'auto_refresh_interval': self.auto_refresh_interval,
         }

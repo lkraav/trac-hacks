@@ -29,13 +29,13 @@
     overflow: auto; 
 }
 .trac-card-slot
- {
+{
     display: block;
     margin: 1px;
 }
 
 .trac-card
- {
+{
     display: block;
     
     margin: 5px;

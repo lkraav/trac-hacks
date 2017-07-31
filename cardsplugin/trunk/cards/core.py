@@ -18,7 +18,7 @@ from cards.model import SCHEMA, Card, CardStack
 
 
 PLUGIN_NAME = 'CardsPlugin'
-PLUGIN_VERSION = 2
+PLUGIN_VERSION = 3
 
 
 def serialized_stacks_by_name(stacks, stack_names):
@@ -94,7 +94,8 @@ class CardsModule(Component):
             int(req.args.get('id')),
             req.args.get('stack'),
             int(req.args.get('rank')),
-            req.args.get('title'))
+            req.args.get('title'),
+            req.args.get('color'))
 
     def _parse_stack(self, req, old=False):
         return CardStack(

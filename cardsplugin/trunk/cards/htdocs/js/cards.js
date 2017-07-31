@@ -19,6 +19,7 @@ jQuery(document).ready(function($) {
                 stack: card.stack,
                 rank: card.rank,
                 title: card.title,
+                color: card.color,
                 stack_version: board_data.stacks_by_name[card.stack].version,
                 old_stack_name: card.stack,
                 old_stack_version: board_data.stacks_by_name[card.stack].version
@@ -33,6 +34,7 @@ jQuery(document).ready(function($) {
         var $card_slot = $("<div class='trac-card-slot'><div class='trac-card'></div></div>");
         var $card_element = $card_slot.find(".trac-card");
         $card_element.attr('id', 'trac-card-' + card.id);
+        $card_element.css('background', card.color);
         $card_element.html(card.title_html);
         $card_element.dblclick(showEditCardDialog);
         $stack_sorter.append($card_slot);
@@ -183,8 +185,9 @@ jQuery(document).ready(function($) {
     });
     
     // Edit / delete
-    var editCardDialog = $("<div title='Edit card'><form><label for='title'>Title:</label><br /><textarea name='title' rows='5' cols='30'></textarea></form></div>");
+    var editCardDialog = $("<div title='Edit card'><form><label for='title'>Title:</label><br /><textarea name='title' rows='5' cols='30'></textarea><br /><label>Color: <input type='color' name='color' /></label></form></div>");
     var ctrlEditTitle = editCardDialog.find("textarea[name='title']");
+    var ctrlEditColor = editCardDialog.find("input[name='color']");
     function showEditCardDialog() {
     
         var board_data = get_board_data($(this));
@@ -194,6 +197,7 @@ jQuery(document).ready(function($) {
         var card_id = get_card_id($card_element);
         var card = board_data.cards_by_id[card_id];
         ctrlEditTitle.val(card.title);
+        ctrlEditColor.val(card.color || '#ffffe0');
         editCardDialog.dialog({
             modal: true,
             dialogClass: "trac-cards-dialog",
@@ -201,12 +205,14 @@ jQuery(document).ready(function($) {
                 "Edit": function() {
                     var post_data = serialized_post_data(card, 'update_card', board_data);
                     post_data.title = ctrlEditTitle.val();
+                    post_data.color = ctrlEditColor.val();
                     var current_dialog = $(this);
                     $.post(board_data.api_url, post_data, function(updated_card) {
                         card.title_html = updated_card.title_html;
                         card.title = updated_card.title;
                         $card_element.html(card.title_html);
-
+                        card.color = updated_card.color;
+                        $card_element.css('background', card.color);
                         current_dialog.dialog("close");
                     }).done(function() {
                         board_data.stacks_by_name[card.stack].version += 1;
@@ -251,6 +257,7 @@ jQuery(document).ready(function($) {
                         stack: stack_id,
                         rank: -1, // Initialized server-side
                         title: ctrlCreateTitle.val(),                        
+                        color: '#ffffe0', // default: yellow
                     };
                     var post_data = serialized_post_data(proposed_card, 'add_card', board_data);
                     var current_dialog = $(this);
@@ -271,5 +278,58 @@ jQuery(document).ready(function($) {
         });
     };
     $(".trac-card-add").click(showAddCardDialog);
+
+    // Export
+    var exportDialog = $("<div title='Export'><form><label for='wiki'>Content:</label><br /><textarea name='wiki' rows='5' cols='30'></textarea></form></div>");
+    var ctrlExportWiki = exportDialog.find("textarea[name='wiki']");
+    function showExportStackDialog() {
+        var $element = $(this);
+        var board_data = get_board_data($element);
+        var stack_id = get_stack_name($element);
+
+        var sorted_cards = $.map(board_data.cards_by_id, function(card, id) { return card; })
+                            .filter(function(card) { return card.stack == stack_id; });
+        sorted_cards.sort(function(a, b) { return a.rank - b.rank; });
+        var label = board_data.labels[stack_id];
+        var wiki = '=== ' + label + '\n\n' + $.map(sorted_cards, function(card, id) { return card.title; }).join('\n\n');
+        ctrlExportWiki.val(wiki);
+
+        exportDialog.dialog({
+            modal: true,
+            dialogClass: "trac-cards-dialog",
+            buttons: {
+                "OK": function() {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    };
+    function showExportBoardDialog() {
+        var $element = $(this);
+        var board_data = get_board_data($element);
+
+        var wiki = '';
+        $.each(board_data.stack_names, function(index, stack_id) {
+            var sorted_cards = $.map(board_data.cards_by_id, function(card, id) { return card; })
+                                .filter(function(card) { return card.stack == stack_id; });
+            sorted_cards.sort(function(a, b) { return a.rank - b.rank; });
+
+            var label = board_data.labels[stack_id];
+            wiki += '=== ' + label + '\n\n' + $.map(sorted_cards, function(card, id) { return card.title; }).join('\n\n') + '\n\n';
+        });
+        ctrlExportWiki.val(wiki);
+
+        exportDialog.dialog({
+            modal: true,
+            dialogClass: "trac-cards-dialog",
+            buttons: {
+                "OK": function() {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    };
+    $(".trac-cards-export-stack").click(showExportStackDialog);
+    $(".trac-cards-export-board").click(showExportBoardDialog);
 
 });

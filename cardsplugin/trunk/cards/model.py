@@ -9,6 +9,7 @@ SCHEMA = [
         Column('stack'),
         Column('rank', type='int64'),
         Column('title'),
+        Column('color'),
         Index(['stack', 'rank']),
     ],
     Table('cards_stacks', key='name')[
@@ -20,11 +21,12 @@ SCHEMA = [
 
 class Card(object):
 
-    def __init__(self, id, stack, rank, title):
+    def __init__(self, id, stack, rank, title, color):
         self.id = id
         self.stack = stack
         self.rank = rank
         self.title = title
+        self.color = color
 
     def serialized(self, env, context):
         return {
@@ -33,6 +35,7 @@ class Card(object):
             'rank': self.rank,
             'title': self.title, 
             'title_html': format_to_html(env, context, self.title),
+            'color': self.color,
         }
 
     @classmethod
@@ -49,9 +52,9 @@ class Card(object):
             card.rank = cursor.fetchone()[0]
             cursor.execute("""
             INSERT INTO cards
-                        (stack, rank, title)
-                 VALUES (%s, %s, %s)
-            """, (card.stack, card.rank, card.title))
+                        (stack, rank, title, color)
+                 VALUES (%s, %s, %s, %s)
+            """, (card.stack, card.rank, card.title, card.color))
             card.id = db.get_last_id(cursor, 'cards')
             return True
 
@@ -97,9 +100,9 @@ class Card(object):
 
             cursor.execute("""
                 UPDATE cards
-                SET stack=%s, rank=%s, title=%s
+                SET stack=%s, rank=%s, title=%s, color=%s
                 WHERE id=%s
-            """, (card.stack, card.rank, card.title, card.id))
+            """, (card.stack, card.rank, card.title, card.color, card.id))
             return True
 
     @classmethod
@@ -128,12 +131,12 @@ class Card(object):
     @classmethod
     def select_by_stack(cls, env, stack):
         rows = env.db_query("""
-                SELECT id, stack, rank, title
+                SELECT id, stack, rank, title, color
                 FROM cards
                 WHERE stack=%s
                 ORDER BY rank
                 """, (stack,))
-        return [Card(id, stack, rank, title) for id, stack, rank, title in rows]
+        return [Card(id, stack, rank, title, color) for id, stack, rank, title, color in rows]
 
     @classmethod
     def select_by_stacks(cls, env, stacks):
@@ -141,12 +144,12 @@ class Card(object):
             return []
         stack_holder = ','.join(['%s'] * len(stacks))
         rows = env.db_query("""
-                SELECT id, stack, rank, title
+                SELECT id, stack, rank, title, color
                 FROM cards
                 WHERE stack in (%s)
                 ORDER BY stack, rank
                 """ % stack_holder, list(stacks))
-        return [Card(id, stack, rank, title) for id, stack, rank, title in rows]
+        return [Card(id, stack, rank, title, color) for id, stack, rank, title, color in rows]
 
 
 class CardStack(object):
