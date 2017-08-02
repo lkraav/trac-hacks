@@ -26,7 +26,7 @@ from trac.util.datefmt import from_utimestamp, to_utimestamp
 
 class SensitiveTicketsPolicy(Component):
     """Prevent public access to security sensitive tickets.
-    
+
     Add the SENSITIVE_VIEW permission as a pre-requisite for any
     other permission check done on tickets that have been marked (through
     the UI) as "Sensitive".
@@ -43,7 +43,7 @@ class SensitiveTicketsPolicy(Component):
 
     {{{
     [trac]
-    permission_policies = SensitiveTicketsPolicy, AuthzPolicy, 
+    permission_policies = SensitiveTicketsPolicy, AuthzPolicy,
                           DefaultPermissionPolicy, LegacyAttachmentPolicy
     }}}
 
@@ -53,7 +53,7 @@ class SensitiveTicketsPolicy(Component):
     material in the timeline, but will only be able to identify it by
     ticket number, comment number, and timestamp.  All other content
     will be redacted.
-    
+
     SENSITIVE_ACTIVITY_VIEW can be useful (for example) for providing
     a notification daemon the ability to tell that some activity
     happened without leaking the content of that activity.
@@ -121,8 +121,7 @@ class SensitiveTicketsPolicy(Component):
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        yield 'SENSITIVE_VIEW'
-        yield 'SENSITIVE_ACTIVITY_VIEW'
+        return ['SENSITIVE_VIEW', 'SENSITIVE_ACTIVITY_VIEW']
 
     # ITicketManipulator methods:
 
