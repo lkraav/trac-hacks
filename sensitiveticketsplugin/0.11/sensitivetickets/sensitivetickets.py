@@ -115,7 +115,7 @@ This prevents users from marking the tickets of other users as "sensitive".''')
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        yield ['SENSITIVE_VIEW', 'SENSITIVE_ACTIVITY_VIEW']
+        return ['SENSITIVE_VIEW', 'SENSITIVE_ACTIVITY_VIEW']
 
     # ITicketManipulator methods
 
