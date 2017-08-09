@@ -29,7 +29,8 @@ class Accreditation(Component):
 
     def environment_created(self):
 
-        self.upgrade_environment(self.env.get_db_cnx())
+        with self.env.db_transaction as db:
+            self.upgrade_environment(db)
 
     def environment_needs_upgrade(self, db):
 
@@ -75,15 +76,12 @@ class Accreditation(Component):
 
             id = int(req.args['ticket'])
             topic = req.args['topic']
-            participants = req.args['participants'].strip().split(',')
-
-            db = self.env.get_db_cnx()
-
-            cursor = db.cursor()
+            # Richard@Lyders.com: strip out spaces surrounding commas in the list
+            participants = [x.strip() for x in req.args['participants'].strip().split(',')]
 
             for item in participants:
-
-                cursor.execute("INSERT INTO accreditation VALUES(%s, %s, '', '', %s)", (id, topic, item))
+                with self.env.db_transaction as db:
+                    db("INSERT INTO accreditation VALUES(%s, %s, '', '', %s)", (id, topic, item))
 
             ticket = Ticket(self.env, id)
 
@@ -101,11 +99,8 @@ class Accreditation(Component):
             conclusion = req.args['conclusion']
             comment = req.args['comment']
 
-            db = self.env.get_db_cnx()
-
-            cursor = db.cursor()
-
-            cursor.execute('UPDATE accreditation SET conclusion = %s, comment = %s WHERE ticket = %s AND topic = %s AND author = %s;',
+            with self.env.db_transaction as db:
+                db('UPDATE accreditation SET conclusion = %s, comment = %s WHERE ticket = %s AND topic = %s AND author = %s;',
                 (conclusion, comment, id, topic, author))
 
             ticket = Ticket(self.env, id)
@@ -169,14 +164,11 @@ class Accreditation(Component):
 
     def _get_accreditations(self, id):
 
-        db = self.env.get_db_cnx()
         result = {}
 
-        cursor = db.cursor()
-
-        cursor.execute('SELECT * FROM accreditation WHERE ticket = %s;', (id,))
-
-        for ticket, topic, conclusion, comment, author in cursor:
+        for ticket, topic, conclusion, comment, author in self.env.db_query("""
+            SELECT * FROM accreditation WHERE ticket = %s
+            """, (id,) ):
 
             result.setdefault(topic, []).append((author, conclusion, comment))
 
