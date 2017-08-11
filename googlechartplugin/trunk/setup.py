@@ -8,7 +8,7 @@ setup(
     author = 'Martin Aspeli',
     author_email = 'optilude@gmail.com',
     description = 'Trac plugin for drawing charts with Google Chart API',
-    version = '0.1',
+    version = '0.2',
     license='BSD',
     packages=['gchartplugin'],
     entry_points = {
