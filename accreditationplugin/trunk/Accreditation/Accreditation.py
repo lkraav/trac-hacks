@@ -6,117 +6,107 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-
 '''
-Created on 2014-03-15
+Created on 2014-03-19
 
 @author: cauly
 '''
 
-import re
+from genshi.filters.transform import Transformer
 
-from trac.core import Component, implements, TracError
-from trac.ticket.model import Ticket
-from trac.web.api import ITemplateStreamFilter, IRequestHandler, Request
+from trac.core import Component, TracError, implements
 from trac.env import IEnvironmentSetupParticipant
-from genshi.filters.transform import Transformer, StreamBuffer
-from genshi.builder import tag
-from trac.ticket.notification import TicketNotifyEmail
+from trac.ticket.model import Ticket
+from trac.util import to_list
+from trac.util.html import html as tag
+from trac.web.api import IRequestHandler
+from trac.web.chrome import ITemplateStreamFilter
+from trac.db import DatabaseManager
+import db_default
 
 class Accreditation(Component):
 
-    implements(ITemplateStreamFilter, IEnvironmentSetupParticipant, IRequestHandler)
+    implements(IEnvironmentSetupParticipant, IRequestHandler,
+               ITemplateStreamFilter)
 
     def environment_created(self):
+        self.upgrade_environment()
 
-        with self.env.db_transaction as db:
-            self.upgrade_environment(db)
+    def environment_needs_upgrade(self, db=None):
 
-    def environment_needs_upgrade(self, db):
-
-        try:
-
-            cursor = db.cursor()
-
-            cursor.execute('SELECT * FROM accreditation;')
-
+        dburi = self.config.get('trac', 'database')
+        cursor = db.cursor()
+        tables = self._get_tables(dburi, cursor)
+        if 'accreditation' in tables:
             return False
-
-        except:
-
+        else:
             return True
 
-    def upgrade_environment(self, db):
-
-        cursor = db.cursor()
-
-        cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS accreditation (
-                            ticket INT,
-                            topic VARCHAR(100),
-                            conclusion VARCHAR(50),
-                            comment TEXT,
-                            author TEXT);
-                       """)
-
-        cursor.execute('CREATE INDEX accreditation_ticket_index ON accreditation (ticket);')
+    def upgrade_environment(self, db=None):
+        db_manager, _ = DatabaseManager(self.env)._get_connector()
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            for table in db_default.tables:
+                for sql in db_manager.to_sql(table):
+                    cursor.execute(sql)
 
     def match_request(self, req):
-
-        return req.path_info.startswith('/accreditation/new') or req.path_info.startswith('/accreditation/comment')
+        return (req.path_info.startswith('/accreditation/new') or
+                req.path_info.startswith('/accreditation/comment'))
 
     def process_request(self, req):
-        """
-
-        :type req: Request
-        :return:
-        """
-
         if req.path_info.startswith('/accreditation/new'):
 
             id = int(req.args['ticket'])
             topic = req.args['topic']
-            # Richard@Lyders.com: strip out spaces surrounding commas in the list
-            participants = [x.strip() for x in req.args['participants'].strip().split(',')]
+            participants = to_list(req.args.get('participants'))
 
-            for item in participants:
-                with self.env.db_transaction as db:
-                    db("INSERT INTO accreditation VALUES(%s, %s, '', '', %s)", (id, topic, item))
+            with self.env.db_transaction as db:
+                for item in participants:
+                    db("""
+                        INSERT INTO accreditation VALUES(%s, %s, '', '', %s)
+                        """, (id, topic, item))
 
             ticket = Ticket(self.env, id)
 
             ticket['cc'] += ',' + ','.join(participants)
 
-            ticket.save_changes(req.authname, "Launched New Accreditation '''%s'''" % topic)
+            ticket.save_changes(req.authname,
+                                "Launched New Accreditation '''%s'''" % topic)
 
             req.redirect(req.href('ticket', id))
 
         elif req.path_info.startswith('/accreditation/comment'):
 
             id = int(req.args['ticket'])
-            topic = req.args['topic']
+            topic = req.args.get('topic')
             author = req.authname
-            conclusion = req.args['conclusion']
-            comment = req.args['comment']
+            conclusion = req.args.get('conclusion')
+            comment = req.args.get('comment')
+            if conclusion and comment:
+                ticket_comment = "Accredited '''%s''' for \"''%s''\".\n\n%s" \
+                                 % (topic, conclusion, comment)
 
-            with self.env.db_transaction as db:
-                db('UPDATE accreditation SET conclusion = %s, comment = %s WHERE ticket = %s AND topic = %s AND author = %s;',
-                (conclusion, comment, id, topic, author))
-
-            ticket = Ticket(self.env, id)
-
-            ticket.save_changes(req.authname, "Accredited '''%s''' for \"''%s''\".\n\n%s" % (topic, conclusion, comment))
+                with self.env.db_transaction as db:
+                    db("""
+                        UPDATE accreditation SET conclusion = %s, comment = %s
+                        WHERE ticket = %s AND topic = %s AND author = %s
+                        """, (conclusion, comment, id, topic, author))
+                    ticket = Ticket(self.env, id)
+                    ticket.save_changes(req.authname, ticket_comment)
 
             req.redirect(req.href('ticket', id))
 
     def filter_stream(self, req, method, filename, stream, data):
 
-        if not req.path_info.startswith('/ticket') or not 'ticket' in data:
+        if not req.path_info.startswith('/ticket') or 'ticket' not in data:
             return stream
 
         ticket = data['ticket']
 
-        accdivheader = tag.h3(tag.a('Accreditation', href='#accreditation_wrapper'), class_='foldable')
+        accdivheader = tag.h3(
+            tag.a('Accreditation', href='#accreditation_wrapper'),
+            class_='foldable')
 
         createacc = tag.div(
             tag.form(
@@ -157,7 +147,10 @@ class Accreditation(Component):
             , class_='trac-content', style='background: none repeat scroll 0 0 #FFFFDD; border:1px solid #DDDD99;'
         )
 
-        accdiv = tag.div(accdivheader, tag.div(createacc, acclist, id='accreditation'), id='accreditation_wrapper')
+        accdiv = tag.div(
+            accdivheader,
+            tag.div(createacc, acclist, id='accreditation'),
+            id='accreditation_wrapper')
 
         stream |= Transformer('//div[@id="ticket"]').after(accdiv)
         return stream
@@ -165,11 +158,31 @@ class Accreditation(Component):
     def _get_accreditations(self, id):
 
         result = {}
-
         for ticket, topic, conclusion, comment, author in self.env.db_query("""
             SELECT * FROM accreditation WHERE ticket = %s
             """, (id,) ):
-
             result.setdefault(topic, []).append((author, conclusion, comment))
-
         return result
+
+    def _get_tables(self, dburi, cursor):
+        """Code from TracMigratePlugin by Jun Omae (see tracmigrate.admin)."""
+        if dburi.startswith('sqlite:'):
+            sql = """
+                SELECT name
+                  FROM sqlite_master
+                 WHERE type='table'
+                   AND NOT name='sqlite_sequence'
+            """
+        elif dburi.startswith('postgres:'):
+            sql = """
+                SELECT tablename
+                  FROM pg_tables
+                 WHERE schemaname = ANY (current_schemas(false))
+            """
+        elif dburi.startswith('mysql:'):
+            sql = "SHOW TABLES"
+        else:
+            raise TracError('Unsupported database type "%s"'
+                            % dburi.split(':')[0])
+        cursor.execute(sql)
+        return sorted([row[0] for row in cursor])
