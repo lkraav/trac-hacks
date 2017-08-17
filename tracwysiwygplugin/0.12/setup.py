@@ -4,7 +4,7 @@
 def main():
     kwargs = {
         'name': 'TracWysiwyg',
-        'version': '0.12.0.6',
+        'version': '0.12.0.7',
         'description': 'TracWiki WYSIWYG Editor',
         'license': 'BSD',
         'url': 'https://trac-hacks.org/wiki/TracWysiwygPlugin',

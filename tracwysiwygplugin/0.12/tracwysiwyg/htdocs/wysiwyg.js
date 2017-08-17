@@ -273,9 +273,6 @@ prototype.createEditable = function(d, textarea, textareaResizable) {
         var contentDocument = null;
         var grip = d.createElement("div");
         grip.className = "trac-grip";
-        if (/^[0-9]+$/.exec(dimension.width)) {
-            grip.style.width = dimension.width + "px";
-        }
         $(grip).bind("mousedown", beginDrag);
         wrapper.appendChild(grip);
         var resizable = d.createElement("div");
