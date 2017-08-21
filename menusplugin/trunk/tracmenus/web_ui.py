@@ -9,17 +9,19 @@ from urlparse import urlsplit
 
 from trac.core import *
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_script, add_stylesheet,ITemplateProvider
+from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 from trac.config import ListOption, BoolOption
 from trac.util.html import html
 from trac.util.compat import sorted
 
+
 class MenuManagerModule(Component):
     implements(IRequestFilter, ITemplateProvider)
 
-    managed_menus = ListOption('menu-custom', 'managed_menus', 'mainnav,metanav',
-                        doc="""List of menus to be controlled by the Menu Manager""")
-    serve_ui_files = BoolOption('menu-custom', 'serve_ui_files', True)
+    managed_menus = ListOption('menu-custom', 'managed_menus',
+        'mainnav,metanav', doc="""
+        List of menus to be controlled by the Menu Manager
+        """)
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
@@ -27,11 +29,12 @@ class MenuManagerModule(Component):
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
-        return [('tracmenus',resource_filename(__name__, 'htdocs'))]
+        return [('tracmenus', resource_filename(__name__, 'htdocs'))]
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
+
     def post_process_request(self, req, template, data, content_type):
         if 'nav_orig' in req.chrome:
             return template, data, content_type
@@ -44,11 +47,10 @@ class MenuManagerModule(Component):
             if menu_name=='ctxtnav':
                 req.chrome['ctxtnav'] = [ ctxt_item.get('label') for ctxt_item in req.chrome['nav'][menu_name] ]
 
-        if self.serve_ui_files:
-            add_script(req, 'tracmenus/js/superfish.js')
-            add_script(req, 'tracmenus/js/tracmenus.js')
-            add_script(req, 'tracmenus/js/jquery.hoverIntent.minified.js')
-            add_stylesheet(req, 'tracmenus/css/tracmenus.css')
+        add_script(req, 'tracmenus/js/superfish.js')
+        add_script(req, 'tracmenus/js/tracmenus.js')
+        add_script(req, 'tracmenus/js/jquery.hoverIntent.js')
+        add_stylesheet(req, 'tracmenus/css/superfish.css')
         return template, data, content_type
 
     def _get_menu(self, req, menu_name, nav_orig):
@@ -62,7 +64,7 @@ class MenuManagerModule(Component):
 
         tree_menu={}
         for option in sorted(menu_orig+[{'name':key} for key in config_menu.keys()],
-                             key=lambda x:int(config_menu.get(x['name'],{}).get('order',999))):
+                             key=lambda x: float(config_menu.get(x['name'],{}).get('order',999))):
             name = option['name']
             if 'visited' in tree_menu.get(name, []) \
                     or (config_menu.get(name, {}).get('enabled', True)==False and not 'active' in option)\

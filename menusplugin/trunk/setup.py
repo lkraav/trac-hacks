@@ -7,18 +7,19 @@
 from setuptools import setup
 
 setup(name="TracMenusPlugin",
-      version="0.1.1",
+      version="0.2.0",
       packages=['tracmenus'],
       author="Catalin Balan",
       author_email="cbalan@optaros.com",
-      url="http://code.optaros.com/trac/oforge",
+      url="https://trac-hacks.org/wiki/MenusPlugin",
       description="Trac Menus",
       license="BSD",
       entry_points={'trac.plugins': [
-            'tracmenus.web_ui = tracmenus.web_ui',
-            ]},
-      package_data={'tracmenus' : ['htdocs/js/*.js',
-                                         'htdocs/css/*.css',
-                                         'templates/*.html',
-                                         'htdocs/images/*.png']}
-)
+          'tracmenus.web_ui = tracmenus.web_ui',
+      ]},
+      package_data={'tracmenus': [
+          'htdocs/js/*.js',
+          'htdocs/css/*.css',
+          'htdocs/images/*.png'
+      ]}
+      )
