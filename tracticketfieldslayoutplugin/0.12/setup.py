@@ -28,7 +28,7 @@ else:
 
 setup(
     name='TracTicketFieldsLayoutPlugin',
-    version='0.12.0.4',
+    version='0.12.0.5',
     description='Allow to customize the layout of ticket fields in view and form',
     license='BSD',  # the same as Trac
     url='http://trac-hacks.org/wiki/TracTicketFieldsLayoutPlugin',

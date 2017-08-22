@@ -11,9 +11,12 @@ from genshi.builder import tag
 from genshi.filters.transform import StreamBuffer
 
 from trac.core import Component, implements
+from trac.ticket.api import TicketSystem
+from trac.ticket.model import Ticket
 from trac.util.translation import N_
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data, \
+                            add_stylesheet
 
 from tracticketfieldslayout.api import ListOption, get_default_fields, \
                                        get_groups
@@ -67,10 +70,23 @@ ticket form"""))
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if req and data and template in self._templates:
-            for path in self._stylesheet_files:
-                add_stylesheet(req, path)
-            add_script(req, 'ticketfieldslayout/web_ui.js')
+        if req and data and template:
+            if template in self._templates:
+                for path in self._stylesheet_files:
+                    add_stylesheet(req, path)
+                add_script(req, 'ticketfieldslayout/web_ui.js')
+            if 'common/js/query.js' in req.chrome.get('scriptset') or set():
+                add_script(req, 'ticketfieldslayout/query.js')
+                default_fields = self._default_fields()
+                fields, groups = self._get_fields_and_groups(default_fields)
+                if fields and groups:
+                    fields = list(Ticket.protected_fields) + fields
+                else:
+                    fields = [f['name'] for f in TicketSystem(self.env).fields]
+                    groups = {}
+                fields.append('id')
+                script_data = {'fields': fields, 'groups': groups}
+                add_script_data(req, {'ticketfieldslayout': script_data})
         return template, data, content_type
 
     def get_htdocs_dirs(self):
@@ -86,13 +102,21 @@ ticket form"""))
         if not (filename and data and 'ticket' in data and
                 filename in self._templates and self._fields):
             return stream
-        fields = [f.lower() for f in self._fields if f]
-        if fields == self._default_fields():
-            return stream
-        groups = get_groups(self.config)
-        self._prepend_stdprops(fields, groups)
-        stream |= TicketFieldsLayoutTransformer(fields, groups, req, data)
+
+        default_fields = self._default_fields()
+        fields, groups = self._get_fields_and_groups(default_fields)
+        if fields and groups:
+            stream |= TicketFieldsLayoutTransformer(fields, groups, req, data)
         return stream
+
+    def _get_fields_and_groups(self, default_fields):
+        fields = [f.lower() for f in self._fields if f]
+        if fields == default_fields:
+            return None, None
+        else:
+            groups = get_groups(self.config)
+            self._prepend_stdprops(fields, groups)
+            return fields, groups
 
     def _default_fields(self):
         return get_default_fields(self.env)
