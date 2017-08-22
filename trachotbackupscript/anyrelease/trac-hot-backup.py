@@ -29,7 +29,6 @@ import os
 import re
 import shutil
 import stat
-import string
 import subprocess
 import sys
 import time
@@ -50,6 +49,8 @@ archive_map = {
 }
 
 # Chmod recursively on a whole subtree
+
+
 def chmod_tree(path, mode, mask):
     def visit(arg, dirname, names):
         mode, mask = arg
@@ -61,6 +62,8 @@ def chmod_tree(path, mode, mask):
     os.path.walk(path, visit, (mode, mask))
 
 # For clearing away read-only directories
+
+
 def safe_rmtree(dirname, retry=0):
     "Remove the tree at DIRNAME, making it writable first"
     def rmtree(dirname):
@@ -150,7 +153,7 @@ if __name__ == '__main__':
             usage(sys.stderr)
             sys.exit(2)
 
-    print "Beginning hot backup of '"+ project_dir + "'."
+    print "Beginning hot backup of '" + project_dir + "'."
 
     # Step 1: Ask trac-admin to make a hot copy of a project.
 
@@ -210,10 +213,9 @@ if __name__ == '__main__':
                 err_msg = "Zip failed: " + str(e)
                 err_code = -5
 
-
         if err_code != 0:
             print >> sys.stderr, \
-                  "Unable to create an archive for the backup.\n" + err_msg
+                "Unable to create an archive for the backup.\n" + err_msg
             sys.exit(err_code)
         else:
             print "Archive created, removing backup '" + backup_subdir + "'..."
@@ -222,11 +224,13 @@ if __name__ == '__main__':
     # Step 3: finally, remove all project backups other than last NUM_BACKUPS.
 
     if num_backups > 0:
-        regexp = re.compile("^" + project + "-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}?" + ext_re + "$")
+        regexp = re.compile("^" + project +
+                            "-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}?" +
+                            ext_re + "$")
         directory_list = os.listdir(backup_dir)
         old_list = filter(lambda x: regexp.search(x), directory_list)
         old_list.sort()
-        del old_list[max(0,len(old_list)-num_backups):]
+        del old_list[max(0, len(old_list) - num_backups):]
         for item in old_list:
             old_backup_item = os.path.join(backup_dir, item)
             print "Removing old backup: " + old_backup_item
