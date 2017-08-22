@@ -82,7 +82,11 @@ ticket form"""))
                 if fields and groups:
                     fields = list(Ticket.protected_fields) + fields
                 else:
-                    fields = [f['name'] for f in TicketSystem(self.env).fields]
+                    fields = list(Ticket.protected_fields)
+                    used_fields = set(fields)
+                    fields.extend(f['name']
+                                  for f in TicketSystem(self.env).fields
+                                  if f['name'] not in used_fields)
                     groups = {}
                 fields.append('id')
                 script_data = {'fields': fields, 'groups': groups}
