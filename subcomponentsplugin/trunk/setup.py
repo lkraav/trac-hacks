@@ -9,10 +9,12 @@ from setuptools import setup
 
 setup(
     name='TracSubcomponents',
-    version='1.3.0',
+    version='1.3.1',
     packages=['subcomponents'],
-    package_data={'subcomponents': ['htdocs/*.js']},
-
+    package_data={'subcomponents': [
+        'htdocs/*.js',
+        'templates/*.html',
+    ]},
     author='Niels Sascha Reedijk',
     author_email='niels.reedijk@gmail.com',
     description='Provides support for subcomponents in the interface.',
