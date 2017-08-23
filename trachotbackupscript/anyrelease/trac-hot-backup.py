@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     # Do we want to create an archive of the backup
     if archive_type:
-        if 'archive_type' in archive_map:
+        if archive_type in archive_map:
             # Additionally find files with the archive extension.
             ext_re = "(" + re.escape(archive_map[archive_type]) + ")?"
         else:
