@@ -35,9 +35,6 @@ import time
 
 # Global Settings
 
-# Path to trac-admin utility
-tracadmin = r'usr/bin/trac-admin'
-
 # Default number of backups to keep around (0 for "keep them all")
 num_backups = int(os.environ.get('TRAC_HOTBACKUP_BACKUPS_NUMBER', 64))
 
@@ -153,6 +150,12 @@ if __name__ == '__main__':
             usage(sys.stderr)
             sys.exit(2)
 
+    try:
+        import trac.admin.console
+    except ImportError:
+        print >> sys.stderr, "You need to install Trac to use this script."
+        sys.exit(2)
+
     print "Beginning hot backup of '" + project_dir + "'."
 
     # Step 1: Ask trac-admin to make a hot copy of a project.
@@ -160,8 +163,8 @@ if __name__ == '__main__':
     backup_subdir = os.path.join(backup_dir,
                                  project + "-" + time.strftime(r"%Y-%m-%d-%H%M"))
     print "Backing up project to '" + backup_subdir + "'..."
-    err_code = subprocess.call([tracadmin, project_dir, "hotcopy",
-                                backup_subdir])
+    err_code = subprocess.call([sys.executable, '-m', 'trac.admin.console',
+                                project_dir, "hotcopy", backup_subdir])
     if err_code != 0:
         print >> sys.stderr, "Unable to backup the repository."
         sys.exit(err_code)
