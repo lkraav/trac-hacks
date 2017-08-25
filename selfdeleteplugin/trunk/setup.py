@@ -21,7 +21,7 @@ setup(
                 "and attachments that they created.",
     license="BSD",
     keywords="trac plugin wiki attachment delete",
-    url="http://trac-hacks.org/wiki/SelfDeletePlugin",
+    url="https://trac-hacks.org/wiki/SelfDeletePlugin",
     classifiers=[
         'Framework :: Trac',
     ],

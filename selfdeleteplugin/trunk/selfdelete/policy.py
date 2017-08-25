@@ -18,7 +18,7 @@ class SelfDeletePolicy(Component):
     """Permissions policy that allows users to delete wiki pages and
     attachments that they created.
     """
-    
+
     implements(IPermissionPolicy, IPermissionRequestor)
 
     # IPermissionRequestor methods
