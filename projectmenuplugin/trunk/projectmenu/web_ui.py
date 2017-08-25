@@ -13,7 +13,7 @@ import posixpath
 from genshi.builder import tag
 from trac.core import *
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_script
+    add_script
 from trac.web.api import IRequestFilter
 from trac.web.main import open_environment
 
@@ -43,10 +43,11 @@ class ProjectMenuModule(Component):
         projects.append((tag.option(self.env.project_name,
                                     selected=True, value=''),
                          self.env.project_name,))
-        projects.sort(lambda a,b: cmp(a[1],b[1])) # Sort on the project names
+        # Sort on the project names
+        projects.sort(lambda a, b: cmp(a[1], b[1]))
 
         yield ('metanav', 'projectmenu',
-               tag.select([e for e,_ in projects], name='projectmenu',
+               tag.select([e for e, _ in projects], name='projectmenu',
                           id='projectmenu',
                           onchange='return on_projectmenu_change();'))
 

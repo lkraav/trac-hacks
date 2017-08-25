@@ -11,24 +11,24 @@
 from setuptools import setup
 
 setup(
-    name = 'TracProjectMenu',
-    version = '2.0',
-    packages = ['projectmenu'],
-    package_data = { 'projectmenu': ['htdocs/*.js'] },
+    name='TracProjectMenu',
+    version='2.0',
+    packages=['projectmenu'],
+    package_data={'projectmenu': ['htdocs/*.js']},
 
-    author = "Noah Kantrowitz",
-    author_email = "noah@coderanger.net",
-    description = "Provide a menu entry to switch between projects in TRAC_ENV_PARENT_DIR-type setup.",
-    license = "3-Clause BSD",
-    keywords = "trac plugin multiproject",
-    url = "http://trac-hacks.org/wiki/ProjectMenuPlugin",
-    classifiers = [
+    author="Noah Kantrowitz",
+    author_email="noah@coderanger.net",
+    description="Provide a menu entry to switch between projects in TRAC_ENV_PARENT_DIR-type setup.",
+    license="3-Clause BSD",
+    keywords="trac plugin multiproject",
+    url="http://trac-hacks.org/wiki/ProjectMenuPlugin",
+    classifiers=[
         'Framework :: Trac',
     ],
 
     #install_requires = ['TracWebAdmin'],
 
-    entry_points = {
+    entry_points={
         'trac.plugins': [
             'projectmenu.web_ui = projectmenu.web_ui',
         ]
