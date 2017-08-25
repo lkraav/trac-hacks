@@ -19,14 +19,15 @@ except ImportError:
 
 # TODO: Add a client-side identicon implementation using canvas <NPK>
 
+
 class GravatarHackergotchiProvider(Component):
     """Use gravatar.com to provide images."""
-    
+
     implements(IHackergotchiProvider)
-    
+
     default = Option('hackergotchi', 'gravatar_default', default='identicon',
                      doc='The default value to pass along to gravatar to use if the email address does not match.')
-    
+
     # IHackergotchiProvider methods
     def get_hackergotchi(self, href, user, name, email):
         if email:
@@ -39,20 +40,20 @@ class GravatarHackergotchiProvider(Component):
 
 class IdenticonHackergotchiProvider(Component):
     """Generate identicons locally to provide images."""
-    
+
     implements(IHackergotchiProvider, IRequestHandler)
-    
+
     # IHackergotchiProvider methods
     def get_hackergotchi(self, href, user, name, email):
         if render_identicon is None:
             return None
-        
+
         h = md5(user)
         h.update(name or '')
         h.update(email or '')
         code = h.hexdigest()[:8]
-        return href.identicon(code+'.png')
-    
+        return href.identicon(code + '.png')
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/identicon')
@@ -60,14 +61,14 @@ class IdenticonHackergotchiProvider(Component):
     def process_request(self, req):
         if render_identicon is None:
             raise TracError('PIL not installed, can not render identicon')
-        
+
         # Render the identicon to a string
         code = int(req.path_info[11:-4], 16)
         icon = render_identicon(code, 20)
         out = StringIO()
         icon.save(out, 'png')
         data = out.getvalue()
-        
+
         # Send response
         req.send_response(200)
         req.send_header('Content-Type', 'image/png')
