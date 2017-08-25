@@ -11,7 +11,7 @@ from setuptools import setup
 
 setup(
     name='TracOhlohBadge',
-    version='1.0',
+    version='1.1',
     packages=['ohlohbadge'],
     author='Noah Kantrowitz',
     author_email='noah+pypi@coderanger.net',
