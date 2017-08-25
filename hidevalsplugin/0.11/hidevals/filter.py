@@ -14,6 +14,7 @@ except NameError:
 
 from api import HideValsSystem
 
+
 class HideValsFilter(Component):
     """A filter to hide certain ticket field values."""
 
@@ -27,8 +28,8 @@ class HideValsFilter(Component):
         if (req.perm.has_permission('TRAC_ADMIN')
             or not req.perm.has_permission('TICKET_HIDEVALS')
             or (not req.path_info.startswith('/newticket')
-                    and not req.path_info.startswith('/ticket')
-                    and not req.path_info.startswith('/query'))):
+                and not req.path_info.startswith('/ticket')
+                and not req.path_info.startswith('/query'))):
             # TRAC_ADMIN would have the filterer permissions by inheritance
             return (template, data, content_type)
         else:
@@ -53,14 +54,17 @@ class HideValsFilter(Component):
                                     opts_to_delete.append(opt)
 
                             for opt in opts_to_delete:
-                                self.env.log.debug("HideValsFilter: '%s' option removed from '%s' field" % (opt, field['name']))
+                                self.env.log.debug(
+                                    "HideValsFilter: '%s' option removed from '%s' field" % (opt, field['name']))
                                 opts.remove(opt)
                         else:
                             # If there are no values for this user, remove the field entirely
-                            # NOTE: Deleting in place screws up the iteration, so do it all afterwards. <NPK>
+                            # NOTE: Deleting in place screws up the iteration,
+                            # so do it all afterwards. <NPK>
                             to_delete.append(field)
                 for field in to_delete:
-                    self.env.log.debug("HideValsFilter: '%s' field removed" % field['name'])
+                    self.env.log.debug(
+                        "HideValsFilter: '%s' field removed" % field['name'])
                     fields.remove(field)
             elif req.path_info.startswith('/query'):
                 for field_name, field_value in fields.iteritems():
@@ -76,13 +80,16 @@ class HideValsFilter(Component):
                                     opts_to_delete.append(opt)
 
                             for opt in opts_to_delete:
-                                self.env.log.debug("HideValsFilter: '%s' option removed from '%s' field" % (opt, field_name))
+                                self.env.log.debug(
+                                    "HideValsFilter: '%s' option removed from '%s' field" % (opt, field_name))
                                 opts.remove(opt)
                         else:
                             # If there are no values for this user, remove the field entirely
-                            # NOTE: Deleting in place screws up the iteration, so do it all afterwards. <NPK>
+                            # NOTE: Deleting in place screws up the iteration,
+                            # so do it all afterwards. <NPK>
                             to_delete.append(field_name)
                 for field_name in to_delete:
-                    self.env.log.debug("HideValsFilter: '%s' field removed" % field_name)
+                    self.env.log.debug(
+                        "HideValsFilter: '%s' field removed" % field_name)
                     del fields[field_name]
             return (template, data, content_type)

@@ -13,6 +13,7 @@ except NameError:
 
 import db_default
 
+
 class HideValsSystem(Component):
     """Database provider for the TracHideVals plugin."""
 
@@ -31,7 +32,8 @@ class HideValsSystem(Component):
         groups = self._get_groups(req.authname)
         fields = {}
         for group in groups:
-            cursor.execute('SELECT field, value FROM hidevals WHERE sid = %s', (group,))
+            cursor.execute(
+                'SELECT field, value FROM hidevals WHERE sid = %s', (group,))
             for f, v in cursor:
                 fields.setdefault(f, []).append(v)
 
@@ -48,7 +50,8 @@ class HideValsSystem(Component):
 
     def environment_needs_upgrade(self, db):
         cursor = db.cursor()
-        cursor.execute("SELECT value FROM system WHERE name=%s", (db_default.name,))
+        cursor.execute("SELECT value FROM system WHERE name=%s",
+                       (db_default.name,))
         value = cursor.fetchone()
         if not value:
             self.found_db_version = 0
@@ -67,21 +70,23 @@ class HideValsSystem(Component):
             db_manager = db
 
         # Insert the default table
-        old_data = {} # {table_name: (col_names, [row, ...]), ...}
+        old_data = {}  # {table_name: (col_names, [row, ...]), ...}
         cursor = db.cursor()
         if not self.found_db_version:
-            cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",(db_default.name, db_default.version))
+            cursor.execute("INSERT INTO system (name, value) VALUES (%s, %s)",
+                           (db_default.name, db_default.version))
         else:
-            cursor.execute("UPDATE system SET value=%s WHERE name=%s",(db_default.version, db_default.name))
+            cursor.execute("UPDATE system SET value=%s WHERE name=%s",
+                           (db_default.version, db_default.name))
             for tbl in db_default.tables:
                 try:
-                    cursor.execute('SELECT * FROM %s'%tbl.name)
-                    old_data[tbl.name] = ([d[0] for d in cursor.description], cursor.fetchall())
-                    cursor.execute('DROP TABLE %s'%tbl.name)
+                    cursor.execute('SELECT * FROM %s' % tbl.name)
+                    old_data[tbl.name] = (
+                        [d[0] for d in cursor.description], cursor.fetchall())
+                    cursor.execute('DROP TABLE %s' % tbl.name)
                 except Exception, e:
                     if 'OperationalError' not in e.__class__.__name__:
-                        raise e # If it is an OperationalError, just move on to the next table
-
+                        raise e  # If it is an OperationalError, just move on to the next table
 
         for tbl in db_default.tables:
             for sql in db_manager.to_sql(tbl):
@@ -91,7 +96,8 @@ class HideValsSystem(Component):
             if tbl.name in old_data:
                 data = old_data[tbl.name]
                 sql = 'INSERT INTO %s (%s) VALUES (%s)' % \
-                  (tbl.name, ','.join(data[0]), ','.join(['%s'] * len(data[0])))
+                    (tbl.name, ','.join(data[0]),
+                     ','.join(['%s'] * len(data[0])))
                 for row in data[1]:
                     try:
                         cursor.execute(sql, row)

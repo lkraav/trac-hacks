@@ -11,6 +11,7 @@ from trac.admin import IAdminPanelProvider
 
 from api import HideValsSystem
 
+
 class HideValsAdminModule(Component):
     """WebAdmin sub-page for configuring the TracHideVals plugins."""
 
@@ -26,8 +27,10 @@ class HideValsAdminModule(Component):
     def render_admin_panel(self, req, cat, page, path_info):
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        field = dict([(field['name'], field) for field in TicketSystem(self.env).get_ticket_fields()])[page]
-        cursor.execute('SELECT sid, value FROM hidevals WHERE field = %s', (field['name'],))
+        field = dict([(field['name'], field)
+                      for field in TicketSystem(self.env).get_ticket_fields()])[page]
+        cursor.execute(
+            'SELECT sid, value FROM hidevals WHERE field = %s', (field['name'],))
         values = cursor.fetchall()
         enabled = field['name'] not in HideValsSystem(self.env).dont_filter
         if req.method == 'POST':
@@ -35,13 +38,15 @@ class HideValsAdminModule(Component):
                 group = req.args['group']
                 value = req.args['value']
                 if (group, value) not in values:
-                    cursor.execute('INSERT INTO hidevals (sid, field, value) VALUES (%s, %s, %s)', (group, field['name'], value))
+                    cursor.execute(
+                        'INSERT INTO hidevals (sid, field, value) VALUES (%s, %s, %s)', (group, field['name'], value))
                     db.commit()
             elif req.args.get('remove'):
                 sel = req.args.getlist('sel')
                 for val in sel:
                     group, value = val.split('#', 1)
-                    cursor.execute('DELETE FROM hidevals WHERE sid = %s AND field = %s AND value = %s', (group, field['name'], value))
+                    cursor.execute(
+                        'DELETE FROM hidevals WHERE sid = %s AND field = %s AND value = %s', (group, field['name'], value))
                     db.commit()
             elif req.args.get('toggle'):
                 new_val = HideValsSystem(self.env).dont_filter[:]
@@ -49,14 +54,15 @@ class HideValsAdminModule(Component):
                     new_val.append(field['name'])
                 else:
                     new_val.remove(field['name'])
-                self.config.set('hidevals', 'dont_filter', ', '.join(sorted(new_val)))
+                self.config.set('hidevals', 'dont_filter',
+                                ', '.join(sorted(new_val)))
                 self.config.save()
 
             req.redirect(req.href.admin(cat, page))
 
-        data = {'field' : field,
-                        'values' : [{'group': g, 'value': v} for g, v in values],
-                        'enabled' : enabled}
+        data = {'field': field,
+                'values': [{'group': g, 'value': v} for g, v in values],
+                'enabled': enabled}
         return 'admin_hidevals.html', data
 
     # ITemplateProvider methods
