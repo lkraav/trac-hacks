@@ -12,13 +12,15 @@ from acct_mgr.api import AccountManager
 
 __all__ = ['HTTPAuthFilter']
 
+
 class HTTPAuthFilter(Component):
     """Request filter and handler to provide HTTP authentication."""
 
     paths = ListOption('httpauth', 'paths', default='/login/xmlrpc',
                        doc='Paths to force HTTP authentication on.')
 
-    formats = ListOption('httpauth', 'formats', doc='Request formats to force HTTP authentication on')
+    formats = ListOption('httpauth', 'formats',
+                         doc='Request formats to force HTTP authentication on')
 
     implements(IRequestFilter, IAuthenticator)
 
@@ -32,7 +34,8 @@ class HTTPAuthFilter(Component):
         if req.args.get('format') in self.formats:
             check = True
         if check and not self._check_password(req):
-            self.log.info('HTTPAuthFilter: No/bad authentication data given, returing 403')
+            self.log.info(
+                'HTTPAuthFilter: No/bad authentication data given, returing 403')
             return self
         return handler
 
@@ -42,7 +45,7 @@ class HTTPAuthFilter(Component):
     # IRequestHandler methods (sort of)
     def process_request(self, req):
         if req.session:
-            req.session.save() # Just in case
+            req.session.save()  # Just in case
 
         auth_req_msg = 'Authentication required'
         req.send_response(401)
@@ -67,7 +70,7 @@ class HTTPAuthFilter(Component):
             req.environ['REMOTE_USER'] = user
             self.log.debug('HTTPAuthFilter: Authentication okay for %s', user)
             return user
-            
+
     # Internal methods
     def _check_password(self, req):
         header = req.get_header('Authorization')
