@@ -11,7 +11,7 @@
 from trac.config import ListOption
 from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import IPermissionGroupProvider, IPermissionPolicy, \
-                      IPermissionRequestor, PermissionSystem
+    IPermissionRequestor, PermissionSystem
 from trac.ticket.model import Ticket
 from trac.util.compat import set
 from trac.web.chrome import Chrome
