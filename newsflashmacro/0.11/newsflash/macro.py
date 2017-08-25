@@ -42,5 +42,3 @@ class NewsFlashEndMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content):
         return Markup('</div>')
-
-
