@@ -24,7 +24,7 @@ from trac.util.html import escape
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchChangeset, NoSuchNode, \
-                                    RepositoryManager
+    RepositoryManager
 from trac.wiki.api import WikiSystem
 from trac.wiki.formatter import WikiParser, system_message
 from trac.wiki.macros import WikiMacroBase
@@ -171,8 +171,8 @@ class IncludeMacro(WikiMacroBase):
                                     break
                         if not out:
                             return system_message(
-                                   "Comment %s does not exist for Ticket %s"
-                                   % (comment_num, ticket_num))
+                                "Comment %s does not exist for Ticket %s"
+                                % (comment_num, ticket_num))
                     else:
                         system_message("Unsupported ticket field %s"
                                        % source_format)

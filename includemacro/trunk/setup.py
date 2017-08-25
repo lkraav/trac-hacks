@@ -22,7 +22,8 @@ setup(
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
     description='Include the contents of external URLs and other Trac objects in a wiki page.',
-    long_description=open(os.path.join(os.path.dirname(__file__), 'README')).read(),
+    long_description=open(os.path.join(
+        os.path.dirname(__file__), 'README')).read(),
     license='3-Clause BSD',
     keywords='trac 0.11 plugin wiki include macro',
     url='http://trac-hacks.org/wiki/IncludeMacro',
