@@ -21,12 +21,13 @@ burndown_table = Table('burndown', key='id')[
     Column('hours_remaining', type='int'),
     Index(['id'])]
 
-milestone_table = Table('milestone', key='name')[Column('name'),
-                                                 Column('due', type='int'),
-                                                 Column('completed',
-                                                        type='int'),
-                                                 Column('description'),
-                                                 Column('started', type='int')]
+milestone_table = Table('milestone', key='name')[
+    Column('name'),
+    Column('due', type='int64'),
+    Column('completed', type='int64'),
+    Column('description'),
+    Column('started', type='int64')
+]
 
 
 def get_current_milestone(db, milestone_name):
