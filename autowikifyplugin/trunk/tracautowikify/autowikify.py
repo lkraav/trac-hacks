@@ -10,12 +10,11 @@
 
 import re
 
-from genshi.builder import tag
 from trac.config import IntOption, ListOption
 from trac.core import Component, implements
-from trac.util.compat import set
+from trac.util.html import html as tag
 from trac.wiki.api import IWikiChangeListener, IWikiSyntaxProvider, \
-                          WikiParser, WikiSystem
+    WikiParser, WikiSystem
 
 
 def _get_breakable_pattern():
@@ -40,8 +39,8 @@ def _get_breakable_pattern():
         (0xF900, 0xFAFF),   # CJK Compatibility Ideographs
         (0xFE30, 0xFE4F),   # CJK Compatibility Forms
         (0xFF00, 0xFFEF),   # Halfwidth and Fullwidth Forms
-        (0x20000, 0x2FFFF), # Plane 2
-        (0x30000, 0x3FFFF), # Plane 3
+        (0x20000, 0x2FFFF),  # Plane 2
+        (0x30000, 0x3FFFF),  # Plane 3
     ]
     char_ranges = []
     for val in _breakable_char_ranges:
@@ -54,6 +53,7 @@ def _get_breakable_pattern():
             pass
     return u'[%s]' % u''.join(char_ranges)
 
+
 _breakable_pattern = _get_breakable_pattern()
 _breakable_re = re.compile(_breakable_pattern)
 _alnum_re = re.compile(r'\w', re.UNICODE)
@@ -64,10 +64,10 @@ class AutoWikify(Component):
     do not have CamelCase names. """
     implements(IWikiChangeListener, IWikiSyntaxProvider)
 
-    exclude = ListOption('autowikify', 'exclude', doc=
-        """List of Wiki pages to exclude from auto-wikification.""")
-    explicitly_wikify = ListOption('autowikify', 'explicitly_wikify', doc=
-        """List of Wiki pages to always Wikify, regardless of size.""")
+    exclude = ListOption('autowikify', 'exclude',
+        doc="""List of Wiki pages to exclude from auto-wikification.""")
+    explicitly_wikify = ListOption('autowikify', 'explicitly_wikify',
+        doc="""List of Wiki pages to always Wikify, regardless of size.""")
     minimum_length = IntOption('autowikify', 'minimum_length', 3,
         """Minimum length of wiki page name to autowikify.""")
 
@@ -77,7 +77,7 @@ class AutoWikify(Component):
         self._update_pages()
         self._update_compiled_rules()
 
-    ### IWikiChangeListener methods
+    # IWikiChangeListener methods
 
     def wiki_page_added(self, page):
         self.pages.add(page.name)
@@ -99,7 +99,7 @@ class AutoWikify(Component):
     def wiki_page_version_deleted(self, page):
         pass
 
-    ### IWikiSyntaxProvider methods
+    # IWikiSyntaxProvider methods
 
     def get_wiki_syntax(self):
         def page_formatter(formatter, ns, match):
@@ -113,14 +113,16 @@ class AutoWikify(Component):
     def get_link_resolvers(self):
         return []
 
-    ### Internal methods
+    # Internal methods
 
     def _update_pages(self):
         all_pages = WikiSystem(self.env).get_pages()
-        self.pages = set([p for p in all_pages if len(p) >= self.minimum_length])
+        self.pages = set(
+            [p for p in all_pages if len(p) >= self.minimum_length])
         exclude = set([p.strip() for p in (self.exclude or '') if p.strip()])
         self.pages.difference_update(exclude)
-        explicitly_wikified = set([p.strip() for p in (self.explicitly_wikify or '') if p.strip()])
+        explicitly_wikified = set([p.strip() for p in (
+            self.explicitly_wikify or '') if p.strip()])
         self.pages.update(explicitly_wikified)
 
     def _update_compiled_rules(self):

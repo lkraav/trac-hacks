@@ -17,16 +17,16 @@ setup(name='TracAutoWikify',
       author='Alec Thomas',
       maintainer='Ryan J Ollos',
       maintainer_email='ryan.j.ollos@gmail.com',
-      url='http://trac-hacks.org/wiki/AutoWikifyPlugin',
+      url='https://trac-hacks.org/wiki/AutoWikifyPlugin',
       license='3-Clause BSD',
 
       packages=find_packages(exclude=['*.tests']),
-      test_suite = 'tracautowikify.tests',
-      tests_require = [],
-      entry_points = {
+      test_suite='tracautowikify.tests',
+      tests_require=[],
+      entry_points={
           'trac.plugins': [
               'tracautowikify = tracautowikify.autowikify'
           ]
       },
       install_requires=['Trac'],
-)
+      )
