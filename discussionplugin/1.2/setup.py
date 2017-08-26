@@ -1,5 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2005 Alec Thomas
+# Copyright (C) 2006-2011 Radek Bartoň
+# Copyright (C) 2012-2017 Ryan Ollos
+# Copyright (C) 2013 Markus Decke
+# Copyright (C) 2014 Steffen Hoffmann
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 from setuptools import setup
 
