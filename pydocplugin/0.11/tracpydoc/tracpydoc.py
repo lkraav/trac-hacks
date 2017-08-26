@@ -1,20 +1,26 @@
-# Tracpydoc plugin
-
-from genshi.builder import tag
-from genshi.core import Markup
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006 Alec Thomas
+# Copyright (C) 2006-2007 Christian Boos
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 from trac.core import *
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-     add_stylesheet
+                            add_stylesheet
 from trac.web.main import IRequestHandler
 from trac.util.compat import any
+from trac.util.html import Markup, html as tag
 from trac.util.text import shorten_line, to_unicode
 from trac.wiki.api import IWikiSyntaxProvider, IWikiMacroProvider
 from trac.search.api import ISearchSource
 
-import inspect, os
 from pydoc import ispackage
 
+import inspect
 import urllib
 import pydoc
 import re
