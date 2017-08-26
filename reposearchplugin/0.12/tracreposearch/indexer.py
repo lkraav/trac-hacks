@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2005-2008 Alex Thomas
+# Copyright (C) 2010-2017 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 """
 
 Indexing engine for Trac's repository. Implemented using the algorithm
@@ -247,7 +257,7 @@ class Indexer:
                     self._invalidate_file(node.path)
                     self._reindex_node(node)
             new_files.add(node.path)
-        
+
         # All files that don't match the new filter criteria must be purged
         # from the index
         invalidated_files = set(self.files.keys())
