@@ -19,7 +19,7 @@ from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchNode
 from trac.web.chrome import web_context
 from trac.wiki.formatter import format_to_html, format_to_oneliner, \
-                                system_message
+    system_message
 from trac.wiki.macros import WikiMacroBase, parse_args
 
 
@@ -88,8 +88,8 @@ class ChangeLogMacro(WikiMacroBase):
         context = web_context(req)
         args, kwargs = parse_args(content)
         if len(args) == 0:
-          return system_message(_("ChangeLog macro error"),
-                                _("Repository path is required."))
+            return system_message(_("ChangeLog macro error"),
+                                  _("Repository path is required."))
         args += [None, None]
         path, limit, rev = args[:3]
         limit = kwargs.pop('limit', limit)
@@ -131,7 +131,7 @@ class ChangeLogMacro(WikiMacroBase):
         except NoSuchNode, e:
             return system_message(_("ChangeLog macro failed"), e)
         out = StringIO()
-        out.write('</p>') # close surrounding paragraph
+        out.write('</p>')  # close surrounding paragraph
         out.write('\n<div class="changelog">\n<dl class="wiki">')
         for npath, nrev, nlog in node.get_history(limit):
             if nrev < revstart:
@@ -145,22 +145,23 @@ class ChangeLogMacro(WikiMacroBase):
             else:
                 sargs = '%s/%s' % (nrev, reponame), '%s/%s' % (drev, reponame)
             cset = '[changeset:%s %s]' % sargs
-            header = format_to_oneliner(self.env, context,
+            header = format_to_oneliner(
+                self.env, context,
                 "%s by %s on %s" % (cset, change.author, datetime))
             out.write('\n<dt id="changelog-changeset-%s">\n%s\n</dt>' %
-                (cset, header))
-            message = _remove_p(format_to_html(self.env, context,
-                change.message, escape_newlines=True))
+                      (cset, header))
+            message = _remove_p(format_to_html(
+                self.env, context, change.message, escape_newlines=True))
             out.write('\n<dd>\n%s\n</dd>' % message)
         out.write(html.small(html.a(_("(more)"), href=req.href.log(path))))
         out.write('\n</dl>\n</div>')
-        out.write('\n<p>') # re-open surrounding paragraph
+        out.write('\n<p>')  # re-open surrounding paragraph
         return out.getvalue()
 
-# Utilities
 
 REMOVE_P = '^\s*<p>(.*?)</p>\s*$'
 REMOVE_P_RE = re.compile(REMOVE_P, re.DOTALL)
+
 
 def _remove_p(html):
     f = REMOVE_P_RE.findall(html)
@@ -168,4 +169,3 @@ def _remove_p(html):
         return f[0]
     else:
         return html
-

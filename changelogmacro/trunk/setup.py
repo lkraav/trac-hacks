@@ -12,20 +12,21 @@
 from setuptools import setup
 
 setup(
-    name = 'TracChangeLog',
-    version = '0.4',
-    packages = ['changelog'],
-    author = 'Alec Thomas',
-    maintainer = 'Ryan Ollos',
-    maintainer_email = 'ryan.j.ollos@gmail.com',
-    description = 'Adds a Wiki macro that displays the changelog for a repository path',
-    keywords = 'trac scm macro plugin',
-    license = '3-Clause BSD',
-    url = 'https://trac-hacks.org/wiki/ChangeLogMacro',
-    entry_points = {
-        'trac.plugins':[
+    name='TracChangeLog',
+    version='0.4',
+    packages=['changelog'],
+    author='Alec Thomas',
+    maintainer='Ryan Ollos',
+    maintainer_email='ryan.j.ollos@gmail.com',
+    description='Adds a Wiki macro that displays the changelog for a '
+                'repository path',
+    keywords='trac scm macro plugin',
+    license='3-Clause BSD',
+    url='https://trac-hacks.org/wiki/ChangeLogMacro',
+    entry_points={
+        'trac.plugins': [
             'changelog.ChangeLogMacro = changelog.ChangeLogMacro'
         ]
     },
-    install_requires = ['Trac'],
+    install_requires=['Trac'],
 )
