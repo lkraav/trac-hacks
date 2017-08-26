@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2006 Alec Thomas
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 from trac.wiki.macros import WikiMacroBase
 from trac.util import escape
 from StringIO import StringIO
@@ -12,7 +21,8 @@ url = "https://trac-hacks.org/wiki/CsvMacro"
 
 class CsvMacro(WikiMacroBase):
     """
-    Display CSV data in a table. Simply copy and paste the CSV data into the macro body and hope for the best.
+    Display CSV data in a table. Simply copy and paste the CSV data
+    into the macro body and hope for the best.
 
     Example:
     {{{
@@ -42,4 +52,3 @@ class CsvMacro(WikiMacroBase):
                 formatter.out.write('<td>%s</td>' % escape(col))
             formatter.out.write('</tr>\n')
         formatter.out.write('</table>\n')
-
