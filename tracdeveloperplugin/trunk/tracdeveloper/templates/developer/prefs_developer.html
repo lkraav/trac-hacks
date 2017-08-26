@@ -1,7 +1,12 @@
 <!--!
-	prefs_developer
-	Created by Noah Kantrowitz on 2008-02-19.
-	Copyright (c) 2008 Noah Kantrowitz. All rights reserved.
+  Copyright (C) 2015-2017 Ryan Ollos
+  Copyright (C) 2012-2013 Olemis Lang
+  Copyright (C) 2008-2009 Noah Kantrowitz
+  Copyright (C) 2008 Christoper Lenz
+  Copyright (C) 2007-2008 Alec Thomas
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
 -->
 <!DOCTYPE html
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -18,7 +23,7 @@
       <legend>JavaScript</legend>
       <div class="field">
         <label for="enable_debug">Enable unpacked JavaScript</label>
-        <input type="checkbox" id="enable_debug" name="enable_debug" 
+        <input type="checkbox" id="enable_debug" name="enable_debug"
                value="1" checked="${req.session.get('developer.js.enable_debug') == '1' or None}" />
       </div>
     </fieldset>

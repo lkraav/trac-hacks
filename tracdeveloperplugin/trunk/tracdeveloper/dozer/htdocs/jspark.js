@@ -2,10 +2,10 @@
  * Javascript Sparklines Library
  * Written By John Resig
  * http://ejohn.org/projects/jspark/
- * 
+ *
  * This work is tri-licensed under the MPL, GPL, and LGPL:
  * http://www.mozilla.org/MPL/
- * 
+ *
  * To use, place your data points within your HTML, like so:
  * <span class="sparkline">10,8,20,5...</span>
  *

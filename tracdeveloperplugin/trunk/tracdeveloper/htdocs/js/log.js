@@ -7,6 +7,6 @@ $(function() {
     $('#tracdeveloper-log').toggle();
     return false;
   });
-  
+
   $('#tracdeveloper-log').hide();
 });
