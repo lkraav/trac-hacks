@@ -1,5 +1,5 @@
 jQuery(document).ready(function ($) {
-  $("#field-owner, #action [id$=_reassign_owner]").autocomplete("subjects", {
+  $("#field-owner, #action input:text[id$=_reassign_owner]").autocomplete("subjects", {
     formatItem: formatItem
   });
 
