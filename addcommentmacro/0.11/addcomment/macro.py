@@ -1,4 +1,12 @@
-# vim: expandtab
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2005-2006 Alec Thomas
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+
 import re
 import time
 from StringIO import StringIO

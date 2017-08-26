@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2005-2006 Alec Thomas
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 from setuptools import setup
 
@@ -10,9 +17,9 @@ setup(
     package_data={'addcomment': []},
     author="Alec Thomas",
     description="Macro to add comments to a wiki page.",
-    license="BSD",
+    license="3-Clause BSD",
     keywords="trac plugin macro comments",
-    url="http://trac-hacks.org/wiki/AddCommentMacro",
+    url="https://trac-hacks.org/wiki/AddCommentMacro",
     classifiers=[
         'Framework :: Trac',
     ],
