@@ -145,7 +145,7 @@ class TicketLogModule(CommitTicketUpdater):
                 add_stylesheet(req, 'ticketlog/ticketlog.css')
                 revisions = self._get_ticket_revisions(req, ticket_id)
                 template = Chrome(self.env) \
-                    .load_template('ticketlog.html') \
+                    .load_template('ticketlog.html', None) \
                     .generate(revisions=revisions)
                 stream |= Transformer('//div[@id="ticket"]').after(template)
         return stream
