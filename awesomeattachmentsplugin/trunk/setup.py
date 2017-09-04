@@ -10,7 +10,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='AwesomeAttachmentsPlugin',
+    name='TracAwesomeAttachments',
     version='0.4',
     author='Dan Ordille',
     author_email='dordille@gmail.com',
