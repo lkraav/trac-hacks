@@ -85,7 +85,7 @@ class AwesomeAttachments(Component):
         if size == 0:
             raise TracError(_("Can't upload empty file"))
 
-        max_size = self.env.config.get('attachment', 'max_size')
+        max_size = self.env.config.getint('attachment', 'max_size')
         if 0 <= max_size < size:
             raise TracError(_('Maximum attachment size: %(num)s bytes',
                               num=max_size), _("Upload failed"))
