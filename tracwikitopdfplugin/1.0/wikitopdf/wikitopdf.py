@@ -42,7 +42,7 @@ def tagattrfind(page, tag, attr, pos):
     return -1, -1
 
 
-def wiki_to_pdf(text, env, req, tmp_dir, codepage):
+def wiki_to_pdf(text, env, req, tmp_dir, default_charset):
     env.log.debug("WikiToPdf => Start function wiki_to_pdf")
 
     # Remove exclude expressions
@@ -176,24 +176,24 @@ def wiki_to_pdf(text, env, req, tmp_dir, codepage):
                                          endpos)
 
     meta = '<meta http-equiv="Content-Type" content="text/html; ' \
-           'charset=%s"/>' % codepage
+           'charset=%s"/>' % default_charset
     css = ''
     if env.config.get('wikitopdf', 'css_file'):
         css = ('<link rel="stylesheet" href="%s" type="text/css"/>'
-               % env.config.get('wikitopdf', 'css_file')).encode(codepage)
+               % env.config.get('wikitopdf', 'css_file')).encode(default_charset)
 
     page = '<html><head>' + meta + css + '</head><body>' + page + \
            '</body></html>'
-    page = page.encode(codepage, 'replace')
+    page = page.encode(default_charset, 'replace')
 
     env.log.debug("WikiToPdf => HTML output for WikiToPdf in charset %s "
-                  "is: %r", codepage, page)
+                  "is: %r", default_charset, page)
     env.log.debug("WikiToPdf => Finish function wiki_to_pdf")
 
     return page
 
 
-def html_to_pdf(env, tmp_dir, htmldoc_args, files, codepage):
+def html_to_pdf(env, tmp_dir, htmldoc_args, files, default_charset):
     env.log.debug("WikiToPdf => Start function html_to_pdf")
 
     htmldoc_path = env.config.get('wikitopdf', 'htmldoc_path')
@@ -209,7 +209,7 @@ def html_to_pdf(env, tmp_dir, htmldoc_args, files, codepage):
     cmd_string = '%s %s %s -f %s' \
                  % (htmldoc_path, args_string, ' '.join(files), pfilename)
     env.log.debug("WikiToPdf => Htmldoc command line: %s", cmd_string)
-    os.system(cmd_string.encode(codepage))
+    os.system(cmd_string.encode(default_charset))
 
     with open(pfilename, 'rb') as infile:
         out = infile.read()
@@ -241,16 +241,19 @@ class WikiToPdfPage(Component):
     htmldoc_path = Option('wikitopdf', 'htmldoc_path', 'htmldoc', """
         Path to HTMLDOC binary.""")
 
+    default_charset = Option('wikitopdf', 'default_charset', 'iso-8859-1',
+        """The [http://michaelrsweet.github.io/htmldoc/htmldoc.html#3_2_12 8-bit character set]
+        to use for the entire document.
+        """)
+
     # IContentConverter methods
     def get_supported_conversions(self):
         yield ('pdf', 'PDF', 'pdf', 'text/x-trac-wiki', 'application/pdf', 7)
 
     def convert_content(self, req, input_type, text, output_type):
 
-        codepage = self.env.config.get('trac', 'default_charset', 'utf-8')
-
         tmp_dir = tempfile.mkdtemp(prefix='tracwikitopdf-')
-        page = wiki_to_pdf(text, self.env, req, tmp_dir, codepage)
+        page = wiki_to_pdf(text, self.env, req, tmp_dir, self.default_charset)
 
         hfile, hfilename = tempfile.mkstemp('wikitopdf', dir=tmp_dir)
         os.write(hfile, page)
@@ -259,12 +262,12 @@ class WikiToPdfPage(Component):
         htmldoc_args = {
             'webpage': '',
             'format': 'pdf14',
-            'charset': codepage
+            'charset': self.default_charset
         }
         htmldoc_args.update(dict(self.env.config.options('wikitopdf-page')))
 
         out = html_to_pdf(self.env, tmp_dir, htmldoc_args, [hfilename],
-                          codepage)
+                          self.default_charset)
 
         shutil.rmtree(tmp_dir)
 

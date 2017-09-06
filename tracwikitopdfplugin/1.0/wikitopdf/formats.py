@@ -12,7 +12,7 @@ from trac.web.api import RequestDone
 from trac.wiki.model import WikiPage
 
 from api import IWikiToPdfFormat
-from wikitopdf import wiki_to_pdf, html_to_pdf
+from wikitopdf import WikiToPdfPage, wiki_to_pdf, html_to_pdf
 
 
 class WikiToPdfOutput(Component):
@@ -29,9 +29,11 @@ class WikiToPdfOutput(Component):
                           date, pdfname):
 
         tmp_dir = tempfile.mkdtemp(prefix='tracwikitopdf-')
+        default_charset = WikiToPdfPage(self.env).default_charset
 
         # Dump all pages to HTML files
-        files = [self._page_to_file('', req, tmp_dir, p) for p in pages]
+        files = [self._page_to_file('', req, tmp_dir, p, default_charset)
+                 for p in pages]
 
         # Setup the title and license pages
         title_template = self.env.config.get('wikitopdf', 'pathtocover')
@@ -44,10 +46,12 @@ class WikiToPdfOutput(Component):
                                        date, version) or None
 
         # Prepare html doc arguments
-        codepage = self.env.config.get('trac', 'default_charset', 'utf-8')
-
         oformat = {'pdf': 'pdf14', 'ps': 'ps2', 'html': 'html'}[format]
-        htmldoc_args = {'book': '', 'format': oformat, 'charset': codepage}
+        htmldoc_args = {
+            'book': '',
+            'format': oformat,
+            'charset': default_charset
+        }
 
         if titlefile:
             htmldoc_args['titlefile'] = titlefile
@@ -57,7 +61,8 @@ class WikiToPdfOutput(Component):
         htmldoc_args.update(dict(self.env.config.options('wikitopdf-admin')))
 
         # render
-        out = html_to_pdf(self.env, tmp_dir, htmldoc_args, files, codepage)
+        out = html_to_pdf(self.env, tmp_dir, htmldoc_args, files,
+                          default_charset)
 
         # Send the output
         req.send_response(200)
@@ -75,20 +80,15 @@ class WikiToPdfOutput(Component):
         shutil.rmtree(tmp_dir)
         raise RequestDone
 
-    def _page_to_file(self, header, req, tmp_dir, pagename):
+    def _page_to_file(self, header, req, tmp_dir, pagename, default_charset):
         """Slight modification of some code from Alec's PageToPdf plugin."""
 
-        # htmldoc doesn't support utf-8, we need to use some other input
-        # encoding
-        codepage = self.env.config.get('trac', 'default_charset',
-                                       'iso-8859-1')
-
         page = WikiPage(self.env, pagename)
-        pdf = wiki_to_pdf(page.text, self.env, req, tmp_dir, codepage)
+        pdf = wiki_to_pdf(page.text, self.env, req, tmp_dir, default_charset)
 
         hfile, hfilename = tempfile.mkstemp('wikitopdf', dir=tmp_dir)
         self.log.debug("WikiToPdf => Writting %s to %s using encoding %s",
-                       pagename, hfilename, codepage)
+                       pagename, hfilename, default_charset)
         os.write(hfile, pdf)
         os.close(hfile)
         return hfilename
