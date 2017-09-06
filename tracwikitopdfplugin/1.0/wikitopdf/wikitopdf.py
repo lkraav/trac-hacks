@@ -4,11 +4,11 @@ Author: Diorgenes Felipe Grzesiuk <diorgenes@prognus.com.br>
 """
 
 import os
-import random
 import re
+import shutil
 import subprocess
+import tempfile
 import xml.sax.saxutils
-from tempfile import NamedTemporaryFile, mkstemp
 from urllib import urlretrieve
 
 from trac.config import Option
@@ -26,8 +26,6 @@ EXCLUDE_RES = [
     re.compile(r'----(\r)?$\n^Back up: \[\[ParentWiki\]\]', re.M | re.I)
 ]
 
-IMG_CACHE = {}
-
 
 def tagattrfind(page, tag, attr, pos):
     tb_pos = page.find('<%s' % tag, pos)
@@ -44,9 +42,7 @@ def tagattrfind(page, tag, attr, pos):
     return -1, -1
 
 
-def wiki_to_pdf(text, env, req, base_dir, codepage):
-    global IMG_CACHE
-
+def wiki_to_pdf(text, env, req, tmp_dir, codepage):
     env.log.debug("WikiToPdf => Start function wiki_to_pdf")
 
     # Remove exclude expressions
@@ -78,54 +74,39 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
     page = page.replace('</pre>', '</pre></td></tr></table>')
     page = page.replace('<table class="wiki">',
                         '<table class="wiki" border="1" width="100%">')
-    tracuri = env.config.get('wikitopdf', 'trac_uri')
-    tmp_dir = env.config.get('wikitopdf', 'tmp_dir')
 
     imgpos = page.find('<img')
-    if tracuri != '' and tmp_dir != '':
-        # Download images so that dynamic images also work right
-        # Create a random prefix
-        random.seed()
-        tmp_dir += '/%(#)04x_' % {"#": random.randint(0, 65535)}
-        # Create temp dir
-        os.system('mkdir %s 2>/dev/null' % tmp_dir)
 
-        imgcounter = 0
+    imgcounter = 0
 
-        while imgpos != -1:
-            addrpos = page.find('src="', imgpos)
-            theimg = page[addrpos + 5:]
-            thepos = theimg.find('"')
-            theimg = theimg[:thepos]
-            if theimg[:1] == '/':
-                theimg = tracuri + theimg
-            try:
-                newimg = IMG_CACHE[theimg]
-            except:
-                # newimg = tmp_dir + '%(#)d_' %{"#":imgcounter} + \
-                #          theimg[theimg.rfind('/')+1:]
-                file = NamedTemporaryFile(mode='w',
-                                          prefix='%(#)d_' % {"#": imgcounter},
-                                          dir=tmp_dir)
-                newimg = file.name
-                file.close()
-                theimg = xml.sax.saxutils.unescape(theimg)
-                theimg = theimg.replace(" ", "%20")
-                urlretrieve(theimg, newimg)
-                IMG_CACHE[theimg] = newimg
-                env.log.debug("The image is %s new image is %s", theimg,
-                              newimg)
-                imgcounter += 1
-                page = page[:addrpos + 5] + newimg + page[
-                                                     addrpos + 5 + thepos:]
-                imgpos = page.find('<img', addrpos)
-    else:
-        # Use old search for images in path
-        page = page.replace('raw-attachment', 'attachments')
-        while imgpos != -1:
-            addrpos = page.find('src="', imgpos)
-            #            base_dir = base_dir.encode('ascii')
-            page = page[:addrpos + 5] + base_dir + page[addrpos + 5:]
+    img_cache = {}
+    while imgpos != -1:
+        addrpos = page.find('src="', imgpos)
+        theimg = page[addrpos + 5:]
+        thepos = theimg.find('"')
+        theimg = theimg[:thepos]
+        if theimg[:1] == '/':
+            basepath = os.path.commonprefix([env.href(), theimg.lstrip()])
+            theimg = env.abs_href(theimg[len(basepath):])
+        try:
+            newimg = img_cache[theimg]
+        except:
+            # newimg = tmp_dir + '%(#)d_' %{"#":imgcounter} + \
+            #          theimg[theimg.rfind('/')+1:]
+            prefix = '%(#)d_' % {"#": imgcounter}
+            file = tempfile.NamedTemporaryFile(mode='w', prefix=prefix,
+                                               dir=tmp_dir)
+            newimg = file.name
+            file.close()
+            theimg = xml.sax.saxutils.unescape(theimg)
+            theimg = theimg.replace(" ", "%20")
+            urlretrieve(theimg, newimg)
+            img_cache[theimg] = newimg
+            env.log.debug("The image is %s new image is %s", theimg,
+                          newimg)
+            imgcounter += 1
+            page = (page[:addrpos + 5] + newimg +
+                    page[addrpos + 5 + thepos:])
             imgpos = page.find('<img', addrpos)
 
     # Add center tags, since htmldoc 1.9 does not handle align="center"
@@ -136,8 +117,8 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
         page = page[:tablepos] + '<center>' + page[tablepos:]
 
         endpos = page.find('</table>', tablepos)
-        tablepos, tableend = tagattrfind(page, 'table', 'align="center"',
-                                           endpos)
+        tablepos, tableend = \
+            tagattrfind(page, 'table', 'align="center"', endpos)
 
     # Add table around '<div class="code">'
     tablepos, tableend = tagattrfind(page, 'div', 'class="code"', 0)
@@ -212,18 +193,17 @@ def wiki_to_pdf(text, env, req, base_dir, codepage):
     return page
 
 
-def html_to_pdf(env, htmldoc_args, files, codepage):
+def html_to_pdf(env, tmp_dir, htmldoc_args, files, codepage):
     env.log.debug("WikiToPdf => Start function html_to_pdf")
 
     htmldoc_path = env.config.get('wikitopdf', 'htmldoc_path')
 
-    global IMG_CACHE
     os.environ['HTMLDOC_NOCGI'] = 'yes'
 
     args_string = ' '.join('--%s %s' % (arg, value or '') for arg, value
                            in htmldoc_args.iteritems() if value is not None)
 
-    pfile, pfilename = mkstemp('wikitopdf')
+    pfile, pfilename = tempfile.mkstemp('wikitopdf', dir=tmp_dir)
     os.close(pfile)
 
     cmd_string = '%s %s %s -f %s' \
@@ -231,15 +211,8 @@ def html_to_pdf(env, htmldoc_args, files, codepage):
     env.log.debug("WikiToPdf => Htmldoc command line: %s", cmd_string)
     os.system(cmd_string.encode(codepage))
 
-    # Delete files from tmp_dir
-    for v in IMG_CACHE.values():
-        if os.path.exists(v):
-            os.unlink(v)
-    IMG_CACHE = {}
     with open(pfilename, 'rb') as infile:
         out = infile.read()
-
-    os.unlink(pfilename)
 
     env.log.debug("WikiToPdf => Finish function html_to_pdf")
 
@@ -274,13 +247,12 @@ class WikiToPdfPage(Component):
 
     def convert_content(self, req, input_type, text, output_type):
 
-        codepage = self.env.config.get('trac', 'default_charset',
-                                       'iso-8859-1')
-        base_dir = self.env.config.get('wikitopdf', 'base_dir')
+        codepage = self.env.config.get('trac', 'default_charset', 'utf-8')
 
-        page = wiki_to_pdf(text, self.env, req, base_dir, codepage)
+        tmp_dir = tempfile.mkdtemp(prefix='tracwikitopdf-')
+        page = wiki_to_pdf(text, self.env, req, tmp_dir, codepage)
 
-        hfile, hfilename = mkstemp('wikitopdf')
+        hfile, hfilename = tempfile.mkstemp('wikitopdf', dir=tmp_dir)
         os.write(hfile, page)
         os.close(hfile)
 
@@ -291,8 +263,10 @@ class WikiToPdfPage(Component):
         }
         htmldoc_args.update(dict(self.env.config.options('wikitopdf-page')))
 
-        out = html_to_pdf(self.env, htmldoc_args, [hfilename], codepage)
-        os.unlink(hfilename)
+        out = html_to_pdf(self.env, tmp_dir, htmldoc_args, [hfilename],
+                          codepage)
+
+        shutil.rmtree(tmp_dir)
 
         return out, 'application/pdf'
 
