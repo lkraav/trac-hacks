@@ -200,16 +200,24 @@ def html_to_pdf(env, tmp_dir, htmldoc_args, files, default_charset):
 
     os.environ['HTMLDOC_NOCGI'] = 'yes'
 
-    args_string = ' '.join('--%s %s' % (arg, value or '') for arg, value
-                           in htmldoc_args.iteritems() if value is not None)
-
     pfile, pfilename = tempfile.mkstemp('wikitopdf', dir=tmp_dir)
     os.close(pfile)
 
-    cmd_string = '%s %s %s -f %s' \
-                 % (htmldoc_path, args_string, ' '.join(files), pfilename)
-    env.log.debug("WikiToPdf => Htmldoc command line: %s", cmd_string)
-    os.system(cmd_string.encode(default_charset))
+    args = [htmldoc_path]
+    for arg, value in htmldoc_args.iteritems():
+        farg = '--%s' % arg
+        args.extend((farg, '%s' % value)) if value else args.append(farg)
+    args.extend(files)
+    args.extend(('-f', pfilename))
+    try:
+        p = subprocess.Popen(args, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+    except EnvironmentError, e:
+        raise TracError(e)
+    else:
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            raise TracError(stderr if stderr else stdout)
 
     with open(pfilename, 'rb') as infile:
         out = infile.read()
