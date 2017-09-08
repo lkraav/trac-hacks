@@ -1,0 +1,107 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- This file is a copy from:
+ !     trac/admin/templates/admin_plugins.html
+ !   Version: 0.11.5
+ !-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="admin.html" />
+  <head>
+    <title>Plugins (Secure Mode)</title>
+    <script type="text/javascript" src="${chrome.htdocs_location}js/folding.js"></script>
+    <script type="text/javascript">
+      jQuery(document).ready(function($){ $("div.plugin h3").enableFolding(true) });
+    </script>
+  </head>
+
+  <body>
+    <h2>Manage Plugins (Secure Mode)</h2>
+
+    <p class="help" style="margin-bottom:10px; text-align:justify;">
+    Allows you to enable or disable Trac's plugins. Some of them are, however,
+    marked as "readonly" as they are vital for Trac to run correctly or the 
+    administrator of your server has made them "readonly" for some reasons.<br/>
+    Note that components that have a description attached are marked with a note
+    icon <img src="${href.chrome('/securepluginpanel/info.png')}"/>.
+    </p>
+
+    <!-- CHANGE: Removed form "addplug" here. -->
+
+    <form py:for="idx, plugin in enumerate(plugins)" method="post" action="">
+      <div class="plugin" style="padding-bottom:5px;">
+        <!-- CHANGE: Added name postfix here. -->
+        <h3>${plugin.name}<py:if test="plugin.name_postfix"> - ${plugin.name_postfix}</py:if> <py:if test="plugin.version">(${plugin.version})</py:if></h3>
+        <!-- CHANGE: Added summary here. -->
+        <p class="summary" style="float:right; margin-top:-2em;">[${plugin.compenabledcount}/${plugin.compcount}]</p>
+        <!-- CHANGE: Removed uninstall form here. -->
+        <py:if test="plugin.info">
+          <p class="summary" style="margin-top:5px;">${plugin.info.get('summary')}</p>
+          <!-- CHANGE: Since the original module name is always available always create this list. -->
+          <dl class="info">
+            <py:if test="'author' in plugin.info or 'author_email' in plugin.info">
+              <dt>Author:</dt>
+              <dd>
+                <a py:strip="not plugin.info.get('author_email')"
+                   href="mailto:${plugin.info.author_email}">
+                  <!-- CHANGE: Use author name when available instead of email address. -->
+                  ${plugin.info.author or plugin.info.author_email}
+                </a>
+              </dd>
+            </py:if>
+            <py:if test="plugin.info.get('home_page')">
+              <dt>Home page:</dt>
+              <dd>
+                <a onclick="window.open(this.href); return false"
+                   href="${plugin.info.home_page}">${plugin.info.home_page}</a>
+              </dd>
+            </py:if>
+            <py:if test="plugin.info.get('license')">
+              <dt>License:</dt>
+              <dd>${plugin.info.license}</dd>
+            </py:if>
+            <py:if test="plugin.full_name">
+              <dt>Full Name:</dt>
+              <dd>${plugin.full_name}</dd>
+            </py:if>
+          </dl>
+        </py:if>
+        <table class="listing">
+          <thead>
+            <!-- CHANGE: Swapped columns for better workflow (especially with long names. -->
+            <tr><th class="sel">Enabled</th><th>Component</th></tr>
+          </thead>
+          <tbody>
+            <tr py:for="component in plugin.components">
+              <td class="sel">
+                <!-- CHANGE: Not only required components are "disabled" but also components
+                 !     that must not be activated. Hence we change the name from "required" to
+                 !     "readonly".
+                 !-->
+                <input py:if="not component.readonly" type="hidden" name="component"
+                       value="${component.module}.${component.name}" />
+                <input type="checkbox" name="enable"
+                       value="${component.module}.${component.name}"
+                       checked="${component.enabled or None}"
+                       disabled="${component.readonly or None}" />
+              </td>
+              <td class="name" title="${component.description}">
+                ${component.name}
+                <!-- CHANGE: Added icon when a component description is available. -->
+                <img py:if="component.description" src="${href.chrome('/securepluginpanel/info.png')}"/>
+                <p class="module">Module: ${component.module}</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="update buttons">
+          <input type="hidden" name="plugin" value="$idx" />
+          <input type="submit" name="update" value="Apply changes" />
+        </div>
+      </div>
+    </form>
+  </body>
+
+</html>
