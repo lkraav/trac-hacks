@@ -1,0 +1,13 @@
+div.lang-name-template {
+  background: #F7F7F7;
+  text-align: right;
+  border-top: 1px solid #D7D7D7;
+  margin: 0;
+  padding: 2px 0.5em 0 0;
+}
+
+  div.lang-name-template > span {
+      font-size:80%;
+      display:block;
+      color: #990000;
+  }
