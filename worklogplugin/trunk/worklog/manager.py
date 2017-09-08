@@ -167,6 +167,7 @@ class WorkLogManager:
         message = ''
         hours = '0.0'
         seconds = 0
+        ticket = Ticket(self.env, active['ticket'])
 
         # Leave a comment if the user has configured this or if they have entered
         # a work log comment.
@@ -188,8 +189,6 @@ class WorkLogManager:
             hours_message = "%s hours recorded by worklog plugin" % hours
             if comment:
                 hours_message = comment + " (%s)" % hours_message
-            print(hours_message)
-            ticket = Ticket(self.env, active['ticket'])
             TracHoursPlugin(self.env) \
                 .add_ticket_hours(ticket.id, self.authname, seconds,
                                   comments=hours_message)
@@ -199,7 +198,7 @@ class WorkLogManager:
             finished = datetime.fromtimestamp(stoptime)
             message = '%s worked on this ticket for %s between %s %s and %s %s.' % \
                       (self.authname,
-                       hours if plughrs else pretty_timedelta(started, finished), # use decimal output to prevent plughrs from parsing the comment
+                       hours if plughrs else pretty_timedelta(started, finished),  # use decimal output to prevent plughrs from parsing the comment
                        format_date(active['starttime']), format_time(active['starttime']),
                        format_date(stoptime), format_time(stoptime))
             if comment:
@@ -209,16 +208,13 @@ class WorkLogManager:
             if not message:
                 message = 'Hours recorded automatically by the worklog plugin.'
 
-            tckt = Ticket(self.env, active['ticket'])
-
             if plugtne:
-                tckt['hours'] = hours
-            self.save_ticket(tckt, message)
+                ticket['hours'] = hours
+            self.save_ticket(ticket, message)
             message = ''
 
         if message:
-            tckt = Ticket(self.env, active['ticket'])
-            self.save_ticket(tckt, message)
+            self.save_ticket(ticket, message)
 
         return True
 
