@@ -1,0 +1,7 @@
+div.notification-warning {
+  background-color: #DDFFDD;
+  border: 1px solid #000;
+  color: #500;
+  margin: 1em 0;
+  padding: 0.5em;
+}

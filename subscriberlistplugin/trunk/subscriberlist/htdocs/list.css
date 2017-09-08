@@ -1,0 +1,78 @@
+table.subscriber-ticket-table td {
+  vertical-align: top;
+}
+
+  table.subscriber-ticket-table td.ticket-content {
+    width: 700px;  
+    /* We have to set this here as otherwise the cell may grow wider than 700px.
+     * This happens for instance when a <pre> tag contains very long lines.
+     */
+    max-width: 700px;
+  }
+
+#recipient-list {
+  border: 1px outset #999966;
+  padding: 1em;
+  background-color: #EDFFDB;
+  margin: 1em 0 0 1em;
+}
+
+  #recipient-list p.help {
+    margin-top: 0;
+    color: #999966;
+    font-size: 85%;
+    width: 230px;
+  }
+
+  #recipient-list p.empty-list-warning {
+    margin-top: 0;
+    width: 230px;
+    font-weight: bold;
+  }
+  
+  #recipient-list ul {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  
+    #recipient-list ul li {
+      padding-top: 3px;
+      padding-right: 3px;
+      padding-bottom: 6px;
+      border-bottom: 1px dotted #C4EC9B;
+    }
+    
+    #recipient-list ul li.normal {
+      background: transparent url(user.png) no-repeat left 6px;
+      padding-left: 20px;
+    }
+
+    #recipient-list ul li.hackergotchi {
+      background: transparent no-repeat left 6px;
+      padding-left: 27px;
+    }
+    
+  #recipient-list .recipient-name {
+    display: block;
+    font-weight: bold;
+  }
+  
+  #recipient-list .recipient_mail {
+    font-size: 85%;
+    display: block;
+  }
+  
+  #recipient-list .recipient-info {
+    color: #999966;
+    font-size: 85%;
+    display: block;
+  }  
+  
+  #recipient-list .role {
+    cursor: help;
+    border-bottom: 1px dotted #B0D789;
+  }
+  
+  #recipient-list .inactive-role {
+    color: #C5DBAF;
+  }
