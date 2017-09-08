@@ -13,15 +13,15 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='TracExcelXLSTViewer',
-    version='0.9.3',
+    name='TracExcelXlstViewer',
+    version='1.0',
     author='Daniel Rolls',
     author_email='drolls@maxeler.com',
     description='Support for preview of Microsoft Excel XLST files in Trac',
     license='BSD',
     packages=find_packages(exclude=['*.test*']),
     entry_points={
-        'trac.plugins': ['excelXLSTviewer = tracexcelxlstviewer']
+        'trac.plugins': ['excelXLSTviewer = tracexcelxlstviewer.web_ui']
     },
     install_requires=['openpyxl'],
     zip_safe=True,
