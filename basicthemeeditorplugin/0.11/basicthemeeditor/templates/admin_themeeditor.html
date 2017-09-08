@@ -1,0 +1,63 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="admin.html" />
+  <head>
+    <title>Basic Theme Editor</title>
+  </head>
+
+  <body>
+    <h2>Basic Theme Editor</h2>
+
+    <p class="help" style="width:60%; margin-bottom:10px; text-align:justify;">
+    Files (e.g. the logo or the CSS file) uploaded using the 
+    <a href="${href('/admin/siteupload/files')}">site uploader</a> 
+    is available under <code>site/&lt;name_of_file&gt;</code>.
+    </p>            
+    <form class="mod" id="contactformsettings" method="post" action="">
+      <fieldset>
+        <legend>Logo Settings</legend>
+        <div class="field">
+          <label>Logo URL:<br/>
+            <input type="text" name="logo_src" size="70" value="${logo_src}" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Logo Link:<br/>
+            <input type="text" name="logo_link" size="70" value="${logo_link}" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Alternative Text:<br/>
+            <input type="text" name="logo_alt" size="70" value="${logo_alt}" />
+          </label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Miscellaneous</legend>
+        <div class="field">
+          <label>Favicon URL:<br/>
+            <input type="text" name="project_icon" size="70" value="${project_icon}" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Custom CSS file URL:<br/>
+            <input type="text" name="project_css" size="70" value="${project_css}" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Footer HTML (no Genshi Markup allowed):<br/>
+            <textarea name="project_footer" rows="5" cols="70">${project_footer}</textarea>
+          </label>
+        </div>
+      </fieldset>
+      <div class="buttons">
+        <input type="submit" value="Apply changes"/>
+      </div>
+    </form>
+  </body>
+
+</html>
