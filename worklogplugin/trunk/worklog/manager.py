@@ -14,6 +14,10 @@ from trac.ticket.notification import TicketNotifyEmail
 from trac.ticket import Ticket
 from trac.util.datefmt import format_date, format_time, pretty_timedelta, \
                               to_datetime
+try:
+    from trachours.hours import TracHoursPlugin
+except ImportError:
+    pass
 
 
 class WorkLogManager:
@@ -162,6 +166,7 @@ class WorkLogManager:
 
         message = ''
         hours = '0.0'
+        seconds = 0
 
         # Leave a comment if the user has configured this or if they have entered
         # a work log comment.
@@ -169,7 +174,8 @@ class WorkLogManager:
             round_delta = float(self.config.getint('worklog', 'roundup') or 1)
 
             # Get the delta in minutes
-            delta = float(int(stoptime) - int(active['starttime'])) / float(60)
+            seconds = float(int(stoptime) - int(active['starttime']))
+            delta = seconds / 60.0
 
             # Round up if needed
             delta = int(round((delta / round_delta) + float(0.5))) * int(round_delta)
@@ -179,18 +185,27 @@ class WorkLogManager:
             hours = str(float(int(100 * float(delta) / 60) / 100.0))
 
         if plughrs:
-            message = 'Hours recorded automatically by the worklog plugin. %s hours' % hours
-        elif self.config.getbool('worklog', 'comment') or comment:
+            hours_message = "%s hours recorded by worklog plugin" % hours
+            if comment:
+                hours_message = comment + " (%s)" % hours_message
+            print(hours_message)
+            ticket = Ticket(self.env, active['ticket'])
+            TracHoursPlugin(self.env) \
+                .add_ticket_hours(ticket.id, self.authname, seconds,
+                                  comments=hours_message)
+
+        if self.config.getbool('worklog', 'comment'):
             started = datetime.fromtimestamp(active['starttime'])
             finished = datetime.fromtimestamp(stoptime)
             message = '%s worked on this ticket for %s between %s %s and %s %s.' % \
-                      (self.authname, pretty_timedelta(started, finished),
+                      (self.authname,
+                       hours if plughrs else pretty_timedelta(started, finished), # use decimal output to prevent plughrs from parsing the comment
                        format_date(active['starttime']), format_time(active['starttime']),
                        format_date(stoptime), format_time(stoptime))
-        if comment:
-            message += "\n[[BR]]\n" + comment
+            if comment:
+                message += "\n[[BR]]\n" + comment
 
-        if plugtne or plughrs:
+        if plugtne:
             if not message:
                 message = 'Hours recorded automatically by the worklog plugin.'
 
