@@ -29,7 +29,7 @@ img_dir = 'cache/plantuml'
 class PlantUmlMacro(WikiMacroBase):
     """
     A wiki processor that renders PlantUML diagrams in wiki text.
-    
+
     Example:
     {{{
     {{{
@@ -43,7 +43,7 @@ class PlantUmlMacro(WikiMacroBase):
     @enduml
     }}}
     }}}
-    
+
     Results in:
     {{{
     #!PlantUML
@@ -65,7 +65,7 @@ class PlantUmlMacro(WikiMacroBase):
     java_bin = Option('plantuml', 'java_bin', 'java',
         """Path to the Java binary file. The default is `java`, which and
            assumes that the Java binary is on the search path.""")
-    
+
     def __init__(self):
         self.abs_img_dir = os.path.join(os.path.abspath(self.env.path),
                                         img_dir)
@@ -86,7 +86,7 @@ class PlantUmlMacro(WikiMacroBase):
         if not os.path.splitext(filename)[1] == '.jar':
             return system_message(_("'%(path)s' is not the path of a JAR "
                                     "file.", path=self.plantuml_jar))
-        
+
         # Trac 0.12 supports expand_macro(self, formatter, name, content,
         # args) which allows us to readily differentiate between a WikiProcess
         # and WikiMacro call. To support Trac 0.11, some additional work is
@@ -108,7 +108,7 @@ class PlantUmlMacro(WikiMacroBase):
             path = args.get('path')
             if not path:
                 return system_message(_("Path not specified"))
-        
+
         if path:
             markup, exists = self._read_source_from_repos(formatter, path)
             if not exists:
@@ -144,7 +144,7 @@ class PlantUmlMacro(WikiMacroBase):
 
     def match_request(self, req):
         return re.match(r'/plantuml?$', req.path_info)
-    
+
     def process_request(self, req):
         img_id = req.args.get('id')
         img_data = self._read_img_from_file(img_id)
@@ -207,7 +207,7 @@ class PlantUmlMacro(WikiMacroBase):
             content = system_message(_("No such node '%s' at revision '%s'")
                                      % (path, rev))
             exists = False
-        
+
         return content, exists
 
 

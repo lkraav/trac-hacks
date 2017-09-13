@@ -12,19 +12,19 @@
 from setuptools import setup
 
 setup(
-    name = "TracPlantUml",
-    version = 2.2,
-    packages = ['plantuml'],
-    author = "Alvaro J. Iradier",
-    author_email = "alvaro.iradier@polartech.es",
-    maintainer = "Ryan J Ollos",
-    maintainer_email = 'ryan.j.ollos@gmail.com',
-    description = "A macro to include diagrams from PlantUML",
-    license = "3-Clause BSD",
-    keywords = "trac macro uml plantuml embed include",
-    url = "https://trac-hacks.org/wiki/PlantUmlMacro",
-    install_requires = ['Trac'],
-    entry_points = {
+    name="TracPlantUml",
+    version=2.2,
+    packages=['plantuml'],
+    author="Alvaro J. Iradier",
+    author_email="alvaro.iradier@polartech.es",
+    maintainer="Ryan J Ollos",
+    maintainer_email='ryan.j.ollos@gmail.com',
+    description="A macro to include diagrams from PlantUML",
+    license="3-Clause BSD",
+    keywords="trac macro uml plantuml embed include",
+    url="https://trac-hacks.org/wiki/PlantUmlMacro",
+    install_requires=['Trac'],
+    entry_points={
         "trac.plugins": [
             "plantuml.macro = plantuml.macro"
         ]
