@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2010 Polar Technologies - www.polartech.es
 # Copyright (C) 2010 Alvaro J Iradier <alvaro.iradier@polartech.es>
-# Copyright (C) 2012-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2012-2017 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
