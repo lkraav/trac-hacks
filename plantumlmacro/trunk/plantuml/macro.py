@@ -13,12 +13,11 @@ import os
 import subprocess
 import re
 
-from genshi.builder import tag
 from trac.config import Option
 from trac.core import implements
-from trac.util.html import Markup
+from trac.util.html import Markup, html as tag
 from trac.util.translation import _
-from trac.versioncontrol.api import RepositoryManager
+from trac.versioncontrol.api import NoSuchNode, RepositoryManager
 from trac.web import IRequestHandler
 from trac.wiki.formatter import system_message
 from trac.wiki.macros import WikiMacroBase
@@ -111,9 +110,10 @@ class PlantUmlMacro(WikiMacroBase):
                 return system_message(_("Path not specified"))
 
         if path:
-            markup, exists = self._read_source_from_repos(formatter, path)
-            if not exists:
-                return system_message(markup)
+            try:
+                markup = self._read_source_from_repos(formatter, path)
+            except NoSuchNode, e:
+                return system_message(e)
         else:
             if not content:
                 return system_message(_("No UML text defined"))
@@ -200,19 +200,12 @@ class PlantUmlMacro(WikiMacroBase):
         if repos and repos.has_node(path, rev):
             node = repos.get_node(path, rev)
             content = node.get_content().read()
-            exists = True
         else:
             if rev is None and repos:
                 rev = repos.get_youngest_rev()
-            # TODO: use `raise NoSuchNode(path, rev)`
-            if rev is None:
-                content = _("No such node '%(path)s'", path=path)
-            else:
-                content = _("No such node '%(path)s' at revision '%(rev)s'",
-                            path=path, rev=rev)
-            exists = False
+            raise NoSuchNode(path, rev)
 
-        return content, exists
+        return content
 
 
 def _split_path(fqpath):
