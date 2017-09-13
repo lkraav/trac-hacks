@@ -192,11 +192,11 @@ class PlantUmlMacro(WikiMacroBase):
     def _read_source_from_repos(self, formatter, src_path):
         repos_mgr = RepositoryManager(self.env)
         try:  # 0.12+
-            repos_name, repos, source_obj = \
+            repos_name, repos, repos_rel_path = \
                 repos_mgr.get_repository_by_path(src_path)
         except AttributeError:  # 0.11
             repos = repos_mgr.get_repository(formatter.req.authname)
-        path, rev = _split_path(src_path)
+        path, rev = _split_path(repos_rel_path)
         if repos and repos.has_node(path, rev):
             node = repos.get_node(path, rev)
             content = node.get_content().read()
