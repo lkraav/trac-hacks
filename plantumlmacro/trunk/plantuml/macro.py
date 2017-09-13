@@ -74,7 +74,7 @@ class PlantUmlMacro(WikiMacroBase):
 
     # WikiMacroBase methods
 
-    def expand_macro(self, formatter, name, content):
+    def expand_macro(self, formatter, name, content, args=None):
         if not self.plantuml_jar:
             return system_message(_("Installation error: plantuml_jar "
                                     "option not defined in trac.ini"))
@@ -95,6 +95,7 @@ class PlantUmlMacro(WikiMacroBase):
             args = formatter.code_processor.args
         except AttributeError:
             args = None
+        args = args or {}
 
         path = None
         if 'path' not in args:  # Could be WikiProcessor or WikiMacro call
@@ -112,8 +113,7 @@ class PlantUmlMacro(WikiMacroBase):
         if path:
             markup, exists = self._read_source_from_repos(formatter, path)
             if not exists:
-                return system_message(_("File not found in repository: "
-                                        "%(path)s", path=path))
+                return system_message(markup)
         else:
             if not content:
                 return system_message(_("No UML text defined"))
@@ -197,15 +197,19 @@ class PlantUmlMacro(WikiMacroBase):
         except AttributeError:  # 0.11
             repos = repos_mgr.get_repository(formatter.req.authname)
         path, rev = _split_path(src_path)
-        if repos.has_node(path, rev):
+        if repos and repos.has_node(path, rev):
             node = repos.get_node(path, rev)
             content = node.get_content().read()
             exists = True
         else:
-            rev = rev or repos.get_youngest_rev()
+            if rev is None and repos:
+                rev = repos.get_youngest_rev()
             # TODO: use `raise NoSuchNode(path, rev)`
-            content = system_message(_("No such node '%s' at revision '%s'")
-                                     % (path, rev))
+            if rev is None:
+                content = _("No such node '%(path)s'", path=path)
+            else:
+                content = _("No such node '%(path)s' at revision '%(rev)s'",
+                            path=path, rev=rev)
             exists = False
 
         return content, exists
