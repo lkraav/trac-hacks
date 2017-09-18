@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name="TracPlantUml",
-    version=2.3,
+    version=2.2,
     packages=['plantuml'],
     author="Alvaro J. Iradier",
     author_email="alvaro.iradier@polartech.es",
