@@ -1059,15 +1059,16 @@ Field.prototype.set_field_visibility = function (target) {
 // field is to have controlled visibility in the Change Properties box, the
 // ticket box, or both.
 Field.prototype.set_visibility = function() {
+    var visibility_promises = [];
     var specific_target = false;
 
     for (var target in this.operations['visible']) {
         if (target == 'property') {
-            this.set_field_visibility('property');
+            visibility_promises.push(this.set_field_visibility('property'));
             specific_target = true;
         }
         else if (target == 'ticket') {
-            this.set_field_visibility('ticket');
+            visibility_promises.push(this.set_field_visibility('ticket'));
             specific_target = true;
         }
         else if (target == 'all') {
@@ -1077,8 +1078,8 @@ Field.prototype.set_visibility = function() {
             this.operations['visible']['ticket'] = {};
             this.operations['visible']['ticket']['#'] = 
                 this.operations['visible']['all']['#'];
-            this.set_field_visibility('property');
-            this.set_field_visibility('ticket');
+            visibility_promises.push(this.set_field_visibility('property'));
+            visibility_promises.push(this.set_field_visibility('ticket'));
             specific_target = true;
         }
     }
@@ -1089,26 +1090,29 @@ Field.prototype.set_visibility = function() {
         this.operations['visible']['property'] = {};
         this.operations['visible']['property']['#'] = 
             this.operations['visible']['#'];
-        this.set_field_visibility('property');
+        visibility_promises.push(this.set_field_visibility('property'));
     }
+    return Promise.all(visibility_promises);
 };
 
 // setup()
 //
 // Completely initialises a field; called exactly once for each field.
 Field.prototype.setup = function () {
+    var setup_promises = [];
     if (this.operations['options']) {
-        this.set_options();
+        setup_promises.push(this.set_options());
     }
     if (this.operations['update']) {
-        this.set_update();
+        setup_promises.push(this.set_update());
     }
     if (this.operations['template']) {
-        this.set_template();
+        setup_promises.push(this.set_template());
     }
     if (this.operations['visible']) {
-        this.set_visibility();
+        setup_promises.push(this.set_visibility());
     }
+    return Promise.all(setup_promises);
 }
 
 // val()
@@ -1126,11 +1130,16 @@ var page_info = window.kis2_page_info;
 // ticket box.
 var ui = [];
 var update_fields = function () {
+    var field_promises = [];
     for(var field_name in page_info['trac_ini']) {
         var field = new Field(field_name);
-        field.setup();
+        field_promises.push(field.setup().then(function (x) {
+                x.field_name = this;
+                return x;
+            }.bind(field_name)));
         ui[field_name] = field.ui;
     }
+    return Promise.all(field_promises);
 }
 
 return {

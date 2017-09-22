@@ -735,13 +735,23 @@ evaluation.available.none = evaluation_template == 'None'
     # ITemplateStreamFilter
     def filter_stream(self, req, method, filename, stream, data):
         ''' Updates auto preview submission to apply filtering of fields.
+            Stops window 'jumping' due to kis2 updates on auto-preview.
         '''
-        fieldRefreshCall = 'kis2.update_fields();\n'
+        start_preview = '$("#ticket").replaceWith(items.filter(\'#ticket\'));'
+        rememberPosition = "var screenOffset = " \
+            "$(document).scrollTop() - $('#ticket').height();\n"
         ticket_preview = '}, "#ticketchange .trac-loading");'
+        fieldRefreshCall = "kis2.update_fields().then(" + \
+            "function () { $(document).scrollTop(screenOffset + " \
+            "$('#ticket').height()) });\n"
 
         # Applying changes only on ticket.html.
         if filename == 'ticket.html':
-            stream = stream | Transformer('.//script').\
-                 substitute(re.escape(ticket_preview), fieldRefreshCall +
-                            ticket_preview)
+            stream = stream | Transformer('.//script'). \
+                substitute(
+                    '( *)' + re.escape(start_preview),
+                    '\\1' + rememberPosition + '\\1' + start_preview). \
+                substitute(
+                    '( *)' + re.escape(ticket_preview),
+                    '\\1  ' + fieldRefreshCall + '\\1' + ticket_preview)
         return stream
