@@ -243,13 +243,16 @@ class WikiPrint(Component):
         self.env.log.debug('WikiPrint => Wiki to HTML output: %r', page)
 
         # Link to internal sections of document.
-        # This needs further development for section headings (th:#11024)
         if self.local_anchor:
-            page = Markup('<a name=' + page_name + '></a>') + page
-            r = re.compile(re.escape(req.abs_href.wiki()) + r'/(.*?)(#\w+)')
-            page = r.sub('#\g<1>', page)
+            page = Markup('<a name=' + page_name + '/></a>') + page
+            r = re.compile(re.escape(req.abs_href.wiki()) +
+                           r'/([a-zA-Z0-9_/]*)(#?)')
+            page = r.sub('#\g<1>/', page)
             r1 = re.compile(r'(span class="wikianchor" id=")(.*)(/span)')
-            page = r1.sub('a name="' + page_name + '\g<2>/a', page)
+            page = r1.sub('a name="' + page_name + '/\g<2>/a', page)
+            r2 = re.compile(r'(h[0-9] id=")(.*)(">)')
+            page = r2.sub('\g<1>' + page_name + '/\g<2>\g<3><a name="' +
+                          page_name + '/\g<2>"></a>', page)
         self.env.log.debug("WikiPrint => HTML input to html_to_pdf is: %r",
                            page)
 
