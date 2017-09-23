@@ -3,11 +3,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2008 John Hampton <pacopablo@pacopablo.com>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
-# 
+#
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the above copyright
@@ -17,7 +17,7 @@
 # 3. The name of the author may not be used to endorse or promote
 #    products derived from this software without specific prior
 #    written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR `AS IS'' AND ANY EXPRESS
 # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -58,8 +58,8 @@ def epochtime(t):
     """ Return seconds from epoch from a datetime object """
     return int(time.mktime(t.timetuple()))
 
-def insert_blog_post(cnx, name, version, title, body, publish_time, 
-                     version_time, version_comment, version_author, 
+def insert_blog_post(cnx, name, version, title, body, publish_time,
+                     version_time, version_comment, version_author,
                      author, categories):
     """ Insert the post into the FullBlog tables """
     cur = cnx.cursor()
@@ -123,12 +123,12 @@ def Main(opts):
     env = Environment(opts.envpath)
     from tractags.api import TagSystem
 
-    tlist = opts.tags or split_tags(env.config.get('blog', 'default_tag', 
+    tlist = opts.tags or split_tags(env.config.get('blog', 'default_tag',
                                                    'blog'))
     tags = TagSystem(env)
     req = Mock(perm=MockPerm())
     blog = tags.query(req, ' '.join(tlist + ['realm:wiki']))
-                   
+
     cnx = env.get_db_cnx()
     for resource, page_tags in list(blog):
         try:
@@ -141,7 +141,7 @@ def Main(opts):
             page = WikiPage(env, name=resource.id)
             for version, version_time, version_author, version_comment, \
                 _ in page.get_history():
-                # Currently the basename of the post url is used due to 
+                # Currently the basename of the post url is used due to
                 # http://trac-hacks.org/ticket/2956
                 #name = resource.id.replace('/', '_')
                 name = resource.id
@@ -151,12 +151,12 @@ def Main(opts):
                 if match:
                     title = match.group(1)
                     fulltext = match.group(2)
-                else: 
+                else:
                     title = name
                 body = fulltext
                 print "Adding post %s, v%s: %s" % (name, version, title)
                 insert_blog_post(cnx, name, version, title, body,
-                                 publish_time, version_time, 
+                                 publish_time, version_time,
                                  version_comment, version_author, author,
                                  categories)
                 reparent_blog_attachments(env, resource.id, name)
@@ -166,7 +166,7 @@ def Main(opts):
                 page.delete()
                 continue
         except:
-            env.log.debug("Error loading wiki page %s" % resource.id, 
+            env.log.debug("Error loading wiki page %s" % resource.id,
                           exc_info=True)
             print "Failed to add post %s, v%s: %s" % (name, version, title)
             cnx.rollback()
@@ -174,7 +174,7 @@ def Main(opts):
             return 1
     cnx.close()
     return 0
-    
+
 
 def doArgs():
     """Parse command line options"""
@@ -186,7 +186,7 @@ def doArgs():
     parser.add_option("-d", "--delete", dest="delete", action="store_true",
                       help="Delete the TracBlog posts from the wiki after "
                       "migration", default=False)
-    parser.add_option("", "--delete-only", dest="deleteonly", 
+    parser.add_option("", "--delete-only", dest="deleteonly",
                       action="store_true", help="Only delete the TracBlog "
                       "posts from the wiki.  Do not perform any migration "
                       "steps", default=False)

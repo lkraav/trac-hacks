@@ -36,7 +36,7 @@ class IBlogChangeListener(Interface):
 class IBlogManipulator(Interface):
     """Extension point interface for components that need to manipulate the content
     of blog posts and comments before insertion.
-    
+
     Unlike change listeners, a manipulator can reject changes being committed
     to the database.
     """
@@ -45,7 +45,7 @@ class IBlogManipulator(Interface):
         """Validate blog post fields before they are to be inserted as new version.
         version==1 denotes a new post, version>1 is a new version on existing post.
         Fields is a dict of the fields needed for insert by model.BlogPost.
-                
+
         Must return a list of `(field, message)` tuples, one for each problem
         detected. `field` can be `None` to indicate an overall problem with the
         post. Therefore, a return value of `[]` means everything is OK."""
@@ -53,7 +53,7 @@ class IBlogManipulator(Interface):
     def validate_blog_comment(req, postname, fields):
         """Validate new blog fields before comment gets added to 'postname'
         Fields is a dict of the fields needed for insert by model.BlogComment.
-        
+
         Must return a list of `(field, message)` tuples, one for each problem
         detected. `field` can be `None` to indicate an overall problem with the
         comment. Therefore, a return value of `[]` means everything is OK."""

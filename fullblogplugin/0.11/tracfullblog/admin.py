@@ -21,19 +21,19 @@ class FullBlogAdminPanel(Component):
     """ Admin panel for settings related to FullBlog plugin. """
 
     implements(IAdminPanelProvider)
-    
+
     # IAdminPageProvider
 
     def get_admin_panels(self, req):
         if 'BLOG_ADMIN' in req.perm('blog'):
             yield ('blog', 'Blog', 'settings', 'Settings')
 
-    def render_admin_panel(self, req, cat, page, path_info):     
+    def render_admin_panel(self, req, cat, page, path_info):
         req.perm(Resource('blog', None)).require('BLOG_ADMIN')
 
         blog_admin = {}
         blog_core = FullBlogCore(self.env)
-        
+
         if req.method == "POST":
             if req.args.get('savesettings'):
                 self.env.config.set('fullblog', 'num_items_front',
@@ -52,15 +52,14 @@ class FullBlogAdminPanel(Component):
                     add_warning(req, "Error storing text in database. Not saved.")
             else:
                 self.log.warning('Unknown POST request: %s', req.args)
-        
+
         blog_admin['bloginfotext'] = blog_core.get_bloginfotext()
         blog_admin['numpostsfront'] = self.env.config.getint(
                                             'fullblog', 'num_items_front')
         blog_admin['defaultpostname'] = self.env.config.get(
                                             'fullblog', 'default_postname')
-        
+
         if hasattr(Chrome(self.env), 'jenv'):       # jinja2
             return ('fullblog_admin.html', {'blog_admin': blog_admin}, None)
         else:                                       # genshi
             return ('fullblog_admin.html', {'blog_admin': blog_admin})
-

@@ -12,9 +12,9 @@ from tracfullblog.api import IBlogChangeListener, IBlogManipulator
 from tracfullblog.model import BlogComment
 
 class SampleBlogPlugin(Component):
-    
+
     implements(IBlogChangeListener, IBlogManipulator)
-    
+
     # IBlogChangeListener methods
 
     def blog_post_changed(self, postname, version):
@@ -55,7 +55,7 @@ class SampleBlogPlugin(Component):
     def validate_blog_post(self, req, postname, version, fields):
         """Validate blog post fields before they are to be inserted as new version.
         Fields is a dict of the fields needed for insert by model.BlogPost.
-                
+
         Must return a list of `(field, message)` tuples, one for each problem
         detected. `field` can be `None` to indicate an overall problem with the
         post. Therefore, a return value of `[]` means everything is OK."""
@@ -69,7 +69,7 @@ class SampleBlogPlugin(Component):
     def validate_blog_comment(self, req, postname, fields):
         """Validate new blog fields before comment gets added to 'postname'
         Fields is a dict of the fields needed for insert by model.BlogComment.
-        
+
         Must return a list of `(field, message)` tuples, one for each problem
         detected. `field` can be `None` to indicate an overall problem with the
         comment. Therefore, a return value of `[]` means everything is OK."""

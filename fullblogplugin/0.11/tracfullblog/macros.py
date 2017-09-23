@@ -25,7 +25,7 @@ class BlogListMacro(WikiMacroBase):
     {{{
     [[BlogList]]
     }}}
-    
+
     Available named arguments:
      * `recent=` - max. number of posts
      * `category=` - a category
@@ -40,27 +40,27 @@ class BlogListMacro(WikiMacroBase):
     {{{
     [[BlogList(recent=5, max_size=250, period=2007/12, author=osimons, format=float, heading=Some Trac Posts)]]
     }}}
-    
+
     The arguments for criteria are 'AND'-based, so the above example will render
-    at most 5 posts by 'osimons' in December 2007. 
-    
+    at most 5 posts by 'osimons' in December 2007.
+
     There is no heading unless specified.
-    
+
     Without restriction on recent number of posts, it will use the number currently
     active in the Blog module as default for 'float' and 'full' rendering, but for rendering
     of 'inline' list it will render all found as default unless restricted. Additionally for
     'float' and 'full' it will truncate content if it is larger than a max_size (if set).
-    
+
     The `format=` keyword argument supports rendering these formats:
     ||`format=inline`||Renders an unordered list in the normal text flow (default).||
     ||`format=float`||A floating box out on the side of the page with slightly more detail.||
     ||`format=full`||Full rendering like on period, category and author listings inside blog.||
-    
+
     The arguments can appear in any order.
-    
+
     Posts are rendered sorted by newest first for all modes.
     """
-    
+
     def expand_macro(self, formatter, name, content):
 
         # Parse content for arguments

@@ -33,15 +33,15 @@ from tracfullblog.api import IBlogManipulator
 from tracfullblog.model import BlogPost, _parse_categories
 
 class BlogDraftPlugin(Component):
-    
+
     implements(IPermissionPolicy, IBlogManipulator)
-    
+
     draft = ListOption('fullblog', 'draft_categories', default='draft, Draft',
         doc="""List of categories to be considered as draft blog posts,
         only available to the author.""")
-    
+
     # IPermissionPolicy method
-    
+
     def check_permission(self, action, username, resource, perm):
         """ Will block access if the resource points to a draft blog post,
         and the user is different from the author. Any other variation

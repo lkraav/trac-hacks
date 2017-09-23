@@ -82,7 +82,7 @@ upgrade_map = {
 
 class FullBlogSetup(Component):
     """Component that deals with database setup and upgrades."""
-    
+
     implements(IEnvironmentSetupParticipant)
 
     def environment_created(self):
@@ -123,7 +123,7 @@ class FullBlogSetup(Component):
         sql = "SELECT value FROM system WHERE name='fullblog_version'"
         if hasattr(self.env, 'db_query'):
             rows = self.env.db_query(sql)
-        else: 
+        else:
             cursor = db.cursor()
             cursor.execute(sql)
             rows = list(cursor)

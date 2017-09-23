@@ -52,13 +52,13 @@ __all__ = ['FullBlogModule']
 
 
 class FullBlogModule(Component):
-    
+
     implements(IRequestHandler, INavigationContributor,
                ISearchSource, ITimelineEventProvider,
                ITemplateProvider)
 
     # Options
-    
+
     month_names = ListOption('fullblog', 'month_names',
         doc = """Ability to specify a list of month names for display in groupings.
         If empty it will make a list from default locale setting.
@@ -81,11 +81,11 @@ class FullBlogModule(Component):
         """Controls whether or not to display rss icons more than once""")
 
     # INavigationContributor methods
-    
+
     def get_active_navigation_item(self, req):
         """This method is only called for the `IRequestHandler` processing the
         request.
-        
+
         It should return the name of the navigation item that should be
         highlighted as active/current.
         """
@@ -100,7 +100,7 @@ class FullBlogModule(Component):
                    tag.a(_('Blog'), href=req.href.blog()) )
 
     # IRequstHandler methods
-    
+
     def match_request(self, req):
         """Return whether the handler wants to process the given request."""
         match = re.match(r'^/blog(?:/(.*)|$)', req.path_info)
@@ -348,7 +348,7 @@ class FullBlogModule(Component):
                 if field:
                     add_warning(req, "Field '%s': %s" % (field, reason))
                 else:
-                    add_warning(req, reason)                        
+                    add_warning(req, reason)
 
         elif command.startswith('listing-'):
             # 2007/10 or category/something or author/theuser
@@ -407,12 +407,12 @@ class FullBlogModule(Component):
                                         or self.archive_rss_icon
         data['blog_all_rss_icons'] = self.all_rss_icons
         return (template, data, None)
-    
+
     # ISearchSource methods
-    
+
     def get_search_filters(self, req):
         """Return a list of filters that this search source supports.
-        
+
         Each filter must be a `(name, label[, default])` tuple, where `name` is
         the internal name, `label` is a human-readable name for display and
         `default` is an optional boolean for determining whether this filter
@@ -423,7 +423,7 @@ class FullBlogModule(Component):
 
     def get_search_results(self, req, terms, filters):
         """Return a list of search results matching each search term in `terms`.
-        
+
         The `filters` parameters is a list of the enabled filters, each item
         being the name of the tuples returned by `get_search_events`.
 
@@ -454,7 +454,7 @@ class FullBlogModule(Component):
                         'Blog: '+bp.title+' (Comment '+str(comment_number)+')',
                         comment_time, comment_author,
                         shorten_result(text=comment, keywords=terms))
-    
+
     # ITimelineEventProvider methods
 
     def get_timeline_filters(self, req):
@@ -497,7 +497,7 @@ class FullBlogModule(Component):
         bp_resource, bp, bc = event[3]
         compat_format_0_11_2 = 'oneliner'
         if hasattr(context, '_hints'):
-             compat_format_0_11_2 = None
+            compat_format_0_11_2 = None
         if bc: # A blog comment
             if field == 'url':
                 return context.href.blog(bp.name) + '#comment-%d' % bc.number

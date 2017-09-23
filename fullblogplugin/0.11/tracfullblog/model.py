@@ -101,10 +101,10 @@ def get_blog_posts(env, category='', author='', from_dt=None, to_dt=None,
      * from_dt - posted on or after the given time (datetime)
      * to_dt - posted on or before the given time (datetime)
      * all_versions - if all versions are needed, like for timeline display
-    
+
     Note: For datetime criteria the 'publish_time' is the default field searched,
     but if all_versions is requested the 'version_time' is used instead.
-    
+
     Returns a list of tuples of the form:
         (name, version, time, author, title, body, category_list)
     Use 'name' and 'version' to instantiate BlogPost objects."""
@@ -168,7 +168,7 @@ def get_blog_posts(env, category='', author='', from_dt=None, to_dt=None,
 def get_blog_comments(env, post_name='', from_dt=None, to_dt=None):
     """ Returns comments as a list of tuples from search based on
     AND input for post_name, and datetime span (from_dt and to_dt):
-        (post_name, number, comment, author, time) 
+        (post_name, number, comment, author, time)
     Instantiate BlogComment objects to get further details of each.
     Example of sorting the output by time, newest first:
         from trac.util.compat import sorted, itemgetter
@@ -191,7 +191,7 @@ def get_blog_comments(env, post_name='', from_dt=None, to_dt=None):
     # Do the SELECT
     if hasattr(env, 'db_query'):
         cursor = env.db_query(sql, args)
-    else:    
+    else:
         db = env.get_db_cnx()
         cursor = db.cursor()
         cursor.execute(sql, args)
@@ -249,7 +249,7 @@ def group_posts_by_month(posts):
     return grouped_list
 
 # Internal functions
-    
+
 def _parse_categories(categories, sep=' '):
     """ Parses the string containing categories separated by sep.
     Internal method, used in case we want to change split strategy later. """
@@ -263,14 +263,14 @@ def _parse_categories(categories, sep=' '):
 class BlogComment(object):
     """ Model class representing a comment on a given post.
     Various methods supporting CRUD management of the comment. """
-    
+
     # Default values (fields from table)
     post_name = '' # required ('name' = column definition)
     number = 0     # auto
     comment = ''   # required
     author = ''    # required
     time = datetime.datetime.now(utc) # Now
-    
+
     def __init__(self, env, post_name, number=0):
         """ Requires a name for the blog post that the comment belongs to.
         If no comment_id is passed, it is assumed to not exist. """
@@ -278,17 +278,17 @@ class BlogComment(object):
         self.post_name = post_name
         if number:
             self._load_comment(number)
-    
+
     def create(self, comment='', author='', verify_only=False):
         """ Creates a comment in the database.
         Comment and author needs to be set either by passing values
         as args, or previously setting them as properties on the object
         and not passing values.
-        
+
         If something prevents the comment from being created, it will
         return a list of tuple objects with (field, reason). A general
         error will be denoted by empty field - ('', 'reason').
-        
+
         If comment is created and all is well, an empty list ([]) is returned."""
         comment = comment or self.comment
         author = author or self.author
@@ -324,7 +324,7 @@ class BlogComment(object):
             db.commit()
         self._load_comment(number)
         return warnings
-    
+
     def delete(self):
         if not self.post_name or not self.number:
             return False
@@ -342,7 +342,7 @@ class BlogComment(object):
         return True
 
     # Internal methods
-    
+
     def _load_comment(self, number):
         """ Loads a comment from database if found. """
         self.env.log.debug("Fetching blog comment number %d for %r" % (
@@ -364,7 +364,7 @@ class BlogComment(object):
             self.time = to_datetime(row[2], utc)
             return True
         return False
-    
+
     def _next_comment_number(self):
         """ Function that returns the next available comment number.
         If no blog post exists (can't attach comment), it returns 0. """
@@ -389,7 +389,7 @@ class BlogComment(object):
 class BlogPost(object):
     """ Model class representing a blog post with various methods
     to do CRUD and manipulation as needed by the plugin. """
-    
+
     # Fields of database - will be expanded into object properties
     _db_default_fields = {'name': u'',  # required
                     'version': 0, # auto
@@ -404,7 +404,7 @@ class BlogPost(object):
     # Other data - fetched or computed
     category_list = []
     versions = []
-    
+
     def __init__(self, env, name, version=0):
         self.env = env
         # Expand the default values as object properties
@@ -416,7 +416,7 @@ class BlogPost(object):
                 setattr(self, prop, self._db_default_fields[prop])
         self.name = name and name.strip() or name
         self._load_post(version)
-        
+
     def save(self, version_author, version_comment=u'', verify_only=False):
         """ Saves the post as a new version in the database.
         Returns [] if saved without warnings, or a list of warnings
@@ -458,7 +458,7 @@ class BlogPost(object):
             db.commit()
         self._load_post(version)
         return warnings
-    
+
     def update_fields(self, fields={}):
         """" Takes in a dictionary of arbitrary number of fields with
         properties as keys, and used for updating the various object properties.
@@ -477,7 +477,7 @@ class BlogPost(object):
                     self.category_list = _parse_categories(fields[field])
                 changes_made = True
         return changes_made
-    
+
     def delete(self, version=0):
         """ Deletes a specific version, or if none is provided
         then all versions will be deleted. If all (or just one version exists) it
@@ -506,7 +506,7 @@ class BlogPost(object):
             else:
                 Attachment.delete_all(self.env, 'blog', self.name)
         return True
-    
+
     def get_versions(self):
         """ Returns a sorted list of versions stored for the blog post.
         Returns empty list ([]) if no versions exists. """
@@ -520,7 +520,7 @@ class BlogPost(object):
             cursor.execute(sql, args)
         self.versions = sorted([row[0] for row in cursor])
         return self.versions
-        
+
     def get_comments(self):
         """ Returns a list of used comment numbers attached to the post.
         It instantiates BlogComment objects for comments attached to the
@@ -529,9 +529,9 @@ class BlogPost(object):
                     key=itemgetter(1))
         return [BlogComment(self.env, comment[0],
                         comment[1]) for comment in comments]
-    
+
     # Internal methods
-    
+
     def _fetch_fields(self, version=0):
         """ Returns a dict with field/value combinations for the content
         of a specific version of a blog post, or last/current version if

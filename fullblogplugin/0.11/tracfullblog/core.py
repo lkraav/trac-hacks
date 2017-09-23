@@ -34,10 +34,10 @@ class FullBlogCore(Component):
     between the various parts of the plugin. """
 
     # Extensions
-    
+
     listeners = ExtensionPoint(IBlogChangeListener)
     manipulators = ExtensionPoint(IBlogManipulator)
-    
+
     implements(IPermissionRequestor, IWikiSyntaxProvider, IResourceManager,
             ILegacyAttachmentPolicyDelegate)
 
@@ -60,7 +60,7 @@ class FullBlogCore(Component):
                 __import__('tracfullblog', ['__version__']).__version__))
 
     # IPermissionRequestor method
-    
+
     def get_permission_actions(self):
         """ Permissions supported by the plugin.
         Commenting needs special enabling if wanted as it is only enabled
@@ -77,7 +77,7 @@ class FullBlogCore(Component):
                 ]
 
     # ILegacyAttachmentPolicyDelegate methods
-    
+
     def check_attachment_permission(self, action, username, resource, perm):
         """ Respond to the various actions into the legacy attachment
         permissions used by the Attachment module. """
@@ -97,14 +97,14 @@ class FullBlogCore(Component):
                     return False
 
     # IResourceManager methods
-    
+
     def get_resource_realms(self):
         yield 'blog'
 
     def get_resource_url(self, resource, href, **kwargs):
         return href.blog(resource.id,
                 resource.version and 'version=%d' % (resource.version) or None)
-        
+
     def get_resource_description(self, resource, format=None, context=None,
                                  **kwargs):
         bp = BlogPost(self.env, resource.id, resource.version)
@@ -121,10 +121,10 @@ class FullBlogCore(Component):
 
     def get_wiki_syntax(self):
         return []
-    
+
     def get_link_resolvers(self):
         yield ('blog', self._bloglink_formatter)
-    
+
     def _bloglink_formatter(self, formatter, ns, content, label):
         content = (content.startswith('/') and content[1:]) or content
         path_parts = [part for part in content.split('/') if part != '']
@@ -150,7 +150,7 @@ class FullBlogCore(Component):
                     + (anchor and '#' + anchor or ''))
 
     # Utility methods used by other modules
-    
+
     def get_bloginfotext(self):
         """ Retrieves the blog info text in sidebar from database. """
         sql = "SELECT value from system WHERE name='fullblog_infotext'"
@@ -178,7 +178,7 @@ class FullBlogCore(Component):
             cursor.execute(sql, args)
             db.commit()
         return True
-    
+
     def get_prev_next_posts(self, perm, post_name):
         """ Returns the name of the next and previous posts when compared with
         input 'post_name'. """
@@ -198,7 +198,7 @@ class FullBlogCore(Component):
         return prev, next
 
     # CRUD methods that support input verification and listener and manipulator APIs
-    
+
     def create_post(self, req, bp, version_author, version_comment=u'', verify_only=False):
         """ Creates a new post, or a new version of existing post.
         Does some input verification.
@@ -228,7 +228,7 @@ class FullBlogCore(Component):
         for listener in self.listeners:
             listener.blog_post_changed(bp.name, bp.version)
         return warnings
-        
+
     def delete_post(self, bp, version=0):
         """ Deletes a blog post (version=0 for all versions, or specific version=N).
         Notifies listeners if successful.
@@ -247,11 +247,11 @@ class FullBlogCore(Component):
         if is_deleted:
             version = bp.get_versions() and fields['version'] or 0 # Any versions left?
             for listener in self.listeners:
-                    listener.blog_post_deleted(bp.name, version, fields)
-                    if not version: # Also notify that all comments are deleted
-                        listener.blog_comment_deleted(bp.name, 0, {})
+                listener.blog_post_deleted(bp.name, version, fields)
+                if not version: # Also notify that all comments are deleted
+                    listener.blog_comment_deleted(bp.name, 0, {})
         return warnings
-    
+
     def create_comment(self, req, bc, verify_only=False):
         """ Create a comment. Comment and author set on the bc (comment) instance:
         * Calls manipulators and bc.create() (if not verify_only) collecting warnings
@@ -275,7 +275,7 @@ class FullBlogCore(Component):
             for listener in self.listeners:
                 listener.blog_comment_added(bc.post_name, bc.number)
         return warnings
-    
+
     def delete_comment(self, bc):
         """ Deletes the comment (bc), and notifies listeners.
         Returns [] for success, or a list of (field, message) tuples if not."""
@@ -331,7 +331,7 @@ class FullBlogCore(Component):
                 total)
 
     # Internal methods
-    
+
     def _get_default_postname(self, user=''):
         """ Parses and returns the setting for default_postname. """
         opt = self.env.config.get('fullblog', 'default_postname')
@@ -367,5 +367,5 @@ class FullBlogCore(Component):
         if len(items) == 2 and parse_period(items) != (None, None):
             warnings.append(('',
                 "'%s' is seen as a time period, and cannot "
-                "be used as a name. Please change." % name))        
+                "be used as a name. Please change." % name))
         return warnings
