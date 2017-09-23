@@ -32,7 +32,7 @@
       <div id="blog-main">
 
         <!--! View single post with comments -->
-      
+
         <py:if test="defined('blog_post') and blog_post.version">
           ${render_blog_post(blog_post)}
 
@@ -63,7 +63,7 @@
               </form>
             </div>
           </py:if>
-        
+
           <!--! List attachments -->
           <py:choose test="defined('list_of_attachments')">
             <py:when test="True">
@@ -120,13 +120,13 @@
                       <a tabindex="42" href="${href.wiki('WikiFormatting')}">WikiFormatting</a>
                       here):
                     </label><br />
-                    <textarea class="wikitext" id="comment" name="comment" 
+                    <textarea class="wikitext" id="comment" name="comment"
                       cols="80" rows="8">${defined('blog_comment') and blog_comment.comment or ''}</textarea>
                   </div>
                 <div class="field">
                   <label for="author">Email or username:</label>
                     <br />
-                    <input id="author" type="text" 
+                    <input id="author" type="text"
                         name="author" size="30"
                         value="${(defined('blog_comment') and blog_comment.author)
                                  or (req.authname == 'anonymous' and
@@ -165,7 +165,7 @@
           <p py:if="not len(blog_post_list)">
             No blog posts available.
           </p>
-          <div py:for="blog_post in blog_post_list" py:strip="True"> 
+          <div py:for="blog_post in blog_post_list" py:strip="True">
             ${render_blog_post(blog_post, list_mode=True)}
           </div>
         </py:if>

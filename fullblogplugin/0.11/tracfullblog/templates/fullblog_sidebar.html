@@ -10,7 +10,7 @@
         <a py:if="'BLOG_CREATE' in perm('blog')"
             href="${req.href.blog('create', name='about')}">
           Create 'About' post.
-        </a> 
+        </a>
       </p>
       <p py:if="defined('blog_about') and blog_about.version">
         About: <a href="${req.href.blog('about')}">${blog_about.title}</a>
@@ -28,7 +28,7 @@
         Archive: <a href="${req.href.blog('archive')}">All posts</a> (${blog_total})
       </p>
     </div>
-    
+
     <div class="sidebar-section">
       <py:if test="blog_months">
         <p>Browse by time:</p>
@@ -41,7 +41,7 @@
       </py:if>
       <p py:if="not blog_months">No posts.</p>
     </div>
-    
+
     <div class="sidebar-section"
           py:if="not blog_personal_blog">
       <py:if test="blog_authors">
@@ -53,7 +53,7 @@
                 <img py:if="blog_all_rss_icons"
                     src="${chrome.htdocs_location}feed.png" alt="RSS" /> rss
               </a>
-            </span> 
+            </span>
             <a href="${req.href.blog('author', author)}">${author}</a> (${count})</li>
         </ul>
       </py:if>
@@ -70,7 +70,7 @@
                 <img py:if="blog_all_rss_icons"
                     src="${chrome.htdocs_location}feed.png" alt="RSS" /> rss
               </a>
-            </span> 
+            </span>
             <a href="${req.href.blog('category', category)}">${category}</a>
                   (${count})
           </li>
