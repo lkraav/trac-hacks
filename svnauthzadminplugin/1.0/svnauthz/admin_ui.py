@@ -136,7 +136,7 @@ class SvnAuthzAdminPage(Component):
 
         data['read_only_display'] = self.read_only_display
 
-        AuthzFile(self.authz_file).write(self.authz)
+        AuthzFile(self.env, self.authz_file).write(self.authz)
 
         return 'admin_authz.html', data
 
@@ -356,7 +356,7 @@ class SvnAuthzAdminPage(Component):
 
     def _get_authz(self, req):
         if self.authz_file and os.path.exists(self.authz_file):
-            return AuthzFile(self.authz_file).read()
+            return AuthzFile(self.env, self.authz_file).read()
         elif self.authz_file:
             add_warning(req, _("Authz file not found at %(file)s",
                                file=self.authz_file))

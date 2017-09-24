@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from api import SvnAuthzSystem
 from model import AuthModel, Group, Path, PathAcl, User
 
 PARSE_NORMAL = 0
@@ -7,9 +8,10 @@ PARSE_GROUPS = 1
 PARSE_PATH_ACL = 2
 
 
-class AuthzFile:
+class AuthzFile(object):
 
-    def __init__(self, filename):
+    def __init__(self, env, filename):
+        self.env = env
         self.filename = filename
 
     def read(self):
@@ -24,9 +26,11 @@ class AuthzFile:
         if orig != new:
             with open(self.filename, 'w') as fp:
                 fp.write(new)
+            for listener in SvnAuthzSystem(self.env).change_listeners:
+                listener.authz_changed(self, orig)
 
 
-class AuthzFileParser:
+class AuthzFileParser(object):
 
     def __init__(self, filename, fp):
         self.filename = filename

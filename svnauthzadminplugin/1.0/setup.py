@@ -9,7 +9,7 @@ setup(
     name=PACKAGE, version=VERSION,
     author='Gergely Kis',
     author_email='trac@kisgergely.com',
-    url='http://www.trac-hacks.org/wiki/SvnAuthzAdminPlugin',
+    url='https://www.trac-hacks.org/wiki/SvnAuthzAdminPlugin',
     description='SvnAuthz File Administration Plugin for Trac',
     license='GPL',
     package_dir={
@@ -23,6 +23,7 @@ setup(
     },
     entry_points={
         'trac.plugins': [
+            'svnauthz.api = svnauthz.api',
             'svnauthz.admin_ui = svnauthz.admin_ui',
         ]
     },
