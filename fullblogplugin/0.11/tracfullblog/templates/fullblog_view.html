@@ -88,8 +88,8 @@
                 <div class="comment-info">
                     <a href="${req.href.blog(comment.post_name)}#comment-${to_unicode(comment.number)}">
                       ${comment.number}.</a>
-                    ${format_author(comment.author)} --
-                    ${format_datetime(comment.time, '%Y-%m-%d %H:%M')}</div>
+                    ${authorinfo(comment.author)} --
+                    ${pretty_dateinfo and pretty_dateinfo(comment.time) or format_datetime(comment.time)}</div>
                 <div class="comment-body">${wiki_to_html(context, comment.comment)}</div>
               </div>
             </py:if>
@@ -109,8 +109,8 @@
                         <a py:if="req.chrome.warnings" href="#warning">(Warnings)</a>
                       </legend>
                       <div class="comment-info">
-                        ${format_author(blog_comment.author)} --
-                        ${format_datetime(blog_comment.time, '%Y-%m-%d %H:%M')}
+                        ${authorinfo(blog_comment.author)} --
+                        ${pretty_dateinfo and pretty_dateinfo(blog_comment.time) or format_datetime(blog_comment.time)}
                       </div>
                       <div class="comment_body">${wiki_to_html(context, blog_comment.comment)}</div>
                     </fieldset>
@@ -129,11 +129,7 @@
                     <input id="author" type="text"
                         name="author" size="30"
                         value="${(defined('blog_comment') and blog_comment.author)
-                                 or (req.authname == 'anonymous' and
-                                         (req.session.get('email')
-                                             or req.session.get('name')
-                                             or req.authname))
-                                 or req.authname}" />
+                                 or get_reporter_id(req)}" />
                 </div>
                 <div class="buttons">
                   <input type="submit" name="previewcomment" value="Preview comment" />

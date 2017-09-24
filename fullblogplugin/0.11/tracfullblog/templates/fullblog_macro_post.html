@@ -12,13 +12,13 @@
         <p py:if="do_shorten"><a href="${href.blog(post.name)}">(Read more)</a></p>
     </div>
     <ul class="metainfo" py:if="not defined('show_meta') and True or show_meta">
-      <li class="metadates">Posted: ${format_datetime(post.publish_time, '%Y-%m-%d %H:%M')}
+      <li class="metadates">Posted: ${pretty_dateinfo and pretty_dateinfo(post.publish_time) or format_datetime(post.publish_time)}
         <span class="metaupdated" py:if="len(post.versions) > 1">
-          (Updated: ${format_datetime(post.version_time, '%Y-%m-%d %H:%M')})
+          (Updated: ${pretty_dateinfo and pretty_dateinfo(post.version_time) or format_datetime(post.version_time)})
         </span>
       </li>
       <li class="metaauthor" py:if="not blog_personal_blog">Author:
-        <a href="${req.href.blog('author', post.author)}">${post.author}</a> </li>
+        <a href="${req.href.blog('author', post.author)}">${authorinfo(post.author)}</a> </li>
       <li class="metacategories">Categories:
         <py:for each="cat in post.category_list">
           <a href="${req.href.blog('category', cat)}">${cat}</a>

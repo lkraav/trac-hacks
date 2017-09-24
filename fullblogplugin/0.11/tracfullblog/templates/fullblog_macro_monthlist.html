@@ -8,9 +8,9 @@
         <li py:for="name, version, time, author, title, body, categories in posts">
           <a href="${req.href.blog(name)}">${title}</a>
           <span class="metainfo" py:if="not defined('show_meta') and True or show_meta">
-            &nbsp;-- Posted on ${format_datetime(time, '%Y-%m-%d %H:%M')}
+            &nbsp;-- Posted on ${pretty_dateinfo and pretty_dateinfo(time) or format_datetime(time)}
             <py:if test="not blog_personal_blog">
-              : author <a href="${req.href.blog('author', author)}">${author}</a>
+              : author <a href="${req.href.blog('author', author)}">${authorinfo(author)}</a>
             </py:if>
             <py:if test="categories">
               : categories
