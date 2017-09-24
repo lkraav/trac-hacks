@@ -36,6 +36,7 @@ from trac.web.chrome import (
 
 from acct_mgr.api import IAccountChangeListener, IPasswordStore
 from acct_mgr.htfile import HtPasswdStore
+from svnauthz.api import ISvnAuthzChangeListener
 from svnauthz.io import AuthzFile
 from svnauthz.model import User, Path, PathAcl
 from tractags.api import TagSystem
@@ -108,7 +109,7 @@ class HackDoesntExist(Aspect):
             )
 
         authz_file = self.env.config.getpath('svn', 'authz_file')
-        authz = AuthzFile(authz_file).read()
+        authz = AuthzFile(self.env, authz_file).read()
         authz_paths = [p.get_path() for p in authz.get_paths()]
         for ap in authz_paths:
             if ap.startswith(path):
@@ -269,7 +270,8 @@ class TracHacksPolicy(Component):
 class TracHacksHandler(Component):
     """Trac-Hacks request handler."""
     implements(INavigationContributor, IPermissionRequestor, IRequestFilter,
-               IRequestHandler, ITemplateProvider, ITemplateStreamFilter)
+               IRequestHandler, ISvnAuthzChangeListener, ITemplateProvider,
+               ITemplateStreamFilter)
 
     limit = IntOption('trachacks', 'limit', 25,
         "Default maximum number of hacks to display.")
@@ -504,6 +506,15 @@ for [wiki:AdoptingHacks adoption].
     def get_permission_actions(self):
         return ['HACK_CREATE']
 
+    # ISvnAuthzChangeListener methods
+
+    def authz_changed(self, authz_file, old_authz):
+        args = [self.svn_path, 'commit', '-q', '--username', 'trac',
+                '--config-dir', _SVN_CONFIG_DIR, '--non-interactive',
+                '-m', 'Modify authz file', '--',
+                os.path.abspath(authz_file.filename)]
+        self._run_command(args)
+
     # Internal methods
 
     def render_new(self, req, data, hacks):
@@ -668,11 +679,11 @@ for [wiki:AdoptingHacks adoption].
 
             # Step 5: Add permissions
             authz_file = self.config.getpath('svn', 'authz_file')
-            authz = AuthzFile(authz_file).read()
+            authz = AuthzFile(self.env, authz_file).read()
 
             svn_path_acl = PathAcl(User(req.authname), r=True, w=True)
             authz.add_path(Path("/%s" % hack_path, acls=[svn_path_acl, ]))
-            AuthzFile(authz_file).write(authz)
+            AuthzFile(self.env, authz_file).write(authz)
 
             fcntl.flock(lock_file, fcntl.LOCK_UN)
             created = True
@@ -700,9 +711,9 @@ for [wiki:AdoptingHacks adoption].
 
         # Remove from authz file.
         authz_file = self.config.getpath('svn', 'authz_file')
-        authz = AuthzFile(authz_file).read()
+        authz = AuthzFile(self.env, authz_file).read()
         authz.del_path('/%s' % hack_path)
-        AuthzFile(authz_file).write(authz)
+        AuthzFile(self.env, authz_file).write(authz)
 
         # Delete wiki page.
         page = WikiPage(self.env, name)
