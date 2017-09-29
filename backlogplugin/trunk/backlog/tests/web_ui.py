@@ -10,6 +10,7 @@ import unittest
 
 from backlog.web_ui import BacklogModule
 
+
 class BacklogRequestHandlerTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -21,10 +22,12 @@ class BacklogRequestHandlerTestCase(unittest.TestCase):
     def test_something(self):
         pass
 
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BacklogRequestHandlerTestCase, 'test'))
     return suite
 
+
 if __name__ == '__main__':
-    unitest.main(defaultTest='test_suite')
+    unittest.main(defaultTest='test_suite')

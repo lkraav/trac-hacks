@@ -9,21 +9,9 @@
 # you should have received as part of this distribution.
 
 from setuptools import find_packages, setup
-import sys
 
 name = 'BacklogPlugin'
-version = '0.2'
-min_trac_version = '0.11.1'
-
-# Check for minimum required Trac version
-try:
-    import trac
-    if trac.__version__ < min_trac_version:
-        print "%s %s requires Trac >= %s" % (name, version, min_trac_version)
-        sys.exit(1)
-except ImportError:
-    print "Trac not found"
-    sys.exit(1)
+version = '0.3'
 
 setup(
     name=name,
@@ -33,7 +21,7 @@ setup(
     author_email='bartlomiej.ogryczak@hyves.nl',
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
-    url='http://trac-hacks.org/wiki/BacklogPlugin',
+    url='https://trac-hacks.org/wiki/BacklogPlugin',
     license='BSD',
     description="""Organize tickets within backlogs.""",
     zip_safe=True,

@@ -12,8 +12,9 @@ from trac.ticket.api import ITicketChangeListener
 
 from model import *
 
+
 class BacklogTicketChangeListener(Component):
-    "Listens to the changes of tickets and updates backlogs if necessary"
+    """Listens to the changes of tickets and updates backlogs if necessary"""
 
     implements(ITicketChangeListener)
 
@@ -29,7 +30,6 @@ class BacklogTicketChangeListener(Component):
             except BacklogException:
                 pass
 
-
     def ticket_changed(self, ticket, comment, author, old_values):
         """Called when a ticket is modified. Adds and removes tickets
         from backlogs."""
@@ -39,7 +39,8 @@ class BacklogTicketChangeListener(Component):
         # backlog has been changed
         if 'backlog' in old_values.keys():
             if backlog_name == NO_BACKLOG:
-                if old_values['backlog'] and old_values['backlog'] != NO_BACKLOG:
+                if old_values['backlog'] and \
+                        old_values['backlog'] != NO_BACKLOG:
                     Backlog(self.env, name=old_values['backlog']).delete_ticket(ticket.id)
             else:
                 Backlog(self.env, name=backlog_name).add_ticket(ticket.id)

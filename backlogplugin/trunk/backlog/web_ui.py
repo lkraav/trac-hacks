@@ -7,14 +7,13 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.builder import tag
-from trac import __version__ as trac_version
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, TracError, implements
-from trac.perm import IPermissionRequestor, PermissionCache, PermissionError
-from trac.ticket.api import ITicketChangeListener, TicketSystem
+from trac.perm import IPermissionRequestor
+from trac.ticket.api import TicketSystem
+from trac.util.html import html as tag
 from trac.util.translation import _
-from trac.web import IRequestHandler
+from trac.web.api import IRequestHandler
 from trac.web.chrome import (
     INavigationContributor, ITemplateProvider, add_stylesheet, add_script,
     Chrome,
@@ -39,8 +38,7 @@ def custom_enum_fields(self):
             from trac.ticket.model import AbstractEnum
             enum_cls = type(str(enum_col), (AbstractEnum,), {})
             enum_cls.type = enum_col
-            db = self.env.get_db_cnx()
-            field['options'] = [val.name for val in enum_cls.select(self.env, db=db)]
+            field['options'] = [val.name for val in enum_cls.select(self.env)]
 
     return fields
 
@@ -98,32 +96,19 @@ class BacklogModule(Component):
 
     def process_request(self, req):
         req.perm.require('BACKLOG_VIEW')
-        db = self.env.get_db_cnx()
-        create_ordering_table(db)
+        create_ordering_table(self.env)
         backlog_id = req.args.get('backlog_id')
         if req.method == 'POST':
             self._save_order(req, backlog_id)
             req.redirect(req.href.backlog(backlog_id))
 
-        self._add_jquery_ui(req)
+        Chrome(self.env).add_jquery_ui(req)
         add_stylesheet(req, 'backlog/css/backlog.css')
 
         if backlog_id:
             return self._show_backlog(req, backlog_id)
         else:
             return self._show_backlog_list(req)
-
-    def _add_jquery_ui(self, req):
-        if hasattr(Chrome, 'add_jquery_ui'):
-            Chrome(self.env).add_jquery_ui(req)
-            return
-
-        from pkg_resources import parse_version
-        if parse_version(trac_version) >= parse_version('0.12'):
-            add_script(req, 'backlog/js/jquery-ui-1.8.23.custom.min.js')
-        else:
-            add_script(req, 'backlog/js/jquery-ui-1.6.min.js')
-        add_stylesheet(req, 'backlog/css/jquery-ui.custom.css')
 
     def _show_backlog(self, req, backlog_id):
         try:
@@ -140,46 +125,34 @@ class BacklogModule(Component):
         return 'backlog.html', data, None
 
     def _show_backlog_list(self, req):
-        db = self.env.get_db_cnx()
-        backlog_id = req.args.get('backlog_id', None)
-
         columns = ['id', 'name', 'owner', 'description']
-
-        cursor = db.cursor()
-        sql = """SELECT %s, 0 as total, 0 as active
-                 FROM  backlog
-                 """ % (','.join(columns))
-        cursor.execute(sql)
-
-        columns.extend(['total', 'active'])
-
         data = {}
-        data['backlogs'] = dict([(backlog[0], (dict(zip(columns, backlog)))) for backlog in cursor])
+        data['backlogs'] = \
+            dict([(backlog[0],
+                   (dict(zip(columns + ['total', 'active'], backlog))))
+                  for backlog in self.env.db_query("""
+                    SELECT %s, 0 as total, 0 as active FROM  backlog
+                    """ % (','.join(columns)))])
 
         # get total of tickets in each backlog
-        sql = """SELECT bklg_id, count(*) as total
-                 FROM backlog_ticket
-                 WHERE tkt_order IS NULL OR tkt_order > -1
-                 GROUP BY bklg_id
-              """
-        cursor.execute(sql)
-
-        for id, total in cursor:
+        for id, total in self.env.db_query("""
+                SELECT bklg_id, COUNT(*) as total FROM backlog_ticket
+                WHERE tkt_order IS NULL OR tkt_order > -1
+                GROUP BY bklg_id
+                """):
             data['backlogs'][id]['total'] = total
             data['backlogs'][id]['closed'] = 0
             data['backlogs'][id]['active'] = 0
 
         # get total of tickets by status in each backlog
-        sql = """SELECT bt.bklg_id, t.status, count(*) as total
-                 FROM backlog_ticket bt, ticket t
-                 WHERE t.id = bt.tkt_id
+        for id, status, total in self.env.db_query("""
+                SELECT bt.bklg_id, t.status, COUNT(*) as total
+                FROM backlog_ticket bt, ticket t
+                WHERE t.id = bt.tkt_id
                  AND (bt.tkt_order IS NULL OR bt.tkt_order > -1)
-                 GROUP BY bklg_id, status
-              """
-        cursor.execute(sql)
-
-        for id, status, total in cursor:
-            if(status == 'closed'):
+                GROUP BY bklg_id, status
+                """):
+            if status == 'closed':
                 data['backlogs'][id]['closed'] += total
             else:
                 data['backlogs'][id]['active'] += total
@@ -190,22 +163,18 @@ class BacklogModule(Component):
     def _save_order(self, req, backlog_id):
         req.perm.require('BACKLOG_MODIFY')
         backlog = Backlog(self.env, backlog_id)
-        #db = self.env.get_db_cnx()
-        #cursor = db.cursor()
+        print(req.args)
         if req.args.get('remove_tickets'):
             backlog.remove_closed_tickets()
         if req.args.get('ticket_order'):
             ticket_order = req.args.get('ticket_order').split(',')
-            ticket_order = [int(tkt_id.split('_')[1]) for tkt_id in ticket_order]
+            ticket_order = [int(tkt_id.split('_')[1])
+                            for tkt_id in ticket_order]
             backlog.set_ticket_order(ticket_order)
-            #ticket_order = [ (bklg_id, int(tkt_id.split('_')[1]), int(tkt_order)) for (tkt_order, tkt_id) in enumerate(ticket_order)]
-            #cursor.executemany('REPLACE INTO backlog_tkt (bklg_id, tkt_id, tkt_order) VALUES (%s, %s, %s)', ticket_order)
         if req.args.get('tickets_out'):
             tickets_out = req.args.get('tickets_out').split(',')
             tickets_out = [int(tkt_id.split('_')[1]) for tkt_id in tickets_out]
             backlog.reset_priority(tickets_out)
-            #cursor.executemany('DELETE FROM backlog_ticket WHERE bklg_id=%s AND tkt_id=%s', tickets_out)
-        #db.commit()
 
     # IPermissionRequestor methods
 
