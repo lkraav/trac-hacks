@@ -85,7 +85,7 @@ class BacklogSetup(Component):
 
     implements(IEnvironmentSetupParticipant)
 
-    def environment_created(self, db=None):
+    def environment_created(self):
         """Called when a new Trac environment is created."""
         pass
 
