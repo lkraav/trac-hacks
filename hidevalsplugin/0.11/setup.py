@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='TracHideVals',
-    version='1.2',
+    version='1.2.1',
     packages=['hidevals'],
     package_data={'hidevals': [
         'templates/*.html', 'htdocs/*.js', 'htdocs/*.css']},
