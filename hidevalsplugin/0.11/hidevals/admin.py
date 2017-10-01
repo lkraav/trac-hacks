@@ -71,5 +71,4 @@ class HideValsAdminModule(Component):
         return [resource_filename(__name__, 'templates')]
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('hidevals', resource_filename(__name__, 'htdocs'))]
+        return []
