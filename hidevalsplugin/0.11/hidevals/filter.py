@@ -25,13 +25,13 @@ class HideValsFilter(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if (req.perm.has_permission('TRAC_ADMIN')
-            or not req.perm.has_permission('TICKET_HIDEVALS')
-            or (not req.path_info.startswith('/newticket')
-                and not req.path_info.startswith('/ticket')
-                and not req.path_info.startswith('/query'))):
+        if 'TRAC_ADMIN' in req.perm or \
+                'TICKET_HIDEVALS' not in req.perm or \
+                not req.path_info.startswith(('/newticket', '/ticket',
+                                              '/query')) or \
+                (template, data, content_type) == (None, None, None):
             # TRAC_ADMIN would have the filterer permissions by inheritance
-            return (template, data, content_type)
+            return template, data, content_type
         else:
             visible_fields = HideValsSystem(self.env).visible_fields(req)
             self.env.log.debug("visible_fields: %s" % str(visible_fields))
