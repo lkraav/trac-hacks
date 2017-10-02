@@ -186,6 +186,9 @@ TracInterface.prototype.select = function (name) {
 
     if (this.type == 'radio') {
         item.checked(true);
+        if (item.prop('name') == 'action') {
+            item.nextAll('select').prop('disabled', false);
+        }
     } else {
         item.prop('selected', true);
     }
