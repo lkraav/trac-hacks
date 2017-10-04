@@ -8,7 +8,7 @@ $(document).ready(function() {
 
     var onQueryError = function() {
         // prompt error message
-        $("#content").prepend("<div id='query_error_msg' style='display: none; border: solid 1px; background-color: yellow;'>Right in place edit start failed.</div>");
+        $("#content").prepend("<div id='query_error_msg' style='display: none; border: solid 1px; background-color: yellow;'>In place editing failed.</div>");
         $("#query_error_msg").fadeIn("fast").fadeTo(5000, 1).fadeOut("slow", function(){
             $("#query_error_msg").remove();
         });
