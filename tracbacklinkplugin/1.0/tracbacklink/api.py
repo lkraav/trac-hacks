@@ -42,7 +42,7 @@ from trac.web.api import Request, arg_list_to_args
 from trac.web.chrome import web_context
 from trac.web.session import Session
 from trac.wiki.api import IWikiChangeListener, WikiSystem
-from trac.wiki.formatter import Formatter
+from trac.wiki.formatter import Formatter, WikiProcessor
 from trac.wiki.macros import ImageMacro
 from trac.wiki.model import WikiPage
 from trac.wiki.parser import WikiParser
@@ -570,11 +570,6 @@ class LinksGatherer(Formatter):
         self.resources = set()
         return self._super.format(text, out)
 
-    @lazy
-    def _wiki_name_re(self):
-        for pattern, f in WikiSystem(self.env).get_wiki_syntax():
-            return re.compile(pattern, re.UNICODE)
-
     _ticket_re = re.compile(r'#[0-9]+(,[0-9]+)*\Z')
 
     @lazy
@@ -587,8 +582,9 @@ class LinksGatherer(Formatter):
         return ResourceSystem(self.env).get_known_realms()
 
     def handle_match(self, fullmatch):
+        wikiparser = self.wikiparser
         for itype, match in fullmatch.groupdict().iteritems():
-            if not match or itype in self.wikiparser.helper_patterns:
+            if not match or itype in wikiparser.helper_patterns:
                 continue
             if match[0] == '!':
                 return ''
@@ -604,8 +600,12 @@ class LinksGatherer(Formatter):
                 elif match.startswith('[') and match.endswith(']'):
                     self._add_changeset_link(match[1:-1])
                 return ''
-            if self._wiki_name_re.match(match):
-                self._add_resource(Resource('wiki', match))
+            if itype in wikiparser.external_handlers:
+                handler_name = wikiparser.external_handlers[itype].__name__
+                if handler_name == 'wikipagename_link':
+                    self._add_wiki_link(match)
+                elif handler_name == 'wikipagename_with_label_link':
+                    self._add_wiki_link(fullmatch.group('wiki_page'))
                 return ''
         return self._super.handle_match(fullmatch)
 
@@ -652,11 +652,17 @@ class LinksGatherer(Formatter):
             macrolist = name[-1] == '?'
             if name.lower() == 'br' or name == '?' or macrolist:
                 return ''
+            macro = None
             if name in ('span', 'Span'):
                 self._gather_resources(args)
             elif name == 'Image':
                 self._gather_resource_from_image_macro(args)
-            return ''
+            else:
+                macro = WikiProcessor(self, (name, name[:-1])[macrolist])
+                if macro.error:
+                    macro = False
+            if macro is not False:
+                return ''
         fullmatch = WikiParser._creolelink_re.match(macro_or_link)
         return self._lhref_formatter(match, fullmatch)
 
@@ -738,8 +744,15 @@ class LinksGatherer(Formatter):
         return ''
 
     def _add_wiki_link(self, target):
+        target, query, fragment = self.split_link(target)
+        target = self._resolve_wiki_name(target)
+        self._add_resource(Resource('wiki', target))
+
+    def _resolve_wiki_name(self, target):
         wikisys = WikiSystem(self.env)
-        target = target.rstrip('/') or 'WikiStart'
+        if '@' in target:
+            target = target.split('@', 1)[0]
+        target = target.rstrip('/') or self.START_PAGE
         referrer = self.resource.id \
                    if self.resource and self.resource.realm == 'wiki' \
                    else ''
@@ -749,7 +762,7 @@ class LinksGatherer(Formatter):
             target = wikisys._resolve_relative_name(target, referrer)
         else:
             target = wikisys._resolve_scoped_name(target, referrer)
-        self._add_resource(Resource('wiki', target))
+        return target
 
     def _add_ticket_link(self, target):
         try:
@@ -840,6 +853,10 @@ class LinksGatherer(Formatter):
                                                 only_inline=only_inline)
         else:
             return ''
+
+
+if not hasattr(LinksGatherer, 'START_PAGE'):
+    LinksGatherer.START_PAGE = 'WikiStart'
 
 
 class NullOut(object):

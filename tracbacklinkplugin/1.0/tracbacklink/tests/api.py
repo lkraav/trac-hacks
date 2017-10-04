@@ -8,10 +8,10 @@
 
 from __future__ import with_statement
 
+import inspect
 import os
 import pkg_resources
 import unittest
-import tempfile
 from cStringIO import StringIO
 from datetime import datetime
 
@@ -32,6 +32,14 @@ from trac.wiki.model import WikiPage
 from tracbacklink import db_default
 from tracbacklink.api import (MockRequest, TracBackLinkChangeset as Changeset,
                               TracBackLinkSystem, gather_links)
+
+
+if 'remote_addr' in inspect.getargspec(WikiPage.save)[0]:
+    def _save_page(page, author, comment):
+        page.save(author, comment, remote_addr='::1')
+else:
+    def _save_page(page, author, comment):
+        page.save(author, comment)
 
 
 class RepositoryStubConnector(Component):
@@ -81,7 +89,6 @@ class GatherLinksTestCase(unittest.TestCase):
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', RepositoryStubConnector])
-        self.env.path = tempfile.mkdtemp(prefix='trac-tempenv-')
         dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
         pages = pkg_resources.resource_listdir('trac.wiki', 'default-pages')
         with self.env.db_transaction:
@@ -91,7 +98,7 @@ class GatherLinksTestCase(unittest.TestCase):
                 admin.import_page(filename, name)
 
     def tearDown(self):
-        self.env.reset_db_and_disk()
+        self.env.reset_db()
 
     def _gather(self, resource, text):
         return gather_links(self.env, resource, text)
@@ -138,10 +145,10 @@ class GatherLinksTestCase(unittest.TestCase):
             with self.env.db_transaction:
                 page = WikiPage(self.env, 'SandBox/Sub/TracLicense')
                 page.text = text
-                page.save('anonymous', None)
+                _save_page(page, 'anonymous', None)
                 page = WikiPage(self.env, 'SandBox/Sub/TracLinks')
                 page.text = text
-                page.save('anonymous', None)
+                _save_page(page, 'anonymous', None)
             actual = set(self._gather(page, page.text))
             expected = set(expected)
             self.assertEqual(expected - (expected & actual),
@@ -149,16 +156,82 @@ class GatherLinksTestCase(unittest.TestCase):
 
         test([Resource('wiki', 'WikiStart')], 'wiki:WikiStart')
         test([], 'wiki:SandBox/Sub/TracLinks')  # self-reference
-        test([Resource('wiki', 'TracUpgrade')], 'TracUpgrade')
-        test([Resource('wiki', 'SandBox/Sub/Missing')], 'wiki:Missing')
-        test([Resource('wiki', 'Missing')], 'wiki:/Missing')
+
+        resources = [Resource('wiki', 'TracUpgrade')]
+        test(resources, 'TracUpgrade')
+        test(resources, '/TracUpgrade/')
+        test(resources, 'TracUpgrade@42')
+        test(resources, 'TracUpgrade#anchor')
+        test(resources, '/TracUpgrade@42#anchor')
+        test(resources, '[TracUpgrade]')
+        test(resources, '[TracUpgrade@42]')
+        test(resources, '[TracUpgrade#anchor]')
+        test(resources, '[TracUpgrade@42#anchor]')
+        test(resources, '[TracUpgrade upgrade]')
+        test(resources, '[TracUpgrade@42 upgrade]')
+        test(resources, '[TracUpgrade#anchor upgrade]')
+        test(resources, '[TracUpgrade@42#anchor upgrade]')
+        test(resources, '[wiki:TracUpgrade upgrade]')
+        test(resources, '[wiki:TracUpgrade@42 upgrade]')
+        test(resources, '[wiki:TracUpgrade#anchor upgrade]')
+        test(resources, '[wiki:/TracUpgrade@42#anchor upgrade]')
+
+        resources = [Resource('wiki', 'SandBox/Sub/MissingPage')]
+        test(resources, 'MissingPage')
+        test(resources, 'MissingPage@42')
+        test(resources, 'MissingPage#anchor')
+        test(resources, 'MissingPage@42#anchor')
+        test(resources, '[MissingPage]')
+        test(resources, '[MissingPage@42]')
+        test(resources, '[MissingPage#anchor]')
+        test(resources, '[MissingPage@42#anchor]')
+        test(resources, '[MissingPage missing page]')
+        test(resources, '[MissingPage@42 missing page]')
+        test(resources, '[MissingPage#anchor missing page]')
+        test(resources, '[MissingPage@42#anchor missing page]')
+        test(resources, 'wiki:MissingPage')
+        test(resources, 'wiki:MissingPage@42')
+        test(resources, 'wiki:MissingPage#anchor')
+        test(resources, 'wiki:MissingPage@42#anchor')
+        test(resources, '[wiki:MissingPage]')
+        test(resources, '[wiki:MissingPage@42]')
+        test(resources, '[wiki:MissingPage#anchor]')
+        test(resources, '[wiki:MissingPage@42#anchor]')
+        test(resources, '[wiki:MissingPage missing page]')
+        test(resources, '[wiki:MissingPage@42 missing page]')
+        test(resources, '[wiki:MissingPage#anchor missing page]')
+        test(resources, '[wiki:MissingPage@42#anchor missing page]')
+
+        resources = [Resource('wiki', 'TracInstall')]
+        test(resources, '<TracInstall>')
+        test(resources, '<TracInstall@42>')
+        test(resources, '<TracInstall#anchor>')
+        test(resources, '</TracInstall@42#anchor>')
+        test(resources, '<wiki:TracInstall>')
+        test(resources, '<wiki:TracInstall@42>')
+        test(resources, '<wiki:TracInstall#anchor>')
+        test(resources, '<wiki:/TracInstall@42#anchor>')
+
+        resources = [Resource('wiki', 'TracGuide')]
+        test(resources, '[[TracGuide]]')
+        test(resources, '[[TracGuide@42]]')
+        test(resources, '[[TracGuide#anchor]]')
+        test(resources, '[[TracGuide@42#anchor]]')
+        test(resources, '[[wiki:TracGuide]]')
+        test(resources, '[[wiki:TracGuide@42]]')
+        test(resources, '[[wiki:TracGuide#anchor]]')
+        test(resources, '[[wiki:/TracGuide@42#anchor]]')
+        test(resources, '[[wiki:TracGuide|Trac Guide]]')
+        test(resources, '[[wiki:TracGuide@42|Trac Guide]]')
+        test(resources, '[[wiki:TracGuide#anchor|Trac Guide]]')
+        test(resources, '[[wiki:/TracGuide@42#anchor|Trac Guide]]')
+
+        test([Resource('wiki', 'MissingPage')], 'wiki:/MissingPage')
         test([Resource('wiki', u'SandBox/Sub/föo')], u'wiki:föo')
         test([Resource('wiki', 'SandBox/Sub/bar')], '[wiki:bar Bar page]')
         test([Resource('wiki', 'SandBox/Sub/foo bar')], 'wiki:"foo bar"')
         test([Resource('wiki', 'SandBox/Sub/foo bar')],
              '[wiki:"foo bar" "Foo bar" page]')
-        test([Resource('wiki', 'TracInstall')], '<wiki:TracInstall>')
-        test([Resource('wiki', 'TracGuide')], '[[wiki:TracGuide|Trac Guide]]')
         test([], '[/TracAdmin]')
         test([Resource('wiki', 'SandBox/Sub/TracLicense')],
              '[wiki:TracLicense]')
@@ -305,7 +378,6 @@ class ChangeListenersTestCase(unittest.TestCase):
         self.env = EnvironmentStub(default_data=True,
                                    enable=['trac.*', TracBackLinkSystem,
                                            RepositoryStubConnector])
-        self.env.path = tempfile.mkdtemp(prefix='trac-tempenv-')
         dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
         pages = pkg_resources.resource_listdir('trac.wiki', 'default-pages')
         with self.env.db_transaction:
@@ -319,7 +391,7 @@ class ChangeListenersTestCase(unittest.TestCase):
 
     def tearDown(self):
         DatabaseManager(self.env).drop_tables(db_default.schema)
-        self.env.reset_db_and_disk()
+        self.env.reset_db()
 
     def _invoke(self, name, f, *args, **kwargs):
         return f(*args, **kwargs)
@@ -353,7 +425,7 @@ class ChangeListenersTestCase(unittest.TestCase):
         with self.env.db_transaction:
             page = WikiPage(self.env, 'SandBox')
             page.text = '.'
-            page.save('anonymous', '')
+            _save_page(page, 'anonymous', '')
             t1 = Ticket(self.env)
             t1.populate({'summary': 'test attachment', 'status': 'new'})
             t1.insert()  # ticket:1
@@ -433,7 +505,7 @@ class ChangeListenersTestCase(unittest.TestCase):
     def test_wiki_page(self):
         page = WikiPage(self.env, 'SandBox/NewPage')
         page.text = 'See TracIni'
-        page.save('anonymous', 'Added hints (refs #42, comment:3:ticket:43)')
+        _save_page(page, 'anonymous', 'Added hints (refs #42, comment:3:ticket:43)')
         self._verify_sets([('wiki', 'TracIni', None, None,
                             'wiki', 'SandBox/NewPage', None, None),
                            ('ticket', '42', None, None,
@@ -444,7 +516,7 @@ class ChangeListenersTestCase(unittest.TestCase):
 
         page = WikiPage(self.env, 'SandBox/NewPage')
         page.text = 'See TracInstall'
-        page.save('anonymous', 'Minor changes (#44)')
+        _save_page(page, 'anonymous', 'Minor changes (#44)')
         expected = [('wiki', 'TracInstall', None, None,
                      'wiki', 'SandBox/NewPage', None, None),
                     ('ticket', '42', None, None,
