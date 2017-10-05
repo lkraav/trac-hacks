@@ -27,7 +27,7 @@
                         <th colspan="${len(user_manager.cells)+3}" >${is_trac_managed and _('External users') or _('Users')}</th>
                     </tr>
                     <tr>
-                        <th width="1%" align="left"></th>
+                        <th align="left" width="1%"></th>
                         <th align="left" class="${sort == 'username' and (asc == '1' and 'asc' or 'desc') or None}">
                           <a title="${_('Sort by User %(direction)s',
                                          direction=(sort =='username' and asc == '1' and
@@ -48,20 +48,20 @@
                             ${cells.label}
                           </a>
                         </th>
-                        <th width="1%" align="center">Actions</th>
+                        <th align="center" width="1%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                 <py:for each="user in sorted(users, key=itemgetter(sort), reverse=asc == '0')">
                     <tr id="um_user_${user.username}">
                         <th rowspan="${(user_manager.user and user_manager.user.username==user.username) and '2' or None}"><img src="${href.chrome('tracusermanager')+'/img/user.png'}" /></th>
-                        <th rowspan="1" valign="top" align="left" ><a href="${panel_href(user.username, (not is_trac_managed and user_manager.default_panel!='account') and user_manager.default_panel or 'profile')}#um_user_${user.username}" class="expander${(user_manager.user and user_manager.user.username==user.username) and '_open' or ''}">${user.username}</a></th>
+                        <th align="left" valign="top" rowspan="1"><a href="${panel_href(user.username, (not is_trac_managed and user_manager.default_panel!='account') and user_manager.default_panel or 'profile')}#um_user_${user.username}" class="expander${(user_manager.user and user_manager.user.username==user.username) and '_open' or ''}">${user.username}</a></th>
                         <th align="left" py:for="cell_dict in sorted(user_manager.cells, lambda x,y:x['order']-y['order'])" title="${cell_dict.label}">
                           ${cell_dict.render_method(cell_dict.name, user)}
                         </th>
                         <th align="left" >
                             <form method="POST" action="${panel_href()}">
-                                <input type="hidden" name="um_deleteuser_username" value="$user.username"/>                 
+                                <input type="hidden" name="um_deleteuser_username" value="$user.username"/>
                                 <input type="submit" name="um_user_delete" value="Remove"/>
                             </form>
                         </th>
@@ -95,8 +95,8 @@
                     </tr>
                 </py:for>
                 <tr py:if="len(users)==0">
-                    <td colspan="${len(user_manager.cells)+3}" align="center"> [ ${is_trac_managed and _('No external users defined') or _('No users defined') } ]</td>
-                </tr>   
+                    <td align="center" colspan="${len(user_manager.cells)+3}"> [ ${is_trac_managed and _('No external users defined') or _('No users defined') } ]</td>
+                </tr>
             </tbody>
             <tfoot>
                 <tr py:if="False">
@@ -124,7 +124,7 @@
                                     </div>
                                     <input type="submit" name="um_newuser_create" value="Add user"/>
                                 </div>
-                                
+
                             </fieldset>
                         </form>
                         <form py:if="is_trac_managed" name="um_create" action="${panel_href()}" method="post">
@@ -153,7 +153,7 @@
                                     <input type="submit" name="um_newuser_create" value="Add external user"/>
                                 </div>
                             </fieldset>
-                        </form> 
+                        </form>
                     </th>
                 </tr>
             </tfoot>
