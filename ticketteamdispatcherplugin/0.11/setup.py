@@ -9,7 +9,7 @@
 
 from setuptools import setup
 
-PACKAGE = 'TicketTeamDispatcher'
+PACKAGE = 'TracTicketTeamDispatcher'
 PACKAGE_SHORT = 'ttd'
 VERSION = '0.3'
 
