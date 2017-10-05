@@ -59,7 +59,7 @@ class TicketlogModule(Component):
                 req.path_info.startswith('/ticket/'):
             ticket_id = req.args.get('id')
             resource = Resource('ticket', ticket_id)
-            if 'LOG_VIEW' in req.perm(resource):
+            if 'CHANGESET_VIEW' in req.perm(resource):
                 add_stylesheet(req, 'ticketlog/ticketlog.css')
                 revisions = self._get_ticket_revisions(req, ticket_id)
                 template = Chrome(self.env)\
