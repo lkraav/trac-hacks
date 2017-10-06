@@ -84,7 +84,7 @@ class UserManagementAdminPage(Component):
         if 'um_session_management' in req.args and panel is None:
             return self._do_session_management(req, cat, page, path_info)
 
-        if req.method == "POST" and panel is None:
+        if req.method == 'POST' and panel is None:
             try:
                 if 'um_newuser_create' in req.args:
                     um_data['messages'].append(self._do_create_user(req))
@@ -263,7 +263,7 @@ class UserManagementAdminPage(Component):
         data = dict(sessions=sorted(sessions.itervalues(),
                                     key=lambda session: session['username']))
 
-        return "admin_session_management.html", data
+        return 'admin_session_management.html', data
 
     def _get_panels(self, req):
         """Return a list of available admin panels."""

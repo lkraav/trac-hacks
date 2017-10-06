@@ -65,7 +65,7 @@ class AccountUserManagerPanel(Component):
 
         # Adding type
         data.update(type=AccountManager(self.env).has_user(user.username) and
-                         'trac-managed' or 'server-managed')
+                    'trac-managed' or 'server-managed')
 
         return 'admin_um_account.html', {'um_account': data,
                                          'messages': messages,
