@@ -24,6 +24,7 @@ setup(
     description='Sends mails on ticket-creation to specified addresses '
                 'according to the selected team.',
     install_requires=['TracUserManagerPlugin'],
+    dependency_links=['https://trac-hacks.org/svn/usermanagerplugin/0.11#egg=TracUserManagerPlugin'],
     entry_points="""
         [trac.plugins]
         %(pkg)s.admin = %(pkg_s)s.admin
