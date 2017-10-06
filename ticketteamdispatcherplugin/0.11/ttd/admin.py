@@ -9,6 +9,7 @@
 
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
+from trac.env import IEnvironmentSetupParticipant
 from trac.util.translation import _
 from trac.web.chrome import ITemplateProvider, add_warning
 
@@ -19,23 +20,37 @@ class TicketTeamDispatcherAdmin(Component):
     """
         Provides functions related to registration
     """
-    implements(ITemplateProvider, IAdminPanelProvider)
+    implements(IAdminPanelProvider, IEnvironmentSetupParticipant,
+               ITemplateProvider)
+
+    # IEnvironmentSetupParticipant methods
+
+    def environment_created(self):
+        self.upgrade_environment()
+
+    def environment_needs_upgrade(self, db=None):
+        return 'ttd' not in self.config['ticket-custom']
+
+    def upgrade_environment(self, db=None):
+        self.config.set('ticket-custom', 'ttd', 'select')
+        self.config.set('ticket-custom', 'ttd.label', 'Team')
+        self.config.save()
 
     # IAdminPanelProvider methods
+
     def get_admin_panels(self, req):
-        if req.perm.has_permission('TICKET_ADMIN'):
-            yield ('ticket', 'Ticket System', 'ttd', 'Team Dispatcher')
+        if 'TICKET_ADMIN' in req.perm:
+            yield 'ticket', 'Ticket System', 'ttd', 'Team Dispatcher'
 
     def render_admin_panel(self, req, category, page, path_info):
         req.perm.require('TICKET_ADMIN')
-
-        action = req.args.get('action')
 
         users = UserManager(self.env).get_active_users()
         caption = self.get_caption()
         teams = self.get_teams()
 
-        if action:
+        if req.method == 'POST':
+            action = req.args.get('action')
             if action == 'rename':
                 caption = req.args.get('caption')
                 self.set_caption(caption)
@@ -79,6 +94,8 @@ class TicketTeamDispatcherAdmin(Component):
                 self.set_notify_on('create', req.args.get('notify_on_create'))
                 self.set_notify_on('change', req.args.get('notify_on_change'))
                 self.set_notify_on('delete', req.args.get('notify_on_delete'))
+
+            req.redirect(req.href.admin('ticket/ttd'))
 
         return 'team_dispatcher_admin.html', {
             'teams': teams,
