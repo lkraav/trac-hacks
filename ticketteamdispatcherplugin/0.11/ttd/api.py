@@ -6,10 +6,11 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+from datetime import datetime
+
 from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.ticket.api import ITicketChangeListener
-from datetime import datetime
 from trac.util.datefmt import utc
 
 from notification import SpecialTicketNotifyEmail

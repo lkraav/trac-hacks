@@ -17,8 +17,7 @@ from tracusermanager.api import UserManager
 
 
 class TicketTeamDispatcherAdmin(Component):
-    """
-        Provides functions related to registration
+    """Provides functions related to registration
     """
     implements(IAdminPanelProvider, IEnvironmentSetupParticipant,
                ITemplateProvider)
@@ -74,9 +73,7 @@ class TicketTeamDispatcherAdmin(Component):
                         user.save()
 
             elif action == 'remove':
-                sel = req.args.get('sel')
-                sel = sel if isinstance(sel, list) else [sel]
-                for item in sel:
+                for item in req.args.getlist('sel'):
                     if ':' in item:
                         username, team = item.split(':', 1)
                         for user in users:
@@ -107,6 +104,7 @@ class TicketTeamDispatcherAdmin(Component):
         }
 
     # INavigationContributor methods
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
@@ -115,6 +113,7 @@ class TicketTeamDispatcherAdmin(Component):
         return []
 
     # Internal methods
+
     def get_caption(self):
         return self.config.get('ticket-custom', 'ttd.label')
 

@@ -19,13 +19,14 @@ setup(
     packages=[PACKAGE_SHORT],
     package_data={PACKAGE_SHORT: ['templates/*.html']},
     author='Alexander von Bremen-Kuehne',
-    url='http://trac-hacks.org/wiki/TicketTeamDispatcherPlugin',
+    url='https://trac-hacks.org/wiki/TicketTeamDispatcherPlugin',
     license='GPLv2 or later',
     description='Sends mails on ticket-creation to specified addresses '
                 'according to the selected team.',
     install_requires=['TracUserManagerPlugin'],
     entry_points="""
         [trac.plugins]
-        %(pkg)s = %(pkg_s)s
+        %(pkg)s.admin = %(pkg_s)s.admin
+        %(pkg)s.api = %(pkg_s)s.api
     """ % {'pkg': PACKAGE, 'pkg_s': PACKAGE_SHORT},
 )

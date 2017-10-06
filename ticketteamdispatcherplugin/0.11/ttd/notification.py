@@ -13,11 +13,11 @@ from tracusermanager.api import UserManager
 
 class SpecialTicketNotifyEmail(TicketNotifyEmail):
     """Special Notification of ticket changes."""
-    __team = None
+    _team = None
 
     def notify(self, ticket, newticket=True, modtime=None):
-        self.__team = ticket['ttd']
-        if self.__team is not None:
+        self._team = ticket['ttd']
+        if self._team is not None:
             super(SpecialTicketNotifyEmail, self) \
                 .notify(ticket, newticket, modtime)
         else:
@@ -26,6 +26,6 @@ class SpecialTicketNotifyEmail(TicketNotifyEmail):
     def get_recipients(self, tktid):
         recipients = []
         for user in UserManager(self.env).get_active_users():
-            if user[self.__team] == '1':
+            if user[self._team] == '1':
                 recipients.append(user['email'])
         return recipients, []
