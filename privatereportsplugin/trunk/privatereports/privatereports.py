@@ -167,7 +167,7 @@ class PrivateReports(Component):
             selector = '//div[@class="reports"]/div'
 
         def check_report_permission():
-            report_stream = str(stream_buffer)
+            report_stream = unicode(stream_buffer)
             reports_raw = report_stream.split(delimiter)
             report_stream = ''
             for row in reports_raw:
