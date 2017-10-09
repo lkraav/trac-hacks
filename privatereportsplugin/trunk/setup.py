@@ -23,7 +23,7 @@ setup(
     license="BSD 3-Clause",
 
     keywords='trac plugin security report group user',
-    url='http://trac-hacks.org/wiki/PrivateReportsPlugin',
+    url='https://trac-hacks.org/wiki/PrivateReportsPlugin',
 
     classifiers=[
         'Framework :: Trac',

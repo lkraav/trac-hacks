@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2012 Michael Henke <michael.henke@she.net>
@@ -34,7 +33,7 @@ class PrivateReports(Component):
                IAdminPanelProvider, ITemplateProvider, IRequestFilter,
                IPermissionRequestor)
 
-    ### IRequestFilter methods
+    # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
         if not isinstance(handler, ReportModule):
@@ -51,7 +50,7 @@ class PrivateReports(Component):
     def post_process_request(self, req, template, data, content_type):
         return template, data, content_type
 
-    ### ITemplateProvider methods
+    # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
         return []
@@ -60,10 +59,10 @@ class PrivateReports(Component):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
 
-    ### IAdminPanelProvider methods
+    # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
-        if req.perm.has_permission('TRAC_ADMIN'):
+        if 'TRAC_ADMIN' in req.perm:
             yield ('reports', 'Reports',
                    'privatereports', 'Private Reports')
 
@@ -121,7 +120,7 @@ class PrivateReports(Component):
                 data['report_permissions'] = report_permissions or ''
             return 'admin_privatereports.html', data
 
-    ### IEnvironmentSetupParticipant methods
+    # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
         db = self.env.get_db_cnx()
@@ -152,10 +151,10 @@ class PrivateReports(Component):
         except:
             cursor.connection.rollback()
 
-    ### ITemplateStreamFilter methods
+    # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-        if not filename == 'report_list.html':
+        if filename != 'report_list.html':
             return stream
         stream_buffer = StreamBuffer()
 
@@ -194,7 +193,7 @@ class PrivateReports(Component):
             .copy(stream_buffer) \
             .replace(check_report_permission)
 
-    ### IPermissionRequestor methods
+    # IPermissionRequestor methods
 
     def get_permission_actions(self):
         db = self.env.get_db_cnx()
@@ -209,7 +208,7 @@ class PrivateReports(Component):
             pass
         return tuple(report_perms)
 
-    ### Internal methods
+    # Internal methods
 
     def _has_permission(self, user, report_id):
         report_permissions = self._get_report_permissions(report_id)
