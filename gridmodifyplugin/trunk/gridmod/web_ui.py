@@ -127,8 +127,12 @@ class GridModifyModule(Component):
             add_script(req, 'gridmod/gridmod.js')
             div = html.div(id='table_inits_holder', style='display:none;')
             div.append('\n')
+            ts = TicketSystem(self.env)
 
-            for field in TicketSystem(self.env).get_ticket_fields():
+            for field in ts.get_ticket_fields():
+                if field['name'] == 'owner':
+                    ts.eventually_restrict_owner(field)
+
                 # SELECT tags
                 if field['type'] == 'select' and 'options' in field and \
                         (field['name'] in self.fields or not self.fields):
