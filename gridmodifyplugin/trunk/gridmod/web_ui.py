@@ -26,8 +26,9 @@ class GridModifyModule(Component):
     implements(IPermissionRequestor, IRequestHandler,
                ITemplateProvider, ITemplateStreamFilter)
 
-    fields = ListOption('gridmodify', 'fields', '',
-        doc="List of fields that will be modifiable.")
+    fields = ListOption('gridmodify', 'fields', '', doc="""
+        List of fields that will be modifiable.
+        """)
 
     # IPermissionRequestor methods
 
@@ -42,7 +43,7 @@ class GridModifyModule(Component):
 
     def get_templates_dirs(self):
         return []
-    
+
     # IRequestHandler methods
 
     def match_request(self, req):
@@ -99,8 +100,8 @@ class GridModifyModule(Component):
 
                 # After saving the changes, apply the side-effects.
                 for controller in controllers:
-                    self.env.log.info('Side effect for %s',
-                                       controller.__class__.__name__)
+                    self.log.info('Side effect for %s',
+                                  controller.__class__.__name__)
                     controller.apply_action_side_effects(req, ticket, action)
             else:
                 raise PermissionError("Permission denied")
@@ -201,7 +202,7 @@ class GridModifyModule(Component):
 
             stream |= Transformer('//div[@id="content"]').append(div)
         return stream
-            
+
     def _get_action_controllers(self, req, ticket, action):
         """Generator yielding the controllers handling the given `action`"""
         for controller in TicketSystem(self.env).action_controllers:
