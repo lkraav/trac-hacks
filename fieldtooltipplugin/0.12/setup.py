@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='FieldTooltip',
-    version='0.7.2',
+    version='0.7.3',
     license="""Modified BSD, except including libraries follows:
     - jQuery clueTip Plugin: the MIT License
      - hoverIntent jQuery Plug-in: the MIT or GPL License
@@ -20,9 +20,13 @@ setup(
     zip_safe=True,
     packages=find_packages(exclude=['*.tests']),
     package_data={
-        'fieldtooltip': ['htdocs/*', 'htdocs/*/*']
-        },
+        'fieldtooltip': [
+            'htdocs/*.js',
+            'htdocs/*/*.css'
+            'htdocs/*/*.js',
+        ]
+    },
     entry_points={
         'trac.plugins': 'FieldTooltip = fieldtooltip'
-        },
-    )
+    },
+)
