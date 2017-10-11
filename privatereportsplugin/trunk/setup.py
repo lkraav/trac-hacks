@@ -12,8 +12,8 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='PrivateReports',
-    version='0.4',
+    name='TracPrivateReports',
+    version='1.0.0',
     packages=find_packages(),
 
     author='Michael Henke',

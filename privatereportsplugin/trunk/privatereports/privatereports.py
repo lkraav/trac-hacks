@@ -10,45 +10,20 @@
 
 from types import ListType, StringTypes
 
-from trac import __version__ as trac_version
 from trac.admin import IAdminPanelProvider
-from trac.core import Component, ExtensionPoint, TracError, implements
+from trac.core import Component, ExtensionPoint, implements
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import (
-    PermissionSystem, IPermissionGroupProvider, IPermissionRequestor
+    IPermissionGroupProvider, IPermissionPolicy, IPermissionRequestor,
+    PermissionSystem
 )
-from trac.ticket.report import ReportModule
 from trac.web.chrome import ITemplateProvider
-from trac.web.api import ITemplateStreamFilter, IRequestFilter
-
-from genshi.filters import Transformer
-from genshi.filters.transform import StreamBuffer
-from genshi.input import HTML
 
 
 class PrivateReports(Component):
-    group_providers = ExtensionPoint(IPermissionGroupProvider)
 
-    implements(ITemplateStreamFilter, IEnvironmentSetupParticipant,
-               IAdminPanelProvider, ITemplateProvider, IRequestFilter,
-               IPermissionRequestor)
-
-    # IRequestFilter methods
-
-    def pre_process_request(self, req, handler):
-        if not isinstance(handler, ReportModule):
-            return handler
-        report_id = req.args.get('id')
-        if not report_id or self._has_permission(req.authname, report_id):
-            return handler
-        else:
-            self.log.debug("User %s doesn't have permission to view report %s "
-                           % (req.authname, report_id))
-            raise TracError("You don't have permission to access this report",
-                            "No Permission")
-
-    def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type
+    implements(IAdminPanelProvider, IEnvironmentSetupParticipant,
+               IPermissionRequestor, ITemplateProvider)
 
     # ITemplateProvider methods
 
@@ -151,48 +126,6 @@ class PrivateReports(Component):
         except:
             cursor.connection.rollback()
 
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename != 'report_list.html':
-            return stream
-        stream_buffer = StreamBuffer()
-
-        from pkg_resources import parse_version
-        if parse_version(trac_version) < parse_version('1.0'):
-            delimiter = '<tr>'
-            selector = '//tbody/tr'
-        else:
-            delimiter = '<div class="collapsed">'
-            selector = '//div[@class="reports"]/div'
-
-        def check_report_permission():
-            report_stream = unicode(stream_buffer)
-            reports_raw = report_stream.split(delimiter)
-            report_stream = ''
-            for row in reports_raw:
-                if row and 'View report' in row:
-                    # determine the report id
-                    s = row.find('/report/')
-                    if s == -1:
-                        continue
-                    e = row.find('\"', s)
-                    if e == -1:
-                        continue
-                    report_id = row[s+len('/report/'):e]
-                    if self._has_permission(req.authname, report_id):
-                        report_stream += row
-                    else:
-                        self.log.debug("Removing report %s from list because "
-                                       "%s doesn't have permission to view" %
-                                       (report_id, req.authname))
-                else:
-                    report_stream += row
-            return HTML(report_stream)
-        return stream | Transformer(selector) \
-            .copy(stream_buffer) \
-            .replace(check_report_permission)
-
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
@@ -209,34 +142,6 @@ class PrivateReports(Component):
         return tuple(report_perms)
 
     # Internal methods
-
-    def _has_permission(self, user, report_id):
-        report_permissions = self._get_report_permissions(report_id)
-        if not report_permissions:
-            return True
-        perms = PermissionSystem(self.env)
-        report_permissions = set(report_permissions)
-        user_perm = set(perms.get_user_permissions(user))
-        groups = set(self._get_user_groups(user))
-        user_perm.update(groups)
-        if report_permissions.intersection(user_perm) != set([]):
-            return True
-        return False
-
-    def _get_user_groups(self, user):
-        subjects = set([user])
-        for provider in self.group_providers:
-            subjects.update(provider.get_permission_groups(user) or [])
-        groups = []
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT action FROM permission WHERE username = %s""", (user,))
-        rows = cursor.fetchall()
-        for action in rows:
-            if action[0].isupper():
-                groups.append(action[0])
-        return groups
 
     def _get_reports(self):
         db = self.env.get_db_cnx()
@@ -273,3 +178,44 @@ class PrivateReports(Component):
         for perm in cursor.fetchall():
             report_perms.append(perm[0])
         return report_perms
+
+
+class PrivateReportsPolicy(Component):
+
+    group_providers = ExtensionPoint(IPermissionGroupProvider)
+
+    implements(IPermissionPolicy)
+
+    def check_permission(self, action, username, resource, perm):
+        if resource and resource.realm == 'report' and \
+                resource.id not in (None, -1):
+            return self._has_permission(username, resource.id)
+
+    def _has_permission(self, user, report_id):
+        report_permissions = \
+            PrivateReports(self.env)._get_report_permissions(report_id)
+        if not report_permissions:
+            return True
+        perms = PermissionSystem(self.env)
+        report_permissions = set(report_permissions)
+        user_perm = set(perms.get_user_permissions(user))
+        groups = set(self._get_user_groups(user))
+        user_perm.update(groups)
+        if report_permissions.intersection(user_perm) != set([]):
+            return True
+        return False
+
+    def _get_user_groups(self, user):
+        subjects = set([user])
+        for provider in self.group_providers:
+            subjects.update(provider.get_permission_groups(user) or [])
+        groups = []
+        db = self.env.get_db_cnx()
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT action FROM permission WHERE username = %s""", (user,))
+        rows = cursor.fetchall()
+        for action in rows:
+            if action[0].isupper():
+                groups.append(action[0])
+        return groups
