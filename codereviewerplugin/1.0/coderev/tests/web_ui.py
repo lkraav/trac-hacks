@@ -7,14 +7,20 @@
 # you should have received as part of this distribution.
 #
 
+from datetime import datetime
 import unittest
 
 from trac.test import EnvironmentStub, Mock, MockPerm, locale_en
-from trac.util.datefmt import utc
+from trac.util.datefmt import to_utimestamp, utc
 from trac.web.api import RequestDone, _RequestArgs
+from trac.versioncontrol.api import Changeset, Repository
 
 from coderev.api import CodeReviewerSystem
-from coderev.web_ui import CodeReviewerModule
+from coderev.web_ui import ChangesetTicketMapper, CodeReviewerModule
+
+
+def _upgrade_environment(env):
+    CodeReviewerSystem(env).upgrade_environment()
 
 
 def _revert_schema_init(env):
@@ -28,7 +34,7 @@ class CodeReviewerModuleTestCase(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub()
-        CodeReviewerSystem(self.env).upgrade_environment()
+        _upgrade_environment(self.env)
         self.url = None
 
     def tearDown(self):
@@ -66,9 +72,65 @@ class CodeReviewerModuleTestCase(unittest.TestCase):
         self.assertEqual('/trac.cgi/changeset/1', self.url)
 
 
+class ChangesetTicketMapperTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = EnvironmentStub()
+        _upgrade_environment(self.env)
+        self.mapper = ChangesetTicketMapper(self.env)
+
+    def tearDown(self):
+        _revert_schema_init(self.env)
+        self.env.reset_db()
+
+    def _make_repos(self, name, id=1):
+        params = {'name': name, 'id': id}
+        return Mock(Repository, name, params, self.env.log)
+
+    def _make_changeset(self, repos, rev, message, author='anonymous',
+                        date=None):
+        return Mock(Changeset, repos, rev, message, author,
+                    date or datetime.now(utc))
+
+    def _fetch_map_records(self, changeset):
+        return self.env.db_query("""
+            SELECT ticket,time FROM codereviewer_map
+            WHERE repo=%s AND changeset=%s
+            """, (changeset.repos.name, str(changeset.rev)))
+
+    def test_changeset_events(self):
+        repos = self._make_repos('')
+        when = datetime(2017, 9, 21, 12, 34, 56, 987654, utc)
+        when_ts = to_utimestamp(when)
+
+        cset = self._make_changeset(
+            repos, 42, 'refs #4242, #4241, #1\ncloses #2424, #4241, #2\n',
+            'anonymous', when)
+        self.mapper.changeset_added(repos, cset)
+        rows = self._fetch_map_records(cset)
+        self.assertEqual(['1', '2', '2424', '4241', '4242'],
+                         sorted(row[0] for row in rows))
+        self.assertEqual([when_ts], list(set(row[1] for row in rows)))
+
+        self.mapper.changeset_added(repos, cset)
+        self.assertEqual(rows, self._fetch_map_records(cset))
+
+        cset = self._make_changeset(
+            repos, 42, 'refs #4242, #4241, #1\ncloses #2424, #4241, #2\n',
+            'anonymous', when)
+        self.mapper.changeset_added(repos, cset)
+
+        new_cset = self._make_changeset(repos, 42, 'refs #987', 'anonymous', when)
+        self.mapper.changeset_modified(repos, new_cset, cset)
+        rows = self._fetch_map_records(new_cset)
+        self.assertEqual(['987'], sorted(row[0] for row in rows))
+        self.assertEqual([when_ts], sorted(row[1] for row in rows))
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(CodeReviewerModuleTestCase))
+    suite.addTest(unittest.makeSuite(ChangesetTicketMapperTestCase))
     return suite
 
 

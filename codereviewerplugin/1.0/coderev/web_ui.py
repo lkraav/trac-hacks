@@ -339,21 +339,19 @@ class ChangesetTicketMapper(Component):
         self._map(repos.reponame, changeset)
 
     def changeset_modified(self, repos, changeset, old_changeset):
-        self._map(repos.reponame, changeset, update=True)
+        self._map(repos.reponame, changeset)
 
     # Internal methods
 
-    def _map(self, reponame, changeset, update=False):
+    def _map(self, reponame, changeset):
         # Extract tickets from changeset message.
         ctu = CommitTicketUpdater(self.env)
         tickets = set(ctu._parse_message(changeset.message))
         when = to_utimestamp(changeset.date)
 
         with self.env.db_transaction as db:
-            if update:
-                db("""DELETE FROM codereviewer_map
-                   WHERE repo=%s and changeset=%s
-                   """, (reponame or '', changeset.rev))
+            db("DELETE FROM codereviewer_map WHERE repo=%s and changeset=%s",
+               (reponame or '', changeset.rev))
             if not tickets:
                 tickets = ['']  # we still want merges inserted
             for ticket in tickets:
