@@ -15,7 +15,7 @@ setup(
     packages=find_packages(exclude=['*.tests']),
     package_data={
         'contextchrome': ['htdocs/*.png', 'htdocs/js/*.js', 'htdocs/css/*.css']
-        },
+    },
     entry_points={
         'trac.plugins': [
             'ContextChrome = contextchrome.style',

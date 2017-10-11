@@ -7,7 +7,7 @@
     $('a[class*="ext-link"][href*="/intertrac/"]')
       .each(function() {
         var that = $(this);
-        // with XMLRPC on target 
+        // with XMLRPC on target
         var url = that.attr("href").replace(/%3A/g,':').replace(/%23/g,'ticket:');
         var ticket = /ticket:([0-9]+)/.exec(url);
         if(!ticket) return;

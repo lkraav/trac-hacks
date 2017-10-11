@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
  * All rights reserved.
- * 
+ *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution.
  */
@@ -49,4 +49,4 @@
 			$("#properties [name=field_" + field + "]").parentsUntil("tr","td").prev().addClass('tracvalidator');
 		}
 	}
-})(jQuery); 
+})(jQuery);
