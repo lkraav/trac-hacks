@@ -39,7 +39,7 @@ function addTag(w) {
         newval = orig + (orig ? ' ' : '') + w;
         if(link) link.className = 'sel';
     }
-    el.value = newval.replace(/^\s+/, '');
+    el.value = newval.replace(/^\s+|\s+$/, '');
 }
 </script>
 
