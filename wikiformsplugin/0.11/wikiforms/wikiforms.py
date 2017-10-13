@@ -141,6 +141,8 @@ class WikiFormsMacro(WikiMacroBase, Component):
             #
             # self.log.debug(req.args)
             backpath = args.pop('__BACKPATH', None)
+            args.pop('__FORM_TOKEN', None)
+            args.pop('__SUBMIT', None)
             page = args.pop('__PAGE', None)
             notify_mailto = args.pop('__NOTIFY_MAILTO', None)
             notify_subject = args.pop('__NOTIFY_SUBJECT', None)
