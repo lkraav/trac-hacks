@@ -19,6 +19,7 @@ Based on ideas from TracFormsPlugin.
     version="0.3",
     author='Verigy (Singapore) Pte. Ltd., Klaus.Welch@verigy.com',
     license='BSD',
+    install_requires=['Trac'],
     packages=['wikiforms'],
     entry_points={
         'trac.plugins': [

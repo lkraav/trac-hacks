@@ -18,6 +18,7 @@ from genshi.core import escape
 from genshi.filters.html import HTMLSanitizer
 from genshi.input import HTMLParser, ParseError
 from trac.core import Component, TracError, implements
+from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.mimeview.api import Context, Mimeview
@@ -69,8 +70,9 @@ class WikiFormsMacro(WikiMacroBase, Component):
 
     def environment_needs_upgrade(self, db):
         cursor = db.cursor()
-        cursor.execute(
-            "SELECT value FROM system WHERE name='wikiforms_version'")
+        cursor.execute("""
+            SELECT value FROM system WHERE name='wikiforms_version'
+            """)
         value = cursor.fetchone()
         if not value:
             WikiFormsMacro.found_db_version = 0
@@ -80,23 +82,21 @@ class WikiFormsMacro(WikiMacroBase, Component):
             return WikiFormsMacro.found_db_version < WikiFormsMacro.db_version
 
     def upgrade_environment(self, db):
-        from trac.db import DatabaseManager
         db_manager = DatabaseManager(self.env)._get_connector()[0]
 
         # Insert the default table
         cursor = db.cursor()
-
         if not WikiFormsMacro.found_db_version:
             # remember current database schema version...
             cursor.execute("""
                 INSERT INTO system (name, value)
-                VALUES ('wikiforms_version', '%s')
-                """ % (WikiFormsMacro.db_version))
+                VALUES ('wikiforms_version', %s)
+                """, (self.db_version,))
         else:
             # remember current database schema version...
             cursor.execute("""
                 UPDATE system SET value = %s WHERE name = 'wikiforms_version'
-                """ % (WikiFormsMacro.db_version))
+                """, (self.db_version,))
 
             # in case tables (from previous versions) are already available,
             # remove them...
@@ -198,10 +198,10 @@ class WikiFormsMacro(WikiMacroBase, Component):
             for name, value in fields_to_be_stored.iteritems():
                 value = re.sub('(\r\n|\r|\n)', '\\\\n', value)
 
-                msg = self.set_tracform_field(db, name, value, authname)
+                self.set_tracform_field(db, name, value, authname)
 
             # set form modification date...
-            msg = self.set_tracform_field(db, page, '', authname)
+            self.set_tracform_field(db, page, '', authname)
 
             if notify_mailto is not None:
 
@@ -228,7 +228,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
                     smtp_msg.append("")
                     smtp_msg.append("Value(s) of field(s) in the form are:")
 
-                    msg, rows = self.get_tracform(db)
+                    rows = self.get_tracform(db)
 
                     regexp = re.compile("%s\/(.*)" % page)
 
@@ -335,7 +335,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
                         resolved_name = self.resolve_name(page, context, name)
 
                         db = formatter.env.get_db_cnx()
-                        msg, entry = self.get_tracform_field(db, resolved_name)
+                        entry = self.get_tracform_field(db, resolved_name)
                         if permission['r']:
                             result += "%s" % entry['value']
                     elif command == 'permission':
@@ -415,8 +415,8 @@ class WikiFormsMacro(WikiMacroBase, Component):
                                 resolved_name = self.resolve_name(
                                     page, local_context, name)
                                 db = formatter.env.get_db_cnx()
-                                msg, entry = self.get_tracform_field(
-                                    db, resolved_name)
+                                entry = \
+                                    self.get_tracform_field(db, resolved_name)
                                 if permission['r']:
                                     result += "%s" % entry['value']
                             else:
@@ -430,7 +430,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
 
                         resolved_name = self.resolve_name(page, context, name)
                         db = formatter.env.get_db_cnx()
-                        msg, entry = self.get_tracform_field(db, resolved_name)
+                        entry = self.get_tracform_field(db, resolved_name)
                         if permission['r']:
                             result += "%s" % entry['updated_by']
 
@@ -440,7 +440,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
 
                         resolved_name = self.resolve_name(page, context, name)
                         db = formatter.env.get_db_cnx()
-                        msg, entry = self.get_tracform_field(db, resolved_name)
+                        entry = self.get_tracform_field(db, resolved_name)
                         if permission['r']:
                             result += "%s" \
                                       % self.to_timestring(entry['updated_on'])
@@ -451,7 +451,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
 
                         resolved_name = self.resolve_name(page, context, name)
                         db = formatter.env.get_db_cnx()
-                        msg, entry = self.get_tracform_field(db, resolved_name)
+                        entry = self.get_tracform_field(db, resolved_name)
 
                         if permission['r']:
                             if entry['field'] is not None:
@@ -473,7 +473,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
 
                         resolved_name = self.resolve_name(page, context, name)
                         db = formatter.env.get_db_cnx()
-                        msg, entry = self.get_tracform_field(db, resolved_name)
+                        entry = self.get_tracform_field(db, resolved_name)
 
                         now = datetime.now(utc)
 
@@ -502,14 +502,14 @@ class WikiFormsMacro(WikiMacroBase, Component):
                         resolved_name = self.resolve_name(page, context, name)
                         authname = formatter.req.authname
                         db = formatter.env.get_db_cnx()
-                        msg = self.set_tracform_field(db, resolved_name,
-                                                      value, authname)
+                        self.set_tracform_field(db, resolved_name, value,
+                                                authname)
 
                     elif command == 'dump':
                         # dump fields...
                         name, ignored = wikiforms_lib.get_piece(options)
                         db = formatter.env.get_db_cnx()
-                        msg, rows = self.get_tracform(db)
+                        rows = self.get_tracform(db)
 
                         if permission['r']:
                             result += "||'''field'''||'''value'''||'''who'''||'''when'''\n"
@@ -530,7 +530,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
                         name, ignored = wikiforms_lib.get_piece(options)
                         resolved_name = self.resolve_name(page, context, name)
                         db = formatter.env.get_db_cnx()
-                        msg = self.delete_tracform_field(db, resolved_name)
+                        self.delete_tracform_field(db, resolved_name)
 
                     elif command == 'checkbox':
                         # create checkbox...
@@ -665,7 +665,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
         checkbox_def = wikiforms_lib.parse_options(parameters, checkbox_def)
 
         # fetch state from database...
-        msg, entry = self.get_tracform_field(db, resolved_name)
+        entry = self.get_tracform_field(db, resolved_name)
 
         if (entry['field'] is not None):
             # derive checked-state from database...
@@ -741,7 +741,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
         radio_def = wikiforms_lib.parse_options(parameters, radio_def)
 
         # fetch state from database...
-        msg, entry = self.get_tracform_field(db, resolved_name)
+        entry = self.get_tracform_field(db, resolved_name)
 
         if entry['field'] is not None:
             # derive checked-state from database...
@@ -803,7 +803,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
         input_def = wikiforms_lib.parse_options(parameters, input_def)
 
         # fetch state from database...
-        msg, entry = self.get_tracform_field(db, resolved_name)
+        entry = self.get_tracform_field(db, resolved_name)
 
         if input_def['cfg']['debug']:
             result += "debug: parameters=>%s< name=>%s<>%s< cfg=>%s< xtras=>%s< xtra=>%s< db=>%s< perm=>%s<" \
@@ -856,7 +856,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
         text_def = wikiforms_lib.parse_options(parameters, text_def)
 
         # fetch state from database...
-        msg, entry = self.get_tracform_field(db, resolved_name)
+        entry = self.get_tracform_field(db, resolved_name)
 
         if text_def['cfg']['debug']:
             result += "debug: parameters=>%s< name=>%s<>%s< cfg=>%s< xtras=>%s< xtra=>%s< db=>%s< perm=>%s<" \
@@ -908,7 +908,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
         select_def = wikiforms_lib.parse_options(parameters, select_def)
 
         # fetch state from database...
-        msg, entry = self.get_tracform_field(db, resolved_name)
+        entry = self.get_tracform_field(db, resolved_name)
 
         if (select_def['cfg']['debug']):
             result += "debug: parameters=>%s< name=>%s<>%s< cfg=>%s< xtras=>%s< xtra=>%s< db=>%s< perm=>%s<" \
@@ -1109,23 +1109,20 @@ class WikiFormsMacro(WikiMacroBase, Component):
         return result
 
     def get_tracform_field(self, db, resolved_name):
-        cursor = db.cursor()
         result = {
             'field': None,
             'value': '',
             'updated_by': self.to_userstring(None),
             'updated_on': None
         }
+        row = []
 
-        get_sql = """
+        cursor = db.cursor()
+        cursor.execute("""
             SELECT field,value,updated_by,updated_on
             FROM wikiforms_fields
-            WHERE field='%s'
-            """ % (self.to_quote(resolved_name))
-
-        cursor.execute(get_sql)
-
-        row = []
+            WHERE field=%s
+            """, (resolved_name,))
 
         for field, value, updated_by, updated_on in cursor:
             row.append({
@@ -1138,18 +1135,16 @@ class WikiFormsMacro(WikiMacroBase, Component):
         if len(row) == 1:
             result = row[0]
 
-        return get_sql, result
+        return result
 
     def get_tracform(self, db):
-        cursor = db.cursor()
         result = []
 
-        get_sql = """
+        cursor = db.cursor()
+        cursor.execute("""
             SELECT field,value,updated_by,updated_on
             FROM wikiforms_fields
-            """
-
-        cursor.execute(get_sql)
+            """)
 
         for field, value, updated_by, updated_on in cursor:
             result.append({
@@ -1159,68 +1154,45 @@ class WikiFormsMacro(WikiMacroBase, Component):
                 'updated_on': self.to_timestring(updated_on)
             })
 
-        return get_sql, result
+        return result
 
     def set_tracform_field(self, db, resolved_name, value, authname):
         cursor = db.cursor()
         updated_on = int(time.time())
         updated_by = authname
 
-        sql = """
+        cursor.execute("""
             SELECT value
             FROM wikiforms_fields
-            WHERE field='%s'
-            """ % (self.to_quote(resolved_name))
-
-        cursor.execute(sql)
+            WHERE field=%s
+            """, (resolved_name,))
 
         row = cursor.fetchone()
 
         if not row:
             # does not exist => insert...
-            sql = """
+            cursor.execute("""
                 INSERT INTO wikiforms_fields
                   (field,value,updated_on,updated_by)
-                VALUES ('%s', '%s', '%s', '%s')
-                  """ % (self.to_quote(resolved_name),
-                         self.to_quote(value),
-                         updated_on,
-                         updated_by)
-
-            cursor.execute(sql)
+                VALUES (%s, %s, %s, %s)
+                """, (resolved_name, value, updated_on, updated_by))
             db.commit()
         elif self.to_quote(value) != row[0]:
             # new value => update...
-            sql = """
+            cursor.execute("""
                 UPDATE wikiforms_fields
-                SET value='%s', updated_on='%s', updated_by='%s'
-                WHERE field='%s'
-                """ % (self.to_quote(value),
-                       updated_on,
-                       updated_by,
-                       self.to_quote(resolved_name))
-
-            cursor.execute(sql)
+                SET value=%s, updated_on=%s, updated_by=%s
+                WHERE field=%s
+                """, (value, updated_on, updated_by, resolved_name))
             db.commit()
-        else:
-            # unmodified => do nothing...
-            sql = ''
-
-        return sql
 
     def delete_tracform_field(self, db, resolved_name):
         cursor = db.cursor()
-
-        del_sql = """
+        cursor.execute("""
             DELETE FROM wikiforms_fields
-            WHERE  field='%s'
-            """ % self.to_quote(resolved_name)
-
-        cursor.execute(del_sql)
-
+            WHERE field=%s
+            """, (resolved_name,))
         db.commit()
-
-        return del_sql
 
     def get_placeholder_id(self):
         WikiFormsMacro.placeholder_cnt += 1
@@ -1283,12 +1255,9 @@ class WikiFormsMacro(WikiMacroBase, Component):
             operator, rhs = wikiforms_lib.get_piece(rest_of_line, [' '])
             db = formatter.env.get_db_cnx()
             cursor = db.cursor()
-
-            sql = """
+            cursor.execute("""
                 SELECT status FROM ticket WHERE id=%s
-                """ % (ticket_id)
-
-            cursor.execute(sql)
+                """, (ticket_id,))
 
             row = cursor.fetchone()
             if row:
@@ -1301,14 +1270,9 @@ class WikiFormsMacro(WikiMacroBase, Component):
 
             db = formatter.env.get_db_cnx()
             cursor = db.cursor()
-
-            sql = """
-                SELECT completed
-                FROM milestone
-                WHERE name='%s'
-                """ % (milestone_name)
-
-            cursor.execute(sql)
+            cursor.execute("""
+                SELECT completed FROM milestone WHERE name=%s
+                """, (milestone_name,))
 
             row = cursor.fetchone()
             if row:
