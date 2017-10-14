@@ -24,6 +24,7 @@ from trac.env import IEnvironmentSetupParticipant
 from trac.mimeview.api import Context, Mimeview
 from trac.perm import IPermissionRequestor
 from trac.util.datefmt import format_datetime, pretty_timedelta, utc
+from trac.util.text import exception_to_unicode
 from trac.web import IRequestHandler
 from trac.web.api import HTTPBadRequest
 from trac.wiki.macros import WikiMacroBase
@@ -265,11 +266,14 @@ class WikiFormsMacro(WikiMacroBase, Component):
                 req.end_headers()
                 req.write('OK')
         except Exception, e:
+            etb = exception_to_unicode(e, traceback=True).encode('utf-8')
             req.send_response(500)
             req.send_header('Content-type', 'text/plain')
-            req.send_header('Content-Length', len(str(e)))
+            req.send_header('Content-Length', len(etb))
             req.end_headers()
-            req.write(str(e))
+            self.log.warning("Failed processing request for %s: "
+                             "%s", req.path_info, etb)
+            req.write(etb)
 
     def expand_macro(self, formatter, name, args):
         # set defaults...
