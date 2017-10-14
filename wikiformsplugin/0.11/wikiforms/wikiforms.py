@@ -17,7 +17,7 @@ from datetime import datetime
 from genshi.core import escape
 from genshi.filters.html import HTMLSanitizer
 from genshi.input import HTMLParser, ParseError
-from trac.core import Component, TracError, implements
+from trac.core import TracError, implements
 from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
@@ -34,7 +34,7 @@ from trac.wiki.formatter import Formatter, system_message
 import wikiforms_lib
 
 
-class WikiFormsMacro(WikiMacroBase, Component):
+class WikiFormsMacro(WikiMacroBase):
     """Docs for WikiForms wiki processor.
     """
     implements(IEnvironmentSetupParticipant, IPermissionRequestor,
@@ -113,7 +113,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
                 cursor.execute(sql)
 
     def match_request(self, req):
-        return req.path_info.endswith('/wikiforms/update')
+        return req.path_info == '/wikiforms/update'
 
     def process_request(self, req):
         try:
@@ -252,7 +252,7 @@ class WikiFormsMacro(WikiMacroBase, Component):
                     smtp_server.quit()
 
             if backpath is not None:
-                    # req.redirect(backpath)
+                # req.redirect(backpath)
                 req.send_response(302)
                 req.send_header('Content-type', 'text/plain')
                 req.send_header('Location', backpath)
