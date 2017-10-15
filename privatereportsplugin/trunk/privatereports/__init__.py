@@ -1,2 +1,2 @@
 import pkg_resources
-pkg_resources.require('Trac >= 0.12')
+pkg_resources.require('Trac >= 1.2')
