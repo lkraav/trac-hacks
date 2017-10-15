@@ -189,7 +189,8 @@ class WikiFormsMacro(WikiMacroBase):
 
             # third step : process all non-checkbox fields...
             for name, value in unprocessed.iteritems():
-                if name not in checkbox_state:
+                if name not in checkbox_state and \
+                        isinstance(value, basestring):
                     # it's not a checkbox...
                     # might be compared against current database state to log
                     # changes, only...
