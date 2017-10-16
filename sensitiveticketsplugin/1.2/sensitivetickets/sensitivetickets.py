@@ -20,7 +20,7 @@ from trac.resource import ResourceNotFound
 from trac.ticket.api import ITicketManipulator
 from trac.ticket.model import Ticket
 from trac.timeline.api import ITimelineEventProvider
-from trac.util import as_bool
+from trac.util import as_bool, as_int
 from trac.util.datefmt import from_utimestamp, to_utimestamp
 
 
@@ -105,18 +105,21 @@ class SensitiveTicketsPolicy(Component):
 
         if resource and resource.realm == 'ticket' and \
                 resource.id is not None:
-            bypass = False
-            try:
-                ticket = Ticket(self.env, int(resource.id))
-                sensitive = ticket['sensitive']
-                if as_bool(sensitive):
-                    bypass = self.bypass_sensitive_view(ticket, username)
-            except ResourceNotFound:
-                sensitive = 1  # Fail safe to prevent a race condition.
+            tid = as_int(resource.id, None)
+            if tid is not None:
+                bypass = False
+                try:
+                    ticket = Ticket(self.env, int(resource.id))
+                except ResourceNotFound:
+                    sensitive = 1  # Fail safe to prevent a race condition.
+                else:
+                    sensitive = ticket['sensitive']
+                    if as_bool(sensitive):
+                        bypass = self.bypass_sensitive_view(ticket, username)
 
-            if as_bool(sensitive):
-                if 'SENSITIVE_VIEW' not in perm and not bypass:
-                    return False
+                if as_bool(sensitive):
+                    if 'SENSITIVE_VIEW' not in perm and not bypass:
+                        return False
 
     # IPermissionRequestor methods
 
