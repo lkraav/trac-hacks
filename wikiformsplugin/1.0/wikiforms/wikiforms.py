@@ -17,7 +17,7 @@ from datetime import datetime
 from genshi.core import escape
 from genshi.filters.html import HTMLSanitizer
 from genshi.input import HTMLParser, ParseError
-from trac.core import TracError, implements
+from trac.core import implements
 from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
@@ -58,7 +58,7 @@ class WikiFormsMacro(WikiMacroBase):
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        return ['WIKIFORMS_ADMIN', 'WIKIFORMS_UPDATE']
+        return [('WIKIFORMS_ADMIN', ['WIKIFORMS_UPDATE']), 'WIKIFORMS_UPDATE']
 
     # IEnvironmentSetupParticipant
 
@@ -103,14 +103,7 @@ class WikiFormsMacro(WikiMacroBase):
 
     def process_request(self, req):
         try:
-            # check whether user has form-update permissions...
-            if 'WIKIFORMS_UPDATE' in req.perm or 'WIKIFORMS_ADMIN' in req.perm:
-                pass
-            else:
-                msg = "You(%s) don't have enough permissions to update " \
-                      "form values..." % req.authname
-                raise TracError(msg)
-
+            req.perm.require('WIKIFORMS_UPDATE')
             args = dict(req.args)
             #
             # you get something like this...
