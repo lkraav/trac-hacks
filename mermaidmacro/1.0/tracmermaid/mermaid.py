@@ -7,12 +7,11 @@
 # you should have received as part of this distribution.
 
 import re
-import urllib2
 import uuid
 
 from trac.core import implements
 from trac.util.text import unicode_quote
-from trac.util.html import Fragment, Element, Markup, escape
+from trac.util.html import Fragment, Element, escape
 from trac.web.chrome import (add_script, add_script_data, add_stylesheet,
                              Chrome, ITemplateProvider)
 from trac.web.main import IRequestHandler
@@ -40,14 +39,12 @@ class MermaidMacro(WikiMacroBase):
         add_stylesheet(req, 'mermaid/mermaid.css')
         add_script(req, 'mermaid/mermaid.min.js')
         add_script(req, 'mermaid/tracmermaid.js')
-        add_script_data(req,
-                {
-                    '_tracmermaid': {
-                        'submit': req.href + '/mermaid/submit',
-                    },
-                    'form_token': req.form_token,
-                }
-        )
+        add_script_data(req, {
+            '_tracmermaid': {
+                'submit': req.href + '/mermaid/submit',
+            },
+            'form_token': req.form_token,
+        })
         content = self.expand_links(context, content)
         return """\
             <div class="mermaid"
@@ -105,7 +102,7 @@ class MermaidMacro(WikiMacroBase):
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename 
+        from pkg_resources import resource_filename
         return [('mermaid', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
@@ -124,7 +121,7 @@ class MermaidMacro(WikiMacroBase):
         id = req.args['id']
         page_name = req.args['wikipage']
         source = req.args['source']
-        page = WikiPage(env = self.env, name = page_name)
+        page = WikiPage(env=self.env, name=page_name)
         lines = page.text.splitlines()
         lines.reverse()
         buf = []
