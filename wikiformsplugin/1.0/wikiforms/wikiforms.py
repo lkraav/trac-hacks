@@ -25,8 +25,8 @@ from trac.mimeview.api import Context, Mimeview
 from trac.perm import IPermissionRequestor
 from trac.util.datefmt import format_datetime, pretty_timedelta, utc
 from trac.util.text import exception_to_unicode
-from trac.web import IRequestHandler
-from trac.web.api import HTTPBadRequest
+from trac.web.api import HTTPBadRequest, IRequestHandler
+from trac.web.chrome import web_context
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import Formatter, system_message
@@ -1300,7 +1300,7 @@ class WikiFormIncludeMacro(WikiMacroBase):
                                   % wikiforms_page)
 
         out = page.text
-        ctxt = Context.from_request(formatter.req, 'wiki', wikiforms_page)
+        ctxt = web_context(formatter.req, page.resource)
 
         # replace defined keys...
         for key in parameters['xtras']:
