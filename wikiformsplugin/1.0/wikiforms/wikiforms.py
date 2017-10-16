@@ -21,7 +21,7 @@ from trac.core import TracError, implements
 from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
-from trac.mimeview.api import Context, Mimeview
+from trac.mimeview.api import Mimeview
 from trac.perm import IPermissionRequestor
 from trac.util.datefmt import format_datetime, pretty_timedelta, utc
 from trac.util.text import exception_to_unicode
