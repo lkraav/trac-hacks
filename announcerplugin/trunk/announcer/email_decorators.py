@@ -3,10 +3,7 @@
 #
 
 import re
-try:
-    from email.utils import parseaddr
-except ImportError:
-    from email.Utils import parseaddr
+from email.utils import parseaddr
 
 from genshi.template import NewTextTemplate, TemplateError
 from trac import __version__ as trac_version

@@ -7,10 +7,7 @@
 #
 
 from base64 import b32encode, b32decode
-try:
-    from email.header import Header
-except ImportError:
-    from email.Header import Header
+from email.header import Header
 
 from announcer.util import get_target_id
 

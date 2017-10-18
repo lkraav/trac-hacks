@@ -14,6 +14,9 @@ extra = {}
 
 try:
     from trac.util.dist import get_l10n_cmdclass
+except ImportError:
+    pass  # i18n is implemented to be optional here.
+else:
     cmdclass = get_l10n_cmdclass()
     if cmdclass:
         extra['cmdclass'] = cmdclass
@@ -25,8 +28,6 @@ try:
             }),
         ]
         extra['message_extractors'] = {'announcer': extractors}
-except ImportError:
-    pass  # i18n is implemented to be optional here.
 
 setup(
     name='TracAnnouncer',

@@ -20,18 +20,11 @@ import smtplib
 import sys
 import threading
 import time
-try:
-    from email.header import Header
-    from email.charset import Charset, QP, BASE64
-    from email.mimemultipart import MIMEMultipart
-    from email.mimetext import MIMEText
-    from email.utils import formatdate, formataddr
-except ImportError:
-    from email.Header import Header
-    from email.Charset import Charset, QP, BASE64
-    from email.MIMEMultipart import MIMEMultipart
-    from email.MIMEText import MIMEText
-    from email.Utils import formatdate, formataddr
+from email.header import Header
+from email.charset import Charset, QP, BASE64
+from email.mimemultipart import MIMEMultipart
+from email.mimetext import MIMEText
+from email.utils import formatdate, formataddr
 from subprocess import Popen, PIPE
 
 from trac.config import BoolOption, ExtensionOption, IntOption, Option, \

@@ -340,22 +340,20 @@ def istrue(value, otherwise=False):
 # Import i18n methods. Fallback to keep Babel optional.
 try:
     from trac.util.translation import domain_functions
-
-    add_domain, _, N_, tag_ = \
-        domain_functions('announcer', ('add_domain', '_', 'N_', 'tag_'))
 except ImportError:
     from genshi.builder import tag as tag_
     from trac.util.translation import gettext
 
     _ = gettext
 
-
     def N_(text):
         return text
 
-
     def add_domain(a, b, c=None):
         pass
+else:
+    add_domain, _, N_, tag_ = \
+        domain_functions('announcer', ('add_domain', '_', 'N_', 'tag_'))
 
 
 class AnnouncementSystem(Component):
