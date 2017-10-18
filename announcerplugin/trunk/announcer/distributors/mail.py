@@ -27,12 +27,11 @@ from trac.config import (
     BoolOption, ExtensionOption, Option, OrderedExtensionsOption)
 from trac.core import (
     Component, ExtensionPoint, Interface, TracError, implements)
-from trac.notification.api import IEmailSender
+from trac.notification.api import IEmailAddressResolver, IEmailSender
 from trac.util.text import CRLF
 
 from announcer.api import (
-    _, IAnnouncementAddressResolver, IAnnouncementDistributor,
-    IAnnouncementFormatter)
+    _, IAnnouncementDistributor, IAnnouncementFormatter)
 from announcer.model import Subscription
 from announcer.util.mail import set_header
 from announcer.util.mail_crypto import CryptoTxt
@@ -55,7 +54,7 @@ class EmailDistributor(Component):
     decorators = ExtensionPoint(IAnnouncementEmailDecorator)
 
     resolvers = OrderedExtensionsOption('announcer',
-        'email_address_resolvers', IAnnouncementAddressResolver,
+        'email_address_resolvers', IEmailAddressResolver,
         'SpecifiedEmailResolver, SessionEmailResolver, '
         'DefaultDomainEmailResolver',
         """Comma seperated list of email resolver components in the order
@@ -259,7 +258,7 @@ class EmailDistributor(Component):
             if name and not address:
                 # figure out what the addr should be if it's not defined
                 for resolver in self.resolvers:
-                    address = resolver.get_address_for_name(name, authed)
+                    address = resolver.get_address_for_session(name, authed)
                     if address:
                         break
             if address:

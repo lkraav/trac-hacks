@@ -13,13 +13,13 @@ import threading
 
 from trac.config import Option, BoolOption, IntOption, OrderedExtensionsOption
 from trac.core import Component, ExtensionPoint, implements
+from trac.notification.api import IEmailAddressResolver
 from xmpp import Client
 from xmpp.protocol import Message, JID
 
-from announcer.api import _, IAnnouncementAddressResolver, \
-                          IAnnouncementDistributor, IAnnouncementFormatter, \
-                          IAnnouncementPreferenceProvider, \
-                          IAnnouncementProducer
+from announcer.api import (
+    _, IAnnouncementDistributor, IAnnouncementFormatter,
+    IAnnouncementPreferenceProvider, IAnnouncementProducer)
 from announcer.resolvers import SpecifiedXmppResolver
 from announcer.util.settings import SubscriptionSetting
 
@@ -32,7 +32,7 @@ class XmppDistributor(Component):
     formatters = ExtensionPoint(IAnnouncementFormatter)
 
     resolvers = OrderedExtensionsOption('announcer', 'xmpp_resolvers',
-        IAnnouncementAddressResolver, 'SpecifiedXmppResolver',
+        IEmailAddressResolver, 'SpecifiedXmppResolver',
         """Comma seperated list of xmpp resolver components in the order
         they will be called.  If an xmpp address is resolved, the remaining
         resolvers will no be called.
@@ -120,7 +120,7 @@ class XmppDistributor(Component):
             #    addr = rslvr.get_address_for_name(name, authed)
             #    if addr: break
             resolver = SpecifiedXmppResolver(self.env)
-            address = resolver.get_address_for_name(name, authed)
+            address = resolver.get_address_for_session(name, authed)
             if address:
                 self.log.debug("XmppDistributor found the address '%s' for "
                                "'%s (%s)' via: %s", address, name, authed and

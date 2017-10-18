@@ -10,31 +10,31 @@
 
 from trac.config import Option
 from trac.core import Component, implements
+from trac.notification.api import IEmailAddressResolver
 
-from announcer.api import _, IAnnouncementAddressResolver, \
-                         IAnnouncementPreferenceProvider
+from announcer.api import _, IAnnouncementPreferenceProvider
 from announcer.util.settings import SubscriptionSetting
 
 
 class DefaultDomainEmailResolver(Component):
 
-    implements(IAnnouncementAddressResolver)
+    implements(IEmailAddressResolver)
 
     default_domain = Option('announcer', 'email_default_domain', '',
         """Default host/domain to append to address that do not specify one.
         """)
 
-    def get_address_for_name(self, name, authenticated):
+    def get_address_for_session(self, sid, authenticated):
         if self.default_domain:
-            return '%s@%s' % (name, self.default_domain)
+            return '%s@%s' % (sid, self.default_domain)
         return None
 
 
 class SessionEmailResolver(Component):
 
-    implements(IAnnouncementAddressResolver)
+    implements(IEmailAddressResolver)
 
-    def get_address_for_name(self, name, authenticated):
+    def get_address_for_session(self, sid, authenticated):
         with self.env.db_query as db:
             cursor = db.cursor()
             cursor.execute("""
@@ -43,7 +43,7 @@ class SessionEmailResolver(Component):
                  WHERE sid=%s
                    AND authenticated=%s
                    AND name=%s
-            """, (name, int(authenticated), 'email'))
+            """, (sid, int(authenticated), 'email'))
             result = cursor.fetchone()
             if result:
                 return result[0]
@@ -52,9 +52,9 @@ class SessionEmailResolver(Component):
 
 class SpecifiedEmailResolver(Component):
 
-    implements(IAnnouncementAddressResolver, IAnnouncementPreferenceProvider)
+    implements(IEmailAddressResolver, IAnnouncementPreferenceProvider)
 
-    def get_address_for_name(self, name, authenticated):
+    def get_address_for_session(self, sid, authenticated):
         with self.env.db_query as db:
             cursor = db.cursor()
             cursor.execute("""
@@ -63,7 +63,7 @@ class SpecifiedEmailResolver(Component):
                  WHERE sid=%s
                    AND authenticated=1
                    AND name=%s
-            """, (name, 'announcer_specified_email'))
+            """, (sid, 'announcer_specified_email'))
             result = cursor.fetchone()
             if result:
                 return result[0]
@@ -86,13 +86,13 @@ class SpecifiedEmailResolver(Component):
 
 class SpecifiedXmppResolver(Component):
 
-    implements(IAnnouncementAddressResolver, IAnnouncementPreferenceProvider)
+    implements(IEmailAddressResolver, IAnnouncementPreferenceProvider)
 
     def __init__(self):
         self.setting = SubscriptionSetting(self.env, 'specified_xmpp')
 
-    def get_address_for_name(self, name, authed):
-        return self.setting.get_user_setting(name)[1]
+    def get_address_for_session(self, sid, authed):
+        return self.setting.get_user_setting(sid)[1]
 
     # IAnnouncementDistributor methods
 
