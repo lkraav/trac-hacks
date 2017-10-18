@@ -20,10 +20,9 @@ import smtplib
 import sys
 import threading
 import time
-from email.header import Header
 from email.charset import Charset, QP, BASE64
-from email.mimemultipart import MIMEMultipart
-from email.mimetext import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.utils import formatdate, formataddr
 from subprocess import Popen, PIPE
 
