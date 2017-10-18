@@ -15,13 +15,13 @@ from genshi import HTML
 from genshi.template import NewTextTemplate, MarkupTemplate, TemplateLoader
 from trac.config import BoolOption, ListOption
 from trac.core import implements
-from trac.mimeview import Context
+from trac.resource import Resource
 from trac.test import Mock, MockPerm
 from trac.ticket.api import TicketSystem
 from trac.util import as_int
 from trac.util.text import exception_to_unicode, to_unicode, wrap
 from trac.versioncontrol.diff import unified_diff
-from trac.web.chrome import Chrome
+from trac.web.chrome import Chrome, web_context
 from trac.web.href import Href
 from trac.wiki.formatter import HtmlFormatter
 from trac.wiki.model import WikiPage
@@ -200,8 +200,8 @@ class TicketFormatter(AnnouncerTemplateProvider):
                     ),
                     args={}
                 )
-                context = Context.from_request(req, event.realm,
-                                               event.target.id)
+                resource = Resource(event.realm, event.target.id)
+                context = web_context(req, resource)
                 formatter = HtmlFormatter(self.env, context, wikitext)
                 return formatter.generate(True)
             except Exception, e:

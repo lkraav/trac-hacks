@@ -38,26 +38,6 @@ class TicketFormatterTestCase(FormatterTestCase):
         FormatterTestCase.setUp(self)
         self.tf = TicketFormatter(self.env)
 
-    def test_add_attachment_html_notification(self):
-        ticket = Ticket(self.env)
-        ticket['description'] = 'Some ticket description'
-        ticket['summary'] = 'Some ticket summary'
-        ticket['type'] = 'defect'
-        ticket['status'] = 'new'
-        ticket.insert()
-
-        attachment = Attachment(self.env, ticket)
-        attachment.description = "`Some` '''!WikiFormatted''' ''text''"
-        attachment.filename = 'somefile.txt'
-        event = TicketChangeEvent('ticket', 'changed', ticket,
-                                  author='user1', attachment=attachment)
-        actual = self.tf.format([], 'ticket', 'text/html', event)
-
-        filename = resource_filename(__name__, 'attachment_notification.html')
-        with open(filename, 'r') as fobj:
-            expected = fobj.read()
-        self.assertEqual(expected, actual)
-
     def test_styles(self):
         self.assertTrue('text/html' in self.tf.styles('email', 'ticket'))
         self.assertTrue('text/plain' in self.tf.styles('email', 'ticket'))

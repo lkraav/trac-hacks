@@ -86,14 +86,14 @@ class AnnouncerPreferences(AnnouncerTemplateProvider):
         chrome = Chrome(self.env)
         for name, label, template, data in self._get_boxes(req):
             streams.append((label, chrome.render_template(
-                req, template, data, content_type='text/html', fragment=True
+                req, template, data, fragment=True
             )))
 
         if req.method == 'POST':
             req.redirect(req.href.prefs('announcer'))
 
         add_stylesheet(req, 'announcer/css/announcer_prefs.css')
-        return 'prefs_announcer.html', {"boxes": streams}
+        return 'prefs_announcer.html', {"boxes": streams}, None
 
 
 class SubscriptionManagementPanel(AnnouncerTemplateProvider):
@@ -182,7 +182,7 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
                 })
 
         add_stylesheet(req, 'announcer/css/announcer_prefs.css')
-        return 'prefs_announcer_manage_subscriptions.html', dict(data=data)
+        return 'prefs_announcer_manage_subscriptions.html', dict(data=data), None
 
     # ITemplateStreamFilter method
 

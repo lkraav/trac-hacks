@@ -31,13 +31,11 @@ class SubscriberTestCase(unittest.TestCase):
             enable=['trac.*', 'announcer.opt.subscribers.*'])
         self.env.path = tempfile.mkdtemp()
         self.db_mgr = DatabaseManager(self.env)
-        self.db = self.env.get_db_cnx()
-        AnnouncementSystem(self.env).upgrade_environment(self.db)
+        AnnouncementSystem(self.env).upgrade_environment()
 
     def tearDown(self):
         self.env.db_transaction("DROP table 'subscription'")
         self.env.db_transaction("DROP table 'subscription_attribute'")
-        self.db.close()
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 

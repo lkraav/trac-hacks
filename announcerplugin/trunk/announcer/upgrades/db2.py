@@ -41,7 +41,7 @@ def do_upgrade(env, ver, cursor):
     """)
     cursor.execute("DROP TABLE subscriptions")
 
-    connector = DatabaseManager(env)._get_connector()[0]
+    connector = DatabaseManager(env).get_connector()[0]
     for table in schema:
         for stmt in connector.to_sql(table):
             cursor.execute(stmt)

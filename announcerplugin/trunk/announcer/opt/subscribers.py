@@ -110,8 +110,7 @@ class GeneralWikiSubscriber(Component):
         sess = req.session
 
         if req.method == 'POST':
-            @self.env.with_transaction()
-            def do_update(db):
+            with self.env.db_transaction as db:
                 SubscriptionAttribute.\
                     delete_by_sid_and_class(self.env, sess.sid,
                                             sess.authenticated, klass, db)
@@ -192,8 +191,7 @@ class JoinableGroupSubscriber(Component):
         klass = self.__class__.__name__
 
         if req.method == "POST":
-            @self.env.with_transaction()
-            def do_update(db):
+            with self.env.db_transaction as db:
                 SubscriptionAttribute.\
                     delete_by_sid_and_class(self.env, req.session.sid,
                                             req.session.authenticated,
@@ -338,8 +336,7 @@ class TicketComponentSubscriber(Component):
     def render_announcement_preference_box(self, req, panel):
         klass = self.__class__.__name__
         if req.method == "POST":
-            @self.env.with_transaction()
-            def do_update(db):
+            with self.env.db_transaction as db:
                 SubscriptionAttribute.\
                     delete_by_sid_and_class(self.env, req.session.sid,
                                             req.session.authenticated,
@@ -482,8 +479,7 @@ class UserChangeSubscriber(Component):
         klass = self.__class__.__name__
 
         if req.method == 'POST':
-            @self.env.with_transaction()
-            def do_update(db):
+            with self.env.db_transaction as db:
                 sess = req.session
                 SubscriptionAttribute\
                     .delete_by_sid_and_class(self.env, sess.sid,

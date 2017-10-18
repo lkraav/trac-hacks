@@ -49,11 +49,9 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self.env = EnvironmentStub(enable=['trac.*'])
         self.env.path = tempfile.mkdtemp()
         self.db_mgr = DatabaseManager(self.env)
-        self.db = self.env.get_db_cnx()
         self.an_sys = AnnouncementSystem(self.env)
 
     def tearDown(self):
-        self.db.close()
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
@@ -62,54 +60,58 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
     def _schema_init(self, schema=None):
         # Current announcer schema is setup with enabled component anyway.
         #   Revert these changes for clean install testing.
-        cursor = self.db.cursor()
-        cursor.execute("DROP TABLE IF EXISTS subscriptions")
-        cursor.execute("DROP TABLE IF EXISTS subscription")
-        cursor.execute("DROP TABLE IF EXISTS subscription_attribute")
-        cursor.execute("DELETE FROM system WHERE name='announcer_version'")
+        with self.env.db_transaction as db:
+            db("DROP TABLE IF EXISTS subscriptions")
+            db("DROP TABLE IF EXISTS subscription")
+            db("DROP TABLE IF EXISTS subscription_attribute")
+            db("DELETE FROM system WHERE name='announcer_version'")
 
-        if schema:
-            connector = self.db_mgr._get_connector()[0]
-            for table in schema:
-                for stmt in connector.to_sql(table):
-                    cursor.execute(stmt)
+            if schema:
+                connector = self.db_mgr.get_connector()[0]
+                for table in schema:
+                    for stmt in connector.to_sql(table):
+                        db(stmt)
 
     def _verify_curr_schema(self):
-        self.assertFalse(self.an_sys.environment_needs_upgrade(self.db))
-        cursor = self.db.cursor()
-        cursor.execute("SELECT * FROM subscription_attribute")
-        columns = [col[0] for col in cursor.cursor.description]
+        self.assertFalse(self.an_sys.environment_needs_upgrade())
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM subscription_attribute")
+            columns = [col[0] for col in cursor.cursor.description]
         self.assertTrue('name' not in columns)
         self.assertTrue('value' not in columns)
         self.assertEquals(
             ['id', 'sid', 'authenticated', 'class', 'realm', 'target'],
             columns
         )
-        cursor.execute("""
-            SELECT value
-              FROM system
-             WHERE name='announcer_version'
-        """)
-        version = int(cursor.fetchone()[0])
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT value
+                  FROM system
+                 WHERE name='announcer_version'
+            """)
+            version = int(cursor.fetchone()[0])
         self.assertEquals(db_default.schema_version, version)
 
     def _verify_version_unregistered(self):
-        cursor = self.db.cursor()
-        cursor.execute("""
-            SELECT value
-              FROM system
-             WHERE name='announcer_version'
-        """)
-        self.assertFalse(cursor.fetchone())
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT value
+                  FROM system
+                 WHERE name='announcer_version'
+            """)
+            self.assertFalse(cursor.fetchone())
 
     def test_new_install(self):
         # Just do db table clean-up.
         self._schema_init()
 
-        self.assertEquals(0, self.an_sys.get_schema_version(self.db))
-        self.assertTrue(self.an_sys.environment_needs_upgrade(self.db))
+        self.assertEquals(0, self.an_sys.get_schema_version())
+        self.assertTrue(self.an_sys.environment_needs_upgrade())
 
-        self.an_sys.upgrade_environment(self.db)
+        self.an_sys.upgrade_environment()
         self._verify_curr_schema()
 
     def test_upgrade_v1_to_current(self):
@@ -132,32 +134,33 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._schema_init(schema)
 
         # Populate tables with test data.
-        cursor = self.db.cursor()
-        cursor.executemany("""
-            INSERT INTO session
-                   (sid,authenticated,last_visit)
-            VALUES (%s,%s,%s)
-        """, (('somebody', '0', '0'), ('user', '1', '0')))
-        cursor.executemany("""
-            INSERT INTO session_attribute
-                   (sid,authenticated,name,value)
-            VALUES (%s,1,%s,%s)
-        """, (('user', 'announcer_email_format_ticket', 'text/html'),
-              ('user', 'announcer_specified_email', '')))
-        cursor.executemany("""
-            INSERT INTO subscriptions
-                   (sid,enabled,managed,
-                    realm,category,rule,destination,format)
-            VALUES (%s,%s,0,%s,%s,%s,%s,%s)
-        """, (('somebody', 1, 'ticket', 'changed', '1', '1', 'email'),
-              ('user', 1, 'ticket', 'attachment added', '1', '1', 'email')))
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.executemany("""
+                INSERT INTO session
+                       (sid,authenticated,last_visit)
+                VALUES (%s,%s,%s)
+            """, (('somebody', '0', '0'), ('user', '1', '0')))
+            cursor.executemany("""
+                INSERT INTO session_attribute
+                       (sid,authenticated,name,value)
+                VALUES (%s,1,%s,%s)
+            """, (('user', 'announcer_email_format_ticket', 'text/html'),
+                  ('user', 'announcer_specified_email', '')))
+            cursor.executemany("""
+                INSERT INTO subscriptions
+                       (sid,enabled,managed,
+                        realm,category,rule,destination,format)
+                VALUES (%s,%s,0,%s,%s,%s,%s,%s)
+            """, (('somebody', 1, 'ticket', 'changed', '1', '1', 'email'),
+                  ('user', 1, 'ticket', 'attachment added', '1', '1', 'email')))
 
-        self.assertEquals(1, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(1, self.an_sys.get_schema_version())
         target = 6
         db_default.schema_version = target
-        self.assertTrue(self.an_sys.environment_needs_upgrade(self.db))
+        self.assertTrue(self.an_sys.environment_needs_upgrade())
 
-        self.an_sys.upgrade_environment(self.db)
+        self.an_sys.upgrade_environment()
         self._verify_curr_schema()
 
     def test_upgrade_to_schema_v2(self):
@@ -180,42 +183,44 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._schema_init(schema)
 
         # Populate tables with test data.
-        cursor = self.db.cursor()
-        cursor.executemany("""
-            INSERT INTO session
-                   (sid,authenticated,last_visit)
-            VALUES (%s,%s,%s)
-        """, (('somebody', '0', '0'), ('user', '1', '0')))
-        cursor.executemany("""
-            INSERT INTO session_attribute
-                   (sid,authenticated,name,value)
-            VALUES (%s,1,%s,%s)
-        """, (('user', 'announcer_email_format_ticket', 'text/html'),
-              ('user', 'announcer_specified_email', '')))
-        cursor.executemany("""
-            INSERT INTO subscriptions
-                   (sid,enabled,managed,
-                    realm,category,rule,destination,format)
-            VALUES (%s,%s,0,%s,%s,%s,%s,%s)
-        """, (('somebody', 1, 'ticket', 'changed', '1', '1', 'email'),
-              ('user', 1, 'ticket', 'attachment added', '1', '1', 'email')))
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.executemany("""
+                INSERT INTO session
+                       (sid,authenticated,last_visit)
+                VALUES (%s,%s,%s)
+            """, (('somebody', '0', '0'), ('user', '1', '0')))
+            cursor.executemany("""
+                INSERT INTO session_attribute
+                       (sid,authenticated,name,value)
+                VALUES (%s,1,%s,%s)
+            """, (('user', 'announcer_email_format_ticket', 'text/html'),
+                  ('user', 'announcer_specified_email', '')))
+            cursor.executemany("""
+                INSERT INTO subscriptions
+                       (sid,enabled,managed,
+                        realm,category,rule,destination,format)
+                VALUES (%s,%s,0,%s,%s,%s,%s,%s)
+            """, (('somebody', 1, 'ticket', 'changed', '1', '1', 'email'),
+                  ('user', 1, 'ticket', 'attachment added', '1', '1', 'email')))
 
-        self.assertEquals(1, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(1, self.an_sys.get_schema_version())
         target = 2
         db_default.schema_version = target
-        self.assertTrue(self.an_sys.environment_needs_upgrade(self.db))
+        self.assertTrue(self.an_sys.environment_needs_upgrade())
 
         # Change from r3047 - 13-Jan-2008 for announcer-0.2 by Stephen Hansen.
         # - 'subscriptions.destination', 'subscriptions.format'
         # + 'subscriptions.authenticated', 'subscriptions.transport'
         # 'subscriptions.managed' type='int' --> (default == char)
-        self.an_sys.upgrade_environment(self.db)
+        self.an_sys.upgrade_environment()
 
-        self.assertEquals(target, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(target, self.an_sys.get_schema_version())
         self._verify_version_unregistered()
-        cursor = self.db.cursor()
-        cursor.execute("SELECT * FROM subscriptions")
-        columns = [col[0] for col in cursor.cursor.description]
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM subscriptions")
+            columns = [col[0] for col in cursor.cursor.description]
         self.assertEquals(['id', 'sid', 'authenticated', 'enabled', 'managed',
                            'realm', 'category', 'rule', 'transport'],
                           columns
@@ -241,32 +246,33 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._schema_init(schema)
 
         # Populate tables with test data.
-        cursor = self.db.cursor()
-        cursor.executemany("""
-            INSERT INTO session_attribute
-                   (sid,authenticated,name,value)
-            VALUES (%s,1,%s,%s)
-        """, (('user', 'announcer_email_format_ticket', 'text/html'),
-              ('user', 'announcer_email_format_wiki', 'text/plain'),
-              ('user', 'announcer_specified_email', '')))
-        cursor.executemany("""
-            INSERT INTO subscriptions
-                   (sid,authenticated,enabled,managed,
-                    realm,category,rule,transport)
-            VALUES (%s,%s,1,%s,%s,%s,%s,%s)
-        """, (('user', 1, 'watcher', 'ticket', 'changed', '1', 'email'),
-              ('user', 1, 'watcher', 'wiki', '*', 'WikiStart', 'email')))
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.executemany("""
+                INSERT INTO session_attribute
+                       (sid,authenticated,name,value)
+                VALUES (%s,1,%s,%s)
+            """, (('user', 'announcer_email_format_ticket', 'text/html'),
+                  ('user', 'announcer_email_format_wiki', 'text/plain'),
+                  ('user', 'announcer_specified_email', '')))
+            cursor.executemany("""
+                INSERT INTO subscriptions
+                       (sid,authenticated,enabled,managed,
+                        realm,category,rule,transport)
+                VALUES (%s,%s,1,%s,%s,%s,%s,%s)
+            """, (('user', 1, 'watcher', 'ticket', 'changed', '1', 'email'),
+                  ('user', 1, 'watcher', 'wiki', '*', 'WikiStart', 'email')))
 
-        self.assertEquals(2, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(2, self.an_sys.get_schema_version())
         target = 3
         db_default.schema_version = target
-        self.assertTrue(self.an_sys.environment_needs_upgrade(self.db))
+        self.assertTrue(self.an_sys.environment_needs_upgrade())
 
         # From r9116 - 25-Sep-2010 for announcer-0.12.1 by Robert Corsaro.
         # + table 'subscription', 'subscription_attribute'
-        self.an_sys.upgrade_environment(self.db)
+        self.an_sys.upgrade_environment()
 
-        self.assertEquals(target, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(target, self.an_sys.get_schema_version())
 
     def test_upgrade_to_schema_v4(self):
         # Schema from r9116 - 25-Sep-2010 for announcer-0.12.1 by R. Corsaro.
@@ -307,41 +313,43 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._schema_init(schema)
 
         # Populate tables with test data.
-        cursor = self.db.cursor()
-        cursor.execute("""
-            INSERT INTO subscription
-                   (time,changetime,class,sid,authenticated,
-                    distributor,format,priority,adverb)
-            VALUES ('0','0','GeneralWikiSubscriber','user','1',
-                    'email','text/plain','1','always')
-        """)
-        cursor.executemany("""
-            INSERT INTO subscription_attribute
-                   (sid,class,name,value)
-            VALUES (%s,%s,%s,%s)
-        """, (('somebody', 'GeneralWikiSubscriber', 'wiki', '*'),
-              ('somebody', 'UserChangeSubscriber', 'wiki', 'created'),
-              ('user', 'GeneralWikiSubscriber', 'wiki', 'TracWiki')))
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                INSERT INTO subscription
+                       (time,changetime,class,sid,authenticated,
+                        distributor,format,priority,adverb)
+                VALUES ('0','0','GeneralWikiSubscriber','user','1',
+                        'email','text/plain','1','always')
+            """)
+            cursor.executemany("""
+                INSERT INTO subscription_attribute
+                       (sid,class,name,value)
+                VALUES (%s,%s,%s,%s)
+            """, (('somebody', 'GeneralWikiSubscriber', 'wiki', '*'),
+                  ('somebody', 'UserChangeSubscriber', 'wiki', 'created'),
+                  ('user', 'GeneralWikiSubscriber', 'wiki', 'TracWiki')))
 
-        self.assertEquals(3, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(3, self.an_sys.get_schema_version())
         target = 4
         db_default.schema_version = target
-        self.assertTrue(self.an_sys.environment_needs_upgrade(self.db))
+        self.assertTrue(self.an_sys.environment_needs_upgrade())
 
         # From r9210 - 29-Sep-2010 for announcer-0.12.1 by Robert Corsaro.
         # - table 'subscriptions'
         # 'subscription.priority' type=(default == char) --> 'int'
         # 'subscription_attribute.name --> 'subscription_attribute.realm'
         # 'subscription_attribute.value --> 'subscription_attribute.target'
-        self.an_sys.upgrade_environment(self.db)
+        self.an_sys.upgrade_environment()
 
-        self.assertEquals(target, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(target, self.an_sys.get_schema_version())
         # Check type of priority value.
-        cursor = self.db.cursor()
-        cursor.execute("SELECT priority FROM subscription")
-        for priority in cursor:
-            # Shouldn't raise an TypeError with appropriate column type.
-            result = priority[0] + 0
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT priority FROM subscription")
+            for priority in cursor:
+                # Shouldn't raise an TypeError with appropriate column type.
+                result = priority[0] + 0
 
     def test_upgrade_to_schema_v5(self):
         # Schema from r9210 - 29-Sep-2010 for announcer-0.12.1 by R. Corsaro.
@@ -369,34 +377,36 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._schema_init(schema)
 
         # Populate tables with test data.
-        cursor = self.db.cursor()
-        cursor.executemany("""
-            INSERT INTO session
-                   (sid,authenticated,last_visit)
-            VALUES (%s,%s,%s)
-        """, (('somebody', '0', '0'), ('user', '1', '0')))
-        cursor.executemany("""
-            INSERT INTO subscription_attribute
-                   (sid,class,realm,target)
-            VALUES (%s,%s,%s,%s)
-        """, (('somebody', 'GeneralWikiSubscriber', 'wiki', '*'),
-              ('somebody', 'UserChangeSubscriber', 'wiki', 'created'),
-              ('user', 'GeneralWikiSubscriber', 'wiki', 'TracWiki')))
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.executemany("""
+                INSERT INTO session
+                       (sid,authenticated,last_visit)
+                VALUES (%s,%s,%s)
+            """, (('somebody', '0', '0'), ('user', '1', '0')))
+            cursor.executemany("""
+                INSERT INTO subscription_attribute
+                       (sid,class,realm,target)
+                VALUES (%s,%s,%s,%s)
+            """, (('somebody', 'GeneralWikiSubscriber', 'wiki', '*'),
+                  ('somebody', 'UserChangeSubscriber', 'wiki', 'created'),
+                  ('user', 'GeneralWikiSubscriber', 'wiki', 'TracWiki')))
 
-        self.assertEquals(4, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(4, self.an_sys.get_schema_version())
         target = 5
         db_default.schema_version = target
-        self.assertTrue(self.an_sys.environment_needs_upgrade(self.db))
+        self.assertTrue(self.an_sys.environment_needs_upgrade())
 
         # From r9235 - 01-Oct-2010 for announcer-0.12.1 by Robert Corsaro.
         # + 'subscription_attribute.authenticated'
-        self.an_sys.upgrade_environment(self.db)
+        self.an_sys.upgrade_environment()
 
-        self.assertEquals(target, self.an_sys.get_schema_version(self.db))
+        self.assertEquals(target, self.an_sys.get_schema_version())
         self._verify_version_unregistered()
-        cursor = self.db.cursor()
-        cursor.execute("SELECT * FROM subscription_attribute")
-        columns = [col[0] for col in cursor.cursor.description]
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM subscription_attribute")
+            columns = [col[0] for col in cursor.cursor.description]
         self.assertTrue('name' not in columns)
         self.assertTrue('value' not in columns)
         self.assertEquals(
@@ -416,46 +426,47 @@ class AnnouncementSystemSetupTestCase(unittest.TestCase):
         self._schema_init(db_default.schema)
 
         # Populate table with test data.
-        cursor = self.db.cursor()
-        if self.env.config.get('trac', 'database').startswith('sqlite'):
-            # Add dataset with CURRENT_TIMESTAMP strings.
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            if self.env.config.get('trac', 'database').startswith('sqlite'):
+                # Add dataset with CURRENT_TIMESTAMP strings.
+                cursor.execute("""
+                    INSERT INTO subscription
+                           (time,changetime,
+                            class,sid,authenticated,
+                            distributor,format,priority,adverb)
+                    VALUES ('1970-01-01 00:00:00','2012-10-31 23:59:59',
+                            'GeneralWikiSubscriber','user','1',
+                            'email','text/plain','1','always')
+                """)
+            else:
+                cursor.execute("""
+                    INSERT INTO subscription
+                           (time,changetime,
+                            class,sid,authenticated,
+                            distributor,format,priority,adverb)
+                    VALUES ('0','1351724399',
+                            'GeneralWikiSubscriber','user','1',
+                            'email','text/plain','1','always')
+                """)
             cursor.execute("""
-                INSERT INTO subscription
-                       (time,changetime,
-                        class,sid,authenticated,
-                        distributor,format,priority,adverb)
-                VALUES ('1970-01-01 00:00:00','2012-10-31 23:59:59',
-                        'GeneralWikiSubscriber','user','1',
-                        'email','text/plain','1','always')
+                INSERT INTO subscription_attribute
+                       (sid,authenticated,class,realm,target)
+                VALUES ('user','1','GeneralWikiSubscriber','wiki', 'TracWiki')
             """)
-        else:
-            cursor.execute("""
-                INSERT INTO subscription
-                       (time,changetime,
-                        class,sid,authenticated,
-                        distributor,format,priority,adverb)
-                VALUES ('0','1351724399',
-                        'GeneralWikiSubscriber','user','1',
-                        'email','text/plain','1','always')
-            """)
-        cursor.execute("""
-            INSERT INTO subscription_attribute
-                   (sid,authenticated,class,realm,target)
-            VALUES ('user','1','GeneralWikiSubscriber','wiki', 'TracWiki')
-        """)
-        self.assertEquals(5, self.an_sys.get_schema_version(self.db))
-        target = 6
-        db_default.schema_version = target
-        self.assertTrue(self.an_sys.environment_needs_upgrade(self.db))
+            self.assertEquals(5, self.an_sys.get_schema_version())
+            target = 6
+            db_default.schema_version = target
+            self.assertTrue(self.an_sys.environment_needs_upgrade())
 
-        # Data migration and registration of unversioned schema.
-        self.an_sys.upgrade_environment(self.db)
+            # Data migration and registration of unversioned schema.
+            self.an_sys.upgrade_environment()
 
-        self._verify_curr_schema()
-        cursor.execute("SELECT time,changetime FROM subscription")
-        for time in cursor:
-            # Shouldn't raise an TypeError with proper int/long values.
-            check = time[1] - time[0]
+            self._verify_curr_schema()
+            cursor.execute("SELECT time,changetime FROM subscription")
+            for time in cursor:
+                # Shouldn't raise an TypeError with proper int/long values.
+                check = time[1] - time[0]
 
 
 class SubscriptionResolverTestCase(unittest.TestCase):
@@ -463,10 +474,8 @@ class SubscriptionResolverTestCase(unittest.TestCase):
         self.env = EnvironmentStub(enable=['trac.*'])
         self.env.path = tempfile.mkdtemp()
         self.db_mgr = DatabaseManager(self.env)
-        self.db = self.env.get_db_cnx()
 
     def tearDown(self):
-        self.db.close()
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
@@ -482,11 +491,9 @@ class AnnouncementSystemSendTestCase(unittest.TestCase):
         self.env = EnvironmentStub(enable=['trac.*', 'announcer.*'])
         self.env.path = tempfile.mkdtemp()
         self.db_mgr = DatabaseManager(self.env)
-        self.db = self.env.get_db_cnx()
         self.an_sys = AnnouncementSystem(self.env)
 
     def tearDown(self):
-        self.db.close()
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 

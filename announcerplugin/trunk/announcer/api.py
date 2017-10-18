@@ -407,10 +407,10 @@ class AnnouncementSystem(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        self._upgrade_db(self.env.get_db_cnx())
+        self._upgrade_db()
 
-    def environment_needs_upgrade(self, db):
-        schema_ver = self.get_schema_version(db)
+    def environment_needs_upgrade(self):
+        schema_ver = self.get_schema_version()
         if schema_ver == db_default.schema_version:
             return False
         if schema_ver > db_default.schema_version:
@@ -420,50 +420,50 @@ class AnnouncementSystem(Component):
                       schema_ver, db_default.schema_version)
         return True
 
-    def upgrade_environment(self, db):
-        self._upgrade_db(db)
+    def upgrade_environment(self):
+        self._upgrade_db()
 
     # Internal methods
 
-    def get_schema_version(self, db=None):
+    def get_schema_version(self):
         """Return the current schema version for this plugin."""
-        db = db and db or self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT value
-              FROM system
-             WHERE name='announcer_version'
-        """)
-        row = cursor.fetchone()
-        if not (row and int(row[0]) > 5):
-            # Care for pre-announcer-1.0 installations.
-            dburi = self.config.get('trac', 'database')
-            tables = self._get_tables(dburi, cursor)
-            if 'subscription' in tables:
-                # Version > 2
-                cursor.execute("SELECT * FROM subscription_attribute")
-                columns = [col[0] for col in cursor.cursor.description]
-                if 'authenticated' in columns:
-                    self.log.debug("TracAnnouncer needs to register schema "
-                                   "version")
-                    return 5
-                if 'realm' in columns:
-                    self.log.debug("TracAnnouncer needs to change a table")
-                    return 4
-                self.log.debug("TracAnnouncer needs to change tables")
-                return 3
-            if 'subscriptions' in tables:
-                cursor.execute("SELECT * FROM subscriptions")
-                columns = [col[0] for col in cursor.cursor.description]
-                if 'format' not in columns:
-                    self.log.debug("TracAnnouncer needs to add new tables")
-                    return 2
-                self.log.debug("TracAnnouncer needs to add/change tables")
-                return 1
-            # This is a new installation.
-            return 0
-        # The expected outcome for any up-to-date installation.
-        return row and int(row[0]) or 0
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT value
+                  FROM system
+                 WHERE name='announcer_version'
+            """)
+            row = cursor.fetchone()
+            if not (row and int(row[0]) > 5):
+                # Care for pre-announcer-1.0 installations.
+                dburi = self.config.get('trac', 'database')
+                tables = self._get_tables(dburi, cursor)
+                if 'subscription' in tables:
+                    # Version > 2
+                    cursor.execute("SELECT * FROM subscription_attribute")
+                    columns = [col[0] for col in cursor.cursor.description]
+                    if 'authenticated' in columns:
+                        self.log.debug("TracAnnouncer needs to register "
+                                       "schema version")
+                        return 5
+                    if 'realm' in columns:
+                        self.log.debug("TracAnnouncer needs to change a table")
+                        return 4
+                    self.log.debug("TracAnnouncer needs to change tables")
+                    return 3
+                if 'subscriptions' in tables:
+                    cursor.execute("SELECT * FROM subscriptions")
+                    columns = [col[0] for col in cursor.cursor.description]
+                    if 'format' not in columns:
+                        self.log.debug("TracAnnouncer needs to add new tables")
+                        return 2
+                    self.log.debug("TracAnnouncer needs to add/change tables")
+                    return 1
+                # This is a new installation.
+                return 0
+            # The expected outcome for any up-to-date installation.
+            return row and int(row[0]) or 0
 
     @staticmethod
     def _get_tables(dburi, cursor):
@@ -489,48 +489,49 @@ class AnnouncementSystem(Component):
         cursor.execute(sql)
         return sorted(row[0] for row in cursor)
 
-    def _upgrade_db(self, db):
+    def _upgrade_db(self):
         """Each schema version should have its own upgrade module, named
         upgrades/dbN.py, where 'N' is the version number (int).
         """
         db_mgr = DatabaseManager(self.env)
-        schema_ver = self.get_schema_version(db)
+        schema_ver = self.get_schema_version()
 
-        cursor = db.cursor()
-        # Is this a new installation?
-        if not schema_ver:
-            # Perform a single-step install: Create plugin schema and
-            # insert default data into the database.
-            connector = db_mgr._get_connector()[0]
-            for table in db_default.schema:
-                for stmt in connector.to_sql(table):
-                    cursor.execute(stmt)
-            for table, cols, vals in db_default.get_data(db):
-                cursor.executemany("""
-                    INSERT INTO %s (%s) VALUES (%s)
-                    """ % (table, ','.join(cols),
-                           ','.join('%s' for c in cols)), vals)
-        else:
-            # Perform incremental upgrades.
-            for i in range(schema_ver + 1, db_default.schema_version + 1):
-                name = 'db%i' % i
-                try:
-                    upgrades = __import__('announcer.upgrades', globals(),
-                                          locals(), [name])
-                    script = getattr(upgrades, name)
-                except AttributeError:
-                    raise TracError(_("""
-                        No upgrade module for version %(num)i (%(version)s.py)
-                        """, num=i, version=name))
-                script.do_upgrade(self.env, i, cursor)
-        cursor.execute("""
-            UPDATE system
-               SET value=%s
-             WHERE name='announcer_version'
-            """, (db_default.schema_version,))
-        self.log.info("Upgraded TracAnnouncer db schema from version %d to "
-                      "%d", schema_ver, db_default.schema_version)
-        db.commit()
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            # Is this a new installation?
+            if not schema_ver:
+                # Perform a single-step install: Create plugin schema and
+                # insert default data into the database.
+                connector = db_mgr.get_connector()[0]
+                for table in db_default.schema:
+                    for stmt in connector.to_sql(table):
+                        cursor.execute(stmt)
+                for table, cols, vals in db_default.get_data(db):
+                    cursor.executemany("""
+                        INSERT INTO %s (%s) VALUES (%s)
+                        """ % (table, ','.join(cols),
+                               ','.join('%s' for c in cols)), vals)
+            else:
+                # Perform incremental upgrades.
+                for i in range(schema_ver + 1, db_default.schema_version + 1):
+                    name = 'db%i' % i
+                    try:
+                        upgrades = __import__('announcer.upgrades', globals(),
+                                              locals(), [name])
+                        script = getattr(upgrades, name)
+                    except AttributeError:
+                        raise TracError(_("""
+                            No upgrade module for version %(num)i
+                            (%(version)s.py)
+                            """, num=i, version=name))
+                    script.do_upgrade(self.env, i, cursor)
+            cursor.execute("""
+                UPDATE system
+                   SET value=%s
+                 WHERE name='announcer_version'
+                """, (db_default.schema_version,))
+            self.log.info("Upgraded TracAnnouncer db schema from version "
+                          "%d to %d", schema_ver, db_default.schema_version)
 
     # AnnouncementSystem core methods
 

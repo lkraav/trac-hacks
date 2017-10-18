@@ -192,8 +192,7 @@ class FullBlogWatchSubscriber(Component):
         m = re.match(r'^/blog_watch/(.*)', req.path_info)
         (name,) = m.groups()
 
-        @self.env.with_transaction()
-        def do_update(db):
+        with self.env.db_transaction:
             attrs = SubscriptionAttribute.find_by_sid_class_and_target(
                 self.env, req.session.sid, req.session.authenticated,
                 klass, name)
@@ -250,8 +249,7 @@ class FullBlogBloggerSubscriber(Component):
         klass = self.__class__.__name__
 
         if req.method == "POST":
-            @self.env.with_transaction()
-            def do_update(db):
+            with self.env.db_transaction:
                 SubscriptionAttribute.delete_by_sid_and_class(
                     self.env, req.session.sid, req.session.authenticated,
                     klass)

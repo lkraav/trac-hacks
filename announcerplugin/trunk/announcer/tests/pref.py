@@ -23,10 +23,8 @@ class AnnouncerPreferencesTestCase(unittest.TestCase):
         self.env = EnvironmentStub(enable=['trac.*'])
         self.env.path = tempfile.mkdtemp()
         self.db_mgr = DatabaseManager(self.env)
-        self.db = self.env.get_db_cnx()
 
     def tearDown(self):
-        self.db.close()
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 

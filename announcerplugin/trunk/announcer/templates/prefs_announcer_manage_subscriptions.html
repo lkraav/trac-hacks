@@ -2,7 +2,7 @@
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude" 
+      xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:py="http://genshi.edgewall.org/"
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       i18n:domain="announcer">
@@ -12,7 +12,7 @@
   </head>
   <body>
     <p>
-      Announcements serve as a method for Trac to communicate events to you; 
+      Announcements serve as a method for Trac to communicate events to you;
       the creation of a ticket, the change of a Wiki page, and so on. Under
       the Announcement system, you will only receive notifications to those
       topics that you subscribe to.
@@ -32,10 +32,11 @@
                       </select><button type="submit" name="method" value="set-format_${distributor}">Save</button>
                   </div>
                   <div>
-                      <ul>
-                          <li py:for="rule in rules" class="rule">
-                          ${rule['adverb']} ${rule['description']} <button type="submit" name="method" value="delete-rule_${rule['id']}">Delete</button><button type="submit" name="method" value="move-rule_${rule['id']}-${rule['priority']+1}">down</button><button type="submit" name="method" value="move-rule_${rule['id']}-${rule['priority']-1}">up</button></li>
-                      </ul>
+                    <ul>
+                      <li py:for="rule in rules" class="rule">
+                        ${rule['adverb']} ${rule['description']} <button type="submit" name="method" value="delete-rule_${rule['id']}">Delete</button><button type="submit" name="method" value="move-rule_${rule['id']}-${rule['priority']+1}">down</button><button type="submit" name="method" value="move-rule_${rule['id']}-${rule['priority']-1}">up</button>
+                      </li>
+                    </ul>
                   </div>
               </py:if>
               <div class="add_rule">

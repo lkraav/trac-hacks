@@ -22,13 +22,11 @@ class SubscriptionTestSetup(unittest.TestCase):
         self.env = EnvironmentStub(enable=['trac.*'])
         self.env.path = tempfile.mkdtemp()
         self.db_mgr = DatabaseManager(self.env)
-        self.db = self.env.get_db_cnx()
         # Setup current announcer db schema tables.
         self.an_sys = AnnouncementSystem(self.env)
-        self.an_sys.upgrade_environment(self.db)
+        self.an_sys.upgrade_environment()
 
     def tearDown(self):
-        self.db.close()
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
@@ -69,32 +67,33 @@ class SubscriptionTestCase(SubscriptionTestSetup):
               FROM subscription
              WHERE priority=%s
         """
-        cursor = self.db.cursor()
-        cursor.execute(sql, (1,))
-        for subscription in cursor.fetchall():
-            self.assertEqual(subscription, sub.subscription_tuple())
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute(sql, (1,))
+            for subscription in cursor.fetchall():
+                self.assertEqual(subscription, sub.subscription_tuple())
 
-        sub['class'] = 'UserChangeSubscriber'
-        sub.add(self.env, sub)
-        cursor.execute("SELECT COUNT(*) FROM subscription")
-        count = cursor.fetchone()
-        self.assertEqual(count[0], 2)
+            sub['class'] = 'UserChangeSubscriber'
+            sub.add(self.env, sub)
+            cursor.execute("SELECT COUNT(*) FROM subscription")
+            count = cursor.fetchone()
+            self.assertEqual(count[0], 2)
 
-        sub.move(self.env, 1, 2)
-        cursor.execute(sql, (1,))
-        for subscription in cursor.fetchall():
-            self.assertEqual(subscription[0], sub['class'])
+            sub.move(self.env, 1, 2)
+            cursor.execute(sql, (1,))
+            for subscription in cursor.fetchall():
+                self.assertEqual(subscription[0], sub['class'])
 
-        sub.delete(self.env, 1)
-        cursor.execute("SELECT COUNT(*) FROM subscription")
-        count = cursor.fetchone()
-        self.assertEqual(count[0], 1)
-        # Make sure, that we really deleted the 1st subscription.
-        cursor.execute(sql, (1,))
-        for subscription in cursor.fetchall():
-            self.assertEqual(subscription[0], sub['class'])
-        # Can't delete the same subscription twice.
-        self.assertRaises(TypeError, sub.delete, self.env, 1)
+            sub.delete(self.env, 1)
+            cursor.execute("SELECT COUNT(*) FROM subscription")
+            count = cursor.fetchone()
+            self.assertEqual(count[0], 1)
+            # Make sure, that we really deleted the 1st subscription.
+            cursor.execute(sql, (1,))
+            for subscription in cursor.fetchall():
+                self.assertEqual(subscription[0], sub['class'])
+            # Can't delete the same subscription twice.
+            self.assertRaises(TypeError, sub.delete, self.env, 1)
 
         # def test_update_format_by_distributor_and_sid(self):
 
@@ -117,21 +116,22 @@ class SubscriptionAttributeTestCase(SubscriptionTestSetup):
         attr = SubscriptionAttribute(self.env)
         attr.add(self.env, 'user', 1, 'GeneralWikiSubscriber', 'wiki',
                  ('TracWiki', 'TracWiki'))
-        cursor = self.db.cursor()
-        cursor.execute("SELECT COUNT(*) FROM subscription_attribute")
-        count = cursor.fetchone()
-        self.assertEqual(count[0], 2)
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT COUNT(*) FROM subscription_attribute")
+            count = cursor.fetchone()
+            self.assertEqual(count[0], 2)
 
-        attr.delete(self.env, 1)
-        # Make sure, that we really deleted the 1st attribute.
-        cursor.execute("SELECT target FROM subscription_attribute")
-        for attribute in cursor.fetchone():
-            self.assertEqual(attribute, 'TracWiki')
-        cursor.execute("SELECT COUNT(*) FROM subscription_attribute")
-        count = cursor.fetchone()
-        self.assertEqual(count[0], 1)
-        # Deleting non-existent subscriptions is handled gracefully.
-        attr.delete(self.env, 1)
+            attr.delete(self.env, 1)
+            # Make sure, that we really deleted the 1st attribute.
+            cursor.execute("SELECT target FROM subscription_attribute")
+            for attribute in cursor.fetchone():
+                self.assertEqual(attribute, 'TracWiki')
+            cursor.execute("SELECT COUNT(*) FROM subscription_attribute")
+            count = cursor.fetchone()
+            self.assertEqual(count[0], 1)
+            # Deleting non-existent subscriptions is handled gracefully.
+            attr.delete(self.env, 1)
 
         # def test_delete_by_sid_and_class(self):
 
