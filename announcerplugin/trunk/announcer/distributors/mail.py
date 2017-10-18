@@ -16,34 +16,26 @@ import Queue
 import hashlib
 import random
 import re
-import smtplib
-import sys
 import threading
 import time
 from email.charset import Charset, QP, BASE64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, formataddr
-from subprocess import Popen, PIPE
 
-from trac.config import BoolOption, ExtensionOption, IntOption, Option, \
-                        OrderedExtensionsOption
-from trac.core import Component, ExtensionPoint, Interface, TracError, \
-                      implements
+from trac.config import (
+    BoolOption, ExtensionOption, Option, OrderedExtensionsOption)
+from trac.core import (
+    Component, ExtensionPoint, Interface, TracError, implements)
+from trac.notification.api import IEmailSender
 from trac.util.text import CRLF
 
-from announcer.api import _, IAnnouncementAddressResolver, \
-                          IAnnouncementDistributor, IAnnouncementFormatter
+from announcer.api import (
+    _, IAnnouncementAddressResolver, IAnnouncementDistributor,
+    IAnnouncementFormatter)
 from announcer.model import Subscription
 from announcer.util.mail import set_header
 from announcer.util.mail_crypto import CryptoTxt
-
-
-class IEmailSender(Interface):
-    """Extension point interface for components that allow sending e-mail."""
-
-    def send(self, from_addr, recipients, message):
-        """Send message to recipients."""
 
 
 class IAnnouncementEmailDecorator(Interface):
@@ -508,105 +500,6 @@ class EmailDistributor(Component):
 
     def _get_decorators(self):
         return self.decorators[:]
-
-
-class SmtpEmailSender(Component):
-    """E-mail sender connecting to an SMTP server."""
-
-    implements(IEmailSender)
-
-    server = Option('smtp', 'server', 'localhost',
-        """SMTP server hostname to use for email notifications.""")
-
-    timeout = IntOption('smtp', 'timeout', 10,
-        """SMTP server connection timeout. (requires python-2.6)""")
-
-    port = IntOption('smtp', 'port', 25,
-        """SMTP server port to use for email notification.""")
-
-    user = Option('smtp', 'user', '', "Username for SMTP server.")
-
-    password = Option('smtp', 'password', '', "Password for SMTP server.")
-
-    use_tls = BoolOption('smtp', 'use_tls', False,
-        """Use SSL/TLS to send notifications over SMTP.""")
-
-    use_ssl = BoolOption('smtp', 'use_ssl', False,
-        """Use ssl for smtp connection.""")
-
-    debuglevel = IntOption('smtp', 'debuglevel', 0,
-        """Set to 1 for useful smtp debugging on stdout.""")
-
-    def send(self, from_addr, recipients, message):
-        # use defaults to make sure connect() is called in the constructor
-        smtpclass = smtplib.SMTP
-        if self.use_ssl:
-            smtpclass = smtplib.SMTP_SSL
-
-        args = {
-            'host': self.server,
-            'port': self.port
-        }
-        # timeout isn't supported until python 2.6
-        vparts = sys.version_info[0:2]
-        if vparts[0] >= 2 and vparts[1] >= 6:
-            args['timeout'] = self.timeout
-
-        smtp = smtpclass(**args)
-        smtp.set_debuglevel(self.debuglevel)
-        if self.use_tls:
-            smtp.ehlo()
-            if 'starttls' not in smtp.esmtp_features:
-                raise TracError(_("TLS enabled but server does not support "
-                                  "TLS"))
-            smtp.starttls()
-            smtp.ehlo()
-        if self.user:
-            smtp.login(
-                self.user.encode('utf-8'),
-                self.password.encode('utf-8')
-            )
-        smtp.sendmail(from_addr, recipients, message)
-        if self.use_tls or self.use_ssl:
-            # avoid false failure detection when the server closes
-            # the SMTP connection with TLS/SSL enabled
-            import socket
-            try:
-                smtp.quit()
-            except socket.sslerror:
-                pass
-        else:
-            smtp.quit()
-
-
-class SendmailEmailSender(Component):
-    """E-mail sender using a locally-installed sendmail program."""
-
-    implements(IEmailSender)
-
-    sendmail_path = Option('sendmail', 'sendmail_path', 'sendmail',
-        """Path to the sendmail executable.
-
-        The sendmail program must accept the `-i` and `-f` options.
-        """)
-
-    def send(self, from_addr, recipients, message):
-        self.log.info("Sending notification through sendmail at %s to %s",
-                      self.sendmail_path, recipients)
-        cmdline = [self.sendmail_path, '-i', '-f', from_addr]
-        cmdline.extend(recipients)
-        self.log.debug("Sendmail command line: %s", ' '.join(cmdline))
-        try:
-            child = Popen(cmdline, bufsize=-1, stdin=PIPE, stdout=PIPE,
-                          stderr=PIPE)
-            (out, err) = child.communicate(message)
-            if child.returncode or err:
-                raise Exception("Sendmail failed with (%s, %s), command: "
-                                "'%s'", child.returncode, err.strip(),
-                                cmdline)
-        except OSError, e:
-            self.log.error("Failed to run sendmail[%s] with error %s",
-                           self.sendmail_path, e)
 
 
 class DeliveryThread(threading.Thread):
