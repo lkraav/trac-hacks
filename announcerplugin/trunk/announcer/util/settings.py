@@ -8,7 +8,7 @@
 
 import pickle
 
-from announcer.api import istrue
+from trac.util import as_bool
 
 
 def encode(*args):
@@ -59,7 +59,7 @@ class SubscriptionSetting(object):
             row = cursor.fetchone()
             if row:
                 pair = decode(row[0])
-                authenticated = istrue(row[1])
+                authenticated = as_bool(row[1])
             else:
                 pair = (self.default['dists'], self.default['value'])
                 authenticated = False
@@ -88,7 +88,7 @@ class SubscriptionSetting(object):
                 dists, val = decode(result[2])
                 for dist in dists:
                     if match(dist, val):
-                        authenticated = istrue(result[1])
+                        authenticated = as_bool(result[1])
                         yield (dist, result[0], authenticated, None)
 
     def _attr_name(self):
@@ -115,10 +115,8 @@ class BoolSubscriptionSetting(object):
     def set_user_setting(self, session, value=None, dists=('email',),
                          save=True):
         """Sets session attribute to 1 or 0."""
-        if istrue(value):
-            session[self._attr_name()] = encode(dists, '1')
-        else:
-            session[self._attr_name()] = encode(dists, '0')
+        session[self._attr_name()] = \
+            encode(dists, '1' if as_bool(value) else '0')
         if save:
             session.save()
 
@@ -139,11 +137,11 @@ class BoolSubscriptionSetting(object):
             row = cursor.fetchone()
             if row:
                 dists, v = decode(row[0])
-                value = istrue(v)
-                authenticated = istrue(row[1])
+                value = as_bool(v)
+                authenticated = as_bool(row[1])
             else:
                 dists = self.default['dists']
-                value = istrue(self.default['value'])
+                value = as_bool(self.default['value'])
                 authenticated = False
 
             # We use None here so that Genshi templates check their checkboxes
@@ -166,8 +164,8 @@ class BoolSubscriptionSetting(object):
             for result in cursor.fetchall():
                 dists, val = decode(result[2])
                 for dist in dists:
-                    if istrue(val):
-                        authenticated = istrue(result[1])
+                    if as_bool(val):
+                        authenticated = as_bool(result[1])
                         yield (dist, result[0], authenticated, None)
 
     def _attr_name(self):

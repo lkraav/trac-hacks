@@ -330,13 +330,6 @@ class SubscriptionResolver(Component):
         return resolved_subs
 
 
-_TRUE_VALUES = ('yes', 'true', 'enabled', 'on', 'aye', '1', 1, True)
-
-
-def istrue(value, otherwise=False):
-    return True and (value in _TRUE_VALUES) or otherwise
-
-
 # Import i18n methods. Fallback to keep Babel optional.
 try:
     from trac.util.translation import domain_functions
