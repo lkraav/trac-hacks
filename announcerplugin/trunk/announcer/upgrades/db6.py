@@ -11,7 +11,7 @@
 import time
 import datetime
 
-from trac.util.datefmt import to_utimestamp, utc
+from trac.util.datefmt import datetime_now, to_utimestamp, utc
 
 
 def do_upgrade(env, ver, cursor):
@@ -58,4 +58,4 @@ def _iso8601_to_ts(s):
         return to_utimestamp(dt)
     except (AttributeError, TypeError, ValueError):
         # Create a valid timestamp anyway.
-        return to_utimestamp(datetime.datetime.now(utc))
+        return to_utimestamp(datetime_now(utc))

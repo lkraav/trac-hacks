@@ -14,9 +14,7 @@
 # checking for unauthenticated users should be done against the 'anonymous'
 # user.
 
-import datetime
-
-from trac.util.datefmt import to_utimestamp, utc
+from trac.util.datefmt import datetime_now, to_utimestamp, utc
 
 __all__ = ['Subscription', 'SubscriptionAttribute']
 
@@ -49,7 +47,7 @@ class Subscription(object):
             priority = len(cls.find_by_sid_and_distributor(
                 env, subscription['sid'], subscription['authenticated'],
                 subscription['distributor'], db)) + 1
-            now = to_utimestamp(datetime.datetime.now(utc))
+            now = to_utimestamp(datetime_now(utc))
             cursor.execute("""
                 INSERT INTO subscription
                        (time,changetime,sid,authenticated,
@@ -231,7 +229,7 @@ class Subscription(object):
 
         with self.env.db_transaction as db:
             cursor = db.cursor()
-            now = to_utimestamp(datetime.datetime.now(utc))
+            now = to_utimestamp(datetime_now(utc))
             cursor.execute("""
                 UPDATE subscription
                    SET changetime=%s,
