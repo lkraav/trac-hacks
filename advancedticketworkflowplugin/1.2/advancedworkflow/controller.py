@@ -205,6 +205,82 @@ class TicketWorkflowOpOwnerField(TicketWorkflowOpBase):
         return ticket[field]
 
 
+class TicketWorkflowOpFieldSelf(TicketWorkflowOpBase):
+    """Sets the value of a ticket field to the current user
+
+    <someaction>.operations = set_field_to_self
+    <someaction>.set_field_to_self = myfield
+
+    Don't forget to add the `TicketWorkflowOpFieldSelf` to the workflow
+    option in [ticket].
+    If there is no workflow option, the line will look like this:
+
+    workflow = ConfigurableTicketWorkflow,TicketWorkflowOpFieldSelf
+    """
+
+    _op_name = 'set_field_to_self'
+
+    # ITicketActionController methods
+
+    def render_ticket_action_control(self, req, ticket, action):
+        """Returns the action control"""
+        actions = ConfigurableTicketWorkflow(self.env).actions
+        label = actions[action]['name']
+        hint = _("The '%(field)s' field will be set to '%(username)s'.",
+            field=self._field_name(action, ticket),
+            username=req.authname)
+        control = tag('')
+        return (label, control, hint)
+
+    def get_ticket_changes(self, req, ticket, action):
+        """Returns the change of the field."""
+        return {self._field_name(action, ticket): req.authname}
+
+    def _field_name(self, action, ticket):
+        """Determines the field to set to self """
+        field = self.config.get('ticket-workflow',
+                                action + '.' + self._op_name).strip()
+        return field
+
+
+class TicketWorkflowOpFieldsBlank(TicketWorkflowOpBase):
+    """Sets the value of ticket fields to be the empty string
+
+    <someaction>.operations = set_fields_to_blank
+    <someaction>.set_fields_to_blank = myfield_one, myfield_two
+
+    Don't forget to add the `TicketWorkflowOpFieldsBlank` to the workflow
+    option in [ticket].
+    If there is no workflow option, the line will look like this:
+
+    workflow = ConfigurableTicketWorkflow,TicketWorkflowOpFieldsBlank
+    """
+
+    _op_name = 'set_fields_to_blank'
+
+    # ITicketActionController methods
+
+    def render_ticket_action_control(self, req, ticket, action):
+        """Returns the action control"""
+        actions = ConfigurableTicketWorkflow(self.env).actions
+        label = actions[action]['name']
+        fields = ["'%s'" % x for x in self._field_names(action, ticket)]
+        hint = ngettext("The %(fields)s field will be cleared.",
+                        "The %(fields)s fields will be cleared.", len(fields),
+                        fields=', '.join(fields))
+        control = tag('')
+        return (label, control, hint)
+
+    def get_ticket_changes(self, req, ticket, action):
+        """Returns the changes to the fields."""
+        return {x: '' for x in self._field_names(action, ticket)}
+
+    def _field_names(self, action, ticket):
+        """Determines the fields to set to blank """
+        return self.config.getlist('ticket-workflow',
+                                   action + '.' + self._op_name)
+
+
 class TicketWorkflowOpOwnerPrevious(TicketWorkflowOpBase):
     """Sets the owner to the previous owner
 
