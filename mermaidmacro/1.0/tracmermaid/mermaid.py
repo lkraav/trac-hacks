@@ -93,7 +93,7 @@ class MermaidMacro(WikiMacroBase):
                             name = c
                             break
                     else:
-                        name = description
+                        name = title
                     line = line[0:m.start(1)] + '"%s" "%s"' % (
                         href.replace('"', ''), name.replace('"', ''))
             lines.append(line)

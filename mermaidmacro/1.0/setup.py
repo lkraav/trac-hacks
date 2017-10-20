@@ -18,6 +18,7 @@ setup(
             'tracmermaid = tracmermaid',
         ],
     },
+    install_requires=['Trac'],
     package_data = {
         'tracmermaid': [
             'htdocs/*',
