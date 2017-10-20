@@ -62,7 +62,7 @@ class MermaidMacro(WikiMacroBase):
             </script>""" % (
                 id_attr,
                 escape(context.resource.realm),
-                escape(context.resource.id),
+                escape(unicode(context.resource.id)),
                 escape(context.resource.version or ''),
                 escape(unicode_quote(content)),
                 escape(content))

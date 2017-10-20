@@ -10,7 +10,7 @@ from setuptools import find_packages, setup
 
 setup(
     name = 'TracMermaid',
-    version = '0.4.1',
+    version = '0.4.2',
     packages = find_packages(exclude=['*.tests*']),
     license = "BSD 3-Clause",
     entry_points = {
