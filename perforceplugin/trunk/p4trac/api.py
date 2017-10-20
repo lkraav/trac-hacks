@@ -9,13 +9,15 @@ from datetime import datetime
 from trac.config import ListOption, Option
 from trac.core import Component, implements, TracError
 from trac.versioncontrol import Changeset, Node, Repository, \
-                                Authorizer, IRepositoryConnector, \
+                                IRepositoryConnector, \
                                 NoSuchChangeset, NoSuchNode
 from trac.versioncontrol.cache import CachedRepository
 from trac.versioncontrol.web_ui.browser import IPropertyRenderer
 from trac.util import sorted, embedded_numbers
 from trac.util.text import to_unicode
 from trac.util.datefmt import utc
+
+from trac.env import ISystemInfoProvider
 
 from p4trac.repos import NO_CLIENT
 
@@ -69,7 +71,7 @@ class PerforceConnector(Component):
     the Trac repository manager.
     """
 
-    implements(IRepositoryConnector)
+    implements(ISystemInfoProvider, IRepositoryConnector)
 
     port = Option('perforce', 'port', 'localhost:1666', doc=
         """Perforce server IP address and port.
@@ -103,6 +105,7 @@ class PerforceConnector(Component):
         """)
 
     def __init__(self):
+        self._version = None
         try:
             import perforce
             self.log.debug('Perforce bindings imported')
@@ -110,13 +113,21 @@ class PerforceConnector(Component):
             self.log.warning('Failed to import PyPerforce: ' + str(e))
             self.hasPerforce = False
         else:
+            self._version = perforce.__version__
             self.hasPerforce = True
 
+    # ISystemInfoProvider methods
+    def get_system_info(self):
+        if self.hasPerforce:
+            yield 'Perforce', self._version
+
+
+    # IRepositoryConnector methods
     def get_supported_types(self):
         if self.hasPerforce:
             yield ("perforce", 4)
 
-    def get_repository(self, repos_type, repos_dir, authname):
+    def get_repository(self, repos_type, repos_dir, params):
         """Return a `PerforceRepository`.
 
         The repository is wrapped in a `CachedRepository`.
@@ -150,12 +161,12 @@ class PerforceConnector(Component):
         jobPrefixLength = len(options.get('job_prefix', 'job'))
         p4.client = self.workspace
 
-        p4_repos = PerforceRepository(p4, None, self.log, jobPrefixLength,
-                                      {'labels': self.labels,
-                                       'branches': self.branches})
-        repos = CachedRepository(self.env.get_db_cnx(), p4_repos, None, self.log)
-        if authname:
-            pass
+        params.update(labels=self.labels,branches=self.branches)
+
+        # Calling CachedRepository depending on version
+        # (for backward-compatibility with 0.11)
+        p4_repos = PerforceRepository(p4, None, self.log, jobPrefixLength, params)
+        repos = CachedRepository(self.env, p4_repos, self.log)
         return repos
 
 
@@ -190,9 +201,10 @@ class PerforceRepository(Repository):
         self.options = options
         self._connection = connection
         name = 'p4://%s@%s' % (connection.user, connection.port)
-        Repository.__init__(self, name, authz, log)
+        Repository.__init__(self, name, options, log)
         from p4trac.repos import P4Repository
         self._repos = P4Repository(connection, log)
+        #self.repos = self._repos
 
     def __del__(self):
         self.close()
@@ -214,7 +226,7 @@ class PerforceRepository(Repository):
                 folder = posixpath.dirname(path)
                 try:
                     entries = [n for n in self.get_node(folder).get_entries()]
-                    for node in sorted(entries, key=lambda n: 
+                    for node in sorted(entries, key=lambda n:
                                        embedded_numbers(n.path.lower())):
                         if node.kind == Node.DIRECTORY:
                             yield node
@@ -228,7 +240,7 @@ class PerforceRepository(Repository):
 
     def get_quickjump_entries(self, rev):
         """Retrieve known branches, as (name, id) pairs.
-        
+
         Purposedly ignores `rev` and always takes the last revision.
         """
         self.log.debug('get_quickjump_entries(%r)' % rev)
@@ -284,15 +296,15 @@ class PerforceRepository(Repository):
         self.log.debug('get_node(%s, %s) called' % (path, rev))
         from p4trac.repos import P4NodePath
         nodePath = P4NodePath(P4NodePath.normalisePath(path), rev)
-        return PerforceNode(nodePath, self._repos, self.log)
+        return PerforceNode(nodePath, self, self.log)
 
     def get_oldest_rev(self):
-        return self.next_rev(0, '')
+        return self.next_rev(0)
 
     def get_youngest_rev(self):
         return self._repos.getLatestChange()
 
-    def previous_rev(self, rev, path):
+    def previous_rev(self, rev, path=''):
         self.log.debug('previous_rev(%r)' % rev)
         if not isinstance(rev, int):
             rev = self.short_rev(rev)
@@ -327,7 +339,6 @@ class PerforceRepository(Repository):
         else:
             path = P4NodePath.normalisePath(path)
         node = self._repos.getNode(P4NodePath(path, rev))
-        self.log.debug(u'node : %i %i %s' % (node.isDirectory, node.nodePath.isRoot, node.nodePath.path))
 
         if node.isDirectory:
             if node.nodePath.isRoot:
@@ -456,7 +467,7 @@ class PerforceRepository(Repository):
         # deleted or a file has changed to a directory or vica versa.
         from p4trac.repos import P4NodePath
         nodePath = P4NodePath(P4NodePath.normalisePath(path), rev)
-        node = PerforceNode(nodePath, self._repos, self.log)
+        node = PerforceNode(nodePath, self, self.log)
         return node.get_history(limit)
 
     def normalize_path(self, path):
@@ -524,14 +535,14 @@ class PerforceRepository(Repository):
             oldFileNodePath, newFileNodePath = change
             if oldFileNodePath is not None:
                 oldFileNode = PerforceNode(oldFileNodePath,
-                                           self._repos,
+                                           self,
                                            self.log)
             else:
                 oldFileNode = None
 
             if newFileNodePath is not None:
                 newFileNode = PerforceNode(newFileNodePath,
-                                           self._repos,
+                                           self,
                                            self.log)
             else:
                 newFileNode = None
@@ -548,16 +559,16 @@ class PerforceNode(Node):
     """A Perforce repository node (depot, directory or file)"""
 
     def __init__(self, nodePath, repos, log):
-        log.debug('Creation of PerforceNode for %r' % nodePath)
+        log.debug('Created PerforceNode for %r' % nodePath)
         self._log = log
         self._nodePath = nodePath
-        self._repos = repos
+        self._repos = repos._repos
         self._node = self._repos.getNode(nodePath)
         node_type = self._get_kind()
         self.created_rev = self._node.change
         self.created_path = self._nodePath.path
         self.rev = self.created_rev
-        Node.__init__(self, self._nodePath.path, self.rev, node_type)
+        Node.__init__(self, repos, self._nodePath.path, self.rev, node_type)
 
     def _get_kind(self):
         if self._node.isDirectory:
@@ -576,11 +587,11 @@ class PerforceNode(Node):
         if self.isdir:
             for node in self._node.subDirectories:
                 self._log.debug('got subddir %s' % node.nodePath.fullPath)
-                yield PerforceNode(node.nodePath, self._repos, self._log)
+                yield PerforceNode(node.nodePath, self.repos, self._log)
 
             for node in self._node.files:
                 self._log.debug('got file %s' % node.nodePath.fullPath)
-                yield PerforceNode(node.nodePath, self._repos, self._log)
+                yield PerforceNode(node.nodePath, self.repos, self._log)
 
     def get_history(self, limit=None):
         self._log.debug('PerforceNode.get_history(%r)' % limit)
@@ -656,9 +667,9 @@ class PerforceNode(Node):
             output = P4ChangesOutputConsumer(self._repos)
 
             if self._nodePath.isRoot:
-                queryPath = '@<=%s' % self._nodePath.rev[1:]
+                queryPath = '%s%s' % (rootPath(self._repos._connection), self._nodePath.rev)
             else:
-                queryPath = '%s/...@<=%s' % (self._nodePath.path, self._nodePath.rev[1:])
+                queryPath = '%s/...%s' % (self._nodePath.path, self._nodePath.rev)
 
             if limit is None:
                 self._repos._connection.run('changes', '-l', '-s', 'submitted',
@@ -744,7 +755,7 @@ class PerforceNode(Node):
         return self._nodePath.leaf
 
     def get_last_modified(self):
-        return datetime.fromtimestamp(self._repos.getChangelist(self._node.change).time, utc)
+        return self._repos.getChangelist(self._node.change).time
 
 
 class PerforceChangeset(Changeset):
@@ -758,7 +769,7 @@ class PerforceChangeset(Changeset):
         self._repos = repository
         self._log = log
         self._changelist = self._repos.getChangelist(self._change)
-        Changeset.__init__(self, self._change, self._changelist.description,
+        Changeset.__init__(self, self._repos, self._change, self._changelist.description,
                            self._changelist.user,
                            datetime.fromtimestamp(self._changelist.time, utc))
 
