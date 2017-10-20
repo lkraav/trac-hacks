@@ -205,20 +205,20 @@ class TicketWorkflowOpOwnerField(TicketWorkflowOpBase):
         return ticket[field]
 
 
-class TicketWorkflowOpFieldSelf(TicketWorkflowOpBase):
+class TicketWorkflowOpFieldAuthor(TicketWorkflowOpBase):
     """Sets the value of a ticket field to the current user
 
-    <someaction>.operations = set_field_to_self
-    <someaction>.set_field_to_self = myfield
+    <someaction>.operations = set_field_to_author
+    <someaction>.set_field_to_author = myfield
 
-    Don't forget to add the `TicketWorkflowOpFieldSelf` to the workflow
+    Don't forget to add the `TicketWorkflowOpFieldAuthor` to the workflow
     option in [ticket].
     If there is no workflow option, the line will look like this:
 
-    workflow = ConfigurableTicketWorkflow,TicketWorkflowOpFieldSelf
+    workflow = ConfigurableTicketWorkflow,TicketWorkflowOpFieldAuthor
     """
 
-    _op_name = 'set_field_to_self'
+    _op_name = 'set_field_to_author'
 
     # ITicketActionController methods
 
@@ -243,20 +243,20 @@ class TicketWorkflowOpFieldSelf(TicketWorkflowOpBase):
         return field
 
 
-class TicketWorkflowOpFieldsBlank(TicketWorkflowOpBase):
+class TicketWorkflowOpFieldsClear(TicketWorkflowOpBase):
     """Sets the value of ticket fields to be the empty string
 
-    <someaction>.operations = set_fields_to_blank
-    <someaction>.set_fields_to_blank = myfield_one, myfield_two
+    <someaction>.operations = clear_fields
+    <someaction>.clear_fields = myfield_one, myfield_two
 
-    Don't forget to add the `TicketWorkflowOpFieldsBlank` to the workflow
+    Don't forget to add the `TicketWorkflowOpFieldsClear` to the workflow
     option in [ticket].
     If there is no workflow option, the line will look like this:
 
-    workflow = ConfigurableTicketWorkflow,TicketWorkflowOpFieldsBlank
+    workflow = ConfigurableTicketWorkflow,TicketWorkflowOpFieldsClear
     """
 
-    _op_name = 'set_fields_to_blank'
+    _op_name = 'clear_fields'
 
     # ITicketActionController methods
 
