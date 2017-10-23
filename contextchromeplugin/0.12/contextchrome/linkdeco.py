@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2012-2013,2017 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -9,6 +9,8 @@
 
 from trac.core import Component, implements
 from trac.ticket.api import TicketSystem
+from trac.ticket.model import Ticket
+from trac.ticket.web_ui import TicketModule
 from trac.web.api import IRequestHandler, IRequestFilter
 from trac.config import ListOption, IntOption
 from trac.util import Ranges, as_int
@@ -40,6 +42,7 @@ class TicketLinkDecorator(Component):
 
     def wrap(self):
         ticketsystem = self.compmgr[TicketSystem]
+        ticketmodule = self.compmgr[TicketModule]
 
         def _format_link(*args, **kwargs):  # hook method
             element = self.wrapped[0](*args, **kwargs)
@@ -58,13 +61,23 @@ class TicketLinkDecorator(Component):
                     deco = self.get_comment_deco(*args, **kwargs) or []
                     element.attrib |= [('class', ' '.join(deco + [class_]))]
             return element
+        
+        def get_timeline_events(*args, **kwargs):
+            events = self.wrapped[2](*args, **kwargs)
+            for event in events:
+                ticket = Ticket(self.env, event[3][0].id)
+                deco = [event[0]] + (self._decorate(ticket) or [])
+                event = (' '.join(deco), ) + event[1:]
+                yield event
 
         self.wrapped = [
             ticketsystem._format_link,
             ticketsystem._format_comment_link,
+            ticketmodule.get_timeline_events,
         ]
         ticketsystem._format_link = _format_link
         ticketsystem._format_comment_link = _format_comment_link
+        ticketmodule.get_timeline_events = get_timeline_events
 
     def get_ticket_deco(self, formatter, ns, target, label, fullmatch=None):
         link, params, fragment = formatter.split_link(target)  # @UnusedVariable

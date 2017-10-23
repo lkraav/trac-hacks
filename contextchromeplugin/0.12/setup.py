@@ -5,9 +5,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='ContextChrome',
-    version='0.4',
+    version='0.5',
     license='Modified BSD;  except xdr.js under MIT-LICENSE',
-    author='MATOBA Akihiro',
+    author= {'MATOBA Akihiro', 'Ryan J Ollos'},
     author_email='matobaa+trac-hacks@gmail.com',
     url='http://trac-hacks.org/wiki/matobaa',
     description='Add context-aware css attribute or style',
