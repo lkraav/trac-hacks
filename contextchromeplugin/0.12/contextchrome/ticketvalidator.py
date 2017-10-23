@@ -82,6 +82,6 @@ class TicketValidatorDecolator(Component):
                         'ticket.html',  # /ticket/{\d} or /newticket
                         ]:
             add_script(req, "contextchrome/js/ticketvalidatordecolator.js")
-            status = 'ticket' in data and data['ticket'].values['status'] or 'sentinel'
+            status = 'ticket' in data and 'status' in data['ticket'].values and data['ticket'].values['status'] or 'sentinel'
             add_script_data(req, {"contextchrome_tracstatus": status})
         return stream
