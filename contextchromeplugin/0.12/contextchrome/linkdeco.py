@@ -21,6 +21,7 @@ from datetime import datetime
 from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script,\
     add_script_data
 from pkg_resources import ResourceManager
+from trac.resource import Resource
 
 
 class TicketLinkDecorator(Component):
@@ -65,9 +66,10 @@ class TicketLinkDecorator(Component):
         def get_timeline_events(*args, **kwargs):
             events = self.wrapped[2](*args, **kwargs)
             for event in events:
-                ticket = Ticket(self.env, event[3][0].id)
-                deco = [event[0]] + (self._decorate(ticket) or [])
-                event = (' '.join(deco), ) + event[1:]
+                if(isinstance(event[3][0], Resource)):
+                    ticket = Ticket(self.env, event[3][0].id)
+                    deco = [event[0]] + (self._decorate(ticket) or [])
+                    event = (' '.join(deco), ) + event[1:]
                 yield event
 
         self.wrapped = [
