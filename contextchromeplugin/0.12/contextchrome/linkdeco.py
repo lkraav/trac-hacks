@@ -21,8 +21,6 @@ from datetime import datetime
 from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script,\
     add_script_data
 from pkg_resources import ResourceManager
-from trac.resource import Resource
-from warnings import catch_warnings
 
 
 class TicketLinkDecorator(Component):
