@@ -22,6 +22,7 @@ from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script,\
     add_script_data
 from pkg_resources import ResourceManager
 from trac.resource import Resource
+from warnings import catch_warnings
 
 
 class TicketLinkDecorator(Component):
@@ -66,10 +67,12 @@ class TicketLinkDecorator(Component):
         def get_timeline_events(*args, **kwargs):
             events = self.wrapped[2](*args, **kwargs)
             for event in events:
-                if(isinstance(event[3][0], Resource)):
+                try:
                     ticket = Ticket(self.env, event[3][0].id)
                     deco = [event[0]] + (self._decorate(ticket) or [])
                     event = (' '.join(deco), ) + event[1:]
+                except:
+                    pass
                 yield event
 
         self.wrapped = [
