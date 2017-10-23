@@ -66,7 +66,7 @@ Example:
             ticketsystem = TicketSystem(self.env)
             #
             labels = ticketsystem.get_ticket_field_labels()
-            headers = [{'name': col, 'label': labels.get(col, _('Ticket'))} for col in cols]
+            headers = [{'name': col, 'field': {}, 'label': labels.get(col, _('Ticket'))} for col in cols]
             #
             fields = {}
             ticket_fields = ticketsystem.get_ticket_fields()
