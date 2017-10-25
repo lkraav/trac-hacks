@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name='TracChangeLog',
-    version='0.4',
+    version='0.5',
     packages=['changelog'],
     author='Alec Thomas',
     maintainer='Ryan Ollos',

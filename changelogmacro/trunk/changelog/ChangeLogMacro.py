@@ -11,12 +11,10 @@
 import re
 from StringIO import StringIO
 
-from trac.core import *
-from trac.mimeview import *
-from trac.util import format_datetime, Markup
-from trac.util.html import html
+from trac.util.datefmt import format_datetime
+from trac.util.html import Markup, html
 from trac.util.translation import _
-from trac.versioncontrol.api import NoSuchNode
+from trac.versioncontrol.api import NoSuchNode, RepositoryManager
 from trac.web.chrome import web_context
 from trac.wiki.formatter import format_to_html, format_to_oneliner, \
     system_message
@@ -29,11 +27,11 @@ class ChangeLogMacro(WikiMacroBase):
     The !ChangeLog macro writes a log of the last changes of a repository at a
     given path. Following variants are possible to use:
     {{{
-    1. [[ChangeLog([reponame:]path)]]
-    2. [[ChangeLog([reponame:]path@rev)]]
-    3. [[ChangeLog([reponame:]path@rev, limit)]]
-    4. [[ChangeLog([reponame:]path@from-to)]]
-    5. [[ChangeLog([reponame:]path, limit, rev)]]
+    1. [[ChangeLog(/path)]]
+    2. [[ChangeLog(/path@rev)]]
+    3. [[ChangeLog(/path@rev, limit)]]
+    4. [[ChangeLog(/path@from-to)]]
+    5. [[ChangeLog(/path, limit, rev)]]
     }}}
 
     1. Default repository is used if reponame is left out. To show the last
@@ -41,41 +39,41 @@ class ChangeLogMacro(WikiMacroBase):
        {{{
        [[ChangeLog(/)]]
        }}}
-       To show the last five changes of the trunk folder in a named repo:
+       To show the last five changes of the trunk folder in a named otherrepo:
        {{{
-       [[ChangeLog(otherrepo:/trunk)]]
+       [[ChangeLog(/otherrepo/trunk)]]
        }}}
     2. The ending revision can be set.
        To show the last five changes up to revision 99:
        {{{
-       [[ChangeLog(otherrepo:/trunk@99)]]
+       [[ChangeLog(/otherrepo/trunk@99)]]
        }}}
     3. The limit can be set by an optional parameter. To show the last
        10 changes, up to revision 99:
        {{{
-       [[ChangeLog(otherrepo:/trunk@99, 10)]]
+       [[ChangeLog(/otherrepo/trunk@99, 10)]]
        }}}
     4. A range of revisions can be logged.
        {{{
-       [[ChangeLog(otherrepo:/trunk@90-99)]]
+       [[ChangeLog(/otherrepo/trunk@90-99)]]
        }}}
        To lists all changes:
        {{{
-       [[ChangeLog(otherrepo:/trunk@1-HEAD)]]
+       [[ChangeLog(/otherrepo/trunk@1-HEAD)]]
        }}}
        HEAD can be left out:
        {{{
-       [[ChangeLog(otherrepo:/trunk@1-)]]
+       [[ChangeLog(/otherrepo/trunk@1-)]]
        }}}
     5. For backwards compatibility, revision can be stated as a third
        parameter:
        {{{
-       [[ChangeLog(otherrepo:/trunk, 10, 99)]]
+       [[ChangeLog(/otherrepo/trunk, 10, 99)]]
        }}}
 
     limit and rev may be keyword arguments.
     {{{
-    [[ChangeLog(otherrepo:/trunk, limit=10, rev=99)]]
+    [[ChangeLog(/otherrepo/trunk, limit=10, rev=99)]]
     }}}
     """
 
@@ -91,16 +89,18 @@ class ChangeLogMacro(WikiMacroBase):
             return system_message(_("ChangeLog macro error"),
                                   _("Repository path is required."))
         args += [None, None]
-        path, limit, rev = args[:3]
+        raw_path, limit, rev = args[:3]
         limit = kwargs.pop('limit', limit)
         rev = kwargs.pop('rev', rev)
-        if ':' in path:
-            reponame, path = path.split(':', 2)
+        if '@' in raw_path:
+            raw_path, rev = raw_path.split('@', 2)
+        if ':' in raw_path:  # Compatibility with version 0.4
+            abs_path = '/'.join(raw_path.split(':', 2))
         else:
-            reponame = ''
-        if '@' in path:
-            path, rev = path.split('@', 2)
-        repo = self.env.get_repository(reponame)
+            abs_path = raw_path
+        reponame, repo, path = \
+            RepositoryManager(self.env).get_repository_by_path(abs_path)
+        log_href = req.href.log(abs_path, rev=rev)
         path = repo.normalize_path(path)
         revstart = 0
         if rev is not None:
@@ -153,7 +153,7 @@ class ChangeLogMacro(WikiMacroBase):
             message = _remove_p(format_to_html(
                 self.env, context, change.message, escape_newlines=True))
             out.write('\n<dd>\n%s\n</dd>' % message)
-        out.write(html.small(html.a(_("(more)"), href=req.href.log(path))))
+        out.write(html.small(html.a(_("(more)"), href=log_href)))
         out.write('\n</dl>\n</div>')
         out.write('\n<p>')  # re-open surrounding paragraph
         return out.getvalue()
