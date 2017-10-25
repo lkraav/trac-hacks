@@ -58,6 +58,7 @@ The Macro accepts arguments as well:
  * '''showproblems'''     to show all pages which have problems
  * '''showuntranslated''' to show all untranslated pages
  * '''showstatus'''       to show one big status table
+ * '''skipmissing'''      skip links to missing pages in status table (speed up display a lot)
  * '''lang=<code>'''      to restrict output of show outdated, status or missing to a specific language
 
  * '''label_outdated'''   label to display when using the showoutdated option"""
@@ -341,7 +342,7 @@ The Macro accepts arguments as well:
             res = u'none\n'
         return u"== Problem pages ==\n" + res;
 
-    def _get_status(self, lang):
+    def _get_status(self, lang, skipmissing):
         res = ""
 
         base_pages = []
@@ -403,6 +404,8 @@ The Macro accepts arguments as well:
                     color = "grey"
                 if lang != None:
                     res += "||$$$%s$$$[[wiki:/%s|%s]]" % (color, transpage, base_page)
+                elif skipmissing and color == "grey":
+                    res += "|| "
                 else:
                     res += "||$$$%s$$$[[wiki:/%s|%s]]" % (color, transpage, l)
             res +="||\n"
@@ -426,6 +429,7 @@ The Macro accepts arguments as well:
         show = u"";
         lang = None
         silent = u'silent' in args
+        skipmissing = u'skipmissing' in args
         outdated = u""
         if u'lang' in kw:
             lang = kw[u'lang']
@@ -434,7 +438,7 @@ The Macro accepts arguments as well:
         if u'showproblems' in args:
             show += self._get_problems(silent)
         if u'showstatus' in args:
-            show += self._get_status(lang)
+            show += self._get_status(lang, skipmissing)
         if u'showoutdated' in args:
             label = None
             if u'label_outdated' in kw:
