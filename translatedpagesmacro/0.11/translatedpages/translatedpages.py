@@ -253,7 +253,7 @@ The Macro accepts arguments as well:
             if arg == 'showoutdated' or arg == 'showuntranslated' or \
                 arg == 'showmissing' or arg == 'showstatus' or arg == 'showproblems':
                     show = True;
-            elif arg != 'silent':
+            elif arg != 'silent' and arg != 'skipmissing':
                 resargs += "||[wiki:/%s]||%s||unknown argument '%s'||\n" % (page, argstr, arg)
         for arg in kw.keys():
             if arg == 'lang':
