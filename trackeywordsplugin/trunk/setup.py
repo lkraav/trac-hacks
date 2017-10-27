@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2007 Thomas Vander Stichele <thomas at apestaart dot org>
+# Copyright (C) 2007-2009 Thomas Vander Stichele <thomas at apestaart dot org>
+# Copyright (C) 2010-2017 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -11,7 +12,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracKeywordsPlugin',
-    version=0.3,
+    version=1.0,
     description="Allows adding and removing keywords on a ticket from a list",
     author="Thomas Vander Stichele",
     author_email="thomas at apestaart dot org",
@@ -20,7 +21,7 @@ setup(
     packages=find_packages(exclude=['*.tests*']),
     package_data={
         'trackeywords': [
-            'templates/*.html',
+            'htdocs/*.js', 'htdocs/*.css',
             'README', 'TODO', 'ChangeLog'
         ]
     },

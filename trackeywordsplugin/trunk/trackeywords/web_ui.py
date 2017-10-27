@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2007 Thomas Vander Stichele <thomas at apestaart dot org>
+# Copyright (C) 2007-2009 Thomas Vander Stichele <thomas at apestaart dot org>
+# Copyright (C) 2010-2017 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.filters.transform import Transformer
 from trac.core import Component, implements
 from trac.web.api import IRequestFilter
-from trac.web.chrome import Chrome, ITemplateProvider, ITemplateStreamFilter
+from trac.web.chrome import (
+    ITemplateProvider, add_script, add_script_data, add_stylesheet)
 
 
 class TracKeywordsComponent(Component):
@@ -25,7 +26,7 @@ class TracKeywordsComponent(Component):
     The description will show up as a tooltip when you hover over the keyword.
     """
 
-    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateProvider)
 
     def __init__(self):
         self.keywords = self._get_keywords()
@@ -33,9 +34,10 @@ class TracKeywordsComponent(Component):
         # tagging support.
         try:
             from tractags.wiki import WikiTagInterface
-            self.tagsplugin_enabled = self._is_enabled(WikiTagInterface)
         except ImportError:
             self.tagsplugin_enabled = False
+        else:
+            self.tagsplugin_enabled = self.env.is_enabled(WikiTagInterface)
 
     # IRequestFilter methods
 
@@ -43,44 +45,20 @@ class TracKeywordsComponent(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if template in ('ticket.html', 'wiki.html'):
-            data['keywords'] = self.keywords
+        if template in ('ticket.html', 'wiki_edit.html'):
+            add_script_data(req, trac_keywords=self.keywords)
+            add_script(req, 'keywords/trac_keywords.js')
+            add_stylesheet(req, 'keywords/trac_keywords.css')
         return template, data, content_type
 
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        return []
+        from pkg_resources import resource_filename
+        return [('keywords', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'ticket.html':
-            ticket = data.get('ticket')
-            if self.keywords and ticket:
-                if ticket.exists and \
-                        'TICKET_CHGPROP' in req.perm(ticket.resource):
-                    filter = Transformer('//fieldset[@id="properties"]')
-                    stream |= filter.after(self._render_template(req))
-                elif not ticket.exists:
-                    filter = Transformer('//fieldset[@id="properties"]')
-                    stream |= filter.after(self._render_template(req))
-        elif filename == 'wiki_edit.html' and self.tagsplugin_enabled:
-            filter = Transformer('//fieldset[@id="changeinfo"]')
-            stream |= filter.after(self._render_template(req))
-
-        return stream
-
-    # Internal methods
-
-    def _render_template(self, req):
-        data = {'keywords': self.keywords}
-        return Chrome(self.env). \
-            render_template(req, 'keywords.html', data, 'MarkupTemplate', True)
+        return []
 
     def _get_keywords(self):
         keywords = []
@@ -93,19 +71,4 @@ class TracKeywordsComponent(Component):
                 ('patch', 'has a patch attached'),
                 ('easy', 'easy to fix, good for beginners'),
             ]
-
         return sorted(keywords)
-
-    # Compatibility code for `ComponentManager.is_enabled`
-    # (available since Trac 0.12)
-    def _is_enabled(self, cls):
-        """Return whether the given component class is enabled.
-
-           For Trac 0.11 the missing algorithm is included as fallback.
-        """
-        try:
-            return self.env.is_enabled(cls)
-        except AttributeError:
-            if cls not in self.env.enabled:
-                self.env.enabled[cls] = self.env.is_component_enabled(cls)
-            return self.env.enabled[cls]
