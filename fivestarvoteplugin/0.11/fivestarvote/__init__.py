@@ -2,19 +2,19 @@
 # Ported to a 5 star style voting system
 
 import re
-from trac.core import *
+from pkg_resources import resource_filename
+
+from trac.core import Component, implements
 from trac.config import ListOption
+from trac.db import DatabaseManager, Table, Column
 from trac.env import IEnvironmentSetupParticipant
+from trac.perm import IPermissionRequestor
+from trac.resource import get_resource_url
+from trac.util import get_reporter_id
+from trac.util.html import html as tag
 from trac.web.api import IRequestFilter, IRequestHandler, Href
 from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_stylesheet, \
-                            add_script, add_notice
-from trac.resource import get_resource_url
-from trac.db import DatabaseManager, Table, Column
-from trac.perm import IPermissionRequestor
-from trac.util import get_reporter_id
-from genshi import Markup, Stream
-from genshi.builder import tag
-from pkg_resources import resource_filename
+    add_script
 
 
 class FiveStarVoteSystem(Component):
@@ -23,7 +23,8 @@ class FiveStarVoteSystem(Component):
     implements(ITemplateProvider, IRequestFilter, IRequestHandler,
                IEnvironmentSetupParticipant, IPermissionRequestor)
 
-    voteable_paths = ListOption('fivestarvote', 'paths', '^/$,^/wiki*,^/ticket*',
+    voteable_paths = ListOption('fivestarvote', 'paths',
+        '^/$,^/wiki*,^/ticket*',
         doc='List of URL paths to allow voting on. Globs are supported.')
 
     schema = [
@@ -31,21 +32,23 @@ class FiveStarVoteSystem(Component):
             Column('resource'),
             Column('username'),
             Column('vote', 'int'),
-            ]
         ]
+    ]
 
     path_match = re.compile(r'/fivestarvote/([1-5])/(.*)')
 
-
     # Public methods
     def get_vote_counts(self, resource):
-        """Get total, count and tally vote counts and return them in a tuple."""
+        """Get total, count and tally vote counts and return them in a
+        tuple.
+        """
         resource = self.normalise_resource(resource)
         db = self.env.get_db_cnx()
         cursor = db.cursor()
-        sql = "select sum(vote), count(*) from fivestarvote where (resource = '%s')" % resource
-        self.env.log.debug("sql:: %s" % sql)
-        cursor.execute(sql)
+        cursor.execute("""
+            select sum(vote), count(*) from fivestarvote
+            where (resource = '%s')
+            """ % resource)
         row = cursor.fetchone()
         sum = row[0] or 0
         total = row[1] or 0
@@ -73,9 +76,10 @@ class FiveStarVoteSystem(Component):
         cursor.execute('DELETE FROM fivestarvote WHERE username=%s '
                        'AND resource = %s', (get_reporter_id(req), resource))
         if vote:
-            cursor.execute('INSERT INTO fivestarvote (resource, username, vote) '
-                           'VALUES (%s, %s, %s)',
-                           (resource, get_reporter_id(req), vote))
+            cursor.execute("""
+                INSERT INTO fivestarvote (resource, username, vote)
+                VALUES (%s, %s, %s)
+                """, (resource, get_reporter_id(req), vote))
         db.commit()
 
     # IPermissionRequestor methods
@@ -105,7 +109,7 @@ class FiveStarVoteSystem(Component):
         if req.args.get('js'):
             percent, str, title = self.format_votes(resource)
             req.send(','.join(("%s" % percent, str, title)))
-        
+
         req.redirect(req.get_header('Referer'))
 
     # IRequestFilter methods
@@ -134,7 +138,7 @@ class FiveStarVoteSystem(Component):
             cursor.fetchone()
             return False
         except:
-            cursor.connection.rollback() 
+            cursor.connection.rollback()
             return True
 
     def upgrade_environment(self, db):
@@ -168,20 +172,24 @@ class FiveStarVoteSystem(Component):
         for i in range(1, 6):
             className = "item %s-star" % names[i]
             href = "#"
-            if 'VOTE_MODIFY' in req.perm and get_reporter_id(req) != 'anonymous':
+            if 'VOTE_MODIFY' in req.perm and \
+                    get_reporter_id(req) != 'anonymous':
                 href = req.href.fivestarvote(i, resource)
-                add_script(req, 'fivestarvote/js/fivestarvote.js', mimetype='text/javascript')
+                add_script(req, 'fivestarvote/js/fivestarvote.js',
+                           mimetype='text/javascript')
             a = tag.a(i, href=href, class_=className)
             li = tag.li(a)
             els.append(li)
-        
+
         ul = tag.ul(els, class_='star-rating')
         className = ''
         if 'VOTE_MODIFY' in req.perm and get_reporter_id(req) != 'anonymous':
             className = 'active'
-        title = "Current Vote: %s users voted for a total of %s" % (count[1], count[0]) 
-        add_ctxtnav(req, tag.span(tag.object(ul), id='fivestarvotes', title=title, class_=className))
-
+        title = "Current Vote: %s users voted for a total of %s" \
+                % (count[1], count[0])
+        add_ctxtnav(req,
+                    tag.span(tag.object(ul), id='fivestarvotes', title=title,
+                             class_=className))
 
     def normalise_resource(self, resource):
         if isinstance(resource, basestring):
@@ -200,5 +208,6 @@ class FiveStarVoteSystem(Component):
             percent = count[2] * 20
 
         str = "Currently %s/5 stars." % count[2]
-        title = "Current Vote: %s users voted for a total of %s" % (count[1], count[0]) 
+        title = "Current Vote: %s users voted for a total of %s" \
+                % (count[1], count[0])
         return (percent, str, title)
