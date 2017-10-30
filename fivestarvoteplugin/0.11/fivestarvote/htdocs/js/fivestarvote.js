@@ -1,4 +1,4 @@
-$(document).ready(function() {
+jQuery(function($) {
     $('#fivestarvotes').click(function(e) {
         var button = this;
         e.preventDefault();
