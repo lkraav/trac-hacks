@@ -50,6 +50,11 @@ class OnSiteNotificationsDistributor(Component):
         if transport != 'on-site':
             return
 
+        if event.realm == 'ticket' and event.category == 'batchmodify':
+            for ticket_event in event.get_ticket_change_events(self.env):
+                self.distribute(transport, recipients, ticket_event)
+            return
+
         formats = {}
         for f in self.formatters:
             for style, realm in f.get_supported_styles(transport):
