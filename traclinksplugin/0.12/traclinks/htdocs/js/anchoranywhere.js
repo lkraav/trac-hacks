@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013,2016 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+ * Copyright (C) 2013,2016-2017 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
  * All rights reserved.
  * 
  * This software is licensed as described in the file COPYING, which
@@ -39,7 +39,7 @@
     $("#changelog p, #changelog li").each(function() {
       context = $(this).parents('div.change');
       index = 1 + $("p,li", context).index(this);
-      name = $('.cnum', context).attr('id') + ";" + index;
+      name = ($('.cnum', context).attr('id') || $('.change', context).attr('id')) + ";" + index;
       addAnchor(this, name);
     });
   
