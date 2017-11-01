@@ -22,15 +22,17 @@ from setuptools import setup
 setup(
     name='TracBuildbot',
     version='0.2.0',
+    author='Etienne PIERRE',
+    description='A plugin to integrate Buildbot into Trac',
+    url='https://trac-hacks.org/wiki/TracBuildbotIntegration',
+    license='GPL',
     packages=['tracbb'],
     package_data={'tracbb': [
         'htdocs/*.css',
         'htdocs/*.png',
         'templates/*.html'
     ]},
-    author='Etienne PIERRE',
-    description='A plugin to integrate Buildbot into Trac',
-    url='http://trac-hacks.org/wiki/TracBuildbotIntegration',
-    license='GPL',
-    entry_points={'trac.plugins': 'tracbb = tracbb.tracbb'}
+    entry_points={
+        'trac.plugins': 'tracbb = tracbb.tracbb'
+    },
 )

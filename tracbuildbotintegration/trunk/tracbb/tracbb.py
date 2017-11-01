@@ -21,9 +21,9 @@ import xmlrpclib
 
 from genshi.builder import tag
 from trac.config import IntOption, Option
-from trac.core import *
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_ctxtnav
+from trac.core import Component, implements
+from trac.web.chrome import (
+    INavigationContributor, ITemplateProvider, add_ctxtnav)
 from trac.web.main import IRequestHandler
 from trac.util import TracError, pathjoin
 
@@ -127,7 +127,7 @@ class BuildBotPlugin(Component):
         except:
             raise TracError("Can't get builder %s on url %s"
                             % (builder, self.xmlrpc_url))
-        #last build first
+        # last build first
         builds.reverse()
         ret = []
         for build in builds:
