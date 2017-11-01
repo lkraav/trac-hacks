@@ -9,7 +9,7 @@ from trac.perm import IPermissionRequestor
 from trac.resource import IResourceManager, ResourceNotFound, \
                           get_resource_name, get_resource_shortname, \
                           get_resource_url
-from trac.util.html import tag
+from trac.util.html import html as tag
 from trac.util.translation import domain_functions
 from trac.web import IRequestHandler
 from trac.web.api import HTTPBadRequest

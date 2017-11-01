@@ -8,7 +8,7 @@ from trac.resource import get_resource_description, \
                           get_resource_shortname, get_resource_url
 from trac.search.api import ISearchSource, shorten_result
 from trac.util.datefmt import to_datetime
-from trac.util.html import tag
+from trac.util.html import html as tag
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_stylesheet
 

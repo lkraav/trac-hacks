@@ -7,7 +7,7 @@ import re
 import codecs
 
 from trac.resource import ResourceSystem
-from trac.util.html import tag
+from trac.util.html import html as tag
 from trac.util.text import to_unicode
 
 from api import tag_
