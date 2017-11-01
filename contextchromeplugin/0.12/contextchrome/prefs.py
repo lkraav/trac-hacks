@@ -30,8 +30,8 @@ class UserStyle(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if template and template.startswith('prefs') or \
-                template.startswith('admin'):
+        if template and (template.startswith('prefs') or \
+                template.startswith('admin')):
             pass  # do nothing, for troubleshoot yourself
             return template, data, content_type
         if _path_css in req.session:
