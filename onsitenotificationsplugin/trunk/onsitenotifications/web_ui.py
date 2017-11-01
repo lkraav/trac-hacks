@@ -12,6 +12,7 @@ from trac.resource import Resource, get_resource_description, get_resource_url
 from trac.web.api import IRequestHandler
 from trac.web.chrome import add_ctxtnav, INavigationContributor
 from trac.util.compat import set
+from trac.util.text import to_unicode
 
 from onsitenotifications.model import OnSiteMessage
 
@@ -77,6 +78,7 @@ class OnSiteNotificationsDistributor(Component):
 
         for fmt, sids in msgdict.iteritems():
             message = formats[fmt].format(transport, fmt, event)
+            message = to_unicode(message)
             for sid, authenticated in sids:
                 OnSiteMessage.add(self.env, sid, authenticated, message,
                                   event.realm, get_target_id(event.target))
