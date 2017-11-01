@@ -15,7 +15,8 @@ class GuestbookInit(Component):
     """
     implements(IEnvironmentSetupParticipant)
 
-    # IEnvironmentSetupParticipanttr
+    # IEnvironmentSetupParticipant methods
+
     def environment_created(self):
         pass
 

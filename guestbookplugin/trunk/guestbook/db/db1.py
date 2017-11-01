@@ -1,4 +1,4 @@
-from trac.db import Table, Column, Index, DatabaseManager
+from trac.db import Table, Column, DatabaseManager
 
 tables = [
   Table('guestbook', key='id')[
