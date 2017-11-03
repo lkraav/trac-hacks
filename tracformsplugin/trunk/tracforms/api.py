@@ -10,6 +10,7 @@ from trac.resource import IResourceManager, ResourceNotFound, \
                           get_resource_name, get_resource_shortname, \
                           get_resource_url
 from trac.util.html import html as tag
+from trac.util.text import exception_to_unicode
 from trac.util.translation import domain_functions
 from trac.web import IRequestHandler
 from trac.web.api import HTTPBadRequest
@@ -280,9 +281,11 @@ class FormUpdater(FormDBUser, PasswordStoreUser):
                 req.end_headers()
                 req.write(buffer)
         except Exception, e:
-            buffer = str(e)
+            buffer = exception_to_unicode(e, traceback=True).encode('utf-8')
             req.send_response(500)
             req.send_header('Content-type', 'text/plain')
             req.send_header('Content-Length', str(len(buffer)))
             req.end_headers()
+            self.log.warning("Failed processing request for %s: "
+                             "%s", req.path_info, buffer)
             req.write(buffer)
