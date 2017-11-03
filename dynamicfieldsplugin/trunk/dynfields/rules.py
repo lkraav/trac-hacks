@@ -10,7 +10,11 @@ import re
 
 from trac.core import *
 from trac.perm import IPermissionGroupProvider, PermissionSystem
-from trac.util import to_list
+
+try:
+    from trac.util import to_list
+except ImportError:
+    from dynfields.compat import to_list
 
 # Import translation functions.
 # Fallbacks make Babel still optional and provide Trac 0.11 compatibility.
