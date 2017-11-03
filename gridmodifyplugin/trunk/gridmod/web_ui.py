@@ -33,7 +33,7 @@ class GridModifyModule(Component):
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        yield 'TICKET_GRID_MODIFY'
+        return ['TICKET_GRID_MODIFY', ('TICKET_ADMIN', ['TICKET_GRID_MODIFY'])]
 
     # ITemplateProvider methods
 
@@ -51,7 +51,7 @@ class GridModifyModule(Component):
 
     def process_request(self, req):
         try:
-            if 'TICKET_ADMIN' in req.perm or 'TICKET_GRID_MODIFY' in req.perm:
+            if 'TICKET_GRID_MODIFY' in req.perm:
 
                 id = as_int(req.args.get('ticket'), None)
                 ticket = Ticket(self.env, id)
@@ -122,7 +122,6 @@ class GridModifyModule(Component):
         # tag values. JQuery then uses this information to update the
         # relevant fields on the page.
         if filename in ('query.html', 'report_view.html') and \
-                'TICKET_ADMIN' in req.perm or \
                 'TICKET_GRID_MODIFY' in req.perm:
             add_script(req, 'gridmod/gridmod.js')
             div = html.div(id='table_inits_holder', style='display:none;')
