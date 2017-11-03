@@ -9,11 +9,11 @@
 import re
 from pkg_resources import resource_filename
 
-from trac.core import *
+from trac.core import Component, ExtensionPoint, implements
 from trac.prefs.api import IPreferencePanelProvider
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_script, add_script_data, \
-                            add_stylesheet
+from trac.web.chrome import (
+    ITemplateProvider, add_script, add_script_data, add_stylesheet)
 
 from dynfields.options import Options
 from dynfields.rules import add_domain, _, IRule

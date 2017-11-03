@@ -8,7 +8,7 @@
 
 import re
 
-from trac.core import *
+from trac.core import Component, ExtensionPoint, Interface, implements
 from trac.perm import IPermissionGroupProvider, PermissionSystem
 
 try:
@@ -20,14 +20,16 @@ except ImportError:
 # Fallbacks make Babel still optional and provide Trac 0.11 compatibility.
 try:
     from trac.util.translation import domain_functions
-    add_domain, _, tag_ = \
-        domain_functions('dynfields', ('add_domain', '_', 'tag_'))
 except ImportError:
-    from genshi.builder import tag as tag_
+    from trac.util.html import html as tag_
     from trac.util.translation import gettext
     _ = gettext
+
     def add_domain(a, b, c=None):
         pass
+else:
+    add_domain, _, tag_ = \
+        domain_functions('dynfields', ('add_domain', '_', 'tag_'))
 
 
 class IRule(Interface):
@@ -151,7 +153,7 @@ class ClearRule(Component, Rule):
     def update_spec(self, req, key, opts, spec):
         target = spec['target']
         spec['op'] = 'clear'
-        spec['clear_on_change'] = opts.get(target+'.clear_on_change', 'true')
+        spec['clear_on_change'] = opts.get(target + '.clear_on_change', 'true')
 
     def update_pref(self, req, trigger, target, key, opts, pref):
         # TRANSLATOR: checkbox label text for clear rules
@@ -318,8 +320,8 @@ class HideRule(Component, Rule):
             spec['op'] = 'show'
             spec['trigger_value'] = 'invalid_value'
             spec['hide_always'] = 'true'
-        spec['clear_on_hide'] = opts.get(target+'.clear_on_hide', 'true')
-        spec['link_to_show'] = opts.get(target+'.link_to_show', 'false')
+        spec['clear_on_hide'] = opts.get(target + '.clear_on_hide', 'true')
+        spec['link_to_show'] = opts.get(target + '.link_to_show', 'false')
 
     def update_pref(self, req, trigger, target, key, opts, pref):
         spec = {'trigger': trigger, 'target': target}

@@ -33,7 +33,7 @@
         <py:for each="pref in data[title]['prefs']">
           <br/>
           <label>
-            <input type="checkbox" name="${pref['id']}" 
+            <input type="checkbox" name="${pref['id']}"
               value="1" checked="${pref['enabled'] == '1' or None}" />
             ${pref['label']}
           </label>

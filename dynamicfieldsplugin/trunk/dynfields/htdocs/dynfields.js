@@ -1,4 +1,4 @@
-jQuery(document).ready(function ($) {
+jQuery(function ($) {
 
   window.get_selector = function (field_name) {
     var selector = '#field-' + field_name;

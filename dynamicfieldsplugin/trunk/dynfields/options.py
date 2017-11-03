@@ -57,7 +57,7 @@ class Options(dict):
             return True
 
         # return the default pref value if not set
-        return req.session.get(PREFIX+key, self._pref_defaults[key]) == '1'
+        return req.session.get(PREFIX + key, self._pref_defaults[key]) == '1'
 
     def get_value_and_options(self, req, target, key):
         """Returns the preference value for the given key if configured
@@ -71,7 +71,7 @@ class Options(dict):
                 options = field.get('options', options)
                 break
         if key in self._pref_defaults:
-            value = req.session.get(PREFIX+key+'.value', value)
+            value = req.session.get(PREFIX + key + '.value', value)
         return value, options
 
     def get_pref(self, req, target, key):
@@ -100,7 +100,7 @@ class Options(dict):
         """Saves the user's preferences."""
         # save checkbox settings
         for key in self._pref_defaults:
-            req.session[PREFIX+key] = req.args.get(PREFIX + key, '0')
+            req.session[PREFIX + key] = req.args.get(PREFIX + key, '0')
 
         # now save values
         for arg, value in req.args.items():

@@ -30,7 +30,7 @@ except ImportError:
     pass
 
 PACKAGE = 'TracDynamicFields'
-VERSION = '2.2.2'
+VERSION = '2.3.0'
 
 setup(
     name=PACKAGE, version=VERSION,
@@ -39,7 +39,7 @@ setup(
     author="Rob Guttman",
     author_email="guttman@alum.mit.edu",
     license='3-Clause BSD',
-    url='http://trac-hacks.org/wiki/DynamicFieldsPlugin',
+    url='https://trac-hacks.org/wiki/DynamicFieldsPlugin',
     packages=['dynfields'],
     package_data={'dynfields': [
         'templates/*.html', 'htdocs/*.js', 'htdocs/*.css',
