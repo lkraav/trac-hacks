@@ -12,7 +12,7 @@ from compat import json
 from errors import FormError, FormTooManyValuesError
 from formdb import format_author
 from trac.util.datefmt import format_datetime
-from trac.util.text import to_unicode
+from trac.util.text import exception_to_unicode, to_unicode
 from trac.wiki.formatter import Formatter
 from trac.wiki.macros import WikiMacroBase
 from util import resource_from_page, xml_escape
@@ -119,9 +119,14 @@ class FormProcessor(object):
                             try:
                                 fn(*args, **kw)
                             except FormError, e:
-                                errors.append(str(e))
-                            except Exception:
-                                errors.append(traceback.format_exc())
+                                self.env.log.warning(e)
+                                errors.append(to_unicode(e))
+                            except Exception, e:
+                                message = \
+                                    exception_to_unicode(e, traceback=True) \
+                                    .encode('utf-8')
+                                self.env.log.error(message)
+                                errors.append(message)
             else:
                 if self.showErrors:
                     textlines.extend(errors)
