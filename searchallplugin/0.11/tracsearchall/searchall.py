@@ -1,10 +1,17 @@
-# AMB SearchAll - Search multiple trac projects at once
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2007-2010 Alvaro J. Iradier <alvaro.iradier@polartech.es>
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 
 import os
 import posixpath
 
 from trac.config import ListOption
-from trac.core import Component, implements
+from trac.core import Component, TracError, implements
 from trac.env import open_environment
 from trac.perm import IPermissionRequestor
 from trac.search.api import ISearchSource
@@ -31,55 +38,11 @@ class SearchAllPlugin(Component):
         'Search All Projects'. Case sensitive.
         """)
 
-    def get_project_list(self, req):
-        # get search path and base_url
-        search_path, this_project = os.path.split(self.env.path)
-        base_url, _ = posixpath.split(req.abs_href())
-
-        # Closes #4158, thanks to jholg
-        if 'tracforge' in self.config:
-            if self.config.get('tracforge', 'master_path') == self.env.path:
-                base_url = '/'.join((base_url, this_project, 'projects'))
-
-        projects = []
-        for project in os.listdir(search_path):
-
-            # skip our own project
-            if project == this_project:
-                continue
-
-            # Include only if project is in include_projects, or
-            # include_projects is empty
-            if self.include_projects and project not in self.include_projects:
-                continue
-
-            # Exclude if project is in exclude_projcets
-            if project in self.exclude_projects:
-                continue
-
-            # make up URL for project
-            project_url = '/'.join((base_url, project))
-            project_path = os.path.join(search_path, project)
-
-            if not os.path.isdir(project_path):
-                continue
-            try:
-                env = open_environment(project_path, use_cache=True)
-            except:
-                try:
-                    env = open_environment(project_path)
-                except:
-                    continue
-
-            projects.append((project, project_path, project_url, env))
-
-        return projects
-
     # ISearchSource methods
 
     def get_search_filters(self, req):
 
-        if 'SEARCHALL_VIEW' not in req.perm and 'TRAC_ADMIN' not in req.perm:
+        if 'SEARCHALL_VIEW' not in req.perm:
             return
 
         if hasattr(req, 'is_searchall_recursive'):
@@ -108,18 +71,16 @@ class SearchAllPlugin(Component):
                 if filter in existing_filters:
                     continue
                 existing_filters.append(filter)
-                self.env.log.debug(
-                    "Yielding %s from project %s", filter, project)
                 yield filter
 
-        yield ('searchall', 'All projects', 0)
+        yield 'searchall', 'All projects', 0
 
     def get_search_results(self, req, query, filters):
         # return if search all is not active
         if 'searchall' not in filters:
             return
 
-        if 'SEARCHALL_VIEW' not in req.perm and 'TRAC_ADMIN' not in req.perm:
+        if 'SEARCHALL_VIEW' not in req.perm:
             return
 
         # remove 'searchall' from filters
@@ -143,9 +104,9 @@ class SearchAllPlugin(Component):
             #    available_filters += source.get_search_filters(req)
             #subfilters = [x[0] for x in available_filters if x[0] != 'searchall']
 
-            self.env.log.debug("Searching project %s" % project)
-            self.env.log.debug("Searching for %s" % query[0])
-            self.env.log.debug("Searching with filters %s" % subfilters)
+            self.log.debug("Searching project %s", project)
+            self.log.debug("Searching for %s", query[0])
+            self.log.debug("Searching with filters %s", subfilters)
 
             # Update request data
             orig_href = req.href
@@ -157,18 +118,59 @@ class SearchAllPlugin(Component):
                         results += list(source.get_search_results(req, query,
                                                                   [filter]))
                     except Exception, ex:
-                        results += [(req.href('search', **req.args),
-                                     "<strong>ERROR</strong> in search filter <em>%s</em>" % filter,
-                                     to_datetime(None), "none", "Exception: %s" % to_unicode(ex))]
+                        results += [
+                            (req.href('search', **req.args),
+                             "<strong>ERROR</strong> in search filter "
+                             "<em>%s</em>" % filter,
+                             to_datetime(None), "none",
+                             "Exception: %s" % to_unicode(ex))]
 
             req.href = orig_href
 
             for result in results:
                 yield (result[0],
-                       Markup('%s<br/> %s' % (env.project_name, result[1])))\
+                       Markup('%s<br/> %s' % (env.project_name, result[1]))) \
                     + result[2:]
 
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        return ['SEARCHALL_VIEW']
+        return ['SEARCHALL_VIEW', ('TRAC_ADMIN', ['SEARCHALL_VIEW'])]
+
+    # Internal methods
+
+    def get_project_list(self, req):
+        # get search path and base_url
+        search_path, this_project = os.path.split(self.env.path)
+        base_url = posixpath.split(req.abs_href())[0]
+
+        projects = []
+        for project in os.listdir(search_path):
+
+            # skip our own project
+            if project == this_project:
+                continue
+
+            # Include only if project is in include_projects, or
+            # include_projects is empty
+            if self.include_projects and project not in self.include_projects:
+                continue
+
+            # Exclude if project is in exclude_projcets
+            if project in self.exclude_projects:
+                continue
+
+            # make up URL for project
+            project_url = '/'.join((base_url, project))
+            project_path = os.path.join(search_path, project)
+
+            if not os.path.isdir(project_path):
+                continue
+            try:
+                env = open_environment(project_path, use_cache=True)
+            except TracError:
+                continue
+
+            projects.append((project, project_path, project_url, env))
+
+        return projects
