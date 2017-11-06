@@ -31,7 +31,7 @@ class FormDBComponent(DBComponent):
         'forms', 'parent_blacklist', 'wiki:PageTemplates/*,/newticket',
         doc="""Deaktivate form submission from these (parent) resources.
             Resources are specified as comma-separated list of paths and/or
-            <realm>:<resource_id> pairs, even with REGEXP pattern supported 
+            <realm>:<resource_id> pairs, even with REGEXP pattern supported
             for resource IDs in the latter specifier type.""")
 
     show_fullname = BoolOption(
@@ -99,7 +99,6 @@ class FormDBComponent(DBComponent):
         else:
             form_id = src
             src = tuple([src], )
-        print(src, sql)
         for row in self.env.db_query(sql, src):
             return row
         return form_id, realm, resource_id, subcontext, None, None, None, None
@@ -582,7 +581,7 @@ class FormDBComponent(DBComponent):
             cursor.execute("""
                 CREATE TABLE forms_fields
                     AS SELECT
-                         tracform_id 'id', field, 
+                         tracform_id 'id', field,
                          updater 'author', updated_on 'time'
                     FROM tracform_fields
                 """)
