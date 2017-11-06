@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+ * Copyright (C) 2013,2017 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
  * All rights reserved.
  *
  * This software is licensed as described in the file COPYING, which
@@ -22,8 +22,12 @@
             $('select#field-type').change(addclass);
 			// force invoke a select handler on document.ready
 			currentaction = $('#action input[checked=checked]')
-			dummyevent = {target:{'id':'action_', value:'newticket'}}
-			currentaction.length == 0 && addclass(dummyevent) || currentaction.change();
+			if(currentaction.length > 0) {
+				event = {target:currentaction[0]}
+			} else {
+				event = {target:{'id':'action_', value:'newticket'}}
+			}
+			addclass(event);
 		});
 	});
 
