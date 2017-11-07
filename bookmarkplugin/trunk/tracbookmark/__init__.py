@@ -227,59 +227,58 @@ class BookmarkSystem(Component):
         class_ = realm
         if len(path) > 1:
             resource = Resource(realm, path[1])
-            if resource:
-                if realm == 'ticket':
-                    linkname = get_resource_shortname(self.env, resource)
-                    try:
-                        name = get_resource_summary(self.env, resource)
-                    except ResourceNotFound:
-                        missing = True
-                    else:
-                        from trac.ticket.model import Ticket
-                        class_ = Ticket(self.env, resource.id)['status'] + \
-                            ' ' + class_
-                elif realm == 'milestone':
-                    linkname = get_resource_name(self.env, resource)
-                elif realm == 'wiki':
-                    resource = Resource(realm, '/'.join(path[1:]), version)
-                    linkname = get_resource_shortname(self.env, resource)
-                    if version:
-                        linkname += '@' + version
-                elif realm == 'report':
-                    linkname = "{%s}" % path[1]
-                    name = self._format_report_name(path[1])
-                elif realm == 'changeset':
-                    rev = path[1]
-                    parent = Resource('source', '/'.join(path[2:]))
-                    resource = Resource(realm, rev, False, parent)
-                    linkname = "[%s]" % rev
-                    name = get_resource_description(self.env, resource)
-                elif realm == 'browser':
-                    parent = Resource('source', path[1])
-                    resource = Resource('source', '/'.join(path[2:]), False,
-                                        parent)
-                    linkname = get_resource_description(self.env, resource)
+            if realm == 'ticket':
+                linkname = get_resource_shortname(self.env, resource)
+                try:
                     name = get_resource_summary(self.env, resource)
-                elif realm == 'attachment':
-                    # Assume a file and check existence
-                    parent = Resource(path[1], '/'.join(path[2:-1]))
-                    resource = Resource(realm, path[-1], parent=parent)
-                    linkname = get_resource_name(self.env, resource)
-                    if not resource_exists(self.env, resource):
-                        # Assume an attachment list page and check existence
-                        parent = Resource(path[1], '/'.join(path[2:]))
-                        if resource_exists(self.env, parent):
-                            resource = Resource(realm, parent=parent)
-                            linkname = get_resource_name(self.env, resource)
-                            if not query_string:
-                                # Needed for Trac < 1.0, t:#10280
-                                href += '/'
-                        else:
-                            # Assume it's a missing attachment
-                            missing = True
+                except ResourceNotFound:
+                    missing = True
                 else:
-                    linkname = get_resource_shortname(self.env, resource)
-                    name = get_resource_summary(self.env, resource)
+                    from trac.ticket.model import Ticket
+                    class_ = Ticket(self.env, resource.id)['status'] + \
+                        ' ' + class_
+            elif realm == 'milestone':
+                linkname = get_resource_name(self.env, resource)
+            elif realm == 'wiki':
+                resource = Resource(realm, '/'.join(path[1:]), version)
+                linkname = get_resource_shortname(self.env, resource)
+                if version:
+                    linkname += '@' + version
+            elif realm == 'report':
+                linkname = "{%s}" % path[1]
+                name = self._format_report_name(path[1])
+            elif realm == 'changeset':
+                rev = path[1]
+                parent = Resource('source', '/'.join(path[2:]))
+                resource = Resource(realm, rev, False, parent)
+                linkname = "[%s]" % rev
+                name = get_resource_description(self.env, resource)
+            elif realm == 'browser':
+                parent = Resource('source', path[1])
+                resource = Resource('source', '/'.join(path[2:]), False,
+                                    parent)
+                linkname = get_resource_description(self.env, resource)
+                name = get_resource_summary(self.env, resource)
+            elif realm == 'attachment':
+                # Assume a file and check existence
+                parent = Resource(path[1], '/'.join(path[2:-1]))
+                resource = Resource(realm, path[-1], parent=parent)
+                linkname = get_resource_name(self.env, resource)
+                if not resource_exists(self.env, resource):
+                    # Assume an attachment list page and check existence
+                    parent = Resource(path[1], '/'.join(path[2:]))
+                    if resource_exists(self.env, parent):
+                        resource = Resource(realm, parent=parent)
+                        linkname = get_resource_name(self.env, resource)
+                        if not query_string:
+                            # Needed for Trac < 1.0, t:#10280
+                            href += '/'
+                    else:
+                        # Assume it's a missing attachment
+                        missing = True
+            else:
+                linkname = get_resource_shortname(self.env, resource)
+                name = get_resource_summary(self.env, resource)
         elif len(path) == 1 and path[0] and path[0] != 'wiki':
             linkname = path[0].capitalize()
         else:
