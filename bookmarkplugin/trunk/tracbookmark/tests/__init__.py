@@ -13,14 +13,12 @@ import shutil
 import tempfile
 import unittest
 from StringIO import StringIO
-from pkg_resources import parse_version
 
 from trac.attachment import Attachment
 from trac.test import EnvironmentStub, Mock, MockPerm
 from trac.ticket.model import Ticket
 from trac.web.href import Href
 from trac.wiki.model import WikiPage
-from trac.versioncontrol.api import Changeset
 
 from tracbookmark import BookmarkSystem
 
@@ -169,16 +167,15 @@ class BookmarkSystemTestCase(unittest.TestCase):
         self.assertEquals('', data['name'])
 
     def test_format_name_attachment_list(self):
-        data = self._format_name(self.req, '/attachment/wiki/WikiStart')
+        page = WikiPage(self.env, 'Sub/Page')
+        page.text = '...'
+        page.save('trac', '', '::1')
+        data = self._format_name(self.req, '/attachment/wiki/Sub/Page')
         self.assertEquals('attachment', data['class_'])
-        self.assertEquals('/trac.cgi/attachment/wiki/WikiStart/',
-                          data['href'])
-        self.assertEquals("Attachments of WikiStart",
+        self.assertEquals('/trac.cgi/attachment/wiki/Sub/Page/', data['href'])
+        self.assertEquals("Attachments of Sub/Page",
                           data['linkname'])
         self.assertEquals('', data['name'])
-
-    def test_format_name_attachment_list(self):
-        pass
 
 
 def test_suite():

@@ -21,7 +21,8 @@ from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor, PermissionError
 from trac.resource import (
     Resource, ResourceNotFound, get_resource_description,
-    get_resource_name, get_resource_shortname, get_resource_summary)
+    get_resource_name, get_resource_shortname, get_resource_summary,
+    get_resource_url)
 from trac.util import get_reporter_id
 from trac.util.html import html
 from trac.web.api import IRequestFilter, IRequestHandler
@@ -222,7 +223,7 @@ class BookmarkSystem(Component):
         args = arg_list_to_args(parse_arg_list(query_string.lstrip('?')))
         version = args.get('version', False)
 
-        path = path_info.strip('/').split('/')
+        path = path_info.lstrip('/').split('/')
         realm = path[0]
         class_ = realm
         if len(path) > 1:
@@ -266,15 +267,14 @@ class BookmarkSystem(Component):
                 parent = Resource(path[1], '/'.join(path[2:-1]))
                 resource = Resource(realm, path[-1], parent=parent)
                 linkname = get_resource_name(self.env, resource)
-                if not resource_exists(self.env, resource):
+                href = get_resource_url(self.env, resource, req.href)
+                if resource.id and not resource_exists(self.env, resource):
                     # Assume an attachment list page and check existence
                     parent = Resource(path[1], '/'.join(path[2:]))
                     if resource_exists(self.env, parent):
                         resource = Resource(realm, parent=parent)
                         linkname = get_resource_name(self.env, resource)
-                        if not query_string:
-                            # Needed for Trac < 1.0, t:#10280
-                            href += '/'
+                        href += '/'  # Needed for Trac < 1.0, t:#10280
                     else:
                         # Assume it's a missing attachment
                         missing = True
