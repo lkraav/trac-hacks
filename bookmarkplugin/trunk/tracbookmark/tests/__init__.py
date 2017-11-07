@@ -15,10 +15,14 @@ import unittest
 from StringIO import StringIO
 
 from trac.attachment import Attachment
+from trac.core import Component, implements
 from trac.test import EnvironmentStub, Mock, MockPerm
 from trac.ticket.model import Ticket
 from trac.web.href import Href
 from trac.wiki.model import WikiPage
+from trac.versioncontrol.api import (
+    DbRepositoryProvider, IRepositoryConnector, Node, Repository,
+    RepositoryManager)
 
 from tracbookmark import BookmarkSystem
 
@@ -26,7 +30,8 @@ from tracbookmark import BookmarkSystem
 class BookmarkSystemTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub(default_data=True)
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=['trac.*', _RepositoryConnectorStub])
         self.env.path = tempfile.mkdtemp()
         self.req = Mock(base_path='/trac.cgi', chrome={}, args={}, session={},
                         abs_href=Href('/trac.cgi'), href=Href('/trac.cgi'),
@@ -142,6 +147,24 @@ class BookmarkSystemTestCase(unittest.TestCase):
         self.assertEquals('[42]', data['linkname'])
         self.assertEquals('Changeset 42', data['name'])
 
+    def test_format_name_browser(self):
+        db_provider = DbRepositoryProvider(self.env)
+        db_provider.add_repository('', '/path/to/default', 'stub')
+        db_provider.add_repository('reponame', '/path/to/reponame', 'stub')
+
+        data = self._format_name(self.req, '/browser/trunk')
+        self.assertEquals('browser', data['class_'])
+        self.assertEquals('/trac.cgi/browser/trunk', data['href'])
+        self.assertEquals('path trunk', data['linkname'])
+        self.assertEquals('directory trunk', data['name'])
+
+        data = self._format_name(self.req, '/browser/reponame/tags/v1.2.3')
+        self.assertEquals('browser', data['class_'])
+        self.assertEquals('/trac.cgi/browser/reponame/tags/v1.2.3',
+                          data['href'])
+        self.assertEquals('path tags/v1.2.3 in reponame', data['linkname'])
+        self.assertEquals('directory tags/v1.2.3 in reponame', data['name'])
+
     def test_format_name_attachment(self):
         page = WikiPage(self.env, 'WikiStart')
         page.text = 'the text'
@@ -173,9 +196,28 @@ class BookmarkSystemTestCase(unittest.TestCase):
         data = self._format_name(self.req, '/attachment/wiki/Sub/Page')
         self.assertEquals('attachment', data['class_'])
         self.assertEquals('/trac.cgi/attachment/wiki/Sub/Page/', data['href'])
-        self.assertEquals("Attachments of Sub/Page",
-                          data['linkname'])
+        self.assertEquals("Attachments of Sub/Page", data['linkname'])
         self.assertEquals('', data['name'])
+
+
+class _RepositoryConnectorStub(Component):
+
+    implements(IRepositoryConnector)
+
+    def get_supported_types(self):
+        yield 'stub', 8
+
+    def get_repository(self, repos_type, repos_dir, params):
+        return _RepositoryStub(params['name'], params, self.log)
+
+
+class _RepositoryStub(Repository):
+
+    def get_node(self, path, rev):
+        return _NodeStub(self, path, rev, Node.DIRECTORY)
+
+
+class _NodeStub(Node): pass
 
 
 def test_suite():

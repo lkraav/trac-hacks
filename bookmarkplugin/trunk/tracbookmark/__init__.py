@@ -30,6 +30,7 @@ from trac.web.chrome import (
     ITemplateProvider, add_ctxtnav, add_notice, add_script, add_stylesheet)
 from trac.web.api import arg_list_to_args, parse_arg_list
 from trac.resource import resource_exists
+from trac.versioncontrol.api import RepositoryManager
 
 import tracbookmark.compat
 
@@ -257,9 +258,11 @@ class BookmarkSystem(Component):
                 linkname = "[%s]" % rev
                 name = get_resource_description(self.env, resource)
             elif realm == 'browser':
-                parent = Resource('source', path[1])
-                resource = Resource('source', '/'.join(path[2:]), False,
-                                    parent)
+                rm = RepositoryManager(self.env)
+                reponame, repo, path_info = \
+                    rm.get_repository_by_path('/'.join(path[1:]))
+                parent = Resource('repository', reponame)
+                resource = Resource('source', path_info, parent=parent)
                 linkname = get_resource_description(self.env, resource)
                 name = get_resource_summary(self.env, resource)
             elif realm == 'attachment':
