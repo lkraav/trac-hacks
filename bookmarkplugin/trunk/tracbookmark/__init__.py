@@ -234,9 +234,11 @@ class BookmarkSystem(Component):
                 except ResourceNotFound:
                     missing = True
                 else:
-                    from trac.ticket.model import Ticket
-                    class_ = Ticket(self.env, resource.id)['status'] + \
-                        ' ' + class_
+                    rows = self.env.db_query("""
+                        SELECT status FROM ticket WHERE id=%s
+                        """, (int(resource.id),))
+                    for row in rows:
+                        class_ = row[0] + ' ' + class_
             elif realm == 'milestone':
                 linkname = get_resource_name(self.env, resource)
             elif realm == 'wiki':
