@@ -345,6 +345,31 @@ var evaluate = function (predicate) {
 
     function term() { return new Promise(function (resolve, reject) {
 
+        function query_server(config_func, args) {
+            return new Promise(function (resolve, reject) {
+                console.log('query_server: ' + config_func + ', ' + args);
+                $.ajax('2kis_function', {
+                    data: {
+                        op: 'call_function',
+                        id: page_info['id'],
+                        config_func: config_func,
+                        args: args,
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        if (errorThrown == 'Internal Server Error') {
+                            $('body').replaceWith(jqXHR.responseText);
+                        }
+                        reject({ error: errorThrown });
+                    },
+                    success: function (result) {
+                        console.log('result: ' + result);
+                        resolve({ value: result });
+                    },
+                    timeout: 10000,
+                });
+            });
+        }
+
         var result = { value: undefined };
 
         if (token_type == 'number') {
@@ -407,55 +432,13 @@ var evaluate = function (predicate) {
                     depends.push(token);
                 }
             }
+
+            var term_token = token;
             next_token();
-            if (token !== '(') {
-                if (field.type === 'undefined') {
-                    console.log('no field named ' + field.field_name
-                                + ' present on page');
-                    result.error = 'undefined field ' + field.field_name;
-                    reject(result);
-                }
-            }
-        }
-        resolve(result);
-    });}
 
-    function func_term() {
-        function query_server(config_func, args) {
-            return new Promise(function (resolve, reject) {
-                $.ajax('2kis_function', {
-                    data: {
-                        op: 'call_function',
-                        id: page_info['id'],
-                        config_func: config_func,
-                        args: args,
-                    },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        if (errorThrown == 'Internal Server Error') {
-                            $('body').replaceWith(jqXHR.responseText);
-                        }
-                        reject({ error: errorThrown });
-                    },
-                    success: function (result) {
-                        resolve({ value: result });
-                    },
-                    timeout: 10000,
-                });
-            });
-        }
-
-        var term_token = token;
-        return term().then(function (t) {
-            if (token == 'in') {
-                next_token();
-                return cmp_list().then(function (c) {
-                    c.value = ($.inArray(t.value, c.value) != -1);
-                    return c;
-                });
-            } else
             if (token == '(') {
                 next_token();
-                return param_list().then(function (r) {
+                result = param_list().then(function (r) {
                     if (token != ')') {
                         config_error('expected ")"', 0);
                         r.error = 'syntax error';
@@ -475,9 +458,28 @@ var evaluate = function (predicate) {
                     });
                 });
             } else {
-                return t;
+                if (field.type === 'undefined') {
+                    console.log('no field named ' + field.field_name
+                                + ' present on page');
+                    result.error = 'undefined field ' + field.field_name;
+                    reject(result);
+                }
             }
-        });
+        }
+        resolve(result);
+    });}
+
+    function in_term() {
+        return term().then(function (t) {
+            if (token == 'in') {
+                next_token();
+                return cmp_list().then(function (c) {
+                    c.value = ($.inArray(t.value, c.value) != -1);
+                    return c;
+                });
+            } else
+            return t;
+       });
     }
 
     function param_list() {
@@ -547,7 +549,7 @@ var evaluate = function (predicate) {
                 return n;
             });
         } else
-        return func_term();
+        return in_term();
     }
 
     function product() {

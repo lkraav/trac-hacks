@@ -224,7 +224,22 @@ class Lexer():
             text = self.look[1]
             self.match(text)
             if self.look[1] == '(':
-                v = text
+                self.match('(')
+                args, text2 = self.param_list()
+                self.match(')')
+                v = None
+                for provider in self.config_functions:
+                    funcs = provider.__class__.__dict__
+                    if text in funcs:
+                        v = funcs[text].__get__(provider)(self.req, *args)
+                        break
+                else:
+                    raise ConfigurationError(
+                        "Function '%s' has no implementation" % text,
+                         title='Missing plugin or error in trac.ini '
+                               '[kis2_warden]',
+                         show_traceback=True)
+                text = '%s(%s)' % (text, text2)
             else:
                 v = self.symbol_table[text]
                 if v == None and not text.startswith('_'):
@@ -237,29 +252,13 @@ class Lexer():
                 title='Syntax error in trac.ini [kis2_warden]')
         return v, text
 
-    def func_term(self):
+    def in_term(self):
         v, text = self.term()
         if self.look[1] == 'in':
             self.match('in')
             i, text2 = self.cmp_list()
             v = v in i
             text = '%s in %s' % (text, text2)
-        elif self.look[1] == '(':
-            self.match('(')
-            args, text2 = self.param_list()
-            self.match(')')
-            v = None
-            for provider in self.config_functions:
-                funcs = provider.__class__.__dict__
-                if text in funcs:
-                    v = funcs[text].__get__(provider)(self.req, *args)
-                    break
-            else:
-                raise ConfigurationError(
-                    "Function '%s' has no implementation" % text,
-                     title='Missing plugin or error in trac.ini [kis2_warden]',
-                     show_traceback=True)
-            text = '%s(%s)' % (text, text2)
         return v, text
 
     def param_list(self):
@@ -304,7 +303,7 @@ class Lexer():
             v = not v
             text = '!%s' % text
         else:
-            v, text = self.func_term()
+            v, text = self.in_term()
         return v, text
 
     def product(self):
@@ -623,20 +622,20 @@ evaluation.available.none = evaluation_template == 'None'
                              | product "+" | "-" sum
                    product ::= negation
                              | negation "*" | "/" product
-                  negation ::= func_term
+                  negation ::= in_term
                              | "-" | "!" negation
-                 func_term ::= term
+                   in_term ::= term
                              | term "in" cmp_list
-                             | <function_name> "(" param_list ")"
                   cmp_list ::= "(" cmp_list ")"
-                             | func_term
-                             | func_term "," cmp_list
+                             | expression
+                             | expression "," cmp_list
                 param_list ::= *empty*
-                             | term
-                             | term "," param_list
+                             | expression
+                             | expression "," param_list
                       term ::= "(" expression ")"
                              | <number>
                              | <field>
+                             | <function_name> "(" param_list ")"
                              | "'" <string> "'"
 }}}
     `~=` is an operator that returns True only if the value on the left is matched by the Javascript regular expression on the right. `in` is an operator that returns True only if the value on the left appears in the list on the right. The operators `!`, `==`, `!=`, `||` and `&&` are negation, equality, inequality, OR and AND respectively.
