@@ -11,7 +11,7 @@
 from setuptools import setup
 
 setup(
-    name='ComponentHierarchy',
+    name='TracComponentHierarchy',
     version='1.2.0',
     packages=['componenthierarchy'],
     package_data={
