@@ -3,15 +3,15 @@ Convert a latex formula into an image.
 by Valient Gough <vgough@pobox.com>, David Douard <david.douard@gmail.com>
 
 Changes:
-	2008-02-17: Boris Resnick <boris@resnick.ru>:
-		* make this macro work with Trac 0.11
-		* make it run under Windows NT family
+    2008-02-17: Boris Resnick <boris@resnick.ru>:
+        * make this macro work with Trac 0.11
+        * make it run under Windows NT family
     2006-01-16 (David Douard):
         * make this macro work with Trac 0.9
         * make the generated images be saved in $PROJECT/htdocs/formulas
         * make default image format be 'png'
         * replaced every Tab by spaces
-        * make tmp dir creation recursive 
+        * make tmp dir creation recursive
     2005-10-21:  Ken McIvor <mcivor@iit.edu>:
         * Updated to support trac 0.9b2.
         * Improved the error messages for missing configuration elements.
@@ -103,19 +103,20 @@ standards (whatever those may be).  Feedback is welcome, but complaints about
 ugliness will be redirected to /dev/null.
 """
 
-# if the output version string changes, then images will be regenerated
-outputVersion = "0.1"
-
-
-import re
-import string
 import os
+import re
 import sha
 
 from trac.wiki.macros import WikiMacroBase
 
-revison = "$Rev$"
-url = "$URL$" 
+# if the output version string changes, then images will be regenerated
+outputVersion = "0.1"
+
+author = "Valient Gough"
+author_email = "vgough@pobox.com"
+version = "1.0 ($Rev$)"
+url = "https://trac-hacks.org/wiki/LatexFormulaMacro"
+
 
 def render(env, texData, density, fleqnMode, mathMode):
     # gets paths from configuration
@@ -129,51 +130,53 @@ def render(env, texData, density, fleqnMode, mathMode):
     texMag = cfg.get('latex', 'text_mag', 1000)
     imageFormat = cfg.get('latex', 'image_format', 'png')
 
-    imagePath = os.path.normpath(os.path.join(env.get_htdocs_dir(), "formulas"))
+    imagePath = os.path.normpath(
+        os.path.join(env.get_htdocs_dir(), "formulas"))
     if not os.path.exists(imagePath):
         try:
             os.mkdir(imagePath)
         except:
-            return "<b>Error: unable to create image directory</b><br>"        
+            return "<b>Error: unable to create image directory</b><br>"
 
     def make_cfg_error(element):
-	msg = """\
+        msg = """\
 <div class="system-message">
     <strong>Error: the <code>formula</code> macro requires the
-	setting <code>%s</code> in the configuration section
-	<code>latex</code>
+    setting <code>%s</code> in the configuration section
+    <code>latex</code>
     </strong>
 </div>
 """
-	return msg % element
+        return msg % element
 
     if not tmpdir:
-	return make_cfg_error('temp_dir')
+        return make_cfg_error('temp_dir')
     if not imagePath:
-	return make_cfg_error('image_path')
+        return make_cfg_error('image_path')
 
     path = tmpdir
     # create temporary directory if necessary
+
     def mkd(path):
         if not os.path.exists(path):
             d, t, = os.path.split(path)
             if not os.path.exists(d):
                 mkd(d)
-            
+
             os.mkdir(path)
-                 
+
     try:
         if not os.path.exists(path):
             mkd(path)
     except:
         return "Unable to create temporary directory " + path
-    
+
     # generate final image name.  Use a hash of the parameters which affect
     # the image, so we don't have to recreate it unless they change.
     hash = sha.new(texData)
     # include some options in the hash, as they affect the output image
-    hash.update( "%d %d" % (density, int(texMag)) ) 
-    hash.update( outputVersion )
+    hash.update("%d %d" % (density, int(texMag)))
+    hash.update(outputVersion)
     name = hash.hexdigest()
     imageFile = "%s/%s.%s" % (imagePath, name, imageFormat)
 
@@ -189,40 +192,42 @@ def render(env, texData, density, fleqnMode, mathMode):
 
         # the output from latex on stdout seems to cause problems, so sent it
         # to /dev/null (or NUL under Windows)
-	if os.name == "nt":
+        if os.name == "nt":
             nullDevice = "nul"
-	else:
-	    nullDevice = "/dev/null"
+        else:
+            nullDevice = "/dev/null"
 
-	cmd = "%s %s > %s" % (latexPath, texFile, nullDevice)
-        log += execprog( cmd )
+        cmd = "%s %s > %s" % (latexPath, texFile, nullDevice)
+        log += execprog(cmd)
         os.chdir(cwd)
 
         # use dvips to convert to eps
         dviFile = "%s/%s.dvi" % (path, name)
         epsFile = "%s/%s.eps" % (path, name)
-        cmd = "%s -q -D 600 -E -n 1 -p 1 -o %s %s" % (dvipsPath, epsFile, dviFile)
-        log += execprog( cmd )
+        cmd = "%s -q -D 600 -E -n 1 -p 1 -o %s %s" % (
+            dvipsPath, epsFile, dviFile)
+        log += execprog(cmd)
 
         # and finally, ImageMagick to convert from eps to [imageFormat] type
-        cmd = "%s -antialias -density %ix%i %s %s" % (convertPath, density, density, epsFile, imageFile)
-        log += execprog( cmd )
+        cmd = "%s -antialias -density %ix%i %s %s" % (
+            convertPath, density, density, epsFile, imageFile)
+        log += execprog(cmd)
 
     if fleqnMode:
         margin = " margin-left: %s" % fleqnIndent
     else:
         margin = ""
-        
-    html = "<img src='%s' border='0' style='vertical-align: middle;%s' alt='formula' />" % (env.href.chrome('site','formulas/%s.%s'%(name, imageFormat)), margin)
-    # Uncomment this for debugging purposes
-    #html += "<h1>log</h1>"
-    #html += log
+
+    html = "<img src='%s' border='0' style='vertical-align: middle;%s' alt='formula' />" % (
+        env.href.chrome('site', 'formulas/%s.%s' % (name, imageFormat)), margin)
 
     return html
 
+
 def execprog(cmd):
-    os.system( cmd )
+    os.system(cmd)
     return cmd + "<br>"
+
 
 def makeTexFile(texFile, texData, mathMode, texMag):
     tex = "\\batchmode\n"
@@ -247,23 +252,25 @@ def makeTexFile(texFile, texData, mathMode, texMag):
         tex += "$$\n"
     tex += "\\pagebreak\n"
     tex += "\\end{document}\n"
-        
+
     FILE = open(texFile, "w")
-    FILE.write( tex )
+    FILE.write(tex)
     FILE.close()
 
 # arguments start with "#" on the beginning of a line
+
+
 def execute(text, env):
     cfg = env.config
 
     # TODO: unescape all html escape codes
     text = text.replace("&amp;", "&")
-        
+
     # defaults
     density = 100
     mathMode = 1    # default to using display-math mode for LaTeX processing
-    displayMode = 0 # default to generating inline formula
-    fleqnMode   = cfg.get('latex', 'fleqn')
+    displayMode = 0  # default to generating inline formula
+    fleqnMode = cfg.get('latex', 'fleqn')
     centerImage = 0
     indentImage = 0
     indentClass = ""
@@ -281,7 +288,7 @@ def execute(text, env):
                 mathMode = 0
             elif m.group(1) == "center":
                 centerImage = 1
-                fleqnMode   = 0
+                fleqnMode = 0
             elif m.group(1) == "indent":
                 indentImage = 1
                 indentClass = m.group(2)
@@ -289,33 +296,35 @@ def execute(text, env):
                 displayMode = 1
             elif m.group(1) == "fleqn":
                 displayMode = 1
-                fleqnMode   = 1
+                fleqnMode = 1
             else:
-                errors = '<br>Unknown <i>formula</i> command "%s"<br>' % m.group(1)
+                errors = '<br>Unknown <i>formula</i> command "%s"<br>' % m.group(
+                    1)
         else:
             formula += line + "\n"
 
     # Set display and fleqn defaults
     if displayMode:
-	if fleqnMode:
-	    centerImage = 0
-	else:
-	    centerImage = 1
+        if fleqnMode:
+            centerImage = 0
+        else:
+            centerImage = 1
 
     # Render formula
     format = '%s'
     if centerImage:
-	format = '<center>%s</center>' % format
+        format = '<center>%s</center>' % format
     if indentImage:
-	if indentClass:
-	    format = '<p class="%s">%s</p>' % (indentClass, format)
-	else:
-	    format = '<p>%s</p>' % format
-    
-    result = errors + render(env, formula, density, fleqnMode, mathMode) 
+        if indentClass:
+            format = '<p class="%s">%s</p>' % (indentClass, format)
+        else:
+            format = '<p>%s</p>' % format
+
+    result = errors + render(env, formula, density, fleqnMode, mathMode)
     return format % result
 
+
 class formulaMacro(WikiMacroBase):
-    
+
     def expand_macro(self, formatter, name, args):
         return execute(args, self.env)
