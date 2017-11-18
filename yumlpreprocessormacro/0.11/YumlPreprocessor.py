@@ -12,23 +12,30 @@ YumlPreprocessor.py
 Includes a UML diagram as an image using the http://yuml.me API.
 '''
 
-from trac.wiki.macros import WikiMacroBase
 import re
 import urllib
 
-revison = "$Rev$"
-url = "$URL$"
+from trac.wiki.macros import WikiMacroBase
+
+author = "Daren Thomas"
+version = "1.0 ($Rev$)"
+license = "GPL"
+url = "https://trac-hacks.org/wiki/YumlPreprocessorMacro"
+
 
 pragmaRE = re.compile('^# pragma (.*) #$', re.MULTILINE)
+
 
 def yuml_url(prefix, content):
     pragmaMatch = pragmaRE.search(content)
     if pragmaMatch:
-        pragma = urllib.quote(pragmaMatch.group(1),';:')
+        pragma = urllib.quote(pragmaMatch.group(1), ';:')
     else:
         pragma = 'scruffy'
     content = content.strip().replace('\n', ', ')
-    return '<img src="http://yuml.me/diagram/' + pragma + '/' + prefix + '/' + urllib.quote(content) + '" />'
+    return '<img src="http://yuml.me/diagram/' + pragma + '/' + \
+           prefix + '/' + urllib.quote(content) + '" />'
+
 
 class YumlUseCaseMacro(WikiMacroBase):
     '''
@@ -36,24 +43,22 @@ class YumlUseCaseMacro(WikiMacroBase):
     This is intended to be used as a preprocessor.
     '''
 
-    revision = "$Rev$"
-    url = "$URL$"
-
     def expand_macro(self, formatter, name, content):
         '''
         Use this macro as a preprocessor macro. The content is a valid
         UseCase notation as per yuml.me. You may insert newlines.
-        
+
         Example usage: (from website)
         {{{
         #!YumlUseCase
         [User]-(Login)
-        [User]-(Logout) 
-        (Login)<(Reminder) 
+        [User]-(Logout)
+        (Login)<(Reminder)
         (Login)>(Captcha)
         }}}
         '''
         return yuml_url('usecase', content)
+
 
 class YumlClassMacro(WikiMacroBase):
     '''
@@ -61,14 +66,11 @@ class YumlClassMacro(WikiMacroBase):
     This is intended to be used as a preprocessor.
     '''
 
-    revision = "$Rev$"
-    url = "$URL$"
-
     def expand_macro(self, formatter, name, content):
         '''
         Use this macro as a preprocessor macro. The content is a valid
         class diagram notation as per yuml.me. You may insert newlines.
-        
+
         Example usage: (from website)
         {{{
         #!YumlClass
@@ -79,20 +81,18 @@ class YumlClassMacro(WikiMacroBase):
         '''
         return yuml_url('class', content)
 
+
 class YumlActivityMacro(WikiMacroBase):
     '''
     Includes a UML diagram as an image using the yuml.me API.
     This is intended to be used as a preprocessor.
     '''
 
-    revision = "$Rev$"
-    url = "$URL$"
-
     def expand_macro(self, formatter, name, content):
         '''
         Use this macro as a preprocessor macro. The content is a valid
         activity diagram notation as per yuml.me. You may insert newlines.
-        
+
         Example usage: (from website)
         {{{
         #!YumlActivity
