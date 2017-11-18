@@ -6,7 +6,7 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
-# 
+#
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the above copyright
@@ -16,7 +16,7 @@
 # 3. The name of the author may not be used to endorse or promote
 #    products derived from this software without specific prior
 #    written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR `AS IS'' AND ANY EXPRESS
 # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,29 +37,36 @@ import trac.wiki.formatter
 import trac.wiki.macros
 import trac.wiki.model
 
+author = "Christopher Head"
+version = "1.0 ($Rev$)"
+license = "BSD"
+url = "https://trac-hacks.org/wiki/ParameterizedIncludeMacro"
+
+
 class ParameterizedIncludeMacro(trac.wiki.macros.WikiMacroBase):
-	"""
-	Includes one wiki page in another, with parameter substitution.
+    """
+    Includes one wiki page in another, with parameter substitution.
 
-	Use as follows:
-	{{{
-	[[ParameterizedInclude(PageName,Arg1,Arg2,Arg3,…)]]
-	}}}
+    Use as follows:
+    {{{
+    [[ParameterizedInclude(PageName,Arg1,Arg2,Arg3,…)]]
+    }}}
 
-	Within the included page, {{1}}, {{2}}, {{3}}, … are replaced with the
-	values passed as Arg1, Arg2, Arg3, and so on.
-	"""
-	def expand_macro(self, formatter, name, content):
-		args = [x.strip() for x in content.split(",")]
-		if len(args) < 1:
-			return trac.wiki.formatter.system_message("No page specified")
-		page_name = args[0]
-		page = trac.wiki.model.WikiPage(self.env, page_name, None)
-		if not "WIKI_VIEW" in formatter.perm(page.resource):
-			return ""
-		if not page.exists:
-			return trac.wiki.formatter.system_message("Wiki page \"%s\" does not exist" % page_name)
-		text = page.text
-		for i in range(1, len(args)):
-			text = text.replace("{{%d}}" % i, args[i])
-		return trac.mimeview.api.Mimeview(self.env).render(trac.mimeview.api.Context.from_request(formatter.req, "wiki", page_name), "text/x-trac-wiki", text)
+    Within the included page, {{1}}, {{2}}, {{3}}, … are replaced with the
+    values passed as Arg1, Arg2, Arg3, and so on.
+    """
+
+    def expand_macro(self, formatter, name, content):
+        args = [x.strip() for x in content.split(",")]
+        if len(args) < 1:
+            return trac.wiki.formatter.system_message("No page specified")
+        page_name = args[0]
+        page = trac.wiki.model.WikiPage(self.env, page_name, None)
+        if "WIKI_VIEW" not in formatter.perm(page.resource):
+            return ""
+        if not page.exists:
+            return trac.wiki.formatter.system_message("Wiki page \"%s\" does not exist" % page_name)
+        text = page.text
+        for i in range(1, len(args)):
+            text = text.replace("{{%d}}" % i, args[i])
+        return trac.mimeview.api.Mimeview(self.env).render(trac.mimeview.api.Context.from_request(formatter.req, "wiki", page_name), "text/x-trac-wiki", text)
