@@ -5,19 +5,25 @@ from trac.util.html import html
 from trac.wiki import WikiSystem
 from trac.wiki.macros import WikiMacroBase
 
-revision="$Rev$"
-url="$URL$"
+author = "Simone Gianni"
+version = "1.0 ($Rev$)"
+url = "https://trac-hacks.org/wiki/WikiSearchMacro"
+
 
 class WikiSearchMacro(WikiMacroBase):
-    """Performs a search in wiki content, and displays links to the pages.
+    """Performs a search in wiki content, and displays links to the
+    pages.
 
     The first parameter is the search string, and its mandatory.
 
-    The second parameter is an optional name prefix, only page names starting with this string will be included.
+    The second parameter is an optional name prefix, only page names
+    starting with this string will be included.
 
-    The third parameter is an optional limit to the length of the returned list
+    The third parameter is an optional limit to the length of the
+    returned list
 
-    The fourth parameter is an optional name of a page to not include in the list
+    The fourth parameter is an optional name of a page to not include
+    in the list
     """
 
     def expand_macro(self, formatter, name, content):
@@ -51,7 +57,7 @@ class WikiSearchMacro(WikiMacroBase):
             args.append(prefix + '%')
         if skips:
             if prefix:
-                sql += ' AND ';
+                sql += ' AND '
             sql += 'name != %s'
             args.append(skips)
         sql += ' GROUP BY name ORDER BY max_time ASC'
@@ -65,5 +71,6 @@ class WikiSearchMacro(WikiMacroBase):
         wiki = WikiSystem(self.env)
         return html.DIV(
             html.UL([html.LI(
-                html.A(wiki.format_page_name(name), href=formatter.req.href.wiki(name)))
-                      for name, version in cursor]))
+                html.A(wiki.format_page_name(name),
+                       href=formatter.req.href.wiki(name)))
+                     for name, version in cursor]))
