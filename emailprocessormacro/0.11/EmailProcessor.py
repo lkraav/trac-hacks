@@ -8,19 +8,23 @@
 #
 # Author: John Hampton <pacopablo@pacopablo.com>
 
-from trac.wiki.macros import WikiMacroBase
 from trac.util import escape
 from trac.util.text import wrap
+from trac.wiki.macros import WikiMacroBase
 
-revision="$Rev$"
-url="http://trac-hacks.org/wiki/EmailProcessorMacro"
+author = "pacopablo"
+author_email = "pacopablo@pacopablo.com"
+version = "1.0 ($Rev$)"
+url = "https://trac-hacks.org/wiki/EmailProcessorMacro"
+license = "BSD"
 
 __all__ = ['EmailMacro']
+
 
 class EmailMacro(WikiMacroBase):
     """Email wrapping formatter
 
-    This macro takes an email message and will wrap lines to 
+    This macro takes an email message and will wrap lines to
     72 characters (default), or a length specified.  It will
     also put the emails inside a preformatted block.
 
@@ -61,4 +65,3 @@ class EmailMacro(WikiMacroBase):
                 width = 72
             text = wrap('\n'.join(lines), cols=width)
         return '<pre class="wiki">%s</pre>' % escape(text)
-    
