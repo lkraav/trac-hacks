@@ -347,7 +347,6 @@ var evaluate = function (predicate) {
 
         function query_server(config_func, args) {
             return new Promise(function (resolve, reject) {
-                console.log('query_server: ' + config_func + ', ' + args);
                 $.ajax('2kis_function', {
                     data: {
                         op: 'call_function',
@@ -362,7 +361,6 @@ var evaluate = function (predicate) {
                         reject({ error: errorThrown });
                     },
                     success: function (result) {
-                        console.log('result: ' + result);
                         resolve({ value: result });
                     },
                     timeout: 10000,
@@ -469,7 +467,7 @@ var evaluate = function (predicate) {
         resolve(result);
     });}
 
-    function in_term() {
+    function membership() {
         return term().then(function (t) {
             if (token == 'in') {
                 next_token();
@@ -549,7 +547,7 @@ var evaluate = function (predicate) {
                 return n;
             });
         } else
-        return in_term();
+        return membership();
     }
 
     function product() {

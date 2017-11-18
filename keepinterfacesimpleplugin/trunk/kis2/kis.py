@@ -47,7 +47,7 @@ class BuiltInConfigFunctions(Component):
 User-defined functions that can be called from the configuration file can be implemented by adding a Python file to the Trac plugins folder that implements the `IConfigFunction` interface. For example:
 {{{
 from trac.core import *
-from kis import IConfigFunction
+from kis2 import IConfigFunction
 
 class MyConfigFunctions(Component):
     ''' Local functions for use by 'kisplugin' configuration files.
@@ -224,6 +224,7 @@ class Lexer():
             text = self.look[1]
             self.match(text)
             if self.look[1] == '(':
+                # Function call.
                 self.match('(')
                 args, text2 = self.param_list()
                 self.match(')')
@@ -252,7 +253,7 @@ class Lexer():
                 title='Syntax error in trac.ini [kis2_warden]')
         return v, text
 
-    def in_term(self):
+    def membership(self):
         v, text = self.term()
         if self.look[1] == 'in':
             self.match('in')
@@ -303,7 +304,7 @@ class Lexer():
             v = not v
             text = '!%s' % text
         else:
-            v, text = self.in_term()
+            v, text = self.membership()
         return v, text
 
     def product(self):
@@ -392,16 +393,22 @@ class Lexer():
         return self.expression()
 
 class KisWarden(Component):
-    ''' Prevents a commit from being accepted if certain conditions are not met, as described in the configuration file.
+    '''
+    Prevents a commit from being accepted if certain conditions are not
+    met, as described in the configuration file.
 
     The configuration file structure is
 {{{
 [kis2_warden]
 <rule name> = <boolean valued expression>
 }}}
-    Expressions describe the state of the ticket after a change has been submitted. If the expression for any rule evaluates to 'true', then the change is blocked.
+    Expressions describe the state of the ticket after a change has been
+    submitted. If the expression for any rule evaluates to 'true', then the
+    change is blocked.
 
-    The grammar of the expressions is the same as defined for the '!KisAssistant' component, except that the regular expression syntax is Python rather than Javascript.
+    The grammar of the expressions is the same as defined for the
+    '!KisAssistant' component, except that the regular expression syntax is
+    Python rather than Javascript.
 
     For example, take the rules:
 {{{
@@ -409,7 +416,10 @@ approval required to close = status == 'closed' && approval != 'Approved'
 
 only designated approver can approve = !has_role('approver') && approval != _approval && approval == 'Approved'
 }}}
-    The first rule means that the ticket cannot be closed if the 'approval' field has not been set to the value 'Approved'. The second rule means that only a user who is a member of the group 'approver' can change the 'approval' field to that value.
+    The first rule means that the ticket cannot be closed if the 'approval'
+    field has not been set to the value 'Approved'. The second rule means that
+    only a user who is a member of the group 'approver' can change the
+    'approval' field to that value.
     '''
 
     implements(ITicketManipulator)
@@ -520,7 +530,10 @@ only designated approver can approve = !has_role('approver') && approval != _app
 ###############################################################################
 
 class KisAssistant(Component):
-    ''' Controls which fields, actions and options are available in the user interface. Can automatically update the content of fields. Allows templates to be defined for initialising text fields.
+    '''
+    Controls which fields, actions and options are available in the user
+    interface. Can automatically update the content of fields. Allows
+    templates to be defined for initialising text fields.
 
 === Configuration file ===
     The configuration file structure is:
@@ -535,20 +548,37 @@ class KisAssistant(Component):
 <field_name>.update.when = <boolean valued expression>
 }}}
 
-    The restrictions imposed by '!KisAssistant' are in the user interface only. None of the constraints are enforced. Define matching rules using the '!KisWarden' component if it's necessary to enforce the restrictions.
+    The restrictions imposed by '!KisAssistant' are in the user interface
+    only. None of the constraints are enforced. Define matching rules using
+    the '!KisWarden' component if it's necessary to enforce the restrictions.
 
 === Hiding and showing fields ===
-    The rule attribute 'visible' defines when the associated field will be visible in the interface.
+    The rule attribute 'visible' defines when the associated field will be
+    visible in the interface.
 
     For example, take the rule:
 {{{
 approval.visible = !status in 'new', 'closed'
 }}}
-    This requires that a custom field named 'approval' is defined. This rule states that the field only appears when the ticket status is other than 'new' or 'closed'.
-    If no visibility rule is defined for a field, the field is visible by default.
+    This requires that a custom field named 'approval' is defined. This rule
+    states that the field only appears when the ticket status is other than
+    'new' or 'closed'. If no visibility rule is defined for a field, the
+    field is visible.
+
+    By default, fields are hidden only in the "Change Properties" box: the
+    area where the user modifies the fields. To hide them in the main ticket
+    description at the top of the page as well, add the suffix `.all` to the
+    rule name. To hide the fields in the main ticket description only, add the
+    suffix `.ticket` to the rule name. To use different rules for hiding the
+    field in the main ticket description and in the "Change Properties" box,
+    give the main ticket description rule the suffix `.ticket` and the "Change
+    Properties" rule the suffix `.property`.
 
 === Controlling the options available in dropdowns (Select fields) and radio button sets (Radio fields) ===
-    The options shown in Select and Radio fields can be controlled using the attributes 'options' and 'available'. The 'options' attribute is used to assign a name to a group of options. Then the matching 'available' attribute for that name defines when those options are available.
+    The options shown in Select and Radio fields can be controlled using the
+    attributes 'options' and 'available'. The 'options' attribute is used to
+    assign a name to a group of options. Then the matching 'available'
+    attribute for that name defines when those options are available.
 
     For example, take the rules:
 {{{
@@ -557,34 +587,60 @@ approval.available.basic_set = true
 approval.options.full_set = 'Approved'
 approval.available.full_set = has_role('approver') || _approval == 'Approved'
 }}}
-    This requires that the 'approval' field is either a Select or a Radio field, with options 'Not assessed', 'Denied' and 'Approved'. The options 'Not assessed' or 'Denied' are always available, but the option 'Approved' is only available if the user is a member of the 'approver' group or if the field already had the value 'Approved' when the page was loaded.
+    This requires that the 'approval' field is either a Select or a Radio
+    field, with options 'Not assessed', 'Denied' and 'Approved'. The options
+    'Not assessed' or 'Denied' are always available, but the option 'Approved'
+    is only available if the user is a member of the 'approver' group or if
+    the field already had the value 'Approved' when the page was loaded.
 
-    Options will appear by default unless specifically hidden by a rule. It isn't therefore strictly necessary to specify 'Not assessed' and 'Denied' here, but it can be clearer to do so. An option will be available if it appears it at least one set that is available.
+    Options will appear by default unless specifically hidden by a rule. It
+    isn't therefore strictly necessary to specify 'Not assessed' and 'Denied'
+    here, but it can be clearer to do so. An option will be available if it
+    appears in at least one set that is available.
 
-    The ticket actions can be controlled as if they were a custom field of Radio type. They are accessed with a pre-defined field named 'action'. The available values for the ticket actions are the names defined in the configuration file for the state transitions corresponding to the action.
+    The ticket actions can be controlled as if they were a custom field of
+    Radio type. They are accessed with a pre-defined field named 'action'. The
+    available values for the ticket actions are the names defined in the
+    configuration file for the state transitions corresponding to the action.
 
-    Note that the options are hidden, not removed. The user will still be able to select the option in most browsers by using keyboard shortcuts. Use a '!KisWarden' rule to restrict the values accepted when a ticket is submitted, if that is what is needed.
+    Note that the options are hidden, not removed. The user will still be able
+    to select the option in most browsers by using keyboard shortcuts. Use a
+    '!KisWarden' rule to restrict the values accepted when a ticket is
+    submitted, if that is what is needed.
 
 === Automatic updates ===
 
-    The 'update' attribute of a field defines a rule for automatically updating the field's content. Normally, it is re-evaluated whenever one of the fields used to determine the outcome of the rule is changed.
+    The 'update' attribute of a field defines a rule for automatically
+    updating the field's content. Normally, it is re-evaluated whenever one of
+    the fields used to determine the outcome of the rule is changed.
 
     For example, take the rule:
 {{{
 priority.update = (effort > 5) ? 'high' : 'low'
 }}}
-    This requires that a custom field named 'effort' is defined. If the 'effort' field is changed to a value greater than 5, then the priority field is set to 'high'. Otherwise it is set to low.
+    This requires that a custom field named 'effort' is defined. If the
+    'effort' field is changed to a value greater than 5, then the priority
+    field is set to 'high'. Otherwise it is set to low.
 
-    Sometimes it's necessary to update a field only under certain conditions. In that case, the optional 'update.when' attribute can be used to define those conditions.
+    Sometimes it's necessary to update a field only under certain conditions.
+    In that case, the optional 'update.when' attribute can be used to define
+    those conditions.
 
     For example:
 {{{
 priority.update.when = milestone == 'Build 42'
 }}}
-    Now the rule stated previously will be applied when the milestone is changed to 'Build 42', not when the 'effort' field is changed. The 'update.when' rule is re-evaluated whenever one of the fields used to determine the outcome of the rule is changed.
+    Now the rule stated previously will be applied when the milestone is
+    changed to 'Build 42', not when the 'effort' field is changed. The
+    'update.when' rule is re-evaluated whenever one of the fields used to
+    determine the outcome of the rule is changed.
 
 === Using templates ===
-    Templating rules use the attributes 'template' and 'available'. The 'template' attribute assigns a name to a block of template text that could be used to pre-populate a field. The 'available' attribute for that name defines the condition under which the field will be populated with that text.
+    Templating rules use the attributes 'template' and 'available'. The
+    'template' attribute assigns a name to a block of template text that could
+    be used to pre-populate a field. The 'available' attribute for that name
+    defines the condition under which the field will be populated with that
+    text.
 
     For example:
 {{{
@@ -596,15 +652,33 @@ evaluation.template.none = ''
 evaluation.available.none = evaluation_template == 'None'
 }}}
 
-    This requires that a custom field named 'evaluation_template' is defined (either a Select or a Radio field) with options 'None', 'Change' and 'Fault'. Another custom Textarea field named 'evaluation' is defined. When 'evaluation_template' is set to 'Change', the 'evaluation' field will be initialised with the value of the 'evaluation.template.change' option (shown here in a cut-down form; it would normally contain template entries for all the items of information that might be wanted in a Change evaluation). Similarly for 'evaluation_template' values of 'Fault' or 'None'.
+    This requires that a custom field named 'evaluation_template' is defined
+    (either a Select or a Radio field) with options 'None', 'Change' and
+    'Fault'. Another custom Textarea field named 'evaluation' is defined. When
+    'evaluation_template' is set to 'Change', the 'evaluation' field will be
+    initialised with the value of the 'evaluation.template.change' option
+    (shown here in a cut-down form; it would normally contain template entries
+    for all the items of information that might be wanted in a Change
+    evaluation). Similarly for 'evaluation_template' values of 'Fault' or
+    'None'.
 
-    A field will only be initialised from a template if it is currently either empty or unchanged from one of the alternative template values. Template fields can be preferred over the use of automatically-updated fields because of this behaviour.
+    A field will only be initialised from a template if it is currently either
+    empty or unchanged from one of the alternative template values. Template
+    fields can be preferred over the use of automatically-updated fields
+    because of this behaviour.
 
 === Expression syntax and semantics ===
 
-    In expressions, field names evaluate to the current value of the corresponding field, except for the special names `status`, which evaluates to the ticket status, `authname`, which evaluates to the current username, `true` which evaluates True and `false`, which evaluates False. If the field name is prefixed with an underscore, it evaluates to the value of the field at the time the page was loaded.
+    In expressions, field names evaluate to the current value of the
+    corresponding field, except for the special names `status`, which
+    evaluates to the ticket status, `authname`, which evaluates to the current
+    username, `true` which evaluates True and `false`, which evaluates False.
+    If the field name is prefixed with an underscore, it evaluates to the
+    value of the field at the time the page was loaded.
 
-    Text-type fields evaluate to their contents, checkboxes evaluate to true if checked or false if not, and Select or Radio fields evaluate to the selected item if an item is selected or undefined if no item is selected.
+    Text-type fields evaluate to their contents, checkboxes evaluate to true
+    if checked or false if not, and Select or Radio fields evaluate to the
+    selected item if an item is selected or undefined if no item is selected.
 
     The grammar of the expressions is:
 {{{
@@ -622,9 +696,9 @@ evaluation.available.none = evaluation_template == 'None'
                              | product "+" | "-" sum
                    product ::= negation
                              | negation "*" | "/" product
-                  negation ::= in_term
+                  negation ::= membership
                              | "-" | "!" negation
-                   in_term ::= term
+                membership ::= term
                              | term "in" cmp_list
                   cmp_list ::= "(" cmp_list ")"
                              | expression
@@ -638,9 +712,16 @@ evaluation.available.none = evaluation_template == 'None'
                              | <function_name> "(" param_list ")"
                              | "'" <string> "'"
 }}}
-    `~=` is an operator that returns True only if the value on the left is matched by the Javascript regular expression on the right. `in` is an operator that returns True only if the value on the left appears in the list on the right. The operators `!`, `==`, `!=`, `||` and `&&` are negation, equality, inequality, OR and AND respectively.
+    `~=` is an operator that returns True only if the value on the left is
+    matched by the Javascript regular expression on the right. `in` is an
+    operator that returns True only if the value on the left appears in the
+    list on the right. The operators `!`, `==`, `!=`, `||` and `&&` are
+    negation, equality, inequality, OR and AND respectively.
 
-    Note that the `&&` and `||` operators evaluate in the same way as the Javascript operators (or the Python `and` and `or` operators). So 'x && y' evaluates to 'x' if 'x' is false; 'y' if 'x' is true. [[span('x || y')]] evaluates to 'x' if 'x' is true; 'y' if 'x' is false.
+    Note that the `&&` and `||` operators evaluate in the same way as the
+    Javascript operators (or the Python `and` and `or` operators). So 'x && y'
+    evaluates to 'x' if 'x' is false; 'y' if 'x' is true. [[span('x || y')]]
+    evaluates to 'x' if 'x' is true; 'y' if 'x' is false.
     '''
 
     implements(IRequestFilter,
