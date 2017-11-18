@@ -1,8 +1,11 @@
-from trac.wiki.macros import WikiMacroBase
 import shlex
 
-revison = "$Rev$"
-url = "$URL$"
+from trac.wiki.macros import WikiMacroBase
+
+author = "sanmarcos"
+version = "1.0 ($Rev$)"
+url = "https://trac-hacks.org/wiki/InsertElementMacro"
+
 
 class InsertElementMacro(WikiMacroBase):
     """
@@ -17,7 +20,7 @@ class InsertElementMacro(WikiMacroBase):
       [[InsertElement(element, property, value, content)]]
     }}}
 
-    Where: 
+    Where:
      * '''element'''
       Name of an HTML element like div or p
      * '''property'''
