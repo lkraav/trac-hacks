@@ -30,15 +30,15 @@ Example:
 [[TicketBox({1}, inline_total)]]       ... inline text of total number /wo box.
 }}}
 
-[wiki:TracReports#AdvancedReports:DynamicVariables Dynamic Variables] 
+[wiki:TracReports#AdvancedReports:DynamicVariables Dynamic Variables]
 is supported for report. Variables can be specified like
 {{{[report:9?PRIORITY=high&COMPONENT=ui]}}}. Of course, the special
 variable '{{{$USER}}}' is available. The login name (or 'anonymous)
 is used as $USER if not specified explicitly.
 """
 
-## NOTE: CSS2 defines 'max-width' but it seems that only few browser
-##       support it. So I use 'width'. Any idea?
+# NOTE: CSS2 defines 'max-width' but it seems that only few browser
+# support it. So I use 'width'. Any idea?
 
 import re
 import string
@@ -52,17 +52,20 @@ try:
 except:
     has_query = False
 
-# plugin info
-revision="$Rev$"
-home_page="http://trac-hacks.org/wiki/TicketBoxMacro"
+author = "Shun-ichi Goto"
+version = "1.0 ($Rev$)"
+url = "https://trac-hacks.org/wiki/TicketBoxMacro"
 
-## Mock request object for trac 0.10.x or before
+# Mock request object for trac 0.10.x or before
+
+
 class MockReq(object):
+
     def __init__(self, hdf):
         self.hdf = dict()
         self.args = {}
         self.authname = hdf.getValue('trac.authname', 'anonymous')
-        
+
 
 # get trac version
 verstr = re.compile('([0-9.]+).*').match(trac_ver).group(1)
@@ -84,13 +87,13 @@ else:
                      sql_sub_vars=['sql', 'dv', 'db'],
                      )
 
-## default style values
-default_styles = { "float": "right",
-                   "color": None,
-                   "background": "#f7f7f0",
-                   "width": "25%",
-                   "border-color": None,
-                   }
+# default style values
+default_styles = {"float": "right",
+                  "color": None,
+                  "background": "#f7f7f0",
+                  "width": "25%",
+                  "border-color": None,
+                  }
 
 args_pat = [r"#?(?P<tktnum>\d+)",
             r"{(?P<rptnum>\d+)}",
@@ -105,6 +108,7 @@ args_pat = [r"#?(?P<tktnum>\d+)",
 default_summary_field = 'summary'
 default_ticket_field = 'ticket'
 
+
 def uniq(x):
     """Remove duplicated items and return new list.
     If there are duplicated items, first appeared item remains and
@@ -113,11 +117,12 @@ def uniq(x):
     >>> uniq([1,2,3,3,2,4,1])
     [1, 2, 3, 4]
     """
-    y=[]
+    y = []
     for i in x:
         if not y.count(i):
             y.append(i)
     return y
+
 
 def sqlstr(x):
     """Make quoted value string for SQL.
@@ -134,9 +139,10 @@ def sqlstr(x):
     1
     """
     if isinstance(x, basestring):
-        return "'%s'" % x.replace( "'","''" )
+        return "'%s'" % x.replace("'", "''")
     else:
         return x
+
 
 def unquote(s):
     """remove quotation chars on both side.
@@ -152,6 +158,7 @@ def unquote(s):
         return s[1:-1]
     else:
         return s
+
 
 def parse(content):
     """Split macro argument string by comma considering quotation/escaping.
@@ -177,12 +184,14 @@ def parse(content):
         result.append(item)
     return result
 
+
 def call(func, vars):
     names = call_args[func.__name__]
     args = [vars[x] for x in names]
     # NOTE: ignore 3rd return value 'missing' in Trac 0.12.
     return func(*args)[:2]
-    
+
+
 def run0(req, env, db, content):
     args = parse(content or '')
     items = []
@@ -235,7 +244,8 @@ def run0(req, env, db, content):
             items.append(int(match.group('tktnum')))
         elif match.group('query'):
             if not has_query:
-                raise Exception('You cannot use trac query for this version of trac')
+                raise Exception(
+                    'You cannot use trac query for this version of trac')
             q = Query.from_string(env, match.group('query'))
             sql, params = call(q.get_sql, locals())
             id_name = 'id'
@@ -248,7 +258,7 @@ def run0(req, env, db, content):
                              % (report_query_field, num))
                 rows = curs.fetchall()
                 if len(rows) == 0:
-                    raise Exception("No such report: %s"  % num)
+                    raise Exception("No such report: %s" % num)
                 sql = rows[0][0]
             finally:
                 curs.close()
@@ -256,7 +266,8 @@ def run0(req, env, db, content):
                 sql = sql.strip()
                 if has_query and sql.lower().startswith("query:"):
                     if sql.lower().startswith('query:?'):
-                        raise Exception('URL style of query string is not supported.')
+                        raise Exception(
+                            'URL style of query string is not supported.')
                     q = Query.from_string(env, sql[6:])
                     sql, params = call(q.get_sql, locals())
                     id_name = 'id'
@@ -281,7 +292,7 @@ def run0(req, env, db, content):
                         iidx = descriptions.index(id_name)
                     except:
                         raise Exception('No such column for ticket number: %r'
-                                        % id_name )
+                                        % id_name)
                     if summary:
                         try:
                             sidx = descriptions.index(summary)
@@ -304,7 +315,7 @@ def run0(req, env, db, content):
             if not tkt:
                 continue
             summaries[id] = tkt['summary']
-    
+
     items = uniq(items)
     if not nosort:
         items.sort()
@@ -314,7 +325,7 @@ def run0(req, env, db, content):
         # return simple text of total count to be placed inline.
         return '<span class="ticketbox"><span id="total">%s</span></span>' \
             % len(items)
-    
+
     if ver < [0, 11]:
         fargs = dict(db=db)
     else:
@@ -340,14 +351,15 @@ def run0(req, env, db, content):
         if inline:
             for key in ['float', 'width']:
                 del styles[key]
-        style = ';'.join(["%s:%s" % (k,v) for k,v in styles.items() if v])
+        style = ';'.join(["%s:%s" % (k, v) for k, v in styles.items() if v])
         return '<fieldset class="ticketbox" style="%s"><legend>%s</legend>%s</fieldset>' % \
                (style, title, html)
     else:
         return ''
 
+
 def run(req, env, content):
-    
+
     db = env.get_db_cnx()
     try:
         return run0(req, env, db, content)
@@ -358,6 +370,8 @@ def run(req, env, content):
             db.close()
 
 # single file macro I/F (not plugin, for 0.10.x or before)
+
+
 def execute(hdf, txt, env):
     req = MockReq(hdf)
     return run(req, env, txt)
@@ -368,7 +382,7 @@ try:
 
     class TicketBoxMacro(WikiMacroBase):
         __doc__ = __doc__
-        
+
         # plugin macro I/F for trac 0.10.x
         def render_macro(self, req, name, content):
             db = env.get_db_cnx()
@@ -391,12 +405,13 @@ try:
               [[HelloWorld]]), then `args` is `None`.
             """
             if 'TICKET_VIEW' not in formatter.perm('ticket'):
-                return '' # no permission, no display
+                return ''  # no permission, no display
             return run(formatter.req, formatter.env, args)
 except ImportError:
     # trac 0.9
     pass
 
 if __name__ == '__main__':
-    import sys, doctest
+    import sys
+    import doctest
     doctest.testmod(sys.modules[__name__])
