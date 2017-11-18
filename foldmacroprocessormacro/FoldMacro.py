@@ -1,7 +1,12 @@
-from genshi.builder import tag
 from trac.core import *
-from trac.wiki.macros import WikiMacroBase
+from trac.util.html import html as tag
 from trac.wiki.formatter import format_to_html, format_to_oneliner
+from trac.wiki.macros import WikiMacroBase
+
+author = "Peter Suter"
+version = "1.0 ($Rev$)"
+license = "BSD"
+url = "https://trac-hacks.org/wiki/FoldMacroProcessorMacro"
 
 
 class FoldMacro(WikiMacroBase):
