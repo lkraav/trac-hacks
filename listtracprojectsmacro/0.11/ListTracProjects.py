@@ -8,6 +8,11 @@ from genshi.builder import tag
 from trac.config import Option
 from trac.wiki.macros import WikiMacroBase
 
+author = "mathomas"
+version = "1.0 ($Rev$)"
+url = "https://trac-hacks.org/wiki/ListTracProjectsMacro"
+
+
 class ListTracProjectsMacro(WikiMacroBase):
 
     base_dir = Option('projects', 'base_dir',
