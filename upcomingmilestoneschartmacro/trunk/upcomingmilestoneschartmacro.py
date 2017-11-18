@@ -21,6 +21,11 @@ from trac.wiki.macros import WikiMacroBase
 
 pkg_resources.require('Trac >= 1.0')
 
+author = "Falk Brettschneider"
+version = "1.0 ($Rev$)"
+license = "BSD"
+url = "https://trac-hacks.org/wiki/UpcomingMilestonesChartMacro"
+
 
 class UpcomingMilestonesChartMacro(WikiMacroBase):
     """Display a list of the latest upcoming milestones.
@@ -31,7 +36,6 @@ class UpcomingMilestonesChartMacro(WikiMacroBase):
     """
 
     def expand_macro(self, formatter, name, text):
-        option_list = text.split(",")
         pattern, max_displayed, title, overdue_color = text.split(",")
 
         with self.env.db_query as db:
