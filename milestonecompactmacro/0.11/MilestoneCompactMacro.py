@@ -12,8 +12,9 @@ from trac.core import Component, implements
 from trac.wiki.api import IWikiMacroProvider
 from trac.wiki import format_to_html
 
-revison = "$Rev$"
-url = "$URL$"
+author = "Terry Brown"
+version = "1.0 ($Rev$)"
+url = "https://trac-hacks.org/wiki/MilestoneCompactMacro"
 
 
 class MilestoneCompactProcessor(Component):
