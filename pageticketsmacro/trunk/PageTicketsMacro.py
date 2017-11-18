@@ -6,6 +6,11 @@ from trac.wiki.formatter import format_to_html
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 
+author = "Lucid"
+version = "1.0 ($Rev$)"
+license = "BSD"
+url = "https://trac-hacks.org/wiki/PageTicketsMacro"
+
 
 class PageTicketsMacro(WikiMacroBase):
     """Expands to a TicketQuery of all tickets mentioned in the current wiki page.
@@ -16,7 +21,7 @@ class PageTicketsMacro(WikiMacroBase):
     {{{
     All tickets mentioned on this page:
     [[PageTickets()]]
-    
+
     New tickets mentioned on this page, grouped by milestone:
     [[PageTickets(status=new,group=milestone)]]
     }}}
