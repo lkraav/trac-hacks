@@ -8,15 +8,10 @@
 # you should have received as part of this distribution.
 #
 
-from pkg_resources import resource_filename
-
-from genshi.builder import tag
-
-from trac.core import implements
-from trac.web.chrome import ITemplateProvider, add_stylesheet
+from trac.web.chrome import add_stylesheet
 from trac.wiki.formatter import system_message
 from trac.wiki.macros import WikiMacroBase
-from trac.util.html import Markup
+from trac.util.html import html as tag
 from trac.util.text import exception_to_unicode
 from trac.util.translation import _
 

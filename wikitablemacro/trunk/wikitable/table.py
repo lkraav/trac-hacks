@@ -8,8 +8,6 @@
 # you should have received as part of this distribution.
 #
 
-from genshi.builder import tag
-
 from trac.core import implements
 from trac.db.api import get_column_names
 from trac.web.chrome import ITemplateProvider, add_stylesheet
@@ -17,6 +15,7 @@ from trac.wiki.formatter import format_to_html, system_message
 from trac.wiki.macros import WikiMacroBase
 from trac.util.text import exception_to_unicode, to_unicode
 from trac.util.translation import _
+from trac.util.html import html as tag
 
 
 class SQLTable(WikiMacroBase):
@@ -68,5 +67,5 @@ class SQLTable(WikiMacroBase):
         return tag.table(tag.thead(tag.tr(tag.th(c) for c in cols)),
                          tag.tbody(tag.tr((tag.td(format(c)) for c in row),
                                           class_='even' if idx % 2 else 'odd')
-                                          for idx, row in enumerate(rows)),
+                                   for idx, row in enumerate(rows)),
                          class_='listing wikitable')

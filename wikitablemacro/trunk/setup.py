@@ -17,13 +17,13 @@ setup(
     author_email='optilude@gmail.com',
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
-    description='Trac plugin for drawing a table from a SQL query in a wiki page',
-    url='http://trac-hacks.org/wiki/WikiTableMacro',
+    description='Trac plugin for drawing a table from a SQL query in wiki text',
+    url='https://trac-hacks.org/wiki/WikiTableMacro',
     version='0.3',
     license='3-Clause BSD',
     packages=['wikitable'],
-    package_data={'wikitable': ['htdocs/css/*.css',]},
-    entry_points = {
+    package_data={'wikitable': ['htdocs/css/*.css']},
+    entry_points={
         'trac.plugins': [
             'wikitable.table = wikitable.table',
             'wikitable.scalar = wikitable.scalar'
