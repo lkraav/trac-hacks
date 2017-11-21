@@ -172,7 +172,7 @@ class XLSXReader(object):
     def __init__(self, filename, sheet_index, datetime_format):
         self.fileobj = open(filename, 'rb')
         self.book = openpyxl.load_workbook(filename=self.fileobj,
-                                           read_only=True)
+                                           read_only=True, data_only=True)
         worksheets = self.book.worksheets
         self.sheets_count = len(worksheets)
         self.sheet = worksheets[sheet_index - 1]
