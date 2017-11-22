@@ -11,11 +11,11 @@
 # License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported
 # License URI: http://creativecommons.org/licenses/by-nc-sa/3.0/
 #
-import re
 
 from trac.config import Option
 from trac.core import implements, Component
 from trac.wiki import IWikiSyntaxProvider
+
 
 class MilnCheckbox(Component):
 
@@ -37,7 +37,7 @@ class MilnCheckbox(Component):
     def get_link_resolvers(self):
         return []
 
-    def _format_checkbox(self, contents = ' '):
+    def _format_checkbox(self, contents=' '):
         if contents == ' ':
             ballotbox = u'☐'
             checked = ''
@@ -48,7 +48,7 @@ class MilnCheckbox(Component):
         optional_class = ''
         if self.optional_class != '':
             optional_class = ' class="' + self.optional_class + '"'
-            
+
         if self.optional_type == 'html':
             return "<input type=\"checkbox\"%s disabled=\"disabled\"%s />" % (optional_class, checked)
         else:
