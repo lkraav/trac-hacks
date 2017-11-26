@@ -144,7 +144,7 @@ def _get_ini_file(section, trac_instance=None):
 # Authentication and "login" stuff
 
 def _login_auth(username, password, trac_url):
-    token = re.sub(r'(http[s]+)://(.*)',
+    token = re.sub(r'(http[s]?)://(.*)',
                    r'\1://%s:%s@\2' % (urllib.quote(username),
                                        urllib.quote(password)),
                    trac_url)
