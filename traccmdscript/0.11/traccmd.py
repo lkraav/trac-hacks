@@ -82,16 +82,17 @@ When a ticket has been created the ticket number is printed.
 Author: Nic Ferrier, nferrier@woome.com
 """
 
-import re
 import os
+import re
 import sys
-import xmlrpclib
 import tempfile
-import urllib
-from ConfigParser import ConfigParser
 import traceback
-from os.path import expanduser as expanduserpath
-from os.path import exists as path_exists
+import urllib
+import xmlrpclib
+from ConfigParser import ConfigParser
+from cmd import Cmd
+from datetime import datetime
+from os.path import expanduser as expanduserpath, exists as path_exists
 
 
 def _get_ini_file(section, trac_instance=None):
@@ -121,7 +122,7 @@ def _get_ini_file(section, trac_instance=None):
     trac_ini_file = os.environ.get(
         "TRAC_INI",
         expanduserpath("~/.trac_cmd.ini")
-        )
+    )
     if not path_exists(trac_ini_file):
         return {}
     try:
@@ -129,17 +130,18 @@ def _get_ini_file(section, trac_instance=None):
         cp = ConfigParser()
         cp.readfp(fd)
         return dict(cp.items(
-                section if not trac_instance else "%s.%s" % (
+            section if not trac_instance else "%s.%s" % (
                     section,
                     trac_instance
                     )
-                ))
+        ))
     except Exception, e:
-        print >>sys.stderr, "reading the trac_cmd ini file failed because: %s" % str(e)
+        print >>sys.stderr, "reading the trac_cmd ini file failed because: %s" % str(
+            e)
         return {}
 
 
-## Authentication and "login" stuff
+# Authentication and "login" stuff
 
 def _login_auth(username, password, trac_url):
     token = re.sub(r'(http[s]+)://(.*)',
@@ -149,13 +151,14 @@ def _login_auth(username, password, trac_url):
     os.environ["TRAC_URL"] = token
     return os.environ["TRAC_URL"]
 
+
 def _login(username=None, password=None, trac_url=None, trac_instance=None):
     """Do login filling in gaps from ini file if necessary"""
     auth_details = {
         "username": username,
         "password": password,
         "trac_url": trac_url
-        }
+    }
     if None in auth_details.values():
         cfg_details = _get_ini_file("Auth", trac_instance=trac_instance)
         auth_details.update(cfg_details)
@@ -164,10 +167,13 @@ def _login(username=None, password=None, trac_url=None, trac_instance=None):
 
 def loginemacs(username, password, trac_url=None):
     """Return the environment settings for doing trac env in emacs"""
-    print """(setenv "TRAC_URL" \"%s\")""" % _login(username, password, trac_url)
+    print """(setenv "TRAC_URL" \"%s\")""" \
+          % _login(username, password, trac_url)
+
 
 def shell(username, trac_instance=None, command=None):
-    """Make some script to export your username/password to your current session environment.
+    """Make some script to export your username/password to your current
+    session environment.
 
     Call this in your shell before using the other commands.
 
@@ -181,7 +187,7 @@ def shell(username, trac_instance=None, command=None):
     os.execl(os.environ["SHELL"])
 
 
-## RPC management
+# RPC management
 
 def _get_trac_url(trac_instance=None):
     trac_url = os.environ.get("TRAC_URL", None)
@@ -189,13 +195,15 @@ def _get_trac_url(trac_instance=None):
         return _login(trac_instance=trac_instance)
     return trac_url
 
+
 def _get_xmlrpc(trac_instance=None):
     """Called by everything to actually do the login"""
     trac_url = _get_trac_url(trac_instance=trac_instance)
     xr = xmlrpclib.ServerProxy("%s/login/rpc" % trac_url.rstrip('/'))
     return xr
 
-## RPC exposure methods
+# RPC exposure methods
+
 
 def methods(*patterns, **kwargs):
     """Lists the xmlrpc methods available from trac."""
@@ -210,6 +218,7 @@ def methods(*patterns, **kwargs):
         if matched:
             print methName
 
+
 def method(*methnames, **kwargs):
     """Shows the documentation for the xmlrpc methods specified.
     More than 1 method may be specified.
@@ -219,7 +228,8 @@ def method(*methnames, **kwargs):
     for meth in methnames:
         print server.system.methodHelp(meth)
 
-## Wiki handling methods
+# Wiki handling methods
+
 
 def wiki(page_name, version=None, trac_instance=None):
     """Simply retrieves the wiki page
@@ -228,11 +238,12 @@ def wiki(page_name, version=None, trac_instance=None):
 
     server = _get_xmlrpc(trac_instance=trac_instance)
     print "(:tracwikiproperties ("
-    for name,value in server.wiki.getPageInfo(page_name).iteritems():
-        print ":%s \"%s\"" % (name,value)
+    for name, value in server.wiki.getPageInfo(page_name).iteritems():
+        print ":%s \"%s\"" % (name, value)
     print "))"
     content = server.wiki.getPage(page_name)
     print content.encode("utf8")
+
 
 def wikiput(page_name, content=None, trac_instance=None):
     """Puts the page back to the wiki
@@ -241,13 +252,14 @@ def wikiput(page_name, content=None, trac_instance=None):
     stdin."""
 
     server = _get_xmlrpc(trac_instance=trac_instance)
-    if content == None or content == "-":
+    if content is None or content == "-":
         content = sys.stdin.read()
     try:
         server.wiki.putPage(page_name, content, {})
     except:
         print >>sys.stderr, "page does not exist: %s" % page_name
         sys.exit(1)
+
 
 def wikiedit(page_name, trac_instance=None):
     """Simple operating system trac integration.
@@ -287,12 +299,12 @@ def wikiedit(page_name, trac_instance=None):
                 server.wiki.putPage(page_name, content, {})
 
 
+# Ticket handling methods
 
-## Ticket handling methods
-
-def tickets(*args, **kwargs): ##kwargs specifically support trac_instance
+def tickets(*args, **kwargs):  # kwargs specifically support trac_instance
     """Alias for ticket(*args)"""
     ticket(*args, **kwargs)
+
 
 def _milestone_tickets(ticks, server):
     """Return a list of tickets, dereferncing milestones if appropriate"""
@@ -302,7 +314,8 @@ def _milestone_tickets(ticks, server):
     for t in ticks:
         m = milestonere.match(t)
         if m:
-            milestone_ticks = server.ticket.query("milestone=%s" % m.group("milestone_name"))
+            milestone_ticks = server.ticket.query(
+                "milestone=%s" % m.group("milestone_name"))
             ticklist += milestone_ticks
         else:
             tm = hashticketre.match(t)
@@ -312,7 +325,7 @@ def _milestone_tickets(ticks, server):
     return ticklist
 
 
-def ticket(*ticks, **kwargs): ##kwargs specifically support trac_instance
+def ticket(*ticks, **kwargs):  # kwargs specifically support trac_instance
     """Produce output about each ticket specified.
 
     Tickets can either be ticket numbers or \#ticketnumber or a
@@ -328,13 +341,14 @@ def ticket(*ticks, **kwargs): ##kwargs specifically support trac_instance
       \#6672 milestone:release_201011180943 1001
     """
     trac_instance = kwargs.get("trac_instance", None)
+
     def ticket_fmt(prefix, s):
         # Anti-charlie device
         # Sometimes he seems to add random unicode chars to strings
         # There is no rhyme or reason to this
         # We try and strip them out.
         if type(s) == type(u""):
-            s=s.encode('ascii', 'replace')
+            s = s.encode('ascii', 'replace')
         return re.sub("\n", "\n%s " % prefix, str(s))
 
     server = _get_xmlrpc(trac_instance=trac_instance)
@@ -343,7 +357,7 @@ def ticket(*ticks, **kwargs): ##kwargs specifically support trac_instance
     for t in ticklist:
         tick = server.ticket.get(t)
         attrs = tick[3]
-        for name,value in attrs.iteritems():
+        for name, value in attrs.iteritems():
             try:
                 print "%d %s %s" % (int(t), name, ticket_fmt("%d %s" % (int(t), name), value))
             except:
@@ -354,7 +368,8 @@ def ticket(*ticks, **kwargs): ##kwargs specifically support trac_instance
                 print u"%d %s" % (int(t), u" ".join(ticket_fmt(int(t), attrib) for attrib in log))
             except Exception, e:
                 print >>sys.stderr, traceback.format_exc()
-                print >>sys.stderr, "whoopsie! some problem (%s) with ticket: %s" % (str(e), t)
+                print >>sys.stderr, "whoopsie! some problem (%s) with ticket: %s" % (
+                    str(e), t)
 
 
 def ticketdetail(ticket_num, *details, **kwargs):
@@ -372,7 +387,9 @@ def ticketdetail(ticket_num, *details, **kwargs):
     for i in details:
         detail = attrs.get(i, None)
         if not None:
-            print ("#%s %s: %s" % (ticket_num, i, detail)).encode("ascii", "replace")
+            print ("#%s %s: %s" % (ticket_num, i, detail)
+                   ).encode("ascii", "replace")
+
 
 def ticketnew(to, summary, tickettype, component, description, trac_instance=None):
     """Make a new ticket
@@ -384,6 +401,7 @@ def ticketnew(to, summary, tickettype, component, description, trac_instance=Non
     description - a longer description
     """
     class ValidationError(Exception):
+
         def __init__(self, field, fieldname, possibles):
             self.field = field
             self.fieldname = fieldname
@@ -401,9 +419,9 @@ def ticketnew(to, summary, tickettype, component, description, trac_instance=Non
 
         ticket_number = server.ticket.create(summary,
                                              description,
-                                             { "owner": to,
-                                               "type": tickettype,
-                                               "component": component },
+                                             {"owner": to,
+                                              "type": tickettype,
+                                              "component": component},
                                              True)
         print ticket_number
     except ValidationError, e:
@@ -412,7 +430,7 @@ def ticketnew(to, summary, tickettype, component, description, trac_instance=Non
             e.field,
             e.fieldname,
             " ".join(e.possibles)
-            )
+        )
         sys.exit(1)
 
 # This controls whether the field must be forced or not
@@ -420,6 +438,7 @@ def ticketnew(to, summary, tickettype, component, description, trac_instance=Non
 # eg:
 #   force:milestone
 FIELD_REQUIRES_FORCE = ["milestone"]
+
 
 def _force_guard(field, current_attribs):
     """Check if the field name is specified in FIELD_REQUIRES_FORCE.
@@ -432,6 +451,7 @@ def _force_guard(field, current_attribs):
         if current_attribs.get(fieldname) and fieldm.group("force") != "force:":
             return False
     return fieldname
+
 
 def ticketupdate(ticket, field, value, description="", trac_instance=None):
     """Simple update for tickets.
@@ -448,7 +468,7 @@ def ticketupdate(ticket, field, value, description="", trac_instance=None):
             newticket = server.ticket.update(
                 int(ticket_number),
                 value
-                )
+            )
         else:
             current = server.ticket.get(t)
             fieldname = _force_guard(field, current[3])
@@ -457,23 +477,22 @@ def ticketupdate(ticket, field, value, description="", trac_instance=None):
                     field,
                     value,
                     t
-                    )
+                )
                 sys.exit(1)
             else:
                 newticket = server.ticket.update(
                     int(t),
                     description if description != "" else "changing %s" % fieldname,
-                    { fieldname: value.strip() }
-                    )
+                    {fieldname: value.strip()}
+                )
 
-
-from datetime import datetime
 
 def milestones(trac_instance):
     """List the milestones"""
     server = _get_xmlrpc(trac_instance=trac_instance)
     for m in server.ticket.milestone.getAll():
         print m
+
 
 def milestonenew(tag, trac_instance=None):
     """Make a new milestone.
@@ -484,25 +503,28 @@ def milestonenew(tag, trac_instance=None):
     server.ticket.milestone.create(tag, {})
     print tag
 
+
 def milestonecomplete(tag, trac_instance=None):
     """Mark the milestone completed.
 
     tag - the tag to give the milestone.
     """
     server = _get_xmlrpc(trac_instance=trac_instance)
-    server.ticket.milestone.update(tag, {"completed":datetime.now()})
+    server.ticket.milestone.update(tag, {"completed": datetime.now()})
+
 
 def milestoneupdate(tag, name, value, trac_instance=None):
     """Update the specified milestone"""
     server = _get_xmlrpc(trac_instance=trac_instance)
-    server.ticket.milestone.update(tag, {name:value})
+    server.ticket.milestone.update(tag, {name: value})
     print value
 
 
-## More admin stuff
+# More admin stuff
 
 def help(*lst):
     print __doc__
+
 
 def fnre(s, regex, grp=0):
     """Functional regex match"""
@@ -511,10 +533,12 @@ def fnre(s, regex, grp=0):
         return m.group(grp)
     return None
 
+
 def ticket_number(str):
     m = re.match("#*([0-9]+)", str)
     ticket_number = m.group(1) if m else str
     return ticket_number
+
 
 def ticket_or_milestone(str):
     m = re.match("(#*(?P<tn>[0-9]+))|(?P<mname>milestone:.*)", str)
@@ -526,7 +550,6 @@ def ticket_or_milestone(str):
     return str
 
 
-from cmd import Cmd
 class SysArgsCmd(Cmd):
     """Let's you use cmd with arg lists"""
 
@@ -550,17 +573,19 @@ class TracCmd(SysArgsCmd):
     trac_instance = None
 
     def _set_common_opts(self, parser):
-        """If we can get option parser working for the sub commands this could do the common stuff"""
+        """If we can get option parser working for the sub commands this
+        could do the common stuff
+        """
         parser.add_option()
 
     def do_methods(self, arg):
         """Display help on a xmlrpc methods"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         methods(*arg, **kwargs)
 
     def do_method(self, arg):
         """Display help on a specific xmlrpc method"""
-        kwargs = { "trac_instance": self.trac_instance}
+        kwargs = {"trac_instance": self.trac_instance}
         method(*arg, **kwargs)
 
     def do_xmlrpc(self, arg):
@@ -578,51 +603,51 @@ class TracCmd(SysArgsCmd):
 
     def do_wiki(self, arg):
         """Get the wiki page specified"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         wiki(*arg, **kwargs)
 
     def do_wikiedit(self, arg):
         """Use your editor to edit the specified wiki page"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         wikiedit(*arg, **kwargs)
 
     def do_wikiput(self, arg):
         """Put a page back to the wiki"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         wikiput(*arg, **kwargs)
 
     def do_milestones(self, arg):
         """List all the milestones"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         milestones(*arg, **kwargs)
 
     def do_milestonenew(self, arg):
         """Make a new milestone"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         milestonenew(*arg, **kwargs)
 
     def do_milestonecomplete(self, arg):
         """Complete the milestone"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         milestonecomplete(*arg, **kwargs)
 
     def do_milestoneupdate(self, arg):
         """Update the milestone"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         milestoneupdate(*arg, **kwargs)
 
     def do_shell(self, arg):
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         shell(*arg, **kwargs)
 
     def do_ticketdetail(self, arg):
         """Print specific details about a ticket"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         ticketdetail(ticket_number(arg[0]), *arg[1:], **kwargs)
 
     def do_td(self, arg):
         """Alias for ticketdetail"""
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         ticketdetail(ticket_number(arg[0]), *arg[1:], **kwargs)
 
     def do_tickets(self, arg):
@@ -642,7 +667,7 @@ milestone references and ticket numbers can be mixed, eg:
 
 If you use #ticket in a shell be careful to escape the #
 """
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         ticket(*arg, **kwargs)
 
     def do_ticket(self, arg):
@@ -655,7 +680,7 @@ If you use #ticket in a shell be careful to escape the #
         ticketupdate number field value [description]
         """
         tn = ticket_number(arg[0])
-        kwargs = { "trac_instance": self.trac_instance }
+        kwargs = {"trac_instance": self.trac_instance}
         ticketupdate(tn, *arg[1:], **kwargs)
 
     def do_ticketnew(self, arg):
@@ -665,9 +690,10 @@ If you use #ticket in a shell be careful to escape the #
         """
 
         # Todo
-        # Suggestion: if no parameters are presented we could ask for the data with an edit form
-        # (pop up a form into an editor and read back data specified)
-        kwargs = { "trac_instance": self.trac_instance }
+        # Suggestion: if no parameters are presented we could ask for the data
+        # with an edit form (pop up a form into an editor and read back data
+        # specified)
+        kwargs = {"trac_instance": self.trac_instance}
         ticketnew(*arg, **kwargs)
 
 
@@ -683,7 +709,7 @@ if __name__ == "__main__":
         dest="trac_instance",
         help="specify the name of the trac instance in your .trac_cmd.ini file",
         default=None,
-        )
+    )
 
     o, a = p.parse_args(sys.argv[1:])
     cmdproc.trac_instance = o.trac_instance
