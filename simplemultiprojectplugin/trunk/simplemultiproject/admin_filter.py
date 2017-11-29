@@ -545,7 +545,7 @@ class SmpFilterDefaultComponentPanels(Component):
                 stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
             else:
                 # 'Manage Component' panel
-                filter_form = Transformer('//form[@id="modcomp"]//div[@class="field"][1]')
+                filter_form = Transformer('//form[@id="modcomp" or @id="edit"]//div[@class="field"][1]')
                 stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
 
