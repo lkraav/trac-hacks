@@ -30,7 +30,7 @@ def get_reader(env, filename, sheet_index, datetime_format, encoding='utf-8'):
             raise TracError('The sheet index (%s) does not seem to correspond to an existing sheet in the spreadsheet'
                             % sheet_index)
         except Exception, e:
-            errors['XLSXReader'] = exception_to_unicode(e)
+            errors['XLSXReader'] = exception_to_unicode(e, traceback=True)
 
     if xlrd:
         try:
@@ -38,21 +38,30 @@ def get_reader(env, filename, sheet_index, datetime_format, encoding='utf-8'):
         except IndexError:
             raise TracError('The sheet index (%s) does not seem to correspond to an existing sheet in the spreadsheet'
                             % sheet_index)
-        except Exception, e:
+        except xlrd.XLRDError, e:
             errors['XLSReader'] = exception_to_unicode(e)
+        except Exception, e:
+            errors['XLSReader'] = exception_to_unicode(e, traceback=True)
 
     try:
         return CSVReader(filename, encoding)
     except UnicodeDecodeError:
         raise TracError('Unable to read the CSV file with "%s"' % encoding)
-    except Exception, e:
+    except csv.Error, e:
         errors['CSVReader'] = exception_to_unicode(e)
-        env.log.warning('Exception caught while reading the file (%r)', errors)
-        if xlrd or openpyxl:
-            message = 'Unable to read this file, does not seem to be a valid Excel or CSV file.'
-        else:
-            message = 'XLS reading is not configured, and this file is not a valid CSV file: unable to read file.'
-        raise TracError(message)
+    except Exception, e:
+        errors['CSVReader'] = exception_to_unicode(e, traceback=True)
+
+    for name, error in errors.iteritems():
+        env.log.warning('Exception caught while reading the file using %s: %s',
+                        name, error)
+    if xlrd or openpyxl:
+        message = 'Unable to read this file, does not seem to be a valid ' \
+                  'Excel or CSV file.'
+    else:
+        message = 'XLS reading is not configured, and this file is not a ' \
+                  'valid CSV file: unable to read file.'
+    raise TracError(message)
 
 def _to_unicode(val):
     if val is None or isinstance(val, unicode):
