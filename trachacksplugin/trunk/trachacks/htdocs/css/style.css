@@ -1,7 +1,7 @@
 /* vim: syntax=css
 */
 body {
- background: url("/chrome/hacks/png/trachacks_bg.png") 64px 64px;
+ background: url("../png/trachacks_bg.png") 64px 64px;
 }
 
 #ticket form {
