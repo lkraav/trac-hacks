@@ -1,4 +1,5 @@
 import dbhelper
+import re
 from trac.ticket.default_workflow import get_workflow_config
 try: 
     set 
@@ -6,7 +7,8 @@ except NameError:
     from sets import Set as set     # Python 2.3 fallback 
 
 def status_variables(statuses):
-    return ', '.join(['$'+i.upper().replace("_","").replace(" ","") for i in list(statuses)])
+    return ', '.join(['$'+re.sub(r"\W|_|\s", "", i.upper(), re.I)
+                      for i in list(statuses)])
 
 def get_statuses(env):
     config = env.config
