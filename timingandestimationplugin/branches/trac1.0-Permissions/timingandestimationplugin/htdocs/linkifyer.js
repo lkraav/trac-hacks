@@ -65,12 +65,12 @@ function addBillingField( name, type, status ){
   var name = decodeHtml(name);
   var type = type || "textbox";
   var status = status || false;
-  // console.log('addBillingField', name, type, status)
-  var fn = type == 'checkbox' ? getSetCheck :
-        type == 'date' ? getSetDate :
-        getSetInp;
-  var ctl = jQuery(document.getElementById(name));
-  var get = function(){ return fn(ctl);};
+  var fn = getSetInp;
+  if (type == 'checkbox') fn = getSetCheck;
+  if (type == 'date' ) fn = getSetDate;
+  //console.log('addBillingField', name, type, status, fn);
+  var ctl = name;
+  var get = function(){ return fn(jQuery(document.getElementById(name)));};
   var o = { name: name, ctl: ctl, getval: get };
   billingfields[name] = o;
   if (status){
