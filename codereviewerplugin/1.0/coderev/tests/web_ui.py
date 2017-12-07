@@ -12,6 +12,7 @@ import unittest
 
 from trac.test import EnvironmentStub, Mock, MockPerm, locale_en
 from trac.util.datefmt import to_utimestamp, utc
+from trac.perm import PermissionCache, PermissionSystem
 from trac.web.api import RequestDone, _RequestArgs
 from trac.versioncontrol.api import Changeset, Repository
 
@@ -33,7 +34,8 @@ def _revert_schema_init(env):
 class CodeReviewerModuleTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub()
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=['trac.*', 'coderev.*'])
         _upgrade_environment(self.env)
         self.url = None
 
@@ -56,20 +58,29 @@ class CodeReviewerModuleTestCase(unittest.TestCase):
         return Mock(add_redirect_listener=lambda x: [].append(x),
                     redirect=redirect, **kw)
 
-    def test_save_status(self):
+    def _save_status(self, with_permission):
         repos = Mock(reponame='repos1', short_rev=lambda c: int(c),
                      db_rev=lambda rev: '%010d' % rev)
         changeset = Mock(rev=1, repos=repos)
         args = _RequestArgs(tickets=None, status='PASSED',
                             summary='the summary')
+        if with_permission:
+            PermissionSystem(self.env).grant_permission('anonymous',
+                                                        'CODEREVIEWER_MODIFY')
         req = self._create_request(method='POST', path_info='/changeset/1',
+                                   perm=PermissionCache(self.env, 'anonymous'),
                                    args=args)
         crm = CodeReviewerModule(self.env)
         data = {'changeset': changeset}
+        return crm.post_process_request(req, 'changeset.html', data, None)
 
-        self.assertRaises(RequestDone, crm.post_process_request, req,
-                          None, data, None)
+    def test_save_status_with_permission(self):
+        self.assertRaises(RequestDone, self._save_status, True)
         self.assertEqual('/trac.cgi/changeset/1', self.url)
+
+    def test_save_status_without_permission(self):
+        rv = self._save_status(False)
+        self.assertEqual('changeset.html', rv[0])
 
 
 class ChangesetTicketMapperTestCase(unittest.TestCase):

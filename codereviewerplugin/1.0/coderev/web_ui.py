@@ -76,7 +76,8 @@ class CodeReviewerModule(Component):
     def post_process_request(self, req, template, data, content_type):
         diff_mode = data and 'changeset' in data and \
                     data['changeset'] is False
-        if req.path_info.startswith('/changeset') and not diff_mode:
+        if req.path_info.startswith('/changeset') and not diff_mode and \
+                'CODEREVIEWER_MODIFY' in req.perm:
             changeset = data['changeset']
             repos = changeset.repos
             reponame, rev = repos.reponame, repos.db_rev(changeset.rev)
