@@ -349,10 +349,11 @@ class ChangesetTicketMapper(Component):
         ctu = CommitTicketUpdater(self.env)
         tickets = set(ctu._parse_message(changeset.message))
         when = to_utimestamp(changeset.date)
+        srev = str(changeset.rev)
 
         with self.env.db_transaction as db:
             db("DELETE FROM codereviewer_map WHERE repo=%s and changeset=%s",
-               (reponame or '', changeset.rev))
+               (reponame or '', srev))
             if not tickets:
                 tickets = ['']  # we still want merges inserted
             for ticket in tickets:
@@ -360,9 +361,8 @@ class ChangesetTicketMapper(Component):
                     db("""INSERT INTO codereviewer_map
                         (repo,changeset,ticket,time)
                        VALUES (%s,%s,%s,%s)
-                       """, (reponame or '', changeset.rev, ticket, when))
+                       """, (reponame or '', srev, ticket, when))
                 except Exception, e:
                     self.log.warning("Unable to insert changeset "
                                      "%s/%s and ticket %s into db: %s",
-                                     changeset.rev, reponame or '',
-                                     ticket, e)
+                                     srev, reponame or '', ticket, e)
