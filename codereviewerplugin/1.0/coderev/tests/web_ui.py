@@ -13,7 +13,7 @@ import unittest
 from trac.test import EnvironmentStub, Mock, MockPerm, locale_en
 from trac.util.datefmt import to_utimestamp, utc
 from trac.perm import PermissionCache, PermissionSystem
-from trac.web.api import RequestDone, _RequestArgs
+from trac.web.api import RequestDone, arg_list_to_args
 from trac.versioncontrol.api import Changeset, Repository
 
 from coderev.api import CodeReviewerSystem
@@ -38,6 +38,7 @@ class CodeReviewerModuleTestCase(unittest.TestCase):
                                    enable=['trac.*', 'coderev.*'])
         _upgrade_environment(self.env)
         self.url = None
+        self.crm = CodeReviewerModule(self.env)
 
     def tearDown(self):
         _revert_schema_init(self.env)
@@ -58,21 +59,29 @@ class CodeReviewerModuleTestCase(unittest.TestCase):
         return Mock(add_redirect_listener=lambda x: [].append(x),
                     redirect=redirect, **kw)
 
+    def _create_repos(self, reponame):
+        return Mock(reponame=reponame, short_rev=lambda c: int(c),
+                    db_rev=lambda rev: '%010d' % rev)
+
+    def _create_changeset(self, repos, rev):
+        return Mock(repos=repos, rev=rev)
+
+    def _grant_permission(self, username, action):
+        permsys = PermissionSystem(self.env)
+        permsys.grant_permission(username, action)
+
     def _save_status(self, with_permission):
-        repos = Mock(reponame='repos1', short_rev=lambda c: int(c),
-                     db_rev=lambda rev: '%010d' % rev)
-        changeset = Mock(rev=1, repos=repos)
-        args = _RequestArgs(tickets=None, status='PASSED',
-                            summary='the summary')
+        repos = self._create_repos('repos1')
+        changeset = self._create_changeset(repos, 1)
+        args = arg_list_to_args([('tickets', None), ('status', 'PASSED'),
+                                 ('summary', 'the summary')])
         if with_permission:
-            PermissionSystem(self.env).grant_permission('anonymous',
-                                                        'CODEREVIEWER_MODIFY')
+            self._grant_permission('anonymous', 'CODEREVIEWER_MODIFY')
         req = self._create_request(method='POST', path_info='/changeset/1',
                                    perm=PermissionCache(self.env, 'anonymous'),
                                    args=args)
-        crm = CodeReviewerModule(self.env)
         data = {'changeset': changeset}
-        return crm.post_process_request(req, 'changeset.html', data, None)
+        return self.crm.post_process_request(req, 'changeset.html', data, None)
 
     def test_save_status_with_permission(self):
         self.assertRaises(RequestDone, self._save_status, True)
@@ -81,6 +90,16 @@ class CodeReviewerModuleTestCase(unittest.TestCase):
     def test_save_status_without_permission(self):
         rv = self._save_status(False)
         self.assertEqual('changeset.html', rv[0])
+
+    def test_post_process_request_on_error(self):
+        self._grant_permission('anonymous', 'CODEREVIEWER_MODIFY')
+        args = arg_list_to_args([('tickets', None), ('status', 'PASSED'),
+                                 ('summary', 'the summary')])
+        req = self._create_request(method='POST', path_info='/changeset/1',
+                                   perm=PermissionCache(self.env, 'anonymous'),
+                                   args=args)
+        self.assertEqual((None, None, None),
+                         self.crm.post_process_request(req, None, None, None))
 
 
 class ChangesetTicketMapperTestCase(unittest.TestCase):
