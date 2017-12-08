@@ -204,6 +204,8 @@ class CodeReviewerModule(Component):
         """
         changes = {}
         for group in getattr(self, status, []):
+            if '=' not in group:
+                continue
             field, value = group.split('=', 1)
             if value.startswith('{'):
                 value = tkt[value.strip('{}')]

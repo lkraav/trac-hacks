@@ -87,6 +87,8 @@ def is_incomplete(env, review, ticket):
         pass  # e.g., incorrect ticket reference
     else:
         for criteria in env.config.getlist('codereviewer', 'completeness'):
+            if '=' not in criteria:
+                continue
             field, rule = criteria.split('=', 1)
             value = tkt[field]
             rule_re = re.compile(rule)
