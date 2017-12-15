@@ -1,12 +1,3 @@
-<?python
-
-first_metanav = chrome['nav']['metanav'][0]['label']
-if hasattr(first_metanav, 'children'):
-  user_menu_text = first_metanav.children
-else:
-  user_menu_text = first_metanav
-
-?>
 <!DOCTYPE html
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -74,8 +65,9 @@ else:
 
                  <div class="collapse navbar-collapse">
                   <div class="btn-group pull-right" id="metanav">
-                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                      ${user_menu_text}
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"
+                       py:with="first_metanav = chrome['nav']['metanav'][0]['label'];">
+                      ${first_metanav}
                       <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu" py:if="chrome.nav['metanav']">

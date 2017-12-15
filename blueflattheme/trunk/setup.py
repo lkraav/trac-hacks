@@ -12,7 +12,7 @@ from setuptools import setup
 
 setup(
     name='BlueFlatTheme',
-    version='1.0',
+    version='1.0.1',
     packages=['blueflattheme'],
     package_data={'blueflattheme': ['htdocs/css/*.css',
                                      'htdocs/fonts/*',
