@@ -78,9 +78,10 @@ class TracBackLinkCommandProvider(Component):
         isatty = hasattr(out, 'fileno') and os.isatty(out.fileno())
 
         def print_stat(n_links, n_models, realm, newline=True):
-            msg = 'Gathered %d links from %d %s objects%s' % \
-                  (n_links, n_models, realm, '' if newline else '\r')
-            console_print(out, msg, newline=newline)
+            if isatty:
+                msg = 'Gathered %d links from %d %s objects%s' % \
+                      (n_links, n_models, realm, '' if newline else '\r')
+                console_print(out, msg, newline=newline)
 
         mod = TracBackLinkSystem(self.env)
         specs = [
@@ -102,8 +103,7 @@ class TracBackLinkCommandProvider(Component):
                     n += 1
                 n_links += n
                 n_models += 1
-                if isatty:
-                    print_stat(n_links, n_models, realm_, newline=False)
+                print_stat(n_links, n_models, realm_, newline=False)
             print_stat(n_links, n_models, realm_)
 
     def _iter_wikis(self, args):
