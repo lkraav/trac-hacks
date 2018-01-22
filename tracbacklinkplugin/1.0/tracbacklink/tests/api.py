@@ -11,6 +11,7 @@ from __future__ import with_statement
 import inspect
 import os
 import pkg_resources
+import tempfile
 import unittest
 from cStringIO import StringIO
 from datetime import datetime
@@ -87,7 +88,7 @@ class CachedRepositoryStub(CachedRepository):
 class GatherLinksTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub(default_data=True,
+        self.env = EnvironmentStub(default_data=True, path=_mkdtemp(),
                                    enable=['trac.*', RepositoryStubConnector])
         dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
         pages = pkg_resources.resource_listdir('trac.wiki', 'default-pages')
@@ -375,7 +376,7 @@ class ChangeListenersTestCase(unittest.TestCase):
     _form_token = 'a' * 40
 
     def setUp(self):
-        self.env = EnvironmentStub(default_data=True,
+        self.env = EnvironmentStub(default_data=True, path=_mkdtemp(),
                                    enable=['trac.*', TracBackLinkSystem,
                                            RepositoryStubConnector])
         dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
@@ -738,6 +739,10 @@ def _add_cset(env, reponame, message, *revs):
             INSERT INTO revision (repos, rev, message, author, time)
             VALUES (%s,%s,%s,%s,%s)
             """, [(repos.id, rev, message, 'anonymous', ts) for rev in revs])
+
+
+def _mkdtemp():
+    return os.path.realpath(tempfile.mkdtemp(prefix='trac-testdir-'))
 
 
 def test_suite():
