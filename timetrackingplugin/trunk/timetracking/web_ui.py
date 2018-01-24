@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from genshi.builder import tag
 
 from trac.admin import *
-from trac.config import BoolOption, Option
+from trac.config import BoolOption, IntOption, Option
 from trac.core import *
 from trac.util.datefmt import format_date, parse_date, utc
 from trac.util.presentation import Paginator
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet, add_notice, add_warning
 
 from timetracking.model import LogEntry, Task, Estimate
+
+
+def next_day(reference_date, use_weekends):
+    reference_date += timedelta(days=1)
+    if not use_weekends:
+        while reference_date.weekday() >= 5: # sunday = 6
+            reference_date += timedelta(days=1)
+    return reference_date
 
 
 class LogEntryAdminPanel(Component):
@@ -34,6 +42,12 @@ class LogEntryAdminPanel(Component):
 
     label_project = Option('timetracking', 'project.label', 'Project',
         """Label for the project field.""")
+
+    default_spent_hours = IntOption('timetracking', 'spent_hours.default', 8,
+        """Default for the spent hours field.""")
+
+    use_weekends = BoolOption('timetracking', 'weekends', 'False',
+        """By default skip weekends.""")
 
     # IAdminPanelProvider methods
 
@@ -139,11 +153,9 @@ class LogEntryAdminPanel(Component):
                     req.redirect(req.href.admin(category, panel, user=user, year=year))
                 elif req.args.get('remove'):
                     # Remove entries
-                    logentry_ids = req.args.get('sel')
+                    logentry_ids = req.args.getlist('sel')
                     if not logentry_ids:
                         raise TracError('No entries selected')
-                    if not isinstance(logentry_ids, list):
-                        logentry_ids = [logentry_ids]
                     LogEntry.delete_by_ids(self.env, logentry_ids)
                     add_notice(req, 'The entries have been removed.')
                     req.redirect(req.href.admin(category, panel, user=user, year=year))
@@ -187,6 +199,28 @@ class LogEntryAdminPanel(Component):
                                     'string': str(paginator.page + 1),
                                     'title':None}
 
+            # Use heuristics to determine default values in "Add new entry" form:
+            if entries:
+                latest_entry_date = max(entry.date for entry in entries)
+                latest_date_entries = [entry for entry in entries if entry.date == latest_entry_date]
+                latest_spent_hours = sum(entry.spent_hours for entry in latest_date_entries)
+                latest_entry = latest_date_entries[0]
+                default_task_id = latest_entry.task_id
+                if latest_spent_hours >= self.default_spent_hours:
+                    default_spent_hours = self.default_spent_hours
+                    default_date = next_day(latest_entry.date, use_weekends=self.use_weekends)
+                else:
+                    default_spent_hours = self.default_spent_hours - latest_spent_hours
+                    default_date = latest_entry.date
+                default_location = latest_entry.location
+                default_comment = latest_entry.comment
+            else:
+                default_task_id = None
+                default_spent_hours = 0
+                default_date = datetime.utcnow()
+                default_location = ""
+                default_comment = ""
+
             data = {'view': 'list',
                     'paginator': paginator,
                     'max_per_page': max_per_page,
@@ -203,12 +237,17 @@ class LogEntryAdminPanel(Component):
                     'allow_user_switching': allow_user_switching,
                     'format_date_utc': format_date_utc,
                     'format_task_label': format_task_label,
+                    'default_task_id': default_task_id,
+                    'default_spent_hours': default_spent_hours,
+                    'default_date': default_date,
+                    'default_location': default_location,
+                    'default_comment': default_comment,
             }
 
         Chrome(self.env).add_jquery_ui(req)
         add_script(req, 'timetracking/chosen/chosen.jquery.js')
         add_stylesheet(req, 'timetracking/chosen/chosen.css')
-        return 'timetracking_logentries.html', data
+        return 'timetracking_logentries.html', data, None
 
     def render_tasks_panel(self, req, category, panel, path_info):
         # Detail view?
@@ -277,7 +316,7 @@ class LogEntryAdminPanel(Component):
                     'selected_year': year,
                     'estimate_name': estimate_name,
                 }
-                return 'timetracking_copyestimates.html', data
+                return 'timetracking_copyestimates.html', data, None
 
 
             if req.method == 'POST':
@@ -294,11 +333,9 @@ class LogEntryAdminPanel(Component):
                     req.redirect(req.href.admin(category, panel, year=year))
                 elif req.args.get('remove'):
                     # Remove tasks
-                    task_ids = req.args.get('sel')
+                    task_ids = req.args.getlist('sel')
                     if not task_ids:
                         raise TracError('No tasks selected')
-                    if not isinstance(task_ids, list):
-                        task_ids = [task_ids]
                     Task.delete_by_ids(self.env, task_ids)
                     Estimate.delete_by_task_ids(self.env, task_ids)
                     add_notice(req, 'The tasks have been removed.')
@@ -339,4 +376,4 @@ class LogEntryAdminPanel(Component):
 
         add_script(req, 'timetracking/chosen/chosen.jquery.js')
         add_stylesheet(req, 'timetracking/chosen/chosen.css')
-        return 'timetracking_tasks.html', data
+        return 'timetracking_tasks.html', data, None

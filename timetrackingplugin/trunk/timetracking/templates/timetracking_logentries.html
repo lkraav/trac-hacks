@@ -89,21 +89,21 @@
             <div class="field">
               <label>Task:
                 <select name="task_id" class="chosen-select">
-                    <option py:for="task in tasks" value="$task.id">${format_task_label(task)}</option>
+                    <option py:for="task in tasks" value="$task.id" selected="${task.id == default_task_id or None}">${format_task_label(task)}</option>
                 </select>
               </label>
             </div>
             <div class="field">
-              <label>Spent hours: <input type="text" name="spent_hours" /></label>
+              <label>Spent hours: <input type="text" name="spent_hours" value="$default_spent_hours" /></label>
             </div>
             <div class="field">
-              <label>Date: <br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(datetime.utcnow())}"/></label>
+              <label>Date: <br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(default_date)}"/></label>
             </div>
             <div py:if="show_location" class="field">
-              <label>$label_location: <br /><input type="text" name="location" value=""/></label>
+              <label>$label_location: <br /><input type="text" name="location" value="$default_location"/></label>
             </div>
             <div class="field">
-              <label>Comment: <input type="text" name="comment" /></label>
+              <label>Comment: <input type="text" name="comment" value="$default_comment"/></label>
             </div>
             <div class="buttons">
               <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
