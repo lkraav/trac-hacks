@@ -133,7 +133,7 @@ class PlantUmlMacro(WikiMacroBase):
         img_link = formatter.href('plantuml', id=img_id)
         cmap = self._is_cmapx_existing(img_id) and \
                self._read_cmapx_from_file(img_id) or ''
-        return Markup(cmap) + tag.img(src=img_link, usemap=img_id + '_map')
+        return Markup(cmap) + tag.img(src=img_link, usemap='#%s_map' % img_id)
 
     def get_macros(self):
         yield 'PlantUml'  # WikiMacros syntax
