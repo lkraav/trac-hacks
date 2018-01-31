@@ -20,12 +20,13 @@ from trac.attachment import Attachment
 from trac.core import Component, implements
 from trac.db.api import DatabaseManager
 from trac.resource import Resource
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Milestone, Ticket
 from trac.util.datefmt import from_utimestamp, to_utimestamp, utc
 from trac.versioncontrol.api import (
-    DbRepositoryProvider, IRepositoryConnector, Repository, RepositoryManager)
+    DbRepositoryProvider, IRepositoryConnector, NoSuchChangeset, Repository,
+    RepositoryManager)
 from trac.versioncontrol.cache import CachedRepository
 from trac.wiki.admin import WikiAdmin
 from trac.wiki.model import WikiPage
@@ -48,20 +49,53 @@ class RepositoryStubConnector(Component):
     implements(IRepositoryConnector)
 
     def get_supported_types(self):
-        yield 'stub', 1
+        yield 'cached-stub', 1
+        yield 'raw-stub', 1
 
     def get_repository(self, repos_type, repos_dir, params):
-        def __init__(*args, **kwargs):
-            Repository.__init__(*args, **kwargs)
-        repos = Mock(Repository, params['name'], params, self.log,
-                     __init__=__init__)
-        return CachedRepositoryStub(self.env, repos, self.log)
+        repos = RepositoryStub(params['name'], params, self.log)
+        assert repos_type in ('cached-stub', 'raw-stub')
+        if repos_type == 'cached-stub':
+            repos = CachedRepositoryStub(self.env, repos, self.log)
+        return repos
+
+
+class RepositoryStub(Repository):
+
+    close = get_changes = get_node = get_oldest_rev = get_path_history = \
+        get_youngest_rev = next_rev = normalize_path = previous_rev = \
+        rev_older_than = sync = lambda self, *args, **kwargs: None
+
+    def __init__(self, *args):
+        Repository.__init__(self, *args)
+        self._revs = {}
+        self._old_revs = {}
+
+    def get_changeset(self, rev):
+        rev = self.normalize_rev(rev)
+        return self._get_cset(rev, self._revs[rev])
+
+    def normalize_rev(self, rev):
+        return int(rev)
+
+    def sync_changeset(self, rev):
+        rev = self.normalize_rev(rev)
+        if rev in self._old_revs:
+            values = self._old_revs[rev]
+            del self._old_revs[rev]
+            return self._get_cset(rev, values)
+        else:
+            raise NoSuchChangeset(rev)
+
+    def _get_cset(self, rev, values):
+        message, author, date = values
+        return Changeset(self, rev, message, author, from_utimestamp(date))
 
 
 class CachedRepositoryStub(CachedRepository):
 
     def db_rev(self, rev):
-        return '%05d' % int(rev)
+        return '%010d' % int(rev)
 
     def rev_db(self, rev):
         return int(rev or 0)
@@ -296,36 +330,42 @@ class GatherLinksTestCase(unittest.TestCase):
               u'[[milestone:milestone4|Milestone 4]]\n'
               u'milestone:"milé stoné"\n'))
 
-    def test_changeset_links(self):
+    def _test_changeset_links(self, repos_type):
         repos_prov = DbRepositoryProvider(self.env)
-        repos_prov.add_repository('', '/', 'stub')
-        repos_prov.add_repository('foo', '/foo', 'stub')
-        repos_prov.add_repository('bar', '/bar', 'stub')
-        _add_cset(self.env, '', None, '00042')
-        _add_cset(self.env, 'foo', None, '00043')
-        _add_cset(self.env, 'bar', None, '00044')
+        repos_prov.add_repository('', '/', repos_type)
+        repos_prov.add_repository('foo', '/foo', repos_type)
+        repos_prov.add_repository('bar', '/bar', repos_type)
+        _add_cset(self.env, '', None, 42)
+        _add_cset(self.env, 'foo', None, 43)
+        _add_cset(self.env, 'bar', None, 44)
 
         def test(expected, reponame, rev, message):
             repos = RepositoryManager(self.env).get_repository(reponame)
-            cset = Changeset(repos, '00001', message, 'anonymous',
+            cset = Changeset(repos, '0000000001', message, 'anonymous',
                              datetime.now(utc))
             actual = set(self._gather(cset, message))
             expected = set(expected)
             self.assertEqual(expected - (expected & actual),
                              actual - (expected & actual))
 
-        test([Resource('repository', '').child('changeset', '00042')],
-             '', '00042', 'changeset:42')
-        test([Resource('repository', '').child('changeset', '00042')],
-             '', '00042', '[42]')
-        test([Resource('repository', '').child('changeset', '00042')],
-             '', '00042', 'r42')
-        test([Resource('repository', 'foo').child('changeset', '00043')],
-             'foo', '00043', 'changeset:43/foo')
-        test([Resource('repository', 'foo').child('changeset', '00043')],
-             'foo', '00043', '[43/foo]')
-        test([Resource('repository', 'foo').child('changeset', '00043')],
-             'foo', '00043', 'r43/foo')
+        test([Resource('repository', '').child('changeset', '0000000042')],
+             '', '0000000042', 'changeset:42')
+        test([Resource('repository', '').child('changeset', '0000000042')],
+             '', '0000000042', '[42]')
+        test([Resource('repository', '').child('changeset', '0000000042')],
+             '', '0000000042', 'r42')
+        test([Resource('repository', 'foo').child('changeset', '0000000043')],
+             'foo', '0000000043', 'changeset:43/foo')
+        test([Resource('repository', 'foo').child('changeset', '0000000043')],
+             'foo', '0000000043', '[43/foo]')
+        test([Resource('repository', 'foo').child('changeset', '0000000043')],
+             'foo', '0000000043', 'r43/foo')
+
+    def test_changeset_links_cached_repository(self):
+        self._test_changeset_links('cached-stub')
+
+    def test_changeset_links_non_cached_repository(self):
+        self._test_changeset_links('raw-stub')
 
     def test_wiki_syntax(self):
         def test(expected, text):
@@ -685,60 +725,84 @@ class ChangeListenersTestCase(unittest.TestCase):
                             'milestone', 'milestone4', None, None),
                           ], self._db_query())
 
-    def test_changeset(self):
+    def _test_changeset(self, repos_type):
         rm = RepositoryManager(self.env)
+        reponame = 'foo'
         repos_prov = DbRepositoryProvider(self.env)
-        repos_prov.add_repository('stub', '/stub', 'stub')
-        repos = rm.get_repository('stub')
-        _add_cset(self.env, 'stub', 'closes #123', '00042')
-        _add_cset(self.env, 'stub', 'refs #124, comment:3:ticket:125', '00043')
-        _add_cset(self.env, 'stub', '#126 #127', '00044')
+        repos_prov.add_repository(reponame, '/stub', repos_type)
+        _add_cset(self.env, reponame, 'closes #123', 42)
+        _add_cset(self.env, reponame, 'refs #124, comment:3:ticket:125', 43)
+        _add_cset(self.env, reponame, '#126 #127', 44)
 
-        rm.notify('changeset_added', 'stub', ['42', '43'])
-        self._verify_sets([('ticket', '123', None, None,
-                            'changeset', '00042', 'repository', 'stub'),
-                           ('ticket', '124', None, None,
-                            'changeset', '00043', 'repository', 'stub'),
-                           ('comment', '3', 'ticket', '125',
-                            'changeset', '00043', 'repository', 'stub'),
-                          ], self._db_query())
+        rm.notify('changeset_added', reponame, [42, 43])
+        self._verify_sets(
+            [('ticket', '123', None, None,
+              'changeset', '0000000042', 'repository', reponame),
+             ('ticket', '124', None, None,
+              'changeset', '0000000043', 'repository', reponame),
+             ('comment', '3', 'ticket', '125',
+              'changeset', '0000000043', 'repository', reponame),
+            ], self._db_query())
 
-        rm.notify('changeset_added', 'stub', ['44'])
-        self._verify_sets([('ticket', '123', None, None,
-                            'changeset', '00042', 'repository', 'stub'),
-                           ('ticket', '124', None, None,
-                            'changeset', '00043', 'repository', 'stub'),
-                           ('comment', '3', 'ticket', '125',
-                            'changeset', '00043', 'repository', 'stub'),
-                           ('ticket', '126', None, None,
-                            'changeset', '00044', 'repository', 'stub'),
-                           ('ticket', '127', None, None,
-                            'changeset', '00044', 'repository', 'stub'),
-                          ], self._db_query())
+        rm.notify('changeset_added', reponame, [44])
+        self._verify_sets(
+            [('ticket', '123', None, None,
+              'changeset', '0000000042', 'repository', reponame),
+             ('ticket', '124', None, None,
+              'changeset', '0000000043', 'repository', reponame),
+             ('comment', '3', 'ticket', '125',
+              'changeset', '0000000043', 'repository', reponame),
+             ('ticket', '126', None, None,
+              'changeset', '0000000044', 'repository', reponame),
+             ('ticket', '127', None, None,
+              'changeset', '0000000044', 'repository', reponame),
+            ], self._db_query())
 
-        self.env.db_transaction("""
-            UPDATE revision SET message=%s WHERE repos=%s AND rev=%s
-            """, ('refs #224', repos.id, '00043'))
-        rm.notify('changeset_modified', 'stub', ['43'])
-        self._verify_sets([('ticket', '123', None, None,
-                            'changeset', '00042', 'repository', 'stub'),
-                           ('ticket', '224', None, None,
-                            'changeset', '00043', 'repository', 'stub'),
-                           ('ticket', '126', None, None,
-                            'changeset', '00044', 'repository', 'stub'),
-                           ('ticket', '127', None, None,
-                            'changeset', '00044', 'repository', 'stub'),
-                          ], self._db_query())
+        _set_cset(self.env, reponame, 'refs #224', 43)
+        rm.notify('changeset_modified', reponame, [43])
+        self._verify_sets(
+            [('ticket', '123', None, None,
+              'changeset', '0000000042', 'repository', reponame),
+             ('ticket', '224', None, None,
+              'changeset', '0000000043', 'repository', reponame),
+             ('ticket', '126', None, None,
+              'changeset', '0000000044', 'repository', reponame),
+             ('ticket', '127', None, None,
+              'changeset', '0000000044', 'repository', reponame),
+            ], self._db_query())
+
+    def test_changeset_with_cached_repos(self):
+        self._test_changeset('cached-stub')
+
+    def test_changeset_with_non_cached_repos(self):
+        self._test_changeset('raw-stub')
 
 
 def _add_cset(env, reponame, message, *revs):
     repos = RepositoryManager(env).get_repository(reponame)
     ts = to_utimestamp(datetime(2017, 1, 2, 12, 34, 56, 987654, utc))
-    with env.db_transaction as db:
-        db.executemany("""
-            INSERT INTO revision (repos, rev, message, author, time)
-            VALUES (%s,%s,%s,%s,%s)
-            """, [(repos.id, rev, message, 'anonymous', ts) for rev in revs])
+    if isinstance(repos, CachedRepositoryStub):
+        with env.db_transaction as db:
+            db.executemany("""
+                INSERT INTO revision (repos, rev, message, author, time)
+                VALUES (%s,%s,%s,%s,%s)
+                """, [(repos.id, repos.db_rev(rev), message, 'anonymous', ts)
+                      for rev in revs])
+    else:
+        repos._revs.update((rev, (message, 'anonymous', ts)) for rev in revs)
+
+
+def _set_cset(env, reponame, message, *revs):
+    repos = RepositoryManager(env).get_repository(reponame)
+    if isinstance(repos, CachedRepositoryStub):
+        with env.db_transaction as db:
+            db.executemany(
+                "UPDATE revision SET message=%s WHERE repos=%s AND rev=%s",
+                [(message, repos.id, repos.db_rev(rev)) for rev in revs])
+    else:
+        repos._old_revs.update((rev, repos._revs[rev]) for rev in revs)
+        repos._revs.update((rev, (message,) + repos._revs[rev][1:])
+                           for rev in revs)
 
 
 def _mkdtemp():

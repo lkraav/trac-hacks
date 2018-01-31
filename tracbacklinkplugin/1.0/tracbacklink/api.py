@@ -148,9 +148,9 @@ class TracBackLinkSystem(Component):
         author = changeset.author
         resource = changeset.resource
         repos = changeset.repos
-        if isinstance(repos, CachedRepository):
-            resource = repos.resource.child(resource.realm,
-                                            repos.db_rev(resource.id))
+        rev = _db_rev(repos, resource.id)
+        if rev != resource.id:
+            resource = repos.resource.child(resource.realm, rev)
         for ref in gather_links(self.env, changeset, changeset.message):
             yield date, author, resource, ref
         for ref in self._gather_from_extpoints(changeset):
@@ -376,10 +376,10 @@ class TracBackLinkSystem(Component):
 
     def _changeset_modified(self, repos, changeset, old_changeset):
         with self.env.db_transaction:
-            if isinstance(repos, CachedRepository):
-                rev = repos.db_rev(old_changeset.rev)
-            self._resource_deleted('changeset', rev, 'repository',
-                                   repos.reponame)
+            if old_changeset:
+                old_rev = _db_rev(repos, old_changeset.rev)
+                self._resource_deleted('changeset', old_rev, 'repository',
+                                       repos.reponame)
             self._changeset_added(repos, changeset)
 
     def _resource_added(self, gathered):
@@ -427,8 +427,9 @@ class TracBackLinkSystem(Component):
 class TracBackLinkChangeset(CachedChangeset):
 
     def __init__(self, repos, rev, message, author, date):
-        Changeset.__init__(self, repos, repos.rev_db(rev), message, author,
-                           date)
+        if isinstance(repos, CachedRepository):
+            rev = repos.rev_db(rev)
+        Changeset.__init__(self, repos, rev, message, author, date)
 
 
 def gather_links(env, source, text):
@@ -452,6 +453,14 @@ def _strip_version(resource):
 def _is_equal(r1, r2):
     return r1 == r2 or r2.parent and r2.parent == r1 or \
             r1.parent and r1.parent == r2
+
+
+def _db_rev(repos, rev):
+    if isinstance(repos, CachedRepository):
+        return repos.db_rev(rev)
+    if isinstance(rev, int):  # e.g. direct-svnfs
+        return '%010d' % rev
+    return rev
 
 
 def MockRequest(env, **kwargs):
@@ -835,8 +844,7 @@ class LinksGatherer(Formatter):
             rev = repos.normalize_rev(rev)
         except TracError:
             return
-        if isinstance(repos, CachedRepository):
-            rev = repos.db_rev(rev)
+        rev = _db_rev(repos, rev)
         self._add_resource(repos.resource.child('changeset', rev))
 
     _wiki_processors = set(('div', 'rtl', 'span', 'Span', 'td', 'th', 'tr',
