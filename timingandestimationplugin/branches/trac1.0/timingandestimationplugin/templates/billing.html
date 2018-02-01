@@ -39,18 +39,20 @@
               <input id="unbillable" name="unbillable" type="checkbox"  /> 
             </div>
 
-		  <div class="minorsection">
-		    <div class="label" >Status:</div>
-		    <py:for each="status in statuses" >
-		      <label for="$status">${status.capitalize()}: </label>
-		      <input id="$status" name="$status" type="checkbox" checked="true" /> 
-		    </py:for>
-		    <script>
-		      <py:for each="status in statuses" >
-			   addBillingField("$status", "checkbox", true);
-		      </py:for>
-		    </script>
-		  </div>
+	    <div class="minorsection">
+	      <div class="label" >Status:</div>
+	      <py:for each="status in statuses" >
+                <?python statusid = status.replace('>','').replace('<','') ?>
+		<label for="$statusid">${status.capitalize()}: </label>
+		<input id="$statusid" name="$statusid" type="checkbox" checked="true" /> 
+	      </py:for>
+	      <script>
+	       <py:for each="status in statuses" >
+               <?python statusid = status.replace('>','').replace('<','') ?>
+               addBillingField("$statusid", "checkbox", true);
+	       </py:for>
+	      </script>
+	    </div>
 
       </td>
     </tr><tr class="minorsection">
