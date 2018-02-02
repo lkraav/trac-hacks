@@ -202,6 +202,7 @@ class TracBackLinkCommandProvider(Component):
                              'repository "%s": %s',
                              repos.__class__.__name__, repos.reponame,
                              exception_to_unicode(e))
+            return
         for path, rev, change in node.get_history():
             try:
                 cset = repos.get_changeset(rev)
