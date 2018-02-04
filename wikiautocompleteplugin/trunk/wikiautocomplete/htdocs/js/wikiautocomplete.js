@@ -8,102 +8,86 @@ jQuery(document).ready(function($) {
         return value.replace(/\$/g, '$$$$');
     }
 
-    function search(strategy) {
-        return function (term, callback) {
-            var data = {q: term};
-            if (strategy === 'attachment') {
-                data.realm = wikiautocomplete.realm;
-                data.id = wikiautocomplete.id;
-            }
-            $.getJSON(wikiautocomplete.url + '/' + strategy, data)
-                .done(function (resp) { callback(resp); })
-                .fail(function () { callback([]); });
-        };
-    }
-
-    function search_cache(strategy, match) {
-        return function(term, callback) {
-            function invoke_callback(resp) {
-                callback($.grep(resp, function(item) {
-                    return match(item, term);
-                }));
-            }
-            if (cache[strategy] !== undefined) {
-                invoke_callback(cache[strategy]);
-                return;
-            }
-            $.getJSON(wikiautocomplete.url + '/' + strategy)
-                .done(function(resp) {
-                    cache[strategy] = resp;
-                    invoke_callback(resp);
-                })
-                .fail(function() { callback([]) });
-        };
-    }
-
-    function search_macro(strategy) {
-        return function(term, callback) {
-            function invoke_callback(resp) {
-                var resp = $.grep(resp, function(item) {
-                    return match_string(item.name, term);
-                });
-                var key = resp.length === 1 ? 'html' : 'oneliner';
-                callback($.map(resp, function(item) {
-                    switch (item.type) {
-                    case 'mimetype':
-                        return {type: item.type, name: item.name};
-                    case 'macro':
-                        return {type: item.type, name: item.name,
-                                description: item.description[key],
-                                description_type: key};
-                    }
-                }));
-            }
-            if (cache[strategy] !== undefined) {
-                invoke_callback(cache[strategy]);
-            }
-            else {
-                var data = {
-                    realm: wikiautocomplete.realm,
-                    id: wikiautocomplete.id
-                };
-                $.getJSON(wikiautocomplete.url + '/' + strategy, data)
-                    .done(function(resp) {
-                        cache[strategy] = resp;
-                        invoke_callback(resp);
-                    })
-                    .fail(function() { callback([]) });
-            }
-        };
-    }
-
-    function match_string(string, term) {
-        return string.substr(0, term.length) === term;
-    }
-
-    function match_report(report, term) {
-        return match_string(report.id.toString(), term);
-    }
-
     function context(text) {
         return text.replace(/\{{3}(?:.|\n)*?(?:\}{3}|$)/g, '{{{}}}')
                    .replace(/`[^`\n]*(?:`|$)/gm, '``');
     }
 
-    function template(text, term) {
-        return $.htmlEscape(text);
+    function search(strategy) {
+        if (strategy.cache) {
+            return function(term, callback) {
+                function invoke_callback(resp) {
+                    var matches = $.grep(resp, function(item) {
+                        return item.value.toString().substr(0, term.length) === term;
+                    });
+                    if (matches.length === 1) {
+                        matches[0].single_match = true;
+                    }
+                    callback(matches);
+                }
+                if (cache[strategy.name] !== undefined) {
+                    invoke_callback(cache[strategy.name]);
+                    return;
+                }
+                var data = {
+                    realm: wikiautocomplete.realm,
+                    id: wikiautocomplete.id
+                };
+                $.getJSON(wikiautocomplete.url + '/' + strategy.name, data)
+                    .done(function(resp) {
+                        cache[strategy] = resp;
+                        invoke_callback(resp);
+                    })
+                    .fail(function() { callback([]) });
+            };
+        } else {
+            return function (term, callback) {
+                var data = {
+                    q: term,
+                    realm: wikiautocomplete.realm,
+                    id: wikiautocomplete.id
+                };
+                $.getJSON(wikiautocomplete.url + '/' + strategy.name, data)
+                    .done(function (resp) { callback(resp); })
+                    .fail(function () { callback([]); });
+            };
+        }
     }
 
-    function template_descr(value, descr, term) {
-        var text = $.htmlEscape(value);
-        if (descr && value !== descr)
-            text += $.htmlFormat(
-                '<span class="wikiautocomplete-menu-descr">$1</span>', descr);
-        return text;
+    function template(strategy) {
+        var prefix = strategy.template_prefix || '';
+        var suffix = strategy.template_suffix || '';
+        return function (item) {
+            var fmt = '<span class="wikiautocomplete-menu-descr">$1</span>';
+            var value = prefix + item.value + suffix;
+            var text = $.htmlEscape(value);
+            if (item.single_match && item.details_html) {
+                text += $.format('<div>$1</div>', item.details_html);
+            }
+            else if (item.title_html) {
+                text += $.format(fmt, item.title_html);
+            }
+            else if (item.title && item.title !== value) {
+                text += $.htmlFormat(fmt, item.title);
+            }
+            return text;
+        };
     }
 
-    function template_report(report, term) {
-        return template_descr('{' + report.id + '}', report.title, term);
+    function replace(strategy) {
+        var prefix = strategy.replace_prefix || '';
+        var suffix = strategy.replace_suffix || '';
+        var end = strategy.replace_end;
+        var quote = strategy.quote_whitespace;
+        return function (item) {
+            var value = item.value.toString();
+            if (quote && /\s/.test(value))
+                value = '"' + value + '"';
+            value = escape_newvalue(value);
+            value = prefix + value + suffix;
+            if (end) return [value, end]; 
+            else return value;
+        };
     }
 
     var TextareaAdapter = $.fn.textcomplete.Textarea;
@@ -119,159 +103,18 @@ jQuery(document).ready(function($) {
         }
     });
 
-    var strategies = [
-        { // Processors
-            match: /^(\s*\{{3}#!)(.*)(?!\n)$/m,
-            search: search_macro('processor'),
-            index: 2,
-            template: function (processor) {
-                var name = $.htmlEscape(processor.name);
-                var descr = processor.description;
-                if (processor.type === 'mimetype')
-                    return name;
-                if (!descr)
-                    return name;
-                var f =
-                    processor.description_type === 'html' ? '$1<div>$2</div>' :
-                    '$1<span class="wikiautocomplete-menu-descr">$2</span>';
-                return $.format(f, name, descr);
-            },
-            replace: function (processor) {
-                return '$1' + escape_newvalue(processor.name);
-            },
+    var strategies = wikiautocomplete.strategies.map(function (strategy) {
+        var result = {
+            match: new RegExp(strategy.match, strategy.match_flags),
+            search: search(strategy),
+            index: strategy.index,
+            template: template(strategy),
+            replace: replace(strategy),
             cache: true
-        },
-
-        { // Attachment
-            match: /(\b(?:raw-)?attachment:|\[\[Image\()(\S*)$/,
-            search: search('attachment'),
-            index: 2,
-            context: context,
-            template: template,
-            replace: function (name) {
-                if (/\s/.test(name))
-                    name = '"' + name + '"';
-                return '$1' + escape_newvalue(name);
-            },
-            cache: true
-        },
-
-        { // TracLinks, InterTrac and InterWiki
-            match: /(^|[^[])\[(\w*)$/,
-            search: search_cache('linkresolvers', function(resolver, term) {
-                return match_string(resolver.name, term);
-            }),
-            index: 2,
-            context: context,
-            template: function (resolver, term) {
-                var descr = resolver.name !== resolver.title ?
-                            resolver.title : resolver.url;
-                return template_descr(resolver.name, descr, term);
-            },
-            replace: function (resolver) {
-                return ['$1[' + escape_newvalue(resolver.name) + ':', ']'];
-            },
-            cache: true,
-        },
-
-        { // Tickets
-            match: /((?:^|[^{])#|\bticket:|\bbug:|\bissue:)(\d*)$/,
-            search: search('ticket'),
-            index: 2,
-            context: context,
-            template: function (ticket, term) {
-                return template_descr('#' + ticket.id, ticket.summary);
-            },
-            replace: function (ticket) {
-                return '$1' + ticket.id;
-            },
-            cache: true,
-        },
-
-        { // Wiki pages
-            match: /\bwiki:(\S*)$/,
-            search: search_cache('wikipage', match_string),
-            index: 1,
-            context: context,
-            template: template,
-            replace: function (wikipage) {
-                return 'wiki:' + escape_newvalue(wikipage);
-            },
-            cache: true,
-        },
-
-        { // Macros
-            match: /\[\[(\w*)(?:\(([^)]*))?$/,
-            search: search_macro('macro'),
-            index: 1,
-            context: context,
-            template: function (macro) {
-                var name = $.htmlEscape(macro.name);
-                var descr = macro.description;
-                if (!descr)
-                    return name;
-                var f =
-                    macro.description_type === 'html' ? '$1<div>$2</div>' :
-                    '$1<span class="wikiautocomplete-menu-descr">$2</span>';
-                return $.format(f, name, descr);
-            },
-            replace: function (macro) {
-                return ['[[' + macro.name + '($2',')]]'];
-            },
-            cache: true,
-        },
-
-        { // Source
-            match: /\b(source:|browser:|repos:|log:)([^@\s]*(?:@\S*)?)$/,
-            search: search('source'),
-            index: 2,
-            context: context,
-            template: template,
-            replace: function (path) {
-                return '$1' + escape_newvalue(path);
-            },
-            cache: true,
-        },
-
-        { // Milestone
-            match: /\bmilestone:(\S*)$/,
-            search: search_cache('milestone', match_string),
-            index: 1,
-            context: context,
-            template: template,
-            replace: function (name) {
-                if (/\s/.test(name))
-                    name = '"' + name + '"';
-                return 'milestone:' + escape_newvalue(name);
-            },
-            cache: true
-        },
-
-        { // Report - {\d+}
-            match: /(^|[^{])\{(\d*)$/,
-            search: search_cache('report', match_report),
-            index: 2,
-            context: context,
-            template: template_report,
-            replace: function (report) {
-                return ['$1{' + report.id, '}'];
-            },
-            cache: true
-        },
-
-        { // Report - report:\d+
-            match: /\breport:(\d*)$/,
-            search: search_cache('report', match_report),
-            index: 1,
-            context: context,
-            template: template_report,
-            replace: function (report) {
-                return 'report:' + report.id;
-            },
-            cache: true
-        }
-
-    ];
+        };
+        if (strategy.name != 'processor') result.context = context;
+        return result;
+    });
     var options = {
         appendTo: $('body'),
         adapter: Adapter,

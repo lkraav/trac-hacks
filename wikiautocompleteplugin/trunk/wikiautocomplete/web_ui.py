@@ -52,7 +52,10 @@ class WikiAutoCompleteModule(Component):
 
     def post_process_request(self, req, template, data, content_type):
         if template:
-            script_data = {'url': req.href('wikiautocomplete')}
+            script_data = {
+                'url': req.href('wikiautocomplete'),
+                'strategies': self._get_strategies(),
+            }
             context_or_page = data.get('context') or data.get('page')
             if context_or_page and context_or_page.resource:
                 script_data['realm'] = context_or_page.resource.realm
@@ -99,6 +102,102 @@ class WikiAutoCompleteModule(Component):
         else:
             self._send_json(req, completions)
 
+    def _get_strategies(self):
+       return [
+            { # Processors
+                "match": r"^(\s*\{{3}#!)(.*)(?!\n)$",
+                "match_flags": 'm',
+                "name": 'processor',
+                "index": 2,
+                "replace_prefix": '$1',
+                "cache": True,
+            },
+
+            { # Attachment
+                "match": r"(\b(?:raw-)?attachment:|\[\[Image\()(\S*)$",
+                "name": 'attachment',
+                "index": 2,
+                "quote_whitespace": True,
+                "replace_prefix": '$1',
+                "cache": False,
+            },
+
+            { # TracLinks, InterTrac and InterWiki
+                "match": r"(^|[^[])\[(\w*)$",
+                "name": 'linkresolvers',
+                "index": 2,
+                "replace_prefix": '$1[',
+                "replace_suffix": ':',
+                "replace_end": ']',
+                "cache": True,
+            },
+
+            { # Tickets
+                "match": r"((?:^|[^{])#|\bticket:|\bbug:|\bissue:)(\d*)$",
+                "name": 'ticket',
+                "index": 2,
+                "template_prefix": '#',
+                "replace_prefix": '$1',
+                "cache": False,
+            },
+
+            { # Wiki pages
+                "match": r"\bwiki:(\S*)$",
+                "name": 'wikipage',
+                "index": 1,
+                "replace_prefix": 'wiki:',
+                "cache": True,
+            },
+
+            { # Macros
+                "match": r"\[\[(\w*)(?:\(([^)]*))?$",
+                "name": 'macro',
+                "index": 1,
+                "replace_prefix": '[[',
+                "replace_suffix": '($2',
+                "replace_end": ')]]',
+                "cache": True,
+            },
+
+            { # Source
+                "match": r"\b(source:|browser:|repos:|log:)([^@\s]*(?:@\S*)?)$",
+                "name": 'source',
+                "index": 2,
+                "replace_prefix": '$1',
+                "cache": False,
+            },
+
+            { # Milestone
+                "match": r"\bmilestone:(\S*)$",
+                "name": 'milestone',
+                "index": 1,
+                "quote_whitespace": True,
+                "replace_prefix": 'milestone:',
+                "cache": True,
+            },
+
+            { # Report - {\d+}
+                "match": r"(^|[^{])\{(\d*)$",
+                "name": 'report',
+                "index": 2,
+                "template_prefix": '{',
+                "template_suffix": '}',
+                "replace_prefix": '$1{',
+                "replace_end": '}',
+                "cache": True,
+            },
+
+            { # Report - report:\d+
+                "match": r"\breport:(\d*)$",
+                "name": 'report',
+                "index": 1,
+                "template_prefix": '{',
+                "template_suffix": '}',
+                "replace_prefix": 'report:',
+                "cache": True,
+            }
+        ]
+
     def _suggest_linkresolvers(self, req):
         links = {}
         links.update((name, (2, name, url, title))
@@ -109,7 +208,7 @@ class WikiAutoCompleteModule(Component):
         links.update((name, (0, name, None, None))
                      for provider in WikiSystem(self.env).syntax_providers
                      for name, resolver in provider.get_link_resolvers())
-        return [{'name': name, 'url': url, 'title': title}
+        return [{'value': name, 'title': title if name != title else url}
                 for order, name, url, title
                 in sorted(links.itervalues(),
                           key=lambda item: (item[0], item[1]))]
@@ -128,12 +227,13 @@ class WikiAutoCompleteModule(Component):
             rows = self.env.db_query("""
                 SELECT id, summary FROM ticket
                 ORDER BY changetime DESC LIMIT 10""")
-        return [{'id': row[0], 'summary': row[1]}
+        return [{'value': row[0], 'title': row[1]}
                 for row in rows if 'TICKET_VIEW' in req.perm('ticket', row[0])]
 
     def _suggest_wikipage(self, req):
-        return sorted(page for page in WikiSystem(self.env).pages
-                           if 'WIKI_VIEW' in req.perm('wiki', page))
+        return [{'value': page}
+                for page in sorted(page for page in WikiSystem(self.env).pages
+                                   if 'WIKI_VIEW' in req.perm('wiki', page))]
 
     def _suggest_attachment(self, req, term):
         tokens = term.split(':', 2)
@@ -168,21 +268,19 @@ class WikiAutoCompleteModule(Component):
                                    for filename in filenames)
             else:
                 completions.extend(filenames)
-        return completions
+        return [{'value': value} for value in completions]
 
     def _suggest_macro(self, req):
         resource = Resource(req.args.get('realm'), req.args.get('id'))
         context = web_context(req, resource)
         completions = []
         for name, descr in self._get_macros().iteritems():
-            descr = {
-                'html': self._format_to_html(context, descr),
-                'oneliner':
-                    self._format_to_oneliner(context, descr, shorten=True),
-            }
-            completions.append({'type': 'macro', 'name': name,
-                                'description': descr})
-        return sorted(completions, key=lambda entry: entry['name'])
+            details_html = self._format_to_html(context, descr)
+            title_html = self._format_to_oneliner(context, descr, shorten=True)
+            completions.append({'value': name,
+                                'title_html': title_html,
+                                'details_html': details_html})
+        return sorted(completions, key=lambda entry: entry['value'])
 
     def _suggest_processor(self, req):
         resource = Resource(req.args.get('realm'), req.args.get('id'))
@@ -196,16 +294,14 @@ class WikiAutoCompleteModule(Component):
 
         completions = []
         for name, descr in macros.iteritems():
-            descr = {
-                'html': self._format_to_html(context, descr),
-                'oneliner':
-                    self._format_to_oneliner(context, descr, shorten=True),
-            }
-            completions.append({'type': 'macro', 'name': name,
-                                'description': descr})
-        completions.extend({'type': 'mimetype', 'name': mimetype}
+            details_html = self._format_to_html(context, descr)
+            title_html = self._format_to_oneliner(context, descr, shorten=True)
+            completions.append({'value': name,
+                                'title_html': title_html,
+                                'details_html': details_html})
+        completions.extend({'value': mimetype}
                            for mimetype in mimetypes)
-        return sorted(completions, key=lambda item: item['name'])
+        return sorted(completions, key=lambda item: item['value'])
 
     def _suggest_source(self, req, term):
 
@@ -258,16 +354,16 @@ class WikiAutoCompleteModule(Component):
                         '%s/%s%s' % (reponame, n.path.lstrip('/'), '/' if n.isdir else '')
                         for n in node.get_entries()
                         if n.name.startswith(filename) and n.can_view(req.perm))
-        return completions
+        return [{'value': value} for value in completions]
 
     def _suggest_milestone(self, req):
         names = [row[0] for row in self.env.db_query(
                                 "SELECT name FROM milestone ORDER BY name")]
-        return [name for name in names
+        return [{'value': name} for name in names
                      if 'MILESTONE_VIEW' in req.perm('milestone', name)]
 
     def _suggest_report(self, req):
-        return [{'id': id, 'title': title}
+        return [{'value': id, 'title': title}
                 for id, title in self.env.db_query(
                                     "SELECT id, title FROM report ORDER BY id")
                 if 'REPORT_VIEW' in req.perm('report', id)]
