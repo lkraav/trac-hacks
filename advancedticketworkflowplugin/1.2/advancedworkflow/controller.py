@@ -244,7 +244,7 @@ class TicketWorkflowOpFieldAuthor(TicketWorkflowOpBase):
 
 
 class TicketWorkflowOpFieldsClear(TicketWorkflowOpBase):
-    """Sets the value of ticket fields to be the empty string
+    """Clears the value of the ticket field(s)
 
     <someaction>.operations = clear_fields
     <someaction>.clear_fields = myfield_one, myfield_two
