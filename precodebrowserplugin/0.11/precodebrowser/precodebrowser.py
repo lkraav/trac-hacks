@@ -10,8 +10,10 @@ class PreCodeBrowserPlugin(Component):
 
     # ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
-        filter = Transformer('//table[@class = "code"]')
-        return stream | filter.rename('pre') \
+        filter1 = Transformer('//div[@id = "preview"]')
+        filter2 = Transformer('//table[@class = "code"]')
+        return stream | filter1.attr('class', 'searchable code') | \
+            filter2.rename('pre') \
             .select('//pre[@class = "code"]/thead').remove().end() \
             .select('//pre[@class = "code"]/tbody/tr/th').remove().end() \
             .select('//pre[@class = "code"]/tbody/tr/td').append('\n').unwrap()

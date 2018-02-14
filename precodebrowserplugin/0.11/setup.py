@@ -3,7 +3,7 @@
 from setuptools import setup
 
 PACKAGE = 'PreCodeBrowserPlugin'
-VERSION = '1'
+VERSION = '1.0'
 
 setup(
     name=PACKAGE,
@@ -11,7 +11,7 @@ setup(
     author='Katherine Flavel',
     author_email='kate@elide.org',
     description='Replace tables output in the source browser with simple <pre> file listings',
-    url='http://trac-hacks.org/wiki/%s' % PACKAGE,
+    url='https://trac-hacks.org/wiki/%s' % PACKAGE,
 
     license='Public Domain',
     packages=['precodebrowser'],
