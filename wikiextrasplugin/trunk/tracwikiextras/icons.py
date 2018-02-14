@@ -48,7 +48,7 @@ import re
 
 from pkg_resources import resource_filename
 
-from trac.util.html import tag
+from trac.util.html import html as tag
 
 from trac.config import BoolOption, ConfigSection, IntOption, ListOption
 from trac.core import implements, Component

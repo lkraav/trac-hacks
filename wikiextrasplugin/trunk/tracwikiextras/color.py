@@ -12,7 +12,7 @@
 """Decorate wiki text with colors.
 """
 
-from trac.util.html import Markup, tag
+from trac.util.html import Markup, html as tag
 
 from trac.core import implements, Component
 from trac.util.compat import cleandoc
@@ -71,7 +71,7 @@ class Color(Component):
                 variant can be used ''(background color and font size may not
                 display as expected due to the mechanisms of cascading style
                 sheets, be advised and use the ''color'' parameter only)'':
-                 
+
                 {{{
                 {{{#!Color color=green
                 ...

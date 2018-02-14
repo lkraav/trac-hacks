@@ -9,7 +9,7 @@
 #
 # Author: Christian Boos <cboos@neuf.fr>
 
-from trac.util.html import tag
+from trac.util.html import Markup, html as tag
 
 from trac.core import implements, Component
 from trac.wiki import IWikiSyntaxProvider

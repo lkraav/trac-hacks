@@ -8,4 +8,3 @@ from symbols import Symbols
 from unc_paths import UNCPathLink
 
 pkg_resources.require('Trac >= 1.0')
-

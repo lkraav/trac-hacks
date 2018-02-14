@@ -16,7 +16,7 @@
 import re
 import string
 
-from trac.util.html import Markup, tag
+from trac.util.html import Markup, html as tag
 
 from trac.util import arity
 from trac.util.compat import sorted

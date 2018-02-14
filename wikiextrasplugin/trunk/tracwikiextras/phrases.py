@@ -22,7 +22,7 @@ Activate this component to highlight this: FIXME
 
 from pkg_resources import resource_filename
 
-from trac.util.html import Markup, tag
+from trac.util.html import Markup, html as tag
 
 from trac.config import ListOption, ConfigSection
 from trac.core import implements, Component

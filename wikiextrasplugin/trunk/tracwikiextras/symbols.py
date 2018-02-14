@@ -13,7 +13,7 @@
 # Author: Christian Boos <cboos@neuf.fr>
 #         Mikael Relbe <mikael@relbe.se>
 
-from trac.util.html import Markup
+from trac.util.html import Markup, html as tag
 
 from trac.config import BoolOption, ConfigSection, ListOption
 from trac.core import implements, Component
@@ -54,7 +54,7 @@ class Symbols(Component):
     section in `trac.ini`. Use the `ShowSymbols` macro to display a list of
     currently defined symbols.
     """
-    
+
     implements(IWikiMacroProvider, IWikiSyntaxProvider)
 
     symbols_section = ConfigSection('wikiextras-symbols',
