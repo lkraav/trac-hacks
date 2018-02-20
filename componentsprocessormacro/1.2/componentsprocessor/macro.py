@@ -8,8 +8,8 @@ terry_n_brown@yahoo.com
 """
 
 import inspect
-import sys
 import re
+import sys
 
 from trac.core import Component, implements
 from trac.wiki.api import IWikiMacroProvider
@@ -28,53 +28,44 @@ class ComponentsProcessor(Component):
         return inspect.getdoc(sys.modules.get(self.__module__))
 
     def expand_macro(self, formatter, name, pattern):
+        with self.env.db_query as db:
+            comps = [comp for comp in db("""
+                    SELECT name, description from component order by name
+                    """)]
 
-        cursor = self.env.get_db_cnx().cursor()
+            # get a distinct list of all components for which there are tickets
+            tickets = [page[0] for page in db("""
+                    SELECT component from ticket group by component
+                    """)]
 
-        query = "SELECT name, description from component order by name;"
-        cursor.execute(query)
+            content = []
 
-        comps = [comp for comp in cursor]
+            for name, descrip in comps:
+                if pattern and not re.match(pattern, name):
+                    continue
 
-        # get a distinct list of all components for which there are tickets
-        query = "SELECT component from ticket group by component;"
-        cursor.execute(query)
-        tickets = [page[0] for page in cursor]
+                # Get number of tickets
+                count = 0
+                for count, in db("""
+                        SELECT count(id) FROM ticket WHERE component=%s
+                        """, (name,)):
+                    break
 
-        content = []
+                p = re.compile(' ')
+                wiki_str = p.sub('', name)
+                ticket_str = p.sub('+', name)
+                dt = ' [wiki:%s %s]' % (wiki_str, name)
+                if name in tickets:
+                    dt += ' ([query:component=%s %d tickets])' \
+                          % (ticket_str.replace('&', '\&'), count)
+                dt += '::'
+                content.append(dt)
+                if descrip is not None and descrip.strip() != '':
+                    content.append('   %s' % descrip)
 
-        for name, descrip in comps:
-            if pattern and not re.match(pattern, name): continue
-            
-            # Get number of tickets
-            count = 0
-            query = "SELECT count(id) FROM ticket WHERE component='%s'" % name
-            cursor.execute(query)
-            for count, in cursor:
-                break
-            
-            p = re.compile(' ')
-            wiki_str = p.sub('',name)
-            ticket_str = p.sub('+',name)
-            dt = ' [wiki:%s %s]' % (wiki_str, name)
-            if name in tickets:
-                dt += ' ([query:component=%s %d tickets])' % (ticket_str, count)
-            dt += '::'
-            content.append(dt)
-            if descrip != None and descrip.strip() != '':
-                content.append('   %s' % descrip)
-
-        content = '\n'.join(content)
-
-        content = format_to_html(self.env, formatter.context, content)
-        p = re.compile('%2B')
-        content = p.sub('+',content)
-        content = '<div class="component-list">%s</div>' % content
-
-        # to avoid things like the above it might be nicer to use
-        # Genshi tag() construction, but this way the wiki formatter
-        # gets to deal with '[query:component=%s tickets]' etc.
-        # if going the Genshi route you'd replace that with something
-        # like req.href.query(component="mycomp", status="open")
-
-        return content
+            content = '\n'.join(content)
+            content = format_to_html(self.env, formatter.context, content)
+            p = re.compile('%2B')
+            content = p.sub('+', content)
+            content = '<div class="component-list">%s</div>' % content
+            return content

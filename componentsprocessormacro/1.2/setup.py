@@ -3,14 +3,14 @@
 
 from setuptools import setup
 
-VERSION = '0.11'
+VERSION = '1.2'
 PACKAGE = 'componentsprocessor'
 
 setup(
     name='ComponentsProcessorMacro',
     version=VERSION,
     description="Lists components based on a name.",
-    url='http://trac-hacks.org/wiki/ComponentsProcessorMacro',
+    url='https://trac-hacks.org/wiki/ComponentsProcessorMacro',
     author='Terry Brown',
     author_email='terry_n_brown@yahoo.com',
     keywords='trac plugin',
