@@ -8,8 +8,8 @@ from trac.config import Option
 from trac.core import *
 from trac.util.text import to_unicode
 from trac.util.translation import _
-from trac.wiki.api import IWikiMacroProvider, WikiSystem, parse_args
-from trac.wiki.formatter import Formatter, system_message
+from trac.wiki.api import IWikiMacroProvider, IWikiSyntaxProvider, WikiSystem, parse_args
+from trac.wiki.formatter import Formatter, OneLinerFormatter, system_message
 from trac.wiki.model import WikiPage
 
 
@@ -17,7 +17,7 @@ class TranslatedPagesMacro(Component):
     """
     Macro to show the translated pages list.
     """
-    implements(IWikiMacroProvider)
+    implements(IWikiMacroProvider, IWikiSyntaxProvider)
 
     lang_page_name = Option('translatedpages', 'languages_page', u'TracLanguages',
         """Page name of table containing available languages""")
@@ -27,6 +27,52 @@ class TranslatedPagesMacro(Component):
 
     base_lang = Option('translatedpages', 'base_language', u'En',
         """Base language to be used without prefix/suffix""")
+
+
+    # IWikiSyntaxProvider methods
+
+    def get_wiki_syntax(self):
+        return []
+
+    def get_link_resolvers(self):
+        yield ('wikitr', self._format_link)
+
+    def _format_link(self, formatter, ns, name, label):
+        self._update_languages()
+        prefix, base_page_name, lang_code = self._get_page_info(formatter.context.resource.id)
+        origcode = self.extensions[lang_code]
+        if label == name:
+          label = ""
+        r = re.compile("^'(.*)':(.*)$").search(name)
+        if r == None:
+          r = re.compile("^\"(.*)\":(.*)$").search(name)
+          if r == None:
+            r = re.compile("^(.*):(.*)$").search(name)
+        if r != None:
+          origcode = r.group(1)
+          name = r.group(2)
+
+        if lang_code == self.base_lang:
+          origcode = "{t}"
+        else:
+          if name[0] == '/':
+            oname = name[1:]
+          else:
+            i = base_page_name.rfind("/")
+            if i > 0:
+              oname = base_page_name[:i+1] + name
+            else:
+              oname = name
+          tname = self._get_translated_page(prefix, oname, lang_code);
+          if not WikiPage(self.env, tname).exists:
+            name = oname
+          else:
+            name = tname
+            origcode = "{t}"
+        txt = "[[wiki:/%s|%s]]" % (name, origcode.replace("{t}", label if label else name))
+        out = StringIO()
+        OneLinerFormatter(self.env, formatter.context).format(txt, out)
+        return out.getvalue()
 
     # IWikiMacroProvider methods
 
@@ -42,11 +88,14 @@ Simply calling that macro in a page adds a menu linking to all available transla
 A language page (usually [wiki:TracLanguages]) must provide the language codes as a table
 with following entries:
 {{{
-||<language code>||<language name>||<english name>||<description>||
+||<language code>||<language name>||<english name>||<description>||<base language link indication>||
 }}}
 The description contains the text displayed above language links in that language
 (usually a variant of 'Other languages').
 A table title line starting with {{{||=}}} is not parsed.
+
+The base language link indication is the default value for wikitr: links (see below) and describes how links to base language should be formatted. It must contain
+one {t} which is replaced by the label (e.g. **{t} (en)** to append a note in brackets).
 
 The Macro accepts arguments as well:
  * '''revision=<num>'''   to specify the version of the base page when last translated, a negative revision indicates that a page needs updating in the status overview table
@@ -61,7 +110,12 @@ The Macro accepts arguments as well:
  * '''skipmissing'''      skip links to missing pages in status table (speed up display a lot)
  * '''lang=<code>'''      to restrict output of show outdated, status or missing to a specific language
 
- * '''label_outdated'''   label to display when using the showoutdated option"""
+ * '''label_outdated'''   label to display when using the showoutdated option
+ 
+Use wikitr:[basetext:] in links to reference the translated form of a page when it exists, the original otherwise. In case the optional part **basetext**: is used this text
+is used to indicate links to the base language (see above for format). When using these links translators do not need to update links when they step by step add translated pages.
+Using this macro on the base langue pages does no harm, but may help in translation when doing copy and paste.
+"""
 
     # Language forms:
     # De:
@@ -78,7 +132,7 @@ The Macro accepts arguments as well:
     outdated_re = re.compile(u"\[\[TranslatedPages(?:\((?:.*,)?outdated=(.*)\))?\]\]")
 
     def __init__(self):
-        self.langpage_re = re.compile(u"^\|\|"+ self.langcode_re + u"\|\|(.+?)\|\|(.+?)\|\|(.+?)\|\|$")
+        self.langpage_re = re.compile(u"^\|\|"+ self.langcode_re + u"\|\|(.+?)\|\|(.+?)\|\|(.+?)\|\|(?:[\"']?(.+?)[\"']?\|\|)?$")
         self.languages_page_version = 0
         self._update_languages()
         self.template_re = re.compile(self.page_code \
@@ -89,6 +143,7 @@ The Macro accepts arguments as well:
         langs = {}
         descr = {}
         langse = {}
+        extensions = {}
         for line in text.replace('\r','').split(u'\n'):
             regres = self.langpage_re.search(line)
             if regres == None:
@@ -100,12 +155,16 @@ The Macro accepts arguments as well:
                 name = regres.group(2)
                 engname = regres.group(3)
                 desc = regres.group(4)
-                self.env.log.debug("Adding language %s -> %s [%s] (%s)", code,
-                                   name, engname, desc)
+                extension = regres.group(5)
+                if extension == None:
+                  extension = "{t}"
+                self.env.log.debug("Adding language %s -> %s [%s] (%s) (%s)", code,
+                                   name, engname, desc, extension)
                 langs[code] = name
                 descr[code] = desc
                 langse[code] = engname
-        return (langs, descr, langse)
+                extensions[code] = extension
+        return (langs, descr, langse, extensions)
 
     def _update_languages(self):
         languages_page = WikiPage(self.env, self.lang_page_name)
@@ -115,7 +174,7 @@ The Macro accepts arguments as well:
             self.languages_page_version = 0
         else:
             if languages_page.version > self.languages_page_version:
-                (self.languages, self.description, self.languagesbase) = \
+                (self.languages, self.description, self.languagesbase, self.extensions) = \
                     self._parse_languages_list(languages_page.text)
                 self.languages_page_version = languages_page.version
 
@@ -449,9 +508,6 @@ The Macro accepts arguments as well:
         if u'showuntranslated' in args:
             show += self._get_untranslated(silent)
         if len(show):
-            outshow = StringIO()
-            Formatter(self.env, formatter.context).format(show, outshow)
-            val = outshow.getvalue()
             val = re.sub('>\$\$\$([a-z]+?)\$\$\$<a class=".*?"', \
                 ' style="background-color:\\1"><a style="color:#151B8D"', val)
             # try again more secure in case previous fails due to Wiki engine changes

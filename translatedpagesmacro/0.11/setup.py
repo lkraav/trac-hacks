@@ -4,7 +4,7 @@
 from setuptools import setup
 
 PACKAGE = 'TranslatedPages'
-VERSION = '1.0.4'
+VERSION = '1.1.0'
 
 setup(
     name=PACKAGE,
