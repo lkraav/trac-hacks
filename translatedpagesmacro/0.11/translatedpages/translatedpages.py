@@ -69,10 +69,16 @@ class TranslatedPagesMacro(Component):
           else:
             name = tname
             origcode = "{t}"
-        txt = "[[wiki:/%s|%s]]" % (name, origcode.replace("{t}", label if label else name))
+        txt = "[[wiki:/%s|%s]]" % (name, self._get_label_text(origcode, label, name))
         out = StringIO()
         OneLinerFormatter(self.env, formatter.context).format(txt, out)
         return out.getvalue()
+
+    def _get_label_text(self, code, label, name):
+        return code.replace("{t}", label if label else name) \
+                   .replace("{b}", self.base_lang) \
+                   .replace("{c}", self.base_lang.lower()) \
+                   .replace("{n}", self.languages[self.base_lang])
 
     # IWikiMacroProvider methods
 
@@ -95,7 +101,8 @@ The description contains the text displayed above language links in that languag
 A table title line starting with {{{||=}}} is not parsed.
 
 The base language link indication is the default value for wikitr: links (see below) and describes how links to base language should be formatted. It must contain
-one {t} which is replaced by the label (e.g. **{t} (en)** to append a note in brackets).
+one {t} which is replaced by the label (e.g. **{t} (en)** to append a note in brackets). Other parameters are {b} for the base language code, {c} for the base
+language code in lowercase letters and {n} for the base language name.
 
 The Macro accepts arguments as well:
  * '''revision=<num>'''   to specify the version of the base page when last translated, a negative revision indicates that a page needs updating in the status overview table
