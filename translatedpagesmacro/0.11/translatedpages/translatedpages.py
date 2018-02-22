@@ -122,6 +122,8 @@ The Macro accepts arguments as well:
 Use wikitr:[basetext:] in links to reference the translated form of a page when it exists, the original otherwise. In case the optional part **basetext**: is used this text
 is used to indicate links to the base language (see above for format). When using these links translators do not need to update links when they step by step add translated pages.
 Using this macro on the base langue pages does no harm, but may help in translation when doing copy and paste.
+
+Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr::{t} ({n}):Link|Label]]}}}, {{{[[wikitr::Link|Label]]}}}, {{{[wikitr:Link]}}}, {{{[wikitr:Link Label]}}} and so on (see TracLinks).
 """
 
     # Language forms:
