@@ -515,6 +515,9 @@ Using this macro on the base langue pages does no harm, but may help in translat
         if u'showuntranslated' in args:
             show += self._get_untranslated(silent)
         if len(show):
+            outshow = StringIO()
+            Formatter(self.env, formatter.context).format(show, outshow)
+            val = outshow.getvalue()
             val = re.sub('>\$\$\$([a-z]+?)\$\$\$<a class=".*?"', \
                 ' style="background-color:\\1"><a style="color:#151B8D"', val)
             # try again more secure in case previous fails due to Wiki engine changes
