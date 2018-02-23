@@ -39,7 +39,12 @@ class TranslatedPagesMacro(Component):
 
     def _format_link(self, formatter, ns, name, label):
         self._update_languages()
-        prefix, base_page_name, lang_code = self._get_page_info(formatter.context.resource.id)
+        res = formatter.context.resource
+        prefix = ""
+        base_page_name = ""
+        lang_code = self.base_lang
+        if res.realm == "wiki":
+          prefix, base_page_name, lang_code = self._get_page_info(res.id)
         origcode = self.extensions[lang_code]
         if label == name:
           label = ""
