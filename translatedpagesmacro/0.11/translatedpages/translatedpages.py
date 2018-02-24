@@ -9,7 +9,7 @@ from trac.core import *
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.wiki.api import IWikiMacroProvider, IWikiSyntaxProvider, WikiSystem, parse_args
-from trac.wiki.formatter import Formatter, OneLinerFormatter, system_message
+from trac.wiki.formatter import Formatter, OneLinerFormatter, system_message, split_url_into_path_query_fragment, concat_path_query_fragment
 from trac.wiki.model import WikiPage
 
 
@@ -57,6 +57,7 @@ class TranslatedPagesMacro(Component):
           origcode = r.group(1)
           name = r.group(2)
 
+        name,query,fragment = split_url_into_path_query_fragment(name)
         if lang_code == self.base_lang:
           origcode = "{t}"
         else:
@@ -74,6 +75,7 @@ class TranslatedPagesMacro(Component):
           else:
             name = tname
             origcode = "{t}"
+        name = concat_path_query_fragment(name, query, fragment)
         txt = "[[wiki:/%s|%s]]" % (name, self._get_label_text(origcode, label, name))
         out = StringIO()
         OneLinerFormatter(self.env, formatter.context).format(txt, out)
