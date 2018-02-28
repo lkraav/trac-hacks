@@ -6,6 +6,8 @@ from StringIO import StringIO
 
 from trac.config import Option
 from trac.core import *
+from trac.resource import get_resource_url
+from trac.util.html import tag
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.wiki.api import IWikiMacroProvider, IWikiSyntaxProvider, WikiSystem, parse_args
@@ -59,6 +61,10 @@ class TranslatedPagesMacro(Component):
 
         name,query,fragment = split_url_into_path_query_fragment(name)
         if lang_code == self.base_lang:
+          if name[0] != '/':
+            i = base_page_name.rfind("/")
+            if i > 0:
+              name = base_page_name[:i+1] + name
           origcode = "{t}"
         else:
           if name[0] == '/':
@@ -76,10 +82,16 @@ class TranslatedPagesMacro(Component):
             name = tname
             origcode = "{t}"
         name = concat_path_query_fragment(name, query, fragment)
-        txt = "[[wiki:/%s|%s]]" % (name, self._get_label_text(origcode, label, name))
-        out = StringIO()
-        OneLinerFormatter(self.env, formatter.context).format(txt, out)
-        return out.getvalue()
+        label = self._get_label_text(origcode, label, name)
+        if formatter.flavor == 'link':
+          p = WikiPage(self.env, "/"+name);
+          url = get_resource_url(self.env, p.resource, formatter.req.href)
+          return tag.a(label, href=url)
+        else:
+          txt = "[[wiki:/%s|%s]]" % (name, label)
+          out = StringIO()
+          OneLinerFormatter(self.env, formatter.context).format(txt, out)
+          return out.getvalue()
 
     def _get_label_text(self, code, label, name):
         return code.replace("{t}", label if label else name) \
@@ -164,7 +176,7 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr::{t} ({n}):Link|Labe
             regres = self.langpage_re.search(line)
             if regres == None:
                 if not line.startswith(u'||=') and line.strip():
-                    self.env.log.warn(
+                    self.env.log.debug(
                         u"Wrong line syntax while parsing languages list: %s", line)
             else:
                 code = regres.group(1)
