@@ -138,8 +138,11 @@ class RPCWeb(Component):
         """Process incoming RPC request and finalize response."""
         proto_id = protocol.rpc_info()[0]
         rpcreq = req.rpc = {'mimetype': content_type}
-        try :
-            self.log.debug("RPC(%s) call by '%s'", proto_id, req.authname)
+        self.log.debug("RPC(%s) call by '%s'", proto_id, req.authname)
+        try:
+            if req.path_info.startswith('/login/') and \
+                    req.authname == 'anonymous':
+                raise TracError("Authentication information not available")
             rpcreq = req.rpc = protocol.parse_rpc_request(req, content_type)
             rpcreq['mimetype'] = content_type
 
