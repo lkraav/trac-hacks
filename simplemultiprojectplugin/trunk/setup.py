@@ -18,7 +18,8 @@ setup(
     maintainer="falkb",
     license='GPL',
     url='https://trac-hacks.org/wiki/SimpleMultiProjectPlugin',
-    description='Simple Multi Project plugin for managing several projects with one Trac instance.',
+    description='Simple Multi Project plugin for managing several projects '
+                'with one Trac instance.',
     long_description='Simple Multi Project',
     keywords='Simple Multi Project',
     entry_points={'trac.plugins': ['simplemultiproject = simplemultiproject']},

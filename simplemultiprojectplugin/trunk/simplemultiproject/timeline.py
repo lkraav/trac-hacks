@@ -5,17 +5,16 @@
 # License: 3-clause BSD
 #
 
+from genshi.filters import Transformer
 from trac.core import *
 from trac.ticket.model import Ticket
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from genshi.builder import tag
-from genshi.filters import Transformer
+from trac.util.html import html as tag
+from trac.web.api import ITemplateStreamFilter, IRequestFilter
+
 from simplemultiproject.model import *
 from simplemultiproject.roadmap import create_proj_table
 from simplemultiproject.smp_model import SmpProject
 from simplemultiproject.session import get_project_filter_settings
-
-__author__ = 'Cinc'
 
 
 class SmpTimelineProjectFilter(Component):
@@ -24,7 +23,7 @@ class SmpTimelineProjectFilter(Component):
     implements(IRequestFilter, ITemplateStreamFilter)
 
     def __init__(self):
-        self._SmpModel =  SmpModel(self.env)
+        self._SmpModel = SmpModel(self.env)
         self.smp_project = SmpProject(self.env)
 
     # IRequestFilter
@@ -71,13 +70,16 @@ class SmpTimelineProjectFilter(Component):
         return stream
 
     def _lambda_render_func(self, proj_name, old_render):
-        """Lambda function which saves some parameters for our private render function.
+        """Lambda function which saves some parameters for our private
+        render function.
 
-        The timeline module calls render functions only with parameter field and context. In our private render
-        function we need more information.
-        So we replace the original render function stored in the event data with this one while storing the original
-        pointer to the render function and the project name within this lambda. When the timeline module calls our
-        own function field and context are forwarded together with our stored parameters.
+        The timeline module calls render functions only with parameter field
+        and context. In our private render function we need more information.
+        So we replace the original render function stored in the event data
+        with this one while storing the original pointer to the render
+        function and the project name within this lambda. When the timeline
+        module calls our own function field and context are forwarded together
+        with our stored parameters.
         """
         return lambda field, context: self._render_ticket_event(field, context, proj_name, old_render)
 

@@ -4,17 +4,20 @@
 #
 # License: 3-clause BSD
 #
-from trac.core import *
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import Chrome, add_stylesheet
-from trac.config import OrderedExtensionsOption
+
 from genshi.template import MarkupTemplate
 from genshi import HTML
 from genshi.filters import Transformer
+from trac.config import OrderedExtensionsOption
+from trac.core import *
+from trac.web.api import IRequestFilter, ITemplateStreamFilter
+from trac.web.chrome import Chrome, add_stylesheet
+
 from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.model import SmpModel
-from simplemultiproject.session import get_project_filter_settings, get_filter_settings
+from simplemultiproject.session import get_project_filter_settings, \
+    get_filter_settings
 
 __all__ = ['SmpRoadmapGroup', 'SmpRoadmapProjectFilter', 'SmpRoadmapModule']
 
@@ -29,7 +32,7 @@ class SmpRoadmapGroup(Component):
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_project = SmpProject(self.env)
         self.smp_version = SmpVersion(self.env)
-        self._SmpModel=SmpModel(self.env)
+        self._SmpModel = SmpModel(self.env)
 
     # IRoadmapDataProvider
 
@@ -142,12 +145,15 @@ class SmpRoadmapModule(Component):
 
     implements(IRequestFilter)
 
-    data_provider = OrderedExtensionsOption('simple-multi-project', 'roadmap_data_provider', IRoadmapDataProvider,
-                                            default="SmpVersionProject, SmpRoadmapGroup, SmpRoadmapProjectFilter",
-                                            doc="""Specify the order of plugins providing data for the roadmap page""")
-    data_filters = OrderedExtensionsOption('simple-multi-project', 'roadmap_data_filters', IRoadmapDataProvider,
-                                           default="SmpRoadmapGroup, SmpRoadmapProjectFilter",
-                                           doc="""Specify the order of plugins filtering data for the roadmap page""")
+    data_provider = OrderedExtensionsOption(
+        'simple-multi-project', 'roadmap_data_provider', IRoadmapDataProvider,
+        default="SmpVersionProject, SmpRoadmapGroup, SmpRoadmapProjectFilter",
+        doc="""Specify the order of plugins providing data for roadmap page""")
+
+    data_filters = OrderedExtensionsOption(
+        'simple-multi-project', 'roadmap_data_filters', IRoadmapDataProvider,
+        default="SmpRoadmapGroup, SmpRoadmapProjectFilter",
+        doc="""Specify the order of plugins filtering data for roadmap page""")
 
     # IRequestFilter methods
 
@@ -155,7 +161,9 @@ class SmpRoadmapModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        """Call extensions adding data or filtering data in the appropriate order."""
+        """Call extensions adding data or filtering data in the
+        appropriate order.
+        """
         if data:
             path_elms = req.path_info.split('/')
             if len(path_elms) > 1 and path_elms[1] == 'roadmap':
@@ -166,6 +174,7 @@ class SmpRoadmapModule(Component):
                     data = provider.filter_data(req, data)
 
         return template, data, content_type
+
 
 class SmpRoadmapProjectFilter(Component):
     """Filter roadmap by project(s)"""
@@ -185,7 +194,8 @@ class SmpRoadmapProjectFilter(Component):
 
     def filter_data(self, req, data):
 
-        filter_proj = get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')
+        filter_proj = \
+            get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')
 
         if 'All' in filter_proj:
             return data
@@ -274,7 +284,8 @@ table_proj = """
 
 
 def create_proj_table(self, _SmpModel, req):
-    """Create a select tag holding valid projects (means not closed) for the current user.
+    """Create a select tag holding valid projects (means not closed) for
+    the current user.
 
     @param self: Component instance holding a self.smp_project =  SmpProject(env)
     @param _SmpModel: SmpModel object used for filtering functions

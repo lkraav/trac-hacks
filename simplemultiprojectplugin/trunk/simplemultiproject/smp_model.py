@@ -8,13 +8,12 @@
 from trac.db import with_transaction
 from trac.ticket.model import Version
 
-__author__ = 'Cinc'
-
 __all__ = ['SmpMilestone', 'SmpComponent', 'SmpProject', 'SmpVersion']
 
 
 class SmpBaseModel(object):
     """Base class for models providing the database access"""
+
     def __init__(self, env):
         self.env = env
         self.resource_name = "base"
@@ -66,11 +65,12 @@ class SmpBaseModel(object):
         @param name: the name of them item
         @param id_projects: single id of a project or list if ids
 
-        Update is done by deleting the item from the SMP database and adding it again for the given projects. For
-        each project a row is added to the table so inplace update won't work.
+        Update is done by deleting the item from the SMP database and adding
+        it again for the given projects. For each project a row is added to
+        the table so inplace update won't work.
 
-        This method is used when the set of projects an item (version, milestone, component) is associated with has
-        changed.
+        This method is used when the set of projects an item
+        (version, milestone, component) is associated with has changed.
         """
         self.delete(name)
         self.add(name, id_projects)
@@ -92,7 +92,8 @@ class SmpBaseModel(object):
             cursor.execute(sql, (id_projects, name))
 
     def get_project_names_for_item(self, name):
-        """Get a list of project names the item (version, milestone, component) is associated with.
+        """Get a list of project names the item
+        (version, milestone, component) is associated with.
 
         @param name: name of the item e.g. a component name
         @return: a list of project names
@@ -102,7 +103,7 @@ class SmpBaseModel(object):
         sql = "SELECT name FROM smp_project AS p, smp_%s_project AS res WHERE p.id_project = res.id_project " \
               "AND res.%s = %%s" % (self.resource_name, self.resource_name)
         cursor.execute(sql, [name])
-        return [proj[0] for proj in cursor]  # Convert list of tuples to list of project names
+        return [proj[0] for proj in cursor]
 
     def get_project_ids_for_resource_item(self, resource_name, name):
         """Get a list of project ids the item of type resource_name is associated with.
@@ -113,10 +114,10 @@ class SmpBaseModel(object):
         """
         db = self.env.get_read_db()
         cursor = db.cursor()
-        sql = "SELECT id_project FROM smp_%s_project WHERE "\
+        sql = "SELECT id_project FROM smp_%s_project WHERE " \
               "%s = %%s" % (resource_name, resource_name)
         cursor.execute(sql, [name])
-        return [proj[0] for proj in cursor]  # Convert list of tuples to list of project names
+        return [proj[0] for proj in cursor]
 
     def get_items_for_project_id(self, id_project):
         """Get all items associated with the given project id for a resource.
@@ -134,6 +135,7 @@ class SmpBaseModel(object):
 
 class SmpComponent(SmpBaseModel):
     """Model for SMP components"""
+
     def __init__(self, env):
         super(SmpComponent, self).__init__(env)
         self.resource_name = "component"
@@ -141,7 +143,8 @@ class SmpComponent(SmpBaseModel):
     def get_all_components_and_project_id(self):
         """Get all components with associated project ids
 
-        Note that a component may have several project ids and thus will be several times in the tuple.
+        Note that a component may have several project ids and thus will
+        be several times in the tuple.
 
         :return a list of tuples (component_name, project_id)
         """
@@ -151,7 +154,8 @@ class SmpComponent(SmpBaseModel):
         """Get components for the given project id.
 
         :param id_project: a project id
-        :return: ordered list of components associated with the given project id. May be empty.
+        :return: ordered list of components associated with the given
+                 project id. May be empty.
         """
         return self.get_items_for_project_id(id_project)
 
@@ -164,7 +168,8 @@ class SmpMilestone(SmpBaseModel):
     def get_all_milestones_and_id_project_id(self):
         """Get all milestones with associated project ids
 
-        Note that a milestone may have several project ids and thus will be several times in the tuple.
+        Note that a milestone may have several project ids and thus will
+        be several times in the tuple.
         :return a list of tuples (milestone_name, project_id)
         """
         return self._get_all_names_and_project_id_for_resource('milestone')
@@ -173,7 +178,8 @@ class SmpMilestone(SmpBaseModel):
         """Get milestones for the given project id.
 
         :param id_project: a project id
-        :return: ordered list of milestones associated with the given project id. May be empty.
+        :return: ordered list of milestones associated with the given
+                 project id. May be empty.
         """
         return self.get_items_for_project_id(id_project)
 
@@ -181,8 +187,8 @@ class SmpMilestone(SmpBaseModel):
 class SmpProject(SmpBaseModel):
     def __init__(self, env):
         super(SmpProject, self).__init__(env)
-        # TODO: a call to get_all_projects is missing to fill the custom ticket field.
-        # Make sure to look at #12393 when implementing
+        # TODO: a call to get_all_projects is missing to fill the custom
+        # ticket field. Make sure to look at #12393 when implementing
 
     def get_name_and_id(self):
         db = self.env.get_read_db()
@@ -208,7 +214,9 @@ class SmpProject(SmpBaseModel):
 
 
 def get_all_versions_without_project(env):
-    """Return a list of all known versions (as unicode) not linked to a project."""
+    """Return a list of all known versions (as unicode) not linked to a
+    project.
+    """
     trac_vers = Version.select(env)
 
     versions = set(v.name for v in trac_vers) - set(v for v, id_ in SmpVersion(env).get_all_versions_and_project_id())
@@ -236,6 +244,7 @@ class SmpVersion(SmpBaseModel):
         """Get versions for the given project id.
 
         :param id_project: a project id
-        :return: ordered list of versions associated with the given project id. May be empty.
+        :return: ordered list of versions associated with the given project id.
+                 May be empty.
         """
         return self.get_items_for_project_id(id_project)

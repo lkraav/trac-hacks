@@ -5,14 +5,12 @@
 # License: BSD
 #
 
-__author__ = 'Cinc'
-
-from trac.core import Component, implements
 from trac.admin import IAdminCommandProvider
+from trac.core import Component, implements
 from trac.util.text import printout
 from trac.util.translation import _
-from smp_model import SmpMilestone, SmpVersion, SmpComponent
-# Model Class
+
+from smp_model import SmpMilestone
 from model import SmpModel
 
 
@@ -35,7 +33,8 @@ class SmpAdminCommands(Component):
       Change description of project.
 
      project list [detailed]::
-      Show all defined projects. With parameter "detailed" some additional project information is printed.
+      Show all defined projects. With parameter "detailed" some additional
+      project information is printed.
 
      project open <project>::
       Open project.
@@ -60,7 +59,7 @@ class SmpAdminCommands(Component):
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
-        self.smp_milestone =SmpMilestone(self.env)
+        self.smp_milestone = SmpMilestone(self.env)
 
     def get_admin_commands(self):
         yield ('project add', '<project> [summary]',
@@ -121,7 +120,8 @@ class SmpAdminCommands(Component):
                 self.__SmpModel.update_custom_ticket_field(name, newname)
 
     def _list_projects(self, detailed_list=""):
-        for id_project, name, summary, description, closed, restrict_to in self.__SmpModel.get_all_projects():
+        for id_project, name, summary, description, closed, restrict_to \
+                in self.__SmpModel.get_all_projects():
             if detailed_list:
                 printout("\n%s:" % name)
                 printout("  Summary:\t%s" % summary)

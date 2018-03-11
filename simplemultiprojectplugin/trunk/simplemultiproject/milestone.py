@@ -5,13 +5,14 @@
 # License: BSD
 #
 
+from genshi.filters import Transformer
+from genshi.template.markup import MarkupTemplate
 from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.ticket.api import IMilestoneChangeListener
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateStreamFilter, add_stylesheet
-from genshi.filters import Transformer
-from genshi.template.markup import MarkupTemplate
+
 from simplemultiproject.model import *
 from smp_model import SmpProject, SmpMilestone
 from admin_filter import create_projects_table, create_script_tag
@@ -47,7 +48,7 @@ def create_cur_projects_table(smp_model, name):
 
     @return <div> tag holding a project select control with label
     """
-    ms_projects =  smp_model.get_project_names_for_item(name)
+    ms_projects = smp_model.get_project_names_for_item(name)
     print(ms_projects)
     tbl = MarkupTemplate(cur_projects_tmpl)
     return tbl.generate(all_projects=ms_projects)
@@ -58,14 +59,18 @@ class SmpMilestoneProject(Component):
 
     implements(IRequestFilter, ITemplateStreamFilter, IMilestoneChangeListener)
 
-    single_project = BoolOption("simple-multi-project", "single_project_milestones", False,
-                                doc="If set to {{{True}}} only a single project can be associated with a milestone. "
-                                    "The default value is {{{False}}}.")
-    allow_no_project = BoolOption("simple-multi-project", "milestone_without_project", False,
-                                  doc="Set this option to {{{True}}} if you want to create milestones without "
-                                      "associated projects. The default value is {{{False}}}.")
+    single_project = BoolOption(
+        'simple-multi-project', 'single_project_milestones', False,
+        doc="""If set to {{{True}}} only a single project can be associated
+               with a milestone. The default value is {{{False}}}.
+               """)
 
-    # Init
+    allow_no_project = BoolOption(
+        'simple-multi-project', 'milestone_without_project', False,
+        doc="""Set this option to {{{True}}} if you want to create milestones
+               without associated projects. The default value is {{{False}}}.
+               """)
+
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
         self.smp_model = SmpMilestone(self.env)
@@ -76,11 +81,11 @@ class SmpMilestoneProject(Component):
     def pre_process_request(self, req, handler):
         if self._is_valid_request(req) and not req.args.get('cancel'):
             action = req.args.get('action', 'view')
-            # Note deletion of milestones is handled in IMilestoneChangeListener
+            # Deletion of milestones is handled in IMilestoneChangeListener
             if action == 'edit':
                 # This one may be a new one or editing of an existing milestone
                 ms_id = req.args.get('id')  # holds the old name if there was a name change, empty if new
-                p_ids=req.args.get('sel')
+                p_ids = req.args.get('sel')
                 if not ms_id:
                     self.smp_model.add(req.args.get('name'), p_ids)
                 else:
@@ -91,7 +96,8 @@ class SmpMilestoneProject(Component):
     @staticmethod
     def _is_valid_request(req):
         """Check request for correct path and valid form token"""
-        if req.path_info.startswith('/milestone') and req.args.get('__FORM_TOKEN') == req.form_token:
+        if req.path_info.startswith('/milestone') and \
+                req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 

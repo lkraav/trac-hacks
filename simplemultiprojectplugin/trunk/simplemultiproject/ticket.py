@@ -2,33 +2,18 @@
 #
 # Copyright (C) 2012 Thomas Doering, falkb
 #
+from operator import itemgetter
 
-from genshi.builder import tag
 from genshi.filters.transform import Transformer
-from simplemultiproject.model import *
-from trac.util.text import to_unicode
 from trac.core import *
+from trac.util.html import html as tag
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
-from trac.web.chrome import add_script, add_notice
+from trac.web.chrome import add_script, add_script_data
 from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.ticket import model
-from operator import itemgetter
+
 from smp_model import get_all_versions_without_project
-
-try:
-    from trac.web.chrome import add_script_data
-except ImportError:
-    # Backported from 0.12
-    def add_script_data(req, data={}, **kwargs):
-        """Add data to be made available in javascript scripts as global variables.
-
-        The keys in `data` and the keyword argument names provide the names of the
-        global variables. The values are converted to JSON and assigned to the
-        corresponding variables.
-        """
-        script_data = req.chrome.setdefault('script_data', {})
-        script_data.update(data)
-        script_data.update(kwargs)
+from simplemultiproject.model import *
 
 
 class SmpTicketProject(Component):

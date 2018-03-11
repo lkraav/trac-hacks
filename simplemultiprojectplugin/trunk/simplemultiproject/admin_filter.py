@@ -5,27 +5,28 @@
 # License: 3-clause BSD
 #
 
-# Trac extension point imports
-from trac.core import *
-from trac.web.api import IRequestFilter
-from trac.util.translation import _
-from trac.config import BoolOption
-from trac.resource import ResourceNotFound
-from trac.ticket.model import Component as TicketComponent  # Make sure not to confuse with Component for plugins
-from trac.ticket.model import Milestone, Version
-from trac.ticket.api import IMilestoneChangeListener
-from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateStreamFilter
-from genshi.builder import tag
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
+from trac.config import BoolOption
+from trac.core import *
+from trac.resource import ResourceNotFound
+from trac.ticket.model import Component as TicketComponent
+from trac.ticket.model import Milestone, Version
+from trac.ticket.api import IMilestoneChangeListener
+from trac.util.html import html as tag
+from trac.util.translation import _
+from trac.web.api import IRequestFilter
+from trac.web.chrome import ITemplateStreamFilter, add_script, \
+    add_script_data, add_stylesheet
+
 from smp_model import SmpComponent, SmpProject, SmpVersion, SmpMilestone
 from model import SmpModel
 
-__author__ = 'Cinc'
-
 
 class InsertProjectTd(InjectorTransformation):
-    """Transformation to insert the project column into the milestone and version tables"""
+    """Transformation to insert the project column into the milestone
+    and version tables
+    """
     _value = None
     _td = 0
 
@@ -70,7 +71,8 @@ class InsertProjectTd(InjectorTransformation):
 
 
 def create_script_tag(input_type="checkbox"):
-    """Create javascript tag which holds code to enable/disable 'add' button for milestones.
+    """Create javascript tag which holds code to enable/disable 'add'
+    button for milestones.
 
     :param input_type:
     :return: javascript tag (Genshi)
@@ -100,11 +102,13 @@ def create_script_tag(input_type="checkbox"):
         });
     });
     """
-    return tag.script(script % (input_type, input_type), type='text/javascript')
+    return tag.script(script % (input_type, input_type),
+                      type='text/javascript')
 
 
 def _allow_no_project(self):
-    """Check config if user enabled milestone creation without prior selection of a project.
+    """Check config if user enabled milestone creation without prior
+    selection of a project.
 
     @return: True if milestones may be created without a project
     """
@@ -128,31 +132,38 @@ $proj
 """
 
 class SmpFilterDefaultMilestonePanels(Component):
-    """Modify default Trac admin panels for milestones to include project selection.
+    """Modify default Trac admin panels for milestones to include
+    project selection.
 
-    Using this component you may associate a milestone with one or more projects using the default Trac admin panels.
+    Using this component you may associate a milestone with one or more
+    projects using the default Trac admin panels.
 
-    Creation of milestones is only possible when a project is chosen. You may disable this behaviour by setting the
-    following in ''trac.ini'':
+    Creation of milestones is only possible when a project is chosen.
+    You may disable this behaviour by setting the following in ''trac.ini'':
 
     {{{
     [simple-multi-project]
     milestone_without_project = True
     }}}
 
-    To ensure only a single project is associated with each milestone set the following in ''trac.ini'':
+    To ensure only a single project is associated with each milestone
+    set the following in ''trac.ini'':
     {{{
     [simple-multi-project]
     single_project_milestones = True
     }}}
     """
 
-    allow_no_project = BoolOption("simple-multi-project", "milestone_without_project", False,
-                                  doc="Set this option to {{{True}}} if you want to create milestones without "
-                                      "associated projects. The default value is {{{False}}}.")
-    single_project = BoolOption("simple-multi-project", "single_project_milestones", False,
-                                doc="If set to {{{True}}} only a single project can be associated with a milestone. "
-                                    "The default value is {{{False}}}.")
+    allow_no_project = BoolOption(
+        'simple-multi-project', 'milestone_without_project', False,
+        doc="""Set this option to {{{True}}} if you want to create milestones
+               without associated projects. The default value is {{{False}}}.
+               """)
+    single_project = BoolOption(
+        'simple-multi-project', 'single_project_milestones', False,
+        doc="""If set to {{{True}}} only a single project can be associated
+               with a milestone. The default value is {{{False}}}.
+               """)
 
     implements(ITemplateStreamFilter, IRequestFilter, IMilestoneChangeListener)
 
@@ -169,7 +180,8 @@ class SmpFilterDefaultMilestonePanels(Component):
                 # Removal is handled in change listener
                 if 'add' in req.args:
                     # 'Add' button on main milestone panel
-                    # Check if we already have this milestone. Trac will show an error later if so.
+                    # Check if we already have this milestone.
+                    # Trac will show an error later if so.
                     # Don't change the db for smp if already exists.
                     p_ids = req.args.get('sel')
                     if not get_milestone_from_trac(self.env, req.args.get('name')) and p_ids:
@@ -186,7 +198,8 @@ class SmpFilterDefaultMilestonePanels(Component):
     @staticmethod
     def _is_valid_request(req):
         """Check request for correct path and valid form token"""
-        if req.path_info.startswith('/admin/ticket/milestones') and req.args.get('__FORM_TOKEN') == req.form_token:
+        if req.path_info.startswith('/admin/ticket/milestones') and \
+                req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 
@@ -220,7 +233,8 @@ class SmpFilterDefaultMilestonePanels(Component):
                             all_ms_proj[ms] = [all_proj[p_id]]
                         else:
                             # A milestone without a project
-                            # For historical reasons these milestones may have a project id of '0' instead of
+                            # For historical reasons these milestones
+                            # may have a project id of '0' instead of
                             # missing from the SMP milestone table
                             all_ms_proj[ms] = [""]
 
@@ -265,7 +279,6 @@ class SmpFilterDefaultMilestonePanels(Component):
         pass
 
     def milestone_deleted(self, milestone):
-        self.log.debug("Milestone '%s' deleted. About to call SmpMilestone.delete().", milestone.name)
         self.smp_model.delete(milestone.name)
 
 
@@ -279,7 +292,8 @@ def get_version_from_trac(env, name):
 class SmpFilterDefaultVersionPanels(Component):
     """Modify default Trac admin panels for versions to include project selection.
 
-    Creation of versions is only possible when a project is chosen. You may disable this behaviour by setting the
+    Creation of versions is only possible when a project is chosen.
+    You may disable this behaviour by setting the
     following in ''trac.ini'':
 
     {{{
@@ -287,7 +301,8 @@ class SmpFilterDefaultVersionPanels(Component):
     version_without_project = True
     }}}
 
-    To ensure only a single project is associated with each version set the following in ''trac.ini'':
+    To ensure only a single project is associated with each version set
+    the following in ''trac.ini'':
     {{{
     [simple-multi-project]
     single_project_versions = True
@@ -296,12 +311,17 @@ class SmpFilterDefaultVersionPanels(Component):
 
     implements(ITemplateStreamFilter, IRequestFilter)
 
-    allow_no_project = BoolOption("simple-multi-project", "version_without_project", False,
-                                  doc="Set this option to {{{True}}} if you want to create versions without "
-                                      "associated projects. The default value is {{{False}}}.")
-    single_project = BoolOption("simple-multi-project", "single_project_versions", False,
-                                doc="If set to {{{True}}} only a single project can be associated with a version. "
-                                                                      "The default value is {{{False}}}.")
+    allow_no_project = BoolOption(
+        'simple-multi-project', 'version_without_project', False,
+        doc="""Set this option to {{{True}}} if you want to create versions
+               without associated projects. The default value is {{{False}}}.
+               """)
+
+    single_project = BoolOption(
+        'simple-multi-project', 'single_project_versions', False,
+        doc="""If set to {{{True}}} only a single project can be associated
+               with a version. The default value is {{{False}}}.
+               """)
 
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
@@ -315,7 +335,8 @@ class SmpFilterDefaultVersionPanels(Component):
             if req.path_info.startswith('/admin/ticket/versions'):
                 if 'add' in req.args:
                     # 'Add' button on main milestone panel
-                    # Check if we already have this milestone. Trac will show an error later if so.
+                    # Check if we already have this milestone.
+                    # Trac will show an error later if so.
                     # Don't change the db for smp if already exists.
                     p_ids = req.args.get('sel')
                     if not get_version_from_trac(self.env, req.args.get('name')) and p_ids:
@@ -333,7 +354,8 @@ class SmpFilterDefaultVersionPanels(Component):
     @staticmethod
     def _is_valid_request(req):
         """Check request for correct path and valid form token"""
-        if req.path_info.startswith('/admin/ticket/versions') and req.args.get('__FORM_TOKEN') == req.form_token:
+        if req.path_info.startswith('/admin/ticket/versions') and \
+                req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 
@@ -399,6 +421,7 @@ class SmpFilterDefaultVersionPanels(Component):
                                                                           input_type=input_type))
         return stream
 
+
 table_tmpl = """
 <div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
 <div id="project-help-div">
@@ -426,7 +449,8 @@ table_tmpl = """
 """
 
 
-def create_projects_table(self, _SmpModel, req, input_type="checkbox", item_name=""):
+def create_projects_table(self, _SmpModel, req, input_type='checkbox',
+                          item_name=''):
     """Create a table for admin panels holding valid projects (means not closed).
 
     @param self: Component instance filtering an admin page
@@ -436,15 +460,18 @@ def create_projects_table(self, _SmpModel, req, input_type="checkbox", item_name
     @return DIV tag holding a project select control with label
     """
     # project[0] is the id, project[1] the name
-    all_projects = [[project[0], project[1]] for project in self.smp_project.get_all_projects()]
+    all_projects = [[project[0], project[1]]
+                    for project in self.smp_project.get_all_projects()]
     all_project_names = [name for p_id, name in all_projects]
 
     # no closed projects
     for project_name in all_project_names:
         project_info = _SmpModel.get_project_info(project_name)
-        _SmpModel.filter_project_by_conditions(all_project_names, project_name, project_info, req)
+        _SmpModel.filter_project_by_conditions(all_project_names, project_name,
+                                               project_info, req)
 
-    filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects
+    filtered_projects = [[p_id, project_name]
+                         for p_id, project_name in all_projects
                          if project_name in all_project_names]
 
     item = req.args.get('path_info', "")
@@ -452,7 +479,8 @@ def create_projects_table(self, _SmpModel, req, input_type="checkbox", item_name
         item = item_name
     comp_prj = self.smp_model.get_project_names_for_item(item)
     tbl = MarkupTemplate(table_tmpl)
-    return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj, input_type=input_type)
+    return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj,
+                        input_type=input_type)
 
 
 def get_component_from_trac(env, name):
@@ -463,12 +491,14 @@ def get_component_from_trac(env, name):
 
 
 class SmpFilterDefaultComponentPanels(Component):
-    """Modify default Trac admin panels for components to include project selection.
+    """Modify default Trac admin panels for components to include
+    project selection.
 
-    You need ''TICKET_ADMIN'' rights so the component panel is visible in the ''Ticket System'' section.
+    You need ''TICKET_ADMIN'' rights so the component panel is visible
+    in the ''Ticket System'' section.
 
-    After enabling this component you may disable the component panel in the ''Manage Projects'' section by
-    adding the following to ''trac.ini'':
+    After enabling this component you may disable the component panel
+    in the ''Manage Projects'' section by adding the following to ''trac.ini'':
     {{{
     [components]
     simplemultiproject.admin_component.* = disabled
@@ -487,7 +517,8 @@ class SmpFilterDefaultComponentPanels(Component):
             if req.path_info.startswith('/admin/ticket/components'):
                 if 'add' in req.args:
                     # 'Add' button on main component panel
-                    # Check if we already have this component. Trac will show an error later if so.
+                    # Check if we already have this component.
+                    # Trac will show an error later if so.
                     # Don't change the db for smp.
                     p_ids = req.args.get('sel')
                     if not get_component_from_trac(self.env, req.args.get('name')) and p_ids:
@@ -505,7 +536,8 @@ class SmpFilterDefaultComponentPanels(Component):
     @staticmethod
     def _is_valid_request(req):
         """Check request for correct path and valid form token"""
-        if req.path_info.startswith('/admin/ticket/components') and req.args.get('__FORM_TOKEN') == req.form_token:
+        if req.path_info.startswith('/admin/ticket/components') \
+                and req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 
@@ -549,6 +581,7 @@ class SmpFilterDefaultComponentPanels(Component):
                 stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
 
+
 class SmpAddExtendedVersionColumn(Component):
     """Add version column to milestone table when using ExtendedVersion plugin."""
 
@@ -585,7 +618,9 @@ class SmpAddExtendedVersionColumn(Component):
     def post_process_request(self, req, template, data, content_type):
         if self.extended_version and template == 'admin_milestones.html':
             if data and data['view'] == 'list':
-                add_script_data(req, {'ms_ext_version': self.get_version_for_milestone()})
+                add_script_data(req, {
+                    'ms_ext_version': self.get_version_for_milestone()
+                })
                 add_script(req, "simplemultiproject/js/add_version_column.js")
 
         return template, data, content_type

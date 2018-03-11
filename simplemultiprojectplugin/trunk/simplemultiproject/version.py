@@ -3,66 +3,56 @@
 # Copyright (C) 2012 Thomas Doering
 #
 
-# smp
-from simplemultiproject.model import *
+import re
+from datetime import datetime, timedelta
+from operator import itemgetter
 
-# trac
+from genshi import HTML
+from genshi.filters.transform import Transformer
 from trac.attachment import AttachmentModule
 from trac.config import ExtensionOption
 from trac.core import *
-from trac.ticket.model import Version, Ticket, TicketSystem
-from trac.ticket.roadmap import apply_ticket_permissions, get_ticket_stats, ITicketGroupStatsProvider, \
-    DefaultTicketGroupStatsProvider
+from trac.ticket.model import Version, TicketSystem
 from trac.ticket.query import QueryModule
-from trac.mimeview import Context
-from trac import __version__ as VERSION
-from trac.util.translation import _, tag_
-from trac.util.datefmt import parse_date, utc, to_utimestamp, \
-    get_datetime_format_hint, format_date, \
-    format_datetime, from_utimestamp
-from api import IRoadmapDataProvider
-
-try:
-    from trac.util.datefmt import user_time
-except ImportError:
-    def user_time(req, func, *args, **kwargs):
-        """port from 1.0-stable"""
-        if 'tzinfo' not in kwargs:
-            kwargs['tzinfo'] = getattr(req, 'tz', None)
-        return func(*args, **kwargs)
-
+from trac.ticket.roadmap import ITicketGroupStatsProvider, \
+    apply_ticket_permissions, get_ticket_stats
+from trac.web.chrome import web_context
+from trac.util.datefmt import get_datetime_format_hint, parse_date, \
+    user_time, utc
+from trac.util.html import html as tag
+from trac.util.translation import _
 from trac.web.api import IRequestHandler, IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import add_link, add_notice, add_script, add_stylesheet, \
-    add_warning, Chrome, INavigationContributor
+from trac.web.chrome import add_notice, add_script, add_stylesheet, \
+    add_warning, Chrome
 
-# genshi
-from genshi.builder import tag
-from genshi.filters.transform import Transformer
-
-# python
-from datetime import datetime, timedelta
-from pkg_resources import resource_filename
-from operator import itemgetter
-import re
+from admin_filter import SmpFilterDefaultVersionPanels
+from simplemultiproject.api import IRoadmapDataProvider
+from simplemultiproject.model import *
 from simplemultiproject.session import get_filter_settings
+from smp_model import SmpVersion
+
 
 def get_tickets_for_any(env, db, any_name, any_value, field='component'):
     cursor = db.cursor()
     fields = TicketSystem(env).get_ticket_fields()
     if field in [f['name'] for f in fields if not f.get('custom')]:
-        cursor.execute("""SELECT id,status,%s FROM ticket WHERE %s=%%s ORDER BY %s""" %
-                       (field, any_name, field), [any_value])
+        cursor.execute("""
+            SELECT id,status,%s FROM ticket WHERE %s=%%s ORDER BY %s
+            """ % (field, any_name, field), [any_value])
     else:
-        cursor.execute("""SELECT id,status,value FROM ticket
-                          LEFT OUTER JOIN ticket_custom ON (id=ticket AND name=%%s)
-                          WHERE %s=%%s ORDER BY value""" % any_name, [field, any_value])
+        cursor.execute("""
+            SELECT id,status,value FROM ticket
+            LEFT OUTER JOIN ticket_custom ON (id=ticket AND name=%%s)
+            WHERE %s=%%s ORDER BY value
+            """ % any_name, [field, any_value])
     tickets = []
     for tkt_id, status, fieldval in cursor:
         tickets.append({'id': tkt_id, 'status': status, field: fieldval})
     return tickets
 
 
-def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component', group=None):
+def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component',
+                   group=None):
     has_query = env[QueryModule] is not None
 
     def query_href(extra_args):
@@ -72,23 +62,27 @@ def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component', 
         args.update(extra_args)
         return req.href.query(args)
 
-    return {'stats': stat,
-            'stats_href': query_href(stat.qry_args),
-            'interval_hrefs': [query_href(interval['qry_args']) for interval in stat.intervals]
-            }
+    return {
+        'stats': stat,
+        'stats_href': query_href(stat.qry_args),
+        'interval_hrefs': [query_href(interval['qry_args'])
+                           for interval in stat.intervals]
+    }
 
 
 class SmpVersionProject(Component):
     """Create Project dependent versions"""
 
-    implements(IRequestHandler, IRequestFilter, ITemplateStreamFilter, IRoadmapDataProvider)
+    implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider,
+               ITemplateStreamFilter)
 
-    stats_provider = ExtensionOption('roadmap', 'stats_provider',
-                                     ITicketGroupStatsProvider,
-                                     'DefaultTicketGroupStatsProvider',
-                                     """Name of the component implementing `ITicketGroupStatsProvider`,
+    stats_provider = ExtensionOption(
+        'roadmap', 'stats_provider',
+        ITicketGroupStatsProvider, 'DefaultTicketGroupStatsProvider',
+        """Name of the component implementing `ITicketGroupStatsProvider`,
         which is used to collect statistics on groups of tickets for display
-        in the roadmap views.""")
+        in the roadmap views.
+        """)
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
@@ -139,12 +133,15 @@ class SmpVersionProject(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if data and 'is_SMP' in data and req.path_info.startswith('/version'):  # #12371
+        if data and 'is_SMP' in data and \
+                req.path_info.startswith('/version'):  # #12371
             version = data['version']
-            if version and (type(version) is Version):
-                project_name = self.__SmpModel.get_project_version(version.name)
+            if version and type(version) is Version:
+                project_name = \
+                    self.__SmpModel.get_project_version(version.name)
                 if project_name and project_name[0]:
-                    self.__SmpModel.check_project_permission(req, project_name[0])
+                    self.__SmpModel.check_project_permission(req,
+                                                             project_name[0])
         return template, data, content_type
 
     # IRoadmapDataProvider
@@ -163,7 +160,7 @@ class SmpVersionProject(Component):
             data['hide'] = hide
 
         if data and (not hide or 'versions' not in hide):
-            versions, version_stats = self._versions_and_stats(req, None)  # filter_projects)
+            versions, version_stats = self._versions_and_stats(req, None)
             data['versions'] = versions
             data['version_stats'] = version_stats
 
@@ -194,10 +191,11 @@ class SmpVersionProject(Component):
 
     def __edit_project(self, data, req):
         version = data.get('version').name
-        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
+        all_projects = \
+            self.__SmpModel.get_all_projects_filtered_by_conditions(req)
         id_project_version = self.__SmpModel.get_id_project_version(version)
 
-        if id_project_version != None:
+        if id_project_version is None:
             id_project_selected = id_project_version[0]
         else:
             id_project_selected = None
@@ -208,14 +206,15 @@ class SmpVersionProject(Component):
                 tag.br(),
                 tag.select(
                     tag.option(),
-                    [tag.option(row[1], selected=(id_project_selected == row[0] or None), value=row[0]) for row in
-                     sorted(all_projects, key=itemgetter(1))],
+                    [tag.option(row[1], selected=(id_project_selected == row[0] or None), value=row[0])
+                     for row in sorted(all_projects, key=itemgetter(1))],
                     name="project")
             ),
             class_="field")
 
     def __new_project(self, req):
-        all_projects = self.__SmpModel.get_all_projects_filtered_by_conditions(req)
+        all_projects = \
+            self.__SmpModel.get_all_projects_filtered_by_conditions(req)
 
         return tag.div(
             tag.label(
@@ -223,7 +222,8 @@ class SmpVersionProject(Component):
                 tag.br(),
                 tag.select(
                     tag.option(),
-                    [tag.option(row[1], value=row[0]) for row in sorted(all_projects, key=itemgetter(1))],
+                    [tag.option(row[1], value=row[0])
+                     for row in sorted(all_projects, key=itemgetter(1))],
                     name="project")
             ),
             class_="field")
@@ -242,7 +242,8 @@ class SmpVersionProject(Component):
     def _do_save(self, req, db, version):
         version_name = req.args.get('name')
         version_project = req.args.get('project')
-        old_version_project = self.__SmpModel.get_id_project_version(version.name)
+        old_version_project = \
+            self.__SmpModel.get_id_project_version(version.name)
 
         if version.exists:
             req.perm.require('MILESTONE_MODIFY')
@@ -315,8 +316,7 @@ class SmpVersionProject(Component):
         req.perm.require('MILESTONE_DELETE')
 
         version = [v for v in Version.select(self.env)
-                   if v.name != version.name
-                   and 'MILESTONE_VIEW' in req.perm]
+                     if v.name != version.name and 'MILESTONE_VIEW' in req.perm]
         data = {
             'version': version
         }
@@ -372,12 +372,9 @@ class SmpVersionProject(Component):
         tickets = apply_ticket_permissions(self.env, req, tickets)
         stat = get_ticket_stats(self.stats_provider, tickets)
 
-        context = Context.from_request(req)
+        context = web_context(req)
 
-        if VERSION <= '0.12':
-            infodivclass = 'info'
-        else:
-            infodivclass = 'info trac-progress'
+        infodivclass = 'info trac-progress'
 
         data = {
             'context': context,
@@ -478,41 +475,25 @@ class SmpVersionProject(Component):
 
         return filtered_versions, stats
 
-######################################################################################################################
-#     Everything below this point is (c) Cinc
-######################################################################################################################
-
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2015 Cinc
-#
-# License: 3-clause BSD
-#
-
-from smp_model import SmpVersion
-from genshi import HTML
-from trac.web.chrome import Chrome
-from admin_filter import SmpFilterDefaultVersionPanels
-
 
 class SmpVersionModule(Component):
-    """Module to keep version information for projects up to date when SmpFilterDefaultVersionPanel is deactivated."""
+    """Module to keep version information for projects up to date when
+    SmpFilterDefaultVersionPanel is deactivated.
+    """
     implements(IRequestFilter, ITemplateStreamFilter)
 
     def __init__(self):
         self.smp_model = SmpVersion(self.env)
         self.version_tmpl = Chrome(self.env).load_template("roadmap_versions.html")
         # CSS class for milestones and versions
-        if VERSION <= '0.12':
-            self.infodivclass = 'info'
-        else:
-            self.infodivclass = 'info trac-progress'
+        self.infodivclass = 'info trac-progress'
 
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
         if self._is_valid_request(req) and req.method == "POST":
-            # Try to delete only if version page filter is disabled. Deleting is usually done there.
+            # Try to delete only if version page filter is disabled.
+            # Deleting is usually done there.
             if not self.env.enabled[SmpFilterDefaultVersionPanels]:
                 if 'remove' in req.args:
                     # 'Remove' button on main version panel
@@ -527,7 +508,8 @@ class SmpVersionModule(Component):
     @staticmethod
     def _is_valid_request(req):
         """Check request for correct path and valid form token"""
-        if req.path_info.startswith('/admin/ticket/versions') and req.args.get('__FORM_TOKEN') == req.form_token:
+        if req.path_info.startswith('/admin/ticket/versions') and \
+                req.args.get('__FORM_TOKEN') == req.form_token:
             return True
         return False
 

@@ -3,12 +3,11 @@
 # Copyright (C) 2011 Christopher Paredes
 #
 
-from trac import __version__ as VERSION
 from trac.core import *
-from trac.util.text import to_unicode
-from trac.web.chrome import add_warning, add_notice
-from trac.perm import PermissionSystem, IPermissionGroupProvider
 from trac.db import with_transaction
+from trac.perm import PermissionSystem, IPermissionGroupProvider
+from trac.web.chrome import add_warning
+
 from environmentSetup import db_version_key, db_version
 
 
@@ -34,13 +33,6 @@ class SmpModel(Component):
             # We are just installed and the environment isn't upgraded yet
             pass
 
-    # DB Methods
-    def __start_transaction(self, db):
-        if VERSION < '0.12':
-            # deprecated in newer versions
-            db.commit()
-            db.close()
-
     # Commons Methods
     def get_project_info(self, name):
         query = """SELECT
@@ -53,7 +45,7 @@ class SmpModel(Component):
         db = self.env.get_read_db()
         cursor = db.cursor()
         cursor.execute(query, [unicode(name)])
-        return  cursor.fetchone()
+        return cursor.fetchone()
 
     def get_all_projects(self):
         query = """SELECT
@@ -151,12 +143,9 @@ class SmpModel(Component):
         return name
 
     def update_custom_ticket_field(self, old_project_name, new_project_name):
-        query    = """UPDATE
-                        ticket_custom
-                      SET
-                        value = %s
-                      WHERE
-                        name = 'project' AND value = %s"""
+        query    = """UPDATE ticket_custom SET value = %s
+                      WHERE name='project' AND value=%s
+                      """
 
         @with_transaction(self.env)
         def execute_sql_statement(db):
@@ -219,13 +208,12 @@ class SmpModel(Component):
                    WHERE
                         name = 'project' AND ticket = %s"""
         cursor.execute(query, [id])
-        self.__start_transaction(db)
 
         return cursor.fetchone()
 
     # MilestoneProject Methods
 
-    def get_milestones_of_project(self,project):
+    def get_milestones_of_project(self, project):
         db = self.env.get_read_db()
         cursor = db.cursor()
         query = """SELECT
@@ -289,7 +277,7 @@ class SmpModel(Component):
                    FROM
                         smp_version_project
                    WHERE
-                        version=%s;"""
+                        version=%s"""
 
         cursor.execute(query, [version])
         return cursor.fetchone()
@@ -339,8 +327,10 @@ class SmpModel(Component):
         def execute_sql_statement(db):
             cursor = db.cursor()
             for id_project in id_projects:
-                query = """INSERT INTO smp_component_project(component, id_project) VALUES (%s, %s)"""
-                cursor.execute(query, [component, id_project])
+                cursor.execute("""
+                    INSERT INTO smp_component_project(component, id_project)
+                    VALUES (%s, %s)
+                    """, (component, id_project))
 
     def get_projects_component(self, component):
         db = self.env.get_read_db()
