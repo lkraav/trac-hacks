@@ -16,7 +16,7 @@ import simplemultiproject.compat
 
 # Database schema variables
 db_version_key = 'simplemultiproject_version'
-db_version = 6
+db_version = 1
 
 tables = [
     Table('smp_project', key='id_project')[
@@ -77,12 +77,12 @@ class smpEnvironmentSetupParticipant(Component):
 
         with self.env.db_transaction as db:
             if db_installed_version < 1:
-                dbm.create_tables(tables_v2)
+                dbm.create_tables(tables)
                 db_installed_version = 1
                 dbm.set_database_version(db_installed_version, db_version_key)
 
             if db_installed_version < 2:
-                dbm.create_tables(tables)
+                dbm.create_tables(tables_v2)
                 db_installed_version = 2
                 dbm.set_database_version(db_installed_version, db_version_key)
 
