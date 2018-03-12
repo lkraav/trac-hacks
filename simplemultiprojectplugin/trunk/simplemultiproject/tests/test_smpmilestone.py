@@ -4,13 +4,12 @@ from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.smp_model import SmpMilestone
 from simplemultiproject.tests.util import revert_schema
 
-__author__ = 'cinc'
-
 
 class TestSmpMilestone(unittest.TestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=["trac.*", "simplemultiproject.*"])
         with self.env.db_transaction as db:
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
@@ -32,7 +31,6 @@ class TestSmpMilestone(unittest.TestCase):
         self.assertEqual(2, len(items))
         self.assertEqual("foo1", items[0])
         self.assertEqual("foo2", items[1])
-
 
     def test_add(self):
         self.assertEqual(4, len(self.model.get_all_milestones_and_id_project_id()))

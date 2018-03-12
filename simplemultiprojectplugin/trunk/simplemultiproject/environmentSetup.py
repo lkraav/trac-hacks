@@ -5,11 +5,13 @@
 
 # SimpleMultiProject.SMP_EnvironmentSetupParticipant
 
-from trac.core import *
-from trac.db import *
+from trac.core import Component, implements
+from trac.db.api import DatabaseManager
+from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
-from trac.db import Table, Column, DatabaseManager
 from trac.util.text import printout
+
+import simplemultiproject.compat
 
 
 # Database schema variables
@@ -30,7 +32,6 @@ tables = [
 ]
 
 tables_v2 = [
-    # Added with version 2
     Table('smp_version_project', key='id')[
         Column('id', type='integer', auto_increment=True),
         Column('version', type='varchar(255)'),
@@ -39,7 +40,6 @@ tables_v2 = [
 ]
 
 tables_v3 = [
-    # Added with version 3
     Table('smp_component_project', key='id')[
         Column('id', type='integer', auto_increment=True),
         Column('component', type='varchar(255)'),
@@ -63,123 +63,52 @@ class smpEnvironmentSetupParticipant(Component):
     implements(IEnvironmentSetupParticipant)
 
     def environment_created(self):
-        pass
+        self.upgrade_environment()
 
     def environment_needs_upgrade(self, db=None):
-        # Initialise database schema version tracking.
-        cursor = db.cursor()
-        # Get currently installed database schema version
-        db_installed_version = 0
-        try:
-            sqlGetInstalledVersion = """
-                SELECT value FROM system WHERE name = %s
-                """
-            cursor.execute(sqlGetInstalledVersion, [db_version_key])
-            db_installed_version = int(cursor.fetchone()[0])
-        except:
-            # No version currently, inserting new one.
-            db_installed_version = 0
-
-        self.log.debug("SimpleMultiProject database schema version: %s "
-                       "(should be %s)", db_installed_version, db_version)
-        # return boolean for if we need to update or not
-        needsUpgrade = db_installed_version < db_version
-        if needsUpgrade:
-            self.log.info("SimpleMultiProject database schema version is %s, "
-                          "should be %s", db_installed_version, db_version)
-        return needsUpgrade
+        dbm = DatabaseManager(self.env)
+        db_installed_version = dbm.get_database_version(db_version_key)
+        return db_installed_version < db_version
 
     def upgrade_environment(self, db=None):
         printout("Upgrading SimpleMultiProject database schema")
-        cursor = db.cursor()
+        dbm = DatabaseManager(self.env)
+        db_installed_version = dbm.get_database_version(db_version_key)
 
-        db_installed_version = 0
-        sqlGetInstalledVersion = """SELECT value FROM system WHERE name = %s"""
-        cursor.execute(sqlGetInstalledVersion, [db_version_key])
-        for row in cursor:
-            db_installed_version = int(row[0])
-        printout("SimpleMultiProject database schema version is %s, "
-                 "should be %s" % (db_installed_version, db_version))
+        with self.env.db_transaction as db:
+            if db_installed_version < 1:
+                dbm.create_tables(tables_v2)
+                db_installed_version = 1
+                dbm.set_database_version(db_installed_version, db_version_key)
 
-        db_connector, _ = DatabaseManager(self.env)._get_connector()
+            if db_installed_version < 2:
+                dbm.create_tables(tables)
+                db_installed_version = 2
+                dbm.set_database_version(db_installed_version, db_version_key)
 
-        if db_installed_version < 1:
-            # Create tables
-            for table in tables:
-                for statement in db_connector.to_sql(table):
-                    cursor.execute(statement)
+            if db_installed_version < 3:
+                dbm.create_tables(tables_v3)
+                db_installed_version = 3
+                dbm.set_database_version(db_installed_version, db_version_key)
 
-            sqlInsertVersion = """
-                INSERT INTO system (name, value) VALUES (%s,%s)
-                """
-            cursor.execute(sqlInsertVersion, (db_version_key, db_version))
-            db_installed_version = 1
+            if db_installed_version < 4:
+                db("""
+                    ALTER TABLE smp_project ADD summary varchar(255)
+                    """)
+                db_installed_version = 4
+                dbm.set_database_version(db_installed_version, db_version_key)
 
-        if db_installed_version < 2:
-            # Create tables
-            for table in tables_v2:
-                for statement in db_connector.to_sql(table):
-                    cursor.execute(statement)
+            if db_installed_version < 5:
+                db("""
+                    ALTER TABLE smp_project ADD closed integer
+                    """)
+                db("""
+                    ALTER TABLE smp_project ADD %s text
+                    """ % db.quote('restrict'))
+                db_installed_version = 5
+                dbm.set_database_version(db_installed_version, db_version_key)
 
-            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
-            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
-            db_installed_version = 2
-
-        if db_installed_version < 3:
-            # Create tables
-            for table in tables_v3:
-                for statement in db_connector.to_sql(table):
-                    cursor.execute(statement)
-
-            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
-            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
-            db_installed_version = 3
-
-        if db_installed_version < 4:
-            # Insert new column
-            cursor.execute("""ALTER TABLE smp_project ADD summary varchar(255)""")
-
-            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
-            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
-            db_installed_version = 4
-
-        if db_installed_version < 5:
-            # Insert new column
-            cursor.execute("""ALTER TABLE smp_project ADD closed integer""")
-
-            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
-            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
-
-            # Insert new column
-            cursor.execute("""ALTER TABLE smp_project ADD %s text"""
-                           % db.quote('restrict'))
-
-            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
-            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
-            db_installed_version = 5
-
-        if db_installed_version < 6:
-            # TH ticket 11553 (problems with int range in PostgreSQL):
-            # fix: make field 'closed' of table 'smp_project' which is int a int64
-            cursor.execute("""
-                CREATE TEMPORARY TABLE smp_project_old AS SELECT *
-                FROM smp_project
-                """)
-            cursor.execute("""DROP TABLE smp_project""")
-            # Create tables
-            for table in tables_v6:
-                for statement in db_connector.to_sql(table):
-                    cursor.execute(statement)
-
-            cursor.execute("""INSERT INTO
-                                   smp_project
-                                   (id_project,name,description,summary,closed,restrict_to)
-                              SELECT
-                                   id_project,name,description,summary,closed,%s
-                              FROM smp_project_old"""
-                           % db.quote('restrict'))
-            cursor.execute("""DROP TABLE smp_project_old""")
-
-            sqlInsertVersion = """UPDATE system SET value=%s WHERE name=%s"""
-            cursor.execute(sqlInsertVersion, [db_version, db_version_key])
-            db_installed_version = 6
+            if db_installed_version < 6:
+                dbm.upgrade_tables(tables_v6)
+                db_installed_version = 6
+                dbm.set_database_version(db_installed_version, db_version_key)

@@ -65,7 +65,7 @@ class SmpTimelineProjectFilter(Component):
         if len(path_elms) > 1 and path_elms[1] == 'timeline':
             # Add project selection to the roadmap preferences
             xformer = Transformer('//form[@id="prefs"]')
-            stream = stream | xformer.prepend(create_proj_table(self, self._SmpModel, req))
+            stream |= xformer.prepend(create_proj_table(self, self._SmpModel, req))
 
         return stream
 

@@ -6,14 +6,14 @@ from operator import itemgetter
 
 from genshi.filters.transform import Transformer
 from trac.core import *
+from trac.perm import IPermissionPolicy, IPermissionRequestor
+from trac.ticket import model
 from trac.util.html import html as tag
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.web.chrome import add_script, add_script_data
-from trac.perm import IPermissionPolicy, IPermissionRequestor
-from trac.ticket import model
 
-from smp_model import get_all_versions_without_project
 from simplemultiproject.model import *
+from simplemultiproject.smp_model import get_all_versions_without_project
 
 
 class SmpTicketProject(Component):
@@ -83,12 +83,12 @@ class SmpTicketProject(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == "ticket.html":
-            add_script(req, "simplemultiproject/filter_milestones.js")
+            add_script(req, "simplemultiproject/js/filter_milestones.js")
             # replace "project" selection field for ticket with a filtered selection field
             filter = Transformer('//select[@id="field-project"]')
             ticket_data = data['ticket']
 
-            stream = stream | filter.replace(self._projects_field_ticket_input(req, ticket_data))
+            stream |= filter.replace(self._projects_field_ticket_input(req, ticket_data))
 
         return stream
 

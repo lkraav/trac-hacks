@@ -13,8 +13,6 @@ from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.session import get_list_from_req_or_session, get_project_filter_settings
 from simplemultiproject.tests.util import revert_schema
 
-__author__ = 'Cinc'
-
 
 class TestGet_list_from_req_or_session(unittest.TestCase):
 

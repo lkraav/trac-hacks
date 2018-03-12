@@ -19,8 +19,9 @@ from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateStreamFilter, add_script, \
     add_script_data, add_stylesheet
 
-from smp_model import SmpComponent, SmpProject, SmpVersion, SmpMilestone
-from model import SmpModel
+from simplemultiproject.model import SmpModel
+from simplemultiproject.smp_model import SmpComponent, SmpProject, \
+    SmpVersion, SmpMilestone
 
 
 class InsertProjectTd(InjectorTransformation):
@@ -240,32 +241,32 @@ class SmpFilterDefaultMilestonePanels(Component):
 
                 add_script_data(req, {'smp_proj_ms': all_ms_proj})
                 # Add project column to main milestone table
-                stream = stream | Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
-                stream = stream | Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
+                stream |= Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
+                stream |= Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
                 # Add select control with projects for hiding milestones
                 sel = MarkupTemplate(projects_tmpl)
                 all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
-                stream = stream | Transformer('//table[@id="millist"]').\
+                stream |= Transformer('//table[@id="millist"]').\
                    before(sel.generate(proj=_("Project"), all_projects=all_proj,
                                        sel_prj="", all_label=_("All")))
                 # The 'add milestone' part of the page
                 if not self.allow_no_project:
-                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
-                                    | Transformer('//form[@id="addmilestone"]//input[@name="add"]'
-                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
+                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
+                    stream |= Transformer('//form[@id="addmilestone"]//input[@name="add"]') \
+                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
 
                 # The 'Add milestone' part of the page
                 filter_form = Transformer('//form[@id="addmilestone"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
                                                                           input_type=input_type))
             else:
                 # 'Modify Milestone' panel
                 if not self.allow_no_project:
-                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type)) \
-                                    | Transformer('//form[@id="modifymilestone"]//input[@name="save"]'
-                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
-                filter_form = Transformer('//form[@id="modifymilestone"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
+                    stream |= Transformer('//form[@id="modifymilestone"]//input[@name="save"]') \
+                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
+                filter_form = Transformer('//form[@id="modifymilestone" or @id="edit"]//div[@class="field"][1]')
+                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
                                                                           input_type=input_type))
         return stream
 
@@ -365,7 +366,6 @@ class SmpFilterDefaultVersionPanels(Component):
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-
         if filename == "admin_versions.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
@@ -388,37 +388,37 @@ class SmpFilterDefaultVersionPanels(Component):
                         all_ver_proj[ver] = [all_proj[p_id]]
                 add_script_data(req, {'smp_proj_ver': all_ver_proj})
                 # Add project column to main version table
-                stream = stream | Transformer('//table[@id="verlist"]//th[2]').after(tag.th(_("Project")))
-                stream = stream | Transformer('//table[@id="verlist"]//tr').apply(InsertProjectTd("", all_ver_proj))
+                stream |= Transformer('//table[@id="verlist"]//th[2]').after(tag.th(_("Project")))
+                stream |= Transformer('//table[@id="verlist"]//tr').apply(InsertProjectTd("", all_ver_proj))
 
                 sel = MarkupTemplate(projects_tmpl)
                 all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
-                stream = stream | Transformer('//table[@id="verlist"]'). \
+                stream |= Transformer('//table[@id="verlist"]'). \
                     before(sel.generate(proj=_("Project"), all_projects=all_proj,
                                         sel_prj="", all_label=_("All")))
 
                 # The 'add version' part of the page
                 if not self.allow_no_project:
-                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
-                                    | Transformer('//form[@id="addversion"]//input[@name="add"]'
-                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
+                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
+                    stream |= Transformer('//form[@id="addversion"]//input[@name="add"]') \
+                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
                 # Insert project selection control
                 filter_form = Transformer('//form[@id="addversion"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
+                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
                                                                           input_type=input_type))
 
                 # Remove current date/time as release date otherwise the version will be filtered on the roadmap.
                 # User probably forgets to change it on creation and would be surprised not finding it.
-                stream = stream | Transformer('//form[@id="addversion"]//input[@id="releaseddate"]').attr("value", '')
+                stream |= Transformer('//form[@id="addversion"]//input[@id="releaseddate"]').attr("value", '')
             else:
                 # 'Modify versions' panel
                 if not self.allow_no_project:
-                    stream = stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
-                                    | Transformer('//form[@id="modifyversion"]//input[@name="save"]'
-                                                  ).attr('id', 'smp-btn-id')  # Add id for use from javascript
-                filter_form = Transformer('//form[@id="modifyversion"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
-                                                                          input_type=input_type))
+                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
+                    stream |= Transformer('//form[@id="modifyversion"]//input[@name="save"]') \
+                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
+                filter_form = Transformer('//form[@id="modifyversion" or @id="edit"]//div[@class="field"][1]')
+                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                                  input_type=input_type))
         return stream
 
 
@@ -513,7 +513,7 @@ class SmpFilterDefaultComponentPanels(Component):
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
-        if self._is_valid_request(req) and req.method == "POST":
+        if self._is_valid_request(req) and req.method == 'POST':
             if req.path_info.startswith('/admin/ticket/components'):
                 if 'add' in req.args:
                     # 'Add' button on main component panel
@@ -566,48 +566,45 @@ class SmpFilterDefaultComponentPanels(Component):
 
                 # The 'Add component' part of the page
                 filter_form = Transformer('//form[@id="addcomponent"]//div[@class="field"][2]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
+                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req))
 
-                stream = stream | Transformer('//table[@id="complist"]').before(
+                stream |= Transformer('//table[@id="complist"]').before(
                     tag.p(_("A component is visible for all projects when not associated with any project."),
                           class_="help"))
                 # Add project column to component table
-                stream = stream | Transformer('//table[@id="complist"]//th[2]').\
+                stream |= Transformer('//table[@id="complist"]//th[2]').\
                     after(tag.th(_("Restricted to Project")))
-                stream = stream | Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
+                stream |= Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
             else:
                 # 'Manage Component' panel
                 filter_form = Transformer('//form[@id="modcomp" or @id="edit"]//div[@class="field"][1]')
-                stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req))
+                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
 
 
 class SmpAddExtendedVersionColumn(Component):
-    """Add version column to milestone table when using ExtendedVersion plugin."""
+    """Add version column to milestone table for ExtendedVersionPlugin.
+    """
 
     implements(IRequestFilter)
 
     def __init__(self):
-        self.extended_version = self._get_ext_version(self.env.get_read_db()) != 0
+        self.extended_version = self._get_ext_version() != 0
         if self.extended_version:
             try:
                 from extendedversion.milestone import MilestoneVersion
-                self.extended_version = self.env.enabled[MilestoneVersion]
             except ImportError:
                 self.extended_version = False
-
-    def _get_ext_version(self, db):
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                    """SELECT value FROM system
-                       WHERE name='extended_version_plugin'""")
-            row = cursor.fetchone()
-            if row:
-                return int(row[0])
             else:
-                return 0
-        except:
+                self.extended_version = self.env.enabled[MilestoneVersion]
+
+    def _get_ext_version(self):
+        for version, in self.env.db_query("""
+                SELECT value FROM system
+                WHERE name='extended_version_plugin'
+                """):
+            return int(version)
+        else:
             return 0
 
     # IRequestFilter methods
@@ -616,21 +613,18 @@ class SmpAddExtendedVersionColumn(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if self.extended_version and template == 'admin_milestones.html':
-            if data and data['view'] == 'list':
-                add_script_data(req, {
-                    'ms_ext_version': self.get_version_for_milestone()
-                })
-                add_script(req, "simplemultiproject/js/add_version_column.js")
+        if self.extended_version and template == 'admin_milestones.html' and \
+                data and data['view'] == 'list':
+            add_script_data(req, {
+                'ms_ext_version': self.get_version_for_milestone()
+            })
+            add_script(req, 'simplemultiproject/js/add_version_column.js')
 
         return template, data, content_type
 
     def get_version_for_milestone(self):
-        data = {}
         if self.extended_version:
-            db = self.env.get_read_db()
-            cursor = db.cursor()
-            cursor.execute('SELECT * FROM milestone_version')
-            for row in cursor:
-                data.update({row[0]: row[1]})
-        return data
+            return [dict(row[0], row[1]) for row in self.env.db_query("""
+                    SELECT * FROM milestone_version
+                    """)]
+        return {}

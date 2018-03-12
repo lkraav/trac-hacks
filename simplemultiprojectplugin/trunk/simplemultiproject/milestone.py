@@ -13,9 +13,10 @@ from trac.ticket.api import IMilestoneChangeListener
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateStreamFilter, add_stylesheet
 
+from simplemultiproject.admin_filter import create_projects_table, \
+    create_script_tag
 from simplemultiproject.model import *
-from smp_model import SmpProject, SmpMilestone
-from admin_filter import create_projects_table, create_script_tag
+from simplemultiproject.smp_model import SmpProject, SmpMilestone
 
 
 cur_projects_tmpl = """
@@ -49,7 +50,6 @@ def create_cur_projects_table(smp_model, name):
     @return <div> tag holding a project select control with label
     """
     ms_projects = smp_model.get_project_names_for_item(name)
-    print(ms_projects)
     tbl = MarkupTemplate(cur_projects_tmpl)
     return tbl.generate(all_projects=ms_projects)
 
@@ -117,18 +117,18 @@ class SmpMilestoneProject(Component):
                 input_type = "checkbox"  # Default input type for project selection.
 
             if not self.allow_no_project:
-                stream =  stream | Transformer('//head').append(create_script_tag(input_type=input_type))\
-                                 | Transformer('//form[@id="edit"]//div[@class="buttons"]/input[not(@name)]'
-                                              ).attr('id', 'smp-btn-id')  # Add id for use from javascript
+                stream |= Transformer('//head').append(create_script_tag(input_type=input_type))\
+                          | Transformer('//form[@id="edit"]//div[@class="buttons"]/input[not(@name)]'
+                                        ).attr('id', 'smp-btn-id')  # Add id for use from javascript
             filter_form = Transformer('//form[@id="edit"]//div[@class="field"][1]')
-            stream = stream | filter_form.after(create_projects_table(self, self._SmpModel, req,
-                                                                      input_type=input_type,
-                                                                      item_name=data.get('milestone').name))
+            stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
+                                                              input_type=input_type,
+                                                              item_name=data.get('milestone').name))
         elif filename == 'milestone_view.html':
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
             filter_form = Transformer('//div[@class="info"]')
-            stream = stream | filter_form.after(create_cur_projects_table(self.smp_model,
-                                                                          data.get('milestone').name))
+            stream |= filter_form.after(create_cur_projects_table(self.smp_model,
+                                                                  data.get('milestone').name))
         return stream
 
     # IMilestoneChangeListener methods

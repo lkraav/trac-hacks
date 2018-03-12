@@ -45,7 +45,7 @@
                 </py:choose>
                 <xi:include href="progress_bar.html" py:if="mstats.stats.count"
                             py:with="stats = mstats.stats; interval_hrefs = mstats.interval_hrefs;
-                                     stats_href = mstats.stats_href"/>
+                                     stats_href = mstats.stats_href;"/>
               </div>
               <div class="description" xml:space="preserve">
                 ${wiki_to_html(context(milestone.resource), milestone.description)}

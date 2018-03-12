@@ -3,79 +3,48 @@
 # Copyright (C) 2011 Christopher Paredes
 #
 
-from trac.core import *
-from trac.db import with_transaction
-from trac.perm import PermissionSystem, IPermissionGroupProvider
+from trac.core import Component, ExtensionPoint
+from trac.perm import IPermissionGroupProvider, PermissionSystem
+from trac.util import to_list
 from trac.web.chrome import add_warning
-
-from environmentSetup import db_version_key, db_version
 
 
 class SmpModel(Component):
     # needed in self.is_not_in_restricted_users()
     group_providers = ExtensionPoint(IPermissionGroupProvider)
 
-    def __init__(self):
-        # Fix for #12393: check for upgraded database before calling self.get_all_projects()
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        sql = "SELECT value FROM system WHERE name = %s"
-        try:
-            cursor.execute(sql, [db_version_key])
-            # Make sure we have initial data for the ticket-custom field 'project'.
-            if int(cursor.fetchone()[0]) == db_version:
-                self.get_all_projects()
-        except:
-            # We catch all and everything here because different database backends
-            # may throw different errors (or none at all which means we would get a
-            # TypeError for fetchone()[0], e.g. SQlite)
+    # Common Methods
 
-            # We are just installed and the environment isn't upgraded yet
-            pass
-
-    # Commons Methods
     def get_project_info(self, name):
-        query = """SELECT
-                        id_project,name,summary,description,closed,restrict_to
-                   FROM
-                        smp_project
-                   WHERE
-                        name = %s"""
-
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute(query, [unicode(name)])
-        return cursor.fetchone()
+        for row in self.env.db_query("""
+                SELECT id_project,name,summary,description,closed,restrict_to
+                FROM smp_project WHERE name =%s
+                """, (name,)):
+            return row
 
     def get_all_projects(self):
-        query = """SELECT
-                        id_project,name,summary,description,closed,restrict_to
-                   FROM
-                        smp_project"""
+        projects = self.env.db_query("""
+                SELECT id_project,name,summary,description,closed,restrict_to
+                FROM smp_project
+                """)
 
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute(query)
+        project_names = [r[1] for r in sorted(projects, key=lambda k: k[1])]
+        self.config.set('ticket-custom', 'project.options',
+                        '|'.join(project_names))
 
-        l = list(cursor.fetchall())
-        all_projects = [project[1] for project in sorted(l, key=lambda k: k[1])]
-        # Set the list of current projects. This way the dropdown on the query page will be properly populated.
-        # Note that we don't save the list at all.
-        self.env.config.set("ticket-custom", "project.options", "|".join(all_projects))
-        return l
+        return projects
 
     def get_all_projects_filtered_by_conditions(self, req):
         all_projects = self.get_all_projects()
-
-        # now filter out
-        if all_projects:
-            for project in list(all_projects):
-                project_name = project[1]
-                project_info = self.get_project_info(project_name)
-                self.filter_project_by_conditions(all_projects, project, project_info, req)
+        for project in list(all_projects):  # now filter out
+            project_name = project[1]
+            project_info = self.get_project_info(project_name)
+            self.filter_project_by_conditions(all_projects, project,
+                                              project_info, req)
         return all_projects
 
-    def filter_project_by_conditions(self, all_projects, project, project_info, req):
+    def filter_project_by_conditions(self, all_projects, project, project_info,
+                                     req):
         if project_info:
             if project_info[4] > 0:
                 # column 4 of table smp_project tells if project is closed
@@ -97,8 +66,9 @@ class SmpModel(Component):
             allowed = True
             should_invert = False
 
-            restricted_list = [users.strip() for users in restricted_users.split(',')]
-            if restricted_list[0] == '!':  # if the list starts with "!," (needs comma!), its meaning is inverted
+            restricted_list = to_list(restricted_users)
+            # If list starts with "!," (needs comma!), its meaning is inverted.
+            if restricted_list[0] == '!':
                 should_invert = True
 
             # detect groups of the current user including the user name
@@ -111,11 +81,13 @@ class SmpModel(Component):
             while repeat:
                 repeat = False
                 for subject, action in perms:
-                    if subject in g and not action.isupper() and action not in g:
+                    if subject in g and not action.isupper() and \
+                            action not in g:
                         g.add(action)
                         repeat = True
 
-            g = g.intersection(set(restricted_list))  # some of the user's groups must be in the restrictions
+            # some of the user's groups must be in the restrictions
+            g = g.intersection(set(restricted_list))
             if not (g or len(g)):  # current browser user not allowed?
                 allowed = False
             if should_invert:
@@ -124,196 +96,124 @@ class SmpModel(Component):
         return False
 
     def get_project_name(self, project_id):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        name
-                   FROM
-                        smp_project
-                   WHERE
-                        id_project=%s"""
-
-        cursor.execute(query, [str(project_id)])
-        result = cursor.fetchone()
-
-        if result:
-            name = result[0]
-        else:
-            name = None
-        return name
+        for name, in self.env.db_query("""
+                SELECT name FROM smp_project WHERE id_project=%s
+                """, (project_id,)):
+            return name
 
     def update_custom_ticket_field(self, old_project_name, new_project_name):
-        query    = """UPDATE ticket_custom SET value = %s
-                      WHERE name='project' AND value=%s
-                      """
-
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [new_project_name, old_project_name])
+        self.env.db_transaction("""
+                UPDATE ticket_custom SET value=%s
+                WHERE name='project' AND value=%s
+                """, (new_project_name, old_project_name))
 
     # AdminPanel Methods
+
     def insert_project(self, name, summary, description, closed, restrict):
-        query    = """INSERT INTO
-                        smp_project (name, summary, description, closed, restrict_to)
-                      VALUES (%s, %s, %s, %s, %s);"""
+        self.env.db_transaction("""
+                INSERT INTO smp_project
+                  (name, summary, description, closed, restrict_to)
+                VALUES (%s,%s,%s,%s,%s)
+                """, (name, summary, description, closed, restrict))
 
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [name, summary, description, closed, restrict])
-
-        # Keep internal list of values for ticket-custom field 'project' updated. This list is used for the dropdown
-        # on the query page
+        # Keep internal list of values for ticket-custom field 'project'
+        # updated. This list is used for the dropdown on the query page.
         self.get_all_projects()
 
     def delete_project(self, ids_projects):
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            for id in ids_projects:
-                query = """DELETE FROM smp_project WHERE id_project=%s"""
-                cursor.execute(query, [id])
-                query = """DELETE FROM smp_milestone_project WHERE id_project=%s;"""
-                cursor.execute(query, [id])
-                query = """DELETE FROM smp_version_project WHERE id_project=%s;"""
-                cursor.execute(query, [id])
-                query = """DELETE FROM smp_component_project WHERE id_project=%s;"""
-                cursor.execute(query, [id])
+        with self.env.db_transaction as db:
+            for id_ in ids_projects:
+                db("""
+                    DELETE FROM smp_project WHERE id_project=%s
+                    """, (id_,))
+                db("""
+                    DELETE FROM smp_milestone_project WHERE id_project=%s
+                    """, (id_,))
+                db("""
+                    DELETE FROM smp_version_project WHERE id_project=%s
+                    """, (id_,))
+                db("""
+                    DELETE FROM smp_component_project WHERE id_project=%s
+                    """, (id_,))
 
-        # Keep internal list of values for ticket-custom field 'project' updated. This list is used for the dropdown
-        # on the query page
+        # Keep internal list of values for ticket-custom field 'project'
+        # updated. This list is used for the dropdown on the query page.
         self.get_all_projects()
 
     def update_project(self, id, name, summary, description, closed, restrict):
-        query = """UPDATE
-                        smp_project
-                      SET
-                        name = %s, summary = %s, description = %s, closed = %s, restrict_to = %s
-                      WHERE
-                        id_project = %s"""
-
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [name, summary, description, closed, restrict, id])
+        self.env.db_transaction("""
+            UPDATE smp_project
+            SET name=%s, summary=%s, description=%s, closed=%s, restrict_to=%s
+            WHERE id_project=%s
+            """, (name, summary, description, closed, restrict, id))
 
     # Ticket Methods
-    def get_ticket_project(self, id):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT value
-                   FROM
-                        ticket_custom
-                   WHERE
-                        name = 'project' AND ticket = %s"""
-        cursor.execute(query, [id])
 
-        return cursor.fetchone()
+    def get_ticket_project(self, id):
+        for project, in self.env.db_query("""
+                SELECT value FROM ticket_custom
+                WHERE name='project' AND ticket=%s
+                """, (id,)):
+            return project
 
     # MilestoneProject Methods
 
     def get_milestones_of_project(self, project):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        m.milestone AS milestone
-                   FROM
-                        smp_project AS p,
-                        smp_milestone_project AS m
-                   WHERE
-                        p.name = %s AND
-                        p.id_project = m.id_project"""
-
-        cursor.execute(query, [project])
-        return cursor.fetchall()
+        for milestone, in self.env.db_query("""
+                SELECT m.milestone AS milestone
+                FROM smp_project AS p, smp_milestone_project AS m
+                WHERE p.name = %s AND p.id_project = m.id_project
+                """, (project,)):
+            return milestone
 
     # VersionProject Methods
-    def insert_version_project(self, version, id_project):
-        query = """INSERT INTO
-                        smp_version_project(version, id_project)
-                    VALUES (%s, %s)"""
 
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [version, str(id_project)])
+    def insert_version_project(self, version, id_project):
+        self.env.db_transaction("""
+                INSERT INTO smp_version_project(version, id_project)
+                VALUES (%s,%s)
+                """, (version, id_project))
 
     def get_versions_of_project(self, project):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        m.version AS version
-                   FROM
-                        smp_project AS p,
-                        smp_version_project AS m
-                   WHERE
-                        p.name = %s AND
-                        p.id_project = m.id_project"""
-
-        cursor.execute(query, [project])
-        return sorted(cursor.fetchall())
+        for version, in self.env.db_query("""
+                SELECT m.version AS version
+                FROM smp_project AS p,
+                     smp_version_project AS m
+                WHERE p.name = %s AND p.id_project = m.id_project
+                ORDER BY m.version
+                """, (project,)):
+            yield version
 
     def get_project_version(self, version):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        name
-                   FROM
-                        smp_project AS p,
-                        smp_version_project AS m
-                   WHERE
-                        m.version=%s and
-                        m.id_project = p.id_project"""
-
-        cursor.execute(query, [version])
-        return cursor.fetchone()
+        for name, in self.env.db_query("""
+                SELECT name
+                FROM smp_project AS p, smp_version_project AS m
+                WHERE m.version=%s and m.id_project = p.id_project
+                """, (version,)):
+            return name
 
     def get_id_project_version(self, version):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        id_project
-                   FROM
-                        smp_version_project
-                   WHERE
-                        version=%s"""
-
-        cursor.execute(query, [version])
-        return cursor.fetchone()
+        for id_, in self.env.db_query("""
+                SELECT id_project FROM smp_version_project WHERE version=%s
+                """, (version,)):
+            return id_
 
     def delete_version_project(self, version):
-        query = """DELETE FROM
-                        smp_version_project
-                   WHERE
-                        version=%s;"""
-
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [version])
+        self.env.db_transaction("""
+            DELETE FROM smp_version_project WHERE version=%s
+            """, (version,))
 
     def update_version_project(self, version, project):
-        query = """UPDATE
-                        smp_version_project
-                   SET
-                        id_project=%s WHERE version=%s;"""
-
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [str(project), version])
+        self.env.db_transaction("""
+            UPDATE smp_version_project
+            SET id_project=%s WHERE version=%s
+            """, (project, version))
 
     def rename_version_project(self, old_version, new_version):
-        query = """UPDATE
-                        smp_version_project
-                   SET
-                        version=%s WHERE version=%s;"""
-
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [new_version, old_version])
+        self.env.db_transaction("""
+            UPDATE smp_version_project
+            SET version=%s WHERE version=%s
+            """, (new_version, old_version))
 
     # ComponentProject Methods
     def insert_component_projects(self, component, id_projects):
@@ -323,72 +223,43 @@ class SmpModel(Component):
         if type(id_projects) is not list:
             id_projects = [id_projects]
 
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
+        with self.env.db_transaction as db:
             for id_project in id_projects:
-                cursor.execute("""
+                db("""
                     INSERT INTO smp_component_project(component, id_project)
                     VALUES (%s, %s)
                     """, (component, id_project))
 
     def get_projects_component(self, component):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        name
-                   FROM
-                        smp_project AS p,
-                        smp_component_project AS m
-                   WHERE
-                        m.component=%s and
-                        m.id_project = p.id_project"""
-
-        cursor.execute(query, [component])
-        return cursor.fetchall()
+        for name, in self.env.db_query("""
+                SELECT name
+                FROM smp_project AS p, smp_component_project AS m
+                WHERE m.component=%s and m.id_project = p.id_project
+                """, (component,)):
+            yield name
 
     def get_id_projects_component(self, component):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT
-                        id_project
-                   FROM
-                        smp_component_project
-                   WHERE
-                        component=%s;"""
-
-        cursor.execute(query, [component])
-        return cursor.fetchall()
+        for id_project, in self.env.db_query("""
+                SELECT id_project
+                FROM smp_component_project WHERE component=%s
+                """, (component,)):
+            return id_project
 
     def delete_component_projects(self, component):
-        query = """DELETE FROM
-                        smp_component_project
-                   WHERE
-                        component=%s;"""
-
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [component])
+        self.env.db_transaction("""
+            DELETE FROM smp_component_project WHERE component=%s
+            """, (component,))
 
     def rename_component_project(self, old_component, new_component):
-        query = """UPDATE
-                        smp_component_project
-                   SET
-                        component=%s WHERE component=%s;"""
-
-        @with_transaction(self.env)
-        def execute_sql_statement(db):
-            cursor = db.cursor()
-            cursor.execute(query, [new_component, old_component])
+        self.env.db_transaction("""
+            UPDATE smp_component_project
+            SET component=%s WHERE component=%s
+            """, (new_component, old_component))
 
     def is_milestone_completed(self, milestone_name):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        query = """SELECT completed FROM milestone WHERE name=%s;"""
-        cursor.execute(query, [milestone_name])
-        msCompletedDate = cursor.fetchone()
-
-        if msCompletedDate and msCompletedDate[0] > 0:
-            return True
-        return False
+        completed = None
+        for completed, in self.env.db_query("""
+                SELECT completed FROM milestone WHERE name=%s
+                """, (milestone_name,)):
+            break
+        return completed and completed > 0

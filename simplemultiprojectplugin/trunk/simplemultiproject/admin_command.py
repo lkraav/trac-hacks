@@ -10,8 +10,8 @@ from trac.core import Component, implements
 from trac.util.text import printout
 from trac.util.translation import _
 
-from smp_model import SmpMilestone
-from model import SmpModel
+from simplemultiproject.model import SmpModel
+from simplemultiproject.smp_model import SmpMilestone
 
 
 class SmpAdminCommands(Component):

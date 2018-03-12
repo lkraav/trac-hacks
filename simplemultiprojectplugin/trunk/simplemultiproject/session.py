@@ -80,10 +80,7 @@ def get_list_from_req_or_session(req, context, name, default=None):
 
     if 'smp_update' in req.args:
         if cur_filter in req.args:
-            if isinstance(req.args.get(name), list):
-                session_data = ',///,'.join(req.args.get(name))
-            else:
-                session_data = req.args.get(name)
+            session_data = ',///,'.join(req.args.getlist(name))
             req.session[session_key] = session_data
         elif session_key in req.session:
             del req.session[session_key]

@@ -28,7 +28,8 @@ class SmpRoadmapGroup(Component):
     implements(IRequestFilter, ITemplateStreamFilter, IRoadmapDataProvider)
 
     def __init__(self):
-        self.group_tmpl = Chrome(self.env).load_template("smp_roadmap.html")
+        chrome = Chrome(self.env)
+        self.group_tmpl = chrome.load_template("smp_roadmap.html", None)
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_project = SmpProject(self.env)
         self.smp_version = SmpVersion(self.env)
@@ -113,7 +114,7 @@ class SmpRoadmapGroup(Component):
         if filename == 'roadmap.html':
             # Change label to include versions
             filter_ = Transformer('//label[@for="showcompleted"]')
-            stream = stream | filter_.replace(HTML(u'<label for="showcompleted">Show completed milestones and '
+            stream |= filter_.replace(HTML(u'<label for="showcompleted">Show completed milestones and '
                                                    'versions</label>'))
             # Add additional checkboxes to preferences
             data['smp_render'] = 'prefs'  # specify which part of template to render
@@ -123,19 +124,19 @@ class SmpRoadmapGroup(Component):
             if group_proj:
                 chked = 'checked="1"'
             filter_ = Transformer('//form[@id="prefs"]')
-            stream = stream | filter_.prepend(HTML(u'<div>'
-                                                   '<input type="hidden" name="smp_update" value="group" />'
-                                                   '<input type="checkbox" id="groupbyproject" name="smp_group" '
-                                                   'value="1" %s />'
-                                                   '<label for="groupbyproject">Group by project</label></div><br />' %
-                                                   chked))
+            stream |= filter_.prepend(HTML(u'<div>'
+                                            '<input type="hidden" name="smp_update" value="group" />'
+                                            '<input type="checkbox" id="groupbyproject" name="smp_group" '
+                                            'value="1" %s />'
+                                            '<label for="groupbyproject">Group by project</label></div><br />' %
+                                            chked))
             if chked:
                 # Remove contents leaving the preferences
                 filter_ = Transformer('//div[@class="milestones"]')
-                stream = stream | filter_.remove()
+                stream |= filter_.remove()
                 # Add new grouped content
                 filter_ = Transformer('//form[@id="prefs"]')
-                stream = stream | filter_.after(self.group_tmpl.generate(**data))
+                stream |= filter_.after(self.group_tmpl.generate(**data))
 
         return stream
 
@@ -258,7 +259,7 @@ class SmpRoadmapProjectFilter(Component):
         if len(path_elms) > 1 and path_elms[1] == 'roadmap':
             # Add project selection to the roadmap preferences
             xformer = Transformer('//form[@id="prefs"]')
-            stream = stream | xformer.prepend(create_proj_table(self, self._SmpModel, req))
+            stream |= xformer.prepend(create_proj_table(self, self._SmpModel, req))
 
         return stream
 

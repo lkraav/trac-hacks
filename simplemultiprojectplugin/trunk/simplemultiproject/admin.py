@@ -152,11 +152,9 @@ class SmpAdminPanel(Component):
 
                 elif req.args.get('remove'):
                     req.perm.require('PROJECT_ADMIN')
-                    sel = req.args.get('sel')
+                    sel = req.args.getlist('sel')
                     if not sel:
                         raise TracError('No project selected')
-                    if not isinstance(sel, list):
-                        sel = [sel]
 
                     self.__SmpModel.delete_project(sel)
 
@@ -171,7 +169,7 @@ class SmpAdminPanel(Component):
                     'datetime_hint': get_datetime_format_hint()
                 }
 
-        return 'simplemultiproject_adminpanel.html', data
+        return 'simplemultiproject_adminpanel.html', data, None
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
