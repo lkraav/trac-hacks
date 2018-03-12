@@ -184,13 +184,13 @@ class SmpFilterDefaultMilestonePanels(Component):
                     # Check if we already have this milestone.
                     # Trac will show an error later if so.
                     # Don't change the db for smp if already exists.
-                    p_ids = req.args.get('sel')
+                    p_ids = req.args.getlist('sel')
                     if not get_milestone_from_trac(self.env, req.args.get('name')) and p_ids:
                         # Note this one handles lists and single ids
                         self.smp_model.add(req.args.get('name'), p_ids)  # p_ids may be a list here
                 elif 'save' in req.args:
                     # 'Save' button on 'Manage milestone' panel
-                    p_ids = req.args.get('sel')
+                    p_ids = req.args.getlist('sel')
                     self.smp_model.delete(req.args.get('path_info'))
                     # Note this one handles lists and single ids
                     self.smp_model.add_after_delete(req.args.get('name'), p_ids)
@@ -339,15 +339,15 @@ class SmpFilterDefaultVersionPanels(Component):
                     # Check if we already have this milestone.
                     # Trac will show an error later if so.
                     # Don't change the db for smp if already exists.
-                    p_ids = req.args.get('sel')
+                    p_ids = req.args.getlist('sel')
                     if not get_version_from_trac(self.env, req.args.get('name')) and p_ids:
                         self.smp_model.add(req.args.get('name'), p_ids)
                 elif 'remove' in req.args:
                     # 'Remove' button on main version panel
-                    self.smp_model.delete(req.args.get('sel'))
+                    self.smp_model.delete(req.args.getlist('sel'))
                 elif 'save' in req.args:
                     # 'Save' button on 'Manage version' panel
-                    p_ids = req.args.get('sel')
+                    p_ids = req.args.getlist('sel')
                     self.smp_model.delete(req.args.get('path_info'))
                     self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler
@@ -520,15 +520,15 @@ class SmpFilterDefaultComponentPanels(Component):
                     # Check if we already have this component.
                     # Trac will show an error later if so.
                     # Don't change the db for smp.
-                    p_ids = req.args.get('sel')
+                    p_ids = req.args.getlist('sel')
                     if not get_component_from_trac(self.env, req.args.get('name')) and p_ids:
                         self.smp_model.add(req.args.get('name'), p_ids)
                 elif 'remove' in req.args:
                     # 'Remove' button on main component panel
-                    self.smp_model.delete(req.args.get('sel'))
+                    self.smp_model.delete(req.args.getlist('sel'))
                 elif 'save' in req.args:
                     # 'Save' button on 'Manage Component' panel
-                    p_ids = req.args.get('sel')
+                    p_ids = req.args.getlist('sel')
                     self.smp_model.delete(req.args.get('path_info'))
                     self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler

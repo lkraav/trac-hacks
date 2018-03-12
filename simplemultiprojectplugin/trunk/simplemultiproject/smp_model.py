@@ -27,9 +27,10 @@ class SmpBaseModel(object):
             name = [name]
 
         with self.env.db_transaction as db:
-            db.executemany("""
-                DELETE FROM smp_%s_project WHERE %s=%%s
-                """ % (self.resource_name, self.resource_name), (name,))
+            for n in name:
+                db("""
+                    DELETE FROM smp_%s_project WHERE %s=%%s
+                    """ % (self.resource_name, self.resource_name), (n,))
 
     def add(self, name, id_projects):
         """Link name with one or more id_project.

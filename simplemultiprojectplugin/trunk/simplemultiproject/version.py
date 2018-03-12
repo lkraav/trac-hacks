@@ -493,10 +493,10 @@ class SmpVersionModule(Component):
             if not self.env.enabled[SmpFilterDefaultVersionPanels]:
                 if 'remove' in req.args:
                     # 'Remove' button on main version panel
-                    self.smp_model.delete(req.args.get('sel'))
+                    self.smp_model.delete(req.args.getlist('sel'))
                 elif 'save' in req.args:
                     # 'Save' button on 'Manage version' panel
-                    p_ids = req.args.get('sel')
+                    p_ids = req.args.getlist('sel')
                     self.smp_model.delete(req.args.get('path_info'))
                     self.smp_model.add_after_delete(req.args.get('name'), p_ids)
         return handler

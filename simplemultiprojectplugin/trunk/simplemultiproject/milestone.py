@@ -85,7 +85,7 @@ class SmpMilestoneProject(Component):
             if action == 'edit':
                 # This one may be a new one or editing of an existing milestone
                 ms_id = req.args.get('id')  # holds the old name if there was a name change, empty if new
-                p_ids = req.args.get('sel')
+                p_ids = req.args.getlist('sel')
                 if not ms_id:
                     self.smp_model.add(req.args.get('name'), p_ids)
                 else:
@@ -117,9 +117,9 @@ class SmpMilestoneProject(Component):
                 input_type = "checkbox"  # Default input type for project selection.
 
             if not self.allow_no_project:
-                stream |= Transformer('//head').append(create_script_tag(input_type=input_type))\
-                          | Transformer('//form[@id="edit"]//div[@class="buttons"]/input[not(@name)]'
-                                        ).attr('id', 'smp-btn-id')  # Add id for use from javascript
+                stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
+                stream |= Transformer('//form[@id="edit"]//div[@class="buttons"]/input[not(@name)]') \
+                          .attr('id', 'smp-btn-id')  # Add id for use from javascript
             filter_form = Transformer('//form[@id="edit"]//div[@class="field"][1]')
             stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
                                                               input_type=input_type,
