@@ -145,6 +145,7 @@ class WikiAutoCompleteModule(Component):
                 "match": r"\bwiki:(\S*)$",
                 "name": 'wikipage',
                 "index": 1,
+                "quote_whitespace": True,
                 "replace_prefix": 'wiki:',
                 "cache": True,
             },
