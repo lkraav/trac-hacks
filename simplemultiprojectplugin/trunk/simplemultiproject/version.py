@@ -9,6 +9,7 @@ from operator import itemgetter
 
 from genshi import HTML
 from genshi.filters.transform import Transformer
+from genshi.template.markup import MarkupTemplate
 from trac.attachment import AttachmentModule
 from trac.config import ExtensionOption
 from trac.core import *
@@ -517,25 +518,41 @@ class SmpVersionModule(Component):
 
         if filename == 'roadmap.html':
             # Add button to create new versions
-            filter_ = Transformer('//div[@class="buttons"][2]')
-            stream |= filter_.append(HTML(u'<form action="%s" method="get"><div>'
-                                                  '<input type="hidden" value="new" name="action"/>'
-                                                  '<input value="Add new Version" type="submit">'
-                                                  '</div></form>' % req.href.version()))
+            stream |= self._add_version_button(data)
             # Change label to include versions
             filter_ = Transformer('//label[@for="showcompleted"]')
-            stream |= filter_.replace(HTML(u'<label for="showcompleted">Show completed milestones and '
-                                                   'versions</label>'))
+            stream |= filter_.replace(HTML(show_completed_label))
             # Add additional checkboxes to preferences
             data['smp_render'] = 'prefs'
             filter_ = Transformer('//form[@id="prefs"]')
             stream |= filter_.prepend(self.version_tmpl.generate(**data))
 
             # Add versions to page
-            if 'smp_groupproject' not in data:  # Roadmap group plugin is grouping by project
+            # Roadmap group plugin is grouping by project
+            if 'smp_groupproject' not in data:
                 data['infodivclass'] = self.infodivclass
-                data['smp_render'] = 'versions'  # Specify part of template to be rendered
+                # Specify part of template to be rendered
+                data['smp_render'] = 'versions'
                 filter_ = Transformer('//div[@class="milestones"]')
                 stream |= filter_.after(self.version_tmpl.generate(**data))
 
         return stream
+
+    def _add_version_button(self, data):
+        filter_ = Transformer('//div[@class="buttons"][2]')
+        template = MarkupTemplate(add_version_button).generate(**data)
+        return filter_.append(template)
+
+
+show_completed_label = u"""\
+<label for="showcompleted">Show completed milestones and versions</label>
+"""
+
+add_version_button = u"""\
+<form id="add-version" method="get" action="${href.version()}">
+  <div>
+    <input type="hidden" name="action" value="new" />
+    <input type="submit" value="Add new version" />
+  </div>
+</form>
+"""
