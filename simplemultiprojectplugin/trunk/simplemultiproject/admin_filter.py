@@ -589,23 +589,12 @@ class SmpAddExtendedVersionColumn(Component):
     implements(IRequestFilter)
 
     def __init__(self):
-        self.extended_version = self._get_ext_version() != 0
-        if self.extended_version:
-            try:
-                from extendedversion.milestone import MilestoneVersion
-            except ImportError:
-                self.extended_version = False
-            else:
-                self.extended_version = self.env.enabled[MilestoneVersion]
-
-    def _get_ext_version(self):
-        for version, in self.env.db_query("""
-                SELECT value FROM system
-                WHERE name='extended_version_plugin'
-                """):
-            return int(version)
+        try:
+            from extendedversion.milestone import MilestoneVersion
+        except ImportError:
+            self.extended_version = False
         else:
-            return 0
+            self.extended_version = self.env.enabled[MilestoneVersion]
 
     # IRequestFilter methods
 
@@ -613,7 +602,8 @@ class SmpAddExtendedVersionColumn(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if self.extended_version and template == 'admin_milestones.html' and \
+        if self.extended_version and \
+                template == 'admin_milestones.html' and \
                 data and data['view'] == 'list':
             add_script_data(req, {
                 'ms_ext_version': self.get_version_for_milestone()
@@ -624,7 +614,5 @@ class SmpAddExtendedVersionColumn(Component):
 
     def get_version_for_milestone(self):
         if self.extended_version:
-            return [dict(row[0], row[1]) for row in self.env.db_query("""
-                    SELECT * FROM milestone_version
-                    """)]
+            return dict(self.env.db_query("SELECT * FROM milestone_version"))
         return {}
