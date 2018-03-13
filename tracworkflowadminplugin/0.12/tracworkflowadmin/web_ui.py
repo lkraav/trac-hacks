@@ -22,7 +22,7 @@ from trac.config import Configuration, Option, BoolOption, ListOption, \
                         FloatOption, ChoiceOption
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import PermissionSystem
-from trac.util.compat import md5, any
+from trac.util.compat import sha1, any
 from trac.util.text import to_unicode, exception_to_unicode
 from trac.util.translation import dgettext, domain_functions
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
@@ -458,7 +458,7 @@ class TracWorkflowAdminModule(Component):
             script = self._create_dot_script(params)
             self._image_path_setup(req)
             dir = os.path.join(self.env.get_htdocs_dir(), 'tracworkflowadmin')
-            basename = '%s.png' % md5(script).hexdigest()
+            basename = '%s.png' % sha1(script).hexdigest()
             path = os.path.join(dir, basename)
             if not self.diagram_cache or not os.path.isfile(path):
                 self._create_diagram_image(path, dir, script, errors)
