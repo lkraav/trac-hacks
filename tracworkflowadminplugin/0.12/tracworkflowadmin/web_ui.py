@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 import ConfigParser
+import errno
 import glob
 import inspect
 import os
@@ -8,6 +9,7 @@ import re
 import time
 from cStringIO import StringIO
 from pkg_resources import resource_filename, parse_version
+from random import Random
 from subprocess import Popen, PIPE
 from tempfile import mkstemp
 try:
@@ -467,9 +469,20 @@ class TracWorkflowAdminModule(Component):
         req.send(json.dumps(data))
         # NOTREACHED
 
+    _random = Random()
+
     def _create_diagram_image(self, path, dir, script, errors):
-        fd, tmp = mkstemp(suffix='.png', dir=dir)
-        os.close(fd)
+        flags = os.O_CREAT + os.O_WRONLY + os.O_EXCL
+        while True:
+            tmp = '%s.%08x' % (path, self._random.randint(0, 0xffffffff))
+            try:
+                fd = os.open(tmp, flags, 0666)
+            except OSError, e:
+                if e.errno != errno.EEXIST:
+                    raise
+                continue
+            os.close(fd)
+            break
         try:
             args = [self.dot_path, '-Tpng', '-o', tmp]
             try:
@@ -492,10 +505,10 @@ class TracWorkflowAdminModule(Component):
             raise
         else:
             try:
+                os.rename(tmp, path)
+            except OSError:
                 os.remove(path)
-            except:
-                pass
-            os.rename(tmp, path)
+                os.rename(tmp, path)
 
     _default_workflow = (
         ('leave', 'new,assigned,accepted,reopened,closed -> *'),
