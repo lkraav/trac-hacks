@@ -161,7 +161,7 @@ class WikiAutoCompleteModule(Component):
             },
 
             { # Source
-                "match": r"\b(source:|browser:|repos:|log:)([^@\s]*(?:@\S*)?)$",
+                "match": r"\b(source:|browser:|repos:|log:|export:)([^@\s]*(?:@\S*)?)$",
                 "name": 'source',
                 "index": 2,
                 "replace_prefix": '$1',
