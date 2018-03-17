@@ -511,6 +511,7 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr::{t} ({n}):Link|Labe
                                     "wiki pages.", name=name))
 
         args, kw = parse_args(args)
+        preview = 'preview' in formatter.req.args
 
         # first handle special cases
         show = u"";
@@ -521,7 +522,7 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr::{t} ({n}):Link|Labe
         if u'lang' in kw:
             lang = kw[u'lang']
         if u'outdated' in kw:
-            outdated = self.outdated_tx % kw[u'outdated']
+            outdated = kw[u'outdated']
         if u'showproblems' in args:
             show += self._get_problems(silent)
         if u'showstatus' in args:
@@ -564,9 +565,21 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr::{t} ({n}):Link|Labe
             newver = WikiPage(self.env, basepage).version
             oldver = abs(int(kw[u'revision']))
             if oldver < newver:
-                baselink = u"\n  * [[wiki:/%s?action=diff&old_version=%s|@%s - @%s]]" \
+                t = "[[wiki:/%s?action=diff&old_version=%s|@%s - @%s]]" \
                     % (basepage, oldver, oldver, newver)
+                baselink = u"\n  * " + t
+                if preview:
+                    out = StringIO()
+                    t = "Translation not up to date: %s" % t
+                    OneLinerFormatter(self.env, formatter.context).format(t, out)
+                    t = out.getvalue()
+                    if outdated:
+                        outdated += "<br>" + t
+                    else:
+                        outdated = t
 
+        if outdated:
+            outdated = self.outdated_tx % outdated
         if len(lang_link_list) <= 1:
             return outdated;
         out = StringIO()
