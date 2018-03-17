@@ -9,7 +9,7 @@ from trac.admin.api import IAdminPanelProvider
 from trac.core import *
 from trac.config import *
 from trac.perm import IPermissionRequestor
-from trac.web.chrome import ITemplateProvider, add_notice
+from trac.web.chrome import Chrome, ITemplateProvider, add_notice
 from trac.util.translation import _
 from trac.util.datefmt import from_utimestamp, get_datetime_format_hint, \
     parse_date, to_utimestamp, user_time
@@ -169,7 +169,10 @@ class SmpAdminPanel(Component):
                     'datetime_hint': get_datetime_format_hint()
                 }
 
-        return 'simplemultiproject_adminpanel.html', data, None
+        if hasattr(Chrome(self.env), 'jenv'):
+            return 'simplemultiproject_adminpanel.html', data, None
+        else:
+            return 'simplemultiproject_adminpanel.html', data
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
