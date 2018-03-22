@@ -9,7 +9,7 @@ from trac.core import Component, TracError, implements
 from trac.attachment import Attachment
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
-from trac.ticket.model import Ticket
+from trac.ticket.model import MilestoneCache, Ticket
 from trac.util import lazy
 from trac.util.text import to_unicode
 from trac.util.translation import dgettext
@@ -358,10 +358,9 @@ class WikiAutoCompleteModule(Component):
         return [{'value': value} for value in completions]
 
     def _suggest_milestone(self, req):
-        names = [row[0] for row in self.env.db_query(
-                                "SELECT name FROM milestone ORDER BY name")]
-        return [{'value': name} for name in names
-                     if 'MILESTONE_VIEW' in req.perm('milestone', name)]
+        return [{'value': name}
+                for name in sorted(MilestoneCache(self.env).milestones)
+                if 'MILESTONE_VIEW' in req.perm('milestone', name)]
 
     def _suggest_report(self, req):
         return [{'value': id, 'title': title}
