@@ -7,7 +7,7 @@ from StringIO import StringIO
 from trac.config import Option
 from trac.core import *
 from trac.resource import get_resource_url
-from trac.util.html import tag
+from trac.util.html import Markup, tag, unescape
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.wiki.api import IWikiMacroProvider, IWikiSyntaxProvider, WikiSystem, parse_args
@@ -65,6 +65,8 @@ class TranslatedPagesMacro(Component):
             i = base_page_name.rfind("/")
             if i > 0:
               name = base_page_name[:i+1] + name
+          else:
+            name = name[1:]
           origcode = "{t}"
         else:
           if name[0] == '/':
@@ -81,17 +83,12 @@ class TranslatedPagesMacro(Component):
           else:
             name = tname
             origcode = "{t}"
-        name = concat_path_query_fragment(name, query, fragment)
-        label = self._get_label_text(origcode, label, name)
-        if formatter.flavor == 'link':
-          p = WikiPage(self.env, "/"+name);
-          url = get_resource_url(self.env, p.resource, formatter.req.href)
-          return tag.a(label, href=url)
-        else:
-          txt = "[[wiki:/%s|%s]]" % (name, label)
-          out = StringIO()
-          OneLinerFormatter(self.env, formatter.context).format(txt, out)
-          return out.getvalue()
+        fullname = concat_path_query_fragment(name, query, fragment)
+        label = unescape(Markup(self._get_label_text(origcode, label, name)))
+        p = WikiPage(self.env, fullname)
+        pp = WikiPage(self.env, name)
+        url = get_resource_url(self.env, p.resource, formatter.req.href)
+        return tag.a(label, href=url, class_=("wiki" if pp.exists else "missing wiki"))
 
     def _get_label_text(self, code, label, name):
         return code.replace("{t}", label if label else name) \
