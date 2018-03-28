@@ -83,12 +83,11 @@ class TranslatedPagesMacro(Component):
           else:
             name = tname
             origcode = "{t}"
-        fullname = concat_path_query_fragment(name, query, fragment)
         label = unescape(Markup(self._get_label_text(origcode, label, name)))
-        p = WikiPage(self.env, fullname)
-        pp = WikiPage(self.env, name)
+        p = WikiPage(self.env, name)
         url = get_resource_url(self.env, p.resource, formatter.req.href)
-        return tag.a(label, href=url, class_=("wiki" if pp.exists else "missing wiki"))
+        url = concat_path_query_fragment(url, query, fragment)
+        return tag.a(label, href=url, class_=("wiki" if p.exists else "missing wiki"))
 
     def _get_label_text(self, code, label, name):
         return code.replace("{t}", label if label else name) \
