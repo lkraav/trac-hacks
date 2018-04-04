@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""A simple captcha to allow anonymous ticket changes as long as the user 
+"""A simple captcha to allow anonymous ticket changes as long as the user
 solves a math problem.
 
 I thought that the ITicketManipulator prepare_ticket method would be the place
@@ -11,7 +11,7 @@ Genshi template using the ITemplateStreamFilter.
 I looked at http://trac-hacks.org/wiki/BlackMagicTicketTweaksPlugin for help
 trying to understand how the Genshi transformation stuff worked.
 
-Database setup borrowed from BSD licensed TicketModerator by John D. Siirola 
+Database setup borrowed from BSD licensed TicketModerator by John D. Siirola
 at Sandia National Labs.  See http://trac-hacks.org/wiki/TicketModeratorPlugin
 
 Author: Rob McMullen <robm@users.sourceforge.net>
@@ -97,7 +97,7 @@ class MathCaptchaPlugin(Component):
 
             if ver == 1:
                 db("""
-                    ALTER TABLE mathcaptcha_history RENAME TO 
+                    ALTER TABLE mathcaptcha_history RENAME TO
                     mathcaptcha_history_temp
                     """)
                 dbm.create_tables(schema)
@@ -107,7 +107,7 @@ class MathCaptchaPlugin(Component):
                 old_fields[old_fields.index('summary')] = 'incorrect_summary'
                 old_fields[old_fields.index('text')] = 'incorrect_text'
                 db("""
-                    INSERT INTO mathcaptcha_history (%s) 
+                    INSERT INTO mathcaptcha_history (%s)
                     SELECT %s FROM mathcaptcha_history_temp
                     """ % (new_fields, old_fields))
                 dbm.drop_tables('mathcaptcha_history_temp')
@@ -117,11 +117,11 @@ class MathCaptchaPlugin(Component):
 
     def create_math_problem(self, values):
         """Hook for generation of the math problem.
-        
+
         As a side effect, should populate the values dict with the
         'left_operand', 'operator', 'right_operand' and 'solution' keys that
         will be placed in the database.
-        
+
         Returns a text version of the math problem that is presented to the
         user.
         """
@@ -154,7 +154,7 @@ class MathCaptchaPlugin(Component):
             cursor.execute("""
                 INSERT INTO mathcaptcha_history (%s) VALUES (%s)
                 """ % (','.join(fields), ','.join(['%s'] * len(fields))),
-                       [values[name] for name in fields])
+                [values[name] for name in fields])
             id_ = db.get_last_id(cursor, 'mathcaptcha_history')
         self.log.debug(
             "%s %s %s%s: generating math solution: id=%d, %d %s %d = %d",
@@ -179,7 +179,7 @@ class MathCaptchaPlugin(Component):
 
     def is_validation_needed(self, req):
         """Hook to determine whether or not the math captcha should be shown.
-        
+
         Currently, only anonymous users get shown the captcha, but this could
         be modified for local purposes.
         """
@@ -196,7 +196,7 @@ class MathCaptchaPlugin(Component):
 
     def validate_mathcaptcha(self, req):
         """Validates the user (or spammer) input
-        
+
         Uses the database storage to compare the user input with the correct
         solution.
         """
@@ -281,8 +281,8 @@ class MathCaptchaPlugin(Component):
 
     def store_failed_attempt(self, req, id, user_solution):
         self.env.db_transaction("""
-            UPDATE mathcaptcha_history 
-            SET incorrect_solution=%s,author=%s,summary=%s,TEXT=%s,solved=%s 
+            UPDATE mathcaptcha_history
+            SET incorrect_solution=%s,author=%s,summary=%s,TEXT=%s,solved=%s
             WHERE id=%s
             """, (user_solution, req.args.get('author'),
                   req.args.get('field_summary'),
@@ -324,8 +324,8 @@ class MathCaptchaPlugin(Component):
         stream if no match.
 
         `req` is the current request object, `method` is the Genshi render
-        method (xml, xhtml or text), `filename` is the filename of the 
-        template to be rendered, `stream` is the event stream and `data` is 
+        method (xml, xhtml or text), `filename` is the filename of the
+        template to be rendered, `stream` is the event stream and `data` is
         the data for the current template.
 
         See the Genshi documentation for more information.
@@ -360,9 +360,9 @@ class MathCaptchaPlugin(Component):
 
     def validate_ticket(self, req, ticket):
         """Validate a ticket after it's been populated from user input.
-        
+
         Must return a list of `(field, message)` tuples, one for each problem
-        detected. `field` can be `None` to indicate an overall problem with 
+        detected. `field` can be `None` to indicate an overall problem with
         the ticket. Therefore, a return value of `[]` means everything is OK.
         """
         if self.is_validation_needed(req):
@@ -376,9 +376,9 @@ class MathCaptchaPlugin(Component):
 
     def validate_wiki_page(self, req, page):
         """Validate a wiki page after it's been populated from user input.
-        
+
         Must return a list of `(field, message)` tuples, one for each problem
-        detected. `field` can be `None` to indicate an overall problem with 
+        detected. `field` can be `None` to indicate an overall problem with
         the ticket. Therefore, a return value of `[]` means everything is OK.
         """
         if self.is_validation_needed(req):
