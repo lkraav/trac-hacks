@@ -70,6 +70,7 @@ class HideValsFilter(Component):
 
             if req.path_info.startswith('/newticket') or \
                     req.path_info.startswith('/ticket'):
+                ticket = data['ticket']
                 for field in fields:
                     if (field.get('options') or field.get('optgroups')) and \
                             field['name'] not in dont_filter:
@@ -85,6 +86,9 @@ class HideValsFilter(Component):
                     self.log.debug(
                         "HideValsFilter: '%s' field removed", field['name'])
                     fields.remove(field)
+                    setattr(ticket, field['name'], None)
+                data['fields_map'] = dict((field['name'], i)
+                                          for i, field in enumerate(fields))
             elif req.path_info.startswith('/query'):
                 for field in fields.itervalues():
                     if (field.get('options') or field.get('optgroups')) and \
