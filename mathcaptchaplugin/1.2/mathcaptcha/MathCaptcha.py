@@ -22,6 +22,7 @@ import re
 import time
 
 from genshi.filters.transform import Transformer
+from trac.config import IntOption
 from trac.core import Component, TracError, implements
 from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
@@ -75,8 +76,11 @@ class MathCaptchaPlugin(Component):
     # into the solution.
     id_offset = 5830285
 
-    # Number of invalid captchas before the IP is blocked
-    ban_after_failed_attempts = 4
+    ban_after_failed_attempts = IntOption(
+        'mathcaptcha', 'ban_after_failed_attempts', default=4,
+        doc="""Number of invalid captchas before the IP is blocked. Set
+        to `0` disable banning.
+        """)
 
     # IEnvironmentSetupParticipant methods
 
@@ -186,13 +190,14 @@ class MathCaptchaPlugin(Component):
         return req.authname == 'anonymous'
 
     def is_banned(self, req):
-        failed = 0
-        for solved, in self.env.db_query("""
-                SELECT solved FROM mathcaptcha_history WHERE ip=%s
-                """, (req.remote_addr,)):
-            if solved is False:
-                failed += 1
-        return failed > self.ban_after_failed_attempts
+        if self.ban_after_failed_attempts:
+            failed = 0
+            for solved, in self.env.db_query("""
+                    SELECT solved FROM mathcaptcha_history WHERE ip=%s
+                    """, (req.remote_addr,)):
+                if solved == 0:
+                    failed += 1
+            return failed >= self.ban_after_failed_attempts
 
     def validate_mathcaptcha(self, req):
         """Validates the user (or spammer) input
