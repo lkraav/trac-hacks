@@ -79,7 +79,7 @@ class MathCaptchaPlugin(Component):
     ban_after_failed_attempts = IntOption(
         'mathcaptcha', 'ban_after_failed_attempts', default=4,
         doc="""Number of invalid captchas before the IP is blocked. Set
-        to `0` disable banning.
+        to `0` to disable banning.
         """)
 
     # IEnvironmentSetupParticipant methods
