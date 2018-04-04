@@ -340,11 +340,11 @@ class MathCaptchaPlugin(Component):
                 stream = tag.label("System offline.")
                 return stream
 
-            href = req.path_info
             if filename == 'ticket.html':
-                if 'newticket' in href:
+                tid = data['ticket'].id
+                if tid is None:  # New ticket
                     add_captcha = 'TICKET_CREATE' in req.perm
-                elif 'ticket' in href:
+                else:
                     add_captcha = 'TICKET_MODIFY' in req.perm or \
                                   'TICKET_APPEND' in req.perm
             elif filename == 'wiki_edit.html':
