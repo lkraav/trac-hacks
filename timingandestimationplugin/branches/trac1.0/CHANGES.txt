@@ -1,3 +1,6 @@
+2018-04-04 - Russ Tyndall
+ - https://trac-hacks.org/ticket/13405 fix hour summing in reports
+
 2017-06-30 - Russ Tyndall
  - #12853 Remove defunct, unused macros include in billing.html
  - #13080 Update database access for proper trac 1.1 Thanks lkraav
