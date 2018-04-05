@@ -43,7 +43,6 @@ class GoogleAnalyticsAdmin(Component):
 
         add_stylesheet(req, 'googleanalytics/googleanalytics.css')
         ga = self.config['google.analytics']
-        print(ga.getbool('outbound_link_tracking'))
         return 'google_analytics_admin.html', {
             'admin_logging': ga.getbool('admin_logging'),
             'authenticated_logging': ga.getbool('authenticated_logging'),
