@@ -13,8 +13,9 @@ from trac.core import Component, implements
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import Chrome
 
+
 class GoogleAnalyticsStreamFilter(Component):
-    config = env = log = None
+
     implements(ITemplateStreamFilter)
 
     # ITemplateStreamFilter method
@@ -26,17 +27,17 @@ class GoogleAnalyticsStreamFilter(Component):
         if not options.get('uid'):
             self.log.debug('Plugin not configured, returning stream')
             return stream
-        elif ('TRAC_ADMIN' in req.perm) and (not options['admin_logging']):
+        elif 'TRAC_ADMIN' in req.perm and not options['admin_logging']:
             self.log.debug("Not tracking TRAC_ADMIN's, returning stream")
             return stream
-        elif (req.authname and req.authname != "anonymous") \
-                                    and (not options['authenticated_logging']):
+        elif req.authname and req.authname != "anonymous" and \
+                not options['authenticated_logging']:
             self.log.debug("Not tracking authenticated users, returning stream")
             return stream
 
         template = Chrome(self.env).load_template('google_analytics.html')
         data = template.generate(
-            admin= 'TRAC_ADMIN' in req.perm,
+            admin='TRAC_ADMIN' in req.perm,
             opt=options,
             base_url='http:\/\/%s' % req.environ.get('HTTP_HOST'))
         return stream | Transformer('body').append(data)
@@ -60,4 +61,3 @@ class GoogleAnalyticsStreamFilter(Component):
                 option.value = value
             options[option.name] = option.value
         return options
-

@@ -22,7 +22,7 @@
       <fieldset>
         <legend>Basic Options</legend>
         <label for="uid">UID:</label>
-        <input type="text" name="uid" value="${ga.uid.value.upper()}"/>
+        <input type="text" name="uid" value="${uid.upper()}"/>
         <p class="help">Enter your Google Analytics' UID in this box.<br/>
           The UID is needed for Google Analytics to log your website stats.<br/>
           Your UID can be found by looking in the JavaScript Google Analytics
@@ -33,15 +33,15 @@
           UID box.</p><br/>
 
         <label for="admin_logging">Admin Logging:</label>
-        <input type="checkbox" name="admin_logging" value="yes" checked="${
-          ga.admin_logging.value and 'checked' or None}"/>
+        <input type="checkbox" id="admin_logging" name="admin_logging"
+               checked="${admin_logging or None}" />
         <p class="help">Disabling this option will prevent all logged in
           <tt><strong>TRAC_ADMIN</strong></tt>'s from showing up on your Google
           Analytics reports.</p><br/>
 
         <label for="authenticated_logging">Authenticated Users Logging:</label>
-        <input type="checkbox" name="authenticated_logging" value="yes" checked="${
-          ga.authenticated_logging.value and 'checked' or None}"/>
+        <input type="checkbox" id="authenticated_logging" name="authenticated_logging"
+               checked="${authenticated_logging or None}" />
         <p class="help">Disabling this option will prevent all
         <strong>authenticated</strong> users from showing up on your Google
         Analytics reports.</p><br/>
@@ -50,36 +50,33 @@
       <fieldset>
         <legend>Advanced Options</legend>
         <label for="outbound_link_tracking">Outbound Link Tracking:</label>
-        <input type="checkbox" value="yes" name="outbound_link_tracking" checked="${
-          ga.outbound_link_tracking.value and 'checked' or None}"/>
+        <input type="checkbox" id="outbound_link_tracking" name="outbound_link_tracking"
+               checked="${outbound_link_tracking or None}" />
         <p class="help">Disabling this option will turn off the tracking of
           outbound links.<br/>It's recommended not to disable this option unless
           you're a privacy advocate (now why would you be using Google Analytics
           in the first place?) or it's causing some kind of weird issue.</p><br/>
 
         <label for="google_external_path">Google External Path:</label>
-        <input type="text" name="google_external_path"
-          value="${ga.google_external_path.value}"/>
+        <input type="text" name="google_external_path" value="${google_external_path}" />
         <p class="help">This will be the path shown on Google Analytics
           regarding external links. Consider the following link:<br/><strong><tt>
           &lt;a href="http://trac.edgewall.org/">Trac&lt;/a&gt;</tt></strong><br/>
           The above link will be shown as <strong><tt>${
-          ga.google_external_path.value}trac.edgewall.org/</tt></strong>.<br/>
+          google_external_path}trac.edgewall.org/</tt></strong>.<br/>
           This way you will be able to track outgoing links.<br/>
           <em>Outbound link tracking must be enabled for external links to be
           tracked.</em></p><br/>
 
         <label for="extensions">Download Extensions To Track:</label>
-        <input type="text" name="extensions" size="50" value="${
-          ga.extensions.value }"/>
+        <input type="text" name="extensions" size="50" value="${extensions}"/>
         <p class="help">Enter any extensions of files you would like to be
           tracked as a download.<br/>For example to track all MP3s and PDFs enter
           <strong>mp3,pdf</strong>.<br/><em>Outbound link tracking must be enabled
           for downloads to be tracked.</em></p><br/>
 
         <label for="tracking_domain_name">Tracking Domain Name:</label>
-        <input type="text" name="tracking_domain_name" size="50" value="${
-          ga.tracking_domain_name.value }"/>
+        <input type="text" name="tracking_domain_name" size="50" value="${tracking_domain_name}"/>
         <p class="help">If you're tracking multiple subdomains with the same
         Google Analytics profile, like what's talked about
         <a href="https://www.google.com/support/googleanalytics/bin/answer.py?answer=55524">here</a>,
