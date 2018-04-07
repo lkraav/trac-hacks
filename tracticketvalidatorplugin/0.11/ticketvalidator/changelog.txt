@@ -1,3 +1,0 @@
-TicketValidator 0.1 (May 9, 2008)
-
- * First release
