@@ -90,7 +90,8 @@ class TicketsValidator(Component):
             return False
 
         if len(email) > 7:
-            if re.match("^[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+\.[a-zA-Z]{2,6}$",
+            if re.match(r'^(?P<named>.*? <){,1}[a-zA-Z0-9._%-]+'
+                        r'@[a-zA-Z0-9._%-]+\.[a-zA-Z]{2,6}(?(named)>)$',
                         email) is not None:
                 return True
         return False

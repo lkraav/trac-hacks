@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='TracTicketValidator',
-    version='0.3',
+    version='0.4',
     author='Richard Liao',
     author_email='richard.liao.i@gmail.com',
     maintainer='Richard Liao',
