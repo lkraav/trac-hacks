@@ -7,7 +7,7 @@
 # you should have received as part of this distribution.
 #
 
-from trac.core import *
+from trac.core import Component, implements
 from trac.ticket import ITicketManipulator, TicketSystem
 
 
@@ -49,13 +49,12 @@ class RequiredFieldValidator(Component):
             action_changes.update(controller.get_ticket_changes(req, ticket,
                                                                 action))
 
-        return 'status' in action_changes \
-                and action_changes['status'] or ticket['status']
+        return 'status' in action_changes and action_changes['status'] or \
+                ticket['status']
 
     def _get_action_controllers(self, req, ticket, action):
 
-        for controller in TicketSystem(self.env).action_controllers:
-            actions = [action for weight, action
-                       in controller.get_ticket_actions(req, ticket)]
+        for ctlr in TicketSystem(self.env).action_controllers:
+            actions = [a for w, a in ctlr.get_ticket_actions(req, ticket)]
             if action in actions:
-                yield controller
+                yield ctlr
