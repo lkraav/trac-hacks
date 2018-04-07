@@ -1,8 +1,8 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
 setup(
     name='TracTicketValidator',
-    version='0.2',
+    version='0.3',
     author='Richard Liao',
     author_email='richard.liao.i@gmail.com',
     maintainer='Richard Liao',
@@ -11,9 +11,9 @@ setup(
     license='BSD',
     keywords='trac ticket validator',
     url='https://trac-hacks.org/wiki/TracTicketValidatorPlugin',
-    packages=['ticketvalidator'],
+    packages=['tracticketvalidator'],
     package_data={
-        'ticketvalidator': ['*.txt']
+        'tracticketvalidator': ['*.txt']
     },
     classifiers=[
         'Framework :: Trac',
@@ -21,7 +21,7 @@ setup(
     install_requires=['Trac'],
     entry_points={
         'trac.plugins': [
-            'tracticketvalidator = ticketvalidator.ticketvalidator'
+            'tracticketvalidator = tracticketvalidator.ticketvalidator'
         ]
     },
 )
