@@ -54,7 +54,7 @@ def update_totalhours_custom( db, ticket_id):
     cursor = db.cursor()
     sumSql = """
        (SELECT SUM( CASE WHEN newvalue = '' OR newvalue IS NULL THEN 0
-                         ELSE CAST( newvalue AS DECIMAL ) END ) as total 
+                         ELSE CAST( newvalue AS DECIMAL(10,2) ) END ) as total 
           FROM ticket_change
          WHERE ticket=%s and field='hours')  """
     cursor.execute("UPDATE ticket_custom SET value="+sumSql+
@@ -70,13 +70,13 @@ def insert_totalhours_changes( db, ticket_id):
        INSERT INTO ticket_change (ticket, author, time, field, oldvalue, newvalue)
        SELECT ticket, author, time, 'totalhours',  
                (SELECT SUM( CASE WHEN newvalue = '' OR newvalue IS NULL THEN 0
-                           ELSE CAST( newvalue AS DECIMAL ) END ) as total
+                           ELSE CAST( newvalue AS DECIMAL(10,2) ) END ) as total
                FROM ticket_change as guts 
                WHERE guts.ticket = ticket_change.ticket AND guts.field='hours'
                  AND guts.time < ticket_change.time
               ) as oldvalue, 
               (SELECT SUM( CASE WHEN newvalue = '' OR newvalue IS NULL THEN 0
-                           ELSE CAST( newvalue AS DECIMAL ) END ) as total
+                           ELSE CAST( newvalue AS DECIMAL(10,2) ) END ) as total
                FROM ticket_change as guts 
                WHERE guts.ticket = ticket_change.ticket AND guts.field='hours'
                  AND guts.time <= ticket_change.time
