@@ -15,6 +15,9 @@ setup(
     zip_safe = False,
     keywords = 'trac mindmap freemind flash macro',
     install_requires = ['TracExtractUrl', 'Trac'],
+    dependency_links=[
+        'https://trac-hacks.org/svn/extracturlplugin/0.11#egg=TracExtractUrl',
+    ],
     package_data = {
         'tracmindmap': [
             'htdocs/*.swf',
