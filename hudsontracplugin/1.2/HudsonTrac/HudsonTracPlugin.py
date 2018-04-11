@@ -291,7 +291,11 @@ class HudsonTracPlugin(Component):
         add_stylesheet(req, 'HudsonTrac/hudsontrac.css')
 
         # get and parse the build-info
-        info, cset = self.__get_info()
+        try:
+            info, cset = self.__get_info()
+        except:
+            add_notice(req, "Error accessing build status")
+            return
 
         # extract all build entries
         for entry in self.__extract_builds(info):
