@@ -28,7 +28,7 @@ setup(
         'googleanalytics': [
             'templates/*.html',
             'htdocs/*.css'
-        ]
+        ],
     },
     include_package_data=True,
     keywords="trac plugin google analytics",
