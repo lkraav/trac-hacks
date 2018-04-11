@@ -30,7 +30,6 @@ setup(
             'htdocs/*.css'
         ],
     },
-    include_package_data=True,
     keywords="trac plugin google analytics",
     entry_points="""
     [trac.plugins]
