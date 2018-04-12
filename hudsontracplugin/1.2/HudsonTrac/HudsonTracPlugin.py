@@ -25,7 +25,7 @@ from trac.util.datefmt import datetime_now, format_datetime, \
 from trac.util.html import tag
 from trac.util.text import unicode_quote
 from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.web.chrome import add_stylesheet
+from trac.web.chrome import add_notice, add_stylesheet
 from trac.wiki.formatter import wiki_to_oneliner
 
 try:
