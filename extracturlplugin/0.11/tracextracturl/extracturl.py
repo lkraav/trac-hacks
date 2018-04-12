@@ -2,80 +2,73 @@
 """ Copyright (c) 2008 Martin Scharrer <martin@scharrer-online.de>
     v0.1 - Oct 2008
     This is Free Software under the GPL v3!
-""" 
+"""
 
-__url__      = ur"$URL$"[6:-2]
-__author__   = ur"$Author$"[9:-2]
-__revision__ = int("0" + ur"$Rev$"[6:-2])
-__date__     = ur"$Date$"[7:-2]
+from trac.util.html import Element, Fragment
+from trac.wiki.formatter import extract_link
 
-from trac.core import *
 
-def extract_url (env, context, wikilink, raw=False):
+def extract_url(env, context, wikilink, raw=False):
     """
-= Description for `extract_url()` =
-Extracts an URL from an Wiki link, e.g. to used in macro produced HTML code.
+    = Description for `extract_url()` =
+    Extracts an URL from an Wiki link, e.g. to used in macro produced
+    HTML code.
 
-Website: http://trac-hacks.org/wiki/ExtractUrlPlugin
+    Website: http://trac-hacks.org/wiki/ExtractUrlPlugin
 
-`$Id$`
+    `$Id$`
 
-== Description ==
-Returns an (possible relative) URL which can be used in HTML code.
+    == Description ==
+    Returns an (possible relative) URL which can be used in HTML code.
 
-If `raw` is true the returned link will point to a downloadable
-version of the linked resource otherwise the same link is returned
-which would be used in the resulting Wiki page.
+    If `raw` is true the returned link will point to a downloadable
+    version of the linked resource otherwise the same link is returned
+    which would be used in the resulting Wiki page.
 
-The raw links are also usable as online resouces, e.g. if the link target
-is to be used as input for a flash application etc.
+    The raw links are also usable as online resouces, e.g. if the link target
+    is to be used as input for a flash application etc.
 
-== Usage ==
-General:
-{{{
-from tracextracturl import extract_url
-# ...
-  url = extract_url (env, context, wikilink, raw=False)
-}}}
+    == Usage ==
+    General:
+    {{{
+    from tracextracturl import extract_url
+    # ...
+      url = extract_url(env, context, wikilink, raw=False)
+    }}}
 
-Inside WikiMacros:
-{{{
-#!python
-from tracextracturl import extract_url
+    Inside WikiMacros:
+    {{{
+    #!python
+    from tracextracturl import extract_url
 
-def MyMacro(WikiMacroBase):
-  def expand_macro (self, formatter, name, content):
-     # e.g. wikilink = 'wiki:WikiStart' or 'attachment:file.ext'
-     url = extract_url(self.env, formatter.context, wikilink)
-     rawurl = extract_url(self.env, formatter.context, wikilink, True)
-}}}
+    def MyMacro(WikiMacroBase):
+      def expand_macro (self, formatter, name, content):
+         # e.g. wikilink = 'wiki:WikiStart' or 'attachment:file.ext'
+         url = extract_url(self.env, formatter.context, wikilink)
+         rawurl = extract_url(self.env, formatter.context, wikilink, True)
+    }}}
 
-== Example ==
-Inside a Trac macro called from the wiki page 'ExamplePage' of project
-'project1' on a multi-project trac server:
-{{{
-    extract_url(self.env, formatter, 'attachment:file.js', True)
-}}}
-will return `/project1/raw-attachment/wiki/ExamplePage/file.js`,
-which could be directly accessed by the browser inside some javascript 
-or flash HTML object code produced by the macro.
+    == Example ==
+    Inside a Trac macro called from the wiki page 'ExamplePage' of project
+    'project1' on a multi-project trac server:
+    {{{
+        extract_url(self.env, formatter, 'attachment:file.js', True)
+    }}}
+    will return `/project1/raw-attachment/wiki/ExamplePage/file.js`,
+    which could be directly accessed by the browser inside some javascript
+    or flash HTML object code produced by the macro.
     """
-    from genshi.builder import Element, Fragment
-    from trac.wiki.formatter import extract_link
 
     if not wikilink:
         return ''
 
     link = extract_link(env, context, '[' + wikilink + ' x]')
-    #env.log.debug("link = " + str(link.__class__) + ' ' + str(link))
 
     if isinstance(link, Element):
         href = link.attrib.get('href')
-        #env.log.debug("href1 = " + href)
     elif isinstance(link, Fragment):
         link = link.children[0]
         href = link.attrib.get('href')
-        #env.log.debug("href2 = " + href)
     else:
         href = None
 
@@ -83,7 +76,7 @@ or flash HTML object code produced by the macro.
         return ''
 
     if raw:
-        # rewrite URL to point to downloadable/exportable/raw version of the 
+        # rewrite URL to point to downloadable/exportable/raw version of the
         # linked resource
 
         # Remove existing project URL part for later string search
@@ -104,12 +97,12 @@ or flash HTML object code produced by the macro.
             else:
                 # Otherwise add to existing parameters if this one doesn't
                 # exists yet:
-                if href.find(r'?format=') == -1 and href.find(r'&format=') == -1:
+                if href.find(r'?format=') == -1 and \
+                        href.find(r'&format=') == -1:
                     href += r'&format=raw'
         # Change 'attachment' links to 'raw-attachment' links:
         elif rhref.startswith('/attachment/'):
-            href = href.replace('/attachment/','/raw-attachment/', 1)
+            href = href.replace('/attachment/', '/raw-attachment/', 1)
         # All other link types should be already fine for file export (if
         # applicable)
     return href
-
