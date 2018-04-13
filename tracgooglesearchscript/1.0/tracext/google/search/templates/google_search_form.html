@@ -1,0 +1,16 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:py="http://genshi.edgewall.org/" py:strip="">
+  <div>
+    <form action="${req.abs_href.gsearch()}" id="${search_form_id}">
+      <div>
+        <input type="hidden" name="cx" value="${client_id}" />
+        <input type="hidden" name="cof" value="${forid}" />
+        <input type="hidden" name="ie" value="${charset}" />
+        <input type="text" name="q" size="${input_width}" />
+        <input type="submit" name="sa" value="Search" />
+      </div>
+    </form>
+  </div>
+  <script type="text/javascript"
+          src="http://www.google.com/coop/cse/brand?form=${search_form_id}&amp;lang=en"/>
+</html>

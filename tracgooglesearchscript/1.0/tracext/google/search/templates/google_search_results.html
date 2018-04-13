@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:py="http://genshi.edgewall.org/"
+    xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
+
+  <head>
+    <title>Google Search Results</title>
+  </head>
+
+  <body>
+    <div id="googleSearchUnitIframe"></div>
+    <div id="content">
+      <!-- Google Search Result Snippet Begins -->
+
+      <script type="text/javascript">
+         //jQuery('#googleSearchUnitIframe').hide();
+         var googleSearchIframeName = 'googleSearchUnitIframe';
+         var googleSearchFrameWidth = $iframe_initial_width;
+         var googleSearchFrameborder = 0 ;
+         var googleSearchDomain = 'www.google.com';
+         var googleSearchPath = '/cse';
+      </script>
+      <script type="text/javascript"
+              src="http://www.google.com/afsonline/show_afs_search.js"/>
+        <!-- Google Search Result Snippet Ends -->
+
+      <script type="text/javascript">
+        jQuery(document).ready( function($) {
+          $("#googleSearchUnitIframe iframe").animate({
+            width: $("#content").width(), speed: 'fast'
+          });
+        });
+      </script>
+    </div>
+  </body>
+</html>
