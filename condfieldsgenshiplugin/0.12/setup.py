@@ -11,15 +11,14 @@
 from setuptools import find_packages, setup
 
 setup(
-    name = 'CondFieldsGenshiPlugin',
-    version = '0.2',
-    author = 'Reinhard Wobst',
-    author_email = 'rwobst@gmx.de',
-    description = "CondFieldsGenshiPlugin for Trac >= 0.11 based on BlackMagicTicketTweaks",
-    license = \
-    """Copyright (C) 2012-2013, Reinhard Wobst. All rights reserved. Released under the 3-clause BSD license.""",
-    packages = find_packages(),
-    package_data = {'condfieldsgenshi' : []},
-    install_requires = ['trac>=0.11'],
-    entry_points = {'trac.plugins': ['condfieldsgenshi = condfieldsgenshi'] }
+    name='CondFieldsGenshiPlugin',
+    version='0.3',
+    author='Reinhard Wobst',
+    author_email='rwobst@gmx.de',
+    description="CondFieldsGenshiPlugin based on BlackMagicTicketTweaks",
+    license="BSD 3-Clause",
+    packages=find_packages(),
+    package_data={'condfieldsgenshi': []},
+    install_requires=['Trac'],
+    entry_points={'trac.plugins': ['condfieldsgenshi = condfieldsgenshi']}
 )

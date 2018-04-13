@@ -31,7 +31,7 @@ First, configure trac.ini as in this example:
 
   [condfieldsgenshi]
   tweaks = field1, field2, field3
-  default = disable
+  default = disabled
   field1.type_cond = defect
   field2.type_cond = task
   field3.type_cond = !enhancement, task
@@ -43,19 +43,17 @@ Now field1 will be shown only if the ticket type is "defect", field2
 only if the ticket type is "task", and field3 only if the ticket type is
 neither "task" nor "enhancement".
 
-The entry "default = disable" means that the field listed under "tweaks"
+The entry "default = disabled" means that the field listed under "tweaks"
 are NOT shown by default.
-The default value is "default = enable".
+The default value is "default = enabled".
 
 To disable/enable a field independent of the ticket type, simply write a line
 like
 
-  field1.type_cond = None
+  field1.type_cond =
 
-(supposed there is no "None" type :-).
-
-When you change the ticket type, you must type "submit" before you can
-see the effect of of CondFieldsGenshi (some times, also "preview" works).
+When you change the ticket type, you must "preview" or submit" before you can
+see the effect of of CondFieldsGenshi.
 
 
 Bug fix done for "type" field

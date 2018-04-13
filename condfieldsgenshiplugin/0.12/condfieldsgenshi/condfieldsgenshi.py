@@ -20,8 +20,7 @@
 # This plugin is based on Genshi, not on Javascript; can easily be extended. A
 # detailed documentation can be found in condfieldsgenshi.txt.
 
-from trac.core import Component, implements, TracError
-from trac.ticket import Ticket
+from trac.core import Component, implements
 from trac.web.api import ITemplateStreamFilter
 from genshi.filters.transform import Transformer
 
@@ -29,114 +28,60 @@ from genshi.filters.transform import Transformer
 class CondfieldTweaks(Component):
     implements(ITemplateStreamFilter)
 
-    ## ITemplateStreamFilter
+    # ITemplateStreamFilter
 
     def filter_stream(self, req, method, filename, stream, data):
-        if filename != "ticket.html":
+        if filename != 'ticket.html':
             return stream
 
-        enchants = self.config.get('condfieldsgenshi', 'tweaks', '')
-
-        ticket_type = None
-        id = req.args.get('id')
-
-        if id:
-            # The ticket is already in data base, just show it.
-            ticket = Ticket(self.env, id)
-
-            # The ticket type must be defined - no check
-            ticket_type = ticket['type']
-        else:
-            # new ticket or preview
-            ticket = None
-
-            # Check if the type is defined in the URL ...
-            ticket_type = req.args.get('type')
-
-            # ... otherwise it is a new ticket or a preview.
-            if not ticket_type:
-                # For preview, the internal field names are given in req.args,
-                # and these are formed in trac/ticket/templates/ticket.html as
-                # "field_${field.name}".
-                # If this changes, this plugin must be changed, too!
-
-                ticket_type = req.args.get('field_type')
-
-                # It is a new ticket, no type given in URL, no preview, hence
-                # put the default type here.
-                if not ticket_type:
-                    ticket_type = self.config.get('ticket', 'default_type')
+        ticket = data['ticket']
+        ticket_type = ticket['type']
+        if not ticket_type:  # New ticket with no default_type
+            findex = data['fields_map']['type']
+            ticket_type = data['fields'][findex]['options'][0]
 
         # Test if condfields shall be shown or hidden by default.
-        default = self.config.get('condfieldsgenshi', 'default', '')
-        if not default:
-            default = 'enable'
-        if default not in ('enable', 'disable'):
-            raise TracError(("Error in trac.ini [condfieldsgenshi]: " +
-                    "Illegal value '%s' " +
-                    "for 'default' option - allowed: " +
-                    "'enable', 'disable'\n") % default)
-            return stream
+        shown_by_default = \
+            self.config.getbool('condfieldsgenshi', 'default', True)
 
-        for field in (x.strip() for x in enchants.split(',')):
-            # Check if it is a conditional field.
-            # This part can be extended to dependence on other parameters
-            # than "type".
+        for field in self.config.getlist('condfieldsgenshi', 'tweaks', []):
 
-            type_cond = self.config.get('condfieldsgenshi', field+'.type_cond', None)
+            type_cond = self.config.getlist('condfieldsgenshi',
+                                            field + '.type_cond', None)
 
-            # old version:
-            #if type_cond and \
-            #        (
-            #         (default == 'enable') ==
-            #            (
-            #             ticket_type in
-            #                [x.strip() for x in type_cond.split(',')]
-            #            )
-            #        ):
-
-            if not type_cond:
+            if type_cond is None:
                 continue
 
-            neg = False
-            if type_cond.startswith('!'):
-                neg = True
-                type_cond = type_cond[1:].strip()
+            if not type_cond:
+                matches_type_cond = True
+            else:
+                matches_type_cond = False
+                for cond in type_cond:
+                    if cond.startswith('!'):
+                        matches_type_cond |= ticket_type == cond[1:].lower()
+                    else:
+                        matches_type_cond |= ticket_type == cond.lower()
 
-            inlst = (ticket_type in [x.strip() for x in type_cond.split(',')])
-            if neg:
-                inlst = not inlst
-
-            if (default == 'enable' and inlst) or \
-                    (default == 'disable' and not inlst):
-
+            if shown_by_default and matches_type_cond or \
+                    not shown_by_default and not matches_type_cond:
                 if field != 'type':
-                    stream = stream | Transformer(
-                            '//th[@id="h_%s"]' % field).replace(" ")
-                    stream = stream | Transformer(
-                            '//td[@headers="h_%s"]' % field).replace(" ")
-                    stream = stream | Transformer(
-                            '//label[@for="field-%s"]' % field).replace(" ")
-                    stream = stream | Transformer(
-                            '//*[@id="field-%s"]' % field).replace(" ")
+                    stream |= Transformer(
+                        '//th[@id="h_%s"]' % field).replace(" ")
+                    stream |= Transformer(
+                        '//td[@headers="h_%s"]' % field).replace(" ")
+                    stream |= Transformer(
+                        '//label[@for="field-%s"]' % field).replace(" ")
+                    stream |= Transformer(
+                        '//*[@id="field-%s"]' % field).replace(" ")
                 else:
-                    stream = stream | Transformer(
-                            '//label[@for="field-type"]/text()'). \
-                                    replace('Type (Fixed):')
-
-                    stream = stream | Transformer(
-                            '//*[@id="field-type"]/option').remove()
-                    stream = stream | Transformer(
-                            '//*[@id="field-type"]').append(ticket_type)
-                    stream = stream | Transformer(
-                            '//*[@id="field-type"]/text()').wrap('option')
-
+                    continue
+                    stream |= Transformer(
+                        '//label[@for="field-type"]/text()'). \
+                        replace('Type (Fixed):')
+                    stream |= Transformer(
+                        '//*[@id="field-type"]/option').remove()
+                    stream |= Transformer(
+                        '//*[@id="field-type"]').append(ticket_type)
+                    stream |= Transformer(
+                        '//*[@id="field-type"]/text()').wrap('option')
         return stream
-
-    ## ITemplateProvider
-
-    def get_htdocs_dirs(self):
-        return []
-
-    def get_templates_dirs(self):
-        return []
