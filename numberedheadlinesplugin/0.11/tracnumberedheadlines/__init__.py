@@ -1,2 +1,1 @@
-# $Id$
 from tracnumberedheadlines import *
