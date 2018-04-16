@@ -6,16 +6,18 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-__url__      = ur"$URL$"[6:-2]
-__author__   = ur"$Author$"[9:-2]
+__url__ = ur"$URL$"[
+    6:-2]
+__author__ = ur"$Author$"[9:-2]
 __revision__ = int("0" + ur"$Rev$"[6:-2])
-__date__     = ur"$Date$"[7:-2]
+__date__ = ur"$Date$"[7:-2]
 
-from  trac.core       import  *
-from  trac.wiki.api   import  IWikiMacroProvider
-from  genshi.builder  import  tag
+from trac.core import *
+from trac.wiki.api import IWikiMacroProvider
+from genshi.builder import tag
 
-from  parseargs       import  *
+from parseargs import *
+
 
 class ParseArgsTestMacro(Component):
     """Test macro for `tracadvparseargs.parse_args` function.
@@ -43,25 +45,24 @@ will call
 parse_args('key1=val1,key2="val2a,val2b"', strict=True, delquotes=True)
 }}}
     """
-    implements ( IWikiMacroProvider )
+    implements(IWikiMacroProvider)
 
-    ### methods for IWikiMacroProvider
+    # methods for IWikiMacroProvider
     def expand_macro(self, formatter, name, content):
-        args, rcontent = content.split('|||',2)
+        args, rcontent = content.split('|||', 2)
         try:
-            ldummy, pa = parse_args (args)
-            largs, kwargs = parse_args (rcontent, **pa)
+            ldummy, pa = parse_args(args)
+            largs, kwargs = parse_args(rcontent, **pa)
         except EndQuoteError, e:
-            raise TracError( unicode(e) )
+            raise TracError(unicode(e))
         return tag.div(
-              tag.p("largs  = ", largs.__repr__()),
-              tag.p("kwargs = ", kwargs.__repr__()),
-              class_='advparseargs'
-            )
+            tag.p("largs  = ", largs.__repr__()),
+            tag.p("kwargs = ", kwargs.__repr__()),
+            class_='advparseargs'
+        )
 
     def get_macros(self):
         yield 'ParseArgsTest'
 
     def get_macro_description(self, name):
         return self.__doc__ + parse_args.__doc__
-
