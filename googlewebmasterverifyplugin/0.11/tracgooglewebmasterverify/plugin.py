@@ -41,10 +41,12 @@ class GoogleWebmasterVerifyPlugin(Component):
 
     def process_request(self, req):
         """Send an empty HTTP 200 OK response."""
+        data = str("google-site-verification: " + req.path_info[1:])
         req.send_response(200)
         req.send_header('Content-Type', 'text/plain')
+        req.send_header('Content-Length', len(data))
         req.end_headers()
-        req.write("google-site-verification: " + req.path_info[1:])
+        req.write(data)
         raise RequestDone
 
     def pre_process_request(self, req, handler):
