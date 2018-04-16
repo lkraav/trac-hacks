@@ -1,4 +1,4 @@
-/* 
+/*
  JavaScript functions for Trac GoogleMapMacro
 
  Copyright (c) 2008 Martin Scharrer <martin@scharrer-online.de>
@@ -51,10 +51,9 @@ function TracGoogleMap( initfunc, id ) {
 
 function gmapiloaded() {
     if ( GBrowserIsCompatible() ) {
-        // Go through all GoogleMap divs, set id and execute the 
+        // Go through all GoogleMap divs, set id and execute the
         // associated init function:
-        $("div.tracgooglemap")
-        .each( function (index) {
+        jQuery("div.tracgooglemap").each(function (index) {
             var initfunc = tracgooglemapfuncs[index];
             if (initfunc) {
                 initfunc(this, index);
@@ -63,7 +62,7 @@ function gmapiloaded() {
     }
 }
 
-$(document).ready( function () {
+jQuery(function($) {
     if ( $("div.tracgooglemap").length ) {
         var key = $("link.google-key").attr('title');
         jQuery.getScript("http://www.google.com/jsapi?key=" + key, function () {
@@ -72,7 +71,7 @@ $(document).ready( function () {
     }
 });
 
-$(window).unload( function () {
+jQuery(function($) {
     if ( $("div.tracgooglemap").length ) {
         GUnload();
     }

@@ -8,9 +8,8 @@ from trac.env import Environment
 
 tracdir = "<YOUR TRAC DIRECTORY>"
 env = Environment(tracdir)
-db  = env.get_db_cnx()
+db = env.get_db_cnx()
 cursor = db.cursor()
 
 cursor.execute("DROP TABLE 'googlemapmacro';")
 db.commit()
-
