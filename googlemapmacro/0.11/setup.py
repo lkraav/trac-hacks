@@ -4,7 +4,7 @@
 from setuptools import setup
 
 setup(
-    name='TracAdvParseArgsPlugin',
+    name='TracGoogleMapMacro',
     version='0.6',
     packages=['tracgooglemap'],
     author='Martin Scharrer',
@@ -16,7 +16,7 @@ setup(
     url='https://www.trac-hacks.org/wiki/GoogleMapMacro',
     license='GPLv3',
     zip_safe=False,
-    install_requires=['Trac'],
+    install_requires=['Trac', 'TracAdvParseArgsPlugin'],
     keywords='trac googlemap macro',
     classifiers=['Framework :: Trac'],
     entry_points={'trac.plugins': [
