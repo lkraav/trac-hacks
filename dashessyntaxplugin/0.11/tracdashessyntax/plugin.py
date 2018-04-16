@@ -14,22 +14,18 @@
 
 """
 
-__url__      = ur"$URL$"[6:-2]
-__author__   = ur"$Author$"[9:-2]
-__revision__ = int("0" + ur"$Rev$"[6:-2])
-__date__     = ur"$Date$"[7:-2]
-
-from trac.core import *
+from trac.core import Component, implements
 from trac.wiki.api import IWikiSyntaxProvider
+
 
 class DashesSyntaxPlugin(Component):
     """ Trac Plug-in to provide Wiki Syntax for em and en dashes.
 
         `$Id$`
     """
-    implements ( IWikiSyntaxProvider )
+    implements(IWikiSyntaxProvider)
 
-    RE_DASH  = r"(?P<endash>(?<!-)-{2,3}(?!-))"
+    RE_DASH = r"(?P<endash>(?<!-)-{2,3}(?!-))"
     HTML_EN_DASH = "&#8211;"
     HTML_EM_DASH = "&#8212;"
 
@@ -42,8 +38,7 @@ class DashesSyntaxPlugin(Component):
             return match
 
     def get_wiki_syntax(self):
-        yield  ( self.RE_DASH , self._dash )
+        yield (self.RE_DASH, self._dash)
 
     def get_link_resolvers(self):
         return []
-
