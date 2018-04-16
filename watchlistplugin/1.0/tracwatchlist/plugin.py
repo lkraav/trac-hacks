@@ -27,7 +27,7 @@ from trac.core import *
 from trac.util.html import tag
 from trac.util.text import to_unicode
 from trac.web.api import IRequestFilter, IRequestHandler, RequestDone, \
-                         HTTPNotFound, HTTPBadRequest
+    HTTPNotFound, HTTPBadRequest
 from trac.web.chrome import ITemplateProvider, add_ctxtnav, add_notice
 
 from tracwatchlist.api import IWatchlistProvider
@@ -162,9 +162,9 @@ class WatchlistPlugin(Component):
         return settings
 
     def _delete_user_settings(self, user):
-        """Deletes all user settings in 'watchlist_settings' table. This 
-        can be done to reset all settings to the default values and to 
-        resolve possible errors with wrongly stored settings. This can 
+        """Deletes all user settings in 'watchlist_settings' table. This
+        can be done to reset all settings to the default values and to
+        resolve possible errors with wrongly stored settings. This can
         happen while using the develop version of this plugin.
         """
         self.env.db_transaction("""
@@ -227,7 +227,7 @@ class WatchlistPlugin(Component):
     def has_watchlist(self, user):
         """Checks if user has a non-empty watchlist."""
         for count, in self.env.db_query("""
-                SELECT count(*) FROM watchlist WHERE wluser=%s; 
+                SELECT count(*) FROM watchlist WHERE wluser=%s;
                 """, (user,)):
             if count:
                 return True
@@ -265,7 +265,7 @@ class WatchlistPlugin(Component):
             return False
 
     def watch(self, realm, resid, user, lastvisit=0):
-        """Adds given resources to watchlist. They must not be watched 
+        """Adds given resources to watchlist. They must not be watched
         already.
         """
         with self.env.db_transaction as db:
@@ -594,15 +594,15 @@ class WatchlistPlugin(Component):
 
         # TRANSLATOR: Link to help/manual page of the plug-in
         add_ctxtnav(req, _("Help"), href=(
-            self.env[WatchlistManual] and req.href.watchlist('manual')
-            or 'http://www.trac-hacks.org/wiki/WatchlistPlugin'))
+            self.env[WatchlistManual] and req.href.watchlist('manual') or
+            'http://www.trac-hacks.org/wiki/WatchlistPlugin'))
         for xrealm in wldict['realms']:
             xhandler = self.realm_handler[xrealm]
             if xhandler.has_perm(xrealm, req.perm):
                 wldict[str(xrealm) + 'list'], wldict[
                     str(xrealm) + 'data'] = \
-                        xhandler.get_list(xrealm, self, req,
-                                          wldict['active_fields'][xrealm])
+                    xhandler.get_list(xrealm, self, req,
+                                      wldict['active_fields'][xrealm])
                 name = xhandler.get_realm_label(xrealm, n_plural=1000,
                                                 astitle=True)
                 # TRANSLATOR: Navigation link to point to watchlist section
@@ -652,9 +652,8 @@ class WatchlistPlugin(Component):
         except KeyError:
             settings = self.get_settings(user)
             options = settings['booloptions']
-            notify = (self.wsub and options['notifications']
-                      and options[
-                          'display_notify_navitems']) and 'True' or 'False'
+            notify = (self.wsub and options['notifications'] and
+                      options['display_notify_navitems']) and 'True' or 'False'
             req.session['watchlist_display_notify_navitems'] = notify
 
         try:

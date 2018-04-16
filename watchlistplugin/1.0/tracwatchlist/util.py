@@ -20,7 +20,7 @@
 
 from trac.util.datefmt import datetime, utc
 from trac.util.datefmt import format_datetime as trac_format_datetime, \
-                              to_utimestamp
+    to_utimestamp
 from trac.util.html import Markup, tag
 
 try:
@@ -183,7 +183,7 @@ def convert_ldml_to_mysql(ldml_pattern):
 
 try:
     from babel.dates import get_datetime_format, get_date_format, \
-                            get_time_format
+        get_time_format
 except ImportError:
     def datetime_format(format='medium', locale=LC_TIME):
         return u"%Y-%m-%d %H:%i:%s"

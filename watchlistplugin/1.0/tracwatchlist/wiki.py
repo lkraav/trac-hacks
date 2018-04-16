@@ -31,7 +31,7 @@ from trac.wiki.model import WikiPage
 from tracwatchlist.api import BasicWatchlist
 from tracwatchlist.translation import _, N_, T_, t_, tag_, ngettext
 from tracwatchlist.util import moreless, format_datetime, LC_TIME, \
-                               convert_to_sql_wildcards
+    convert_to_sql_wildcards
 
 
 class WikiWatchlist(BasicWatchlist):
@@ -127,7 +127,7 @@ class WikiWatchlist(BasicWatchlist):
                 SELECT DISTINCT name FROM wiki
                 WHERE name NOT IN (
                   SELECT resid FROM watchlist
-                  WHERE wluser=%%s AND realm='wiki') 
+                  WHERE wluser=%%s AND realm='wiki')
                  AND (%s)
                 """ % sql, [user] + args)]
 
@@ -182,7 +182,7 @@ class WikiWatchlist(BasicWatchlist):
                     if 'comment' in fields:
                         wikitext = '[attachment:"' + ':'.join(
                             [latest_attachment.filename, 'wiki', name]) + \
-                                   '" ' + latest_attachment.filename + ']'
+                            '" ' + latest_attachment.filename + ']'
                         desc = latest_attachment.description
                         comment = tag(tag_("Attachment %(attachment)s added",
                                            attachment=format_to_oneliner(
@@ -208,7 +208,7 @@ class WikiWatchlist(BasicWatchlist):
                 wikidict['name'] = name
             if 'author' in fields:
                 if not (Chrome(self.env).show_email_addresses or
-                                'EMAIL_VIEW' in req.perm(wikipage.resource)):
+                        'EMAIL_VIEW' in req.perm(wikipage.resource)):
                     wikidict['author'] = obfuscate_email_address(author)
                 else:
                     wikidict['author'] = author

@@ -64,7 +64,7 @@
     <http://www.gnu.org/licenses/>.
 
  i18n notice:
- This file uses the same domain as trac itself, not the one for the 
+ This file uses the same domain as trac itself, not the one for the
  WatchlistPlugin.
 
  $Id$
@@ -103,14 +103,17 @@ def render_property_diff(env, req, ticket, field, old, new,
 
     # per name special rendering of diffs
     old_list, new_list = None, None
-    render_elt = lambda x: x
+
+    def render_elt(x):
+        return x
+
     sep = ', '
     if field == 'cc':
         chrome = Chrome(env)
         old_list, new_list = chrome.cc_list(old), chrome.cc_list(new)
         if not (Chrome(env).show_email_addresses or
-                        'EMAIL_VIEW' in req.perm(
-                            resource_new or ticket.resource)):
+                'EMAIL_VIEW' in req.perm(
+                resource_new or ticket.resource)):
             render_elt = obfuscate_email_address
     elif field == 'keywords':
         old_list, new_list = old.split(), new.split()
@@ -128,8 +131,8 @@ def render_property_diff(env, req, ticket, field, old, new,
             return tag(added, added and remvd and _("; "), remvd)
     if field in ('reporter', 'owner'):
         if not (Chrome(env).show_email_addresses or
-                        'EMAIL_VIEW' in req.perm(
-                            resource_new or ticket.resource)):
+                'EMAIL_VIEW' in req.perm(
+                resource_new or ticket.resource)):
             old = obfuscate_email_address(old)
             new = obfuscate_email_address(new)
     # Added by MS

@@ -33,7 +33,7 @@ from tracwatchlist.api import BasicWatchlist
 from tracwatchlist.render import render_property_diff
 from tracwatchlist.translation import _, N_, T_, t_, ngettext
 from tracwatchlist.util import moreless, format_datetime, LC_TIME, \
-                               decode_range_sql
+    decode_range_sql
 
 
 class TicketWatchlist(BasicWatchlist):
@@ -127,7 +127,7 @@ class TicketWatchlist(BasicWatchlist):
                 SELECT id FROM ticket
                 WHERE id NOT IN (
                   SELECT CAST(resid AS DECIMAL) FROM watchlist
-                  WHERE wluser=%%s AND realm='ticket') 
+                  WHERE wluser=%%s AND realm='ticket')
                  AND (%s)
                 """ % sql, [user] + args)]
 
@@ -190,10 +190,12 @@ class TicketWatchlist(BasicWatchlist):
                 ticketlist.append(ticketdict)
                 continue
 
-            render_elt = lambda x: x
             if not (Chrome(self.env).show_email_addresses or
                     'EMAIL_VIEW' in req.perm(ticket.resource)):
                 render_elt = obfuscate_email_address
+            else:
+                def render_elt(x):
+                    return x
 
             # Copy all requested fields from ticket
             if fields:
@@ -278,8 +280,7 @@ class TicketWatchlist(BasicWatchlist):
                     changetime=format_datetime(changetime, locale=locale,
                                                tzinfo=req.tz),
                     ichangetime=ichangetime,
-                    changedsincelastvisit=(last_visit < ichangetime and 1
-                                           or 0),
+                    changedsincelastvisit=last_visit < ichangetime and 1 or 0,
                     changetime_delta=pretty_timedelta(changetime),
                     changetime_link=req.href.timeline(precision='seconds',
                                                       from_=from_))

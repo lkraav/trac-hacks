@@ -121,7 +121,7 @@ class WatchlistDataBaseUpgrader(Component):
         raise NotImplemented
 
     def get_version(self):
-        """Returns watchlist table version from system table or 0 if not 
+        """Returns watchlist table version from system table or 0 if not
         present.
         """
         try:
@@ -160,7 +160,7 @@ class WatchlistDataBaseUpgrader(Component):
             self.log.warn(unicode(e))
         try:
             self.env.db_transaction("""
-                INSERT INTO system (name,value) 
+                INSERT INTO system (name,value)
                 VALUES ('watchlist_version',%s)
                 """, (unicode(version),))
         except Exception as e:
@@ -197,7 +197,7 @@ class WatchlistDataBaseUpgrader(Component):
         self.upgrade_watchlist_table_to_v4('*')
 
     def upgrade_watchlist_table_from_v2_to_v4(self):
-        """Upgrades watchlist table from v2 which has four columns. The 
+        """Upgrades watchlist table from v2 which has four columns. The
         forth was 'notify' which was dropped again quickly.
         """
         self.upgrade_watchlist_table_to_v4('wluser,realm,resid')
@@ -206,7 +206,7 @@ class WatchlistDataBaseUpgrader(Component):
         self.upgrade_watchlist_table_to_v4('*')
 
     def upgrade_watchlist_table_to_v4(self, selection):
-        """Upgrade 'watchlist' table to v4. The data is copied into a 
+        """Upgrade 'watchlist' table to v4. The data is copied into a
         temporary table and then back into the newly created table.
         """
         db_connector = DatabaseManager(self.env).get_connector()[0]

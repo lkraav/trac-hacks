@@ -63,20 +63,20 @@ class WatchlistManual(Component):
         if language not in self.manuals:
             # Try to find a main language,
             # e.g. 'xy' instead of 'xy-ZV'
-            l = language.split('-')[0]
+            lang = language.split('-')[0]
             language = 'en-US'  # fallback if no other is found
-            if l in self.manuals:
-                language = l
+            if lang in self.manuals:
+                language = lang
             else:
                 # Prefer 'en-US' before any other English dialect
-                if l == 'en' and 'en-US' in self.manuals:
+                if lang == 'en' and 'en-US' in self.manuals:
                     language = 'en-US'
                 else:
                     # If there is none try to find
                     # any other 'xy-*' language
-                    l += '-'
+                    lang += '-'
                     for lang in sorted(self.manuals.keys()):
-                        if lang.startswith(l):
+                        if lang.startswith(lang):
                             language = lang
                             break
             req.redirect(req.href.watchlist('manual', language))
