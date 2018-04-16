@@ -18,5 +18,6 @@ def suite():
     suite.addTest(plugin.suite())
     return suite
 
+
 if __name__ == '__main__':
     unittest.main(defaultTest='suite')
