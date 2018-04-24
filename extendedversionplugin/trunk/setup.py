@@ -25,7 +25,11 @@ setup(
     packages=find_packages(exclude=['*.tests']),
     include_package_data=True,
     package_data={
-        'extendedversion': ['templates/*.html', 'htdocs/css/*.css']
+        'extendedversion': [
+            'templates/*.html',
+            'htdocs/css/*.css'
+            'htdocs/js/*.js'
+        ]
     },
     install_requires=['Trac'],
     zip_safe=False,

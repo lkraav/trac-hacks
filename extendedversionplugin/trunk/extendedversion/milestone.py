@@ -16,7 +16,8 @@ from trac.ticket.model import Milestone
 from trac.util.html import html as tag
 from trac.util.datefmt import to_timestamp
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import INavigationContributor, web_context
+from trac.web.chrome import (
+    INavigationContributor, add_script, add_script_data, web_context)
 
 from extendedversion.version import VisibleVersion
 
@@ -68,6 +69,13 @@ class MilestoneVersion(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
+        if template == 'admin_milestones.html' and \
+                data and data['view'] == 'list':
+            add_script_data(req, {
+                'milestone_version': self._get_milestone_versions()
+            })
+            add_script(req, 'extendedversion/js/add_version_column.js')
+
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -110,6 +118,9 @@ class MilestoneVersion(Component):
         self._delete_milestone_version(milestone.name)
 
     # Internal methods
+
+    def _get_milestone_versions(self):
+        return dict(self.env.db_query("SELECT * FROM milestone_version"))
 
     def _get_milestone(self, name):
         try:

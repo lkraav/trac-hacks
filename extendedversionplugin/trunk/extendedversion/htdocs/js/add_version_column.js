@@ -3,7 +3,7 @@ jQuery(function($) {
     function add_version_column(idx) {
       if(idx > 0) { /* Skip header */
         var name = $('input', this).val();
-        var ver = ms_ext_version[name];
+        var ver = milestone_version[name];
         if(ver != undefined) {
           $('td:nth-child(' + col_pos + ')', this).after('<td>' + ver + '</td>')
         }

@@ -580,39 +580,3 @@ class SmpFilterDefaultComponentPanels(Component):
                 filter_form = Transformer('//form[@id="modcomp" or @id="edit"]//div[@class="field"][1]')
                 stream |= filter_form.after(create_projects_table(self, self._SmpModel, req))
         return stream
-
-
-class SmpAddExtendedVersionColumn(Component):
-    """Add version column to milestone table for ExtendedVersionPlugin.
-    """
-
-    implements(IRequestFilter)
-
-    def __init__(self):
-        try:
-            from extendedversion.milestone import MilestoneVersion
-        except ImportError:
-            self.extended_version = False
-        else:
-            self.extended_version = self.env.enabled[MilestoneVersion]
-
-    # IRequestFilter methods
-
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        if self.extended_version and \
-                template == 'admin_milestones.html' and \
-                data and data['view'] == 'list':
-            add_script_data(req, {
-                'ms_ext_version': self.get_version_for_milestone()
-            })
-            add_script(req, 'simplemultiproject/js/add_version_column.js')
-
-        return template, data, content_type
-
-    def get_version_for_milestone(self):
-        if self.extended_version:
-            return dict(self.env.db_query("SELECT * FROM milestone_version"))
-        return {}
