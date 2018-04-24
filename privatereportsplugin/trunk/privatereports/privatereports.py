@@ -168,7 +168,9 @@ class PrivateReportsPolicy(Component):
         if not report_permissions:
             return True
         ps = PermissionSystem(self.env)
-        user_perms = set(ps.get_user_permissions(user))
-        for group in ps.get_permission_groups(user):
+        groups = set(ps.get_permission_groups(user))
+        groups.add(user)
+        user_perms = set()
+        for group in groups:
             user_perms.update(ps.get_user_permissions(group))
         return bool(set(report_permissions) & user_perms)
