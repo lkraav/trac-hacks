@@ -10,16 +10,16 @@
 from setuptools import setup
 
 setup(
-    name = 'Trac-jsGantt',
-    author = 'Chris Nelson',
-    author_email = 'Chris.Nelson@SIXNET.com',
-    description = 'Trac plugin displaying jsGantt charts in Trac',
-    version = '0.11',
-    url = 'https://trac-hacks.org/wiki/TracJsGanttPlugin',
+    name='Trac-jsGantt',
+    author='Chris Nelson',
+    author_email='Chris.Nelson@SIXNET.com',
+    description='Trac plugin displaying jsGantt charts in Trac',
+    version='1.2.0.0',
+    url='https://trac-hacks.org/wiki/TracJsGanttPlugin',
     license='3-Clause BSD',
     packages=['tracjsgantt'],
-    package_data = { 'tracjsgantt': ['htdocs/*.js', 'htdocs/*.css'] },
-    entry_points = {
+    package_data={'tracjsgantt': ['htdocs/*.js', 'htdocs/*.css']},
+    entry_points={
         'trac.plugins': [
             'tracjsgantt = tracjsgantt'
         ]
