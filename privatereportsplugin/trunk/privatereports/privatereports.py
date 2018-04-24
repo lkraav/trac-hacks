@@ -18,7 +18,31 @@ from trac.perm import (
     PermissionSystem)
 from trac.ticket.model import Report
 from trac.util.translation import _
-from trac.web.chrome import ITemplateProvider, add_warning
+from trac.web.chrome import Chrome, ITemplateProvider, add_warning
+
+
+if not hasattr(PermissionSystem, 'get_permission_groups'):
+
+    PermissionSystem.group_providers = ExtensionPoint(IPermissionGroupProvider)
+
+    def get_permission_groups(self, user):
+        groups = set([user])
+        for provider in self.group_providers:
+            for group in provider.get_permission_groups(user):
+                groups.add(group)
+
+        perms = PermissionSystem(self.env).get_all_permissions()
+        repeat = True
+        while repeat:
+            repeat = False
+            for subject, action in perms:
+                if subject in groups and action.islower() and \
+                        action not in groups:
+                    groups.add(action)
+                    repeat = True
+        return groups
+
+    PermissionSystem.get_permission_groups = get_permission_groups
 
 
 class PrivateReports(Component):
@@ -70,11 +94,16 @@ class PrivateReports(Component):
                 self._delete_report_permissions(report_id, report_permissions)
             req.redirect(req.href.admin('ticket/privatereports',
                          report_id=report_id))
-        return 'admin_privatereports.html', {
+        data = {
             'reports': reports,
             'report_permissions': report_permissions,
             'show_report': report_id,
         }
+        template = 'admin_privatereports.html'
+        if hasattr(Chrome(self.env), 'jenv'):
+            return template, data, None
+        else:
+            return template, data
 
     # IEnvironmentSetupParticipant methods
 
@@ -126,8 +155,6 @@ class PrivateReports(Component):
 
 class PrivateReportsPolicy(Component):
 
-    group_providers = ExtensionPoint(IPermissionGroupProvider)
-
     implements(IPermissionPolicy)
 
     def check_permission(self, action, username, resource, perm):
@@ -140,18 +167,8 @@ class PrivateReportsPolicy(Component):
             PrivateReports(self.env)._get_report_permissions(report_id)
         if not report_permissions:
             return True
-        user_perms = set(PermissionSystem(self.env).get_user_permissions(user))
-        user_perms.update(self._get_user_groups(user))
+        ps = PermissionSystem(self.env)
+        user_perms = set(ps.get_user_permissions(user))
+        for group in ps.get_permission_groups(user):
+            user_perms.update(ps.get_user_permissions(group))
         return bool(set(report_permissions) & user_perms)
-
-    def _get_user_groups(self, user):
-        subjects = set([user])
-        for provider in self.group_providers:
-            subjects.update(provider.get_permission_groups(user) or [])
-        groups = []
-        for action, in self.env.db_query("""
-                SELECT action FROM permission WHERE username = %s
-                """, (user,)):
-            if action.isupper():
-                groups.append(action)
-        return groups
