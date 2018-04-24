@@ -10,34 +10,53 @@ from trac.perm import (
 
 import db_default
 
+if not hasattr(PermissionSystem, 'get_permission_groups'):
+
+    PermissionSystem.group_providers = ExtensionPoint(IPermissionGroupProvider)
+
+    def get_permission_groups(self, user):
+        groups = set([user])
+        for provider in self.group_providers:
+            for group in provider.get_permission_groups(user):
+                groups.add(group)
+
+        perms = PermissionSystem(self.env).get_all_permissions()
+        repeat = True
+        while repeat:
+            repeat = False
+            for subject, action in perms:
+                if subject in groups and action.islower() and \
+                        action not in groups:
+                    groups.add(action)
+                    repeat = True
+        return groups
+
+    PermissionSystem.get_permission_groups = get_permission_groups
+
 
 class HideValsSystem(Component):
     """Database provider for the TracHideVals plugin."""
 
-    group_providers = ExtensionPoint(IPermissionGroupProvider)
-
     dont_filter = ListOption('hidevals', 'dont_filter',
                              doc='Ticket fields to ignore when filtering.')
 
-    implements(IPermissionRequestor, IEnvironmentSetupParticipant)
+    implements(IEnvironmentSetupParticipant, IPermissionRequestor)
 
     # Public methods
 
     def visible_fields(self, req):
         fields = {}
+        ps = PermissionSystem(self.env)
         with self.env.db_query as db:
-            for group in self._get_groups(req.authname):
+            groups = set(ps.get_permission_groups(req.authname))
+            groups.add(req.authname)
+            for group in groups:
                 for f, v in db("""
                         SELECT field, value FROM hidevals WHERE sid = %s
                         """, (group,)):
                     fields.setdefault(f, []).append(v)
 
         return fields
-
-    # IPermissionRequestor methods
-
-    def get_permission_actions(self):
-        yield 'TICKET_HIDEVALS'
 
     # IEnvironmentSetupParticipant methods
 
@@ -53,23 +72,7 @@ class HideValsSystem(Component):
         dbm.upgrade_tables(db_default.tables)
         dbm.set_database_version(db_default.version, db_default.name)
 
-    # Private methods
+    # IPermissionRequestor methods
 
-    def _get_groups(self, user):
-        # Get initial subjects
-        groups = set([user])
-        for provider in self.group_providers:
-            for group in provider.get_permission_groups(user):
-                groups.add(group)
-
-        perms = PermissionSystem(self.env).get_all_permissions()
-        repeat = True
-        while repeat:
-            repeat = False
-            for subject, action in perms:
-                if subject in groups and action.islower() and \
-                        action not in groups:
-                    groups.add(action)
-                    repeat = True
-
-        return groups
+    def get_permission_actions(self):
+        yield 'TICKET_HIDEVALS'

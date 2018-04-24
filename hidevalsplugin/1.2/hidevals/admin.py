@@ -6,7 +6,7 @@
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.ticket.api import TicketSystem
-from trac.web.chrome import ITemplateProvider
+from trac.web.chrome import Chrome, ITemplateProvider
 
 from api import HideValsSystem
 
@@ -17,6 +17,7 @@ class HideValsAdminModule(Component):
     implements(IAdminPanelProvider, ITemplateProvider)
 
     # IAdminPanelProvider methods
+
     def get_admin_panels(self, req):
         if 'TRAC_ADMIN' in req.perm:
             for field in TicketSystem(self.env).get_ticket_fields():
@@ -60,11 +61,16 @@ class HideValsAdminModule(Component):
 
             req.redirect(req.href.admin(cat, page))
 
-        return 'admin_hidevals.html', {
+        template = 'admin_hidevals.html'
+        data = {
             'field': field,
             'values': [{'group': g, 'value': v} for g, v in values],
             'enabled': enabled
         }
+        if hasattr(Chrome(self.env), 'jenv'):
+            return template, data, None
+        else:
+            return template, data
 
     # ITemplateProvider methods
 
