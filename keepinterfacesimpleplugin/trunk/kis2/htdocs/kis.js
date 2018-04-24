@@ -1143,12 +1143,37 @@ var update_fields = function () {
         ui[field_name] = field.ui;
     }
     return Promise.all(field_promises);
-}
+};
+
+// Trac's 'auto_preview.js' script defines a new jQuery method named
+// 'autoSubmit'. This plugin needs to intercept it so that fields can be
+// updated on preview, and the top of the visible window adjusted to prevent
+// apparent jumping.
+var hook_autoSubmit = function () {
+    // This relies on auto_preview.js having registered its document-ready
+    // handler first. Currently, Trac creates pages such that this is true.
+    var autoSubmit = $.fn.autoSubmit;
+    if (autoSubmit === undefined) {
+        return;
+    }
+    var override_autoSubmit = function (args, update, busy) {
+        var override_update = function (data, reply) {
+            var offset = $(document).scrollTop() - $('#ticket').height();
+            update.call(this, data, reply);
+            update_fields().then(function () {
+                $(document).scrollTop(offset + $('#ticket').height());
+            });
+        };
+        autoSubmit.call(this, args, override_update, busy);
+    };
+    $.fn.autoSubmit = override_autoSubmit;
+};
 
 return {
     ev: evaluate,
     ui: ui,
     update_fields: update_fields,
+    hook_autoSubmit: hook_autoSubmit,
 };
 
 // ...close namespace.
@@ -1161,5 +1186,6 @@ if ($.fn.addBack === undefined) {
 
 // This function is called when the page has loaded. It initialises the fields.
 $(function () {
+    kis2.hook_autoSubmit();
     kis2.update_fields();
 });
