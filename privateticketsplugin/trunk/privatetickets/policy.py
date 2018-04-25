@@ -13,16 +13,37 @@ from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import IPermissionGroupProvider, IPermissionPolicy, \
     IPermissionRequestor, PermissionSystem
 from trac.ticket.model import Ticket
-from trac.util.compat import set
 from trac.web.chrome import Chrome
+
+
+if not hasattr(PermissionSystem, 'get_permission_groups'):
+
+    PermissionSystem.group_providers = ExtensionPoint(IPermissionGroupProvider)
+
+    def get_permission_groups(self, user):
+        groups = set([user])
+        for provider in self.group_providers:
+            for group in provider.get_permission_groups(user):
+                groups.add(group)
+
+        perms = PermissionSystem(self.env).get_all_permissions()
+        repeat = True
+        while repeat:
+            repeat = False
+            for subject, action in perms:
+                if subject in groups and action.islower() and \
+                        action not in groups:
+                    groups.add(action)
+                    repeat = True
+        return groups
+
+    PermissionSystem.get_permission_groups = get_permission_groups
 
 
 class PrivateTicketsPolicy(Component):
     """Central tasks for the PrivateTickets plugin."""
 
     implements(IPermissionRequestor, IPermissionPolicy)
-
-    group_providers = ExtensionPoint(IPermissionGroupProvider)
 
     blacklist = ListOption('privatetickets', 'group_blacklist',
                            default='anonymous, authenticated',
@@ -120,27 +141,9 @@ class PrivateTicketsPolicy(Component):
 
     def _check_group(self, user1, user2):
         """Check if user1 and user2 share a common group."""
-        user1_groups = self._get_groups(user1)
-        user2_groups = self._get_groups(user2)
+        ps = PermissionSystem(self.env)
+        user1_groups = set(ps.get_permission_groups(user1))
+        user2_groups = set(ps.get_permission_groups(user2))
         both = user1_groups.intersection(user2_groups)
         both -= set(self.blacklist)
         return bool(both)
-
-    def _get_groups(self, user):
-        # Get initial subjects
-        groups = set([user])
-        for provider in self.group_providers:
-            for group in provider.get_permission_groups(user):
-                groups.add(group)
-
-        perms = PermissionSystem(self.env).get_all_permissions()
-        repeat = True
-        while repeat:
-            repeat = False
-            for subject, action in perms:
-                if subject in groups and not action.isupper() \
-                        and action not in groups:
-                    groups.add(action)
-                    repeat = True
-
-        return groups
