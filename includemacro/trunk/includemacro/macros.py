@@ -16,7 +16,7 @@ from StringIO import StringIO
 from genshi.filters.html import HTMLSanitizer
 from genshi.input import HTMLParser, ParseError
 from trac.core import TracError, implements
-from trac.mimeview.api import Mimeview, get_mimetype, Context
+from trac.mimeview.api import Mimeview, get_mimetype
 from trac.perm import IPermissionRequestor
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Ticket
@@ -25,6 +25,7 @@ from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchChangeset, NoSuchNode, \
     RepositoryManager
+from trac.web.chrome import web_context
 from trac.wiki.api import WikiSystem
 from trac.wiki.formatter import WikiParser, system_message
 from trac.wiki.macros import WikiMacroBase
@@ -84,7 +85,7 @@ class IncludeMacro(WikiMacroBase):
                 return system_message("Error while retrieving file", str(e))
             except TracError, e:
                 return system_message("Error while previewing", str(e))
-            ctxt = Context.from_request(formatter.req)
+            ctxt = web_context(formatter.req)
         elif source_format == 'wiki':
             if '#' in source_obj:
                 source_obj, source_section = source_obj.split('#', 1)
@@ -134,7 +135,7 @@ class IncludeMacro(WikiMacroBase):
                     return system_message(
                         'Section "%s" not found in wiki page "%s"'
                         % (source_section, page_name))
-            ctxt = Context.from_request(formatter.req, 'wiki', source_obj)
+            ctxt = web_context(formatter.req, 'wiki', source_obj)
         elif source_format in ('source', 'browser', 'repos'):
             if 'FILE_VIEW' not in formatter.perm:
                 return ''
@@ -164,9 +165,8 @@ class IncludeMacro(WikiMacroBase):
                                 if field == 'comment' and \
                                         oldval == comment_num:
                                     dest_format = 'text/x-trac-wiki'
-                                    ctxt = Context.from_request(formatter.req,
-                                                                'ticket',
-                                                                ticket_num)
+                                    ctxt = web_context(formatter.req,
+                                                       'ticket', ticket_num)
                                     out = newval
                                     break
                         if not out:
@@ -223,7 +223,7 @@ class IncludeMacro(WikiMacroBase):
             out = content.read()
             if dest_format is None:
                 dest_format = node.content_type or get_mimetype(path, out)
-            ctxt = Context.from_request(formatter.req, 'source', path)
+            ctxt = web_context(formatter.req, 'source', path)
 
         return out, ctxt, dest_format
 
