@@ -218,7 +218,7 @@ class IncludeMacro(WikiMacroBase):
             return system_message(e), None, None
         content = node.get_content()
         out = ''
-        ctxt = dest_format = None
+        ctxt = None
         if content:
             out = content.read()
             if dest_format is None:
