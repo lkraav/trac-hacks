@@ -6,8 +6,8 @@
 
 from setuptools import setup
 
-setup(name="TracMenusPlugin",
-      version="0.2.0",
+setup(name='TracMenusPlugin',
+      version='0.3.0',
       packages=['tracmenus'],
       author="Catalin Balan",
       author_email="cbalan@optaros.com",
@@ -17,6 +17,7 @@ setup(name="TracMenusPlugin",
       entry_points={'trac.plugins': [
           'tracmenus.web_ui = tracmenus.web_ui',
       ]},
+      install_requires=['Trac'],
       package_data={'tracmenus': [
           'htdocs/js/*.js',
           'htdocs/css/*.css',
