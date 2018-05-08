@@ -159,12 +159,11 @@ class SmpModel(Component):
     # MilestoneProject Methods
 
     def get_milestones_of_project(self, project):
-        for milestone, in self.env.db_query("""
+        return [milestone for milestone, in self.env.db_query("""
                 SELECT m.milestone AS milestone
                 FROM smp_project AS p, smp_milestone_project AS m
                 WHERE p.name = %s AND p.id_project = m.id_project
-                """, (project,)):
-            return milestone
+                """, (project,))]
 
     # VersionProject Methods
 
@@ -175,14 +174,12 @@ class SmpModel(Component):
                 """, (version, id_project))
 
     def get_versions_of_project(self, project):
-        for version, in self.env.db_query("""
+        return [version for version, in self.env.db_query("""
                 SELECT m.version AS version
-                FROM smp_project AS p,
-                     smp_version_project AS m
+                FROM smp_project AS p, smp_version_project AS m
                 WHERE p.name = %s AND p.id_project = m.id_project
                 ORDER BY m.version
-                """, (project,)):
-            yield version
+                """, (project,))]
 
     def get_project_version(self, version):
         for name, in self.env.db_query("""
@@ -216,6 +213,7 @@ class SmpModel(Component):
             """, (new_version, old_version))
 
     # ComponentProject Methods
+
     def insert_component_projects(self, component, id_projects):
         if not id_projects:
             return
@@ -231,19 +229,17 @@ class SmpModel(Component):
                     """, (component, id_project))
 
     def get_projects_component(self, component):
-        for name, in self.env.db_query("""
+        return [name for name, in self.env.db_query("""
                 SELECT name
                 FROM smp_project AS p, smp_component_project AS m
                 WHERE m.component=%s and m.id_project = p.id_project
-                """, (component,)):
-            yield name
+                """, (component,))]
 
     def get_id_projects_component(self, component):
-        for id_project, in self.env.db_query("""
+        return [id_project for id_project, in self.env.db_query("""
                 SELECT id_project
                 FROM smp_component_project WHERE component=%s
-                """, (component,)):
-            return id_project
+                """, (component,))]
 
     def delete_component_projects(self, component):
         self.env.db_transaction("""

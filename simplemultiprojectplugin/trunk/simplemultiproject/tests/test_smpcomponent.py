@@ -41,11 +41,11 @@ class TestSmpComponent(unittest.TestCase):
         self.assertEqual("foo2", items[1])
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestSmpComponent))
     return suite
 
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

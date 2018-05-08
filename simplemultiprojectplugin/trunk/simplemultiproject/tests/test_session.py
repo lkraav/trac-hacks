@@ -6,22 +6,22 @@
 #
 
 import unittest
-from trac.web.api import Request
-from trac.web.session import DetachedSession
-from trac.test import EnvironmentStub, Mock
+from trac.test import EnvironmentStub, MockRequest
 from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
-from simplemultiproject.session import get_list_from_req_or_session, get_project_filter_settings
+from simplemultiproject.session import \
+    get_list_from_req_or_session, get_project_filter_settings
 from simplemultiproject.tests.util import revert_schema
 
 
 class TestGet_list_from_req_or_session(unittest.TestCase):
 
     def setUp(self):
-        self.env = EnvironmentStub(default_data=True, enable=["trac.*", "simplemultiproject.*"])
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=["trac.*", "simplemultiproject.*"])
         with self.env.db_transaction as db:
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
-        self.req = Mock(session=DetachedSession(self.env, 'Tester'), args={})
+        self.req = MockRequest(self.env, username='Tester')
         self.session_key = "ctx.filter.tst"
 
     def tearDown(self):
@@ -104,7 +104,7 @@ class TestGet_project_filter_settings(unittest.TestCase):
         with self.env.db_transaction as db:
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
-        self.req = Mock(session=DetachedSession(self.env, 'Tester'), args={})
+        self.req = MockRequest(self.env, username='Tester')
         self.session_key = "ctx.filter.tst"
 
     def tearDown(self):
@@ -136,7 +136,7 @@ class TestGet_project_filter_settings(unittest.TestCase):
         self.assertEqual('bar', res[1])
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestGet_list_from_req_or_session))
     suite.addTest(unittest.makeSuite(TestGet_project_filter_settings))
@@ -144,4 +144,4 @@ def suite():
 
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    unittest.main(defaultTest='test_suite')

@@ -69,5 +69,8 @@ jQuery(function($) {
     }
 
     smp_onProjectChange();
+    $('#field-project').change(function() {
+        smp_onProjectChange(this.value)
+    });
 
 });

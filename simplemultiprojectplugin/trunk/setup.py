@@ -23,5 +23,5 @@ setup(
     long_description='Simple Multi Project',
     keywords='Simple Multi Project',
     entry_points={'trac.plugins': ['simplemultiproject = simplemultiproject']},
-    test_suite='simplemultiproject.tests.suite'
+    test_suite='simplemultiproject.tests.test_suite'
 )

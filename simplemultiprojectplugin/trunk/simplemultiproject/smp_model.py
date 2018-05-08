@@ -45,6 +45,9 @@ class SmpBaseModel(object):
         if not id_projects:
             return
 
+        if not isinstance(id_projects, (list, tuple)):
+            id_projects = [id_projects]
+
         with self.env.db_transaction as db:
             for id_proj in id_projects:
                 db("""
@@ -71,10 +74,9 @@ class SmpBaseModel(object):
         self.add(name, id_projects)
 
     def _get_all_names_and_project_id_for_resource(self, resource_name):
-        for row in self.env.db_query("""
+        return self.env.db_query("""
                 SELECT %s, id_project FROM smp_%s_project
-                """ % (resource_name, resource_name)):
-            yield row
+                """ % (resource_name, resource_name))
 
     def _update(self, resource_name, name, id_projects):
 

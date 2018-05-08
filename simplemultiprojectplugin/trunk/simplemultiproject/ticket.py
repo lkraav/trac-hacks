@@ -109,15 +109,14 @@ class SmpTicketProject(Component):
         for project in sorted(allProjects, key=itemgetter(1)):
             milestones = self.__SmpModel.get_milestones_of_project(project[1])
             milestonesForProject[project[1]] = {"": ""}
-            for milestone in sorted(milestones, key=itemgetter(0)):
-                ms = milestone[0]
-                is_completed = self.__SmpModel.is_milestone_completed(ms)
+            for milestone in sorted(milestones):
+                is_completed = self.__SmpModel.is_milestone_completed(milestone)
                 if is_newticket:
                     hide_milestone = is_completed
                 else:
                     hide_milestone = not (have_ticketadmin or (not is_completed and have_ticketchgprop))  # see #12201
                 if not hide_milestone:
-                    milestonesForProject[project[1]][ms] = ms
+                    milestonesForProject[project[1]][milestone] = milestone
 
         smp_milestonesForProject = {'smp_milestonesForProject': milestonesForProject}
         smp_initialProjectMilestone = {'smp_initialProjectMilestone': initialProjectMilestone}
@@ -127,7 +126,7 @@ class SmpTicketProject(Component):
 
     def _projects_field_ticket_input(self, req, ticket_data):
         all_projects = [project[1] for project in sorted(self.__SmpModel.get_all_projects(), key=itemgetter(1))]
-        select = tag.select(name="field_project", id="field-project", onchange="smp_onProjectChange(this.value)")
+        select = tag.select(name="field_project", id="field-project")
 
         cur_project = ticket_data.get_value_or_default('project')
 
