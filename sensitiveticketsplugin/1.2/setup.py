@@ -32,9 +32,9 @@ setup(name='TracSensitiveTickets',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
       include_package_data=True,
       zip_safe=False,
+      install_requires=['Trac'],
       entry_points="""
       [trac.plugins]
       sensitivetickets = sensitivetickets.sensitivetickets
       """,
-      install_requires=['Trac'],
       )

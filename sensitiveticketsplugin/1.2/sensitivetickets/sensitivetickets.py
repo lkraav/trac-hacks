@@ -63,24 +63,27 @@ class SensitiveTicketsPolicy(Component):
                IPermissionRequestor, ITicketManipulator,
                ITimelineEventProvider)
 
-    allow_reporter = BoolOption('sensitivetickets', 'allow_reporter', False,
+    allow_reporter = BoolOption(
+        'sensitivetickets', 'allow_reporter', False,
         """Whether the reporter of a sensitive ticket should have access to
         that ticket even if they do not have SENSITIVE_VIEW privileges.
         """)
 
-    allow_cc = BoolOption('sensitivetickets', 'allow_cc', False,
+    allow_cc = BoolOption(
+        'sensitivetickets', 'allow_cc', False,
         """Whether users listed in the cc field of a sensitive ticket
         should have access to that ticket even if they do not have
         SENSITIVE_VIEW privileges.
         """)
 
-    allow_owner = BoolOption('sensitivetickets', 'allow_owner', True,
+    allow_owner = BoolOption(
+        'sensitivetickets', 'allow_owner', True,
         """Whether the owner of a sensitive ticket should have access to
         that ticket even if they do not have SENSITIVE_VIEW privileges.
         """)
 
-    limit_sensitivity = BoolOption('sensitivetickets', 'limit_sensitivity',
-        False,
+    limit_sensitivity = BoolOption(
+        'sensitivetickets', 'limit_sensitivity', False,
         """With limit_sensitivity set to true, users cannot set the
         sensitivity checkbox on a ticket unless they are authenticated
         and would otherwise be permitted to deal with the ticket if it
@@ -184,12 +187,11 @@ class SensitiveTicketsPolicy(Component):
                         SELECT DISTINCT t.id,tc.time,tc.oldvalue
                         FROM ticket_change tc
                          INNER JOIN ticket t ON t.id = tc.ticket
-                          AND tc.time >= %s AND tc.time <= %s  AND tc.field = %s
+                          AND tc.time >= %s AND tc.time <= %s AND tc.field = %s
                          INNER JOIN ticket_custom td ON t.id = td.ticket
                           AND td.name = %s AND td.value = %s
                         ORDER BY tc.time
-                        """,
-                        (ts_start, ts_stop, 'comment', 'sensitive', '1')):
+                        """, (ts_start, ts_stop, 'comment', 'sensitive', '1')):
                     yield ('sensitive_activity', from_utimestamp(t),
                            'redacted', (tid, cid))
             # Always show new sensitive tickets.
@@ -224,6 +226,6 @@ class SensitiveTicketsPolicy(Component):
         if username == 'anonymous':
             return False
         return (self.allow_owner and ticket['owner'] == username) or \
-                (self.allow_reporter and ticket['reporter'] == username) or \
-                (self.allow_cc and
-                 (username in NotifyEmail.addrsep_re.split(ticket['cc'])))
+               (self.allow_reporter and ticket['reporter'] == username) or \
+               (self.allow_cc and
+                (username in NotifyEmail.addrsep_re.split(ticket['cc'])))
