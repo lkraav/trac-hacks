@@ -1,0 +1,25 @@
+# -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------
+# Name:         upgrades.py
+# Purpose:      The TracTweakUI Trac plugin upgrade module
+#
+# Author:       Richard Liao <richard.liao.i@gmail.com>
+#
+# ----------------------------------------------------------------------------
+
+
+# Automated upgrades for the TracTweakUI database tables, and other
+# data stored in the Trac environment.
+
+global ENV
+
+
+def add_tractweakui_table(env, db):
+    """Migrate db."""
+
+    pass
+
+
+map = {
+    1: [add_tractweakui_table],
+}
