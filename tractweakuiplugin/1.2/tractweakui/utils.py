@@ -17,18 +17,6 @@ SECPERDAY = 60 * 60 * 24
 SECPERWEEK = 60 * 60 * 24 * 7
 
 
-def queryDb(sqlString, env):
-    """ execute sql query
-        return:
-            rows
-    """
-    db = env.get_db_cnx()
-    cursor = db.cursor()
-    cursor.execute(sqlString)
-    rows = cursor.fetchall()
-    return rows
-
-
 def encode_url(path, params):
     params_encoded = {}
     for k, v in params.items():

@@ -9,8 +9,7 @@
 
 import os
 import re
-import inspect
-import textwrap
+import urllib
 from pkg_resources import resource_filename
 
 from genshi.filters.transform import Transformer
@@ -24,8 +23,8 @@ from trac.util.text import to_unicode
 from trac.web.api import ITemplateStreamFilter, IRequestHandler, RequestDone
 from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script
 
-from model import schema, schema_version, TracTweakUIModel
-from utils import *
+from model import schema, schema_version, schema_version_key, TracTweakUIModel
+from utils import encode_url
 
 __all__ = ['TracTweakUIModule']
 
@@ -53,51 +52,16 @@ class TracTweakUIModule(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        # Create the required tables
-        db = self.env.get_db_cnx()
-        connector, _ = DatabaseManager(self.env)._get_connector()
-        cursor = db.cursor()
-        for table in schema:
-            for stmt in connector.to_sql(table):
-                cursor.execute(stmt)
+        self.env.upgrade_environment()
 
-        # Insert a global version flag
-        cursor.execute("""
-            INSERT INTO system (name,value) VALUES ('tractweakui_version',%s)
-            """, (schema_version,))
+    def environment_needs_upgrade(self):
+        dbm = DatabaseManager(self.env)
+        return dbm.needs_upgrade(schema_version, schema_version_key)
 
-        db.commit()
-
-    def environment_needs_upgrade(self, db):
-        cursor = db.cursor()
-        cursor.execute(
-            "SELECT value FROM system WHERE name='tractweakui_version'")
-        row = cursor.fetchone()
-        if not row or int(row[0]) < schema_version:
-            return True
-
-    def upgrade_environment(self, db):
-        cursor = db.cursor()
-        cursor.execute(
-            "SELECT value FROM system WHERE name='tractweakui_version'")
-        row = cursor.fetchone()
-        if not row:
-            self.environment_created()
-            current_version = 0
-        else:
-            current_version = int(row[0])
-
-        from tractweakui import upgrades
-        for version in range(current_version + 1, schema_version + 1):
-            for function in upgrades.map.get(version):
-                print textwrap.fill(inspect.getdoc(function))
-                function(self.env, db)
-                print 'Done.'
-        cursor.execute("""
-            UPDATE system SET value=%s WHERE name='tractweakui_version'
-            """, (schema_version,))
-        self.log.info('Upgraded TracTweakUI tables from version %d to %d',
-                      current_version, schema_version)
+    def upgrade_environment(self):
+        dbm = DatabaseManager(self.env)
+        dbm.create_tables(schema)
+        dbm.set_database_version(schema_version, schema_version_key)
 
     # IAdminPanelProvider methods
 
@@ -243,7 +207,8 @@ class TracTweakUIModule(Component):
                 script = ""
             self._send_response(req, script)
 
-    # internal methods
+    # Internal methods
+
     def _apply_filter(self, req, path_pattern, filter_name):
         # get filter path
         filter_path = os.path.normpath(os.path.join(
