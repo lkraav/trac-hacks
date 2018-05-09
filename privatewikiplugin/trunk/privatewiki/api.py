@@ -30,8 +30,8 @@ class PrivateWikiPolicy(Component):
         view_actions = ['PRIVATE_VIEW_' + a for a in self.wikis]
         edit_actions = ['PRIVATE_EDIT_' + a for a in self.wikis]
         return view_actions + edit_actions + \
-               [('PRIVATE_VIEW_ALL', view_actions),
-                ('PRIVATE_EDIT_ALL', edit_actions + view_actions)]
+            [('PRIVATE_VIEW_ALL', view_actions),
+             ('PRIVATE_EDIT_ALL', edit_actions + view_actions)]
 
     def _prep_page(self, page):
         return page.upper().replace('/', '_')
@@ -56,8 +56,8 @@ class PrivateWikiPolicy(Component):
             if not member_of:
                 return
             for p in member_of:
-                view_perm = 'PRIVATE_VIEW_%s' % p;
-                edit_perm = 'PRIVATE_EDIT_%s' % p;
+                view_perm = 'PRIVATE_VIEW_%s' % p
+                edit_perm = 'PRIVATE_EDIT_%s' % p
                 if action == 'WIKI_VIEW':
                     if perm and ('PRIVATE_ALL_VIEW' in perm(res) or
                                  view_perm in perm(res) or
