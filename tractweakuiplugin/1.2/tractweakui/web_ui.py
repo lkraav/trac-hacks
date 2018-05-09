@@ -24,7 +24,6 @@ from trac.web.api import ITemplateStreamFilter, IRequestHandler, RequestDone
 from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script
 
 from model import schema, schema_version, schema_version_key, TracTweakUIModel
-from utils import encode_url
 
 __all__ = ['TracTweakUIModule']
 
@@ -46,7 +45,7 @@ class TracTweakUIModule(Component):
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        actions = ['TRACTWEAKUI_VIEW', 'TRACTWEAKUI_ADMIN', ]
+        actions = ['TRACTWEAKUI_VIEW', 'TRACTWEAKUI_ADMIN']
         return actions
 
     # IEnvironmentSetupParticipant methods
@@ -67,89 +66,79 @@ class TracTweakUIModule(Component):
 
     def get_admin_panels(self, req):
         if 'TRACTWEAKUI_ADMIN' in req.perm:
-            yield ('ticket', 'Ticket System',
-                   'tractweakui_admin', 'TracTweakUI Admin')
+            yield 'ticket', 'Ticket System', 'tweakui', 'Tweak UI'
 
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.require('TRACTWEAKUI_ADMIN')
 
         data = {}
-        data["page"] = page
-        data["encode_url"] = encode_url
 
         # Analyze url
-        action = ""
+        action = ''
         if path_info:
-            try:
-                action, args = path_info.split('?', 1)
-                action = action.strip('/')
-            except:
-                action = path_info.strip('/')
+            action = path_info.split('?', 1)[0].strip('/') \
+                if '?' in path_info else path_info.strip('/')
 
-        if action:
-            if action == "edit_path_pattern":
-                # edit path_pattern
-                if req.method == 'POST':
-                    # TODO
-                    if 'save' in req.args:
-                        # save filter
-                        path_pattern = req.args.get("path_pattern", "").strip()
-                        self._save_path_pattern(req)
+        if action == 'edit_path_pattern':
+            # edit path_pattern
+            if req.method == 'POST':
+                # TODO
+                if 'save' in req.args:
+                    # save filter
+                    path_pattern = req.args.get("path_pattern", "").strip()
+                    self._save_path_pattern(req)
+                    req.redirect(req.href.admin(cat, page))
 
-                        req.redirect(req.abs_href.admin(cat, page))
+                elif 'delete' in req.args:
+                    # delete filter
+                    path_pattern = req.args.get("path_pattern", "").strip()
+                    self._del_path_pattern(req)
+                    req.redirect(req.href.admin(cat, page))
 
-                    elif 'delete' in req.args:
-                        # delete filter
-                        path_pattern = req.args.get("path_pattern", "").strip()
-                        self._del_path_pattern(req)
-                        req.redirect(req.abs_href.admin(cat, page))
+            else:
+                # list filters
+                path_pattern = req.args.get("path_pattern", "").strip()
+                data["filter_names"] = self._get_filters()
+                data["path_pattern"] = \
+                    req.args.get("path_pattern", "").strip()
+                return 'tractweakui_admin_list_filter.html', data
 
-                else:
-                    # list filters
+        elif action.startswith('edit_filter_script'):
+            # edit script
+            if req.method == 'POST':
+                if 'save' in req.args:
+                    # save filter
+                    self._save_tweak_script(req)
                     path_pattern = req.args.get("path_pattern", "").strip()
                     data["filter_names"] = self._get_filters()
                     data["path_pattern"] = \
                         req.args.get("path_pattern", "").strip()
                     return 'tractweakui_admin_list_filter.html', data
 
-            elif action.startswith("edit_filter_script"):
-                # edit script
-                if req.method == 'POST':
-                    if 'save' in req.args:
-                        # save filter
-                        self._save_tweak_script(req)
-                        path_pattern = req.args.get("path_pattern", "").strip()
-                        data["filter_names"] = self._get_filters()
-                        data["path_pattern"] = \
-                            req.args.get("path_pattern", "").strip()
-                        return 'tractweakui_admin_list_filter.html', data
-
-                    elif 'load_default' in req.args:
-                        # load_default js script
-                        data['path_pattern'] = \
-                            req.args.get("path_pattern", "").strip()
-                        data['filter_name'] = \
-                            req.args.get("filter_name", "").strip()
-                        data['tweak_script'] = self._load_default_script(req)
-                        return 'tractweakui_admin_edit_filter.html', data
-
-                else:
-                    # display filter details
-                    path_pattern = req.args.get("path_pattern", "").strip()
-                    filter_name = req.args.get("filter_name", "").strip()
-                    tweak_script = TracTweakUIModel.get_tweak_script(
-                        self.env, path_pattern, filter_name)
-                    data['tweak_script'] = tweak_script
-                    data['path_pattern'] = path_pattern
-                    data['filter_name'] = filter_name
+                elif 'load_default' in req.args:
+                    # load_default js script
+                    data['path_pattern'] = \
+                        req.args.get("path_pattern", "").strip()
+                    data['filter_name'] = \
+                        req.args.get("filter_name", "").strip()
+                    data['tweak_script'] = self._load_default_script(req)
                     return 'tractweakui_admin_edit_filter.html', data
 
-            elif action == "add_path_pattern":
-                # add path pattern
-                if req.method == 'POST':
-                    if 'add' in req.args:
-                        self._add_path_pattern(req)
-                        req.redirect(req.abs_href.admin(cat, page))
+            else:
+                # display filter details
+                path_pattern = req.args.get("path_pattern", "").strip()
+                filter_name = req.args.get("filter_name", "").strip()
+                tweak_script = TracTweakUIModel.get_tweak_script(
+                    self.env, path_pattern, filter_name)
+                data['tweak_script'] = tweak_script
+                data['path_pattern'] = path_pattern
+                data['filter_name'] = filter_name
+                return 'tractweakui_admin_edit_filter.html', data
+
+        elif action == 'add_path_pattern' and req.method == 'POST':
+            if 'add' in req.args:
+                self._add_path_pattern(req)
+                req.redirect(req.href.admin(cat, page))
         else:
             # list all path patterns
             data["path_patterns"] = TracTweakUIModel.get_path_patterns(
@@ -190,11 +179,6 @@ class TracTweakUIModule(Component):
         return False
 
     def process_request(self, req):
-        filter_base_path = os.path.normpath(
-            os.path.join(self.env.path, 'htdocs', 'tractweakui'))
-        if not os.path.exists(filter_base_path):
-            return self._send_response(req, "")
-
         tweakui_js_path = '/tractweakui/tweakui_js'
         if req.path_info.startswith(tweakui_js_path):
             path_pattern = urllib.unquote(
@@ -209,10 +193,12 @@ class TracTweakUIModule(Component):
 
     # Internal methods
 
+    def _filter_path(self, *args):
+        base_path = resource_filename(__name__, 'htdocs')
+        return os.path.normpath(os.path.join(base_path, 'tractweakui', *args))
+
     def _apply_filter(self, req, path_pattern, filter_name):
-        # get filter path
-        filter_path = os.path.normpath(os.path.join(
-            self.env.path, "htdocs", "tractweakui", filter_name))
+        filter_path = self._filter_path(filter_name)
         if not os.path.exists(filter_path):
             return
 
@@ -220,13 +206,13 @@ class TracTweakUIModule(Component):
         js_files = self._find_filter_files(filter_path, ".js")
 
         for css_file in css_files:
-            add_stylesheet(req, 'site/tractweakui/' +
-                           filter_name + "/" + css_file)
+            add_stylesheet(req, 'site/tractweakui/%s/%s'
+                                % (filter_name, css_file))
 
         for js_file in js_files:
             if js_file != "__template__.js":
-                add_script(req, 'site/tractweakui/' +
-                           filter_name + "/" + js_file)
+                add_script(req, 'site/tractweakui/%s/%s'
+                                % (filter_name, js_file))
 
     def _find_filter_files(self, filter_path, file_type):
         if not os.path.exists(filter_path):
@@ -236,12 +222,7 @@ class TracTweakUIModule(Component):
                 if file.endswith(file_type)]
 
     def _get_filters(self):
-        filter_base_path = os.path.normpath(
-            os.path.join(self.env.path, "htdocs", "tractweakui"))
-        if not os.path.exists(filter_base_path):
-            return []
-
-        return [file for file in os.listdir(filter_base_path)]
+        return [file for file in os.listdir(self._filter_path())]
 
     def _send_response(self, req, message):
         """
@@ -300,11 +281,9 @@ class TracTweakUIModule(Component):
         """
         filter_name = req.args.get("filter_name", "").strip()
 
-        template_path = os.path.normpath(
-            os.path.join(self.env.path, "htdocs", "tractweakui",
-                         filter_name, "__template__.js"))
+        template_path = self._filter_path(filter_name, '__template__.js')
         if not os.path.exists(template_path):
-            return ""
+            return ''
 
         try:
             return to_unicode(open(template_path).read())

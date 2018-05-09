@@ -57,12 +57,12 @@ class TracTweakUIModel(object):
         """Insert a new path_pattern into the database."""
         env.db_transaction("""
             INSERT INTO tractweakui_list (path_pattern) VALUES (%s)
-            """, (path_pattern, ))
+            """, (path_pattern,))
 
     @classmethod
     def save_path_pattern(cls, env, path_pattern, path_pattern_orig):
         """Insert a new path_pattern into the database."""
-        env.db_transactions("""
+        env.db_transaction("""
             UPDATE tractweakui_list SET path_pattern = %s
             WHERE path_pattern = %s
             """, (path_pattern, path_pattern_orig))

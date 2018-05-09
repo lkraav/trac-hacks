@@ -15,7 +15,7 @@
 
   <div class="field">
 
-    <form id="tractweakui_admin" class="addnew" action="${page}/add_path_pattern" method="post">
+    <form id="tractweakui_admin" class="addnew" action="${href.admin('ticket/tweakui/add_path_pattern')}" method="post">
 
         <fieldset>
         <legend>Add:</legend>
@@ -25,9 +25,9 @@
             <label for="path_pattern"> Url path: </label>
           </td><td>
             <input type="text" name="path_pattern" size="16px" />
+            <span class="hint">Please input path regular expression</span>
           </td></tr>
           <tr><td/><td>
-            Please input path regular expression
           </td></tr>
           <tr><td>
             <input type="submit" name="add" value="Add" />
@@ -45,7 +45,7 @@
     </thead>
     <tbody>
         <tr py:for="path_pattern in path_patterns">
-            <td><a href="${encode_url(page + '/edit_path_pattern', {'path_pattern': path_pattern})}" >${path_pattern}</a></td>
+            <td><a href="${href.admin('ticket/tweakui/edit_path_pattern', path_pattern=path_pattern)}">${path_pattern}</a></td>
         </tr>
     </tbody>
     </table>

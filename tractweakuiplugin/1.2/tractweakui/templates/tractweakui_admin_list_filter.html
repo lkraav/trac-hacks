@@ -24,9 +24,9 @@
             <label for="path_pattern"> Url path: </label>
           </td><td>
             <input type="text" name="path_pattern" size="16px" value="${path_pattern}"/>
+            <span class="hint">Please input path regular expression</span>
           </td></tr>
           <tr><td/><td>
-            Please input path regular expression
           </td></tr>
           <tr><td>
             <input type="hidden" name="path_pattern_orig" value="${path_pattern}" />
@@ -47,7 +47,7 @@
     </thead>
     <tbody>
         <tr py:for="filter_name in filter_names">
-            <td><a href="${encode_url('edit_filter_script', {'path_pattern': path_pattern, 'filter_name': filter_name})}" >${filter_name}</a></td>
+            <td><a href="${href.admin('ticket/tweakui/edit_filter_script', path_pattern=path_pattern, filter_name=filter_name)}" >${filter_name}</a></td>
         </tr>
     </tbody>
     </table>
