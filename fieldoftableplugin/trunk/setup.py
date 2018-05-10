@@ -15,7 +15,7 @@ Created on 2014-03-19
 from setuptools import find_packages, setup
 
 setup(
-    name='TracFieldOfTablePlugin', version='1.0',
+    name='TracFieldOfTablePlugin', version='1.1',
     packages=find_packages(exclude=['*.tests*']),
     author='Cauly Kan',
     author_email='cauliflower.kan@gmail.com',

@@ -5,7 +5,22 @@
 .fieldoftable td {
     text-align: left;
     width: auto;
+    background: white;
 }
 .fieldoftable input {
     width: auto;
+    background: white;
+    border: none;
+}
+.fot-insert-row, .fot-delete-row {
+    border: none;
+    display: inline;
+    padding: 0 1px;
+    cursor: pointer;
+}
+.fot-insert-row {
+    color: dodgerblue;
+}
+.fot-delete-row {
+    color: indianred;
 }
