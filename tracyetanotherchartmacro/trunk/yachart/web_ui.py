@@ -20,11 +20,9 @@ from tracadvparseargs import *
 
 import jinja2
 
-print 'LOADED!'
-
 
 class yachart(WikiMacroBase):
-    implements(ITemplateProvider, IRequestFilter)
+    implements(IRequestFilter)
 
     """Embed a bar/line/bar chart in a wiki page.
 
