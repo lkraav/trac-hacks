@@ -48,7 +48,7 @@ class SmpTicketProject(Component):
 
             for comp in all_components:
                 components.append(comp.name)
-                comp_projects = [project[0] for project in
+                comp_projects = [project for project in
                                  sorted(self.__SmpModel.get_projects_component(comp.name), key=itemgetter(0))]
                 if comp_projects and len(comp_projects) > 0:
                     component_projects[comp.name] = comp_projects
