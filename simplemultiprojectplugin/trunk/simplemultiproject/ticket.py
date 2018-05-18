@@ -56,7 +56,7 @@ class SmpTicketProject(Component):
             all_projects2 = all_projects
             for project in all_projects2:
                 project_versions[project] = ['']
-                project_versions[project].extend([version[0] for version in
+                project_versions[project].extend([version for version in
                                                   self.__SmpModel.get_versions_of_project(project)])
                 project_versions[project].extend(get_all_versions_without_project(self.env))  # See #12463
                 project_versions[project].sort()
