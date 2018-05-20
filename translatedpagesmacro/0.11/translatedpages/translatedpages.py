@@ -47,7 +47,7 @@ class TranslatedPagesMacro(Component):
         lang_code = self.base_lang
         if res.realm == "wiki":
           prefix, base_page_name, lang_code = self._get_page_info(res.id)
-        origcode = self.extensions[lang_code]
+        origcode = self.extensions.get(lang_code, '')
         if label == name:
           label = ""
         r = re.compile("^'(.*)':(.*)$").search(name)
