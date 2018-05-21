@@ -9,7 +9,7 @@ if (!window.console)
   console.log = console.log || function () {
 };
 
-jQuery(document).ready(function ($) {
+jQuery(function ($) {
 
   // Do post-load processing on each field type on the page
 
@@ -17,13 +17,21 @@ jQuery(document).ready(function ($) {
 
   // SELECT
   $table_inits_holder.find("select").each(function () {
-    var field = $(this).attr("name");
-    console.log("SELECT field name: " + field);
     var select = $(this);
+    var field = select.attr("name");
+    console.log("SELECT field name: " + field);
     $("td." + field).each(function () {
-      var gridmod_default = $.trim($(this).text());
+      var field_text = $.trim($(this).text());
       $(this).html(select.clone().get(0));
-      $(this).find('option[value="' + gridmod_default + '"]').attr('selected', 'selected');
+      var default_option = $(this).find(
+        $.format('option[value="$1"]', field_text));
+      if (default_option[0] !== undefined) {
+        default_option.prop('selected', 'selected');
+      } else {
+	$(this).find('select').prepend(
+          $($.format('<option value="$1" selected="selected">$1</option>',
+		     field_text)))
+      }
     });
   });
   // INPUT TEXT
