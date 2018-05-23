@@ -9,7 +9,7 @@
 
 import re
 
-from trac.config      import ListOption
+from trac.config      import IntOption
 from trac.core        import *
 from trac.web.chrome  import ITemplateProvider, add_script
 from trac.web.main    import IRequestFilter, IRequestHandler
@@ -22,7 +22,7 @@ import jinja2
 
 
 class yachart(WikiMacroBase):
-    implements(IRequestFilter)
+    implements(IRequestFilter,ITemplateProvider)
 
     """Embed a bar/line/bar chart in a wiki page.
 
@@ -31,28 +31,43 @@ class yachart(WikiMacroBase):
         [[yachart(id=chart1; title=Ticket statuses; query=SELECT status , COUNT(status) FROM ticket GROUP BY status)]]
     }}}
     """
+
+    # Options
+    opt_w  = IntOption('yachart', 'width', default=400,
+                       doc='Default width of plot (in pixels)')
+
+    opt_h  = IntOption('yachart', 'height', default=200,
+                       doc='Default height of plot (in pixels)')
+
+    opt_tm = IntOption('yachart', 'top_margin', default=50,
+                       doc='Default top margin of plot (in pixels)')
+
+    opt_bm = IntOption('yachart', 'bottom_margin', default=30,
+                       doc='Default bottom margin of plot (in pixels)')
+
+    opt_lm = IntOption('yachart', 'left_margin', default=5,
+                       doc='Default left margin of plot (in pixels)')
+
+    opt_rm = IntOption('yachart', 'right_margin', default=5,
+                       doc='Default right margin of plot (in pixels)')
+
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
-        print 'IN get_htdocs_dirs'
         from pkg_resources import resource_filename
         return [('yachart', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
-        print 'IN get_templates_dirs'
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return []
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if True: #self._is_valid_request(req):
-            add_script(req, 'yachart/plotly-latest.min.js')
+        add_script(req, 'yachart/plotly-latest.min.js')
         return template, data, content_type
 
     # private methods
-
 
     def _get_data(self, options):
         q = self.env.db_query(options.get('query', None), ())
@@ -89,7 +104,15 @@ class yachart(WikiMacroBase):
     layout_template = jinja2.Template(\
         """
         {
-        title: '{{ title }}',
+        title  : '{{ title }}',
+        width  : {{ width }},
+        height : {{ height }},
+        margin: { t: {{ top_margin }},
+                  b: {{ bottom_margin }},
+                  l: {{ left_margin }}, 
+                  r: {{ right_margin }},
+                  pad: 4,
+                 }
         }
         """
     )
@@ -104,7 +127,7 @@ class yachart(WikiMacroBase):
                     {{ layout }});
                });
          </script> """
-    )
+    ) 
 
     def expand_macro(self, formatter, name, text, args):
         req = formatter.req
@@ -113,19 +136,12 @@ class yachart(WikiMacroBase):
                                     escchar = '\\', 
                                     delim = ';', 
                                     delquotes = True)
-        print text, type(options), options, args
-        #options = eval("dict(%s)" % text)
         if not options.get('query', None):
             raise TracError('Mandatory query argument is missing')
         if options['query'].find('$USER') >= 0:
            options['query'] = options['query']\
                .replace('$USER', "'"+formatter.req.authname+"'")
         id = options.get('id', '')
-        try:
-            w = int(options.get('width', 600))
-            h = int(options.get('height', 400))
-        except ValueError as e:
-            raise TracError('width/height arguments must be integers')
 
         x,y = self._get_data(options)
         chart_type =options.get('chart_type', 'bar')
@@ -146,8 +162,24 @@ class yachart(WikiMacroBase):
                 y_data     = y,
                 )
 
+        try:
+            w  = int(options.get('width', self.opt_w))
+            h  = int(options.get('height', self.opt_h))
+            tm = int(options.get('top_margin', self.opt_tm))
+            bm = int(options.get('bottom_margin', self.opt_bm))
+            lm = int(options.get('left_margin', self.opt_lm))
+            rm = int(options.get('right_margin', self.opt_rm))
+        except ValueError as e:
+            raise TracError('width/height arguments must be integers. Are values seprated by semicolons?')
+
         layout = self.layout_template.render(
-            title =  options.get('title', ''),
+            title         = options.get('title', ''),
+            width         = w,
+            height        = h,
+            top_margin    = tm,
+            bottom_margin = bm,
+            left_margin   = lm,
+            right_margin  = rm,
             )
             
         script = self.script_template.render(
@@ -158,7 +190,6 @@ class yachart(WikiMacroBase):
 
         return tag.div( \
             tag.div(id="%s" % id, 
-                    style="width: %dpx;height:%dpx;" % (w,h)
                     ),
             Markup(script)
             )
