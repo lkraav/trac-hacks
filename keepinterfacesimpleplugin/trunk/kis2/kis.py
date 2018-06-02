@@ -768,7 +768,7 @@ evaluation.available.none = evaluation_template == 'None'
                 status = ticket.get_value_or_default('status')
             else:
                 ticket_id = None
-                status = 'new'
+                status = ''
             page_data = { 'trac_ini' : config,
                           'status'   : status,
                           'id'       : ticket_id,
