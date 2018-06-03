@@ -51,38 +51,49 @@ except ImportError:
 
 
 class KeywordSuggestModule(Component):
-    implements (IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
 
-    field_opt = Option('keywordsuggest', 'field', 'keywords',
+    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
+
+    field_opt = Option(
+        'keywordsuggest', 'field', 'keywords',
         """Field to which the drop-down list should be attached.""")
 
-    keywords_opt = ListOption('keywordsuggest', 'keywords', '', ',',
+    keywords_opt = ListOption(
+        'keywordsuggest', 'keywords', '', ',',
         doc="A list of comma separated values available for input.")
 
 # This needs to be reimplemented as part of the work on version 0.5, refs th:#8141
 #    mustmatch = BoolOption('keywordsuggest', 'mustmatch', False,
 #                           """If true, 'keywords' field accepts values from the keywords list only.""")
 
-    matchcontains_opt = BoolOption('keywordsuggest','matchcontains_opt', True,
+    matchcontains_opt = BoolOption(
+        'keywordsuggest', 'matchcontains_opt', True,
         "Include partial matches in suggestion list. Default is true.")
 
-    multiple_separator_opt = Option('keywordsuggest','multipleseparator', ' ',
-        """Character(s) to use as separators between keywords. Default is a
-           single whitespace.""")
+    multiple_separator_opt = Option(
+        'keywordsuggest', 'multipleseparator', ' ',
+        """Character(s) to use as separators between keywords. Default
+        is a single whitespace.
+        """)
 
-    helppage_opt = Option('keywordsuggest','helppage_opt', None,
-        "If specified, 'keywords' label will be turned into a link to this URL.")
+    helppage_opt = Option(
+        'keywordsuggest', 'helppage_opt', None,
+        """If specified, 'keywords' label will be turned into a link to
+        this URL.
+        """)
 
-    helppagenewwindow_opt = BoolOption('keywordsuggest','helppage_opt.newwindow', False,
-        """If true and helppage_opt specified, wiki page will open in a new window.
-           Default is false.""")
+    helppagenewwindow_opt = BoolOption(
+        'keywordsuggest', 'helppage_opt.newwindow', False,
+        """If true and helppage_opt specified, wiki page will open in a new
+        window. Default is false.
+        """)
 
     @property
     def multiple_separator(self):
         return self.multiple_separator_opt.strip('\'') or ' '
 
-
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -99,8 +110,8 @@ class KeywordSuggestModule(Component):
 
         return template, data, content_type
 
-
     # ITemplateStreamFilter methods
+
     def filter_stream(self, req, method, filename, stream, data):
 
         if not (filename == 'ticket.html' or
@@ -151,7 +162,7 @@ class KeywordSuggestModule(Component):
                                 terms.pop();
                                 // add the selected item
                                 terms.push( ui.item.value );
-                                // add placeholder to get the comma-and-space at the end
+                                // add placeholder for comma-and-space at end
                                 terms.push( "" );
                                 this.value = terms.join( sep );
                                 return false;
@@ -159,13 +170,15 @@ class KeywordSuggestModule(Component):
                         });
                 });"""
 
-        # inject transient part of javascript directly into ticket.html template
+        # inject transient part of javascript directly to ticket.html template
         if req.path_info.startswith('/ticket/') or \
            req.path_info.startswith('/newticket'):
-            js_ticket =  js % {'field': '#field-' + self.field_opt,
-                               'multipleseparator': self.multiple_separator,
-                               'keywords': keywords,
-                               'matchfromstart': matchfromstart}
+            js_ticket = js % {
+                'field': '#field-' + self.field_opt,
+                'multipleseparator': self.multiple_separator,
+                'keywords': keywords,
+                'matchfromstart': matchfromstart
+            }
             stream = stream | Transformer('.//head').append\
                               (tag.script(Markup(js_ticket),
                                type='text/javascript'))
@@ -182,17 +195,19 @@ class KeywordSuggestModule(Component):
 
         # inject transient part of javascript directly into wiki.html template
         elif tagsplugin_is_installed and req.path_info.startswith('/wiki/'):
-            js_wiki =  js % {'field': '#tags',
-                             'multipleseparator': self.multiple_separator,
-                             'keywords': keywords,
-                             'matchfromstart': matchfromstart}
+            js_wiki = js % {
+                'field': '#tags',
+                'multipleseparator': self.multiple_separator,
+                'keywords': keywords,
+                'matchfromstart': matchfromstart
+            }
             stream = stream | Transformer('.//head').append \
                               (tag.script(Markup(js_wiki),
                                type='text/javascript'))
         return stream
 
-
     # Private methods
+
     def _get_keywords_string(self, req):
         # Using a set ensures no duplicates
         keywords = set(self.keywords_opt)
@@ -258,4 +273,3 @@ class KeywordSuggestModule(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'htdocs')]
-
