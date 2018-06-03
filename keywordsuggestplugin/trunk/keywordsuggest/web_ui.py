@@ -10,13 +10,13 @@
 
 import re
 
-from genshi.builder import tag
 from genshi.core import Markup
 from genshi.filters.transform import Transformer
 from trac import __version__ as trac_version
 from trac.config import Option, BoolOption, ListOption
 from trac.core import Component, implements
 from trac.resource import Resource, ResourceSystem
+from trac.util.html import html as tag
 from trac.util.text import unicode_quote_plus
 from trac.web import IRequestFilter
 from trac.web.api import ITemplateStreamFilter
@@ -85,7 +85,7 @@ class KeywordSuggestModule(Component):
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
         return handler
-    
+
     def post_process_request(self, req, template, data, content_type):
         if req.path_info.startswith('/ticket/') or \
            req.path_info.startswith('/newticket') or \
@@ -104,9 +104,9 @@ class KeywordSuggestModule(Component):
     def filter_stream(self, req, method, filename, stream, data):
 
         if not (filename == 'ticket.html' or
-                (tagsplugin_is_installed and filename == 'wiki_edit.html')): 
+                (tagsplugin_is_installed and filename == 'wiki_edit.html')):
             return stream
-        
+
         keywords = self._get_keywords_string(req)
         if not keywords:
             self.log.debug("""
@@ -125,7 +125,7 @@ class KeywordSuggestModule(Component):
                     }
                     function extractLast( term ) {
                         return split( term ).pop();
-                    }                    
+                    }
                     $('%(field)s')
                         // don't navigate away from the field on tab when selecting an item
                         .bind( "keydown", function( event ) {
@@ -144,7 +144,7 @@ class KeywordSuggestModule(Component):
                             focus: function() {
                                 // prevent value inserted on focus
                                 return false;
-                            },                            
+                            },
                             select: function( event, ui ) {
                                 var terms = split( this.value );
                                 // remove the current input
@@ -155,7 +155,7 @@ class KeywordSuggestModule(Component):
                                 terms.push( "" );
                                 this.value = terms.join( sep );
                                 return false;
-                            }                            
+                            }
                         });
                 });"""
 
@@ -209,7 +209,7 @@ class KeywordSuggestModule(Component):
                                  for _keyword in keywords))
         else:
             keywords = ''
-            
+
         return keywords
 
     def _get_helppage_link(self, req):
@@ -254,7 +254,7 @@ class KeywordSuggestModule(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('keywordsuggest', resource_filename(__name__, 'htdocs'))]
-    
+
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'htdocs')]
