@@ -67,7 +67,7 @@ class KeywordSuggestModule(Component):
 #                           """If true, 'keywords' field accepts values from the keywords list only.""")
 
     matchcontains_opt = BoolOption(
-        'keywordsuggest', 'matchcontains_opt', True,
+        'keywordsuggest', 'matchcontains', True,
         "Include partial matches in suggestion list. Default is true.")
 
     multiple_separator_opt = Option(
@@ -77,14 +77,14 @@ class KeywordSuggestModule(Component):
         """)
 
     helppage_opt = Option(
-        'keywordsuggest', 'helppage_opt', None,
+        'keywordsuggest', 'helppage', None,
         """If specified, 'keywords' label will be turned into a link to
         this URL.
         """)
 
     helppagenewwindow_opt = BoolOption(
-        'keywordsuggest', 'helppage_opt.newwindow', False,
-        """If true and helppage_opt specified, wiki page will open in a new
+        'keywordsuggest', 'helppage.newwindow', False,
+        """If true and helppage specified, wiki page will open in a new
         window. Default is false.
         """)
 
