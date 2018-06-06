@@ -21,7 +21,6 @@ from trac.ticket import TicketSystem
 from trac.ticket.model import Ticket
 from trac.web.api import IRequestFilter, \
                          IRequestHandler, \
-                         ITemplateStreamFilter, \
                          RequestDone
 from trac.web.chrome import add_script, add_script_data, ITemplateProvider
 
@@ -671,10 +670,11 @@ evaluation.available.none = evaluation_template == 'None'
 
     In expressions, field names evaluate to the current value of the
     corresponding field, except for the special names `status`, which
-    evaluates to the ticket status, `authname`, which evaluates to the current
-    username, `true` which evaluates True and `false`, which evaluates False.
-    If the field name is prefixed with an underscore, it evaluates to the
-    value of the field at the time the page was loaded.
+    evaluates to the ticket status (or the empty string if the ticket has not
+    yet been created), `authname`, which evaluates to the current username,
+    `true` which evaluates True and `false`, which evaluates False.  If the
+    field name is prefixed with an underscore, it evaluates to the value of
+    the field at the time the page was loaded.
 
     Text-type fields evaluate to their contents, checkboxes evaluate to true
     if checked or false if not, and Select or Radio fields evaluate to the
@@ -726,10 +726,32 @@ evaluation.available.none = evaluation_template == 'None'
 
     implements(IRequestFilter,
                IRequestHandler,
-               ITemplateProvider,
-               ITemplateStreamFilter)
+               ITemplateProvider)
 
     config_functions = ExtensionPoint(IConfigFunction)
+
+    def __init__(self):
+        super(KisAssistant, self).__init__()
+
+        # Construct an object representing the configuration, to be passed to
+        # the client-side script.
+        items = self.config.options('kis2_assistant')
+        for test_value in self.config.options('kis2_assistant'):
+            break
+        else:
+            # No rules defined under 'kis2_assistant'; try 'kis_assistant'.
+            items = self.config.options('kis_assistant')
+        self.kis_config = {}
+        for dotted_name, value in items:
+            config_traverse = self.kis_config
+            for component in dotted_name.split('.'):
+                if not component in config_traverse:
+                    if component.startswith('#'):
+                        continue
+                    config_traverse[component] = {}
+                config_traverse = config_traverse[component]
+            config_traverse['#'] = \
+                re.sub("\s*,\s*", ",", value.strip()).split(",")
 
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
@@ -745,33 +767,14 @@ evaluation.available.none = evaluation_template == 'None'
     def post_process_request(self, req, template, data, content_type):
         if req.path_info.startswith('/newticket') or \
                 req.path_info.startswith('/ticket/'):
-            # Create and include the initial data dump.
-            items = self.config.options('kis2_assistant')
-            for test_value in self.config.options('kis2_assistant'):
-                break
-            else:
-                # No rules defined under 'kis2_assistant'; try 'kis_assistant'.
-                items = self.config.options('kis_assistant')
-            config = {}
-            for dotted_name, value in items:
-                config_traverse = config
-                for component in dotted_name.split('.'):
-                    if not component in config_traverse:
-                        if component.startswith('#'):
-                            continue
-                        config_traverse[component] = {}
-                    config_traverse = config_traverse[component]
-                config_traverse['#'] = \
-                    re.sub("\s*,\s*", ",", value.strip()).split(",")
-
             if 'id' in req.args:
                 ticket_id = req.args['id'].lstrip('#')
                 ticket = Ticket(self.env, ticket_id)
                 status = ticket.get_value_or_default('status')
             else:
                 ticket_id = None
-                status = 'new'
-            page_data = { 'trac_ini' : config,
+                status = ''
+            page_data = { 'trac_ini' : self.kis_config,
                           'status'   : status,
                           'id'       : ticket_id,
                           'authname' : req.authname }
@@ -811,27 +814,3 @@ evaluation.available.none = evaluation_template == 'None'
                      title='Missing plugin or error in trac.ini '
                            '[kis2_assistant]',
                      show_traceback=True)
-
-    # ITemplateStreamFilter
-    def filter_stream(self, req, method, filename, stream, data):
-        ''' Updates auto preview submission to apply filtering of fields.
-            Stops window 'jumping' due to kis2 updates on auto-preview.
-        '''
-        start_preview = '$("#ticket").replaceWith(items.filter(\'#ticket\'));'
-        rememberPosition = "var screenOffset = " \
-            "$(document).scrollTop() - $('#ticket').height();\n"
-        ticket_preview = '}, "#ticketchange .trac-loading");'
-        fieldRefreshCall = "kis2.update_fields().then(" + \
-            "function () { $(document).scrollTop(screenOffset + " \
-            "$('#ticket').height()) });\n"
-
-        # Applying changes only on ticket.html.
-        if filename == 'ticket.html':
-            stream = stream | Transformer('.//script'). \
-                substitute(
-                    '( *)' + re.escape(start_preview),
-                    '\\1' + rememberPosition + '\\1' + start_preview). \
-                substitute(
-                    '( *)' + re.escape(ticket_preview),
-                    '\\1  ' + fieldRefreshCall + '\\1' + ticket_preview)
-        return stream
