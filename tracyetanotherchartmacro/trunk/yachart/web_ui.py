@@ -70,11 +70,18 @@ class yachart(WikiMacroBase):
     # private methods
 
     def _get_data(self, options):
+
+        def _encode(col):
+            if type(col) == unicode:
+                return ''.join(col.splitlines())
+            return str(col)
+
         q = self.env.db_query(options.get('query', None), ())
         x,y = ([],[])
         for r in q:
-            x.append(str(r[0]))
-            y.append(str(r[1]))
+            x.append(_encode(r[0]))
+            y.append(_encode(r[1]))
+
         return '"' + '","'.join(x) + '"', '"' + '","'.join(y) + '"' 
             
     pie_template = jinja2.Template(\
