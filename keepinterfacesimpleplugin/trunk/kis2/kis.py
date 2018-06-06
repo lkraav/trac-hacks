@@ -729,6 +729,29 @@ evaluation.available.none = evaluation_template == 'None'
 
     config_functions = ExtensionPoint(IConfigFunction)
 
+    def __init__(self):
+        super(KisAssistant, self).__init__()
+
+        # Construct an object representing the configuration, to be passed to
+        # the client-side script.
+        items = self.config.options('kis2_assistant')
+        for test_value in self.config.options('kis2_assistant'):
+            break
+        else:
+            # No rules defined under 'kis2_assistant'; try 'kis_assistant'.
+            items = self.config.options('kis_assistant')
+        self.kis_config = {}
+        for dotted_name, value in items:
+            config_traverse = self.kis_config
+            for component in dotted_name.split('.'):
+                if not component in config_traverse:
+                    if component.startswith('#'):
+                        continue
+                    config_traverse[component] = {}
+                config_traverse = config_traverse[component]
+            config_traverse['#'] = \
+                re.sub("\s*,\s*", ",", value.strip()).split(",")
+
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
         return [('kis2', resource_filename(__name__, 'htdocs'))]
@@ -743,25 +766,6 @@ evaluation.available.none = evaluation_template == 'None'
     def post_process_request(self, req, template, data, content_type):
         if req.path_info.startswith('/newticket') or \
                 req.path_info.startswith('/ticket/'):
-            # Create and include the initial data dump.
-            items = self.config.options('kis2_assistant')
-            for test_value in self.config.options('kis2_assistant'):
-                break
-            else:
-                # No rules defined under 'kis2_assistant'; try 'kis_assistant'.
-                items = self.config.options('kis_assistant')
-            config = {}
-            for dotted_name, value in items:
-                config_traverse = config
-                for component in dotted_name.split('.'):
-                    if not component in config_traverse:
-                        if component.startswith('#'):
-                            continue
-                        config_traverse[component] = {}
-                    config_traverse = config_traverse[component]
-                config_traverse['#'] = \
-                    re.sub("\s*,\s*", ",", value.strip()).split(",")
-
             if 'id' in req.args:
                 ticket_id = req.args['id'].lstrip('#')
                 ticket = Ticket(self.env, ticket_id)
@@ -769,7 +773,7 @@ evaluation.available.none = evaluation_template == 'None'
             else:
                 ticket_id = None
                 status = ''
-            page_data = { 'trac_ini' : config,
+            page_data = { 'trac_ini' : self.kis_config,
                           'status'   : status,
                           'id'       : ticket_id,
                           'authname' : req.authname }
