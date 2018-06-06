@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Name:         utils.py
 # Purpose:      The TracReportInplaceEditPlugin utils module
 #
 # Author:       Richard Liao <richard.liao.i@gmail.com>
 #
-#----------------------------------------------------------------------------
 
 import time
 
@@ -35,6 +34,7 @@ def get_date_from_str(date_str):
     if not timeTuple:
         return None
 
+
 def format_date_full(t):
     """ convert int to 2008-01-01
     """
@@ -44,12 +44,14 @@ def format_date_full(t):
         return ""
     return time.strftime("%Y-%m-%d", time.localtime(t))
 
+
 def format_time_full(t):
     try:
         t = int(t)
     except:
         return ""
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t))
+
 
 def format_date_compact(t):
     return time.strftime("%y%m%d", time.localtime(t))

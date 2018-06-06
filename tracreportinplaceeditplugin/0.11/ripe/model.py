@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Name:         model.py
 # Purpose:      The TracReportInplaceEditPlugin Trac plugin db model module
 #
 # Author:       Richard Liao <richard.liao.i@gmail.com>
 #
-#----------------------------------------------------------------------------
 
 """Model classes for objects persisted in the database."""
 
 from trac.db import Table, Column, Index
+
 
 class RipeStore(object):
     """Represents a table."""

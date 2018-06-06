@@ -1,4 +1,4 @@
-$(document).ready(function() {
+jQuery(function($) {
     // get base URL
     var base_url = $("#search").attr("action").replace(/\/search$/g, "");
 

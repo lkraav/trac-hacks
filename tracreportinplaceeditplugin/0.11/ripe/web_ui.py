@@ -1,38 +1,19 @@
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Name:         web_ui.py
 # Purpose:      The TracReportInplaceEditPlugin Trac plugin handler module
 #
 # Author:       Richard Liao <richard.liao.i@gmail.com>
 #
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
-# python modules
-import os
-import inspect
-import time
-import textwrap
-import urllib
-
-# trac modules
-from trac.core import *
-from trac.db import DatabaseManager
-from trac.util.html import html
-from trac.web.chrome import add_script, add_stylesheet
-from trac.web.api import RequestDone
-from trac.ticket import Ticket, TicketSystem
-from trac.util import get_reporter_id
-
-# trac interfaces for components
+from trac.core import Component, TracError, implements
 from trac.perm import IPermissionRequestor
-from trac.web.chrome import ITemplateProvider
-from trac.web import IRequestHandler
-from trac.web.api import ITemplateStreamFilter
+from trac.ticket.model import Ticket
+from trac.util import get_reporter_id
+from trac.web.api import IRequestHandler, ITemplateStreamFilter, RequestDone
+from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 
-# other trac modules you may need
-# from trac.web.main import IRequestFilter
-
-# third party modules
 from pkg_resources import resource_filename
 try:
     import json
@@ -40,20 +21,18 @@ except ImportError:
     import simplejson as json
 
 # import plugins module
-from model import schema, schema_version, RipeStore
 from utils import *
 from i18n_domain import gettext, _, tag_, N_, add_domain
 
-__all__ = ['RipeModule']
 
 class RipeModule(Component):
 
     implements(
-                IPermissionRequestor,
-                ITemplateProvider,
-                IRequestHandler,
-                ITemplateStreamFilter,
-            )
+        IPermissionRequestor,
+        IRequestHandler,
+        ITemplateProvider,
+        ITemplateStreamFilter,
+    )
 
     def __init__(self):
         locale_dir = resource_filename(__name__, 'locale')
@@ -62,7 +41,7 @@ class RipeModule(Component):
     # IPermissionRequestor methods
 
     def get_permission_actions(self):
-        actions = ['RIPE_EDIT','RIPE_ADMIN', ]
+        actions = ['RIPE_EDIT', 'RIPE_ADMIN', ]
         return actions
 
     # ITemplateProvider
@@ -78,9 +57,8 @@ class RipeModule(Component):
     def match_request(self, req):
         return req.path_info.startswith('/ripe')
 
-
     def process_request(self, req):
-        req.perm.assert_permission('RIPE_EDIT')
+        req.perm.require('RIPE_EDIT')
 
         data = {
             "gettext": gettext,
@@ -101,19 +79,22 @@ class RipeModule(Component):
 
         return 'ripe.html', data, None
 
-    ## ITemplateStreamFilter
+    # ITemplateStreamFilter
 
     def filter_stream(self, req, method, filename, stream, data):
-        if (filename == "report_view.html" and req.path_info.startswith("/report/")) or \
-            (filename == "query.html" and req.path_info.startswith("/query")):
+        if filename == "report_view.html" and \
+                req.path_info.startswith("/report/") or \
+                filename == "query.html" and \
+                req.path_info.startswith("/query"):
             if "RIPE_EDIT" in req.perm and "TICKET_MODIFY" in req.perm:
-                add_stylesheet(req, 'ripe/ripe.css')
                 add_script(req, 'ripe/json2.js')
                 add_script(req, 'ripe/jquery.jeditable.js')
                 add_script(req, 'ripe/ripe.js')
 
         return stream
-    # internal methods
+
+    # Internal methods
+
     def _handle_ripe_query(self, req):
         """ hander for query  """
         ticket = Ticket(self.env, 1)
@@ -137,7 +118,6 @@ class RipeModule(Component):
         for field in self.config.getlist("ripe", "skip_fields", []):
             skip_fields[field] = None
         skip_fields.update(always_skip_fields)
-
 
         # get field type and options
         field_infos = {}
@@ -172,7 +152,8 @@ class RipeModule(Component):
 
         # validation
         if current_value != old_value and (old_value or current_value):
-            self.log.info("Field value should be %s, got %s" % (repr(current_value), repr(old_value)))
+            self.log.info("Field value should be %s, got %s" %
+                          (repr(current_value), repr(old_value)))
             raise TracError("field value inconsistant.")
 
         # set params
@@ -190,7 +171,8 @@ class RipeModule(Component):
     def _send_response(self, req, message):
         """ send response and stop request handling
         """
-        message = isinstance(message, unicode) and message.encode("utf-8") or message
+        message = isinstance(message, unicode) and message.encode(
+            "utf-8") or message
         req.send_response(200)
         req.send_header('Cache-control', 'no-cache')
         req.send_header('Expires', 'Fri, 01 Jan 1999 00:00:00 GMT')
@@ -201,4 +183,3 @@ class RipeModule(Component):
         if req.method != 'HEAD':
             req.write(message)
         raise RequestDone
-
