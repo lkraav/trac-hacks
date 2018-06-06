@@ -670,10 +670,11 @@ evaluation.available.none = evaluation_template == 'None'
 
     In expressions, field names evaluate to the current value of the
     corresponding field, except for the special names `status`, which
-    evaluates to the ticket status, `authname`, which evaluates to the current
-    username, `true` which evaluates True and `false`, which evaluates False.
-    If the field name is prefixed with an underscore, it evaluates to the
-    value of the field at the time the page was loaded.
+    evaluates to the ticket status (or the empty string if the ticket has not
+    yet been created), `authname`, which evaluates to the current username,
+    `true` which evaluates True and `false`, which evaluates False.  If the
+    field name is prefixed with an underscore, it evaluates to the value of
+    the field at the time the page was loaded.
 
     Text-type fields evaluate to their contents, checkboxes evaluate to true
     if checked or false if not, and Select or Radio fields evaluate to the
