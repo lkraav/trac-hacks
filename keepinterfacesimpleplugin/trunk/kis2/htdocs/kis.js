@@ -97,7 +97,13 @@ var TracInterface = function(field_name) {
             this.option_selector = this.selector;
             this.type = 'radio';
             if (this.select_field().length == 0) {
-                this.type = 'undefined';
+                // Header-only field (not modifiable as a change property).
+                this.selector = 'td[headers=h_' + field_name + ']';
+                this.option_selector = this.selector;
+                this.type = 'header';
+                if (this.select_field().length == 0) {
+                    this.type = 'undefined';
+                }
             }
         }
     }
@@ -247,6 +253,9 @@ TracInterface.prototype.val = function () {
         case 'radio':
             context = context.filter(':checked');
             result = context.val.apply(context, arguments);
+            break;
+        case 'header':
+            result = context.text().trim();
             break;
         default:
             result = context.val.apply(context, arguments);
