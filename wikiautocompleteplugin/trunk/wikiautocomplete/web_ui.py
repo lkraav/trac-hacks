@@ -57,7 +57,8 @@ class WikiAutoCompleteModule(Component):
                 'strategies': self._get_strategies(),
             }
             context_or_page = data.get('context') or data.get('page')
-            if context_or_page and context_or_page.resource:
+            if (context_or_page and hasattr(context_or_page, 'resource')
+                and context_or_page.resource):
                 script_data['realm'] = context_or_page.resource.realm
                 script_data['id'] = context_or_page.resource.id
             add_script_data(req, {'wikiautocomplete': script_data})
