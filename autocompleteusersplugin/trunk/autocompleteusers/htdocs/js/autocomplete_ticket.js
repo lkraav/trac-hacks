@@ -1,4 +1,4 @@
-jQuery(document).ready(function ($) {
+jQuery(function ($) {
   $("#action input:text[id$=_reassign_owner]").autocomplete("../subjects", {
     formatItem: formatItem
   });

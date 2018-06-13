@@ -1,4 +1,4 @@
-$(document).ready(function () {
+jQuery(function ($) {
   $("#gp_subject").autocomplete("../../subjects?groups=1", {
     formatItem: formatItem
   });

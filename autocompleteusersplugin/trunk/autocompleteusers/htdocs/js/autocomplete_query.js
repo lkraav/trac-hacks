@@ -1,4 +1,4 @@
-$(document).ready(function ($) {
+jQuery(function ($) {
   function addAutocompleteBehavior() {
     var filters = $('#filters');
     var contains = $.contains // jQuery 1.4+
