@@ -19,16 +19,22 @@ NAME = 1
 EMAIL = 2  # indices
 
 SECTION_NAME = 'autocomplete'
-FIELDS_OPTION = 'fields'
+FIELDS_OPTION = ('fields', 'multi_fields')
 SCRIPT_FIELD_NAME = 'autocomplete_fields'
 
 
 class AutocompleteUsers(Component):
     implements(IRequestFilter, IRequestHandler, ITemplateProvider)
 
-    complement_fields = ListOption(
-        SECTION_NAME, FIELDS_OPTION, default='',
-        doc="select fields to autocomplement")
+    complete_fields = ListOption(
+        SECTION_NAME, FIELDS_OPTION[0], default='',
+        doc="Select fields to autocomplete")
+
+    multi_complete_fields = ListOption(
+        SECTION_NAME, FIELDS_OPTION[1], default='',
+        doc="""Select fields to autocomplete with multiple
+        (comma-separated) values.
+        """)
 
     # IRequestHandler methods
 
@@ -73,8 +79,12 @@ class AutocompleteUsers(Component):
             add_script(req, 'autocomplete/js/autocomplete.js')
             add_script(req, 'autocomplete/js/format_item.js')
 
-            custom_fields = self.config.getlist(SECTION_NAME, FIELDS_OPTION)
-            script_data = {SCRIPT_FIELD_NAME: custom_fields}
+            script_data = {
+                SCRIPT_FIELD_NAME:
+                    self.config.getlist(SECTION_NAME, FIELDS_OPTION[0]),
+                SCRIPT_FIELD_NAME + '_multi':
+                    self.config.getlist(SECTION_NAME, FIELDS_OPTION[1]),
+            }
 
             if template == 'ticket.html':
                 add_script(req, 'autocomplete/js/autocomplete_ticket.js')
