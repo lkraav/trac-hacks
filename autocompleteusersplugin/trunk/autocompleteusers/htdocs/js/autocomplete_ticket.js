@@ -1,19 +1,18 @@
 jQuery(function ($) {
-  $("#action input:text[id$=_reassign_owner]").autocomplete("../subjects", {
+  var path = newticket ? "subjects" : "../subjects"
+
+  $("#field-owner, input:text#field-reporter, #action input:text[id$=_reassign_owner]").autocomplete(path, {
     formatItem: formatItem
   });
 
-  $("#field-cc").autocomplete("../subjects", {
+  $("#field-cc").autocomplete(path, {
     multiple: true,
-    formatItem: formatItem
-  });
-
-  $("input:text#field-reporter").autocomplete("../subjects", {
-    formatItem: formatItem
+    formatItem: formatItem,
+    delay: 100
   });
 
   for (var i = 0; i < autocomplete_fields.length; i++) {
-    $("#field-" + autocomplete_fields[i]).autocomplete("../subjects", {
+    $("#field-" + autocomplete_fields[i]).autocomplete(path, {
       formatItem: formatItem
     });
   }

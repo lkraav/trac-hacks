@@ -74,17 +74,19 @@ class AutocompleteUsers(Component):
             add_script(req, 'autocomplete/js/format_item.js')
 
             custom_fields = self.config.getlist(SECTION_NAME, FIELDS_OPTION)
-            add_script_data(req, {SCRIPT_FIELD_NAME: custom_fields})
+            script_data = {SCRIPT_FIELD_NAME: custom_fields}
 
             if template == 'ticket.html':
-                if req.path_info.rstrip() == '/newticket':
-                    add_script(req, 'autocomplete/js/autocomplete_newticket.js')
-                else:
-                    add_script(req, 'autocomplete/js/autocomplete_ticket.js')
+                add_script(req, 'autocomplete/js/autocomplete_ticket.js')
+                script_data.update({
+                    'newticket': req.path_info.rstrip() == '/newticket'
+                })
             elif template == 'admin_perms.html':
                 add_script(req, 'autocomplete/js/autocomplete_perms.js')
             elif template == 'query.html':
                 add_script(req, 'autocomplete/js/autocomplete_query.js')
+
+            add_script_data(req, script_data)
 
         return template, data, content_type
 
