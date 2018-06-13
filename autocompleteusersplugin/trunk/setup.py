@@ -30,12 +30,12 @@ setup(
     author_email='jhammel@openplans.org',
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
-    url='http://trac-hacks.org/wiki/AutocompleteUsersPlugin',
+    url='https://trac-hacks.org/wiki/AutocompleteUsersPlugin',
     keywords='trac plugin',
     license='BSD 3-Clause',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
     include_package_data=True,
-    install_requires=['Trac >= 0.11'],
+    install_requires=['Trac'],
     tests_require=['tox'],
     package_data={'autocompleteusers': [
         'htdocs/css/*.css', 'htdocs/css/*.gif', 'htdocs/js/*.js']
