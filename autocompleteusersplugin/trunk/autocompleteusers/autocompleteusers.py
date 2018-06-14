@@ -84,13 +84,11 @@ class AutocompleteUsers(Component):
                     self.config.getlist(SECTION_NAME, FIELDS_OPTION[0]),
                 SCRIPT_FIELD_NAME + '_multi':
                     self.config.getlist(SECTION_NAME, FIELDS_OPTION[1]),
+                'subjects_href': req.href.subjects(),
             }
 
             if template == 'ticket.html':
                 add_script(req, 'autocomplete/js/autocomplete_ticket.js')
-                script_data.update({
-                    'newticket': req.path_info.rstrip() == '/newticket'
-                })
             elif template == 'admin_perms.html':
                 add_script(req, 'autocomplete/js/autocomplete_perms.js')
             elif template == 'query.html':
