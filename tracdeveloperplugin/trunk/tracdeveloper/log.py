@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Ryan Ollos
+# Copyright (C) 2015-2018 Ryan Ollos
 # Copyright (C) 2012-2013 Olemis Lang
 # Copyright (C) 2008-2009 Noah Kantrowitz
 # Copyright (C) 2008 Christoper Lenz
@@ -13,10 +13,9 @@
 
 import logging
 
-from trac.core import *
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import Chrome, add_script
-from trac.util.html import END, html as tag
+from trac.core import Component, implements
+from trac.web.api import IRequestFilter
+from trac.web.chrome import Chrome, add_script, add_script_data
 
 
 class TracDeveloperHandler(logging.Handler):
@@ -33,7 +32,7 @@ class TracDeveloperHandler(logging.Handler):
 class DeveloperLogModule(Component):
     """A plugin to display the Trac log."""
 
-    implements(IRequestFilter, ITemplateStreamFilter)
+    implements(IRequestFilter)
 
     def __init__(self):
         self.log_handler = TracDeveloperHandler()
@@ -52,50 +51,18 @@ class DeveloperLogModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if not hasattr(req, '_tracdeveloper_hdlr'):
-            return stream
-
-        if method != 'xhtml':
+        if hasattr(req, '_tracdeveloper_hdlr'):
+            add_script(req, 'developer/js/log.js')
+            first_time = 0
+            if req._tracdeveloper_hdlr.buf:
+                first_time = req._tracdeveloper_hdlr.buf[0].created
+            add_script_data(req, log_data=[
+                (int((r.created - first_time) * 1000), r.module,
+                 r.levelname, r.getMessage())
+                for r in req._tracdeveloper_hdlr.buf
+            ])
             req._tracdeveloper_hdlr.formatter = None
             del req._tracdeveloper_hdlr.buf[:]
             self.log.removeHandler(req._tracdeveloper_hdlr)
             del req._tracdeveloper_hdlr
-            return stream
-
-        add_script(req, 'developer/js/log.js')
-
-        def fn(stream):
-            for kind, data, pos in stream:
-                if kind is END and data.localname == 'body':
-                    first_time = req._tracdeveloper_hdlr.buf \
-                                 and req._tracdeveloper_hdlr.buf[0].created
-
-                    elm = tag.div(tag.table(tag.thead(tag.tr(
-                        tag.th('Time'),
-                        tag.th('Module'),
-                        tag.th('Level'),
-                        tag.th('Message'),
-                    )), class_='listing')([
-                        tag.tr(
-                            tag.td(int((r.created - first_time) * 1000)),
-                            tag.td(r.module),
-                            tag.td(r.levelname),
-                            tag.td(r.getMessage()),
-                            class_=(i%2 and 'even' or 'odd'),
-                        )
-                        for i, r in enumerate(req._tracdeveloper_hdlr.buf)
-                    ]), id='tracdeveloper-log')
-                    for evt in elm.generate():
-                        yield evt
-                    del elm
-                    req._tracdeveloper_hdlr.formatter = None
-                    del req._tracdeveloper_hdlr.buf[:]
-                    self.log.removeHandler(req._tracdeveloper_hdlr)
-                    del req._tracdeveloper_hdlr
-                yield kind, data, pos
-        return stream | fn
+        return template, data, content_type
