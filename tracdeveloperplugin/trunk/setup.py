@@ -35,6 +35,7 @@ setup(
             'developer.dozer = tracdeveloper.dozer',
         ]
     },
+    install_requires=['Trac'],
     package_data = {
         'tracdeveloper' : [
             'htdocs/css/*.css',
