@@ -16,8 +16,9 @@ import re
 import sys
 
 from trac.core import *
-from trac.web import HTTPNotFound, IRequestHandler
-from trac.mimeview import Mimeview, Context
+from trac.mimeview import Mimeview
+from trac.web.api import HTTPNotFound, IRequestHandler
+from trac.web.chrome import web_context
 
 from tracdeveloper.util import linebreaks
 
@@ -67,7 +68,7 @@ class APIDocumentation(Component):
 
         def mimeview_formatter(req, text):
             mimeview = Mimeview(self.env)
-            context = Context.from_request(req)
+            context = web_context(req)
             return mimeview.render(context, mimetype, text)
         return formatter
 
