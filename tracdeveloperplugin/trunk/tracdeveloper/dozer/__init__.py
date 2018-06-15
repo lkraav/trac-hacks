@@ -4,7 +4,6 @@ import os
 import sys
 import threading
 import time
-from StringIO import StringIO
 from types import FrameType, ModuleType
 
 #
@@ -12,11 +11,9 @@ from types import FrameType, ModuleType
 # import ImageDraw
 
 from trac.core import *
+from trac.util.html import Markup
 from trac.web.api import IRequestHandler, HTTPNotFound, HTTPForbidden
 from trac.web.chrome import add_stylesheet, add_script
-
-from genshi.core import Markup
-from genshi.builder import tag
 
 # from paste import fileapp
 # from paste import urlparser
@@ -27,17 +24,24 @@ from tracdeveloper.dozer import reftree
 
 localDir = os.path.join(os.getcwd(), os.path.dirname(__file__))
 
+
 def get_repr(obj, limit=250):
     return cgi.escape(reftree.get_repr(obj, limit))
 
-class _(object): pass
+
+class _(object):
+    pass
+
+
 dictproxy = type(_.__dict__)
 
-method_types = [type(tuple.__le__),                 # 'wrapper_descriptor'
-                type([1].__le__),                   # 'method-wrapper'
-                type(sys.getcheckinterval),         # 'builtin_function_or_method'
-                type(cgi.FieldStorage.getfirst),    # 'instancemethod'
-                ]
+method_types = [
+    type(tuple.__le__),               # 'wrapper_descriptor'
+    type([1].__le__),                 # 'method-wrapper'
+    type(sys.getcheckinterval),       # 'builtin_function_or_method'
+    type(cgi.FieldStorage.getfirst),  # 'instancemethod'
+]
+
 
 def url(req, path):
     if path.startswith('/'):
