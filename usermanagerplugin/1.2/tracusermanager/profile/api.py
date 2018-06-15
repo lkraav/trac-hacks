@@ -75,9 +75,10 @@ def get_custom_fields_config(config, section_name):
 
 
 class UserProfileManager(Component):
-    attachments_wikiPage = Option('user_manager', 'wiki_page_attachment',
-        'UserManagerPluginPictures',
-        """Wiki Page used by TracUserManager plugin to manage UserProfile's 
+
+    attachments_wikiPage = Option(
+        'user_manager', 'wiki_page_attachment', 'UserManagerPluginPictures',
+        """Wiki Page used by TracUserManager plugin to manage UserProfile's
         picture.""")
 
     SUPPORTED_FIELD_TYPES = ['text', 'select', 'multichecks', 'textarea',
@@ -123,7 +124,7 @@ class UserProfileManager(Component):
             type = text|checkbox|select|radio|textarea
             label = label description
             value = default value for field content
-            options = options for select and multichecks types 
+            options = options for select and multichecks types
               (list, leave first empty for optional)
             cols = number of columns for text area/wikitext
             rows = number of rows for text area/wikitext
@@ -202,7 +203,7 @@ class UserProfileManager(Component):
             env.config.set(self.CONFIG_SECTION_NAME, field['name'] + '.order',
                            field.get('order', 0) or last)
         elif 'order' in field and field['order']:
-            # Exists and have value - 
+            # Exists and have value -
             # note: will not update order conflicting with other fields
             if str(field['order']).isdigit():
                 env.config.set(self.CONFIG_SECTION_NAME,
@@ -217,7 +218,7 @@ class UserProfileManager(Component):
 
     def delete_user_profile_field(self, field, config_save=True):
         """ Deletes a custom field.
-        Input is a dictionary (see update_custom_field), but only ['name'] 
+        Input is a dictionary (see update_custom_field), but only ['name']
         is required.
         """
 

@@ -142,8 +142,8 @@ class UserManagementAdminPage(Component):
                           html.input(type='submit',
                                      name='um_import_current_users',
                                      value=_("Add Users")),
-                                     action=req.href.admin('accounts/users'),
-                                     method='post'))
+                          action=req.href.admin('accounts/users'),
+                          method='post'))
 
         try:
             from acct_mgr.api import AccountManager

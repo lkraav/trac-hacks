@@ -125,14 +125,15 @@ class IAttributeProvider(Interface):
 class UserManager(Component):
     implements(ITemplateProvider)
 
-    user_store = ExtensionOption('user_manager', 'user_store', IUserStore,
-        'SessionUserStore',
+    user_store = ExtensionOption(
+        'user_manager', 'user_store', IUserStore, 'SessionUserStore',
         """Name of the component implementing `IUserStore`, which is used
         for storing project's team""")
 
-    attribute_provider = ExtensionOption('user_manager', 'attribute_provider',
-        IAttributeProvider, 'SessionAttributeProvider',
-        """Name of the component implementing `IAttributeProvider`, which is 
+    attribute_provider = ExtensionOption(
+        'user_manager', 'attribute_provider', IAttributeProvider,
+        'SessionAttributeProvider',
+        """Name of the component implementing `IAttributeProvider`, which is
         used for storing user attributes""")
 
     change_listeners = ExtensionPoint(IUserAttributeChangeListener)
@@ -277,7 +278,7 @@ class SessionUserStore(Component):
                 VALUES(%s,%s,1)
                 """, (username, int(time.time())))
             db("""
-                DELETE FROM session_attribute 
+                DELETE FROM session_attribute
                 WHERE sid=%s AND authenticated=1 AND name='enabled'
                 """, (username,))
             db("""
@@ -294,7 +295,7 @@ class SessionUserStore(Component):
                 """)]
         else:
             return [username for username, in self.env.db_query("""
-                SELECT sid FROM session_attribute 
+                SELECT sid FROM session_attribute
                 WHERE sid LIKE %s AND name='enabled' AND value='1'
                 """, (username_pattern,))]
 
@@ -341,7 +342,7 @@ class SessionAttributeProvider(Component):
     def get_usernames_with_attributes(self, attributes_dict=None):
         """ Returns all usernames matching attributes_dict.
 
-        Example: self.get_usernames_with_attributes(dict(name='John%', 
+        Example: self.get_usernames_with_attributes(dict(name='John%',
                                                          email='%'))
 
         @param attributes_dict: dict
@@ -396,7 +397,7 @@ class CachedSessionAttributeProvider(SessionAttributeProvider):
                 self._attribute_cache[username] = \
                     dict((name, value)
                          for name, value in self.env.db_query("""
-                            SELECT name, value FROM session_attribute 
+                            SELECT name, value FROM session_attribute
                             WHERE sid=%s
                             """, (username,)))
                 self._attribute_cache_last_update[username] = now
@@ -450,5 +451,5 @@ class EnvironmentFixKnownUsers(Component):
 
         return False
 
-    def upgrade_environment(self, db=None):
+    def upgrade_environment(self):
         pass

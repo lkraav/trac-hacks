@@ -20,10 +20,6 @@
  height: auto;
 }
 
-.um_profile_fields {
-
-}
-
 .um_profile_fields .field LABEL {
  margin-right: 5px;
  min-width: 70px;
@@ -37,5 +33,4 @@
  border-top: 1px solid #c7c7c7;
  text-align: right;
  padding: 5px;
-
 }

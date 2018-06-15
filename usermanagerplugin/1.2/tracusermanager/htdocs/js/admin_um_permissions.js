@@ -1,4 +1,4 @@
-jQuery(document).ready(function ($) {
+jQuery(function ($) {
   // Hide permissions
   var permissions = $('.um_permissions_group').not('.um_permissions_group_groups');
   permissions.hide();
