@@ -18,7 +18,7 @@ from trac.perm import IPermissionRequestor
 from trac.prefs.api import IPreferencePanelProvider
 from trac.util.html import html as tag
 from trac.web import IRequestHandler
-from trac.web.chrome import INavigationContributor, ITemplateProvider
+from trac.web.chrome import Chrome, INavigationContributor, ITemplateProvider
 
 __all__ = ['DeveloperPlugin']
 
@@ -75,4 +75,7 @@ class DeveloperPlugin(Component):
         if req.method == 'POST':
             key = 'developer.js.enable_debug'
             req.session[key] = req.args.get('enable_debug', '0')
-        return 'developer/prefs_developer.html', {}
+        if hasattr(Chrome(self.env), 'jenv'):
+            return 'developer/prefs_developer.html', {}, None
+        else:
+            return 'developer/prefs_developer.html', {}
