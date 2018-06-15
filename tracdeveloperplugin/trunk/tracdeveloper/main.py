@@ -13,12 +13,12 @@
 
 import re
 
-from genshi.builder import tag
 from trac.core import *
 from trac.perm import IPermissionRequestor
+from trac.prefs.api import IPreferencePanelProvider
+from trac.util.html import html as tag
 from trac.web import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.prefs.api import IPreferencePanelProvider
 
 __all__ = ['DeveloperPlugin']
 
@@ -33,11 +33,12 @@ class DeveloperPlugin(Component):
         return 'developer'
 
     def get_navigation_items(self, req):
-        if req.perm.has_permission('TRAC_DEVELOP'):
+        if 'TRAC_DEVELOP' in req.perm:
             yield ('metanav', 'developer',
                    tag.a('Developer Tools', href=req.href.developer()))
 
     # IPermissionRequestor methods
+
     def get_permission_actions(self):
         return ['TRAC_DEVELOP']
 
@@ -63,8 +64,9 @@ class DeveloperPlugin(Component):
                 ('dozer', resource_filename('tracdeveloper.dozer', 'htdocs'))]
 
     # IPreferencePanelProvider methods
+
     def get_preference_panels(self, req):
-        if req.perm.has_permission('TRAC_DEVELOP'):
+        if 'TRAC_DEVELOP' in req.perm:
             yield 'developer', 'Developer Options'
 
     def render_preference_panel(self, req, panel):
@@ -74,4 +76,3 @@ class DeveloperPlugin(Component):
             key = 'developer.js.enable_debug'
             req.session[key] = req.args.get('enable_debug', '0')
         return 'developer/prefs_developer.html', {}
-

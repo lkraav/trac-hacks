@@ -16,9 +16,8 @@ import re
 from types import BuiltinFunctionType, FunctionType, GeneratorType, MethodType
 from UserDict import DictMixin
 
-from genshi import Markup
-from genshi.builder import tag
 from trac.core import *
+from trac.util.html import html as tag
 from trac.util.text import shorten_line
 from trac.web import HTTPBadRequest, HTTPNotFound, IRequestFilter, \
                      IRequestHandler
@@ -67,7 +66,7 @@ class TemplateDebugger(Component):
         self._cache_bytime[datetime.now()] = cache_key
         new_data['context'] = ctxt
 
-        del req.chrome # reset chrome info
+        del req.chrome  # reset chrome info
         add_script(req, 'developer/js/apidoc.js')
         add_script(req, 'developer/js/debugger.js')
         add_stylesheet(req, 'common/css/code.css')

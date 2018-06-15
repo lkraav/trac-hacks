@@ -56,7 +56,7 @@ class APIDocumentation(Component):
             'doc': formatter(req, inspect.getdoc(obj)),
             'methods': self._get_methods(req, formatter, obj)
         }
-        return 'developer/apidoc.html', data, 'text/html'
+        return 'developer/apidoc.html', data, None
 
     # Internal methods
     def _get_formatter(self, module):

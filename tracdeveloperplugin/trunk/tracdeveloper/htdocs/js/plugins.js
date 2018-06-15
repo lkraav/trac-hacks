@@ -1,4 +1,4 @@
-$(document).ready(function () {
+jQuery(function ($) {
   $("#content.plugins li div.info").hide();
   $("#content.plugins li h3 a").click(function() {
     var item = $(this).parents("li:first");

@@ -18,7 +18,7 @@
   <head>
     <title>Debugger</title>
     <script type="text/javascript">/*<![CDATA[*/
-      $(document).ready(function() {
+      jQuery(function ($) {
         $("#context").initTree("${href.developer('debug')}", function(detail) {
           $("span.type", detail).click(function() {
             $(this).showDocs("${href.developer('doc')}/" + this.title);

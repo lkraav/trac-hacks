@@ -7,7 +7,7 @@ import time
 from StringIO import StringIO
 from types import FrameType, ModuleType
 
-# 
+#
 # import Image
 # import ImageDraw
 
@@ -62,16 +62,16 @@ class Dozer(Component):
     troubleshoot memory leaks"""
     period = 5
     maxhistory = 300
-    
+
     implements(IRequestHandler)
-    
+
     def __init__(self):
         self.history = {}
         self.samples = 0
         self.runthread = threading.Thread(target=self.start)
         self.runthread.setDaemon(True)
         self.runthread.start()
-    
+
     # IRequestHandler methods
     def match_request(self, req):
         return req.path_info.startswith('/developer/dozer')
@@ -91,17 +91,17 @@ class Dozer(Component):
             raise HTTPForbidden('Access to %s is forbidden' % path_info)
         add_stylesheet(req, 'dozer/main.css')
         return method(req)
-    
+
     # Internal methods
     def start(self):
         self.running = True
         while self.running:
             self.tick()
             time.sleep(self.period)
-    
+
     def tick(self):
         gc.collect()
-        
+
         typecounts = {}
         for obj in gc.get_objects():
             objtype = type(obj)
@@ -109,31 +109,31 @@ class Dozer(Component):
                 typecounts[objtype] += 1
             else:
                 typecounts[objtype] = 1
-        
+
         for objtype, count in typecounts.iteritems():
             typename = objtype.__module__ + "." + objtype.__name__
             if typename not in self.history:
                 self.history[typename] = [0] * self.samples
             self.history[typename].append(count)
-        
+
         samples = self.samples + 1
-        
+
         # Add dummy entries for any types which no longer exist
         for typename, hist in self.history.iteritems():
             diff = samples - len(hist)
             if diff > 0:
                 hist.extend([0] * diff)
-        
+
         # Truncate history to self.maxhistory
         if samples > self.maxhistory:
             for typename, hist in self.history.iteritems():
                 hist.pop(0)
         else:
             self.samples = samples
-    
+
     def stop(self):
         self.running = False
-    
+
     # Subpage handlers
     def index(self, req):
         data = {}
@@ -164,7 +164,7 @@ class Dozer(Component):
         add_script(req, 'dozer/jspark.js')
         return 'graphs.html', data, None
     index.exposed = True
-    
+
     # def chart(self, req):
     #     """Return a sparkline chart of the given type."""
     #     typename = req.path_info[23:]
@@ -176,14 +176,14 @@ class Dozer(Component):
     #     draw.line([(i, int(height - (v * scale))) for i, v in enumerate(data)],
     #               fill="#009900")
     #     del draw
-    #     
+    #
     #     f = StringIO()
     #     im.save(f, "PNG")
     #     result = f.getvalue()
-    #     
+    #
     #     req.send(result, 'image/png')
     # chart.exposed = True
-    
+
     def trace(self, req):
         typename = req.path_info[23:]
         objid = None
@@ -191,12 +191,12 @@ class Dozer(Component):
             objid = typename[typename.find('/')+1:]
             typename = typename[:typename.find('/')]
         gc.collect()
-        
+
         if objid is None:
             rows = self.trace_all(req, typename)
         else:
             rows = self.trace_one(req, typename, objid)
-        
+
         #res = Response()
         #res.body =template(req, "trace.html", output="\n".join(rows),
         #                typename=cgi.escape(typename),
@@ -208,7 +208,7 @@ class Dozer(Component):
         data['objid'] = str(objid or '')
         return 'trace.html', data, None
     trace.exposed = True
-    
+
     def trace_all(self, req, typename):
         rows = []
         for obj in gc.get_objects():
@@ -219,7 +219,7 @@ class Dozer(Component):
         if not rows:
             rows = ["<h3>The type you requested was not found.</h3>"]
         return rows
-    
+
     def trace_one(self, req, typename, objid):
         rows = []
         objid = int(objid)
@@ -240,7 +240,7 @@ class Dozer(Component):
                                         (k, get_repr(v)))
                         del v
                     rows.append('</div>')
-                    
+
                     # Referrers
                     rows.append('<div class="refs"><h3>Referrers (Parents)</h3>')
                     rows.append('<p class="desc"><a href="%s">Show the '
@@ -252,7 +252,7 @@ class Dozer(Component):
                         if parentid:
                             rows.append("<p class='obj'>%s</p>" % parentrepr)
                     rows.append('</div>')
-                    
+
                     # Referents
                     rows.append('<div class="refs"><h3>Referents (Children)</h3>')
                     for child in gc.get_referents(obj):
@@ -262,7 +262,7 @@ class Dozer(Component):
         if not rows:
             rows = ["<h3>The object you requested was not found.</h3>"]
         return rows
-    
+
     def tree(self, req):
         typename = req.path_info[22:]
         objid = None
@@ -270,7 +270,7 @@ class Dozer(Component):
             objid = typename[typename.find('/')+1:]
             typename = typename[:typename.find('/')]
         gc.collect()
-        
+
         rows = []
         objid = int(objid)
         all_objs = gc.get_objects()
@@ -282,17 +282,17 @@ class Dozer(Component):
                             "of the correct type.</h3>"]
                 else:
                     rows.append('<div class="obj">')
-                    
+
                     tree = ReferrerTree(obj, req)
                     tree.ignore(all_objs)
                     for depth, parentid, parentrepr in tree.walk(maxresults=1000):
                         rows.append(parentrepr)
-                    
+
                     rows.append('</div>')
                 break
         if not rows:
             rows = ["<h3>The object you requested was not found.</h3>"]
-        
+
         params = {'output': Markup("\n".join(rows)),
                   'typename': typename,
                   'objid': str(objid),
@@ -306,17 +306,17 @@ class Dozer(Component):
 
 
 class ReferrerTree(reftree.Tree):
-    
+
     ignore_modules = True
-    
+
     def _gen(self, obj, depth=0):
         if self.maxdepth and depth >= self.maxdepth:
             yield depth, 0, "---- Max depth reached ----"
             raise StopIteration
-        
+
         if isinstance(obj, ModuleType) and self.ignore_modules:
             raise StopIteration
-        
+
         refs = gc.get_referrers(obj)
         refiter = iter(refs)
         self.ignore(refs, refiter)
@@ -326,16 +326,16 @@ class ReferrerTree(reftree.Tree):
             if (isinstance(ref, FrameType)
                 and ref.f_code.co_filename in (thisfile, self.filename)):
                 continue
-            
+
             # Exclude all functions and classes from this module or reftree.
             mod = getattr(ref, "__module__", "")
             if "dozer" in mod or "reftree" in mod or mod == '__main__':
                 continue
-            
+
             # Exclude all parents in our ignore list.
             if id(ref) in self._ignore:
                 continue
-            
+
             # Yield the (depth, id, repr) of our object.
             yield depth, 0, '%s<div class="branch">' % (" " * depth)
             if id(ref) in self.seen:
@@ -343,21 +343,21 @@ class ReferrerTree(reftree.Tree):
             else:
                 self.seen[id(ref)] = None
                 yield depth, id(ref), self.get_repr(ref, obj)
-                
+
                 for parent in self._gen(ref, depth + 1):
                     yield parent
             yield depth, 0, '%s</div>' % (" " * depth)
-    
+
     def get_repr(self, obj, referent=None):
         """Return an HTML tree block describing the given object."""
         objtype = type(obj)
         typename = objtype.__module__ + "." + objtype.__name__
         prettytype = typename.replace("__builtin__.", "")
-        
+
         name = getattr(obj, "__name__", "")
         if name:
             prettytype = "%s %r" % (prettytype, name)
-        
+
         key = ""
         if referent:
             key = self.get_refkey(obj, referent)
@@ -367,14 +367,14 @@ class ReferrerTree(reftree.Tree):
                 % (self.req.href.developer('dozer', 'trace', typename, id(obj)), #url(self.req, "/trace/%s/%s" % (typename, id(obj))),
                    id(obj), prettytype, key, get_repr(obj, 100))
                 )
-    
+
     def get_refkey(self, obj, referent):
         """Return the dict key or attribute name of obj which refers to referent."""
         if isinstance(obj, dict):
             for k, v in obj.iteritems():
                 if v is referent:
                     return " (via its %r key)" % k
-        
+
         for k in dir(obj) + ['__dict__']:
             if getattr(obj, k, None) is referent:
                 return " (via its %r attribute)" % k

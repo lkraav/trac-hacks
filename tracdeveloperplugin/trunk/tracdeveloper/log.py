@@ -16,15 +16,14 @@ import logging
 from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import Chrome, add_script
-from genshi.core import END
-from genshi.builder import tag
+from trac.util.html import END, html as tag
 
 
 class TracDeveloperHandler(logging.Handler):
     """A custom logging handler to implement the TracDeveloper log console."""
 
     def __init__(self):
-        logging.Handler.__init__(self)
+        super(TracDeveloperHandler, self).__init__()
         self.buf = []
 
     def emit(self, record):
@@ -38,7 +37,7 @@ class DeveloperLogModule(Component):
 
     def __init__(self):
         self.log_handler = TracDeveloperHandler()
-        self.log_handler.setFormatter(self.log._trac_handler.formatter)
+        self.log_handler.setFormatter(self.log.handlers[0].formatter)
         self.log.addHandler(self.log_handler)
 
     # IRequestFilter methods
@@ -56,6 +55,7 @@ class DeveloperLogModule(Component):
         return template, data, content_type
 
     # ITemplateStreamFilter methods
+
     def filter_stream(self, req, method, filename, stream, data):
         if not hasattr(req, '_tracdeveloper_hdlr'):
             return stream
@@ -99,5 +99,3 @@ class DeveloperLogModule(Component):
                     del req._tracdeveloper_hdlr
                 yield kind, data, pos
         return stream | fn
-
-

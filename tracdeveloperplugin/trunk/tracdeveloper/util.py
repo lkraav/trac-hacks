@@ -13,7 +13,8 @@
 
 import re
 
-from genshi.builder import tag
+from trac.util.html import html as tag
+
 
 def linebreaks(value):
     """Converts newlines in strings into <p> and <br />s."""

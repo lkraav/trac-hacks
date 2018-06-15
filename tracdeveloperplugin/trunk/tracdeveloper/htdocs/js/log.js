@@ -1,4 +1,4 @@
-$(function() {
+jQuery(function ($) {
   var metanav = $('#metanav li');
   var last = metanav.eq(metanav.length - 1);
   last.removeClass('last');

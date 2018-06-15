@@ -14,6 +14,7 @@
 from trac.core import *
 from trac.web.api import IRequestFilter
 
+
 class JavascriptDeveloperModule(Component):
     """Developer functionality for JavaScript in Trac."""
 
