@@ -8,6 +8,7 @@ except ImportError:
     import dummy_threading as threading
 
 import time
+import types
 
 from trac.core import Component, ExtensionPoint, Interface, TracError, \
                       implements
@@ -435,8 +436,8 @@ class EnvironmentFixKnownUsers(Component):
         pass
 
     def environment_needs_upgrade(self):
-        def inline_overwrite_get_known_users(as_dict=False):
-            users = UserManager(self.env).get_active_users()
+        def get_known_users(env, as_dict=False):
+            users = UserManager(env).get_active_users()
             if users:
                 if as_dict:
                     return dict((user.username, (user['name'], user['email']))
@@ -445,9 +446,9 @@ class EnvironmentFixKnownUsers(Component):
                     return iter((user.username, user['name'], user['email'])
                                 for user in users)
             else:
-                return self.env.__class__.get_known_users(self.env)
+                return env.__class__.get_known_users(env)
 
-        self.env.get_known_users = inline_overwrite_get_known_users
+        self.env.get_known_users = types.MethodType(get_known_users, self.env)
 
         return False
 
