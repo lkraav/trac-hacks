@@ -63,7 +63,6 @@ class ClientTicketChanges(Component):
             etree.SubElement(xclient, 'lastupdate').text = myformat_date(
                 fromdate)
 
-        db = self.env.get_read_db()
         have_data = False
         # Load in any changes that have happend
         sql = ("""\
@@ -88,12 +87,12 @@ class ClientTicketChanges(Component):
               AND sm.due > 0)
           ORDER BY t.time
           """)
-        cur2 = db.cursor()
-        cur2.execute(sql, (client, fromdate * 1000000, todate * 1000000))
         changes = etree.SubElement(xml, 'changes')
         lasttid = 0
         for tid, summary, description, status, resolution, milestone, \
-                due, cgfield, oldvalue, newvalue in cur2:
+                due, cgfield, oldvalue, newvalue \
+                in self.env.db_query(sql, (client, fromdate * 1000000,
+                                           todate * 1000000)):
             text = ''
             if 'status' == cgfield:
                 text = 'Status changed from "%s" to "%s"' % (
