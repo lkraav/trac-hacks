@@ -22,14 +22,14 @@ import urllib2
 import urlparse
 import zipfile
 
+from trac.attachment import Attachment
+from trac.config import BoolOption, IntOption, ListOption, Option
 from trac.core import Component, implements
-from trac.mimeview.api import IContentConverter, Context
-from trac.wiki import Formatter
+from trac.mimeview.api import IContentConverter
 from trac.util.html import Markup
 from trac.util.text import unicode_quote
-from trac.web.chrome import Chrome
-from trac.config import Option, IntOption, BoolOption, ListOption
-from trac.attachment import Attachment
+from trac.web.chrome import Chrome, web_context
+from trac.wiki import Formatter
 
 INCH_TO_CM = 2.54
 
@@ -123,7 +123,7 @@ class ODTExportPlugin(Component):
 
         # Now convert wiki to HTML
         out = StringIO()
-        context = Context.from_request(req, absurls=True)
+        context = web_context(req, absurls=True)
         Formatter(self.env,
                   context('wiki', self.page_name)).format(wiki_text, out)
         html = Markup(out.getvalue())
@@ -204,7 +204,6 @@ class ODTFile(object):
         self.autostyles = {}
         self.style_name_re = re.compile('style:name="([^"]+)"')
         self.fonts = {}
-        self.zfile = None
 
     def get_template_path(self):
         for tpldir in self.template_dirs:
@@ -215,8 +214,8 @@ class ODTFile(object):
 
     def open(self):
         template = self.get_template_path()
-        self.zfile = zipfile.ZipFile(template, 'r')
-        for name in self.zfile.namelist():
+        zfile = zipfile.ZipFile(template, 'r')
+        for name in zfile.namelist():
             fname = os.path.join(self.tmpdir, name)
             if not os.path.exists(os.path.dirname(fname)):
                 os.makedirs(os.path.dirname(fname))
@@ -224,11 +223,10 @@ class ODTFile(object):
                 if not os.path.exists(fname):
                     os.mkdir(fname)
                 continue
-            fname_h = open(fname, 'w')
-            fname_h.write(self.zfile.read(name))
-            fname_h.close()
+            with open(fname, 'w') as fname_h:
+                fname_h.write(zfile.read(name))
         for xmlfile in self.xml:
-            self.xml[xmlfile] = self.zfile.read('%s.xml' % xmlfile)
+            self.xml[xmlfile] = zfile.read('%s.xml' % xmlfile)
 
     def import_xhtml(self, xhtml):
         odt = self.xhtml_to_odt(xhtml)
@@ -452,9 +450,9 @@ class ODTFile(object):
                     '%s</office:font-face-decls>' % fonts)
         # Store the new content
         for xmlfile in self.xml:
-            xmlf = open(os.path.join(self.tmpdir, '%s.xml' % xmlfile), 'w')
-            xmlf.write(self.xml[xmlfile])
-            xmlf.close()
+            xmlpath = os.path.join(self.tmpdir, '%s.xml' % xmlfile)
+            with open(xmlpath, 'w') as xmlf:
+                xmlf.write(self.xml[xmlfile])
 
     def save(self):
         self.compile()
