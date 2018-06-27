@@ -10,7 +10,7 @@ __all__ = ("add_styles",)
 
 # pylint: disable-msg=C0103
 
-style_name_re = re.compile('style:name="([^"]+)"') 
+style_name_re = re.compile('style:name="([^"]+)"')
 need_font_re = re.compile('font-name="([^"]+)"')
 
 
