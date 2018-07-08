@@ -28,9 +28,10 @@ setup(
         ticketstats.macro = ticketstats.macro
     """,
     install_requires=['Trac', 'TracAdvParseArgsPlugin'],
-    dependency_links=[
-      'https://trac-hacks.org/svn/advparseargsplugin/0.11'
-      '#egg=TracAdvParseArgsPlugin',
-    ],
-    package_data={'ticketstats': ['templates/*.html']},
+    package_data={
+        'ticketstats': [
+            'htdocs/*.js',
+            'templates/*.html'
+        ]
+    },
 )

@@ -15,9 +15,10 @@ from datetime import timedelta, datetime
 from tracadvparseargs import parseargs
 from trac.config import Option
 from trac.ticket.query import Query
-from trac.web.chrome import Chrome
-from trac.wiki.macros import WikiMacroBase
 from trac.util.datefmt import format_date, to_utimestamp, utc
+from trac.util.html import Markup
+from trac.web.chrome import add_script, add_script_data
+from trac.wiki.macros import WikiMacroBase
 
 from ticketstats import date_range
 
@@ -136,11 +137,10 @@ def _get_args_defaults(env, args):
 
 
 class TicketStatsMacro(WikiMacroBase):
-    yui_base_url = Option('ticketstats', 'yui_base_url',
-                          default='//cdnjs.cloudflare.com/ajax/libs/yui/2.9.0',
-                          doc='Location of YUI API')
+    plotly_js_url = Option('ticketstats', 'plotly_js_url',
+                           default='//cdn.plot.ly/plotly-latest.min.js',
+                           doc='Location of plotly.js')
 
-    # ==[ Helper functions ]==
     def _get_num_closed_tix(self, from_date, at_date, req, ticketFilter=""):
         """Returns an integer of the number of close ticket events counted
         between from_date to at_date."""
@@ -172,7 +172,7 @@ class TicketStatsMacro(WikiMacroBase):
 
         return count
 
-    def _get_num_open_tix(self, at_date, req, ticketFilter=""):
+    def _get_num_open_tix(self, at_date, req, ticketFilter=''):
         """Returns an integer of the number of tickets currently open on that
         date."""
 
@@ -229,8 +229,7 @@ class TicketStatsMacro(WikiMacroBase):
             sql_format_string, format_string_arguments = query_object.get_sql()
             # Hack to remove extra columns, I don't know another way to do it
             sql_format_string = "SELECT t.id " + \
-                                sql_format_string[
-                                    sql_format_string.index("FROM ticket"):]
+                sql_format_string[sql_format_string.index("FROM ticket"):]
 
             ticketFilter = "AND t.id IN (%s)" % \
                            (sql_format_string % tuple(format_string_arguments))
@@ -263,19 +262,40 @@ class TicketStatsMacro(WikiMacroBase):
             last_num_open = num_open
             last_date = cur_date
 
-        chart_data = ", \n".join(['{date: \'%(date)s\', new_tickets: %(new)d, '
-                                  'closed: %(closed)d, open: %(open)d}' % d
-                                  for d in count])
+        x = [c['date'] for c in count]
+        ticket_data = [
+            {
+                'x': x,
+                'y': [c['new'] for c in count],
+                'name': 'open',
+                'type': 'bar',
+            },
+            {
+                'x': x,
+                'y': [c['closed'] for c in count],
+                'name': 'closed',
+                'type': 'bar',
+            },
+            {
+                'x': x,
+                'y': [c['open'] for c in count],
+                'name': 'open',
+                'type': 'scatter',
+            },
+        ]
 
-        data = {
-            'chart_title': chart_title,
-            'chart_data': chart_data,
-            'height': args['height'],
-            'column_width': args['column_width'],
-            'id': random.randint(1, 9999999),
-            'yui_base_url': self.yui_base_url.rstrip('/')
-        }
+        add_script(req, self.plotly_js_url)
+        add_script(req, 'ticketstats/ticketstats.js')
+        cid = random.randint(1, 9999999)
+        add_script_data(req, {
+            'chart_%s' % cid: {'ticket_data': ticket_data},
+        })
 
-        return Chrome(self.env).render_template(formatter.req,
-                                                'ticketstats_macro.html',
-                                                data)
+        style = 'style="height: %spx">' % args['height'] \
+                if args['height'] else ''
+
+        return Markup('<h3 class="chart_title">%(title)s</h3>'
+                      '<div class="ticketstats-chart" '
+                      'id="ticketstats-chart-%(cid)s" %(style)s >'
+                      '</div>'
+                      % {'cid': cid, 'style': style, 'title': chart_title})

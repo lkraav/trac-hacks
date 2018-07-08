@@ -8,18 +8,10 @@
   <xi:include href="layout.html" />
   <head>
     <title>Ticket Statistics</title>
-    <style type="text/css">#chart {
-      height: 500px
-    }</style>
-    <script type="text/javascript" src="${plotly_js_url}"></script>
     <script type="text/javascript">
       jQuery(function($) {
         $("#start_date").datepicker();
         $("#end_date").datepicker();
-
-        function renderPlot(chart_data) {
-          Plotly.newPlot('chart', chart_data, {barmode: 'group'});
-        }
 
         var chart_form = document.getElementById("chart_form");
 
@@ -42,14 +34,14 @@
                 'milestone': chart_form.milestone.value,
               },
               function (ticket_data) {
-                renderPlot(ticket_data);
+                Plotly.newPlot('chart', ticket_data, {barmode: 'group'});
             },
             'json',
           )
           e.preventDefault();
         });
         updateStaticURL();
-        renderPlot(ticket_data);
+        Plotly.newPlot('chart', ticket_data, {barmode: 'group'});
       });
     </script>
   </head>

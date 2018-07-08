@@ -20,7 +20,8 @@ from trac.util.datefmt import format_date, parse_date, to_utimestamp, utc
 from trac.util.html import tag
 from trac.web.api import IRequestHandler
 from trac.web.chrome import (
-    Chrome, INavigationContributor, ITemplateProvider, add_script_data)
+    Chrome, INavigationContributor, ITemplateProvider, add_script,
+    add_script_data)
 
 DEFAULT_DAYS_BACK = 30 * 6
 DEFAULT_INTERVAL = 30
@@ -115,6 +116,7 @@ class TicketStatsPlugin(Component):
         milestone_list = [m.name for m in Milestone.select(self.env, show_all)]
         component_list = [c.name for c in TicketComponent.select(self.env)]
 
+        add_script(req, self.plotly_js_url)
         add_script_data(req, {
             'base_url': req.base_url,
             'ticket_data': ticket_data,
@@ -129,13 +131,13 @@ class TicketStatsPlugin(Component):
             'interval_selected': interval,
             'milestone_selected': milestone,
             'component_selected': component,
-            'plotly_js_url': self.plotly_js_url,
         }, None
 
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        return []
+        from pkg_resources import resource_filename
+        return [('ticketstats', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
