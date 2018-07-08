@@ -8,30 +8,30 @@
 # you should have received as part of this distribution.
 #
 
+import json
 import re
 from datetime import date, datetime, time, timedelta
 
-from genshi.builder import tag
 from trac.config import IntOption, Option
-from trac.core import Component, TracError, implements
+from trac.core import Component, implements
 from trac.ticket import Milestone
 from trac.ticket import Component as TicketComponent
 from trac.util.datefmt import format_date, parse_date, to_utimestamp, utc
+from trac.util.html import tag
 from trac.web.api import IRequestHandler
-from trac.web.chrome import Chrome, INavigationContributor, ITemplateProvider
+from trac.web.chrome import (
+    Chrome, INavigationContributor, ITemplateProvider, add_script_data)
 
-# ************************
 DEFAULT_DAYS_BACK = 30 * 6
 DEFAULT_INTERVAL = 30
-# ************************
 
 
 class TicketStatsPlugin(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider)
 
-    yui_base_url = Option('ticketstats', 'yui_base_url',
-                          default='//cdnjs.cloudflare.com/ajax/libs/yui/2.9.0',
-                          doc='Location of YUI API')
+    plotly_js_url = Option('ticketstats', 'plotly_js_url',
+                           default='//cdn.plot.ly/plotly-latest.min.js',
+                           doc='Location of plotly.js')
 
     default_days_back = IntOption('ticketstats', 'default_days_back',
                                   default=DEFAULT_DAYS_BACK,
@@ -40,7 +40,7 @@ class TicketStatsPlugin(Component):
     default_interval = IntOption('ticketstats', 'default_interval',
                                  default=DEFAULT_INTERVAL,
                                  doc='Number of days between each data point'
-                                     ' (resolution) by default')
+                                     ' (interval) by default')
 
     # INavigationContributor methods
 
@@ -55,66 +55,98 @@ class TicketStatsPlugin(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        return re.match(r'/ticketstats(?:_trac)?(?:/.*)?$', req.path_info)
+        return re.match(r'/ticketstats', req.path_info)
 
     def process_request(self, req):
         req.perm.require('TICKET_VIEW')
-        req_content = req.args.get('content')
-        milestone = None
-        component = None
 
-        if None not in [req.args.get('end_date'), req.args.get('start_date'),
-                        req.args.get('resolution')]:
-            # form submit
-            grab_at_date = req.args.get('end_date')
-            grab_from_date = req.args.get('start_date')
-            grab_resolution = req.args.get('resolution')
-            grab_milestone = req.args.get('milestone')
-            grab_component = req.args.get('component')
+        interval = req.args.getint('interval', self.default_interval)
 
-            if grab_milestone == "__all":
-                milestone = None
-            else:
-                milestone = grab_milestone
-
-            if grab_component == "__all":
-                component = None
-            else:
-                component = grab_component
-
-            # validate inputs
-            if None in [grab_at_date, grab_from_date]:
-                raise TracError('Please specify a valid range.')
-
-            if None in [grab_resolution]:
-                raise TracError('Please specify the graph interval.')
-
-            if 0 in [len(grab_at_date), len(grab_from_date),
-                     len(grab_resolution)]:
-                raise TracError(
-                    'Please ensure that all fields have been filled in.')
-
-            if not grab_resolution.isdigit():
-                raise TracError(
-                    'The graph interval field must be an integer, days.')
-
-            at_date = parse_date(grab_at_date)
-            at_date = datetime.combine(at_date,
-                                       time(11, 59, 59, 0, utc))  # Add tzinfo
-
-            from_date = parse_date(grab_from_date)
-            from_date = datetime.combine(from_date,
-                                         time(0, 0, 0, 0, utc))  # Add tzinfo
-
-            graph_res = int(grab_resolution)
+        todays_date = date.today()
+        at_date = req.args.get('end_date')
+        if at_date:
+            at_date = parse_date(at_date)
+            at_date = datetime.combine(at_date, time(11, 59, 59, 0, utc))
         else:
-            # default data
-            todays_date = date.today()
             at_date = datetime.combine(todays_date, time(11, 59, 59, 0, utc))
-            from_date = at_date - timedelta(self.default_days_back)
-            graph_res = self.default_interval
 
-        count = []
+        from_date = req.args.get('start_date')
+        if from_date:
+            from_date = parse_date(from_date)
+            from_date = datetime.combine(from_date, time(0, 0, 0, 0, utc))
+        else:
+            from_date = at_date - timedelta(self.default_days_back)
+
+        milestone = req.args.get('milestone')
+        if milestone == '__all':
+            milestone = None
+        component = req.args.get('component')
+        if component == '__all':
+            component = None
+
+        count = self._get_ticket_counts(from_date, at_date, interval,
+                                        milestone, component)
+        x = [c['date'] for c in count]
+        ticket_data = [
+            {
+                'x': x,
+                'y': [c['new'] for c in count],
+                'name': 'open',
+                'type': 'bar',
+            },
+            {
+                'x': x,
+                'y': [c['closed'] for c in count],
+                'name': 'closed',
+                'type': 'bar',
+            },
+            {
+                'x': x,
+                'y': [c['open'] for c in count],
+                'name': 'open',
+                'type': 'scatter',
+            },
+        ]
+
+        if req.is_xhr:
+            req.send(json.dumps(ticket_data))
+
+        show_all = req.args.get('show') == 'all'
+        milestone_list = [m.name for m in Milestone.select(self.env, show_all)]
+        component_list = [c.name for c in TicketComponent.select(self.env)]
+
+        add_script_data(req, {
+            'base_url': req.base_url,
+            'ticket_data': ticket_data,
+        })
+        Chrome(self.env).add_jquery_ui(req)
+
+        return 'ticketstats.html', {
+            'start_date': from_date,
+            'end_date': at_date,
+            'components': component_list,
+            'milestones': milestone_list,
+            'interval_selected': interval,
+            'milestone_selected': milestone,
+            'component_selected': component,
+            'plotly_js_url': self.plotly_js_url,
+        }, None
+
+    # ITemplateProvider methods
+
+    def get_htdocs_dirs(self):
+        return []
+
+    def get_templates_dirs(self):
+        from pkg_resources import resource_filename
+        return [resource_filename(__name__, 'templates')]
+
+    # Internal methods
+
+    def _get_ticket_counts(self, from_date, at_date, graph_res, milestone,
+                           component):
+
+        counts = []
 
         # Calculate 0th point
         last_date = from_date - timedelta(graph_res)
@@ -130,71 +162,16 @@ class TicketStatsPlugin(Component):
             date_str = format_date(cur_date)
             if graph_res != 1:
                 date_str = "%s thru %s" % (format_date(last_date), date_str)
-            count.append({'date': date_str,
-                          'new': num_open - last_num_open + num_closed,
-                          'closed': num_closed,
-                          'open': num_open})
+            counts.append({
+                'date': date_str,
+                'new': num_open - last_num_open + num_closed,
+                'closed': num_closed,
+                'open': num_open
+            })
             last_num_open = num_open
             last_date = cur_date
 
-        # if chart data is requested, raw text is returned rather than data
-        # object for templating
-        if req_content is not None and req_content == "chartdata":
-            js_data = '{"chartdata": [\n'
-            for x in count:
-                js_data += '{"date": "%s",' % x['date']
-                js_data += ' "new_tickets": %s,' % x['new']
-                js_data += ' "closed": %s,' % x['closed']
-                js_data += ' "open": %s},\n' % x['open']
-            js_data = js_data[:-2] + '\n]}'
-            req.send(js_data.encode('utf-8'))
-            return
-        else:
-            show_all = req.args.get('show') == 'all'
-            milestone_list = [m.name for m in
-                              Milestone.select(self.env, show_all)]
-
-            # Get list of all components
-            component_list = [c.name
-                              for c in TicketComponent.select(self.env)]
-            if milestone in milestone_list:
-                milestone_num = milestone_list.index(milestone) + 1
-            else:
-                milestone_num = 0
-
-            # index of selected component
-            if component in component_list:
-                component_num = component_list.index(component) + 1
-            else:
-                component_num = 0
-
-            data = {
-                'ticket_data': count,
-                'start_date': format_date(from_date),
-                'end_date': format_date(at_date),
-                'resolution': str(graph_res),
-                'baseurl': req.base_url,
-                'components': component_list,
-                'milestones': milestone_list,
-                'cmilestone': milestone_num,
-                'ccomponent': component_num,
-                'yui_base_url': self.yui_base_url.rstrip('/'),
-                'debug': 'debug' in req.args
-            }
-
-            if hasattr(Chrome, 'add_jquery_ui'):
-                Chrome(self.env).add_jquery_ui(req)
-
-            return 'ticketstats.html', data, None
-
-    # ITemplateProvider methods
-
-    def get_htdocs_dirs(self):
-        return []
-
-    def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return counts
 
 
 def get_num_closed_tix(env, from_date, at_date, milestone, component):
