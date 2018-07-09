@@ -460,9 +460,9 @@ class WikiFormsMacro(WikiMacroBase):
                                 datetime.fromtimestamp(
                                     entry['updated_on'], utc)
                             pretty_delta = pretty_timedelta(now, last_modified)
-                            time_string = format_datetime(last_modified,
-                                                          '%a %b %d %T %Y %Z',
-                                                          req.tz, req.locale)
+                            time_string = format_datetime(
+                                last_modified, '%a %b %d %H:%M:%S %Y %Z',
+                                req.tz, req.locale)
                         else:
                             time_string = self.to_timestring(
                                 entry['updated_on'])
