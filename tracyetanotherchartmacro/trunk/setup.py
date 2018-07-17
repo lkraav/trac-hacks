@@ -24,5 +24,6 @@ setup(
             'htdocs/*.js',
             ]
     },
+    install_requires=['TracAdvParseArgsPlugin', 'jinja2'],
     entry_points = {'trac.plugins':['yachart.web_ui = yachart.web_ui']}
 )
