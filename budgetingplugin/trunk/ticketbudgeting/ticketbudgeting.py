@@ -30,14 +30,14 @@ _, tag_, N_, add_domain = domain_functions('ticketbudgeting', '_',
                                            'tag_', 'N_', 'add_domain')
 
 BUDGETING_TABLE = Table('budgeting', key=('ticket', 'position'))[
-        Column('ticket', type='int'),
-        Column('position', type='int'),
-        Column('username'),
-        Column('type'),
-        Column('estimation', type='int64'),
-        Column('cost', type='int64'),
-        Column('status', type='int'),
-        Column('comment')
+    Column('ticket', type='int'),
+    Column('position', type='int'),
+    Column('username'),
+    Column('type'),
+    Column('estimation', type='int64'),
+    Column('cost', type='int64'),
+    Column('status', type='int'),
+    Column('comment')
 ]
 
 BUDGET_REPORT_ALL_ID = 90
@@ -123,7 +123,7 @@ class Budget:
 
             self._diff[''] = (self._to_str(), '')
             sql = ("INSERT INTO %s (%s) VALUES (%s)" %
-                    (BUDGETING_TABLE.name, set_attrs, set_vals_space))
+                   (BUDGETING_TABLE.name, set_attrs, set_vals_space))
             env.db_transaction(sql, set_vals)
             env.log.debug("Added Budgeting-row at position %s to ticket %s:"
                           "\n%s", position, ticket_id, self._to_str())
@@ -165,7 +165,7 @@ class Budget:
 
             if not set_attrs == '':
                 sql = ("UPDATE %s SET %s WHERE ticket=%%s AND position=%%s"
-                        % (BUDGETING_TABLE.name, set_attrs))
+                       % (BUDGETING_TABLE.name, set_attrs))
 
                 set_vals.append(ticket_id)
                 set_vals.append(position)
@@ -178,7 +178,7 @@ class Budget:
             self._diff[''] = ('', self._to_str())
 
             sql = ("DELETE FROM %s WHERE ticket=%%s AND position=%%s"
-                    % BUDGETING_TABLE.name)
+                   % BUDGETING_TABLE.name)
             env.db_transaction(sql, (ticket_id, position))
 
             env.log.debug("Deleted Budgeting-row for ticket %s"
@@ -195,7 +195,7 @@ class Budget:
         return ("username: %s, type: %s, estimation: %s, cost: %s,"
                 " state: %s, comment: %s" %
                 (self.get_value(1), self.get_value(2), self.get_value(3),
-                self.get_value(4), self.get_value(5), self.get_value(6)))
+                 self.get_value(4), self.get_value(5), self.get_value(6)))
 
     def get_value(self, number):
         if number is None:
@@ -228,20 +228,24 @@ class TicketBudgetingView(Component):
     _CONFIG_SECTION = 'budgeting-plugin'
 
     # these options won't be saved to trac.ini
-    _types = Option(_CONFIG_SECTION, 'types',
+    _types = Option(
+        _CONFIG_SECTION, 'types',
         'Implementation|Documentation|Specification|Test',
         """Types of work, which could be selected in select-box.""")
 
-    Option(_CONFIG_SECTION, 'retrieve_users', "permission",
+    Option(
+        _CONFIG_SECTION, 'retrieve_users', "permission",
         """indicates whether users should be retrieved from session or
         permission table; possible values: permission, session""")
 
-    Option(_CONFIG_SECTION, 'exclude_users',
+    Option(
+        _CONFIG_SECTION, 'exclude_users',
         "'anonymous','authenticated','tracadmin'",
         """list of users, which should be excluded to show in the
         drop-down list; should be usable as SQL-IN list""")
 
-    _def_cost = IntOption(_CONFIG_SECTION, 'default_cost', 0,
+    _def_cost = IntOption(
+        _CONFIG_SECTION, 'default_cost', 0,
         doc="""Default costs or -1 to disabled entering costs.
                This might useful when costs are entered by third
                party software.""")
@@ -252,41 +256,41 @@ class TicketBudgetingView(Component):
     _budgets = None
     _changed_by_author = None
 
-    BUDGET_REPORTS = [(BUDGET_REPORT_ALL_ID, 'report_title_90',
-                       'report_description_90',
-        """SELECT t.id, t.summary,
-                  t.milestone AS __group__, '../milestone/' ||
-                  t.milestone AS __grouplink__, t.owner, t.reporter,
-                  t.status, t.type, t.priority, t.component,
-                  COUNT(b.ticket) AS Count, SUM(b.cost) AS Cost,
-                  SUM(b.estimation) AS Effort,
-                  %(status)s || '%%' AS "Status",
-         (CASE
-           WHEN t.status='closed'
-           THEN 'color: #777; background: #ddd; border-color: #ccc;'
-           WHEN SUM(b.cost) > SUM(b.estimation)
-           THEN 'font-weight: bold; background: orange;'
-          END) AS __style__
-        FROM ticket t
-        LEFT JOIN budgeting b ON b.ticket = t.id
-        WHERE t.milestone LIKE
-        (CASE $MILESTONE
-                  WHEN '' THEN '%%'
-                  ELSE $MILESTONE END) and
-        (t.component LIKE (CASE $COMPONENT
-                  WHEN '' THEN '%%'
-                  ELSE $COMPONENT END) or t.component is null) and
-        (t.owner LIKE (CASE $OWNER
-                  WHEN '''' THEN $USER
-                  ELSE $OWNER END) or t.owner is null or
-         b.username LIKE (CASE $OWNER
-                  WHEN '''' THEN $USER
-                  ELSE $OWNER END) )
-        GROUP BY t.id, t.type, t.priority, t.summary, t.owner, t.reporter,
-                 t.component, t.status, t.milestone
-        HAVING COUNT(b.ticket) > 0
-        ORDER BY t.milestone DESC, t.status, t.id DESC
-        """)]
+    BUDGET_REPORTS = [
+        (BUDGET_REPORT_ALL_ID, 'report_title_90', 'report_description_90',
+         """SELECT t.id, t.summary,
+                   t.milestone AS __group__, '../milestone/' ||
+                   t.milestone AS __grouplink__, t.owner, t.reporter,
+                   t.status, t.type, t.priority, t.component,
+                   COUNT(b.ticket) AS Count, SUM(b.cost) AS Cost,
+                   SUM(b.estimation) AS Effort,
+                   %(status)s || '%%' AS "Status",
+          (CASE
+            WHEN t.status='closed'
+            THEN 'color: #777; background: #ddd; border-color: #ccc;'
+            WHEN SUM(b.cost) > SUM(b.estimation)
+            THEN 'font-weight: bold; background: orange;'
+           END) AS __style__
+         FROM ticket t
+         LEFT JOIN budgeting b ON b.ticket = t.id
+         WHERE t.milestone LIKE
+         (CASE $MILESTONE
+                   WHEN '' THEN '%%'
+                   ELSE $MILESTONE END) and
+         (t.component LIKE (CASE $COMPONENT
+                   WHEN '' THEN '%%'
+                   ELSE $COMPONENT END) or t.component is null) and
+         (t.owner LIKE (CASE $OWNER
+                   WHEN '''' THEN $USER
+                   ELSE $OWNER END) or t.owner is null or
+          b.username LIKE (CASE $OWNER
+                   WHEN '''' THEN $USER
+                   ELSE $OWNER END) )
+         GROUP BY t.id, t.type, t.priority, t.summary, t.owner, t.reporter,
+                  t.component, t.status, t.milestone
+         HAVING COUNT(b.ticket) > 0
+         ORDER BY t.milestone DESC, t.status, t.id DESC
+         """)]
 
     def __init__(self):
         try:
@@ -489,9 +493,9 @@ class TicketBudgetingView(Component):
                 WHERE b.ticket=t.id AND t.milestone=%s
                 """, (ms,)):
             html = '<dl><dt>' + _('Budget in hours') + ':</dt><dd> </dd>' \
-                    '<dt>' + _('Cost') + ': <dd>%.2f</dd></dt>' \
-                    '<dt>' + _('Estimation') + ': <dd>%.2f</dd></dt>' \
-                    '<dt>' + _('Status') + ': <dd>%.1f%%</dd></dt></dl>'
+                   '<dt>' + _('Cost') + ': <dd>%.2f</dd></dt>' \
+                   '<dt>' + _('Estimation') + ': <dd>%.2f</dd></dt>' \
+                   '<dt>' + _('Status') + ': <dd>%.1f%%</dd></dt></dl>'
             html %= row[0], row[1], row[2]
             html = self._get_progress_html(row[0], row[1], row[2]) + html
 
