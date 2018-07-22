@@ -118,29 +118,32 @@ class TimeTrackingChartMacro(WikiMacroBase):
         r = query_chart_data(self.env, kw)
 
         chart_data = {
-            'width': width,
-            'height': height,
 
             'data': {
-                'labels': r[0],
-                'datasets': [
-                    {
-                        'label': "Time tracking data",
-                        'fillColor': "rgba(151,187,205,0.5)",
-                        'strokeColor': "rgba(151,187,205,1.0)",
-                        'pointColor': "rgba(151,187,205,1.0)",
-                        'data': r[1],
-                    },
-                ]
+                'x': r[0],
+                'y': r[1],
+                'type': 'line',
+                'mode': 'lines+markers',
+                'fill': 'tozeroy',
             },
+
+            'layout': {
+                'width': width,
+                'height': height,
+                'margin': {
+                    'r': 0,
+                    't': 0,
+                },
+            },
+
             'options': {
-                'animation': False,
-                'pointHitDetectionRadius' : 1,
+                'displayModeBar': False,
+                'staticPlot': False, 
             },
         }
         chart_data_id = '%012x' % id(chart_data)
         
-        add_script(req, 'timetracking/Chart.js')
+        add_script(req, 'timetracking/plotly-basic.min.js')
         add_script(req, 'timetracking/timetrackingchart.js')
         add_script_data(req, {'timetracking_chart_%s' % chart_data_id: chart_data})
 
