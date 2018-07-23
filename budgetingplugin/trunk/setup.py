@@ -10,8 +10,8 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='Budgeting Plugin',
-    version='0.6.6',
+    name='TracBudgeting',
+    version='0.6.7',
     author='Gefasoft AG, Franz Mayer',
     author_email='franz.mayer@gefasoft.de',
     description='Possibility to add budgeting information '
