@@ -65,7 +65,8 @@ class PrivateTicketsPolicy(Component):
     def check_permission(self, action, username, resource, perm):
         if username == 'anonymous' or \
                 action in self.ignore_permissions or \
-                'TRAC_ADMIN' in perm:
+                'TRAC_ADMIN' in perm or \
+                action != 'TICKET_VIEW':
             return None
 
         # Look up the resource parentage for a ticket.
