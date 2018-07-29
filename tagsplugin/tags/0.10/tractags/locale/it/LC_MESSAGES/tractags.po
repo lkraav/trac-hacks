@@ -1,0 +1,346 @@
+# Italian translations for TracTags.
+# Copyright (C) 2014
+# This file is distributed under the same license as the TracTags
+# project.
+#
+# Translators:
+# Roberto Longobardi <seccanj@gmail.com>, 2011
+msgid ""
+msgstr ""
+"Project-Id-Version: TracTags 0.7\n"
+"Report-Msgid-Bugs-To: hoff.st@shaas.net\n"
+"POT-Creation-Date: 2014-03-30 13:34+0200\n"
+"PO-Revision-Date: 2014-03-30 12:17+0000\n"
+"Last-Translator: Roberto Longobardi <seccanj@gmail.com>\n"
+"Language-Team: Italian (http://www.transifex.com/projects/p/Trac_Plugin-"
+"L10N/language/it/)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.3\n"
+
+#: tractags/admin.py:27
+msgid "Tag System"
+msgstr ""
+
+#: tractags/admin.py:27 tractags/templates/admin_tag_change.html:42
+msgid "Replace"
+msgstr ""
+
+#: tractags/admin.py:52
+msgid "Selected current tag(s) and either new tag or delete approval are required"
+msgstr ""
+
+#: tractags/api.py:541
+#, python-format
+msgid "Tags are not supported on the '%s' realm"
+msgstr "I tag non sono supportati sul reame '%s'"
+
+#: tractags/db.py:33
+msgid ""
+"A newer plugin version has been installed before, but downgrading is "
+"unsupported."
+msgstr ""
+
+#: tractags/db.py:68
+#, python-format
+msgid "No upgrade module for version %(num)i (%(version)s.py)"
+msgstr ""
+
+#. TRANSLATOR: Keep macro doc style formatting here, please.
+#: tractags/macros.py:111
+msgid ""
+"Display a tag cloud.\n"
+"\n"
+"    Show a tag cloud for all tags on resources matching query.\n"
+"\n"
+"    Usage:\n"
+"\n"
+"    {{{\n"
+"    [[TagCloud(query,caseless_sort=<bool>,mincount=<n>)]]\n"
+"    }}}\n"
+"    caseless_sort::\n"
+"      Whether the tag cloud should be sorted case-sensitive.\n"
+"    mincount::\n"
+"      Optional integer threshold to hide tags with smaller count.\n"
+"\n"
+"    See tags documentation for the query syntax.\n"
+"    "
+msgstr ""
+
+#: tractags/macros.py:127
+msgid ""
+"List tagged resources.\n"
+"\n"
+"    Usage:\n"
+"\n"
+"    {{{\n"
+"    [[ListTagged(query)]]\n"
+"    }}}\n"
+"\n"
+"    See tags documentation for the query syntax.\n"
+"    "
+msgstr ""
+"Lista delle risorse taggate.\n"
+"\n"
+"    Uso: \n"
+"\n"
+"    {{{\n"
+"    [[ListTagged(query)]]\n"
+"    }}}\n"
+"\n"
+"    Consultare la documentazione sui tag per la sintassi delle query."
+
+#: tractags/macros.py:235
+msgid "Id"
+msgstr ""
+
+#: tractags/macros.py:239
+msgid "Realm"
+msgstr ""
+
+#. TRANSLATOR: Header label text for tag list at wiki page bottom.
+#: tractags/macros.py:240 tractags/web_ui.py:68 tractags/web_ui.py:107
+#: tractags/wiki.py:227 tractags/wiki.py:254
+#: tractags/templates/admin_tag_change.html:13
+msgid "Tags"
+msgstr "Tag"
+
+#: tractags/macros.py:372
+msgid "No tags found"
+msgstr ""
+
+#: tractags/macros.py:387
+#, python-format
+msgid "Page %(num)d"
+msgstr ""
+
+#: tractags/macros.py:398
+msgid "Next Page"
+msgstr ""
+
+#: tractags/macros.py:403
+msgid "Previous Page"
+msgstr ""
+
+#: tractags/query.py:191
+msgid "Attribute must be a word"
+msgstr "L'attributo deve essere una parola"
+
+#: tractags/query.py:216
+msgid "Expected ) at end of sub-expression"
+msgstr "Previsto ) alla fine del sotto-espressione"
+
+#: tractags/query.py:233
+msgid "Unexpected end of string"
+msgstr "Inaspettata fine della stringa"
+
+#: tractags/query.py:239
+#, python-format
+msgid "Expected terminal, got '%s'"
+msgstr "Carattere terminale previsto, trovato '%s'"
+
+#: tractags/query.py:427
+#, python-format
+msgid "Invalid attribute '%s'"
+msgstr "Attributo non valido '%s'"
+
+#: tractags/ticket.py:44
+msgid "List of ticket fields to expose as tags."
+msgstr "Elenco dei campi della segnalazione da esporre come tag."
+
+#: tractags/ticket.py:47
+msgid "Do not collect tags from closed tickets."
+msgstr "Non collezionare i tag da segnalazioni chiuse."
+
+#. TRANSLATOR: The meta-nav link label.
+#: tractags/web_ui.py:121
+msgid "Back to Cloud"
+msgstr ""
+
+#: tractags/wiki.py:220
+#, python-format
+msgid "%(tags)s added"
+msgid_plural "%(tags)s added"
+msgstr[0] "%(tags)s aggiunto"
+msgstr[1] "%(tags)s aggiunti"
+
+#: tractags/wiki.py:224
+#, python-format
+msgid "%(tags)s removed"
+msgid_plural "%(tags)s removed"
+msgstr[0] "%(tags)s eliminato"
+msgstr[1] "%(tags)s eliminati"
+
+#. TRANSLATOR: How to delimit added and removed tags.
+#: tractags/wiki.py:226
+msgid "; "
+msgstr ""
+
+#. TRANSLATOR: Label text for link to '/tags'.
+#: tractags/wiki.py:270
+msgid "view all tags"
+msgstr "vedi tutti i Tag"
+
+#. TRANSLATOR: ... (view all tags)
+#: tractags/wiki.py:272
+#, python-format
+msgid "Tag under: (%(tags_link)s)"
+msgstr "Tagga con: (%(tags_link)s)"
+
+#: tractags/wiki.py:353
+msgid "no permission to view tags"
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:16
+msgid "Manage Tags"
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:19
+#
+msgid "Filters"
+msgstr "Filtri"
+
+#: tractags/templates/admin_tag_change.html:20
+msgid "Tag filters"
+msgstr "Filtra i Tag"
+
+#: tractags/templates/admin_tag_change.html:21
+msgid "Realms"
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:30
+msgid "Update"
+msgstr "Aggiorna"
+
+#: tractags/templates/admin_tag_change.html:43
+msgid ""
+"Select an existing tag to replace with another one;\n"
+"          two or more to consolidate into one. The [1:required] new tag\n"
+"          may actually be an existing tag or a new one. A change comment "
+"will\n"
+"          be added if supported by the tag storage for the resource's "
+"realm."
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:49
+msgid "Current Tag:"
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:60
+msgid ""
+"New Tag:[1:]\n"
+"            [2:][3:]or\n"
+"            [4:]\n"
+"            allow tag deletion"
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:67
+msgid "Comment (optional):"
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:71
+msgid ""
+"[1:Beware:] Attempting to replace one or more tags will\n"
+"            always add the new tag, but [2:removal could fail]\n"
+"            for some tags, because tags might be immutable depending\n"
+"            on internals of the tag provider they've been derived from."
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:77
+msgid ""
+"You'll need to investigate further on how to change/remove these\n"
+"            remaining tags closer to the tagged resource, i.e. in your\n"
+"            [1:trac.ini] see [2:ticket_fields] option\n"
+"            that lists fields to expose as tags for tag realm:ticket."
+msgstr ""
+
+#: tractags/templates/admin_tag_change.html:89
+msgid "Change"
+msgstr ""
+
+#: tractags/templates/listtagged_results.html:12
+msgid ""
+"You seem to be using an old Tag query. Try using the\n"
+"      [1:new syntax] in your\n"
+"      [2:ListTagged] macro."
+msgstr ""
+
+#: tractags/templates/listtagged_results.html:18
+msgid "Results"
+msgstr ""
+
+#: tractags/templates/listtagged_results.html:35
+#: tractags/templates/listtagged_results.html:48
+msgid "No resources found"
+msgstr ""
+
+#: tractags/templates/tag_view.html:25
+msgid "Filter Tags"
+msgstr "Filtra i Tag"
+
+#: tractags/templates/tag_view.html:35
+msgid "Error:"
+msgstr "Errore:"
+
+#: tractags/templates/tag_view.html:38
+msgid "Query syntax:"
+msgstr "Sintassi della query:"
+
+#: tractags/templates/tag_view.html:39
+msgid ""
+"[1:Use [2:tag1 tag2] to match [3:all] tags.]\n"
+"            [4:[5:tag1 or tag2] will match [6:any] tag.]\n"
+"            [7:Negate a tag with [8:-tag1].]\n"
+"            [9:Group sub-queries with [10:(tag1 or tag2)].]\n"
+"            [11:Quote strings to include special characters.]\n"
+"            [12:Restrict search to a specific realm with [13:realm:wiki].]"
+msgstr ""
+"[1:Usa [2:tag1 tag2] per verificare [3:tutti] i tag.]\n"
+"            [4:[5:tag1 o tag2] corrisponderà a [6:ogni] tag.]\n"
+"            [7:Nega un tag con [8:-tag1].]\n"
+"            [9:Raggruppa sotto-query con [10:(tag1 o tag2)].]\n"
+"            [11:Racchiudi le stringhe tra virgolette per includere "
+"caratteri speciali]\n"
+"            [12:Restringi la ricerca ad un ambito specifico con "
+"[13:realm:wiki].]"
+
+#: tractags/templates/tag_view.html:56
+msgid "Go to wiki page"
+msgstr ""
+
+#: tractags/templates/tag_view.html:52
+#, python-format
+msgid ""
+"Showing objects tagged with\n"
+"            [1:\n"
+"              '%(query)s'\n"
+"            ]"
+msgstr ""
+
+#: tractags/templates/tag_view.html:60
+#, python-format
+msgid "Showing objects tagged with '%(query)s'"
+msgstr ""
+
+#: tractags/templates/tag_view.html:63
+#, python-format
+msgid "Showing objects matching '%(query)s'"
+msgstr ""
+
+#: tractags/templates/tag_view.html:67
+msgid ""
+"[1:\n"
+"            Create Wiki page\n"
+"          ]\n"
+"          for this tag"
+msgstr ""
+
+#: tractags/templates/tag_view.html:77
+#, python-format
+msgid ""
+"Showing only tags with %(mincount)s or more occurrences\n"
+"          ([1:view all tags])"
+msgstr ""
+
