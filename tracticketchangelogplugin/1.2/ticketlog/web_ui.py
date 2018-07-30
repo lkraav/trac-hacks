@@ -24,7 +24,7 @@ from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
                             web_context
 from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.util.datefmt import format_datetime, from_utimestamp, user_time
-from trac.util.text import shorten_line
+from trac.util.text import exception_to_unicode, shorten_line
 from trac.util.translation import domain_functions
 from tracopt.ticket.commit_updater import CommitTicketUpdater
 
@@ -156,10 +156,25 @@ class TicketLogModule(CommitTicketUpdater):
         tickets = self._parse_message(message)
         with self.env.db_transaction as db:
             for tid in tickets:
-                db("""
-                    INSERT INTO ticket_revision (ticket,repos,rev)
-                    VALUES (%s,%s,%s)
-                    """, (tid, rid, rev))
+                try:
+                    db("""
+                        INSERT INTO ticket_revision (ticket,repos,rev)
+                        VALUES (%s,%s,%s)
+                        """, (tid, rid, rev))
+                except Exception as e:
+                    repos = self._get_repository_by_id(rid)
+                    self.log.warning(
+                        "Error syncing ticket-revision table for repository "
+                        "'%s', revision '%s', ticket #%s: %s",
+                        repos['name'], rev, tid, exception_to_unicode(e))
+
+    def _get_repository_by_id(self, rid):
+        rm = RepositoryManager(self.env)
+        all_repos = rm.get_all_repositories()
+        repos = {}
+        for repos in all_repos.itervalues():
+            if repos['id'] == rid:
+                return repos
 
     def _get_ticket_revisions(self, req, ticket_id):
         revisions = []
