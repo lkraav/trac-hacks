@@ -1,2 +1,3 @@
-#trac-keywords a { margin-right: 0.25em }
+#trac-keywords ul { list-style: none; padding-left: 0; margin: 0; }
+#trac-keywords li { display: inline-block; margin: 0.25em 0.5em 0.25em 0 }
 #trac-keywords .trac-keyword { text-decoration: underline }

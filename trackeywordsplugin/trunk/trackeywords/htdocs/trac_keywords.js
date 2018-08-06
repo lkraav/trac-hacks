@@ -17,9 +17,11 @@ jQuery(function($) {
 
   var $fieldset = $('<fieldset id="trac-keywords" />');
   $fieldset.append('<legend>Add Keywords</legend>')
+  $ul = $('<ul></ul>');
+  $fieldset.append($ul)
   var resource_keywords = document.getElementById(field_id).value.split(' ');
   $.each(trac_keywords, function(i, item) {
-    $fieldset.append($('<a href="#">' + item[0] + '</a> ')
+    $ul.append($('<li><a href="#">' + item[0] + '</a></li> ')
       .attr({
         'title': item[1],
         'id': 'trac-keyword-' + item[0],
