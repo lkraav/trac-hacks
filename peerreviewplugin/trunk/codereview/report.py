@@ -20,6 +20,19 @@ __license__ = "BSD"
 
 
 class PeerReviewReport(Component):
+    """Show a page with reports for getting data from code reviews.
+
+    [[BR]]
+    Code review reports are normal Trac SQL reports. A report will be shown on the code review report page when the
+    report description starts with the following comment:
+
+    {{{
+    {{{
+    #!comment
+    codereview=1
+    }}}
+    }}}
+    """
     implements(INavigationContributor, IRequestHandler)
 
     # INavigationContributor methods

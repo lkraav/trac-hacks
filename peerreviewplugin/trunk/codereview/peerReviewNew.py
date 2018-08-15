@@ -87,6 +87,8 @@ def add_users_to_data(env, reviewID, data):
 
 
 class NewReviewModule(Component):
+    """Component handling the creation of code reviews."""
+
     implements(IRequestHandler, INavigationContributor)
 
     trac_version = get_distribution('trac').version

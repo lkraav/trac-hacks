@@ -66,7 +66,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         return PeerReviewModel(self.env, key['review_id'], 'peerreview')
 
     def change_status(self, new_status, author=None):
-        """Called from the change object listener to change state of review and connencted files."""
+        """Called from the change object listener to change state of review and connected files."""
         self['status'] = new_status
         self.save_changes(author=author)
 
@@ -80,11 +80,11 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         finish_states = self.env.config.getlist("peerreview", "terminal_review_states")
         if new_status in finish_states:
             status = new_status
-            self.env.log.debug("ReviewModel: changing status of attached files for review '#%s'to '%s'" %
+            self.env.log.debug("PeerReviewModel: changing status of attached files for review '#%s'to '%s'" %
                                (self['review_id'], new_status))
         else:
             status = 'new'
-            self.env.log.debug("ReviewModel: changing status of attached files for review '#%s'to '%s'" %
+            self.env.log.debug("PeerReviewModel: changing status of attached files for review '#%s'to '%s'" %
                                (self['review_id'], status))
         for f in all_files:
             f['status'] = status

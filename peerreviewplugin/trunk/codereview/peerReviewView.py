@@ -134,7 +134,13 @@ class PeerReviewView(Component):
         if resource.realm == 'peerreviewer':
             reviewer = PeerReviewerModel(self.env, resource.id)
             reviewer['status'] = new_state
-            reviewer.save_changes(author=res_wf_state.authname)
+            # This is for updating the PeerReviewer object. The info is used for displaying the review state to the
+            # review author. Note that this change is recorded in 'peerreviewer_change' by this.
+            # The change is also recorded in the generic change table 'resourceworkflow_change' because of the
+            # Resource object 'resource'.
+            reviewer.save_changes(author=res_wf_state.authname,
+                                  comment="State change to %s  for %s from object_transition() of %s"
+                                          % (new_state, reviewer, resource))
         elif resource.realm == 'peerreview':
             review = PeerReviewModel(self.env, resource.id)
             review.change_status(new_state, res_wf_state.authname)

@@ -47,6 +47,14 @@ def _natural_order(x, y):
 
 
 class PeerReviewBrowser(Component):
+    """Provide a repository browser for file selection for code reviews.
+
+    [[BR]]
+    Component used for browsing the repository for files.
+
+    '''Note:''' do not disable otherwise no files may be selected for a review.
+    """
+
     implements(IRequestHandler, IHTMLPreviewAnnotator)
 
     # ITextAnnotator methods

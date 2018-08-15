@@ -21,6 +21,14 @@ from model import PeerReviewModel, PeerReviewerModel
 
 
 class PeerReviewTimeline(Component):
+    """Provide code review events for the timeline.
+
+    [[BR]]
+    You need permission {{{CODE_REVIEW_VIEW}}} to see code review events.
+
+    '''Note:''' It is safe to disable this plugin when no timeline for code reviews should be shown.
+    """
+
     implements(ITimelineEventProvider)
 
     # ITimelineEventProvider methods
