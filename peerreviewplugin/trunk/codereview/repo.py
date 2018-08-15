@@ -115,10 +115,13 @@ def get_nodes_for_dir(env, repodict, dir_node, fnodes, ignore_ext, follow_ext):
     return errors
 
 
-def file_data_from_repo(node):
+def file_data_from_repo(node, keyword_substitution=False):
 
     dat = u''
-    content = node.get_content()
+    if keyword_substitution:
+        content = node.get_processed_content()
+    else:
+        content = node.get_content()
     res = content.read()
     while res:
         dat += res.decode('utf-8')  # We assume 'utf-8' here. In fact it may be anything.

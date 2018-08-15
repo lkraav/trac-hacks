@@ -214,8 +214,8 @@ class PeerReviewPerform(Component):
             charset = None
 
         mimeview = Mimeview(self.env)
-        rev = None  # IS this correct? Seems to work with the call 'rev=rev or node.rev' further down
-        content = node.get_content().read(mimeview.max_preview_size)
+        rev = None  # Is this correct? Seems to work with the call 'rev=rev or node.rev' further down
+        content = node.get_content().read(mimeview.max_preview_size)  # We get the raw data without keyword substitution
         if not is_binary(content):
             if mime_type != 'text/plain':
                 plain_href = self.env.href.peerReviewBrowser(node.path, rev=rev or node.rev, format='txt')
