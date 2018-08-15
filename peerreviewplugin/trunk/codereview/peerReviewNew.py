@@ -37,9 +37,11 @@ def java_string_hashcode(s):
     return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
 
 
-def create_id_string(f):
+def create_id_string(f, rev=None):
+    # Use rev to override the revision in the id string. Used in followup review creation
+    f_rev = rev or f['revision']
     return "%s,%s,%s,%s,%s" %\
-           (f['path'], f['revision'], f['line_start'], f['line_end'], f['repo'])
+           (f['path'], f_rev, f['line_start'], f['line_end'], f['repo'])
 
 
 def create_file_hash_id(f):
@@ -91,6 +93,7 @@ class NewReviewModule(Component):
     legacy_trac = parse_version(trac_version) < parse_version('1.0.0')  # True if Trac V0.12.x
 
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
 
@@ -98,18 +101,17 @@ class NewReviewModule(Component):
         return []
 
     # IRequestHandler methods
+
     def match_request(self, req):
         return req.path_info == '/peerReviewNew'
 
-
     def process_request(self, req):
-
         req.perm.require('CODE_REVIEW_DEV')
 
         if req.method == 'POST':
             oldid = req.args.get('oldid')
             if req.args.get('create'):
-                returnid = self.createCodeReview(req)
+                returnid = self.createCodeReview(req, 'create')
                 if oldid:
                     # Automatically close the review we resubmitted from
                     review = PeerReviewModel(self.env, oldid)
@@ -118,11 +120,11 @@ class NewReviewModule(Component):
                                                               returnid)
                     add_notice(req, "Review '%s' (#%s) was automatically closed after resubmitting as '#%s'." %
                                (review['name'], oldid, returnid))
-                #If no errors then redirect to the viewCodeReview page
+                # If no errors then redirect to the viewCodeReview page
                 req.redirect(self.env.href.peerReviewView() + '?Review=' + str(returnid))
             if req.args.get('createfollowup'):
-                returnid = self.createCodeReview(req)
-                #If no errors then redirect to the viewCodeReview page
+                returnid = self.createCodeReview(req, 'followup')
+                # If no errors then redirect to the viewCodeReview page of the new review
                 req.redirect(self.env.href.peerReviewView(Review=returnid))
             if req.args.get('save'):
                 self.save_changes(req)
@@ -130,13 +132,19 @@ class NewReviewModule(Component):
             if req.args.get('cancel'):
                 req.redirect(self.env.href.peerReviewView(Review=oldid))
 
-        data = {}
-        data['users'] = get_users(self.env)
+        # Handling of GET request
 
+        data = {'users': get_users(self.env),
+                'new': "no",
+                'cycle': itertools.cycle,
+                'followup': req.args.get('followup')
+                }
+
+        is_followup = req.args.get('followup', None)
         review_id = req.args.get('resubmit')
+        review = PeerReviewModel(self.env, review_id)
 
         # If we tried resubmitting and the review_id is not a valid number or not a valid code review, error
-        review = PeerReviewModel(self.env, review_id)
         if review_id and (not review_id.isdigit() or not review):
             raise TracError("Invalid resubmit ID supplied - unable to load page correctly.", "Resubmit ID error")
 
@@ -144,9 +152,13 @@ class NewReviewModule(Component):
             raise TracError("The Review '#%s' is already closed and can't be modified." % review['review_id'],
                             "Modify Review error")
 
+        # If we are resubmitting a code review, and are neither the author nor the manager
+        if review_id and not review['owner'] == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
+            raise TracError("You need to be a manager or the author of this code review to resubmit it.",
+                            "Access error")
+
         # If we are resubmitting a code review and we are the author or the manager
         if review_id and (review['owner'] == req.authname or 'CODE_REVIEW_MGR' in req.perm):
-            data['new'] = "no"
             data['oldid'] = review_id
 
             add_users_to_data(self.env, review_id, data)
@@ -155,9 +167,21 @@ class NewReviewModule(Component):
             popFiles = []
             # Set up the file information
             for f in rfiles:
+                if is_followup:
+                    # Get the current file and repo revision
+                    repo = RepositoryManager(self.env).get_repository(f['repo'])
+                    node, display_rev, context = get_node_from_repo(req, repo, f['path'], None)
+                    f.curchangerevision = unicode(node.created_rev)
+                    f.curreporev = repo.youngest_rev
+                    # We use the current repo revision here so on POST that revision is used for creating
+                    # the file entry in the database. The POST handler parses the string for necessary information.
+                    f.id_string = create_id_string(f, repo.youngest_rev)
+                else:
+                    # The id_String holds info like revision, line numbers, path and repo. It is later used to save
+                    # file info to the database during a post.
+                    f.id_string = create_id_string(f)
                 # This id is used by the javascript code to find duplicate entries.
                 f.element_id = create_file_hash_id(f)
-                f.id_string = create_id_string(f)
                 if req.args.get('modify'):
                     comments = Comment.select_by_file_id(self.env, f['file_id'])
                     f.num_comments = len(comments) or 0
@@ -169,19 +193,11 @@ class NewReviewModule(Component):
             else:
                 data['notes'] = "%sReview based on ''%s'' (resubmitted)." %\
                                 (review['notes']+ CRLF + CRLF, review['name'])
-
             data['prevFiles'] = popFiles
-
-        # If we resubmitting a code review, and are neither the author and the manager
-        elif review_id and not review['owner'] == req.authname and not 'CODE_REVIEW_MGR' in req.perm:
-            raise TracError("You need to be a manager or the author of this code review to resubmit it.",
-                            "Access error")
         # If we are not resubmitting
         else:
             data['new'] = "yes"
 
-        data['cycle'] = itertools.cycle
-        data['followup'] = req.args.get('followup')
         prj = self.env.config.getlist("peerreview", "projects", default=[])
         if not prj:
             prj = self.env.config.getlist("ticket-custom", "project.options", default=[], sep='|')
@@ -203,17 +219,21 @@ class NewReviewModule(Component):
         add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser(),
                               'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
                               'form_token': req.form_token,
-                              'peer_is_modify': req.args.get('modify', '0')})
+                              'peer_is_modify': req.args.get('modify', '0'),
+                              'peer_is_followup': req.args.get('followup', '0')})
         add_script(req, "hw/js/peer_review_new.js")
         add_script(req, 'hw/js/peer_user_list.js')
         add_ctxt_nav_items(req)
         return 'peerReviewNew.html', data, None
 
-    # Takes the information given when the page is posted
-    # and creates a new code review struct in the database
-    # and populates it with the information.  Also creates
-    # new reviewer structs and file structs for the review.
-    def createCodeReview(self, req):
+    def createCodeReview(self, req, action):
+        """Create a new code review from the data in the request object req.
+
+        Takes the information given when the page is posted and creates a
+        new code review struct in the database and populates it with the
+        information. Also creates new reviewer structs and file structs for
+        the review.
+        """
         oldid = req.args.get('oldid', 0)
         review = PeerReviewModel(self.env)
         review['owner'] = req.authname
@@ -223,7 +243,7 @@ class NewReviewModule(Component):
             review['project'] = req.args.get('project')
         if oldid:
             # Resubmit or follow up
-            if req.args.get('followup'):
+            if action == 'followup':
                 review['parent_id'] = oldid
             else:
                 # Keep parent -> follow up relationship when resubmitting
@@ -256,10 +276,7 @@ class NewReviewModule(Component):
             rfile = ReviewFileModel(self.env)
             rfile['review_id'] = id_
             rfile['path'] = segment[0]
-            if req.args.get('followup'):
-                rfile['revision'] = req.args.get('revision', 0)
-            else:
-                rfile['revision'] = segment[1]
+            rfile['revision'] = segment[1]  # If we create a followup review this is the current repo revision
             rfile['line_start'] = segment[2]
             rfile['line_end'] = segment[3]
             rfile['repo'] = segment[4]

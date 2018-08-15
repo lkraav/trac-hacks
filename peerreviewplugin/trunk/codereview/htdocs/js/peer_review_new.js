@@ -24,7 +24,7 @@ function validateInput(form) {
         return false;
     }
 
-    if(peer_is_modify != 1){
+    if(peer_is_modify != 1 && peer_is_followup != 1){
         if($('#fileRevVal').length == 0){
             alert("You must choose a revision for your new files.");
             return false;
@@ -155,16 +155,6 @@ jQuery(document).ready(function($) {
                  addFile($(this).val());
                  });
        });
-       if($('#repo_browser').data('is-followup') == 1){
-          $('#addfiles').hide();
-          $('#add-file-fs').hide();
-          $('.newrev').each(function(idx){
-             $(this).text($('#fileRevVal').val());
-          });
-          if($('#fileRevVal').length != 0){
-              $('#missing-rev-warning').hide();
-          };
-       }
     };
 
     function switch_rev(event){
@@ -192,8 +182,8 @@ jQuery(document).ready(function($) {
       });
     };
 
-    /* Initial browser load only when not modifying */
-    if($('#repo_browser').data('is-modify') == 0){
+    /* Initial browser load only when not modifying and no followup review */
+    if($('#repo_browser').data('is-modify') == 0 && peer_is_followup == 0){
        load_browser(repo_browser);
     };
 
