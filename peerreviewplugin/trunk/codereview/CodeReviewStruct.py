@@ -23,6 +23,8 @@ class CodeReviewStruct(object):
     #Date created (using Trac's internal representation)
     DateCreate = 0
 
+    date_closed = 0
+
     #Name of the CodeReview
     Name = ""
 
@@ -38,6 +40,7 @@ class CodeReviewStruct(object):
             self.DateCreate = row[3]
             self.Name = row[4]
             self.Notes = row[5]
+            self.date_closed = row[6]
 
     def save(self, db):
         if self.IDReview == "":

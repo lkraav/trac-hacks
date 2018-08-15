@@ -54,6 +54,7 @@ class PeerReviewSearch(Component):
                 noValResult.append("")
                 noValResult.append("")
                 noValResult.append("")
+                noValResult.append("")
                 results.append(noValResult)
             data['results'] = results
             data['doSearch'] = 'yes'
@@ -159,6 +160,10 @@ class PeerReviewSearch(Component):
             tempArray.append(struct.Status)
             tempArray.append(format_date(struct.DateCreate))
             tempArray.append(struct.Name)
+            if struct.date_closed:
+                tempArray.append(format_date(struct.date_closed))
+            else:
+                tempArray.append('')
             returnArray.append(tempArray)
             tempArray = []
 

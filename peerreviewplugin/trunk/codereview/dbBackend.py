@@ -35,15 +35,15 @@ class dbBackend(object):
     def searchCodeReviewsByName(self, name):
         queryPart = self.createORLoop(name, "Name")
         if len(queryPart) == 0:
-            query = "SELECT review_id, owner, status, created, name, notes FROM peerreview"
+            query = "SELECT review_id, owner, status, created, name, notes, closed FROM peerreview"
         else:
-            query = "SELECT review_id, owner, status, created, name, notes FROM peerreview WHERE %s" % (queryPart)
+            query = "SELECT review_id, owner, status, created, name, notes, closed FROM peerreview WHERE %s" % (queryPart)
         return self.execCodeReviewQuery(query, True)
 
     #Returns an array of code reviews that match the values in the given
     #code review structure.  The 'name' part is treated as a keyword list
     def searchCodeReviews(self, crStruct):
-        query = "SELECT review_id, owner, status, created, name, notes FROM peerreview WHERE "
+        query = "SELECT review_id, owner, status, created, name, notes, closed FROM peerreview WHERE "
         queryPart = self.createORLoop(crStruct.Name, "name")
         if len(queryPart) != 0:
             query = query + "(%s) AND " % (queryPart)

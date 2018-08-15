@@ -170,6 +170,10 @@ class PeerReviewMain(Component):
             # Reviews created by me
             if rev['owner'] == req.authname:
                 rev.date = format_date(rev['created'])
+                if rev['closed']:
+                    rev.finish_date = format_date(rev['closed'])
+                else:
+                    rev.finish_date = ''
                 rev.rev_files = files[rev['review_id']]
                 # Prepare number of comments for a review
                 rev.num_comments = 0
@@ -196,6 +200,10 @@ class PeerReviewMain(Component):
             if not review_is_finished(self.env.config, rev):
                 rev.reviewer = item
                 rev.date = format_date(rev['created'])
+                if rev['closed']:
+                    rev.finish_date = format_date(rev['closed'])
+                else:
+                    rev.finish_date = ''
                 rev.rev_files = files[rev['review_id']]
                 # Prepare number of comments for a review
                 rev.num_comments = 0

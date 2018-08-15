@@ -140,7 +140,7 @@ class PeerReviewView(Component):
             # Resource object 'resource'.
             reviewer.save_changes(author=res_wf_state.authname,
                                   comment="State change to %s  for %s from object_transition() of %s"
-                                          % (new_state, reviewer, resource))
+                                                                        % (new_state, reviewer, resource))
         elif resource.realm == 'peerreview':
             review = PeerReviewModel(self.env, resource.id)
             review.change_status(new_state, res_wf_state.authname)
@@ -163,6 +163,10 @@ class PeerReviewView(Component):
             review = PeerReviewModel(self.env, review_id)
             review.html_notes = format_to_html(self.env, Context.from_request(req), review['notes'])
             review.date = format_date(review['created'])
+            if review['closed']:
+                review.finish_date = format_date(review['closed'])
+            else:
+                review.finish_date = ''
             return review
         def get_files_for_review_id(review_id, comments=False):
             """Get all files belonging to the given review id. Provide the number of comments if asked for."""

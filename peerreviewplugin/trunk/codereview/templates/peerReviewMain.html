@@ -39,7 +39,8 @@
                     <th>My Status</th>
                     <th># Comments</th>
                     <th># Not Read</th>
-                    <th>Date Opened</th>
+                    <th>Date Created</th>
+                    <th>Date Finished</th>
                     <th>Files</th>
                 </tr>
                 </thead>
@@ -47,6 +48,7 @@
                 <!--! if there are no reviews open for you, state this in the table -->
                 <tr py:if="not assigned_reviews">
                     <td>There are no code reviews assigned to you.</td>
+                    <td/>
                     <td/>
                     <td/>
                     <td/>
@@ -66,6 +68,7 @@
                     <td>$item.num_comments</td>
                     <td py:attrs="{'class': 'comment-notread'} if item.num_notread else None">$item.num_notread</td>
                     <td>${item.date}</td>
+                    <td>${item.finish_date}</td>
                     <td>
                         <p py:for="file in item.rev_files" class="path">
                             <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>
@@ -95,7 +98,8 @@
                         <th>Review Status</th>
                         <th># Comments</th>
                         <th># Not Read</th>
-                        <th>Date Opened</th>
+                        <th>Date Created</th>
+                        <th>Date Finished</th>
                         <th>Files</th>
                     </tr>
                 </thead>
@@ -103,6 +107,7 @@
                     <!--! if there are no reviews open for you, state this in the table -->
                     <tr py:if="not myreviews">
                         <td>You have no code reviews currently open.</td>
+                        <td/>
                         <td/>
                         <td/>
                         <td/>
@@ -118,6 +123,7 @@
                         <td>$item.num_comments</td>
                         <td py:attrs="{'class': 'comment-notread'} if item.num_notread else None">$item.num_notread</td>
                         <td>${item.date}</td>
+                        <td>${item.finish_date}</td>
                         <td>
                             <p py:for="file in item.rev_files" class="path">
                                 <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>

@@ -94,6 +94,7 @@
                             <th>Status</th>
                             <th>Name</th>
                             <th>Date Opened</th>
+                            <th>Date Finished</th>
                         </tr>
                     </thead>
                     <tbody py:with="cls=cycle(('odd', 'even'))" id = "myfilebody">
@@ -104,6 +105,7 @@
                                 <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[2]}</a></td>
                                 <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[4]}</a></td>
                                 <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[3]}</a></td>
+                                <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[5]}</a></td>
                             </tr>
                                 <tr py:if="item[2] == ''">
                                 <td>${item[0]}</td>
@@ -111,6 +113,7 @@
                                 <td>${item[2]}</td>
                                 <td>${item[4]}</td>
                                 <td>${item[3]}</td>
+                                <td>${item[5]}</td>
                             </tr>
                         </py:for>
                     </tbody>
