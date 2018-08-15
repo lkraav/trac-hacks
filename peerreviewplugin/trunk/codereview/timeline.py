@@ -12,7 +12,7 @@ from trac.core import Component, implements
 from trac.wiki.formatter import format_to_html
 from trac.resource import Resource
 from trac.timeline.api import ITimelineEventProvider
-from trac.util.datefmt import to_timestamp
+from trac.util.datefmt import from_utimestamp, to_utimestamp
 from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
@@ -26,14 +26,14 @@ class PeerReviewTimeline(Component):
     # ITimelineEventProvider methods
 
     def get_timeline_filters(self, req):
-        if 'CODE_REVIEW_DEV' in req.perm:
+        if 'CODE_REVIEW_VIEW' in req.perm:
             yield ('peerreview', _('Code Reviews'))
 
     def get_timeline_events(self, req, start, stop, filters):
         if 'peerreview' in filters:
             codereview_realm = Resource('peerreview')
 
-            reviews = PeerReviewModel.reviews_by_period(self.env, to_timestamp(start), to_timestamp(stop))
+            reviews = PeerReviewModel.reviews_by_period(self.env, to_utimestamp(start), to_utimestamp(stop))
 
             add_stylesheet(req, 'hw/css/peerreview.css')
 
@@ -51,7 +51,7 @@ class PeerReviewTimeline(Component):
                     if idx != last:
                         reviewers_list += ', '
 
-                yield('peerreview', codereview['created'], codereview['owner'],
+                yield('peerreview', from_utimestamp(codereview['created']), codereview['owner'],
                       (codereview_page, codereview['name'], codereview['notes'],
                        reviewers_list))
 
