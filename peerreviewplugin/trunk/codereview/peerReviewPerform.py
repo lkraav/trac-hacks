@@ -204,6 +204,7 @@ class PeerReviewPerform(Component):
 
         # Generate HTML preview - this code take from Trac - refer to their documentation
         mime_type = node.content_type
+        self.env.log.debug("mime_type taken from node.content_type: %s" % (mime_type,))
         if not mime_type or mime_type == 'application/octet-stream':
             mime_type = get_mimetype(node.name) or mime_type or 'text/plain'
 
@@ -230,6 +231,7 @@ class PeerReviewPerform(Component):
             context.set_hints(authname=req.authname)
             context.set_hints(perm=req.perm)
 
+            self.env.log.debug("Creating preview data for %s with mime_type = %s" % (node.created_path, mime_type))
             preview_data = mimeview.preview_data(context, content, len(content),
                                                  mime_type, node.created_path,
                                                  None,
