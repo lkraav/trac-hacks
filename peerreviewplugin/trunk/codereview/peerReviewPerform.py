@@ -172,7 +172,7 @@ class PeerReviewPerform(Component):
                             "Subversion Repository Error")
 
         # The following may raise an exception if revision can't be found
-        rev = r_file['revision']
+        rev = r_file['changerevision']
         if rev:
             rev = repos.normalize_rev(rev)
         rev_or_latest = rev or repos.youngest_rev
