@@ -69,7 +69,8 @@
                     <th>Filename</th>
                     <th>Repository</th>
                     <th py:if="parent_review">Old Revision</th>
-                    <th>Revision</th>
+                    <th>File Revision</th>
+                    <th>Repo Revision</th>
                     <th>Line Numbers</th>
                     <th># of Comments</th>
                     <th># Not Read</th>
@@ -85,6 +86,7 @@
                     <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
                     <td>${item['repo'] if item['repo'] else '(default)'}</td>
                     <td py:if="parent_review">${file_map[item['file_id']]['revision']}</td>
+                    <td>${item['changerevision']}</td>
                     <td>${item['revision']}</td>
                     <td py:if="item['line_start'] != 0">${item['line_start']} -
                         ${item['line_end']}</td>
