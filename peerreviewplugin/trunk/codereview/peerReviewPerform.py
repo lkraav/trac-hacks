@@ -234,6 +234,8 @@ class PeerReviewPerform(Component):
                                                  mime_type, node.created_path,
                                                  None,
                                                  annotations=['performCodeReview'])
+            data['preview'] = preview_data
+            # TODO: use in template 'preview.rendered' instead similar to preview_file.html
             data['file_rendered'] = preview_data['rendered']
 
         # A finished review can't be changed anymore except by a manager

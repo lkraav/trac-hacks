@@ -3,7 +3,8 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
-      xmlns:xi="http://www.w3.org/2001/XInclude">
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
     <xi:include href="layout.html"/>
     <head>
         <title>Review File - $review_file['name']</title>
@@ -141,7 +142,30 @@
                 </div>
             </py:if>
             <!--! displays the contents of the file being reviewed -->
+
             <div id="FilePreview">$file_rendered</div>
+
+            <!--! This is taken from preview_file.html with addition of system message div -->
+            <py:choose>
+                <p py:when="preview.size == 0">
+                    <strong>(The file is empty)</strong>
+                </p>
+                <p py:when="not preview.rendered">
+                    <py:choose>
+                        <py:when test="preview.max_file_size_reached">
+                            <div class="warning system-message">
+                                <i18n:msg params="size">
+                                    <strong>HTML preview not available</strong>, since the file size exceeds $preview.max_file_size bytes.
+                                </i18n:msg>
+                            </div>
+                        </py:when>
+                        <py:otherwise><div class="warning system-message"><i18n:msg>
+                            <strong>HTML preview not available</strong>, since no preview renderer could handle it.
+                        </i18n:msg></div></py:otherwise>
+                    </py:choose>
+                </p>
+            </py:choose>
+            <!--! End of taken from preview_file.html -->
 
             <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file['review_id']}"> Code Review Details</a> page.</p>
 
