@@ -86,7 +86,8 @@
                                 <th>Repository</th>
                                 <th>Start Line</th>
                                 <th>End Line</th>
-                                <th py:if="followup">Old Revision</th>
+                                <th py:if="followup">Previous File Revision</th>
+                                <th py:if="followup">Previous Repo Revision</th>
                                 <th>Repo Revision</th>
                                 <th py:if="modify">Comments</th>
                             </tr>
@@ -98,9 +99,10 @@
                                 <td></td>
                                 <td></td>
                                 <td></td>
+                                <td py:if="followup"></td>
+                                <td py:if="followup"></td>
                                 <td></td>
                                 <td py:if="modify"></td>
-                                <td py:if="followup"></td>
                             </tr>
                         </tbody>
 
@@ -117,6 +119,7 @@
                                 <td >${item['repo'] if item['repo'] else '(default)'}</td>
                                 <td>${item['line_start']}</td>
                                 <td>${item['line_end']}</td>
+                                <td>${item['changerevision']}</td>
                                 <td>${item['revision']}</td>
                                 <td py:if="modify">${item.num_comments}</td>
                                 <td py:if="followup" class="newrev"><p style="color:red;">Revision is missing</p></td>
