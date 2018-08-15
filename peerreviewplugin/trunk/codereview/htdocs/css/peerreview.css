@@ -104,6 +104,7 @@ table.code th.performCodeReview{
 
 #new-review fieldset {
     margin-top: 2em;
+    border-bottom: 1px solid lightgrey;
 }
 
 #noteschange{

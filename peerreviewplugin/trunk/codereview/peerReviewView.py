@@ -13,7 +13,7 @@
 
 import itertools
 from string import Template
-from trac.config import ListOption
+from trac.config import BoolOption, ListOption
 from trac.core import Component, implements, TracError
 from trac.mimeview import Context
 from trac.mimeview.api import Mimeview
@@ -53,6 +53,14 @@ class PeerReviewView(Component):
                doc="A reviewer may no longer comment on reviews in one of the given states. The review owner still "
                    "may comment. Used to lock a review against modification after all reviewing persons have "
                    "finished their task.")
+
+    show_ticket = BoolOption("peerreview", "show_ticket", False,
+                             doc="A ticket may be created with information about "
+                                 "a review. If set to {{{True}}} a ticket preview on "
+                                 "the view page of a review will be shown and a button "
+                                 "for filling the '''New Ticket''' page with data. "
+                                 "The review must have status ''reviewed''. Only the "
+                                 "author or a manager have the necessary permisisons.")
 
     # IWorkflowOperationProvider methods
 
@@ -185,6 +193,7 @@ class PeerReviewView(Component):
 
         data['review_files'] = get_files_for_review_id(review_id, True)
         data['users'] = get_users(self.env)
+        data['show_ticket'] = self.show_ticket
 
         review = get_review_by_id(review_id)
         data['review'] = review
@@ -196,7 +205,7 @@ class PeerReviewView(Component):
         # Used to indicate that a review is done. 'review_locked' is not suitable because it is false for the
         # author of a review even when the review is done.
         data['review_done'] = review_is_locked(self.env.config, review)
-
+        data['finished_states_str'] = ', '.join(self.env.config.getlist("peerreview", "terminal_review_states"))
         # Parent review if any
         if review['parent_id'] != 0:
             data['parent_review'] = get_review_by_id(review['parent_id'])

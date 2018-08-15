@@ -129,7 +129,7 @@
                     <xi:include href="user_list.html"/>
                 </fieldset>
 
-                <fieldset>
+                <div>
                     <div class="buttons">
                         <input py:if="oldid" type="hidden" name="oldid" value="$oldid"/>
                         <input py:if="not followup and not modify" type="submit" name="create"
@@ -140,7 +140,7 @@
                         <input py:if="modify" type="submit" name="cancel" value="Cancel"/>
                         <input py:if="modify" type="submit" name="save" value="Save Changes"/>
                     </div>
-                </fieldset>
+                </div>
 
             </form>
             <div id="dialog-confirm" title="Remove file?">
