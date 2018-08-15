@@ -92,8 +92,10 @@
                 <dl class="overview" id="parent-info">
                     <dt>Path:</dt>
                     <dd>${par_file['path']}</dd>
-                    <dt>Revision:</dt>
+                    <dt>Repo Revision:</dt>
                     <dd>${par_file['revision']}</dd>
+                    <dt>File Revision:</dt>
+                    <dd>${par_file['changerevision']}</dd>
                     <dt>Comments:</dt>
                     <dd py:if="diff.options.contextall">
                         <py:for each="idx, line in enumerate(par_file.comments)">
