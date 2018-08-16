@@ -1,23 +1,22 @@
+# -*- coding: utf-8 -*-
 #
-# Copyright (C) 2005-2006 Team5
-# Copyright (C) 2016 Cinc-th
-#
+# Copyright (C) 2016 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
 # you should have received as part of this distribution.
 #
-
+# Author: Cinc
+#
+from model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
 from trac.core import Component, implements
 from trac.wiki.formatter import format_to_html
-from trac.resource import Resource
+from trac.resource import Resource, get_resource_url
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import from_utimestamp, to_utimestamp
 from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.chrome import add_stylesheet
-
-from model import PeerReviewModel, PeerReviewerModel
 
 
 class PeerReviewTimeline(Component):
@@ -39,41 +38,92 @@ class PeerReviewTimeline(Component):
 
     def get_timeline_events(self, req, start, stop, filters):
         if 'peerreview' in filters:
-            codereview_realm = Resource('peerreview')
+            ts_start = to_utimestamp(start)
+            ts_stop = to_utimestamp(stop)
 
-            reviews = PeerReviewModel.reviews_by_period(self.env, to_utimestamp(start), to_utimestamp(stop))
+            coderev_resource = Resource('peerreview')
 
             add_stylesheet(req, 'hw/css/peerreview.css')
 
-            for codereview in reviews:
-                codereview_page = codereview_realm(id=codereview['review_id'])
+            def reviewers_for_review(rev_id):
                 rm = PeerReviewerModel(self.env)
                 rm.clear_props()
-                rm['review_id'] = codereview['review_id']
-                reviewers = list(rm.list_matching_objects())
+                rm['review_id'] = rev_id
+                reviewers_lst = list(rm.list_matching_objects())
 
-                reviewers_list = ''
-                last = len(reviewers) - 1
-                for idx, reviewer in enumerate(reviewers):
-                    reviewers_list = reviewers_list + reviewer['reviewer']
+                rev_list = ''
+                last = len(reviewers_lst) - 1
+                for idx, reviewer in enumerate(reviewers_lst):
+                    rev_list = rev_list + reviewer['reviewer']
                     if idx != last:
-                        reviewers_list += ', '
+                        rev_list += ', '
+                return rev_list
 
-                yield('peerreview', from_utimestamp(codereview['created']), codereview['owner'],
-                      (codereview_page, codereview['name'], codereview['notes'],
-                       reviewers_list))
+            def get_files_for_review_id(review_id):
+                """Get all files belonging to the given review id. Provide the number of comments if asked for."""
+                rfm = ReviewFileModel(self.env)
+                rfm.clear_props()
+                rfm['review_id'] = review_id
+                rev_files = list(rfm.list_matching_objects())
+                return rev_files
+
+            with self.env.db_query as db:
+                reviews = {}
+                for rid, t, author, field, oldvalue, newvalue \
+                        in db("""
+                                        SELECT pc.review_id, pc.time, pc.author,
+                                               pc.field, pc.oldvalue, pc.newvalue
+                                        FROM peerreview_change AS pc
+                                        WHERE pc.time>=%s AND pc.time<=%s
+                                        ORDER BY pc.time, pc.review_id
+                                        """, (ts_start, ts_stop)):
+                    if not (oldvalue or newvalue):
+                        # ignore empty change corresponding to custom field
+                        # created (None -> '') or deleted ('' -> None)
+                        continue
+                    if field == 'status':
+                        try:
+                            codereview, reviewers_list, coderev_page, files = reviews[rid]
+                        except KeyError:
+                            reviews[rid] = [PeerReviewModel(self.env, rid),
+                                            reviewers_for_review(rid),
+                                            coderev_resource(id=rid),
+                                            get_files_for_review_id(rid)
+                                            ]
+                            codereview, reviewers_list, coderev_page, files = reviews[rid]
+                        yield('peerreview', from_utimestamp(t), codereview['owner'],
+                              (coderev_page, codereview['name'], codereview['notes'],
+                               reviewers_list, oldvalue, newvalue, files))
+
 
     def render_timeline_event(self, context, field, event):
-        codereview_page, name, notes, reviewersList = event[3]
+        codereview_page, name, notes, reviewersList, oldstatus, newstatus, files = event[3]
 
         if field == 'url':
-            return context.href.peerReviewView(Review=codereview_page.id)
+            return get_resource_url(self.env, codereview_page, context.href)
         if field == 'title':
-            return tag(_('Code review '), tag.em(name), _(' has been raised'))
+            return tag(_('Code review '), tag.em(name), " (%s)" % codereview_page.id,
+                       _(": Status changed from '%s' to '%s'" % (oldstatus, newstatus))
+                       )
+
+        def filelist():
+            ul = tag.ul()
+            for f in files:
+                ul.append(tag.li(
+                                 tag.a('%s @ %s' % (f['path'], f['changerevision']),
+                                       href='peerReviewPerform?IDFile=%s' % f['file_id']
+                                       )
+                                )
+                          )
+            return ul
+
         if field == 'description':
-            return tag(_('Assigned to: '), reviewersList,
+            return tag(_('Assigned to: '), tag.em(reviewersList),
                        tag.div(_('Additional notes:')),
                        tag.div(
                            format_to_html(self.env, context, notes),
                            class_='notes'
-                       ))
+                       ),
+                       tag.div(_('Files:')),
+                       filelist()
+                       )
