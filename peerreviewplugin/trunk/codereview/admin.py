@@ -142,8 +142,9 @@ class PeerReviewFileAdmin(Component):
                     if name in all_proj:
                         add_warning(req, _("The project identifier already exists."))
                         do_redirect_save()
-                if not repo_path_exists(self.env, rootfolder, ''):
-                    add_warning(req, _("The given root folder can't be found in the repository or it is a file."))
+                if not repo_path_exists(self.env, rootfolder, reponame):
+                    add_warning(req, _("The given root folder %s can't be found in the repository or it is a file."),
+                                       rootfolder)
                     do_redirect_save()
                 if len(ext_list) != len(ext_filtered):
                     add_warning(req, _("Some extensions are not valid. %s"), exts)
