@@ -39,14 +39,14 @@ def repo_path_exists(env, path, reponame=''):
     try:
         node = repos.get_node(path, rev)
         return node.isdir
-    except NoSuchNode, e:
+    except NoSuchNode as e:
         return False
 
 
 def get_node(repos, path, rev):
     try:
         return repos.get_node(path, rev)
-    except NoSuchNode, e:
+    except NoSuchNode as e:
         return None
 
 from svn_externals import parse_externals

@@ -142,10 +142,10 @@ class PeerReviewBrowser(Component):
         if repo:
             try:
                 node, display_rev, context = get_node_from_repo(req, repo, path, rev)
-            except NoSuchChangeset, e:
+            except NoSuchChangeset as e:
                 data['norepo'] = _(e.message)
                 return template_file, data, None
-            except ResourceNotFound, e:  # NoSuchNode is converted to this exception by Trac
+            except ResourceNotFound as e:  # NoSuchNode is converted to this exception by Trac
                 data['nonode'] = e.message
                 node = None
                 display_rev = rev
