@@ -11,6 +11,7 @@
 
 import hashlib
 import os
+import posixpath
 from trac.versioncontrol.api import NoSuchNode, RepositoryManager
 from .model import ReviewFileModel
 
@@ -52,7 +53,7 @@ def get_node(repos, path, rev):
 from svn_externals import parse_externals
 
 
-def get_nodes_for_dir(env, repodict, dir_node, fnodes, ignore_ext, follow_ext):
+def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, follow_ext):
     """Get file nodes recursively for a given directory node.
 
     :param env: Trac environment object
@@ -64,40 +65,60 @@ def get_nodes_for_dir(env, repodict, dir_node, fnodes, ignore_ext, follow_ext):
 
     :return errors: list of errors. Empty list if no errors occurred.
     """
+    if not self._externals_map:
+        for dummykey, value in self.external_map_section.options():
+            value = value.split()
+            if len(value) != 3:
+                self.log.warn("peerreview:repomap entry %s doesn't contain "
+                              "a space-separated list of three items, "
+                              "skipping.", dummykey)
+                continue
+            key, value, repo = value
+            self._externals_map[key] = [value, repo]
+
+    env = self.env
     errors = []
     for node in dir_node.get_entries():
         if node.isdir:
-            errors += get_nodes_for_dir(env, repodict, node, fnodes, ignore_ext, follow_ext)
+            errors += get_nodes_for_dir(self, repodict, node, fnodes, ignore_ext, follow_ext)
             if follow_ext:
                 props = node.get_properties()
                 try:
                     for external in parse_externals(props['svn:externals']):
                         try:
+                            # Create a valid paths from externals information. The path may point to virtual
+                            # repositories.
+                            base_url = external['url']
+                            while base_url:
+                                if base_url in self._externals_map or base_url == u'/':
+                                    break
+                                base_url, pref = posixpath.split(base_url)
+                            # base_url is the path head of the external
+                            ext_info = self._externals_map.get(base_url)
+                            file_path = repos = reponame = None
+                            if ext_info:
+                                file_path, reponame = ext_info
+                                file_path = file_path + external['url'][len(base_url):]
+                                repos = repodict[reponame]['repo']
 
-                            # list of lists. First item is len of common prefix, second is repository object
-                            len_common = []
-                            for key, val in repodict.iteritems():
-                                try:
-                                    len_common.append([len(os.path.commonprefix([external['url'], val['url']])),
-                                                       val['repo']])
-                                except KeyError:
-                                    pass
-                            len_common.sort(reverse=True)
-                            # First item in list is repo holding the external path because it has the longest
-                            # common prefix
-                            repos = len_common[0][1]
-                            repo_path = repodict[repos.reponame]['prefix'] + '/' + \
-                                external['url'][len_common[0][0]:].lstrip('/')
-                            ext_node = get_node(repos, repo_path, external['rev'])
-                            if ext_node:
-                                errors += get_nodes_for_dir(env, repodict, ext_node, fnodes, ignore_ext, follow_ext)
+                            if file_path:
+                                rev = external['rev']
+                                if rev:
+                                    rev = repos.normalize_rev(rev)
+                                rev_or_latest = rev or repos.youngest_rev
+                                ext_node = get_node(repos, file_path, rev_or_latest)
+                            else:
+                                ext_node = None
+
+                            if ext_node and ext_node.isdir:
+                                errors += get_nodes_for_dir(self, repodict, ext_node, fnodes, ignore_ext, follow_ext)
                             else:
                                 txt = "No node for external path '%s' in repository '%s'. " \
                                       "External: '%s %s' was ignored for directory '%s'." \
-                                      % (repo_path, repos.reponame, external['url'], external['dir'], node.name)
+                                      % (file_path, reponame, external['url'], external['dir'], node.name)
                                 env.log.warning(txt)
                                 errors.append(txt)
-                        except KeyError:  # Missing data in dictionary e.g. we try to use aan unnamed repository
+                        except KeyError:  # Missing data in dictionary e.g. we try to use an unnamed repository
                             txt = "External: '%s %s' was ignored for directory '%s'." %\
                                   (external['url'], external['dir'], node.name)
                             env.log.warning(txt)
@@ -112,6 +133,8 @@ def get_nodes_for_dir(env, repodict, dir_node, fnodes, ignore_ext, follow_ext):
                     'change_rev':node.created_rev,
                     'hash': hash_from_file_node(node)
                 })
+    #env.log.info('      %s', _repo_map)
+    #env.log.info('      %s', repodict)
     return errors
 
 
@@ -179,7 +202,7 @@ def insert_project_files(self, src_path, project, ignore_ext, follow_ext=False, 
 
     fnodes = []
     if root_node.isdir:
-        errors = get_nodes_for_dir(self.env, repolist, root_node, fnodes, ignore_ext, follow_ext)
+        errors = get_nodes_for_dir(self, repolist, root_node, fnodes, ignore_ext, follow_ext)
     else:
         errors = []
 

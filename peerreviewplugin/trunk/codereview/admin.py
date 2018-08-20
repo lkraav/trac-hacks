@@ -10,6 +10,7 @@
 #
 
 from trac.admin import IAdminPanelProvider
+from trac.config import ConfigSection
 from trac.core import Component, implements
 from trac.util.translation import _
 from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, add_warning
@@ -32,7 +33,38 @@ class PeerReviewFileAdmin(Component):
     """
     implements(IAdminPanelProvider)
 
+    external_map_section = ConfigSection('peerreview:externals',
+        """It is possible to create a list of project files to check against files approved during a code review.
+        A root directory may be selected which contains the source files. While traversing the tree {{{svn:esternal}}} 
+        information is taken into account and all linked directories are also traversed.
+        
+        It is possible to have virtual repositories in Trac pointing to different parts of a bigger Subversion
+        repository. To make sure externals are properly mapped path information may be provided in the section 
+        {{{[peerreview:externals]}}} of the TracIni. Note that Subversion 1.5 server root relative URLs supported 
+        (like {{{/foo/bar/src}}}) but not other relative URLs.
+        
+        Example:
+        {{{
+        #!ini
+        [peerreview:externals]
+        1 = /svn/repos1/src_branch1/foo           /src_branch1/foo  Repo-Src1                  
+        2 = /svn/repos1/src_branch2/bar           /src_branch2/bar  Repo-Src2
+        3 = /svn/repos1/src_branch3/baz           /src_branch3/baz  Repo-Src3
+        4 = http://server/svn/repos1/src_branch3  /src_branch3  Repo-Src3
+        }}}
+        
+        With the above, the
+        `/svn/repos1/src_branch1/foo` external will
+        be mapped to `/src_branch1/foo` in the repository {{{Repo-Src1}}}. 
+        
+        You only have to provide the common path prefix here. The remainder of the external path will automatically 
+        appended thus {{{/svn/repos1/src_branch1/foo/dir1/dir2/dir3}}} becomes {{{/src_branch1/foo/dir1/dir2/dir3}}}.
+        """)
+
     # IAdminPanelProvider methods
+
+    def __init__(self):
+        self._externals_map = {}
 
     def get_admin_panels(self, req):
         if 'CODE_REVIEW_DEV' in req.perm:
@@ -79,8 +111,9 @@ class PeerReviewFileAdmin(Component):
             """
             if not ext_str:
                 return [], []
-            ext_list = [ext.strip() for ext in ext_str.split(',') if ext.strip()]  # filter trailing ',', double ','and empty exts
-            return [ext for ext in ext_str.split(',') if ext], [ext.lower() for ext in ext_list if ext[0] == '.']
+            # filter trailing ',', double ','and empty exts
+            ext_list = [ext.strip() for ext in ext_str.split(',') if ext.strip()]
+            return ext_list, [ext.lower() for ext in ext_list if ext[0] == '.']
 
         req.perm.require('CODE_REVIEW_DEV')
 
@@ -89,7 +122,7 @@ class PeerReviewFileAdmin(Component):
         reponame = req.args.get('reponame', '')
         rev = req.args.get('rev', None)
         exts = req.args.get('extensions', '')
-        follow_ext = req.args.get('follow_ext', False)
+        follow_externals = req.args.get('follow_ext', False)
         ext_list, ext_filtered = create_ext_list(exts)
         sel = req.args.get('sel', [])  # For removal
         if type(sel) is not list:
@@ -119,7 +152,8 @@ class PeerReviewFileAdmin(Component):
                     add_warning(req, _("Some extensions are not valid."))
                     do_redirect()
                 add_project_info()
-                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, follow_ext, rev=rev, reponame=reponame)
+                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered,
+                                                         follow_externals, rev=rev, reponame=reponame)
                 add_notice(req, _("The project has been added. %s files belonging to the project have been added "
                                   "to the database"), num_files)
                 for err in errors:
@@ -152,8 +186,8 @@ class PeerReviewFileAdmin(Component):
                 # Handle change. We remove all data for old name and recreate it using the new one
                 remove_project_info(path_info)
                 add_project_info()
-                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, follow_ext, rev=rev, reponame=reponame)
-                add_notice(req, _("Your changes have been changed. %s files belonging to the project have been added "
+                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, follow_externals, rev=rev, reponame=reponame)
+                add_notice(req, _("Your changes have been saved. %s files belonging to the project have been added "
                                   "to the database"), num_files)
                 for err in errors:
                     add_warning(req, err)
