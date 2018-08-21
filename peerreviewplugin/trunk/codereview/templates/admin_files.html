@@ -36,9 +36,16 @@
                     </div>
                     <p class="help">The root folder in the repository holding all the project files.</p>
                     <div class="field">
+                        <label>Allowed Extensions:</label>
+                        <input type="text" class="form-control" maxlength="255" id="includeext"
+                               name="includeext" value="$includeext" />
+                    </div>
+                    <p class="help">File extensions used when collecting the projects files. Use commas for separating.
+                        Example: <strong>.c, .h, .cpp</strong>.</p>
+                    <div class="field">
                         <label>Ignored Extensions:</label>
-                        <input type="text" class="form-control" maxlength="255" id="extensions"
-                               name="extensions" value="$extensions" />
+                        <input type="text" class="form-control" maxlength="255" id="excludeext"
+                               name="excludeext" value="$excludeext" />
                     </div>
                     <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
                         Example: <strong>.tmb, .zip</strong>.</p>
@@ -76,9 +83,16 @@
                         </div>
                         <p class="help">The root folder in the repository holding all the project files.</p>
                         <div class="field">
+                            <label>Allowed Extensions:</label>
+                            <input type="text" class="form-control" maxlength="255" id="includeext"
+                                   name="includeext" value="$includeext" />
+                        </div>
+                        <p class="help">File extensions used when collecting the projects files. Use commas for separating.
+                            Example: <strong>.c, .h, .cpp</strong>.</p>
+                        <div class="field">
                             <label>Ignored Extensions:</label>
-                            <input type="text" class="form-control" maxlength="255" id="extensions"
-                                   name="extensions" value="$extensions" />
+                            <input type="text" class="form-control" maxlength="255" id="excludeext"
+                                   name="excludeext" value="$excludeext" />
                         </div>
                         <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
                         Example: <strong>.tmb, .zip</strong>.</p>
@@ -99,7 +113,8 @@
                             <th>Root Folder</th>
                             <th>Repository</th>
                             <th>Revision</th>
-                            <th>Extensions</th>
+                            <th>Include</th>
+                            <th>Exclude</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -111,7 +126,8 @@
                             <td class="owner">${proj[1].rootfolder}</td>
                             <td>${proj[1].repo}</td>
                             <td>${proj[1].revision}</td>
-                            <td class="extensions">${proj[1].extensions}</td>
+                            <td class="includeext">${proj[1].includeext}</td>
+                            <td class="extensions">${proj[1].excludeext}</td>
                         </tr>
                         </tbody>
                     </table>

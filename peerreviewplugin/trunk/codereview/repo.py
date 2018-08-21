@@ -53,7 +53,7 @@ def get_node(repos, path, rev):
 from svn_externals import parse_externals
 
 
-def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, follow_ext):
+def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, follow_ext):
     """Get file nodes recursively for a given directory node.
 
     :param env: Trac environment object
@@ -80,7 +80,7 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, follow_ext):
     errors = []
     for node in dir_node.get_entries():
         if node.isdir:
-            errors += get_nodes_for_dir(self, repodict, node, fnodes, ignore_ext, follow_ext)
+            errors += get_nodes_for_dir(self, repodict, node, fnodes, ignore_ext, incl_ext, follow_ext)
             if follow_ext:
                 props = node.get_properties()
                 try:
@@ -111,7 +111,8 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, follow_ext):
                                 ext_node = None
 
                             if ext_node and ext_node.isdir:
-                                errors += get_nodes_for_dir(self, repodict, ext_node, fnodes, ignore_ext, follow_ext)
+                                errors += get_nodes_for_dir(self, repodict, ext_node, fnodes, ignore_ext, incl_ext,
+                                                            follow_ext)
                             else:
                                 txt = "No node for external path '%s' in repository '%s'. " \
                                       "External: '%s %s' was ignored for directory '%s'." \
@@ -126,15 +127,22 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, follow_ext):
                 except KeyError:  # property has no svn:externals
                     pass
         else:
-            if os.path.splitext(node.path)[1].lower() not in ignore_ext:
-                fnodes.append({
-                    'path': node.path,
-                    'rev': node.rev,
-                    'change_rev':node.created_rev,
-                    'hash': hash_from_file_node(node)
-                })
-    #env.log.info('      %s', _repo_map)
-    #env.log.info('      %s', repodict)
+            if incl_ext:
+                if os.path.splitext(node.path)[1].lower() in incl_ext:
+                    fnodes.append({
+                        'path': node.path,
+                        'rev': node.rev,
+                        'change_rev':node.created_rev,
+                        'hash': hash_from_file_node(node)
+                    })
+            else:
+                if os.path.splitext(node.path)[1].lower() not in ignore_ext:
+                    fnodes.append({
+                        'path': node.path,
+                        'rev': node.rev,
+                        'change_rev':node.created_rev,
+                        'hash': hash_from_file_node(node)
+                    })
     return errors
 
 
@@ -179,7 +187,7 @@ def get_repository_dict(env):
     return repolist
 
 
-def insert_project_files(self, src_path, project, ignore_ext, follow_ext=False, rev=None, reponame=''):
+def insert_project_files(self, src_path, project, ignore_ext, incl_ext, follow_ext=False, rev=None, reponame=''):
     """Add project files to the database.
 
     :param self: Trac component object
@@ -202,7 +210,7 @@ def insert_project_files(self, src_path, project, ignore_ext, follow_ext=False, 
 
     fnodes = []
     if root_node.isdir:
-        errors = get_nodes_for_dir(self, repolist, root_node, fnodes, ignore_ext, follow_ext)
+        errors = get_nodes_for_dir(self, repolist, root_node, fnodes, ignore_ext, incl_ext, follow_ext)
     else:
         errors = []
 

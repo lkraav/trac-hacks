@@ -97,7 +97,8 @@ class PeerReviewFileAdmin(Component):
                 rev_data.insert()
             _insert_project_info('fileproject', 'name', name)
             _insert_project_info('rootfolder', name, rootfolder)
-            _insert_project_info('extensions', name, exts)
+            _insert_project_info('excludeext', name, exts)
+            _insert_project_info('includeext', name, incl)
             _insert_project_info('repo', name, reponame)
             _insert_project_info('revision', name, rev)
 
@@ -121,9 +122,11 @@ class PeerReviewFileAdmin(Component):
         rootfolder = req.args.get('rootfolder')
         reponame = req.args.get('reponame', '')
         rev = req.args.get('rev', None)
-        exts = req.args.get('extensions', '')
+        exts = req.args.get('excludeext', '')
+        incl = req.args.get('includeext', '')
         follow_externals = req.args.get('follow_ext', False)
         ext_list, ext_filtered = create_ext_list(exts)
+        incl_list, incl_filtered = create_ext_list(incl)
         sel = req.args.get('sel', [])  # For removal
         if type(sel) is not list:
             sel = [sel]
@@ -149,10 +152,13 @@ class PeerReviewFileAdmin(Component):
                     add_warning(req, _("The given root folder can't be found in the repository or it is a file."))
                     do_redirect()
                 if len(ext_list) != len(ext_filtered):
-                    add_warning(req, _("Some extensions are not valid."))
+                    add_warning(req, _("Some extensions in exclude list are not valid."))
+                    do_redirect()
+                if len(incl_list) != len(incl_filtered):
+                    add_warning(req, _("Some extensions in include list are not valid."))
                     do_redirect()
                 add_project_info()
-                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered,
+                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
                                                          follow_externals, rev=rev, reponame=reponame)
                 add_notice(req, _("The project has been added. %s files belonging to the project have been added "
                                   "to the database"), num_files)
@@ -186,7 +192,8 @@ class PeerReviewFileAdmin(Component):
                 # Handle change. We remove all data for old name and recreate it using the new one
                 remove_project_info(path_info)
                 add_project_info()
-                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, follow_externals, rev=rev, reponame=reponame)
+                errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
+                                                         follow_externals, rev=rev, reponame=reponame)
                 add_notice(req, _("Your changes have been saved. %s files belonging to the project have been added "
                                   "to the database"), num_files)
                 for err in errors:
@@ -211,16 +218,27 @@ class PeerReviewFileAdmin(Component):
                 view_proj['repo'] = ''
             if 'revision' not in view_proj:
                 view_proj['revision'] = ''
+            try:
+                incl_prj = view_proj['includeext']
+            except KeyError:
+                incl_prj = ''
+            # Legacy support. The name changed in V3.2
+            try:
+                excl_prj = view_proj['excludeext']
+            except KeyError:
+                excl_prj = view_proj['extensions']
             data.update({
                 'rootfolder': rootfolder or view_proj['rootfolder'],
-                'extensions': exts or view_proj['extensions'],
+                'excludeext': exts or excl_prj,
+                'includeext': incl or incl_prj,
                 'reponame': reponame or view_proj['repo'],
                 'revision': rev or view_proj['revision'],
             })
         else:
             data.update({
                 'rootfolder': rootfolder,
-                'extensions': exts,
+                'excludeext': exts,
+                'includeext': incl,
                 'reponame': reponame,
                 'revision': rev
             })
