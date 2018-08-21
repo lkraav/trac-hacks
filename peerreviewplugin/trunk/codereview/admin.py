@@ -98,6 +98,7 @@ class PeerReviewFileAdmin(Component):
             _insert_project_info('fileproject', 'name', name)
             _insert_project_info('rootfolder', name, rootfolder)
             _insert_project_info('excludeext', name, exts)
+            _insert_project_info('excludepath', name, exclpath)
             _insert_project_info('includeext', name, incl)
             _insert_project_info('repo', name, reponame)
             _insert_project_info('revision', name, rev)
@@ -116,6 +117,20 @@ class PeerReviewFileAdmin(Component):
             ext_list = [ext.strip() for ext in ext_str.split(',') if ext.strip()]
             return ext_list, [ext.lower() for ext in ext_list if ext[0] == '.']
 
+        def create_path_list(path_str):
+            """Create a list of paths from a string.
+
+            Double ',', trailing ',' and empty extensions are filtered out. Paths not starting with '/'
+            are ignored.
+
+            @return: unfiltered list, filtered list
+            """
+            if not path_str:
+                return [], []
+            # filter trailing ',', double ','and empty exts
+            ext_list = [ext.strip() for ext in path_str.split(',') if ext.strip()]
+            return ext_list, [ext for ext in ext_list if ext[0] == '/']
+
         req.perm.require('CODE_REVIEW_DEV')
 
         name = req.args.get('projectname') or path_info
@@ -124,9 +139,11 @@ class PeerReviewFileAdmin(Component):
         rev = req.args.get('rev', None)
         exts = req.args.get('excludeext', '')
         incl = req.args.get('includeext', '')
+        exclpath = req.args.get('excludepath', '')
         follow_externals = req.args.get('follow_ext', False)
         ext_list, ext_filtered = create_ext_list(exts)
         incl_list, incl_filtered = create_ext_list(incl)
+        path_lst, path_lst_filtered = create_path_list(exclpath)
         sel = req.args.get('sel', [])  # For removal
         if type(sel) is not list:
             sel = [sel]
@@ -136,9 +153,12 @@ class PeerReviewFileAdmin(Component):
         if req.method=='POST':
             if req.args.get('add'):
                 def do_redirect():
-                    req.redirect(req.href.admin(cat, page, projectname=name,
+                    req.redirect(req.href.admin(cat, page,
+                                                projectname=name,
                                                 rootfolder=rootfolder,
-                                                extensions=exts,
+                                                excludeext=exts,
+                                                includeext=incl,
+                                                excludepath=exclpath,
                                                 repo=reponame,
                                                 rev=rev,
                                                 error=1))
@@ -157,8 +177,12 @@ class PeerReviewFileAdmin(Component):
                 if len(incl_list) != len(incl_filtered):
                     add_warning(req, _("Some extensions in include list are not valid."))
                     do_redirect()
+                if len(path_lst) != len(path_lst_filtered):
+                    add_warning(req, _("Some entries in the exclude path list are not valid."))
+                    do_redirect()
                 add_project_info()
                 errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
+                                                         path_lst_filtered,
                                                          follow_externals, rev=rev, reponame=reponame)
                 add_notice(req, _("The project has been added. %s files belonging to the project have been added "
                                   "to the database"), num_files)
@@ -169,7 +193,9 @@ class PeerReviewFileAdmin(Component):
                     req.redirect(req.href.admin(cat, page, path_info,
                                                 projectname=name,
                                                 rootfolder=rootfolder,
-                                                extensions=exts,
+                                                excludeext=exts,
+                                                includeext=incl,
+                                                excludepath=exclpath,
                                                 repo=reponame,
                                                 rev=rev,
                                                 error=1))
@@ -187,12 +213,20 @@ class PeerReviewFileAdmin(Component):
                                        rootfolder)
                     do_redirect_save()
                 if len(ext_list) != len(ext_filtered):
-                    add_warning(req, _("Some extensions are not valid. %s"), exts)
+                    add_warning(req, _("Some extensions in exclude list are not valid. %s"), exts)
                     do_redirect_save()
+                if len(incl_list) != len(incl_filtered):
+                    add_warning(req, _("Some extensions in include list are not valid."))
+                    do_redirect_save()
+                if len(path_lst) != len(path_lst_filtered):
+                    add_warning(req, _("Some entries in the exclude path list are not valid."))
+                    do_redirect_save()
+
                 # Handle change. We remove all data for old name and recreate it using the new one
                 remove_project_info(path_info)
                 add_project_info()
                 errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
+                                                         path_lst_filtered,
                                                          follow_externals, rev=rev, reponame=reponame)
                 add_notice(req, _("Your changes have been saved. %s files belonging to the project have been added "
                                   "to the database"), num_files)
@@ -210,6 +244,7 @@ class PeerReviewFileAdmin(Component):
                 'projectname': name,
         }
         if(path_info):
+            # Details page
             data['view_project'] = path_info
             view_proj = all_proj[path_info]
             # With V3.1 the following was added to the saved information for multi repo support.
@@ -219,18 +254,24 @@ class PeerReviewFileAdmin(Component):
             if 'revision' not in view_proj:
                 view_proj['revision'] = ''
             try:
-                incl_prj = view_proj['includeext']
+                incl_ext = view_proj['includeext']
             except KeyError:
-                incl_prj = ''
+                incl_ext = ''
+            try:
+                excl_path = view_proj['excludepath']
+            except KeyError:
+                excl_path = ''
             # Legacy support. The name changed in V3.2
             try:
-                excl_prj = view_proj['excludeext']
+                excl_ext = view_proj['excludeext']
             except KeyError:
-                excl_prj = view_proj['extensions']
+                excl_ext = view_proj['extensions']
+
             data.update({
                 'rootfolder': rootfolder or view_proj['rootfolder'],
-                'excludeext': exts or excl_prj,
-                'includeext': incl or incl_prj,
+                'excludeext': exts or excl_ext,
+                'excludepath': exclpath or excl_path,
+                'includeext': incl or incl_ext,
                 'reponame': reponame or view_proj['repo'],
                 'revision': rev or view_proj['revision'],
             })
@@ -238,6 +279,7 @@ class PeerReviewFileAdmin(Component):
             data.update({
                 'rootfolder': rootfolder,
                 'excludeext': exts,
+                'excludepath': exclpath,
                 'includeext': incl,
                 'reponame': reponame,
                 'revision': rev

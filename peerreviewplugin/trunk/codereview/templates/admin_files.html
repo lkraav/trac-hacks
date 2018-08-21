@@ -49,6 +49,13 @@
                     </div>
                     <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
                         Example: <strong>.tmb, .zip</strong>.</p>
+                    <p class="help"><strong>Note:</strong> This list is ignored if an include list is provided.</p>
+                    <div class="field">
+                        <label>Ignored Paths:</label>
+                        <textarea class="trac-fullwidth" name="excludepath" cols="60" rows="2" py:content="excludepath" id="excludepath"></textarea>
+                    </div>
+                    <p class="help">Specify directories to be excluded from the file list. Use commas for separating.
+                        Example: <strong>/root/path/to/diectory, /root2/anotherpath/to/diectory</strong>.</p>
                     <div class="buttons">
                         <input type="submit" name="cancel" value="${_('Cancel')}" />
                         <input type="submit" name="save" value="${_('Save')}" />
@@ -95,7 +102,14 @@
                                    name="excludeext" value="$excludeext" />
                         </div>
                         <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
-                        Example: <strong>.tmb, .zip</strong>.</p>
+                            Example: <strong>.tmb, .zip</strong>.</p>
+                        <p class="help"><strong>Note:</strong> This list is ignored if an include list is provided.</p>
+                        <div class="field">
+                            <label>Ignored Paths:</label>
+                            <textarea class="trac-fullwidth" name="excludepath" cols="60" rows="2" py:content="excludepath" id="excludepath"></textarea>
+                        </div>
+                        <p class="help">Specify directories to be excluded from the file list. Use commas for separating.
+                            Example: <strong>/root/path/to/diectory, /root2/anotherpath/to/diectory</strong>.</p>
                         <div class="buttons">
                             <input name="add" value="${_('Add')}" type="submit" />
                         </div>
@@ -113,8 +127,9 @@
                             <th>Root Folder</th>
                             <th>Repository</th>
                             <th>Revision</th>
-                            <th>Include</th>
-                            <th>Exclude</th>
+                            <th>Include Extensions</th>
+                            <th>Exclude Extensions</th>
+                            <th>Exclude Paths</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -128,6 +143,7 @@
                             <td>${proj[1].revision}</td>
                             <td class="includeext">${proj[1].includeext}</td>
                             <td class="extensions">${proj[1].excludeext}</td>
+                            <td class="extensions">${proj[1].excludepath}</td>
                         </tr>
                         </tbody>
                     </table>
