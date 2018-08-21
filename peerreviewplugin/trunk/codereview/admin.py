@@ -141,9 +141,6 @@ class PeerReviewFileAdmin(Component):
         incl = req.args.get('includeext', '')
         exclpath = req.args.get('excludepath', '')
         follow_externals = req.args.get('follow_ext', False)
-        ext_list, ext_filtered = create_ext_list(exts)
-        incl_list, incl_filtered = create_ext_list(incl)
-        path_lst, path_lst_filtered = create_path_list(exclpath)
         sel = req.args.get('sel', [])  # For removal
         if type(sel) is not list:
             sel = [sel]
@@ -151,76 +148,68 @@ class PeerReviewFileAdmin(Component):
         all_proj = ReviewDataModel.all_file_project_data(self.env)
 
         if req.method=='POST':
-            if req.args.get('add'):
-                def do_redirect():
-                    req.redirect(req.href.admin(cat, page,
-                                                projectname=name,
-                                                rootfolder=rootfolder,
-                                                excludeext=exts,
-                                                includeext=incl,
-                                                excludepath=exclpath,
-                                                repo=reponame,
-                                                rev=rev,
-                                                error=1))
-                if not name:
-                    add_warning(req, _("You need to specify a project name."))
-                    do_redirect()
-                if name in all_proj:
-                    add_warning(req, _("The project identifier already exists."))
-                    do_redirect()
+            def _do_redirect(action):
+                parms = {'projectname': name,
+                         'rootfolder': rootfolder,
+                         'excludeext': exts,
+                         'includeext': incl,
+                         'excludepath': exclpath,
+                         'repo': reponame,
+                         'rev': rev,
+                         'error': 1
+                         }
+                if action == 'add':
+                    req.redirect(req.href.admin(cat, page, parms))
+                elif action == 'save':
+                    req.redirect(req.href.admin(cat, page, path_info, parms))
+
+            def check_parameters(action):
                 if not repo_path_exists(self.env, rootfolder, reponame):
-                    add_warning(req, _("The given root folder can't be found in the repository or it is a file."))
-                    do_redirect()
+                    add_warning(req, _("The given root folder %s can't be found in the repository or it is a file."),
+                                       rootfolder)
+                    _do_redirect(action)
                 if len(ext_list) != len(ext_filtered):
-                    add_warning(req, _("Some extensions in exclude list are not valid."))
-                    do_redirect()
+                    add_warning(req, _("Some extensions in exclude list are not valid: %s"), exts)
+                    _do_redirect(action)
                 if len(incl_list) != len(incl_filtered):
-                    add_warning(req, _("Some extensions in include list are not valid."))
-                    do_redirect()
+                    add_warning(req, _("Some extensions in include list are not valid: %s"), incl)
+                    _do_redirect(action)
                 if len(path_lst) != len(path_lst_filtered):
                     add_warning(req, _("Some entries in the exclude path list are not valid."))
-                    do_redirect()
+                    _do_redirect(action)
+
+            ext_list, ext_filtered = create_ext_list(exts)
+            incl_list, incl_filtered = create_ext_list(incl)
+            path_lst, path_lst_filtered = create_path_list(exclpath)
+
+            if req.args.get('add'):
+                action = 'add'
+                if not name:
+                    add_warning(req, _("You need to specify a project name."))
+                    _do_redirect(action)
+                if name in all_proj:
+                    add_warning(req, _("The project identifier already exists."))
+                    _do_redirect(action)
+                check_parameters(action)  # This redirects to the page on parameter error
                 add_project_info()
                 errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
                                                          path_lst_filtered,
                                                          follow_externals, rev=rev, reponame=reponame)
-                add_notice(req, _("The project has been added. %s files belonging to the project have been added "
-                                  "to the database"), num_files)
+                add_notice(req, _("The project has been added. %s files belonging to the project %s have been added "
+                                  "to the database"), num_files, name)
                 for err in errors:
                     add_warning(req, err)
             elif req.args.get('save'):
-                def do_redirect_save():
-                    req.redirect(req.href.admin(cat, page, path_info,
-                                                projectname=name,
-                                                rootfolder=rootfolder,
-                                                excludeext=exts,
-                                                includeext=incl,
-                                                excludepath=exclpath,
-                                                repo=reponame,
-                                                rev=rev,
-                                                error=1))
-
+                action = 'save'
                 if not req.args.get('projectname'):
                     add_warning(req, _("No project name given. The old name was inserted again."))
                     add_warning(req, _("No changes have been saved."))
-                    do_redirect_save()
+                    _do_redirect(action)
                 if name != path_info:
                     if name in all_proj:
                         add_warning(req, _("The project identifier already exists."))
-                        do_redirect_save()
-                if not repo_path_exists(self.env, rootfolder, reponame):
-                    add_warning(req, _("The given root folder %s can't be found in the repository or it is a file."),
-                                       rootfolder)
-                    do_redirect_save()
-                if len(ext_list) != len(ext_filtered):
-                    add_warning(req, _("Some extensions in exclude list are not valid. %s"), exts)
-                    do_redirect_save()
-                if len(incl_list) != len(incl_filtered):
-                    add_warning(req, _("Some extensions in include list are not valid."))
-                    do_redirect_save()
-                if len(path_lst) != len(path_lst_filtered):
-                    add_warning(req, _("Some entries in the exclude path list are not valid."))
-                    do_redirect_save()
+                        _do_redirect(action)
+                check_parameters(action)  # This redirects to the page on parameter error
 
                 # Handle change. We remove all data for old name and recreate it using the new one
                 remove_project_info(path_info)
@@ -228,8 +217,8 @@ class PeerReviewFileAdmin(Component):
                 errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
                                                          path_lst_filtered,
                                                          follow_externals, rev=rev, reponame=reponame)
-                add_notice(req, _("Your changes have been saved. %s files belonging to the project have been added "
-                                  "to the database"), num_files)
+                add_notice(req, _("Your changes have been saved. %s files belonging to the project %s have been added "
+                                  "to the database"), num_files, name)
                 for err in errors:
                     add_warning(req, err)
             elif req.args.get('remove'):
@@ -249,18 +238,12 @@ class PeerReviewFileAdmin(Component):
             view_proj = all_proj[path_info]
             # With V3.1 the following was added to the saved information for multi repo support.
             # It isn't available for old projects.
-            if 'repo' not in view_proj:
-                view_proj['repo'] = ''
-            if 'revision' not in view_proj:
-                view_proj['revision'] = ''
-            try:
-                incl_ext = view_proj['includeext']
-            except KeyError:
-                incl_ext = ''
-            try:
-                excl_path = view_proj['excludepath']
-            except KeyError:
-                excl_path = ''
+            view_proj.setdefault('repo', '')
+            view_proj.setdefault('revision', '')
+            # With V3.2 includeext and excludepath were added.
+            # These aren't available for old projects.
+            view_proj.setdefault('includeext', '')
+            view_proj.setdefault('excludepath', '')
             # Legacy support. The name changed in V3.2
             try:
                 excl_ext = view_proj['excludeext']
@@ -270,8 +253,8 @@ class PeerReviewFileAdmin(Component):
             data.update({
                 'rootfolder': rootfolder or view_proj['rootfolder'],
                 'excludeext': exts or excl_ext,
-                'excludepath': exclpath or excl_path,
-                'includeext': incl or incl_ext,
+                'excludepath': exclpath or view_proj['excludepath'],  #exclpath or excl_path,
+                'includeext': incl or view_proj['includeext'],  #incl or incl_ext,
                 'reponame': reponame or view_proj['repo'],
                 'revision': rev or view_proj['revision'],
             })
