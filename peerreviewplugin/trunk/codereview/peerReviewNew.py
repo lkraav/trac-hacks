@@ -91,9 +91,6 @@ class NewReviewModule(Component):
 
     implements(IRequestHandler, INavigationContributor)
 
-    trac_version = get_distribution('trac').version
-    legacy_trac = parse_version(trac_version) < parse_version('1.0.0')  # True if Trac V0.12.x
-
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
@@ -207,13 +204,7 @@ class NewReviewModule(Component):
         data['projects'] = prj
         data['curproj'] = review['project']
 
-        if self.legacy_trac:
-            add_script(req, self.env.config.get('trac', 'jquery_ui_location') or
-                            'hw/js/jquery-ui-1.11.4.min.js')
-            add_stylesheet(req, self.env.config.get('trac', 'jquery_ui_theme_location') or
-                           'hw/css/jquery-ui-1.11.4.min.css')
-        else:
-            Chrome(self.env).add_jquery_ui(req)
+        Chrome(self.env).add_jquery_ui(req)
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'hw/css/peerreview.css')

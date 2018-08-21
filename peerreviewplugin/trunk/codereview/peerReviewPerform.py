@@ -23,8 +23,8 @@ from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util import format_date
 from trac.util.html import html as tag
-from trac.web.chrome import INavigationContributor, ITemplateStreamFilter, Chrome, \
-                            add_link, add_stylesheet, add_script, add_script_data
+from trac.web.chrome import INavigationContributor, Chrome, \
+                            add_link, add_stylesheet, add_script_data, add_script, web_context
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import RepositoryManager
@@ -56,84 +56,23 @@ class PeerReviewPerform(Component):
     }}}
     jQuery-ui 1.11.4 is bundled with this plugin.
     """
-    implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator, ITemplateStreamFilter)
+    implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
 
-    imagePath = ''
-    trac_version = get_distribution('trac').version
-    legacy_trac = parse_version(trac_version) < parse_version('1.0.0')  # True if Trac V0.12.x
+    # IHTMLPreviewAnnotator methods
 
-    # ITextAnnotator methods
     def get_annotation_type(self):
         return 'performCodeReview', 'Line', 'Line numbers'
 
     def get_annotation_data(self, context):
-        r_file = context.get_hint('reviewfile')
-        authname = context.get_hint('authname')
-        perm = context.get_hint('perm')
-        review = PeerReviewModel(self.env, r_file['review_id'])
+        return CommentAnnotator(self.env, context, 'chrome/hw/images/thumbtac11x11.gif')
 
-        # Is it allowed to comment on the file?
-        if review_is_finished(self.env.config, review):
-            is_locked = True
-        else:
-            is_locked = review_is_locked(self.env.config, review, authname)
+    def annotate_row(self, context, row, lineno, line, comment_annotator):
+        """line annotator for Perform Code Review page.
 
-        # Don't let users comment who are not part of this review
-        if not_allowed_to_comment(self.env, review, perm, authname):
-            is_locked = True
-
-        data = [[c.line_num for c in Comment.select_by_file_id(self.env, r_file['file_id'])],
-                review, is_locked]
-        return data
-
-    #line annotator for Perform Code Review page
-    #if line has a comment, places an icon to indicate comment
-    #if line is not in the rage of reviewed lines, it makes
-    #the color a light gray
-    def annotate_row(self, context, row, lineno, line, data):
-        r_file = context.get_hint('reviewfile')
-        if (lineno <= int(r_file['line_end']) and lineno >= int(r_file['line_start'])) or int(r_file['line_start']) == 0:
-            # If there is a comment on this line
-            lines = data[0]
-            # review = data[1]
-            if lineno in lines:
-                return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagePath) + ' ' + str(lineno),
-                                                                  href='javascript:getComments(%s, %s)' %
-                                                                       (lineno, r_file['file_id']))))
-            if not data[2]:
-                return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
-                                                                           % (lineno, r_file['file_id']))))
-            else:
-                return row.append(tag.th(str(lineno), id='L%s' % lineno))
-
-        #color line numbers outside range light gray
-        return row.append(tag.th(id='L%s' % lineno)(tag.font(lineno, color='#CCCCCC')))
-
-    # ITemplateStreamFilter
-
-    def filter_stream(self, req, method, filename, stream, data):
-        def repl_jquery(name, event):
-            """ Replace Trac jquery.js with jquery.js coming with plugin. """
-            attrs = event[1][1]
-            #match=re.match(self.PATH_REGEX, req.path_info)
-            #if match and attrs.get(name) and attrs.get(name).endswith("common/js/jquery.js"):
-            if attrs.get(name):
-                if attrs.get(name).endswith("common/js/jquery.js"):
-                    jquery = self.env.config.get('trac', 'jquery_location')
-                    if jquery:
-                        attrs -= name
-                        attrs |= [(QName(name), jquery)]
-                    else:
-                        return attrs.get(name).replace("common/js/jquery.js", 'hw/js/jquery-1.11.2.min.js')
-                elif attrs.get(name) and attrs.get(name).endswith("common/js/keyboard_nav.js"):
-                    #keyboard_nav.js uses function live() which was removed with jQuery 1.9. Use a fixed script here
-                    return attrs.get(name) .replace("common/js/keyboard_nav.js", 'req/js/keyboard_nav.js')
-            return attrs.get(name) #.replace('#trac-add-comment', '?minview')
-
-        # Replace jQuery with a more recent version when using Trac 0.12
-        if self.legacy_trac:
-            stream = stream | Transformer('//head/script').attr('src', repl_jquery)
-        return stream
+        If line has a comment, places an icon to indicate comment.
+        If line is not in the rage of reviewed lines, it makes the color a light gray
+        """
+        comment_annotator.annotate(row, lineno)
 
     # INavigationContributor methods
 
@@ -155,12 +94,9 @@ class PeerReviewPerform(Component):
         if not fileid:
             raise TracError("No file ID given - unable to load page.", "File ID Error")
 
-        #make the thumbtac image global so the line annotator has access to it
-        self.imagePath = 'chrome/hw/images/thumbtac11x11.gif'
-
         data = {'file_id': fileid}
 
-        r_file = ReviewFileModel(self.env, fileid)  # This will replace rfile
+        r_file = ReviewFileModel(self.env, fileid)
         review = PeerReviewModel(self.env, r_file['review_id'])
         review.date = format_date(review['created'])
         data['review_file'] = r_file
@@ -172,7 +108,7 @@ class PeerReviewPerform(Component):
                             "Subversion Repository Error")
 
         # The following may raise an exception if revision can't be found
-        rev = r_file['changerevision']
+        rev = r_file['changerevision']  # last change for the given file
         if rev:
             rev = repos.normalize_rev(rev)
         rev_or_latest = rev or repos.youngest_rev
@@ -226,10 +162,8 @@ class PeerReviewPerform(Component):
             # A followup review with diff viewer
             create_diff_data(req, data, node, par_node)
         else:
-            context = Context.from_request(req, 'source', node.path, node.created_rev)
+            context = web_context(req, 'rfile', fileid)
             context.set_hints(reviewfile=r_file)
-            context.set_hints(authname=req.authname)
-            context.set_hints(perm=req.perm)
 
             self.env.log.debug("Creating preview data for %s with mime_type = %s" % (node.created_path, mime_type))
             preview_data = mimeview.preview_data(context, content, len(content),
@@ -261,14 +195,7 @@ class PeerReviewPerform(Component):
             scr_data['peer_parent_file_id'] = 0  # Mark that we don't have a parent
             scr_data['peer_parent_comments'] = []
 
-        # For comment dialogs when using Trac 0.12. Otherwise use jQuery coming with Trac
-        if self.legacy_trac:
-            add_script(req, self.env.config.get('trac', 'jquery_ui_location') or
-                            'hw/js/jquery-ui-1.11.4.min.js')
-            add_stylesheet(req, self.env.config.get('trac', 'jquery_ui_theme_location') or
-                           'hw/css/jquery-ui-1.11.4.min.css')
-        else:
-            Chrome(self.env).add_jquery_ui(req)
+        Chrome(self.env).add_jquery_ui(req)
 
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'common/css/diff.css')
@@ -280,6 +207,56 @@ class PeerReviewPerform(Component):
 
         return 'peerReviewPerform.html', data, None
 
+
+class CommentAnnotator(object):
+    """Annotator object which handles comments in source view."""
+    def __init__(self, env, context, imagepath):
+        self.env = env
+        self.context = context
+        self.imagepath = imagepath
+        authname = context.req.authname
+        perm = context.req.perm
+        fresource = context.resource
+        review = PeerReviewModel(self.env, fresource.id)
+
+        # Is it allowed to comment on the file?
+        if review_is_finished(self.env.config, review):
+            is_locked = True
+        else:
+            is_locked = review_is_locked(self.env.config, review, authname)
+
+        # Don't let users comment who are not part of this review
+        if not_allowed_to_comment(self.env, review, perm, authname):
+            is_locked = True
+
+        self.data = [[c.line_num for c in Comment.select_by_file_id(self.env, fresource.id)], review, is_locked]
+
+    def annotate(self, row, lineno):
+        """line annotator for Perform Code Review page.
+
+        If line has a comment, places an icon to indicate comment.
+        If line is not in the rage of reviewed lines, it makes the color a light gray
+        """
+        r_file = self.context.get_hint('reviewfile')
+        file_id = self.context.resource.id
+        data = self.data
+        if (lineno <= int(r_file['line_end']) and lineno >= int(r_file['line_start'])) or int(r_file['line_start']) == 0:
+            # If there is a comment on this line
+            lines = data[0]
+            # review = data[1]
+            if lineno in lines:
+                return row.append(tag.th(id='L%s' % lineno)(tag.a(tag.img(src='%s' % self.imagepath) + ' ' + str(lineno),
+                                                                  href='javascript:getComments(%s, %s)' %
+                                                                       (lineno, file_id))))
+            if not data[2]:
+                return row.append(tag.th(id='L%s' % lineno)(tag.a(lineno, href='javascript:addComment(%s, %s, -1)'
+                                                                               % (lineno, file_id))))
+            else:
+                return row.append(tag.th(str(lineno), id='L%s' % lineno))
+
+        #color line numbers outside range light gray
+        # return
+        row.append(tag.th(id='L%s' % lineno)(tag.font(lineno, color='#CCCCCC')))
 
 def get_parent_file_id(env, r_file, par_review_id):
 
