@@ -15,7 +15,7 @@ from setuptools import setup
 
 setup(
     name='TracPrivateTickets',
-    version='2.2.0',
+    version='2.4.0',
     packages=['privatetickets'],
 
     author='Noah Kantrowitz',
