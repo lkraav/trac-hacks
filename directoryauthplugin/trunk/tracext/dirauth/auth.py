@@ -378,7 +378,10 @@ class DirAuthStore(Component):
             
             for entry in user_groups:
                 groupdn = entry[0]
-                group = entry[1][self.group_nameattr][0]
+                if self.group_nameattr != 'dn':
+                    group = entry[1][self.group_nameattr][0]
+                else:
+                    group = entry[0]
                 if self.group_spaces2underscore:
                     group = group.replace(' ', '_')
                 group = '%s%s' % (GROUP_PREFIX, group)
@@ -386,9 +389,9 @@ class DirAuthStore(Component):
                     group = group.decode('utf-8')
                 group = group.lower()
                 self.log.debug('_expand_user_groups: %s repr=%s', group, repr(group))
-                groups.append(group)  # dn
                 if group not in groups:
-                    groups.append(self._get_parent_groups(groups, groupdn))
+                    groups.append(group)  # dn
+                    groups = self._get_parent_groups(groups, groupdn)
             self.log.debug("_expand_user_groups: received groups: %s", groups)
                 
         if self.group_expand == 0:
@@ -402,7 +405,8 @@ class DirAuthStore(Component):
         elif self.group_nested and self.group_nameattr == 'dn':
             gg = []
             for g in groups:
-                g = g[1:]
+                if g.startswith(GROUP_PREFIX):
+                    g = g[1:]
                 while True:
                     if g == self.group_basedn:
                         break
@@ -423,20 +427,24 @@ class DirAuthStore(Component):
 
 
     def _get_parent_groups(self, groups, group_dn):
-        group_filter = '(&(objectClass=%s)(%s=%s)' % (self.group_class_attr, self.member_attr, group_dn)
+        group_filter = '(&(objectClass=%s)(%s=%s))' % (self.group_class_attr, self.member_attr, group_dn)
         basedn = self.group_basedn or self.dir_basedn
         ldap_groups = self._dir_search(basedn, self.dir_scope,
                                        group_filter, [self.group_nameattr])
         if ldap_groups:
             for entry in ldap_groups:
                 groupdn = entry[0]
-                group = entry[1][self.group_nameattr][0]
+                if self.group_nameattr != 'dn':
+                    group = entry[1][self.group_nameattr][0]
+                else:
+                    group = entry[0]
                 if self.group_spaces2underscore:
                     group = group.replace(' ', '_')
                 group = group.lower()
                 if group not in groups:
+                    self.log.debug('_get_parent_groups: adding group %s' % group)
                     groups.append(group)
-                    groups.append(self._get_parent_groups(groups, groupdn))
+                    groups = self._get_parent_groups(groups, groupdn)
         return groups
 
     def _get_userinfo(self, attrs):

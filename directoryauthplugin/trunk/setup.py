@@ -15,7 +15,7 @@
 from setuptools import setup
 
 PACKAGE = 'TracDirectoryAuth'
-VERSION = '2.1.1'
+VERSION = '2.1.2'
 
 setup(
     name=PACKAGE,
