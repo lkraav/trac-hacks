@@ -145,7 +145,7 @@ class DirAuthStore(Component):
 
         # Cache miss
         ldapCtx = self._bind_dir()
-        self.log.info('get users')
+        self.log.debug('get users')
         if ldapCtx:
             if self.group_knownusers:
                 userinfo = self.env.get_known_users()
@@ -161,7 +161,7 @@ class DirAuthStore(Component):
                 userinfo = [self._get_userinfo(u[1]) for u in users]
         else:
             raise TracError('Unable to bind to Active Directory')
-        self.log.info('get users: %s', str(userinfo))
+        self.log.debug('get users: %s', str(userinfo))
         
         all_users = [u[0] for u in userinfo]
         self._cache_set('allusers', all_users)
@@ -180,7 +180,6 @@ class DirAuthStore(Component):
         g = self._ldap_search(ldapCtx, to_utf8(group),
                          ldap.SCOPE_SUBTREE if self.group_nested else ldap.SCOPE_BASE,
                          attrlist=[to_utf8(self.member_attr)])
-
         if g and self.member_attr in g[0][1]:
             users = []
             for m in g[0][1][str(self.member_attr)]:
@@ -189,7 +188,9 @@ class DirAuthStore(Component):
                     e = self._ldap_search(ldapCtx, to_utf8(m), ldap.SCOPE_BASE)
                     if e:
                         if 'person' in e[0][1]['objectClass']:
-                            users.append(self._get_userinfo(e[0][1]))
+                            u = self._get_userinfo(e[0][1])
+                            self.log.debug("found user %s", u[0])
+                            users.append(u)
                         elif str(self.group_class_attr) in e[0][1]['objectClass']:
                             users.extend(self.expand_group_users(ldapCtx, e[0][0]))
                         else:
@@ -199,8 +200,7 @@ class DirAuthStore(Component):
                         self.log.debug('This is very strange and you should probably check '
                                        'the consistency of your LDAP directory.', str(m))
                 except Exception, e:
-                    self.log.debug('expand_group_users: %s: Unable to find ldap user listed in group: %s', (e, str(m)))
-#                    users.append(m)
+                    self.log.debug('expand_group_users: %s: Unable to find ldap user listed in group: %s', e, str(m))
             return users
         else:
             self.log.debug('expand_group_users: Unable to find any members of the group %s', group)
@@ -220,7 +220,7 @@ class DirAuthStore(Component):
 
         if not user or not password:
             msg += " username or password can't be empty!"
-            self.log.info('check_password: %s', msg)
+            self.log.error('check_password: %s', msg)
             return success
 
         user_dn = self._get_user_dn(user, NOCACHE)
@@ -231,10 +231,10 @@ class DirAuthStore(Component):
                 success = True
             elif success is False:
                 msg += " Password Failed"
-            self.log.info('check_password: %s', msg)
+            self.log.error('check_password: %s', msg)
         else:
             msg += " does not exist, deferring authentication"
-            self.log.info('check_password: %s', msg)
+            self.log.error('check_password: %s', msg)
             return success
 
         # Check the user is part of the right group, we don't use the cache
@@ -243,7 +243,7 @@ class DirAuthStore(Component):
             usergroups = self._expand_user_groups(user, NOCACHE)
             if self.group_validusers not in usergroups:
                 msg += " but user is not in %s : %s" % (self.group_validusers, usergroups)
-                self.log.info('check_password: %s', msg)
+                self.log.error('check_password: %s', msg)
                 return False
 
         # Update the session data at each login,
@@ -291,8 +291,8 @@ class DirAuthStore(Component):
             raise TracError(_("The dir_uri URI must start with ldap: %s", self.dir_uri))
 
         if user_dn and passwd:
-            user_ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri, 0,
-                                                            '', 0, 2, 1)
+            user_ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri,
+                                                            retry_max=5, retry_delay=1)
 
             self.log.debug("_bind_dir: attempting specific bind to %s as %s",
                            self.dir_uri, unicode(user_dn, 'utf8'))
@@ -307,7 +307,7 @@ class DirAuthStore(Component):
         if self._ldap:
             return self._ldap
 
-        self._ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri,
+        self._ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri, 
                                                          retry_max=5,
                                                          retry_delay=1)
 
@@ -323,7 +323,7 @@ class DirAuthStore(Component):
         except ldap.LDAPError, e:
             raise TracError("cannot bind to %s: %s" % (self.dir_uri, e))
 
-        self.log.info("_bind_dir: Bound to %s correctly.", self.dir_uri)
+        self.log.debug("_bind_dir: Bound to %s correctly.", self.dir_uri)
 
         # Allow restarting.
         self._ldap.set_option(ldap.OPT_RESTART, 1)
@@ -418,7 +418,7 @@ class DirAuthStore(Component):
             self.log.debug('_expand_user_groups: username=%s has groups %s', user, ', '.join(groups))
             return sorted(groups)
         else:
-            self.log.info('_expand_user_groups: username=%s has no groups.', user)
+            self.log.debug('_expand_user_groups: username=%s has no groups.', user)
             return []
 
 
@@ -446,6 +446,7 @@ class DirAuthStore(Component):
         email = ''
         if self.email_attr in attrs:
             email = attrs[self.email_attr][0].lower()
+            self.log.debug("user %s has email %s", user_name, email)
         elif 'proxyAddresses' in attrs:
             for e in attrs['proxyAddresses']:
                 if e.startswith('SMTP:'):
@@ -506,7 +507,7 @@ class DirAuthStore(Component):
                       (sid, authenticated, name, value)
                     VALUES (%s, 1, 'email', %s)
                     """, (uname, to_unicode(email)))
-                self.log.info("_populate_user_session: updating user session email info for %s (%s)",
+                self.log.debug("_populate_user_session: updating user session email info for %s (%s)",
                               uname, to_unicode(email))
     
             if displayname:
@@ -520,7 +521,7 @@ class DirAuthStore(Component):
                       (sid, authenticated, name, value)
                     VALUES (%s, 1, 'name', %s)
                     """, (uname, to_unicode(displayname)))
-                self.log.info("_populate_user_session: updating user session displayname info for %s (%s)",
+                self.log.debug("_populate_user_session: updating user session displayname info for %s (%s)",
                               uname, to_unicode(displayname))
                 
             return self._close_db(db)
@@ -631,7 +632,15 @@ class DirAuthStore(Component):
     
             res = []
             try:
-                res = self._ldap_search(ldapCtx, basedn.encode(self.dir_charset), scope,
+                try:
+                    res = self._ldap_search(ldapCtx, basedn.encode(self.dir_charset), scope,
+                                 lfilter, attrs)
+                except ldap.LDAPError, e:
+                    # second try - does not work properly without
+                    self.log.info("got %s - doing one additional retry", e)
+                    self._ldap = None
+                    ldapCtx = self._bind_dir()
+                    res = self._ldap_search(ldapCtx, basedn.encode(self.dir_charset), scope,
                                  lfilter, attrs)
             except ldap.LDAPError, e:
                 self.log.error("_dir_search: Error searching %s using %s: %s",
@@ -696,7 +705,7 @@ class DirAuthStore(Component):
         """Grab a list of users from the session store."""
 
         lcnx = self._bind_dir()
-        self.log.info('get users:')
+        self.log.debug('get users:')
         if lcnx:
                 userinfo = self.expand_group_users(lcnx, groupdn)
         else:
