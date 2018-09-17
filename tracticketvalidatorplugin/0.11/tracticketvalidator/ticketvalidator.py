@@ -81,9 +81,9 @@ class TicketsValidator(Component):
         elif field in req.args:
             fieldValue = req.args.get(field)
 
-        if fieldValue is not None:
-            if not fieldValue or (rule and re.match(rule, fieldValue) is None):
-                return errorMessage
+        if fieldValue is not None and \
+                rule and re.match(rule, fieldValue) is None:
+            return errorMessage
 
     def _isValidateEmail(self, email):
         if not email:
