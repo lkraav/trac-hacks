@@ -1,21 +1,22 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright 2007-2008 Optaros, Inc
 #
 
 from setuptools import setup
 
-setup(name="TracSectionEditPlugin",
-      version="1.2.0",
+setup(name='TracSectionEditPlugin',
+      version='1.2.0',
       packages=['tracsectionedit'],
-      author="Catalin Balan",
-      author_email="cbalan@optaros.com",
-      url="http://code.optaros.com/trac/oforge",
-      description="Trac Section Edit based on http://trac.edgewall.org/ticket/6921",
-      license="BSD",
+      author='Catalin Balan',
+      author_email='cbalan@optaros.com',
+      url='https://trac-hacks.org/wiki/SectionEditPlugin',
+      description="Edit sections of the Trac wiki",
+      install_requires=['Trac'],
+      license='BSD',
       entry_points={'trac.plugins': [
-            'tracsectionedit.web_ui = tracsectionedit.web_ui',
-            ]},
-      package_data={'tracsectionedit' : ['htdocs/js/*.js']}
-)
+          'tracsectionedit.web_ui = tracsectionedit.web_ui',
+      ]},
+      package_data={'tracsectionedit': ['htdocs/js/*.js']}
+      )

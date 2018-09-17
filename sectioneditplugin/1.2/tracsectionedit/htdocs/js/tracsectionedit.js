@@ -9,7 +9,7 @@
 		});
 	}
 
-	$(document).ready(function() {
-		 $("#wikipage >:header").addEditlink("Edit this section");
+	$(function() {
+		 $("#wikipage").children(":header").addEditlink("Edit this section");
 	});
 })(jQuery);
