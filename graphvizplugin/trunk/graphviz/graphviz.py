@@ -198,8 +198,9 @@ class Graphviz(Component):
         return 0
 
     def render(self, context, mimetype, content, filename=None, url=None):
-        ext = filename.split('.')[1]
-        name = 'graphviz' if ext == 'graphviz' else 'graphviz.%s' % ext
+        ext = filename.split('.')[1] if filename else None
+        name = 'graphviz' if not ext or ext == 'graphviz' \
+                else 'graphviz.%s' % ext
         text = content.read() if hasattr(content, 'read') else content
         return self.expand_macro(context, name, text)
 
