@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 setup (
     name = 'graphviz',
     version = '1.3.0.1',
-    install_requires='Trac >=1.3dev',
+    install_requires='Trac',
     packages = find_packages(),
     package_data = { 'graphviz' : ['examples/*',],
     },
