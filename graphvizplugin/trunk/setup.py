@@ -9,7 +9,7 @@
 from setuptools import setup, find_packages
 
 setup (
-    name = 'graphviz',
+    name = 'TracGraphviz',
     version = '1.3.0.1',
     install_requires='Trac',
     packages = find_packages(),
