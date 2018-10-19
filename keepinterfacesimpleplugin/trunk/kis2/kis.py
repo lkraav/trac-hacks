@@ -462,7 +462,7 @@ only designated approver can approve = !has_role('approver') && approval != _app
                     and licensed under 3-clause BSD licence.
                 '''
                 if 'action' not in self.req.args:
-                    return 'new'
+                    return ''
 
                 action = self.req.args['action']
                 action_changes = {}
@@ -489,13 +489,15 @@ only designated approver can approve = !has_role('approver') && approval != _app
                 if key == 'authname':
                     return self.req.authname
                 elif key == 'true':
-                     return True
+                    return True
                 elif key == 'false':
-                     return False
+                    return False
                 elif key.startswith('_'):
-                     key = key[1:]
-                     if key in self.ticket._old:
-                        return self.ticket._old[key]
+                    key = key[1:]
+                    if key in self.ticket._old:
+                        return self.ticket._old[key] or ''
+                    else:
+                        return ''
                 if key == 'status':
                     # This is handled specially, as there may be action
                     # controllers that change or restrict the next status.

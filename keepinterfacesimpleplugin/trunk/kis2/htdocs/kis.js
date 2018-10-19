@@ -850,7 +850,7 @@ Field.prototype.set_options = function () {
             }
         }
         return unused;
-    }.bind(this)).catch(function (err) {
+    }.bind(this)).caught(function (err) {
         console.log(this.field_name + '.available ' + err.error);
         return err;
     }.bind(this));
@@ -1022,7 +1022,7 @@ Field.prototype.set_template = function () {
             this.template_onchange_attached = true;
         }
         return p;
-    }.bind(this)).catch(function (p) {
+    }.bind(this)).caught(function (p) {
         console.log(this.field_name + '.available ' + p.error);
         return p;
     }.bind(this));
@@ -1191,6 +1191,12 @@ return {
 // jQuery compatibility patch.
 if ($.fn.addBack === undefined) {
     $.fn.addBack = $.fn.andSelf;
+}
+
+// Internet Explorer v7/v8 compatibility patch.
+// 'caught' is defined by Bluebird as an alias for the 'catch' method.
+if (window.Promise.prototype.caught === undefined) {
+    window.Promise.prototype.caught = window.Promise.prototype.catch;
 }
 
 // This function is called when the page has loaded. It initialises the fields.
