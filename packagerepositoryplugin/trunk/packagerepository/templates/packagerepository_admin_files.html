@@ -1,0 +1,123 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="admin.html" />
+  <head>
+    <title>Package Repository</title>
+  </head>
+
+  <body>
+    <h2>Package Repository <span py:if="view == 'list' and paginator.has_more_pages"> (${paginator.displayed_items()})</span></h2>
+    <py:choose test="view">
+      <form py:when="'detail'" class="mod" id="packagerepository_modifyfile" method="post" action="">
+        <fieldset>
+          <input type="hidden" name="user" value="$selected_user" />
+          <legend>Modify Package:</legend>
+          <div class="field">
+            <label>Repository:<br />
+              <select name="repository">
+                <option py:for="repository in repositories" value="$repository" selected="${'selected' if repository == file.repository else None}">$repository</option>
+              </select>
+            </label>
+          </div>
+          <div class="field">
+            <label>Package:<br /><input type="text" name="package" value="$file.package" /></label>
+          </div>
+          <div class="field">
+            <label>Version:<br /><input type="text" name="version" value="$file.version" /></label>
+          </div>
+          <div class="field">
+            <label>Filename: ${file.filename}</label>
+          </div>
+          <div class="field">
+            <fieldset>
+              <label for="packagerepository_comment">Comment:</label>
+              <p>
+                <textarea id="packagerepository_comment" name="comment" class="wikitext trac-resizable"
+                          rows="6" cols="60">$file.comment</textarea>
+              </p>
+            </fieldset>
+          </div>
+          <div class="buttons">
+            <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
+            <input type="submit" name="cancel" value="${_('Cancel')}" />
+          </div>
+        </fieldset>
+      </form>
+
+      <py:otherwise>
+        <form id="prefs" method="get" action="">
+          <fieldset>
+            <div class="field">
+              <label>Max items per page:
+                <input type="text" name="max" size="10" value="${max_per_page}" />
+              </label>
+            </div>
+            <div class="buttons">
+              <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
+            </div>
+          </fieldset>
+        </form>
+        <form class="addnew" id="packagerepository_addfile" method="post" enctype="multipart/form-data" action="">
+          <fieldset>
+            <legend>Add Package:</legend>
+            <div class="field">
+              <label>Repository:<br />
+                <select name="repository">
+                  <option py:for="repository in repositories" value="$repository">$repository</option>
+                </select>
+              </label>
+            </div>
+            <div class="field">
+              <label>Package:<br /><input type="text" name="package" value="" /></label>
+            </div>
+            <div class="field">
+              <label>Version:<br /><input type="text" name="version" value="" /></label>
+            </div>
+            <div class="field">
+              <input type="file" name="file" />
+            </div>
+            <div class="field">
+              <label>Comment:<br /><input type="text" name="comment" class="wikitext" value="" /></label>
+            </div>
+            <div class="buttons">
+              <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
+            </div>
+          </fieldset>
+        </form>
+
+        <xi:include py:if="paginator.show_index" href="page_index.html" />
+        <form id="packagerepository_filelist" method="post" action="">
+          <table class="listing">
+            <thead>
+              <tr><th class="sel">&nbsp;</th>
+                <th>Repository</th><th>Package</th><th>Version</th><th>Filename</th><th>Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr py:for="file in files">
+                <td class="sel">
+                  <input type="checkbox" class="trac-disable-determinant"
+                         name="sel" value="$file.id" />
+                </td>
+                <td>$file.repository</td>
+                <td><a href="${panel_href(file.id)}">$file.package</a></td>
+                <td><a href="${panel_href(file.id)}">$file.version</a></td>
+                <td>$file.filename</td>
+                <td>${wiki_to_html(context, file.comment)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="buttons">
+            <input type="submit" name="remove" class="trac-disable trac-disable-on-submit" value="${_('Remove selected files')}" />
+          </div>
+        </form>
+        <xi:include py:if="paginator.show_index" href="page_index.html" />
+
+      </py:otherwise>
+    </py:choose>
+  </body>
+</html>
