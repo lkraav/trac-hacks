@@ -499,6 +499,7 @@ only designated approver can approve = !has_role('approver') && approval != _app
                 elif key == 'false':
                     value = False
                 elif key.startswith('_'):
+                    value = None
                     if key[1:] in self.ticket._old:
                         value = self.ticket._old[key[1:]]
                     if value is None:
