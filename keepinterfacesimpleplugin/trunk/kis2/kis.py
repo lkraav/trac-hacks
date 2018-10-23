@@ -486,29 +486,33 @@ only designated approver can approve = !has_role('approver') && approval != _app
                     current transition should be provided.
                 '''
 
-                if key == 'authname':
-                    return self.req.authname
-                elif key == 'true':
-                    return True
-                elif key == 'false':
-                    return False
-                elif key.startswith('_'):
-                    key = key[1:]
-                    if key in self.ticket._old:
-                        return self.ticket._old[key] or ''
-                    else:
-                        return ''
-                if key == 'status':
-                    # This is handled specially, as there may be action
-                    # controllers that change or restrict the next status.
-                    return self._get_next_state()
-                # Return empty string for fields that exist but have no valid
-                # (default) value.
-                value = self.ticket.get_value_or_default(key)
-                if value is None:
+                def __empty_string_if_field_exists__(key):
                     existing_fields = TicketSystem(self.env).get_ticket_fields()
                     if any(x['name'] == key for x in existing_fields):
                         return ''
+                    return None
+
+                if key == 'authname':
+                    value = self.req.authname
+                elif key == 'true':
+                    value = True
+                elif key == 'false':
+                    value = False
+                elif key.startswith('_'):
+                    if key[1:] in self.ticket._old:
+                        value = self.ticket._old[key[1:]]
+                    if value is None:
+                        value = __empty_string_if_field_exists__(key[1:])
+                elif key == 'status':
+                    # This is handled specially, as there may be action
+                    # controllers that change or restrict the next status.
+                    value = self._get_next_state()
+                else:
+                    # Return empty string for fields that exist but have no
+                    # valid (default) value.
+                    value = self.ticket.get_value_or_default(key)
+                    if value is None:
+                        value = __empty_string_if_field_exists__(key)
                 return value
 
         symbol_table = Symbol_Table(self.env, req, ticket)
