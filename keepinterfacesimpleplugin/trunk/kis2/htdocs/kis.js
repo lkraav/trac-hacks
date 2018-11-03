@@ -1196,7 +1196,7 @@ if ($.fn.addBack === undefined) {
 // Internet Explorer v7/v8 compatibility patch.
 // 'caught' is defined by Bluebird as an alias for the 'catch' method.
 if (window.Promise.prototype.caught === undefined) {
-    window.Promise.prototype.caught = window.Promise.prototype.catch;
+    window.Promise.prototype.caught = window.Promise.prototype['catch'];
 }
 
 // This function is called when the page has loaded. It initialises the fields.
