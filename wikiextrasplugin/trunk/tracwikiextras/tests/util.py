@@ -222,7 +222,7 @@ class ReduceNamesTestCase(unittest.TestCase):
         self.assertEqual(result, expect)
 
     def test_50(self):
-        icon_dir = FUGUE_ICONS[False]['S']
+        icon_dir = FUGUE_ICONS[False]['S'][1]
         files = fnmatch.filter(os.listdir(icon_dir), '*.png')
         names = [os.path.splitext(p)[0] for p in files]
         names.sort()
@@ -232,7 +232,7 @@ class ReduceNamesTestCase(unittest.TestCase):
         self.assertEqual(result, expect)
 
     def test_51(self):
-        icon_dir = FUGUE_ICONS[False]['S']
+        icon_dir = FUGUE_ICONS[False]['S'][1]
         files = fnmatch.filter(os.listdir(icon_dir), '*.png')
         names = [os.path.splitext(p)[0] for p in files]
         names.sort()
