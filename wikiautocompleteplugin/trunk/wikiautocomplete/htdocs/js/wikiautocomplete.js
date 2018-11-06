@@ -120,8 +120,8 @@ jQuery(document).ready(function($) {
         adapter: Adapter,
         maxCount: 10000
     };
-    $('textarea.wikitext').textcomplete(strategies, options);
-    $('input[type="text"].wikitext').textcomplete(strategies, options);
+    $('textarea.wikitext').attr("autocomplete", "off").textcomplete(strategies, options);
+    $('input[type="text"].wikitext').attr("autocomplete", "off").textcomplete(strategies, options);
 
     if (/^1\.[78]\./.test($.fn.jquery) && $.browser.mozilla &&
         navigator.userAgent.indexOf('like Gecko') === -1 /* is not IE 11 */)
