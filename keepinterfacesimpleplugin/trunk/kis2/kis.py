@@ -792,6 +792,8 @@ evaluation.available.none = evaluation_template == 'None'
                     or 'MSIE' in req.environ['HTTP_USER_AGENT']:
                 # Provide Promise support for Internet Explorer.
                 add_script(req, 'kis2/bluebird.min.js')
+                # This one is only really needed for IE8 and older.
+                add_script(req, 'kis2/bind.js')
             add_script(req, 'kis2/kis.js')
 
         return template, data, content_type

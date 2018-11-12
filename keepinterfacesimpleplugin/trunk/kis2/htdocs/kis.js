@@ -361,7 +361,7 @@ var evaluate = function (predicate) {
                         op: 'call_function',
                         id: page_info['id'],
                         config_func: config_func,
-                        args: args,
+                        args: args
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
                         if (errorThrown == 'Internal Server Error') {
@@ -372,7 +372,7 @@ var evaluate = function (predicate) {
                     success: function (result) {
                         resolve({ value: result });
                     },
-                    timeout: 10000,
+                    timeout: 10000
                 });
             });
         }
@@ -1182,21 +1182,26 @@ return {
     ev: evaluate,
     ui: ui,
     update_fields: update_fields,
-    hook_autoSubmit: hook_autoSubmit,
+    hook_autoSubmit: hook_autoSubmit
 };
 
 // ...close namespace.
 })();
 
-// jQuery compatibility patch.
+// jQuery compatibility patches.
 if ($.fn.addBack === undefined) {
     $.fn.addBack = $.fn.andSelf;
+}
+if ($.fn.on === undefined) {
+    $.fn.on = $.fn.bind;
 }
 
 // Internet Explorer v7/v8 compatibility patch.
 // 'caught' is defined by Bluebird as an alias for the 'catch' method.
 if (window.Promise.prototype.caught === undefined) {
     window.Promise.prototype.caught = window.Promise.prototype['catch'];
+} else {
+    $.fn.prop = $.fn.attr;
 }
 
 // This function is called when the page has loaded. It initialises the fields.
