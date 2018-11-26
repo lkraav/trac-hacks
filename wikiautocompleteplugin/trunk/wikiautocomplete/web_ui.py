@@ -223,12 +223,14 @@ class WikiAutoCompleteModule(Component):
                 SELECT id, summary FROM ticket
                 WHERE %(expr)s
                 ORDER BY changetime DESC
-                LIMIT 10
+                LIMIT 100
                 """ % {'expr': expr}, args)
         else:
             rows = self.env.db_query("""
                 SELECT id, summary FROM ticket
-                ORDER BY changetime DESC LIMIT 10""")
+                ORDER BY changetime DESC
+                LIMIT 100
+                """)
         return [{'value': row[0], 'title': row[1]}
                 for row in rows if 'TICKET_VIEW' in req.perm('ticket', row[0])]
 
