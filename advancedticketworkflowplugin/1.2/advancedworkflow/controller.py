@@ -16,10 +16,11 @@ from pkg_resources import resource_filename
 from subprocess import call
 
 from trac.core import implements, Component
+from trac.notification.api import NotificationSystem
 from trac.ticket import model
 from trac.ticket.api import ITicketActionController, TicketSystem
 from trac.ticket.default_workflow import ConfigurableTicketWorkflow
-from trac.ticket.notification import TicketNotifyEmail
+from trac.ticket.notification import TicketChangeEvent 
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
 from trac.util.html import html
@@ -569,10 +570,10 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
         now = datetime.now(utc)
         xticket.save_changes(author, comment, now)
 
-        #Send notification on the other ticket
+        # Send notification on the other ticket
+        event = TicketChangeEvent('changed', xticket, now, author)
         try:
-            tn = TicketNotifyEmail(self.env)
-            tn.notify(xticket, newticket=False, modtime=now)
+            NotificationSystem(self.env).notify(event)
         except Exception, e:
             self.log.exception("Failure sending notification on change to "
                                "ticket #%s: %s", ticketnum, e)
