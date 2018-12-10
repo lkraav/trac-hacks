@@ -97,7 +97,13 @@ var TracInterface = function(field_name) {
             this.option_selector = this.selector;
             this.type = 'radio';
             if (this.select_field().length == 0) {
-                this.type = 'undefined';
+                // Header-only field (not modifiable as a change property).
+                this.selector = 'td[headers=h_' + field_name + ']';
+                this.option_selector = this.selector;
+                this.type = 'header';
+                if (this.select_field().length == 0) {
+                    this.type = 'undefined';
+                }
             }
         }
     }
@@ -248,6 +254,9 @@ TracInterface.prototype.val = function () {
             context = context.filter(':checked');
             result = context.val.apply(context, arguments);
             break;
+        case 'header':
+            result = context.text().trim();
+            break;
         default:
             result = context.val.apply(context, arguments);
     }
@@ -352,7 +361,7 @@ var evaluate = function (predicate) {
                         op: 'call_function',
                         id: page_info['id'],
                         config_func: config_func,
-                        args: args,
+                        args: args
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
                         if (errorThrown == 'Internal Server Error') {
@@ -363,7 +372,7 @@ var evaluate = function (predicate) {
                     success: function (result) {
                         resolve({ value: result });
                     },
-                    timeout: 10000,
+                    timeout: 10000
                 });
             });
         }
@@ -841,7 +850,7 @@ Field.prototype.set_options = function () {
             }
         }
         return unused;
-    }.bind(this)).catch(function (err) {
+    }.bind(this)).caught(function (err) {
         console.log(this.field_name + '.available ' + err.error);
         return err;
     }.bind(this));
@@ -1013,7 +1022,7 @@ Field.prototype.set_template = function () {
             this.template_onchange_attached = true;
         }
         return p;
-    }.bind(this)).catch(function (p) {
+    }.bind(this)).caught(function (p) {
         console.log(this.field_name + '.available ' + p.error);
         return p;
     }.bind(this));
@@ -1173,15 +1182,26 @@ return {
     ev: evaluate,
     ui: ui,
     update_fields: update_fields,
-    hook_autoSubmit: hook_autoSubmit,
+    hook_autoSubmit: hook_autoSubmit
 };
 
 // ...close namespace.
 })();
 
-// jQuery compatibility patch.
+// jQuery compatibility patches.
 if ($.fn.addBack === undefined) {
     $.fn.addBack = $.fn.andSelf;
+}
+if ($.fn.on === undefined) {
+    $.fn.on = $.fn.bind;
+}
+
+// Internet Explorer v7/v8 compatibility patch.
+// 'caught' is defined by Bluebird as an alias for the 'catch' method.
+if (window.Promise.prototype.caught === undefined) {
+    window.Promise.prototype.caught = window.Promise.prototype['catch'];
+} else {
+    $.fn.prop = $.fn.attr;
 }
 
 // This function is called when the page has loaded. It initialises the fields.

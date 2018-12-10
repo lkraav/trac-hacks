@@ -462,7 +462,7 @@ only designated approver can approve = !has_role('approver') && approval != _app
                     and licensed under 3-clause BSD licence.
                 '''
                 if 'action' not in self.req.args:
-                    return 'new'
+                    return ''
 
                 action = self.req.args['action']
                 action_changes = {}
@@ -486,27 +486,35 @@ only designated approver can approve = !has_role('approver') && approval != _app
                     current transition should be provided.
                 '''
 
-                if key == 'authname':
-                    return self.req.authname
-                elif key == 'true':
-                     return True
-                elif key == 'false':
-                     return False
-                elif key.startswith('_'):
-                     key = key[1:]
-                     if key in self.ticket._old:
-                        return self.ticket._old[key]
-                if key == 'status':
-                    # This is handled specially, as there may be action
-                    # controllers that change or restrict the next status.
-                    return self._get_next_state()
-                # Return empty string for fields that exist but have no valid
-                # (default) value.
-                value = self.ticket.get_value_or_default(key)
-                if value is None:
+                def __empty_string_if_field_exists__(key):
                     existing_fields = TicketSystem(self.env).get_ticket_fields()
                     if any(x['name'] == key for x in existing_fields):
                         return ''
+                    return None
+
+                value = None
+                if key == 'authname':
+                    value = self.req.authname
+                elif key == 'true':
+                    value = True
+                elif key == 'false':
+                    value = False
+                elif key.startswith('_'):
+                    key = key[1:]
+                    if key in self.ticket._old:
+                        # _old only has values for fields that are changing.
+                        value = self.ticket._old[key] or ''
+                elif key == 'status':
+                    # This is handled specially, as there may be action
+                    # controllers that change or restrict the next status.
+                    value = self._get_next_state()
+
+                # Return empty string for fields that exist but have no
+                # valid (default) value.
+                if value is None:
+                    value = self.ticket.get_value_or_default(key)
+                if value is None:
+                    value = __empty_string_if_field_exists__(key)
                 return value
 
         symbol_table = Symbol_Table(self.env, req, ticket)
@@ -785,6 +793,8 @@ evaluation.available.none = evaluation_template == 'None'
                     or 'MSIE' in req.environ['HTTP_USER_AGENT']:
                 # Provide Promise support for Internet Explorer.
                 add_script(req, 'kis2/bluebird.min.js')
+                # This one is only really needed for IE8 and older.
+                add_script(req, 'kis2/bind.js')
             add_script(req, 'kis2/kis.js')
 
         return template, data, content_type
