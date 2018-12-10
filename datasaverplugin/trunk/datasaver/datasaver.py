@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re, sys
 
 from pkg_resources         import resource_filename, resource_exists
