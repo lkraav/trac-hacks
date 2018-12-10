@@ -503,7 +503,7 @@ only designated approver can approve = !has_role('approver') && approval != _app
                     key = key[1:]
                     if key in self.ticket._old:
                         # _old only has values for fields that are changing.
-                        value = self.ticket._old[key]
+                        value = self.ticket._old[key] or ''
                 elif key == 'status':
                     # This is handled specially, as there may be action
                     # controllers that change or restrict the next status.
