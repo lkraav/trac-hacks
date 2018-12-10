@@ -18,11 +18,11 @@ function datasaver($)
         $('#datasaver_restorer').css('opacity', '0.25')
     }
 
-    // Keep a copy of form data every minute and keep a copy if the page is 
+    // Keep a copy of form data every minute and keep a copy if the page is
     //datasaver_watcher()
 
     // Also track when the page is left.
-    $(window).unload(datasaver_savior)
+    $(window).on('unload', datasaver_savior)
 })
 
 var datasaver_blink_state = 1.0;
@@ -86,20 +86,20 @@ function datasaver_capture()
         for (var elemidx = 0; elemidx < elemcount; ++elemidx)
         {
             var element = form.elements[elemidx];
-            if (element.type != 'submit' && 
+            if (element.type != 'submit' &&
                 element.type != 'hidden' &&
                 element.type != 'password' &&
                 element.value)
             {
                 formdata.push(
-                    formidx + ':' + elemidx + ':' + 
+                    formidx + ':' + elemidx + ':' +
                     escape(element.value))
             }
         }
     }
     return formdata.join('&');
 }
-    
+
 function datasaver_save(formdough)
 {
     formdough = formdough || datasaver_capture()
@@ -167,7 +167,7 @@ function datasaver_restore(formdough)
                 var bits = parts[partidx].split(':')
                 var formidx = parseInt(bits[0])
                 var elemidx = parseInt(bits[1])
-                document.forms[formidx].elements[elemidx].value = 
+                document.forms[formidx].elements[elemidx].value =
                     unescape(bits[2])
             }
         }
