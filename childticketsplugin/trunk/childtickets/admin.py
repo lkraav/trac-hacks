@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from trac.admin import IAdminPanelProvider
 from trac.core import *
 from trac.util.text import exception_to_unicode

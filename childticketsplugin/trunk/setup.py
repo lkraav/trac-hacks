@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from setuptools import find_packages, setup
 
 # name can be any name.  This name will be used to create .egg file.
@@ -11,7 +14,7 @@ setup(
     author_email='fatrascal@bigfoot.com@gmail.com',
     description='Provides support for pseudo child-tickets and a visual reference to these within a parent ticket.',
     keywords='trac plugins ticket dependency childtickets',
-    url='http://trac-hacks.org/wiki/ChildTicketsPlugin',
+    url='https://trac-hacks.org/wiki/ChildTicketsPlugin',
     install_requires=['Trac'],
     entry_points="""
         [trac.plugins]
