@@ -198,7 +198,11 @@ class TracchildticketsModule(Component):
 
                 # trac.ini : child tickets are allowed - Set up 'create new ticket' buttons.
                 if childtickets_allowed:
-
+                    childtickets_label = \
+                        self.config.get('childtickets',
+                                        'parent.%s.new_child_ticket_label'
+                                        % ticket['type']) \
+                        or "New Child Ticket"
                     # Can user create a new ticket? If not, just display title (ie. no 'create' button).
                     if 'TICKET_CREATE' in req.perm(ticket.resource):
 
@@ -239,7 +243,7 @@ class TracchildticketsModule(Component):
                                     tag.input(type="submit",
                                               disabled="disabled",
                                               name="childticket",
-                                              value="New Child Ticket",
+                                              value=childtickets_label,
                                               title="Create a child ticket"),
                                     tag.input(type="hidden", name="type",
                                               value=default_child_type),
@@ -248,7 +252,7 @@ class TracchildticketsModule(Component):
                                 submit_button_fields = (
                                     tag.input(type="submit",
                                               name="childticket",
-                                              value="New Child Ticket",
+                                              value=childtickets_label,
                                               title="Create a child ticket"),
                                     tag.input(type="hidden", name="type",
                                               value=default_child_type),

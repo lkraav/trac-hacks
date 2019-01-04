@@ -36,6 +36,14 @@
           </td>
         </tr>
         <tr>
+          <!-- New Child Ticket Label -->
+          <td><label>New Child Ticket Label</label></td>
+          <td><input type="text" name="new_child_ticket_label"
+                     value="${parenttype.new_child_ticket_label}"
+                     size="30" />
+          </td>
+        </tr>
+        <tr>
           <!-- Table Headers Option -->
           <td>Table Headers</td>
           <td>
@@ -89,6 +97,7 @@
         <tr>
           <th>Name</th>
           <th>Allow Child Tickets?</th>
+          <th>New Child Ticket Label</th>
           <th>Table Headers</th>
           <th>Restricted Child Types</th>
           <th>Inherited Fields</th>
@@ -101,6 +110,7 @@
                 href="${'/'.join([base_href,type.name])}">${type.name}</a>
             </td>
             <td>${type.allow_child_tickets}</td>
+            <td>${type.new_child_ticket_label}</td>
             <td>${', '.join(type.table_headers)}</td>
             <td>${', '.join(type.restrict_to_child_types)}</td>
             <td>${', '.join(type.inherited_fields)}</td>

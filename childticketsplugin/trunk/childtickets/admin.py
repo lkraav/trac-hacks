@@ -59,10 +59,19 @@ class ChildTicketsAdminPanel(Component):
             if req.method == 'POST':
                 changed = False
 
-                allow_child_tickets = req.args.get('allow_child_tickets')
+                allow_child_tickets = \
+                    req.args.get('allow_child_tickets')
                 self.config.set('childtickets',
-                                'parent.%s.allow_child_tickets' % parenttype,
+                                'parent.%s.allow_child_tickets'
+                                % parenttype,
                                 allow_child_tickets)
+
+                new_child_ticket_label = \
+                    req.args.get('new_child_ticket_label')
+                self.config.set('childtickets',
+                                'parent.%s.new_child_ticket_label'
+                                % parenttype,
+                                new_child_ticket_label)
 
                 # NOTE: 'req.arg.get()' returns a string if only one of the multiple options is selected.
                 headers = req.args.get('headers') or []
@@ -173,6 +182,13 @@ class ParentType(object):
         return self.config.getbool('childtickets',
                                    'parent.%s.allow_child_tickets' % self.name,
                                    default=False)
+
+    @property
+    def new_child_ticket_label(self):
+        return self.config.get('childtickets',
+                              'parent.%s.new_child_ticket_label'
+                              % self.name,
+                              default="New Child Ticket")
 
     @property
     def table_headers(self):
