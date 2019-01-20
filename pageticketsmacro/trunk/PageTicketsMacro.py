@@ -41,9 +41,11 @@ class PageTicketsMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content, args):
         tickets = PageTicketsMacro.tickets_re.findall(formatter.source)
+        args, kw = parse_args(content)
+        if 'id' in kw:
+            tickets.append(kw['id'])
         if not tickets:
             return 'No tickets found'
-        args, kw = parse_args(content)
         kw['id'] = '|'.join(tickets)
         kw.setdefault('format', 'table')
         args = args + ['%s=%s' % (k, v) for k, v in kw.items()]
