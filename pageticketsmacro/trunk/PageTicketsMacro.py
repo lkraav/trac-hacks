@@ -26,7 +26,18 @@ class PageTicketsMacro(WikiMacroBase):
     }}}
     """
 
-    tickets_re = re.compile('(?:#|(?:ticket:|bug:))(\d+)')
+    tickets_re = re.compile("""
+        (?:
+            \#           # #
+            |            # OR
+            ticket:      # ticket:
+            |            # OR
+            issue:       # issue:
+            |            # OR
+            bug:         # bug:
+        )
+        (\d+)            # Group 1: The ticket number
+    """, re.VERBOSE)
 
     def expand_macro(self, formatter, name, content, args):
         tickets = PageTicketsMacro.tickets_re.findall(formatter.source)
