@@ -68,8 +68,9 @@ class MigrationTestCase(unittest.TestCase):
         @env.with_transaction()
         def fn(db):
             cursor = db.cursor()
-            cursor.execute("UPDATE system SET value='21' "
-                           "WHERE name='initial_database_version'")
+            cursor.execute("UPDATE %s SET value='21' "
+                           "WHERE name='initial_database_version'" %
+                           db.quote('system'))
         pages_dir = resource_filename('trac.wiki', 'default-pages')
         WikiAdmin(env).load_pages(pages_dir)
         att = Attachment(env, 'wiki', 'WikiStart')
