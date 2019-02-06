@@ -250,21 +250,26 @@ class LdapAuthStore(Component):
             if not attrs[attr]:
                 continue
             value = unicode(attrs[attr], 'utf-8')
-            db = self.env.get_db_cnx()
-            cursor = db.cursor()
-            self.log.debug('LDAPstore : Update %s for %s' % ( value , attr ))
-            cursor.execute("UPDATE session_attribute SET value=%s "
-                    "WHERE name=%s AND sid=%s AND authenticated='1'",
-                    (value, attr, user_attr))
-            db.commit()
-            cursor.execute("SELECT * from session_attribute WHERE name=%s AND sid=%s", (attr, user_attr))
-            if not cursor.fetchone():
-                self.log.debug('LDAPstore : Insert %s for %s' % ( value , attr ))
-                cursor.execute("INSERT INTO session_attribute "
-                        "(sid,authenticated,name,value) "
-                        "VALUES (%s,1,%s,%s)",
-                        (user_attr, attr, value))
-                db.commit()
+            self.log.debug('LDAPstore : Update %s for %s',
+                           value , attr)
+            with self.env.db_transaction as db:
+                db("""
+                    UPDATE session_attribute SET value=%s
+                    WHERE name=%s AND sid=%s AND authenticated='1'
+                    """, (value, attr, user_attr))
+                for _ in db("""
+                        SELECT * from session_attribute
+                        WHERE name=%s AND sid=%s
+                        """, (attr, user_attr))
+                    break
+                else:
+                    self.log.debug('LDAPstore : Insert %s for %s',
+                                   value , attr)
+                    db("""
+                        INSERT INTO session_attribute
+                         (sid,authenticated,name,value)
+                        VALUES (%s,1,%s,%s)
+                        """, (user_attr, attr, value))
         return True
 
     def _bind_as_user(self, dn, password):
