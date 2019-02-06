@@ -260,7 +260,7 @@ class LdapAuthStore(Component):
                 for _ in db("""
                         SELECT * from session_attribute
                         WHERE name=%s AND sid=%s
-                        """, (attr, user_attr))
+                        """, (attr, user_attr)):
                     break
                 else:
                     self.log.debug('LDAPstore : Insert %s for %s',
