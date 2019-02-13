@@ -36,10 +36,12 @@ class TicketDefaultCC(Component):
             if 'component' in ticket._old and ticket._old['component']:
                 old_comp = ticket._old['component']
                 old_comp_default_cc = DefaultCC(self.env, old_comp)
-                try:
-                    cc.remove(old_comp_default_cc.cc)
-                except ValueError:
-                    pass
+                old_comp_cc = chrome.cc_list(old_comp_default_cc.cc)
+                for entry in old_comp_cc:
+                    try:
+                        cc.remove(entry)
+                    except ValueError:
+                        pass
             comp_default_cc = DefaultCC(self.env, ticket['component'])
             if comp_default_cc:
                 comp_cc = chrome.cc_list(comp_default_cc.cc)
