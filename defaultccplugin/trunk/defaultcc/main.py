@@ -12,6 +12,7 @@
 
 from trac.core import *
 from trac.ticket.api import ITicketManipulator
+from trac.web.chrome import Chrome
 
 from defaultcc.model import DefaultCC
 
@@ -29,11 +30,22 @@ class TicketDefaultCC(Component):
         pass
 
     def validate_ticket(self, req, ticket):
-        if 'preview' not in req.args and 'comment' not in req.args:
+        if 'preview' not in req.args:
+            chrome = Chrome(self.env)
+            cc = chrome.cc_list(ticket['cc'])
+            if 'component' in ticket._old and ticket._old['component']:
+                old_comp = ticket._old['component']
+                old_comp_default_cc = DefaultCC(self.env, old_comp)
+                try:
+                    cc.remove(old_comp_default_cc.cc)
+                except ValueError:
+                    pass
             comp_default_cc = DefaultCC(self.env, ticket['component'])
-            if comp_default_cc and comp_default_cc.cc:
-                if ticket['cc']:
-                    ticket['cc'] += ', '
-                ticket['cc'] += comp_default_cc.cc
+            if comp_default_cc:
+                comp_cc = chrome.cc_list(comp_default_cc.cc)
+                if comp_cc:
+                    cc.extend(comp_cc)
+            if cc:
+                ticket['cc'] = ', '.join(cc)
 
         return []
