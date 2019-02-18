@@ -8,9 +8,9 @@ import re
 import shutil
 import subprocess
 import tempfile
-import xml.sax.saxutils
-from urllib import urlretrieve
+import urllib
 
+from trac.attachment import Attachment
 from trac.config import Option
 from trac.core import *
 from trac.env import ISystemInfoProvider
@@ -25,6 +25,8 @@ EXCLUDE_RES = [
     re.compile(r'\[\[TOC([^]]*)\]\]'),
     re.compile(r'----(\r)?$\n^Back up: \[\[ParentWiki\]\]', re.M | re.I)
 ]
+
+IMG_RE = re.compile(r'(<img[^>]+src=")([^"]+)(")')
 
 
 def tagattrfind(page, tag, attr, pos):
@@ -75,39 +77,16 @@ def wiki_to_pdf(text, env, req, tmp_dir, default_charset):
     page = page.replace('<table class="wiki">',
                         '<table class="wiki" border="1" width="100%">')
 
-    imgpos = page.find('<img')
-
-    imgcounter = 0
-
     img_cache = {}
-    while imgpos != -1:
-        addrpos = page.find('src="', imgpos)
-        theimg = page[addrpos + 5:]
-        thepos = theimg.find('"')
-        theimg = theimg[:thepos]
-        if theimg[:1] == '/':
-            basepath = os.path.commonprefix([env.href(), theimg.lstrip()])
-            theimg = env.abs_href(theimg[len(basepath):])
-        try:
-            newimg = img_cache[theimg]
-        except:
-            # newimg = tmp_dir + '%(#)d_' %{"#":imgcounter} + \
-            #          theimg[theimg.rfind('/')+1:]
-            prefix = '%(#)d_' % {"#": imgcounter}
-            file = tempfile.NamedTemporaryFile(mode='w', prefix=prefix,
-                                               dir=tmp_dir)
-            newimg = file.name
-            file.close()
-            theimg = xml.sax.saxutils.unescape(theimg)
-            theimg = theimg.replace(" ", "%20")
-            urlretrieve(theimg, newimg)
-            img_cache[theimg] = newimg
-            env.log.debug("The image is %s new image is %s", theimg,
-                          newimg)
-            imgcounter += 1
-            page = (page[:addrpos + 5] + newimg +
-                    page[addrpos + 5 + thepos:])
-            imgpos = page.find('<img', addrpos)
+    def repl_href(m):
+        img_url = urllib.unquote(m.group(2))
+        if img_url not in img_cache:
+            prealm, presource, filename = img_url.split('/')[-3:]
+            attachment = Attachment(env, prealm, presource, filename)
+            img_cache[img_url] = attachment.path
+        return m.group(1) + img_cache[img_url] + m.group(3)
+
+    page = re.sub(IMG_RE, repl_href, page)
 
     # Add center tags, since htmldoc 1.9 does not handle align="center"
     tablepos, tableend = tagattrfind(page, 'table', 'align="center"', 0)
