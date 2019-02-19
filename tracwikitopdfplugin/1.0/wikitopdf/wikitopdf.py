@@ -26,6 +26,7 @@ EXCLUDE_RES = [
     re.compile(r'----(\r)?$\n^Back up: \[\[ParentWiki\]\]', re.M | re.I)
 ]
 
+ATTACHMENT_RE = re.compile(r'.*/raw-attachment/(.*)')
 IMG_RE = re.compile(r'(<img[^>]+src=")([^"]+)(")')
 
 
@@ -81,7 +82,10 @@ def wiki_to_pdf(text, env, req, tmp_dir, default_charset):
     def repl_href(m):
         img_url = urllib.unquote(m.group(2))
         if img_url not in img_cache:
-            prealm, presource, filename = img_url.split('/')[-3:]
+            resource_path = re.match(ATTACHMENT_RE, img_url).group(1)
+            path_parts = resource_path.split('/')
+            prealm, filename = path_parts[0], path_parts[-1]
+            presource = '/'.join(path_parts[1:-1])
             attachment = Attachment(env, prealm, presource, filename)
             img_cache[img_url] = attachment.path
         return m.group(1) + img_cache[img_url] + m.group(3)
