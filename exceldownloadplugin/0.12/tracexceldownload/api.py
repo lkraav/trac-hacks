@@ -365,7 +365,6 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
     def set_col_widths(self):
         from openpyxl.utils.cell import get_column_letter
         from openpyxl.cell import Cell
-        TYPE_STRING = Cell.TYPE_STRING
 
         for idx, width in sorted(self._col_widths.iteritems()):
             letter = get_column_letter(idx + 1)
@@ -377,7 +376,12 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
                     value = val.value
                     cell = Cell(self.sheet, column='A', row=1)
                     if isinstance(value, basestring):
-                        cell.set_explicit_value(value, data_type=TYPE_STRING)
+                        # It is need to set "=..." value as a string but
+                        # set_explicit_value() is deprecated since openpyxl
+                        # 2.6. Instead, set directly properties of Cell
+                        # instance.
+                        cell.data_type = 's'
+                        cell._value = cell.check_string(value)
                     else:
                         cell.value = value
                     cell.style = val.style
