@@ -32,6 +32,9 @@
 # Signed-Off-By: Christopher Head <chead@zaber.com>
 #
 
+import itertools
+import re
+
 import trac.mimeview.api
 import trac.wiki.formatter
 import trac.wiki.macros
@@ -57,16 +60,30 @@ class ParameterizedIncludeMacro(trac.wiki.macros.WikiMacroBase):
     """
 
     def expand_macro(self, formatter, name, content):
-        args = [x.strip() for x in content.split(",")]
-        if len(args) < 1:
-            return trac.wiki.formatter.system_message("No page specified")
-        page_name = args[0]
+        args = (x.strip() for x in ParameterizedIncludeMacro._split_args(content))
+        page_name = next(args)
         page = trac.wiki.model.WikiPage(self.env, page_name, None)
         if "WIKI_VIEW" not in formatter.perm(page.resource):
             return ""
         if not page.exists:
             return trac.wiki.formatter.system_message("Wiki page \"%s\" does not exist" % page_name)
         text = page.text
-        for i in range(1, len(args)):
-            text = text.replace("{{%d}}" % i, args[i])
+        for arg_value, arg_index in zip(args, itertools.count(1)):
+            text = text.replace("{{%d}}" % arg_index, arg_value)
         return trac.mimeview.api.Mimeview(self.env).render(trac.mimeview.api.Context.from_request(formatter.req, "wiki", page_name), "text/x-trac-wiki", text)
+
+    _unescape_re = re.compile(R"\\(.)")
+
+    @staticmethod
+    def _split_args(args):
+        start_of_current_token = 0
+        escaped = False
+        for i in range(len(args)):
+            if escaped:
+                escaped = False
+            elif args[i] == "\\":
+                escaped = True
+            elif args[i] == ",":
+                yield ParameterizedIncludeMacro._unescape_re.sub(R"\1", args[start_of_current_token:i])
+                start_of_current_token = i + 1
+        yield ParameterizedIncludeMacro._unescape_re.sub(R"\1", args[start_of_current_token:])
