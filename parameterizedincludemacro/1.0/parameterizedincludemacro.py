@@ -41,7 +41,7 @@ import trac.wiki.macros
 import trac.wiki.model
 
 author = "Christopher Head"
-version = "1.0 ($Rev$)"
+version = "1.1 ($Rev$)"
 license = "BSD"
 url = "https://trac-hacks.org/wiki/ParameterizedIncludeMacro"
 
