@@ -23,7 +23,8 @@ from configobj import ConfigObj
 
 from trac.admin.api import IAdminPanelProvider
 from trac.core import *
-from trac.util.translation import _
+from trac.util.html import html as tag
+from trac.util.translation import _, tag_
 from trac.web.chrome import ITemplateProvider
 
 from acct_mgr.api import AccountManager
@@ -40,7 +41,7 @@ class PageAuthzPolicyEditor(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
-    
+
     def get_htdocs_dirs(self):
         return []
 
@@ -55,13 +56,17 @@ class PageAuthzPolicyEditor(Component):
         req.perm.require('TRAC_ADMIN')
         authz_policy_file_name = \
             self._get_filename('authz_policy', 'authz_file')
+        if not authz_policy_file_name:
+            raise TracError(
+                tag_("No filename specified in %(section)s",
+                     section=tag.code("[authz_policy] authz_file")))
         group_details = self._get_groups_and_members()
         # Handle the return data
         if req.method == 'POST':
             if req.args.get('authz_file_contents'):
                 # The data needs to be validated, otherwise duplicate
                 # entries can break things.
-                edited_contents = str(req.args.get('authz_file_contents'))
+                edited_contents = req.args.get('authz_file_contents')
                 edited_contents_stringio = StringIO(edited_contents)
                 try:
                     test_authz_policy_dict = \
@@ -69,9 +74,8 @@ class PageAuthzPolicyEditor(Component):
                 except:
                     raise TracError(_("Error in edited file. Re-edit and "
                                       "check for duplicate entries."))
-                authz_policy_file = open(authz_policy_file_name, 'w')
-                test_authz_policy_dict.write(authz_policy_file)
-                authz_policy_file.close()
+                with open(authz_policy_file_name, 'w') as f:
+                    test_authz_policy_dict.write(f)
 
         authz_policy_dict = ConfigObj(authz_policy_file_name)
 
