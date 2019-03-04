@@ -17,7 +17,7 @@ setup(
     author_email='robert.martin@arqiva.com',
     maintainer='Ryan J Ollos',
     maintainer_email='ryan.j.ollos@gmail.com',
-    url='http://trac-hacks.org/wiki/FineGrainedPageAuthzEditorPlugin',
+    url='https://trac-hacks.org/wiki/FineGrainedPageAuthzEditorPlugin',
     description='Page Authz File management plugin for Trac',
     license='3-Clause BSD',
 
@@ -29,5 +29,5 @@ setup(
             'page_authz_policy_editor.admin = page_authz_policy_editor.pape_admin',
         ]
     },
-    install_requires=['configobj', 'TracAccountManager'],
+    install_requires=['configobj', 'TracAccountManager', 'Trac'],
 )
