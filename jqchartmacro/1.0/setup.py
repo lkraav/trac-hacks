@@ -14,8 +14,8 @@ setup (
     version = 1.0,
     author = 'pablo.grana',
     author_email = 'pablo.pg@gmail.com',
-    license = 'BSD',    
-    url = 'http://trac-hacks.org/wiki/TBD',
+    license = 'BSD',
+    url = 'https://trac-hacks.org/wiki/TBD',
     description = 'Provides jqplot based charts.',
     packages = find_packages(exclude=['*.tests']),
     package_data = { 'jqplotchart': ['htdocs/*.png','htdocs/*.js',
@@ -24,4 +24,3 @@ setup (
     entry_points = {'trac.plugins': ['JQChart = jqplotchart.macro']},
     keywords = 'trac macro',
 )
-

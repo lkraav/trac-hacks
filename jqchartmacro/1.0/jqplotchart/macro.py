@@ -1,5 +1,3 @@
-# vim: set sw=2 et ts=2:
-#
 # -*- coding: utf-8 -*-
 #
 # jqplot based chart macro for trac.
@@ -27,10 +25,10 @@ from trac.ticket.query import TicketQueryMacro
 """ Encoder for decimal numbers for json strings.
 """
 class DecimalEncoder(json.JSONEncoder):
-  def default(self, value):
-    if isinstance(value, decimal.Decimal):
-      return float(value)
-    super(DecimalEncoder, self).default(value)
+    def default(self, value):
+        if isinstance(value, decimal.Decimal):
+            return float(value)
+        super(DecimalEncoder, self).default(value)
 
 
 """ Runs a query
@@ -54,12 +52,12 @@ class QueryRunner(object):
     """
     def __init__(self, env, current_user, base_url, report_id, query,
           series_column):
-      self.env = env
-      self.current_user = current_user
-      self.query = query
-      self.series_column = series_column
-      self.base_url = base_url
-      self.report_id = report_id
+        self.env = env
+        self.current_user = current_user
+        self.query = query
+        self.series_column = series_column
+        self.base_url = base_url
+        self.report_id = report_id
 
     """ Gets the sql query string and parameters to execute.
     """
@@ -391,14 +389,14 @@ class ChartIdGenerator(object):
     context: the trac request context, used to store the current id.
     """
     def __init__(self, context):
-      current = context
-      while current != None:
-        if current.parent == None:
-          self.context = current.parent
-          break
-        else:
-          current = current.parent
-      self.context = current
+        current = context
+        while current != None:
+            if current.parent == None:
+                self.context = current.parent
+                break
+            else:
+                current = current.parent
+        self.context = current
 
     """
     get_id: returns a unique id each time it is called.
@@ -545,7 +543,7 @@ class Chart(object):
 
         dataset_options = data.get_options()
         if dataset_options is not None:
-           jqplot_options.update(dataset_options)
+            jqplot_options.update(dataset_options)
 
         if chart_type == 'Table':
             self.draw_table(datasets, use_date_axis, additional_info,
@@ -631,15 +629,15 @@ class Chart(object):
             gauge_height = 100
 
         if self.width is None:
-            width = default_width 
+            width = default_width
         else:
-            width = self.width 
+            width = self.width
             gauge_width = width
 
         if self.height is None:
-            height = default_height 
+            height = default_height
         else:
-            height = self.height 
+            height = self.height
             gauge_height = height
 
         options_str = json.dumps(jqplot_options, cls = DecimalEncoder)
@@ -676,4 +674,3 @@ class Chart(object):
             buf.write("</a>")
         else:
             buf.write("</div>")
-
