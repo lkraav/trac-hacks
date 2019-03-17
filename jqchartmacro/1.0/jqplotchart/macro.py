@@ -82,11 +82,9 @@ class QueryRunner(object):
     """ Returns the sql query string and parameters from a report.
     """
     def get_query_from_report(self, report_id):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        report_query = 'select query from report where id = %s' % report_id
-        cursor.execute(report_query)
-        for row_number, row in enumerate(cursor):
+        for row_number, row in enumerate(self.env.db_query("""
+                SELECT query FROM report WHERE id=%s
+                """, (report_id,))):
             query_string = row[0]
 
         if query_string[0] == '?' or query_string.startswith('query:'):
@@ -113,90 +111,91 @@ class QueryRunner(object):
     count the number of records in a MeterGauge.
     """
     def run(self, count_only):
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
+        with self.env.db_query as db:
+            cursor = db.cursor()
 
-        query, params = self.get_query()
-        if count_only and self.report_id is not None:
-            query = "select count(*) from (" + query + ") as q"
-        cursor.execute(query, params)
+            query, params = self.get_query()
+            if count_only and self.report_id is not None:
+                query = "SELECT COUNT(*) FROM (" + query + ") AS q"
+            print(query)
+            cursor.execute(query, params)
 
-        use_date_axis = 'false';
+            use_date_axis = 'false';
 
-        number_of_columns = len(cursor.description);
+            number_of_columns = len(cursor.description);
 
-        data_set = DataSet()
+            data_set = DataSet()
 
-        series_name = 0
-
-        number_of_series = 0;
-
-        for description in cursor.description:
-            column_name = description[0]
-            column_type = self.determine_type(column_name)
-
-            if self.series_column != column_name and column_type != "ticket_id":
-                number_of_series += 1
-
-        if number_of_series == 0:
-            number_of_series = len(cursor.description)
-
-        for row_number, row in enumerate(cursor):
-            datapoint = []
             series_name = 0
-            xvalue = None
-            yvalue = None
-            ticket_id = None
-            tooltip = ""
-            link = ''
 
-            for column_number, cell in enumerate(row):
+            number_of_series = 0;
 
-                column_name = cursor.description[column_number][0]
+            for description in cursor.description:
+                column_name = description[0]
                 column_type = self.determine_type(column_name)
 
-                if column_name.startswith('_') and column_name != '__group__':
-                    continue
+                if self.series_column != column_name and column_type != "ticket_id":
+                    number_of_series += 1
 
-                value = self.format_cell(column_name, cell)
+            if number_of_series == 0:
+                number_of_series = len(cursor.description)
 
-                if column_type == 'ticket_id':
-                    ticket_id = value
+            for row_number, row in enumerate(cursor):
+                datapoint = []
+                series_name = 0
+                xvalue = None
+                yvalue = None
+                ticket_id = None
+                tooltip = ""
+                link = ''
 
-                if number_of_columns == 1:
-                    # Just one column in the query, just add values in one
-                    # series.
-                    data_set.add_value(0, value)
+                for column_number, cell in enumerate(row):
 
-                elif self.series_column == column_name:
-                    series_name = value
+                    column_name = cursor.description[column_number][0]
+                    column_type = self.determine_type(column_name)
 
-                elif xvalue is None and column_type != 'ticket_id':
-                    # The x axis.
-                    if column_type == 'time':
-                        data_set.use_date_axis()
-                    xvalue = value
+                    if column_name.startswith('_') and column_name != '__group__':
+                        continue
 
-                else:
+                    value = self.format_cell(column_name, cell)
+
                     if column_type == 'ticket_id':
                         ticket_id = value
 
-                    if ticket_id is not None:
-                        link = self.base_url + 'ticket/' + str(ticket_id)
+                    if number_of_columns == 1:
+                        # Just one column in the query, just add values in one
+                        # series.
+                        data_set.add_value(0, value)
 
-                    if self.series_column is not None:
-                        tooltip = series_name
-                        if column_type != 'ticket_id':
-                            yvalue = value
+                    elif self.series_column == column_name:
+                        series_name = value
 
-                    elif column_type != 'ticket_id':
-                        data_set.add_point(series_name, xvalue, value, tooltip,
-                                link, ticket_id)
-                        series_name += 1
+                    elif xvalue is None and column_type != 'ticket_id':
+                        # The x axis.
+                        if column_type == 'time':
+                            data_set.use_date_axis()
+                        xvalue = value
 
-            if self.series_column is not None:
-                data_set.add_point(series_name, xvalue, yvalue, tooltip, link,
-                        ticket_id)
+                    else:
+                        if column_type == 'ticket_id':
+                            ticket_id = value
+
+                        if ticket_id is not None:
+                            link = self.base_url + 'ticket/' + str(ticket_id)
+
+                        if self.series_column is not None:
+                            tooltip = series_name
+                            if column_type != 'ticket_id':
+                                yvalue = value
+
+                        elif column_type != 'ticket_id':
+                            data_set.add_point(series_name, xvalue, value, tooltip,
+                                    link, ticket_id)
+                            series_name += 1
+
+                if self.series_column is not None:
+                    data_set.add_point(series_name, xvalue, yvalue, tooltip, link,
+                            ticket_id)
 
         return data_set
 
