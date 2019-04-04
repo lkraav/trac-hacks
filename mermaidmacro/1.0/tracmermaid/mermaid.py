@@ -63,7 +63,7 @@ class MermaidMacro(WikiMacroBase):
                 id_attr,
                 escape(context.resource.realm),
                 escape(unicode(context.resource.id)),
-                escape(context.resource.version or ''),
+                escape(unicode(context.resource.version or '')),
                 escape(unicode_quote(content)),
                 escape(content))
 
