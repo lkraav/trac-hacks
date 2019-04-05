@@ -26,7 +26,7 @@ class UserExtensiblePermissionStore(DefaultPermissionStore):
         formatted tuples."""
         self.log.debug("calling super.get_all_permissions")
         permissions = super(UserExtensiblePermissionStore, self).get_all_permissions()
-        self.log.debug("super.get_all_permissions: %s" % permissions)
+        self.log.debug("super.get_all_permissions: %s", permissions)
 
         daProvider = None
         for provider in self.group_providers:
@@ -49,5 +49,5 @@ class UserExtensiblePermissionStore(DefaultPermissionStore):
             for u in users:
                 filteredPermissions.append([u, "@%s" % g[1][self.group_nameattr][0]])
 
-        self.log.debug("permissions: %s" % filteredPermissions)
+        self.log.debug("permissions: %s", filteredPermissions)
         return filteredPermissions
