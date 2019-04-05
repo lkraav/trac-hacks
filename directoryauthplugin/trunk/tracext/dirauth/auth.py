@@ -760,7 +760,7 @@ class DirAuthStore(Component):
         r = []
 
         while True:
-            msgid = context.search_ext(base, scope, filterstr, attrlist, 0, [lc], None, -1, sz);
+            msgid = context.search_ext(base, scope, filterstr, attrlist, 0, [lc], None, -1, sz)
 
             resp_type, resp_data, resp_msgid, decoded_resp_ctrls = context.result3(msgid)
 
@@ -784,5 +784,5 @@ class DirAuthStore(Component):
                 break
 
         self.log.debug("_ldap_search: result = %s", r)
-        return r;
+        return r
 
