@@ -67,7 +67,7 @@ class DirAuthStore(Component):
 
     dir_basedn = Option('account-manager', 'dir_basedn', None,
                         "Base DN used for account searches")
-    
+
     dir_pagesize = IntOption('account-manager', 'dir_pagesize', 1000,
                              "Page size for ldap queries.")
 
@@ -101,13 +101,13 @@ class DirAuthStore(Component):
 
     group_expand = IntOption('account-manager', 'group_expand', 1,
                              "binary: expand ldap_groups into trac groups.")
-    
+
     group_nested = BoolOption('account-manager', 'group_nested', False,
                              "Boolean: also add all parent groups of each group containing the user.")
-    
+
     group_spaces2underscore = BoolOption('account-manager', 'group_spaces2underscore', True,
                              "Boolean:Replace spaces in group names with underscores.")
-    
+
     group_nameattr = Option('account-manager', 'group_nameattr', 'cn',
                              "Specify the attribute to read the group name. Defaults to 'cn'. For full group names use 'dn'.")
 
@@ -162,17 +162,17 @@ class DirAuthStore(Component):
         else:
             raise TracError('Unable to bind to Active Directory')
         self.log.debug('get users: %s', str(userinfo))
-        
+
         all_users = [u[0] for u in userinfo]
         self._cache_set('allusers', all_users)
         return all_users
 
     def expand_group_users(self, ldapCtx, group):
         """Given a group name, enumerate all members"""
-                
+
         if self.group_expand == 0:
             return []
-        
+
         if group.startswith('@'):
             group = group[1:]
         group = "cn=%s,%s" % (group, self.group_basedn) if self.group_nameattr == 'cn' else group
@@ -307,7 +307,7 @@ class DirAuthStore(Component):
         if self._ldap:
             return self._ldap
 
-        self._ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri, 
+        self._ldap = ldap.ldapobject.ReconnectLDAPObject(self.dir_uri,
                                                          retry_max=5,
                                                          retry_delay=1)
 
@@ -375,7 +375,7 @@ class DirAuthStore(Component):
             group_filter = ('(&(objectClass=%s)(%s=%s))') % (self.group_class_attr, self.member_attr, user_dn)
             user_groups = self._dir_search(basedn, self.dir_scope,
                                            group_filter, [self.group_nameattr])
-            
+
             for entry in user_groups:
                 groupdn = entry[0]
                 if self.group_nameattr != 'dn':
@@ -393,7 +393,7 @@ class DirAuthStore(Component):
                     groups.append(group)  # dn
                     groups = self._get_parent_groups(groups, groupdn)
             self.log.debug("_expand_user_groups: received groups: %s", groups)
-                
+
         if self.group_expand == 0:
             gg = []
             if use_cache == 0:
@@ -485,7 +485,7 @@ class DirAuthStore(Component):
                     VALUES (%s, 1, %s)""", (uname, 0))
             except:
                 self.log.debug("_populate_user_session: Session for %s exists.", uname)
-    
+
             # Assume enabled if we get this far self.env.get_known_users()
             # needs this..
             # TODO need to have it updated by the get_dn stuff long term so the
@@ -503,7 +503,7 @@ class DirAuthStore(Component):
                     """, (uname,))
             except:
                 self.log.debug("_populate_user_session: Session for %s exists.", uname)
-    
+
             if email:
                 cur = db.cursor()
                 cur.execute("""
@@ -517,7 +517,7 @@ class DirAuthStore(Component):
                     """, (uname, to_unicode(email)))
                 self.log.debug("_populate_user_session: updating user session email info for %s (%s)",
                               uname, to_unicode(email))
-    
+
             if displayname:
                 cur = db.cursor()
                 cur.execute("""
@@ -531,7 +531,7 @@ class DirAuthStore(Component):
                     """, (uname, to_unicode(displayname)))
                 self.log.debug("_populate_user_session: updating user session displayname info for %s (%s)",
                               uname, to_unicode(displayname))
-                
+
             return self._close_db(db)
 
     def _cache_get(self, key=None, ttl=None):
@@ -596,7 +596,7 @@ class DirAuthStore(Component):
 
         basedn = basedn
         lfilter = lfilter
-        
+
         # Create unique key from the filter and the attributes.
         keystr = to_utf8(','.join([basedn, str(scope), lfilter, ':'.join(attrs)]))
         key = hashlib.md5(keystr).hexdigest()
@@ -609,7 +609,7 @@ class DirAuthStore(Component):
                 ret = self._cache_get(key)
                 if ret:
                     return ret
-    
+
                 # --  Check database
                 cur = db.cursor()
                 cur.execute("""
@@ -618,7 +618,7 @@ class DirAuthStore(Component):
                 row = cur.fetchone()
                 if row:
                     lut, data = row
-    
+
                     if current_time < lut + self.cache_ttl:
                         self.log.debug("_dir_search: dbcache hit for %s", lfilter)
                         ret = cPickle.loads(str(data))
@@ -633,11 +633,11 @@ class DirAuthStore(Component):
 #                    db.commit()
             else:
                 self.log.debug("_dir_search: skipping cache.")
-    
+
             ldapCtx = self._bind_dir()
             self.log.debug("_dir_search: starting LDAP search of %s %s using %s "
                            "for %s", self.dir_uri, basedn, lfilter, attrs)
-    
+
             res = []
             try:
                 try:
@@ -653,15 +653,15 @@ class DirAuthStore(Component):
             except ldap.LDAPError, e:
                 self.log.error("_dir_search: Error searching %s using %s: %s",
                                basedn, lfilter, e)
-    
+
             if res:
                 self.log.debug("_dir_search: dir hit, %d entries.", len(res))
             else:
                 self.log.debug("_dir_search: dir miss.")
-    
+
             if not check_cache:
                 return res
-    
+
             # Set the db cache for the next search, even if results are empty.
             res_str = cPickle.dumps(res, 0)
             try:
@@ -679,9 +679,9 @@ class DirAuthStore(Component):
             except Exception, e:
                 db.rollback()
                 self.log.warn("_dir_search: db cache update failed. %s" % e)
-                
+
             self._close_db(db)
-    
+
             self._cache_set(key, res)
 
         self.log.debug("_dir_search: res=%s" % res)
@@ -698,7 +698,7 @@ class DirAuthStore(Component):
         basedn = self.group_basedn or self.dir_basedn
         group_filter = ('(objectClass=%s)') % self.group_class_attr
         all_groups = self._dir_search(basedn, self.dir_scope, group_filter, [self.group_nameattr])
-        
+
         if self.group_spaces2underscore:
             self.log.debug("get_all_groups: all=%s" % all_groups)
             for index, item in enumerate(all_groups):
@@ -744,30 +744,30 @@ class DirAuthStore(Component):
         if "get_db_cnx" in self.env:
             db.commit()
             return db.close()
-        
+
         return True
 
 
     def _ldap_search(self, context, base, scope, filterstr = '(objectClass=*)', attrlist = None):
         """Perform a LDAP search."""
-        
+
         sz = int(self.dir_pagesize)
         if sz > 0:
             self.log.debug("_ldap_search: ldap query with page size %s", sz)
-        
+
         lc = SimplePagedResultsControl(True, sz, '') if sz > 0 else None
 
         r = []
 
         while True:
             msgid = context.search_ext(base, scope, filterstr, attrlist, 0, [lc], None, -1, sz);
-            
+
             resp_type, resp_data, resp_msgid, decoded_resp_ctrls = context.result3(msgid)
-    
+
             r += resp_data
-            
+
             self.log.debug("_ldap_search: serverControls: %s", decoded_resp_ctrls)
-            
+
             pctrls = [
                 c
                 for c in decoded_resp_ctrls
@@ -785,4 +785,4 @@ class DirAuthStore(Component):
 
         self.log.debug("_ldap_search: result = %s", r)
         return r;
-    
+
