@@ -1,15 +1,15 @@
 # Translations template for TicketCalendarPlugin.
-# Copyright (C) 2013 ORGANIZATION
+# Copyright (C) 2019 ORGANIZATION
 # This file is distributed under the same license as the
 # TicketCalendarPlugin project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2013.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: TicketCalendarPlugin 0.12.0.1\n"
+"Project-Id-Version: TicketCalendarPlugin 0.12.0.2\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2013-05-17 17:49+0900\n"
+"POT-Creation-Date: 2019-04-15 19:15+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,99 +18,98 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: ticketcalendar/web_ui.py:384
+#: ticketcalendar/web_ui.py:373
 msgid "Today"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:393
+#: ticketcalendar/web_ui.py:382
 #, python-format
 msgid "%d more tickets..."
 msgstr ""
 
-#: ticketcalendar/web_ui.py:417
+#: ticketcalendar/web_ui.py:406
 msgid "Current month"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:431
+#: ticketcalendar/web_ui.py:421
 #: ticketcalendar/templates/ticketcalendar_list.html:7
 msgid "Macro"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:438
+#: ticketcalendar/web_ui.py:428
 #, python-format
 msgid "%(month_name)s, %(year)s"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:454
+#: ticketcalendar/web_ui.py:444
 #, python-format
 msgid "New ticket with \"%(date)s\" as the start date"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:460
+#: ticketcalendar/web_ui.py:450
 #, python-format
 msgid "New ticket with \"%(date)s\" as the due date"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:464
+#: ticketcalendar/web_ui.py:454
 msgid "Create new ticket"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:596
+#: ticketcalendar/web_ui.py:591
 msgid "The background color for milestones"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:600
+#: ticketcalendar/web_ui.py:595
 msgid ""
-"The icon name in jquery-ui for milestones. See http://jquery-"
-"ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html."
+"The icon name in jquery-ui for milestones. See "
+"https://api.jqueryui.com/theming/icons/."
 msgstr ""
 
-#: ticketcalendar/web_ui.py:606
+#: ticketcalendar/web_ui.py:601
 msgid ""
 "Comma-separated list of background colors to use for the ticket "
 "priorities. It can be specified explicitly pairs of priority name and"
 " background color. e.g. `blocker:#fa6653, critical:#ffad46, ...`."
 msgstr ""
 
-#: ticketcalendar/web_ui.py:615
+#: ticketcalendar/web_ui.py:610
 msgid ""
 "Comma-separated list of icon names in jquery-ui to use for ticket "
 "types.\n"
-"See http://jquery-"
-"ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html.\n"
+"See https://api.jqueryui.com/theming/icons/.\n"
 "\n"
 "It can be specified explicitly pairs of ticket type and icon name.\n"
 "e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."
 msgstr ""
 
-#: ticketcalendar/web_ui.py:624
+#: ticketcalendar/web_ui.py:619
 msgid ""
 "The first day of the week in calendar. If -1, use first week day in "
 "user's locale. Otherwise, use the specified number (0 is Monday as "
 "the first day of the week)."
 msgstr ""
 
-#: ticketcalendar/web_ui.py:630
+#: ticketcalendar/web_ui.py:625
 msgid "The field name for start date of ticket"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:634
+#: ticketcalendar/web_ui.py:629
 msgid "The format for start date of ticket"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:638
+#: ticketcalendar/web_ui.py:633
 msgid "The field name for due date of ticket"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:642
+#: ticketcalendar/web_ui.py:637
 msgid "The format for due date of ticket"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:708
+#: ticketcalendar/web_ui.py:703
 msgid "Ticket Calendar"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:717
+#: ticketcalendar/web_ui.py:712
 msgid ""
 "Display tickets and milestones in calendar or list view.\n"
 "\n"
@@ -134,19 +133,19 @@ msgid ""
 "   view. The default is today and 7 days.\n"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:818
+#: ticketcalendar/web_ui.py:824
 msgid "Ticket Calendar (Calendar view)"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:823 ticketcalendar/web_ui.py:848
+#: ticketcalendar/web_ui.py:829 ticketcalendar/web_ui.py:854
 msgid "Calendar view"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:824 ticketcalendar/web_ui.py:850
+#: ticketcalendar/web_ui.py:830 ticketcalendar/web_ui.py:856
 msgid "List view"
 msgstr ""
 
-#: ticketcalendar/web_ui.py:840
+#: ticketcalendar/web_ui.py:846
 msgid "Ticket Calendar (List view)"
 msgstr ""
 
@@ -187,7 +186,7 @@ msgstr ""
 msgid "Ticket #%(id)s"
 msgstr ""
 
-#: ticketcalendar/templates/ticketcalendar_ticket_detail.html:18
+#: ticketcalendar/templates/ticketcalendar_ticket_detail.html:16
 msgid "Edit this ticket"
 msgstr ""
 

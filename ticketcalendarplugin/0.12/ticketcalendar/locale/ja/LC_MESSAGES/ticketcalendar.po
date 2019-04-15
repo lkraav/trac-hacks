@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TicketCalendar 0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2013-05-17 17:49+0900\n"
+"POT-Creation-Date: 2019-04-15 19:15+0900\n"
 "PO-Revision-Date: 2013-05-02 13:49+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -18,56 +18,56 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: ticketcalendar/web_ui.py:384
+#: ticketcalendar/web_ui.py:373
 msgid "Today"
 msgstr "今日"
 
-#: ticketcalendar/web_ui.py:393
+#: ticketcalendar/web_ui.py:382
 #, python-format
 msgid "%d more tickets..."
 msgstr "他%d件"
 
-#: ticketcalendar/web_ui.py:417
+#: ticketcalendar/web_ui.py:406
 msgid "Current month"
 msgstr "今月"
 
-#: ticketcalendar/web_ui.py:431
+#: ticketcalendar/web_ui.py:421
 #: ticketcalendar/templates/ticketcalendar_list.html:7
 msgid "Macro"
 msgstr "マクロ"
 
-#: ticketcalendar/web_ui.py:438
+#: ticketcalendar/web_ui.py:428
 #, python-format
 msgid "%(month_name)s, %(year)s"
 msgstr "%(year)s年%(month_name)s"
 
-#: ticketcalendar/web_ui.py:454
+#: ticketcalendar/web_ui.py:444
 #, python-format
 msgid "New ticket with \"%(date)s\" as the start date"
 msgstr "開始日を \"%(date)s\" にしてチケット作成"
 
-#: ticketcalendar/web_ui.py:460
+#: ticketcalendar/web_ui.py:450
 #, python-format
 msgid "New ticket with \"%(date)s\" as the due date"
 msgstr "期日を \"%(date)s\" にしてチケット作成"
 
-#: ticketcalendar/web_ui.py:464
+#: ticketcalendar/web_ui.py:454
 msgid "Create new ticket"
 msgstr "チケット作成"
 
-#: ticketcalendar/web_ui.py:596
+#: ticketcalendar/web_ui.py:591
 msgid "The background color for milestones"
 msgstr "マイルストーンの背景色を指定します"
 
-#: ticketcalendar/web_ui.py:600
+#: ticketcalendar/web_ui.py:595
 msgid ""
-"The icon name in jquery-ui for milestones. See http://jquery-"
-"ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html."
+"The icon name in jquery-ui for milestones. See "
+"https://api.jqueryui.com/theming/icons/."
 msgstr ""
-"マイルストーンで表示する jquery-ui のアイコン名を指定します。http://jquery-"
-"ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html を参照してください。"
+"マイルストーンで表示する jquery-ui "
+"のアイコン名を指定します。https://api.jqueryui.com/theming/icons/ を参照してください。"
 
-#: ticketcalendar/web_ui.py:606
+#: ticketcalendar/web_ui.py:601
 msgid ""
 "Comma-separated list of background colors to use for the ticket "
 "priorities. It can be specified explicitly pairs of priority name and "
@@ -76,23 +76,21 @@ msgstr ""
 "チケットの優先度に使う背景色をカンマ区切りで指定します。優先度と背景色を明示的に指定することもできます。例: `blocker:#fa6653, "
 "critical:#ffad46, ...`"
 
-#: ticketcalendar/web_ui.py:615
+#: ticketcalendar/web_ui.py:610
 msgid ""
 "Comma-separated list of icon names in jquery-ui to use for ticket types.\n"
-"See http://jquery-"
-"ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html.\n"
+"See https://api.jqueryui.com/theming/icons/.\n"
 "\n"
 "It can be specified explicitly pairs of ticket type and icon name.\n"
 "e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."
 msgstr ""
 "チケット分類に使う jquery-ui のアイコン名をカンマ区切りで指定します。\n"
-"http://jquery-ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html "
-"を参照してください。\n"
+"https://api.jqueryui.com/theming/icons/ を参照してください。\n"
 "\n"
 "チケット分類とアイコン名を明示的に指定することができます。\n"
 "例: `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`"
 
-#: ticketcalendar/web_ui.py:624
+#: ticketcalendar/web_ui.py:619
 msgid ""
 "The first day of the week in calendar. If -1, use first week day in "
 "user's locale. Otherwise, use the specified number (0 is Monday as the "
@@ -101,27 +99,27 @@ msgstr ""
 "カレンダーにおける週の最初の曜日を指定します。-1 "
 "の場合、ユーザのロケールに対応する曜日を使用します。それ以外の場合、指定した値を使用します。(0 が月曜日になります)"
 
-#: ticketcalendar/web_ui.py:630
+#: ticketcalendar/web_ui.py:625
 msgid "The field name for start date of ticket"
 msgstr "チケット開始日になるフィールド名を指定します"
 
-#: ticketcalendar/web_ui.py:634
+#: ticketcalendar/web_ui.py:629
 msgid "The format for start date of ticket"
 msgstr "チケット開始日の書式を指定します。"
 
-#: ticketcalendar/web_ui.py:638
+#: ticketcalendar/web_ui.py:633
 msgid "The field name for due date of ticket"
 msgstr "チケット期日になるフィールド名を指定します"
 
-#: ticketcalendar/web_ui.py:642
+#: ticketcalendar/web_ui.py:637
 msgid "The format for due date of ticket"
 msgstr "チケット期日の書式を指定します。"
 
-#: ticketcalendar/web_ui.py:708
+#: ticketcalendar/web_ui.py:703
 msgid "Ticket Calendar"
 msgstr "チケットカレンダー"
 
-#: ticketcalendar/web_ui.py:717
+#: ticketcalendar/web_ui.py:712
 msgid ""
 "Display tickets and milestones in calendar or list view.\n"
 "\n"
@@ -161,19 +159,19 @@ msgstr ""
 " * `duration` パラメータは `YYYY-MM-DD/PnD` "
 "で指定し、リスト表示のみで使えます。デフォルトは当日で7日分になります。\n"
 
-#: ticketcalendar/web_ui.py:818
+#: ticketcalendar/web_ui.py:824
 msgid "Ticket Calendar (Calendar view)"
 msgstr "チケットカレンダー (カレンダー表示)"
 
-#: ticketcalendar/web_ui.py:823 ticketcalendar/web_ui.py:848
+#: ticketcalendar/web_ui.py:829 ticketcalendar/web_ui.py:854
 msgid "Calendar view"
 msgstr "カレンダー表示"
 
-#: ticketcalendar/web_ui.py:824 ticketcalendar/web_ui.py:850
+#: ticketcalendar/web_ui.py:830 ticketcalendar/web_ui.py:856
 msgid "List view"
 msgstr "リスト表示"
 
-#: ticketcalendar/web_ui.py:840
+#: ticketcalendar/web_ui.py:846
 msgid "Ticket Calendar (List view)"
 msgstr "チケットカレンダー (リスト表示)"
 
@@ -214,7 +212,7 @@ msgstr "更新"
 msgid "Ticket #%(id)s"
 msgstr "チケット #%(id)s"
 
-#: ticketcalendar/templates/ticketcalendar_ticket_detail.html:18
+#: ticketcalendar/templates/ticketcalendar_ticket_detail.html:16
 msgid "Edit this ticket"
 msgstr "チケット更新"
 

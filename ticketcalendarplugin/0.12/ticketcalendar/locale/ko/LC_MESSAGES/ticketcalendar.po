@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TicketCalendarPlugin 0.12.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2013-05-29 03:03+0900\n"
+"POT-Creation-Date: 2019-04-15 19:15+0900\n"
 "PO-Revision-Date: 2013-06-01 23:08+0900\n"
 "Last-Translator: Genie <386@mail.com>\n"
 "Language-Team: ko <LL@li.org>\n"
@@ -18,57 +18,57 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: ticketcalendar/web_ui.py:379
+#: ticketcalendar/web_ui.py:373
 msgid "Today"
 msgstr " "
 
-#: ticketcalendar/web_ui.py:388
+#: ticketcalendar/web_ui.py:382
 #, python-format
 msgid "%d more tickets..."
 msgstr "외 %d 개..."
 
-#: ticketcalendar/web_ui.py:412
+#: ticketcalendar/web_ui.py:406
 msgid "Current month"
 msgstr "이번 달 보기"
 
-#: ticketcalendar/web_ui.py:426
+#: ticketcalendar/web_ui.py:421
 #: ticketcalendar/templates/ticketcalendar_list.html:7
 msgid "Macro"
 msgstr "매크로 사용법"
 
-#: ticketcalendar/web_ui.py:433
+#: ticketcalendar/web_ui.py:428
 #, python-format
 msgid "%(month_name)s, %(year)s"
 msgstr "%(year)s년 %(month_name)s"
 
-#: ticketcalendar/web_ui.py:449
+#: ticketcalendar/web_ui.py:444
 #, python-format
 msgid "New ticket with \"%(date)s\" as the start date"
 msgstr "시작일을 \"%(date)s\"로 하는 티켓을 작성"
 
-#: ticketcalendar/web_ui.py:455
+#: ticketcalendar/web_ui.py:450
 #, python-format
 msgid "New ticket with \"%(date)s\" as the due date"
 msgstr "완료기한을 \"%(date)s\"로 하는 티켓을 작성"
 
-#: ticketcalendar/web_ui.py:459
+#: ticketcalendar/web_ui.py:454
 msgid "Create new ticket"
 msgstr "새로운 티켓 작성하기"
 
-#: ticketcalendar/web_ui.py:596
+#: ticketcalendar/web_ui.py:591
 msgid "The background color for milestones"
 msgstr "마일스톤을 표시할 때 사용할 배경 색상을 설정합니다."
 
-#: ticketcalendar/web_ui.py:600
+#: ticketcalendar/web_ui.py:595
 msgid ""
-"The icon name in jquery-ui for milestones. See http://jquery-"
-"ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html."
+"The icon name in jquery-ui for milestones. See "
+"https://api.jqueryui.com/theming/icons/."
 msgstr ""
 "마일스톤을 표시할 때 사용할 jquery-ui 아이콘을 설정합니다.\n"
 "\n"
-"http://jquery-ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html 을 참조하세요."
+"https://api.jqueryui.com/theming/icons/ 을 참조하세요."
 
-#: ticketcalendar/web_ui.py:606
+#: ticketcalendar/web_ui.py:601
 msgid ""
 "Comma-separated list of background colors to use for the ticket "
 "priorities. It can be specified explicitly pairs of priority name and "
@@ -80,24 +80,23 @@ msgstr ""
 "\n"
 "사용 예: `blocker:#fa6653, critical:#ffad46, ...`"
 
-#: ticketcalendar/web_ui.py:615
+#: ticketcalendar/web_ui.py:610
 msgid ""
 "Comma-separated list of icon names in jquery-ui to use for ticket types.\n"
-"See http://jquery-"
-"ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html.\n"
+"See https://api.jqueryui.com/theming/icons/.\n"
 "\n"
 "It can be specified explicitly pairs of ticket type and icon name.\n"
 "e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."
 msgstr ""
 "`티켓 종류(type)`별로 사용할 jquery-ui 아이콘을 쉼표로 구분하여 설정합니다.\n"
 "\n"
-"http://jquery-ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html 을 참조하세요.\n"
+"https://api.jqueryui.com/theming/icons/ 을 참조하세요.\n"
 "\n"
 "티켓 종류와 아이콘의 쌍으로 명시적으로 설정할 수 도 있습니다.\n"
 "\n"
 "사용 예: `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`"
 
-#: ticketcalendar/web_ui.py:624
+#: ticketcalendar/web_ui.py:619
 msgid ""
 "The first day of the week in calendar. If -1, use first week day in "
 "user's locale. Otherwise, use the specified number (0 is Monday as the "
@@ -105,30 +104,30 @@ msgid ""
 msgstr ""
 "한 주의 시작 요일을 설정합니다.\n"
 "\n"
-"로케일 기본값으로 설정하려면 `-1` 을 사용하고, "
-"특정 요일로 설정하려면 0 ~ 6 사이 숫자값을 사용합니다. (월요일은 `0`, ..., 일요일은 `6`으로 설정)"
+"로케일 기본값으로 설정하려면 `-1` 을 사용하고, 특정 요일로 설정하려면 0 ~ 6 사이 숫자값을 사용합니다. (월요일은 `0`,"
+" ..., 일요일은 `6`으로 설정)"
 
-#: ticketcalendar/web_ui.py:630
+#: ticketcalendar/web_ui.py:625
 msgid "The field name for start date of ticket"
 msgstr "티켓의 `시작일` 필드를 설정합니다."
 
-#: ticketcalendar/web_ui.py:634
+#: ticketcalendar/web_ui.py:629
 msgid "The format for start date of ticket"
 msgstr "`시작일` 필드의 날짜 형식을 설정합니다."
 
-#: ticketcalendar/web_ui.py:638
+#: ticketcalendar/web_ui.py:633
 msgid "The field name for due date of ticket"
 msgstr "티켓의 `완료기한` 필드를 설정합니다."
 
-#: ticketcalendar/web_ui.py:642
+#: ticketcalendar/web_ui.py:637
 msgid "The format for due date of ticket"
 msgstr "`완료기한` 필드의 날짜 형식을 설정합니다."
 
-#: ticketcalendar/web_ui.py:708
+#: ticketcalendar/web_ui.py:703
 msgid "Ticket Calendar"
 msgstr "일정 보기"
 
-#: ticketcalendar/web_ui.py:717
+#: ticketcalendar/web_ui.py:712
 msgid ""
 "Display tickets and milestones in calendar or list view.\n"
 "\n"
@@ -164,23 +163,24 @@ msgstr ""
 "   - `box`: 달력 보기 (기본값)\n"
 "   - `list`: 목록 보기\n"
 " * `query` 매개변수는 조회 대상에 대한 질의입니다.\n"
-" * `month` 매개변수는 `YYYY-MM` 형식으로 지정하고, \"달력 보기\" 에서만 사용할 수 있습니다. 기본값은 이번 달 입니다.\n"
-" * `duration` 매개변수는 `YYYY-MM-DD/PnD` 형식"
-"으로 지정하고, \"목록 보기\" 에서만 사용할 수 있습니다. 기본값은 오늘부터 7일간 입니다.\n"
+" * `month` 매개변수는 `YYYY-MM` 형식으로 지정하고, \"달력 보기\" 에서만 사용할 수 있습니다. 기본값은 이번 달"
+" 입니다.\n"
+" * `duration` 매개변수는 `YYYY-MM-DD/PnD` 형식으로 지정하고, \"목록 보기\" 에서만 사용할 수 있습니다."
+" 기본값은 오늘부터 7일간 입니다.\n"
 
-#: ticketcalendar/web_ui.py:818
+#: ticketcalendar/web_ui.py:824
 msgid "Ticket Calendar (Calendar view)"
 msgstr "일정 보기 : 달력 보기"
 
-#: ticketcalendar/web_ui.py:823 ticketcalendar/web_ui.py:848
+#: ticketcalendar/web_ui.py:829 ticketcalendar/web_ui.py:854
 msgid "Calendar view"
 msgstr "달력 보기"
 
-#: ticketcalendar/web_ui.py:824 ticketcalendar/web_ui.py:850
+#: ticketcalendar/web_ui.py:830 ticketcalendar/web_ui.py:856
 msgid "List view"
 msgstr "목록 보기"
 
-#: ticketcalendar/web_ui.py:840
+#: ticketcalendar/web_ui.py:846
 msgid "Ticket Calendar (List view)"
 msgstr "일정 보기 : 목록 보기"
 
@@ -221,7 +221,7 @@ msgstr "업데이트"
 msgid "Ticket #%(id)s"
 msgstr "티켓 #%(id)s"
 
-#: ticketcalendar/templates/ticketcalendar_ticket_detail.html:18
+#: ticketcalendar/templates/ticketcalendar_ticket_detail.html:16
 msgid "Edit this ticket"
 msgstr "티켓 편집하기"
 

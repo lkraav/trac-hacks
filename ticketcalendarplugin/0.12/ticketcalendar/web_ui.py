@@ -592,8 +592,8 @@ class TicketCalendarModule(Component):
 
     milestone_icon = Option(
         'ticketcalendar', 'milestone.icon', default='ui-icon-flag',
-        doc=N_("The icon name in jquery-ui for milestones. See http://jquery-"
-               "ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html."))
+        doc=N_("The icon name in jquery-ui for milestones. "
+               "See https://api.jqueryui.com/theming/icons/."))
 
     priority_colors = ListOption(
         'ticketcalendar', 'ticket.priority.color',
@@ -609,7 +609,7 @@ e.g. `blocker:#fa6653, critical:#ffad46, ...`."""))
                 'ui-icon-gear, ui-icon-comment',
         doc=N_("""\
 Comma-separated list of icon names in jquery-ui to use for ticket types.
-See http://jquery-ui.googlecode.com/svn/tags/1.8.21/tests/static/icons.html.
+See https://api.jqueryui.com/theming/icons/.
 
 It can be specified explicitly pairs of ticket type and icon name.
 e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."""))
