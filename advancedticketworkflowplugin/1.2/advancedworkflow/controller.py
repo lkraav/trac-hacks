@@ -20,7 +20,7 @@ from trac.notification.api import NotificationSystem
 from trac.ticket import model
 from trac.ticket.api import ITicketActionController, TicketSystem
 from trac.ticket.default_workflow import ConfigurableTicketWorkflow
-from trac.ticket.notification import TicketChangeEvent 
+from trac.ticket.notification import TicketChangeEvent
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
 from trac.util.html import html
@@ -230,7 +230,7 @@ class TicketWorkflowOpFieldAuthor(TicketWorkflowOpBase):
         hint = _("The '%(field)s' field will be set to '%(username)s'.",
             field=self._field_name(action, ticket),
             username=req.authname)
-        control = tag('')
+        control = html('')
         return (label, control, hint)
 
     def get_ticket_changes(self, req, ticket, action):
@@ -269,7 +269,7 @@ class TicketWorkflowOpFieldsClear(TicketWorkflowOpBase):
         hint = ngettext("The %(fields)s field will be cleared.",
                         "The %(fields)s fields will be cleared.", len(fields),
                         fields=', '.join(fields))
-        control = tag('')
+        control = html('')
         return (label, control, hint)
 
     def get_ticket_changes(self, req, ticket, action):
