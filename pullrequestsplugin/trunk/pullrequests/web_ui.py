@@ -188,6 +188,9 @@ class PullRequestsModule(Component):
             id = m.group('id')
             if command in self.update_commands:
                 pr = PullRequest.select_by_id(self.env, id)
+                if pr is None:
+                    add_warning(req, 'Pull request %s was not found.' % (id,))
+                    continue
                 pr.status = command
                 pr.add_reviewer(author)
                 PullRequest.update_status_and_reviewers(self.env, pr)
