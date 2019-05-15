@@ -107,7 +107,7 @@ class PullRequestsModule(Component):
                     'format_wikilink': format_wikilink,
             }
 
-        return 'pullrequests.html', data
+        return 'pullrequests.html', data, None
 
     # IRequestFilter methods
 
