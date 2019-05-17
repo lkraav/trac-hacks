@@ -1,4 +1,5 @@
 import io
+import re
 from xml.etree.cElementTree import XML
 import zipfile
 
@@ -9,10 +10,12 @@ from trac.util.html import tag
 DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 PPTX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+RTF_MIME_TYPE = 'application/rtf'
 OFFICE_MIME_TYPES = {
     DOCX_MIME_TYPE: ['docx'],
     XLSX_MIME_TYPE: ['xlsx'],
     PPTX_MIME_TYPE: ['pptx'],
+    RTF_MIME_TYPE: ['rtf'],
 }
 DOCX_NS = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 XLSX_NS = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
@@ -38,6 +41,8 @@ class BasicOfficePreviewRenderer(Component):
             return self._render_xlsx(content)
         elif mimetype == PPTX_MIME_TYPE:
             return self._render_pptx(content)
+        elif mimetype == RTF_MIME_TYPE:
+            return self._render_rtf(content)
 
     def _render_docx(self, content):
         with self._zip(content) as zip:
@@ -93,6 +98,75 @@ class BasicOfficePreviewRenderer(Component):
                     if node.text])
                 for paragraph in slide.iter(DRAW_NS + 'p')])
             for slide in slides])
+
+    def _render_rtf(self, content):
+        rtf_token_re = re.compile(r"""
+            (?P<ctrlword>  \\  ([a-zA-Z]+)  (?:\ |(\-?\d+)\ ?)?  )|
+            (?P<ctrlsym>   \\  ([^a-zA-Z])                       )|
+            (?P<noise>     \r|\n                                 )|
+            (?P<grpstart>  \{                                    )|
+            (?P<grpend>    \}                                    )|
+            (?P<plain>     [^\{\}\\\r\n]+                        )""", re.VERBOSE)
+        rtf_dest = set([
+            "author", "buptim", "colortbl", "comment", "creatim", "doccomm",
+            "fonttbl", "footer", "footerf", "footerl", "footerr", "footnote",
+            "ftncn", "ftnsep", "ftnsepc", "header", "headerf", "headerl", "headerr",
+            "info", "keywords", "operator", "pict", "printim", "private1", "revtim",
+            "rxe", "stylesheet", "subject", "tc", "title", "txe", "xe"])
+        rtf_prop = set(["b", "i"])
+        def parse_rtf(source):
+            stack = []
+            state = {}
+            paragraph = []
+            doc = [paragraph]
+            pos = 0
+            codepage = 'cp1252'
+            while pos < len(source):
+                m = rtf_token_re.match(source, pos)
+                if m is None:
+                    break
+                token = m.group(0)
+                pos += len(token)
+                tokentype = m.lastgroup
+                if tokentype == 'ctrlword':
+                    ctrlword = m.group(2)
+                    value = m.group(3)
+                    if ctrlword == 'par':
+                        paragraph = []
+                        doc.append(paragraph)
+                    elif ctrlword == 'ansicpg':
+                        codepage = 'cp' + value
+                    elif ctrlword in rtf_prop:
+                        state[ctrlword] = value
+                    elif ctrlword in rtf_dest:
+                        state['ignore'] = True
+                elif tokentype == 'ctrlsym':
+                    if token == '\\*':
+                        state['ignore'] = True
+                    elif token == "\\'":
+                        hex = source[pos:pos+2]
+                        pos += 2
+                        text = bytearray.fromhex(hex).decode(encoding=codepage)
+                        if not state.get('ignore', False):
+                            paragraph.append((dict(state), text))
+                elif tokentype == 'grpstart':
+                    stack.append(state)
+                    state = dict(state)
+                elif tokentype == 'grpend':
+                    state = stack.pop()
+                elif tokentype == 'plain':
+                    if not state.get('ignore', False):
+                        paragraph.append((dict(state), token))
+            return doc
+        def render_span(state, text):
+            if state.get('b', '0') != '0':
+                text = tag.b(text)
+            if state.get('i', '0') != '0':
+                text = tag.i(text)
+            return tag.span(text)
+        return tag.div(class_='basic-office-rtf trac-content')([
+            tag.p([render_span(state, text) for state, text in paragraph])
+            for paragraph in parse_rtf(content.read())])
 
     def _zip(self, content):
         return zipfile.ZipFile(io.BytesIO(content.read()))
