@@ -34,7 +34,7 @@ jQuery(document).ready(function($) {
     if (field_groups_order) {
         for (var i = field_groups_order.length-1; i >= 0; i--) {
             var fieldset_id = 'properties';
-            
+
             if (field_groups_order[i] != "main") {
                 fieldset_id = fieldset_id + "_" + field_groups_order[i];
             }
@@ -47,11 +47,11 @@ jQuery(document).ready(function($) {
     for (var i = 0; i < field_groups.length; i++) {
         var group = field_groups[i];
         var fieldset_id = 'properties';
-        
+
         if (group["name"] != "main") {
             fieldset_id = fieldset_id + "_" + group["name"];
         }
-        
+
         // Reset group name
         var fieldset = $('#' + fieldset_id);
         if (group["label"] && group["label"] != "") {
@@ -63,7 +63,7 @@ jQuery(document).ready(function($) {
                 $('legend', fieldset).enableTicketGroupFolding($.inArray('collapsed', group['properties']) != -1, true);
             }
         }
-        
+
         // Now, gather table entries and apply them to its group table
         var table = $('#table_' + group["name"]);
         var columns = 2;

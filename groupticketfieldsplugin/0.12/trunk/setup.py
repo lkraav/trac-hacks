@@ -11,7 +11,7 @@ from setuptools import setup
 
 setup(
     name='GroupTicketFields',
-    version='0.0.1',
+    version='0.1',
     packages=['groupticketfields'],
     package_data={
         'groupticketfields' : [
@@ -23,7 +23,7 @@ setup(
     author = 'thomasd',
     author_email='tdoering@baumer.com',
     license = "BSD 3-Clause",
-    url='http://trac-hacks.org/wiki/GroupTicketFieldsPlugin',
+    url='https://trac-hacks.org/wiki/GroupTicketFieldsPlugin',
     description='Group Ticket Fields',
     long_description='Group Ticket Fields',
     keywords='Group Ticket Fields',
