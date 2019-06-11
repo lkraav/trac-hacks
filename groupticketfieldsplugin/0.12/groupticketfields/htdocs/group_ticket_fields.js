@@ -29,7 +29,7 @@
   }
 })(jQuery);
 
-jQuery(document).ready(function($) {
+jQuery(function($) {
     // reorder fieldsets
     if (field_groups_order) {
         for (var i = field_groups_order.length-1; i >= 0; i--) {
