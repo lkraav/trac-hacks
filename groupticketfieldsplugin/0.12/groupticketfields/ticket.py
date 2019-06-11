@@ -48,7 +48,8 @@ class GroupTicketFields(Component):
 
                     groups.append(group)
 
-                    remove_fields.extend(group['fields'])
+                    if 'fields' in group:
+                        remove_fields.extend(group['fields'])
 
             for field in data.get('fields'):
                 if field['name'] not in remove_fields:
