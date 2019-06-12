@@ -84,7 +84,7 @@ function loadActivityChart(chart_info) {
 }
 
 
-// For displaying ticket activity chart 
+// For displaying ticket activity chart
 //Pie chart
 function loadActivityPieChart(chart_info) {
     //We pick up the data from the HDF

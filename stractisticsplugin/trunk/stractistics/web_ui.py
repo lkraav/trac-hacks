@@ -29,7 +29,7 @@ from user_reports import user_reports
 class StractisticsModule(Component):
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
                IPermissionRequestor)
-    
+
     # INavigationContributor methods
     def get_active_navigation_item(self, req):
         return 'stractistics'
@@ -57,7 +57,7 @@ class StractisticsModule(Component):
         import re
         match = re.match(r'/stractistics(?:/([^/]+))?(?:/(.*)$)?',
                          req.path_info)
-        if match: 
+        if match:
             req.args['module'] = match.group(1)
             req.args['arguments'] = match.group(2)
             return True

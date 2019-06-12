@@ -12,40 +12,40 @@ import OpenFlashChart
 
 def read_config_options(config):
     """
-    Reads available configurations options from trac.ini 
+    Reads available configurations options from trac.ini
     """
     options = {}
     repository_authors_limit = config.getint('stractistics',
                                              'repository_authors_limit', 5)
     options['repository_authors_limit'] = repository_authors_limit
-        
+
     repository_ignored_authors = \
         [str(elem) for elem in config.getlist('stractistics',
                                               'ignored_repository_authors',
                                               default=[])]
     options['repository_ignored_authors'] = repository_ignored_authors
-        
-    wiki_authors_limit = config.getint('stractistics', 
+
+    wiki_authors_limit = config.getint('stractistics',
                                                     'wiki_authors_limit', 5)
     options['wiki_authors_limit'] = wiki_authors_limit
-        
+
     wiki_ignored_authors = \
         [str(elem) for elem in config.getlist('stractistics',
                                               'ignored_wiki_authors',
                                               default=[])]
     options['wiki_ignored_authors'] = wiki_ignored_authors
-        
+
     max_author_characters = \
         config.getint('stractistics', 'max_author_characters', None)
     options['max_author_characters'] = max_author_characters
-    return options 
+    return options
 
 
 def datetime_to_secs(datetime_date):
-    """ 
-    From datetime to seconds since epoch. 
     """
-    import calendar 
+    From datetime to seconds since epoch.
+    """
+    import calendar
     return calendar.timegm(datetime_date.timetuple())
 
 def parse_time_gap(req, data):
@@ -54,7 +54,7 @@ def parse_time_gap(req, data):
     In case of error, end_date defaults to current date
      and weeks_back defaults to 12.
     """
-    
+
     weeks_back = 12
     if req.args.has_key('weeks_back'):
         try:
@@ -64,7 +64,7 @@ def parse_time_gap(req, data):
         except ValueError:
             pass
     data['weeks_back'] = weeks_back
-    
+
     import datetime
     end_date = datetime.datetime.today()
     date_format = "%m/%d/%y"
@@ -75,7 +75,7 @@ def parse_time_gap(req, data):
             end_date = aux
         except Exception:
             end_date = datetime.datetime.today()
-    data['end_date'] = datetime.datetime.strftime(end_date, 
+    data['end_date'] = datetime.datetime.strftime(end_date,
                                                                date_format)
     start_date = end_date - datetime.timedelta(days = weeks_back * 7)
     return start_date, end_date, weeks_back
@@ -129,12 +129,12 @@ def format_to_week(datetime):
 
 def get_weeks_elapsed(start_date, end_date):
     """
-    Returns a dic whose keys are all the weeks between start_date and 
+    Returns a dic whose keys are all the weeks between start_date and
     end_date.
     """
     import datetime
-    #Sometimes the 53th week of the year is just one day long. If we skip 
-    #that week but data has been generated in 
+    #Sometimes the 53th week of the year is just one day long. If we skip
+    #that week but data has been generated in
     #that week, the plugin will crash because of a KeyError.
     diff = datetime.timedelta(days=1)
     weeks = {}
@@ -143,19 +143,19 @@ def get_weeks_elapsed(start_date, end_date):
         weeks[format_to_week(myDate)] = 0
         myDate = myDate + diff
     weeks[format_to_week(end_date)] = 0
-    return weeks    
+    return weeks
 
 
 def adapt_to_table(weeks_list, authors_data, config):
     """
-    This function rearranges our data in order to be displayed easier 
+    This function rearranges our data in order to be displayed easier
     in the html table.
     """
-        
+
     #First, we reverse the order of the weeks.
     reversed_weeks_list = list(weeks_list)
     reversed_weeks_list.reverse()
-        
+
     # Reverse the order of the results to match the new order of weeks.
     results = {}
     for author in authors_data.iterkeys():
@@ -174,13 +174,13 @@ def adapt_to_table(weeks_list, authors_data, config):
             week_N_values.append(results[author][index])
         index += 1
         rows.append((week, week_N_values))
-        
+
     #Name mangling goes here
     def mangle_name(name, characters_cap):
         if characters_cap is not None and characters_cap > 0:
             name = name[0:characters_cap]
         return name
-    
+
     columns = [mangle_name(name, config['max_author_characters']) \
                     for name in authors]
     return columns, rows
@@ -194,12 +194,12 @@ def restructure_data(authors_data):
     for author in authors_data.keys():
         dic = {'author': author, 'info': authors_data[author]}
         new_data.append(dic)
-    return new_data        
+    return new_data
 
 
 class QueryResponse:
     """
-    Encapsulates the information retrieved by a query and additional data for 
+    Encapsulates the information retrieved by a query and additional data for
     correct display.
     """
     def __init__(self,name, path='/chrome'):
@@ -209,23 +209,23 @@ class QueryResponse:
         self.results = []
         self.path = "".join([path, '/hw/swf/'])
         self.chart_info = ChartInfo(name, self.path)
-        
+
     def set_name(self,name):
         self.name = name
         self.chart_info.name = "%s_chart" % self.name
-    
+
     def set_title(self, title):
         self.title = title
         self.chart_info.title = title
-        
+
     def set_columns(self, columns):
         self.columns = columns
-        
+
     def set_results(self, results):
         self.results = results
         size = len( results )
         self.chart_info.data_size = size
-    
+
     def get_data(self):
         return {
                 'title':self.title,
@@ -233,8 +233,8 @@ class QueryResponse:
                 'results':self.results,
                 'chart_info': self.chart_info.get_data()
                 }
-    
-        
+
+
 class ChartInfo:
     """
     This data is meant to be fed to SWF objects.
@@ -265,26 +265,26 @@ class ChartInfo:
         self.title = ''
         self.name = "%s_chart" % name
         self.path = path
-    
+
     def embed(self):
         chartObject = OpenFlashChart.graph_object()
         return chartObject.render(self.width, self.height,'',
-                                  self.path, ofc_id = self.name) 
+                                  self.path, ofc_id = self.name)
 
-    #Only useful if you wish a custom tool_tip. 
+    #Only useful if you wish a custom tool_tip.
     def set_tool_tip(self, tool_tip):
         self.tool_tip = tool_tip
-    
+
     #Only useful for pie charts
     def set_line_color(self, color):
         self.line_color = color
-               
+
     def set_width(self, width):
-        self.width = width 
-        
+        self.width = width
+
     def set_height(self, height):
         self.height = height
-        
+
     def get_data(self):
         members_dic = {}
         for member in dir(self):

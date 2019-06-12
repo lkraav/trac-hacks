@@ -41,7 +41,7 @@ class graph:
         self.y_steps = 5
         self.title_text = ''
         self.title_size = 30
-        
+
         self.x_tick_size = -1
 
         # GRID styles:
@@ -53,7 +53,7 @@ class graph:
         self.x_axis_steps = 1
 
 
-        # AXIS LABEL styles:         
+        # AXIS LABEL styles:
         self.x_label_style_size = -1
         self.x_label_style_colour = '#000000'
         self.x_label_style_orientation = 0
@@ -61,7 +61,7 @@ class graph:
 
         self.y_label_style_size = -1
         self.y_label_style_colour = '#000000'
-        
+
 
         # AXIS LEGEND styles:
         self.x_legend = ''
@@ -71,10 +71,10 @@ class graph:
         self.y_legend = ''
         self.y_legend_size = 20
         self.y_legend_colour = '#000000'
-        
+
         self.lines = []
         self.line_default = '&line=3,#87421F&' + "\r\n"
-        
+
         self.bg_colour = ''
         self.bg_image = ''
 
@@ -87,10 +87,10 @@ class graph:
             self.data.append('&values=%s&\r\n' % ','.join([str(v) for v in a]))
         else:
             self.data.append('&values_%s=%s&\r\n' % (len(self.data)+1, ','.join([str(v) for v in a])))
-    
+
     def set_x_labels(self, a):
         self.x_labels = a
-    
+
     def set_x_label_style(self, size, colour='', orientation=0, step=-1):
         self.x_label_style_size = size
 
@@ -131,25 +131,25 @@ class graph:
 
     def set_y_min(self, min):
         self.y_min = int(min)
-    
+
     def y_label_steps(self, val):
         self.y_steps = int( val )
-    
+
     def title(self, title, size=-1, colour='#000000'):
         self.title_text = title
         if size > 0:
             self.title_size = size
         if len( colour ) > 0:
             self.title_colour = colour
-    
+
     def set_x_legend(self, text, size=-1, colour=''):
         self.x_legend = text
         if size > -1:
             self.x_legend_size = size
-                
+
         if len( colour ) > 0:
             self.x_legend_colour = colour
-    
+
     def set_x_tick_size(self, size):
         if size > 0:
             self.x_tick_size = size
@@ -165,63 +165,63 @@ class graph:
 
         if len( colour ) > 0:
             self.y_legend_colour = colour
-    
+
     def line(self, width, colour='', text='', size=-1, circles=-1):
         tmp = '&line'
-        
+
         if len( self.lines ) > 0:
             tmp += '_%s' % (len( self.lines )+1)
-                
+
         tmp += '='
-        
+
         if width > 0:
             tmp += "%s,%s" % (width, colour)
-                            
+
         if len(text) > 0:
             tmp += ',%s,%s' % text,size
-            
+
         if circles > 0:
             tmp += ',%s' % circles
-            
+
         tmp += "&\r\n"
         self.lines.append( tmp )
 
     def line_dot( self, width, dot_size, colour, text='', font_size=0 ):
         tmp = '&line_dot'
-        
+
         if len( self.lines ) > 0:
                 tmp += '_%s' % (len( self.lines ) + 1)
-                
+
         tmp += "=%s,%s,%s" % (width,colour,text)
 
         if font_size > 0:
             tmp += ",%s,%s" % font_size,dot_size
-            
+
         tmp += "&\r\n"
-            
+
         self.lines.append( tmp )
 
     def line_hollow(self, width, dot_size, colour, text='', font_size=0):
         tmp = '&line_hollow'
-        
+
         if len(self.lines) > 0:
             tmp += '_%s' % (len(self.lines) + 1)
-                
+
         tmp += "=%s,%s,%s" % (width, colour, text)
 
         if font_size > 0:
             tmp += ",%s,%s" % (font_size, dot_size)
-            
+
         tmp += "&\r\n"
         self.lines.append(tmp)
 
     def area_hollow(self, width, dot_size, colour, alpha, text='',
                     font_size=0):
         tmp = '&area_hollow'
-        
+
         if len( self.lines ) > 0:
                 tmp += '_%s' % (len( self.lines ) + 1)
-                
+
         tmp += "=%s,%s,%s" % (width, dot_size, colour, alpha)
 
         if len(text) > 0:
@@ -232,24 +232,24 @@ class graph:
 
     def bar(self, alpha, colour='', text='', size=-1):
         tmp = '&bar'
-        
+
         if len(self.lines) > 0:
             tmp += '_%s' % (len( self.lines )+1)
-                
+
         tmp += '='
         tmp += "%s,%s,%s,%s" % (alpha,colour,text,size)
         tmp += "&\r\n"
-            
+
         self.lines.append( tmp )
 
     def bar_filled( self, alpha, colour, colour_outline, text='', size=-1 ):
         tmp = '&filled_bar'
-        
+
         if len( self.lines ) > 0:
                 tmp += '_%s' % (len( self.lines )+1)
-                
+
         tmp += "=%s,%s,%s,%s,%s&\r\n" % (alpha,colour,colour_outline,text,size)
-            
+
         self.lines.append( tmp )
 
     def x_axis_colour(self, axis, grid=''):
@@ -263,16 +263,16 @@ class graph:
     def render( self,):
         #tmp = "&padding=70,5,50,40&\r\n"
         tmp = ''
-        
+
         if len(self.title_text) > 0:
             tmp += '&title=%s,%s,%s&\r\n' % (self.title_text,self.title_size,self.title_colour)
-        
+
         if len(self.x_legend) > 0:
             tmp += '&x_legend=%s,%s,%s\r\n' % (self.x_legend,self.x_legend_size,self.x_legend_colour)
-        
+
         if self.x_label_style_size > 0:
             tmp += '&x_label_style=%s,%s,%s,%s&\r\n' % (self.x_label_style_size,self.x_label_style_colour,self.x_label_style_orientation,self.x_label_style_step)
-        
+
         if self.x_tick_size > 0:
             tmp += "&x_ticks=%s&\r\n" % self.x_tick_size
 
@@ -286,7 +286,7 @@ class graph:
             tmp += "&y_label_style=%s,%s&\r\n" % (self.y_label_style_size,self.y_label_style_colour)
 
         tmp += '&y_ticks=5,10,%s&\r\n' % self.y_steps
-        
+
         if len(self.lines) == 0:
             tmp += self.line_default
         else:
@@ -295,13 +295,13 @@ class graph:
 
         for data in self.data:
             tmp += data
-        
+
         if len(self.x_labels) > 0:
             tmp += '&x_labels=%s&\r\n' % ",".join(self.x_labels)
-                        
+
         tmp += '&y_min=%s&\r\n' % self.y_min
         tmp += '&y_max=%s&\r\n' % self.y_max
-        
+
         if len(self.bg_colour) > 0:
             tmp += '&bg_colour=%s&\r\n' % self.bg_colour
 

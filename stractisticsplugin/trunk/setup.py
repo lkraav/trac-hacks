@@ -23,7 +23,7 @@ setup(
     maintainer_email='ryan.j.ollos@gmail.com',
     license='BSD 3-Clause',
     description='Allows to gauge project activity at a glance.',
-    url='http://trac-hacks.org/wiki/StractisticsPlugin',
+    url='https://trac-hacks.org/wiki/StractisticsPlugin',
     packages = ['stractistics'],
     entry_points={
         'trac.plugins': [
