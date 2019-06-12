@@ -15,24 +15,23 @@ from util import *
 def user_reports(req, env, config):
     data = {}
     start, end, weeks_back = parse_time_gap(req, data)
-    db = env.get_db_cnx()
 
-    trac_users = _retrieve_trac_users(req, config, db)
+    trac_users = _retrieve_trac_users(req, config, env)
     data['trac_users'] = trac_users
     user = _get_default_user(req.args, trac_users)
     data['default_user'] = user
 
     data['repository_activity'] = _user_svn_activity(req, user, config,
-                                        start, end, weeks_back, db)
+                                        start, end, weeks_back, env)
 
     data['wiki_activity'] = _user_wiki_activity(req, env, user, config,
                                                 start, end, weeks_back)
 
     data['ticket_activity'] = _user_ticket_activity(req, user, config, start, end,
-                                         weeks_back, db)
+                                         weeks_back, env)
     return 'user_reports.html', data
 
-def _user_ticket_activity(req, user, config, start, end, weeks_back, db):
+def _user_ticket_activity(req, user, config, start, end, weeks_back, env):
     """
     This function calculates:
       * number of tickets opened per week
@@ -41,8 +40,8 @@ def _user_ticket_activity(req, user, config, start, end, weeks_back, db):
       * number of tickets reopened per week
     between start and end
     """
-    created = _get_created_tickets(db, user, start, end)
-    closed_or_reopened = _get_closed_or_reopened_tickets(db, user, start, end)
+    created = _get_created_tickets(env, user, start, end)
+    closed_or_reopened = _get_closed_or_reopened_tickets(env, user, start, end)
 
     weeks_dic = get_weeks_elapsed(start, end)
     tickets_data = _count_tickets(created, closed_or_reopened, weeks_dic)
@@ -88,7 +87,7 @@ def _count_tickets(created, closed_or_reopened, weeks_dic):
         tickets_data[category] = sort_values_by_key(tickets_data[category])
     return tickets_data
 
-def _get_created_tickets(db, user, start, end):
+def _get_created_tickets(env, user, start, end):
     """
     Retrieves all the tickets created by 'user' between start and date.
     """
@@ -103,10 +102,10 @@ def _get_created_tickets(db, user, start, end):
     def map_rows(xx):
         import datetime
         return xx[0], datetime.datetime.fromtimestamp(xx[1]), None
-    user_created_tickets = execute_sql_expression(db, sql_expr, map_rows)
+    user_created_tickets = execute_sql_expression(env, sql_expr, map_rows)
     return user_created_tickets
 
-def _get_closed_or_reopened_tickets(db, user, start, end):
+def _get_closed_or_reopened_tickets(env, user, start, end):
     """
     Retrieves all the tickets closed or reopened by 'user' between start
     and date.
@@ -123,7 +122,7 @@ def _get_closed_or_reopened_tickets(db, user, start, end):
     def map_rows(xx):
         import datetime
         return xx[0], datetime.datetime.fromtimestamp(xx[1]), xx[2]
-    closed_or_reopened_tickets = execute_sql_expression(db, sql_expr, map_rows)
+    closed_or_reopened_tickets = execute_sql_expression(env, sql_expr, map_rows)
     return closed_or_reopened_tickets
 
 
@@ -182,7 +181,7 @@ def _group_wiki_pages(wiki_pages, weeks_dic):
         wiki_data[action] = sort_values_by_key(wiki_data[action])
     return wiki_data
 
-def _user_svn_activity(req, user, config, start, end, weeks_back, db):
+def _user_svn_activity(req, user, config, start, end, weeks_back, env):
     """
     Computes the number of commits per week done by the user between start
     and end.
@@ -198,7 +197,7 @@ def _user_svn_activity(req, user, config, start, end, weeks_back, db):
     def map_rows(xx):
         import datetime
         return datetime.datetime.fromtimestamp(xx[0])
-    raw_commits = execute_sql_expression(db, sql_expr, map_rows)
+    raw_commits = execute_sql_expression(env, sql_expr, map_rows)
 
     weeks_dic = get_weeks_elapsed(start, end)
     commits_per_week = _count_commits(user, raw_commits, weeks_dic)
@@ -251,7 +250,7 @@ def _get_default_user(args, trac_users):
 
 #If I figure a database independent query to do this, this function code
 #will go the way of the dodo.
-def _retrieve_trac_users(req, config, db):
+def _retrieve_trac_users(req, config, env):
     """
     Returns a list with the user name of whoever has ever committed to the
     repository, contributed to the wiki, modified or created a ticket.
@@ -262,9 +261,9 @@ def _retrieve_trac_users(req, config, db):
     """
     users_list = []
 
-    wiki_users = _retrieve_wiki_users(config, db)
-    ticket_users = _retrieve_ticket_users(config, db)
-    repo_users = _retrieve_repo_users(config, db)
+    wiki_users = _retrieve_wiki_users(config, env)
+    ticket_users = _retrieve_ticket_users(config, env)
+    repo_users = _retrieve_repo_users(config, env)
     print "wiki_users %r" % wiki_users
     print "ticket_users %r" % ticket_users
     print "repo_users %r" % repo_users
@@ -277,43 +276,36 @@ def _retrieve_trac_users(req, config, db):
     return users_list
 
 
-def _retrieve_wiki_users(config, db):
+def _retrieve_wiki_users(config, env):
     sql_expr = """
         SELECT DISTINCT ww.author
         FROM wiki ww;
     """
-    wiki_users = execute_sql_expression(db, sql_expr, lambda x:x[0])
+    wiki_users = execute_sql_expression(env, sql_expr, lambda x:x[0])
     return wiki_users
 
 
-def _retrieve_repo_users(config, db):
+def _retrieve_repo_users(config, env):
     sql_expr = """
         SELECT DISTINCT rr.author
         FROM revision rr;
     """
-    repo_users = execute_sql_expression(db, sql_expr, lambda x:x[0])
+    repo_users = execute_sql_expression(env, sql_expr, lambda x:x[0])
     return repo_users
 
 
-def _retrieve_ticket_users(config, db):
+def _retrieve_ticket_users(config, env):
     """
     We are interested only in those users who have either created, closed,
     reopened or accepted a ticket.
     """
 
     sql_expr = "SELECT DISTINCT author FROM ticket_change"
-    tc_users = execute_sql_expression(db, sql_expr, lambda x:x[0])
+    tc_users = execute_sql_expression(env, sql_expr, lambda x:x[0])
 
     sql_expr = "SELECT DISTINCT reporter FROM ticket"
-    reporters = execute_sql_expression(db, sql_expr, lambda x:x[0])
-    print "reporters %r" % reporters
-
+    reporters = execute_sql_expression(env, sql_expr, lambda x:x[0])
     tc_users.extend(reporters)
-    print "tc_users %r" % tc_users
     ticket_users = remove_duplicates(tc_users)
-    print "ticket_users %r" % ticket_users
 
-    cursor = db.cursor()
-    cursor.execute(sql_expr)
-    print "direct query: %r" % ([r[0] for r in cursor])
     return ticket_users

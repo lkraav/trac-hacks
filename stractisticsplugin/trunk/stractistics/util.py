@@ -99,15 +99,11 @@ def remove_duplicates(list):
     return dic.keys()
 
 
-def execute_sql_expression(db, sql_expr, map_rows = lambda x:x):
+def execute_sql_expression(env, sql_expr, map_rows = lambda x:x):
     """
     By default, this function returns a list of rows, each row is a tuple.
     """
-    cursor = db.cursor()
-    cursor.execute(sql_expr)
-    results = [map_rows(elem) for elem in cursor]
-    db.commit()
-    return results
+    return [map_rows(elem) for elem in env.db_query(sql_expr)]
 
 
 def sort_values_by_key(dic):

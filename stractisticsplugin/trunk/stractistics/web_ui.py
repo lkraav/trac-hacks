@@ -7,9 +7,9 @@
 # you should have received as part of this distribution.
 #
 
-from genshi.builder import tag
 from trac.core import *
 from trac.perm import IPermissionRequestor
+from trac.util.html import html as tag
 from trac.web.api import IRequestHandler
 from trac.web.chrome import (
     INavigationContributor, ITemplateProvider,
@@ -82,12 +82,11 @@ class StractisticsModule(Component):
 
         config = read_config_options(self.env.config)
 
-        db = self.env.get_db_cnx()
         module = req.args.get('module', None)
         if module is not None and module == 'user_reports':
             template, data = user_reports(req, self.env, config)
         else:
-            template, data = global_reports(req, config, db)
+            template, data = global_reports(req, config, self.env)
         data['json'] = {
             'repository_activity': json.dumps(data['repository_activity'].get_data()),
             'ticket_activity': json.dumps(data['ticket_activity'].get_data()),

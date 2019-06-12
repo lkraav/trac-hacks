@@ -10,24 +10,24 @@
 from util import *
 
 
-def global_reports(req, config, db):
+def global_reports(req, config, env):
     data = {}
     start_date, end_date, weeks_back = parse_time_gap(req, data)
     # First , repository activity
     data['repository_activity'] = _repository_activity(req, config,
                                           start_date, end_date,
-                                          weeks_back, db)
+                                          weeks_back, env)
 
     # Second, ticket activity.
-    data['ticket_activity'] = _ticket_activity(req, config, end_date, db)
+    data['ticket_activity'] = _ticket_activity(req, config, end_date, env)
 
     # Third, wiki activity.
     data['wiki_activity'] = _wiki_activity(req, config,
                                             start_date, end_date,
-                                            weeks_back, db)
+                                            weeks_back, env)
     return 'global_reports.html', data
 
-def _repository_activity(req, config, start_date, end_date, weeks_back, db):
+def _repository_activity(req, config, start_date, end_date, weeks_back, env):
     """
     Displays commits per week of the AUTHORS_LIMIT most active authors in
     the last WEEKS_NUMBER weeks.
@@ -42,12 +42,12 @@ def _repository_activity(req, config, start_date, end_date, weeks_back, db):
                                                ignored_authors,
                                                start_date,
                                                end_date,
-                                               db)
+                                               env)
     #Now we retrieve all the revisions committed in the time frame
-    revisions = _retrieve_revisions(authors, start_date, end_date, db)
+    revisions = _retrieve_revisions(authors, start_date, end_date, env)
     #Last, for every author we determine how many commits per week he's done.
     weeks_list, authors_data = _authors_commit_data(authors, revisions,
-                                                    start_date, end_date,db)
+                                                    start_date, end_date,env)
     #We must build a QueryResponse from weeks_labels, and authors_data
     query_response = QueryResponse("repository_activity", req.href('/chrome'))
     query_response.set_title("Commits per week (%s weeks)" % WEEKS_NUMBER)
@@ -68,7 +68,7 @@ def _repository_activity(req, config, start_date, end_date, weeks_back, db):
 
 
 def _most_active_repository_authors(limit, ignored_authors, start_date,
-                                    end_date, db):
+                                    end_date, env):
     """
     Retrieves the `limit` most active repository authors between start_date
     and end_date.
@@ -93,11 +93,11 @@ def _most_active_repository_authors(limit, ignored_authors, start_date,
 
     def map_rows(row):
         return row[0]
-    authors = execute_sql_expression(db, sql_expr, map_rows)
+    authors = execute_sql_expression(env, sql_expr, map_rows)
     return authors
 
 
-def _retrieve_revisions(authors, start_date, end_date, db):
+def _retrieve_revisions(authors, start_date, end_date, env):
     """
     Retrieves every revision committed by any author in authors between
     start_date and end_date. Returns a list of author and date pairs.
@@ -119,11 +119,11 @@ def _retrieve_revisions(authors, start_date, end_date, db):
     def map_rows(row):
         import datetime
         return row[0],datetime.datetime.fromtimestamp(row[1])
-    revisions = execute_sql_expression(db, sql_expr, map_rows)
+    revisions = execute_sql_expression(env, sql_expr, map_rows)
     return revisions
 
 
-def _authors_commit_data(authors, revisions, start_date, end_date, db):
+def _authors_commit_data(authors, revisions, start_date, end_date, env):
     """
     First, we obtain the list of weeks between start_date and end_date.
     Then for each author we compute how many commits he's done each week.
@@ -148,7 +148,7 @@ def _authors_commit_data(authors, revisions, start_date, end_date, db):
     return weeks_labels, authors_data
 
 
-def _ticket_activity(req, config, end_date, db):
+def _ticket_activity(req, config, end_date, env):
     """
     Shows ticket activity in the last NUM_DAYS days, only those tickets
     created or modified during that time frame are considered.
@@ -170,7 +170,7 @@ def _ticket_activity(req, config, end_date, db):
 
     def map_rows(row):
         return row[0], row[1]
-    results = execute_sql_expression(db, sql_expr, map_rows)
+    results = execute_sql_expression(env, sql_expr, map_rows)
 
     query_response = QueryResponse("ticket_activity", req.href('/chrome'))
     query_response.set_title("Ticket activity (%s days until %s)" %
@@ -188,7 +188,7 @@ def _ticket_activity(req, config, end_date, db):
 
     return query_response
 
-def _wiki_activity(req, config, start_date, end_date, weeks_back, db):
+def _wiki_activity(req, config, start_date, end_date, weeks_back, env):
     """
     Displays wiki editions per week of each of the AUTHORS_LIMIT most
     active authors in the last WEEKS_NUMBER weeks.
@@ -201,8 +201,8 @@ def _wiki_activity(req, config, start_date, end_date, weeks_back, db):
                                                       ignored_authors,
                                                       start_date,
                                                       end_date,
-                                                      db)
-    wiki_pages_list = _retrieve_wiki_pages(start_date, end_date, db)
+                                                      env)
+    wiki_pages_list = _retrieve_wiki_pages(start_date, end_date, env)
 
     weeks_list, authors_data = _wiki_authors_data(authors_list,
                                                   wiki_pages_list,
@@ -259,7 +259,7 @@ def _wiki_authors_data(authors_list, wiki_pages_list,
 
 
 def _retrieve_most_active_wiki_authors(AUTHORS_LIMIT, ignored_authors,
-                                       start_date, end_date, db):
+                                       start_date, end_date, env):
     """
     Retrieves the AUTHORS_LIMIT most active wiki authors between start_date
      and end_date
@@ -282,10 +282,10 @@ def _retrieve_most_active_wiki_authors(AUTHORS_LIMIT, ignored_authors,
                                      ignore_list(ignored_authors),
                                      AUTHORS_LIMIT)
 
-    authors_list = execute_sql_expression(db, sql_expr, lambda row:row[0])
+    authors_list = execute_sql_expression(env, sql_expr, lambda row:row[0])
     return authors_list
 
-def _retrieve_wiki_pages(start_date, end_date, db):
+def _retrieve_wiki_pages(start_date, end_date, env):
     sql_expr = """
     SELECT w.author AS author, w.time  AS time
     FROM wiki w
@@ -298,7 +298,7 @@ def _retrieve_wiki_pages(start_date, end_date, db):
         import datetime
         return row[0], datetime.datetime.fromtimestamp(row[1])
 
-    wiki_pages_list = execute_sql_expression(db, sql_expr, map_rows)
+    wiki_pages_list = execute_sql_expression(env, sql_expr, map_rows)
     return wiki_pages_list
 
 def _quote_authors(ignored_authors):
