@@ -19,7 +19,7 @@
 
 import os
 from StringIO import StringIO
-from configobj import ConfigObj
+from configobj import ConfigObj, ConfigObjError
 
 from trac.admin.api import IAdminPanelProvider
 from trac.core import *
@@ -71,9 +71,8 @@ class PageAuthzPolicyEditor(Component):
                 try:
                     test_authz_policy_dict = \
                         ConfigObj(edited_contents_stringio)
-                except:
-                    raise TracError(_("Error in edited file. Re-edit and "
-                                      "check for duplicate entries."))
+                except ConfigObjError, e:
+                    raise TracError(e)
                 with open(authz_policy_file_name, 'w') as f:
                     test_authz_policy_dict.write(f)
 
