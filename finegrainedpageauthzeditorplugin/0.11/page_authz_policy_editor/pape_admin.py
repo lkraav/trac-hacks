@@ -67,6 +67,8 @@ class PageAuthzPolicyEditor(Component):
                 # The data needs to be validated, otherwise duplicate
                 # entries can break things.
                 edited_contents = req.args.get('authz_file_contents')
+                if isinstance(edited_contents, unicode):
+                    edited_contents = edited_contents.encode('utf-8')
                 edited_contents_stringio = StringIO(edited_contents)
                 try:
                     test_authz_policy_dict = \
