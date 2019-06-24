@@ -88,6 +88,13 @@ jQuery(document).ready(function($) {
         }
         var href = anchor.attr('href');
         if (href.indexOf(attachment_url) === 0) {
+            if (href.slice(-1) === '/') {
+                // workaround for an attachment started with a hash character
+                var match = /^attachment:#(.*)$/.exec(anchor.text());
+                if (match) {
+                    href += '%23' + match[1];
+                }
+            }
             var options = $.extend({}, basic_options);
             if (imageRegexp.test(href)) {
                 href = raw_attachment_url +
