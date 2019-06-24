@@ -48,6 +48,15 @@
  background: #fff;
  overflow: auto;
 }
+#cboxLoadedContent img, #cboxLoadedContent video {
+ text-align: center;
+ vertical-align: middle;
+ max-height: 100%;
+ max-width: 100%;
+}
+#cboxLoadedContent video {
+ width: 100%;
+}
 #cboxLoadingGraphic {
  background: transparent url(loading.gif) no-repeat center center;
  height: 100%;

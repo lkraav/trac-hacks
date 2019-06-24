@@ -27,7 +27,7 @@ jQuery(document).ready(function($) {
         var loaded = $('#cboxLoadedContent');
         var target;
         target = loaded.children('div.image-file').children('img');
-        if (target.size() === 1) {
+        if (target.length === 1) {
             target.each(function() {
                 var url = target.attr('src');
                 var options = $.extend({}, basic_options, {
@@ -42,7 +42,7 @@ jQuery(document).ready(function($) {
             return;
         }
         target = loaded.find('table.code thead tr th.lineno');
-        if (target.size() === 1) {
+        if (target.length === 1) {
             target.each(function() {
                 var url = element.attr('href');
                 var change = function() {
@@ -54,7 +54,7 @@ jQuery(document).ready(function($) {
                 loaded.find('table.code tbody tr th[id]').each(function() {
                     this.removeAttribute('id');
                     var anchor = $(this).children('a[href]');
-                    if (anchor.size() === 1) {
+                    if (anchor.length === 1) {
                         anchor.each(change);
                     }
                 });
@@ -63,27 +63,50 @@ jQuery(document).ready(function($) {
         }
     }
 
+    function onClosed() {
+        var loaded = $('#cboxLoadedContent');
+        var video = loaded.find('video');
+        if (video.length !== 0) {
+            video[0].pause();
+        }
+    }
+
+    function escape_regexp(text) {
+        return text.replace(/[^-A-Za-z0-9_]/g, '\\$&');
+    }
+
+    function build_exts_re(exts) {
+        if (exts.length === 0)
+            return {test: function() { return false }};
+        var pattern = '\\.(' + $.map(exts, escape_regexp).join('|') +
+                      ')(?:$|[#?])';
+        return new RegExp(pattern, 'i');
+    }
+
     window.overlayview.loadStyleSheet = loadStyleSheet;
-    var baseurl = window.overlayview.baseurl;
+    var script_data = window.overlayview;
+    var baseurl = script_data.baseurl;
     var attachment_url = baseurl + 'attachment/';
     var raw_attachment_url = baseurl + 'raw-attachment/';
     var basic_options = {
         opacity: 0.9, transition: 'none', speed: 200, width: '92%',
-        maxWidth: '92%', maxHeight: '92%', onComplete: onComplete};
+        maxWidth: '92%', maxHeight: '92%', onComplete: onComplete,
+        onClosed: onClosed};
     var attachments = $('div#content > div#attachments');
-    var imageRegexp = /\.(?:gif|png|jpe?g|bmp|ico)(?:[#?].*)?$/i;
+    var image_re = build_exts_re(script_data.images);
+    var video_re = build_exts_re(script_data.videos);
 
     function rawlink() {
         var self = $(this);
         var href = self.attr('href');
         var anchor = self.prev('a');
-        if (anchor.size() === 0) {
+        if (anchor.length === 0) {
             anchor = self.parent('.noprint').prev('a.attachment');
         }
-        if (anchor.size() === 0) {
+        if (anchor.length === 0) {
             return;
         }
-        if (attachments.size() !== 0 && $.contains(attachments.get(0), this)) {
+        if (attachments.length !== 0 && $.contains(attachments.get(0), this)) {
             anchor.attr('rel', 'colorbox-attachments');
         }
         var href = anchor.attr('href');
@@ -96,11 +119,19 @@ jQuery(document).ready(function($) {
                 }
             }
             var options = $.extend({}, basic_options);
-            if (imageRegexp.test(href)) {
+            if (image_re.test(href)) {
                 href = raw_attachment_url +
                        href.substring(attachment_url.length);
                 options.transition = 'elastic';
                 options.photo = true;
+                options.width = false;
+            }
+            else if (video_re.test(href)) {
+                options.inline = true;
+                href = raw_attachment_url +
+                       href.substring(attachment_url.length);
+                href = $('<video />').prop({src: href, controls: true});
+                options.transition = 'elastic';
                 options.width = false;
             }
             else {
@@ -134,7 +165,7 @@ jQuery(document).ready(function($) {
                                     .text(em.first().text());
             var rawlink = raw_attachment_url +
                           href.substring(attachment_url.length);
-            if (imageRegexp.test(href)) {
+            if (image_re.test(href)) {
                 options.href = rawlink;
                 options.transition = 'elastic';
                 options.photo = true;
@@ -201,7 +232,7 @@ jQuery(document).ready(function($) {
                 return;
             }
             var anchor = self.prev('a.trac-rawlink');
-            if (anchor.size() === 0) {
+            if (anchor.length === 0) {
                 anchor = self.next('a.trac-rawlink');
             }
             attachments.find('a.trac-rawlink')
