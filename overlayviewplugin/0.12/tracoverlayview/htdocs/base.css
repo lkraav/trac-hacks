@@ -142,6 +142,9 @@
  -webkit-border-radius: 2px;
  border-radius: 2px;
 }
+button#cboxNext, button#cboxPrevious, button#cboxSlideshow, button#cboxClose {
+ border: 0;
+}
 .cboxIframe {
  background: #fff;
  border: 0;
