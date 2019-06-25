@@ -4,11 +4,11 @@ parse(text) -- returns safe-html from wiki markup
 code based off of mediawiki
 """
 
-import re, random, math, locale
-from base64 import b64encode, b64decode
 from trac.core import *
 from trac.wiki.api import IWikiMacroProvider
-from parser import parse
+
+import parser
+
 
 class MediaWikiRenderer(Component):
     """
@@ -25,8 +25,5 @@ class MediaWikiRenderer(Component):
 
     def expand_macro(self, formatter, name, content):
         if name == 'mediawiki':
-            return parse(content)
+            return parser.parse(content)
 
-    # deprecated interface prior trac 0.11
-    def render_macro(self, req, name, content):
-        return self.expand_macro(None, name, content)

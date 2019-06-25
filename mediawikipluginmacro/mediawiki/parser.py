@@ -5,7 +5,7 @@ code based off of mediawiki
 """
 
 import re, random, math, locale
-from base64 import b64encode, b64decode
+from base64 import decodestring
 from trac.core import *
 from trac.wiki.api import IWikiMacroProvider
 
@@ -919,7 +919,6 @@ def slugifyBit(bit):
     return bit
 
 def slugify(text):
-    """docstring for slugify"""
     return u'/'.join(slugifyBit(t) for t in text.split(u'/'))
 
 _linkPat = re.compile(ur'^([A-Za-z0-9\s]+:)?([A-Za-z0-9_\.\-\s\/]+)(?:\|([^\n]+?))?\]\](.*)$', re.UNICODE | re.DOTALL)
@@ -1329,8 +1328,8 @@ def formatHeadings(text, isMain, showToc, state):
         m = _templateSectionPat.search(headline)
         if m:
             istemplate = True
-            templatetitle = b64decode(m[0])
-            templatesection = 1 + int(b64decode(m[1]))
+            templatetitle = decodestring(m[0])
+            templatesection = 1 + int(decodestring(m[1]))
             headline = _templateSectionPat.sub(u'', headline)
 
         if toclevel:
