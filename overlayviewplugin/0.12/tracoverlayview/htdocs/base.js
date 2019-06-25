@@ -130,7 +130,10 @@ jQuery(document).ready(function($) {
                 options.inline = true;
                 href = raw_attachment_url +
                        href.substring(attachment_url.length);
-                href = $('<video />').prop({src: href, controls: true});
+                var video = $('<video />').prop({src: href, controls: true});
+                video.bind({mouseenter: function() { this.controls = true },
+                            mouseleave: function() { this.controls = false }});
+                href = video;
                 options.transition = 'elastic';
                 options.width = false;
             }
