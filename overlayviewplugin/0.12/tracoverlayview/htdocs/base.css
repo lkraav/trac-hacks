@@ -88,7 +88,9 @@
  background-position: -25px -25px;
 }
 #cboxOverlay {
- background: #fff;
+ background: #000;
+ opacity: 0.2;
+ filter: alpha(opacity=20);
  height: 100%;
  left: 0;
  overflow: hidden;

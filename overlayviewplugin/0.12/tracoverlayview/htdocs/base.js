@@ -89,7 +89,7 @@ jQuery(document).ready(function($) {
     var attachment_url = baseurl + 'attachment/';
     var raw_attachment_url = baseurl + 'raw-attachment/';
     var basic_options = {
-        opacity: 0.9, transition: 'none', speed: 200, width: '92%',
+        opacity: false, transition: 'none', speed: 200, width: '92%',
         maxWidth: '92%', maxHeight: '92%', onComplete: onComplete,
         onClosed: onClosed};
     var attachments = $('div#content > div#attachments');
