@@ -83,6 +83,14 @@ jQuery(document).ready(function($) {
         return new RegExp(pattern, 'i');
     }
 
+    function video_mouseenter() {
+        this.controls = true;
+    }
+
+    function video_mouseleave() {
+        this.controls = false;
+    }
+
     window.overlayview.loadStyleSheet = loadStyleSheet;
     var script_data = window.overlayview;
     var baseurl = script_data.baseurl;
@@ -96,6 +104,36 @@ jQuery(document).ready(function($) {
     var image_re = build_exts_re(script_data.images);
     var video_re = build_exts_re(script_data.videos);
 
+    function build_colorbox_options(href, title) {
+        var options = $.extend({}, basic_options);
+        if (image_re.test(href)) {
+            href = raw_attachment_url +
+                   href.substring(attachment_url.length);
+            options.transition = 'elastic';
+            options.photo = true;
+            options.width = false;
+        }
+        else if (video_re.test(href)) {
+            options.inline = true;
+            href = raw_attachment_url +
+                   href.substring(attachment_url.length);
+            var video = $('<video />').prop({src: href, controls: true});
+            video.bind({mouseenter: video_mouseenter,
+                        mouseleave: video_mouseleave});
+            href = video;
+            options.transition = 'elastic';
+            options.width = false;
+        }
+        else {
+            href = baseurl + 'overlayview/' +
+                   href.substring(baseurl.length)
+                       .replace(/\.([A-Za-z0-9]+)$/, '%2e$1');
+        }
+        options.href = href;
+        options.title = title;
+        return options;
+    }
+
     function rawlink() {
         var self = $(this);
         var href = self.attr('href');
@@ -106,7 +144,7 @@ jQuery(document).ready(function($) {
         if (anchor.length === 0) {
             return;
         }
-        if (attachments.length !== 0 && $.contains(attachments.get(0), this)) {
+        if (attachments.length !== 0 && $.contains(attachments[0], this)) {
             anchor.attr('rel', 'colorbox-attachments');
         }
         var href = anchor.attr('href');
@@ -118,38 +156,12 @@ jQuery(document).ready(function($) {
                     href += '%23' + match[1];
                 }
             }
-            var options = $.extend({}, basic_options);
-            if (image_re.test(href)) {
-                href = raw_attachment_url +
-                       href.substring(attachment_url.length);
-                options.transition = 'elastic';
-                options.photo = true;
-                options.width = false;
-            }
-            else if (video_re.test(href)) {
-                options.inline = true;
-                href = raw_attachment_url +
-                       href.substring(attachment_url.length);
-                var video = $('<video />').prop({src: href, controls: true});
-                video.bind({mouseenter: function() { this.controls = true },
-                            mouseleave: function() { this.controls = false }});
-                href = video;
-                options.transition = 'elastic';
-                options.width = false;
-            }
-            else {
-                href = baseurl + 'overlayview/' +
-                       href.substring(baseurl.length)
-                           .replace(/\.([A-Za-z0-9]+)$/, '%2e$1');
-            }
-            options.href = href;
             var title = anchor.clone();
             title.children('em').contents().appendTo(title);
             title.remove('em');
-            options.title = $('<span/>')
-                            .append(title, self.clone())
-                            .html();
-            anchor.attr('data-colorbox-title', options.title);
+            title = $('<span/>').append(title, self.clone()).html();
+            var options = build_colorbox_options(href, title);
+            anchor.attr('data-colorbox-title', title);
             anchor.colorbox(options);
         }
     }
@@ -158,34 +170,22 @@ jQuery(document).ready(function($) {
         var anchor = $(this);
         var href = anchor.attr('href');
         if (href.indexOf(attachment_url) === 0) {
-            var options = $.extend({}, basic_options);
             var em = anchor.children('em');
             var parent_href = baseurl + href.substring(attachment_url.length)
                                             .replace(/\/[^\/]*$/, '');
             var parent = $('<a/>').attr('href', parent_href)
-                                  .text($(em.get(1)).text());
+                                  .text($(em[1]).text());
             var filename = $('<a/>').attr('href', href)
-                                    .text(em.first().text());
+                                    .text($(em[0]).text());
             var rawlink = raw_attachment_url +
                           href.substring(attachment_url.length);
-            if (image_re.test(href)) {
-                options.href = rawlink;
-                options.transition = 'elastic';
-                options.photo = true;
-                options.width = false;
-            }
-            else {
-                options.href = baseurl + 'overlayview/' +
-                               href.substring(baseurl.length)
-                                   .replace(/\.([A-Za-z0-9]+)$/, '%2e$1');
-            }
             rawlink = $('<a/>').addClass('overlayview-rawlink')
                                .attr('href', rawlink)
                                .text('\u200b');
-            options.title = $('<span/>')
-                            .append(parent, ': ', filename, rawlink)
-                            .html();
-            anchor.attr('data-colorbox-title', options.title);
+            var title = $('<span/>').append(parent, ': ', filename, rawlink)
+                                    .html();
+            var options = build_colorbox_options(href, title);
+            anchor.attr('data-colorbox-title', title);
             anchor.colorbox(options);
         }
     }
