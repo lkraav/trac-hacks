@@ -22,10 +22,22 @@ jQuery(document).ready(function($) {
         }
     }
 
-    function onComplete() {
+    function colorbox_on_complete() {
         var element = $.colorbox.element();
         var loaded = $('#cboxLoadedContent');
         var target;
+        target = loaded.children('video');
+        if (target.length === 1) {
+            var video = target[0];
+            if (!video.src) {
+                video.src = target.attr('data-src');
+            }
+            else {
+                fit_video(video);
+            }
+            video.controls = true;
+            return;
+        }
         target = loaded.children('div.image-file').children('img');
         if (target.length === 1) {
             target.each(function() {
@@ -63,9 +75,9 @@ jQuery(document).ready(function($) {
         }
     }
 
-    function onClosed() {
+    function colorbox_on_closed() {
         var loaded = $('#cboxLoadedContent');
-        var video = loaded.find('video');
+        var video = loaded.children('video');
         if (video.length !== 0) {
             video[0].pause();
         }
@@ -78,28 +90,64 @@ jQuery(document).ready(function($) {
     function build_exts_re(exts) {
         if (exts.length === 0)
             return {test: function() { return false }};
-        var pattern = '\\.(' + $.map(exts, escape_regexp).join('|') +
-                      ')(?:$|[#?])';
+        var pattern = '\\.(?:' + $.map(exts, escape_regexp).join('|')
+                    + ')(?:$|[#?])';
         return new RegExp(pattern, 'i');
     }
 
-    function video_mouseenter() {
+    function get_size(size, dimension) {
+        if (/%/.test(size)) {
+            var distance = dimension === 'w' ? w.width() : w.height();
+            return (parseInt(size, 10) / 100.0 * distance) | 0;
+        }
+        else {
+            return parseInt(size, 10);
+        }
+    }
+
+    function fit_video(video) {
+        var videoWidth = video.videoWidth;
+        if (!videoWidth)
+            return;
+        var videoHeight = video.videoHeight;
+        var maxWidth = get_size(basic_options.maxWidth, 'w');
+        var maxHeight = get_size(basic_options.maxHeight, 'h');
+        var width, height;
+        if (videoWidth / maxWidth > height / maxHeight) {
+            width = Math.min(videoWidth, maxWidth);
+            height = (videoHeight * (1.0 * width / videoWidth)) | 0;
+        }
+        else {
+            height = Math.min(videoHeight, maxHeight);
+            width = (videoWidth * (1.0 * height / videoHeight)) | 0;
+        }
+        video.width = width;
+        video.height = height;
+        $.colorbox.resize({innerWidth: width, innerHeight: height});
+    }
+
+    function video_loadedmetadata() {
+        fit_video(this);
+    }
+
+    function video_controls_show() {
         this.controls = true;
     }
 
-    function video_mouseleave() {
+    function video_controls_hide() {
         this.controls = false;
     }
 
+    var w = $(window);
     window.overlayview.loadStyleSheet = loadStyleSheet;
     var script_data = window.overlayview;
     var baseurl = script_data.baseurl;
     var attachment_url = baseurl + 'attachment/';
     var raw_attachment_url = baseurl + 'raw-attachment/';
     var basic_options = {
-        opacity: false, transition: 'none', speed: 200, width: '92%',
-        maxWidth: '92%', maxHeight: '92%', onComplete: onComplete,
-        onClosed: onClosed};
+        opacity: false, transition: 'none', speed: 200, width: '96%',
+        maxWidth: '96%', maxHeight: '92%', preloading: false,
+        onComplete: colorbox_on_complete, onClosed: colorbox_on_closed};
     var attachments = $('div#content > div#attachments');
     var image_re = build_exts_re(script_data.images);
     var video_re = build_exts_re(script_data.videos);
@@ -117,10 +165,11 @@ jQuery(document).ready(function($) {
             options.inline = true;
             href = raw_attachment_url +
                    href.substring(attachment_url.length);
-            var video = $('<video />').prop({src: href, controls: true});
-            video.bind({mouseenter: video_mouseenter,
-                        mouseleave: video_mouseleave});
-            href = video;
+            var events = {loadedmetadata: video_loadedmetadata,
+                          mouseenter: video_controls_show,
+                          mouseleave: video_controls_hide};
+            href = $('<video />').attr({controls: true, 'data-src': href})
+                                 .bind(events);
             options.transition = 'elastic';
             options.width = false;
         }
