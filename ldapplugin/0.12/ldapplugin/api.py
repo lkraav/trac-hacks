@@ -148,16 +148,35 @@ class LdapPermissionGroupProvider(Component):
 
     def _get_user_groups(self, username):
         """Returns a list of all groups a user belongs to"""
-        ldap_groups = self._ldap.get_groups()
         groups = []
-        for group in ldap_groups:
-            if self._ldap.is_in_group(self.util.user_attrdn(username), group):
-                m = DN_RE.search(group)
-                if m:
-                    groupname = GROUP_PREFIX + m.group('rdn')
-                    if groupname not in groups:
-                        groups.append(groupname)
-        return groups
+        grouprdns = []
+        srfilter = "(&(objectclass=%s)(%s=%s))" % (self._ldap.groupname, self._ldap.groupmember, self.util.user_attrdn(username))
+        srresult = self._ldap.get_dn(self._ldap.basedn, srfilter)
+        if srresult:
+            groups.extend(srresult)
+            for group in srresult:
+                groups = groups + self._get_group_parents(group)
+
+        # Return only the RDN
+        for group in groups:
+            m = DN_RE.search(group)
+            if m:
+                grouprdn = GROUP_PREFIX + m.group('rdn')
+                if grouprdn not in grouprdns:
+                    grouprdns.append(grouprdn)
+        return grouprdns
+
+    def _get_group_parents(self, groupdn, checked=[]):
+        parents = []
+        srfilter = "(&(objectclass=%s)(%s=%s))" % (self._ldap.groupname, self._ldap.groupmember, groupdn)
+        srresult = self._ldap.get_dn(self._ldap.basedn, srfilter)
+        if srresult:
+            parents.extend(srresult)
+            for groupdn in srresult:
+                if groupdn not in checked:
+                    parents = parents + self._get_group_parents(groupdn)
+                    checked.append(groupdn)
+        return parents
 
 
 class LdapPermissionStore(Component):
