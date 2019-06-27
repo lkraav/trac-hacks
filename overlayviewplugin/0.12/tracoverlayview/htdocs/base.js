@@ -38,6 +38,11 @@ jQuery(document).ready(function($) {
             video.controls = true;
             return;
         }
+        target = loaded.children('div.overlayview-no-preview');
+        if (target.length === 1) {
+            $.colorbox.resize({innerWidth: target.width()});
+            return;
+        }
         target = loaded.children('div.image-file').children('img');
         if (target.length === 1) {
             target.each(function() {

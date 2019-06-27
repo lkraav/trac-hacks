@@ -182,3 +182,5 @@ button#cboxNext, button#cboxPrevious, button#cboxSlideshow, button#cboxClose {
 .cboxSlideshow_on #cboxSlideshow:hover {
  background-position: -100px -25px;
 }
+.overlayview-no-preview { width: 480px }
+.overlayview-no-preview p { margin: 1em }
