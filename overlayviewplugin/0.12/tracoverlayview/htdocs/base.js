@@ -2,6 +2,8 @@ jQuery(document).ready(function($) {
     if (!window.overlayview)
         return;
 
+    var colorbox = 'colorbox';
+
     function loadStyleSheet(href, type) {
         var link;
         var re = /(?:[?#].*)?$/;
@@ -23,23 +25,41 @@ jQuery(document).ready(function($) {
     }
 
     function colorbox_on_load() {
-        $.each(videos, function(idx, video) { video.pause() });
+        var videos = [];
+        $.each(videos_map, function(src, video) {
+            video.pause();
+            videos.push(video);
+        });
+        if (videos.length !== 0) {
+            $(videos).unbind();
+        }
+        var options = $(this).data(colorbox);
+        if (options.inline) {
+            var href = $(options.href);
+            if (href.is('video') && !href[0].src) {
+                href[0].src = href.attr('data-src');
+                return;
+            }
+        }
     }
 
     function colorbox_on_complete() {
-        var element = $.colorbox.element();
+        var element = $(this);
         var loaded = $('#cboxLoadedContent');
         var target;
         target = loaded.children('video');
         if (target.length === 1) {
+            var events = {mouseenter: video_controls_show,
+                          mouseleave: video_controls_hide};
             var video = target[0];
-            if (!video.src) {
-                video.src = target.attr('data-src');
-            }
-            else {
+            if (video.readyState !== 0) {
                 fit_video(video);
             }
+            else {
+                events.loadedmetadata = video_loadedmetadata;
+            }
             video.controls = true;
+            target.bind(events);
             return;
         }
         target = loaded.children('div.overlayview-no-preview');
@@ -161,7 +181,7 @@ jQuery(document).ready(function($) {
     var attachments = $('div#content > div#attachments');
     var image_re = build_exts_re(script_data.images);
     var video_re = build_exts_re(script_data.videos);
-    var videos = [];
+    var videos_map = {};
 
     function build_colorbox_options(href, title) {
         var options = $.extend({}, basic_options);
@@ -173,18 +193,21 @@ jQuery(document).ready(function($) {
             options.width = false;
         }
         else if (video_re.test(href)) {
+            var src = raw_attachment_url +
+                      href.substring(attachment_url.length);
+            var video;
+            if (src in videos_map) {
+                video = videos_map[src];
+                href = $(video);
+            }
+            else {
+                href = $('<video />').attr('data-src', src);
+                video = href[0];
+                video.controls = true;
+                video.muted = true;
+                videos_map[src] = video;
+            }
             options.inline = true;
-            href = raw_attachment_url +
-                   href.substring(attachment_url.length);
-            var events = {loadedmetadata: video_loadedmetadata,
-                          mouseenter: video_controls_show,
-                          mouseleave: video_controls_hide};
-            href = $('<video />').attr('data-src', href)
-                                 .bind(events);
-            var video = href[0];
-            video.controls = true;
-            video.muted = true;
-            videos.push(video);
             options.transition = 'elastic';
             options.width = false;
         }
