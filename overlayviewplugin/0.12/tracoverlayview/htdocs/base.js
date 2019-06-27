@@ -168,8 +168,11 @@ jQuery(document).ready(function($) {
             var events = {loadedmetadata: video_loadedmetadata,
                           mouseenter: video_controls_show,
                           mouseleave: video_controls_hide};
-            href = $('<video />').attr({controls: true, 'data-src': href})
+            href = $('<video />').attr('data-src', href)
                                  .bind(events);
+            var video = href[0];
+            video.controls = true;
+            video.muted = true;
             options.transition = 'elastic';
             options.width = false;
         }
