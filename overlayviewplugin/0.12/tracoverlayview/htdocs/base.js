@@ -22,6 +22,10 @@ jQuery(document).ready(function($) {
         }
     }
 
+    function colorbox_on_load() {
+        $.each(videos, function(idx, video) { video.pause() });
+    }
+
     function colorbox_on_complete() {
         var element = $.colorbox.element();
         var loaded = $('#cboxLoadedContent');
@@ -152,10 +156,12 @@ jQuery(document).ready(function($) {
     var basic_options = {
         opacity: false, transition: 'none', speed: 200, width: '96%',
         maxWidth: '96%', maxHeight: '92%', preloading: false,
-        onComplete: colorbox_on_complete, onClosed: colorbox_on_closed};
+        onLoad: colorbox_on_load, onComplete: colorbox_on_complete,
+        onClosed: colorbox_on_closed};
     var attachments = $('div#content > div#attachments');
     var image_re = build_exts_re(script_data.images);
     var video_re = build_exts_re(script_data.videos);
+    var videos = [];
 
     function build_colorbox_options(href, title) {
         var options = $.extend({}, basic_options);
@@ -178,6 +184,7 @@ jQuery(document).ready(function($) {
             var video = href[0];
             video.controls = true;
             video.muted = true;
+            videos.push(video);
             options.transition = 'elastic';
             options.width = false;
         }
