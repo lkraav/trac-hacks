@@ -110,42 +110,27 @@ class PageAuthzPolicyEditor(Component):
         user_list = ', '.join(self.account_manager.get_users())
         return user_list
 
-    def _group_filename(self):
-        group_file_name = self._get_filename('account-manager', 'group_file')
-        if not group_file_name:
-            group_file_name = self._get_filename('htgroups', 'group_file')
-        if not group_file_name:
-            raise TracError("Group filename not found in the config file, in "
-                            "either sections [account-manager] or [htgroups], "
-                            "under the name 'group_file'.")
-        if not os.path.exists(group_file_name):
-            raise TracError(_("Group filename not found: %(filename)s.",
-                              filename=group_file_name))
-        return group_file_name
-
     # Get the groups and their members so they can easily be included
     # in the groups section of the authz file. Need it as a dictionary
     # of arrays so it be easily iterated.
     def _get_groups_and_members(self):
         """Get the groups and their members as a dictionary of lists.
         """
-        # could be in one of two places, depending if the
-        # account-manager is installed or not
-        group_file_name = self._group_filename()
-        groups_dict = dict()
-        group_file = file(group_file_name)
-        try:
-            for group_line in group_file:
-                # Ignore blank lines and lines starting with #
-                group_line = group_line.strip()
-                if group_line and not group_line.startswith('#'):
-                    group_name = group_line.split(':', 1)[0]
-                    group_members = group_line.split(':', 2)[1].split(' ')
-                    groups_dict[group_name] = \
-                        [x for x in [m.strip() for m in group_members] if x]
-        finally:
-            group_file.close()
-        if len(groups_dict):
-            return groups_dict
-        else:
-            return None
+        group_file_name = \
+            self._get_filename('account-manager', 'group_file')
+        if not group_file_name:
+            group_file_name = self._get_filename('htgroups', 'group_file')
+        if group_file_name:
+            groups_dict = dict()
+            with open(group_file_name) as group_file:
+                for group_line in group_file:
+                    # Ignore blank lines and lines starting with #
+                    group_line = group_line.strip()
+                    if group_line and not group_line.startswith('#'):
+                        group_name = group_line.split(':', 1)[0]
+                        group_members = group_line.split(':', 2)[1].split(' ')
+                        groups_dict[group_name] = \
+                            [x for x in [m.strip() for m in group_members] if x]
+                if len(groups_dict):
+                    return groups_dict
+
