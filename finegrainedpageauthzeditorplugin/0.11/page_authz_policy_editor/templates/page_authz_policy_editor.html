@@ -3,6 +3,7 @@
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
       xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="admin.html" />
   <head>
@@ -25,15 +26,6 @@ $pages_authz.contents</textarea>
         </div>
       </fieldset>
       <fieldset>
-        <legend>Available Permission Types</legend>
-        <div class="field">See the  
-          <a class="wiki" href="${href.wiki('TracPermissions')}">
-            Wiki Trac Permissions Page
-          </a>
-          for a listing and description
-        </div>
-      </fieldset>
-      <fieldset>
         <legend>Current Project Users</legend>
         <div class="field">$pages_authz.users</div>
       </fieldset>
@@ -45,6 +37,11 @@ $pages_authz.contents</textarea>
         <input type="reset" name="reset" value="Reset" />
       </div>
     </form>
+
+    <div id="help" i18n:msg="">
+      <strong>Note:</strong>
+      See <a href="${href.wiki('TracPermissions')}">TracPermissions</a> for a list of available permissions.
+    </div>
   </body>
 
 </html>
