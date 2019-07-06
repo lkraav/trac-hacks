@@ -271,7 +271,9 @@ var validaterule = new Rule('ValidateRule'); // must match python class name exa
 
 // setup
 validaterule.setup = function (input, spec) {
-  var field = jQuery('#field-' + spec.target);
+  var id = 'field-' + spec.target;
+  var field = jQuery('#' + id);
+  var label = jQuery('label[for="' + id + '"]');
   var submit = jQuery('input[name=submit]');
   var form = submit.parents('form');
 
@@ -316,7 +318,8 @@ validaterule.setup = function (input, spec) {
               e = 'be empty';
             else
               e = 'equal ' + spec.value;
-            msg = spec.target + " must not " + e;
+            // Remove trailing colon from field label.
+            msg = label.html().slice(0, -1) + " must not " + e;
           }
           alert(msg);
           // Allow form to be submitted again.

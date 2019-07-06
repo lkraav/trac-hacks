@@ -74,5 +74,11 @@ jQuery(function ($) {
       $(this).change(apply_rules).change();
     });
 
+    // apply rules on preview
+    $(document).ajaxComplete(function(event, xhr, settings) {
+      if (settings.url === location.pathname) {
+        $.each(inputs, function() { $(this).change() });
+      }
+    });
   }
 });
