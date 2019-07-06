@@ -91,7 +91,7 @@ class PageAuthzPolicyEditor(Component):
         #contents = open(authz_policy_file_name).readlines()
         data = {
             'file_name': authz_policy_file_name,
-            'contents': contents.getvalue(),
+            'contents': contents.getvalue().decode('utf-8'),
             'users': self._get_users()
         }
         return 'page_authz_policy_editor.html', {'pages_authz': data}
