@@ -15,12 +15,13 @@
 import itertools
 from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
-from trac.resource import IResourceManager, Resource, ResourceNotFound
+from trac.resource import get_resource_url, IResourceManager, resource_exists, Resource, ResourceNotFound
 from trac.util import as_int, format_date
 from trac.util.html import Markup, html as tag
 from trac.util.translation import _
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_stylesheet, add_ctxtnav
 from trac.web.main import IRequestHandler
+from trac.wiki.api import IWikiSyntaxProvider
 from trac.wiki.formatter import format_to
 from model import ReviewCommentModel, ReviewDataModel, ReviewFileModel, PeerReviewModel, PeerReviewerModel
 from util import review_is_finished
@@ -78,9 +79,24 @@ def add_ctxt_nav_items(req):
 
 
 class PeerReviewMain(Component):
-    """Show overview page for code reviews."""
-    implements(INavigationContributor, IRequestHandler, ITemplateProvider,
-               IPermissionRequestor, IResourceManager)
+    """Main component for code reviews providing basic features. Show overview page for code reviews.
+
+    [[BR]]
+    === Permissions
+    There are three additional permissions for code reviews:
+    * CODE_REVIEW_VIEW
+    * CODE_REVIEW_DEV
+    * CODE_REVIEW_MGR
+
+    === Wiki syntax
+    Two new trac links are available with this plugin:
+    * {{{review:<xxx>}}} with <xxx> being a review id
+    * {{{rfile:<xxx>}}} with <xxx> being a file id
+
+    These links open the review page or file page.
+    """
+    implements(INavigationContributor, IPermissionRequestor, IRequestHandler,
+               IResourceManager, ITemplateProvider, IWikiSyntaxProvider)
 
     # INavigationContributor methods
 
@@ -291,3 +307,61 @@ class PeerReviewMain(Component):
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('hw', resource_filename(__name__, 'htdocs'))]
+
+    # IWikiSyntaxProvider
+
+    def get_link_resolvers(self):
+        return [('review', self._format_review_link),
+                ('rfile', self._format_file_link)]
+
+    def get_wiki_syntax(self):
+        return []
+
+    def _format_review_link(self, formatter, ns, target, label):
+        res = Resource('peerreview', target)
+        if resource_exists(self.env, res):
+            review = PeerReviewModel(self.env, target)
+            if review_is_finished(self.env.config, review):
+                cls = 'closed'
+            else:
+                cls = None
+
+            return tag.a(label,
+                         href=get_resource_url(self.env, res, formatter.href),
+                         title=_(u"Review #%s (%s)") % (target, review['status']),
+                         class_=cls
+                        )
+
+        return tag.span(label + '?',
+                        title=_(u"Review #%s doesn't exist") % target,
+                        class_='missing')
+
+    def _format_file_link(self, formatter, ns, target, label):
+        def rfile_is_finished(config, rfile):
+            """A finished review may only be reopened by a manager or admisnistrator
+
+            :param config: Trac config object
+            :param rfile: review file object
+
+            :return True if review is in one of the terminal states
+            """
+            finish_states = config.getlist("peerreview", "terminal_review_states")
+            return rfile['status'] in finish_states
+
+        res = Resource('peerreviewfile', target)
+        if resource_exists(self.env, res):
+            rfile = ReviewFileModel(self.env, target)
+            if rfile_is_finished(self.env.config, rfile):
+                cls = 'closed'
+            else:
+                cls = None
+
+            return tag.a(label,
+                         href=get_resource_url(self.env, res, formatter.href),
+                         title=_(u"File #%s (%s)") % (target, rfile['status']),
+                         class_=cls
+                         )
+
+        return tag.span(label + '?',
+                        title=_(u"File #%s doesn't exist") % target,
+                        class_='missing')
