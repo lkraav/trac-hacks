@@ -210,14 +210,22 @@ class PeerReviewPerform(Component):
 
 class CommentAnnotator(object):
     """Annotator object which handles comments in source view."""
-    def __init__(self, env, context, imagepath):
+    def __init__(self, env, context, imagepath, name=None):
         self.env = env
         self.context = context
         self.imagepath = imagepath
+
+        # We use the annotator on the browser page
+        if name == 'prcomment':
+            self.prep_browser(context)
+        else:
+            self. prep_peer(context)
+
+    def prep_peer(self, context):
         authname = context.req.authname
         perm = context.req.perm
-        fresource = context.resource
-        review = PeerReviewModel(self.env, fresource.id)
+        fresource = context.resource  # This is an 'rfile' realm
+        review = PeerReviewModel(self.env, fresource.id)  # TODO: this is wrong, we must use a review id here
 
         # Is it allowed to comment on the file?
         if review_is_finished(self.env.config, review):
@@ -230,6 +238,51 @@ class CommentAnnotator(object):
             is_locked = True
 
         self.data = [[c.line_num for c in Comment.select_by_file_id(self.env, fresource.id)], review, is_locked]
+
+    def prep_browser(self, context):
+        def comments_for_file(env, path, rev):
+            db = env.get_read_db()
+            cursor = db.cursor()
+            cursor.execute("""SELECT c.line_num, c.comment_id, f.file_id, 
+            f.review_id  
+            FROM peerreviewfile AS f 
+            JOIN peerreviewcomment as c ON c.file_id = f.file_id
+            WHERE f.path = %s 
+            AND f.changerevision = %s
+            """, (path, rev))
+
+            d = {}
+            file_id = 0
+            for row in cursor:
+                d[row[0]] = row[2]
+                file_id = row[2]
+            return d, file_id
+
+        self.path = '/' + context.resource.id
+        self.rev = context.resource.version
+        self.data, fileid = comments_for_file(self.env, self.path, self.rev)
+
+        scr_data = {'peer_comments': [],  # sorted(list(set([c.line_num for c in
+                    #                                  Comment.select_by_file_id(self.env, r_file['file_id'])]))),
+                    'peer_file_id': fileid,
+                    #'peer_review_id': r_file['review_id'],
+                    'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
+                    'form_token': context.req.form_token,
+                    'baseUrl': context.req.href.peerReviewCommentCallback(),
+                    'peer_diff_style': 'no_diff'}  # data['style'] if 'style' in data else 'no_diff'}
+
+        scr_data['peer_parent_file_id'] = 0  # Mark that we don't have a parent
+        scr_data['peer_parent_comments'] = []
+
+        add_script_data(context.req, scr_data)
+        #add_stylesheet(context.req, 'common/css/code.css')
+        #add_stylesheet(context.req, 'common/css/diff.css')
+        chrome = Chrome(self.env)
+        chrome.add_auto_preview(context.req)
+        chrome.add_jquery_ui(context.req)
+        add_stylesheet(context.req, 'hw/css/peerreview.css')
+        add_script(context.req, "hw/js/peer_review_perform.js")
+
 
     def annotate(self, row, lineno):
         """line annotator for Perform Code Review page.
@@ -257,6 +310,16 @@ class CommentAnnotator(object):
         #color line numbers outside range light gray
         # return
         row.append(tag.th(id='L%s' % lineno)(tag.font(lineno, color='#CCCCCC')))
+
+    def annotate_browser(self, row, lineno):
+        if lineno in self.data:
+            row.append(tag.th(id='C%s' % lineno)(tag.a(tag.img(src=self.context.req.href(self.imagepath)),
+                                                              href='javascript:getComments(%s, %s)' %
+                                                                   (lineno, self.data[lineno]))))
+        else:
+            comment_col = tag.th(class_='prcomment')
+            row.append(comment_col)
+
 
 def get_parent_file_id(env, r_file, par_review_id):
 

@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+from browser import PeerReviewBrowser
 import peerReviewMain
 import peerReviewNew
 import peerReviewPerform

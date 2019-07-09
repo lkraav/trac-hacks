@@ -301,3 +301,18 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 dt.peerreview, dt.peerreview a {
     background-image: url(../images/thumbtac11x11.gif) !important;
 }
+
+/* Trac file browser */
+table.code th.prcomment {
+    width: 5em;
+}
+
+table.peer-status-tbl {
+  width: 75%;
+  margin-bottom: 1em;
+}
+
+#peer-msg {
+  margin-top: 0.5em;
+  width: 75%;
+}
