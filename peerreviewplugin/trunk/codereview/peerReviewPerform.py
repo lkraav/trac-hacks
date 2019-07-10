@@ -114,21 +114,23 @@ class PeerReviewPerform(Component):
         rev_or_latest = rev or repos.youngest_rev
         node = get_existing_node(self.env, repos, r_file['path'], rev_or_latest)
 
+        par_review = None
+        par_file = None
         # Data for parent review if any
         if review['parent_id'] != 0:
-            par_review = PeerReviewModel(self.env, review['parent_id'])  # Raises 'ResourceNotFound' on error
-            par_review.date = format_date(par_review['created'])
-            par_file = ReviewFileModel(self.env, get_parent_file_id(self.env, r_file, review['parent_id']))
-            lines = [c.line_num for c in Comment.select_by_file_id(self.env, par_file['file_id'])]
-            par_file.comments = list(set(lines))  # remove duplicates
-            par_revision = par_file['revision']
-            if par_revision:
-                par_revision = repos.normalize_rev(par_revision)
-            rev_or_latest = par_revision or repos.youngest_rev
-            par_node = get_existing_node(self.env, repos, par_file['path'], rev_or_latest)
-        else:
-            par_review = None
-            par_file = None  # TODO: there may be some error handling missing for this. Create a dummy here?
+            par_file_id = get_parent_file_id(self.env, r_file, review['parent_id'])
+            # If this is a file added to the review we don't have a parent file
+            if par_file_id:
+                par_review = PeerReviewModel(self.env, review['parent_id'])  # Raises 'ResourceNotFound' on error
+                par_review.date = format_date(par_review['created'])
+                par_file = ReviewFileModel(self.env, par_file_id)
+                lines = [c.line_num for c in Comment.select_by_file_id(self.env, par_file['file_id'])]
+                par_file.comments = list(set(lines))  # remove duplicates
+                par_revision = par_file['revision']
+                if par_revision:
+                    par_revision = repos.normalize_rev(par_revision)
+                rev_or_latest = par_revision or repos.youngest_rev
+                par_node = get_existing_node(self.env, repos, par_file['path'], rev_or_latest)
         data['par_file'] = par_file
         data['parent_review'] = par_review
 

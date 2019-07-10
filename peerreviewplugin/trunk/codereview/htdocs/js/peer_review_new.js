@@ -60,18 +60,35 @@ function addFile(filepath)
         return;
     }
 
-
-    var tline = $("<tr/>",{id: row_id}).append($('<td/>').append('<input type="hidden" name="file" value="'
-                                                                +saveLine
-                                                                +'"/><a href="javascript:removefile(\''
-                                                                +saveLine
-                                                                +'\')">'
-                                                                +filepath
-                                                                +'</a>'),
-                                                                $("<td>"+display_reponame+"</td>"),
-                                                                $("<td>"+start+"</td>"),
-                                                                $("<td>"+end+"</td>"),
-                                                                $("<td>"+rev+"</td>"));
+    if(peer_is_followup == 0){
+        var tline = $("<tr/>",{id: row_id}).append($('<td/>').append('<input type="hidden" name="file" value="'
+                                                                    +saveLine
+                                                                    +'"/><a href="javascript:removefile(\''
+                                                                    +saveLine
+                                                                    +'\')">'
+                                                                    +filepath
+                                                                    +'</a>'),
+                                                                    $("<td>"+display_reponame+"</td>"),
+                                                                    $("<td>"+start+"</td>"),
+                                                                    $("<td>"+end+"</td>"),
+                                                                    $("<td>"+rev+"</td>"));
+    }
+    else{
+        var tline = $("<tr/>",{id: row_id}).append($('<td/>').append('<input type="hidden" name="file" value="'
+                                                                    +saveLine
+                                                                    +'"/><a href="javascript:removefile(\''
+                                                                    +saveLine
+                                                                    +'\')">'
+                                                                    +filepath
+                                                                    +'</a>'),
+                                                                    $("<td>"+display_reponame+"</td>"),
+                                                                    $("<td>"+start+"</td>"),
+                                                                    $("<td>"+end+"</td>"),
+                                                                    $("<td>---</td>"),
+                                                                    $("<td>"+rev+"</td>"),
+                                                                    $("<td>---</td>"),
+                                                                    $("<td>---</td>"));
+    };
     $('#myfilebody').append(tline);
 
     colorTable('myfilebody');
@@ -183,7 +200,7 @@ jQuery(document).ready(function($) {
     };
 
     /* Initial browser load only when not modifying and no followup review */
-    if($('#repo_browser').data('is-modify') == 0 && peer_is_followup == 0){
+    if($('#repo_browser').data('is-modify') == 0){ /* && peer_is_followup == 0){ */
        load_browser(repo_browser);
     };
 

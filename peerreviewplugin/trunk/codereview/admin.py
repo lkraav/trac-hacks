@@ -269,7 +269,6 @@ class PeerReviewFileAdmin(Component):
                 'reponame': reponame,
                 'revision': rev
             })
-        self.log.info('############## 3 %s' % data)
 
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/admin_file.css')

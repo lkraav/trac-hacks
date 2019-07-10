@@ -7,7 +7,8 @@
     <xi:include href="layout.html"/>
 
     <head>
-        <title>Create Code Review</title>
+        <title py:if="not followup">Create Code Review</title>
+        <title py:if="followup">Create Followup Code Review</title>
     </head>
 
     <body>
@@ -55,16 +56,11 @@
 
 
                 <fieldset>
-                    <legend py:if="not followup and not modify">Select the sections to be reviewed.</legend>
-                    <legend py:if="followup">The current file revisions are automatically set for all files.</legend>
+                    <legend py:if="not modify">Select files for review.</legend>
                     <legend py:if="modify">Modify the list of files.</legend>
 
                     <!--! Displays the file browser -->
                     <div id="repo_browser" data-is-modify="$modify">
-                    </div>
-
-                    <div py:if="followup" id="follow-up-hint">
-                        <p class="help">You can't add files to the current review.</p>
                     </div>
 
                     <div py:if="modify">

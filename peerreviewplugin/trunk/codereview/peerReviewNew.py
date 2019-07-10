@@ -87,7 +87,11 @@ def add_users_to_data(env, reviewID, data):
 
 
 class NewReviewModule(Component):
-    """Component handling the creation of code reviews."""
+    """Component handling the creation of code reviews.
+
+    [[BR]]
+    This component handles the creation of a new review and creation of followup reviews.
+    """
 
     implements(IRequestHandler, INavigationContributor)
 
@@ -187,11 +191,14 @@ class NewReviewModule(Component):
                 popFiles.append(f)
 
             data['name'] = review['name']
-            if req.args.get('modify') or req.args.get('followup'):
+            if req.args.get('modify'):
                 data['notes'] = review['notes']
+            elif  req.args.get('followup'):
+                data['notes'] = "%sReview is followup to review ''%s''." % \
+                                (review['notes']+ CRLF, review['name'])
             else:
                 data['notes'] = "%sReview based on ''%s'' (resubmitted)." %\
-                                (review['notes']+ CRLF + CRLF, review['name'])
+                                (review['notes']+ CRLF, review['name'])
             data['prevFiles'] = popFiles
         # If we are not resubmitting
         else:
