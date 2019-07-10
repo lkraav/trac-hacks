@@ -112,7 +112,13 @@ class PeerReviewPerform(Component):
         if rev:
             rev = repos.normalize_rev(rev)
         rev_or_latest = rev or repos.youngest_rev
-        node = get_existing_node(self.env, repos, r_file['path'], rev_or_latest)
+
+        if repos.has_node(r_file['path'], rev_or_latest):
+            node = get_existing_node(self.env, repos, r_file['path'], rev_or_latest)
+        else:
+            self.log.info("No Node for file '%s' in revision %s. Using repository revision %s instead.",
+                          r_file['path'], rev_or_latest, repos.youngest_rev)
+            node = get_existing_node(self.env, repos, r_file['path'], repos.youngest_rev)
 
         par_review = None
         par_file = None
