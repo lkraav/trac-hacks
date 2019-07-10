@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from admin import get_prj_file_list
 from string import Template
 from trac.admin import IAdminPanelProvider
 from trac.config import PathOption
@@ -13,7 +14,7 @@ from model import PeerReviewModel, ReviewDataModel
 
 try:
     from docx import Document
-    from docx_export import create_docx_for_review
+    from docx_export import create_docx_for_filelist, create_docx_for_review
     docx_support = True
 except ImportError:
     docx_support = False
@@ -258,6 +259,7 @@ class PeerReviewDocx(Component):
 
         format_arg = req.args.get('format')
         review_id = req.args.get('reviewid', None)
+        filelist = req.args.get('filelist', None)
         referrer=req.get_header("Referer")
         if review_id and format_arg == 'docx':
             review = PeerReviewModel(self.env, review_id)
@@ -276,6 +278,12 @@ class PeerReviewDocx(Component):
                                               'text/x-trac-peerreview',
                                               content_info, format_arg, doc_name)
 
+        elif filelist and format_arg == 'docx':
+            doc_name = u"Filelist_%s" % filelist
+            Mimeview(self.env).send_converted(req,
+                                              'text/x-trac-reviewfilelist',
+                                              {'filelist': filelist}, format_arg, doc_name)
+
         self.env.log.info("PeerReviewPlugin: Export of Review data in format 'docx' failed because of missing "
                           "parameters. Review id is '%s'. Format is '%s'.", review_id, format_arg)
         req.redirect(referrer)
@@ -285,6 +293,8 @@ class PeerReviewDocx(Component):
     def get_supported_conversions(self):
         if docx_support:
             yield ('docx', 'MS-Word 2010', 'docx', 'text/x-trac-peerreview',
+                   'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 4)
+            yield ('docx', 'MS-Word 2010', 'docx', 'text/x-trac-reviewfilelist',
                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 4)
 
     def convert_content(self, req, mimetype, content, key):
@@ -307,6 +317,16 @@ class PeerReviewDocx(Component):
                     'title': Template(report_data['reviewreport.title']['data']).safe_substitute(tdata),
                     'subject': Template(report_data['reviewreport.subject']['data']).safe_substitute(tdata)}
             data = create_docx_for_review(self.env, info, template)
+            return data, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        if mimetype == 'text/x-trac-reviewfilelist':
+            filelist_data = self.get_filelist_defaults()
+            template = self._get_template_path(filelist_data['filelist.template']['data'] or '', 'review_filelist.docx')
+            files = get_prj_file_list(self, content['filelist'])
+            info = {'files': files,
+                    'author': req.authname,
+                    'titel': 'File List',
+                    'subject': content['filelist']}
+            data = create_docx_for_filelist(self.env, info, template)
             return data, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
         return None # This will cause a Trac error displayed to the user

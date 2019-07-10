@@ -13,13 +13,30 @@ from collections import namedtuple
 from trac.admin import IAdminPanelProvider
 from trac.config import ConfigSection
 from trac.core import Component, implements
+from trac.mimeview.api import Mimeview
 from trac.util.translation import _
-from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, add_warning
+from trac.web.chrome import add_link, add_notice, add_script, add_script_data, add_stylesheet, add_warning
 from .model import ReviewDataModel, ReviewFileModel
 from .repo import insert_project_files, repo_path_exists
 
 __author__ = 'Cinc'
 __license__ = "BSD"
+
+
+def get_prj_file_list(self, prj_name):
+    with self.env.db_query as db:
+        FileData = namedtuple('FileData', ['file_id', 'path', 'repo', 'hash', 'rev', 'changerev'])
+        files = [[FileData(*item), ''] for item in db("""SELECT f.file_id, f.path, 
+                                               f.repo, f.hash, f.revision, f.changerevision
+                                               FROM peerreviewfile f
+                                               WHERE f.project = %s ORDER BY f.path
+                                               """, (prj_name,))]
+        approved_hashes = [item[0] for item in db("SELECT a.hash FROM peerreviewfile AS a WHERE status = 'approved'")]
+        for item in files:
+            if item[0].hash in approved_hashes:
+                item[1] = 'Approved'
+        return files
+
 
 class PeerReviewFileAdmin(Component):
     """Admin panel to specify files belonging to a project.
@@ -70,21 +87,6 @@ class PeerReviewFileAdmin(Component):
     def get_admin_panels(self, req):
         if 'CODE_REVIEW_DEV' in req.perm:
             yield ('codereview', 'Code review', 'projectfiles', 'Project Files')
-
-    def _get_prj_file_list(self, prj_name):
-        with self.env.db_query as db:
-            FileData = namedtuple('FileData', ['file_id', 'path', 'repo', 'hash', 'rev', 'changerev'])
-            files = [[FileData(*item), ''] for item in db("""SELECT f.file_id, f.path, 
-                                                   f.repo, f.hash, f.revision, f.changerevision
-                                                   FROM peerreviewfile f
-                                                   WHERE f.project = %s ORDER BY f.path
-                                                   """, (prj_name,))]
-            approved_hashes = [item[0] for item in db("SELECT a.hash FROM peerreviewfile AS a WHERE status = 'approved'")]
-            for item in files:
-                if item[0].hash in approved_hashes:
-                    item[1] = 'Approved'
-            return files
-
 
     def render_admin_panel(self, req, cat, page, path_info):
 
@@ -284,7 +286,14 @@ class PeerReviewFileAdmin(Component):
             })
             if req.args.get('filelist'):
                 data['view'] = 'filelist'
-                data['files'] = self._get_prj_file_list(path_info)
+                data['files'] = get_prj_file_list(self, path_info)
+
+                # For downloading in docx format
+                conversions = Mimeview(self.env).get_supported_conversions('text/x-trac-reviewfilelist')
+                for key, name, ext, mime_in, mime_out, q, c in conversions:
+                    conversion_href = req.href("peerreview", format=key, filelist=path_info)
+                    add_link(req, 'alternate', conversion_href, name, mime_out)
+
         else:
             data.update({
                 'rootfolder': rootfolder,

@@ -233,11 +233,10 @@ def get_file_info(env, review_id):
     return items
 
 
-def add_file_info_to_table(env, doc, review_id, file_info):
+def add_file_info_to_table(env, doc, file_info):
     """Find or create file information table and add file info.
 
     @param doc: python-docx Document object
-    @param review_id: id of this review
     @param file_info: list of PeerReviewFile objects
     @return: None
     :param env:
@@ -396,7 +395,7 @@ def add_file_data(env, doc, file_info):
         par.text = u""  # Overwrite marker text
 
 
-def set_custom_doc_properties(zin, review):
+def set_custom_doc_properties(zin, review=None):
     def set_element_txt(elm, txt):
         e = dom.xpath("//p:property[@name='%s']" % elm,
                       namespaces={'p': 'http://schemas.openxmlformats.org/officeDocument/2006/custom-properties'})
@@ -411,14 +410,15 @@ def set_custom_doc_properties(zin, review):
     set_element_txt(u'VersionDate', datetime.datetime.today().strftime("%d.%m.%Y"))
     # Set document id
     set_element_txt(u'Dokumentnummer', '0')
-    set_element_txt(u'MCNummer', review['project'])
+    if review:
+        set_element_txt(u'MCNummer', review['project'])
     set_element_txt(u'VersionMajor', u'1')
     set_element_txt(u'VersionMinor', u'0')
 
     return et.tostring(dom)
 
 
-def set_core_properties(doc, data):
+def set_core_properties(doc):
     from datetime import datetime
 
     props = doc.core_properties
@@ -427,24 +427,22 @@ def set_core_properties(doc, data):
 
 def set_core_doc_properties(zin, data):
 
-    review = data['review']
-
     dom = et.fromstring(zin.read("docProps/core.xml"))
 
     e = dom.find("{http://purl.org/dc/elements/1.1/}creator")
     if e is not None:
-        e.text = review['owner']
+        e.text = data['author']
     e = dom.find("{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}lastModifiedBy")
     if e is not None:
-        e.text = review['owner']
+        e.text = data['author']
 
     e = dom.find("{http://purl.org/dc/elements/1.1/}subject")
     if e is not None:
-        e.text = data['subject']
+        e.text = data.get('subject', '')
 
     e = dom.find("{http://purl.org/dc/elements/1.1/}title")
     if e is not None:
-        e.text = data['title']
+        e.text = data.get('title', '')
 
     e = dom.find("{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}revision")
     if e is not None:
@@ -480,10 +478,10 @@ def create_docx_for_review(env, data, template):
     add_reviewers_to_table(env, doc, review_id)
 
     file_info = get_file_info(env, review_id)
-    add_file_info_to_table(env, doc, review_id, file_info)
+    add_file_info_to_table(env, doc, file_info)
     add_file_data(env, doc, file_info)
 
-    set_core_properties(doc, data)
+    set_core_properties(doc)
     buff = io.BytesIO()
     doc.save(buff)
 
@@ -497,6 +495,104 @@ def create_docx_for_review(env, data, template):
             if item.filename == 'docProps/custom.xml':
                 zout.writestr("docProps/custom.xml",
                               set_custom_doc_properties(zin, data['review']))
+            elif item.filename == 'docProps/core.xml':
+                zout.writestr("docProps/core.xml",
+                              set_core_doc_properties(zin, data))
+            else:
+                zout.writestr(item, buf)
+
+    return out_buff.getvalue()
+
+
+def add_filelist_to_table(env, doc, file_info):
+    """Find or create file information table and add file info.
+
+    @param doc: python-docx Document object
+    @param file_info: list of files as a namedtuple
+    @return: None
+    :param env:
+    """
+    def get_file_table(doc):
+        for table in doc.tables:
+            row = table.rows[-1]
+            if len(row.cells) > 1 and row.cells[1].text == u'$FILEPATH$':
+                return table
+
+        # Table not found, add it. This may be an empty template
+        cell_data = [['ID', 'Path', 'Hash', 'Revision', 'Status'],
+                     ['', '$FILEPATH$', '', '', '']
+                     ]
+        doc.add_heading(u'Files', level=1)
+        tbl = doc.add_table(len(cell_data), len(cell_data[0]))
+        for idx, data in enumerate(cell_data):
+            for i, val in enumerate(data):
+                tbl.rows[idx].cells[i].text = val
+        return tbl
+
+    repodict = get_repository_dict(env)
+
+    table = get_file_table(doc)
+    if file_info and table:
+        cells = table.rows[-1].cells
+
+        for idx, (file, status) in enumerate(file_info):
+            try:
+                try:
+                    prefix = repodict[file.repo]['url'].rstrip('/')
+                except KeyError:
+                    prefix = ''
+                if idx > 0:
+                    cells = table.add_row().cells
+                cells[0].text = str(file.file_id)
+                cells[1].text = prefix + file.path
+                cells[2].text = file.hash or ''
+                cells[3].text = file.changerev
+                cells[4].text = status or ''
+            except IndexError:  # May happen if the template misses some table columns
+                pass
+
+
+def create_docx_for_filelist(env, data, template):
+    """Create a Word document from the given template holding the list of files.
+
+    :param env: Trac environment object
+    :param data: dictionary with information about the review
+    :param template: path to docx template
+    :return: docx file data
+    """
+    def template_exists(tpath):
+        if not tpath:
+            return False
+        if os.path.isfile(tpath):
+            return True
+        return False
+
+    if template and template_exists(template):
+        doc = Document(template)
+    else:
+        doc = Document()
+
+    ensure_paragraph_styles(doc)
+
+    #add_review_info_to_table(env, doc, review_id)
+    #add_reviewers_to_table(env, doc, review_id)
+    files = data['files']
+    add_filelist_to_table(env, doc, files)
+
+    set_core_properties(doc)
+    buff = io.BytesIO()
+    doc.save(buff)
+
+    # Change custom properties
+    out_buff = io.BytesIO()
+
+    zin = zipfile.ZipFile(buff, 'r')
+    with zipfile.ZipFile(out_buff, 'w') as zout:
+        for item in zin.infolist():
+            buf = zin.read(item.filename)
+            if item.filename == 'docProps/custom.xml':
+                zout.writestr("docProps/custom.xml",
+                              set_custom_doc_properties(zin))
             elif item.filename == 'docProps/core.xml':
                 zout.writestr("docProps/core.xml",
                               set_core_doc_properties(zin, data))
