@@ -103,6 +103,12 @@ class PeerReviewFileAdmin(Component):
             _insert_project_info('repo', name, reponame)
             _insert_project_info('revision', name, rev)
             _insert_project_info('follow_externals', name, follow_externals)
+            # Create option for DynamicVariables plugin
+            # Note: we need to get the updated project data here
+            prj_lst = sorted([key for key in ReviewDataModel.all_file_project_data(self.env)])
+            if prj_lst:
+                self.config.set('dynvars', 'project_files.options', '|'.join(prj_lst))
+                self.config.save()
 
         def create_ext_list(ext_str):
             """Create a list of extensions from a string.
