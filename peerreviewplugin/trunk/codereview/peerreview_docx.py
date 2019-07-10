@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import os
 from string import Template
 from trac.admin import IAdminPanelProvider
-from trac.config import ListOption
+from trac.config import PathOption
 from trac.core import Component, implements
 from trac.mimeview.api import IContentConverter, Mimeview
 from trac.util.translation import _
@@ -47,8 +48,11 @@ class PeerReviewDocx(Component):
     [[TracIni(peerreview, review.docx)]]
 
     The path must be readable by Trac. It will be used only on first start to populate the database and is
-    meant to make automated deploying easier.
+    meant to make automated deployment easier.
     You may use the admin page to change it later on.
+
+    When no path is found in the database when trying to export a report the standard ''templates'' directory of the
+    environment is used.
 
     == Template document format
     Markers are used to signify the position where to add information to the document.
@@ -113,7 +117,7 @@ class PeerReviewDocx(Component):
     """
     implements(IAdminPanelProvider, IContentConverter, IRequestHandler,)
 
-    ListOption('peerreview', 'review.docx', doc=u"Path to template document in ''docx'' format used for generating "
+    PathOption('peerreview', 'review.docx', doc=u"Path to template document in ''docx'' format used for generating "
                                                  u"review documents.")
     def __init__(self):
         if not docx_support:
@@ -141,6 +145,19 @@ class PeerReviewDocx(Component):
                     self.env.log.info("PeerReviewPlugin: added '%s' with value '%s' to 'peerreviewdata' table",
                                       d, data)
 
+    def _get_report_template(self, data):
+        template = data['reviewreport.template']['data'] or ''
+        if not os.path.exists(template):
+            self.log.info(u"Report template '%s' does not exist.", template)
+            template = os.path.join(self.config.getpath('inherit', 'templates_dir', ''), 'review_report.docx')
+            template = os.path.abspath(template)
+        if not os.path.exists(template):
+            self.log.info('No inherited templates directory. Using default templates directory.')
+            template = os.path.join(self.env.templates_dir, 'review_report.docx')
+            if not os.path.exists(template):
+                template = 'No template found'
+        return template
+
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
@@ -166,7 +183,9 @@ class PeerReviewDocx(Component):
 
         data = {'title': report_data['reviewreport.title']['data'],
                 'subject': report_data['reviewreport.subject']['data'],
-                'template': report_data['reviewreport.template']['data']}
+                'template': report_data['reviewreport.template']['data'],
+                'template_valid': os.path.exists(report_data['reviewreport.template']['data']),
+                'template_default': self._get_report_template(report_data)}
         return 'admin_review_report.html', data
 
     def get_report_defaults(self):
@@ -223,11 +242,12 @@ class PeerReviewDocx(Component):
 
     def convert_content(self, req, mimetype, content, key):
         """
-        @param content: This is the review id
+        @param content: dict holding information about the review, see request processing code for more information
         """
         if mimetype == 'text/x-trac-peerreview':
             report_data = self.get_report_defaults()
-            template = report_data['reviewreport.template']['data']
+            template = self._get_report_template(report_data)
+
             review = content['review']
             # Data for title and subject templates
             tdata = {'reviewid': content['review_id'],

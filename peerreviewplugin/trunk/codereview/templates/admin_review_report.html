@@ -32,6 +32,10 @@
                         <input type="text" class="form-control" maxlength="255" id="tmplpath"
                                name="template" value="$template" />
                     </div>
+                    <div py:if="not template_valid" class="system-message warning">
+                        <p>The template path is not valid. A default template will be used instead:
+                            <strong>$template_default</strong></p>
+                    </div>
                     <p class="help">The path must be readable by Trac. If no template is specified a default
                         will be used.</p>
                     <div class="buttons">
