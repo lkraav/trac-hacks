@@ -14,7 +14,7 @@
         <py:choose test="view">
             <form py:when="'detail'" class="mod" id="modprojinfo" method="post" action="">
                 <fieldset>
-                    <legend>Modify Project Info</legend>
+                    <legend>Modify Project File List</legend>
                     <div class="field">
                         <label>Project Name:</label>
                         <input type="text" class="form-control" maxlength="255" id="projname"
@@ -66,6 +66,55 @@
                     for future report generation.</p>
             </form>
 
+            <py:when test="'filelist'">
+                <div>
+                    <p>List of Files for project <strong>$projectname</strong>.</p>
+                </div>
+                <div>
+                    <p>${len(files)} files altogether.</p>
+                </div>
+
+                <form class="mod" id="filelistform" method="post" action="">
+                    <fieldset>
+                        <div class="buttons">
+                            <input type="submit" name="back" value="${_('Back')}" />
+                        </div>
+                    </fieldset>
+                    <table class="listing" id="filelisttbl">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th>File Id</th>
+                            <th>Path</th>
+                            <th>Hash</th>
+                            <th>Revision</th>
+                            <th>Change Revision</th>
+                            <th>Approved</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <py:for each="cnt, (file, status) in enumerate(files, 1)">
+                            <tr class="${None if status == 'Approved' else 'error'}">
+                                <td>$cnt</td>
+                                <td>${file.file_id}</td>
+                                <td><a href="${'%s/%s%s' % (href('browser'), file.repo, file.path)}">${file.path}</a></td>
+                                <td>${file.hash}</td>
+                                <td>${file.rev}</td>
+                                <td>${file.changerev}</td>
+                                <td>${status}</td>
+                            </tr>
+                        </py:for>
+                        </tbody>
+                    </table>
+
+                    <fieldset>
+                        <div class="buttons">
+                            <input type="submit" name="back" value="${_('Back')}" />
+                        </div>
+                    </fieldset>
+                </form>
+            </py:when>
+
             <py:otherwise>
                 <div>
                     <p>
@@ -93,6 +142,7 @@
                             <th>Include Extensions</th>
                             <th>Exclude Extensions</th>
                             <th>Exclude Paths</th>
+                            <th>File List</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -107,6 +157,7 @@
                             <td class="includeext">${proj[1].includeext}</td>
                             <td class="extensions">${proj[1].excludeext}</td>
                             <td class="extensions">${proj[1].excludepath}</td>
+                            <td><a href="${panel_href(proj[0])}?filelist=1" title="Show Files of Project ${proj[0]}">Show Files</a></td>
                         </tr>
                         </tbody>
                     </table>
@@ -120,7 +171,7 @@
 
                 <form action="" id="addprojinfo" method="post">
                     <fieldset>
-                        <legend>Add Project Info</legend>
+                        <legend>Add Project File List</legend>
                         <div class="field">
                             <label>Project Name:</label>
                             <input type="text" class="form-control" maxlength="255" id="projname"

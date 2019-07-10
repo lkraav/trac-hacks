@@ -9,6 +9,7 @@
 # Author: Cinc
 #
 
+from collections import namedtuple
 from trac.admin import IAdminPanelProvider
 from trac.config import ConfigSection
 from trac.core import Component, implements
@@ -69,6 +70,21 @@ class PeerReviewFileAdmin(Component):
     def get_admin_panels(self, req):
         if 'CODE_REVIEW_DEV' in req.perm:
             yield ('codereview', 'Code review', 'projectfiles', 'Project Files')
+
+    def _get_prj_file_list(self, prj_name):
+        with self.env.db_query as db:
+            FileData = namedtuple('FileData', ['file_id', 'path', 'repo', 'hash', 'rev', 'changerev'])
+            files = [[FileData(*item), ''] for item in db("""SELECT f.file_id, f.path, 
+                                                   f.repo, f.hash, f.revision, f.changerevision
+                                                   FROM peerreviewfile f
+                                                   WHERE f.project = %s ORDER BY f.path
+                                                   """, (prj_name,))]
+            approved_hashes = [item[0] for item in db("SELECT a.hash FROM peerreviewfile AS a WHERE status = 'approved'")]
+            for item in files:
+                if item[0].hash in approved_hashes:
+                    item[1] = 'Approved'
+            return files
+
 
     def render_admin_panel(self, req, cat, page, path_info):
 
@@ -240,7 +256,7 @@ class PeerReviewFileAdmin(Component):
                 'projectname': name,
         }
         if(path_info):
-            # Details page
+            # Details page or file list
             data['view_project'] = path_info
             view_proj = all_proj[path_info]
             # With V3.1 the following was added to the saved information for multi repo support.
@@ -266,6 +282,9 @@ class PeerReviewFileAdmin(Component):
                 'revision': rev or view_proj['revision'],
                 'follow_externals': follow_externals or view_proj['follow_externals']
             })
+            if req.args.get('filelist'):
+                data['view'] = 'filelist'
+                data['files'] = self._get_prj_file_list(path_info)
         else:
             data.update({
                 'rootfolder': rootfolder,
