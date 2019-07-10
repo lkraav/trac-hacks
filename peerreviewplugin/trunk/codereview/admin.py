@@ -102,6 +102,7 @@ class PeerReviewFileAdmin(Component):
             _insert_project_info('includeext', name, incl)
             _insert_project_info('repo', name, reponame)
             _insert_project_info('revision', name, rev)
+            _insert_project_info('follow_externals', name, follow_externals)
 
         def create_ext_list(ext_str):
             """Create a list of extensions from a string.
@@ -249,7 +250,7 @@ class PeerReviewFileAdmin(Component):
                 excl_ext = view_proj['excludeext']
             except KeyError:
                 excl_ext = view_proj['extensions']
-
+            view_proj.setdefault('follow_externals', False)
             data.update({
                 'rootfolder': rootfolder or view_proj['rootfolder'],
                 'excludeext': exts or excl_ext,
@@ -257,6 +258,7 @@ class PeerReviewFileAdmin(Component):
                 'includeext': incl or view_proj['includeext'],  #incl or incl_ext,
                 'reponame': reponame or view_proj['repo'],
                 'revision': rev or view_proj['revision'],
+                'follow_externals': follow_externals or view_proj['follow_externals']
             })
         else:
             data.update({
@@ -267,6 +269,8 @@ class PeerReviewFileAdmin(Component):
                 'reponame': reponame,
                 'revision': rev
             })
+        self.log.info('############## 3 %s' % data)
+
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/admin_file.css')
         add_script_data(req, {'repo_browser': self.env.href.adminrepobrowser(data['rootfolder'],

@@ -27,7 +27,9 @@
                         <div id="repo_browser"></div>
 
                         <label>
-                            <input type="checkbox" name="follow_ext" value="1"/>Follow externals</label>
+                            <input type="checkbox" name="follow_ext" value="1" checked="${follow_externals == '1' or None}"/>
+                            Follow externals
+                        </label>
                         <p class="help">When selected files in folders referenced as Subversion externals will also be added to the
                             list of project files. Note that only externals to repositories configured in this Trac instance are
                             taken into accoun.</p>
