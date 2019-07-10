@@ -195,7 +195,7 @@ class PeerReviewFileAdmin(Component):
                 add_project_info()
                 errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
                                                          path_lst_filtered,
-                                                         follow_externals, rev=rev, reponame=reponame)
+                                                         follow_externals, rev=rev, repo_name=reponame)
                 add_notice(req, _("The project has been added. %s files belonging to the project %s have been added "
                                   "to the database"), num_files, name)
                 for err in errors:
@@ -217,7 +217,7 @@ class PeerReviewFileAdmin(Component):
                 add_project_info()
                 errors, num_files = insert_project_files(self, rootfolder, name, ext_filtered, incl_filtered,
                                                          path_lst_filtered,
-                                                         follow_externals, rev=rev, reponame=reponame)
+                                                         follow_externals, rev=rev, repo_name=reponame)
                 add_notice(req, _("Your changes have been saved. %s files belonging to the project %s have been added "
                                   "to the database"), num_files, name)
                 for err in errors:

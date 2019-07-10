@@ -53,7 +53,7 @@ def get_node(repos, path, rev):
 from svn_externals import parse_externals
 
 
-def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, excl_path, follow_ext):
+def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, excl_path, follow_ext, repo_name=''):
     """Get file nodes recursively for a given directory node.
 
     :param env: Trac environment object
@@ -80,7 +80,8 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
     errors = []
     for node in dir_node.get_entries():
         if node.isdir:
-            errors += get_nodes_for_dir(self, repodict, node, fnodes, ignore_ext, incl_ext, excl_path, follow_ext)
+            errors += get_nodes_for_dir(self, repodict, node, fnodes, ignore_ext, incl_ext, excl_path, follow_ext,
+                                        repo_name)
             if follow_ext:
                 props = node.get_properties()
                 try:
@@ -112,7 +113,7 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
 
                             if ext_node and ext_node.isdir:
                                 errors += get_nodes_for_dir(self, repodict, ext_node, fnodes, ignore_ext, incl_ext,
-                                                            excl_path, follow_ext)
+                                                            excl_path, follow_ext, reponame)
                             else:
                                 txt = "No node for external path '%s' in repository '%s'. " \
                                       "External: '%s %s' was ignored for directory '%s'." \
@@ -137,7 +138,8 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
                             'path': node.path,
                             'rev': node.rev,
                             'change_rev':node.created_rev,
-                            'hash': hash_from_file_node(node)
+                            'hash': hash_from_file_node(node),
+                            'reponame': repo_name
                         })
                 else:
                     if os.path.splitext(node.path)[1].lower() not in ignore_ext:
@@ -145,7 +147,8 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
                             'path': node.path,
                             'rev': node.rev,
                             'change_rev':node.created_rev,
-                            'hash': hash_from_file_node(node)
+                            'hash': hash_from_file_node(node),
+                            'reponame': repo_name
                         })
     return errors
 
@@ -192,7 +195,7 @@ def get_repository_dict(env):
 
 
 def insert_project_files(self, src_path, project, ignore_ext, incl_ext, excl_path,
-                         follow_ext=False, rev=None, reponame=''):
+                         follow_ext=False, rev=None, repo_name=''):
     """Add project files to the database.
 
     :param self: Trac component object
@@ -200,7 +203,7 @@ def insert_project_files(self, src_path, project, ignore_ext, incl_ext, excl_pat
     """
     repolist = get_repository_dict(self.env)
     try:
-        repos = repolist[reponame]['repo']
+        repos = repolist[repo_name]['repo']
     except KeyError:
         return
 
@@ -215,7 +218,8 @@ def insert_project_files(self, src_path, project, ignore_ext, incl_ext, excl_pat
 
     fnodes = []
     if root_node.isdir:
-        errors = get_nodes_for_dir(self, repolist, root_node, fnodes, ignore_ext, incl_ext, excl_path, follow_ext)
+        errors = get_nodes_for_dir(self, repolist, root_node, fnodes, ignore_ext, incl_ext, excl_path, follow_ext,
+                                   repo_name)
     else:
         errors = []
 
@@ -227,6 +231,6 @@ def insert_project_files(self, src_path, project, ignore_ext, incl_ext, excl_pat
             cursor.execute("INSERT INTO peerreviewfile"
                            "(review_id,path,line_start,line_end,repo,revision, changerevision,hash,project)"
                            "VALUES (0, %s, 0, 0, %s, %s, %s, %s, %s)",
-                           (item['path'], reponame, item['rev'], item['change_rev'], item['hash'], project))
+                           (item['path'], item['reponame'], item['rev'], item['change_rev'], item['hash'], project))
 
     return errors, len(fnodes)
