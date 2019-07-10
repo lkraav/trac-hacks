@@ -25,18 +25,17 @@
                         <label>Root Folder:</label>
                         <p class="help">You may browse repositories and folders here.</p>
                         <div id="repo_browser"></div>
-
+                        <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                               name="rootfolder" value="$rootfolder" />
+                        <p class="help">The root folder in the repository holding all the project files.</p>
                         <label>
                             <input type="checkbox" name="follow_ext" value="1" checked="${follow_externals == '1' or None}"/>
                             Follow externals
                         </label>
                         <p class="help">When selected files in folders referenced as Subversion externals will also be added to the
                             list of project files. Note that only externals to repositories configured in this Trac instance are
-                            taken into accoun.</p>
-                        <input type="text" class="form-control" maxlength="255" id="rootfolder"
-                               name="rootfolder" value="$rootfolder" />
+                            taken into account.</p>
                     </div>
-                    <p class="help">The root folder in the repository holding all the project files.</p>
                     <div class="field">
                         <label>Allowed Extensions:</label>
                         <input type="text" class="form-control" maxlength="255" id="includeext"
@@ -68,58 +67,20 @@
             </form>
 
             <py:otherwise>
-                <form action="" id="addprojinfo" method="post">
-                    <fieldset>
-                        <legend>Add Project Info</legend>
-                        <div class="field">
-                            <label>Project Name:</label>
-                            <input type="text" class="form-control" maxlength="255" id="projname"
-                                   name="projectname" value="$projectname" />
-                        </div>
-                        <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
-                        <div class="field">
-                            <label>Root Folder:</label>
-                            <p class="help">You may browse repositories and folders here.</p>
-                            <div id="repo_browser"></div>
-
-                            <label>
-                                <input type="checkbox" name="follow_ext" value="1"/>Follow externals</label>
-                            <p class="help">When selected files in folders referenced as Subversion externals will also be added to the
-                                list of project files. Note that only externals to repositories configured in this Trac instance are
-                                taken into accoun.</p>
-                            <input type="text" class="form-control" maxlength="255" id="rootfolder"
-                                   name="rootfolder" value="$rootfolder" />
-                        </div>
-                        <p class="help">The root folder in the repository holding all the project files.</p>
-                        <div class="field">
-                            <label>Allowed Extensions:</label>
-                            <input type="text" class="form-control" maxlength="255" id="includeext"
-                                   name="includeext" value="$includeext" />
-                        </div>
-                        <p class="help">File extensions used when collecting the projects files. Use commas for separating.
-                            Example: <strong>.c, .h, .cpp</strong>.</p>
-                        <div class="field">
-                            <label>Ignored Extensions:</label>
-                            <input type="text" class="form-control" maxlength="255" id="excludeext"
-                                   name="excludeext" value="$excludeext" />
-                        </div>
-                        <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
-                            Example: <strong>.tmb, .zip</strong>.</p>
-                        <p class="help"><strong>Note:</strong> This list is ignored if an include list is provided.</p>
-                        <div class="field">
-                            <label>Ignored Paths:</label>
-                            <textarea class="trac-fullwidth" name="excludepath" cols="60" rows="2" py:content="excludepath" id="excludepath"></textarea>
-                        </div>
-                        <p class="help">Specify directories to be excluded from the file list. Use commas for separating.
-                            Example: <strong>/root/path/to/diectory, /root2/anotherpath/to/diectory</strong>.</p>
-                        <div class="buttons">
-                            <input name="add" value="${_('Add')}" type="submit" />
-                        </div>
-                    </fieldset>
-                    <p class="help">Adding a project may need some time because all the files for a project are gathered and processed
-                        for future report generation.</p>
-                </form>
-
+                <div>
+                    <p>
+                        You may define a project identifier and a root folder from the repository holding all the files
+                        of a project here.
+                        When saving the information all the files in the folder hierarchy are hashed and file name,
+                        revision, hash and project name are inserted in the database.
+                    </p>
+                    <p>
+                        Using the file information it is possible to create reports
+                        (see <a href="${href.wiki('TracReports')}">TracReports</a> for more information) like which
+                        files may need a review and more. Predefined codereview reports can be found
+                        <a href="${href('peerreviewreport')}">here</a>.
+                    </p>
+                </div>
                 <form py:if="projects" id="projinfo_table" method="post" action="">
                     <table class="listing" id="projinfolist">
                         <thead>
@@ -156,19 +117,57 @@
                 <div py:if="not projects" class="system-message notice">
                     <p>There is no project file information defined yet.</p>
                 </div>
-                <div>
-                    <p>
-                        You may define a project identifier and a root folder from the repository holding all the files
-                        of a project here.
-                        When saving the information all the files in the folder hierarchy are hashed and file name,
-                        revision, hash and project name are inserted in the database.
-                    </p>
-                    <p>
-                        Using the file information it is possible to create reports
-                        (see <a href="${href.wiki('TracReports')}">TracReports</a> for more information) like which
-                        files may need a review and more.
-                    </p>
-                </div>
+
+                <form action="" id="addprojinfo" method="post">
+                    <fieldset>
+                        <legend>Add Project Info</legend>
+                        <div class="field">
+                            <label>Project Name:</label>
+                            <input type="text" class="form-control" maxlength="255" id="projname"
+                                   name="projectname" value="$projectname" />
+                        </div>
+                        <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
+                        <div class="field">
+                            <label>Root Folder:</label>
+                            <p class="help">You may browse repositories and folders here.</p>
+                            <div id="repo_browser"></div>
+                            <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                                   name="rootfolder" value="$rootfolder" />
+                            <p class="help">The root folder in the repository holding all the project files.</p>
+                            <label>
+                                <input type="checkbox" name="follow_ext" value="1"/>Follow externals</label>
+                            <p class="help">When selected files in folders referenced as Subversion externals will also be added to the
+                                list of project files. Note that only externals to repositories configured in this Trac instance are
+                                taken into account.</p>
+                        </div>
+                        <div class="field">
+                            <label>Allowed Extensions:</label>
+                            <input type="text" class="form-control" maxlength="255" id="includeext"
+                                   name="includeext" value="$includeext" />
+                        </div>
+                        <p class="help">File extensions used when collecting the projects files. Use commas for separating.
+                            Example: <strong>.c, .h, .cpp</strong>.</p>
+                        <div class="field">
+                            <label>Ignored Extensions:</label>
+                            <input type="text" class="form-control" maxlength="255" id="excludeext"
+                                   name="excludeext" value="$excludeext" />
+                        </div>
+                        <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
+                            Example: <strong>.tmb, .zip</strong>.</p>
+                        <p class="help"><strong>Note:</strong> This list is ignored if an include list is provided.</p>
+                        <div class="field">
+                            <label>Ignored Paths:</label>
+                            <textarea class="trac-fullwidth" name="excludepath" cols="60" rows="2" py:content="excludepath" id="excludepath"></textarea>
+                        </div>
+                        <p class="help">Specify directories to be excluded from the file list. Use commas for separating.
+                            Example: <strong>/root/path/to/diectory, /root2/anotherpath/to/diectory</strong>.</p>
+                        <div class="buttons">
+                            <input name="add" value="${_('Add')}" type="submit" />
+                        </div>
+                    </fieldset>
+                    <p class="help">Adding a project may need some time because all the files for a project are gathered and processed
+                        for future report generation.</p>
+                </form>
             </py:otherwise>
         </py:choose>
     </body>
