@@ -233,7 +233,9 @@ class CommentAnnotator(object):
         authname = context.req.authname
         perm = context.req.perm
         fresource = context.resource  # This is an 'rfile' realm
-        review = PeerReviewModel(self.env, fresource.id)  # TODO: this is wrong, we must use a review id here
+        # Get review id
+        r_file = ReviewFileModel(self.env, fresource.id)
+        review = PeerReviewModel(self.env, r_file['id'])
 
         # Is it allowed to comment on the file?
         if review_is_finished(self.env.config, review):
