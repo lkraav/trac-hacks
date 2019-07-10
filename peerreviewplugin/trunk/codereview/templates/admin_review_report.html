@@ -19,13 +19,17 @@
                         <input type="text" class="form-control" maxlength="255" id="doctitle"
                                name="title" value="$title" />
                     </div>
-                    <p class="help">You may use variables here.</p>
                     <div class="field">
                         <label>Subject:</label>
                         <input type="text" class="form-control" maxlength="255" id="docsubject"
                                name="subject" value="$subject" />
                     </div>
-                    <p class="help">You may use variables here.</p>
+                    <p class="help">You may use the following
+                        variable in title and subject which will be replaced with the actual value when creating a document.
+                    </p>
+                    <p class="help"><strong>$$reviewid</strong>: ID of the review</p>
+                    <p class="help"><strong>$$review_name</strong>: review name</p>
+                    <p class="help"><strong>Example</strong>: Report for Review $$reviewid</p>
                     <h3>Document Template</h3>
                     <div class="field">
                         <label>Path:</label>
@@ -41,14 +45,29 @@
                     <div class="buttons">
                         <input name="save" value="${_('Save')}" type="submit" />
                     </div>
-
                 </fieldset>
             </form>
-        <p class="help">This information is used when creating a document from a review. You may use the following
-            variable in title and subject which will be replaced with the actual value when creating a document.
-        </p>
-        <p class="help"><strong>$$reviewid</strong>: ID of the review</p>
-        <p class="help"><strong>$$review_name</strong>: review name</p>
-        <p class="help"><strong>Example</strong>: Report for Review $$reviewid</p>
+
+        <h2>Setting for File Lists</h2>
+        <form action="" id="filelist-form" method="post">
+            <fieldset>
+                <h3>Document Template</h3>
+                <div class="field">
+                    <label>Path:</label>
+                    <input type="text" class="form-control" maxlength="255" id="filelist-tmplpath"
+                           name="template" value="$filelist_template" />
+                </div>
+                <div py:if="not filelist_template_valid" class="system-message warning">
+                    <p>The template path is not valid. A default template will be used instead:
+                        <strong>$filelist_template_default</strong></p>
+                </div>
+                <p class="help">The path must be readable by Trac. If no template is specified a default
+                    will be used.</p>
+                <div class="buttons">
+                    <input name="save_filelist" value="${_('Save')}" type="submit" />
+                </div>
+            </fieldset>
+        </form>
+
     </body>
 </html>

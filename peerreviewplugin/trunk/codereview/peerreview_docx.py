@@ -43,10 +43,13 @@ class PeerReviewDocx(Component):
     The document holds all the information from the review page and the file content of each file.
     File comments are printed inline.
 
-    It is possible to provide a default template document for new environments by providing the path
+    It is possible to provide default template documents for new environments by providing the path
     in ''trac.ini'':
-    [[TracIni(peerreview, review.docx)]]
-
+    {{{#!ini
+    [peerreview]
+    review.docx = path/to/report/template.docx
+    filelist.docx = path/to/filelist/template.docx
+    }}}
     The path must be readable by Trac. It will be used only on first start to populate the database and is
     meant to make automated deployment easier.
     You may use the admin page to change it later on.
@@ -54,7 +57,7 @@ class PeerReviewDocx(Component):
     When no path is found in the database when trying to export a report the standard ''templates'' directory of the
     environment is used.
 
-    == Template document format
+    == Template document format for reports
     Markers are used to signify the position where to add information to the document.
 
     The following is added to predefined tables:
@@ -118,7 +121,12 @@ class PeerReviewDocx(Component):
     implements(IAdminPanelProvider, IContentConverter, IRequestHandler,)
 
     PathOption('peerreview', 'review.docx', doc=u"Path to template document in ''docx'' format used for generating "
-                                                 u"review documents.")
+                                                u"review documents. '''Note:''' this setting is only used during "
+                                                u"first startup to make automated deployment easier.")
+    PathOption('peerreview', 'filelist.docx', doc=u"Path to template document in ''docx'' format used for generating "
+                                                  u" file list documents. '''Note:''' this setting is only used during "
+                                                  u"first startup to make automated deployment easier.")
+
     def __init__(self):
         if not docx_support:
             self.env.log.info("PeerReviewPlugin: python-docx is not installed. Review report creation as docx is not "
@@ -144,16 +152,34 @@ class PeerReviewDocx(Component):
                     rdm.insert()
                     self.env.log.info("PeerReviewPlugin: added '%s' with value '%s' to 'peerreviewdata' table",
                                       d, data)
+            defaults = ['filelist.template']
+            rdm = ReviewDataModel(self.env)
+            rdm.clear_props()
+            rdm['type'] = "filelist.%"
+            keys = [item['type'] for item in rdm.list_matching_objects(False)]
+            for d in defaults:
+                if d not in keys:
+                    if d == 'filelist.template':
+                        # Admins may set this value in trac.ini to specify a default which will be used on first
+                        # start.
+                        data = self.env.config.get('peerreview', 'filelist.docx', '')
+                    else:
+                        data = u""
+                    rdm = ReviewDataModel(self.env)
+                    rdm['type'] = d
+                    rdm['data'] = data
+                    rdm.insert()
+                    self.env.log.info("PeerReviewPlugin: added '%s' with value '%s' to 'peerreviewdata' table",
+                                      d, data)
 
-    def _get_report_template(self, data):
-        template = data['reviewreport.template']['data'] or ''
+    def _get_template_path(self, template, default_tmpl='review_report.docx'):
         if not os.path.exists(template):
             self.log.info(u"Report template '%s' does not exist.", template)
-            template = os.path.join(self.config.getpath('inherit', 'templates_dir', ''), 'review_report.docx')
+            template = os.path.join(self.config.getpath('inherit', 'templates_dir', ''), default_tmpl)
             template = os.path.abspath(template)
         if not os.path.exists(template):
             self.log.info('No inherited templates directory. Using default templates directory.')
-            template = os.path.join(self.env.templates_dir, 'review_report.docx')
+            template = os.path.join(self.env.templates_dir, default_tmpl)
             if not os.path.exists(template):
                 template = 'No template found'
         return template
@@ -162,16 +188,16 @@ class PeerReviewDocx(Component):
 
     def get_admin_panels(self, req):
         if docx_support and 'CODE_REVIEW_MGR' in req.perm:
-            yield ('codereview', 'Code review', 'reviewreport', 'Review Report')
+            yield ('codereview', 'Code review', 'reporttemplates', 'Report Templates')
 
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.require('CODE_REVIEW_MGR')
 
         report_data = self.get_report_defaults()
+        filelist_data = self.get_filelist_defaults()
 
         if req.method=='POST':
-            save = req.args.get('save', '')
-            if save:
+            if req.args.get('save', ''):
                 report_data['reviewreport.title']['data'] = req.args.get('title', u'')
                 report_data['reviewreport.title'].save_changes()
                 report_data['reviewreport.subject']['data'] = req.args.get('subject', u'')
@@ -179,13 +205,22 @@ class PeerReviewDocx(Component):
                 report_data['reviewreport.template']['data'] = req.args.get('template', u'')
                 report_data['reviewreport.template'].save_changes()
                 add_notice(req, _("Your changes have been saved."))
+            elif req.args.get('save_filelist', ''):
+                filelist_data['filelist.template']['data'] = req.args.get('template', u'')
+                filelist_data['filelist.template'].save_changes()
+                add_notice(req, _("Your changes have been saved."))
             req.redirect(req.href.admin(cat, page))
 
         data = {'title': report_data['reviewreport.title']['data'],
                 'subject': report_data['reviewreport.subject']['data'],
                 'template': report_data['reviewreport.template']['data'],
                 'template_valid': os.path.exists(report_data['reviewreport.template']['data']),
-                'template_default': self._get_report_template(report_data)}
+                'template_default': self._get_template_path(report_data['reviewreport.template']['data'] or ''),
+                'filelist_template': filelist_data['filelist.template']['data'],
+                'filelist_template_valid': os.path.exists(filelist_data['filelist.template']['data']),
+                'filelist_default': self._get_template_path(filelist_data['filelist.template']['data'] or '',
+                                                            'review_filelist.docx')
+                }
         return 'admin_review_report.html', data
 
     def get_report_defaults(self):
@@ -195,6 +230,18 @@ class PeerReviewDocx(Component):
         rdm = ReviewDataModel(self.env)
         rdm.clear_props()
         rdm['type'] = "reviewreport%"
+        d = {}
+        for item in rdm.list_matching_objects(False):
+            d[item['type']] = item
+        return d
+
+    def get_filelist_defaults(self):
+        """
+        @return: dict with default values. Key: one of [reviewreport.title, reviewreport.subject], value: unicode
+        """
+        rdm = ReviewDataModel(self.env)
+        rdm.clear_props()
+        rdm['type'] = "filelist%"
         d = {}
         for item in rdm.list_matching_objects(False):
             d[item['type']] = item
@@ -246,7 +293,7 @@ class PeerReviewDocx(Component):
         """
         if mimetype == 'text/x-trac-peerreview':
             report_data = self.get_report_defaults()
-            template = self._get_report_template(report_data)
+            template = self._get_template_path(report_data['reviewreport.template']['data'] or '')
 
             review = content['review']
             # Data for title and subject templates
