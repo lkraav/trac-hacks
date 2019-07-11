@@ -72,15 +72,8 @@ class PeerReviewBrowser(Component):
         Note that `template`, `data`, `content_type` will be `None` if:
          - called when processing an error page
          - the default request handler did not return any result
-
-        :Since 0.11: there's a `data` argument for supporting Genshi templates;
-           this introduced a difference in arity which made it possible to
-           distinguish between the IRequestFilter components still targeted
-           at ClearSilver templates and the newer ones targeted at Genshi
-           templates.
-
-        :Since 1.0: Clearsilver templates are no longer supported.
         """
+        # Note that data is already filled with information about the source file, repo and what not
         path = req.args.get('path')
         rev = req.args.get('rev')
 
@@ -96,7 +89,7 @@ class PeerReviewBrowser(Component):
             """, (path, rev))
             return cursor.fetchone()[0] != 0
 
-        # We only handle the browser
+        #  We only handle the browser
         if path and req.path_info.startswith('/browser/'):
             if rev:
                 is_head = 'HEAD'
@@ -111,8 +104,7 @@ class PeerReviewBrowser(Component):
                              'peer_status_url': req.href.peerreviewstatus(),
                              'peer_is_dir': data.get('dir', None) != None})
             add_script(req, "hw/js/peer_trac_browser.js")
-            #for k, v in data.iteritems():
-            #    self.log.info("%s: %s", k, v)
+
         if path and req.path_info.startswith('/browser_/'):  # Deactivate code comments in browser view for now
             if is_file_with_comments(self.env, '/' + data['path'], rev):
                 add_ctxtnav(req, _("Code Comments"), req.href(req.path_info, annotate='prcomment', rev=rev),
@@ -150,8 +142,10 @@ class PeerReviewBrowser(Component):
             return not_head_tmpl
 
         repo = req.args.get('peer_repo')
-        path = req.args.get('peer_path' '')
-        path = path[len(repo) +1:]  # path starts with slash and reponame
+        path = req.args.get('peer_path', '')
+
+        if repo:
+            path = path[len(repo) + 1:]  # path starts with slash and reponame
         rev = req.args.get('peer_rev')
 
         res = '<div id="peer-msg" class="system-message warning">%s</div>' % _('No review for this file revision yet.')
@@ -160,7 +154,7 @@ class PeerReviewBrowser(Component):
             for row in db("SELECT review_id, changerevision, hash, status FROM peerreviewfile "
                           "WHERE path = %s AND repo = %s AND review_id != 0 "
                           "ORDER BY review_id", (path, repo)):
-                # Colorize row with current file revision. Last review wins...
+                #  Colorize row with current file revision. Last review wins...
                 if row[1] == rev and row[3] == 'approved':
                     bg = ' style="background-color: #dfd"'
                     res = '<div id="peer-msg" class="system-message notice">' \
