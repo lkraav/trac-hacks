@@ -338,7 +338,7 @@ class HideRule(Component, Rule):
                               target=target, trigger=trigger, trigval=trigval)
 
         # special case when trigger value is not a select option
-        _, options = opts.get_value_and_options(req, trigger, key)
+        value, options = opts.get_value_and_options(req, trigger, key)
         value = spec['trigger_value']
         if options and value and value not in options and '|' not in value:
             # "Always hide/show target"
@@ -349,7 +349,7 @@ class HideRule(Component, Rule):
 
     def _is_always_hidden(self, req, key, opts, spec):
         trigger = spec['trigger']
-        _, options = opts.get_value_and_options(req, trigger, key)
+        value, options = opts.get_value_and_options(req, trigger, key)
         value = spec['trigger_value']
         if options and value and value not in options and '|' not in value:
             return spec['op'] == 'show'
