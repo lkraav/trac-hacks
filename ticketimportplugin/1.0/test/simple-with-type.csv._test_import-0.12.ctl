@@ -71,7 +71,7 @@
         (3, u'mycustomfield', u'customfield2'),
         (4, u'mycustomfield', u'customfield2')],
     [],
-    [   (u'priority', u'yourpriority', u'7'),
-        (u'ticket_type', u'newtype', u'4'),
-        (u'priority', u'mypriority', u'6')],
-    [(u'yourcomp', None, None), (u'mycomp', None, None)]]
+    [   (u'priority', u'mypriority', u'6'),
+        (u'priority', u'yourpriority', u'7'),
+        (u'ticket_type', u'newtype', u'4')],
+    [(u'mycomp', None, None), (u'yourcomp', None, None)]]

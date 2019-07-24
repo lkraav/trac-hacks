@@ -164,19 +164,22 @@ class ImporterBaseTestCase(unittest.TestCase):
             #sys.stdout = tempstdout
             #req.display(template, content_type or 'text/html')
             #open('/tmp/out.html', 'w').write(req.hdf.render(template, None))
-            def empty2none(iterable):  # see trac:#11018
-                def to_none(value):
+            def normalize_rows(iterable):  # see trac:#11018
+                def normalize(value):
                     if value == '':
                         value = None
+                    elif isinstance(value, int) and value > 0x7fffffff:
+                        value = long(value)
                     return value
-                return [tuple(to_none(value) for value in row) for row in iterable]
-            tickets = empty2none(db("SELECT * FROM ticket ORDER BY id"))
-            tickets_custom = empty2none(db("SELECT * FROM ticket_custom "
-                                           "ORDER BY ticket, name"))
-            tickets_change = empty2none(db("SELECT * FROM ticket_change"))
-            enums = list(set(db("SELECT * FROM enum")) - set(enums_before))
-            components = list(set(db("SELECT * FROM component")) -
-                              set(components_before))
+                return [tuple(normalize(value) for value in row)
+                        for row in iterable]
+            tickets = normalize_rows(db("SELECT * FROM ticket ORDER BY id"))
+            tickets_custom = normalize_rows(db("SELECT * FROM ticket_custom "
+                                               "ORDER BY ticket, name"))
+            tickets_change = normalize_rows(db("SELECT * FROM ticket_change"))
+            enums = sorted(set(db("SELECT * FROM enum")) - set(enums_before))
+            components = sorted(set(db("SELECT * FROM component")) -
+                                set(components_before))
             return self._pformat([tickets, tickets_custom, tickets_change, enums,
                                   components])
 
