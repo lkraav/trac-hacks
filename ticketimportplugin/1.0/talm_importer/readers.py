@@ -214,7 +214,8 @@ class XLSXReader(object):
                     if idx >= len(header):
                         break
                     values[header[idx]] = to_s(cell)
-                yield values
+                if values:
+                    yield values
 
         iter_row = iter(self.sheet.rows)
         try:
