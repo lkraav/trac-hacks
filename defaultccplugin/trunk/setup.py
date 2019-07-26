@@ -14,7 +14,7 @@
 from setuptools import setup
 
 setup(
-    name = 'DefaultCc',
+    name = 'TracDefaultCc',
     version = '0.5',
     packages = ['defaultcc'],
     include_package_data = True,
