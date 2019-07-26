@@ -79,7 +79,8 @@ class AutocompleteUsers(Component):
             def fixup_user_list(option_name):
                 for field in self.config.getlist(SECTION_NAME, option_name):
                     arg = 'field_' + field
-                    req.args[arg] = _fixup_cc_list(req.args[arg])
+                    if arg in req.args:
+                        req.args[arg] = _fixup_cc_list(req.args[arg])
 
             fixup_user_list(FIELDS_OPTION[0])
             fixup_user_list(FIELDS_OPTION[1])
