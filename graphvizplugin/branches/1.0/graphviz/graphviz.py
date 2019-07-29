@@ -189,7 +189,7 @@ class Graphviz(Component):
 
     # IHTMLPreviewRenderer methods
 
-    MIME_TYPES = ('application/graphviz')
+    MIME_TYPES = ('application/graphviz',)
 
     def get_quality_ratio(self, mimetype):
         if mimetype in self.MIME_TYPES:
