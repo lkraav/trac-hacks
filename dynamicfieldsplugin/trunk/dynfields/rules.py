@@ -32,6 +32,30 @@ else:
         domain_functions('dynfields', ('add_domain', '_', 'tag_'))
 
 
+if not hasattr(PermissionSystem, 'get_permission_groups'):
+
+    PermissionSystem.group_providers = ExtensionPoint(IPermissionGroupProvider)
+
+    def get_permission_groups(self, user):
+        groups = set([user])
+        for provider in self.group_providers:
+            for group in provider.get_permission_groups(user):
+                groups.add(group)
+
+        perms = PermissionSystem(self.env).get_all_permissions()
+        repeat = True
+        while repeat:
+            repeat = False
+            for subject, action in perms:
+                if subject in groups and not action.isupper() and \
+                        action not in groups:
+                    groups.add(action)
+                    repeat = True
+        return groups
+
+    PermissionSystem.get_permission_groups = get_permission_groups
+
+
 class IRule(Interface):
     """An extension point interface for adding rules.  Rule processing
     is split into two parts: (1) rule specification (python), (2) rule
@@ -292,8 +316,9 @@ class HideRule(Component, Rule):
         rule_re = re.compile(r"%s.(?P<op>(show|hide))_if_group" % target)
         match = rule_re.match(key)
         if match:
+            ps = PermissionSystem(self.env)
             groups1 = set(opts[key].split('|'))
-            groups2 = set(self._get_groups(req.authname))
+            groups2 = ps.get_permission_groups(req.authname)
             if match.groupdict()['op'] == 'hide':
                 return 'type' if groups1.intersection(groups2) else None
             else:
@@ -354,25 +379,6 @@ class HideRule(Component, Rule):
         if options and value and value not in options and '|' not in value:
             return spec['op'] == 'show'
         return False
-
-    def _get_groups(self, user):
-        # thanks to PrivateTicketsPlugin for code!
-        groups = set([user])
-        for provider in self.group_providers:
-            for group in provider.get_permission_groups(user):
-                groups.add(group)
-
-        perms = PermissionSystem(self.env).get_all_permissions()
-        repeat = True
-        while repeat:
-            repeat = False
-            for subject, action in perms:
-                if subject in groups and action.islower() \
-                   and action not in groups:
-                    groups.add(action)
-                    repeat = True
-
-        return groups
 
 
 class ValidateRule(Component, Rule):
