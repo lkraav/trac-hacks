@@ -177,8 +177,6 @@ def wiki_to_pdf(text, env, req, tmp_dir, default_charset):
 
 
 def html_to_pdf(env, tmp_dir, htmldoc_args, files, default_charset):
-    env.log.debug("WikiToPdf => Start function html_to_pdf")
-
     htmldoc_path = env.config.get('wikitopdf', 'htmldoc_path')
 
     os.environ['HTMLDOC_NOCGI'] = 'yes'
@@ -192,6 +190,7 @@ def html_to_pdf(env, tmp_dir, htmldoc_args, files, default_charset):
         args.extend((farg, '%s' % value)) if value else args.append(farg)
     args.extend(files)
     args.extend(('-f', pfilename))
+    env.log.debug("Invoking htmldoc process: %s", " ".join(args))
     try:
         p = subprocess.Popen(args, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -204,8 +203,6 @@ def html_to_pdf(env, tmp_dir, htmldoc_args, files, default_charset):
 
     with open(pfilename, 'rb') as infile:
         out = infile.read()
-
-    env.log.debug("WikiToPdf => Finish function html_to_pdf")
 
     return out
 
