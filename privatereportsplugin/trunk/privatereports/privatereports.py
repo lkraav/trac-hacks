@@ -36,7 +36,7 @@ if not hasattr(PermissionSystem, 'get_permission_groups'):
         while repeat:
             repeat = False
             for subject, action in perms:
-                if subject in groups and action.islower() and \
+                if subject in groups and not action.isupper() and \
                         action not in groups:
                     groups.add(action)
                     repeat = True
