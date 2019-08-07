@@ -32,9 +32,10 @@ class TestCreateFileHashId(unittest.TestCase):
             'path': "path",
             'revision': 123,
             'line_start': 1234,
-            'line_end': 5678
+            'line_end': 5678,
+            'repo': 'Repo'
         }
-        self. assertEqual('id2008204331', create_file_hash_id(f))
+        self. assertEqual('id1230698611', create_file_hash_id(f))
 
 class TestComponent(unittest.TestCase):
 
@@ -146,7 +147,9 @@ class TestCreateCodeReview(unittest.TestCase):
         cls.env.shutdown()
 
     def test_create_code_review(self):
-        review_id = self.plugin.createCodeReview(self.req)
+        """Test creation of a new review."""
+        # TODO: do the same for followup reviews
+        review_id = self.plugin.createCodeReview(self.req, 'create')
         self.assertEqual(1, review_id)
         review = PeerReviewModel(self.env, review_id)
         self.assertTrue(isinstance(review, PeerReviewModel))
