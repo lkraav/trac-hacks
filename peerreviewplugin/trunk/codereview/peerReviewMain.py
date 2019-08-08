@@ -255,7 +255,7 @@ class PeerReviewMain(Component):
         if resource.realm == 'peerreviewfile':
             return href('peerReviewPerform', IDFile=resource.id)
         elif resource.realm == 'peerreview':
-            return href('peerReviewView', Review=resource.id)
+            return href.peerreviewview(resource.id)
 
         return href('peerReviewMain')
 

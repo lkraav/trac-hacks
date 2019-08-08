@@ -60,7 +60,7 @@
 
             <h2>Files associated with this code review</h2>
             <p py:if="parent_review">The files will be compared with those from review
-                <a href="peerReviewView?Review=${parent_review['review_id']}">#${parent_review['review_id']}</a>.
+                <a href="${href.peerreviewview(parent_review['review_id'])}">${review['name']} (#${parent_review['review_id']})</a>.
             </p>
             <table class="listing" id="filelist">
                 <thead>

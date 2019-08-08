@@ -9,7 +9,7 @@
             <tbody>
             <tr>
                 <th>Name:</th>
-                <td><a href="peerReviewView?Review=${review['review_id']}">${review['name']}</a></td>
+                <td><a href="${req.href.peerreviewview(review['review_id'])}">${review['name']}</a></td>
             </tr>
             <tr>
                 <th>Status:</th>

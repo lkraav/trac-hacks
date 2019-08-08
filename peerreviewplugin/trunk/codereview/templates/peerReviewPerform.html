@@ -77,7 +77,7 @@
                 <dd>${review_file['path']}</dd>
                 <dt>Repository:</dt>
                 <dd>${review_file['repo'] if review_file['repo'] else '(default)'}</dd>
-                <dt>Revision:</dt>
+                <dt>Repo Revision:</dt>
                 <dd>${review_file['revision']}</dd>
                 <dt>File Revision:</dt>
                 <dd>${review_file['changerevision']}</dd>
@@ -118,7 +118,7 @@
                 </dl>
             </py:if>
 
-            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file['review_id']}"> Code Review Details</a> page.</p>
+            <p>Back to the <a href="${href.peerreviewview(review_file['review_id'])}"> Code Review Details</a> page.</p>
 
 
                 <label><input type="checkbox" id="inline-comments" />Show comments inline.</label>
@@ -153,15 +153,15 @@
             <!--! This is taken from preview_file.html with addition of system message div -->
             <py:choose>
                 <p py:when="preview.size == 0">
-                    <strong>(The file is empty)</strong>
+                        <strong>(The file is empty)</strong>
                 </p>
                 <p py:when="not preview.rendered">
                     <py:choose>
                         <py:when test="preview.max_file_size_reached">
                             <div class="warning system-message">
-                                <i18n:msg params="size">
-                                    <strong>HTML preview not available</strong>, since the file size exceeds $preview.max_file_size bytes.
-                                </i18n:msg>
+                            <i18n:msg params="size">
+                            <strong>HTML preview not available</strong>, since the file size exceeds $preview.max_file_size bytes.
+                            </i18n:msg>
                             </div>
                         </py:when>
                         <py:otherwise><div class="warning system-message"><i18n:msg>
@@ -173,7 +173,7 @@
             <!--! End of taken from preview_file.html -->
             </py:if>
 
-            <p>Back to the <a href="${href.peerReviewView()}?Review=${review_file['review_id']}"> Code Review Details</a> page.</p>
+            <p>Back to the <a href="${href.peerreviewview(review_file['review_id'])}"> Code Review Details</a> page.</p>
 
             <div id="add-comment-dlg">
                 <form action="peerReviewCommentCallback" method="POST" id="add-comment-form">

@@ -100,12 +100,12 @@
                     <tbody py:with="cls=cycle(('odd', 'even'))" id = "myfilebody">
                         <py:for each="item in results">
                             <tr py:if="item[2] != ''" class="${cls.next()}">
-                                <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[0]}</a></td>
-                                <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[1]}</a></td>
-                                <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[2]}</a></td>
-                                <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[4]}</a></td>
-                                <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[3]}</a></td>
-                                <td><a href="${href.peerReviewView()}?Review=${item[0]}">${item[5]}</a></td>
+                                <td><a href="${href.peerreviewview(item[0])}">${item[0]}</a></td>
+                                <td><a href="${href.peerreviewview(item[0])}">${item[1]}</a></td>
+                                <td><a href="${href.peerreviewview(item[0])}">${item[2]}</a></td>
+                                <td><a href="${href.peerreviewview(item[0])}">${item[4]}</a></td>
+                                <td><a href="${href.peerreviewview(item[0])}">${item[3]}</a></td>
+                                <td><a href="${href.peerreviewview(item[0])}">${item[5]}</a></td>
                             </tr>
                                 <tr py:if="item[2] == ''">
                                 <td>${item[0]}</td>

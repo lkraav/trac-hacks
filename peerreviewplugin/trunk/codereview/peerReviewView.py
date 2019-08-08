@@ -12,6 +12,7 @@
 # Works with peerReviewView.html
 
 import itertools
+import re
 from string import Template
 from trac.config import BoolOption, ListOption
 from trac.core import Component, implements, TracError
@@ -61,6 +62,8 @@ class PeerReviewView(Component):
                                  "for filling the '''New Ticket''' page with data. "
                                  "The review must have status ''reviewed''. Only the "
                                  "author or a manager have the necessary permisisons.")
+
+    peerreview_view_re = re.compile(r'/peerreviewview/([0-9]+)$')
 
     # IWorkflowOperationProvider methods
 
@@ -155,7 +158,15 @@ class PeerReviewView(Component):
 
     # IRequestHandler methods
     def match_request(self, req):
-        return req.path_info == '/peerReviewView'
+        match = self.peerreview_view_re.match(req.path_info)
+        if match:
+            req.args['Review'] = match.group(1)
+            return True
+        # Deprecated legacy URL.
+        if req.path_info == '/peerReviewView':
+            self.env.log.info("Legacy URL 'peerReviewView' called from: %s", req.get_header('Referer'))
+            return True
+
 
     def process_request(self, req):
         def get_review_by_id(review_id):
@@ -168,6 +179,7 @@ class PeerReviewView(Component):
             else:
                 review.finish_date = ''
             return review
+
         def get_files_for_review_id(review_id, comments=False):
             """Get all files belonging to the given review id. Provide the number of comments if asked for."""
             rfm = ReviewFileModel(self.env)
@@ -315,7 +327,7 @@ ${review_notes}
 
         data['ticket_desc_wiki'] = self.create_preview(req, txt)
         data['ticket_desc'] = txt
-        data['ticket_summary'] = u'Problems with Review "%s"'% review['name']
+        data['ticket_summary'] = u'Problems with Review "%s"' % review['name']
 
     def create_preview(self, req, text):
         resource = Resource('peerreview')
