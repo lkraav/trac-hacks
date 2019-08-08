@@ -187,5 +187,7 @@ class GenericClassSystem(Component):
                 if 'searchable' in metadata and metadata['searchable']:
                     obj = gclass_modelprovider.get_object(realm)
                     if obj is not None:
-                        for result in obj.get_search_results(req, terms, filters):
-                            yield result
+                        results = obj.get_search_results(req, terms, filters)
+                        if results:
+                            for result in results:
+                                yield result

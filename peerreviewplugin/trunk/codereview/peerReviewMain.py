@@ -72,10 +72,12 @@ except ImportError:
     web_context = web_context_compat
 
 def add_ctxt_nav_items(req):
-    add_ctxtnav(req, _("My Code Reviews"), "peerReviewMain", title=_("My Code Reviews"))
-    add_ctxtnav(req, _("Create a Code Review"), "peerReviewNew", title=_("Create a Code review"))
-    add_ctxtnav(req, _("Report"), "peerreviewreport", title=_("Show Codereview Reports"))
-    add_ctxtnav(req, _("Search Code Reviews"), "peerReviewSearch", _("Search Code Reviews"))
+    add_ctxtnav(req, _("My Code Reviews"), req.href.peerReviewMain(), title=_("My Code Reviews"))
+    add_ctxtnav(req, _("Create a Code Review"), req.href.peerReviewNew(), title=_("Create a Code review"))
+    add_ctxtnav(req, _("Report"), req.href.peerreviewreport(), title=_("Show Codereview Reports"))
+    add_ctxtnav(req, _("Code Review List"), req.href.peerReviewSearch(), _("Code Review List"))
+    add_ctxtnav(req, _("Search Code Reviews"), req.href.search(q='new', peerreview='on'),
+                _("Search Code Reviews"))
 
 
 class PeerReviewMain(Component):

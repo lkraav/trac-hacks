@@ -17,9 +17,9 @@ from trac.core import Component, implements, TracError
 from trac.db import Table, Column, Index,  DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import ResourceNotFound
-from trac.util.datefmt import to_utimestamp, utc
+from trac.search.api import shorten_result
+from trac.util.datefmt import from_utimestamp, to_utimestamp, utc
 from trac.util.translation import N_, _
-from trac.util import format_date
 from tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, \
     need_db_create_for_realm, create_db_for_realm, need_db_upgrade_for_realm, upgrade_db_for_realm
 from tracgenericclass.util import get_timestamp_db_type
@@ -31,6 +31,7 @@ db_name = 'peerreview_version'
 db_version = 2  # Don't change this one!
 
 datetime_now = datetime.now
+
 
 class PeerReviewModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
@@ -107,6 +108,57 @@ class PeerReviewModel(AbstractVariableFieldsObject):
             review = cls(env, row[0])
             reviews.append(review)
         return reviews
+
+    @classmethod
+    def select_all_reviews(cls, env):
+        with env.db_query as db:
+            for row in db("SELECT review_id FROM peerreview WHERE status IS NOT 'closed'"):
+                yield cls(env, row[0])
+
+    def get_search_results(self, req, terms, filters):
+        results = {}
+        set_lst = []
+        review = PeerReviewModel(self.env)
+        if "peerreview:all" in terms:
+            # list all codereviews if no search term is given. This is the behaviour of the old
+            # codereview search page.
+            self.env.log.info("SEARCH terms: %s 2", terms)
+
+            for rev in PeerReviewModel(self.env).select_all_reviews(self.env):
+                title = u"Review #%s - %s: %s" % (rev['review_id'], rev['status'], rev['name'])
+                yield (req.href.peerreviewview(rev['review_id']),
+                       title,
+                       from_utimestamp(rev['created']),
+                       rev['owner'],
+                       shorten_result(rev['notes']))
+            return
+
+        for term in terms:
+            seen_reviews = []
+            for field in ('name', 'notes', 'owner', 'status'):
+                review.clear_props()
+                review[field] = "%" + term + "%"
+                res = review.list_matching_objects(exact_match=False)
+                for rev in res:
+                    seen_reviews.append(rev['review_id'])
+                    if rev['review_id'] not in results:
+                        results[rev['review_id']] = rev
+            set_lst.append(set(seen_reviews))
+
+        if results:
+            # Calculate common review_ids over all sets
+            res_set = set_lst[0]
+            for item in set_lst[1:]:
+                res_set &= item
+
+            for rev_id in res_set:
+                rev = results[rev_id]
+                title = u"Review #%s - %s: %s" % (rev['review_id'], rev['status'], rev['name'])
+                yield (req.href.peerreviewview(rev['review_id']),
+                       title,
+                       from_utimestamp(rev['created']),
+                       rev['owner'],
+                       shorten_result(rev['notes']))
 
 
 class PeerReviewerModel(AbstractVariableFieldsObject):
@@ -519,8 +571,8 @@ class PeerReviewModelProvider(Component):
                 },
     }
 
-
     # IConcreteClassProvider methods
+
     def get_realms(self):
         yield 'peerreview'
         yield 'peerreviewer'
@@ -618,11 +670,11 @@ class PeerReviewModelProvider(Component):
                    ['reviewing', 'new -> in-review'],
                    ['reviewing.default', '5'],
                    ['reviewing.name', 'Start review'],
-                   ['change_owner','* -> *'],
-                   ['change_owner.name','Change Owner to'],
-                   ['change_owner.operations','set_review_owner'],
-                   ['change_owner.permissions','CODE_REVIEW_MGR'],
-                   ['change_owner.default','-1'],
+                   ['change_owner', '* -> *'],
+                   ['change_owner.name', 'Change Owner to'],
+                   ['change_owner.operations', 'set_review_owner'],
+                   ['change_owner.permissions', 'CODE_REVIEW_MGR'],
+                   ['change_owner.default', '-1'],
                    ]
         wf_section = 'peerreview-resource_workflow'
 
@@ -654,6 +706,7 @@ class PeerReviewModelProvider(Component):
         value = cursor.fetchone()
         val = int(value[0]) if value else 0
         return val
+
 
 def get_users(env):
     db = env.get_read_db()
