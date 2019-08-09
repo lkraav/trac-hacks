@@ -10,15 +10,14 @@
 
 import datetime
 import itertools
-import time
 
+from codereview.model import PeerReviewModel
 from trac.core import *
 from trac.util import format_date
+from trac.util.datefmt import to_datetime, to_utimestamp, utc
 from trac.web.chrome import INavigationContributor, add_stylesheet, add_script, add_script_data
 from trac.web.main import IRequestHandler
 
-from dbBackend import *
-from CodeReviewStruct import *
 from peerReviewMain import add_ctxt_nav_items
 from model import get_users
 
@@ -27,10 +26,12 @@ class PeerReviewSearch(Component):
     implements(IRequestHandler, INavigationContributor)
 
     # IRequestHandler methods
+
     def match_request(self, req):
         return req.path_info == '/peerReviewSearch'
 
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         return 'peerReviewMain'
 
@@ -41,29 +42,21 @@ class PeerReviewSearch(Component):
         req.perm.require('CODE_REVIEW_DEV')
         data = {}
 
-        #if the doSearch parameter is 'yes', perform the search
-        #this parameter is set when someone searches
-        if req.args.get('doSearch') == 'yes':
+        # if the doSearch parameter is 'yes', perform the search
+        # this parameter is set when someone searches
+        if req.args.get('doSearch') == 'yes' or True:  # always start with the full list for now
             results = self.performSearch(req, data)
-            #if there are no results - fill the return array
-            #with blank data.
             if len(results) == 0:
-                noValResult = []
-                noValResult.append("No results match query.")
-                noValResult.append("")
-                noValResult.append("")
-                noValResult.append("")
-                noValResult.append("")
-                noValResult.append("")
+                noValResult = ["No results match query.", "", "", "", "", ""]
                 results.append(noValResult)
             data['results'] = results
             data['doSearch'] = 'yes'
 
         users = get_users(self.env)
-        #sets the possible users for the user combo-box
+        # sets the possible users for the user combo-box
         data['users'] = users
-        #creates a year array containing the last 10
-        #years - for the year combo-box
+        # creates a year array containing the last 10
+        # years - for the year combo-box
         now = datetime.datetime.now()
         year = now.year
         years = []
@@ -77,7 +70,7 @@ class PeerReviewSearch(Component):
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_script(req, 'hw/js/peerReviewSearch.js')
-        if req.args.get('doSearch_'):
+        if req.args.get('doSearch'):
             add_script_data(req, {'dateIndexSelected': '01',
                                   'monthSelected': data['searchValues_month'],
                                   'daySelected': data['searchValues_day'],
@@ -96,20 +89,18 @@ class PeerReviewSearch(Component):
         add_ctxt_nav_items(req)
         return 'peerReviewSearch.html', data, None
 
-    #Performs the search
+    # Performs the search
+
     def performSearch(self, req, data):
-        #create a code review struct to hold the search parameters
-        crStruct = CodeReviewStruct(None)
-        #get the search parameters from POST
-        author = req.args.get('Author')
-        name = req.args.get('CodeReviewName')
-        status = req.args.get('Status')
+        # get the search parameters from POST
+        author = req.args.get('Author', '')
+        name = req.args.get('CodeReviewName', '')
+        status = req.args.get('Status', '')
         month = req.args.get('DateMonth', '0')
         day = req.args.get('DateDay', '0')
         year = req.args.get('DateYear', '0')
 
-        #store date values for ClearSilver - used to reset values to
-        #search parameters after a search is performed
+        # store date values for JavaScript
         data['searchValues_month'] = month
         data['searchValues_day'] = day
         data['searchValues_year'] = year
@@ -117,54 +108,38 @@ class PeerReviewSearch(Component):
         data['searchValues_author'] = author
         data['searchValues_name'] = name
 
-        #dates are ints in TRAC - convert search date to int
-        fromdate = "-1"
-
+        # dates are utimes for reviews
+        fromdate = None
+        date = None
         if (month != '0') and (day != '0') and (year != '0'):
-            t = time.strptime(month + '/' + day + '/' + year[2] + year[3], '%m/%d/%y')
-            #I have no idea what this is doing - obtained from TRAC source
-            fromdate = time.mktime((t[0], t[1], t[2], 23, 59, 59, t[6], t[7], t[8]))
-            #convert to string for database lookup
-            fromdate = `fromdate`
+            # implicitely converts to suitable timezone
+            date = to_datetime(datetime.datetime(int(year), int(month), int(day)))
+            fromdate = to_utimestamp(date)
 
         selectString = 'Select...'
-        data['dateSelected'] = fromdate
-        #if user has not selected parameter - leave
-        #value in struct NULL
-        if author != selectString:
-            crStruct.Author = author
 
-        if name != selectString:
-            crStruct.Name = name
-
-        if status != selectString:
-            crStruct.Status = status
-
-        crStruct.DateCreate = fromdate
-        #get the database
-        db = self.env.get_read_db()
-        dbBack = dbBackend(db)
-
-        #perform search
-        results = dbBack.searchCodeReviews(crStruct)
         returnArray = []
-        tempArray = []
 
-        if results is None:
-            return []
-        #fill array with
-        #search results
-        for struct in results:
-            tempArray.append(struct.IDReview)
-            tempArray.append(struct.Author)
-            tempArray.append(struct.Status)
-            tempArray.append(format_date(struct.DateCreate))
-            tempArray.append(struct.Name)
-            if struct.date_closed:
-                tempArray.append(format_date(struct.date_closed))
+        rev_model = PeerReviewModel(self.env)
+        rev_model.clear_props()
+        if status and status != selectString:
+            rev_model['status'] = status
+        if name:
+            rev_model['name'] = "%" + name + "%"
+        if author and author != selectString:
+            rev_model['owner'] = author
+
+        for rev in rev_model.list_matching_objects(exact_match=False):
+            tempArray = [rev['review_id'], rev['owner'], rev['status'],
+                         format_date(rev['created']), rev['name']]
+            if rev['closed']:
+                tempArray.append(format_date(rev['closed']))
             else:
                 tempArray.append('')
-            returnArray.append(tempArray)
-            tempArray = []
+            if date:
+                if rev['created'] > fromdate:
+                    returnArray.append(tempArray)
+            else:
+                returnArray.append(tempArray)
 
         return returnArray

@@ -21,7 +21,6 @@ from trac.web.chrome import INavigationContributor, add_script, add_script_data,
     add_warning, add_notice, add_stylesheet, Chrome
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.api import RepositoryManager
-from CodeReviewStruct import *
 from model import Comment, get_users, \
     PeerReviewerModel, PeerReviewModel, Reviewer, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
