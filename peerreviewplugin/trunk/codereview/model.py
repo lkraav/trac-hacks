@@ -64,6 +64,13 @@ class PeerReviewModel(AbstractVariableFieldsObject):
                 self.values[key] = None
 
     def create_instance(self, key):
+        """Create an instance which is identified by the values in dict 'key'
+
+        @param key: dict with key: identifier 'review_id', val: actual value from the database.
+
+        Note: while it's technically possible to have several identifiers uniquely describing an
+        object here, this class only use a single one.
+        """
         return PeerReviewModel(self.env, key['review_id'], 'peerreview')
 
     def change_status(self, new_status, author=None):
@@ -112,7 +119,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
     @classmethod
     def select_all_reviews(cls, env):
         with env.db_query as db:
-            for row in db("SELECT review_id FROM peerreview WHERE status IS NOT 'closed'"):
+            for row in db("SELECT review_id FROM peerreview"):
                 yield cls(env, row[0])
 
     def get_search_results(self, req, terms, filters):
@@ -124,7 +131,7 @@ class PeerReviewModel(AbstractVariableFieldsObject):
             # codereview search page.
             self.env.log.info("SEARCH terms: %s 2", terms)
 
-            for rev in PeerReviewModel(self.env).select_all_reviews(self.env):
+            for rev in PeerReviewModel.select_all_reviews(self.env):
                 title = u"Review #%s - %s: %s" % (rev['review_id'], rev['status'], rev['name'])
                 yield (req.href.peerreviewview(rev['review_id']),
                        title,
