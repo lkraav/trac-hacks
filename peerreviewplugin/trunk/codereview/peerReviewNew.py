@@ -22,7 +22,7 @@ from trac.web.chrome import INavigationContributor, add_script, add_script_data,
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.api import RepositoryManager
 from model import Comment, get_users, \
-    PeerReviewerModel, PeerReviewModel, Reviewer, ReviewFileModel
+    PeerReviewerModel, PeerReviewModel, ReviewFileModel
 from peerReviewMain import add_ctxt_nav_items
 from repobrowser import get_node_from_repo
 from .repo import hash_from_file_node
@@ -322,17 +322,17 @@ class NewReviewModule(Component):
         rem_users = list(set(data['assigned_users']) - set(user))
         for name in rem_users:
             if name != "":
-                reviewer = Reviewer(self.env, review['review_id'], name)
                 if file_is_commented(name):
                     add_warning(req, "User '%s' already commented a file. Not removed from review '#%s'",
                                 name, review['review_id'])
-                    continue
-                reviewer.delete()
+                else:
+                    PeerReviewerModel.delete_by_review_id_and_name(self.env, review['review_id'], name)
 
         # Handle file removal
         new_files = req.args.get('file')
         if not type(new_files) is list:
             new_files = [new_files]
+        print('########### %s' % new_files)
         old_files = []
         rfiles = {}
         for f in ReviewFileModel.select_by_review(self.env, review['review_id']):

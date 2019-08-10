@@ -223,6 +223,24 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
         rm['review_id'] = review_id
         return rm.list_matching_objects()
 
+    @classmethod
+    def delete_by_review_id_and_name(cls, env, review_id, name):
+        """Delete the reviewer 'name' from the review eith id 'review_id'.
+
+
+        @param env: Trac Environment object
+        @param review_id: id of the review as an int
+        @param name: name of the reviewer.
+        @return: None
+        """
+        reviewer = cls(env)
+        reviewer['review_id'] = 1
+        reviewer['reviewer'] = name
+        res = list(reviewer.list_matching_objects())
+        if len(res) > 1:
+            raise ValueError("Found two reviewers with name '%s' for review '%s'." % (name, review_id))
+        res[0].delete()
+
 
 class ReviewFileModel(AbstractVariableFieldsObject):
     # Fields that have no default, and must not be modified directly by the user
@@ -772,64 +790,6 @@ def get_users(env):
         groups.append('authenticated')
         users = list(set(users)-set(groups))
     return sorted(users)
-
-
-class Reviewer(object):
-    """Model for a reviewer working on a code review."""
-    def __init__(self, env, review_id=None, name=None):
-        self.env = env
-
-        if name and review_id:
-            db = self.env.get_read_db()
-            cursor = db.cursor()
-            cursor.execute("""
-                SELECT reviewer_id, review_id, reviewer, status, vote FROM peerreviewer WHERE reviewer=%s
-                AND review_id=%s
-                """, (name, review_id))
-            row = cursor.fetchone()
-            if not row:
-                raise ResourceNotFound(_("Reviewer '%(name)s' does not exist for review '#%(review)s'.",
-                                         name=name, review=review_id), _('Peer Review Error'))
-            self._init_from_row(row)
-        else:
-            self._init_from_row((None,)*5)
-
-    def _init_from_row(self, row):
-        id_, rev_id, reviewer, status, vote = row
-        self.id = id_
-        self.review_id = rev_id
-        self.reviewer = reviewer
-        self.status = status
-        self.vote = vote
-
-    def insert(self):
-        if not self.review_id:
-            raise ValueError("No review id given during creation of Reviewer entry.")
-        @self.env.with_transaction()
-        def do_insert(db):
-            cursor = db.cursor()
-            self.env.log.debug("Creating new reviewer entry for '%s'" % self.review_id)
-            cursor.execute("""INSERT INTO peerreviewer (review_id, reviewer, status, vote)
-                              VALUES (%s, %s, %s, %s)
-                           """, (self.review_id, self.reviewer, self.status, self.vote))
-
-    def update(self):
-        @self.env.with_transaction()
-        def do_update(db):
-            cursor = db.cursor()
-            self.env.log.debug("Updating reviewer %s for review '%s'" % (self.reviewer, self.review_id))
-            cursor.execute("""UPDATE peerreviewer
-                        SET review_id=%s, reviewer=%s, status=%s, vote=%s
-                        WHERE reviewer=%s AND review_id=%s
-                        """, (self.review_id, self.reviewer, self.status, self.vote, self.reviewer, self.review_id))
-
-    def delete(self):
-        @self.env.with_transaction()
-        def do_update(db):
-            cursor = db.cursor()
-            cursor.execute("""DELETE FROM peerreviewer
-                        WHERE review_id=%s AND reviewer=%s
-                        """, (self.review_id, self.reviewer))
 
 
 # Obsolete use ReviewCommentModel instead
