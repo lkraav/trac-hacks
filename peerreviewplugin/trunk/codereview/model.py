@@ -74,7 +74,19 @@ class PeerReviewModel(AbstractVariableFieldsObject):
         return PeerReviewModel(self.env, key['review_id'], 'peerreview')
 
     def change_status(self, new_status, author=None):
-        """Called from the change object listener to change state of review and connected files."""
+        """Called from the change object listener to change state of review and connected files.
+
+        Note that files are only set to closed when the new status is one of
+
+        [peerreview]
+        terminal_review_states = ...
+
+        as set in trac.ini. For any other status the file status is set to 'new'.
+
+        @param new_status: new status for this review
+        @param author: user causing this change
+        @return:
+        """
         finish_states = self.env.config.getlist("peerreview", "terminal_review_states")
         if new_status in finish_states:
             self['closed'] = to_utimestamp(datetime_now(utc))
@@ -104,16 +116,20 @@ class PeerReviewModel(AbstractVariableFieldsObject):
 
     @classmethod
     def reviews_by_period(cls, env, start_timestamp, end_timestamp):
-        """Used for getting timeline reviews."""
+        """Used for getting timeline reviews.
 
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT review_id FROM peerreview WHERE created >= %s AND created <= %s ORDER BY created",
-                       (start_timestamp, end_timestamp))
+        Times are compared using '>=' and '<='.
+
+        @param env: Trac Environment object
+        @param start_timestamp: start time as a utimestamp
+        @param end_timestamp: end time as a utimestamp
+        @return: list of PeerReviewModels matching the times ordered by field 'created'
+        """
         reviews = []
-        for row in cursor:
-            review = cls(env, row[0])
-            reviews.append(review)
+        with env.db_query as db:
+            for row in db("SELECT review_id FROM peerreview WHERE created >= %s AND created <= %s ORDER BY created",
+                          (start_timestamp, end_timestamp)):
+                reviews.append(cls(env, row[0]))
         return reviews
 
     @classmethod
@@ -267,7 +283,7 @@ class ReviewFileModel(AbstractVariableFieldsObject):
         """Get all file objects for a given review_id.
         @param env: Trac Environment object
         @param review_id: id of a review as int
-        @return Returns a generator.
+        @return: Returns a generator.
 
         Note that review_id 0 is allowed here to query files belonging to
         project file lists.
