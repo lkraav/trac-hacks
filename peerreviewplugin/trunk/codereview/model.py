@@ -210,8 +210,14 @@ class PeerReviewerModel(AbstractVariableFieldsObject):
     def create_instance(self, key):
         return PeerReviewerModel(self.env, key['reviewer_id'], 'peerreviewer')
 
-    @classmethod
-    def select_by_review_id(cls, env, review_id):
+    @staticmethod
+    def select_by_review_id(env, review_id):
+        """Get all reviewers associated with the review with the given id
+
+        @param env: Trac Environment object
+        @param review_id: review id as int
+        @return: a generator returning PeerReviewerModels
+        """
         rm = PeerReviewerModel(env)
         rm.clear_props()
         rm['review_id'] = review_id
