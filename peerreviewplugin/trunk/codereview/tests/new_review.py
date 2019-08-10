@@ -242,7 +242,6 @@ class TestNewReviewModule(unittest.TestCase):
         for f in before_files[1:]:
             new_files.append(u"%s,%s,%s,%s,%s" % (f['path'], f['revision'], f['line_start'], f['line_end'], f['repo']))
         self.req.args['file'] = new_files
-        print(self.req.args)
         self.assertEqual(1, len(self.req.args['file']))
         # Test starts here
         self.plugin.save_changes(self.req)
@@ -372,7 +371,7 @@ class TestCreateCodeReview(unittest.TestCase):
             self.assertEqual(u'new', rev['status'])
 
 
-def new_review_suite():
+def test_suite():
     suite = unittest.TestSuite()
 
     suite.addTest(unittest.makeSuite(TestCreateFileHashId))

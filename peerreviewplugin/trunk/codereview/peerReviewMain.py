@@ -282,20 +282,22 @@ class PeerReviewMain(Component):
 
 
     def resource_exists(self, resource):
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        if resource.realm == 'peerreview':
-            cursor.execute("SELECT * FROM peerreview WHERE review_id = %s", (resource.id,))
-            if cursor.fetchone():
-                return True
-            else:
-                return False
-        elif resource.realm == 'peerreviewfile':
-            cursor.execute("SELECT * FROM peerreviewfile WHERE file_id = %s", (resource.id,))
-            if cursor.fetchone():
-                return True
-            else:
-                return False
+
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            if resource.realm == 'peerreview':
+                cursor.execute("SELECT * FROM peerreview WHERE review_id = %s", (resource.id,))
+                if cursor.fetchone():
+                    return True
+                else:
+                    return False
+            elif resource.realm == 'peerreviewfile':
+                # Only files associated with a review are real peerreviewfiles
+                cursor.execute("SELECT * FROM peerreviewfile WHERE file_id = %s AND review_id != 0", (resource.id,))
+                if cursor.fetchone():
+                    return True
+                else:
+                    return False
 
         raise ResourceNotFound('Resource %s not found.' % resource.realm)
 

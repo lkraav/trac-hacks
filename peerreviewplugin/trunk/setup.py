@@ -41,5 +41,5 @@ setup(
             'tracgenericclass = codereview.tracgenericclass'
         ],
     },
-    test_suite = 'codereview.test.suite',
+    test_suite = 'codereview.tests.test_suite',
 )

@@ -94,3 +94,8 @@ class TestPeerReviewerModel(unittest.TestCase):
         self.assertEqual(3, len(reviewers))
         for rev in reviewers:
             self.assertIn(rev['reviewer'], ('user1', 'user2', 'user3'))
+
+def test_suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestPeerReviewerModel))
+    return suite

@@ -332,7 +332,6 @@ class NewReviewModule(Component):
         new_files = req.args.get('file')
         if not type(new_files) is list:
             new_files = [new_files]
-        print('########### %s' % new_files)
         old_files = []
         rfiles = {}
         for f in ReviewFileModel.select_by_review(self.env, review['review_id']):
