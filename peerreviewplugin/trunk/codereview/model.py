@@ -231,37 +231,47 @@ class ReviewFileModel(AbstractVariableFieldsObject):
         return ReviewFileModel(self.env, key['file_id'], 'peerreviewfile')
 
     @classmethod
-    def file_dict_by_review(cls, env, include_closed=False):
-        """Return a dict with review_id as key and a file list as value.
+    def file_dict_by_review(cls, env):
+        """Return a dict with review_id as key (int) and a file list as value.
 
-        :param include_closed: if True return closed files too.
+        @return dict: key: review id as int, val: list of ReviewFileModels
+
+        Note that files with review_id == 0 are omitted here. These are files
+        which are members of file lists belonging to projects.
         """
-
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT file_id, review_id FROM peerreviewfile ORDER BY review_id")
         files_dict = defaultdict(list)
-        for row in cursor:
-            file_ = cls(env, row[0])
-            files_dict[row[1]].append(file_)
+        with env.db_query as db:
+            for row in db("SELECT file_id, review_id FROM peerreviewfile WHERE review_id != 0 ORDER BY review_id"):
+                file_ = cls(env, row[0])
+                files_dict[row[1]].append(file_)
         return files_dict
 
-    @classmethod
-    def delete_files_by_project_name(cls, env, proj_name):
+    @staticmethod
+    def delete_files_by_project_name(env, proj_name):
         """Delete all file information belonging to project proj_name.
 
         @param env: Trac environment object
-        @param proj_name: name of project. USed to filter by 'project' column
+        @param proj_name: name of project. Used to filter by 'project' column
         @return: None
-        """
-        @env.with_transaction()
-        def do_delete(db):
-            cursor = db.cursor()
-            cursor.execute("DELETE FROM peerreviewfile WHERE project=%s", (proj_name,))
 
-    @classmethod
-    def select_by_review(cls, env, review_id):
-        """Returns a generator."""
+        It's possible to have a list of all files belonging to a project. Using this
+        list one may check which files are not yet reviewed.
+        These files are those in the table which have data in the 'project' column.
+        The review_id is set to 0.
+        """
+        with env.db_transaction as db:
+            db("DELETE FROM peerreviewfile WHERE project=%s", (proj_name,))
+
+    @staticmethod
+    def select_by_review(env, review_id):
+        """Get all file objects for a given review_id.
+        @param env: Trac Environment object
+        @param review_id: id of a review as int
+        @return Returns a generator.
+
+        Note that review_id 0 is allowed here to query files belonging to
+        project file lists.
+        """
         rf = ReviewFileModel(env)
         rf.clear_props()
         rf['review_id'] = review_id
@@ -360,7 +370,11 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
 
     @classmethod
     def comments_by_file_id(cls, env):
-        """Return a dict with file_id as key and a comment id list as value."""
+        """Return a dict with file_id as key and a comment id list as value.
+
+        @param env: Trac Environment object
+        @return dict with key: file id as int, val: list of comment ids for that file as int
+        """
 
         db = env.get_read_db()
         cursor = db.cursor()
