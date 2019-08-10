@@ -168,12 +168,6 @@ hiderule.apply = function (input, spec) {
   // hide field in the header if cleared or always hidden
   var clear_on_hide = spec.clear_on_hide.toLowerCase() == 'true';
   var hide_always = spec.hide_always.toLowerCase() == 'true'
-  if (clear_on_hide || hide_always) {
-    th = jQuery('#h_' + spec.target);
-    td = th.next('td');
-    td.addClass('dynfields-hide dynfields-' + trigger);
-    th.addClass('dynfields-hide dynfields-' + trigger);
-  }
 
   if (input.attr('id').slice(6) !== spec.trigger)
     return;
@@ -199,8 +193,7 @@ hiderule.apply = function (input, spec) {
     th.addClass(cls);
 
     // let's also clear out the field's value to avoid confusion
-    if (spec.clear_on_hide.toLowerCase() == 'true' &&
-      field.val() && field.val().length) { // Chrome fix - see #8654
+    if (clear_on_hide && field.val() && field.val().length) { // Chrome fix - see #8654
       if (field.attr('type') == 'checkbox') {
         if (field.is(':checked')) {
           field.removeAttr('checked').change();
@@ -211,6 +204,12 @@ hiderule.apply = function (input, spec) {
         var newval = field.val('').val();
         if (oldval != newval)
           field.change(); // cascade rules
+      }
+      if (clear_on_hide || hide_always) {
+        th = jQuery('#h_' + spec.target);
+        td = th.next('td');
+        td.addClass('dynfields-hide dynfields-' + trigger);
+        th.addClass('dynfields-hide dynfields-' + trigger);
       }
     }
   }
