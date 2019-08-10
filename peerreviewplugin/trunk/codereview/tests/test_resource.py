@@ -28,7 +28,7 @@ import unittest
 from codereview.model import PeerReviewModelProvider, ReviewFileModel
 from codereview.peerReviewMain import PeerReviewMain
 from datetime import datetime
-from trac.resource import Resource
+from trac.resource import Resource, ResourceNotFound
 from trac.test import EnvironmentStub
 from trac.util.datefmt import to_datetime, to_utimestamp
 from trac.web.href import Href
@@ -115,6 +115,10 @@ class TestResource(unittest.TestCase):
         self.assertEqual('ReviewFile 1', self.plugin.get_resource_description(resource))
         self.assertEqual('rfile:1', self.plugin.get_resource_description(resource, 'compact'))
 
+    def test_get_resource_description_wrong_resource(self):
+        resource = Resource('wiki', 'WikiStart')
+        self.assertEqual('', self.plugin.get_resource_description(resource))
+
     def test_resourece(self):
         resource = Resource('peerreview', 1)
         self.assertEqual("<Resource u'peerreview:1'>", str(resource))
@@ -147,6 +151,10 @@ class TestResource(unittest.TestCase):
         # Invalid file id
         resource = Resource('peerreviewfile', 22)
         self.assertFalse(self.plugin.resource_exists(resource))
+
+    def test_resource_exist_wrong_resource(self):
+        resource = Resource('wiki', 'WikiStart')
+        self.assertRaises(ResourceNotFound, self.plugin.resource_exists, resource)
 
     def test_get_resource_url(self):
         href = Href('foo')

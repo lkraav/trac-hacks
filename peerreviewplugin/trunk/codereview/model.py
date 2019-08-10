@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2019 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -393,6 +393,7 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
         self.values['res_realm'] = res_realm
         self.values['state'] = state
         self.values['created'] = to_utimestamp(datetime_now(utc))
+        self.children = {}
 
         key = self.build_key_object()
         AbstractVariableFieldsObject.__init__(self, env, 'peerreviewcomment', key, db)
@@ -408,21 +409,31 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
     def create_instance(self, key):
         return ReviewCommentModel(self.env, key['comment_id'], 'peerreviewcomment')
 
-    @classmethod
-    def comments_by_file_id(cls, env):
+    @staticmethod
+    def comments_by_file_id(env):
         """Return a dict with file_id as key and a comment id list as value.
 
         @param env: Trac Environment object
         @return dict with key: file id as int, val: list of comment ids for that file as int
         """
-
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT comment_id, file_id FROM peerreviewcomment")
         the_dict = defaultdict(list)
-        for row in cursor:
+        for row in env.db_query("SELECT comment_id, file_id FROM peerreviewcomment"):
             the_dict[row[1]].append(row[0])
         return the_dict
+
+    @classmethod
+    def select_by_file_id(cls, env, file_id):
+        """Return all comments for the file specified by 'file_id'.
+
+        :param env: Trac Environment object
+        :param file_id: file id as int. All comments for this file are returned
+        :return:
+        """
+        pass
+
+    @classmethod
+    def create_comment_tree(cls, file_id, line_num):
+        pass
 
 
 class PeerReviewModelProvider(Component):
@@ -770,29 +781,29 @@ class PeerReviewModelProvider(Component):
 
 
 def get_users(env):
-    db = env.get_read_db()
-    cursor = db.cursor()
-    cursor.execute("""SELECT DISTINCT p1.username FROM permission AS p1
-                      LEFT JOIN permission AS p2 ON p1.action = p2.username
-                      WHERE p2.action IN ('CODE_REVIEW_DEV', 'CODE_REVIEW_MGR')
-                      OR p1.action IN ('CODE_REVIEW_DEV', 'CODE_REVIEW_MGR', 'TRAC_ADMIN')
-                      """)
     users = []
-    for row in cursor:
-        users.append(row[0])
-    if users:
-        # Filter groups from the results. We should probably do this using the group provider component
-        cursor.execute("""Select DISTINCT p3.action FROM permission AS p3
-                          JOIN permission p4 ON p3.action = p4.username""")
-        groups = []
+    with env.db_query as db:
+        cursor = db.cursor()
+        cursor.execute("""SELECT DISTINCT p1.username FROM permission AS p1
+                          LEFT JOIN permission AS p2 ON p1.action = p2.username
+                          WHERE p2.action IN ('CODE_REVIEW_DEV', 'CODE_REVIEW_MGR')
+                          OR p1.action IN ('CODE_REVIEW_DEV', 'CODE_REVIEW_MGR', 'TRAC_ADMIN')
+                          """)
         for row in cursor:
-            groups.append(row[0])
-        groups.append('authenticated')
-        users = list(set(users)-set(groups))
+            users.append(row[0])
+        if users:
+            # Filter groups from the results. We should probably do this using the group provider component
+            cursor.execute("""Select DISTINCT p3.action FROM permission AS p3
+                              JOIN permission p4 ON p3.action = p4.username""")
+            groups = []
+            for row in cursor:
+                groups.append(row[0])
+            groups.append('authenticated')
+            users = list(set(users)-set(groups))
     return sorted(users)
 
 
-# Obsolete use ReviewCommentModel instead
+# Deprecated use ReviewCommentModel instead
 class Comment(object):
 
     def __init__(self, env, file_id=None):
@@ -809,20 +820,6 @@ class Comment(object):
         self.comment = comment
         self.attachment_path = attachment_path
         self.created = created
-
-    def insert(self):
-        @self.env.with_transaction()
-        def do_insert(db):
-            created = self.created
-            if not created:
-                created = to_utimestamp(datetime_now(utc))
-            cursor = db.cursor()
-            self.env.log.debug("Creating new comment for file '%s'" % self.file_id)
-            cursor.execute("""INSERT INTO peerreviewcomment (file_id, parent_id, line_num,
-                            author, comment, attachment_path, created)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            """, (self.file_id, self.parent_id, self.line_num, self.author, self.comment,
-                                  self.attachment_path, created))
 
     @classmethod
     def select_by_file_id(cls, env, file_id):

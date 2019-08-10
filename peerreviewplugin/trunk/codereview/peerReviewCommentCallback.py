@@ -18,6 +18,9 @@ import time
 import unicodedata
 import urllib
 import json
+from codereview.dbBackend import *
+from codereview.model import ReviewCommentModel, PeerReviewModel, ReviewDataModel, ReviewFileModel
+from codereview.util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
 from genshi.template.markup import MarkupTemplate
 from trac import util
 from trac.core import *
@@ -25,9 +28,6 @@ from trac.mimeview import Context
 from trac.util import Markup
 from trac.web.main import IRequestHandler
 from trac.wiki import format_to_html
-from dbBackend import *
-from model import Comment, PeerReviewModel, ReviewDataModel, ReviewFileModel
-from util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
 
 
 def writeJSONResponse(rq, data, httperror=200):
@@ -77,12 +77,12 @@ class PeerReviewCommentHandler(Component):
                     data['invalid'] = 'closed'
                     return 'peerReviewCommentCallback.html', data, None
                 txt = req.args.get('comment')
-                comment = Comment(self.env)
-                comment.file_id = data['fileid'] = req.args.get('fileid')
-                comment.parent_id = data['parentid'] = req.args.get('parentid')
-                comment.comment = txt
-                comment.line_num = data['line'] = req.args.get('line')
-                comment.author = req.authname
+                comment = ReviewCommentModel(self.env)
+                comment['file_id'] = data['fileid'] = req.args.get('fileid')
+                comment['parent_id'] = data['parentid'] = req.args.get('parentid')
+                comment['comment'] = txt
+                comment['line_num'] = data['line'] = req.args.get('line')
+                comment['author'] = req.authname
                 if txt and txt.strip():
                     comment.insert()
                 writeJSONResponse(req, data)
@@ -113,10 +113,10 @@ class PeerReviewCommentHandler(Component):
 
         if actionType == 'getCommentTree':
             self.get_comment_tree(req, data)
-
         elif actionType == 'getCommentFile':
-            self.getCommentFile(req, data)
-
+            self.env.log.info("Trying to get comment file. Not implemented.")
+            # self.getCommentFile_obsolete(req, data)
+            data['invalid'] = 5
         else:
             data['invalid'] = 5
 
@@ -133,7 +133,8 @@ class PeerReviewCommentHandler(Component):
         return False
 
     # Used to send a file that is attached to a comment
-    def getCommentFile(self, req, data):
+    # This method is only left here to keep the file stuff for later
+    def getCommentFile_obsolete(self, req, data):
         data['invalid'] = 6
         short_path = req.args.get('fileName')
         fileid = req.args.get('IDFile')
@@ -152,8 +153,9 @@ class PeerReviewCommentHandler(Component):
         req.send_header('Content-Disposition', 'attachment; filename=' + short_path)
         req.send_file(full_path)
 
-    #Creates a comment based on the values from the request
-    def createComment(self, req, data):
+    # Creates a comment based on the values from the request
+    # This method is only left here to keep the file upload stuff for later
+    def createComment_obsolete(self, req, data):
         data['invalid'] = 5
         struct = ReviewCommentStruct(None)
         struct.IDParent = req.args.get('IDParent')

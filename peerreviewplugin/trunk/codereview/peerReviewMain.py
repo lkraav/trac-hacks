@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
-# Copyright (C) 2016 Cinc-th
+# Copyright (C) 2016-2019 Cinc-th
 #
 # All rights reserved.
 #
@@ -135,8 +135,7 @@ class PeerReviewMain(Component):
         flavor = req.args.get('flavor')
         options = {}
         if 'escape_newlines' in req.args:
-            options['escape_newlines'] = bool(int(req.args['escape_newlines']
-                                                  or 0))
+            options['escape_newlines'] = bool(int(req.args['escape_newlines'] or 0))
         if 'shorten' in req.args:
             options['shorten'] = bool(int(req.args['shorten'] or 0))
         resource = Resource(realm, id=id, version=version)
@@ -267,7 +266,6 @@ class PeerReviewMain(Component):
 
     def get_resource_description(self, resource, format=None, context=None,
                                  **kwargs):
-        desc = unicode(resource.id)
         if resource.realm == 'peerreview':
             if format == 'compact':
                 return 'review:%s' % resource.id  # Will be used as id in reports when 'realm' is used
@@ -280,9 +278,7 @@ class PeerReviewMain(Component):
                 return 'ReviewFile %s' % resource.id
         return ""
 
-
     def resource_exists(self, resource):
-
         with self.env.db_query as db:
             cursor = db.cursor()
             if resource.realm == 'peerreview':
