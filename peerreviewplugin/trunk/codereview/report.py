@@ -12,11 +12,7 @@
 from trac.core import Component, implements
 from trac.web.chrome import INavigationContributor, add_stylesheet
 from trac.web.main import IRequestHandler
-from .peerReviewMain import add_ctxt_nav_items
-
-
-__author__ = 'Cinc'
-__license__ = "BSD"
+from codereview.peerReviewMain import add_ctxt_nav_items
 
 
 class PeerReviewReport(Component):
@@ -54,18 +50,15 @@ class PeerReviewReport(Component):
             lst = desc.splitlines()
             if '{{{' not in lst or '}}}' not in lst or '#!comment' not in lst:
                 return False
-            lst = lst[lst.index('#!comment')+1:lst.index('}}}')]  # contents of comment section
+            lst = lst[lst.index('#!comment') + 1: lst.index('}}}')]  # contents of comment section
             if ''.join(lst[0].split()) == 'codereview=1':
                 return True
             return False
 
         req.perm.require('CODE_REVIEW_DEV')
 
-        db = self.env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT id, title, description FROM report")
         reports = []
-        for row in cursor:
+        for row in self.env.db_query("SELECT id, title, description FROM report"):
             if is_codereview_report(row[2]):
                 reports.append({
                     'id': row[0],
@@ -78,6 +71,5 @@ class PeerReviewReport(Component):
         }
 
         add_stylesheet(req, 'common/css/report.css')
-
         add_ctxt_nav_items(req)
         return 'peerreview_report.html', data, None
