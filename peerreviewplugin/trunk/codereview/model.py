@@ -421,15 +421,18 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
             the_dict[row[1]].append(row[0])
         return the_dict
 
-    @classmethod
-    def select_by_file_id(cls, env, file_id):
+    @staticmethod
+    def select_by_file_id(env, file_id):
         """Return all comments for the file specified by 'file_id'.
 
         :param env: Trac Environment object
         :param file_id: file id as int. All comments for this file are returned
-        :return:
+        :return: generator for ReviewCommentModels
         """
-        pass
+        rcm = ReviewCommentModel(env)
+        rcm.clear_props()
+        rcm['file_id'] = file_id
+        return rcm.list_matching_objects()
 
     @classmethod
     def create_comment_tree(cls, file_id, line_num):

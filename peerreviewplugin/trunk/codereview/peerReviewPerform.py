@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
+# Copyright (C) 2016-2019 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -15,9 +16,10 @@
 # repository browser's line number to indicate what lines are being
 # reviewed and if there are any comments on a particular line.
 
-from genshi.core import QName
-from genshi.filters.transform import Transformer
-from pkg_resources import get_distribution, parse_version
+from codereview.model import Comment, ReviewCommentModel, PeerReviewModel, ReviewFileModel
+from codereview.peerReviewMain import add_ctxt_nav_items
+from codereview.repo import file_data_from_repo
+from codereview.util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
@@ -29,10 +31,6 @@ from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
-from model import Comment, PeerReviewModel, ReviewFileModel
-from peerReviewMain import add_ctxt_nav_items
-from repo import file_data_from_repo
-from util import not_allowed_to_comment, review_is_finished, review_is_locked
 
 
 class PeerReviewPerform(Component):
@@ -83,13 +81,13 @@ class PeerReviewPerform(Component):
         return []
 
     # IRequestHandler methods
+
     def match_request(self, req):
         return req.path_info == '/peerReviewPerform'
 
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_DEV')
 
-        #get the fileID from the request arguments
         fileid = req.args.get('IDFile')
         if not fileid:
             raise TracError("No file ID given - unable to load page.", "File ID Error")
@@ -232,11 +230,8 @@ class CommentAnnotator(object):
     def prep_peer(self, context):
         authname = context.req.authname
         perm = context.req.perm
-        fresource = context.resource  # This is an 'rfile' realm
-        # Get review id
-        r_file = ReviewFileModel(self.env, fresource.id)
-        review = PeerReviewModel(self.env, r_file['id'])
-
+        fresource = context.resource  # This is an 'peerreviewfile' realm
+        review = get_review_for_file(self.env, fresource.id)
         # Is it allowed to comment on the file?
         if review_is_finished(self.env.config, review):
             is_locked = True
@@ -247,17 +242,17 @@ class CommentAnnotator(object):
         if not_allowed_to_comment(self.env, review, perm, authname):
             is_locked = True
 
-        self.data = [[c.line_num for c in Comment.select_by_file_id(self.env, fresource.id)], review, is_locked]
+        self.data = [[c['line_num'] for c in ReviewCommentModel.select_by_file_id(self.env, fresource.id)], review, is_locked]
 
     def prep_browser(self, context):
         def comments_for_file(env, path, rev):
             db = env.get_read_db()
             cursor = db.cursor()
-            cursor.execute("""SELECT c.line_num, c.comment_id, f.file_id, 
-            f.review_id  
-            FROM peerreviewfile AS f 
+            cursor.execute("""SELECT c.line_num, c.comment_id, f.file_id,
+            f.review_id
+            FROM peerreviewfile AS f
             JOIN peerreviewcomment as c ON c.file_id = f.file_id
-            WHERE f.path = %s 
+            WHERE f.path = %s
             AND f.changerevision = %s
             """, (path, rev))
 
@@ -317,15 +312,14 @@ class CommentAnnotator(object):
             else:
                 return row.append(tag.th(str(lineno), id='L%s' % lineno))
 
-        #color line numbers outside range light gray
-        # return
+        # color line numbers outside range light gray
         row.append(tag.th(id='L%s' % lineno)(tag.font(lineno, color='#CCCCCC')))
 
     def annotate_browser(self, row, lineno):
         if lineno in self.data:
             row.append(tag.th(id='C%s' % lineno)(tag.a(tag.img(src=self.context.req.href(self.imagepath)),
-                                                              href='javascript:getComments(%s, %s)' %
-                                                                   (lineno, self.data[lineno]))))
+                                                               href='javascript:getComments(%s, %s)' %
+                                                                    (lineno, self.data[lineno]))))
         else:
             comment_col = tag.th(class_='prcomment')
             row.append(comment_col)
@@ -365,9 +359,7 @@ def create_diff_data(req, data, node, par_node):
     review = data['review']
     par_review = data['parent_review']
     changes = []
-    info = {# 'title': '',
-            # 'comments': 'Ein Kommentar',
-            'diffs': diff,
+    info = {'diffs': diff,
             'new': {'path': node.path, 'rev': "%s (Review #%s)" % (node.rev, review['review_id']), 'shortrev': node.rev},
             'old': {'path': par_node.path, 'rev': "%s (Review #%s)" % (par_node.rev, par_review['review_id']),
                     'shortrev': par_node.rev},

@@ -26,59 +26,9 @@
 
 import unittest
 from codereview.model import ReviewCommentModel, ReviewFileModel, PeerReviewModelProvider
-from datetime import datetime
+from codereview.tests.util import prepare_comments, prepare_file_data
 from trac.test import EnvironmentStub, Mock, MockPerm
-from trac.util.datefmt import to_datetime, to_utimestamp
 
-def _prepare_file_data(env):
-    # review_id, path, start, end, revision, status
-    files = [
-        [1, '/foo/bar', 5, 100, '1234', 'new', None, 'repo1'],
-        [1, '/foo/bar2', 6, 101, '1234', 'new', None, 'repo1'],
-        [2, '/foo/bar', 5, 100, '1234', 'closed', None, 'repo1'],
-        [2, '/foo/bar2', 6, 101, '12346', 'closed', None, 'repo1'],
-        [2, '/foo/bar3', 7, 102, '12347', 'closed', None, 'repo1'],
-        [3, '/foo/bar2', 6, 101, '1234', 'new', None, 'repo1'],
-        [4, '/foo/bar', 5, 100, '1234', 'new', None, 'repo1'],
-        [4, '/foo/bar2', 6, 101, '1234', 'new', None, 'repo1'],
-        # File list data for several projects
-        [0, '/foo/bar', 5, 100, '1234', 'new', 'PrjFoo', 'repo1'],
-        [0, '/foo/bar2', 6, 101, '1234', 'new', 'PrjFoo', 'repo1'],
-        [0, '/foo/bar', 5, 100, '1234', 'new', 'PrjBar', 'repo1'],
-        [0, '/foo/bar2', 6, 101, '12346', 'new', 'PrjBar', 'repo1'],
-        [0, '/foo/bar3', 7, 102, '12347', 'new', 'PrjFoo', 'repo1'],
-        [0, '/foo/bar/baz', 6, 101, '1234', 'new', 'PrjBar', 'repo1'],
-        [0, '/foo/bar', 5, 100, '1234', 'new', 'PrjBaz', 'repo1'],
-        [0, '/foo/bar2', 6, 101, '1234', 'new', 'PrjBaz', 'repo1'],
-    ]
-    for f in files:
-        rfm = ReviewFileModel(env)
-        rfm['review_id'] = f[0]
-        rfm['path'] = f[1]
-        rfm['line_start'] = f[2]
-        rfm['line_end'] = f[3]
-        rfm['revision'] = f[4]
-        rfm['status'] = f[5]
-        rfm['project'] = f[6]
-        rfm['repo'] = f[7]
-        rfm.insert()
-
-
-def _prepare_comments(env):
-    # file_id, parent_id, line_num, author, created, comment
-    comments = [[1, -1, 123, 'user1', to_utimestamp(to_datetime(datetime(2019, 2, 4))), 'Comment 1'],
-                [1, -1, 125, 'user4', to_utimestamp(to_datetime(datetime(2019, 2, 5))), 'Comment 2'],
-                [2, -1, 12, 'user1', to_utimestamp(to_datetime(datetime(2019, 2, 5))), 'Comment 3'],
-                [2, -1, 13, 'user2', to_utimestamp(to_datetime(datetime(2019, 2, 6))), 'Comment 4'],
-                [2, -1, 14, 'user3', to_utimestamp(to_datetime(datetime(2019, 2, 7))), 'Comment 5'],
-                [3, -1, 15, 'user3', to_utimestamp(to_datetime(datetime(2019, 2, 8))), 'Comment 6'],
-                [3, -1, 16, 'user4', to_utimestamp(to_datetime(datetime(2019, 2, 9))), 'Comment 7'],
-    ]
-    with env.db_transaction as db:
-        cursor = db.cursor()
-        for comm in comments:
-            cursor.execute("INSERT INTO peerreviewcomment (file_id, parent_id, line_num, author, created, comment) "
-                           "VALUES (%s,%s,%s,%s,%s,%s)", comm)
 
 class TestReviewCommentModel(unittest.TestCase):
 
@@ -90,8 +40,8 @@ class TestReviewCommentModel(unittest.TestCase):
                                                              'codereview.tracgenericclass.*'])
         PeerReviewModelProvider(self.env).environment_created()
         self.req = Mock(href=Mock(), perm=MockPerm(), args={}, authname="Tester")
-        _prepare_file_data(self.env)
-        _prepare_comments(self.env)
+        prepare_file_data(self.env)
+        prepare_comments(self.env)
 
     def tearDown(self):
         self.env.shutdown()
@@ -103,6 +53,40 @@ class TestReviewCommentModel(unittest.TestCase):
         self.assertEqual(2, len(comments[1]))
         self.assertEqual(3, len(comments[2]))
         self.assertEqual(2, len(comments[3]))
+
+    def test_select_by_file_id_no_file(self):
+        comments = list(ReviewCommentModel.select_by_file_id(self.env, 100))
+        self.assertEqual(0, len(comments))
+
+    def test_select_by_file_id_parent_comments(self):
+        """Test with comment and additional comment tree"""
+        # Note that this file has three comments. Two of them are part of a comment tree on line 13
+        comments = list(ReviewCommentModel.select_by_file_id(self.env, 2))
+        self.assertEqual(3, len(comments))
+
+        lines = [c['line_num'] for c in comments]
+        self.assertEqual(3, len(lines))
+        # There're two comments on line 13
+        res = {13: 0, 12: 0}
+        for line in lines:
+            res[line] += 1
+        self.assertEqual(2, res[13])
+        self.assertEqual(1, res[12])
+
+    def test_select_by_file_id_comments(self):
+        """Test with two comments on different lines."""
+        # Note that this file has three comments. Two of them are part of a comment tree on line 13
+        comments = list(ReviewCommentModel.select_by_file_id(self.env, 3))
+        self.assertEqual(2, len(comments))
+
+        lines = [c['line_num'] for c in comments]
+        self.assertEqual(2, len(lines))
+        res = {15: 0, 16: 0}
+        for line in lines:
+            res[line] += 1
+        self.assertEqual(1, res[15])
+        self.assertEqual(1, res[16])
+
 
 def test_suite():
     suite = unittest.TestSuite()

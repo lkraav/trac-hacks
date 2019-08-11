@@ -26,8 +26,8 @@
 
 import unittest
 from codereview.tests import comment_callback, db, new_review, \
-    review_model, reviewfile_model, test_resource, test_reviewer, \
-    test_reviewcomment, test_report
+    review_model, reviewfile_model, test_resource, \
+    test_report, test_reviewcomment, test_reviewer, test_reviewperform
 
 
 def test_suite():
@@ -41,6 +41,7 @@ def test_suite():
     suite.addTest(test_reviewer.test_suite())
     suite.addTest(test_reviewcomment.test_suite())
     suite.addTest(test_report.test_suite())
+    suite.addTest(test_reviewperform.test_suite())
     return suite
 
 
