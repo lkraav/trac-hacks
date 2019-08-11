@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
+# Copyright (C) 2016-2019 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -9,7 +10,7 @@
 #
 
 # Provides functionality for view code review page
-# Works with peerReviewView.html
+# Works with peerreview_view.html
 
 import itertools
 import re
@@ -233,7 +234,7 @@ class PeerReviewView(Component):
         add_stylesheet(req, 'common/css/ticket.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
-        return 'peerReviewView.html', data, None
+        return 'peerreview_view.html', data, None
 
     def add_parent_data(self, req, review, data):
         """Add inforamtion about parent review to dict 'data'. Do nothing if now parent."""
