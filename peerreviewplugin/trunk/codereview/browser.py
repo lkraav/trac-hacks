@@ -17,18 +17,18 @@ __author__ = 'Cinc'
 # Not used
 def files_with_comments(env, path, rev):
     """Return a dict with file_id as key and a comment id list as value."""
-    db = env.get_read_db()
-    cursor = db.cursor()
-    cursor.execute("""SELECT f.file_id,
-    f.revision, f.changerevision, f.review_id , c.comment_id, c.line_num 
-    FROM peerreviewfile AS f 
-    JOIN peerreviewcomment as c ON c.file_id = f.file_id
-    WHERE f.path = %s 
-    AND f.changerevision = %s
-    """, (path, rev))
+    with env.sb_query as db:
+        cursor = db.cursor()
+        cursor.execute("""SELECT f.file_id,
+        f.revision, f.changerevision, f.review_id , c.comment_id, c.line_num
+        FROM peerreviewfile AS f
+        JOIN peerreviewcomment as c ON c.file_id = f.file_id
+        WHERE f.path = %s
+        AND f.changerevision = %s
+        """, (path, rev))
 
-    for row in cursor:
-        env.log.info('### %s', row)
+        for row in cursor:
+            env.log.info('### %s', row)
 
 # Not used
 def select_by_path(env, path):
@@ -79,15 +79,15 @@ class PeerReviewBrowser(Component):
 
         def is_file_with_comments(env, path, rev):
             """Return a dict with file_id as key and a comment id list as value."""
-            db = env.get_read_db()
-            cursor = db.cursor()
-            cursor.execute("""SELECT COUNT(f.file_id) 
-            FROM peerreviewfile AS f 
-            JOIN peerreviewcomment as c ON c.file_id = f.file_id
-            WHERE f.path = %s 
-            AND f.changerevision = %s
-            """, (path, rev))
-            return cursor.fetchone()[0] != 0
+            with env.db_query as db:
+                cursor = db.cursor()
+                cursor.execute("""SELECT COUNT(f.file_id)
+                FROM peerreviewfile AS f
+                JOIN peerreviewcomment as c ON c.file_id = f.file_id
+                WHERE f.path = %s
+                AND f.changerevision = %s
+                """, (path, rev))
+                return cursor.fetchone()[0] != 0
 
         #  We only handle the browser
         if path and req.path_info.startswith('/browser/'):
