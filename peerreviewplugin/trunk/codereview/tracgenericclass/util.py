@@ -44,8 +44,6 @@ def formatExceptionInfo(maxTBlevel=5):
 
 checked_utimestamp = False
 has_utimestamp = False
-checked_compatibility = False
-has_read_db = False
 
 def to_any_timestamp(date_obj):
     global checked_utimestamp
@@ -95,19 +93,6 @@ def check_utimestamp():
         has_utimestamp = False
 
     checked_utimestamp = True
-
-def check_compatibility(env):
-    global checked_compatibility
-    global has_read_db
-
-    try:
-        if env.get_read_db():
-            has_read_db = True
-    except:
-        # Trac 0.11
-        has_read_db = False
-
-    checked_compatibility = True
 
 def to_list(params=[]):
     result = []
@@ -207,16 +192,15 @@ def db_get_config_property(env, tablename, propname, db=None):
     if not db:
         db = env.get_read_db()
 
-    cursor = db.cursor()
-
     sql = "SELECT value FROM %s WHERE propname=%%s" % tablename
     row = None
-
-    try:
-        cursor.execute(sql, (propname,))
-        row = cursor.fetchone()
-    except:
-        pass
+    with env.db_query as db:
+        cursor = db.cursor()
+        try:
+            cursor.execute(sql, (propname,))
+            row = cursor.fetchone()
+        except:
+            pass
 
     if not row or len(row) == 0:
         return None
