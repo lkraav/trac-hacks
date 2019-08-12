@@ -97,18 +97,21 @@ class PeerReviewBrowser(Component):
                 is_head = rev
             add_stylesheet(req, 'hw/css/peerreview.css')
             add_script_data(req,
-                            {'peer_repo': data.get('reponame'),
-                             'peer_rev': data.get('created_rev'),
+                            {'peer_repo': data.get('reponame', ''),
+                             'peer_rev': data.get('created_rev', ''),
                              'peer_is_head': is_head,
                              'peer_path': path,
                              'peer_status_url': req.href.peerreviewstatus(),
-                             'peer_is_dir': data.get('dir', None) != None})
+                             'peer_is_dir': data.get('dir', None) != None,
+                             'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif')})
             add_script(req, "hw/js/peer_trac_browser.js")
+            # add_script(req, "hw/js/peer_review_perform.js")
 
-        if path and req.path_info.startswith('/browser_/'):  # Deactivate code comments in browser view for now
-            if is_file_with_comments(self.env, '/' + data['path'], rev):
+        # Deactivate code comments in browser view for now
+        if path and req.path_info.startswith('/browser_/'):
+            if is_file_with_comments(self.env, '/' + data['path'], data.get('created_rev')):
                 add_ctxtnav(req, _("Code Comments"), req.href(req.path_info, annotate='prcomment', rev=rev),
-                        title=_("Show Code Comments"))
+                            title=_("Show Code Comments"))
             else:
                 add_ctxtnav(req, tag.span(_("Code Comments"), class_="missing"))
         return template, data, content_type
@@ -170,7 +173,7 @@ class PeerReviewBrowser(Component):
                         'chg_rev': row[1],
                         'hash': row[2],
                         'status': row[3],
-                        'review_href': req.href.peerReviewView(Review=row[0]),
+                        'review_href': req.href.peerreviewview(row[0]),
                         'bg_color': bg}
                 trows += Template(tr_tmpl).safe_substitute(data)
         if trows:
@@ -205,7 +208,6 @@ class PeerReviewBrowser(Component):
         """line annotator for Perform Code Review page.
 
         If line has a comment, places an icon to indicate comment.
-        If line is not in the rage of reviewed lines, it makes the color a light gray
         """
         # self.log.info(lineno)
         #comment_col = tag.th(style='color: red', class_='prcomment')

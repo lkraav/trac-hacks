@@ -329,7 +329,7 @@ class PeerReviewView(Component):
         return review
 
     desc = u"""
-Review [/peerReviewView?Review=${review_id} ${review_name}] is finished.
+Review [/peerreviewview/${review_id} ${review_name}] is finished.
 === Review
 
 ||= Name =|| ${review_name} ||
