@@ -306,9 +306,9 @@ class PeerReviewFileAdmin(Component):
 
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/admin_file.css')
-        add_script_data(req, {'repo_browser': self.env.href.adminrepobrowser(data['rootfolder'],
-                                                                             repo=data['reponame'],
-                                                                             rev=data['revision']),
+        add_script_data(req, {'repo_browser': req.href.adminrepobrowser(data['rootfolder'],
+                                                                        repo=data['reponame'],
+                                                                        rev=data['revision']),
                               'show_repo_idx': path_info == None if 'error' not in req.args else False}
                         )
         add_script(req, 'hw/js/admin_files.js')

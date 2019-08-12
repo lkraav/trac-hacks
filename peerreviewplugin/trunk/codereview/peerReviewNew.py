@@ -123,16 +123,16 @@ class NewReviewModule(Component):
                     add_notice(req, "Review '%s' (#%s) was automatically closed after resubmitting as '#%s'." %
                                (review['name'], oldid, returnid))
                 # If no errors then redirect to the viewCodeReview page
-                req.redirect(self.env.href.peerreviewview(returnid))
+                req.redirect(req.href.peerreviewview(returnid))
             if req.args.get('createfollowup'):
                 returnid = self.createCodeReview(req, 'followup')
                 # If no errors then redirect to the viewCodeReview page of the new review
-                req.redirect(self.env.href.peerreviewview(returnid))
+                req.redirect(req.href.peerreviewview(returnid))
             if req.args.get('save'):
                 self.save_changes(req)
-                req.redirect(self.env.href.peerreviewview(oldid))
+                req.redirect(req.href.peerreviewview(oldid))
             if req.args.get('cancel'):
-                req.redirect(self.env.href.peerreviewview(oldid))
+                req.redirect(req.href.peerreviewview(oldid))
 
         # Handling of GET request
 
@@ -215,7 +215,7 @@ class NewReviewModule(Component):
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_script(req, 'common/js/auto_preview.js')
-        add_script_data(req, {'repo_browser': self.env.href.peerReviewBrowser(),
+        add_script_data(req, {'repo_browser': req.href.peerReviewBrowser(),
                               'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
                               'form_token': req.form_token,
                               'peer_is_modify': req.args.get('modify', '0'),

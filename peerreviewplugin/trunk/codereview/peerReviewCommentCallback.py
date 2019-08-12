@@ -10,7 +10,6 @@
 # Author: Team5
 #
 
-
 import os
 import shutil
 import sys
@@ -35,35 +34,33 @@ def writeJSONResponse(rq, data, httperror=200):
 
 
 def writeResponse(req, data, httperror=200):
-    data=data.encode('utf-8')
+    data = data.encode('utf-8')
     req.send_response(httperror)
     req.send_header('Content-Type', 'text/plain; charset=utf-8')
     req.send_header('Content-Length', len(data))
     req.end_headers()
     req.write(data)
 
+
 class PeerReviewCommentHandler(Component):
     implements(IRequestHandler)
 
     # IRequestHandler methods
+
     def match_request(self, req):
         return req.path_info == '/peerReviewCommentCallback'
 
-    #This page should never be called directly.  It should only be called
-    #by JavaScript HTTPRequest calls.
+    # This page should never be called directly.  It should only be called
+    # by JavaScript HTTPRequest calls.
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_DEV')
 
-        data = {}
+        data = {'invalid': 0}
 
         if not (req.perm.has_permission('CODE_REVIEW_MGR') or
                 req.perm.has_permission('CODE_REVIEW_DEV')):
-
             data['invalid'] = 4
             return 'peerReviewCommentCallback.html', data, None
-
-        data['invalid'] = 0
-        data['trac.href.peerReviewCommentCallback'] = self.env.href.peerReviewCommentCallback()
 
         if req.method == 'POST':
             if req.args.get('addcomment'):
@@ -126,8 +123,7 @@ class PeerReviewCommentHandler(Component):
         fileid = req.args.get('IDFile')
         if not fileid:
             fileid = req.args.get('fileid')
-        r_file = ReviewFileModel(self.env, fileid)
-        review = PeerReviewModel(self.env, r_file['review_id'])
+        review = get_review_for_file(self.env, fileid)
         if review['status'] == 'closed':
             return True
         return False
@@ -245,7 +241,7 @@ class PeerReviewCommentHandler(Component):
         keys.sort()
         for key in keys:
             if comments[key].IDParent not in comments:
-                comment_html += self.build_comment_html(comments[key], 0, linenum, fileid, first, data)
+                comment_html += self.build_comment_html(req, comments[key], 0, linenum, fileid, first, data)
                 first = False
         comment_html = comment_html.strip()
         if not comment_html:
@@ -253,7 +249,6 @@ class PeerReviewCommentHandler(Component):
         data['lineNum'] = linenum
         data['fileID'] = fileid
         data['commentHTML'] = Markup(comment_html)
-
 
     comment_template = u"""
             <table xmlns:py="http://genshi.edgewall.org/"
@@ -309,8 +304,8 @@ class PeerReviewCommentHandler(Component):
             </table>
         """
 
-    #Recursively builds the comment html to send back.
-    def build_comment_html(self, comment, nodesIn, linenum, fiileid, first, data):
+    # Recursively builds the comment html to send back.
+    def build_comment_html(self, req, comment, nodesIn, linenum, fileid, first, data):
         if nodesIn > 50:
             return ""
 
@@ -319,7 +314,7 @@ class PeerReviewCommentHandler(Component):
         keys.sort()
         for key in keys:
             child = comment.Children[key]
-            children_html += self.build_comment_html(child, nodesIn + 1, linenum, fiileid, False, data)
+            children_html += self.build_comment_html(req, child, nodesIn + 1, linenum, fileid, False, data)
 
         factor = 15
         width = 5 + nodesIn * factor
@@ -332,10 +327,10 @@ class PeerReviewCommentHandler(Component):
                  'date': util.format_date(comment.DateCreate),
                  'factor': factor,
                  'childrenHTML': children_html != '' or False,
-                 'href': self.env.href,
+                 'href': req.href,
                  'line': linenum,
-                 'fileid': fiileid,
-                 'callback': self.env.href.peerReviewCommentCallback(),
+                 'fileid': fileid,
+                 'callback': req.href.peerReviewCommentCallback(),  # this is for attachments
                  'review': data['review'],
                  'is_locked': data['is_finished'] or data['review_locked'] or data.get('not_allowed', False),
                  'read_comments': data['read_comments']

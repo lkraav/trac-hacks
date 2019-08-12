@@ -78,7 +78,7 @@ class PeerReviewBrowser(Component):
             req.args['path'] = match.group(2) or '/'
             if match.group(1) == 'file':
                 # FIXME: This should be a permanent redirect
-                req.redirect(self.env.href.peerReviewBrowser(req.args.get('path'),
+                req.redirect(req.href.peerReviewBrowser(req.args.get('path'),
                                                    rev=req.args.get('rev'),
                                                    format=req.args.get('format')))
             elif match.group(1) == 'adminrepobrowser':
@@ -99,7 +99,7 @@ class PeerReviewBrowser(Component):
 
         # display_rev = lambda rev: rev
 
-        data = {'browse_url': self.env.href(browse_url_base),
+        data = {'browse_url': req.href(browse_url_base),
                 'is_admin_browser': is_admin_browser
                 }
 
@@ -157,7 +157,7 @@ class PeerReviewBrowser(Component):
                              in self.config.get('browser', 'hide_properties',
                                                 'svk:merge').split(',')]
 
-        path_links = self.get_path_links_CRB(self.env.href, browse_url_base, path, rev, cur_repo)
+        path_links = self.get_path_links_CRB(req.href, browse_url_base, path, rev, cur_repo)
         if len(path_links) > 1:
             add_link(req, 'up', path_links[-2]['href'], 'Parent directory')
 
@@ -176,7 +176,7 @@ class PeerReviewBrowser(Component):
             'reponame': repo.reponame,  # for included path_links.html
             'revision': rev or repo.get_youngest_rev(),
             'props': props,
-            'log_href': util.escape(self.env.href.log(path, rev=rev or None)),
+            'log_href': util.escape(req.href.log(path, rev=rev or None)),
             'path_links': path_links,
             'dir': node and node.isdir and self._render_directory(req, repo, node, rev, cur_repo),
             'file': node and node.isfile and self._render_file(req, context, repo, node, rev, cur_repo),
@@ -235,8 +235,8 @@ class PeerReviewBrowser(Component):
                     'size': util.pretty_size(entry.content_length),
                     'rev': entry.created_rev,
                     'permission': 1,  # FIXME
-                    'log_href': util.escape(self.env.href.log(repo, entry.path, rev=rev)),
-                    'browser_href': self.env.href(browse_url, entry.path, rev=rev, repo=repo)
+                    'log_href': util.escape(req.href.log(repo, entry.path, rev=rev)),
+                    'browser_href': req.href(browse_url, entry.path, rev=rev, repo=repo)
                     })
 
         changes = get_changes(repos, [i['rev'] for i in info])
@@ -307,7 +307,7 @@ class PeerReviewBrowser(Component):
                 add_link(req, 'alternate', plain_href, 'Plain Text',
                          'text/plain')
 
-            raw_href = self.env.href.peerReviewBrowser(node.path, rev=rev and node.rev, repo=repo,
+            raw_href = req.href.peerReviewBrowser(node.path, rev=rev and node.rev, repo=repo,
                                              format='raw')
             preview_data = mimeview.preview_data(context, node.get_content(),
                                                     node.get_content_length(),
@@ -325,7 +325,7 @@ class PeerReviewBrowser(Component):
                 'max_file_size': preview_data['max_file_size'],
                 'annotate': False,
                 'rev': node.rev,
-                'changeset_href': util.escape(self.env.href.changeset(node.rev)),
+                'changeset_href': util.escape(req.href.changeset(node.rev)),
                 'date': util.format_datetime(changeset.date),
                 'age': util.pretty_timedelta(changeset.date),
                 'author': changeset.author or 'anonymous',

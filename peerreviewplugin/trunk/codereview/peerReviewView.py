@@ -182,11 +182,11 @@ class PeerReviewView(Component):
 
         if req.method == 'POST':
             if req.args.get('resubmit'):
-                req.redirect(self.env.href.peerReviewNew(resubmit=review_id))
+                req.redirect(req.href.peerReviewNew(resubmit=review_id))
             elif req.args.get('followup'):
-                req.redirect(self.env.href.peerReviewNew(resubmit=review_id, followup=1))
+                req.redirect(req.href.peerReviewNew(resubmit=review_id, followup=1))
             elif req.args.get('modify'):
-                req.redirect(self.env.href.peerReviewNew(resubmit=review_id, modify=1))
+                req.redirect(req.href.peerReviewNew(resubmit=review_id, modify=1))
 
         data = {'review_files': self.get_files_for_review_id(req, review_id, True),
                 'users': get_users(self.env),
