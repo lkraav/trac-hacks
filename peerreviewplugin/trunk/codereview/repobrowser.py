@@ -46,7 +46,7 @@ def _natural_order(x, y):
         nx, ny = a.end(), b.end()
 
 
-class PeerReviewBrowser(Component):
+class PeerRepoBrowser(Component):
     """Provide a repository browser for file selection for code reviews.
 
     [[BR]]
