@@ -121,6 +121,7 @@ class TestReviewModel(unittest.TestCase):
         self.assertEqual(u'note1_changed', rm['notes'])
 
     def test_change_status(self):
+        from time import sleep
         self.env.config.set("peerreview", "terminal_review_states", "closed, removed, obsolete")
         self.env.config.save()
         rev_pre = PeerReviewModel(self.env, 4)
@@ -132,6 +133,12 @@ class TestReviewModel(unittest.TestCase):
             self.assertEqual('new', item['status'])
 
         # Change review to 'closed' which is a terminal state
+
+        # On windows the timestamp resolution for 'when' in save_changes() is not microseconds
+        # (only updated in greater intervals).
+        # To prevent IntegrityError when writing to the database add some delay so we are sure
+        # that the time will be different.
+        sleep(0.02)
         rev_pre.change_status('closed')
         rev = PeerReviewModel(self.env, 4)
         self.assertEqual('Rev3', rev['owner'])
@@ -143,6 +150,7 @@ class TestReviewModel(unittest.TestCase):
             self.assertEqual('closed', item['status'])
 
         # Do it again to check if something toggles the status
+        sleep(0.02)
         rev_pre = PeerReviewModel(self.env, 4)
         rev_pre.change_status('closed')
         rev = PeerReviewModel(self.env, 4)
@@ -155,6 +163,7 @@ class TestReviewModel(unittest.TestCase):
             self.assertEqual('closed', item['status'])
 
         # Change to another terminal state
+        sleep(0.02)
         rev_pre = PeerReviewModel(self.env, 4)
         rev_pre.change_status('removed')
         rev = PeerReviewModel(self.env, 4)
@@ -167,6 +176,7 @@ class TestReviewModel(unittest.TestCase):
             self.assertEqual('removed', item['status'])
 
         # Change to a non-terminal state
+        sleep(0.02)
         rev_pre = PeerReviewModel(self.env, 4)
         rev_pre.change_status('Baz')
         rev = PeerReviewModel(self.env, 4)
