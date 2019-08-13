@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2015 Roberto Longobardi
+# Copyright (C) 2016 Cinc
 #
 # This file is part of the Test Manager plugin for Trac.
 #
@@ -42,57 +43,15 @@ def formatExceptionInfo(maxTBlevel=5):
     return "Error name: %s\nArgs: %s\nTraceback:\n%s" % (excName, excArgs, tracestring)
 
 
-checked_utimestamp = False
-has_utimestamp = False
-
 def to_any_timestamp(date_obj):
-    global checked_utimestamp
-    global has_utimestamp
+    from trac.util.datefmt import to_utimestamp
+    return to_utimestamp(date_obj)
 
-    if not checked_utimestamp:
-        check_utimestamp()
-
-    if has_utimestamp:
-        from trac.util.datefmt import to_utimestamp
-        return to_utimestamp(date_obj)
-    else:
-        # Trac 0.11
-        from trac.util.datefmt import to_timestamp
-        return to_timestamp(date_obj)
 
 def from_any_timestamp(ts):
-    global checked_utimestamp
-    global has_utimestamp
+    from trac.util.datefmt import from_utimestamp
+    return from_utimestamp(ts)
 
-    if not checked_utimestamp:
-        check_utimestamp()
-
-    if has_utimestamp:
-        from trac.util.datefmt import from_utimestamp
-        return from_utimestamp(ts)
-    else:
-        # Trac 0.11
-        from trac.util.datefmt import utc
-        return datetime.fromtimestamp(ts, utc)
-
-def get_db(env, db=None):
-    raise TracError('get_db function is deprecated!')
-
-def get_db_for_write(env, db=None):
-    raise TracError('get_db_for_write function is deprecated!')
-
-def check_utimestamp():
-    global checked_utimestamp
-    global has_utimestamp
-
-    try:
-        from trac.util.datefmt import to_utimestamp, from_utimestamp
-        has_utimestamp = True
-    except:
-        # Trac 0.11
-        has_utimestamp = False
-
-    checked_utimestamp = True
 
 def to_list(params=[]):
     result = []
@@ -146,18 +105,10 @@ def remove_quotes(str, quote='\''):
 def compatible_domain_functions(domain, function_name_list):
     return lambda x: x, lambda x: x, lambda x: x, lambda x: x
 
+
 def get_timestamp_db_type():
-    global checked_utimestamp
-    global has_utimestamp
+    return 'int64'
 
-    if not checked_utimestamp:
-        check_utimestamp()
-
-    if has_utimestamp:
-        return 'int64'
-    else:
-        # Trac 0.11
-        return 'int'
 
 def upload_file_to_subdir(env, req, subdir, param_name, target_filename):
     upload = param_name
@@ -188,10 +139,8 @@ def db_insert_or_ignore(env, tablename, propname, value, db=None):
     if db_get_config_property(env, tablename, propname, db) is None:
         db_set_config_property(env, tablename, propname, value, db)
 
-def db_get_config_property(env, tablename, propname, db=None):
-    if not db:
-        db = env.get_read_db()
 
+def db_get_config_property(env, tablename, propname, db=None):
     sql = "SELECT value FROM %s WHERE propname=%%s" % tablename
     row = None
     with env.db_query as db:
@@ -206,6 +155,7 @@ def db_get_config_property(env, tablename, propname, db=None):
         return None
 
     return row[0]
+
 
 def db_set_config_property(env, tablename, propname, value, db=None):
     @env.with_transaction(db)
@@ -230,6 +180,7 @@ def db_set_config_property(env, tablename, propname, value, db=None):
 
     return True
 
+
 def list_available_tables(dburi, cursor):
     if dburi.startswith('sqlite:'):
         query = """
@@ -248,6 +199,7 @@ def list_available_tables(dburi, cursor):
     cursor.execute(query)
 
     return sorted([row[0] for row in cursor])
+
 
 def fix_base_location(req):
     return req.href('/').rstrip('/')
@@ -272,6 +224,7 @@ for k in __bi:
     if k.endswith("Error") or k.endswith("Warning"):
         SAFE_SYMBOLS.append(k)
 del __bi
+
 
 def createFunctionFromString(sourceCode, args="", additional_symbols=dict()):
     """
