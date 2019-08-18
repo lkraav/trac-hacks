@@ -9,15 +9,11 @@
 # Author: John Hampton <pacopablo@pacopablo.com>
 
 from trac.perm import DefaultPermissionStore
-from trac.config import Option
 
 __all__ = ['UserExtensiblePermissionStore']
 
 class UserExtensiblePermissionStore(DefaultPermissionStore):
     """ Default Permission Store extended to list all ldap groups """
-
-    group_nameattr = Option('account-manager', 'group_nameattr', 'cn',
-                             "Specify the attribute to read the group name. Defaults to 'cn'. For full group names use 'dn'.")
 
     def get_all_permissions(self):
         """Return all permissions for all users.
@@ -41,13 +37,15 @@ class UserExtensiblePermissionStore(DefaultPermissionStore):
             if p[1][0:1] != "@":
                 filteredPermissions.append(p)
 
+        group_nameattr = \
+                self.config.get('account-manager', 'group_nameattr', 'cn')
         all_groups = daProvider.get_all_groups()
         for g in all_groups:
-            users = daProvider.get_group_users(g[1][self.group_nameattr][0])
+            users = daProvider.get_group_users(g[1][group_nameattr][0])
             if len(users) == 0:
                 users.append("(nobody)")
             for u in users:
-                filteredPermissions.append([u, "@%s" % g[1][self.group_nameattr][0]])
+                filteredPermissions.append([u, "@%s" % g[1][group_nameattr][0]])
 
         self.log.debug("permissions: %s", filteredPermissions)
         return filteredPermissions
