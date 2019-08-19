@@ -1,4 +1,5 @@
 import ldap
+import ldap.filter
 
 from trac.core import *
 from trac.config import *
@@ -18,15 +19,13 @@ class LDAPStore (Component):
     def check_password(self, user, password):
         # Authenticate a user by checking password
         con = None
-        base = self.user_searchbase
-        filter = self.user_matchfilter % user
-        
+
         # nested "try:" for python2.4
         try:
             try:
                 con = self.init_connection()
-                resp = con.search_s(base, ldap.SCOPE_SUBTREE, filter, ['dn'])
-                
+                resp = self._ldap_search_user(con, user, ['dn'])
+
                 # Added to prevent empty password authentication (some server allows that)
                 if not len(resp) :
                     return None
@@ -46,18 +45,26 @@ class LDAPStore (Component):
         base = self.user_searchbase
         filter = self.user_searchfilter
         resp = None
-        
+
         try:
             con = self.init_connection()
             resp = con.search_s(base, ldap.SCOPE_SUBTREE, filter, ['dn','uid'])
         finally:
             if con != None:
                 con.unbind()
-        
+
         self.log.debug('List users: get %d users' % (len(resp)))
         for entry in resp:
             if entry[1]['uid'][0]:
                 yield entry[1]['uid'][0]
+
+    def has_user(self, user):
+        con = self.init_connection()
+        try:
+            resp = self._ldap_search_user(con, user, ['dn'])
+            return len(resp) != 0
+        finally:
+            con.unbind()
 
     def init_connection(self):
         # Initialize LDAP connection
@@ -72,3 +79,8 @@ class LDAPStore (Component):
             resp = connection.simple_bind_s(self.bind_dn, self.bind_passwd)
 
         return connection
+
+    def _ldap_search_user(self, conn, user, attrs):
+        filter_ = ldap.filter.filter_format(self.user_matchfilter, [user])
+        return con.search_s(self.user_searchbase, ldap.SCOPE_SUBTREE, filter_,
+                            attrs)
