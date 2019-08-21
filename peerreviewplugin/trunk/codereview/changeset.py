@@ -83,6 +83,12 @@ class PeerChangeset(Component):
     Really remove the user <strong id="user-rem-name"></strong> from the list?</p>
 </div>
 """
+
+        if 'CODE_REVIEW_DEV' not in req.perm:
+            res = '<div id="peer-msg" class="system-message warning">%s</div>' % \
+                  _("You don't have permission to create a code review.")
+            return self.review_tmpl % res
+
         users = get_users(self.env)
         data = {
             'form-token': req.form_token,
@@ -134,6 +140,9 @@ class PeerChangeset(Component):
         </dl>
         """
 
+        if 'CODE_REVIEW_VIEW' not in req.perm:
+            return ""
+
         res = Resource('peerreview', review['review_id'])
 
         data = {
@@ -160,6 +169,8 @@ class PeerChangeset(Component):
     def process_request(self, req):
 
         if req.method == 'POST':
+            req.perm.require('CODE_REVIEW_DEV')
+
             review = create_changeset_review(self, req)
             if not review:
                 writeResponse(req, '<div id="peer-msg" class="system-message warning">%s</div>' %
@@ -173,6 +184,7 @@ class PeerChangeset(Component):
         dm['data'] = "%s:%s" % (req.args.get('peer_repo', ''), req.args.get('peer_rev', ''))
         rev_data = list(dm.list_matching_objects())
 
+        # Permission handling is done in the called methods so the proper message is created there.
         if not rev_data:
             data = {'action': 'create',
                     'html': self.create_review_form(req)}
