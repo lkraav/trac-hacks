@@ -219,14 +219,26 @@ jQuery(document).ready(function($) {
                     }).fail(show_error).always(board_data.reset_timer);
                 },
                 "Delete!": function() {
-                    var post_data = serialized_post_data(card, 'delete_card', board_data);
-                    var current_dialog = $(this);
-                    $.post(board_data.api_url, post_data, function(data) {
-                        $card_element.parent().remove();
-                        current_dialog.dialog("close");
-                    }).done(function() {
-                        board_data.stacks_by_name[card.stack].version += 1;
-                    }).fail(show_error).always(board_data.reset_timer);
+                    var deleteCardDialog = $("<div title='Confirm delete'>Really delete card?</div>");
+                    deleteCardDialog.dialog({
+                        modal: true,
+                        dialogClass: "trac-cards-dialog",
+                        buttons: {
+                            "Delete!": function() {
+                                var post_data = serialized_post_data(card, 'delete_card', board_data);
+                                $.post(board_data.api_url, post_data, function(data) {
+                                    $card_element.parent().remove();
+                                    deleteCardDialog.dialog("close");
+                                    editCardDialog.dialog("close");
+                                }).done(function() {
+                                    board_data.stacks_by_name[card.stack].version += 1;
+                                }).fail(show_error).always(board_data.reset_timer);
+                            },
+                            "Cancel": function() {
+                                $(this).dialog("close");
+                            }
+                        }
+                    });
                 },
                 "Cancel": function() {
                     $(this).dialog("close");
