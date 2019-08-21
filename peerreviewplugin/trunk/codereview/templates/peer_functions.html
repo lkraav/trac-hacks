@@ -35,6 +35,18 @@
                 <th>Finish Date:</th>
                 <td>$review.finish_date</td>
             </tr>
+            <tr py:if="changeset">
+                <th>Changeset:</th>
+                <td>
+                    <a href="${href.changeset(changeset, repo)}" title="Show changeset ${changeset}">${changeset}</a>
+                </td>
+            </tr>
+            <tr py:if="changeset">
+                <th>Repository:</th>
+                <td>
+                    <a href="${href.browser(repo)}" title="Show repository ${repo}">${repo}</a>
+                </td>
+            </tr>
             </tbody>
         </table>
         <table py:if="review['notes']" class="info-table">

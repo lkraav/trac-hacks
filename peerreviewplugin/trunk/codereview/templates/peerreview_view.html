@@ -51,6 +51,11 @@
                         </tr>
                     </thead>
                     <tbody>
+                    <tr py:if="changeset">
+                        <td><em>This is a review for changeset
+                            <a href="${href.changeset(changeset, repo)}" title="Show changeset ${changeset}">${changeset}</a>.</em>
+                        </td>
+                    </tr>
                     <tr>
                         <td>${review_info(review)}</td>
                     </tr>

@@ -257,3 +257,21 @@ def create_changeset_review(self, req):
     dm['data'] = "%s:%s" % (reponame, rev)
     dm.insert()
     return review
+
+
+def get_changeset_data(env, review_id):
+    """Return changeset information for the given review id if any.
+
+    Checks the table 'peerreviewdata' for a changeset entry for this
+    review id.
+
+    @param review_id: numeric id of a review
+    @return: list [reponame, changeset] or ['', ''] if no changeset review
+    """
+    dm = ReviewDataModel(env)
+    dm['type'] = 'changeset'
+    dm['review_id'] = review_id
+    rev_data = list(dm.list_matching_objects())
+    if not rev_data:
+        return ['', '']
+    return rev_data[-1]['data'].split(':')

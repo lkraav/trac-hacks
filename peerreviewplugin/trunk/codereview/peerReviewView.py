@@ -14,6 +14,7 @@
 
 import itertools
 import re
+from codereview.changeset import get_changeset_data
 from codereview.model import Comment, get_users, \
     PeerReviewerModel, PeerReviewModel, ReviewCommentModel, ReviewDataModel, ReviewFileModel
 from codereview.peerReviewMain import add_ctxt_nav_items, web_context_compat
@@ -188,12 +189,15 @@ class PeerReviewView(Component):
             elif req.args.get('modify'):
                 req.redirect(req.href.peerReviewNew(resubmit=review_id, modify=1))
 
+        changeset = get_changeset_data(self.env, review_id)
         data = {'review_files': self.get_files_for_review_id(req, review_id, True),
                 'users': get_users(self.env),
                 'show_ticket': self.show_ticket,
                 'cycle': itertools.cycle,
                 'review': self.get_review_by_id(req, review_id),
-                'reviewer': list(PeerReviewerModel.select_by_review_id(self.env, review_id))
+                'reviewer': list(PeerReviewerModel.select_by_review_id(self.env, review_id)),
+                'repo': changeset[0],
+                'changeset': changeset[1]
                 }
 
         # check to see if the user is a manager of this page or not

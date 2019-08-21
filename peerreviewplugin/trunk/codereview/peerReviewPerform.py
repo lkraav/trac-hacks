@@ -16,6 +16,7 @@
 # repository browser's line number to indicate what lines are being
 # reviewed and if there are any comments on a particular line.
 
+from codereview.changeset import get_changeset_data
 from codereview.model import Comment, ReviewCommentModel, PeerReviewModel, ReviewFileModel
 from codereview.peerReviewMain import add_ctxt_nav_items
 from codereview.repo import file_data_from_repo
@@ -143,6 +144,11 @@ class PeerReviewPerform(Component):
             data['fullrange'] = True
         else:
             data['fullrange'] = False
+
+        # Mark if this is a changeset review
+        changeset = get_changeset_data(self.env, review['review_id'])
+        data.update({'changeset': changeset[1],
+                     'repo': changeset[0]})
 
         # Generate HTML preview - this code take from Trac - refer to their documentation
         mime_type = node.content_type
