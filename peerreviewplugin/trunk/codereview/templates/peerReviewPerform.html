@@ -71,30 +71,54 @@
             </div>
 
             <h3>File Information</h3>
-            <dl class="overview" id="file-info">
+            <dl class="overview" id="file-info"
+                py:with="repo_url=review_file['repo'] if review_file['repo'] else ''">
                 <dt>Path:</dt>
-                <dd>${review_file['path']}</dd>
+                <dd><a href="${href.browser(repo_url, review_file['path'], rev=review_file['changerevision'])}"
+                       title="Show file in browser">${review_file['path']}</a></dd>
                 <dt>Repository:</dt>
-                <dd>${review_file['repo'] if review_file['repo'] else '(default)'}</dd>
+                <dd>
+                    <a href="${href.browser(repo_url)}">${review_file['repo'] if review_file['repo'] else '(default)'}</a>
+                    <small><em>(Head)</em></small>
+                </dd>
                 <dt>Repo Revision:</dt>
-                <dd>${review_file['revision']}</dd>
+                <dd>
+                    <a href="${href.browser(repo_url, rev=review_file['revision'])}"
+                       title="Show repository @ ${review_file['revision']}">${review_file['revision']}</a>
+                    <small><em>(click to show repository @ ${review_file['revision']})</em></small>
+                </dd>
                 <dt>File Revision:</dt>
-                <dd>${review_file['changerevision']}</dd>
-                <dt>Start Line:</dt>
-                <dd>${review_file['line_start']}<br/></dd>
-                <dt>End Line:</dt>
-                <dd>${review_file['line_end']}<br/></dd>
+                <dd>
+                    <a href="${href.browser(repo_url, review_file['path'], rev=review_file['changerevision'])}"
+                       title="Show file in browser">${review_file['changerevision']}</a>
+                    <small><em>(click to show file @ ${review_file['revision']})</em></small>
+                </dd>
+                <py:if test="review_file['line_start'] != 0">
+                    <dt>Start Line:</dt>
+                    <dd>${review_file['line_start']}<br/></dd>
+                    <dt>End Line:</dt>
+                    <dd>${review_file['line_end']}<br/></dd>
+                </py:if>
             </dl>
 
             <py:if test="parent_review">
                 <h3>Followup from file:</h3>
-                <dl class="overview" id="parent-info">
+                <dl class="overview" id="parent-info"
+                    py:with="repo_url=par_file['repo'] if par_file['repo'] else ''">
                     <dt>Path:</dt>
-                    <dd>${par_file['path']}</dd>
+                    <dd><a href="${href.browser(repo_url, par_file['path'], rev=par_file['changerevision'])}"
+                           title="Show file in browser">${par_file['path']}</a></dd>
                     <dt>Repo Revision:</dt>
-                    <dd>${par_file['revision']}</dd>
+                    <dd>
+                        <a href="${href.browser(repo_url, rev=par_file['revision'])}"
+                           title="Show repository @ ${par_file['revision']}">${par_file['revision']}</a>
+                        <small><em>(click to show repository @ ${par_file['revision']})</em></small>
+                    </dd>
                     <dt>File Revision:</dt>
-                    <dd>${par_file['changerevision']}</dd>
+                    <dd><a href="${href.browser(repo_url, par_file['path'], rev=par_file['changerevision'])}"
+                           title="Show file in browser">${par_file['changerevision']}</a>
+                        <small><em>(click to show file @ ${par_file['revision']})</em></small>
+                    </dd>
                     <dt>Comments:</dt>
                     <dd py:if="diff.options.contextall">
                         <py:for each="idx, line in enumerate(par_file.comments)">

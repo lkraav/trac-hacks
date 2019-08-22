@@ -15,10 +15,9 @@
 # an HTML friendly format.  The line annotator customizes the
 # repository browser's line number to indicate what lines are being
 # reviewed and if there are any comments on a particular line.
-
+import os
 from codereview.changeset import get_changeset_data
 from codereview.model import Comment, ReviewCommentModel, PeerReviewModel, ReviewFileModel
-from codereview.peerReviewMain import add_ctxt_nav_items
 from codereview.repo import file_data_from_repo
 from codereview.util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
 from trac.core import *
@@ -27,7 +26,8 @@ from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.resource import ResourceNotFound
 from trac.util import format_date
 from trac.util.html import html as tag
-from trac.web.chrome import INavigationContributor, Chrome, \
+from trac.util.text import _
+from trac.web.chrome import add_ctxtnav, INavigationContributor, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_script, web_context
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
@@ -127,13 +127,14 @@ class PeerReviewPerform(Component):
         #         plain_href = req.href.peerReviewBrowser(node.path, rev=node.rev, format='txt')
         #         add_link(req, 'alternate', plain_href, 'Plain Text', 'text/plain')
 
+        if data['changeset']:
+            # This simulates a parent review by creating some temporary data
+            # not backed by the database. If it's a new file, parent information is omitted
+            data.update(self.changeset_data(data, r_file, repos))
+
+
         if data['parent_review']:
             # A followup review with diff viewer
-            data.update(create_diff_data(req, data))
-        elif data['changeset']:
-            # This simulates a parent review by creating some temporary data
-            # not backed by the database
-            data.update(self.changeset_data(data, r_file, repos))
             data.update(create_diff_data(req, data))
         else:
             data.update(self.preview_for_file(req, r_file, data['node']))
@@ -152,9 +153,26 @@ class PeerReviewPerform(Component):
         add_script_data(req, self.create_script_data(req, data))
         add_script(req, 'common/js/auto_preview.js')
         add_script(req, "hw/js/peer_review_perform.js")
-        add_ctxt_nav_items(req)
+        self.add_ctxt_nav_items(req, review, r_file)
 
         return 'peerReviewPerform.html', data, None
+
+    def add_ctxt_nav_items(self, req, review, r_file):
+        rev_files = ["%s:%s" % (item['path'], item['file_id'])
+                     for item in ReviewFileModel.select_by_review(self.env, review['review_id'])]
+        idx = rev_files.index("%s:%s" % (r_file['path'], r_file['file_id']))
+        if not idx:
+            add_ctxtnav(req, _("Previous File"))
+        else:
+            path, file_id = rev_files[idx - 1].split(':')
+            path = os.path.basename(path)
+            add_ctxtnav(req, _("Previous File"), req.href.peerReviewPerform(IDFile=file_id), title=_("File %s") % path)
+        if idx == len(rev_files)-1:
+            add_ctxtnav(req, _("Next File"))
+        else:
+            path, file_id = rev_files[idx + 1].split(':')
+            path = os.path.basename(path)
+            add_ctxtnav(req, _("Next File"), req.href.peerReviewPerform(IDFile=file_id), title=_("File %s") % path)
 
     def create_script_data(self, req, data):
         r_file = data['review_file']
@@ -261,15 +279,23 @@ class PeerReviewPerform(Component):
 
         prev = data['node'].get_previous()
 
+        if not prev:
+            # This file was added
+            return {'par_file': None,
+                    'parent_review': None,
+                    'par_node': None
+                    }
+
         # Create a temp file object for holding the data for the template
         par_file = ReviewFileModel(self.env)
-        par_file['path'] = prev[0]
-        par_file['changerevision'] = str(prev[1])
-        par_file['revision'] = str(prev[1])
-        par_file['line_start'] = 0
-        # par_file['revision'] =
-        par_file.comments = []
+        rev = str(prev[1])
         rev_or_latest = prev[1] or repos.youngest_rev
+        par_file['path'] = prev[0]
+        par_file['changerevision'] = rev
+        par_file['revision'] = rev
+        par_file['line_start'] = 0
+        par_file['repo'] = r_file['repo']
+        par_file.comments = []
         par_node = get_existing_node(self.env, repos, par_file['path'], rev_or_latest)
 
         return {'par_file': par_file,
@@ -420,14 +446,26 @@ def create_diff_data(req, data):
                        ignore_space_changes=diff_data['options']['ignorewhitespace'])
 
     changes = []
+    file_href = req.href.browser(data['review_file']['repo'],
+                                 data['review_file']['path'],
+                                 rev=data['review_file']['changerevision'])
+    par_rev = par_node.rev if par_node else ''
+    # This is shown in the header of the table
+    par_rev_info = " (Review #%s)" % data['parent_review']['review_id'] \
+        if data['parent_review'].exists else ''
+    par_href = req.href.browser(data['par_file']['repo'],
+                                data['par_file']['path'],
+                                rev=data['par_file']['changerevision'])
     info = {'diffs': diff,
             'new': {'path': node.path,
                     'rev': "%s (Review #%s)" % (node.rev, data['review']['review_id']),
-                    'shortrev': node.rev
+                    'shortrev': node.rev,
+                    'href': file_href
                     },
-            'old': {'path': par_node.path,
-                    'rev': "%s (Review #%s)" % (par_node.rev, data['parent_review']['review_id']),
-                    'shortrev': par_node.rev
+            'old': {'path': par_node.path if par_node else '',
+                    'rev': "%s%s" % (par_rev, par_rev_info),
+                    'shortrev': par_rev,
+                    'href': par_href
                     },
             'props': []}
     changes.append(info)

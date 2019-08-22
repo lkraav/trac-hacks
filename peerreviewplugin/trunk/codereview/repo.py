@@ -155,6 +155,9 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
 
 def file_data_from_repo(node, keyword_substitution=False):
 
+    if not node:
+        return u''
+
     dat = u''
     if keyword_substitution:
         content = node.get_processed_content()
