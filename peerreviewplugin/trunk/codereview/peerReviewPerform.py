@@ -24,13 +24,14 @@ from codereview.util import get_review_for_file, not_allowed_to_comment, review_
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
+from trac.resource import ResourceNotFound
 from trac.util import format_date
 from trac.util.html import html as tag
 from trac.web.chrome import INavigationContributor, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_script, web_context
 from trac.web.main import IRequestHandler
 from trac.versioncontrol.web_ui.util import *
-from trac.versioncontrol.api import RepositoryManager
+from trac.versioncontrol.api import InvalidRepository, RepositoryManager
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
 
 
@@ -93,19 +94,111 @@ class PeerReviewPerform(Component):
         if not fileid:
             raise TracError("No file ID given - unable to load page.", "File ID Error")
 
-        data = {'file_id': fileid}
-
         r_file = ReviewFileModel(self.env, fileid)
-        review = PeerReviewModel(self.env, r_file['review_id'])
-        review.date = format_date(review['created'])
-        data['review_file'] = r_file
-        data['review'] = review
+        if not r_file.exists:
+            raise ResourceNotFound("File not found.", "File ID Error")
 
         repos = RepositoryManager(self.env).get_repository(r_file['repo'])
         if not repos:
-            raise TracError("Unable to acquire subversion repository.",
-                            "Subversion Repository Error")
+            raise InvalidRepository("Unable to acquire repository.", "Repository Error")
 
+        review = PeerReviewModel(self.env, r_file['review_id'])
+        review.date = format_date(review['created'])
+
+        data = {'file_id': fileid,
+                'review_file': r_file,
+                'review': review,
+                'fullrange': True if int(r_file['line_start']) == 0 else False,
+                'node': self.get_current_file_node(r_file, repos)
+                }
+
+        # Add parent data if any
+        data.update(self.parent_data(review, r_file, repos))
+
+        # Mark if this is a changeset review
+        changeset = get_changeset_data(self.env, review['review_id'])
+        data.update({'changeset': changeset[1],
+                     'repo': changeset[0]})
+
+        # mimeview = Mimeview(self.env)
+        # content = node.get_content().read(mimeview.max_preview_size)  # We get the raw data without keyword substitution
+        # if not is_binary(content):
+        #     if mime_type != 'text/plain':
+        #         plain_href = req.href.peerReviewBrowser(node.path, rev=node.rev, format='txt')
+        #         add_link(req, 'alternate', plain_href, 'Plain Text', 'text/plain')
+
+        if data['parent_review']:
+            # A followup review with diff viewer
+            data.update(create_diff_data(req, data))
+        elif data['changeset']:
+            # This simulates a parent review by creating some temporary data
+            # not backed by the database
+            data.update(self.changeset_data(data, r_file, repos))
+            data.update(create_diff_data(req, data))
+        else:
+            data.update(self.preview_for_file(req, r_file, data['node']))
+
+        # A finished review can't be changed anymore except by a manager
+        data['is_finished'] = review_is_finished(self.env.config, review)
+        # A user can't chnage his voting for a reviewed review
+        data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
+        data['not_allowed'] = not_allowed_to_comment(self.env, review, req.perm, req.authname)
+
+        Chrome(self.env).add_jquery_ui(req)
+
+        add_stylesheet(req, 'common/css/code.css')
+        add_stylesheet(req, 'common/css/diff.css')
+        add_stylesheet(req, 'hw/css/peerreview.css')
+        add_script_data(req, self.create_script_data(req, data))
+        add_script(req, 'common/js/auto_preview.js')
+        add_script(req, "hw/js/peer_review_perform.js")
+        add_ctxt_nav_items(req)
+
+        return 'peerReviewPerform.html', data, None
+
+    def create_script_data(self, req, data):
+        r_file = data['review_file']
+        scr_data = {'peer_comments': sorted(list(set([c.line_num for c in
+                                                      Comment.select_by_file_id(self.env, r_file['file_id'])]))),
+                    'peer_file_id': r_file['file_id'],
+                    'peer_review_id': r_file['review_id'],
+                    'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
+                    'form_token': req.form_token,
+                    'peer_diff_style': data['style'] if 'style' in data else 'no_diff'}
+        if data['parent_review']:
+            scr_data['peer_parent_file_id'] = data['par_file']['file_id']
+            scr_data['peer_parent_comments'] = sorted(list(set([c.line_num for c in
+                                                                Comment.select_by_file_id(self.env, data['par_file']['file_id'])])))
+        else:
+            scr_data['peer_parent_file_id'] = 0  # Mark that we don't have a parent
+            scr_data['peer_parent_comments'] = []
+        return scr_data
+
+    def preview_for_file(self, req, r_file, node):
+        # Generate HTML preview - this code take from Trac - refer to their documentation
+        mime_type = node.content_type
+        self.env.log.debug("mime_type taken from node.content_type: %s" % (mime_type,))
+        if not mime_type or mime_type == 'application/octet-stream':
+            mime_type = get_mimetype(node.name) or mime_type or 'text/plain'
+
+        mimeview = Mimeview(self.env)
+        content = node.get_content().read(mimeview.max_preview_size)  # We get the raw data without keyword substitution
+
+        context = web_context(req, 'rfile', r_file['file_id'])
+        context.set_hints(reviewfile=r_file)
+
+        self.env.log.debug("Creating preview data for %s with mime_type = %s" % (node.created_path, mime_type))
+        preview_data = mimeview.preview_data(context, content, len(content),
+                                             mime_type, node.created_path,
+                                             None,
+                                             annotations=['performCodeReview'])
+
+        # TODO: use in template 'preview.rendered' instead similar to preview_file.html
+        return {'file_rendered': preview_data['rendered'],
+                'preview': preview_data
+                }
+
+    def get_current_file_node(self, r_file, repos):
         # The following may raise an exception if revision can't be found
         rev = r_file['changerevision']  # last change for the given file
         if rev:
@@ -118,10 +211,21 @@ class PeerReviewPerform(Component):
             self.log.info("No Node for file '%s' in revision %s. Using repository revision %s instead.",
                           r_file['path'], rev_or_latest, repos.youngest_rev)
             node = get_existing_node(self.env, repos, r_file['path'], repos.youngest_rev)
+        return node
 
+    def parent_data(self, review, r_file, repos):
+        """Create a dictionary with data about parent review.
+
+        The dictionary is used to update the 'data' dict.
+
+        @param review: PeerReviewModel object representing the current review
+        @param r_file: ReviewFileModel object representing the current file
+        @param repos: Trac Repository holding the file
+        @return: dict with additional data for the 'data' dict
+        """
         par_review = None
         par_file = None
-        # Data for parent review if any
+        par_node = None
         if review['parent_id'] != 0:
             par_file_id = get_parent_file_id(self.env, r_file, review['parent_id'])
             # If this is a file added to the review we don't have a parent file
@@ -136,88 +240,42 @@ class PeerReviewPerform(Component):
                     par_revision = repos.normalize_rev(par_revision)
                 rev_or_latest = par_revision or repos.youngest_rev
                 par_node = get_existing_node(self.env, repos, par_file['path'], rev_or_latest)
-        data['par_file'] = par_file
-        data['parent_review'] = par_review
 
-        # Wether to show the full file in the browser.
-        if int(r_file['line_start']) == 0:
-            data['fullrange'] = True
-        else:
-            data['fullrange'] = False
+        return {'par_file': par_file,
+                'parent_review': par_review,
+                'par_node': par_node
+                }
 
-        # Mark if this is a changeset review
-        changeset = get_changeset_data(self.env, review['review_id'])
-        data.update({'changeset': changeset[1],
-                     'repo': changeset[0]})
+    def changeset_data(self, data, r_file, repos):
+        """Create a dictionary with data about previous file revision for changeset review.
 
-        # Generate HTML preview - this code take from Trac - refer to their documentation
-        mime_type = node.content_type
-        self.env.log.debug("mime_type taken from node.content_type: %s" % (mime_type,))
-        if not mime_type or mime_type == 'application/octet-stream':
-            mime_type = get_mimetype(node.name) or mime_type or 'text/plain'
+        The dictionary is used to update the 'data' dict.
 
-        ctpos = mime_type.find('charset=')
-        if ctpos >= 0:
-            charset = mime_type[ctpos + 8:]
-        else:
-            charset = None
+        @param review: PeerReviewModel object representing the current review
+        @param r_file: ReviewFileModel object representing the current file
+        @param repos: Trac Repository holding the file
+        @return: dict with additional data for the 'data' dict
+        """
+        # Just to keep the template happy. May possibly be removed later
+        par_review = PeerReviewModel(self.env)
 
-        mimeview = Mimeview(self.env)
-        rev = None  # Is this correct? Seems to work with the call 'rev=rev or node.rev' further down
-        content = node.get_content().read(mimeview.max_preview_size)  # We get the raw data without keyword substitution
-        if not is_binary(content):
-            if mime_type != 'text/plain':
-                plain_href = req.href.peerReviewBrowser(node.path, rev=rev or node.rev, format='txt')
-                add_link(req, 'alternate', plain_href, 'Plain Text', 'text/plain')
+        prev = data['node'].get_previous()
 
-        if par_review:
-            # A followup review with diff viewer
-            create_diff_data(req, data, node, par_node)
-        else:
-            context = web_context(req, 'rfile', fileid)
-            context.set_hints(reviewfile=r_file)
+        # Create a temp file object for holding the data for the template
+        par_file = ReviewFileModel(self.env)
+        par_file['path'] = prev[0]
+        par_file['changerevision'] = str(prev[1])
+        par_file['revision'] = str(prev[1])
+        par_file['line_start'] = 0
+        # par_file['revision'] =
+        par_file.comments = []
+        rev_or_latest = prev[1] or repos.youngest_rev
+        par_node = get_existing_node(self.env, repos, par_file['path'], rev_or_latest)
 
-            self.env.log.debug("Creating preview data for %s with mime_type = %s" % (node.created_path, mime_type))
-            preview_data = mimeview.preview_data(context, content, len(content),
-                                                 mime_type, node.created_path,
-                                                 None,
-                                                 annotations=['performCodeReview'])
-            data['preview'] = preview_data
-            # TODO: use in template 'preview.rendered' instead similar to preview_file.html
-            data['file_rendered'] = preview_data['rendered']
-
-        # A finished review can't be changed anymore except by a manager
-        data['is_finished'] = review_is_finished(self.env.config, review)
-        # A user can't chnage his voting for a reviewed review
-        data['review_locked'] = review_is_locked(self.env.config, review, req.authname)
-        data['not_allowed'] = not_allowed_to_comment(self.env, review, req.perm, req.authname)
-
-        scr_data = {'peer_comments': sorted(list(set([c.line_num for c in
-                                               Comment.select_by_file_id(self.env, r_file['file_id'])]))),
-                    'peer_file_id': fileid,
-                    'peer_review_id': r_file['review_id'],
-                    'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
-                    'form_token': req.form_token,
-                    'peer_diff_style': data['style'] if 'style' in data else 'no_diff'}
-        if par_review:
-            scr_data['peer_parent_file_id'] = par_file['file_id']
-            scr_data['peer_parent_comments'] = sorted(list(set([c.line_num for c in
-                                                         Comment.select_by_file_id(self.env, par_file['file_id'])])))
-        else:
-            scr_data['peer_parent_file_id'] = 0  # Mark that we don't have a parent
-            scr_data['peer_parent_comments'] = []
-
-        Chrome(self.env).add_jquery_ui(req)
-
-        add_stylesheet(req, 'common/css/code.css')
-        add_stylesheet(req, 'common/css/diff.css')
-        add_stylesheet(req, 'hw/css/peerreview.css')
-        add_script_data(req, scr_data)
-        add_script(req, 'common/js/auto_preview.js')
-        add_script(req, "hw/js/peer_review_perform.js")
-        add_ctxt_nav_items(req)
-
-        return 'peerReviewPerform.html', data, None
+        return {'par_file': par_file,
+                'parent_review': par_review,
+                'par_node': par_node
+                }
 
 
 class CommentAnnotator(object):
@@ -294,7 +352,6 @@ class CommentAnnotator(object):
         add_stylesheet(context.req, 'hw/css/peerreview.css')
         add_script(context.req, "hw/js/peer_review_perform.js")
 
-
     def annotate(self, row, lineno):
         """line annotator for Perform Code Review page.
 
@@ -343,14 +400,14 @@ def get_parent_file_id(env, r_file, par_review_id):
     return 0
 
 
-def create_diff_data(req, data, node, par_node):
+def create_diff_data(req, data):
     style, options, diff_data = get_diff_options(req)
+
+    node = data['node']
+    par_node = data['par_node']
 
     old = file_data_from_repo(par_node)
     new = file_data_from_repo(node)
-
-    if old == new:
-        data['nochanges'] = True
 
     if diff_data['options']['contextall']:
         context = None
@@ -362,18 +419,22 @@ def create_diff_data(req, data, node, par_node):
                        ignore_case=diff_data['options']['ignorecase'],
                        ignore_space_changes=diff_data['options']['ignorewhitespace'])
 
-    review = data['review']
-    par_review = data['parent_review']
     changes = []
     info = {'diffs': diff,
-            'new': {'path': node.path, 'rev': "%s (Review #%s)" % (node.rev, review['review_id']), 'shortrev': node.rev},
-            'old': {'path': par_node.path, 'rev': "%s (Review #%s)" % (par_node.rev, par_review['review_id']),
-                    'shortrev': par_node.rev},
+            'new': {'path': node.path,
+                    'rev': "%s (Review #%s)" % (node.rev, data['review']['review_id']),
+                    'shortrev': node.rev
+                    },
+            'old': {'path': par_node.path,
+                    'rev': "%s (Review #%s)" % (par_node.rev, data['parent_review']['review_id']),
+                    'shortrev': par_node.rev
+                    },
             'props': []}
     changes.append(info)
-    data['changes'] = changes
-
-    data['diff'] = diff_data  # {'style': 'inline', 'options': []},
-    data['longcol'] = 'Revision',
-    data['shortcol'] = 'r'
-    data['style'] = style
+    return {'changes': changes,
+            'diff': diff_data,  # {'style': 'inline', 'options': []},
+            'longcol': 'Revision',
+            'shortcol': 'r',
+            'style': style,
+            'nochanges': True if old == new else False
+            }

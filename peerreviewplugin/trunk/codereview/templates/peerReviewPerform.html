@@ -29,18 +29,12 @@
                 <form id="prefs" action="">
                     <div>
                         <input type="hidden" name="IDFile" value="$file_id"/>
-                        <py:if test="not changeset">
-                            <!--!      <input type="hidden" name="old_path" value="${'/' + pathjoin(reponame, old_path)}" />
-                                  <input type="hidden" name="new_path" value="${'/' + pathjoin(reponame, new_path)}" />
-                                  <input type="hidden" name="old" value="$old_rev" />
-                                  <input type="hidden" name="new" value="$new_rev" />
-                                --></py:if>
                         <xi:include href="diff_options.html"/>
                     </div>
                 </form>
             </py:if>
 
-            <div py:if="parent_review" id="review-info">
+            <div py:if="parent_review and not changeset" id="review-info">
                 <table class="review-table">
                     <thead>
                     <tr>
@@ -56,7 +50,7 @@
                     </tbody>
                 </table>
             </div>
-            <div py:if="not parent_review">
+            <div py:if="not parent_review or changeset">
                 <table class="review-table">
                     <thead>
                     <tr>
