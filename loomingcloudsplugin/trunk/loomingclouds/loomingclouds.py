@@ -9,14 +9,14 @@ from genshi.filters.transform import Transformer
 from pkg_resources import resource_filename
 
 from trac.core import *
-from trac.mimeview import Context
+from trac.util.html import html as tag
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import add_script
 from trac.web.chrome import add_stylesheet
-from trac.web.chrome import ITemplateProvider
+from trac.web.chrome import ITemplateProvider, web_context
 from trac.wiki.formatter import Formatter
-from tractags.macros import TagCloudMacro
-from genshi.builder import tag
+from tractags.macros import TagWikiMacros
+
 
 class LoomingClouds(Component):
 
@@ -43,7 +43,7 @@ class LoomingClouds(Component):
             add_stylesheet(req, 'tags/css/tractags.css')
             add_stylesheet(req, 'loomingclouds/css/tagcloud.css')
             add_script(req, 'loomingclouds/js/tag_filler.js')
-            formatter = Formatter(self.env, Context.from_request(req))
+            formatter = Formatter(self.env, web_context(req))
             macro = TagCloudMacro(self.env)
             cloud = macro.expand_macro(formatter, 'TagCloud', '')
 

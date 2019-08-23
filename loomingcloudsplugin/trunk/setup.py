@@ -30,7 +30,7 @@
 
 from setuptools import find_packages, setup
 
-version='0.12r1'
+version='1.0'
 
 setup(name='LoomingClouds',
       version=version,
@@ -39,7 +39,7 @@ setup(name='LoomingClouds',
       author_email='jhammel@openplans.org',
       maintainer = 'Rowan Wookey',
       maintainer_email = 'support@obsidianproject.co.uk',
-      url='http://trac-hacks.org/wiki/LoomingCloudsPlugin',
+      url='https://trac-hacks.org/wiki/LoomingCloudsPlugin',
       keywords='trac plugin',
       license = \
     """Copyright (c), Jeff Hammel. Copyright (c) 2010 Rowan Wookey. All rights reserved. Released under the 3-clause BSD license. """,
@@ -48,7 +48,6 @@ setup(name='LoomingClouds',
       package_data = {'loomingclouds' : ['htdocs/js/*.js', 'htdocs/css/*.css']},
       zip_safe=False,
       install_requires=['TracTags'],
-      dependency_links=['http://trac-hacks.org/svn/tagsplugin/tags/0.6#egg=TracTags'],
       entry_points = """
       [trac.plugins]
       loomingclouds = loomingclouds
