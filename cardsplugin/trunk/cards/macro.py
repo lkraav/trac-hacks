@@ -2,10 +2,9 @@
 
 from itertools import groupby
 
-from genshi.builder import tag
-
 from trac.config import BoolOption, IntOption
 from trac.core import *
+from trac.util.html import tag
 from trac.web.chrome import (Chrome, add_script, add_script_data,
                              add_stylesheet, ITemplateProvider)
 from trac.wiki.api import parse_args
@@ -81,4 +80,4 @@ class CardsMacro(WikiMacroBase):
             'labels': labels,
             'width': width,
         }
-        return chrome.render_template(req, 'cards_macro.html', data, 'text/html', True)
+        return chrome.render_fragment(req, 'cards_macro.html', data)

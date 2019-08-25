@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = 'Cards',
-    version = '1.3',
+    version = '1.4',
     author = 'Peter Suter',
     author_email = 'peter@lucid.ch',
     description = 'Macro of interactive board for sorting cards in list',
