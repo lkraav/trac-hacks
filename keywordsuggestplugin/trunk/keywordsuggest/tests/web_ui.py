@@ -8,7 +8,7 @@
 
 import unittest
 
-from trac.test import EnvironmentStub
+from trac.test import EnvironmentStub, MockRequest
 
 from keywordsuggest.web_ui import KeywordSuggestModule
 
@@ -18,7 +18,7 @@ class KeywordSuggestModuleTestCase(unittest.TestCase):
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'keywordsuggest.*'])
         self.ksm = KeywordSuggestModule(self.env)
-        self.req = Mock()
+        self.req = MockRequest(self.env)
 
     def tearDown(self):
         pass
