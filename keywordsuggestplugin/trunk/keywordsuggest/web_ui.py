@@ -9,50 +9,30 @@
 # you should have received as part of this distribution.
 
 import re
+import textwrap
 
-from genshi.core import Markup
 from genshi.filters.transform import Transformer
 from trac import __version__ as trac_version
 from trac.config import Option, BoolOption, ListOption
 from trac.core import Component, implements
 from trac.resource import Resource, ResourceSystem
-from trac.util.html import html as tag
-from trac.util.text import unicode_quote_plus
+from trac.util.html import Markup, html as tag
+from trac.util.text import javascript_quote, unicode_quote_plus
 from trac.web import IRequestFilter
 from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import (
-    Chrome, ITemplateProvider, add_script, add_stylesheet
-)
-
-try:
-    from trac.util.text import javascript_quote
-except ImportError:
-    # Fallback for Trac<0.11.3 - verbatim copy from Trac 1.0.
-    _js_quote = {'\\': '\\\\', '"': '\\"', '\b': '\\b', '\f': '\\f',
-                 '\n': '\\n', '\r': '\\r', '\t': '\\t', "'": "\\'"}
-    for i in range(0x20) + [ord(c) for c in '&<>']:
-        _js_quote.setdefault(chr(i), '\\u%04x' % i)
-    _js_quote_re = re.compile(r'[\x00-\x1f\\"\b\f\n\r\t\'&<>]')
-
-    def javascript_quote(text):
-        """Quote strings for inclusion in javascript"""
-        if not text:
-            return ''
-        def replace(match):
-            return _js_quote[match.group(0)]
-        return _js_quote_re.sub(replace, text)
+from trac.web.chrome import Chrome, add_script, add_stylesheet
 
 try:
     from tractags.api import TagSystem
-    tagsplugin_is_installed = True
 except ImportError:
-    # TagsPlugin not available
     tagsplugin_is_installed = False
+else:
+    tagsplugin_is_installed = True
 
 
 class KeywordSuggestModule(Component):
 
-    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateStreamFilter)
 
     field_opt = Option(
         'keywordsuggest', 'field', 'keywords',
@@ -98,16 +78,9 @@ class KeywordSuggestModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith('/ticket/') or \
-           req.path_info.startswith('/newticket') or \
-           (tagsplugin_is_installed and req.path_info.startswith('/wiki/')):
-            # In Trac 1.0 and later, jQuery-UI is included from the core.
-            if trac_version >= '1.0':
-                Chrome(self.env).add_jquery_ui(req)
-            else:
-                add_script(req, 'keywordsuggest/js/jquery-ui-1.8.16.custom.min.js')
-                add_stylesheet(req, 'keywordsuggest/css/jquery-ui-1.8.16.custom.css')
-
+        if template == 'ticket.html' or \
+                (tagsplugin_is_installed and template == 'wiki_edit.html'):
+            Chrome(self.env).add_jquery_ui(req)
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -120,68 +93,68 @@ class KeywordSuggestModule(Component):
 
         keywords = self._get_keywords_string(req)
         if not keywords:
-            self.log.debug("""
-                No keywords found. KeywordSuggestPlugin is disabled.""")
+            self.log.debug("No keywords found. KeywordSuggestPlugin is "
+                           "disabled.")
             return stream
 
         matchfromstart = '"^" +'
         if self.matchcontains_opt:
             matchfromstart = ''
 
-        js = """jQuery(document).ready(function($) {
-                    var keywords = [ %(keywords)s ]
-                    var sep = '%(multipleseparator)s'.trim() + ' '
-                    function split( val ) {
-                        return val.split( /%(multipleseparator)s\s*|\s+/ );
-                    }
-                    function extractLast( term ) {
-                        return split( term ).pop();
-                    }
-                    $('%(field)s')
-                        // don't navigate away from the field on tab when selecting an item
-                        .bind( "keydown", function( event ) {
-                            if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "autocomplete" ).menu.active ) {
-                                event.preventDefault();
-                            }
-                        })
-                        .autocomplete({
-                            delay: 0,
-                            minLength: 0,
-                            source: function( request, response ) {
-                                // delegate back to autocomplete, but extract the last term
-                                response( $.ui.autocomplete.filter(
-                                    keywords, extractLast( request.term ) ) );
-                            },
-                            focus: function() {
-                                // prevent value inserted on focus
-                                return false;
-                            },
-                            select: function( event, ui ) {
-                                var terms = split( this.value );
-                                // remove the current input
-                                terms.pop();
-                                // add the selected item
-                                terms.push( ui.item.value );
-                                // add placeholder for comma-and-space at end
-                                terms.push( "" );
-                                this.value = terms.join( sep );
-                                return false;
-                            }
-                        });
-                });"""
+        js = textwrap.dedent("""
+            jQuery(function($) {
+                var keywords = [ %(keywords)s ];
+                var sep = '%(multipleseparator)s'.trim() + ' ';
+                function split(val) {
+                    return val.split( /%(multipleseparator)s\s*|\s+/ );
+                }
+                function extractLast(term) {
+                    return split(term).pop();
+                }
+                $('%(field)s')
+                    // don't navigate away from the field on tab when selecting an item
+                    .bind( "keydown", function( event ) {
+                        if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "autocomplete" ).menu.active ) {
+                            event.preventDefault();
+                        }
+                    })
+                    .autocomplete({
+                        delay: 0,
+                        minLength: 0,
+                        source: function( request, response ) {
+                            // delegate back to autocomplete, but extract the last term
+                            response( $.ui.autocomplete.filter(
+                                keywords, extractLast( request.term ) ) );
+                        },
+                        focus: function() {
+                            // prevent value inserted on focus
+                            return false;
+                        },
+                        select: function( event, ui ) {
+                            var terms = split( this.value );
+                            // remove the current input
+                            terms.pop();
+                            // add the selected item
+                            terms.push( ui.item.value );
+                            // add placeholder for comma-and-space at end
+                            terms.push( "" );
+                            this.value = terms.join( sep );
+                            return false;
+                        }
+                    });
+            });
+            """)
 
-        # inject transient part of javascript directly to ticket.html template
-        if req.path_info.startswith('/ticket/') or \
-           req.path_info.startswith('/newticket'):
+        if filename == 'ticket.html':
             js_ticket = js % {
                 'field': '#field-' + self.field_opt,
                 'multipleseparator': self.multiple_separator,
                 'keywords': keywords,
                 'matchfromstart': matchfromstart
             }
-            stream = stream | Transformer('.//head').append\
-                              (tag.script(Markup(js_ticket),
-                               type='text/javascript'))
+            stream |= Transformer('.//head')\
+                      .append(tag.script(Markup(js_ticket),
+                              type='text/javascript'))
 
             # Turn keywords field label into link to an arbitrary resource.
             if self.helppage_opt:
@@ -190,20 +163,20 @@ class KeywordSuggestModule(Component):
                     link = tag.a(href=link, target='blank')
                 else:
                     link = tag.a(href=link)
-                stream = stream | Transformer\
-                     ('//label[@for="field-keywords"]/text()').wrap(link)
+                stream |= Transformer('//label[@for="field-keywords"]/text()')\
+                          .wrap(link)
 
         # inject transient part of javascript directly into wiki.html template
-        elif tagsplugin_is_installed and req.path_info.startswith('/wiki/'):
+        elif tagsplugin_is_installed and filename == 'wiki_edit.html':
             js_wiki = js % {
                 'field': '#tags',
                 'multipleseparator': self.multiple_separator,
                 'keywords': keywords,
                 'matchfromstart': matchfromstart
             }
-            stream = stream | Transformer('.//head').append \
-                              (tag.script(Markup(js_wiki),
-                               type='text/javascript'))
+            stream |= Transformer('.//head')\
+                      .append(tag.script(Markup(js_wiki),
+                              type='text/javascript'))
         return stream
 
     # Private methods
@@ -264,12 +237,3 @@ class KeywordSuggestModule(Component):
                 anchor = unicode_quote_plus(anchor)
             link = '#'.join([req.href.wiki(path), anchor])
         return link
-
-    # ITemplateProvider methods
-    def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('keywordsuggest', resource_filename(__name__, 'htdocs'))]
-
-    def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'htdocs')]
