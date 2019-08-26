@@ -30,25 +30,23 @@
 
 from setuptools import find_packages, setup
 
-version='1.0'
 
 setup(name='TracLoomingClouds',
-      version=version,
-      description="inline clouds for ticket.html",
+      version='1.0',
+      description="Inline tag cloud for tickets",
       author='Jeff Hammel',
       author_email='jhammel@openplans.org',
-      maintainer = 'Rowan Wookey',
-      maintainer_email = 'support@obsidianproject.co.uk',
+      maintainer='Rowan Wookey',
+      maintainer_email='support@obsidianproject.co.uk',
       url='https://trac-hacks.org/wiki/LoomingCloudsPlugin',
       keywords='trac plugin',
-      license = \
-    """Copyright (c), Jeff Hammel. Copyright (c) 2010 Rowan Wookey. All rights reserved. Released under the 3-clause BSD license. """,
+      license='3-Clause BSD',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
       include_package_data=True,
-      package_data = {'loomingclouds' : ['htdocs/js/*.js', 'htdocs/css/*.css']},
+      package_data={'loomingclouds' : ['htdocs/js/*.js', 'htdocs/css/*.css']},
       zip_safe=False,
       install_requires=['TracTags'],
-      entry_points = """
+      entry_points="""
       [trac.plugins]
       loomingclouds = loomingclouds
       """,
