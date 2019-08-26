@@ -32,7 +32,7 @@ from setuptools import find_packages, setup
 
 version='1.0'
 
-setup(name='LoomingClouds',
+setup(name='tracLoomingClouds',
       version=version,
       description="inline clouds for ticket.html",
       author='Jeff Hammel',
