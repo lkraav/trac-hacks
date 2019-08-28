@@ -169,6 +169,14 @@ class StyledTablePlugin(Component):
                 is_row = True
                 row_count = 0
                 row_style = attribute['row']['style']
+            elif 'rowend' in attribute:
+                if row_count == 0:
+                    continue
+                row_dict.update(attribute)
+                row_list.append(row_dict)
+                row_dict = {}
+                row_count = 0
+                is_row = False
             else:
                 if not heading_set and not body_set_first:
                     first_row_as_header = True
@@ -233,6 +241,8 @@ class StyledTablePlugin(Component):
             trow = tag.tr()
             tcol = ''
             for column in column_list:
+                if not column in row:
+                    row[column] = {'style': '', 'body_name': '', 'data': u'', 'name': None, 'heading': False}
                 if row[column]['heading']:
                     continue
                 if row[column]['body_name'] == body_name and not body_set:
