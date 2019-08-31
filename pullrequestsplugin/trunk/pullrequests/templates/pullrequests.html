@@ -1,74 +1,89 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
-  <xi:include href="admin.html" />
+# extends 'admin.html'
+<!DOCTYPE html>
   <head>
-    <title>Pull Requests</title>
+    <title>
+      # block admintitle
+      Pull Requests
+      ${ super() }
+      # endblock admintitle
+    </title>
   </head>
 
   <body>
-    <h2>Pull Requests <span py:if="view == 'list' and paginator.has_more_pages"> (${paginator.displayed_items()})</span></h2>
+    # block adminpanel
+    # if view == 'list' and paginator.has_more_pages:
+    <h2>Pull Requests (${paginator.displayed_items()})</h2>
+    # else:
+    <h2>Pull Requests</h2>
+    # endif
 
-    <py:choose test="view">
-      <form py:when="'detail'" class="mod" id="pullrequests_modify" method="post" action="">
-        <fieldset>
-          <legend>Modify Pull Request:</legend>
-          <div class="field">
-            <label>Status:
-                <select name="status">
-                    <option py:for="status in statuses" value="$status" selected="${'selected' if pr.status == status else None}">$status</option>
-                </select>
-              </label>
-          </div>
-          <div class="buttons">
-            <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
-            <input type="submit" name="cancel" value="${_('Cancel')}" />
-          </div>
-        </fieldset>
-      </form>
+    # if view == 'detail':
+    <form class="mod" id="pullrequests_modify" method="post" action="">
+      ${jmacros.form_token_input()}
+      <fieldset>
+        <legend>Modify Pull Request:</legend>
+        <div class="field">
+          <label>Status:
+              <select name="status">
+                  # for status in statuses:
+                  <option value="${status}" selected="${'selected' if pr.status == status else None}">${status}</option>
+                  # endfor
+              </select>
+            </label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
+          <input type="submit" name="cancel" value="${_('Cancel')}" />
+        </div>
+      </fieldset>
+    </form>
+    # else:
+    <form id="prefs" method="get" action="">
+      <fieldset>
+        <div class="field">
+          <label>Max items per page:
+            <input type="text" name="max" size="10" value="${max_per_page}" />
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
+        </div>
+      </fieldset>
+    </form>
 
-      <py:otherwise>
-        <form id="prefs" method="get" action="">
-          <fieldset>
-            <div class="field">
-              <label>Max items per page:
-                <input type="text" name="max" size="10" value="${max_per_page}" />
-              </label>
-            </div>
-            <div class="buttons">
-              <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
-            </div>
-          </fieldset>
-        </form>
+    # if paginator.show_index:
+    # include 'page_index.html'
+    # endif
 
-        <xi:include py:if="paginator.show_index" href="page_index.html" />
-        <table class="listing">
-          <thead>
-            <tr>
-              <th>PR</th><th>Status</th><th>Ticket</th><th>Changes</th><th>Author</th><th>Reviewers</th><th>Opened</th><th>Modified</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr py:for="idx, pr in enumerate(prs)" class="${'odd' if idx % 2 else 'even'}">
-              <td>$pr.id</td>
-              <td><a href="${panel_href(pr.id)}">$pr.status</a></td>
-              
-              <td><a href="${href('ticket', pr.ticket) + '#comment:%s' % pr.comment}">#$pr.ticket</a></td>
-              <td>${format_wikilink(pr)}</td>
-              <td>$pr.author</td>
-              <td>$pr.reviewers</td>
-              <td>${format_datetime_utc(pr.opened)}</td>
-              <td>${format_datetime_utc(pr.modified)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <xi:include py:if="paginator.show_index" href="page_index.html" />
+    <table class="listing">
+      <thead>
+        <tr>
+          <th>PR</th><th>Status</th><th>Ticket</th><th>Changes</th><th>Author</th><th>Reviewers</th><th>Opened</th><th>Modified</th>
+        </tr>
+      </thead>
+      <tbody>
+        # for pr in prs:
+        <tr class="${loop.cycle('odd', 'even')}">
+          <td>${pr.id}</td>
+          <td><a href="${panel_href(pr.id)}">${pr.status}</a></td>
+          
+          <td><a href="${href('ticket', pr.ticket) + '#comment:%s' % pr.comment}">#${pr.ticket}</a></td>
+          <td>${format_wikilink(pr)}</td>
+          <td>${pr.author}</td>
+          <td>${pr.reviewers}</td>
+          <td>${format_datetime_utc(pr.opened)}</td>
+          <td>${format_datetime_utc(pr.modified)}</td>
+        </tr>
+        # endfor
+      </tbody>
+    </table>
 
-      </py:otherwise>
-    </py:choose>
+    # if paginator.show_index:
+    # include 'page_index.html'
+    # endif
 
+    # endif
+
+    # endblock adminpanel
   </body>
 </html>

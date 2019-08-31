@@ -4,8 +4,6 @@ import re
 
 from datetime import datetime
 
-from genshi.builder import tag
-
 from trac.admin import *
 from trac.config import ListOption
 from trac.core import *
@@ -13,6 +11,7 @@ from trac.resource import Resource
 from trac.ticket.api import ITicketManipulator
 from trac.util import get_reporter_id
 from trac.util.datefmt import format_datetime, utc
+from trac.util.html import tag
 from trac.util.presentation import Paginator
 from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet, add_notice, add_warning, web_context
@@ -107,7 +106,7 @@ class PullRequestsModule(Component):
                     'format_wikilink': format_wikilink,
             }
 
-        return 'pullrequests.html', data, None
+        return 'pullrequests.html', data
 
     # IRequestFilter methods
 
