@@ -15,7 +15,7 @@ setup(
     long_description = open(os.path.join(os.path.dirname(__file__), 'README')).read(),
     license = 'BSD',
     keywords = 'trac plugin macro ',
-    url = 'http://trac-hacks.org/wiki/RssEmbedMacro',
+    url = 'https://trac-hacks.org/wiki/RssEmbedMacro',
     classifiers = [
         'Framework :: Trac',
         'Development Status :: 5 - Production/Stable',

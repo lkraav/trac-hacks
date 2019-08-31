@@ -18,5 +18,5 @@ Example
 =======
 An example usage::
 
-  [[RssEmbed(http://example.com/trac/report/1?format=rss&USER=anonymous]]
+  [[RssEmbed(url=http://example.com/trac/report/1?format=rss&USER=anonymous]]
 
