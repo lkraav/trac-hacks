@@ -1,12 +1,12 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
-  <xi:include href="admin.html" />
+# extends 'admin.html'
+<!DOCTYPE html>
   <head>
-    <title>Time Log</title>
+    <title>
+      # block admintitle
+      Time Log
+      ${ super() }
+      # endblock admintitle
+    </title>
     <script type="text/javascript">
       jQuery(document).ready(function($) {
         $(".chosen-select").chosen({});
@@ -16,135 +16,177 @@
   </head>
 
   <body>
-    <h2>Log <span py:if="view == 'list' and paginator.has_more_pages"> (${paginator.displayed_items()})</span></h2>
-    <py:choose test="view">
-      <form py:when="'detail'" class="mod" id="timetracking_modifyentry" method="post" action="">
-        <fieldset>
-          <input type="hidden" name="user" value="$selected_user" />
-          <legend>Modify Log Entry:</legend>
-          <div class="field">
-            <label>Task:<br />
-              <select name="task_id" class="chosen-select">
-                <option py:for="task in tasks" value="$task.id" selected="${'selected' if task.id == entry.task_id else None}">${format_task_label(task)}</option>
-              </select>
-            </label>
-          </div>
-          <div class="field">
-            <label>Spent hours:<br /><input type="text" name="spent_hours" value="$entry.spent_hours" /></label>
-          </div>
-          <div class="field">
-            <label>Date:<br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(entry.date)}" /></label>
-          </div>
-          <div py:if="show_location" class="field">
-            <label>$label_location:<br /><input type="text" name="location" value="$entry.location" /></label>
-          </div>
-          <div class="field">
-            <fieldset>
-              <label for="timetracking_entrycomment">Comment:</label>
-              <p>
-                <textarea id="timetracking_entrycomment" name="comment" class="wikitext trac-resizable"
-                          rows="6" cols="60">$entry.comment</textarea>
-              </p>
-            </fieldset>
-          </div>
-          <div class="buttons">
-            <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
-            <input type="submit" name="cancel" value="${_('Cancel')}" />
-          </div>
-        </fieldset>
-      </form>
+    # block adminpanel
+    # if view == 'list' and paginator.has_more_pages:
+    <h2>Log (${paginator.displayed_items()})</h2>
+    # else:
+    <h2>Log</h2>
+    # endif
 
-      <py:otherwise>
-        <form id="prefs" method="get" action="">
+    # if view == 'detail':
+    <form class="mod" id="timetracking_modifyentry" method="post" action="">
+      ${jmacros.form_token_input()}
+      <fieldset>
+        <input type="hidden" name="user" value="${selected_user}" />
+        <legend>Modify Log Entry:</legend>
+        <div class="field">
+          <label>Task:<br />
+            <select name="task_id" class="chosen-select">
+              # for task in tasks:
+              <option value="${task.id}" selected="${'selected' if task.id == entry.task_id else None}">${format_task_label(task)}</option>
+              # endfor
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <label>Spent hours:<br /><input type="text" name="spent_hours" value="${entry.spent_hours}" /></label>
+        </div>
+        <div class="field">
+          <label>Date:<br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(entry.date)}" /></label>
+        </div>
+        # if show_location:
+        <div class="field">
+          <label>${label_location}:<br /><input type="text" name="location" value="${entry.location}" /></label>
+        </div>
+        # endif
+        <div class="field">
           <fieldset>
-            <div py:if="allow_user_switching" class="field">
-              <label>User:
-                <select name="user">
-                    <option py:for="user in users" value="$user" selected="${'selected' if selected_user == user else None}">$user</option>
-                </select>
-              </label>
-            </div>
-            <div py:if="use_year" class="field">
-              <label>Year:
-                <select name="year">
-                    <option py:for="year in years" value="$year" selected="${'selected' if selected_year == year else None}">$year</option>
-                </select>
-              </label>
-            </div>
-            <div class="field">
-              <label>Max items per page:
-                <input type="text" name="max" size="10" value="${max_per_page}" />
-              </label>
-            </div>
-            <div class="buttons">
-              <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
-            </div>
+            <label for="timetracking_entrycomment">Comment:</label>
+            <p>
+              <textarea id="timetracking_entrycomment" name="comment" class="wikitext trac-resizable"
+                        rows="6" cols="60">${entry.comment}</textarea>
+            </p>
           </fieldset>
-        </form>
-        <form class="addnew" id="timetracking_addentry" method="post" action="">
-          <fieldset>
-            <legend>Add Log Entry:</legend>
-            <input type="hidden" name="user" value="$selected_user" />
-            <input type="hidden" name="year" value="$selected_year" />
-            <div class="field">
-              <label>Task:
-                <select name="task_id" class="chosen-select">
-                    <option py:for="task in tasks" value="$task.id" selected="${task.id == default_task_id or None}">${format_task_label(task)}</option>
-                </select>
-              </label>
-            </div>
-            <div class="field">
-              <label>Spent hours: <input type="text" name="spent_hours" value="$default_spent_hours" /></label>
-            </div>
-            <div class="field">
-              <label>Date: <br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(default_date)}"/></label>
-            </div>
-            <div py:if="show_location" class="field">
-              <label>$label_location: <br /><input type="text" name="location" value="$default_location"/></label>
-            </div>
-            <div class="field">
-              <label>Comment: <input type="text" name="comment" class="wikitext" value="$default_comment"/></label>
-            </div>
-            <div class="buttons">
-              <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
-            </div>
-          </fieldset>
-        </form>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
+          <input type="submit" name="cancel" value="${_('Cancel')}" />
+        </div>
+      </fieldset>
+    </form>
+    # else:
+    <form id="prefs" method="get" action="">
+      <fieldset>
+        # if allow_user_switching:
+        <div class="field">
+          <label>User:
+            <select name="user">
+              # for user in users:
+              <option value="${user}" selected="${'selected' if selected_user == user else None}">${user}</option>
+              # endfor
+            </select>
+          </label>
+        </div>
+        # endif
+        # if use_year:
+        <div class="field">
+          <label>Year:
+            <select name="year">
+              # for year in years:
+                <option value="${year}" selected="${'selected' if selected_year == year else None}">${year}</option>
+              # endfor
+            </select>
+          </label>
+        </div>
+        # endif
+        <div class="field">
+          <label>Max items per page:
+            <input type="text" name="max" size="10" value="${max_per_page}" />
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
+        </div>
+      </fieldset>
+    </form>
+    <form class="addnew" id="timetracking_addentry" method="post" action="">
+      ${jmacros.form_token_input()}
+      <fieldset>
+        <legend>Add Log Entry:</legend>
+        <input type="hidden" name="user" value="${selected_user}" />
+        <input type="hidden" name="year" value="${selected_year}" />
+        <div class="field">
+          <label>Task:
+            <select name="task_id" class="chosen-select">
+                # for task in tasks:
+                <option value="${task.id}" selected="${task.id == default_task_id or None}">${format_task_label(task)}</option>
+                # endfor
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <label>Spent hours: <input type="text" name="spent_hours" value="${default_spent_hours}" /></label>
+        </div>
+        <div class="field">
+          <label>Date: <br /><input type="text" name="date" class="trac-datepicker" value="${format_date_utc(default_date)}"/></label>
+        </div>
+        # if show_location:
+        <div class="field">
+          <label>${label_location}: <br /><input type="text" name="location" value="${default_location}"/></label>
+        </div>
+        # endif
+        <div class="field">
+          <label>Comment: <input type="text" name="comment" class="wikitext" value="${default_comment}"/></label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
+        </div>
+      </fieldset>
+    </form>
 
-        <xi:include py:if="paginator.show_index" href="page_index.html" />
-        <form id="timetracking_entrylist" method="post" action="">
-          <table class="listing">
-            <thead>
-              <tr><th class="sel">&nbsp;</th>
-                <th>Task</th><th>Spent hours</th><th>Date</th><th py:if="show_location">$label_location</th><th>Comment</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr py:for="entry in entries">
-                <td class="sel">
-                  <input type="checkbox" class="trac-disable-determinant"
-                         name="sel" value="$entry.id" />
-                </td>
-                <td py:with="task = tasks_by_id.get(entry.task_id)"><a href="${panel_href(entry.id)}">${"%s: %s: %s" % (task.category, task.project, task.name) if task else '?'}</a></td>
-                <td>$entry.spent_hours</td>
-                <td>${format_date_utc(entry.date)}</td>
-                <td py:if="show_location">$entry.location</td>
-                <td>${wiki_to_html(context, entry.comment)}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="buttons">
-            <input type="hidden" name="user" value="$selected_user" />
-            <input type="hidden" name="year" value="$selected_year" />
-            <input type="submit" name="remove" class="trac-disable trac-disable-on-submit" value="${_('Remove selected entries')}" />
-          </div>
-        </form>
-        <xi:include py:if="paginator.show_index" href="page_index.html" />
+    # if paginator.show_index:
+    # include 'page_index.html'
+    # endif
 
-      </py:otherwise>
-    </py:choose>
+    <form id="timetracking_entrylist" method="post" action="">
+      ${jmacros.form_token_input()}
+      <table class="listing">
+        <thead>
+          <tr><th class="sel">&nbsp;</th>
+            <th>Task</th>
+            <th>Spent hours</th>
+            <th>Date</th>
+            # if show_location:
+            <th>${label_location}</th>
+            # endif
+            <th>Comment</th>
+          </tr>
+        </thead>
+        <tbody>
+          # for entry in entries:
+          <tr>
+            <td class="sel">
+              <input type="checkbox" class="trac-disable-determinant"
+                     name="sel" value="${entry.id}" />
+            </td>
+            # with task = tasks_by_id.get(entry.task_id)
+            <td><a href="${panel_href(entry.id)}">${"%s: %s: %s" % (task.category, task.project, task.name) if task else '?'}</a></td>
+            # endwith
+            <td>${entry.spent_hours}</td>
+            <td>${format_date_utc(entry.date)}</td>
+            # if show_location:
+            <td>${entry.location}</td>
+            # endif
+            <td>${wiki_to_html(context, entry.comment)}</td>
+          </tr>
+          # endfor
+        </tbody>
+      </table>
+      <div class="buttons">
+        <input type="hidden" name="user" value="${selected_user}" />
+        <input type="hidden" name="year" value="${selected_year}" />
+        <input type="submit" name="remove" class="trac-disable trac-disable-on-submit" value="${_('Remove selected entries')}" />
+      </div>
+    </form>
+
+    # if paginator.show_index:
+    # include 'page_index.html'
+    # endif
+
+    # endif
     
     <div id="help"><strong>Note:</strong> See <a href="${href.report()}">Available Reports</a> for reporting features.</div>
+    # endblock adminpanel
   </body>
 
 </html>

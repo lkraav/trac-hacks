@@ -1,35 +1,38 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
-  <xi:include href="admin.html" />
+# extends 'admin.html'
+<!DOCTYPE html>
   <head>
-    <title>Time Log Tasks</title>
+    <title>
+      # block admintitle
+      Time Log Tasks
+      ${ super() }
+      # endblock admintitle
+    </title>
   </head>
 
   <body>
+    # block adminpanel
     <h2>Task Estimates</h2>
 
     <form class="mod" id="timetracking_copyestimates" method="post" action="">
+      ${jmacros.form_token_input()}
       <fieldset>
         <legend>Copy Estimates:</legend>
         <div class="field">
-          From: $estimate_name
+          From: ${estimate_name}
         </div>
         <div class="field">
-          <label>To: <input type="text" name="new_estimate_name" class="trac-autofocus" value="$estimate_name" /></label>
+          <label>To: <input type="text" name="new_estimate_name" class="trac-autofocus" value="${estimate_name}" /></label>
         </div>
         <div class="buttons">
           <input type="hidden" name="action" value="copy-estimates" />
-          <input type="hidden" name="estimate" value="$estimate_name" />
-          <input type="hidden" name="year" value="$selected_year" />
+          <input type="hidden" name="estimate" value="${estimate_name}" />
+          <input type="hidden" name="year" value="${selected_year}" />
           <input type="submit" name="copy-estimates" class="trac-disable-on-submit" value="${_('Copy')}"/>
           <input type="submit" name="cancel" value="${_('Cancel')}" />
         </div>
       </fieldset>
     </form>
+    # endblock adminpanel
   </body>
 
 </html>

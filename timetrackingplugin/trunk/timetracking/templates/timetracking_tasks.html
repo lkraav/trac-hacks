@@ -1,12 +1,12 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
-  <xi:include href="admin.html" />
+# extends 'admin.html'
+<!DOCTYPE html>
   <head>
-    <title>Time Log Tasks</title>
+    <title>
+      # block admintitle
+      Time Log Tasks
+      ${ super() }
+      # endblock admintitle
+    </title>
     <script type="text/javascript">
       jQuery(document).ready(function($) {
         $(".chosen-select").chosen({});
@@ -15,133 +15,150 @@
   </head>
 
   <body>
-    <h2>Tasks <span py:if="view == 'list'" class="trac-count">(${len(tasks)})</span></h2>
+    # block adminpanel
+    # if view == 'list':
+    <h2>Tasks (${len(tasks)})</h2>
+    # else:
+    <h2>Tasks</h2>
+    # endif
 
-    <py:choose test="view">
-      <form py:when="'detail'" class="mod" id="timetracking_modifytask" method="post" action="">
-        <fieldset>
-          <legend>Modify Log Task:</legend>
-          <div class="field">
-            <label>$label_category:<br /><input type="text" name="category" value="$task.category" /></label>
-          </div>
-          <div class="field">
-            <label>$label_project:<br /><input type="text" name="project" value="$task.project" /></label>
-          </div>
-          <div py:if="use_year" class="field">
-            <label>Year:<br /><input type="text" name="year" value="$task.year" /></label>
-          </div>
-          <div class="field">
-            <label>Name:<br /><input type="text" name="name" class="trac-autofocus" value="$task.name" /></label>
-          </div>
-          <div class="field">
-            <label>Description:<br /><input type="text" name="description" class="trac-autofocus" value="$task.description" /></label>
-          </div>
-          <div class="field">
-            <label>Estimated hours:<br /><input type="text" name="estimated_hours" value="$estimate.estimated_hours" /></label>
-          </div>
-          <div class="field">
-            <fieldset>
-              <label for="timetracking_taskcomment">Estimate Comment:</label>
-              <p>
-                <textarea id="timetracking_taskcomment" name="comment" class="wikitext trac-resizable"
-                          rows="6" cols="60">$estimate.comment</textarea>
-              </p>
-            </fieldset>
-          </div>
-          <div class="buttons">
-            <input type="hidden" name="estimate" value="$estimate.name" />
-            <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
-            <input type="submit" name="cancel" value="${_('Cancel')}" />
-          </div>
-        </fieldset>
-      </form>
-
-      <py:otherwise>
-        <form  id="prefs" method="get" action="">
+    # if view == 'detail':
+    <form class="mod" id="timetracking_modifytask" method="post" action="">
+      ${jmacros.form_token_input()}
+      <fieldset>
+        <legend>Modify Log Task:</legend>
+        <div class="field">
+          <label>${label_category}:<br /><input type="text" name="category" value="${task.category}" /></label>
+        </div>
+        <div class="field">
+          <label>${label_project}:<br /><input type="text" name="project" value="${task.project}" /></label>
+        </div>
+        # if use_year:
+        <div class="field">
+          <label>Year:<br /><input type="text" name="year" value="${task.year}" /></label>
+        </div>
+        #endif
+        <div class="field">
+          <label>Name:<br /><input type="text" name="name" class="trac-autofocus" value="${task.name}" /></label>
+        </div>
+        <div class="field">
+          <label>Description:<br /><input type="text" name="description" class="trac-autofocus" value="${task.description}" /></label>
+        </div>
+        <div class="field">
+          <label>Estimated hours:<br /><input type="text" name="estimated_hours" value="${estimate.estimated_hours}" /></label>
+        </div>
+        <div class="field">
           <fieldset>
-            <div class="field" py:if="use_year">
-              <label>Year:
-                <select name="year">
-                    <option py:for="year in years" value="$year" selected="${'selected' if selected_year == year else None}">$year</option>
-                </select>
-              </label>
-            </div>
-            <div class="field">
-              <label>Estimate:
-                <select name="estimate">
-                    <option py:for="name in estimate_names" value="$name" selected="${'selected' if selected_estimate == name else None}">$name</option>
-                </select>
-              </label>
-            </div>
-            <div class="buttons">
-              <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
-            </div>
+            <label for="timetracking_taskcomment">Estimate Comment:</label>
+            <p>
+              <textarea id="timetracking_taskcomment" name="comment" class="wikitext trac-resizable"
+                        rows="6" cols="60">${estimate.comment}</textarea>
+            </p>
           </fieldset>
-        </form>
-        <form class="addnew" id="timetracking_addtask" method="post" action="">
-          <fieldset>
-            <legend>Add Task:</legend>
-            <input type="hidden" name="year" value="$selected_year" />
-            <div class="field">
-              <label>$label_category: <input type="text" name="category" /></label>
-            </div>
-            <div class="field">
-              <label>$label_project: <input type="text" name="project" /></label>
-            </div>
-            <div class="field">
-              <label>Name: <input type="text" name="name" /></label>
-            </div>
-            <div class="field">
-              <label>Description: <input type="text" name="description" /></label>
-            </div>
-            <div class="buttons">
-              <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
-            </div>
-          </fieldset>
-        </form>
+        </div>
+        <div class="buttons">
+          <input type="hidden" name="estimate" value="${estimate.name}" />
+          <input type="submit" name="save" class="trac-disable-on-submit" value="${_('Save')}"/>
+          <input type="submit" name="cancel" value="${_('Cancel')}" />
+        </div>
+      </fieldset>
+    </form>
+    # else:
+    <form  id="prefs" method="get" action="">
+      <fieldset>
+        # if use_year:
+        <div class="field">
+          <label>Year:
+            <select name="year">
+              # for year in years:
+              <option value="${year}" selected="${'selected' if selected_year == year else None}">${year}</option>
+              # endfor
+            </select>
+          </label>
+        </div>
+        # endif
+        <div class="field">
+          <label>Estimate:
+            <select name="estimate">
+              # for name in estimate_names:
+                <option value="${name}" selected="${'selected' if selected_estimate == name else None}">${name}</option>
+              # endfor
+            </select>
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="update" class="trac-disable-on-submit" value="${_('Update')}"/>
+        </div>
+      </fieldset>
+    </form>
+    <form class="addnew" id="timetracking_addtask" method="post" action="">
+      ${jmacros.form_token_input()}
+      <fieldset>
+        <legend>Add Task:</legend>
+        <input type="hidden" name="year" value="${selected_year}" />
+        <div class="field">
+          <label>${label_category}: <input type="text" name="category" /></label>
+        </div>
+        <div class="field">
+          <label>${label_project}: <input type="text" name="project" /></label>
+        </div>
+        <div class="field">
+          <label>Name: <input type="text" name="name" /></label>
+        </div>
+        <div class="field">
+          <label>Description: <input type="text" name="description" /></label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="add" class="trac-disable-on-submit" value="${_('Add')}"/>
+        </div>
+      </fieldset>
+    </form>
 
-        <form id="timetracking_tasklist" method="post" action="">
-          <table class="listing">
-            <thead>
-              <tr><th class="sel">&nbsp;</th>
-                <th>$label_category</th><th>$label_project</th><th>Name</th><th>Description</th><th>Estimated hours</th><th>Comment</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr py:for="task in tasks">
-                <td class="sel">
-                  <input type="checkbox" class="trac-disable-determinant"
-                         name="sel" value="$task.id" />
-                </td>
-                <td>$task.category</td>
-                <td>$task.project</td>
-                <td><a href="${panel_href(task.id, estimate=selected_estimate)}">$task.name</a></td>
-                <td>$task.description</td>
-                <td>${estimated_hours(task)}</td>
-                <td>${wiki_to_html(context, estimate_comment(task))}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="buttons">
-            <input type="hidden" name="year" value="$selected_year" />
-            <input type="hidden" name="estimate" value="$selected_estimate" />
-            <input type="submit" name="remove" class="trac-disable trac-disable-on-submit" value="${_('Remove selected tasks')}" />
-          </div>
-        </form>
-        
-        <form id="timetracking_copyestimates" method="get" action="">
-          <div class="buttons">
-            <input type="hidden" name="action" value="copy-estimates" />
-            <input type="hidden" name="year" value="$selected_year" />
-            <input type="hidden" name="estimate" value="$selected_estimate" />
-            <input type="submit" class="trac-disable-on-submit" value="${_('Copy estimates')}" />
-          </div>
-        </form>
+    <form id="timetracking_tasklist" method="post" action="">
+      ${jmacros.form_token_input()}
+      <table class="listing">
+        <thead>
+          <tr><th class="sel">&nbsp;</th>
+            <th>${label_category}</th><th>${label_project}</th><th>Name</th><th>Description</th><th>Estimated hours</th><th>Comment</th>
+          </tr>
+        </thead>
+        <tbody>
+          # for task in tasks:
+          <tr>
+            <td class="sel">
+              <input type="checkbox" class="trac-disable-determinant"
+                     name="sel" value="${task.id}" />
+            </td>
+            <td>${task.category}</td>
+            <td>${task.project}</td>
+            <td><a href="${panel_href(task.id, estimate=selected_estimate)}">${task.name}</a></td>
+            <td>${task.description}</td>
+            <td>${estimated_hours(task)}</td>
+            <td>${wiki_to_html(context, estimate_comment(task))}</td>
+          </tr>
+          # endfor
+        </tbody>
+      </table>
+      <div class="buttons">
+        <input type="hidden" name="year" value="${selected_year}" />
+        <input type="hidden" name="estimate" value="${selected_estimate}" />
+        <input type="submit" name="remove" class="trac-disable trac-disable-on-submit" value="${_('Remove selected tasks')}" />
+      </div>
+    </form>
+    
+    <form id="timetracking_copyestimates" method="get" action="">
+      <div class="buttons">
+        <input type="hidden" name="action" value="copy-estimates" />
+        <input type="hidden" name="year" value="${selected_year}" />
+        <input type="hidden" name="estimate" value="${selected_estimate}" />
+        <input type="submit" class="trac-disable-on-submit" value="${_('Copy estimates')}" />
+      </div>
+    </form>
 
-      </py:otherwise>
-    </py:choose>
+    # endif
     
     <div id="help"><strong>Note:</strong> See <a href="${href.report()}">Available Reports</a> for reporting features.</div>
+    # endblock adminpanel
   </body>
 
 </html>

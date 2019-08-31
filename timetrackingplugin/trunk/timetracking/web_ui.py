@@ -2,12 +2,11 @@
 
 from datetime import datetime, timedelta
 
-from genshi.builder import tag
-
 from trac.admin import *
 from trac.config import BoolOption, IntOption, Option
 from trac.core import *
 from trac.util.datefmt import format_date, parse_date, utc
+from trac.util.html import tag
 from trac.util.presentation import Paginator
 from trac.web.chrome import Chrome, add_link, add_script, add_stylesheet, add_notice, add_warning
 
@@ -247,7 +246,7 @@ class LogEntryAdminPanel(Component):
         Chrome(self.env).add_jquery_ui(req)
         add_script(req, 'timetracking/chosen/chosen.jquery.js')
         add_stylesheet(req, 'timetracking/chosen/chosen.css')
-        return 'timetracking_logentries.html', data, None
+        return 'timetracking_logentries.html', data
 
     def render_tasks_panel(self, req, category, panel, path_info):
         # Detail view?
@@ -316,7 +315,7 @@ class LogEntryAdminPanel(Component):
                     'selected_year': year,
                     'estimate_name': estimate_name,
                 }
-                return 'timetracking_copyestimates.html', data, None
+                return 'timetracking_copyestimates.html', data
 
 
             if req.method == 'POST':
@@ -376,4 +375,4 @@ class LogEntryAdminPanel(Component):
 
         add_script(req, 'timetracking/chosen/chosen.jquery.js')
         add_stylesheet(req, 'timetracking/chosen/chosen.css')
-        return 'timetracking_tasks.html', data, None
+        return 'timetracking_tasks.html', data
