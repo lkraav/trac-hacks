@@ -33,7 +33,11 @@
           <label>Task:<br />
             <select name="task_id" class="chosen-select">
               # for task in tasks:
-              <option value="${task.id}" selected="${'selected' if task.id == entry.task_id else None}">${format_task_label(task)}</option>
+              #     if task.id == entry.task_id:
+              <option value="${task.id}" selected>${format_task_label(task)}</option>
+              #     else:
+              <option value="${task.id}">${format_task_label(task)}</option>
+              #     endif
               # endfor
             </select>
           </label>
@@ -72,7 +76,11 @@
           <label>User:
             <select name="user">
               # for user in users:
-              <option value="${user}" selected="${'selected' if selected_user == user else None}">${user}</option>
+              #     if selected_user == user:
+              <option value="${user}" selected>${user}</option>
+              #     else:
+              <option value="${user}">${user}</option>
+              #     endif
               # endfor
             </select>
           </label>
@@ -83,7 +91,11 @@
           <label>Year:
             <select name="year">
               # for year in years:
-                <option value="${year}" selected="${'selected' if selected_year == year else None}">${year}</option>
+              #     if selected_year == year:
+              <option value="${year}" selected>${year}</option>
+              #     else:
+              <option value="${year}">${year}</option>
+              #     endif
               # endfor
             </select>
           </label>
@@ -109,7 +121,11 @@
           <label>Task:
             <select name="task_id" class="chosen-select">
                 # for task in tasks:
-                <option value="${task.id}" selected="${task.id == default_task_id or None}">${format_task_label(task)}</option>
+                #     if task.id == default_task_id:
+                <option value="${task.id}" selected>${format_task_label(task)}</option>
+                #     else:
+                <option value="${task.id}">${format_task_label(task)}</option>
+                #     endif
                 # endfor
             </select>
           </label>

@@ -71,7 +71,11 @@
           <label>Year:
             <select name="year">
               # for year in years:
-              <option value="${year}" selected="${'selected' if selected_year == year else None}">${year}</option>
+              #     if selected_year == year:
+              <option value="${year}" selected>${year}</option>
+              #     else:
+              <option value="${year}">${year}</option>
+              #     endif
               # endfor
             </select>
           </label>
@@ -81,7 +85,11 @@
           <label>Estimate:
             <select name="estimate">
               # for name in estimate_names:
-                <option value="${name}" selected="${'selected' if selected_estimate == name else None}">${name}</option>
+              #     if selected_estimate == name:
+              <option value="${name}" selected>${name}</option>
+              #     else:
+              <option value="${name}">${name}</option>
+              #     endif
               # endfor
             </select>
           </label>
