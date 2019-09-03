@@ -114,10 +114,10 @@ class AbstractWorkbookWriter(object):
         self._metrics_cache = {}
 
     def create_sheet(self, title):
-        raise NotImplemented
+        raise NotImplementedError
 
     def dump(self, out):
-        raise NotImplemented
+        raise NotImplementedError
 
     def dumps(self):
         out = StringIO()
@@ -125,7 +125,7 @@ class AbstractWorkbookWriter(object):
         return out.getvalue()
 
     def _get_excel_styles(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def get_metrics(self, value):
         if not value:
@@ -160,7 +160,7 @@ class AbstractWorksheetWriter(object):
         self.tz = writer.req.tz
 
     def write_row(self, cells):
-        raise NotImplemented
+        raise NotImplementedError
 
     def move_row(self):
         self.row_idx += 1
@@ -177,7 +177,7 @@ class AbstractWorksheetWriter(object):
             widths[idx] = width
 
     def set_col_widths(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     _invalid_chars_re = _make_invalid_chars_re()
 
@@ -294,7 +294,7 @@ class OpenpyxlWorkbookWriter(AbstractWorkbookWriter):
 
     if not openpyxl:
         def _create_book(self):
-            raise NotImplemented
+            raise NotImplementedError
     elif 'write_only' in inspect.getargspec(openpyxl.Workbook.__init__)[0]:
         def _create_book(self):
             return openpyxl.Workbook(write_only=True)
