@@ -295,12 +295,16 @@ class OpenpyxlWorkbookWriter(AbstractWorkbookWriter):
     if not openpyxl:
         def _create_book(self):
             raise NotImplementedError
-    elif 'write_only' in inspect.getargspec(openpyxl.Workbook.__init__)[0]:
-        def _create_book(self):
-            return openpyxl.Workbook(write_only=True)
     else:
+        _workbook_kwargs = {}
+        _workbook_argspec = inspect.getargspec(openpyxl.Workbook.__init__)
+        _workbook_kwargs['write_only'
+                         if 'write_only' in _workbook_argspec[0]
+                         else 'optimized_write'] = True
+        if 'iso_dates' in _workbook_argspec[0]:
+            _workbook_kwargs['iso_dates'] = True
         def _create_book(self):
-            return openpyxl.Workbook(optimized_write=True)
+            return openpyxl.Workbook(**self._workbook_kwargs)
 
 
 class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
@@ -324,7 +328,7 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
                 value = value.astimezone(tz)
                 if has_tz_normalize:
                     value = tz.normalize(value)
-                value = datetime(*(value.timetuple()[0:6]))
+                value = value.replace(tzinfo=None)
                 if style == '[date]':
                     width = len('YYYY-MM-DD')
                 elif style == '[time]':
