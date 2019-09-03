@@ -26,7 +26,11 @@
           <label>Status:
               <select name="status">
                   # for status in statuses:
-                  <option value="${status}" selected="${'selected' if pr.status == status else None}">${status}</option>
+                  #     if pr.status == status:
+                  <option value="${status}" selected>${status}</option>
+                  #     else:
+                  <option value="${status}">${status}</option>
+                  #     endif
                   # endfor
               </select>
             </label>
