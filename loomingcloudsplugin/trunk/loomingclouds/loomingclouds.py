@@ -43,6 +43,5 @@ class LoomingClouds(Component):
     def get_htdocs_dirs(self):
         return [('loomingclouds', resource_filename(__name__, 'htdocs'))]
 
-
     def get_templates_dirs(self):
         return []
