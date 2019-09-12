@@ -52,7 +52,6 @@ class ChildTicketsAdminPanel(Component):
                                     default=['rrr', 'ppp'])
             y = self.config.getlist('childtickets', 'parent.%s.inherit' % t,
                                     default=['ddd', 'cweeeowner'])
-            self.env.log.debug("XXXXX %s --- %s ---" % (x, y))
 
         # Detail view?
         if parenttype:
@@ -73,7 +72,8 @@ class ChildTicketsAdminPanel(Component):
                                 % parenttype,
                                 new_child_ticket_label)
 
-                # NOTE: 'req.arg.get()' returns a string if only one of the multiple options is selected.
+                # NOTE: 'req.arg.get()' returns a string if only one of the
+                # multiple options is selected.
                 headers = req.args.get('headers') or []
                 if not isinstance(headers, list):
                     headers = [headers]
@@ -154,8 +154,9 @@ class ChildTicketsAdminPanel(Component):
 
     def _types(self, ptype=None):
         """
-        Get list of valid ticket type to work with, or of a parenttype is given, return a dictionary
-        with info as to whether the parent type is already selected as an avaible child type.
+        Get list of valid ticket type to work with, or of a parenttype is
+        given, return a dictionary with info as to whether the parent type
+        is already selected as an avaible child type.
         """
 
         types = self.env.db_query("""
@@ -217,7 +218,9 @@ class ParentType(object):
 
     @property
     def table_row_class(self):
-        """Return a class (enabled/disabled) for the table row - allows it to 'look' disabled if not active!"""
+        """Return a class (enabled/disabled) for the table row - allows it
+        to 'look' disabled if not active.
+        """
         if self.allow_child_tickets:
             return 'enabled'
         return 'disabled'

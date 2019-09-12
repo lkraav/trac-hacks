@@ -1,49 +1,49 @@
 div#childtickets {
-    border: 1px outset #999966;
-    padding: 1em;
+  border: 1px outset #999966;
+  padding: 1em;
 }
 
 table.childtickets_listing {
-    clear: both;
-    border-bottom: 1px solid #d7d7d7;
-    border-collapse: collapse;
-    border-spacing: 0;
-    margin-top: 1em;
-    width: 80%;
+  clear: both;
+  border-bottom: 1px solid #d7d7d7;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-top: 1em;
+  width: 80%;
 }
 
 table.childtickets_listing thead tr {
-    background: #f7f7f0
+  background: #f7f7f0
 }
 
 table.childtickets_listing thead th {
-    border: 1px solid #d7d7d7;
-    border-bottom-color: #999;
-    font-size: 11px;
-    font-weight: bold;
-    padding: 2px .5em;
-    vertical-align: bottom;
-    white-space: nowrap;
-    text-align: left;
+  border: 1px solid #d7d7d7;
+  border-bottom-color: #999;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px .5em;
+  vertical-align: bottom;
+  white-space: nowrap;
+  text-align: left;
 }
 
 table.childtickets_listing tbody td {
-    border: 1px dotted #ddd;
-    padding: .3em .5em;
-    vertical-align: top;
+  border: 1px dotted #ddd;
+  padding: .3em .5em;
+  vertical-align: top;
 }
 
 table.childtickets_listing tbody tr {
-    border-top: 1px solid #ddd
+  border-top: 1px solid #ddd
 }
 
 table.childtickets_listing tbody tr.disabled {
-    color: lightgray
+  color: lightgray
 }
 
 #parenttype div {
-    float: left;
-    min-width: 13em;
-    max-width: 33%;
-    padding: 0 2em 0 0;
+  float: left;
+  min-width: 13em;
+  max-width: 33%;
+  padding: 0 2em 0 0;
 }

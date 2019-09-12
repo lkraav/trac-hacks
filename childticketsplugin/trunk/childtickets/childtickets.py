@@ -3,13 +3,13 @@
 
 import re
 
-from genshi.builder import tag
 from genshi.filters import Transformer
 from trac.cache import cached
 from trac.core import *
 from trac.resource import ResourceNotFound
 from trac.ticket.api import ITicketManipulator, ITicketChangeListener
 from trac.ticket.model import Ticket
+from trac.util.html import html as tag
 from trac.web.api import ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_stylesheet
 
@@ -31,6 +31,7 @@ class TracchildticketsModule(Component):
         return x
 
     # ITicketChangeListener methods
+
     def ticket_changed(self, ticket, comment, author, old_values):
         if 'parent' in old_values:
             del self.childtickets
@@ -39,20 +40,24 @@ class TracchildticketsModule(Component):
         del self.childtickets
 
     def ticket_deleted(self, ticket):
-        # NOTE: Is there a way to 'block' a ticket deletion if it still has child tickets?
+        # NOTE: Is there a way to 'block' a ticket deletion if it still
+        # has child tickets?
         del self.childtickets
 
     # ITicketManipulator methods
+
     def prepare_ticket(self, req, ticket, fields, actions):
         pass
 
     def validate_ticket(self, req, ticket):
 
-        # Don't allow ticket to be 'resolved' if any child tickets are still open.
+        # Don't allow ticket to be 'resolved' if any child tickets are
+        # still open.
         if req.args.get('action') == 'resolve':
             for t in self.childtickets.get(ticket.id, []):
                 if Ticket(self.env, t)['status'] != 'closed':
-                    yield '', 'Cannot resolve ticket while child ticket (#%s) is still open.' % t
+                    yield '', "Cannot resolve ticket while child ticket " \
+                              "(#%s) is still open." % t
 
         # Check if the 'parent' field is being used.
         if not ticket.values.get('parent'):
@@ -60,7 +65,8 @@ class TracchildticketsModule(Component):
 
         # Is it of correct 'format'?
         if not re.match('^#\d+', ticket.values.get('parent')):
-            yield 'parent', "The parent id must be of the form '#id' where 'id' is a valid ticket id."
+            yield 'parent', "The parent id must be of the form '#id' where " \
+                            "'id' is a valid ticket id."
             return
 
         # Strip the '#' to get parent id.
@@ -70,19 +76,22 @@ class TracchildticketsModule(Component):
         if ticket.id and pid == ticket.id:
             yield 'parent', "The ticket has same id as parent id."
 
-        # Recursive/Circular ticket check : Does ticket recursion goes too deep (as defined by 'default.max_depth' in 'trac.ini')?
+        # Recursive/Circular ticket check : Does ticket recursion goes too
+        # deep (as defined by 'default.max_depth' in 'trac.ini')?
         max_depth = self.config.getint('childtickets',
                                        'default.max_depth', default=5)
 
-        fam_tree = [ticket.id, pid]  # The 'family tree' already consists of this ticket id plus the parent
-
+        # The 'family tree' already consists of this ticket id plus the parent
+        fam_tree = [ticket.id, pid]
         for grandad in self._get_parent_id(pid):
             fam_tree.append(grandad)
             if ticket.id == grandad:
-                yield 'parent', "The tickets have a circular dependency upon each other : %s" % str(
-                    ' --> '.join(['#%s' % x for x in fam_tree]))
+                dependencies = ' --> '.join('#%s' % x for x in fam_tree)
+                yield 'parent', "The tickets have a circular dependency " \
+                                "upon each other : %s" % dependencies
             if len(fam_tree) > max_depth:
-                yield 'parent', "Parent/Child relationships go too deep, 'max_depth' exceeded (%s) : %s" % (
+                yield 'parent', "Parent/Child relationships go too deep, " \
+                                "'max_depth' exceeded (%s) : %s" % (
                 max_depth, ' - '.join(['#%s' % x for x in fam_tree]))
                 break
 
@@ -93,41 +102,51 @@ class TracchildticketsModule(Component):
             yield 'parent', "The parent ticket #%d does not exist." % pid
 
         else:
-            # (NOTE: The following checks are checks on the parent ticket being defined in the 'parent' box rather than on
-            # the child ticket actually being created. It is therefore possible to 'legally' create this child ticket but
-            # then for the restrictions or type of the parent ticket to change - I have NOT restricted the possibility to
-            # modify parent type after children have been assigned, however, further modifications to the children themselves
-            # would then throw up some errors and force the users to re-set the child type.)
+            # NOTE: The following checks are checks on the parent ticket
+            # being defined in the 'parent' box rather than on the child
+            # ticket actually being created. It is therefore possible to
+            # 'legally' create this child ticket but then for the restrictions
+            # or type of the parent ticket to change - I have NOT restricted
+            # the possibility to modify parent type after children have been
+            # assigned, however, further modifications to the children
+            # themselves would then throw up some errors and force the users
+            # to re-set the child type.)
 
             # Does the parent ticket 'type' even allow child tickets?
             if not self.config.getbool('childtickets',
                                        'parent.%s.allow_child_tickets' %
                                                parent['type']):
-                yield 'parent', "The parent ticket (#%s) has type %s which does not allow child tickets." % (
-                pid, parent['type'])
+                yield 'parent', "The parent ticket (#%s) has type %s which " \
+                                "does not allow child tickets." \
+                                % (pid, parent['type'])
 
-            # It is possible that the parent restricts the type of children it allows.
+            # It is possible the parent restricts the allowed type of children
             allowedtypes = self.config.getlist('childtickets',
-                                               'parent.%s.restrict_child_type' %
-                                               parent['type'], default=[])
+                                               'parent.%s.restrict_child_type'
+                                               % parent['type'], default=[])
             if allowedtypes and ticket['type'] not in allowedtypes:
-                yield 'parent', "The parent ticket (#%s) has type %s which does not allow child type '%s'. Must be one of : %s." % (
-                pid, parent['type'], ticket['type'],
-                ','.join(allowedtypes))
+                yield 'parent', "The parent ticket (#%s) has type %s which " \
+                                "does not allow child type '%s'. Must be " \
+                                "one of : %s." \
+                                % (pid, parent['type'], ticket['type'],
+                                   ','.join(allowedtypes))
 
-            # If the parent is 'closed' then we should not be allowed to create a new child ticket against that parent.
+            # If the parent is 'closed' then we should not be allowed to
+            # create a new child ticket against that parent.
             if parent['status'] == 'closed':
-                yield 'parent', "The parent ticket (#%s) is not an active ticket (status: %s)." % (
-                pid, parent['status'])
+                yield 'parent', "The parent ticket (#%s) is not an active " \
+                                "ticket (status: %s)." \
+                                % (pid, parent['status'])
 
-            self.env.log.debug(
-                "TracchildticketsModule : parent.ticket.type: %s" %
-                parent['type'])
+            self.log.debug("TracchildticketsModule : parent.ticket.type: %s",
+                           parent['type'])
 
     # ITemplateStreamFilter methods
+
     def filter_stream(self, req, method, filename, stream, data):
 
-        # Tickets will be modified to show the child tickets as a list under the 'Description' section.
+        # Tickets will be modified to show the child tickets as a list
+        # under the 'Description' section.
         if filename == 'ticket.html':
 
             # Add our own styles for the ticket lists.
@@ -138,16 +157,21 @@ class TracchildticketsModule(Component):
 
             # Modify ticket.html with sub-ticket table, create button, etc...
             # As follows:
-            # - If ticket has no child tickets and child tickets are NOT allowed then skip.
-            # - If ticket has child tickets and child tickets are NOT allowed (ie. rules changed or ticket type changed after children were assigned),
-            #   print list of tickets but do not allow any tickets to be created.
-            # - If child tickets are allowed then print list of child tickets or 'No Child Tickets' if non are currently assigned.
-            #
+            # - If ticket has no child tickets and child tickets are NOT
+            #   allowed then skip.
+            # - If ticket has child tickets and child tickets are NOT
+            #   allowed (ie. rules changed or ticket type changed after
+            #   children were assigned), print list of tickets but do not
+            #   allow any tickets to be created.
+            # - If child tickets are allowed then print list of child tickets
+            #   or 'No Child Tickets' if non are currently assigned.
             if ticket and ticket.exists:
 
-                # The additional section on the ticket is built up of (potentially) three parts: header, ticket table, buttons. These
-                # are all 'wrapped up' in a 'div' with the 'attachments' id (we'll just pinch this to make look and feel consistent with any
-                # future changes!)
+                # The additional section on the ticket is built up of
+                # (potentially) three parts: header, ticket table, buttons.
+                # These are all 'wrapped up' in a 'div' with the 'attachments'
+                # id (we'll just pinch this to make look and feel consistent
+                # with any future changes!)
                 filter = Transformer('//div[@id="ticket"]')
                 snippet = tag.div()
 
@@ -159,11 +183,13 @@ class TracchildticketsModule(Component):
                 childtickets = sorted(childtickets, key=lambda t: t.id)
 
                 # Are child tickets allowed?
-                childtickets_allowed = self.config.getbool('childtickets',
-                                                           'parent.%s.allow_child_tickets' %
-                                                           ticket['type'])
+                childtickets_allowed = \
+                        self.config.getbool('childtickets',
+                                            'parent.%s.allow_child_tickets'
+                                            % ticket['type'])
 
-                # If there are no childtickets and the ticket should not have any child tickets, we can simply drop out here.
+                # If there are no childtickets and the ticket should not have
+                # any child tickets, we can simply drop out here.
                 if not childtickets_allowed and not childtickets:
                     return stream
 
@@ -171,9 +197,9 @@ class TracchildticketsModule(Component):
                 buttondiv = tag.div()
                 tablediv = tag.div()
 
-                # Test if the ticket has children: If so, then list in pretty table.
+                # Test if the ticket has children: If so, then list in table.
                 if childtickets:
-                    # trac.ini : Which columns to display in child ticket listing?
+                    # Which columns to display in child ticket listing?
                     columns = self.config.getlist('childtickets',
                                                   'parent.%s.table_headers' %
                                                   ticket['type'],
@@ -196,14 +222,15 @@ class TracchildticketsModule(Component):
                         tag.br(),
                     )
 
-                # trac.ini : child tickets are allowed - Set up 'create new ticket' buttons.
+                # Child tickets are allowed - add 'create new ticket' buttons
                 if childtickets_allowed:
                     childtickets_label = \
                         self.config.get('childtickets',
                                         'parent.%s.new_child_ticket_label'
                                         % ticket['type']) \
                         or "New Child Ticket"
-                    # Can user create a new ticket? If not, just display title (ie. no 'create' button).
+                    # Can user create a new ticket?
+                    # If not, just display title (ie. no 'create' button).
                     if 'TICKET_CREATE' in req.perm(ticket.resource):
 
                         # Always pass these fields
@@ -212,7 +239,7 @@ class TracchildticketsModule(Component):
                                       value='#' + str(ticket.id)),
                         )
 
-                        # Pass extra fields defined in inherit parameter of parent
+                        # Pass extra fields from inherit parameter of parent
                         inherited_child_fields = [
                             tag.input(type="hidden", name="%s" % field,
                                       value=ticket[field]) for field in
@@ -235,7 +262,8 @@ class TracchildticketsModule(Component):
                                 'childtickets',
                                 'parent.%s.default_child_type'
                                 % ticket['type'],
-                                default=self.config.get('ticket', 'default_type'))
+                                default=self.config.get('ticket',
+                                                        'default_type'))
 
                             # ... create a default submit button
                             if ticket['status'] == 'closed':
@@ -264,13 +292,15 @@ class TracchildticketsModule(Component):
                                               disabled="disabled",
                                               name="type",
                                               value="%s" % ticket_type,
-                                              title="Create a %s child ticket" % ticket_type)
+                                              title="Create a %s child ticket"
+                                                     % ticket_type)
                                     for ticket_type in restrict_child_types]
                             else:
                                 submit_button_fields = [
                                     tag.input(type="submit", name="type",
                                               value="%s" % ticket_type,
-                                              title="Create a %s child ticket" % ticket_type)
+                                              title="Create a %s child ticket"
+                                              % ticket_type)
                                     for ticket_type in restrict_child_types]
                         buttondiv = tag.form(
                             tag.div(default_child_fields,
