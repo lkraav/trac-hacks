@@ -11,7 +11,7 @@ from trac.ticket.api import ITicketManipulator, ITicketChangeListener
 from trac.ticket.model import Ticket
 from trac.util.html import html as tag
 from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import ITemplateProvider, add_stylesheet
+from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
 
 
 class TracchildticketsModule(Component):
@@ -331,11 +331,20 @@ class TracchildticketsModule(Component):
         ticket_class = ''
         if ticket['status'] == 'closed':
             ticket_class = 'closed'
+
+        chrome = Chrome(self.env)
+
+        def get_field(f):
+            if s == 'owner':
+                return chrome.authorinfo(req, ticket[f])
+            else:
+                return ticket[f]
+
         return tag.tr(
             tag.td(tag.a("#%s" % ticket.id, href=req.href.ticket(ticket.id),
                          title="Child ticket #%s" % ticket.id,
                          class_=ticket_class), class_="id"),
-            [tag.td(ticket[s], class_=s) for s in columns],
+            [tag.td(get_field(s), class_=s) for s in columns],
         )
 
     def _get_parent_id(self, ticket_id):
