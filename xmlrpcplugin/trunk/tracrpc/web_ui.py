@@ -20,8 +20,7 @@ from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.text import to_unicode
 from trac.util.translation import _
-from trac.web.api import RequestDone, HTTPUnsupportedMediaType, \
-                          HTTPInternalError
+from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
                             add_stylesheet, add_script, add_ctxtnav
@@ -30,6 +29,11 @@ from trac.wiki.formatter import wiki_to_oneliner
 from tracrpc.api import XMLRPCSystem, IRPCProtocol, ProtocolException, \
                           RPCError, ServiceException
 from tracrpc.util import accepts_mimetype, exception_to_unicode
+
+try:
+    from trac.web.api import HTTPInternalError as HTTPInternalServerError
+except ImportError:  # Trac 1.3.1+
+    from trac.web.api import HTTPInternalServerError
 
 __all__ = ['RPCWeb']
 
@@ -195,7 +199,8 @@ class RPCWeb(Component):
         body = "Unhandled protocol error calling '%s': %s" % (
                                         method_name, to_unicode(e))
         req.send_error(None, template='', content_type='text/plain',
-                            env=None, data=body, status=HTTPInternalError.code)
+                            env=None, data=body,
+                            status=HTTPInternalServerError.code)
 
     # ITemplateProvider methods
 
