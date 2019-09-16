@@ -258,8 +258,15 @@ class XMLRPCSystem(Component):
     method_handlers = ExtensionPoint(IXMLRPCHandler)
 
     def __init__(self):
-        self.env.systeminfo.append(('RPC',
-                        __import__('tracrpc', ['__version__']).__version__))
+        # systeminfo is removed in Trac 1.3.1 and ISystemInfoProvider
+        # should generally be used instead, but in this case the plugin
+        # version is shown in Installed Plugins on the /about page, so
+        # it doesn't need to also be shown in System Information.
+        try:
+            self.env.systeminfo.append(('RPC',
+                __import__('tracrpc', ['__version__']).__version__))
+        except AttributeError:
+            pass
 
     # IPermissionRequestor methods
     def get_permission_actions(self):
