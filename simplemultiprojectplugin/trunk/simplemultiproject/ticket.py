@@ -6,7 +6,7 @@ from operator import itemgetter
 
 from genshi.filters.transform import Transformer
 from trac.core import *
-from trac.perm import IPermissionPolicy, IPermissionRequestor
+from trac.perm import IPermissionPolicy
 from trac.ticket import model
 from trac.util.html import html as tag
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
@@ -24,6 +24,7 @@ class SmpTicketProject(Component):
         self.__SmpModel = SmpModel(self.env)
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         return handler
 
@@ -33,8 +34,8 @@ class SmpTicketProject(Component):
             ticket = data.get('ticket', None)
             if ticket:
                 project_name = self.__SmpModel.get_ticket_project(ticket.id)
-                if project_name and project_name[0]:
-                    self.__SmpModel.check_project_permission(req, project_name[0])
+                if project_name:
+                    self.__SmpModel.check_project_permission(req, project_name)
         else:
             is_newticket = True
 
@@ -160,7 +161,7 @@ class ProjectTicketsPolicy(Component):
     * {{{john, mary, group1, authenticated}}} to restrict to this set of users
     * {{{!, bob, anonymous, group2}}} to exclude from the project.
     """
-    implements(IPermissionPolicy, IPermissionRequestor)
+    implements(IPermissionPolicy)
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
@@ -176,11 +177,9 @@ class ProjectTicketsPolicy(Component):
 
         if resource and resource.realm == 'ticket' and resource.id is not None:
             project_name = self.__SmpModel.get_ticket_project(resource.id)
-            if project_name and project_name[0]:
-                project_info = self.__SmpModel.get_project_info(project_name[0])
+            if project_name:
+                project_info = self.__SmpModel.get_project_info(project_name)
                 if project_info:
-                    if self.__SmpModel.is_not_in_restricted_users(username, project_info):
+                    if self.__SmpModel.is_not_in_restricted_users(username,
+                                                                  project_info):
                         return False
-
-    def get_permission_actions(self):
-        return
