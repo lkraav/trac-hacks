@@ -465,7 +465,7 @@ def create_projects_table(self, _SmpModel, req, input_type='checkbox',
     all_project_names = [name for p_id, name in all_projects]
 
     # no closed projects
-    for project_name in all_project_names:
+    for project_name in list(all_project_names):
         project_info = _SmpModel.get_project_info(project_name)
         _SmpModel.filter_project_by_conditions(all_project_names, project_name,
                                                project_info, req)
