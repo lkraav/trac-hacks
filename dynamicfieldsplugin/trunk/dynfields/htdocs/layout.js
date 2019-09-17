@@ -108,7 +108,7 @@ inputs_layout.get_tx = function (field) {
 // get_field
 inputs_layout.get_field = function (td) {
   var input = td.find(':input:first');
-  if (!input.length) return '';
+  if (!input.length || !input.is('[id]')) return '';
   return input.attr('id').slice(6);
 };
 
