@@ -27,9 +27,9 @@ class SumFieldsModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith(('/milestone', '/roadmap')) or \
-                (req.path_info.startswith(('/query', '/report')) and
-                 'REPORT_VIEW' in req.perm):
+        if template in ('milestone_view.html', 'roadmap.html',
+                        'query.html', 'report_view.html', 'wiki_view.html',
+                        'wiki_edit.html'):
             add_script(req, 'sumfields/sumfields.js')
             add_script_data(req, fields=self.fields)
         return template, data, content_type
