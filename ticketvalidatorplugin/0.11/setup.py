@@ -17,7 +17,7 @@ setup(
     author='Max Stewart',
     author_email='max.e.stewart@gmail.com',
     license='3-Clause BSD',
-    url='http://trac-hacks.org/wiki/TicketValidatorPlugin',
+    url='https://trac-hacks.org/wiki/TicketValidatorPlugin',
 
     zip_safe=False,
 

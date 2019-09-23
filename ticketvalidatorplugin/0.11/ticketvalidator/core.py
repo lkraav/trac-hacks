@@ -30,7 +30,7 @@ class RequiredFieldValidator(Component):
         required_fields = self.config.getlist('ticketvalidator',
                                               state + '.required')
 
-        errors = [(field_name, '%s is required' % field_name)
+        errors = [(field_name, "%s is required" % field_name)
                   for field_name in required_fields
                   if not ticket[field_name]]
 

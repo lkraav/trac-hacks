@@ -77,11 +77,9 @@ class TicketValidatorAdminPanelProvider(Component):
             else:
                 if pn not in tmp:
                     tmp[pn] = {}
-
                 tmp[pn].update({key: req.args[name]})
 
         rules = []
-
         for key in tmp:
             if key not in to_remove and tmp[key]['name'] != '':
                 rules.append(tmp[key])
@@ -89,7 +87,6 @@ class TicketValidatorAdminPanelProvider(Component):
         return rules
 
     def _splitname(self, name):
-
         if name.find('_') == -1:
             return name, None
 
@@ -110,9 +107,7 @@ class TicketValidatorAdminPanelProvider(Component):
         for option in self.config['ticketvalidator']:
             self.config.remove('ticketvalidator', option)
 
-        rules = self._get_rules(req)
-
-        for rule in rules:
+        for rule in self._get_rules(req):
             self.config.set('ticketvalidator', rule['name'] + '.required',
                             rule['fields'])
 
