@@ -10,7 +10,7 @@
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.util.translation import _
-from trac.web.chrome import ITemplateProvider
+from trac.web.chrome import Chrome, ITemplateProvider
 
 
 class TicketValidatorAdminPanelProvider(Component):
@@ -99,7 +99,10 @@ class TicketValidatorAdminPanelProvider(Component):
 
         rules.append({'': ''})
 
-        return 'validator_admin.html', {'rules': rules}, None
+        if hasattr(Chrome(self.env), 'jenv'):
+            return 'validator_admin.html', {'rules': rules}, None
+        else:
+            return 'validator_admin.html', {'rules': rules}
 
     def _update_config(self, req):
         """Save changes to main configuration file."""
