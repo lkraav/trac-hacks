@@ -99,7 +99,7 @@ class TicketValidatorAdminPanelProvider(Component):
 
         rules.append({'': ''})
 
-        return 'validator_admin.html', {'rules': rules}
+        return 'validator_admin.html', {'rules': rules}, None
 
     def _update_config(self, req):
         """Save changes to main configuration file."""
