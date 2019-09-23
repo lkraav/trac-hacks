@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+from trac.config import ConfigSection
 from trac.core import Component, implements
 from trac.ticket import ITicketManipulator, TicketSystem
 
@@ -15,6 +16,21 @@ class RequiredFieldValidator(Component):
     """Basic ticket validator for required fields"""
 
     implements(ITicketManipulator)
+
+    required_section = ConfigSection('ticketvalidator',
+        """Fields that are required to be non-empty in order to
+        transition to the specified workflow status. Example:
+
+        Require the 'actual' field to be non-empty when the ticket
+        is completed and the 'estimate' field when the ticket is
+        accepted.
+
+        {{{#!ini
+        [ticketvalidator]
+        done.required = actual,estimate
+        accepted.required = estimate
+        }}}
+        """)
 
     def prepare_ticket(self, req, ticket, fields, actions):
         """Not currently called, but should be provided for future
@@ -27,8 +43,7 @@ class RequiredFieldValidator(Component):
 
         state = self._get_state(req, ticket)
 
-        required_fields = self.config.getlist('ticketvalidator',
-                                              state + '.required')
+        required_fields = self.required_section.getlist(state + '.required')
 
         errors = [(field_name, "%s is required" % field_name)
                   for field_name in required_fields
