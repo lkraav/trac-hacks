@@ -9,19 +9,38 @@
 # you should have received as part of this distribution.
 #
 
+from pkg_resources import parse_version, resource_filename
 import inspect
 import re
 
+from trac import __version__ as VERSION
 from trac.core import Component, implements, TracError
 from trac.admin.api import IAdminPanelProvider
 from trac.config import Option, ListOption
 from trac.util.compat import set, sorted, any
 from trac.util.text import to_unicode
-from trac.web.chrome import ITemplateProvider, add_stylesheet
+from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
 try:
     from trac.util.translation import dgettext
 except ImportError:
     dgettext = lambda domain, string: string
+
+
+_parsed_version = parse_version(VERSION)
+
+if _parsed_version >= parse_version('1.4'):
+    _use_jinja2 = True
+elif _parsed_version >= parse_version('1.3'):
+    _use_jinja2 = hasattr(Chrome, 'jenv')
+else:
+    _use_jinja2 = False
+
+if _use_jinja2:
+    _template_dir = resource_filename(__name__, 'templates/jinja2')
+else:
+    _template_dir = resource_filename(__name__, 'templates/genshi')
+
+_htdoc_dir = resource_filename(__name__, 'htdocs')
 
 
 class IniAdminPlugin(Component):
@@ -105,12 +124,10 @@ class IniAdminPlugin(Component):
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return [_template_dir]
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('iniadmin', resource_filename(__name__, 'htdocs'))]
+        return [('iniadmin', _htdoc_dir)]
 
     def _get_sections_set(self, excludes_match):
         return set([section

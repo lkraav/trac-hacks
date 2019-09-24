@@ -1,0 +1,79 @@
+{#
+  Copyright (C) 2006-2008 Alec Thomas
+  Copyright (C) 2010-2011 Ryan Ollos
+  Copyright (C) 2012-2019 Jun Omae
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block admintitle
+      [${iniadmin.section}]
+      # endblock admintitle
+    </title>
+    # block head
+    ${ super() }
+    <script>
+      jQuery(document).ready(function(){
+        $('form').attr('autocomplete','off');
+      });
+    </script>
+    # endblock head
+  </head>
+  <body>
+    # block adminpanel
+    <h2>[${iniadmin.section}]</h2>
+
+    <div class="ini">
+      <form method="post">
+        ${jmacros.form_token_input()}
+        <ul>
+          # for option in iniadmin.options:
+          <li class="align${loop.index0 % 3}">
+            <fieldset class="col${loop.index0 % 2}">
+              <legend>${option.name}</legend>
+                # if option.type in ('extension', 'choice'):
+                <div class="select">
+                  <select name="${option.name}">
+                    # for val in option.options:
+                    <option value="${val}"
+                            selected="${option.value == val or None}">${val}</option>
+                    # endfor
+                  </select>
+                </div>
+                # elif option.type == 'bool':
+                <div class="bool">
+                  # for val in ('true', 'false'):
+                  <label>
+                    <input type="radio" name="${option.name}" value="${val}"
+                           checked="${option.value == val or None}" />
+                    ${val}
+                  </label>
+                  # endfor
+                </div>
+                # elif option.type == 'password':
+                <div class="text">
+                  <input type="password" name="${option.name}" value="${option.value}" />
+                </div>
+                # else:
+                <div class="text">
+                  <input type="text" name="${option.name}" value="${option.value}" />
+                </div>
+              # endif
+              <div class="help">${wiki_to_html(context, option.doc)}</div>
+            </fieldset>
+          </li>
+          # endfor
+        </ul>
+        <div class="ini buttons">
+          <input type="submit" value="Apply changes" />
+        </div>
+      </form>
+    </div>
+    # endblock adminpanel
+  </body>
+</html>
