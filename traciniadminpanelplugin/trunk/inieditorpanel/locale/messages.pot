@@ -1,30 +1,30 @@
 # Translations template for TracIniAdminPanel.
-# Copyright (C) 2014 ORGANIZATION
+# Copyright (C) 2019 ORGANIZATION
 # This file is distributed under the same license as the
 # TracIniAdminPanel project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: TracIniAdminPanel 1.0.1\n"
+"Project-Id-Version: TracIniAdminPanel 1.0.2\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2014-11-03 23:42+0100\n"
+"POT-Creation-Date: 2019-09-24 16:22-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 1.3\n"
+"Generated-By: Babel 2.7.0\n"
 
-#: inieditorpanel/default_manager.py:65
+#: inieditorpanel/default_manager.py:71
 msgid ""
 "Defines the default access level for options that don't have an\n"
 "explicit access level defined. Defaults to readonly."
 msgstr ""
 
-#: inieditorpanel/default_manager.py:69
+#: inieditorpanel/default_manager.py:75
 msgid ""
 "This section is used to store restriction configurations used by\n"
 "TracIniAdminPanel plugin security manager. An example file can be "
@@ -33,142 +33,142 @@ msgid ""
 "restrictions.ini"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:27 inieditorpanel/web_ui.py:33
+#: inieditorpanel/web_ui.py:28 inieditorpanel/web_ui.py:35
 msgid ""
-"Defines the valid characters for a section name or option name in \n"
+"Defines the valid characters for a section name or option name in\n"
 "`trac.ini`. Must be a valid regular expression. You only need to "
-"change \n"
+"change\n"
 "these if you have plugins that use some strange section or option "
 "names."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:39
+#: inieditorpanel/web_ui.py:42
 msgid ""
-"Defines the security manager that specifies whether the user has \n"
+"Defines the security manager that specifies whether the user has\n"
 "access to certain options."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:46
+#: inieditorpanel/web_ui.py:49
 msgid ""
-"Defines option fields (as `section-name|option-name`) that \n"
+"Defines option fields (as `section-name|option-name`) that\n"
 "represent passwords. Password input fields are used for these fields."
 "\n"
 "Note the fields specified here are taken additionally to some "
-"predefined \n"
+"predefined\n"
 "fields provided by the ini editor."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:53
+#: inieditorpanel/web_ui.py:56
 msgid ""
 "This section is used to handle configurations used by\n"
 "TracIniAdminPanel plugin."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:79
+#: inieditorpanel/web_ui.py:84
 msgid "General"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:79
+#: inieditorpanel/web_ui.py:85
 msgid "trac.ini Editor"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:103 inieditorpanel/web_ui.py:167
+#: inieditorpanel/web_ui.py:109 inieditorpanel/web_ui.py:173
 msgid "The section \"components\" can't be edited with the ini editor."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:107 inieditorpanel/web_ui.py:170
+#: inieditorpanel/web_ui.py:113 inieditorpanel/web_ui.py:176
 #, python-format
 msgid "The section name %s is invalid."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:140
+#: inieditorpanel/web_ui.py:146
 #, python-format
 msgid "Security manager could not be initated. %s"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:164
+#: inieditorpanel/web_ui.py:170
 msgid "The section name was empty."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:174
+#: inieditorpanel/web_ui.py:180
 #, python-format
 msgid ""
 "Section %s has been created. Note that you need to add at least one "
 "option to store it permanently."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:176
+#: inieditorpanel/web_ui.py:182
 msgid "The section already exists."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:292
+#: inieditorpanel/web_ui.py:298
 #, python-format
 msgid "Changes for section %s have been applied."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:295 inieditorpanel/web_ui.py:307
+#: inieditorpanel/web_ui.py:301 inieditorpanel/web_ui.py:313
 msgid "No changes have been applied."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:304
+#: inieditorpanel/web_ui.py:310
 msgid "Changes have been applied."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:314
+#: inieditorpanel/web_ui.py:320
 #, python-format
 msgid "Your changes for section %s have been discarded."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:319
+#: inieditorpanel/web_ui.py:325
 msgid "All changes have been discarded."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:334
+#: inieditorpanel/web_ui.py:340
 #, python-format
 msgid "The option name %s is invalid."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:339
+#: inieditorpanel/web_ui.py:345
 #, python-format
 msgid "The new option %s could not be added due to security restrictions."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:346
+#: inieditorpanel/web_ui.py:352
 #, python-format
 msgid "The new fields have been added to section %s."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:348
+#: inieditorpanel/web_ui.py:354
 msgid "No new fields have been added."
 msgstr ""
 
-#: inieditorpanel/web_ui.py:403
+#: inieditorpanel/web_ui.py:409
 msgid ""
 "You have unsaved changes in this section. Do you still want to change"
 " the section?"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:406
+#: inieditorpanel/web_ui.py:412
 #, python-format
 msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:546 inieditorpanel/web_ui.py:549
+#: inieditorpanel/web_ui.py:552 inieditorpanel/web_ui.py:555
 msgid "text"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:553
+#: inieditorpanel/web_ui.py:559
 msgid "password"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:609
+#: inieditorpanel/web_ui.py:615
 #, python-format
 msgid ""
 "The default value for option \"%s\" in section \"%s\" is invalid. "
 "Reason: %s"
 msgstr ""
 
-#: inieditorpanel/web_ui.py:638
+#: inieditorpanel/web_ui.py:644
 #, python-format
 msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
 msgstr ""

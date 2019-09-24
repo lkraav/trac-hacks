@@ -1,7 +1,7 @@
 var settings_input_fields = new Object();
 
 function update_section_info(section_name, count_diff, modified_diff, defaults_diff) {
-  var section_counter = section_counters[section_name];    
+  var section_counter = section_counters[section_name];
   var info_elem = section_counter['info_elem'];
 
   section_counter['option_count'] += count_diff;
@@ -9,9 +9,9 @@ function update_section_info(section_name, count_diff, modified_diff, defaults_d
   section_counter['modified_count'] += modified_diff;
 
   info_elem.text(babel.format(info_format,
-                              {mod: section_counter['modified_count'],
-                               def: section_counter['defaults_count'],
-                               opt: section_counter['option_count']}));
+    {mod: section_counter['modified_count'],
+      def: section_counter['defaults_count'],
+      opt: section_counter['option_count']}));
 }
 
 // Returns jquery result for the specified field
@@ -64,15 +64,15 @@ function check_for_changes() {
   return false;
 }
 
-$(document).ready(function(){
+jQuery(function($){
   settings_list = $('#settings_table'); // global var
   cur_focused_field = settings_list.find('input[name="inieditor_cur_focused_field"]');
 
   $.each(section_names, function(idx, name) {
     var info_elem = settings_list.find('td#section-title-' + name +
-                                       ' .section-info');
+      ' .section-info');
     $.extend(section_counters[name], {defaults_count: 0, modified_count: 0,
-                                      info_elem: info_elem});
+      info_elem: info_elem});
   });
 
   settings_list.find('input:checkbox[name=inieditor_default]').each(function() {
@@ -82,9 +82,9 @@ $(document).ready(function(){
     var option_name = name_split[1];
     var input_field = get_option_input_field(field_name);
 
-    // Count section options, setup fields (default, modified), and add register 
-    // listener to checkboxes that enables or disables the related input field.    
-    var section_counter = section_counters[section_name];    
+    // Count section options, setup fields (default, modified), and add register
+    // listener to checkboxes that enables or disables the related input field.
+    var section_counter = section_counters[section_name];
 
     // Default values
     if ($(this).is(':checked')) {
@@ -118,7 +118,7 @@ $(document).ready(function(){
         containing_row.addClass('modified-field');
       }
 
-      // Add triggers for detecting changed values 
+      // Add triggers for detecting changed values
       input_field.keyup(function() {
         var wasModified = containing_row.hasClass('modified-field');
         if (get_option_cur_value(input_field) == stored_value) {
@@ -157,7 +157,7 @@ $(document).ready(function(){
       input_field.focus(function() {
         cur_focused_field.val('option-value-' + section_name);
       });
-    }    
+    }
   });
 
   // Add trigger to notify about the currently focused field type; used to
@@ -215,7 +215,7 @@ $(document).ready(function(){
       return false;
     }
 
-    $(this).find(':submit').attr('disabled', true); 
+    $(this).find(':submit').attr('disabled', true);
     return true;
   });
 
