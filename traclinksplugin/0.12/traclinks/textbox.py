@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2012-2013,2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -15,7 +15,7 @@ from trac.core import Component, implements, ExtensionPoint
 from trac.resource import Resource
 from trac.util.datefmt import format_datetime
 from trac.util.text import unicode_urlencode
-from trac.web.api import ITemplateStreamFilter
+from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script
 from trac.wiki.api import IWikiSyntaxProvider
 
@@ -24,7 +24,7 @@ class TextBox(Component):
     """ Generate TracLinks in search box for:
     { wiki: report: query: ticket: attachment: source: diff: log: milestone: timeline: search: }
     """
-    implements(ITemplateStreamFilter, ITemplateProvider)
+    implements(ITemplateStreamFilter, ITemplateProvider, IRequestFilter)
 
     def list_namespaces(self):
         providers = ExtensionPoint(IWikiSyntaxProvider).extensions(self.compmgr)
@@ -101,11 +101,6 @@ class TextBox(Component):
         else:
             pass
 
-        # link hash TODO: check wiki_view for agilo
-        if filename in ['browser.html', 'changeset.html', 'ticket.html', 'agilo_ticket_view.html', 'wiki_view.html']:
-            add_script(req, 'traclinks/js/jquery.ba-hashchange.js')
-            add_script(req, 'traclinks/js/onhashchange.js')
-        #
         if resource:
             traclinks = '%s' % (resource.id)
             if resource.version != None:
@@ -128,6 +123,17 @@ class TextBox(Component):
 
             return stream | Transformer('//input[@id="proj-search"]').attr('value', traclinks).attr('size', '50')
         return stream
+
+    # IRequestFilter methods
+    def pre_process_request(self, req, handler):
+        return handler  # no operation
+
+    def post_process_request(self, req, template, data, content_type):
+        # link hash TODO: check wiki_view for agilo
+        if template in ['browser.html', 'changeset.html', 'ticket.html', 'agilo_ticket_view.html', 'wiki_view.html']:
+            add_script(req, 'traclinks/js/jquery.ba-hashchange.js')
+            add_script(req, 'traclinks/js/onhashchange.js')
+        return template, data, content_type
 
 # Implemented and tested:
 """
