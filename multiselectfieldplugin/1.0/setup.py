@@ -9,6 +9,7 @@ setup(
     packages=['multiselectfield'],
     author='Olli Kallioinen',
     author_email='olli.kallioinen@iki.fi',
+    url='https://trac-hacks.org/wiki/MultiSelectFieldPlugin',
     description='A plugin providing a multiselection custom ticket field.',
     license='BSD',
     keywords='trac plugin multiselection',
