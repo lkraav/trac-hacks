@@ -43,13 +43,13 @@ def get_all_status(actions):
 class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
     """Ticket action controller providing actions according to the ticket type.
 
-    The [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] 
-    replaces the [TracWorkflow ConfigurableTicketWorkflow] used by Trac to 
-    control what actions can be performed on a ticket. The actions are 
+    The [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin]
+    replaces the [TracWorkflow ConfigurableTicketWorkflow] used by Trac to
+    control what actions can be performed on a ticket. The actions are
     specified in the {{{[ticket-workflow]}}} section of the TracIni file.
 
-    With [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin] 
-    Trac can read the workflow based on the type of a ticket. If a section for 
+    With [http://trac-hacks.org/wiki/MultipleWorkflowPlugin MultipleWorkflowPlugin]
+    Trac can read the workflow based on the type of a ticket. If a section for
     that ticket type doesn't exist, then it uses the default workflow.
 
     == Installation
@@ -68,7 +68,7 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
     }}}
 
     == Example
-    To define a different workflow for a ticket with type {{{Requirement}}} 
+    To define a different workflow for a ticket with type {{{Requirement}}}
     create a section in ''trac.ini'' called
     {{{[ticket-workflow-Requirement]}}} and add your workflow items:
     {{{#!ini
@@ -122,7 +122,7 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         return [enum.name for enum in model.Type.select(self.env)]
 
     def get_actions_by_type(self, ticket_type):
-        """Return the ticket actions defined by the workflow for the given 
+        """Return the ticket actions defined by the workflow for the given
         ticket type or {}.
         """
         try:
@@ -134,9 +134,9 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
 
     def pre_process_request(self, req, handler):
         return handler
-            
+
     def post_process_request(self, req, template, data, content_type):
-        """Implements the special behaviour for requests with 'refresh' 
+        """Implements the special behaviour for requests with 'refresh'
         argument should provide the proper list of available actions.
         """
         mine = ['/newticket', '/ticket', '/simpleticket']
@@ -152,17 +152,17 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                 template = 'ticket_workflow.html'
 
         return template, data, content_type
-        
+
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-        """Returns a transformed stream extended with action refresh 
+        """Returns a transformed stream extended with action refresh
         functionality.
         """
         # The jQuery code responsible for refreshing the list of actions will
         # be injected after certain points (matched based on regex) in the
         # original ticket template
-        
+
         # Note: refresh should preserve the previous selection if applicable
         script = '''\n
         $("#field-type").autoSubmit({refresh: '1'}, function(data, reply) {
@@ -187,7 +187,7 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                               substitute('#changelog \.trac-loading\"\);',
                                          '#changelog .trac-loading");' + script)
         return stream
-        
+
     # ITicketActionController methods
 
     def get_ticket_actions(self, req, ticket):

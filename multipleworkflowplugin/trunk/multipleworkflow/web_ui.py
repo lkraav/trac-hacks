@@ -274,7 +274,7 @@ class MultipleWorkflowAdminModule(Component):
                 'form_token': req.form_token,
                 'trac_types': data['trac_types']})
 
-        return "multipleworkflowadmin.html", data
+        return 'multipleworkflowadmin.html', data
 
     # ITemplateProvider methods
 
