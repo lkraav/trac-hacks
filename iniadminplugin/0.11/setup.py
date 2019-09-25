@@ -15,7 +15,7 @@ from setuptools import setup
 def main():
     setup(
         name='TracIniAdmin',
-        version='0.5',
+        version='0.5.1',
         packages=['iniadmin'],
         author='Alec Thomas',
         maintainer='Jun Omae',

@@ -102,7 +102,9 @@ class IniAdminPlugin(Component):
             value = self.config.get(page, option.name)
             # We assume the classes all end in "Option"
             type = option.__class__.__name__.lower()[:-6] or 'text'
-            if type == 'list' and not isinstance(value,basestring):
+            if type == 'bool':
+                value = self.config.getbool(page, option.name)
+            elif type == 'list' and not isinstance(value,basestring):
                 value = unicode(option.sep).join(list(value))
             option_data = {'name': option.name, 'default': option.default,
                            'doc': doc, 'value': value, 'type': type}

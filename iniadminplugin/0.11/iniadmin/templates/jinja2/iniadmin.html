@@ -48,12 +48,12 @@
                 </div>
                 # elif option.type == 'bool':
                 <div class="bool">
-                  # for val in ('true', 'false'):
+                  # for val, label in ((True, 'true'), (False, 'false')):
                   <label>
-                    <input type="radio" name="${option.name}" value="${val}"${
+                    <input type="radio" name="${option.name}" value="${label}"${
                         {'checked': option.value == val}|htmlattr
                       } />
-                    ${val}
+                    ${label}
                   </label>
                   # endfor
                 </div>

@@ -41,10 +41,10 @@
                   </select>
                 </div>
                 <div class="bool" py:when="option.type == 'bool'">
-                  <label py:for="val in ('true', 'false')">
-                    <input type="radio" name="${option.name}" value="$val"
+                  <label py:for="val, label in ((True, 'true'), (False, 'false'))">
+                    <input type="radio" name="${option.name}" value="$label"
                            checked="${option.value == val or None}" />
-                    $val
+                    $label
                   </label>
                 </div>
                 <div class="text" py:when="option.type == 'password'">
