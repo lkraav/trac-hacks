@@ -22,7 +22,7 @@ var clearrule = new Rule('ClearRule'); // must match python class name exactly
 
 // apply
 clearrule.apply = function (input, spec) {
-  if (input.attr('id').slice(6) !== spec.trigger)
+  if (input[0].name.slice(6) !== spec.trigger)
     return;
 
   var target = spec.target;
@@ -92,7 +92,7 @@ var defaultrule = new Rule('DefaultRule'); // must match python class name exact
 
 // apply
 defaultrule.apply = function (input, spec) {
-  if (input[0].id.slice(6) !== spec.trigger)
+  if (input[0].name.slice(6) !== spec.trigger)
     return;
 
   var $field = jQuery(get_selector(spec.target));
@@ -150,10 +150,10 @@ var hiderule = new Rule('HideRule'); // must match python class name exactly
 
 // setup
 hiderule.setup = function (input, spec) {
-  var id = input[0].id;
-  if (id) { // no input fields when on /query page
+  var name = input[0].name;
+  if (name) { // no input fields when on /query page
     // show and reset elements controlled by this input field
-    var trigger = id.substring(6); // ids start with 'field-'
+    var trigger = name.substring(6); // names start with 'field_'
     jQuery('#properties, #ticket .properties')
       .find('.dynfields-' + trigger)
       .removeClass('dynfields-hide dynfields-' + trigger)
@@ -163,25 +163,25 @@ hiderule.setup = function (input, spec) {
 
 // apply
 hiderule.apply = function (input, spec) {
+  var input_0 = input[0]
   var trigger = spec.trigger;
-  var target = spec.target;
 
-  if (input.attr('id').slice(6) !== trigger)
+  if (input_0.name.slice(6) !== trigger)
     return;
 
   // process hide rule
   var v;
-  if (input.attr('type') == 'checkbox')
+  if (input_0.type === 'checkbox')
     v = (input.is(':checked')) ? "1" : "0";
   else
     v = input.val();
   var l = spec.trigger_value.split('|'); // supports list of trigger values
   var idx = jQuery.inArray(v, l);
+  var target = spec.target;
   if (idx !== -1 && spec.op === 'hide' || idx === -1 && spec.op === 'show') {
     // we want to hide the input fields's td and related th
-    var field = jQuery(
-        '#field-<target>, #properties input[name="field_<target>"]'
-        .replace(/<target>/g, target));
+    var field = jQuery('#field-@, #properties input[name="field_@"]'
+                       .replace(/@/g, target));
     var td = field.closest('td');
     var th = td.prev('th');
     var cls = 'dynfields-hide dynfields-' + trigger;

@@ -13,8 +13,8 @@ var Layout = function (name) {
   // Return the given td/th element's field name
   this.get_field = function (tx) {};
 
-  // Move a field's tds and ths to slot i
-  this.move_field = function (field, i) {};
+  // Reorder the fields
+  this.order_fields = function (fields) {};
 
   // Returns true if the field needs its own row
   this.needs_own_row = function (field) {
@@ -22,30 +22,27 @@ var Layout = function (name) {
     return element !== null && element.tagName.toLowerCase() === 'textarea';
   };
 
+  var saved_field_order = {};
+
   // Update the field layout given a spec
   this.update = function (spec) {
     var this_ = this;
     var name = this.name;
 
     // save original field order
-    var orig_field_order = window.dynfields_orig_field_order;
-    if (orig_field_order === undefined)
-      window.dynfields_orig_field_order = orig_field_order = {};
-
-    var field_order = orig_field_order[name];
-    if (field_order === undefined) {
-      orig_field_order[name] = field_order = [];
+    if (!(name in saved_field_order)) {
+      saved_field_order[name] = [];
       jQuery(this.selector).each(function (i, e) {
         var field = this_.get_field($(this));
         if (field)
-          field_order.push(field);
+          saved_field_order[name].push(field);
       });
     }
 
     // get visible and hidden fields
     var visible = [];
     var hidden = [];
-    jQuery.each(field_order, function (i, field) {
+    jQuery.each(saved_field_order[name], function (i, field) {
       var tx = this_.get_tx(field);
       if (tx.hasClass('dynfields-hide')) {
         hidden.push(field);
@@ -60,36 +57,30 @@ var Layout = function (name) {
     // order the fields
     this.order_fields(new_fields);
   };
+};
 
-  this.order_fields = function (new_fields) {
-    var this_ = this;
-    var skip_slot = 0;
-
-    // determine which fields need to move and move 'em!
-    jQuery(this.selector).each(function (i, e) {
-      var old_field = this_.get_field($(this));
-      var old_slot = -1;
-      if (old_field.length !== 0)
-        old_slot = jQuery.inArray(old_field, new_fields);
-      var new_field = new_fields[i];
-
-      // check to allow *this* field be in its own row
-      if (i % 2 === 1 && old_field.length !== 0 && this_.needs_own_row(new_field))
-        skip_slot += 1;
-
-      var new_slot = i + skip_slot;
-
-      // check if field is in the correct slot in the new order
-      if (new_slot != old_slot && i < new_fields.length) {
-        // wrong order!
-        this_.move_field(new_field, new_slot);
+var dynfields_group = function(values, n, callback) {
+  var groups = [];
+  var buf = [];
+  jQuery.each(values, function(index, name) {
+    if (callback(name)) {
+      if (buf.length !== 0) {
+        groups.push(buf.slice(0, n));
+        buf = [];
       }
-
-      // check to move *next* field to its own row
-      if (old_field.length && this_.needs_own_row(new_field))
-        skip_slot += 1;
-    });
+      groups.push([name, true]);
+    } else {
+      buf.push(name);
+      if (buf.length === n) {
+        groups.push(buf.slice(0, n));
+        buf = [];
+      }
+    }
+  });
+  if (buf.length !== 0) {
+    groups.push(buf.slice(0, n));
   }
+  return groups;
 };
 
 
@@ -117,44 +108,56 @@ inputs_layout.get_field = function (td) {
   return name !== '<missing>' ? name : '';
 };
 
-// move_field
-inputs_layout.move_field = function (field, i) {
-  var td = this.get_tx(field);
-  var th = td.prev('th');
-
-  // find correct row (tr) to insert field
-  var row = Math.round(i / 2 - 0.5); // round down
-  var $properties = jQuery('#properties');
-  row += $properties.find('td.fullrow').length; // skip fullrows
-  var tr = $properties.find('tr:eq(' + row + ')');
-
-  // find correct column (tx) to insert field
-  var col = 'col' + ((i % 2) + 1);
-  var old_th = tr.find('th:first');
-  if (old_th.length !== 0) {
-    if (col == 'col1') {
-      if (old_th[0] != th[0]) { // don't move self to self
-        old_th.before(th);
-        old_th.before(td);
+inputs_layout.order_fields = function (new_fields) {
+  var this_ = this;
+  var properties = jQuery('#properties');
+  var target_row = properties.find('textarea[name=field_description]')
+                             .closest('tr');
+  var cells = {};
+  var headers = {};
+  var fullrows = {};
+  jQuery.each(new_fields, function(idx, name) {
+    var cell = this_.get_tx(name);
+    cells[name] = cell;
+    headers[name] = cell.prev('th');
+    fullrows[name] = cell.hasClass('fullrow');
+  });
+  var groups = dynfields_group(new_fields, 2,
+                               function(name) { return fullrows[name] });
+  jQuery.each(groups, function(idx, group) {
+    var col1 = group[0];
+    var col2 = group[1];
+    var cell1 = cells[col1];
+    var header1 = headers[col1];
+    cell1.removeClass('col2');
+    cell1.addClass('col1');
+    header1.removeClass('col2');
+    header1.addClass('col1');
+    var row = jQuery('<tr>').append(headers[col1], cell1);
+    if (col2 !== true) {
+      var cell2, header2;
+      if (col2) {
+        cell2 = cells[col2];
+        header2 = headers[col2];
+        cell2.removeClass('col1');
+        header2.removeClass('col1');
+      } else {
+        cell2 = jQuery('<td>');
+        header2 = jQuery('<th>');
       }
-    } else {
-      var old_td = tr.find('td:has(:input):last');
-      if (old_td[0] != td[0]) { // don't move self to self
-        old_td.after(td);
-        old_td.after(th);
-      }
+      header2.addClass('col2');
+      cell2.addClass('col2');
+      row.append(header2, cell2);
     }
-  } else {
-    // no columns so just insert
-    tr.append(th);
-    tr.append(td);
-  }
-
-  // let's set col
-  td.removeClass('col1 col2');
-  th.removeClass('col1 col2');
-  td.addClass(col);
-  th.addClass(col);
+    target_row.after(row);
+    target_row = row;
+  });
+  properties.find('> table > tbody > tr').each(function() {
+    var row = $(this);
+    var headers = row.children('th');
+    if (headers.length === 0 || !jQuery.trim(headers.text()))
+      row.remove();
+  });
 };
 
 
@@ -181,33 +184,48 @@ header_layout.get_field = function (th) {
   return name !== '<missing>' ? name : '';
 };
 
-// move_field
-header_layout.move_field = function (field, i) {
-  var th = this.get_tx(field);
-  var td = th.next('td');
-
-  // find correct row (tr) to insert field
-  var row = Math.round(i / 2 - 0.5); // round down
-  var tr = jQuery('#ticket .properties').find('tr:eq(' + row + ')');
-
-  // find correct column (tx) to insert field
-  var old_th = tr.find('th:first');
-  if (old_th.length !== 0) {
-    if (i % 2 == 0) {
-      if (old_th[0] != th[0]) { // don't move self to self
-        old_th.before(th);
-        old_th.before(td);
+header_layout.order_fields = function (new_fields) {
+  var this_ = this;
+  var cells = {};
+  var headers = {};
+  var fullrows = {};
+  jQuery.each(new_fields, function(idx, name) {
+    var header = this_.get_tx(name);
+    var cell = header.next('td');
+    headers[name] = header;
+    cells[name] = cell;
+    fullrows[name] = cell.attr('colspan') === '3';
+  });
+  var groups = dynfields_group(new_fields, 2,
+                               function(name) { return fullrows[name] });
+  var tbody = jQuery('#ticket table.properties > tbody');
+  var target_row;
+  jQuery.each(groups, function(idx, group) {
+    var col1 = group[0];
+    var col2 = group[1];
+    var row = jQuery('<tr>').append(headers[col1], cells[col1]);
+    if (col2 !== true) {
+      var header2, cell2;
+      if (col2) {
+        header2 = headers[col2];
+        cell2 = cells[col2];
+      } else {
+        cell2 = jQuery('<td>');
+        header2 = jQuery('<th>');
       }
-    } else {
-      var old_td = tr.find('td:last');
-      if (old_td[0] != td[0]) { // don't move self to self
-        old_td.after(td);
-        old_td.after(th);
-      }
+      row.append(header2, cell2);
     }
-  } else {
-    // no columns so just insert
-    tr.append(th);
-    tr.append(td);
-  }
+    if (target_row === undefined) {
+      tbody.prepend(row);
+    } else {
+      target_row.after(row);
+    }
+    target_row = row;
+  });
+  tbody.children('tr').each(function() {
+    var row = $(this);
+    var headers = row.children('th');
+    if (headers.length === 0 || !jQuery.trim(headers.text()))
+      row.remove();
+  });
 };
