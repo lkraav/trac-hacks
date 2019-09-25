@@ -39,13 +39,14 @@ jQuery(function ($) {
   };
 
   window.setup_triggers = function () {
-    if (window.dynfields_rules == undefined)
-      window.dynfields_rules = {};
+    var rules = window.dynfields_rules;
+    if (rules === undefined)
+      window.dynfields_rules = rules = {};
 
     for (var prop in triggers) {
       triggers[prop].selector = get_selector(prop);
       triggers[prop].forEach(function (spec) {
-        spec.rule = window.dynfields_rules[spec.rule_name];
+        spec.rule = rules[spec.rule_name];
       });
     }
   };

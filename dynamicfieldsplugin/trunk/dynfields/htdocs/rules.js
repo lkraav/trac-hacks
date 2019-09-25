@@ -9,7 +9,7 @@ var Rule = function (name) {
   this.query = function (spec) {}; // for query page
 
   // register this rule by adding to global variable
-  if (window.dynfields_rules == undefined)
+  if (window.dynfields_rules === undefined)
     window.dynfields_rules = {};
   window.dynfields_rules[name] = this;
 };
@@ -27,7 +27,7 @@ clearrule.apply = function (input, spec) {
 
   var target = spec.target;
 
-  if (spec.clear_on_change == undefined)
+  if (spec.clear_on_change === undefined)
     return;
 
   var field = jQuery('#field-' + target);
@@ -50,7 +50,7 @@ var copyrule = new Rule('CopyRule'); // must match python class name exactly
 
 // apply
 copyrule.apply = function (input, spec) {
-  var id = input.attr('id');
+  var id = input[0].id;
   if (spec.value === undefined ||
       !((id.endsWith('_reassign_owner') && spec.trigger == 'owner') ||
         id.slice(6) === spec.trigger))
@@ -92,7 +92,7 @@ var defaultrule = new Rule('DefaultRule'); // must match python class name exact
 
 // apply
 defaultrule.apply = function (input, spec) {
-  if (input.attr('id').slice(6) !== spec.trigger)
+  if (input[0].id.slice(6) !== spec.trigger)
     return;
 
   var $field = jQuery(get_selector(spec.target));
@@ -150,11 +150,12 @@ var hiderule = new Rule('HideRule'); // must match python class name exactly
 
 // setup
 hiderule.setup = function (input, spec) {
-  var id = input.attr('id');
+  var id = input[0].id;
   if (id) { // no input fields when on /query page
     // show and reset elements controlled by this input field
     var trigger = id.substring(6); // ids start with 'field-'
-    jQuery('.dynfields-' + trigger)
+    jQuery('#properties, #ticket .properties')
+      .find('.dynfields-' + trigger)
       .removeClass('dynfields-hide dynfields-' + trigger)
       .show();
   }
@@ -165,11 +166,7 @@ hiderule.apply = function (input, spec) {
   var trigger = spec.trigger;
   var target = spec.target;
 
-  // hide field in the header if cleared or always hidden
-  var clear_on_hide = spec.clear_on_hide.toLowerCase() == 'true';
-  var hide_always = spec.hide_always.toLowerCase() == 'true'
-
-  if (input.attr('id').slice(6) !== spec.trigger)
+  if (input.attr('id').slice(6) !== trigger)
     return;
 
   // process hide rule
@@ -179,11 +176,12 @@ hiderule.apply = function (input, spec) {
   else
     v = input.val();
   var l = spec.trigger_value.split('|'); // supports list of trigger values
-  if ((jQuery.inArray(v, l) != -1 && spec.op == 'hide') ||
-    (jQuery.inArray(v, l) == -1 && spec.op == 'show')) {
-
+  var idx = jQuery.inArray(v, l);
+  if (idx !== -1 && spec.op === 'hide' || idx === -1 && spec.op === 'show') {
     // we want to hide the input fields's td and related th
-    var field = jQuery('#field-' + target + ',input[name="field_' + target + '"]');
+    var field = jQuery(
+        '#field-<target>, #properties input[name="field_<target>"]'
+        .replace(/<target>/g, target));
     var td = field.closest('td');
     var th = td.prev('th');
     var cls = 'dynfields-hide dynfields-' + trigger;
@@ -193,31 +191,36 @@ hiderule.apply = function (input, spec) {
     th.addClass(cls);
 
     // let's also clear out the field's value to avoid confusion
-    if (clear_on_hide && field.val() && field.val().length) { // Chrome fix - see #8654
-      if (field.attr('type') == 'checkbox') {
-        if (field.is(':checked')) {
-          field.removeAttr('checked').change();
+    var clear_on_hide = spec.clear_on_hide.toLowerCase() == 'true';
+    var hide_always = spec.hide_always.toLowerCase() == 'true'
+    if (clear_on_hide) {
+      var oldval = field.val();
+      if (oldval && oldval.length) { // Chrome fix - see #8654
+        if (field.attr('type') == 'checkbox') {
+          if (field.is(':checked')) {
+            field.removeAttr('checked').change();
+          }
+        } else {
+          // only cascade rules if value changes
+          var newval = field.val('').val();
+          if (oldval != newval)
+            field.change(); // cascade rules
         }
-      } else {
-        // only cascade rules if value changes
-        var oldval = field.val();
-        var newval = field.val('').val();
-        if (oldval != newval)
-          field.change(); // cascade rules
       }
-      if (clear_on_hide || hide_always) {
-        th = jQuery('#h_' + spec.target);
-        td = th.next('td');
-        td.addClass('dynfields-hide dynfields-' + trigger);
-        th.addClass('dynfields-hide dynfields-' + trigger);
-      }
+    }
+    // Hide fields in ticket properties box
+    if (clear_on_hide || hide_always) {
+      th = jQuery('#h_' + target);
+      td = th.next('td');
+      td.addClass(cls);
+      th.addClass(cls);
     }
   }
 };
 
 // complete
 hiderule.complete = function (input, spec) {
-  jQuery('.dynfields-hide').hide();
+  jQuery('#properties .dynfields-hide, #ticket .properties .dynfields-hide').hide();
 
   // update layout (see layout.js)
   inputs_layout.update(spec);
@@ -231,7 +234,7 @@ hiderule.complete = function (input, spec) {
         '    <a href="#no3" onClick="jQuery(\'.dynfields-link\').show(); jQuery(\'#dynfields-show-link\').remove();">Show hidden fields</a>' +
         '  </td>' +
         '</tr>';
-      jQuery('.dynfields-link:last').parents('tbody:first').append(html);
+      jQuery('.dynfields-link:last').closest('tbody').append(html);
     }
   }
 };
@@ -241,23 +244,24 @@ hiderule.query = function (spec) {
   // hide hide_always fields on /query page
   if (spec.hide_always.toLowerCase() == 'true') {
     // hide from columns section
+    var target = spec.target;
     var query_form = jQuery('form#query')
     var filters_fieldset = query_form.find('fieldset#filters');
-    filters_fieldset.find('input[value="' + spec.target + '"]')
+    filters_fieldset.find('input[value="' + target + '"]')
       .prop('checked', false)
       .parent().hide();
     // hide from and/or column filters/dropdowns
-    filters_fieldset.find('#add_filter option[value="' + spec.target + '"]') // trac <= 0.12.1
+    filters_fieldset.find('#add_filter option[value="' + target + '"]') // trac <= 0.12.1
       .hide();
-    filters_fieldset.find('.actions option[value="' + spec.target + '"]') // trac 0.12.2
+    filters_fieldset.find('.actions option[value="' + target + '"]') // trac 0.12.2
       .hide();
     var columns_fieldset = query_form.find('fieldset#columns');
-    columns_fieldset.find('input[value="' + spec.target + '"]')
+    columns_fieldset.find('input[value="' + target + '"]')
       .prop('checked', false)
       .parent().hide();
     // Hide from "Group results by" dropdown.
     var group_select = query_form.find('#group');
-    group_select.find('option[value="' + spec.target + '"]')
+    group_select.find('option[value="' + target + '"]')
       .hide();
   }
 };
@@ -273,8 +277,8 @@ validaterule.setup = function (input, spec) {
   var id = 'field-' + spec.target;
   var field = jQuery('#' + id);
   var label = jQuery('label[for="' + id + '"]');
-  var submit = jQuery('input[name=submit]');
-  var form = submit.parents('form');
+  var form = jQuery('#propertyform');
+  var submit = form.find('input[name=submit]');
 
   // reset "alert only once per form submission"
   submit.click(function () {
@@ -341,16 +345,16 @@ var setrule = new Rule('SetRule'); // must match python class name exactly
 
 // setup
 setrule.setup = function (input, spec) {
-  if (spec.value == undefined)
+  if (spec.value === undefined)
     return;
 
   // ensure trigger field's new value is in spec's list
   // supports list of trigger values
-  if (spec.trigger_value.length != 0 &&
+  if (spec.trigger_value.length !== 0 &&
       jQuery.inArray(input.val(), spec.trigger_value) == -1)
     return;
 
-  if (spec.trigger_not_value.length != 0 &&
+  if (spec.trigger_not_value.length !== 0 &&
       jQuery.inArray(input.val(), spec.trigger_not_value) > -1)
     return;
 

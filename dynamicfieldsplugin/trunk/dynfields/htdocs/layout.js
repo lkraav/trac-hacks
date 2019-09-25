@@ -16,35 +16,36 @@ var Layout = function (name) {
   // Move a field's tds and ths to slot i
   this.move_field = function (field, i) {};
 
-  // Returns true of the field needs its own row
+  // Returns true if the field needs its own row
   this.needs_own_row = function (field) {
-    var $field = jQuery('#field-' + field);
-    if ($field.length)
-      return $field.is('TEXTAREA');
-    return false;
+    var element = document.getElementById('field-' + field);
+    return element !== null && element.tagName.toLowerCase() === 'textarea';
   };
 
   // Update the field layout given a spec
   this.update = function (spec) {
     var this_ = this;
+    var name = this.name;
 
     // save original field order
-    if (window.dynfields_orig_field_order == undefined)
-      window.dynfields_orig_field_order = Object();
+    var orig_field_order = window.dynfields_orig_field_order;
+    if (orig_field_order === undefined)
+      window.dynfields_orig_field_order = orig_field_order = {};
 
-    if (window.dynfields_orig_field_order[this.name] == undefined) {
-      window.dynfields_orig_field_order[this.name] = [];
+    var field_order = orig_field_order[name];
+    if (field_order === undefined) {
+      orig_field_order[name] = field_order = [];
       jQuery(this.selector).each(function (i, e) {
         var field = this_.get_field($(this));
         if (field)
-          window.dynfields_orig_field_order[this_.name].push(field);
+          field_order.push(field);
       });
     }
 
     // get visible and hidden fields
     var visible = [];
     var hidden = [];
-    jQuery.each(window.dynfields_orig_field_order[this.name], function (i, field) {
+    jQuery.each(field_order, function (i, field) {
       var tx = this_.get_tx(field);
       if (tx.hasClass('dynfields-hide')) {
         hidden.push(field);
@@ -68,12 +69,12 @@ var Layout = function (name) {
     jQuery(this.selector).each(function (i, e) {
       var old_field = this_.get_field($(this));
       var old_slot = -1;
-      if (old_field.length)
+      if (old_field.length !== 0)
         old_slot = jQuery.inArray(old_field, new_fields);
       var new_field = new_fields[i];
 
       // check to allow *this* field be in its own row
-      if (i % 2 == 1 && old_field.length && this_.needs_own_row(new_field))
+      if (i % 2 === 1 && old_field.length !== 0 && this_.needs_own_row(new_field))
         skip_slot += 1;
 
       var new_slot = i + skip_slot;
@@ -107,9 +108,13 @@ inputs_layout.get_tx = function (field) {
 
 // get_field
 inputs_layout.get_field = function (td) {
-  var input = td.find(':input:first');
-  if (!input.length || !input.is('[id]')) return '';
-  return input.attr('id').slice(6);
+  var name = td.attr('data-dynfields-name');
+  if (!name) {
+    var input = td.find(':input:first');
+    name = input.length !== 0 ? input[0].id.slice(6) : '<missing>';
+    td.attr('data-dynfields-name', name);
+  }
+  return name !== '<missing>' ? name : '';
 };
 
 // move_field
@@ -125,16 +130,16 @@ inputs_layout.move_field = function (field, i) {
 
   // find correct column (tx) to insert field
   var col = 'col' + ((i % 2) + 1);
-  if (tr.find('th').length) {
+  var old_th = tr.find('th:first');
+  if (old_th.length !== 0) {
     if (col == 'col1') {
-      var old_th = tr.find('th:first');
-      if (old_th.get(0) != th.get(0)) { // don't move self to self
+      if (old_th[0] != th[0]) { // don't move self to self
         old_th.before(th);
         old_th.before(td);
       }
     } else {
       var old_td = tr.find('td:has(:input):last');
-      if (old_td.get(0) != td.get(0)) { // don't move self to self
+      if (old_td[0] != td[0]) { // don't move self to self
         old_td.after(td);
         old_td.after(th);
       }
@@ -168,7 +173,12 @@ header_layout.get_tx = function (field) {
 
 // get_field
 header_layout.get_field = function (th) {
-  return (th.attr('id') ? th.attr('id').slice(2) : '');
+  var name = th.attr('data-dynfields-name');
+  if (!name) {
+    var name = th.length !== 0 ? th[0].id.slice(2) : '<missing>';
+    th.attr('data-dynfields-name', name);
+  }
+  return name !== '<missing>' ? name : '';
 };
 
 // move_field
@@ -178,19 +188,19 @@ header_layout.move_field = function (field, i) {
 
   // find correct row (tr) to insert field
   var row = Math.round(i / 2 - 0.5); // round down
-  var tr = jQuery('#ticket').find('.properties tr:eq(' + row + ')');
+  var tr = jQuery('#ticket .properties').find('tr:eq(' + row + ')');
 
   // find correct column (tx) to insert field
-  if (tr.find('th').length) {
+  var old_th = tr.find('th:first');
+  if (old_th.length !== 0) {
     if (i % 2 == 0) {
-      var old_th = tr.find('th:first');
-      if (old_th.get(0) != th.get(0)) { // don't move self to self
+      if (old_th[0] != th[0]) { // don't move self to self
         old_th.before(th);
         old_th.before(td);
       }
     } else {
       var old_td = tr.find('td:last');
-      if (old_td.get(0) != td.get(0)) { // don't move self to self
+      if (old_td[0] != td[0]) { // don't move self to self
         old_td.after(td);
         old_td.after(th);
       }

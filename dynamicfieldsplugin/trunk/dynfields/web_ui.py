@@ -27,6 +27,8 @@ class DynamicFieldsModule(Component):
 
     rules = ExtensionPoint(IRule)
 
+    target_re = re.compile(r"(?P<target>[^.]+).*")
+
     def __init__(self):
         # bind the 'dynfields' catalog to the specified locale directory
         locale_dir = resource_filename(__name__, 'locale')
@@ -88,8 +90,7 @@ class DynamicFieldsModule(Component):
             for key in opts:
                 if not opts.has_pref(key):
                     continue
-                target_re = re.compile(r"(?P<target>[^.]+).*")
-                target = target_re.match(key).groupdict()['target']
+                target = self.target_re.match(key).groupdict()['target']
                 trigger = rule.get_trigger(req, target, key, opts)
                 if not trigger:
                     continue
@@ -107,8 +108,7 @@ class DynamicFieldsModule(Component):
         opts = Options(self.env)
         for key in opts:
             # extract the target field
-            target_re = re.compile(r"(?P<target>[^.]+).*")
-            target = target_re.match(key).groupdict()['target']
+            target = self.target_re.match(key).groupdict()['target']
 
             # extract rule specifications from configs
             for rule in self.rules:
