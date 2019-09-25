@@ -36,6 +36,11 @@ jQuery(function ($) {
         spec.rule.complete(input, spec);
       });
     });
+
+    // update layout (see layout.js)
+    inputs_layout.update();
+    header_layout.update();
+
   };
 
   window.setup_triggers = function () {

@@ -222,10 +222,6 @@ hiderule.apply = function (input, spec) {
 hiderule.complete = function (input, spec) {
   jQuery('#properties .dynfields-hide, #ticket .properties .dynfields-hide').hide();
 
-  // update layout (see layout.js)
-  inputs_layout.update(spec);
-  header_layout.update(spec);
-
   // add link to show hidden fields (that are enabled to be shown)
   if (spec.link_to_show.toLowerCase() == 'true') {
     if (jQuery('#dynfields-show-link').length == 0) {

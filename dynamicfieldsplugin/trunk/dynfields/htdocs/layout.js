@@ -24,8 +24,8 @@ var Layout = function (name) {
 
   var saved_field_order = {};
 
-  // Update the field layout given a spec
-  this.update = function (spec) {
+  // Update the field layout
+  this.update = function () {
     var this_ = this;
     var name = this.name;
 
