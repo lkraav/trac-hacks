@@ -40,8 +40,9 @@
                 <div class="select">
                   <select name="${option.name}">
                     # for val in option.options:
-                    <option value="${val}"
-                            selected="${option.value == val or None}">${val}</option>
+                    <option value="${val}"${
+                        {'selected': option.value == val}|htmlattr
+                      }>${val}</option>
                     # endfor
                   </select>
                 </div>
@@ -49,8 +50,9 @@
                 <div class="bool">
                   # for val in ('true', 'false'):
                   <label>
-                    <input type="radio" name="${option.name}" value="${val}"
-                           checked="${option.value == val or None}" />
+                    <input type="radio" name="${option.name}" value="${val}"${
+                        {'checked': option.value == val}|htmlattr
+                      } />
                     ${val}
                   </label>
                   # endfor
