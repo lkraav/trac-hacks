@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from setuptools import find_packages, setup
 
 setup(
@@ -20,8 +22,8 @@ setup(
     maintainer_email = "richard.liao.i@gmail.com",
     description = "Auto complete plugin for Trac.",
     license = "BSD",
-    keywords = "trac svg",
-    url = "http://trac-hacks.org/wiki/TracAutoCompletePlugin",
+    keywords = "trac",
+    url = "https://trac-hacks.org/wiki/TracAutoCompletePlugin",
     classifiers = [
         'Framework :: Trac',
     ],

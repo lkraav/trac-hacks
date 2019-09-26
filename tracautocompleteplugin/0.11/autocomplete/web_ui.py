@@ -22,6 +22,7 @@ import re
 
 __all__ = ['AutoComplete']
 
+
 class AutoComplete(Component):
     implements(ITemplateProvider,
                IRequestHandler,
