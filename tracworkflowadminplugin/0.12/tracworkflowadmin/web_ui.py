@@ -22,11 +22,12 @@ from trac.core import Component, implements
 from trac.admin import IAdminPanelProvider
 from trac.config import Configuration, Option, BoolOption, ListOption, \
                         FloatOption, ChoiceOption
-from trac.env import IEnvironmentSetupParticipant
+from trac.env import Environment, IEnvironmentSetupParticipant
 from trac.perm import PermissionSystem
 from trac.util.compat import sha1, any
+from trac.util.html import tag
 from trac.util.text import to_unicode, exception_to_unicode
-from trac.util.translation import dgettext, domain_functions
+from trac.util.translation import dgettext, domain_functions, tgettext_noop
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
                             add_script, add_script_data
 
@@ -64,16 +65,45 @@ ChoiceOption = _option_with_tx(ChoiceOption)
 __all__ = ['TracWorkflowAdminModule']
 
 
+_parsed_version = parse_version(__version__)
+
+if _parsed_version >= parse_version('1.4'):
+    _use_jinja2 = True
+elif _parsed_version >= parse_version('1.3'):
+    _use_jinja2 = hasattr(Chrome, 'jenv')
+else:
+    _use_jinja2 = False
+
+if _use_jinja2:
+    _template_dir = resource_filename(__name__, 'templates/jinja2')
+else:
+    _template_dir = resource_filename(__name__, 'templates/genshi')
+
+_htdoc_dir = resource_filename(__name__, 'htdocs')
+
 _default_operations = ['del_owner', 'set_owner', 'set_owner_to_self',
                        'del_resolution', 'set_resolution', 'leave_status']
-if parse_version(__version__) >= parse_version('1.2'):
+if _parsed_version >= parse_version('1.2'):
     _default_operations.append('may_set_owner')
 _default_operations = ', '.join(_default_operations)
 
 
+def _help(href):
+    text = _("Please refer to [1:TracWorkflow] for the setting method of a "
+             "workflow.")
+    kwargs = {'arg1': 'TracWorkflow'}
+    def repl(match):
+        idx = 'arg%d' % int(match.group(1))
+        kwargs[idx] = match.group(2)
+        return '%(' + idx + ')s'
+    fmt = re.sub(r'\[(\d+):([^]]*)\]', repl, text)
+    kwargs['arg1'] = tag.a(kwargs['arg1'], href=href.wiki('TracWorkflow'))
+    return tgettext_noop(fmt, **kwargs)
+
+
 def _msgjs_locales(dir=None):
     if dir is None:
-        dir = resource_filename(__name__, 'htdocs')
+        dir = _htdoc_dir
         dir = os.path.join(dir, 'scripts', 'messages')
     if not os.path.isdir(dir):
         return set()
@@ -119,18 +149,18 @@ class TracWorkflowAdminModule(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, db=None):
         return False
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         pass
 
     # ITemplateProvider method
     def get_htdocs_dirs(self):
-        return [('tracworkflowadmin', resource_filename(__name__, 'htdocs'))]
+        return [('tracworkflowadmin', _htdoc_dir)]
 
     def get_templates_dirs(self):
-        return [resource_filename(__name__, 'templates')]
+        return [_template_dir]
 
     # IAdminPanelProvider methods
     def get_admin_panels(self, req):
@@ -162,8 +192,10 @@ class TracWorkflowAdminModule(Component):
             'perms': permissions,
             'operations': operations,
             'editor_mode': req.args.get('editor_mode') or self.default_editor,
-            'text': self._conf_to_str(self.config)
+            'text': self._conf_to_str(self.config),
         }
+        if _use_jinja2:
+            data['help'] = _help(req.href)
         return 'tracworkflowadmin.html', data
 
     if hasattr(Chrome, 'add_jquery_ui'):
@@ -176,6 +208,11 @@ class TracWorkflowAdminModule(Component):
             add_script(req, 'tracworkflowadmin/scripts/jquery-ui.js')
         _jquery_multiselect = \
             'tracworkflowadmin/scripts/jquery.multiselect-1.9.js'
+
+    if hasattr(Environment, 'htdocs_dir'):
+        _env_htdocs_dir = property(lambda self: self.env.htdocs_dir)
+    else:
+        _env_htdocs_dir = property(lambda self: self.env.get_htdocs_dir())
 
     def _conf_to_inner_format(self, conf):
         statuses = []
@@ -433,7 +470,7 @@ class TracWorkflowAdminModule(Component):
         return script.encode('utf-8')
 
     def _image_path_setup(self, req):
-        dir = os.path.join(self.env.get_htdocs_dir(), 'tracworkflowadmin')
+        dir = os.path.join(self._env_htdocs_dir, 'tracworkflowadmin')
         if not os.path.isdir(dir):
             os.mkdir(dir)
         for file in glob.glob(os.path.join(dir, '*')):
@@ -444,7 +481,7 @@ class TracWorkflowAdminModule(Component):
                 pass
 
     def _image_tmp_path(self, basename):
-        return os.path.join(self.env.get_htdocs_dir(), 'tracworkflowadmin', basename)
+        return os.path.join(self._env_htdocs_dir, 'tracworkflowadmin', basename)
 
     def _image_tmp_url(self, req, basename, timestamp):
         kwargs = {}
@@ -459,7 +496,7 @@ class TracWorkflowAdminModule(Component):
         if len(errors) == 0:
             script = self._create_dot_script(params)
             self._image_path_setup(req)
-            dir = os.path.join(self.env.get_htdocs_dir(), 'tracworkflowadmin')
+            dir = os.path.join(self._env_htdocs_dir, 'tracworkflowadmin')
             basename = '%s.png' % sha1(script).hexdigest()
             path = os.path.join(dir, basename)
             if not self.diagram_cache or not os.path.isfile(path):
