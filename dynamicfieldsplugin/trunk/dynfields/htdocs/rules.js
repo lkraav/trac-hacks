@@ -367,19 +367,21 @@ setrule.setup = function (input, spec) {
   if (set_to == 'invalid_value')
     set_to = spec.value; // only use pref if set_to not set in trac.ini
 
-  // only do effect if value is changing (i.e., is a select option)
-  var doit = false;
+  // if select option, only do effect if value is changing
+  var doit = true;
   if ($field.is('select')) {
+    doit = false;
     $field.find('option').each(function (i, e) {
-      var option = jQuery(e).val().toLowerCase();
-      if (set_to == '!' && option.length) // special non-empty rule
+      var option = jQuery(e).val();
+      // special rule '!' - set to first non-empty value
+      // set_to is always lowercase because ConfigParser lowercases option names
+      // see comment:5:ticket:13099
+      if (set_to === '!' && option.length !== 0 || option.toLowerCase() === set_to) {
         set_to = option;
-      if (option == set_to) {
         doit = true;
+        return false; // break out of loop
       }
     });
-  } else {
-    doit = true;
   }
   if (doit) {
     if ($field.is(':checkbox')) {
