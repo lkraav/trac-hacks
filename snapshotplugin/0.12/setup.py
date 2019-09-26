@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='Snapshot',
-    version='0.1',
+    version='0.2',
     license='Modified BSD',
     author='MATOBA Akihiro',
     author_email='matobaa+trac-hacks@gmail.com',

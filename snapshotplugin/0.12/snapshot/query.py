@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2012-2013, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -26,7 +26,7 @@ a \"page_name\" URL Parameter uses for default name if exists."""
 
     @classmethod
     def formatter(self, obj):
-        return isinstance(obj, datetime) and format_datetime(obj) or str(obj)
+        return isinstance(obj, datetime) and format_datetime(obj) or unicode(obj)
 
     #ITemplateStreamFilter methods
     def filter_stream(self, req, method, filename, stream, data):
@@ -53,6 +53,10 @@ a \"page_name\" URL Parameter uses for default name if exists."""
                 text += '|| %s || %s\n' % (ticket['href'],
                     ' || '.join([self.formatter(ticket[col]) for col in cols]))
         text += '}}}'
+        if 'id' in cols:
+            ticket_id_list = [str(ticket['id']) for ticket in tickets for (_, tickets) in data['groups']]
+            if len(ticket_id_list) > 0:
+                text += '\n([ticket:' + ','.join(ticket_id_list) + ' query by ticket id])'
         div = tag.div(tag.input(value='Save as wiki:', type='submit'),
                       tag.input(name='action', value='edit', type='hidden'),
                       tag.input(name='text', value=text, type='hidden'),
@@ -92,6 +96,7 @@ class Report(Component):
         if 'ticket' in cols_work:
             cols_work[cols_work.index('ticket')] = 'id'  # replace 'ticket' to 'id'
         text += '||= href =||= %s\n' % ' =||= '.join(cols_work)
+        ticket_id_list = []
         for  groupindex, row_group in data.get('row_groups', []):
             text += '|| group: %s\n' % groupindex
             for row in row_group:
@@ -102,7 +107,11 @@ class Report(Component):
                 ticket['href'] = get_resource_url(self.env, Resource('ticket', ticket.get('ticket', 0)), self.env.href)
                 text += '|| %s || %s\n' % (ticket['href'],
                     ' || '.join([self.formatter(col, ticket[col]) for col in cols]))
+                if 'ticket' in ticket:
+                    ticket_id_list.append(ticket['ticket'])
         text += '}}}'
+        if len(ticket_id_list) > 0:
+            text += '\n([ticket:' + ','.join(ticket_id_list) + ' query by ticket id])'
         div = tag.div(tag.input(value='Save as wiki:', type='submit'),
                       tag.input(name='action', value='edit', type='hidden'),
                           tag.input(name='text', value=text, type='hidden'),

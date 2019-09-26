@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2012-2013, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
 from genshi.builder import tag
+from trac import __version__ as VERSION
 from trac.core import Component, implements
 from trac.ticket.api import TicketSystem
+from trac.util.presentation import Paginator
 from trac.util.translation import _
 from trac.web.chrome import Chrome, add_stylesheet
 from trac.wiki.api import IWikiMacroProvider
@@ -46,7 +48,7 @@ Example:
             cols = []  # Sentinel
             group = ''  # Sentinel
             groups = {}
-            lines = content.split('\r\n')
+            lines = content.split('\n')
             for line in lines:
                 if line.startswith('||= href =||= '):
                     cols = line[14:].split(' =||= ')
@@ -87,24 +89,22 @@ Example:
             groups = [(name, groups[name]) for name in groups]  # transform dict to expected tuple
             #
             data = {
-                'paginator': None,
+                'paginator': Paginator([]),
                 'headers': headers,
                 'query': query,
                 'fields': fields,
                 'groups': groups,
             }
             add_stylesheet(formatter.req, 'common/css/report.css')
-            chrome = Chrome(self.env)
-            data = chrome.populate_data(formatter.req, data)
-            template = chrome.load_template('query_results.html')
-            content = template.generate(**data)
-            # ticket id list as static
-            tickets = ''
-            if 'id' in cols:
-                ticket_id_list = [ticket.get('id') for group in groups for ticket in group[1]]
-                if len(ticket_id_list) > 0:
-                    tickets = '([ticket:' + ','.join(ticket_id_list) + ' query by ticket id])'
-            return tag.div(content, format_to_html(self.env, formatter.context, tickets))
+
+            if VERSION < '1.3.2':  # Genshi
+                chrome = Chrome(self.env)
+                data = chrome.populate_data(formatter.req, data)
+                template = chrome.load_template('query_results.html')
+                content = template.generate(**data)
+                return content
+            else: # jinja2
+                return Chrome(self.env).render_fragment(formatter.req, 'query_results.html', data)
         except StopIteration:
             errorinfo = _('Not Enough fields in ticket: %s') % line
         except Exception:
