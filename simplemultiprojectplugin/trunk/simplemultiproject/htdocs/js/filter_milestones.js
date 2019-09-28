@@ -31,10 +31,6 @@ jQuery(function($) {
 
   function smp_onProjectChange(project)
   {
-    if (!project) {
-      project = smp_initialProjectMilestone[0];
-    }
-
     // milestones
     var milestones = smp_milestonesForProject[project];
     var selectedMilestone = "";
@@ -68,8 +64,9 @@ jQuery(function($) {
     smp_updateSelect('version', smp_project_versions[project], smp_default_version);
   }
 
-  smp_onProjectChange();
-  $('#field-project').change(function() {
+  var $project = $('#field-project');
+  smp_onProjectChange($project.val());
+  $project.change(function() {
     smp_onProjectChange(this.value)
   });
 
