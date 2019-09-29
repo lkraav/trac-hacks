@@ -80,7 +80,7 @@ class LDAPStore (Component):
 
         return connection
 
-    def _ldap_search_user(self, conn, user, attrs):
+    def _ldap_search_user(self, con, user, attrs):
         filter_ = ldap.filter.filter_format(self.user_matchfilter, [user])
         return con.search_s(self.user_searchbase, ldap.SCOPE_SUBTREE, filter_,
                             attrs)
