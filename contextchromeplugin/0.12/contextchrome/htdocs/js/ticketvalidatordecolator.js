@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013,2017 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+ * Copyright (C) 2013,2017,2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
  * All rights reserved.
  *
  * This software is licensed as described in the file COPYING, which
@@ -10,25 +10,21 @@
 	var rules;
 	var workflow;
 	$(function() {
-		// retrieve a configuration
-		path = $('#search')[0].action
-		path = path.substring(0, path.length - 7)
-		$.getJSON(path + "/ticketvalidator.options", function(json) {
-			rules = json['rules'];
-			workflow = json['workflow'];
-			workflow['newticket'] = {newstate: 'new'}
-			// bind
-			$('#action input[type=radio]').change(addclass);
-            $('select#field-type').change(addclass);
-			// force invoke a select handler on document.ready
-			currentaction = $('#action input[checked=checked]')
-			if(currentaction.length > 0) {
-				event = {target:currentaction[0]}
-			} else {
-				event = {target:{'id':'action_', value:'newticket'}}
-			}
-			addclass(event);
-		});
+		json = contextchrome_ticketvalidator;
+		rules = json['rules'];
+		workflow = json['workflow'];
+		workflow['newticket'] = {newstate: 'new'}
+		// bind
+		$('#action input[type=radio]').change(addclass);
+		$('select#field-type').change(addclass);
+		// force invoke a select handler on document.ready
+		currentaction = $('#action input[checked=checked]')
+		if(currentaction.length > 0) {
+			event = {target:currentaction[0]}
+		} else {
+			event = {target:{'id':'action_', value:'newticket'}}
+		}
+		addclass(event);
 	});
 
 	addclass = function(event) {

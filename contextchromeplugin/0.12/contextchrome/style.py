@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2012-2013, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -8,12 +8,13 @@
 
 from genshi.filters.transform import Transformer
 from trac.core import Component, implements
-from trac.web.api import ITemplateStreamFilter
-
+from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
+from pkg_resources import resource_filename
 
 class TypeClassToTicket(Component):
     """ set css-class to type on ticket. """
-    implements(ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateProvider)
 
     def get_resource_tags(self, req, resource):
         try:
@@ -23,24 +24,31 @@ class TypeClassToTicket(Component):
         except:
             return []
 
-    def filter_stream(self, req, method, filename, stream, data):
+    # IRequestFilter methods
+    def pre_process_request(self, req, handler):
+        return handler  # unchanged
+
+    def post_process_request(self, req, template, data, content_type):
         value = None
-        if filename == 'ticket.html':
-            if not 'ticket' in data:
-                return stream
+        if template == 'ticket.html' and 'ticket' in data:
             ticket = data['ticket'].values
             fields = self.config.getlist('ticket', 'decorate_fields')
             value = ' '.join(['%s_is_%s' % (field, value.rstrip(' ').rstrip(',').replace('"', ''))
                               for field in fields if field in ticket for value in ticket.get(field).split(' ')]
+                             # FIXME: custom field of datetime occurs exception; it does not have 'split' attr.
                              + [ticket.get('type')]  # backward compatibility
                              )
-        if filename == 'wiki_view.html':
+        if template == 'wiki_view.html':
             value = ' '.join(['tagged_as_%s' % tag for tag in self.get_resource_tags(req, data['context'].resource)])
 
         if value:
-            def add(name, event):
-                attrs = event[1][1]
-                values = attrs.get(name)
-                return values and ' '.join((values, value)) or value
-            return stream | Transformer('//body').attr('class', add)
-        return stream
+            add_script(req, "contextchrome/js/bodyclassdecolator.js")
+            add_script_data(req, contextchrome_bodyclass=value)
+        return template, data, content_type
+
+    # ITemplateProvider methods
+    def get_htdocs_dirs(self):
+        return [('contextchrome', resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        return []

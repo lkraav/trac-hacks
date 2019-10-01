@@ -8,6 +8,7 @@ select.tracvalidator, input.tracvalidator, textarea.tracvalidator, input.tracval
 
 th.tracvalidator {
 	font-weight: bold;
+	text-decoration: underline solid #330000;
 }
 
 /*

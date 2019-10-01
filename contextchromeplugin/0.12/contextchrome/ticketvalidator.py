@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2013, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -9,8 +9,10 @@
 
 from trac.core import implements, Component
 from trac.ticket.default_workflow import get_workflow_config
-from trac.web.api import ITemplateStreamFilter, IRequestHandler
-from trac.web.chrome import add_script, add_script_data
+from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
+from pkg_resources import resource_filename
+
 try:
     import json
 except:
@@ -18,7 +20,7 @@ except:
 
 
 class TicketValidatorDecolator(Component):
-    implements(ITemplateStreamFilter, IRequestHandler)
+    implements(ITemplateProvider, IRequestFilter, IRequestHandler)
 
     def __init__(self):
         self.rules = self._get_validation_rules()
@@ -76,12 +78,23 @@ class TicketValidatorDecolator(Component):
         req.end_headers()
         req.write(content)
 
-    # ITemplateStreamFilter methods
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename in [
+    # IRequestFilter methods
+    def pre_process_request(self, req, handler):
+        return handler  # unchanged
+
+    def post_process_request(self, req, template, data, content_type):
+        if template in [
                         'ticket.html',  # /ticket/{\d} or /newticket
                         ]:
             add_script(req, "contextchrome/js/ticketvalidatordecolator.js")
             status = 'ticket' in data and 'status' in data['ticket'].values and data['ticket'].values['status'] or 'sentinel'
             add_script_data(req, {"contextchrome_tracstatus": status})
-        return stream
+            add_script_data(req, contextchrome_ticketvalidator={'rules': self.rules, 'workflow': self.workflow})
+        return template, data, content_type
+
+    # ITemplateProvider methods
+    def get_htdocs_dirs(self):
+        return [('contextchrome', resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        return []

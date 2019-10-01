@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2017 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2017, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -13,6 +13,7 @@ from trac.web.chrome import ITemplateProvider, add_notice, add_stylesheet,\
     add_script
 from trac.web.api import IRequestHandler, IRequestFilter, HTTPException
 from pkg_resources import ResourceManager
+from trac import __version__ as VERSION
 
 _path_css = '/contextchrome/userstyle.css'
 _path_js = '/contextchrome/userscript.js'
@@ -88,7 +89,10 @@ class UserStyle(Component):
         userscript = req.session[_path_js] if _path_js in req.session else ''
         data = {'userstyle': userstyle,
                 'userscript': userscript}
-        return 'prefs_userstyle.html', data
+        if VERSION < '1.3.2':
+            return 'genshi_prefs_userstyle.html', data
+        else:
+            return 'prefs_userstyle.html', data
 
     # ITemplateProvider methods
 

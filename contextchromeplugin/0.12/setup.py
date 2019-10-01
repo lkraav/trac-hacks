@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ContextChrome',
-    version='0.6',
+    version='0.7',
     license='Modified BSD;  except xdr.js under MIT-LICENSE',
     author='MATOBA Akihiro',
     author_email='matobaa+trac-hacks@gmail.com',

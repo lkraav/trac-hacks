@@ -1,10 +1,18 @@
-// FIXME: IE8,9 bug, refs; http://dev.classmethod.jp/cloud/cors-cross-origin-resource-sharing-cross-domain/
+/*
+ * Copyright (C) 2013, 2017, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+ * All rights reserved.
+ *
+ * This software is licensed as described in the file COPYING, which
+ * you should have received as part of this distribution.
+ */
+
+ // FIXME: IE8,9 bug, refs; http://dev.classmethod.jp/cloud/cors-cross-origin-resource-sharing-cross-domain/
 
 (function($) {
   var XMLRPC = true;
   $(function($) {
     var fields = config__ticket__decolate_fields;
-    $('a[class*="ext-link"][href*="/intertrac/"]')
+    $('a[href*="/intertrac/"]')
       .each(function() {
         var that = $(this);
         // with XMLRPC on target

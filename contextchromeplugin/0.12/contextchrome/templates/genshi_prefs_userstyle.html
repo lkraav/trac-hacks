@@ -1,34 +1,33 @@
-{# Copyright (C) 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+<!--! Copyright (C) 2017 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
   This software is licensed as described in the file COPYING, which
   you should have received as part of this distribution.
-#}
-# extends 'prefs.html'
-<!DOCTYPE html>
-<html>
+-->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="prefs.html" />
   <head>
-    <title>
-      # block preftitle
-      ${_("User Style")}
-      # endblock preftitle
-    </title>
+    <title>User Style</title>
   </head>
   <body>
-    # block prefpanel
-    <p class="hint">Contents below will be injected on all pages.</p>
+    <p class="hint" i18n:msg="">Contents below will be injected on all pages.</p>
   
-    <div class="field">
+    <div class="fields">
       <label>user stylesheet:</label><br/>
       <p class="hint">your own stylesheet like:</p>
       <blockquote class="code hint"><pre>a.owner_is_${req.authname or 'somebody'} {<br/>&nbsp;&nbsp;&nbsp;&nbsp;border: maroon thin solid;<br/>}</pre></blockquote>
       <textarea rows="10" cols="80" name="userstyle">${userstyle or None}</textarea>
     </div>
     <br/>
-    <div class="field">
+    <div class="fields">
       <label>user script:</label><br/>
       <p class="hint">your own script like:</p>
       <blockquote class="code hint"><pre>document.addEventListener("DOMContentLoaded",function(){<br/>&nbsp;&nbsp;&nbsp;&nbsp;console.dir(this);<br/>});</pre></blockquote>
       <textarea rows="10" cols="80" name="userscript">${userscript or None}</textarea>
     </div>
-    # endblock prefpanel
   </body>
 </html>
