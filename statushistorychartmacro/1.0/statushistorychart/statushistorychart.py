@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013, 2015 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2013, 2015, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -11,7 +11,7 @@ import copy
 from datetime import datetime
 import re
 
-from genshi.builder import tag
+from trac.util.html import tag
 from pkg_resources import ResourceManager
 from trac.core import Component, implements, TracError
 from trac.ticket.api import TicketSystem
@@ -150,8 +150,7 @@ class Macro(Component):
         # execute query for value changes of each ticket
         join_clause_dummy = ''
         join_clause = "JOIN ticket_custom ON ticket.id = ticket_custom.ticket and ticket_custom.name = '%s'"
-        cursor = formatter.env.get_read_db().cursor()
-        cursor.execute("""
+        fetchall = self.env.db_query("""
                 SELECT id, time, null, %s, 'content'
                     FROM ticket
                     %s
@@ -166,7 +165,7 @@ class Macro(Component):
                 """ % (custom and "'\uFEFF'" or field['name'],  # ZERO WIDTH NO-BREAK SPACE; uses for mark of invalid data
                        custom and (join_clause % field['name']) or join_clause_dummy,
                        cond, cond, field['name']))
-        changes = [row for row in cursor.fetchall()]
+        changes = [row for row in fetchall]
         # transform (ticket, time, status)* ==> (ticket <>- status)*
         tid = 0  # position of ticket id
         tickets = {}
