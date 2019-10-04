@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2011-2014 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
+# Copyright (C) 2011-2014, 2019 MATOBA Akihiro <matobaa+trac-hacks@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -9,17 +9,21 @@
 
 from pkg_resources import ResourceManager
 
-from genshi.core import QName
-from genshi.filters.transform import START, END
 from trac.cache import cached
 from trac.core import Component, implements
 from trac.util import arity
 from trac.util.html import tag
-from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
+from trac.web.api import IRequestHandler, IRequestFilter
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data, add_stylesheet, web_context
 from trac.wiki.api import IWikiChangeListener, WikiSystem
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
+from datetime import datetime
+
+try:
+    import json
+except:
+    from tracrpc.json_rpc import json
 
 try:
     from trac.web.chrome import web_context
@@ -31,7 +35,7 @@ except ImportError:
 class FieldTooltip(Component):
     """ Provides tooltip for ticket fields. (In Japanese/KANJI) チケットフィールドのツールチップを提供します。
         if wiki page named 'help/field-name is supplied, use it for tooltip text. """
-    implements(ITemplateStreamFilter, ITemplateProvider, IWikiChangeListener)
+    implements(IRequestHandler, IRequestFilter, ITemplateProvider, IWikiChangeListener)
     _default_pages = {'reporter': 'The author of the ticket.',
                       'type': 'The nature of the ticket (for example, defect or enhancement request). See TicketTypes for more details.',
                       'component': 'The project module or subsystem this ticket concerns.',
@@ -102,6 +106,9 @@ class FieldTooltip(Component):
         prefix_len = len(FieldTooltip._wiki_prefix)
         wiki_pages = WikiSystem(self.env).get_pages(FieldTooltip._wiki_prefix)
         for page in wiki_pages:
+            #FIXME
+            # if 'WIKI_VIEW' not in self.perm('wiki', pages):
+            #     continue
             if arity(WikiPage.__init__) == 5:
                 text = WikiPage(self.env, page, db=db).text
             else:  # == 4
@@ -119,142 +126,57 @@ class FieldTooltip(Component):
     def get_htdocs_dirs(self):
         return [('fieldtooltip', ResourceManager().resource_filename(__name__, 'htdocs'))]
 
-    # ITemplateStreamFilter methods
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'ticket.html':
-            # jquery tools tooltip ... tested
-            add_script(req, 'fieldtooltip/jquery-migrate-1.4.1.min.js')
-            add_script(req, 'fieldtooltip/jquerytools/jquery.tools.min.js')
-            add_script(req, 'fieldtooltip/jquerytools/enabler.js')
-            add_stylesheet(req, 'fieldtooltip/jquerytools/jquery_tools_tooltip.css')
-            # jquery tooltip ... tested
-#            add_script(req, 'fieldtooltip/jquerytooltip/jquery.dimensions.js')
-#            add_script(req, 'fieldtooltip/jquerytooltip/jquery.tooltip.js')
-#            add_script(req, 'fieldtooltip/jquerytooltip/enabler.js')
-#            add_stylesheet(req, 'fieldtooltip/jquerytooltip/jquery.tooltip.css')
-            # jquery powertip ... tested
-#            add_script(req, 'fieldtooltip/jquerypowertip/jquery.powertip.js')
-#            add_script(req, 'fieldtooltip/jquerypowertip/enabler.js')
-#            add_stylesheet(req, 'fieldtooltip/jquerypowertip/jquery.powertip.css')
-            # cluetip ... tested
-#            add_script(req, 'fieldtooltip/cluetip/jquery.hoverIntent.js')
-#            add_script(req, 'fieldtooltip/cluetip/jquery.cluetip.js')
-#            add_script(req, 'fieldtooltip/cluetip/enabler.js')
-#            add_stylesheet(req, 'fieldtooltip/cluetip/jquery.cluetip.css')
+    # IRequestFilter methods
+    def pre_process_request(self, req, handler):
+        return handler
 
-            return stream | FieldTooltipFilter(self, req)
-        return stream
+    def post_process_request(self, req, template, data, metadata=None):
+        if template in ['ticket.html']:
+            add_script(req, 'fieldtooltip/tooltip.js')
+            add_stylesheet(req, 'fieldtooltip/tooltip.css')
+            add_script_data(req, {'fieldtooltip_default_pages': self._default_pages})
+        return template, data, metadata
 
+    # IRequestHandler Methods
+    def match_request(self, req):
+        return req.path_info == '/fieldtooltip/tooltip.jsonrpc'
+
+    def process_request(self, req):
+        payload = json.load(req)
+        if not 'method' in payload or not payload['method'] == 'wiki.getPage':
+            req.send_response(501)  # Method Not Implemented
+            req.end_headers()
+            return
+        if req.get_header('If-None-Match') == str(id(self.pages)):
+            req.send_response(304)  # Not Modified
+            req.end_headers()
+            return
+            
+        content = json.dumps({page:format_to_html(self.env, web_context(req), self.pages[page], False) for page in self.pages}, indent=4)
+        req.send_response(200)
+        req.send_header('Content-Type', 'application/json')
+        req.send_header('Content-Length', len(content))
+        req.send_header('ETag', "%s" % id(self.pages))
+        req.end_headers()
+        req.write(content)
+    
     # IWikiChangeListener methods
     def wiki_page_added(self, page):
-        del self.pages
+        if page.name.startwith(self._wiki_prefix):
+            del self.pages
 
-    def wiki_page_changed(self, page, version, t, comment, author, ipnr):
-        del self.pages
+    def wiki_page_changed(self, page, version, t, comment, author):
+        if page.name.startwith(self._wiki_prefix):
+            del self.pages
 
     def wiki_page_deleted(self, page):
-        del self.pages
+        if page.name.startwith(self._wiki_prefix):
+            del self.pages
 
     def wiki_page_version_deleted(self, page):
-        del self.pages
+        if page.name.startwith(self._wiki_prefix):
+            del self.pages
 
     def wiki_page_renamed(self, page, old_name):
-        del self.pages
-
-
-class FieldTooltipFilter(object):
-    """ Add description in 'title' attribute as title="ZZZZZ | zzzzzz",
-        add 'rel' attribute as rel="#tooltip-ZZZZZ",
-        add element as <div id="tooltip-ZZZZZ"> zzzzz </div>,
-        for <label for="field-ZZZZZ"> and <th id="h_ZZZZZ"> element in a stream.
-        The content in the div will be HTML-formatted, we can use bold, italic, link or so.
-
-        It occurs
-        pop up the title attribute by default,
-        pop up a div element pointed in rel, with jquery cluetip plugin and {local:true} style,
-        pop up a div element returned by bodyHandler, with jquery tooltip plugin,
-        pop up the next element (=div added by this plugin), with jquery tools tooltip.
-
-        (In Janapese/KANJI)
-        stream の <label for="field-ZZZZZ"> および <th id="h_ZZZZZ"> に対して、
-        title="ZZZZZ | zzzzzz" という属性で説明を追加し、
-        rel="#tooltip-ZZZZZ" という属性を追加し、
-        <div id="tooltip-ZZZZZ"> zzzzz </div> という要素を追加します。
-        div要素の中身はWikiフォーマットされたHTMLで説明を追加します。太字やリンクなども表現されます。
-
-               通常のHTMLでは title属性がポップアップします。
-        jquery cluetip plugin を使う場合、{local:true} と指定することで、relで指定したIDのdivがポップアップします。
-        jquery tooltip plugin を使う場合、bodyHandler で 当該divを返すようにすることで、そのdivがポップアップします。
-        jquery tools tooltip を使う場合、removeAttr('title') することで next要素(=div)がポップアップします。
-        """
-
-    def __init__(self, parent, req):
-        self.parent = parent
-        self.context = web_context(req)
-        self.locale = self.context.req.locale
-
-    def __call__(self, stream):
-        after_stream = {}
-        depth = 0
-        for kind, data, pos in stream:
-            if kind is START:
-                depth += 1
-                # add title and rel attribute to the element
-                data = self._add_title(data, 'label', 'for', 'action_', after_stream, depth)
-                data = self._add_title(data, 'label', 'for', 'field-', after_stream, depth)
-                data = self._add_title(data, 'th', 'id', 'h_', after_stream, depth)
-                yield kind, data, pos
-            elif kind is END:
-                # add div element after the element
-                if str(depth) in after_stream:
-                    for subevent in after_stream[str(depth)]:
-                        yield subevent
-                    del after_stream[str(depth)]
-                yield kind, data, pos
-                depth -= 1
-            else:
-                yield kind, data, pos
-
-    def _add_title(self, data, tagname, attr_name, prefix, after_stream, depth):
-        """ In case of
-            data parameter as element has same tagname attribute for the parameter and
-            attribute named the attr_name starts with the prefix,
-            add description in title attribute and rel attribute to the element
-            and store span element generated to after_stream[depth] for later use.
-
-            (In Japanese/KANJI)
-            data で与えられた要素が、引数で指定された tagname であり、attr_name 属性の値が prefix で始まる場合、
-                        説明文をtitle属性およびrel属性としてその要素に設定します。
-                        またそのとき、after_stream[depth] に SPAN 要素を格納します。
-        """
-        element, attrs = data
-        attr_value = attrs.get(attr_name)
-        if element.localname == tagname and attr_value and attr_value.startswith(prefix):
-            attr_value = attr_value[len(prefix):]
-            attr_value_locale = "%s.%s" % (attr_value, self.locale)
-            modifiable = 'WIKI_MODIFY' in self.context.perm('wiki', '/wiki/%s%s' % (FieldTooltip._wiki_prefix, attr_value))
-            default_attr = modifiable and '../nohint' or '../nohint-readonly'
-            default_attr_locale = (modifiable and '../nohint.%s' or '../nohint-readonly.%s') % self.locale
-            text = self.parent.pages.get(attr_value_locale,
-                   self.parent.pages.get(attr_value,
-                   FieldTooltip._default_pages.get(attr_value_locale,
-                   FieldTooltip._default_pages.get(attr_value,
-                   FieldTooltip._default_pages.get(default_attr_locale,
-                   FieldTooltip._default_pages.get(default_attr,
-                   ))))))
-            if text:
-                attrs |= [(QName('title'), attr_value + ' | ' + text)]
-                attrs |= [(QName('rel'), '#tooltip-' + attr_value)]
-                img = tag.img(src='%s/chrome/common/wiki.png' \
-                              % self.context.req.base_url,
-                              alt='?', align='right')
-                a = tag.a(img, href='%s/wiki/%s%s' \
-                           % (self.context.req.base_url, FieldTooltip._wiki_prefix, attr_value))
-                after_stream[str(depth)] = \
-                tag.span(a, '%s:\n' % attr_value,
-                        format_to_html(self.parent.env, self.context, text, False),
-                        id='tooltip-' + attr_value,
-                        class_='tooltip',
-                        style='display: none')
-                data = element, attrs
-        return data
+        if page.name.startwith(self._wiki_prefix):
+            del self.pages
