@@ -31,16 +31,19 @@
       content: function(callback) {
         const field = this.id && this.id.slice(2) || this.querySelector('label').attributes.for.value.replace(/^field-/,'').replace(/^action_/,'');
         const imglink = `<a href="${path}/wiki/${_wiki_prefix}${field}"><img align="right" src="${path}/chrome/common/wiki.png"></img></a>`;
-      
+        
+        const get_content = function(field) {
+          return `${imglink}<strong>${field}</strong>:<p>${pages[field+locale] || pages[field] || defaults[field+locale] || defaults[field] || sorry}`
+        }
         //  if not expired, use the page cache
         if(pages_age > Date.now() - 10e3)
-          return `${imglink}<strong>${field}</strong>:<p>${pages[field+locale] || pages[field] || fieldtooltip_default_pages[field+locale] || fieldtooltip_default_pages[field] || sorry}</p>`;
+          return get_content(field);
         else {
           // else, retrieve it
           _ajax = ajax;  // copy ajax singleton to local to avoid timing issue
           // if some ajax request in progress exists, add a resolver without new request to the ajax
           if(_ajax && _ajax.readystate != 4) {
-            _ajax.done(()=>{callback(`${imglink}<strong>${field}</strong>:<p>${pages[field+locale] || pages[field] || fieldtooltip_default_pages[field+locale] || fieldtooltip_default_pages[field] || sorry}</p>`)});
+            _ajax.done(()=>{callback(get_content(field))});
           } else {
             // if no ajax request in progress, create new request
             ajax = $.ajax({
@@ -55,10 +58,12 @@
               }),
               dataType: "json",
             }).done(function(json, status_text, jqXHR) {
-              pages = json || pages  // when 304, json also we can use jqXHR.responseJSON from browser cache
+              // when 304, json also we can use jqXHR.responseJSON from browser cache
+              pages = json && json['pages'] || pages
+              defaults = json && json['defaults'] || defaults
               pages_age = Date.now()
               pages_etag = jqXHR.getResponseHeader('etag') || pages_etag  // if no etag header presented, use old one
-              callback(`${imglink}<strong>${field}</strong>:<p>${pages[field+locale] || pages[field] || fieldtooltip_default_pages[field+locale] || fieldtooltip_default_pages[field] || sorry}</p>`);
+              callback(get_content(field));
             })
             .fail(console.error)  // FIXME
             .always(function() {ajax = null})  // if all done, dispose the ajax singleton
