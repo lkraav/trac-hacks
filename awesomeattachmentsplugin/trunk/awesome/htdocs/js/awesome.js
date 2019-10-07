@@ -1,4 +1,4 @@
-jQuery(document).ready(function ($) {
+jQuery(function ($) {
 
   var $propertyform = $('#propertyform');
   var $properties = $('#properties', $propertyform);
@@ -10,24 +10,24 @@ jQuery(document).ready(function ($) {
 
   var upload = '\
     <div class="upload">\
-      <span>\
-        <a class="uploadDescription" href="#"><img src="' + edithref + '"></a>\
-        <input class="fileInput" type="file" name="attachment[]" />\
-      </span>\
-      <div class="field">\
-        <label>Description of the file (optional):<br />\
-        <input type="text" class="trac-fullwidth" name="description[]" \
-               size="60" />\
-        </label>\
-      </div>\
+    <span>\
+    <a class="uploadDescription" href="#"><img src="' + edithref + '"></a>\
+    <input class="fileInput" type="file" name="attachment[]" />\
+    </span>\
+    <div class="field">\
+    <label>Description of the file (optional):<br />\
+    <input type="text" class="trac-fullwidth" name="description[]" \
+  size="60" />\
+    </label>\
+    </div>\
     </div>';
 
   var uploadContainer = '\
     <fieldset>\
-      <legend>Add Files</legend>\
-      <div id="uploads" class="uploads">\
-      </div>\
-      <a class="addUpload" href="#" style="float:right"><img src="' + addhref + '"></a>\
+    <legend>Add Files</legend>\
+    <div id="uploads" class="uploads">\
+    </div>\
+    <a class="addUpload" href="#" style="float:right"><img src="' + addhref + '"></a>\
     </fieldset>';
 
   var remove = '<a class="removeUpload" href="#"><img src="' + deletehref + '"></a>'
