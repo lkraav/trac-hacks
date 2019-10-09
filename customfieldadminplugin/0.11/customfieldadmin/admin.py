@@ -12,7 +12,7 @@ from pkg_resources import resource_filename
 
 from trac.config import Option
 from trac.core import *
-from trac.web.chrome import ITemplateProvider, add_script, add_warning
+from trac.web.chrome import Chrome, ITemplateProvider, add_script, add_warning
 from trac.admin.api import IAdminPanelProvider
 
 from customfieldadmin.api import CustomFields, _
@@ -125,8 +125,10 @@ class CustomFieldAdminPage(Component):
                 add_warning(req, _("Custom Fields are not correctly sorted. " \
                          "This may affect appearance when viewing tickets."))
 
-        return ('customfieldadmin.html', cf_admin)
-
+        if hasattr(Chrome(self.env), 'jenv'):
+            return 'customfieldadmin.html', cf_admin, None
+        else:
+            return 'customfieldadmin.html', cf_admin
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
