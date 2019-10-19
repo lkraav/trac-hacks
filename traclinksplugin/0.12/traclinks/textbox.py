@@ -8,15 +8,14 @@
 # you should have received as part of this distribution.
 
 from copy import copy
-from genshi.filters.transform import Transformer
 from pkg_resources import ResourceManager
 from trac.attachment import Attachment
 from trac.core import Component, implements, ExtensionPoint
 from trac.resource import Resource
 from trac.util.datefmt import format_datetime
 from trac.util.text import unicode_urlencode
-from trac.web.api import ITemplateStreamFilter, IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_script
+from trac.web.api import IRequestFilter
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 from trac.wiki.api import IWikiSyntaxProvider
 
 
@@ -24,7 +23,7 @@ class TextBox(Component):
     """ Generate TracLinks in search box for:
     { wiki: report: query: ticket: attachment: source: diff: log: milestone: timeline: search: }
     """
-    implements(ITemplateStreamFilter, ITemplateProvider, IRequestFilter)
+    implements(ITemplateProvider, IRequestFilter)
 
     def list_namespaces(self):
         providers = ExtensionPoint(IWikiSyntaxProvider).extensions(self.compmgr)
@@ -39,9 +38,8 @@ class TextBox(Component):
     def get_htdocs_dirs(self):
         return [('traclinks', ResourceManager().resource_filename(__name__, 'htdocs'))]
 
-    # ITemplateStreamFilter methods
-    def filter_stream(self, req, method, filename, stream, data):
-#        self.list_namespaces()
+    # IRequestFilter helper method
+    def make_traclinks(self, req, filename, data):
         # generate TracLink string
         resource = None
         if filename in ['ticket.html', 'wiki_view.html', 'report_view.html', 'milestone_view.html', 'agilo_ticket_view.html'] \
@@ -121,8 +119,8 @@ class TextBox(Component):
                             if v not in (None, '')])
                 traclinks = '[/newticket?%s]' % query_string
 
-            return stream | Transformer('//input[@id="proj-search"]').attr('value', traclinks).attr('size', '50')
-        return stream
+            return traclinks
+        return ''
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -130,9 +128,9 @@ class TextBox(Component):
 
     def post_process_request(self, req, template, data, content_type):
         # link hash TODO: check wiki_view for agilo
-        if template in ['browser.html', 'changeset.html', 'ticket.html', 'agilo_ticket_view.html', 'wiki_view.html']:
-            add_script(req, 'traclinks/js/jquery.ba-hashchange.js')
-            add_script(req, 'traclinks/js/onhashchange.js')
+        traclinks = self.make_traclinks(req, template, data)
+        add_script_data(req, traclinks=traclinks)
+        add_script(req, 'traclinks/js/onhashchange.js')
         return template, data, content_type
 
 # Implemented and tested:
