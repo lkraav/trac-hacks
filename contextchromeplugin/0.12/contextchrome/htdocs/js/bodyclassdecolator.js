@@ -6,9 +6,9 @@
  * you should have received as part of this distribution.
  */
 
- (function($) {
-	$(function() {
-        if(typeof(contextchrome_bodyclass) == 'string')
-          $('body').addClass(contextchrome_bodyclass);
-    })
+(function ($) {
+  $(function () {
+    if(typeof contextchrome_bodyclass == 'string')
+      $('body').addClass(contextchrome_bodyclass);
+  });
 })(jQuery);

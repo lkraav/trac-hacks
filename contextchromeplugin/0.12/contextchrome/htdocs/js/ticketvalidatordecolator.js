@@ -18,7 +18,7 @@
 		$('#action input[type=radio]').change(addclass);
 		$('select#field-type').change(addclass);
 		// force invoke a select handler on document.ready
-		currentaction = $('#action input[checked=checked]')
+		currentaction = $('#action input[checked]')
 		if(currentaction.length > 0) {
 			event = {target:currentaction[0]}
 		} else {
@@ -32,8 +32,8 @@
 		// Generate condition
 		var type = $('#field-type option:selected').text();
 		var node = false;
-		var action = event.target.id.substring(0,7) == 'action_' && event.target.value ||
-		             (node = $('#action input[checked=checked]')[0]) && node.value || 'newticket';
+		var action = event.target.id && event.target.id.substring(0,7) == 'action_' && event.target.value ||
+		             (node = $('#action input[checked]')[0]) && node.value || 'newticket';
 		if (!action in workflow) return;  // error exit
 		var state = workflow[action].newstate
 		// TODO: a line below will be fixed; after preview or auto_preview, .trac-status reflects invalid current status

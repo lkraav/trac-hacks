@@ -13,9 +13,9 @@
     // generates dict as: { <wikiname>: [a, a, ...], <wikiname>: [a, ]}
     const wikiname_anchors =
       Array.prototype.slice.call(document.querySelectorAll('a.wiki'))
-      .filter(a=>!a.classList.contains('missing'))
-      .reduce((acc,a) => {
-        const wikiname = a.pathname.substring((path + '/wiki/').length);
+      .filter(function(a){return !a.classList.contains('missing')})
+      .reduce(function(acc,a){
+        const wikiname = decodeURIComponent(a.pathname.substring((path + '/wiki/').length));
         acc[wikiname] ? acc[wikiname].push(a) : acc[wikiname] = [a];
         return acc}, {});
     const wikinames = Object.keys(wikiname_anchors);

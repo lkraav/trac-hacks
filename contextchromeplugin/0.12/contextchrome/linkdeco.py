@@ -8,24 +8,16 @@
 # you should have received as part of this distribution.
 
 from trac.core import Component, implements
-# from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
-# from trac.ticket.web_ui import TicketModule
 from trac.web.api import IRequestHandler, IRequestFilter
 from trac.config import ListOption, IntOption
-# from trac.util import Ranges, as_int
-# from trac.util.html import Element
-# from trac.wiki.api import WikiSystem
 from trac.wiki.model import WikiPage
 from datetime import datetime
 from trac.web.chrome import ITemplateProvider, add_stylesheet, add_script,\
     add_script_data
 from pkg_resources import resource_filename
+import json
 
-try:
-    import json
-except:
-    from tracrpc.json_rpc import json
 
 class TicketLinkDecorator(Component):
     """ set css-class to ticket link as ticket field value. field name can
@@ -106,7 +98,7 @@ class WikiLinkNewDecolator(Component):
 
     def process_request(self, req):
         payload = json.load(req)
-        if not 'method' in payload or not payload['method'] == 'wiki.getPageInfo':
+        if 'method' not in payload or not payload['method'] == 'wiki.getPageInfo':
             req.send_response(501)  # Method Not Implemented
             req.end_headers()
             return
@@ -134,7 +126,7 @@ class WikiLinkNewDecolator(Component):
         req.perm(wikipage.resource).require('WIKI_VIEW')  # FIXME: skip instead fail
         now = datetime.now(req.tz)
         limit = self.config.getint('wiki', 'wiki_new_info_second')
-        delta = now - wikipage.time
+        delta = now - wikipage.time or 0
         return {  # like XmlRpcPlugin
             'id': id,
             'error': None,
@@ -152,6 +144,7 @@ class WikiLinkNewDecolator(Component):
 
     def get_templates_dirs(self):
         return []
+
 
 class InternalStylesheet(Component):
     """ Use internal stylesheet. Off to use your own site.css for \".new\" css-class."""

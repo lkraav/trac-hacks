@@ -6,11 +6,11 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.filters.transform import Transformer
 from trac.core import Component, implements
-from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 from pkg_resources import resource_filename
+
 
 class TypeClassToTicket(Component):
     """ set css-class to type on ticket. """

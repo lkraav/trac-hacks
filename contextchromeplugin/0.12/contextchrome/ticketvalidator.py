@@ -12,11 +12,7 @@ from trac.ticket.default_workflow import get_workflow_config
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 from pkg_resources import resource_filename
-
-try:
-    import json
-except:
-    from tracrpc.json_rpc import json
+import json
 
 
 class TicketValidatorDecolator(Component):

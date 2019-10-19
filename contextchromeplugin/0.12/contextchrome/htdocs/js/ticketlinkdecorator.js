@@ -13,11 +13,11 @@
     // generates dict as: { <ticketid>: [a, a, ...], <ticketid>: [a, ]}
     const ticketArray =
       Array.prototype.slice.call(document.querySelectorAll('a.ticket'))
-      .reduce((acc,a) => {
+      .reduce(function(acc,a){
         const ticketid = parseInt(a.href.substring((path + '/ticket/').length));
         acc[ticketid] ? acc[ticketid].push(a) : acc[ticketid] = [a];
         return acc}, {});
-    const idArray = Object.keys(ticketArray).filter(n=>n>0);
+    const idArray = Object.keys(ticketArray).filter(function(n){return n>0});
     $.ajax({
       type: 'POST',
       url: path + '/contextchrome/ticketlink.jsonrpc',
