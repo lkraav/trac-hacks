@@ -30,10 +30,11 @@
       },
       content: function(callback) {
         const field = this.id && this.id.slice(2) || this.querySelector('label').attributes.for.value.replace(/^field-/,'').replace(/^action_/,'');
-        const imglink = `<a href="${path}/wiki/${_wiki_prefix}${field}"><img align="right" src="${path}/chrome/common/wiki.png"></img></a>`;
-        
+        // const imglink = `<a href="${path}/wiki/${_wiki_prefix}${field}"><img align="right" src="${path}/chrome/common/wiki.png"></img></a>`;
+        const imglink = '<a href="'+path+'/wiki/'+_wiki_prefix+field+'"><img align="right" src="'+path+'/chrome/common/wiki.png"></img></a>';
+
         const get_content = function(field) {
-          return `${imglink}<strong>${field}</strong>:<p>${pages[field+locale] || pages[field] || defaults[field+locale] || defaults[field] || sorry}`
+          return imglink+'<strong>'+field+'</strong>:<p>'+(pages[field+locale] || pages[field] || defaults[field+locale] || defaults[field] || sorry)
         }
         //  if not expired, use the page cache
         if(pages_age > Date.now() - 10e3)
@@ -43,7 +44,7 @@
           _ajax = ajax;  // copy ajax singleton to local to avoid timing issue
           // if some ajax request in progress exists, add a resolver without new request to the ajax
           if(_ajax && _ajax.readystate != 4) {
-            _ajax.done(()=>{callback(get_content(field))});
+            _ajax.done(function(){callback(get_content(field))});
           } else {
             // if no ajax request in progress, create new request
             ajax = $.ajax({
@@ -70,7 +71,7 @@
           }
         }
         // during ajax, will show a spinner
-        return `${imglink}${field}:<p><img src="${path}/chrome/common/loading.gif"></img></p>`;
+        return imglink+field+':<p><img src="'+path+'/chrome/common/loading.gif"></img></p>';
       },
     });
   })
