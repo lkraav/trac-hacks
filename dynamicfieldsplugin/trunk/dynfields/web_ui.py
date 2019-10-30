@@ -13,7 +13,7 @@ from trac.core import Component, ExtensionPoint, implements
 from trac.prefs.api import IPreferencePanelProvider
 from trac.web.api import IRequestFilter
 from trac.web.chrome import (
-    ITemplateProvider, add_script, add_script_data, add_stylesheet)
+    Chrome, ITemplateProvider, add_script, add_script_data, add_stylesheet)
 
 from dynfields.options import Options
 from dynfields.rules import add_domain, _, IRule
@@ -66,9 +66,13 @@ class DynamicFieldsModule(Component):
         opts = Options(self.env)
         if req.method == 'POST':
             opts.set_prefs(req)
-        data = self._get_prefs_data(req, opts)
-        return 'prefs_panel.html', {'data': data,
-                                    'saved': req.method == 'POST'}
+        prefs_data = self._get_prefs_data(req, opts)
+        data = {'data': prefs_data, 'saved': req.method == 'POST'}
+        template = 'prefs_panel.html'
+        if hasattr(Chrome(self.env), 'jenv'):
+            return template, data, None
+        else:
+            return template, data
 
     # Internal methods
 
