@@ -62,7 +62,8 @@ class SqlQueryMacro(Component):
         else:
             with self.env.db_query as db:
                 cursor = db.cursor()
-                records = cursor.execute(sql).fetchall()
+                cursor.execute(sql)
+                records = cursor.fetchall()
                 fields = get_column_names(cursor)
 
         if records:
