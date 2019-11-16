@@ -27,8 +27,8 @@
 import re
 from StringIO import StringIO
 
-from genshi.builder import tag
 from trac.config import IntOption
+from trac.util.html import html as tag
 from trac.wiki.formatter import Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
 
