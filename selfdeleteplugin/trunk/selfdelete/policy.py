@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2006-2008 Noah Kantrowitz <noah@coderanger.net>
-# Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2014-2019 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
 
+from trac.attachment import Attachment
 from trac.core import *
 from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.ticket.model import Ticket
@@ -33,11 +34,13 @@ class SelfDeletePolicy(Component):
         if action in self.get_permission_actions():
             return
         if resource:
+            parent = resource.parent
             if resource.realm == 'wiki' and \
-                    action == 'WIKI_DELETE':
-                return WikiPage(self.env, resource, 1).author == username
+                    action == 'WIKI_DELETE' and \
+                    WikiPage(self.env, resource, 1).author == username:
+                return True
             if resource.realm == 'attachment' and \
-                    resource.parent.realm == 'ticket' and \
-                    action == 'ATTACHMENT_DELETE':
-                ticket = Ticket(self.env, resource.parent.id)
-                return ticket['reporter'] == username
+                    action == 'ATTACHMENT_DELETE' and \
+                    Attachment(self.env, parent.realm, parent.id,
+                               resource.id).author == username:
+                return True

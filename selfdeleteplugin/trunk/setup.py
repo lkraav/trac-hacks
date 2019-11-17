@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2006-2008 Noah Kantrowitz <noah@coderanger.net>
-# Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2014-2019 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name='TracSelfDelete',
-    version='2.0',
+    version='2.1',
     packages=['selfdelete'],
     author="Ryan J Ollos",
     author_email="ryan.j.ollos@gmail.com",
