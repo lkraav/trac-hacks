@@ -10,7 +10,6 @@
 # you should have received as part of this distribution.
 #
 
-from genshi.builder import tag
 from genshi.core import START
 from genshi.filters import Transformer
 from genshi.filters.transform import INSIDE
@@ -20,6 +19,7 @@ from trac.db import Column, DatabaseManager, Index, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import ResourceNotFound
 from trac.ticket import model
+from trac.util.html import html as tag
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 
 from defaultcc.model import DefaultCC
