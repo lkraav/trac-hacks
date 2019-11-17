@@ -20,16 +20,16 @@ __all__ = ['IniGetMacro']
 class IniGetMacro(WikiMacroBase):
     """The macro call `[[IniGet(section.name)]]` returns the value of the
     `trac.ini` option `name` in `section`.
-    
+
     Example: `[[IniGet(project.name)]]` yields "[[IniGet(project.name)]]"
-    
+
     '''Note:''' allowing users to see values in `trac.ini` can be considered a
     security risk.
     """
 
     def expand_macro(self, formatter, name, args):
         """Return value of a trac.ini [section].option as plain text."""
-        
+
         if args.find('.') == -1:
             return system_message('%s: Invalid parameter: "%s"' % (name, args))
         section, option = re.sub('\s+', '', args).split('.', 1)

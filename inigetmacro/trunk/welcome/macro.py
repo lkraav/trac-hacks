@@ -9,14 +9,16 @@
     @version 0.11.3
 """
 
+import re
+
 from trac.core import *
+from trac.util.html import html as tag
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.formatter import system_message
 from trac.wiki.api import parse_args
-from genshi.builder import tag
-import re
 
 __all__ = ['WelcomeMacro']
+
 
 class WelcomeMacro(WikiMacroBase):
     """Return a welcome heading with the project name extracted from trac.ini.
@@ -24,13 +26,13 @@ class WelcomeMacro(WikiMacroBase):
        * User-defined welcome string suffix and prefix.
        * Supports both standard and dictionary methods.
        * With defaults.
-       
+
        Example: `[[Welcome(prefix=This is the,suffix=Project)]]` yields
        [[Welcome(prefix=This is the,suffix=Project)]]
     """
-    
+
     def expand_macro(self, formatter, name, args):
-        
+
         prefix = suffix = ''
         args, kw = parse_args(args)
 
