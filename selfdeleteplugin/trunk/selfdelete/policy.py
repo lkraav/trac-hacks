@@ -11,7 +11,6 @@
 from trac.attachment import Attachment
 from trac.core import *
 from trac.perm import IPermissionPolicy, IPermissionRequestor
-from trac.ticket.model import Ticket
 from trac.wiki.model import WikiPage
 
 
