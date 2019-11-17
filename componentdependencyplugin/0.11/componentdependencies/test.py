@@ -4,12 +4,14 @@ test class for ComponentDependencyPlugin
 
 from trac.core import *
 from trac.web import IRequestHandler
+
 from componentdependencies import IRequireComponents
 
 __all__ = [ 'FooBarTest', 'TestDependencyPlugin', ]
 
+
 class FooBarTest(Component):
-    
+
     def foobar(self):
         return "hello world"
 
@@ -22,7 +24,7 @@ class TestDependencyPlugin(Component):
     def match_request(self, req):
         """Return whether the handler wants to process the given request."""
         return req.path_info == '/hello-world'
-        
+
 
     def process_request(self, req):
         """Process the request. For ClearSilver, return a (template_name,
@@ -43,6 +45,6 @@ class TestDependencyPlugin(Component):
 
 
     ### methods for IRequireComponents
-        
+
     def requires(self):
         return [ FooBarTest ]
