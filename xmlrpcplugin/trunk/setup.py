@@ -34,6 +34,9 @@ setup(
     package_data={
         'tracrpc': ['templates/*.html', 'htdocs/*.js', 'htdocs/*.css']
         },
+    classifiers=[
+        'Framework :: Trac',
+    ],
     entry_points={
         'trac.plugins': 'TracXMLRPC = tracrpc'
         },
