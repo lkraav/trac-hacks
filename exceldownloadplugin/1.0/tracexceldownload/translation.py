@@ -55,13 +55,14 @@ if domain_functions:
             add_domain(self.env.path, resource_filename(__name__, 'locale'))
 
         # IEnvironmentSetupParticipant methods
+
         def environment_created(self):
             pass
 
-        def environment_needs_upgrade(self, db):
+        def environment_needs_upgrade(self, db=None):
             return False
 
-        def upgrade_environment(self, db):
+        def upgrade_environment(self, db=None):
             pass
 
 else:
