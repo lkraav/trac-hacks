@@ -9,19 +9,30 @@ import socket
 from pkg_resources import resource_filename
 from tempfile import TemporaryFile
 
-from genshi.filters.transform import Transformer
-
 from trac.attachment import AttachmentModule, Attachment
 from trac.core import Component, implements, TracError
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import PermissionError
 from trac.resource import get_resource_name, get_resource_url
-from trac.web.api import IRequestHandler, IRequestFilter, \
-                         ITemplateStreamFilter, RequestDone, HTTPBadRequest
+from trac.web.api import IRequestHandler, IRequestFilter, RequestDone, \
+                         HTTPBadRequest
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
                             add_script, add_script_data
 from trac.util.text import to_unicode, unicode_unquote
 from trac.util.translation import domain_functions, dgettext
+
+try:
+    from trac.web.api import ITemplateStreamFilter
+except ImportError:
+    ITemplateStreamFilter = None
+else:
+    if hasattr(Chrome, 'jenv'):
+        ITemplateStreamFilter = None
+
+if ITemplateStreamFilter:
+    from genshi.filters.transform import Transformer
+else:
+    Transformer = None
 
 try:
     from trac.web.chrome import web_context
@@ -55,8 +66,10 @@ def _is_disconnected(req, e):
 
 
 class TracDragDropModule(Component):
+
     implements(ITemplateProvider, IRequestFilter, IRequestHandler,
-               ITemplateStreamFilter, IEnvironmentSetupParticipant)
+               IEnvironmentSetupParticipant,
+               *filter(None, [ITemplateStreamFilter]))
 
     htdocs_dir = resource_filename(__name__, 'htdocs')
     templates_dir = resource_filename(__name__, 'templates')
@@ -73,10 +86,10 @@ class TracDragDropModule(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, db=None):
         return False
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         pass
 
     # ITemplateProvider#get_htdocs_dirs
