@@ -32,8 +32,8 @@ def main():
         package_data = {
             'tracdragdrop': [
                 'htdocs/*.js', 'htdocs/*.css', 'htdocs/*.gif',
-                'templates/*.html', 'htdocs/messages/*.js',
-                'locale/*/LC_MESSAGES/tracdragdrop.mo',
+                'templates/genshi/*.html', 'templates/jinja2/*.html',
+                'htdocs/messages/*.js', 'locale/*/LC_MESSAGES/tracdragdrop.mo',
             ],
         },
         entry_points = {

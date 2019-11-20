@@ -6,9 +6,10 @@ import inspect
 import os
 import re
 import socket
-from pkg_resources import resource_filename
+from pkg_resources import parse_version, resource_filename
 from tempfile import TemporaryFile
 
+from trac import __version__
 from trac.attachment import AttachmentModule, Attachment
 from trac.core import Component, implements, TracError
 from trac.env import IEnvironmentSetupParticipant
@@ -21,18 +22,21 @@ from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
 from trac.util.text import to_unicode, unicode_unquote
 from trac.util.translation import domain_functions, dgettext
 
-try:
-    from trac.web.api import ITemplateStreamFilter
-except ImportError:
-    ITemplateStreamFilter = None
-else:
-    if hasattr(Chrome, 'jenv'):
-        ITemplateStreamFilter = None
+_parsed_version = parse_version(__version__)
 
-if ITemplateStreamFilter:
-    from genshi.filters.transform import Transformer
+if _parsed_version >= parse_version('1.4'):
+    _use_jinja2 = True
+elif _parsed_version >= parse_version('1.3'):
+    _use_jinja2 = hasattr(Chrome, 'jenv')
 else:
+    _use_jinja2 = False
+
+if _use_jinja2:
+    ITemplateStreamFilter = None
     Transformer = None
+else:
+    from trac.web.api import ITemplateStreamFilter
+    from genshi.filters.transform import Transformer
 
 try:
     from trac.web.chrome import web_context
@@ -72,7 +76,10 @@ class TracDragDropModule(Component):
                *filter(None, [ITemplateStreamFilter]))
 
     htdocs_dir = resource_filename(__name__, 'htdocs')
-    templates_dir = resource_filename(__name__, 'templates')
+    if _use_jinja2:
+        templates_dir = resource_filename(__name__, 'templates/jinja2')
+    else:
+        templates_dir = resource_filename(__name__, 'templates/genshi')
     messages_files = _list_message_files(os.path.join(htdocs_dir, 'messages'))
 
     def __init__(self):
@@ -201,6 +208,13 @@ class TracDragDropModule(Component):
 
     # IRequestHandler#process_request
     def process_request(self, req):
+        rv = self._process_request(req)
+        if _use_jinja2:
+            return rv
+        else:
+            return rv + (None,)
+
+    def _process_request(self, req):
         try:
             if req.method == 'POST':
                 ctype = req.get_header('Content-Type')
@@ -292,7 +306,7 @@ class TracDragDropModule(Component):
             template = 'list_of_attachments.html'
         else:
             template = 'tracdragdrop.html'
-        return template, data, None
+        return template, data
 
     if 'db' in inspect.getargspec(Attachment.select)[0]:
         def _select_attachments(self, realm, path):
@@ -310,7 +324,7 @@ class TracDragDropModule(Component):
             req.send(message.encode('utf-8'), content_type='text/plain',
                      status=status)
         data = {'error': message}
-        return 'tracdragdrop.html', data, None
+        return 'tracdragdrop.html', data
 
     def _redirect_listener(self, req, url, permanent):
         raise RedirectListened()
