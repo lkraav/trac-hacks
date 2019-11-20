@@ -6,7 +6,7 @@ import io
 import unittest
 
 from trac import __version__ as VERSION
-from trac.test import EnvironmentStub, MockRequest
+from trac.test import EnvironmentStub
 from trac.ticket.model import Ticket
 from trac.ticket.query import Query
 from trac.ticket.report import ReportModule
@@ -15,6 +15,85 @@ from trac.web.api import RequestDone
 
 from tracexceldownload.api import openpyxl, xlwt
 from tracexceldownload.ticket import ExcelTicketModule, ExcelReportModule
+
+try:
+    from trac.test import MockRequest
+except ImportError:
+    from trac.test import Mock, MockPerm
+    from trac.web.api import _RequestArgs, Request, arg_list_to_args
+    from trac.web.chrome import Chrome
+
+    def MockRequest(env, **kwargs):
+        authname = kwargs.get('authname') or 'anonymous'
+
+        def convert(val):
+            if isinstance(val, bool):
+                return unicode(int(val))
+            elif isinstance(val, (long, int, float)):
+                return unicode(val)
+            elif isinstance(val, (list, tuple)):
+                return [convert(v) for v in val]
+            else:
+                return val
+
+        if 'arg_list' in kwargs:
+            arg_list = [(k, convert(v)) for k, v in kwargs['arg_list']]
+            args = arg_list_to_args(arg_list)
+        else:
+            args = _RequestArgs()
+            args.update((k, convert(v))
+                        for k, v in kwargs.get('args', {}).iteritems())
+            arg_list = [(name, value) for name in args
+                                      for value in args.getlist(name)]
+
+        environ = {
+            'trac.base_url': env.abs_href(),
+            'wsgi.url_scheme': 'http',
+            'HTTP_ACCEPT_LANGUAGE': kwargs.get('language', ''),
+            'HTTP_COOKIE': kwargs.get('cookie', ''),
+            'PATH_INFO': kwargs.get('path_info', '/'),
+            'REQUEST_METHOD': kwargs.get('method', 'GET'),
+            'REMOTE_ADDR': kwargs.get('remote_addr', '127.0.0.1'),
+            'REMOTE_USER': kwargs.get('remote_user', authname),
+            'SCRIPT_NAME': kwargs.get('script_name', '/trac.cgi'),
+            'SERVER_NAME': kwargs.get('server_name', 'localhost'),
+            'SERVER_PORT': kwargs.get('server_port', '80'),
+        }
+        for key in environ:
+            if isinstance(environ[key], unicode):
+                environ[key] = environ[key].encode('utf-8')
+
+        status_sent = []
+        headers_sent = {}
+        response_sent = io.BytesIO()
+
+        def start_response(status, headers, exc_info=None):
+            status_sent.append(status)
+            headers_sent.update(dict(headers))
+            return response_sent.write
+
+        req = Mock(Request, environ, start_response)
+        req.status_sent = status_sent
+        req.headers_sent = headers_sent
+        req.response_sent = response_sent
+
+        req.callbacks.update({
+            'arg_list': lambda req: arg_list,
+            'args': lambda req: args,
+            'authname': lambda req: authname,
+            'chrome': Chrome(env).prepare_request,
+            'form_token': lambda req: kwargs.get('form_token', 0),
+            'lc_time': lambda req: kwargs.get('lc_time'),
+            'locale': lambda req: kwargs.get('locale'),
+            'perm': lambda req: MockPerm(),
+            'session': lambda req: {},
+            'tz': lambda req: kwargs.get('tz', utc),
+            'use_xsendfile': lambda req: False,
+            'xsendfile_header': lambda req: None,
+            'configurable_headers': lambda req: [],
+        })
+
+        return req
 
 
 _has_time_fields = parse_version(VERSION) >= parse_version('1.2')
