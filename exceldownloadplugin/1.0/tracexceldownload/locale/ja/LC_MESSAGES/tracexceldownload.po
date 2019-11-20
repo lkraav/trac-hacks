@@ -1,0 +1,38 @@
+# Japanese translations for ExcelDownloadPlugin.
+# Copyright (C) 2011 OpenGroove,Inc.
+# This file is distributed under the same license as the
+# ExcelDownloadPlugin project.
+# Jun Omae <jun66j5@gmail.com>, 2011.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ExcelDownloadPlugin 0.12.0.1\n"
+"Report-Msgid-Bugs-To: jun66j5@gmail.com\n"
+"POT-Creation-Date: 2017-01-25 10:27+0000\n"
+"PO-Revision-Date: 2011-09-07 17:49+0900\n"
+"Last-Translator: Jun Omae <jun66j5@gmail.com>\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: tracexceldownload/api.py:64
+msgid "Specifies the format of Excel file to download."
+msgstr "ダウンロードする Excel ファイルのフォーマットを指定します。"
+
+#: tracexceldownload/api.py:556
+#, python-format
+msgid "Number of rows in the Excel sheet exceeded the limit of %(num)d row"
+msgid_plural "Number of rows in the Excel sheet exceeded the limit of %(num)d rows"
+msgstr[0] "Excel ワークシートの行数が制限である%(num)d行を超えました"
+
+#: tracexceldownload/ticket.py:148 tracexceldownload/ticket.py:530
+msgid "Excel"
+msgstr "Excel"
+
+#: tracexceldownload/ticket.py:150 tracexceldownload/ticket.py:152
+msgid "Excel including history"
+msgstr "Excel (履歴含む)"
+
