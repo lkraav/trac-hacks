@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright 2007-2008 Optaros, Inc
 #
@@ -7,7 +7,7 @@
 from setuptools import setup
 
 setup(name='TracMenus',
-      version='0.3.0',
+      version='0.4.0',
       packages=['tracmenus'],
       author="Catalin Balan",
       author_email="cbalan@optaros.com",
