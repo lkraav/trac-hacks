@@ -24,5 +24,6 @@ setup(
     install_requires=['Trac'],
     packages=['quiet'],
     package_data={'quiet': ['htdocs/*.js', 'htdocs/*.css', 'htdocs/*.png']},
+    classifiers=['Framework :: Trac'],
     entry_points={'trac.plugins': ['quiet.web_ui = quiet.web_ui']}
 )
