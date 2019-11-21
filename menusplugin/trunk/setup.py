@@ -18,6 +18,9 @@ setup(name='TracMenusPlugin',
           'tracmenus.web_ui = tracmenus.web_ui',
       ]},
       install_requires=['Trac'],
+      classifiers=[
+          'Framework :: Trac',
+      ],
       package_data={'tracmenus': [
           'htdocs/js/*.js',
           'htdocs/css/*.css',
