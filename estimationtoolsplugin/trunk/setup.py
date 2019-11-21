@@ -16,7 +16,7 @@ setup(
     author_email='hoessler@gmail.com',
     description='Trac plugin for visualizing and quick editing of effort '
                 'estimations',
-    version='0.5.0',
+    version='0.6.0',
     license='BSD',
     url='https://trac-hacks.org/wiki/EstimationToolsPlugin',
     packages=['estimationtools'],
