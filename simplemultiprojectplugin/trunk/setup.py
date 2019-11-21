@@ -22,6 +22,7 @@ setup(
                 'with one Trac instance.',
     long_description='Simple Multi Project',
     keywords='Simple Multi Project',
+    classifiers=['Framework :: Trac'],
     entry_points={'trac.plugins': ['simplemultiproject = simplemultiproject']},
     test_suite='simplemultiproject.tests.test_suite'
 )
