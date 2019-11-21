@@ -7,7 +7,7 @@ setup(
     description='Plugin for Trac which extends the wiki with some extras',
     keywords='trac wiki plugin icons smileys entities symbols color phrases '
              'boxes',
-    url='http://trac-hacks.org/wiki/WikiExtrasPlugin',
+    url='https://trac-hacks.org/wiki/WikiExtrasPlugin',
     version='1.3.1',
     license='BSD',
     author='Mikael Relbe and Christian Boos',
@@ -88,5 +88,6 @@ setup(
     },
     zip_safe = False,
     test_suite = 'tracwikiextras.tests.suite',
+    classifiers=['Framework :: Trac'],
     entry_points={'trac.plugins': 'tracwikiextras = tracwikiextras'},
 )
