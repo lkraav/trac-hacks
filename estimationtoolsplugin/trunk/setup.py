@@ -18,8 +18,10 @@ setup(
                 'estimations',
     version='0.5.0',
     license='BSD',
+    url='https://trac-hacks.org/wiki/EstimationToolsPlugin',
     packages=['estimationtools'],
     package_data={'estimationtools': ['htdocs/*.js', 'templates/*.html']},
+    classifiers=['Framework :: Trac'],
     entry_points={
         'trac.plugins': [
             'estimationtools = estimationtools'
