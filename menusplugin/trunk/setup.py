@@ -6,7 +6,7 @@
 
 from setuptools import setup
 
-setup(name='TracMenusPlugin',
+setup(name='TracMenus',
       version='0.3.0',
       packages=['tracmenus'],
       author="Catalin Balan",
