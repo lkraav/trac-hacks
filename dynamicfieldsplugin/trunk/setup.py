@@ -30,7 +30,7 @@ except ImportError:
     pass
 
 PACKAGE = 'TracDynamicFields'
-VERSION = '2.4.0'
+VERSION = '2.5.0'
 
 setup(
     name=PACKAGE, version=VERSION,
