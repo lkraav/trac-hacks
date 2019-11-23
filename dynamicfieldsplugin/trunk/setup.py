@@ -45,6 +45,7 @@ setup(
         'templates/*.html', 'htdocs/*.js', 'htdocs/*.css',
         'locale/*/LC_MESSAGES/*.mo', 'locale/.placeholder'
     ]},
+    classifiers=['Framework :: Trac'],
     entry_points={'trac.plugins': ['dynfields.rules = dynfields.rules',
                                    'dynfields.web_ui = dynfields.web_ui']},
     test_suite='dynfields.tests.test_suite',
