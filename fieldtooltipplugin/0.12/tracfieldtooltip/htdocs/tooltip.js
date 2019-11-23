@@ -8,7 +8,8 @@
 
 !function($){
   $(function(){
-    const locale = '.' + $('html')[0].lang
+    const locale = '.' + $('html')[0].lang;
+    const wikipng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAeUlEQVQoU8WQ0Q0AERBER5Ea0AUF0IUGlKQB/wpwGcldlkNyX+dHrHkzu6sAwFrbeK9OCEHJen8QcM4Neu89jDGIMUJCA5BSeqCcM2hSShmgYwKda61NQseEeSYabBNmMWd6AXIGCWitsQR2q2X9p4RPLZ3E9x+3dAHt6W0Nuw2FVgAAAABJRU5ErkJggg==';
     var ajax = null;
     const _wiki_prefix = 'help/';
     const sorry = '<em><sub>(sorry, no hint is presented... click icon above to add)<sub></em>';
@@ -31,7 +32,7 @@
       content: function(callback) {
         const field = this.id && this.id.slice(2) || this.querySelector('label').attributes.for.value.replace(/^field-/,'').replace(/^action_/,'');
         // const imglink = `<a href="${path}/wiki/${_wiki_prefix}${field}"><img align="right" src="${path}/chrome/common/wiki.png"></img></a>`;
-        const imglink = '<a href="'+path+'/wiki/'+_wiki_prefix+field+'"><img align="right" src="'+path+'/chrome/common/wiki.png"></img></a>';
+        const imglink = '<a href="'+path+'/wiki/'+_wiki_prefix+field+'"><img align="right" src="'+wikipng+'"></img></a>';
 
         const get_content = function(field) {
           return imglink+'<strong>'+field+'</strong>:<p>'+(pages[field+locale] || pages[field] || defaults[field+locale] || defaults[field] || sorry)
@@ -49,7 +50,7 @@
             // if no ajax request in progress, create new request
             ajax = $.ajax({
               type: 'POST',
-              url: path + '/fieldtooltip/tooltip.jsonrpc',
+              url: path + '/tracfieldtooltip/tooltip.jsonrpc',
               contentType: 'application/json',
               headers: {
                 'If-None-Match': pages_etag,
@@ -71,7 +72,7 @@
           }
         }
         // during ajax, will show a spinner
-        return imglink+field+':<p><img src="'+path+'/chrome/common/loading.gif"></img></p>';
+        return imglink+field+':<p><i>Loading...</i></p>';
       },
     });
   })

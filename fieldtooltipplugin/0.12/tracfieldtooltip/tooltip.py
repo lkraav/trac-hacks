@@ -7,32 +7,20 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+from __future__ import unicode_literals
 from pkg_resources import ResourceManager
-
 from trac.cache import cached
 from trac.core import Component, implements
 from trac.util import arity
-from trac.util.html import tag
 from trac.web.api import IRequestHandler, IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_script, add_script_data, add_stylesheet, web_context
+from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, web_context
 from trac.wiki.api import IWikiChangeListener, WikiSystem
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
-from datetime import datetime
-
-try:
-    import json
-except:
-    from tracrpc.json_rpc import json
-
-try:
-    from trac.web.chrome import web_context
-except ImportError:
-    from trac.mimeview.api import Context
-    web_context = Context.from_request
+import json
 
 
-class FieldTooltip(Component):
+class Tooltip(Component):
     """ Provides tooltip for ticket fields. (In Japanese/KANJI) チケットフィールドのツールチップを提供します。
         if wiki page named 'help/field-name is supplied, use it for tooltip text. """
     implements(IRequestHandler, IRequestFilter, ITemplateProvider, IWikiChangeListener)
@@ -47,14 +35,14 @@ class FieldTooltip(Component):
         'reset_workflow': 'Resets the status of tickets that are in states no longer defined.',
     }
     operations.update({
-        'del_owner.ja': u'チケットの所有者を削除します。',
-        'set_owner.ja': u'チケットの所有者を選択された所有者か入力された所有者に設定します。',
-        'set_owner_to_self.ja': u'チケットの所有者をログインユーザに設定します。',
-        'may_set_owner.ja': u'チケットの所有者を選択された所有者か入力された所有者に設定します。',
-        'del_resolution.ja': u'チケットの解決方法を削除します。',
-        'set_resolution.ja': u'チケットの解決方法を選択された解決方法か入力された解決方法に設定します。',
-        'leave_status.ja': u'チケットの現在のステータスを変更しません。',
-        'reset_workflow.ja': u'チケットのステータスをリセットし、未定義とします。',
+        'del_owner.ja': 'チケットの所有者を削除します。',
+        'set_owner.ja': 'チケットの所有者を選択された所有者か入力された所有者に設定します。',
+        'set_owner_to_self.ja': 'チケットの所有者をログインユーザに設定します。',
+        'may_set_owner.ja': 'チケットの所有者を選択された所有者か入力された所有者に設定します。',
+        'del_resolution.ja': 'チケットの解決方法を削除します。',
+        'set_resolution.ja': 'チケットの解決方法を選択された解決方法か入力された解決方法に設定します。',
+        'leave_status.ja': 'チケットの現在のステータスを変更しません。',
+        'reset_workflow.ja': 'チケットのステータスをリセットし、未定義とします。',
     })
     _default_pages = {
         'reporter': 'The author of the ticket.',
@@ -85,31 +73,31 @@ class FieldTooltip(Component):
     }
     # for locale=ja
     _default_pages.update({
-        'reporter.ja': u'このチケットの作成者',
-        'type.ja': u'このチケットの種類 (例えば、不具合 (defect), 機能追加 (enhancement request) など) 詳細は [trac:TicketTypes TicketTypes] 参照。',
-        'component.ja': u'このチケットが紐づくモジュールやサブシステム。',
-        'version.ja': u'このチケットが関連するプロジェクトのバージョン。',
-        'keywords.ja': u'チケットに付与するキーワード。検索や、レポートの生成で利用できる。',
-        'priority.ja': u'\'\'trivial\'\' から \'\'blocker\'\' の範囲で示されるチケットの重要度。定義した他の優先度を含めプルダウンで表示。',
-        'milestone.ja': u'このチケットを遅くともいつまでに解決すべきか。マイルストーン一覧をプルダウンで表示。',
-        'assigned to.ja': u'次にチケットを扱うべき人。',
-        'owner.ja': u'チケットを扱っている人。',
-        'cc.ja': u'通知すべきユーザ名またはE-Mailアドレスのカンマ区切りリスト。なお、責任などのどんな意味も持っていない。',
-        'resolution.ja': u'チケットが解決された際の理由。{{{修正した(fixed)}}}、{{{無効なチケット(invalid)}}}、{{{修正しない(wontfix)}}}、{{{他のチケットと重複(duplicate)}}}、{{{再現しない(worksforme)}}}など。',
-        'status.ja': u'チケットの現在の状態。 {{{new}}}, {{{assigned}}}, {{{closed}}}, {{{reopened}}} など。',
-        'summary.ja': u'問題や課題の簡単な説明。WikiFormatting されない。',
-        'description.ja': u'チケットの内容。WikiFormatting される。状況を特定する、的を射た説明がよい。',
+        'reporter.ja': 'このチケットの作成者',
+        'type.ja': 'このチケットの種類 (例えば、不具合 (defect), 機能追加 (enhancement request) など) 詳細は [trac:TicketTypes TicketTypes] 参照。',
+        'component.ja': 'このチケットが紐づくモジュールやサブシステム。',
+        'version.ja': 'このチケットが関連するプロジェクトのバージョン。',
+        'keywords.ja': 'チケットに付与するキーワード。検索や、レポートの生成で利用できる。',
+        'priority.ja': '\'\'trivial\'\' から \'\'blocker\'\' の範囲で示されるチケットの重要度。定義した他の優先度を含めプルダウンで表示。',
+        'milestone.ja': 'このチケットを遅くともいつまでに解決すべきか。マイルストーン一覧をプルダウンで表示。',
+        'assigned to.ja': '次にチケットを扱うべき人。',
+        'owner.ja': 'チケットを扱っている人。',
+        'cc.ja': '通知すべきユーザ名またはE-Mailアドレスのカンマ区切りリスト。なお、責任などのどんな意味も持っていない。',
+        'resolution.ja': 'チケットが解決された際の理由。{{{修正した(fixed)}}}、{{{無効なチケット(invalid)}}}、{{{修正しない(wontfix)}}}、{{{他のチケットと重複(duplicate)}}}、{{{再現しない(worksforme)}}}など。',
+        'status.ja': 'チケットの現在の状態。 {{{new}}}, {{{assigned}}}, {{{closed}}}, {{{reopened}}} など。',
+        'summary.ja': '問題や課題の簡単な説明。WikiFormatting されない。',
+        'description.ja': 'チケットの内容。WikiFormatting される。状況を特定する、的を射た説明がよい。',
         # workflow
-        'accept.ja': u'このチケットを引き受け、' + operations['set_owner_to_self.ja'],
-        'create': u'チケットを作成します。所有者は設定しません。',
-        'create_and_assign': u'このチケットを引き受け、' + operations['may_set_owner.ja'],
+        'accept.ja': 'このチケットを引き受け、' + operations['set_owner_to_self.ja'],
+        'create.ja': 'チケットを作成します。所有者は設定しません。',
+        'create_and_assign.ja': 'このチケットを引き受け、' + operations['may_set_owner.ja'],
         'leave.ja': operations['leave_status.ja'],
         'reassign.ja': operations['set_owner.ja'],
-        'reopen.ja': u'チケットを再び扱い、' + operations['del_resolution.ja'],
-        'resolve.ja': u'解決したものとし、' + operations['set_resolution.ja'],
+        'reopen.ja': 'チケットを再び扱い、' + operations['del_resolution.ja'],
+        'resolve.ja': '解決したものとし、' + operations['set_resolution.ja'],
         # default
-        '../nohint.ja': u'//,,(説明はありません ... 追加するにはアイコンをクリック),,//',
-        '../nohint-readonly.ja': u'//,,(説明はありません.),,//',
+        '../nohint.ja': '//,,(説明はありません ... 追加するにはアイコンをクリック),,//',
+        '../nohint-readonly.ja': '//,,(説明はありません.),,//',
     })
     # blocking, blockedby for MasterTicketsPlugin, TicketRelationsPlugin
     # position for QueuesPlugin
@@ -128,8 +116,8 @@ class FieldTooltip(Component):
     def pages(self, db=None):
         # retrieve wiki contents for field help
         pages = {}
-        prefix_len = len(FieldTooltip._wiki_prefix)
-        wiki_pages = WikiSystem(self.env).get_pages(FieldTooltip._wiki_prefix)
+        prefix_len = len(Tooltip._wiki_prefix)
+        wiki_pages = WikiSystem(self.env).get_pages(Tooltip._wiki_prefix)
         for page in wiki_pages:
             # FIXME
             # if 'WIKI_VIEW' not in self.perm('wiki', pages):
@@ -149,7 +137,7 @@ class FieldTooltip(Component):
         return []
 
     def get_htdocs_dirs(self):
-        return [('fieldtooltip', ResourceManager().resource_filename(__name__, 'htdocs'))]
+        return [('tracfieldtooltip', ResourceManager().resource_filename(__name__, 'htdocs'))]
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -157,13 +145,13 @@ class FieldTooltip(Component):
 
     def post_process_request(self, req, template, data, metadata=None):
         if template in ['ticket.html']:
-            add_script(req, 'fieldtooltip/tooltip.js')
-            add_stylesheet(req, 'fieldtooltip/tooltip.css')
+            add_script(req, 'tracfieldtooltip/tooltip.js')
+            add_stylesheet(req, 'tracfieldtooltip/tooltip.css')
         return template, data, metadata
 
     # IRequestHandler Methods
     def match_request(self, req):
-        return req.path_info == '/fieldtooltip/tooltip.jsonrpc'
+        return req.path_info == '/tracfieldtooltip/tooltip.jsonrpc'
 
     def process_request(self, req):
         def to_html(dom):
