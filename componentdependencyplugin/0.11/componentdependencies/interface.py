@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from trac.core import Interface
+
 
 class IRequireComponents(Interface):
     def requires():

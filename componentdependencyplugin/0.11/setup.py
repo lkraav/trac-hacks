@@ -1,15 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from setuptools import find_packages, setup
 
-version='0.1'
 
-setup(name='ComponentDependencyPlugin',
-      version=version,
+setup(name='TracComponentDependency',
+      version='0.2',
       description="allows plugins to depend on other components being enabled",
       author='Jeff Hammel',
       author_email='jhammel@openplans.org',
-      url='http://trac-hacks.org/wiki/k0s',
+      url='https://trac-hacks.org/wiki/ComponentDependencyPlugin',
       keywords='trac plugin',
-      license="",
+      license="BSD 3-Clause",
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
       include_package_data=True,
       package_data={ 'componentdependencyplugin': ['templates/*', 'htdocs/*'] },

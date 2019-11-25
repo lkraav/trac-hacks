@@ -1,8 +1,4 @@
-"""
-ComponentDependencyPlugin:
-a plugin for Trac
-http://trac.edgewall.org
-"""
+# -*- coding: utf-8 -*-
 
 from componentdependencies.interface import IRequireComponents
 from trac.core import *
