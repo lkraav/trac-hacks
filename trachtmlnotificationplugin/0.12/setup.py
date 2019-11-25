@@ -7,7 +7,7 @@ extra = {}
 
 setup(
     name = 'TracHtmlNotificationPlugin',
-    version = '0.12.0.1',
+    version = '0.12.0.2',
     description = 'Send ticket notification with HTML part (t:#2625)',
     license = 'BSD',  # the same as Trac
     url = 'http://trac-hacks.org/wiki/TracHtmlNotificationPlugin',
@@ -15,7 +15,10 @@ setup(
     author_email = 'jun66j5@gmail.com',
     packages = find_packages(exclude=['*.tests*']),
     package_data = {
-        'trachtmlnotification': ['templates/*.html'],
+        'trachtmlnotification': [
+            'templates/genshi/*.html',
+            'templates/jinja2/*.html',
+        ],
     },
     entry_points = {
         'trac.plugins': [

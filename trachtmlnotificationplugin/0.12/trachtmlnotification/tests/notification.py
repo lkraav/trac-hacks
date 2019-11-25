@@ -2,24 +2,19 @@
 
 import unittest
 
-from genshi.builder import tag
-
 from trac.core import Component, implements
-from trac.notification import IEmailSender
-from trac.test import EnvironmentStub
+from trac.test import EnvironmentStub, MockRequest
 from trac.ticket.model import Ticket
-from trac.web.api import ITemplateStreamFilter
+from trac.ticket.web_ui import TicketModule
+from trac.util.datefmt import to_utimestamp
+from trac.web.api import ITemplateStreamFilter, RequestDone
+try:
+    from trac.notification.api import IEmailSender, NotificationSystem
+except ImportError:
+    from trac.notification import IEmailSender, NotificationSystem
 
-from trachtmlnotification.notification import HtmlNotificationModule
-
-message = """\
-From: <trac@localhost>
-To: <trac@localhost>
-X-Trac-Ticket-URL: %(url)s
-Content-Type: text/plain; charset=utf-8
-
-email body
-"""
+from trachtmlnotification.notification import (
+    HtmlNotificationModule, INotificationFormatter, tag)
 
 
 class FilterStreamComponent(Component):
@@ -38,80 +33,104 @@ class FilterStreamComponent(Component):
         return stream | filter
 
 
+class EmailSenderStub(Component):
+
+    implements(IEmailSender)
+
+    history = None
+
+    def __init__(self):
+        self.history = []
+
+    def send(self, from_addr, recipients, message):
+        if not INotificationFormatter:
+            mod = HtmlNotificationModule(self.env)
+            message = mod.substitute_message(message)
+        self.history.append((from_addr, recipients, message))
+
+
 class NormalTestCase(unittest.TestCase):
+
+    users = [('joe', 'Joe User', 'joe@example.org')]
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
-                                   enable=['trac.*', 'trachtmlnotification.*'])
-        self.env.config.set('notification', 'mime_encoding', 'none')
+                                   enable=['trac.*', 'trachtmlnotification.*',
+                                           EmailSenderStub])
+        self.config = self.env.config
+        section = self.config['notification']
+        section.set('smtp_enabled', 'enabled')
+        section.set('mime_encoding', 'none')
+        section.set('email_sender', 'EmailSenderStub')
+        if hasattr(NotificationSystem, 'subscribers'):
+            section = self.config['notification-subscriber']
+            section.set('s', 'TicketReporterSubscriber')
+            section.set('s.priority', '1')
+            section.set('s.adverb', 'always')
+            section.set('s.format', 'text/html')
+        else:
+            section.set('always_notify_reporter', 'enabled')
+        users = [('joe', 'Joe User', 'joe@example.org')]
+        if hasattr(self.env, 'insert_users'):
+            self.env.insert_users(self.users)
+        else:
+            self.env.known_users = users
         self.mod = HtmlNotificationModule(self.env)
+        self.tktmod = TicketModule(self.env)
+        self.sender = EmailSenderStub(self.env)
 
     def tearDown(self):
         self.env.reset_db()
 
-    def test_newticket(self):
-        ticket = Ticket(self.env)
-        ticket['status'] = 'new'
-        ticket['summary'] = 'Blah blah blah'
-        ticket['reporter'] = 'joe'
-        ticket['description'] = '<<<Description>>>'
-        ticket.insert()
-        orig = message % {'url': 'http://localhost/ticket/%d' % ticket.id}
-        result = self.mod.substitute_message(orig, ignore_exc=False)
-        self.assertNotEqual(result, orig)
-        self.assertTrue('\nContent-Type: text/html;' in result)
-        self.assertTrue('&lt;&lt;&lt;Description&gt;&gt;&gt;' in result)
+    def _create_ticket(self, **kwargs):
+        args = dict(('field_' + name, value)
+                     for name, value in kwargs.iteritems())
+        req = MockRequest(self.env, method='POST', authname=kwargs['reporter'],
+                          path_info='/newticket', args=args)
+        self.assertEqual(True, self.tktmod.match_request(req))
+        try:
+            self.tktmod.process_request(req)
+            self.fail('RequestDone not raised')
+        except RequestDone:
+            pass
 
-    def test_ticket_comment(self):
-        ticket = Ticket(self.env)
-        ticket['status'] = 'new'
-        ticket['summary'] = 'Blah blah blah'
-        ticket['reporter'] = 'joe'
-        ticket['description'] = '`<<<Description>>>`'
-        ticket.insert()
-        ticket.save_changes(author='anonymous', comment='`>>>first comment<<<`')
-        ticket.save_changes(author='anonymous', comment='`>>>second comment<<<`')
-        url = 'http://localhost/ticket/%d#comment:2' % ticket.id
-        orig = message % {'url': url}
-        result = self.mod.substitute_message(orig, ignore_exc=False)
-        self.assertNotEqual(result, orig)
-        self.assertTrue('\nContent-Type: text/html;' in result)
-        self.assertTrue('&lt;&lt;&lt;Description&gt;&gt;&gt;' in result)
-        self.assertFalse('&gt;&gt;&gt;first comment&lt;&lt;&lt;' in result)
-        self.assertTrue('&gt;&gt;&gt;second comment&lt;&lt;&lt;' in result)
+    def _comment_ticket(self, id_, author, comment):
+        ticket = Ticket(self.env, id_)
+        changetime = str(to_utimestamp(ticket['changetime']))
+        req = MockRequest(self.env, method='POST', authname=author,
+                          path_info='/ticket/%d' % id_,
+                          args={'action': 'leave', 'submit': '*',
+                                'comment': comment, 'start_time': changetime,
+                                'view_time': changetime})
+        self.assertEqual(True, self.tktmod.match_request(req))
+        try:
+            self.tktmod.process_request(req)
+            self.fail('RequestDone not raised')
+        except RequestDone:
+            pass
 
-
-class RequestAttributeTestCase(unittest.TestCase):
-
-    def setUp(self):
-        self.env = EnvironmentStub(
-            default_data=True,
-            enable=['trac.*', 'trachtmlnotification.*',
-                    'trachtmlnotification.tests.*'])
-        self.env.config.set('notification', 'mime_encoding', 'none')
-        self.mod = HtmlNotificationModule(self.env)
-
-    def tearDown(self):
-        self.env.reset_db()
-
-    def test_read_attribute_in_filter_stream(self):
-        ticket = Ticket(self.env)
-        ticket['status'] = 'new'
-        ticket['summary'] = 'Blah blah blah'
-        ticket['reporter'] = 'joe'
-        ticket['description'] = '<<<Description>>>'
-        ticket.insert()
-        orig = message % {'url': 'http://localhost/ticket/%d' % ticket.id}
-        result = self.mod.substitute_message(orig, ignore_exc=False)
-        self.assertNotEqual(result, orig)
-        self.assertTrue('\nContent-Type: text/html;' in result)
-        self.assertTrue('<script>// BLAH-BLAH-BLAH</script>' in result)
+    def test_ticket_notification(self):
+        self._create_ticket(status='new', summary='Blah blah blah',
+                            reporter='joe',
+                            description='<<<Description>>>\r\n')
+        from_addr, recipients, message = self.sender.history[-1]
+        self.assertIn('\nContent-Type: text/html;', message)
+        self.assertIn('&lt;&lt;&lt;Description&gt;&gt;&gt;', message)
+        self._comment_ticket(1, 'joe', '`>>>first comment<<<`')
+        from_addr, recipients, message = self.sender.history[-1]
+        self.assertIn('\nContent-Type: text/html;', message)
+        self.assertIn('&lt;&lt;&lt;Description&gt;&gt;&gt;', message)
+        self.assertIn('&gt;&gt;&gt;first comment&lt;&lt;&lt;', message)
+        self._comment_ticket(1, 'joe', '`>>>second comment<<<`')
+        from_addr, recipients, message = self.sender.history[-1]
+        self.assertIn('\nContent-Type: text/html;', message)
+        self.assertIn('&lt;&lt;&lt;Description&gt;&gt;&gt;', message)
+        self.assertIn('&gt;&gt;&gt;second comment&lt;&lt;&lt;', message)
 
 
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(NormalTestCase))
-    suite.addTest(unittest.makeSuite(RequestAttributeTestCase))
     return suite
 
 

@@ -5,17 +5,22 @@ import os.path
 import re
 from email.MIMEText import MIMEText
 from email.MIMEMultipart import MIMEMultipart
-from genshi.builder import tag
-Locale = None
+from pkg_resources import parse_version, resource_filename
+
+try:
+    from trac.util.html import tag
+except ImportError:
+    from genshi.builder import tag
+
 try:
     from babel.core import Locale
 except ImportError:
-    pass
+    Locale = None
 
+from trac import __version__
 from trac.core import Component, implements
 from trac.attachment import AttachmentModule
 from trac.env import Environment
-from trac.mimeview.api import Context
 from trac.notification import SmtpEmailSender, SendmailEmailSender
 from trac.resource import ResourceNotFound
 from trac.test import MockPerm
@@ -30,9 +35,30 @@ from trac.web.chrome import Chrome, ITemplateProvider
 from trac.web.main import FakeSession
 
 try:
+    from trac.web.chrome import web_context
+except ImportError:
+    from trac.mimeview.api import Context
+    web_context = Context.from_request
+
+try:
     from trac.notification.api import INotificationFormatter
 except ImportError:
     INotificationFormatter = None
+
+
+_parsed_version = parse_version(__version__)
+if _parsed_version >= parse_version('1.4'):
+    _use_jinja2 = True
+elif _parsed_version >= parse_version('1.3'):
+    _use_jinja2 = hasattr(Chrome, 'jenv')
+else:
+    _use_jinja2 = False
+
+
+if _use_jinja2:
+    _template_dir = resource_filename(__name__, 'templates/jinja2')
+else:
+    _template_dir = resource_filename(__name__, 'templates/genshi')
 
 
 _TICKET_URI_RE = re.compile(r'/ticket/(?P<tktid>[0-9]+)'
@@ -46,16 +72,7 @@ if Locale:
         except:
             return Locale('en', 'US')
 else:
-    def _parse_locale(lang):
-        return None
-
-
-if hasattr(Environment, 'get_read_db'):
-    def _get_db(env):
-        return env.get_read_db()
-else:
-    def _get_db(env):
-        return env.get_db_cnx()
+    _parse_locale = lambda lang: None
 
 
 class HtmlNotificationModule(Component):
@@ -78,13 +95,11 @@ class HtmlNotificationModule(Component):
         ticket = event.target
         cnum = None
         if event.time:
-            db = self.env.get_read_db()
-            cursor = db.cursor()
-            cursor.execute("""\
+            rows = self._db_query("""\
                 SELECT field, oldvalue FROM ticket_change
                 WHERE ticket=%s AND time=%s AND field='comment'
                 """, (ticket.id, to_utimestamp(event.time)))
-            for field, oldvalue in cursor:
+            for field, oldvalue in rows:
                 if oldvalue:
                     cnum = int(oldvalue.rsplit('.', 1)[-1])
                     break
@@ -115,8 +130,7 @@ class HtmlNotificationModule(Component):
         return ()
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return [_template_dir]
 
     # public methods
 
@@ -139,6 +153,16 @@ class HtmlNotificationModule(Component):
 
     # private methods
 
+    if hasattr(Environment, 'db_query'):
+        def _db_query(self, query, args=()):
+            return self.env.db_query(query, args)
+    else:
+        def _db_query(self, query, args=()):
+            db = self.env.get_read_db()
+            cursor = db.cursor()
+            cursor.execute(query, args)
+            return list(cursor)
+
     def _create_request(self):
         languages = filter(None, [self.config.get('trac', 'default_language')])
         if languages:
@@ -147,10 +171,14 @@ class HtmlNotificationModule(Component):
             locale = None
         tzname = self.config.get('trac', 'default_timezone')
         tz = get_timezone(tzname) or localtz
+        base_url = self.env.abs_href()
+        if ':' in base_url:
+            url_scheme = base_url.split(':', 1)[0]
+        else:
+            url_scheme = 'http'
         environ = {'REQUEST_METHOD': 'POST', 'REMOTE_ADDR': '127.0.0.1',
                    'SERVER_NAME': 'localhost', 'SERVER_PORT': '80',
-                   'wsgi.url_scheme': 'http',
-                   'trac.base_url': self.env.abs_href()}
+                   'wsgi.url_scheme': url_scheme, 'trac.base_url': base_url}
         if languages:
             environ['HTTP_ACCEPT_LANGUAGE'] = ','.join(languages)
         session = FakeSession()
@@ -159,6 +187,7 @@ class HtmlNotificationModule(Component):
         req.arg_list = ()
         req.args = {}
         req.authname = 'anonymous'
+        req.form_token = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         req.session = session
         req.perm = MockPerm()
         req.href = req.abs_href
@@ -181,7 +210,6 @@ class HtmlNotificationModule(Component):
         if cnum is not None:
             cnum = int(cnum)
 
-        db = _get_db(self.env)
         try:
             ticket = Ticket(self.env, tktid)
         except ResourceNotFound:
@@ -217,25 +245,27 @@ class HtmlNotificationModule(Component):
             changes = [change for change in (changes or [])
                               if change.get('cnum') == cnum]
         data['changes'] = changes
-        context = Context.from_request(req, ticket.resource, absurls=True)
+        context = web_context(req, ticket.resource, absurls=True)
         alist = attmod.attachment_data(context)
         alist['can_create'] = False
-        data.update({
-                'can_append': False,
-                'show_editor': False,
-                'start_time': ticket['changetime'],
-                'context': context,
-                'alist': alist,
-                'styles': self._get_styles(chrome),
-                'link': tag.a(link, href=link),
-                'tag_': tag_,
-               })
+        data.update({'can_append': False,
+                     'show_editor': False,
+                     'start_time': ticket['changetime'],
+                     'context': context,
+                     'alist': alist,
+                     'styles': self._get_styles(chrome),
+                     'link': tag.a(link, href=link),
+                     'tag_': tag_})
         template = 'htmlnotification_ticket.html'
         # use pretty_dateinfo in TimelineModule
         TimelineModule(self.env).post_process_request(req, template, data,
                                                       None)
-        rendered = chrome.render_template(req, template, data, fragment=True)
-        return unicode(rendered)
+        if _use_jinja2:
+            return chrome.render_template(req, template, data,
+                                          {'iterable': False})
+        else:
+            return unicode(chrome.render_template(req, template, data,
+                           fragment=True))
 
     def _get_styles(self, chrome):
         for provider in chrome.template_providers:
@@ -281,19 +311,19 @@ class HtmlNotificationModule(Component):
         mime.set_charset(charset)
 
 
-class HtmlNotificationSmtpEmailSender(SmtpEmailSender):
+if not INotificationFormatter:
 
-    def send(self, from_addr, recipients, message):
-        if not INotificationFormatter:
+    class HtmlNotificationSmtpEmailSender(SmtpEmailSender):
+
+        def send(self, from_addr, recipients, message):
             mod = HtmlNotificationModule(self.env)
             message = mod.substitute_message(message)
-        SmtpEmailSender.send(self, from_addr, recipients, message)
+            SmtpEmailSender.send(self, from_addr, recipients, message)
 
 
-class HtmlNotificationSendmailEmailSender(SendmailEmailSender):
+    class HtmlNotificationSendmailEmailSender(SendmailEmailSender):
 
-    def send(self, from_addr, recipients, message):
-        if not INotificationFormatter:
+        def send(self, from_addr, recipients, message):
             mod = HtmlNotificationModule(self.env)
             message = mod.substitute_message(message)
-        SendmailEmailSender.send(self, from_addr, recipients, message)
+            SendmailEmailSender.send(self, from_addr, recipients, message)

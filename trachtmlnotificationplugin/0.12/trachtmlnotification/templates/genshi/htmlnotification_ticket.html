@@ -16,9 +16,9 @@
       <div id="content" class="ticket">
         <h1 id="trac-ticket-title">
           <a href="${abs_href.ticket(ticket.id)}">Ticket #${ticket.id}</a>
-          <span class="status">(${ticket.status}<py:if
-              test="ticket.type"> ${ticket.type}</py:if><py:if
-              test="ticket.resolution">: ${ticket.resolution}</py:if>)</span>
+          <span class="trac-status">(${ticket.status}</span>
+          <span class="trac-type" py:if="ticket.type"> ${ticket.type}</span>
+          <span class="trac-resolution" py:if="ticket.resolution"> ${ticket.resolution}</span>
         </h1>
         <hr />
         <xi:include href="ticket_box.html" />
