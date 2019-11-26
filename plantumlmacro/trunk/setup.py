@@ -24,6 +24,7 @@ setup(
     keywords="trac macro uml plantuml embed include",
     url="https://trac-hacks.org/wiki/PlantUmlMacro",
     install_requires=['Trac'],
+    classifiers = ['Framework :: Trac'],
     entry_points={
         "trac.plugins": [
             "plantuml.macro = plantuml.macro"
