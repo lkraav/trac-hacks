@@ -32,6 +32,7 @@ setup(
     classifiers = [
         'Framework :: Trac',
     ],
+    package_data = {'defaultcc': ['htdocs/*.js']},
     entry_points = {
         'trac.plugins': [
             'defaultcc.admin = defaultcc.admin',
