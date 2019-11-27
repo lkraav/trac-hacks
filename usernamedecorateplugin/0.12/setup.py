@@ -13,7 +13,7 @@ extra = {}
 
 setup(
     name='TracUsernameDecoratePlugin',
-    version='0.12.0.1',
+    version='0.12.0.2',
     description='Showing author information instead of username in Trac '
                 '(t:#7339)',
     license='BSD',  # the same as Trac

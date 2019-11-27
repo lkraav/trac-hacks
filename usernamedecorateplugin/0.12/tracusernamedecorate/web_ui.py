@@ -9,24 +9,24 @@
 import re
 from pkg_resources import resource_filename
 
-from genshi.builder import Fragment, tag
-from genshi.core import Markup
-from genshi.filters.transform import Transformer
-
-from trac import __version__ as VERSION
-from trac.core import Component, TracError, implements
+from trac.core import Component, implements
 from trac.config import BoolOption, ChoiceOption, IntOption
 from trac.ticket.web_ui import TicketModule
 from trac.util.compat import md5, partial
 from trac.util.text import obfuscate_email_address
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
+from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
-                            add_stylesheet
+                            add_script_data, add_stylesheet
+
+try:
+    from trac.util.html import Fragment, tag
+except ImportError:
+    from genshi.builder import Fragment, tag
 
 
 class UsernameDecorateModule(Component):
 
-    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateProvider)
 
     _label_styles = ('$fullname',
                      '$email',
@@ -103,10 +103,21 @@ option.""")
     def post_process_request(self, req, template, data, content_type):
         if template and template.endswith('.html'):
             req.callbacks['_users_cache'] = self._get_users_cache
-            if self.show_tooltips:
+            show_tooltips = self.show_tooltips
+            show_gravatar_icon = self.show_gravatar_icon
+            if show_tooltips:
                 add_stylesheet(req, 'usernamedecorate/tipsy.css')
                 add_script(req, 'usernamedecorate/jquery.tipsy.js')
+            if show_tooltips or show_gravatar_icon:
                 add_script(req, 'usernamedecorate/base.js')
+                script_data = {'show_tooltips': show_tooltips,
+                               'show_gravatar_icon': show_gravatar_icon}
+                gravatar_icon_size = self.gravatar_icon_size
+                if gravatar_icon_size < 1:
+                    gravatar_icon_size = 16
+                if gravatar_icon_size != 16:
+                    script_data['gravatar_icon_size'] = gravatar_icon_size
+                add_script_data(req, {'tracusernamedecorate': script_data})
             add_stylesheet(req, 'usernamedecorate/base.css')
             authorinfo = partial(self._authorinfo, req)
             data['authorinfo'] = authorinfo
@@ -123,27 +134,6 @@ option.""")
 
     def get_templates_dirs(self):
         return ()
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if method != 'xhtml' or not self.show_gravatar_icon:
-            return stream
-
-        size = self.gravatar_icon_size
-        if size < 1:
-            size = 16
-        if size == 16:
-            return stream
-
-        content = """\
-/*<![CDATA[*/
-.usernamedecorate-gravatar { padding-left: %(padding)dpx }
-.usernamedecorate-gravatar > img { width: %(size)dpx; height: %(size)dpx }
-/*]]>*/""" % {'padding': size + 1, 'size': size}
-        def fn():
-            return tag.style(Markup(content), type='text/css')
-        return stream | Transformer('//head').append(fn)
 
     # Internal methods
 
