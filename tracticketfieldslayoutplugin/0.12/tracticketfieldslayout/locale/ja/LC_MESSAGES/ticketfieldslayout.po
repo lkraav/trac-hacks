@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TracTicketFieldsLayoutPlugin 0.12.0.1\n"
 "Report-Msgid-Bugs-To: jun66j5@gmail.com\n"
-"POT-Creation-Date: 2013-07-21 00:34+0900\n"
+"POT-Creation-Date: 2019-11-29 13:12+0900\n"
 "PO-Revision-Date: 2013-07-17 17:37+0900\n"
 "Last-Translator: Jun Omae <jun66j5@gmail.com>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -18,17 +18,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: tracticketfieldslayout/admin.py:34
+#: tracticketfieldslayout/admin.py:37
 #: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:12
 #: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:17
 msgid "Ticket Layout"
 msgstr "チケットレイアウト"
 
-#: tracticketfieldslayout/admin.py:165
+#: tracticketfieldslayout/admin.py:190
 msgid "The default settings have been restored."
 msgstr "デフォルトの設定を復元しました。"
 
-#: tracticketfieldslayout/web_ui.py:38
+#: tracticketfieldslayout/web_ui.py:42
 msgid ""
 "List of comma delimited field names of ticket and group names which\n"
 "start with an `@` character. A group defines as `group.<name>` in the\n"
@@ -55,13 +55,13 @@ msgstr ""
 "group.unused = keywords\n"
 "}}}"
 
-#: tracticketfieldslayout/web_ui.py:55
+#: tracticketfieldslayout/web_ui.py:59
 msgid ""
 "File names of the stylesheet which the plugin adds to ticket page and\n"
 "ticket form"
 msgstr "チケットページとフォームに追加するスタイルシートのファイル名を指定します。"
 
-#: tracticketfieldslayout/web_ui.py:61
+#: tracticketfieldslayout/web_ui.py:65
 msgid ""
 "List of template names to apply the fields layout in ticket page and\n"
 "ticket form"
@@ -69,32 +69,41 @@ msgstr "チケットページやフォームのフィールドレイアウトを
 
 #: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:19
 msgid ""
-"You can group fields of a ticket and hide fields of a ticket in the page "
-"and the form."
-msgstr "チケットフィールドをグループ化や、フィールドを非表示に設定することができます。"
+"You can group fields of ticket and hide the fields in view and form of "
+"ticket page."
+msgstr "チケットページの表示やフォームで、チケットフィールドのグループ化やフィールドの非表示を設定することができます。"
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:25
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:22
+msgid ""
+"[1:Notes:] In the view, summary field is always placed at the first field"
+" and description field is always placed at the last field. In the form, "
+"owner field is always placed at the last field."
+msgstr ""
+"[1:※] "
+"チケットの表示では、概要フィールドは常に最初のフィールドに配置され、詳細フィールドは最後のフィールドに配置されます。フォームでは、担当者フィールドは常に最後のフィールドに配置されます。"
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:30
 msgid "Add group"
 msgstr "グループを追加"
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:27
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:32
 msgid "Restore the default settings"
 msgstr "デフォルト設定を復元"
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:31
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:36
 msgid "Ticket Fields"
 msgstr "チケットフィールド"
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:43
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:49
 msgid "Group"
 msgstr "グループ"
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:55
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:84
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:61
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:90
 msgid "Collapsed"
 msgstr "最小化"
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:68
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:74
 msgid "(Hidden)"
 msgstr "(非表示)"
 

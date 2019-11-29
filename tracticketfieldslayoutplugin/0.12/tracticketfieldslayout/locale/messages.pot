@@ -1,15 +1,15 @@
 # Translations template for TracTicketFieldsLayoutPlugin.
-# Copyright (C) 2013 ORGANIZATION
+# Copyright (C) 2019 ORGANIZATION
 # This file is distributed under the same license as the
 # TracTicketFieldsLayoutPlugin project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2013.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: TracTicketFieldsLayoutPlugin 0.12.0.1\n"
+"Project-Id-Version: TracTicketFieldsLayoutPlugin 0.12.0.5\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2013-07-21 00:34+0900\n"
+"POT-Creation-Date: 2019-11-29 13:12+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,17 +18,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
 
-#: tracticketfieldslayout/admin.py:34
+#: tracticketfieldslayout/admin.py:37
 #: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:12
 #: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:17
 msgid "Ticket Layout"
 msgstr ""
 
-#: tracticketfieldslayout/admin.py:165
+#: tracticketfieldslayout/admin.py:190
 msgid "The default settings have been restored."
 msgstr ""
 
-#: tracticketfieldslayout/web_ui.py:38
+#: tracticketfieldslayout/web_ui.py:42
 msgid ""
 "List of comma delimited field names of ticket and group names which\n"
 "start with an `@` character. A group defines as `group.<name>` in the"
@@ -45,14 +45,14 @@ msgid ""
 "}}}"
 msgstr ""
 
-#: tracticketfieldslayout/web_ui.py:55
+#: tracticketfieldslayout/web_ui.py:59
 msgid ""
 "File names of the stylesheet which the plugin adds to ticket page and"
 "\n"
 "ticket form"
 msgstr ""
 
-#: tracticketfieldslayout/web_ui.py:61
+#: tracticketfieldslayout/web_ui.py:65
 msgid ""
 "List of template names to apply the fields layout in ticket page and\n"
 "ticket form"
@@ -60,32 +60,39 @@ msgstr ""
 
 #: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:19
 msgid ""
-"You can group fields of a ticket and hide fields of a ticket in the "
-"page and the form."
+"You can group fields of ticket and hide the fields in view and form "
+"of ticket page."
 msgstr ""
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:25
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:22
+msgid ""
+"[1:Notes:] In the view, summary field is always placed at the first "
+"field and description field is always placed at the last field. In "
+"the form, owner field is always placed at the last field."
+msgstr ""
+
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:30
 msgid "Add group"
 msgstr ""
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:27
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:32
 msgid "Restore the default settings"
 msgstr ""
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:31
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:36
 msgid "Ticket Fields"
 msgstr ""
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:43
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:49
 msgid "Group"
 msgstr ""
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:55
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:84
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:61
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:90
 msgid "Collapsed"
 msgstr ""
 
-#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:68
+#: tracticketfieldslayout/templates/ticketfieldslayout_admin.html:74
 msgid "(Hidden)"
 msgstr ""
 
