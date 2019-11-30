@@ -161,7 +161,7 @@ class Tooltip(Component):
             req.send_response(501)  # Method Not Implemented
             req.end_headers()
             return
-        if req.get_header('If-None-Match') == str(id(self.pages)):
+        if req.get_header('If-None-Match').strip('"') == str(id(self.pages)):
             req.send_response(304)  # Not Modified
             req.end_headers()
             return
@@ -170,9 +170,9 @@ class Tooltip(Component):
             'defaults': {page: to_html(self._default_pages[page]) for page in self._default_pages},
         }, indent=4)
         req.send_response(200)
-        req.send_header('Content-Type', 'application/json')
-        req.send_header('Content-Length', len(content))
-        req.send_header('ETag', "%s" % id(self.pages))
+        req.send_header(str('Content-Type'), 'application/json')
+        req.send_header(str('Content-Length'), len(content))
+        req.send_header(str('ETag'), '"%s"' % id(self.pages))
         req.end_headers()
         req.write(content)
 
