@@ -15,7 +15,7 @@ from setuptools import setup
 
 setup(
     name = 'TracDefaultCc',
-    version = '0.5',
+    version = '0.6',
     packages = ['defaultcc'],
     include_package_data = True,
     author = "Jean-Guilhem Rouel",
@@ -23,9 +23,9 @@ setup(
     maintainer="Ryan J Ollos",
     maintainer_email="ryan.j.ollos@gmail.com",
     description = "Automatically adds a default CC list to new tickets.",
-    long_description = "Automatically adds a default CC list when a new ticket is created," \
-        "based on its initial component." \
-        "CC lists can be configured per component through the component admin UI",
+    long_description = "Automatically adds a default CC list when a new " \
+            "ticket is created, based on its initial component. CC lists " \
+            "can be configured per component through the component admin UI",
     license = "3-Clause BSD",
     keywords = "trac CC ticket component",
     url = "https://trac-hacks.org/wiki/DefaultCCPlugin",
