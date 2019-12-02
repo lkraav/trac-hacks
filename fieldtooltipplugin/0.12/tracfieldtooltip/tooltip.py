@@ -12,11 +12,14 @@ from pkg_resources import ResourceManager
 from trac.cache import cached
 from trac.core import Component, implements
 from trac.util import arity
+from trac.util.text import to_utf8
 from trac.web.api import IRequestHandler, IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, web_context
 from trac.wiki.api import IWikiChangeListener, WikiSystem
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
+import binascii
+import hashlib
 import json
 
 
@@ -156,12 +159,21 @@ class Tooltip(Component):
     def process_request(self, req):
         def to_html(dom):
             return format_to_html(self.env, web_context(req), dom, False)
+        def build_etag(pages):
+            h = hashlib.sha1()
+            for name in sorted(pages):
+                h.update(to_utf8(name))
+                h.update(b'\0')
+                h.update(to_utf8(pages[name]))
+                h.update(b'\0')
+            return '"%s"' % binascii.hexlify(h.digest())
         payload = json.load(req)
         if 'method' not in payload or not payload['method'] == 'wiki.getPage':
             req.send_response(501)  # Method Not Implemented
             req.end_headers()
             return
-        if req.get_header('If-None-Match').strip('"') == str(id(self.pages)):
+        etag = build_etag(self.pages)
+        if req.get_header('If-None-Match') == etag:
             req.send_response(304)  # Not Modified
             req.end_headers()
             return
@@ -170,9 +182,9 @@ class Tooltip(Component):
             'defaults': {page: to_html(self._default_pages[page]) for page in self._default_pages},
         }, indent=4)
         req.send_response(200)
-        req.send_header(str('Content-Type'), 'application/json')
-        req.send_header(str('Content-Length'), len(content))
-        req.send_header(str('ETag'), '"%s"' % id(self.pages))
+        req.send_header(b'Content-Type', 'application/json')
+        req.send_header(b'Content-Length', len(content))
+        req.send_header(b'ETag', etag)
         req.end_headers()
         req.write(content)
 
