@@ -70,6 +70,7 @@ setup(
         It is not advisable to enable corresponding packages in
         WikiGoodiesPlugin and *this* plugin at the same time.
     """,
+    long_description_content_type = 'text/plain',
     install_requires = ['Trac'],
     packages = find_packages(exclude=['*.tests']),
     package_data={
