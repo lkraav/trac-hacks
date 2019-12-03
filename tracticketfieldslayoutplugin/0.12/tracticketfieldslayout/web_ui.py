@@ -109,7 +109,7 @@ ticket form"""))
 
         default_fields = self._default_fields()
         fields, groups = self._get_fields_and_groups(default_fields)
-        if fields and groups:
+        if fields:
             stream |= TicketFieldsLayoutTransformer(fields, groups, req, data)
         return stream
 
