@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name='TracChangeLog',
-    version='0.5',
+    version='0.6',
     packages=['changelog'],
     author='Alec Thomas',
     maintainer='Ryan Ollos',
@@ -23,6 +23,7 @@ setup(
     keywords='trac scm macro plugin',
     license='3-Clause BSD',
     url='https://trac-hacks.org/wiki/ChangeLogMacro',
+    classifiers=['Framework :: Trac'],
     entry_points={
         'trac.plugins': [
             'changelog.ChangeLogMacro = changelog.ChangeLogMacro'
