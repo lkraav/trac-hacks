@@ -79,7 +79,7 @@ ticket form"""))
                 add_script(req, 'ticketfieldslayout/query.js')
                 default_fields = self._default_fields()
                 fields, groups = self._get_fields_and_groups(default_fields)
-                if fields and groups:
+                if fields:
                     fields = list(Ticket.protected_fields) + fields
                 else:
                     fields = list(Ticket.protected_fields)
@@ -87,9 +87,8 @@ ticket form"""))
                     fields.extend(f['name']
                                   for f in TicketSystem(self.env).fields
                                   if f['name'] not in used_fields)
-                    groups = {}
                 fields.append('id')
-                script_data = {'fields': fields, 'groups': groups}
+                script_data = {'fields': fields, 'groups': groups or {}}
                 add_script_data(req, {'ticketfieldslayout': script_data})
         return template, data, content_type
 
