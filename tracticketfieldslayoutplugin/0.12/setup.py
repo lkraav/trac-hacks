@@ -31,11 +31,16 @@ setup(
     version='0.12.0.6',
     description='Allow to customize the layout of ticket fields in view and form',
     license='BSD',  # the same as Trac
-    url='http://trac-hacks.org/wiki/TracTicketFieldsLayoutPlugin',
+    url='https://trac-hacks.org/wiki/TracTicketFieldsLayoutPlugin',
     author='OpenGroove,Inc.',
     author_email='trac@opengroove.com',
     maintainer='Jun Omae',
     maintainer_email='jun66j5@gmail.com',
+    classifiers=[
+        'Framework :: Trac :: 0.12',
+        'Framework :: Trac :: 1.0',
+        'Framework :: Trac :: 1.2',
+        ],
     packages=find_packages(exclude=['*.tests*']),
     package_data={
         'tracticketfieldslayout': [
