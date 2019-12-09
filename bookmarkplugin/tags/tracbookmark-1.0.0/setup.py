@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name='TracBookmark',
-    version='1.0.1',
+    version='1.0.0',
     author='Yoshiyuki Sugimoto',
     maintainer='Yoshiyuki Sugimoto',
     maintainer_email='s.yosiyuki@gmail.com',
