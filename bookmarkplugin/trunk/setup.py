@@ -17,8 +17,13 @@ setup(
     author='Yoshiyuki Sugimoto',
     maintainer='Yoshiyuki Sugimoto',
     maintainer_email='s.yosiyuki@gmail.com',
+    description='A plugin bookmark Trac resources.',
     license='3-clause BSD',
     url='https://trac-hacks.org/wiki/BookmarkPlugin',
+    install_requires=['Trac'],
+    exclude_package_data={'': ['tests/*']},
+    test_suite='tracbookmark.tests.test_suite',
+    classifiers=['Framework :: Trac'],
     packages=['tracbookmark'],
     package_data={'tracbookmark': [
         'templates/*.html',
@@ -26,9 +31,5 @@ setup(
         'htdocs/js/*.js',
         'htdocs/css/*.css'
     ]},
-    install_requires=['Trac'],
-    exclude_package_data={'': ['tests/*']},
-    test_suite = 'tracbookmark.tests.test_suite',
-    description='A plugin bookmark Trac resources.',
     entry_points = {'trac.plugins': ['tracbookmark = tracbookmark']},
 )
