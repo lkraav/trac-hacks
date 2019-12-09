@@ -12,7 +12,7 @@ from setuptools import setup
 
 setup(
     name='TracComponentHierarchy',
-    version='1.2.0',
+    version='1.2.1',
     packages=['componenthierarchy'],
     package_data={
         'componenthierarchy': [
@@ -28,6 +28,7 @@ setup(
     description='Add a hierarchy to the component field',
     long_description='ComponentHierarchy',
     keywords='ticket component hierarchy',
+    classifiers=['Framework :: Trac'],
     install_requires=['Trac'],
     entry_points={'trac.plugins': ['componenthierarchy = componenthierarchy']}
 )
