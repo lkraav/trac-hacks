@@ -11,12 +11,13 @@ from setuptools import setup
 
 setup(
     name='TracDuplicateTicketSearch',
-    version='1.0.4',
+    version='1.0.5',
     author='gregmac',
     license='BSD',
     description='Adds XMLRPC-based check from ticket entry page for potential duplicate tickets.',
     keywords='trac duplicate ticket search plugin',
     url='https://trac-hacks.org/wiki/DuplicateTicketSearchPlugin',
+    classifiers=['Framework :: Trac'],
     packages=['duplicateticketsearch'],
     package_data={
         'duplicateticketsearch': ['htdocs/css/*.css', 'htdocs/js/*']
