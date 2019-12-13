@@ -23,6 +23,18 @@ setup(
     long_description='Simple Multi Project',
     keywords='Simple Multi Project',
     classifiers=['Framework :: Trac'],
-    entry_points={'trac.plugins': ['simplemultiproject = simplemultiproject']},
+    entry_points={'trac.plugins': [
+        'simplemultiproject.admin = simplemultiproject.admin',
+        'simplemultiproject.admin_command = simplemultiproject.admin_command',
+        'simplemultiproject.admin_filter = simplemultiproject.admin_filter',
+        'simplemultiproject.environmentSetup = simplemultiproject.environmentSetup',
+        'simplemultiproject.milestone = simplemultiproject.milestone',
+        'simplemultiproject.model = simplemultiproject.model',
+        'simplemultiproject.roadmap = simplemultiproject.roadmap',
+        'simplemultiproject.ticket = simplemultiproject.ticket',
+        'simplemultiproject.timeline = simplemultiproject.timeline',
+        'simplemultiproject.version = simplemultiproject.version',
+
+    ]},
     test_suite='simplemultiproject.tests.test_suite'
 )
