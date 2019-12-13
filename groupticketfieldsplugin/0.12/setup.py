@@ -10,8 +10,8 @@
 from setuptools import setup
 
 setup(
-    name='GroupTicketFields',
-    version='0.1',
+    name='TracGroupTicketFields',
+    version='0.2',
     packages=['groupticketfields'],
     package_data={
         'groupticketfields' : [
@@ -24,6 +24,7 @@ setup(
     author_email='tdoering@baumer.com',
     license = "BSD 3-Clause",
     url='https://trac-hacks.org/wiki/GroupTicketFieldsPlugin',
+    classifiers=['Framework :: Trac'],
     description='Group Ticket Fields',
     long_description='Group Ticket Fields',
     keywords='Group Ticket Fields',
