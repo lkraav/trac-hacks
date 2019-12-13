@@ -11,7 +11,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracBudgeting',
-    version='0.6.7',
+    version='0.6.8',
     author='Gefasoft AG, Franz Mayer',
     author_email='franz.mayer@gefasoft.de',
     description='Possibility to add budgeting information '
@@ -19,6 +19,7 @@ setup(
     license='3-Clause BSD',
     url='https://trac-hacks.org/wiki/BudgetingPlugin',
     packages=find_packages(exclude=['*.tests*']),
+    classifiers=['Framework :: Trac'],
     entry_points="""
         [trac.plugins]
         ticketbudgeting = ticketbudgeting
