@@ -23,11 +23,12 @@ from trac.util.datefmt import to_datetime
 from trac.util.html import Markup, tag
 from trac.util.text import to_unicode
 from trac.util.translation import _
-from trac.web import IRequestHandler
+from trac.web.api import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-                            add_stylesheet, add_script, add_ctxtnav
-from trac.wiki.api import WikiSystem, IWikiSyntaxProvider
-from trac.wiki.formatter import wiki_to_html
+                            add_ctxtnav, add_script, add_stylesheet, \
+                            web_context
+from trac.wiki.api import IWikiSyntaxProvider, WikiSystem
+from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
 
 
@@ -102,7 +103,7 @@ class DoxygenPlugin(Component):
         """Split a Doxygen HTML page in its head and body part.
         Find the references to style sheets by the Link tag
         and move them to the Trac Head part by add_stylesheet.
-        Same work for the JS files referenced by the Script Tag, by 
+        Same work for the JS files referenced by the Script Tag, by
         add_script. Move also the content of the Title Tag, by using JQuery.
         """
 
@@ -160,7 +161,8 @@ class DoxygenPlugin(Component):
 
     def rewrite_doxygen(self, req, path, doc, charset):
         def wiki_in_doxygen(m):
-            return wiki_to_html(m.group(1), self.env, req)
+            context = web_context(req)
+            return format_to_html(self.env, context, m.group(1))
 
         content = to_unicode(self.merge_header(req, path), charset)
 
@@ -200,20 +202,16 @@ class DoxygenPlugin(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        self.log.debug('match_request %s', req.path_info)
-        return re.match(r'''/doxygen(/|$)''', req.path_info)
+        return re.match(r'/doxygen(/|$)', req.path_info)
 
     def process_request(self, req):
         req.perm.assert_permission('DOXYGEN_VIEW')
         if req.path_info == '/doxygen':
             req.redirect(req.href.doxygen('/'))
 
-        self.log.debug('process_request %s et %s', req.path_info,
-                       req.query_string)
         segments = filter(None, req.path_info.split('/'))
         segments = segments[1:]  # ditch 'doxygen'
         if not segments:
-            self.log.debug('page garde from %s', req.path_info)
             # Handle /doxygen request
             wiki = self.wiki_index
             if wiki:
@@ -222,7 +220,8 @@ class DoxygenPlugin(Component):
                 else:
                     text = 'Doxygen index page [wiki:%s] does not exist.' % \
                            wiki
-                data = {'doxygen_text': wiki_to_html(text, self.env, req)}
+                context = web_context(req)
+                data = {'doxygen_text': format_to_html(self.env, context, text)}
                 add_ctxtnav(req, "View %s page" % wiki, req.href.wiki(wiki))
                 return 'doxygen.html', data, 'text/html'
             else:
@@ -235,7 +234,6 @@ class DoxygenPlugin(Component):
             dir_ = os.path.join(*dir_) if dir_ else ''
 
         doc = req.args.get('doc') if req.args.get('doc') else self.default_doc
-        self.log.debug('file %s in doc %s', file_, doc)
         path = os.path.join(self.base_path, doc, self.html_output, dir_,
                             file_)
         if not path or not os.path.exists(path):
@@ -243,16 +241,12 @@ class DoxygenPlugin(Component):
             url = req.href.search(q=req.args.get('query'), doxygen='on')
             req.redirect(url)
 
-        self.log.debug('Process_req P %s  %s.', path, req.path_info)
-
         # security check
         path = os.path.abspath(path)
         if not path.startswith(os.path.normpath(self.base_path)):
             raise TracError("Can't access paths outside of " + self.base_path)
 
         mimetype = mimetypes.guess_type(path)[0]
-        self.log.debug('mime %s path: %s for %s.', mimetype, path,
-                       req.path_info)
         if mimetype == 'text/html':
             add_stylesheet(req, 'doxygen/css/doxygen.css')
             charset = (self.encoding or
@@ -295,7 +289,7 @@ class DoxygenPlugin(Component):
                             self.base_path, self.default_doc, self.log)
         add_stylesheet(req, 'doxygen/css/doxygen.css')
         add_script(req, 'doxygen/js/doxygentrac.js')
-        return 'doxygen_admin.html', env
+        return 'doxygen_admin.html', env, None
 
     # ISearchProvider methods
 
@@ -319,7 +313,6 @@ class DoxygenPlugin(Component):
         all_ = search_in_doxygen(doc, k, ['keywords', 'text'], True, self.log)
         all_ = sorted(all_, key=itemgetter('keywords'))
         all_ = sorted(all_, key=itemgetter('occ'), reverse=True)
-        self.log.debug('%s search in %s: "%s" items', k, doc, len(all_))
         for res in all_:
             url = 'doxygen/' + res['url'] + '#' + res['target']
             t = shorten_result(res['text'])
@@ -334,7 +327,6 @@ class DoxygenPlugin(Component):
                 doc, name = name.split('/')
                 if not doc:
                     doc = self.default_doc
-            self.log.debug("search link for %s inc doc %s", name, doc)
             if not name:
                 if doc:
                     label = doc
