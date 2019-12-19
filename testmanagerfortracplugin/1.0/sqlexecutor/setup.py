@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2015 Roberto Longobardi
-# 
+#
 # This file is part of the Test Manager plugin for Trac.
-# 
+#
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at: 
+# are also available at:
 #   https://trac-hacks.org/wiki/TestManagerForTracPluginLicense
 #
 # Author: Roberto Longobardi <otrebor.dev@gmail.com>
-# 
+#
 
 from setuptools import setup
 
@@ -22,7 +22,8 @@ setup(
     author = 'Roberto Longobardi',
     author_email='otrebor.dev@gmail.com',
     license='Modified BSD, same as Trac. See the file COPYING contained in the package.',
-    url='http://trac-hacks.org/wiki/TestManagerForTracPlugin',
+    classifiers=['Framework :: Trac'],
+    url='https://trac-hacks.org/wiki/TestManagerForTracPlugin',
     download_url='https://sourceforge.net/projects/testman4trac/files/',
     description='Test management plugin for Trac - SQL Executor component',
     long_description='A Trac plugin to create Test Cases, organize them in catalogs and track their execution status and outcome. This module provides a generic SQL executor to help debugging your application.',
