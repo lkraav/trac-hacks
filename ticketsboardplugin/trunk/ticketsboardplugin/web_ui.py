@@ -103,22 +103,20 @@ class TicketsboardPage(Component):
         self.filters = [(CHECKBOX_NAME, '1')]
 
     # IEnvironmentSetupParticipant methods
-    def environment_created(self):
-        """Called when a new Trac environment is created."""
-        if environment_needs_upgrade(self.config):
-            upgrade_environment(self.config)
 
-    def environment_needs_upgrade(self, db):
+    def environment_created(self):
+        self.upgrade_environment(self.config)
+
+    def environment_needs_upgrade(self, db=None):
         """Returns the upgrade need according to the presence of all needed
         status and checkbox.
         """
         missing_data = _trac_needs_upgrade(self.env, self.config,
                                            CHECKBOX_NAME,
                                            self.status_list)
-        self.log.debug('Ticketsboard: Upgrade needed: %s', any(missing_data))
         return any(missing_data)
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         """Perform the environment upgrade for the needed status and
         checkbox.
         """
@@ -126,28 +124,26 @@ class TicketsboardPage(Component):
                                            CHECKBOX_NAME,
                                            self.status_list)
 
-        if any(missing_data):
-            print 'Ticketsboard plugin needs an upgrade'
-            missing_checkbox, missing_status = missing_data
-            if missing_checkbox:
-                self.config.set('ticket-custom', CHECKBOX_NAME, 'checkbox')
-                self.config.set('ticket-custom', CHECKBOX_NAME + '.label',
-                                CHECKBOX_LABEL)
-                self.config.set('ticket-custom', CHECKBOX_NAME + '.value',
-                                'false')
-                self.config.save()
-                print '  A "%s" ticket field has been added.' % \
-                    CHECKBOX_LABEL
+        missing_checkbox, missing_status = missing_data
+        if missing_checkbox:
+            self.config.set('ticket-custom', CHECKBOX_NAME, 'checkbox')
+            self.config.set('ticket-custom', CHECKBOX_NAME + '.label',
+                            CHECKBOX_LABEL)
+            self.config.set('ticket-custom', CHECKBOX_NAME + '.value',
+                            'false')
+            self.config.save()
+            print('  A "%s" ticket field has been added.' % CHECKBOX_LABEL)
 
-            if missing_status:
-                print '  Some ticket-workflow states are missing'
-                for status in missing_status:
-                    print '   - %s' % status
-                print '  Please, synchronise your ticket-workflow states ' + \
-                      'with the statuses field of [ticketsboard] section ' + \
-                      'inside trac.ini config file.'
+        if missing_status:
+            print('  Some ticket-workflow states are missing')
+            for status in missing_status:
+                print('   - %s' % status)
+            print('  Please, synchronise your ticket-workflow states ' + \
+                  'with the statuses field of [ticketsboard] section ' + \
+                  'inside trac.ini config file.')
 
     # INavigationContributor methods
+
     def get_active_navigation_item(self, req):
         """Returns the name of the navigation item that will be highlighted as
         active/current.
@@ -167,6 +163,7 @@ class TicketsboardPage(Component):
                           % (url, PAGE_NAME.capitalize())))
 
     # IRequestHandler methods
+
     def match_request(self, req):
         """Return whether the handler wants to process the given request.
         So for us, only the ticketsboard requests.
@@ -267,6 +264,7 @@ class TicketsboardPage(Component):
         return ('%s.html' % PAGE_NAME, data, None)
 
     # ITemplateProvider methods
+
     def get_htdocs_dirs(self):
         """Returns the directory with static resources (style sheets and Java
         Script)

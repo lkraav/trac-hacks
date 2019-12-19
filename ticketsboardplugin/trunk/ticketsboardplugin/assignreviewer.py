@@ -20,11 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from genshi.builder import tag
-
-from trac.core import implements, Component
-from trac.ticket.api import ITicketActionController
+from trac.core import Component, implements
 from trac.env import IEnvironmentSetupParticipant
+from trac.util.html import html as tag
+from trac.ticket.api import ITicketActionController
 from trac.ticket.default_workflow import ConfigurableTicketWorkflow, \
     get_workflow_config
 from trac.ticket.model import Ticket
@@ -41,30 +40,21 @@ class AssignReviewerOperation(Component):
 
     workflow = ConfigurableTicketWorkflow,AssignReviewerOperation
     """
-    implements(ITicketActionController, IEnvironmentSetupParticipant)
+    implements(IEnvironmentSetupParticipant, ITicketActionController)
 
     # IEnvironmentSetupParticipant methods
+
     def environment_created(self):
-        """Called when a new Trac environment is created."""
-        if environment_needs_upgrade(self.config):
-            upgrade_environment(self.config)
+        self.upgrade_environment(self.config)
 
-    def environment_needs_upgrade(self, db):
-        """Returns the upgrade need according to the presence of the reviewer
-        field.
-        """
-        update_needed = _ticket_field_need_upgrade(self.config)
-        self.log.debug("Upgrade needed: %s" % update_needed)
-        return update_needed
+    def environment_needs_upgrade(self, db=None):
+        return _ticket_field_need_upgrade(self.config)
 
-    def upgrade_environment(self, db):
-        """Perform the environment upgrade for the reviewer field."""
-        if _ticket_field_need_upgrade(self.config):
-            print "Ticketsboard plugin needs an upgrade"
-            print "  Add a \"reviewer\" field in ticket-custom section"
-            _do_ticket_field_upgrade(self.config)
+    def upgrade_environment(self, db=None):
+        _do_ticket_field_upgrade(self.config)
 
     # ITicketActionController methods
+
     def get_ticket_actions(self, req, ticket):
         """Returns all actions that have these new operations: 'set_reviewer'
         and 'del_reviewer'.
