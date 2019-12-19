@@ -1,0 +1,51 @@
+# Translations template for TestManager.
+# Copyright (C) 2017 Roberto Longobardi
+# This file is distributed under the same license as the TestManager
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: TestManager 1.9.1\n"
+"Report-Msgid-Bugs-To: otrebor.dev@gmail.com\n"
+"POT-Creation-Date: 2017-03-04 19:18+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.3.4\n"
+
+#: testmanager/htdocs/js/testmanager.js:28
+#: testmanager/htdocs/js/testmanager.js:43
+#: testmanager/htdocs/js/testmanager.js:60
+msgid "You must specify a name. Minimum length is 4 characters."
+msgstr ""
+
+#: testmanager/htdocs/js/testmanager.js:174
+msgid "Are you sure you want to remove the test case from the plan?"
+msgstr ""
+
+#: testmanager/htdocs/js/testmanager.js:209
+msgid "[Insert problem summary]"
+msgstr ""
+
+#: testmanager/htdocs/js/testmanager.js:221
+msgid ""
+"Are you sure you want to duplicate the test catalog and all its contained"
+" test cases?"
+msgstr ""
+
+#: testmanager/htdocs/js/testmanager.js:228
+msgid ""
+"Are you sure you want to delete the test plan and the state of all its "
+"contained test cases?"
+msgstr ""
+
+#: testmanager/htdocs/js/testmanager.js:489
+#: testmanager/htdocs/js/testmanager.js:644
+msgid "Results: "
+msgstr ""
+
