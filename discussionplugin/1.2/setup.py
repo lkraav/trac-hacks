@@ -15,7 +15,7 @@
 from setuptools import setup
 
 setup(name='TracDiscussion',
-      version='1.2',
+      version='1.2.1',
       author='Radek Bartoň',
       author_email='blackhex@post.cz',
       license='GPL',
@@ -39,6 +39,7 @@ setup(name='TracDiscussion',
           'TracDiscussion.timeline = tracdiscussion.timeline',
           'TracDiscussion.wiki = tracdiscussion.wiki']
       },
+      classifiers=['Framework :: Trac'],
       install_requires=['Trac'],
       extras_require={'spamfilter': ['TracSpamFilter >= 1.2'],
                       'tags': ['TracTags >= 0.9']},
