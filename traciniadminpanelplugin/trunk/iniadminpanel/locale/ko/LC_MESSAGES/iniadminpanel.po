@@ -1,18 +1,20 @@
-# Translations template for TracIniAdminPanel.
-# Copyright (C) 2019 ORGANIZATION
+# Korean translations for TracIniAdminPanel.
+# Copyright (C) 2014 ORGANIZATION
 # This file is distributed under the same license as the
 # TracIniAdminPanel project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
 #
-#, fuzzy
+# Translators:
 msgid ""
 msgstr ""
-"Project-Id-Version: TracIniAdminPanel 1.4.0\n"
+"Project-Id-Version: Trac Plugin L10N\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
 "POT-Creation-Date: 2019-12-20 22:03+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2014-11-06 08:06+0000\n"
+"Last-Translator: theYT <dev@theYT.net>\n"
+"Language: ko\n"
+"Language-Team: Korean (http://www.transifex.com/projects/p/Trac_Plugin-"
+"L10N/language/ko/)\n"
+"Plural-Forms: nplurals=1; plural=0\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -22,386 +24,398 @@ msgstr ""
 msgid ""
 "Defines the default access level for options that don't have an\n"
 "explicit access level defined. Defaults to readonly."
-msgstr ""
+msgstr "명시적으로 접근 수준이 정의되지 않은 옵션에 대한 기본 접근 수준입니다. 기본값은 읽기 전용입니다."
 
 #: iniadminpanel/default_manager.py:75
 msgid ""
 "This section is used to store restriction configurations used by\n"
-"TracIniAdminPanel plugin security manager. An example file can be "
-"found at\n"
+"TracIniAdminPanel plugin security manager. An example file can be found "
+"at\n"
 "http://trac-hacks.org/browser/traciniadminpanelplugin/0.12/safe-"
 "restrictions.ini"
 msgstr ""
+"이 구역은 TracIniAdminPanel 플러그인의 보안 관리자에서 사용하는 제약 설정을 저장하는데 사용됩니다.\n"
+"예제 파일은 http://trac-hacks.org/browser/traciniadminpanelplugin/0.12/safe-"
+"restrictions.ini 에서 찾을 수 있습니다."
 
 #: iniadminpanel/web_ui.py:28 iniadminpanel/web_ui.py:35
+#, fuzzy
 msgid ""
 "Defines the valid characters for a section name or option name in\n"
-"`trac.ini`. Must be a valid regular expression. You only need to "
-"change\n"
-"these if you have plugins that use some strange section or option "
-"names."
+"`trac.ini`. Must be a valid regular expression. You only need to change\n"
+"these if you have plugins that use some strange section or option names."
 msgstr ""
+"`trac.ini` 파일의 구역 또는 옵션 이름을 구성하는 유효한 문자를 정의합니다. 유효한 정규 표현식이어야 합니다. 특이한 구역"
+" 또는 옵션 이름을 사용하는 플러그인을 쓰고 있을 경우 이 값을 변경하십시오."
 
 #: iniadminpanel/web_ui.py:42
+#, fuzzy
 msgid ""
 "Defines the security manager that specifies whether the user has\n"
 "access to certain options."
-msgstr ""
+msgstr "사용자가 특정 옵션에 접근할 수 있는 권한이 있는지 확인하는 보안 관리자를 정의합니다."
 
 #: iniadminpanel/web_ui.py:49
+#, fuzzy
 msgid ""
 "Defines option fields (as `section-name|option-name`) that\n"
-"represent passwords. Password input fields are used for these fields."
-"\n"
-"Note the fields specified here are taken additionally to some "
-"predefined\n"
+"represent passwords. Password input fields are used for these fields.\n"
+"Note the fields specified here are taken additionally to some predefined\n"
 "fields provided by the ini editor."
 msgstr ""
+"비밀번호로 처리될 옵션 필드를 `구역명|옵션명` 과 같은 형식으로 정의합니다. 이 필드에는 비밀번호 입력 상자를 사용합니다.\n"
+"여기에 정의한 필드는 ini 편집기에서 사전에 지정한 필드에 추가적으로 처리됨을 유의하십시오."
 
 #: iniadminpanel/web_ui.py:56
 msgid ""
 "This section is used to handle configurations used by\n"
 "TracIniAdminPanel plugin."
-msgstr ""
+msgstr "이 구역은 TracIniAdminPanel 플러그인에서 사용되는 설정값을 지정하는 데 사용됩니다."
 
 #: iniadminpanel/web_ui.py:84
 msgid "General"
-msgstr ""
+msgstr "일반"
 
 #: iniadminpanel/web_ui.py:85
 msgid "trac.ini Editor"
-msgstr ""
+msgstr "trac.ini 편집기"
 
 #: iniadminpanel/web_ui.py:109 iniadminpanel/web_ui.py:173
 msgid "The section \"components\" can't be edited with the ini editor."
-msgstr ""
+msgstr "\"components\" 구역은 ini 편집기로 수정할 수 없습니다."
 
 #: iniadminpanel/web_ui.py:113 iniadminpanel/web_ui.py:176
 #, python-format
 msgid "The section name %s is invalid."
-msgstr ""
+msgstr "구역 이름 %s이(가) 올바르지 않습니다."
 
 #: iniadminpanel/web_ui.py:146
 #, python-format
 msgid "Security manager could not be initated. %s"
-msgstr ""
+msgstr "보안 관리자를 초기화 할 수 없습니다. %s"
 
 #: iniadminpanel/web_ui.py:170
 msgid "The section name was empty."
-msgstr ""
+msgstr "구역 이름이 비어 있습니다."
 
 #: iniadminpanel/web_ui.py:180
 #, python-format
 msgid ""
 "Section %s has been created. Note that you need to add at least one "
 "option to store it permanently."
-msgstr ""
+msgstr "%s 구역을 만들었습니다. 이를 온전히 저장하려면 하나 이상의 옵션을 추가해야 한다는 점을 유의하십시오."
 
 #: iniadminpanel/web_ui.py:182
 msgid "The section already exists."
-msgstr ""
+msgstr "구역이 이미 존재합니다."
 
 #: iniadminpanel/web_ui.py:298
 #, python-format
 msgid "Changes for section %s have been applied."
-msgstr ""
+msgstr "%s 구역에 대한 변경 사항을 적용하였습니다."
 
 #: iniadminpanel/web_ui.py:301 iniadminpanel/web_ui.py:313
 msgid "No changes have been applied."
-msgstr ""
+msgstr "적용된 변경 사항이 없습니다."
 
 #: iniadminpanel/web_ui.py:310
 msgid "Changes have been applied."
-msgstr ""
+msgstr "변경 사항을 적용하였습니다."
 
 #: iniadminpanel/web_ui.py:320
 #, python-format
 msgid "Your changes for section %s have been discarded."
-msgstr ""
+msgstr "%s 구역에 대한 변경 사항을 취소하였습니다."
 
 #: iniadminpanel/web_ui.py:325
 msgid "All changes have been discarded."
-msgstr ""
+msgstr "모든 변경 사항을 취소하였습니다."
 
 #: iniadminpanel/web_ui.py:340
 #, python-format
 msgid "The option name %s is invalid."
-msgstr ""
+msgstr "옵션 이름 %s가 유효하지 않습니다."
 
 #: iniadminpanel/web_ui.py:345
 #, python-format
 msgid "The new option %s could not be added due to security restrictions."
-msgstr ""
+msgstr "보안 제한으로 인해 새 옵션 %s을(를) 추가할 수 없습니다."
 
 #: iniadminpanel/web_ui.py:352
 #, python-format
 msgid "The new fields have been added to section %s."
-msgstr ""
+msgstr "새 필드를 %s 구역에 추가하였습니다."
 
 #: iniadminpanel/web_ui.py:354
 msgid "No new fields have been added."
-msgstr ""
+msgstr "새로 추가한 필드가 없습니다."
 
 #: iniadminpanel/web_ui.py:409
 msgid ""
-"You have unsaved changes in this section. Do you still want to change"
-" the section?"
-msgstr ""
+"You have unsaved changes in this section. Do you still want to change the"
+" section?"
+msgstr "이 구역에 아직 저장하지 않은 변경 사항이 있습니다. 구역을 변경하시겠습니까?"
 
 #: iniadminpanel/web_ui.py:412
 #, python-format
 msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
-msgstr ""
+msgstr "변경됨: %(mod)d | 기본값: %(def)d | 옵션 수: %(opt)d"
 
 #: iniadminpanel/web_ui.py:553 iniadminpanel/web_ui.py:556
 msgid "text"
-msgstr ""
+msgstr "문자열"
 
 #: iniadminpanel/web_ui.py:560
 msgid "password"
-msgstr ""
+msgstr "비밀번호"
 
 #: iniadminpanel/web_ui.py:616
 #, python-format
 msgid ""
-"The default value for option \"%s\" in section \"%s\" is invalid. "
-"Reason: %s"
-msgstr ""
+"The default value for option \"%s\" in section \"%s\" is invalid. Reason:"
+" %s"
+msgstr "\"%s\" 옵션(\"%s\" 구역)에 대한 기본값이 유효하지 않습니다. 사유: %s"
 
 #: iniadminpanel/web_ui.py:645
 #, python-format
 msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
-msgstr ""
+msgstr "\"%s\" 옵션(\"%s\" 구역)에 대한 값이 유효하지 않습니다. 사유: %s"
 
 #: iniadminpanel/templates/admin_tracini.html:11
 #: iniadminpanel/templates/admin_tracini.html:15
 msgid "Edit Trac Settings (trac.ini)"
-msgstr ""
+msgstr "Trac 설정 변경 (trac.ini)"
 
 #: iniadminpanel/templates/admin_tracini.html:17
 msgid ""
 "Allows you to edit the trac.ini file.[1:][2:Note:] To \"delete\" an "
 "option from the trac.ini file, just set it to its default value."
 msgstr ""
+"trac.ini 파일을 편집할 수 있습니다.[1:][2:참고:] trac.ini 파일에서 옵션을 \"제거\"하려면, 기본값으로 "
+"설정하십시오."
 
 #: iniadminpanel/templates/admin_tracini.html:25
 msgid "Change Section"
-msgstr ""
+msgstr "구역 변경"
 
 #: iniadminpanel/templates/admin_tracini.html:26
 #: iniadminpanel/templates/admin_tracini.html:43
 msgid "Section name:"
-msgstr ""
+msgstr "구역 이름:"
 
 #: iniadminpanel/templates/admin_tracini.html:28
 msgid "select section"
-msgstr ""
+msgstr "구역 선택"
 
 #: iniadminpanel/templates/admin_tracini.html:29
 msgid "all sections"
-msgstr ""
+msgstr "모든 구역"
 
 #: iniadminpanel/templates/admin_tracini.html:33
 msgid "Show Section"
-msgstr ""
+msgstr "구역 보기"
 
 #: iniadminpanel/templates/admin_tracini.html:34
 msgid "Warning: Changing the section discards all unsaved changes."
-msgstr ""
+msgstr "주의: 구역을 변경하면 저장하지 않은 내용은 취소됩니다."
 
 #: iniadminpanel/templates/admin_tracini.html:42
 msgid "Add New Section"
-msgstr ""
+msgstr "새 구역 추가"
 
 #: iniadminpanel/templates/admin_tracini.html:44
 msgid "Add Section"
-msgstr ""
+msgstr "구역 추가"
 
 #: iniadminpanel/templates/admin_tracini.html:45
 msgid "Warning: Adding a new section discards all unsaved changes."
-msgstr ""
+msgstr "주의: 새 구역을 추가하면 저장하지 않은 내용은 취소됩니다."
 
 #: iniadminpanel/templates/admin_tracini.html:58
 msgid "Name"
-msgstr ""
+msgstr "이름"
 
 #: iniadminpanel/templates/admin_tracini.html:59
 msgid "Default"
-msgstr ""
+msgstr "기본값"
 
 #: iniadminpanel/templates/admin_tracini.html:60
 msgid "Value"
-msgstr ""
+msgstr "설정값"
 
 #: iniadminpanel/templates/admin_tracini.html:67
 msgid ""
-"[1:Note:] This section is essentially [2:empty and won't persist] "
-"unless a not-default value is \n"
+"[1:Note:] This section is essentially [2:empty and won't persist] unless "
+"a not-default value is \n"
 "                  specified for at least one option in this section."
-msgstr ""
+msgstr "[1:참고:] 이 구역은 기본적으로 [2:비어 있으며], 하나의 옵션이라도 기본값이 아니어야 구역이 보존됩니다."
 
 #: iniadminpanel/templates/admin_tracini.html:72
 msgid "Options count:"
-msgstr ""
+msgstr "옵션 수:"
 
 #: iniadminpanel/templates/admin_tracini.html:83
 msgid "Modifiable Options"
-msgstr ""
+msgstr "변경 가능한 옵션"
 
 #: iniadminpanel/templates/admin_tracini.html:83
 msgid "Read-only Options"
-msgstr ""
+msgstr "읽기 전용 옵션"
 
 #: iniadminpanel/templates/admin_tracini.html:101
 msgid "true"
-msgstr ""
+msgstr "예"
 
 #: iniadminpanel/templates/admin_tracini.html:106
 msgid "false"
-msgstr ""
+msgstr "아니요"
 
 #: iniadminpanel/templates/admin_tracini.html:127
 msgid ""
-"[1:Note:] This option represents [2:a password]. Therefore the value "
-"of this field is intentionally empty.\n"
-"                    To change the password, simply enter it. To keep "
-"the current password keep this field empty."
+"[1:Note:] This option represents [2:a password]. Therefore the value of "
+"this field is intentionally empty.\n"
+"                    To change the password, simply enter it. To keep the "
+"current password keep this field empty."
 msgstr ""
+"[1:참고:] 이 옵션은 [2:비밀번호] 항목이며, 따라서 의도적으로 값을 비워 놓았습니다.\n"
+"비밀번호를 변경하려면, 새 값을 입력하십시오. 현재 값을 유지하려면 공백으로 놓아 두십시오."
 
 #: iniadminpanel/templates/admin_tracini.html:133
 msgid ""
-"[1:Note:] This option is a [2:custom option]. It will be "
-"[3:completely deleted] if it's set to its default value. \n"
-"                    To keep it you need to assign a (non-empty) value"
-" to it."
+"[1:Note:] This option is a [2:custom option]. It will be [3:completely "
+"deleted] if it's set to its default value. \n"
+"                    To keep it you need to assign a (non-empty) value to "
+"it."
 msgstr ""
+"[1:참고:] 이 옵션은 [2:사용자 지정 항목]입니다. 기본값으로 지정하면 옵션이 [3:완전히 삭제]됩니다.\n"
+"유지하려면 (공백이 아닌) 값을 지정하십시오."
 
 #: iniadminpanel/templates/admin_tracini.html:140
 msgid "Description:"
-msgstr ""
+msgstr "설명:"
 
 #: iniadminpanel/templates/admin_tracini.html:142
 msgid "Type:"
-msgstr ""
+msgstr "형식:"
 
 #: iniadminpanel/templates/admin_tracini.html:144
 #, python-format
 msgid "list (separated by '%(separation)s')"
-msgstr ""
+msgstr "목록 ('%(separation)s'(으)로 구분)"
 
 #: iniadminpanel/templates/admin_tracini.html:145
 msgid "file system path"
-msgstr ""
+msgstr "파일 시스템 경로"
 
 #: iniadminpanel/templates/admin_tracini.html:146
 msgid "file system path relative to the Trac env"
-msgstr ""
+msgstr "Trac 환경에 상대적인 파일 시스템 경로"
 
 #: iniadminpanel/templates/admin_tracini.html:147
 #, python-format
 msgid "one component implementing '%(name)s'"
-msgstr ""
+msgstr "'%(name)s'을(를) 구현하는 하나의 컴포넌트"
 
 #: iniadminpanel/templates/admin_tracini.html:148
 #, python-format
 msgid "ordered list of components implementing '%(name)s' (comma separated)"
-msgstr ""
+msgstr "'%(name)s'을(를) 구현하는 컴포넌트를 순서대로 나열한 목록 (쉼표로 구분)"
 
 #: iniadminpanel/templates/admin_tracini.html:151
 msgid "Access:"
-msgstr ""
+msgstr "접근 권한:"
 
 #: iniadminpanel/templates/admin_tracini.html:153
 #, python-format
 msgid ""
 "| [1:Default value:] %(default)s\n"
 "                          | [2:Currently stored value:] %(stored)s"
-msgstr ""
+msgstr "| [1:기본값:] %(default)s | [2:현재 지정된 값:] %(stored)s"
 
 #: iniadminpanel/templates/admin_tracini.html:157
 #, python-format
 msgid ""
 "| [1:Default value:] %(default)s \n"
 "                          | [2:Currently stored value:] %(stored)s"
-msgstr ""
+msgstr "| [1:기본값:] %(default)s | [2:현재 지정된 값:] %(stored)s"
 
 #: iniadminpanel/templates/admin_tracini.html:170
 msgid "Hidden Options"
-msgstr ""
+msgstr "숨겨진 옵션"
 
 #: iniadminpanel/templates/admin_tracini.html:174
 msgid ""
-"Due to security restrictions there is one option marked as hidden in "
-"this section."
-msgstr ""
+"Due to security restrictions there is one option marked as hidden in this"
+" section."
+msgstr "보안 제한으로 인해 이 구역에 있는 하나의 옵션이 숨겨졌습니다."
 
 #: iniadminpanel/templates/admin_tracini.html:175
 #, python-format
 msgid ""
 "Due to security restrictions there are %(options)s options marked as "
 "hidden in this section."
-msgstr ""
+msgstr "보안 제한으로 인해 이 구역에 있는 %(options)s 개의 옵션이 숨겨졌습니다."
 
 #: iniadminpanel/templates/admin_tracini.html:181
 #: iniadminpanel/templates/admin_tracini.html:193
 msgid "Apply changes"
-msgstr ""
+msgstr "변경 사항 적용"
 
 #: iniadminpanel/templates/admin_tracini.html:181
 msgid "Applies the changes from this section."
-msgstr ""
+msgstr "이 구역의 변경 사항을 적용합니다."
 
 #: iniadminpanel/templates/admin_tracini.html:182
 msgid "Discard changes"
-msgstr ""
+msgstr "변경 취소"
 
 #: iniadminpanel/templates/admin_tracini.html:182
 msgid ""
-"Discards the changes from this section. Also removes custom options, "
-"if they still have their default value."
-msgstr ""
+"Discards the changes from this section. Also removes custom options, if "
+"they still have their default value."
+msgstr "이 구역에서의 변경 사항을 취소합니다. 또한 사용자 지정 옵션의 값이 기본값일 경우, 해당 옵션을 삭제합니다."
 
 #: iniadminpanel/templates/admin_tracini.html:184
 msgid "Options to be added to this section; comma-separated"
-msgstr ""
+msgstr "이 구역에 추가할 옵션들을, 쉼표로 구분하여 입력합니다."
 
 #: iniadminpanel/templates/admin_tracini.html:185
 msgid "Add options"
-msgstr ""
+msgstr "옵션 추가"
 
 #: iniadminpanel/templates/admin_tracini.html:185
 msgid "Adds the specified options to this section"
-msgstr ""
+msgstr "지정한 옵션을 이 구역에 추가합니다."
 
 #: iniadminpanel/texts/othertexts.py:4
 msgid "bool"
-msgstr ""
+msgstr "예/아니오"
 
 #: iniadminpanel/texts/othertexts.py:5
 msgid "int"
-msgstr ""
+msgstr "정수"
 
 #: iniadminpanel/texts/othertexts.py:6
 msgid "choice"
-msgstr ""
+msgstr "선택"
 
 #: iniadminpanel/texts/othertexts.py:9
 msgid "readonly"
-msgstr ""
+msgstr "읽기 전용"
 
 #: iniadminpanel/texts/othertexts.py:10
 msgid "hidden"
-msgstr ""
+msgstr "숨김"
 
 #: iniadminpanel/texts/othertexts.py:11
 msgid "modifiable"
-msgstr ""
+msgstr "변경 가능"
 
 #: iniadminpanel/texts/othertexts.py:14
 msgid "<default value>"
-msgstr ""
+msgstr "<기본값>"
 
 #: iniadminpanel/texts/othertexts.py:15
 msgid "<none>"
-msgstr ""
+msgstr "<없음>"
 
