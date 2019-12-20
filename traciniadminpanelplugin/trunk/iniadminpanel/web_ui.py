@@ -13,10 +13,10 @@ from trac.admin.api import IAdminPanelProvider
 from trac.util import as_bool
 from trac.util.translation import dgettext, domain_functions
 
-from inieditorpanel.api import *
+from iniadminpanel.api import *
 
 _, tag_, N_, add_domain, gettext = domain_functions(
-    'inieditorpanel',
+    'iniadminpanel',
     ('_', 'tag_', 'N_', 'add_domain', 'gettext'))
 
 
@@ -30,20 +30,20 @@ class TracIniAdminPanel(Component):
         doc="""Defines the valid characters for a section name or option name in
         `trac.ini`. Must be a valid regular expression. You only need to change
         these if you have plugins that use some strange section or option names.
-        """, doc_domain="inieditorpanel")
+        """, doc_domain="iniadminpanel")
 
     valid_option_name_chars = Option('ini-editor',
         'valid-option-name-chars', '^[a-zA-Z0-9\\-_\\:.]+$',
         doc="""Defines the valid characters for a section name or option name in
         `trac.ini`. Must be a valid regular expression. You only need to change
         these if you have plugins that use some strange section or option names.
-        """, doc_domain="inieditorpanel")
+        """, doc_domain="iniadminpanel")
 
     security_manager = ExtensionOption('ini-editor', 'security-manager',
         IOptionSecurityManager, 'IniEditorEmptySecurityManager',
         doc="""Defines the security manager that specifies whether the user has
         access to certain options.
-        """, doc_domain="inieditorpanel")
+        """, doc_domain="iniadminpanel")
 
     # See "IniEditorBasicSecurityManager" for why we use a pipe char here.
     password_options = ListOption('ini-editor', 'password-options',
@@ -51,11 +51,11 @@ class TracIniAdminPanel(Component):
         represent passwords. Password input fields are used for these fields.
         Note the fields specified here are taken additionally to some predefined
         fields provided by the ini editor.
-        """, doc_domain="inieditorpanel")
+        """, doc_domain="iniadminpanel")
 
     ini_section = ConfigSection('ini-editor',
         """This section is used to handle configurations used by
-        TracIniAdminPanel plugin.""", doc_domain='inieditorpanel')
+        TracIniAdminPanel plugin.""", doc_domain='iniadminpanel')
 
     DEFAULT_PASSWORD_OPTIONS = {
         'notification|smtp_password': True
@@ -212,10 +212,10 @@ class TracIniAdminPanel(Component):
             if req.method == 'POST':
                 # Overwrite option values with POST values so that they don't get lost
                 for key, value in req.args.items():
-                    if not key.startswith('inieditor_value##'): # skip unrelated args
+                    if not key.startswith('iniadmin_value##'): # skip unrelated args
                         continue
 
-                    name = key[len('inieditor_value##'):].split('##')
+                    name = key[len('iniadmin_value##'):].split('##')
                     section_name = name[0].strip()
                     option_name = name[1].strip()
 
@@ -243,8 +243,8 @@ class TracIniAdminPanel(Component):
                 # Check which options use their default values
                 # NOTE: Must be done after assigning field value from the previous step
                 #   to ensure that the default value has been initialized.
-                if 'inieditor_default' in req.args:
-                    default_using_options = req.args.get('inieditor_default')
+                if 'iniadmin_default' in req.args:
+                    default_using_options = req.args.get('iniadmin_default')
                     if default_using_options is None or len(default_using_options) == 0:
                         # if no checkbox was selected make this explicitly a list (just for safety)
                         default_using_options = [ ]
@@ -277,17 +277,17 @@ class TracIniAdminPanel(Component):
                 #  return would always associated to the apply button.
                 #
                 submit_type = None
-                cur_focused_field = req.args.get('inieditor_cur_focused_field', '')
+                cur_focused_field = req.args.get('iniadmin_cur_focused_field', '')
                 if cur_focused_field.startswith('option-value-'):
                     submit_type = 'apply-' + cur_focused_field[len('option-value-'):]
                 elif cur_focused_field.startswith('new-options-'):
                     submit_type = 'addnewoptions-' + cur_focused_field[len('new-options-'):]
                 else:
                     for key in req.args:
-                        if not key.startswith('inieditor-submit-'):
+                        if not key.startswith('iniadmin-submit-'):
                             continue
 
-                        submit_type = key[len('inieditor-submit-'):]
+                        submit_type = key[len('iniadmin-submit-'):]
                         break
 
                 if submit_type.startswith('apply'): # apply changes
@@ -413,11 +413,12 @@ class TracIniAdminPanel(Component):
                              "count: %(opt)d"),
         })
 
-        add_stylesheet(req, 'inieditorpanel/main.css')
-        add_script(req, 'inieditorpanel/editor.js')
-        return 'admin_tracini.html', data
+        add_stylesheet(req, 'iniadminpanel/main.css')
+        add_script(req, 'iniadminpanel/editor.js')
+        # still Genshi, last argument must be none for Trac >= 1.4
+        return 'admin_tracini.html', data, None
 
-    'also change inieditorpanel/htdocs/editor.js when changing this'
+    'also change iniadminpanel/htdocs/editor.js when changing this'
     @staticmethod
     def _fixname(name):
         return re.sub('[:.]', '_', name);
@@ -426,7 +427,7 @@ class TracIniAdminPanel(Component):
         """ Returns the value for an unsaved option stored in the current session,
             if it exists. Values get removed here when they're saved/applied.
         """
-        name = 'inieditor|%s|%s' % (section_name, option_name)
+        name = 'iniadmin|%s|%s' % (section_name, option_name)
         if name in req.session:
             return True, req.session[name]
         else:
@@ -434,12 +435,12 @@ class TracIniAdminPanel(Component):
 
     def _set_session_value(self, req, section_name, option_name, option_value):
         """ Stores the value of an unsaved option in the current session. """
-        name = 'inieditor|%s|%s' % (section_name, option_name)
+        name = 'iniadmin|%s|%s' % (section_name, option_name)
         req.session[name] = option_value
 
     def _remove_session_value(self, req, section_name, option_name):
         """ Removes the value of an unsaved option from the current session. """
-        name = 'inieditor|%s|%s' % (section_name, option_name)
+        name = 'iniadmin|%s|%s' % (section_name, option_name)
         if name in req.session:
             del req.session[name]
 
@@ -448,7 +449,7 @@ class TracIniAdminPanel(Component):
             "Option.registry". Without storing it here, such options would be
             lost when using "req.redirect()".
         """
-        name = 'inieditor-custom|%s|%s' % (section_name, option_name)
+        name = 'iniadmin-custom|%s|%s' % (section_name, option_name)
         req.session[name] = True
 
     def _get_session_custom_options(self, req, filter_section_name = None):
@@ -458,7 +459,7 @@ class TracIniAdminPanel(Component):
         """
         sections = { }
         for item_name in req.session.keys():
-            if not item_name.startswith('inieditor-custom|'):
+            if not item_name.startswith('iniadmin-custom|'):
                 continue
 
             parts = item_name.split('|', 3)
@@ -479,7 +480,7 @@ class TracIniAdminPanel(Component):
         return sections
 
     def _remove_session_custom_option(self, req, section_name, option_name):
-        name = 'inieditor-custom|%s|%s' % (section_name, option_name)
+        name = 'iniadmin-custom|%s|%s' % (section_name, option_name)
         if name in req.session:
             del req.session[name]
 
@@ -683,4 +684,4 @@ class TracIniAdminPanel(Component):
             resources on the local file system.
         """
         from pkg_resources import resource_filename
-        return [('inieditorpanel', resource_filename(__name__, 'htdocs'))]
+        return [('iniadminpanel', resource_filename(__name__, 'htdocs'))]

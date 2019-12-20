@@ -15,8 +15,8 @@
 from setuptools import setup, find_packages
 
 NAME = 'TracIniAdminPanel'
-PACKAGE = 'inieditorpanel'
-VERSION = '1.0.2'
+PACKAGE = 'iniadminpanel'
+VERSION = '1.4.0'
 
 extra = {}
 try:

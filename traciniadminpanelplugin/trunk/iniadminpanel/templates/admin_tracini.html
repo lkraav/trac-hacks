@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:i18n="http://genshi.edgewall.org/i18n"
-      i18n:domain="inieditorpanel"
+      i18n:domain="iniadminpanel"
       xmlns:py="http://genshi.edgewall.org/">
   <xi:include href="admin.html" />
   <head>
@@ -55,7 +55,7 @@
       <table class="listing" id="ini_settings_list">
         <thead>
           <tr>
-            <th>Name<input type="hidden" name="inieditor_cur_focused_field" value=""/></th>
+            <th>Name<input type="hidden" name="iniadmin_cur_focused_field" value=""/></th>
             <th>Default</th>
             <th>Value</th>
           </tr>
@@ -71,7 +71,7 @@
                 <span class="section-name">[${section_name}]</span>
                 <span class="section-info">Options count: ${len(section)}</span>
                 <!--! Add dummy field so that empty section won't get lost. -->
-                <input type="hidden" name="inieditor_value##${_fix(section_name)}##dummy" value="dummy"/>
+                <input type="hidden" name="iniadmin_value##${_fix(section_name)}##dummy" value="dummy"/>
               </td>
             </tr>
             <tr class="collapsible-${_fix(section_name)} section-description" py:if="descriptions.get(section_name)">
@@ -89,7 +89,7 @@
                     <span class="nobr">${option_name}&nbsp;<span class="modification-indicator">(*)</span></span>
                   </td>
                   <td class="default">
-                    <input type="checkbox" name="inieditor_default" value="${section_name}##${option_name}" 
+                    <input type="checkbox" name="iniadmin_default" value="${section_name}##${option_name}" 
                            checked="${(option.value == option.default_value) or None}"
                            disabled="${option.access != 'modifiable' or None}"/>
                   </td>
@@ -97,17 +97,17 @@
                     <py:choose test="option.type">
                       <span py:when="'bool'">
                         <label>
-                          <input type="radio" name="inieditor_value##${section_name}##${option_name}" value="true" 
+                          <input type="radio" name="iniadmin_value##${section_name}##${option_name}" value="true" 
                                  checked="${option.value == 'true' or None}" disabled="${option.access != 'modifiable' or None}"/> 
                           true
                         </label>
                         <label>
-                          <input type="radio" name="inieditor_value##${section_name}##${option_name}" value="false" 
+                          <input type="radio" name="iniadmin_value##${section_name}##${option_name}" value="false" 
                                  checked="${option.value != 'true' or None}" disabled="${option.access != 'modifiable' or None}"/> 
                           false
                         </label>
                       </span>
-                      <select py:when="'choice'" name="inieditor_value##${section_name}##${option_name}">
+                      <select py:when="'choice'" name="iniadmin_value##${section_name}##${option_name}">
                         <py:choose test="option.access">
                           <py:for py:when="'modifiable'" each="choice in option.option_info.choices">
                             <option value="${choice}" selected="${(option.value == choice) or None}">${choice}</option>
@@ -116,9 +116,9 @@
                         </py:choose>
                       </select>
                       <!--! NOTE: The value for password fields is intentionally empty so that passwords can't be found in the HTML code. -->
-                      <input py:when="'password'" name="inieditor_value##${section_name}##${option_name}" type="password" value="" 
+                      <input py:when="'password'" name="iniadmin_value##${section_name}##${option_name}" type="password" value="" 
                              class="option-value-field" disabled="${option.access != 'modifiable' or None}"/>
-                      <input py:otherwise="" name="inieditor_value##${section_name}##${option_name}" value="${option.value}" 
+                      <input py:otherwise="" name="iniadmin_value##${section_name}##${option_name}" value="${option.value}" 
                              class="option-value-field" disabled="${option.access != 'modifiable' or None}"/>
                     </py:choose>
                   </td>
@@ -178,11 +178,11 @@
             </py:if>
             <tr class="collapsible-${_fix(section_name)}">
               <td colspan="3">
-                <input type="submit" name="inieditor-submit-apply-${section_name}" value="${_('Apply changes')}" title="Applies the changes from this section."/>
-                <input type="submit" name="inieditor-submit-discard-${section_name}" value="${_('Discard changes')}" title="Discards the changes from this section. Also removes custom options, if they still have their default value."/>
+                <input type="submit" name="iniadmin-submit-apply-${section_name}" value="${_('Apply changes')}" title="Applies the changes from this section."/>
+                <input type="submit" name="iniadmin-submit-discard-${section_name}" value="${_('Discard changes')}" title="Discards the changes from this section. Also removes custom options, if they still have their default value."/>
                 <span class="option-modify-section">
                   <input name="new-options-${section_name}" size="70" title="Options to be added to this section; comma-separated"/>
-                  <input type="submit" name="inieditor-submit-addnewoptions-${section_name}" value="${_('Add options')}" title="Adds the specified options to this section"/>
+                  <input type="submit" name="iniadmin-submit-addnewoptions-${section_name}" value="${_('Add options')}" title="Adds the specified options to this section"/>
                 </span>
               </td>
             </tr>
@@ -190,7 +190,7 @@
         </tbody>
       </table>
       <div class="buttons" py:if="len(sections) > 1">
-        <input type="submit" name="inieditor-submit-apply" value="${_('Apply changes')}" />
+        <input type="submit" name="iniadmin-submit-apply" value="${_('Apply changes')}" />
       </div>
     </form>
     </div>

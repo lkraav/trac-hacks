@@ -21,10 +21,10 @@ function get_option_input_field(field_name) {
     return input_fields;
   }
 
-  input_fields = settings_list.find('input[name=\'inieditor_value##' + field_name + '\']');
+  input_fields = settings_list.find('input[name=\'iniadmin_value##' + field_name + '\']');
   if (input_fields.length == 0) {
     // Not an input field but select field
-    input_fields = settings_list.find('select[name=\'inieditor_value##' + field_name + '\']');
+    input_fields = settings_list.find('select[name=\'iniadmin_value##' + field_name + '\']');
   }
 
   settings_input_fields[field_name] = input_fields;
@@ -66,7 +66,7 @@ function check_for_changes() {
 
 jQuery(function($){
   settings_list = $('#settings_table'); // global var
-  cur_focused_field = settings_list.find('input[name="inieditor_cur_focused_field"]');
+  cur_focused_field = settings_list.find('input[name="iniadmin_cur_focused_field"]');
 
   $.each(section_names, function(idx, name) {
     var info_elem = settings_list.find('td#section-title-' + name +
@@ -75,7 +75,7 @@ jQuery(function($){
       info_elem: info_elem});
   });
 
-  settings_list.find('input:checkbox[name=inieditor_default]').each(function() {
+  settings_list.find('input:checkbox[name=iniadmin_default]').each(function() {
     var field_name = $(this).val();
     var name_split  = field_name.split('##');
     var section_name = name_split[0].replace(/[:.]/g,'_');
