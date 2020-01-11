@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re
 from trac.core import *
 from trac.util import escape, Markup, reversed, sorted
@@ -7,8 +9,11 @@ from urlparse import urlparse
 from trac.wiki.formatter import format_to_oneliner
 from trac.mimeview import Context
 
+
 class KeywordReplace(Component):
-    """ Replce wiki keywords from a table in a Wiki page. (KeywordReplace by default).  """
+    """ Replce wiki keywords from a table in a Wiki page.
+    (KeywordReplace by default).
+    """
 
     implements(IWikiSyntaxProvider, IWikiChangeListener)
 
@@ -29,34 +34,35 @@ class KeywordReplace(Component):
         for line in page.text.splitlines():
             self.env.log.warning(line)
             line = line.rstrip()
-            
-            if line.startswith('||') and line.endswith('||') and line[3] != "'":               
+
+            if line.startswith('||') and line.endswith('||') and line[3] != "'":
                 try:
                     a, d = ([i.strip() for i in line.strip('||').split('||')] + ['', ''])[0:2]
                     assert self.valid_replace.match(a), "Invalid replaces %s" % a
-                    self.replace[a] = (escape(d))      
+                    self.replace[a] = (escape(d))
                 except Exception, d:
                     self.env.log.warning("Invalid replaces line: %s", line)
         keys = reversed(sorted(self.replace.keys(), key=lambda a: len(a)))
         self.compiled_replace = \
             r'''\b(?P<replaces>%s)\b''' % '|'.join(keys)
-        
+
         # XXX Very ugly, but only "reliable" way?
         from trac.wiki.parser import WikiParser
         WikiParser(self.env)._compiled_rules = None
 
     def _replaces_formatter(self, formatter, ns, match):
         replaces = match.group('replaces')
-        
+
         if replaces not in self.replace:
             return match.group(0)
         title = self.replace[replaces]
-        
+
         context = Context.from_request(formatter.req, formatter.resource)
-        
+
         return Markup('<span>%s</span>' % (format_to_oneliner(self.env,context,title)))
 
     # IWikiSyntaxProvider methods
+
     def get_wiki_syntax(self):
         if self.compiled_replace:
             yield (self.compiled_replace, self._replaces_formatter)
@@ -65,11 +71,12 @@ class KeywordReplace(Component):
         return []
 
     # IWikiChangeListener methods
+
     def wiki_page_added(self, page):
         if page.name == self.replace_page:
             self._update_replace()
 
-    def wiki_page_changed(self, page, version, t, comment, author, ipnr):
+    def wiki_page_changed(self, page, version, t, comment, author, ipnr=None):
         if page.name == self.replace_page:
             self._update_replace()
 
