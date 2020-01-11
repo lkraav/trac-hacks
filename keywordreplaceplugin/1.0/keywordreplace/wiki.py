@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import re
+from urlparse import urlparse
+
 from trac.core import *
-from trac.util import escape, Markup, reversed, sorted
+from trac.util import Markup, escape
+from trac.web.chrome import web_context
 from trac.wiki.api import IWikiChangeListener, IWikiSyntaxProvider
 from trac.wiki.model import WikiPage
-from urlparse import urlparse
 from trac.wiki.formatter import format_to_oneliner
-from trac.mimeview import Context
 
 
 class KeywordReplace(Component):
@@ -57,7 +58,7 @@ class KeywordReplace(Component):
             return match.group(0)
         title = self.replace[replaces]
 
-        context = Context.from_request(formatter.req, formatter.resource)
+        context = web_context(formatter.req, formatter.resource)
 
         return Markup('<span>%s</span>' % (format_to_oneliner(self.env,context,title)))
 
