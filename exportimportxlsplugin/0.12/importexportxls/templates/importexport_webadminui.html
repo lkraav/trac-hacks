@@ -42,10 +42,12 @@
                           <py:for each="fmt in formats">
                             <py:choose test="">
                               <py:when test="fieldsFormat[fd.name] == fmt">
-                                <option selected='selected' label="${fmt}" value="${fmt}" />
+                                <option selected='selected' value="${fmt}" 
+                                        py:content="fmt">
+                                </option>
                               </py:when>
                               <py:otherwise>
-                                <option label="${fmt}" value="${fmt}" />
+                                <option value="${fmt}" py:content="fmt"></option>
                               </py:otherwise>
                             </py:choose>
                           </py:for>
@@ -95,58 +97,58 @@
                     <tbody>
                         <td py:if="len(types)>0" style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
                             <select name="filter.type" multiple="multiple" size="5">
-                                <py:for each="type in types">
-                                    <option label="${type}" value="${type}" />
-                                </py:for>
+                                <option py:for="type in types"
+                                        value="${type}" py:content="type">
+                                </option>
                             </select>
                         </td>
                         <td py:if="len(versions)>0" style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
                             <select name="filter.version" multiple="multiple" size="5">
-                                <py:for each="version in versions">
-                                    <option label="${version}" value="${version}" />
-                                </py:for>
+                                <option py:for="version in versions"
+                                        value="${version}" py:content="version">
+                                </option>
                             </select>
                         </td>
                         <td py:if="len(milestones)>0" style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
                             <select name="filter.milestone" multiple="multiple" size="5">
-                                <py:for each="mtn in milestones">
-                                    <option label="${mtn}" value="${mtn}" />
-                                </py:for>
+                                <option py:for="m in milestones"
+                                        value="${m}" py:content="m">
+                                </option>
                             </select>
                         </td>
                         <td py:if="len(components)>0" style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
                             <select name="filter.component" multiple="multiple" size="5">
-                                <py:for each="comp in components">
-                                    <option label="${comp}" value="${comp}" />
-                                </py:for>
+                                <option py:for="component in components"
+                                        value="${component}" py:content="component">
+                                </option>
                             </select>
                         </td>
                         <td py:if="len(status)>0" style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
                             <select name="filter.status" multiple="multiple" size="5">
-                                <py:for each="stat in status">
-                                    <option label="${stat}" value="${stat}" />
-                                </py:for>
+                                <option py:for="stat in status"
+                                        value="${stat}" py:content="stat">
+                                </option>
                             </select>
                         </td>
                         <td py:if="len(priorities)>0" style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
                             <select name="filter.priority" multiple="multiple" size="5">
-                                <py:for each="prior in priorities">
-                                    <option label="${prior}" value="${prior}" />
-                                </py:for>
+                                <option py:for="prior in priorities"
+                                        value="${prior}" py:content="prior">
+                                </option>
                             </select>
                         </td>
                         <td py:if="len(severities)>0" style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
                             <select name="filter.severity" multiple="multiple" size="5">
-                                <py:for each="sever in severities">
-                                    <option label="${sever}" value="${sever}" />
-                                </py:for>
+                                <option py:for="sever in severities"
+                                        value="${sever}" py:content="sever">
+                                </option>
                             </select>
                         </td>
                         <td py:if="len(resolutions)>0" style="border:0px;">
                             <select name="filter.resolution" multiple="multiple" size="5">
-                                <py:for each="res in resolutions">
-                                    <option label="${res}" value="${res}" />
-                                </py:for>
+                                <option py:for="res in resolutions"
+                                        value="${res}" py:content="res">
+                                </option>
                             </select>
                         </td>
                     </tbody>
