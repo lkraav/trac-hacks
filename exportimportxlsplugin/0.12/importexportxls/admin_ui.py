@@ -46,6 +46,7 @@ from trac.ticket.api import TicketSystem
 from trac.ticket.query import Query
 from trac.ticket import model
 from trac.ticket.model import Ticket
+from trac.util.translation import _, N_, gettext
 from trac.web.chrome import Chrome, ITemplateProvider, add_script
 
 from importexportxls.formats import *
@@ -56,7 +57,7 @@ class ImportExportAdminPanel(Component):
     implements(ITemplateProvider, IPermissionRequestor, IAdminPanelProvider)
 
     _type = 'importexport'
-    _label = ('Import/Export XLS', 'Import/Export XLS')
+    _label = (N_('Import/Export XLS'), N_('Import/Export XLS'))
 
     def __init__(self):
         self.formats = {}
@@ -77,7 +78,8 @@ class ImportExportAdminPanel(Component):
 
     def get_admin_panels(self, req):
         if 'TICKET_ADMIN' in req.perm:
-            yield ('ticket', 'Ticket System', 'importexport', 'Import/Export XLS')
+            yield ('ticket', _('Ticket System'),
+                   self._type, gettext(self._label[1]))
 
     def render_admin_panel(self, req, cat, page, version):
         req.perm.require('TICKET_ADMIN')
