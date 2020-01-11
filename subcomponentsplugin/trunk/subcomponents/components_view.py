@@ -6,17 +6,17 @@ from trac.util.html import html
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_stylesheet
 from trac.perm import IPermissionRequestor
-from trac.web import IRequestHandler
+from trac.web.api import IRequestHandler
+from trac.web.chrome import web_context
 from trac.wiki import format_to_html
-from trac.mimeview.api import Context
 
 
 class ComponentsViewModule(Component):
     """Adds a separate end-user page that lists all components."""
-    
+
     implements(INavigationContributor, IPermissionRequestor,
                IRequestHandler, ITemplateProvider)
-    
+
     # IPermissionRequestor methods.
 
     def get_permission_actions(self):
@@ -31,12 +31,12 @@ class ComponentsViewModule(Component):
         if 'COMPONENT_VIEW' in req.perm:
             yield ('mainnav', 'components',
                    html.a('Components', href=req.href.components()))
-                
+
     # IRequestHandler methods
 
     def match_request(self, req):
         return req.path_info == '/components'
-        
+
     def process_request(self, req):
         req.perm.require('COMPONENT_VIEW')
 
@@ -46,9 +46,9 @@ class ComponentsViewModule(Component):
             component_names.append(component.name)
             active_tickets = 0
             active_tickets_wo_milestone = 0
-            
+
             for id_, milestone in self.env.db_query("""
-                    SELECT id, milestone FROM ticket 
+                    SELECT id, milestone FROM ticket
                     WHERE status <> 'closed' AND component=%s
                     """, (component.name,)):
                 active_tickets += 1
@@ -57,7 +57,7 @@ class ComponentsViewModule(Component):
 
             subname, sublevel = \
                 self.get_subcomponent_name(component.name, component_names)
-            description = format_to_html(self.env, Context.from_request(req),
+            description = format_to_html(self.env, web_context(req),
                                          component.description, True)
 
             subcomponents.append({
@@ -77,24 +77,24 @@ class ComponentsViewModule(Component):
         add_stylesheet(req, 'subcomponents/subcomponents.css')
 
         return 'components.html', data, None
-    
+
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
         return [('usermanual', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')] 
-    
+        return [resource_filename(__name__, 'templates')]
+
     def get_subcomponent_name(self, name, component_names):
         subname = name
         for component in component_names:
             if not name.startswith(component + '/'):
                 continue
-                
+
             sub = name[len(component):].lstrip('/')
             if len(sub) < len(subname):
                 subname = sub
-                
+
         sublevel = name[:-len(subname)].count('/')
         return subname, sublevel

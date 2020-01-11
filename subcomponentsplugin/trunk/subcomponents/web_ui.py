@@ -123,7 +123,7 @@ class SubComponentsModule(Component):
         return [('subcomponents', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
-        return ""
+        return []
 
     # ITemplateStreamFilter methods
 
@@ -146,6 +146,7 @@ class SubComponentsModule(Component):
         return stream
 
     # Other functions
+
     def _get_component_children(self, name):
         components = model.Component.select(self.env)
         result = []

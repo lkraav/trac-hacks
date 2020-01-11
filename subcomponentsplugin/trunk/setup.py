@@ -9,7 +9,7 @@ from setuptools import setup
 
 setup(
     name='TracSubcomponents',
-    version='1.3.1',
+    version='1.3.2',
     packages=['subcomponents'],
     package_data={'subcomponents': [
         'htdocs/*.js',
