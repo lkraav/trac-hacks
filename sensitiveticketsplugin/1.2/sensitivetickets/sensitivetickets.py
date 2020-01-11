@@ -14,13 +14,12 @@
 from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.env import IEnvironmentSetupParticipant
-from trac.notification import NotifyEmail
 from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.resource import ResourceNotFound
 from trac.ticket.api import ITicketManipulator
 from trac.ticket.model import Ticket
 from trac.timeline.api import ITimelineEventProvider
-from trac.util import as_bool, as_int
+from trac.util import as_bool, as_int, to_list
 from trac.util.datefmt import from_utimestamp, to_utimestamp
 
 
@@ -228,4 +227,4 @@ class SensitiveTicketsPolicy(Component):
         return (self.allow_owner and ticket['owner'] == username) or \
                (self.allow_reporter and ticket['reporter'] == username) or \
                (self.allow_cc and
-                (username in NotifyEmail.addrsep_re.split(ticket['cc'])))
+                username in to_list(ticket['cc'], r'[;,\s]+'))
