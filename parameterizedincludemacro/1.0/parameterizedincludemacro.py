@@ -35,18 +35,19 @@
 import itertools
 import re
 
-import trac.mimeview.api
-import trac.wiki.formatter
-import trac.wiki.macros
-import trac.wiki.model
+from trac.wiki.formatter import system_message
+from trac.wiki.macros import WikiMacroBase
+from trac.wiki.model import WikiPage
+from trac.mimeview.api import Mimeview
+from trac.web.chrome import web_context
 
 author = "Christopher Head"
-version = "1.1 ($Rev$)"
+version = "1.2 ($Rev$)"
 license = "BSD"
 url = "https://trac-hacks.org/wiki/ParameterizedIncludeMacro"
 
 
-class ParameterizedIncludeMacro(trac.wiki.macros.WikiMacroBase):
+class ParameterizedIncludeMacro(WikiMacroBase):
     """
     Includes one wiki page in another, with parameter substitution.
 
@@ -62,15 +63,16 @@ class ParameterizedIncludeMacro(trac.wiki.macros.WikiMacroBase):
     def expand_macro(self, formatter, name, content):
         args = (x.strip() for x in ParameterizedIncludeMacro._split_args(content))
         page_name = next(args)
-        page = trac.wiki.model.WikiPage(self.env, page_name, None)
+        page = WikiPage(self.env, page_name, None)
         if "WIKI_VIEW" not in formatter.perm(page.resource):
             return ""
         if not page.exists:
-            return trac.wiki.formatter.system_message("Wiki page \"%s\" does not exist" % page_name)
+            return system_message("Wiki page \"%s\" does not exist" % page_name)
         text = page.text
         for arg_value, arg_index in zip(args, itertools.count(1)):
             text = text.replace("{{%d}}" % arg_index, arg_value)
-        return trac.mimeview.api.Mimeview(self.env).render(trac.mimeview.api.Context.from_request(formatter.req, "wiki", page_name), "text/x-trac-wiki", text)
+        context = web_context(formatter.req, 'wiki', page_name)
+        return Mimeview(self.env).render(context, "text/x-trac-wiki", text)
 
     _unescape_re = re.compile(R"\\(.)")
 
