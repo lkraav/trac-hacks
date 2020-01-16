@@ -75,8 +75,8 @@ class DefaultCCAdmin(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        if 'TICKET_ADMIN' in req.perm and req.method == 'POST' \
-                and req.path_info.startswith('/admin/ticket/components'):
+        if req.path_info.startswith('/admin/ticket/components') and \
+                'TICKET_ADMIN' in req.perm and req.method == 'POST':
             if req.args.get('save') and req.args.get('name'):
                 old_name = req.args.get('path_info')
                 new_name = req.args.get('name')
