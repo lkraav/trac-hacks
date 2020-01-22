@@ -93,7 +93,10 @@ class AnnouncerPreferences(AnnouncerTemplateProvider):
             req.redirect(req.href.prefs('announcer'))
 
         add_stylesheet(req, 'announcer/css/announcer_prefs.css')
-        return 'prefs_announcer.html', {"boxes": streams}, None
+        if hasattr(chrome, 'jenv'):
+            return 'prefs_announcer.html', {"boxes": streams}, None
+        else:
+            return 'prefs_announcer.html', {"boxes": streams}
 
 
 class SubscriptionManagementPanel(AnnouncerTemplateProvider):
@@ -182,7 +185,10 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
                 })
 
         add_stylesheet(req, 'announcer/css/announcer_prefs.css')
-        return 'prefs_announcer_manage_subscriptions.html', dict(data=data), None
+        if hasattr(Chrome(self.env), 'jenv'):
+            return 'prefs_announcer_manage_subscriptions.html', dict(data=data), None
+        else:
+            return 'prefs_announcer_manage_subscriptions.html', dict(data=data
 
     # ITemplateStreamFilter method
 
