@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+
 import datetime
 import math
-
+from functools import reduce
 
 from trac.core import *
 from trac.util.datefmt import parse_date, utc
@@ -47,7 +49,7 @@ class WeekPlanMacro(WikiMacroBase):
             raise TracError('Missing plan id')
 
         colors = kw.get('color', '#38A|#4B6|#DA8|#9CD|#CAD|#CC7').split('|')
-        colors = dict(zip(plan_ids, colors*((len(plan_ids)-1)/len(colors)+1)))
+        colors = dict(zip(plan_ids, colors*((len(plan_ids)-1)//len(colors)+1)))
 
         labels = [label for label in kw.get('label', '').split('|') if label]
         labels = dict(zip(plan_ids, labels + plan_ids[len(labels):]))
