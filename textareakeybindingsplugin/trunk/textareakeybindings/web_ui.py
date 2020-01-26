@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import pkg_resources
+import re
+try:
+    from StringIO import StringIO # Python 2
+except ImportError:
+    from io import StringIO # Python 3
 
 from trac.core import *
 from trac.web import IRequestFilter
