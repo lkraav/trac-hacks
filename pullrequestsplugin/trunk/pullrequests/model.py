@@ -90,7 +90,7 @@ class PullRequest(object):
         with env.db_query as db:
             conditions = []
             args = []
-            for name, value in sorted(kwargs.iteritems()):
+            for name, value in sorted(kwargs.items()):
                 if value:
                     op = '='
                     if value.startswith('!'):
