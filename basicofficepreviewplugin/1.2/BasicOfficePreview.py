@@ -1,5 +1,6 @@
 import io
 import re
+import sys
 from xml.etree.cElementTree import XML
 import zipfile
 
@@ -164,9 +165,12 @@ class BasicOfficePreviewRenderer(Component):
             if state.get('i', '0') != '0':
                 text = tag.i(text)
             return tag.span(text)
+        source = content.read()
+        if sys.version_info[0] > 2 and isinstance(source, bytes):
+            source = source.decode()
         return tag.div(class_='basic-office-rtf trac-content')([
             tag.p([render_span(state, text) for state, text in paragraph])
-            for paragraph in parse_rtf(content.read())])
+            for paragraph in parse_rtf(source)])
 
     def _zip(self, content):
         return zipfile.ZipFile(io.BytesIO(content.read()))
