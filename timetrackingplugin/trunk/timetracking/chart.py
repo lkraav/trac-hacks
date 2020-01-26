@@ -2,11 +2,10 @@
 
 from datetime import datetime
 
-from genshi.builder import tag
-
 from trac.admin import *
 from trac.core import *
 from trac.util.datefmt import parse_date, utc, format_date
+from trac.util.html import tag
 from trac.web.chrome import Chrome, add_script, add_script_data
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
