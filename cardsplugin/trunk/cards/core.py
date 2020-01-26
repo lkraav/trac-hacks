@@ -4,7 +4,10 @@ import datetime
 from json.encoder import JSONEncoder
 import pkg_resources
 import re
-from StringIO import StringIO
+try:
+    from StringIO import StringIO # Python 2
+except ImportError:
+    from io import StringIO # Python 3
 
 from trac import __version__
 from trac.db.api import DatabaseManager
