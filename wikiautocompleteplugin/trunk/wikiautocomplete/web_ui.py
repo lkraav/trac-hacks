@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import with_statement
+from __future__ import with_statement, division
 
 import pkg_resources
 import re
+import sys
 
 from trac.core import Component, TracError, implements
 from trac.attachment import Attachment
@@ -30,7 +31,10 @@ except ImportError:
         json = None
 if json:
     def to_json(data):
-        return json.dumps(data)
+        text = json.dumps(data)
+        if sys.version_info[0] > 2 and not isinstance(text, bytes):
+            text = text.encode('utf-8')
+        return text
 else:
     def to_json(data):
         from trac.util.presentation import to_json
@@ -204,7 +208,7 @@ class WikiAutoCompleteModule(Component):
         links = {}
         links.update((name, (2, name, url, title))
                      for name, url, title
-                     in InterWikiMap(self.env).interwiki_map.itervalues())
+                     in InterWikiMap(self.env).interwiki_map.values())
         links.update((name, (1, name, url, title))
                      for name, url, title in self._get_intertracs())
         links.update((name, (0, name, None, None))
@@ -212,13 +216,13 @@ class WikiAutoCompleteModule(Component):
                      for name, resolver in provider.get_link_resolvers())
         return [{'value': name, 'title': title if name != title else url}
                 for order, name, url, title
-                in sorted(links.itervalues(),
+                in sorted(links.values(),
                           key=lambda item: (item[0], item[1]))]
 
     def _suggest_ticket(self, req, term):
         args = self._get_num_ranges(term, Ticket.id_is_valid)
         if args:
-            expr = ' OR '.join(['id>=%s AND id<%s'] * (len(args) / 2))
+            expr = ' OR '.join(['id>=%s AND id<%s'] * (len(args) // 2))
             rows = self.env.db_query("""
                 SELECT id, summary FROM ticket
                 WHERE %(expr)s
@@ -278,7 +282,7 @@ class WikiAutoCompleteModule(Component):
         resource = Resource(req.args.get('realm'), req.args.get('id'))
         context = web_context(req, resource)
         completions = []
-        for name, descr in self._get_macros().iteritems():
+        for name, descr in self._get_macros().items():
             details_html = self._format_to_html(context, descr)
             title_html = self._format_to_oneliner(context, descr, shorten=True)
             completions.append({'value': name,
@@ -291,13 +295,13 @@ class WikiAutoCompleteModule(Component):
         context = web_context(req, resource)
         macros = self._get_macros()
         mimetypes = set()
-        for name, mimetype in Mimeview(self.env).mime_map.iteritems():
+        for name, mimetype in Mimeview(self.env).mime_map.items():
             if name not in macros:
                 mimetypes.add(name)
             mimetypes.add(mimetype)
 
         completions = []
-        for name, descr in macros.iteritems():
+        for name, descr in macros.items():
             details_html = self._format_to_html(context, descr)
             title_html = self._format_to_oneliner(context, descr, shorten=True)
             completions.append({'value': name,
@@ -414,7 +418,7 @@ class WikiAutoCompleteModule(Component):
 
     def _get_macros(self):
         macros = {}
-        for name, descr in self._known_macros.iteritems():
+        for name, descr in self._known_macros.items():
             if isinstance(descr, (tuple, list)):
                 descr = dgettext(descr[0], to_unicode(descr[1]))
             macros[name] = descr
