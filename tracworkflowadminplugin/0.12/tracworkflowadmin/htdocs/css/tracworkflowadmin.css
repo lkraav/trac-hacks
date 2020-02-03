@@ -24,7 +24,7 @@
  font-family: inherit;
  font-size: 100%;
  width: 100%;
- padding: 0.2em 0;
+ padding: 0.2em 4px;
  border: 0;
  margin: 0;
  box-sizing: border-box;
@@ -46,7 +46,7 @@
 #elements .editable input,
 #elements .editable a,
 #elements .editable select { display: none }
-#elements .editable span { padding: 0 4px 0 4px }
+#elements .editable span { padding: 0 4px }
 #elements th {
  border-style: solid;
  border-width: 1px;
