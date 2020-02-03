@@ -46,10 +46,7 @@
 #elements .editable input,
 #elements .editable a,
 #elements .editable select { display: none }
-#elements .editable span {
- padding: 0 4px 0 4px;
- text-decoration: underline;
-}
+#elements .editable span { padding: 0 4px 0 4px }
 #elements th {
  border-style: solid;
  border-width: 1px;
