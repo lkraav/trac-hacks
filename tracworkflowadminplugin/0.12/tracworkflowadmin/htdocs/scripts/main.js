@@ -525,7 +525,6 @@ jQuery(document).ready(function($) {
         width: 400,
         modal: true,
         disabled: true,
-        title: _("Add new action; Enter new action that consists of alphabet or digits."),
         buttons: {
             'Ok': function() {
                 $('#new-action-input-dialog').dialog('close');
@@ -674,7 +673,6 @@ jQuery(document).ready(function($) {
         width: 400,
         modal: true,
         disabled: true,
-        title: _("Add new status; Enter new status name that consists of alphabet or digits."),
         buttons: {
             'Ok': function() {
                 $('#new-status-input-dialog').dialog('close');
