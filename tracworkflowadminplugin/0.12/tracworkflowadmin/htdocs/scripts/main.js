@@ -524,7 +524,6 @@ jQuery(document).ready(function($) {
         autoOpen: false,
         width: 400,
         modal: true,
-        disabled: true,
         buttons: {
             'Ok': function() {
                 $('#new-action-input-dialog').dialog('close');
@@ -672,7 +671,6 @@ jQuery(document).ready(function($) {
         autoOpen: false,
         width: 400,
         modal: true,
-        disabled: true,
         buttons: {
             'Ok': function() {
                 $('#new-status-input-dialog').dialog('close');
