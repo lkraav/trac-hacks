@@ -209,8 +209,16 @@
         <textarea name="params" rows="4" cols="4"></textarea>
       </p>
     </form>
-    <div id="new-action-input-dialog" class="dialog"><input /></div>
-    <div id="new-status-input-dialog" class="dialog"><input /></div>
+    <div id="new-action-input-dialog" class="dialog"
+         title="${dgettext('tracworkflowadmin', 'Add new action')}">
+      <p>${dgettext('tracworkflowadmin', 'Enter new action that consists of alphabet or digits.')}</p>
+      <input class="trac-fullwidth" />
+    </div>
+    <div id="new-status-input-dialog" class="dialog"
+         title="${dgettext('tracworkflowadmin', 'Add new status')}">
+      <p>${dgettext('tracworkflowadmin', 'Enter new status name that consists of alphabet or digits.')}</p>
+      <input class="trac-fullwidth" />
+    </div>
     # endblock adminpanel
   </body>
 </html>
