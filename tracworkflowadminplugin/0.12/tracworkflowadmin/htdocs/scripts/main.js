@@ -519,47 +519,47 @@ jQuery(document).ready(function($) {
     });
 
     // 行の追加
-    $('#new-action-input-dialog').dialog({
-        bgiframe: true,
-        autoOpen: false,
-        width: 400,
-        modal: true,
-        buttons: {
-            'Ok': function() {
-                $('#new-action-input-dialog').dialog('close');
-                var actionName = $('#new-action-input-dialog input').val();
-                if (!actionName) return false;
-                var newLine = $('#elements tfoot tr:first').clone(true);
-                $('.col-action span', newLine).text(actionName);
-                $('.col-action input', newLine).val(actionName);
-                $('.col-next-status select', newLine).html('<option>*</option>');
-                var numStatus = $('#status-editor-1 th').length;
-                for (var i = 0; i < numStatus; i++) {
-                    if (i) {
-                        statusCol = $('.col-before-status', $('#elements tfoot tr:first')).clone(true);
-                        newLine.append(statusCol);
-                    }
-                    var statusName = $('span', $('#status-editor-1 th')[i]).text();
-                    $('.col-next-status select', newLine).append($('<option>').text(statusName));
-                }
-                setupLine(newLine);
-                $('#elements tbody').append(newLine);
-                closeUi();
-                $('#elements tbody tr').removeClass('current-line');
-                $('#elements tbody tr:last').addClass('current-line');
-                $('#elements tbody tr:last td.col-line-select').click(function() {
-                     selectCurrentLine(this);
-                     closeUi();
-                     return false;
-                });
-                updateChart();
-                return false;
-            },
-            'Cancel': function() {
-                $('#new-action-input-dialog').dialog('close');
-                return false;
+    var newActionDialog = $('#new-action-input-dialog');
+    var newActionDialogInput = newActionDialog.find('input');
+    var newActionDialogOk = function() {
+        newActionDialog.dialog('close');
+        var actionName = newActionDialogInput.val();
+        if (!actionName)
+            return false;
+        var newLine = $('#elements tfoot tr:first').clone(true);
+        $('.col-action span', newLine).text(actionName);
+        $('.col-action input', newLine).val(actionName);
+        $('.col-next-status select', newLine).html('<option>*</option>');
+        var numStatus = $('#status-editor-1 th').length;
+        for (var i = 0; i < numStatus; i++) {
+            if (i) {
+                statusCol = $('.col-before-status', $('#elements tfoot tr:first')).clone(true);
+                newLine.append(statusCol);
             }
+            var statusName = $('span', $('#status-editor-1 th')[i]).text();
+            $('.col-next-status select', newLine).append($('<option>').text(statusName));
         }
+        setupLine(newLine);
+        $('#elements tbody').append(newLine);
+        closeUi();
+        $('#elements tbody tr').removeClass('current-line');
+        $('#elements tbody tr:last').addClass('current-line');
+        $('#elements tbody tr:last td.col-line-select').click(function() {
+            selectCurrentLine(this);
+            closeUi();
+            return false;
+        });
+        updateChart();
+        return false;
+    };
+    var newActionDialogCancel = function() {
+        newActionDialog.dialog('close');
+        return false;
+    };
+    newActionDialog.dialog({
+        bgiframe: true, autoOpen: false, width: 400, modal: true,
+        buttons: [{text: 'Ok', click: newActionDialogOk},
+                  {text: 'Cancel', click: newActionDialogCancel}]
     });
 
     $('#add-action').click(function() {
@@ -577,12 +577,12 @@ jQuery(document).ready(function($) {
             });
             if (ok) break;
         }
-        $('#new-action-input-dialog input').val(actionName);
-        $('#new-action-input-dialog').dialog('open');
+        newActionDialogInput.val(actionName);
+        newActionDialog.dialog('open');
         return false;
     });
 
-    $('#new-action-input-dialog input').focus(function() {
+    newActionDialogInput.focus(function() {
         this.select();
     });
 
@@ -666,43 +666,44 @@ jQuery(document).ready(function($) {
     });
 
     // ステータスの追加
-    $('#new-status-input-dialog').dialog({
-        bgiframe: true,
-        autoOpen: false,
-        width: 400,
-        modal: true,
-        buttons: {
-            'Ok': function() {
-                $('#new-status-input-dialog').dialog('close');
-                var colspan = $('#status-header-bar').attr('colspan');
-                colspan = parseInt(colspan || '1', 10);
-                var statusName = $('#new-status-input-dialog input').val();
-                if (!statusName) return false;
-                $('#status-header-bar').attr('colspan', colspan + 1);
-                var el = $($('#status-editor-1 th')[0]).clone(true);
-                $('input', el).val(statusName);
-                $('span:first', el).text(statusName);
-                $('#status-editor-1').append(el);
-                el = $($('#status-editor-2 th')[0]).clone(true);
-                $('#status-editor-2').append(el);
-                $('#elements tbody tr').each(function() {
-                    var el = $($('.col-before-status', this)[0]).clone(true);
-                    el.addClass('status-checked');
-                    $(this).append(el);
-                    restoreDropDown($('.col-next-status', this), false, false);
-                    var opt = $('<option>');
-                    opt.text(statusName);
-                    $('.col-next-status select', this).append(opt);
-                    setupNextStatus(this);
-                });
-                closeUi();
-                updateChart();
-                return false;
-            },
-            'Cancel': function() {
-                $('#new-status-input-dialog').dialog('close');
-            }
-        }
+    var newStatusDialog = $('#new-status-input-dialog');
+    var newStatusDialogInput = newStatusDialog.find('input');
+    var newStatusDialogOk = function() {
+        newStatusDialog.dialog('close');
+        var colspan = $('#status-header-bar').attr('colspan');
+        colspan = parseInt(colspan || '1', 10);
+        var statusName = newStatusDialogInput.val();
+        if (!statusName)
+            return false;
+        $('#status-header-bar').attr('colspan', colspan + 1);
+        var el = $($('#status-editor-1 th')[0]).clone(true);
+        $('input', el).val(statusName);
+        $('span:first', el).text(statusName);
+        $('#status-editor-1').append(el);
+        el = $($('#status-editor-2 th')[0]).clone(true);
+        $('#status-editor-2').append(el);
+        $('#elements tbody tr').each(function() {
+            var el = $($('.col-before-status', this)[0]).clone(true);
+            el.addClass('status-checked');
+            $(this).append(el);
+            restoreDropDown($('.col-next-status', this), false, false);
+            var opt = $('<option>');
+            opt.text(statusName);
+            $('.col-next-status select', this).append(opt);
+            setupNextStatus(this);
+        });
+        closeUi();
+        updateChart();
+        return false;
+    };
+    var newStatusDialogCancel = function() {
+        newStatusDialog.dialog('close');
+        return false;
+    };
+    newStatusDialog.dialog({
+        bgiframe: true, autoOpen: false, width: 400, modal: true,
+        buttons: [{text: 'Ok', click: newStatusDialogOk},
+                  {text: 'Cancel', click: newStatusDialogCancel}]
     });
 
     $('#elements #add-status').click(function() {
@@ -725,12 +726,12 @@ jQuery(document).ready(function($) {
             });
             if (ok) break;
         }
-        $('#new-status-input-dialog input').val(statusName);
-        $('#new-status-input-dialog').dialog('open');
+        newStatusDialogInput.val(statusName);
+        newStatusDialog.dialog('open');
         return false;
     });
 
-    $('#new-status-input-dialog input').focus(function() {
+    newStatusDialogInput.focus(function() {
         this.select();
     });
 
