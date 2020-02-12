@@ -135,10 +135,10 @@ The Macro accepts arguments as well:
  * '''label_outdated'''   label to display when using the showoutdated option
  
 Use wikitr:[basetext:] in links to reference the translated form of a page when it exists, the original otherwise. In case the optional part **basetext**: is used this text
-is used to indicate links to the base language (see above for format). When using these links translators do not need to update links when they step by step add translated pages.
-Using this macro on the base langue pages does no harm, but may help in translation when doing copy and paste.
+is used to indicate links to the base language (see above for format, an empty base language text, i.e. two colons, leads to unchanged text). When using these links translators do not need
+to update links when they step by step add translated pages. Using this macro on the base langue pages does no harm, but may help in translation when doing copy and paste.
 
-Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr::{t} ({n}):Link|Label]]}}}, {{{[[wikitr::Link|Label]]}}}, {{{[wikitr:Link]}}}, {{{[wikitr:Link Label]}}} and so on (see TracLinks).
+Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr:{t} ({n}):Link|Label]]}}}, {{{[[wikitr::Link|Label]]}}}, {{{[wikitr:Link]}}}, {{{[wikitr:Link Label]}}} and so on (see TracLinks).
 """
 
     # Language forms:
