@@ -57,6 +57,8 @@ class TranslatedPagesMacro(Component):
             r = re.compile("^(.*):(.*)$").search(name)
         if r != None:
           origcode = r.group(1)
+          if origcode == "":
+            origcode = "{t}"
           name = r.group(2)
 
         name,query,fragment = split_url_into_path_query_fragment(name)
