@@ -188,7 +188,7 @@ class SubscriptionManagementPanel(AnnouncerTemplateProvider):
         if hasattr(Chrome(self.env), 'jenv'):
             return 'prefs_announcer_manage_subscriptions.html', dict(data=data), None
         else:
-            return 'prefs_announcer_manage_subscriptions.html', dict(data=data
+            return 'prefs_announcer_manage_subscriptions.html', dict(data=data)
 
     # ITemplateStreamFilter method
 
