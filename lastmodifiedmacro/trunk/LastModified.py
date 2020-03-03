@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2006-2008 Steven N. Severinghaus <sns@severinghaus.org> 
+# Copyright (C) 2006-2008 Steven N. Severinghaus <sns@severinghaus.org>
 # Copyright (C) 2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
+
+import pkg_resources
 
 from trac.core import TracError
 from trac.resource import get_resource_name
@@ -23,17 +25,30 @@ author_email = "sns@severinghaus.org"
 maintainer = "Ryan J Ollos"
 maintainer_email = "ryan.j.ollos@gmail.com"
 
+pkg_resources.require('Trac >= 1.0')
+
+
 class LastModifiedMacro(WikiMacroBase):
     """Displays the last modified date a wiki page.
-    
+
     If no arguments are provided, the last modified date of the page
-    containing the macro is displayed. A wiki page name can be specified
-    as the first argument. An optional argument, delta, can be given to
-    show the time elapsed since the last modification.
+    containing the macro is displayed. All arguments are optional.
+
+    * A wiki page name can be specified as the first argument.
+    * Keyword argument, `delta`, shows the time elapsed since the
+      last modification.
+    * Keyword argument, `format`, sets the display format of the last
+      modified date (conversion specifications from `strftime` are
+      accepted). The default is the predefined timestamp representation
+      according to the current locale.
 
     Examples:
-     * `[[LastModified(WikiMacros)]]` produces: [[LastModified(WikiMacros)]]
-     * `[[LastModified(WikiMacros,delta)]]` produces: [[LastModified(WikiMacros,delta)]]
+     * `[[LastModified(WikiMacros)]]` produces:
+       [[LastModified(WikiMacros)]]
+     * `[[LastModified(WikiMacros,delta)]]` produces:
+       [[LastModified(WikiMacros,delta)]]
+     * `[[LastModified(WikiMacros,format=%F)]]` produces:
+       [[LastModified(WikiMacros,format=%F)]]
     """
 
     def expand_macro(self, formatter, name, content):
@@ -41,6 +56,7 @@ class LastModifiedMacro(WikiMacroBase):
         args, kwargs = parse_args(content)
 
         mode = 'normal'
+        date_format = '%c' if 'format' not in kwargs else kwargs['format']
         if not args:
             page_name = get_resource_name(self.env, formatter.resource)
         elif len(args) == 1:
@@ -55,25 +71,13 @@ class LastModifiedMacro(WikiMacroBase):
         else:
             raise TracError(_("Invalid number of arguments."))
 
-        db = self.env.get_db_cnx()
-        cursor = db.cursor()
-        cursor.execute("SELECT author, time FROM wiki WHERE name = '%s' "
-                       "ORDER BY version DESC LIMIT 1" % page_name)
-        row = cursor.fetchone()
-        if not row:
-            raise TracError('Wiki page "%s" not found.' % page_name)
-
-        username = row[0]
-        time_int = row[1]
-        
-        # see if there's a fullname associated with username
-        cursor.execute("SELECT value FROM session_attribute "
-                       "WHERE sid = '%s' AND name = 'name'" % username)
-        row = cursor.fetchone()
-        if not row:
-            author = username
+        for time_int, in self.env.db_query("""
+                SELECT time FROM wiki WHERE name=%s
+                ORDER BY version DESC LIMIT 1
+                """, (page_name,)):
+            break
         else:
-            author = row[0]
+            raise TracError('Wiki page "%s" not found.' % page_name)
 
         if mode == 'delta':
             last_mod = to_datetime(time_int)
@@ -107,7 +111,6 @@ class LastModifiedMacro(WikiMacroBase):
             text = "" + repr(count) + " " + unit
             if (count != 1 and count != -1): text += "s"
         else:
-            text = format_datetime(time_int, '%c')
+            text = format_datetime(time_int, date_format)
 
         return Markup(text)
-
