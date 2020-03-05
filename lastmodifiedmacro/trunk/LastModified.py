@@ -10,6 +10,7 @@
 
 import pkg_resources
 
+from trac.config import Option
 from trac.core import TracError
 from trac.resource import get_resource_name
 from trac.util.datefmt import format_datetime, to_datetime
@@ -39,8 +40,16 @@ class LastModifiedMacro(WikiMacroBase):
       last modification.
     * Keyword argument, `format`, sets the display format of the last
       modified date (conversion specifications from `strftime` are
-      accepted). The default is the predefined timestamp representation
-      according to the current locale.
+      accepted).
+
+    A project-wide default date format can be set in `trac.ini`:
+    {{{#!ini
+    [lastmodified]
+    date_format = %F
+    }}}
+    If `date_format` is not defined, the default is `%c`, i.e.
+    the predefined timestamp representation according to the current
+    locale.
 
     Examples:
      * `[[LastModified(WikiMacros)]]` produces:
@@ -51,12 +60,17 @@ class LastModifiedMacro(WikiMacroBase):
        [[LastModified(WikiMacros,format=%F)]]
     """
 
+    default_date_format = \
+        Option('lastmodified', 'date_format', '%c', "Default date/time format")
+
     def expand_macro(self, formatter, name, content):
 
         args, kwargs = parse_args(content)
 
         mode = 'normal'
-        date_format = '%c' if 'format' not in kwargs else kwargs['format']
+        date_format = self.default_date_format \
+                      if 'format' not in kwargs \
+                      else kwargs['format']
         if not args:
             page_name = get_resource_name(self.env, formatter.resource)
         elif len(args) == 1:
