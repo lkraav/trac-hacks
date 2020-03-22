@@ -1,9 +1,12 @@
-from trac.core import *
-from trac.wiki.macros import WikiMacroBase
-from trac.mimeview.api import IHTMLPreviewAnnotator, Mimeview
-from trac.wiki.api import parse_args
 from genshi.builder import tag
 from genshi.filters import Transformer
+from genshi.input import XML
+
+from trac.core import *
+from trac.wiki.macros import WikiMacroBase
+from trac.mimeview.api import Mimeview
+from trac.wiki.api import parse_args
+from trac.versioncontrol.api import RepositoryManager
 
 try:
     from trac.versioncontrol.api import IRepositoryProvider
@@ -97,9 +100,10 @@ class IncludeSourceMacro(WikiMacroBase):
 
         orig_file_name = file_name = largs[0]
 
+        rm = RepositoryManager(self.env)
         global multirepos
         if not multirepos:
-            repos = self.env.get_repository(formatter.req.authname)
+            repos = rm(formatter.req.authname)
         else:
             if (orig_file_name[0] == '/'): orig_file_name = orig_file_name[1:]
             splitpath = file_name.split('/')
@@ -107,15 +111,14 @@ class IncludeSourceMacro(WikiMacroBase):
                 reponame = splitpath[1]
             else:
                 reponame = splitpath[0]
-            repos = self.env.get_repository(reponame)
+            repos = rm.get_repository(reponame)
             if (repos):
                 l = len(reponame)
                 if (file_name[0] == '/'):
                     file_name = file_name[1:]
                 file_name = file_name[l:]
             else:
-                repos = self.env.get_repository()
-
+                repos = rm.get_repository('')
         rev = kwargs.get('rev', None)
 
         if kwargs.has_key('header'):
@@ -167,21 +170,20 @@ class IncludeSourceMacro(WikiMacroBase):
 
                 # ensure accurate start number after this gets stripped
                 context.startline = start - len(render_prepend)
+        else:
+            start = 1
 
         mimetype = kwargs.get('mimetype', None)
         url = None  # render method doesn't seem to use this
 
         mv = Mimeview(self.env)
-        annotations = line_numbers and ['givenlineno'] or None
+        annotations = line_numbers and ['lineno'] or None
 
+        formatter.context.set_hints(lineno=start)
         src = mv.render(formatter.context, mimetype, src, file_name, url, annotations)
 
         if line_numbers:
-            # handle the case where only one line of code was included
-            # and we get back an XHTML string
-            if not hasattr(src, 'generate'):
-                from genshi.input import XML
-                src = XML(src)
+            src = XML(src)
 
             # the _render_source method will always set the CSS class
             # of the annotator to it's name; there isn't an easy way
@@ -195,9 +197,10 @@ class IncludeSourceMacro(WikiMacroBase):
             xpath3 = 'thead/tr/th[2]/text()'
 
             # TODO - does genshi require a QName here? Seems to work w/o it
-            src = src.generate() | Transformer(xpath1).attr('class', 'lineno') \
-                                 | Transformer(xpath2).attr('class', header_class) \
-                                 | Transformer(xpath3).replace(header)
+            src = src | Transformer(xpath1).attr('class', 'lineno') \
+                      | Transformer(xpath2).attr('class', header_class) \
+                      | Transformer(xpath3).replace(header)
+            return src
 
             if render_prepend:
                 # TODO - is there a better of stripping lines here?
@@ -237,31 +240,3 @@ class IncludeSourceMacro(WikiMacroBase):
             start += 1
 
         return '\n'.join(src), start, end
-
-class GivenLineNumberAnnotator(Component):
-    """Text annotator that adds a column with given line numbers."""
-    implements(IHTMLPreviewAnnotator)
-
-    # ITextAnnotator methods
-
-    def get_annotation_type(self):
-        return 'givenlineno', 'Line', 'Line numbers'
-
-    def get_annotation_data(self, context):
-        return None
-
-    def annotate_row(self, context, row, lineno, line, data):
-        file_name = context.file_name
-        if file_name[0] == '/':
-            file_name = file_name[1:]
-
-        rev = make_rev_str(context.rev)
-
-        lineno = context.startline + lineno - 1
-
-        row.append(tag.th(id='L%s' % lineno)(
-            tag.a(lineno, href='../browser/%s%s#L%s' % (file_name, rev, lineno))
-        ))
-
-def make_rev_str(rev=None):
-    return rev and '?rev=' + str(rev) or ''
