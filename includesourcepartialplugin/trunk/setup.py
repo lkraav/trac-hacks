@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(name='trac-IncludeSource',
-    version='0.5',
+    version='0.5.1',
     packages=['includesource'],
     author='Chris Heller',
     maintainer='Thomas Tressieres',
@@ -17,6 +17,7 @@ setuptools.setup(name='trac-IncludeSource',
     classifiers=[
         "Programming Language :: Python :: 2",
         "Operating System :: OS Independent",
+        "Framework :: Trac"
     ],
     install_requires = ['Trac'],
     entry_points = {'trac.plugins': ['includesource.IncludeSource = includesource.IncludeSource']})
