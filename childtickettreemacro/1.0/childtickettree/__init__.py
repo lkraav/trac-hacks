@@ -1,4 +1,4 @@
 from macro import *
-import pkg_resouces
+import pkg_resources
 
 pkg_resources.require('Trac >= 1.0')
