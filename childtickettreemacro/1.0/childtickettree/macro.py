@@ -39,10 +39,11 @@ class ChildTicketTreeMacro(WikiMacroBase):
         # Process the arguments.
         args, kwargs = parse_args(text)
 
-        if 'ticket' not in kwargs and len(args) > 0:
-            kwargs['ticket'] = args[0]
-        elif 'ticket' not in kwargs and not len(args):
-            kwargs['ticket'] = WikiPage(self.env, resource).name
+        if 'ticket' not in kwargs:
+            if len(args) > 0:
+                kwargs['ticket'] = args[0]
+            else:
+                kwargs['ticket'] = resource.id
 
         try:
             kwargs['ticket'] = int(unicode(kwargs.get('ticket')).lstrip('#'))
