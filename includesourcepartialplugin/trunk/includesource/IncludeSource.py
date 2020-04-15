@@ -8,6 +8,9 @@ from trac.mimeview.api import Mimeview
 from trac.wiki.api import parse_args
 from trac.versioncontrol.api import RepositoryManager
 
+
+import re
+
 try:
     from trac.versioncontrol.api import IRepositoryProvider
     multirepos = True
@@ -46,6 +49,12 @@ class IncludeSourceMacro(WikiMacroBase):
 
         # includes line 20-50 inclusive
         [[IncludeSource(trunk/proj/file.py, start=20, end=50)]]
+
+        # includes line where "pattern" is found to first line + 20:
+        [[IncludeSource(trunk/proj/file.py, start=pattern, end=20)]]
+
+        # includes line where "pattern1" is found to line where pattern2 is found:
+        [[IncludeSource(trunk/proj/file.py, start=pattern1, end=pattern2)]]
 
         # includes last 30 lines of file at revision 1200
         [[IncludeSource(trunk/proj/file.py, start=-30, rev=1200)]]
@@ -223,12 +232,35 @@ class IncludeSourceMacro(WikiMacroBase):
         lines = src.split('\n')
         linecount = len(lines)
 
+        self.env.log.debug("start="+repr(start)+", end="+repr(end))
+        start_regex = False
         if start:
-            start = int(start)
-            if start >= 0:
-                start -= 1
+            try:
+                start = int(start)
+                if start >= 0:
+                    start -= 1
+            except:
+                start_regex = True
+                match = re.search(start, src, re.M)
+                if match:
+                    start = src.count('\n',0,match.start())
+                else:
+                    start = 0
+
         if end:
-            end = int(end)
+            try:
+                end = int(end)
+                if start_regex:
+                    end += start
+            except:
+                src2 = '\n'.join(lines[start+1:linecount])
+                match = re.search(end, src2, re.M)
+                if match:
+                    end = start + src2.count('\n',0,match.start())
+                else:
+                    end = linecount
+        if end == start:
+            end += 1
         src = lines[start:end]
 
         # calculate actual startline for display purposes
