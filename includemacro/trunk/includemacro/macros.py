@@ -206,11 +206,8 @@ class IncludeMacro(WikiMacroBase):
 
     def _get_source(self, formatter, source_obj, dest_format):
         repos_mgr = RepositoryManager(self.env)
-        try:  # 0.12+
-            repos_name, repos, source_obj = \
-                repos_mgr.get_repository_by_path(source_obj)
-        except AttributeError:  # 0.11
-            repos = repos_mgr.get_repository(formatter.req.authname)
+        repos_name, repos, source_obj = \
+            repos_mgr.get_repository_by_path(source_obj)
         path, rev = _split_path(source_obj)
         try:
             node = repos.get_node(path, rev)
