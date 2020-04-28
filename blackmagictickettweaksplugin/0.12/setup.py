@@ -21,7 +21,7 @@ setup(
     author_email='shansen@advpubtech.com',
     description="Various hacks to alter the behavior of the ticket form.",
     license="BSD 3-Clause",
-    url="http://trac-hacks.org/wiki/BlackMagicTicketTweaksPlugin",
+    url="https://trac-hacks.org/wiki/BlackMagicTicketTweaksPlugin",
     packages=find_packages(exclude=['*.tests*']),
     package_data={
         'blackmagic': ['htdocs/js/*.js']

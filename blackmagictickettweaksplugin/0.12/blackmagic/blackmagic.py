@@ -9,16 +9,13 @@
 # you should have received as part of this distribution.
 #
 
-from genshi.builder import tag
-from genshi.core import Markup
-from genshi.filters.transform import Transformer
-from genshi.filters.transform import StreamBuffer
+from genshi.filters.transform import StreamBuffer, Transformer
 from trac.config import ListOption, Option
 from trac.core import Component, TracError, implements
 from trac.perm import IPermissionPolicy, IPermissionRequestor
 from trac.ticket import model
-from trac.ticket.model import Ticket
 from trac.ticket.api import ITicketManipulator
+from trac.util.html import Markup, html as tag
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider
 
@@ -76,7 +73,7 @@ class BlackMagicTicketTweaks(Component):
         if resource and resource.realm == 'ticket' and resource.id is not None:
             # return if this req is permitted access to the given ticket ID.
             try:
-                ticket = Ticket(self.env, resource.id)
+                ticket = model.Ticket(self.env, resource.id)
             except TracError:
                 return None  # Ticket doesn't exist
             # get perm for ticket type
