@@ -9,14 +9,14 @@ License: BSD
 
 from setuptools import setup
 
-setup(name='TracFullBlogPlugin',
+setup(name='TracFullBlog',
       version='0.1.6.3',
       packages=['tracfullblog'],
       author='CodeResort.com = BV Network AS',
       author_email='simon-code@bvnetwork.no',
       keywords='trac blog',
       description='Full-featured and self-contained Blog plugin for Trac.',
-      url='http://trac-hacks.org/wiki/FullBlogPlugin',
+      url='https://trac-hacks.org/wiki/FullBlogPlugin',
       license='BSD',
       zip_safe = False,
       extras_require={
