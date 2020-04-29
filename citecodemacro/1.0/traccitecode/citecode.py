@@ -72,7 +72,7 @@ class CiteCodeMacro(WikiMacroBase):
                 mimetype=content_type,
                 content=content,
                 filename="",
-                annotations=['citecode_lineno'],
+                annotations=['lineno'],
             )
             return xhtml
 
@@ -132,57 +132,3 @@ class CiteCodeAndCreateTicket(Component):
             preview=True,
         ))
 
-
-# Just copied from trunk of Trac core and renamed annotation_type
-# since 'lineno' hint is not available in Trac 1.0
-
-# Copyright (C) 2004-2014 Edgewall Software
-# Copyright (C) 2004 Daniel Lundin <daniel@edgewall.com>
-# Copyright (C) 2005-2006 Christopher Lenz <cmlenz@gmx.de>
-# Copyright (C) 2006-2007 Christian Boos <cboos@edgewall.org>
-# All rights reserved.
-#
-# This software is licensed as described in the file COPYING, which
-# you should have received as part of this distribution. The terms
-# are also available at http://trac.edgewall.org/wiki/TracLicense.
-#
-# This software consists of voluntary contributions made by many
-# individuals. For the exact contribution history, see the revision
-# history and logs, available at http://trac.edgewall.org/log/.
-#
-# Author: Daniel Lundin <daniel@edgewall.com>
-#         Christopher Lenz <cmlenz@gmx.de>
-#         Christian Boos <cboos@edgewall.org>
-
-from trac.mimeview.api import IHTMLPreviewAnnotator
-from trac.util import Ranges
-from trac.util.html import html as tag
-from trac.util.translation import _
-
-
-class LineNumberAnnotator(Component):
-    """Text annotator that adds a column with line numbers."""
-    implements(IHTMLPreviewAnnotator)
-
-    # IHTMLPreviewAnnotator methods
-
-    def get_annotation_type(self):
-        return 'citecode_lineno', _('Line'), _('Line numbers')
-
-    def get_annotation_data(self, context):
-        try:
-            marks = Ranges(context.get_hint('marks'))
-        except ValueError:
-            marks = None
-        return {
-            'id': context.get_hint('id', '') + 'L%s',
-            'marks': marks,
-            'offset': context.get_hint('lineno', 1) - 1
-        }
-
-    def annotate_row(self, context, row, lineno, line, data):
-        lineno += data['offset']
-        id = data['id'] % lineno
-        if data['marks'] and lineno in data['marks']:
-            row(class_='hilite')
-        row.append(tag.th(id=id)(tag.a(lineno, href='#' + id)))

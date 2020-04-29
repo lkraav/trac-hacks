@@ -1,4 +1,4 @@
-$(function() {
+jQuery(function($) {
     $(document).find('table.code tr th a').each(function(){
         $(this).attr('title', 'Double click to create a ticket');
         var cls = $(this).attr('class');
