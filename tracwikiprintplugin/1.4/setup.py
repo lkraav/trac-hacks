@@ -6,7 +6,7 @@ Author: Alvaro Iradier <alvaro.iradier@polartech.es>
 from setuptools import setup
 
 setup(
-    name='TracWikiPrintPlugin',
+    name='TracWikiPrint',
     version='3.0',
     packages=['wikiprint'],
     package_data={'wikiprint': ['templates/*', 'htdocs/js/*']},
@@ -28,6 +28,6 @@ setup(
         ],
     },
 
-    install_requires=['xhtml2pdf', 'Trac'],
+    install_requires=['pillow < 7', 'xhtml2pdf', 'Trac'],
 
 )
