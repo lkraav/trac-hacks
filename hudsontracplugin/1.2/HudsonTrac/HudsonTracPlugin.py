@@ -25,8 +25,8 @@ from trac.util.datefmt import datetime_now, format_datetime, \
 from trac.util.html import tag
 from trac.util.text import unicode_quote
 from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.web.chrome import add_notice, add_stylesheet
-from trac.wiki.formatter import wiki_to_oneliner
+from trac.web.chrome import add_notice, add_stylesheet, web_context
+from trac.wiki.formatter import format_to_oneliner
 
 try:
     from ast import literal_eval
@@ -269,14 +269,8 @@ class HudsonTracPlugin(Component):
             yield ('build', self.tl_label)
 
     def __fmt_changeset(self, rev, req):
-        # use format_to_oneliner and drop num_args hack when we drop Trac 0.10
-        # support
-        import inspect
-        num_args = len(inspect.getargspec(wiki_to_oneliner)[0])
-        if num_args > 5:
-            return wiki_to_oneliner('[%s]' % rev, self.env, req=req)
-        else:
-            return wiki_to_oneliner('[%s]' % rev, self.env)
+        ctxt = web_context(req, 'changeset', rev)
+        return format_to_oneliner(self.env, ctxt, '[%s]' % rev)
 
     def get_timeline_events(self, req, start, stop, filters):
         if 'build' not in filters or 'BUILD_VIEW' not in req.perm:
