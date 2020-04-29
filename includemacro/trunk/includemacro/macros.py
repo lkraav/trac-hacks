@@ -20,13 +20,14 @@ from trac.mimeview.api import Mimeview, get_mimetype
 from trac.perm import IPermissionRequestor
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Ticket
+from trac.util import as_bool, as_int
 from trac.util.html import escape
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchChangeset, NoSuchNode, \
     RepositoryManager
 from trac.web.chrome import web_context
-from trac.wiki.api import WikiSystem
+from trac.wiki.api import WikiSystem, parse_args
 from trac.wiki.formatter import WikiParser, system_message
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
@@ -48,14 +49,14 @@ class IncludeMacro(WikiMacroBase):
     # IWikiMacroProvider methods
 
     def expand_macro(self, formatter, name, content):
-        args = [x.strip() for x in content.split(',')]
-        if len(args) == 1:
-            args.append(None)
-        elif len(args) != 2:
+        largs, kwargs = parse_args(content)
+        if len(largs) == 1:
+            largs.append(None)
+        elif len(largs) != 2:
             return system_message('Invalid arguments "%s"' % content)
 
         # Pull out the arguments.
-        source, dest_format = args
+        source, dest_format = largs
         try:
             source_format, source_obj = source.split(':', 1)
         except ValueError:  # If no : is present, assume its a wiki page.
@@ -65,7 +66,7 @@ class IncludeMacro(WikiMacroBase):
         if dest_format is None:
             dest_format = self.default_formats.get(source_format)
 
-        out = ctxt = None
+        annotations = out = ctxt = None
         if source_format in ('http', 'https', 'ftp'):
             # Since I can't really do recursion checking, and because this
             # could be a source of abuse allow selectively blocking it.
@@ -139,8 +140,11 @@ class IncludeMacro(WikiMacroBase):
         elif source_format in ('source', 'browser', 'repos'):
             if 'FILE_VIEW' not in formatter.perm:
                 return ''
-            out, ctxt, dest_format = self._get_source(formatter, source_obj,
-                                                      dest_format)
+            start = kwargs.get('start', 1)
+            end = kwargs.get('end')
+            lineno = as_bool(kwargs.get('lineno'))
+            out, ctxt, dest_format, annotations = self._get_source(formatter, source_obj,
+                                                                   dest_format, start, end, lineno)
         elif source_format == 'ticket':
             if ':' in source_obj:
                 ticket_num, source_obj = source_obj.split(':', 1)
@@ -185,7 +189,7 @@ class IncludeMacro(WikiMacroBase):
 
         # If we have a preview format, use it.
         if dest_format:
-            out = Mimeview(self.env).render(ctxt, dest_format, out)
+            out = Mimeview(self.env).render(ctxt, dest_format, out, '', None, annotations)
 
         # Escape if needed.
         if not self.config.getbool('wiki', 'render_unsafe_content', False):
@@ -204,7 +208,48 @@ class IncludeMacro(WikiMacroBase):
 
     # Private methods
 
-    def _get_source(self, formatter, source_obj, dest_format):
+    def _handle_partial_source(self, src, start, end):
+        # we want to only show a certain number of lines, so we
+        # break the source into lines and set our numbers for 1-based
+        # line numbering.
+        lines = src.split('\n')
+        linecount = len(lines)
+
+        start_regex = False
+        start = as_int(start, start)
+        if isinstance(start, basestring):
+            start = start.strip("'\"")
+            start_regex = True
+            match = re.search(start, src, re.M)
+            if match:
+                start = src.count('\n', 0, match.start())
+            else:
+                raise ParseError('start regexp "%s" does not match any text' % start)
+
+        if end:
+            end = as_int(end, end)
+            if isinstance(end, basestring):
+                end = end.strip("'\"")
+                src2 = '\n'.join(lines[start+1:linecount])
+                match = re.search(end, src2, re.M)
+                if match:
+                    end = start + src2.count('\n', 0, match.start())
+                else:
+                    raise ParseError('end regexp "%s" does not match any text' % end)
+            else:
+                if start_regex:
+                    end += start
+        else:
+            end = linecount
+        src = lines[start - 1:end]
+
+        # calculate actual startline for display purposes
+        if start < 0:
+            start = linecount + start
+
+        return '\n'.join(src), start, end
+
+    def _get_source(self, formatter, source_obj, dest_format, start, end, lineno):
         repos_mgr = RepositoryManager(self.env)
         repos_name, repos, source_obj = \
             repos_mgr.get_repository_by_path(source_obj)
@@ -212,17 +257,25 @@ class IncludeMacro(WikiMacroBase):
         try:
             node = repos.get_node(path, rev)
         except (NoSuchChangeset, NoSuchNode), e:
-            return system_message(e), None, None
+            return system_message(e), None, None, None
         content = node.get_content()
         out = ''
         ctxt = None
+        annotations = None
         if content:
             out = content.read()
             if dest_format is None:
                 dest_format = node.content_type or get_mimetype(path, out)
-            ctxt = web_context(formatter.req, 'source', path)
+            try:
+                out, start, end = self._handle_partial_source(out, start, end)
+            except ParseError as e:
+                return system_message(e), None, None, None
+            annotations = lineno and ['lineno'] or None
 
-        return out, ctxt, dest_format
+            ctxt = web_context(formatter.req, 'source', path)
+            ctxt.set_hints(lineno=start)
+
+        return out, ctxt, dest_format, annotations
 
     def _extract_section(self, text, section):
         m1 = re.search("(^\s*(?P<heading>={1,6})\s(.*?)(\#%s)\s*$)" % section,

@@ -25,7 +25,7 @@ setup(
     long_description=open(os.path.join(
         os.path.dirname(__file__), 'README')).read(),
     license='3-Clause BSD',
-    keywords='trac 0.11 plugin wiki include macro',
+    keywords='trac 1.0+ plugin wiki include macro',
     url='http://trac-hacks.org/wiki/IncludeMacro',
     classifiers=[
         'Framework :: Trac',

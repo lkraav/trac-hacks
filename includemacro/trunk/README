@@ -59,6 +59,17 @@ Include a specific revision of a file from the repository::
 
     [[Include(source:trunk/docs/README@5, text/x-rst)]]
 
+Include only a subpart of file from the repository (use named arguments : start, end, lineno)::
+
+    [[Include(source:trunk/docs/README@5, text/x-rst, start=5, end=15)]]
+    [[Include(source:trunk/docs/README@5, text/x-rst, start=5, end=15, lineno=yes)]]
+
+It's possible to use regular expressions in start and/or end parameters
+
+    [[Include(source:trunk/docs/README, start="[a-z]+", end=15, lineno=yes)]]
+    [[Include(source:trunk/docs/README, start="[a-z]+", end="\[.+\]", lineno=yes)]]
+
+
 __ http://docutils.sf.net/rst.html
 
 .. tip::
