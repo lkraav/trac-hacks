@@ -58,9 +58,9 @@ class CondfieldTweaks(Component):
                 matches_type_cond = False
                 for cond in type_cond:
                     if cond.startswith('!'):
-                        matches_type_cond |= ticket_type == cond[1:].lower()
+                        matches_type_cond |= ticket_type == cond[1:]
                     else:
-                        matches_type_cond |= ticket_type == cond.lower()
+                        matches_type_cond |= ticket_type == cond
 
             if shown_by_default and matches_type_cond or \
                     not shown_by_default and not matches_type_cond:
