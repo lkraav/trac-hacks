@@ -170,13 +170,9 @@ hiderule.apply = function (input, spec) {
     return;
 
   // process hide rule
-  var v;
-  if (input_0.type === 'checkbox')
-    v = (input.is(':checked')) ? "1" : "0";
-  else
-    v = input.val();
+  var val = getValue(input);
   var l = spec.trigger_value.split('|'); // supports list of trigger values
-  var idx = jQuery.inArray(v, l);
+  var idx = jQuery.inArray(val, l);
   var target = spec.target;
   if (idx !== -1 && spec.op === 'hide' || idx === -1 && spec.op === 'show') {
     // we want to hide the input fields's td and related th
@@ -346,12 +342,13 @@ setrule.setup = function (input, spec) {
 
   // ensure trigger field's new value is in spec's list
   // supports list of trigger values
+  var val = getValue(input);
   if (spec.trigger_value.length !== 0 &&
-      jQuery.inArray(input.val(), spec.trigger_value) == -1)
+      jQuery.inArray(val, spec.trigger_value) == -1)
     return;
 
   if (spec.trigger_not_value.length !== 0 &&
-      jQuery.inArray(input.val(), spec.trigger_not_value) > -1)
+      jQuery.inArray(val, spec.trigger_not_value) > -1)
     return;
 
   var $field = jQuery(get_selector(spec.target));
@@ -396,3 +393,11 @@ setrule.setup = function (input, spec) {
     }
   }
 };
+
+function getValue(input) {
+  if (input.is(':checkbox'))
+    return input.is(':checked') ? '1' : '0';
+  else
+    return input.val();
+}
+
