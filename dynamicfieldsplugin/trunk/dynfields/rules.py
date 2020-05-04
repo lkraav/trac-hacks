@@ -142,9 +142,9 @@ class Rule(object):
         value = opts[key]
         if value.endswith(self.OVERWRITE):
             value = value.replace(self.OVERWRITE, '').rstrip()
-            overwrite = 'true'
+            overwrite = True
         else:
-            overwrite = opts.get('%s.overwrite' % target, 'false')
+            overwrite = opts.getbool('%s.overwrite' % target)
         return value, overwrite
 
 
@@ -177,7 +177,8 @@ class ClearRule(Component, Rule):
     def update_spec(self, req, key, opts, spec):
         target = spec['target']
         spec['op'] = 'clear'
-        spec['clear_on_change'] = opts.get(target + '.clear_on_change', 'true')
+        spec['clear_on_change'] = \
+            opts.getbool(target + '.clear_on_change', True)
 
     def update_pref(self, req, trigger, target, key, opts, pref):
         # TRANSLATOR: checkbox label text for clear rules
@@ -200,7 +201,7 @@ class CopyRule(Component, Rule):
     follows:
 
       [ticket-custom]
-      captain.copy_from = (overwrite) owner
+      captain.copy_from = owner (overwrite)
     """
 
     implements(IRule)
@@ -265,8 +266,8 @@ class DefaultRule(Component, Rule):
 
     def update_spec(self, req, key, opts, spec):
         spec['op'] = 'default'
-        spec['append'] = opts.get(spec['target']) == 'select' and 'false' or \
-                         opts.get(spec['target'] + '.append', 'false')
+        spec['append'] = False if opts.get(spec['target']) == 'select' else \
+                         opts.getbool(spec['target'] + '.append')
 
     def update_pref(self, req, trigger, target, key, opts, pref):
         # "Default trigger to <select options>"
@@ -339,14 +340,13 @@ class HideRule(Component, Rule):
         if match:
             spec['op'] = match.groupdict()['op']
             spec['trigger_value'] = opts[key]
-            spec['hide_always'] = \
-                str(self._is_always_hidden(req, key, opts, spec)).lower()
+            spec['hide_always'] = self._is_always_hidden(req, key, opts, spec)
         else:  # assume 'hide_always' or group rule
             spec['op'] = 'show'
             spec['trigger_value'] = 'invalid_value'
-            spec['hide_always'] = 'true'
-        spec['clear_on_hide'] = opts.get(target + '.clear_on_hide', 'true')
-        spec['link_to_show'] = opts.get(target + '.link_to_show', 'false')
+            spec['hide_always'] = True
+        spec['clear_on_hide'] = opts.getbool(target + '.clear_on_hide', True)
+        spec['link_to_show'] = opts.getbool(target + '.link_to_show')
 
     def update_pref(self, req, trigger, target, key, opts, pref):
         spec = {'trigger': trigger, 'target': target}
@@ -438,7 +438,7 @@ class SetRule(Component, Rule):
     overwrite the current value, add "(overwrite)" as follows:
 
       [ticket-custom]
-      milestone.set_to_!_when_phase = (overwrite) implementation|verifying
+      milestone.set_to_!_when_phase = implementation|verifying (overwrite)
     """
 
     implements(IRule)
@@ -459,9 +459,9 @@ class SetRule(Component, Rule):
             return
         spec['set_to'] = match.groupdict()['to']
         if spec['set_to'].lower() in ('1', 'true'):
-            spec['set_to'] = 'true'
+            spec['set_to'] = True
         elif spec['set_to'].lower() in ('0', 'false'):
-            spec['set_to'] = 'false'
+            spec['set_to'] = False
         elif spec['set_to'] == '?' and 'value' in spec:
             spec['set_to'] = spec['value']
         trigger_value, spec['overwrite'] = \

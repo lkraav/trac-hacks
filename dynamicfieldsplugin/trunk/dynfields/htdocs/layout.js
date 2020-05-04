@@ -152,7 +152,9 @@ inputs_layout.order_fields = function (new_fields) {
     target_row.after(row);
     target_row = row;
   });
-  properties.find('> table > tbody > tr').each(function() {
+  properties.find('> table > tbody > tr')
+        .not('#dynfields-show-link')
+        .each(function() {
     var row = $(this);
     var headers = row.children('th');
     if (headers.length === 0 || !jQuery.trim(headers.text()))

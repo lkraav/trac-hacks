@@ -7,6 +7,7 @@
 #
 
 from trac.ticket.api import TicketSystem
+from trac.util import as_bool
 
 PREFIX = 'dynfields.'
 PREF_DEFAULTS = {
@@ -107,3 +108,7 @@ class Options(dict):
             if not arg.startswith(PREFIX) or not arg.endswith('.value'):
                 continue
             req.session[arg] = value
+
+    def getbool(self, key, default=False):
+        return as_bool(self.get(key, default))
+

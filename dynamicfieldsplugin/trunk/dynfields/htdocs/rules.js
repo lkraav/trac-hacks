@@ -57,7 +57,7 @@ copyrule.apply = function (input, spec) {
     return;
 
   var $field = jQuery(get_selector(spec.target));
-  if (spec.overwrite.toLowerCase() == 'false' && $field.val() != '')
+  if (!spec.overwrite && $field.val() != '')
     return;
 
   if ($field.hasClass('copyable')) {
@@ -119,7 +119,7 @@ defaultrule.apply = function (input, spec) {
     // ensure an 'empty' option value for existing tickets (unless appending)
     if ($field.val().length > 1 &&
       window.location.pathname.indexOf('/ticket') > -1) {
-      doit = spec.append.toLowerCase() == 'true';
+      doit = spec.append;
       if (doit) {
         // append preference to text field's value
         var values = [];
@@ -181,15 +181,13 @@ hiderule.apply = function (input, spec) {
     var td = field.closest('td');
     var th = td.prev('th');
     var cls = 'dynfields-hide dynfields-' + trigger;
-    if (spec.link_to_show.toLowerCase() == 'true')
+    if (spec.link_to_show)
       cls += ' dynfields-link';
     td.addClass(cls);
     th.addClass(cls);
 
     // let's also clear out the field's value to avoid confusion
-    var clear_on_hide = spec.clear_on_hide.toLowerCase() == 'true';
-    var hide_always = spec.hide_always.toLowerCase() == 'true'
-    if (clear_on_hide) {
+    if (spec.clear_on_hide) {
       var oldval = field.val();
       if (oldval && oldval.length) { // Chrome fix - see #8654
         if (field.attr('type') == 'checkbox') {
@@ -205,7 +203,7 @@ hiderule.apply = function (input, spec) {
       }
     }
     // Hide fields in ticket properties box
-    if (clear_on_hide || hide_always) {
+    if (spec.clear_on_hide || spec.hide_always) {
       th = jQuery('#h_' + target);
       td = th.next('td');
       td.addClass(cls);
@@ -219,22 +217,21 @@ hiderule.complete = function (input, spec) {
   jQuery('#properties .dynfields-hide, #ticket .properties .dynfields-hide').hide();
 
   // add link to show hidden fields (that are enabled to be shown)
-  if (spec.link_to_show.toLowerCase() == 'true') {
-    if (jQuery('#dynfields-show-link').length == 0) {
-      var html = '<tr id="dynfields-show-link">' +
-        '  <th></th><td></td><th></th><td>' +
-        '    <a href="#no3" onClick="jQuery(\'.dynfields-link\').show(); jQuery(\'#dynfields-show-link\').remove();">Show hidden fields</a>' +
-        '  </td>' +
-        '</tr>';
-      jQuery('.dynfields-link:last').closest('tbody').append(html);
-    }
+  if (spec.link_to_show && jQuery('#dynfields-show-link').length == 0) {
+    var html = jQuery('<tr id="dynfields-show-link">' +
+      '  <th class="col1"></th><td class="col1"></td>' +
+      '  <th class="col2"></th><td class="col2">' +
+      '    <a href="#no3" onClick="jQuery(\'.dynfields-link\').show(); jQuery(\'#dynfields-show-link\').remove();">Show hidden fields</a>' +
+      '  </td>' +
+      '</tr>');
+    html.appendTo(jQuery('.dynfields-link:last').parents('table'));
   }
 };
 
 // query
 hiderule.query = function (spec) {
   // hide hide_always fields on /query page
-  if (spec.hide_always.toLowerCase() == 'true') {
+  if (spec.hide_always) {
     // hide from columns section
     var target = spec.target;
     var query_form = jQuery('form#query')
@@ -357,7 +354,7 @@ setrule.setup = function (input, spec) {
   // behavior should be.
   if (spec.target == 'owner' && $field.length > 1)
     $field = $field.eq(0)
-  if (spec.overwrite.toLowerCase() == 'false' && $field.val() != '')
+  if (!spec.overwrite && !$field.is(':checkbox') && $field.val() != '')
     return;
 
   var set_to = spec.set_to;
