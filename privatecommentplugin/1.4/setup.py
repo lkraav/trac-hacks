@@ -14,22 +14,17 @@ setup(
     name='TracPrivateComments',
     version='0.5',
     packages=find_packages(),
-
     author='Michael Henke',
     author_email='michael.henke@she.net',
     description="""A trac plugin that lets you create comments which are
         only visible for users with a special permission""",
     license="BSD 3-Clause",
-
     keywords='trac plugin security ticket comment group',
-    url='http://trac-hacks.org/wiki/PrivateCommentPlugin',
-
+    url='https://trac-hacks.org/wiki/PrivateCommentPlugin',
     classifiers=[
         'Framework :: Trac',
     ],
-
     install_requires=['Trac'],
-
     entry_points={
         'trac.plugins': [
             'PrivateComments = privatecomments.privatecomments',
