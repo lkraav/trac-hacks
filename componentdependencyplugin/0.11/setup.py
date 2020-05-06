@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 
 setup(name='TracComponentDependency',
-      version='0.2',
+      version='0.3',
       description="allows plugins to depend on other components being enabled",
       author='Jeff Hammel',
       author_email='jhammel@openplans.org',
@@ -14,6 +14,7 @@ setup(name='TracComponentDependency',
       license="BSD 3-Clause",
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
       include_package_data=True,
+      classifiers=['Framework :: Trac'],
       package_data={ 'componentdependencyplugin': ['templates/*', 'htdocs/*'] },
       zip_safe=False,
       entry_points = """
