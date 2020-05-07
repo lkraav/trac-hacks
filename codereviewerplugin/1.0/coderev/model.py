@@ -81,6 +81,7 @@ class CodeReview(object):
             self.status = status
         self.summary = summary
         self.when = when
+        self.reviewer = reviewer
         return True
 
     def decode(self, status):
