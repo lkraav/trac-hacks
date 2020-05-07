@@ -1,5 +1,5 @@
-
 import datetime
+import unittest
 
 from tracfullblog.tests import FullBlogTestCaseTemplate
 from tracfullblog.model import *
@@ -33,6 +33,7 @@ class GroupPostsByMonthTestCase(FullBlogTestCaseTemplate):
         grouped = group_posts_by_month(get_blog_posts(self.env))
         self.assertEquals([], grouped)
 
+
 class GetBlogPostsTestCase(FullBlogTestCaseTemplate):
 
     def test_get_by_category(self):
@@ -50,3 +51,10 @@ class GetBlogPostsTestCase(FullBlogTestCaseTemplate):
         self.assertEquals('one', posts[0][0])
         self.assertEquals(get_blog_posts(self.env, category='about'),
                           get_blog_posts(self.env, category='stuff'))
+
+
+def test_suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(GroupPostsByMonthTestCase))
+    suite.addTest(unittest.makeSuite(GetBlogPostsTestCase))
+    return suite

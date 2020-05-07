@@ -11,12 +11,7 @@ class FullBlogTestCaseTemplate(TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(enable=['trac.*', 'tracfullblog.*'])
-        # tables
-        if hasattr(self.env, 'db_transaction'):
-            with self.env.db_transaction as db:
-                FullBlogSetup(self.env).upgrade_environment(db)
-        else:
-            FullBlogSetup(self.env).upgrade_environment(self.env.get_db_cnx())
+        FullBlogSetup(self.env).upgrade_environment()
         # permissions
         self.env.config.set('trac', 'permission_store',
                             'DefaultPermissionStore')
@@ -31,12 +26,9 @@ class FullBlogTestCaseTemplate(TestCase):
 def test_suite():
     suite = TestSuite()
     import tracfullblog.tests.core
-    suite.addTest(makeSuite(tracfullblog.tests.core.FullBlogCoreTestCase))
+    suite.addTest(tracfullblog.tests.core.test_suite())
     import tracfullblog.tests.model
-    suite.addTest(makeSuite(tracfullblog.tests.model.GroupPostsByMonthTestCase))
-    suite.addTest(makeSuite(tracfullblog.tests.model.GetBlogPostsTestCase))
+    suite.addTest(tracfullblog.tests.model.test_suite())
     import tracfullblog.tests.web_ui
-    suite.addTest(makeSuite(tracfullblog.tests.web_ui.FullBlogListtingsTestCase))
-    suite.addTest(makeSuite(tracfullblog.tests.web_ui.FullBlogRssTestCase))
-    suite.addTest(makeSuite(tracfullblog.tests.web_ui.FullBlogPostTestCase))
+    suite.addTest(tracfullblog.tests.web_ui.test_suite())
     return suite
