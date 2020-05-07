@@ -1,2 +1,2 @@
 
-__version__ = __import__('pkg_resources').get_distribution('TracFullBlogPlugin').version
+__version__ = __import__('pkg_resources').get_distribution('TracFullBlog').version
