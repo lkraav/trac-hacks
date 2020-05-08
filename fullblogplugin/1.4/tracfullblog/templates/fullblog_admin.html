@@ -1,70 +1,85 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
-  <xi:include href="admin.html" />
+{# Copyright (C) 2007-2020 CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
   <head>
-    <title>Blog Admin</title>
+    <title>
+      # block admintitle
+      ${_("Blog Admin")}
+      # endblock admintitle
+    </title>
+    # block head
+    ${ super() }
+    <script>
+      jQuery(function($) {
+        $("#description").autoPreview("${href.wiki_render()}", {
+            realm: "blog",
+          }, $("#preview").showOnPreview());
+      });
+    </script>
+    # endblock head
   </head>
 
   <body>
+    # block adminpanel
+    <h2>${_("Blog Settings")}</h2>
 
-    <h2>Blog Settings and Information</h2>
-
-    <p class="help">Edit various settings for the Blog module.</p>
-
-    <div class="narrow">
-
-      <form class="mod" id="modsettings" method="post" action="">
+    <div>
+      <form id="bloginfo" class="mod" method="post" action="#">
+        ${jmacros.form_token_input()}
        <fieldset>
-        <legend>Blog Settings:</legend>
+         <legend>${_("Blog Settings")}</legend>
+         <div class="field">
+           <label for="numpostsfront">${_("Number of posts on front page:")}<br />
+           <input type="text" size="5" name="numpostsfront"
+                  value="${blog_admin.numpostsfront}" />
+           </label>
+         </div>
         <div class="field">
-         <label for="numpostsfront">Number of posts on front page:<br />
-           <input type="text" size="10" name="numpostsfront"
-                              value="${blog_admin.numpostsfront}" />
+         <label for="defaultpostname">
+           ${_("Template for naming new blog posts:")}<br />
+           <input type="text" size="32" name="defaultpostname"
+                  value="${blog_admin.defaultpostname}" />
+           <br />
+           <span class="hint">
+             # set example
+             <code>${'$USER'}-%Y/%m/%d/my_topic</code>
+             # endset
+             # trans example
+
+             Username and time substitution available. Example: ${example}
+
+             # endtrans
+           </span>
          </label>
         </div>
-        <div class="field">
-         <label for="defaultpostname">Template for naming new blog posts:<br />
-                (username and time substitution available, like <tt>${'$USER'}-%Y/%m/%d/my_topic</tt>)<br />
-           <input type="text" size="35" name="defaultpostname"
-                              value="${blog_admin.defaultpostname}" />
-         </label>
-        </div>
-        <div class="buttons">
-         <input type="submit" name="savesettings" value="Save Settings" />
-        </div>
-       </fieldset>
-      </form>
+        <div class="field description">
+          <label for="description">${_("Sidebar text:")}</label>
+          <textarea id="description" name="bloginfotext"
+                    class="wikitext trac-fullwidth trac-resizeable"
+                    rows="8" cols="78">${blog_admin.bloginfotext}</textarea>
+          <label for="description" class="trac-textarea-hint">
+            # trans wikiformatting = jmacros.wikiformatting_link()
 
-      <form id="bloginfo" class="mod" method="post" action="">
-       <fieldset>
-        <legend>Blog sidebar information:</legend>
-        <div class="field">
-          <fieldset class="iefix">
-            <label for="bloginfotext">Text to display in Blog sidebar (you may use <a tabindex="42"
-              href="${req.href.wiki('WikiFormatting')}">WikiFormatting</a> here):</label>
-            <br />
-            <p>
-              <textarea id="bloginfotext"
-                        name="bloginfotext" class="wikitext" rows="8"
-                        cols="60">${blog_admin.bloginfotext}</textarea>
-            </p>
-          </fieldset>
+            You may use ${wikiformatting} here.
+
+            # endtrans
+          </label>
+          <div id="preview" class="trac-content trac-draft" style="display:none">
+          </div>
         </div>
-        <div class="buttons">
-         <input type="submit" name="savebloginfotext" value="Save Text" />
-        </div>
-        <script type="text/javascript" src="${chrome.htdocs_location}js/wikitoolbar.js">
-          addWikiFormattingToolbar(document.getElementById('bloginfotext'))</script>
        </fieldset>
+       <div class="buttons">
+         <input type="submit" value="${_('Apply changes')}" />
+       </div>
       </form>
 
     </div>
-
+    # endblock adminpanel
   </body>
 
 </html>
-
