@@ -8,6 +8,7 @@ License: BSD
 """
 
 from trac.core import TracError
+from trac.util import as_int
 from trac.util.html import tag
 from trac.web.chrome import add_stylesheet, Chrome
 from trac.wiki.api import parse_args
@@ -68,10 +69,10 @@ class BlogListMacro(WikiMacroBase):
         from_dt, to_dt = parse_period(list(args_dict.get('period', '').split('/')))
         category = args_dict.get('category', '')
         author = args_dict.get('author', '')
-        recent = args_dict.getint('recent', 0)
+        recent = as_int(args_dict.get('recent'), 0)
         format = args_dict.get('format', 'inline').lower()
         heading = args_dict.get('heading', '')
-        max_size = args_dict.getint('max_size', 0)
+        max_size = as_int(args_dict.get('max_size', 0))
         show_meta = args_dict.get('meta', '') != 'off' and True or False
 
         # Get blog posts
@@ -125,7 +126,8 @@ class BlogListMacro(WikiMacroBase):
                                     max_size, show_meta):
         """ Renters full blog posts. """
         out = tag.div(class_="blog")
-        out.append(tag.div(heading, class_="blog-list-title"))
+        out.append(tag.div(tag.a(heading, href=formatter.req.href.blog()),
+                           class_="blog-list-title"))
         for post in post_instances:
             data = {'post': post,
                     'blog_personal_blog': self.config.getbool(
