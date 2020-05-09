@@ -109,15 +109,14 @@ class BlogListMacro(WikiMacroBase):
             return Chrome(self.env).render_template(formatter.req,
                     'fullblog_macro_monthlist.html', data=data, fragment=True)
 
-        elif format == 'full':
-            return self._render_full_format(formatter, post_list,
-                                post_instances, heading, max_size, show_meta)
-
-        elif format == 'float':
-            # Essentially a 'full' list - just wrapped inside a new div
-            return tag.div(self._render_full_format(formatter, post_list,
-                                post_instances, heading, max_size, show_meta),
-                            class_="blogflash")
+        elif format in ('full', 'float'):
+            out = self._render_full_format(
+                    formatter, post_list, post_instances, heading,
+                    max_size, show_meta)
+            if out and format == 'float':
+                return tag.div(out, class_="blogflash")
+            else:
+                return out
 
         else:
             raise TracError("Invalid 'format' argument used for macro %s." % name)
@@ -125,18 +124,20 @@ class BlogListMacro(WikiMacroBase):
     def _render_full_format(self, formatter, post_list, post_instances, heading,
                                     max_size, show_meta):
         """ Renters full blog posts. """
-        out = tag.div(class_="blog")
-        out.append(tag.div(tag.a(heading, href=formatter.req.href.blog()),
-                           class_="blog-list-title"))
-        for post in post_instances:
-            data = {'post': post,
-                    'blog_personal_blog': self.config.getbool(
-                                                'fullblog', 'personal_blog'),
-                    'list_mode': True,
-                    'show_meta': show_meta,
-                    'execute_blog_macro': True}
-            if max_size:
-                data['blog_max_size'] = max_size
-            out.append(Chrome(self.env).render_template(formatter.req,
-                'fullblog_macro_post.html', data=data, fragment=True))
+        out = ''
+        if 'BLOG_VIEW' in formatter.req.perm('blog'):
+            out = tag.div(class_="blog")
+            out.append(tag.div(tag.a(heading, href=formatter.req.href.blog()),
+                               class_="blog-list-title"))
+            for post in post_instances:
+                data = {'post': post,
+                        'blog_personal_blog': self.config.getbool(
+                                                    'fullblog', 'personal_blog'),
+                        'list_mode': True,
+                        'show_meta': show_meta,
+                        'execute_blog_macro': True}
+                if max_size:
+                    data['blog_max_size'] = max_size
+                out.append(Chrome(self.env).render_template(formatter.req,
+                    'fullblog_macro_post.html', data=data, fragment=True))
         return out

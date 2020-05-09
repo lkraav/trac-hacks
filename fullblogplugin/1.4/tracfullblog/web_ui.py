@@ -25,9 +25,9 @@ from trac.util.html import tag
 from trac.util.text import shorten_line
 from trac.util.translation import _
 from trac.web.api import IRequestHandler, HTTPNotFound
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-        add_stylesheet, add_link, add_warning, add_notice, add_ctxtnav, \
-        prevnext_nav, web_context
+from trac.web.chrome import Chrome, INavigationContributor, \
+        ITemplateProvider, add_stylesheet, add_link, add_warning, add_notice, \
+        add_ctxtnav, prevnext_nav, web_context
 from trac.wiki.formatter import format_to_oneliner
 
 from model import *
@@ -277,6 +277,9 @@ class FullBlogModule(Component):
                 else:
                     add_warning(req, reason)
             data['blog_edit'] = the_post
+            chrome = Chrome(self.env)
+            chrome.add_auto_preview(req)
+            chrome.add_wiki_toolbars(req)
 
         elif command == 'delete':
             bp = BlogPost(self.env, pagename)
