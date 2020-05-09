@@ -171,6 +171,7 @@ class FullBlogModule(Component):
                 if 'cancelcomment' in req.args:
                     req.redirect(req.href.blog(pagename))
                 elif 'previewcomment' in req.args:
+                    data['comment_preview'] = True
                     warnings.extend(blog_core.create_comment(req, comment, verify_only=True))
                 elif 'submitcomment' in req.args and not warnings:
                     warnings.extend(blog_core.create_comment(req, comment))
@@ -277,9 +278,6 @@ class FullBlogModule(Component):
                 else:
                     add_warning(req, reason)
             data['blog_edit'] = the_post
-            chrome = Chrome(self.env)
-            chrome.add_auto_preview(req)
-            chrome.add_wiki_toolbars(req)
 
         elif command == 'delete':
             bp = BlogPost(self.env, pagename)
@@ -383,6 +381,10 @@ class FullBlogModule(Component):
         if 'BLOG_CREATE' in req.perm('blog'):
             add_ctxtnav(req, 'New Post', href=req.href.blog('create'),
                     title="Create new Blog Post")
+
+        chrome = Chrome(self.env)
+        chrome.add_auto_preview(req)
+        chrome.add_wiki_toolbars(req)
         add_stylesheet(req, 'tracfullblog/css/fullblog.css')
         add_stylesheet(req, 'common/css/code.css')
         data['blog_personal_blog'] = self.env.config.getbool('fullblog',

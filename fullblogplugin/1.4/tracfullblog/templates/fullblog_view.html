@@ -17,6 +17,9 @@
     <script type="text/javascript">
       jQuery(document).ready(function($) {
         $("#content").find("h1,h2,h3,h4,h5,h6").filter("[id]").addAnchor("Link here");
+        $("#comment").autoPreview("${href.wiki_render()}", {
+            realm: "blog",
+          }, $("#preview").showOnPreview());
       });
     </script>
   </head>
@@ -101,27 +104,20 @@
             <h3>Add New Comment</h3>
             <form action="${req.href.blog(blog_post.name)}#preview" method="post">
               <fieldset>
-                  <div py:if="defined('blog_comment')"
-                          id="preview" class="blog-comment">
-                    <fieldset>
-                      <legend>
-                        Comment preview
-                        <a py:if="req.chrome.warnings" href="#warning">(Warnings)</a>
-                      </legend>
-                      <div class="comment-info">
-                        ${authorinfo(blog_comment.author)} --
-                        ${pretty_dateinfo and pretty_dateinfo(blog_comment.time) or format_datetime(blog_comment.time)}
-                      </div>
-                      <div class="comment_body">${wiki_to_html(context, blog_comment.comment)}</div>
-                    </fieldset>
-                  </div>
                   <div class="field">
                     <label for="comment">Comment (you may use
                       <a tabindex="42" href="${href.wiki('WikiFormatting')}">WikiFormatting</a>
                       here):
                     </label><br />
-                    <textarea class="wikitext" id="comment" name="comment"
-                      cols="80" rows="8">${defined('blog_comment') and blog_comment.comment or ''}</textarea>
+                    <textarea class="wikitext trac-fullwidth" id="comment"
+                              name="comment" cols="80" rows="8">${defined('blog_comment') and blog_comment.comment or ''}</textarea>
+                  </div>
+                  <a py:if="req.chrome.warnings" href="#warning">(Warnings)</a>
+                  <div id="preview" class="trac-content trac-draft"
+                       style="${'' if comment_preview else 'display:none'}">
+                    <py:if test="comment_preview">
+                      ${wiki_to_html(context, blog_comment.comment)}
+                    </py:if>
                   </div>
                 <div class="field">
                   <label for="author">Email or username:</label>
@@ -138,7 +134,6 @@
                   <input type="hidden" name="action" value="comment" />
                   <input type="submit" name="cancelcomment" value="Cancel" />
                 </div>
-                <script type="text/javascript" src="${chrome.htdocs_location}js/wikitoolbar.js" />
               </fieldset>
             </form>
           </div>

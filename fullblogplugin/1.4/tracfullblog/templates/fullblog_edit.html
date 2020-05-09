@@ -84,20 +84,13 @@
                   here):
                 </label><br />
                 <textarea class="wikitext trac-fullwidth" id="blog-body" name="body"
-                  cols="80" rows="25">${defined('blog_edit') and blog_edit.body or ''}</textarea>
+                          cols="80" rows="15">${defined('blog_edit') and blog_edit.body or ''}</textarea>
               </div>
-              <div id="preview" class="trac-content trac-draft" style="display:none">
-              </div>
-              <div id="preview" class="blog-comment"
-                   py:if="defined('blog_action') and blog_action == 'preview'">
-                <fieldset>
-                  <legend>Comment for new version by ${req.authname}</legend>
-                  ${wiki_to_html(context, blog_version_comment)}
-                </fieldset>
-                <fieldset>
-                  <legend>Blog Post Preview</legend>
+              <div id="preview" class="trac-content trac-draft"
+                   style="${'' if blog_action == 'preview' else 'display:none'}">
+                <py:if test="blog_action == 'preview'">
                   ${render_blog_post(blog_edit)}
-                </fieldset>
+                </py:if>
               </div>
               <div py:if="defined('blog_edit') and not blog_edit.version" class="field">
                 <label for="blog-name">Post shortname (for URL):</label><br />
