@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2006-2009 Justin Francis <jfrancis@justinfrancis.org>
@@ -23,36 +24,36 @@ MACRO_TEST_CASE = u"""
 <p>
 </p><table class="wiki">
 <tr><td>Missing link
-</td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe" rel="nofollow">TimLowe?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe#Bio" rel="nofollow">TimLowe#Bio?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/UpgradeEnvironment" rel="nofollow">UpgradeEnvironment?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki/ChildWiki" rel="nofollow">ParentWiki/ChildWiki?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki" rel="nofollow">ParentWiki?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki" rel="nofollow">WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/TubWiki/TubberWiki" rel="nofollow">WantedLinksTestPage/TubWiki/TubberWiki?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/VubWiki" rel="nofollow">WantedLinksTestPage/VubWiki?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki" rel="nofollow">WantedLinksTestPage/SubWiki?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki/SubberWiki" rel="nofollow">WantedLinksTestPage/SubWiki/SubberWiki?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/Wiki_page" rel="nofollow">Wiki_page?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/Wiki_page2" rel="nofollow">Wiki_page2?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/ISO9000" rel="nofollow">ISO9000?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/ISO9001" rel="nofollow">ISO9001?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Matters" rel="nofollow">Space Matters?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Flatters" rel="nofollow">Space Flatters?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/WikiPageName" rel="nofollow">WikiPageName?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%201" rel="nofollow">some page 1?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%202" rel="nofollow">some page 2?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/alsoAWikiPage" rel="nofollow">alsoAWikiPage?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/also-a-wiki-page" rel="nofollow">also-a-wiki-page?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%203" rel="nofollow">some page 3?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%204" rel="nofollow">some page 4?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?format=txt" rel="nofollow">XantedLinksTestPage?format=txt?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?version=1" rel="nofollow">XantedLinksTestPage?version=1?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/WikiCreole%20link%20style" rel="nofollow">WikiCreole link style?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro" rel="nofollow">NonExistingMacro?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro(MyMacroParam)" rel="nofollow">NonExistingMacro(MyMacroParam)?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage" rel="nofollow">XantedLinksTestPage?</a>
-</td></tr><tr><td><a class="missing wiki" href="/wiki/CoinCoin" rel="nofollow">CoinCoin?</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe" rel="nofollow">TimLowe</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe#Bio" rel="nofollow">TimLowe#Bio</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/UpgradeEnvironment" rel="nofollow">UpgradeEnvironment</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki/ChildWiki" rel="nofollow">ParentWiki/ChildWiki</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki" rel="nofollow">ParentWiki</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki" rel="nofollow">WantedLinksTestPage/SubWiki/SubberWiki/SubbestWiki</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/TubWiki/TubberWiki" rel="nofollow">WantedLinksTestPage/TubWiki/TubberWiki</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/VubWiki" rel="nofollow">WantedLinksTestPage/VubWiki</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki" rel="nofollow">WantedLinksTestPage/SubWiki</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WantedLinksTestPage/SubWiki/SubberWiki" rel="nofollow">WantedLinksTestPage/SubWiki/SubberWiki</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Wiki_page" rel="nofollow">Wiki_page</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Wiki_page2" rel="nofollow">Wiki_page2</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ISO9000" rel="nofollow">ISO9000</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/ISO9001" rel="nofollow">ISO9001</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Matters" rel="nofollow">Space Matters</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/Space%20Flatters" rel="nofollow">Space Flatters</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WikiPageName" rel="nofollow">WikiPageName</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%201" rel="nofollow">some page 1</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%202" rel="nofollow">some page 2</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/alsoAWikiPage" rel="nofollow">alsoAWikiPage</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/also-a-wiki-page" rel="nofollow">also-a-wiki-page</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%203" rel="nofollow">some page 3</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/some%20page%204" rel="nofollow">some page 4</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?format=txt" rel="nofollow">XantedLinksTestPage?format=txt</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage?version=1" rel="nofollow">XantedLinksTestPage?version=1</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/WikiCreole%20link%20style" rel="nofollow">WikiCreole link style</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro" rel="nofollow">NonExistingMacro</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/NonExistingMacro(MyMacroParam)" rel="nofollow">NonExistingMacro(MyMacroParam)</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/XantedLinksTestPage" rel="nofollow">XantedLinksTestPage</a>
+</td></tr><tr><td><a class="missing wiki" href="/wiki/CoinCoin" rel="nofollow">CoinCoin</a>
 </td></tr></table>
 <p>
 </p>
@@ -175,7 +176,7 @@ def setUp(tc):
     page = WikiPage(tc.env)
     page.name = 'WantedLinksTestPage'
     page.text = CONTENT
-    page.save('joe', 'first edit', '::1')
+    page.save('joe', 'first edit')
 
 
 def tearDown(tc):
@@ -184,7 +185,7 @@ def tearDown(tc):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(formatter.suite(MACRO_TEST_CASE, setUp, __file__, tearDown))
+    suite.addTest(formatter.test_suite(MACRO_TEST_CASE, setUp, __file__, tearDown))
     return suite
 
 

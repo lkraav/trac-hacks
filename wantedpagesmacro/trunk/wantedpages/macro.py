@@ -7,18 +7,18 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-import time, re
-from StringIO import StringIO
-from HTMLParser import HTMLParser
-from genshi.core import Markup
-from trac.wiki.formatter import format_to_html
-from trac.wiki.formatter import OneLinerFormatter
-from trac.wiki.formatter import InlineHtmlFormatter
+import collections
+import io
+import time
+import re
+
+from trac.util.html import HTMLParser, Markup, escape
+from trac.wiki.api import parse_args
+from trac.wiki.formatter import InlineHtmlFormatter, OneLinerFormatter, \
+        format_to_html
 from trac.wiki.parser import WikiParser
 from trac.wiki.macros import WikiMacroBase
-from trac.wiki.api import parse_args
-from genshi.core import escape
-from collections import OrderedDict
+
 
 # copied from trac/wiki/fomatter.py to use our HTML formatter
 def format_to_oneliner(env, context, wikidom, shorten=None):
@@ -28,6 +28,7 @@ def format_to_oneliner(env, context, wikidom, shorten=None):
         shorten = context.get_hint('shorten_lines', False)
     # use our own HTML formatter
     return WantedPagesHtmlFormatter(env, context, wikidom).generate(shorten)
+
 
 # Parse time is proportional to the number of regular expressions
 # in the wiki parser. We subclass the wiki parser so we can remove
@@ -75,6 +76,7 @@ class WantedPagesWikiParser(WikiParser):
         ]
     pass
 
+
 # subclass formatter so we can ignore content without links
 class WantedPagesFormatter(OneLinerFormatter):
     # override a few formatters to make formatting faster
@@ -121,11 +123,12 @@ class WantedPagesHtmlFormatter(InlineHtmlFormatter):
         have been emitted.
         """
         # FIXME: compatibility code only for now
-        out = StringIO()
+        out = io.StringIO()
         # use our own formatter
         WantedPagesFormatter(self.env, self.context).format(self.wikidom, out,
                                                          shorten)
         return Markup(out.getvalue())
+
 
 class MissingLinksHTMLParser(HTMLParser):
     def __init__(self):
@@ -148,15 +151,6 @@ class MissingLinksHTMLParser(HTMLParser):
         if _save and _href:
             self.data.append(_href)
 
-# query returns pages ordered by version, latest ones first
-wiki_sql = "SELECT name, text FROM wiki ORDER BY version DESC"
-
-def exec_wiki_sql(db):
-    cursor = db.cursor()
-    cursor.execute(wiki_sql)
-    rs = [(name, text) for name, text in cursor]
-    cursor.close()
-    return rs
 
 class WantedPagesMacro(WikiMacroBase):
     """Lists all wiki pages that are linked but not created in wiki pages.
@@ -181,7 +175,7 @@ class WantedPagesMacro(WikiMacroBase):
         _ml_parser = MissingLinksHTMLParser()
         # OrderedDict is needed to run test cases, but was only added in Python 2.7
         try:
-            _missing_links = OrderedDict()
+            _missing_links = collections.OrderedDict()
         except:
             _missing_links = dict()
 
@@ -228,15 +222,12 @@ class WantedPagesMacro(WikiMacroBase):
     def get_wiki_pages(self, ignored_referrers=None, filter='exclusive'):
         page_texts = [] # list of referrer link, wiki-able text tuples
         page_names = [] # list of wikiPages seen
-        # get_db_cnx is only available up to Trac 0.12
-        try:
-            db = self.env.get_db_cnx()
-        except AttributeError:
-            db = self.env.get_read_db()
 
         # query is ordered by latest version first
         # so it's easy to extract the latest pages
-        for name, text in exec_wiki_sql(db):
+        for name, text in self.env.db_query("""
+                SELECT name, text FROM wiki ORDER BY version DESC
+                """):
             if filter == 'exclusive':
                 if ignored_referrers and re.search(ignored_referrers, name):
                     continue  # skip matching names

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 Ryan J Ollos <ryan.j.ollos@gmail.com>

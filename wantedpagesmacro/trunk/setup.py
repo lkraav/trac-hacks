@@ -10,8 +10,8 @@
 from setuptools import setup
 
 setup(
-    name="WantedPages", 
-    version="0.5.1",
+    name="TracWantedPages",
+    version="0.6.0",
     author='Justin Francis',
     author_email='jfrancis@justinfrancis.org',
     maintainer='Geert Linders',
@@ -19,7 +19,7 @@ setup(
     description="List all TracLinks for which the wiki page doesn't exist",
     license="BSD 3-Clause",
     packages=['wantedpages'],
-    url='http://trac-hacks.org/wiki/WantedPagesMacro',
+    url='https://trac-hacks.org/wiki/WantedPagesMacro',
     entry_points={
         'trac.plugins': [
             'wantedpages.macro = wantedpages.macro',
