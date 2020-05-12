@@ -58,7 +58,7 @@ class LogViewerPage(Component):
 
     def get_admin_panels(self, req):
         if 'TRAC_ADMIN' in req.perm:
-            yield 'general', _('General'), 'logviewer', ('Log Viewer')
+            yield 'general', _('General'), 'logviewer', _('Log Viewer')
 
     def render_admin_panel(self, req, cat, page, path_info):
         data = {
