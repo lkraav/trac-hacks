@@ -4,6 +4,7 @@ import re
 from trac.core import Component, implements
 from trac.config import BoolOption, IntOption, Option
 from trac.admin.api import IAdminPanelProvider
+from trac.util.translation import _
 from trac.web.chrome import ITemplateProvider, add_stylesheet
 
 
@@ -57,7 +58,7 @@ class LogViewerPage(Component):
 
     def get_admin_panels(self, req):
         if 'TRAC_ADMIN' in req.perm:
-            yield 'general', _('General'), 'logviewer', 'Log Viewer'
+            yield 'general', _('General'), 'logviewer', ('Log Viewer')
 
     def render_admin_panel(self, req, cat, page, path_info):
         data = {
