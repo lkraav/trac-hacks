@@ -1,10 +1,5 @@
 /**
- * Main Layout
- */
-
-
-/**
- *	Messages
+ * Messages
  */
 div.us_error {
  background: #fdc;
@@ -51,7 +46,6 @@ ul.fieldset li fieldset {
   margin-top:5px;
 }
 fieldset#selection { padding:0; }
-
 
 /**
  * Log messages
