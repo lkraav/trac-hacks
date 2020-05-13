@@ -18,6 +18,7 @@ setup(name='TracFullBlog',
       description='Full-featured and self-contained Blog plugin for Trac.',
       url='https://trac-hacks.org/wiki/FullBlogPlugin',
       license='BSD',
+      classifiers=['Framework :: Trac'],
       zip_safe = False,
       extras_require={
             'tags': 'TracTags>=0.11',
