@@ -444,8 +444,8 @@ class FullBlogModule(Component):
     # ITimelineEventProvider methods
 
     def get_timeline_filters(self, req):
-        if 'BLOG_VIEW' in req.perm('blog', id=None):
-            yield 'blog', _('Blog details')
+        if 'BLOG_VIEW' in req.perm('blog'):
+            yield 'blog', _("Blog details")
 
     def get_timeline_events(self, req, start, stop, filters):
         if 'blog' in filters:
@@ -489,7 +489,7 @@ class FullBlogModule(Component):
                 return tag('Blog: ', tag.em(bp.title), ' comment added')
             elif field == 'description':
                 return format_to_oneliner(
-                        self.env, context(resource=bp_resource), comment)
+                        self.env, context(resource=bp_resource), bc.comment)
         else: # A blog post
             if field == 'url':
                 return context.href.blog(bp.name)
@@ -498,7 +498,8 @@ class FullBlogModule(Component):
                         bp.version > 1 and ' edited' or ' created')
             elif field == 'description':
                 return format_to_oneliner(
-                        self.env, context(resource=bp_resource), comment)
+                        self.env, context(resource=bp_resource),
+                        bp.version_comment)
 
     # ITemplateProvider methods
 
