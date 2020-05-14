@@ -14,23 +14,22 @@
 # Author: Matthew Good <trac@matt-good.net>
 
 from datetime import datetime, timedelta
-from genshi.builder import tag
-from genshi.core import Markup
 from pkg_resources import resource_filename
 from sgmllib import SGMLParser
 
 from trac.config import BoolOption, Option
 from trac.core import Component, implements
-from trac.util.compat import any
-from trac.util.datefmt import format_date
+from trac.util.datefmt import format_date, to_utimestamp
 from trac.util.text import shorten_line, to_unicode
+from trac.util.translation import cleandoc_
+from trac.util.html import Markup, tag
 from trac.web.href import Href
 from trac.web.chrome import add_stylesheet, ITemplateProvider
 from trac.wiki.api import parse_args, IWikiMacroProvider, WikiSystem
 from trac.wiki.formatter import format_to_html
 from trac.wiki.macros import WikiMacroBase
 
-from wikicalendar.api import add_domain, _, cleandoc_, gettext
+from wikicalendar.api import add_domain, _, gettext
 from wikicalendar.ticket import WikiCalendarTicketProvider
 
 has_babel = True
@@ -60,24 +59,7 @@ except ImportError:
     class UnknownLocaleError(object):
         pass
 
-uts = None
-try:
-    from trac.util.datefmt import to_utimestamp
-    uts = "env with POSIX microsecond time stamps found"
-except ImportError:
-    # Fallback to old function for 0.11 compatibility.
-    from trac.util.datefmt import to_timestamp
-
-macro_doc_compat = False
-try:
-    WikiMacroBase._domain
-except AttributeError:
-    macro_doc_compat = True
-
 _TRUE_VALUES = ('True', 'true', 'yes', 'y', '1')
-
-
-__all__ = ['TextExtractor', 'WikiCalendarMacros']
 
 
 class TextExtractor(SGMLParser):
@@ -300,14 +282,9 @@ class WikiCalendarMacros(Component):
         )
 
         if name == 'WikiCalendar':
-            if macro_doc_compat:
-                # Optionally translated doc for Trac < 1.0.
-                return gettext(cal_doc)
-            return ('wikicalendar', cal_doc)
+            return 'wikicalendar', cal_doc
         elif name == 'WikiTicketCalendar':
-            if macro_doc_compat:
-                return gettext(tcal_doc)
-            return ('wikicalendar', tcal_doc)
+            return 'wikicalendar', tcal_doc
 
     def expand_macro(self, formatter, name, arguments):
         """Returns macro content."""
@@ -417,14 +394,14 @@ class WikiCalendarMacros(Component):
             today = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
         showbuttons = True
-        if len(args) >= 3 or kwargs.has_key('nav'):
+        if len(args) >= 3 or 'nav' in kwargs:
             try:
                 showbuttons = kwargs['nav'] in _TRUE_VALUES
             except KeyError:
                 showbuttons = args[2] in _TRUE_VALUES
 
         wiki_page_format = "%Y-%m-%d"
-        if len(args) >= 4 and args[3] != "*" or kwargs.has_key('wiki'):
+        if len(args) >= 4 and args[3] != "*" or 'wiki' in kwargs:
             try:
                 wiki_page_format = str(kwargs['wiki'])
             except KeyError:
@@ -439,11 +416,11 @@ class WikiCalendarMacros(Component):
 
         # Read optional check plan.
         check = []
-        if kwargs.has_key('check'):
+        if 'check'in kwargs:
             check = kwargs['check'].split('.')
 
         if name == 'WikiTicketCalendar':
-            if len(args) >= 5 or kwargs.has_key('cdate'):
+            if len(args) >= 5 or 'cdate' in kwargs:
                 try:
                     show_t_open_dates = kwargs['cdate'] in _TRUE_VALUES
                 except KeyError:
@@ -451,7 +428,7 @@ class WikiCalendarMacros(Component):
 
             # TracQuery support for ticket selection
             query_args = "id!=0"
-            if len(args) >= 7 or kwargs.has_key('query'):
+            if len(args) >= 7 or 'query' in kwargs:
                 # prefer query arguments provided by kwargs
                 try:
                     query_args = kwargs['query']
@@ -459,7 +436,7 @@ class WikiCalendarMacros(Component):
                     query_args = args[6]
 
             # compress long ticket lists
-            if len(args) >= 8 or kwargs.has_key('short'):
+            if len(args) >= 8 or 'short' in kwargs:
                 # prefer query arguments provided by kwargs
                 try:
                     list_condense = int(kwargs['short'])
@@ -468,7 +445,7 @@ class WikiCalendarMacros(Component):
 
             # control calendar display width
             cal_width = "100%;"
-            if len(args) >= 9 or kwargs.has_key('width'):
+            if len(args) >= 9 or 'width' in kwargs:
                 # prefer query arguments provided by kwargs
                 try:
                     cal_width = kwargs['width']
@@ -476,7 +453,7 @@ class WikiCalendarMacros(Component):
                     cal_width = args[8]
 
             # multiple wiki (sub)pages per day
-            if kwargs.has_key('subpages'):
+            if 'subpages' in kwargs:
                 wiki_subpages = kwargs['subpages'].split('|')
 
         # Prepare datetime objects for previous/next navigation link creation.
@@ -502,7 +479,7 @@ class WikiCalendarMacros(Component):
 
         # Find relevant tickets.
         if name == 'WikiTicketCalendar':
-            daystr = (uts and '..' or ':').join([
+            daystr = (':').join([
                          format_datetime(first_day, locale=locale),
                          format_datetime(last_day, locale=locale)])
             provider = WikiCalendarTicketProvider(env)
@@ -596,23 +573,15 @@ class WikiCalendarMacros(Component):
                     a_class = 'day'
                     td_class = 'day'
 
-                if uts:
-                    day_ts = to_utimestamp(day)
-                    day_ts_eod = day_ts + 86399999999
-                else:
-                    day_ts = to_timestamp(day)
-                    day_ts_eod = day_ts + 86399
+                day_ts = to_utimestamp(day)
+                day_ts_eod = day_ts + 86399999999
 
                 # Check for milestone(s) on that day.
-                db = env.get_db_cnx()
-                cursor = db.cursor()
-                cursor.execute("""
-                    SELECT name
-                      FROM milestone
-                     WHERE due >= %s and due <= %s
-                """, (day_ts, day_ts_eod))
                 milestones = tag()
-                for row in cursor:
+                for row in self.env.db_query("""
+                        SELECT name FROM milestone
+                        WHERE due >= %s and due <= %s
+                        """, (day_ts, day_ts_eod)):
                     if not a_class.endswith('milestone'):
                         a_class += ' milestone'
                     milestone = to_unicode(row[0])
@@ -660,10 +629,7 @@ class WikiCalendarMacros(Component):
                             if self.tkt_due_format == 'ts':
                                 if not isinstance(due, datetime):
                                     continue
-                                if uts:
-                                    due_ts = to_utimestamp(due)
-                                else:
-                                    due_ts = to_timestamp(due)
+                                due_ts = to_utimestamp(due)
                                 if due_ts < day_ts or due_ts > day_ts_eod:
                                     continue
                             else:
@@ -691,10 +657,7 @@ class WikiCalendarMacros(Component):
                                        class_='opendate_condense')
 
                         for t in tkt_new:
-                            if uts:
-                                ticket_ts = to_utimestamp(t.get('time'))
-                            else:
-                                ticket_ts = to_timestamp(t.get('time'))
+                            ticket_ts = to_utimestamp(t.get('time'))
                             if ticket_ts < day_ts or ticket_ts > day_ts_eod:
                                 continue
 
@@ -765,11 +728,7 @@ class WikiCalendarMacros(Component):
         if test in self.checks.keys():
             sql = self.checks[test].get('test')
             if sql:
-                db = self.env.get_db_cnx()
-                cursor = db.cursor()
-                cursor.execute(sql, (item,))
-                row = cursor.fetchone()
-                if row is not None:
+                for _ in self.env.db_query(sql, (item,)):
                     return 1
 
     def _wiki_link(self, req, args, kwargs, wiki, label, a_class,
@@ -798,7 +757,7 @@ class WikiCalendarMacros(Component):
             url += "?action=edit"
             # Add page template to create new wiki pages, if specified.
             template = None
-            if len(args) >= 6 or kwargs.has_key('base'):
+            if len(args) >= 6 or 'base' in kwargs:
                 try:
                     template = kwargs['base']
                 except KeyError:

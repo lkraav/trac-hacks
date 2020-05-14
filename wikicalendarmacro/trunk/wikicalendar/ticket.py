@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2013 Steffen Hoffmann <hoff.st@web.de>
@@ -14,9 +13,6 @@ from trac.util.text import to_unicode
 from trac.wiki.api import parse_args
 
 from wikicalendar.api import WikiCalendarBuilder
-
-
-__all__ = ['WikiCalendarTicketProvider']
 
 
 class WikiCalendarTicketProvider(WikiCalendarBuilder):
@@ -64,7 +60,7 @@ class WikiCalendarTicketProvider(WikiCalendarBuilder):
             kwargs['col'] += '|' + due_field
 
         # Construct the query-string.
-        query_string = '&'.join(['%s=%s' % i for i in kwargs.iteritems()])
+        query_string = '&'.join('%s=%s' % i for i in kwargs.iteritems())
 
         # Get the Query object.
         query = Query.from_string(self.env, query_string)

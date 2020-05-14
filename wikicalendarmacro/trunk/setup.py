@@ -13,42 +13,25 @@ from setuptools import find_packages, setup
 
 extra = {}
 
-has_cmdclass = True
-has_trac_extract_python = False
+from trac.dist import get_l10n_cmdclass
 try:
-    from trac.dist import get_l10n_cmdclass
-    try:
-        from trac.dist import extract_python
-        has_trac_extract_python = True
-    except ImportError:
-        # Trac < 1.0, using compatibility code here.
-        pass
+    from trac.dist import extract_python
 except ImportError:
-    # Trac < 0.12.2, next is trying the old location.
-    try:
-        from trac.util.dist import get_l10n_cmdclass
-    except ImportError:
-        # Trac < 0.12, i18n is implemented to be optional here.
-        has_cmdclass = False
-if has_cmdclass:
-    cmdclass = get_l10n_cmdclass()
-    if cmdclass:
-        extra['cmdclass'] = cmdclass
-        if has_trac_extract_python:
-            extractors = [
-                ('**.py', 'trac.dist:extract_python', None)
-            ]
-        else:
-            extractors = [
-                ('**.py', 'wikicalendar.compat:extract_python', None)
-            ]
-        extra['message_extractors'] = {
-            'wikicalendar': extractors,
-        }
+    extract_python = None
+
+cmdclass = get_l10n_cmdclass()
+if cmdclass:
+    extra['cmdclass'] = cmdclass
+    extractors = [
+        ('**.py', 'trac.dist:extract_python', None)
+    ]
+    extra['message_extractors'] = {
+        'wikicalendar': extractors,
+    }
 
 
 PACKAGE = "WikiCalendarMacro"
-VERSION = "2.1.1"
+VERSION = "2.2.0"
 
 setup(
     name = PACKAGE,
@@ -57,7 +40,7 @@ setup(
     author_email = "trac@matt-good.net",
     maintainer = "Steffen Hoffmann",
     maintainer_email = "hoff.st@web.de",
-    url = "http://trac-hacks.org/wiki/WikiCalendarMacro",
+    url = "https://trac-hacks.org/wiki/WikiCalendarMacro",
     description = "Configurable calendars for Trac wiki.",
     long_description = """
 Display Milestones and Tickets in a calendar view, the days link to:
@@ -78,8 +61,8 @@ with one or more of it's corresponding attributes.
         See changelog in source for contributors.
         """,
 
-    install_requires = ['Trac >= 0.11'],
-    extras_require = {'Babel': 'Babel>= 0.9.5', 'Trac': 'Trac >= 0.12'},
+    install_requires = ['Trac'],
+    extras_require = {'Babel': 'Babel>= 0.9.5'},
     packages = find_packages(exclude=['*.tests*']),
     package_data = {
         'wikicalendar': [

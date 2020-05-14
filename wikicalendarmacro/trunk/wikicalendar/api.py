@@ -9,26 +9,12 @@
 # Author: Steffen Hoffmann
 
 from trac.core import Component
-
-# Import i18n methods.  Fallback modules maintain compatibility to Trac 0.11
-# by keeping Babel optional here.
-try:
-    from trac.util.translation import domain_functions
-    add_domain, _, gettext, tag_ = \
-        domain_functions('wikicalendar',
-                         ('add_domain', '_', 'gettext', 'tag_'))
-except ImportError:
-    from genshi.builder import tag as tag_
-    from trac.util.translation import gettext
-    _ = gettext
-    def add_domain(a, b, c=None):
-        pass
-
-from wikicalendar.compat import cleandoc
-cleandoc_ = cleandoc
+from trac.util.translation import domain_functions
 
 
-__all__ = ['WikiCalendarBuilder']
+add_domain, _, gettext, tag_ = \
+    domain_functions('wikicalendar',
+                     ('add_domain', '_', 'gettext', 'tag_'))
 
 
 class WikiCalendarBuilder(Component):
@@ -48,11 +34,7 @@ class WikiCalendarBuilder(Component):
         }
 
     def harvest(self):
-        """
-        """
         pass
 
     def render(self):
-        """
-        """
         pass

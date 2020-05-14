@@ -29,12 +29,9 @@ class WikiCalendarMacrosTestCase(unittest.TestCase):
         self.env.path = tempfile.mkdtemp()
         self.req = Mock()
 
-        self.db = self.env.get_db_cnx()
         self.macros = WikiCalendarMacros(self.env)
 
     def tearDown(self):
-        self.db.close()
-        # Really close db connections.
         self.env.shutdown()
         shutil.rmtree(self.env.path)
 
