@@ -65,9 +65,15 @@ jQuery(function($) {
   }
 
   var $project = $('#field-project');
-  smp_onProjectChange($project.val());
+  var project_name = $project.val();
+  smp_onProjectChange(project_name);
   $project.change(function() {
-    smp_onProjectChange(this.value)
+    // TracDynamicField triggers the change event during preview,
+    // so only trigger if the project is actually changed.
+    if (this.value !== project_name) {
+      smp_onProjectChange(this.value)
+      project_name = this.value;
+    }
   });
 
 });
