@@ -9,15 +9,16 @@
 
 from setuptools import setup
 
+
 setup(
-    name="TracWantedPages",
-    version="0.6.0",
+    name='TracWantedPages',
+    version='0.6.0',
     author='Justin Francis',
     author_email='jfrancis@justinfrancis.org',
     maintainer='Geert Linders',
     maintainer_email='glinders@dynamiccontrols.com',
-    description="List all TracLinks for which the wiki page doesn't exist",
-    license="BSD 3-Clause",
+    description="List all TracLinks non-existent wiki pages.",
+    license='BSD 3-Clause',
     packages=['wantedpages'],
     url='https://trac-hacks.org/wiki/WantedPagesMacro',
     entry_points={
