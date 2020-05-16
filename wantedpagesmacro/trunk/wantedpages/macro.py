@@ -187,7 +187,7 @@ class WantedPagesMacro(WikiMacroBase):
                                                _text))
             if _ml_parser.data:
                 for _page in _ml_parser.data:
-                    if _missing_links.has_key(_page):
+                    if _page in _missing_links:
                         if _missing_links[_page].count(_name) == 0:
                             _missing_links[_page] = _missing_links[_page] + \
                                                         [_name,]
@@ -201,16 +201,16 @@ class WantedPagesMacro(WikiMacroBase):
             _data ='||Missing link||\n'
         _missing_link_count = 0
         for _page in _missing_links:
-            _data = _data + '||[[%s]]' % \
+            _data = _data + '||[["%s"]]' % \
                         _page.partition('/wiki/')[2].replace('%20',' ')
             if _show_referrers:
                 _first = True
                 for _name in _missing_links[_page]:
                     if _first:
-                        _data = _data + "||%s" % _name
+                        _data = _data + '||[["%s"]]' % _name
                         _first = False
                     else:
-                        _data = _data + ", %s" % _name
+                        _data = _data + ', [["%s"]]' % _name
                     _missing_link_count = _missing_link_count + 1
             _data = _data + "||\n"
         # reset context for relative links
