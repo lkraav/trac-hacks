@@ -19,7 +19,7 @@ from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import http_date, to_datetime
 from trac.util.html import html as tag
 from trac.util.translation import _, tag_
-from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.api import IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_link, add_stylesheet
 from trac.wiki.api import IWikiSyntaxProvider
@@ -331,54 +331,3 @@ class TracpastePlugin(Component):
             return False
         else:
             return True
-
-
-class BloodhoundPaste(Component):
-    """
-    Bootstrap UI suitable for integrating TracPastePlugin with
-    Apache(TM) Bloodhound .
-
-    Note: It is possible to enable this component even if Bloodhound is not
-    installed. If that was the case you'll get a warning and nothing else
-    will happen.
-    """
-    implements(IRequestFilter)
-
-    def __init__(self):
-        # Do not fail if Bloodhound is not installed
-        try:
-            import bhtheme.theme
-        except ImportError:
-            self.bhtheme = None
-        else:
-            # FIXME: Remove after closing bh:ticket:360
-            if not hasattr(bhtheme.theme.BloodhoundTheme, 'is_active_theme'):
-                def is_active_theme(self):
-                    """
-                    Determine whether target theme is active
-                    """
-                    from themeengine.api import ThemeEngineSystem
-
-                    is_active = False
-                    active_theme = ThemeEngineSystem(self.env).theme
-                    if active_theme is not None:
-                        this_theme_name = self.get_theme_names().next()
-                        is_active = active_theme['name'] == this_theme_name
-                    return is_active
-
-                bhtheme.theme.BloodhoundTheme.is_active_theme = \
-                    property(is_active_theme)
-
-            self.bhtheme = self.env[bhtheme.theme.BloodhoundTheme]
-
-    # IRequestFilter methods
-
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        if self.bhtheme is not None and self.bhtheme.is_active_theme and \
-                template == 'pastebin.html':
-            return 'bh_pastebin.html', data, content_type
-        else:
-            return template, data, content_type
