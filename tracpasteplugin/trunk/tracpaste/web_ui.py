@@ -9,7 +9,6 @@
 
 import re
 
-from genshi.builder import tag
 from trac.config import BoolOption, IntOption, ListOption
 from trac.core import *
 from trac.mimeview.pygments import get_all_lexers
@@ -18,6 +17,7 @@ from trac.resource import IResourceManager, Resource
 from trac.search import ISearchSource, search_to_sql, shorten_result
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import http_date, to_datetime
+from trac.util.html import html as tag
 from trac.util.translation import _, tag_
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import INavigationContributor, ITemplateProvider, \
@@ -96,7 +96,7 @@ class TracpastePlugin(Component):
 
         if not req.args:
             req.redirect(req.href.pastebin())
-        
+
         # new post
         if req.args['new_paste']:
             title = req.args.get('title', 'untitled')
@@ -256,7 +256,7 @@ class TracpastePlugin(Component):
                          href=context.href.pastebin(resource.id))
         else:
             return _("Pastebin: %(title)s", title=p.title)
-    
+
     # IWikiSyntaxProvider methods
 
     def get_wiki_syntax(self):
@@ -264,7 +264,7 @@ class TracpastePlugin(Component):
 
     def get_link_resolvers(self):
         yield 'paste', self._format_link
-    
+
     # ISearchsource methods
 
     def get_search_filters(self, req):
@@ -298,7 +298,7 @@ class TracpastePlugin(Component):
                          class_='paste')
         except Exception:
             return tag.a(label, class_='missing paste')
-    
+
     def _get_mimetypes(self):
         result = []
         for name, _, _, mimetypes in get_all_lexers():
@@ -335,11 +335,11 @@ class TracpastePlugin(Component):
 
 class BloodhoundPaste(Component):
     """
-    Bootstrap UI suitable for integrating TracPastePlugin with 
+    Bootstrap UI suitable for integrating TracPastePlugin with
     Apache(TM) Bloodhound .
 
     Note: It is possible to enable this component even if Bloodhound is not
-    installed. If that was the case you'll get a warning and nothing else 
+    installed. If that was the case you'll get a warning and nothing else
     will happen.
     """
     implements(IRequestFilter)
