@@ -23,6 +23,7 @@ var Layout = function (name) {
   };
 
   var saved_field_order = {};
+  var prev_fields = null;
 
   // Update the field layout
   this.update = function () {
@@ -55,7 +56,10 @@ var Layout = function (name) {
     var new_fields = jQuery.merge(visible, hidden); // warning: side-effects!
 
     // order the fields
-    this.order_fields(new_fields);
+    if (JSON.stringify(new_fields) !== JSON.stringify(prev_fields)) {
+      this.order_fields(new_fields);
+      prev_fields = new_fields;
+    }
   };
 };
 
