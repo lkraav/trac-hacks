@@ -42,6 +42,7 @@ jQuery(function ($) {
 
   };
 
+  // add selector and rule class to each trigger object
   var rules = window.dynfields_rules;
   for (var prop in triggers) {
     triggers[prop].selector = get_selector(prop);
@@ -72,7 +73,7 @@ jQuery(function ($) {
       $(this).change(apply_rules).change();
     });
 
-    // apply rules on preview
+    // apply rules on auto preview
     $(document).ajaxComplete(function(event, xhr, settings) {
       if (settings.url === location.pathname) {
         $.each(inputs, apply_rules);

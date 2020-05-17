@@ -16,12 +16,13 @@ from trac.web.chrome import (
     Chrome, ITemplateProvider, add_script, add_script_data, add_stylesheet)
 
 from dynfields.options import Options
-from dynfields.rules import add_domain, _, IRule
+from dynfields.rules import IRule, add_domain, _
 
 
 class DynamicFieldsModule(Component):
     """A module that dynamically alters ticket fields based an extensible
-    set of rules.  Uses jQuery for full implementation."""
+    set of rules.  Uses jQuery for full implementation.
+    """
 
     implements(IPreferencePanelProvider, IRequestFilter, ITemplateProvider)
 

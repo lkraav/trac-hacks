@@ -115,7 +115,8 @@ class Rule(object):
         """Returns the rule class' title used for display purposes.
         This default implementation returns the rule's name with any
         camel case split into words and the last word made plural.
-        This property/method can be overridden as needed."""
+        This property/method can be overridden as needed.
+        """
         # split CamelCase to Camel Case
         title = self._split_camel_case(self.name)
         if not title.endswith('s'):
@@ -125,7 +126,8 @@ class Rule(object):
     @property
     def desc(self):
         """Returns the description of the rule.  This default implementation
-        returns the first paragraph of the docstring as the desc."""
+        returns the first paragraph of the docstring as the desc.
+        """
         return self.__doc__.split('\n')[0]
 
     # private methods
