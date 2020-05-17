@@ -12,7 +12,6 @@ jQuery(function ($) {
 
   window.apply_rules = function () {
     var input = $(this);
-    setup_triggers();
 
     // execute the rule lifecycle...
 
@@ -43,20 +42,13 @@ jQuery(function ($) {
 
   };
 
-  window.setup_triggers = function () {
-    var rules = window.dynfields_rules;
-    if (rules === undefined)
-      window.dynfields_rules = rules = {};
-
-    for (var prop in triggers) {
-      triggers[prop].selector = get_selector(prop);
-      triggers[prop].forEach(function (spec) {
-        spec.rule = rules[spec.rule_name];
-      });
-    }
-  };
-
-  setup_triggers(); // trigger fields
+  var rules = window.dynfields_rules;
+  for (var prop in triggers) {
+    triggers[prop].selector = get_selector(prop);
+    triggers[prop].forEach(function (spec) {
+      spec.rule = rules[spec.rule_name];
+    });
+  }
 
   if (window.location.pathname.match(/\/query$/)) {
     // hide all "hide_always" fields
