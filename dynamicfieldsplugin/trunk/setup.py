@@ -30,14 +30,16 @@ except ImportError:
     pass
 
 PACKAGE = 'TracDynamicFields'
-VERSION = '2.5.0'
+VERSION = '2.6.0'
 
 setup(
     name=PACKAGE, version=VERSION,
-    description='Dynamically hide, default, copy, clear,' +
-                ' validate, set ticket fields',
-    author="Rob Guttman",
-    author_email="guttman@alum.mit.edu",
+    description="Dynamically hide, default, copy, clear, validate and " +
+                "set ticket fields",
+    author='Rob Guttman',
+    author_email='guttman@alum.mit.edu',
+    maintainer='Ryan J Ollos',
+    maintainer_email='ryan.j.ollos@gmail.com',
     license='3-Clause BSD',
     url='https://trac-hacks.org/wiki/DynamicFieldsPlugin',
     packages=['dynfields'],
