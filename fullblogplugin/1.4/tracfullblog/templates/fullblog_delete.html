@@ -12,9 +12,7 @@
   <body>
 
     <div id="content" class="blog wiki">
-
       <div id="blog-main">
-
         <!--! Delete a comment. -->
         <div py:if="defined('blog_comment')">
           <h1>Delete Blog Comment</h1>
@@ -33,12 +31,11 @@
             </form>
           </div>
         </div>
-
         <!--! Delete a blog post. -->
         <div py:if="defined('blog_post')">
           <h1>Delete Blog Post</h1>
-          <p>Delete latest or all versions of
-                  blog post '${blog_post.name}'.</p>
+          <p>Delete the latest version or all versions of
+             blog post '${blog_post.name}'.</p>
           <p>If there are no remaining versions, any comments and attachments will also be deleted.</p>
           <p>This operation cannot be undone.</p>
           <div class="buttons">
@@ -50,16 +47,14 @@
                       value="${_('Delete latest version (%(version)d)', version=blog_post.version)}"
                       accesskey="l" />
                 <input type="submit" name="blog-delete"
-                      value="${_('Delete ALL versions')}"
+                      value="${_('Delete all versions')}"
                       accesskey="a" />
                 <input type="submit" name="blog-cancel" value="Cancel" />
               </div>
             </form>
           </div>
         </div>
-
       </div>
-
     </div>
 
   </body>
