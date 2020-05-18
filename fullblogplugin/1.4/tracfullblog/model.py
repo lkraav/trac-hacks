@@ -25,22 +25,22 @@ def search_blog_posts(env, terms):
     Input is a list of terms.
     Returns a list of tuples with:
         (name, version, publish_time, author, title, body) """
-    assert terms
     columns = ['bp1.name', 'bp1.title', 'bp1.body', 'bp1.author',
                'bp1.categories']
     with env.db_query as db:
         search_clause, args = search_to_sql(db, columns, terms)
+        print(search_clause)
         return [(row[0], row[1], to_datetime(row[2], utc), row[3],
-                 row[4], row[5])
-                for row in env.db_query("""
-                    SELECT bp1.name, bp1.version, bp1.publish_time, bp1.author
-                    bp1.title, bp1.body
-                    FROM fullblog_posts bp1,
-                    (SELECT name, max(version) AS ver
-                    FROM fullblog_posts GROUP BY name) bp2
-                    WHERE bp1.version = bp2.ver AND bp1.name = bp2.name
-                    AND %s
-                    """ % search_clause, args)]
+                 row[4], row[5]) for row in db(
+                 """
+                 SELECT bp1.name, bp1.version, bp1.publish_time, bp1.author,
+                  bp1.title, bp1.body
+                 FROM fullblog_posts bp1,
+                  (SELECT name, max(version) AS ver
+                   FROM fullblog_posts GROUP BY name) bp2
+                 WHERE bp1.version = bp2.ver AND bp1.name = bp2.name
+                 AND %s
+                 """ % search_clause, args)]
 
 
 def search_blog_comments(env, terms):
