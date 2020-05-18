@@ -29,7 +29,6 @@ def search_blog_posts(env, terms):
                'bp1.categories']
     with env.db_query as db:
         search_clause, args = search_to_sql(db, columns, terms)
-        print(search_clause)
         return [(row[0], row[1], to_datetime(row[2], utc), row[3],
                  row[4], row[5]) for row in db(
                  """
