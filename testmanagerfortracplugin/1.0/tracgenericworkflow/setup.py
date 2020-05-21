@@ -22,7 +22,7 @@ setup(
     author = 'Roberto Longobardi',
     author_email='otrebor.dev@gmail.com',
     license='Modified BSD, same as Trac. See the file COPYING contained in the package.',
-    url='http://trac-hacks.org/wiki/TestManagerForTracPlugin',
+    url='https://trac-hacks.org/wiki/TestManagerForTracPlugin',
     download_url='https://sourceforge.net/projects/testman4trac/files/',
     description='Test management plugin for Trac - Generic Workflow Engine component',
     long_description='A Trac plugin to create Test Cases, organize them in catalogs and track their execution status and outcome. This module provides a generic workflow engine working on any Trac Resource.',
