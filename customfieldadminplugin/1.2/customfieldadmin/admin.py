@@ -10,10 +10,10 @@ License: BSD
 
 from pkg_resources import resource_filename
 
+from trac.admin.api import IAdminPanelProvider
 from trac.config import Option
 from trac.core import *
 from trac.web.chrome import Chrome, ITemplateProvider, add_script, add_warning
-from trac.admin.api import IAdminPanelProvider
 
 from customfieldadmin.api import CustomFields, _
 
@@ -21,11 +21,6 @@ from customfieldadmin.api import CustomFields, _
 class CustomFieldAdminPage(Component):
 
     implements(ITemplateProvider, IAdminPanelProvider)
-
-    def __init__(self):
-        # Init CustomFields so translations work from first request
-        # FIXME: It actually only works from SECOND request - Trac bug?!
-        CustomFields(self.env)
 
     # IAdminPanelProvider methods
 
@@ -40,16 +35,18 @@ class CustomFieldAdminPage(Component):
         add_script(req, 'customfieldadmin/js/customfieldadmin.js')
 
         def _customfield_from_req(self, req):
-            cfield = {'name': req.args.get('name','').encode('utf-8'),
-                      'label': req.args.get('label','').encode('utf-8'),
-                      'type': req.args.get('type','').encode('utf-8'),
-                      'value': req.args.get('value','').encode('utf-8'),
-                      'options': [x.strip().encode('utf-8') for x in \
-                                    req.args.get('options','').split("\n")],
-                      'cols': req.args.get('cols','').encode('utf-8'),
-                      'rows': req.args.get('rows','').encode('utf-8'),
-                      'order': req.args.get('order', '').encode('utf-8'),
-                      'format': req.args.get('format', '').encode('utf-8')}
+            cfield = {
+                'name': req.args.get('name','').encode('utf-8'),
+                'label': req.args.get('label','').encode('utf-8'),
+                'type': req.args.get('type','').encode('utf-8'),
+                'value': req.args.get('value','').encode('utf-8'),
+                'options': [x.strip().encode('utf-8') for x in \
+                            req.args.get('options','').split("\n")],
+                'cols': req.args.get('cols','').encode('utf-8'),
+                'rows': req.args.get('rows','').encode('utf-8'),
+                'order': req.args.get('order', '').encode('utf-8'),
+                'format': req.args.get('format', '').encode('utf-8')
+            }
             return cfield
 
         cf_api = CustomFields(self.env)
@@ -64,7 +61,7 @@ class CustomFieldAdminPage(Component):
                     break
             if not cfield:
                 raise TracError(_("Custom field %(name)s does not exist.",
-                                            name=customfield))
+                                  name=customfield))
             if req.method == 'POST':
                 if req.args.get('save'):
                     cfield.update(_customfield_from_req(self, req))
@@ -72,11 +69,12 @@ class CustomFieldAdminPage(Component):
                     req.redirect(req.href.admin(cat, page))
                 elif req.args.get('cancel'):
                     req.redirect(req.href.admin(cat, page))
-            if cfield.has_key('options'):
+            if 'options' in cfield:
                 optional_line = ''
                 if cfield.get('optional', False):
                     optional_line = "\n\n"
-                cfield['options'] = optional_line + "\n".join(cfield['options'])
+                cfield['options'] = \
+                        optional_line + "\n".join(cfield['options'])
             cf_admin['cfield'] = cfield
             cf_admin['cf_display'] = 'detail'
         else:

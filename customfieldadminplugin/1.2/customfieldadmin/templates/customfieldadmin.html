@@ -11,7 +11,7 @@
     <title>Custom Fields Admin</title>
   </head>
 
-  <body>
+  <body py:with="text_formats = ['plain', 'wiki', 'reference', 'list']">
 
     <h2>Manage Custom Fields</h2>
 
@@ -49,7 +49,7 @@
         <div class="field">
           <label>Format (Text or Textarea):<br />
             <select name="format" id="format">
-              <option py:for="format in ['plain', 'wiki']" value="${format}"
+              <option py:for="format in text_formats" value="${format}"
                   selected="${cfield.format==format and 'selected' or None}">
                 ${format.capitalize()}</option>
             </select>
@@ -76,8 +76,8 @@
           </label>
         </div>
         <div class="buttons">
-          <input type="submit" name="cancel" value="${_('Cancel')}" />
           <input type="submit" name="save" value="${_('Save')}" />
+          <input type="submit" name="cancel" value="${_('Cancel')}" />
         </div>
       </fieldset>
     </form>
@@ -112,7 +112,7 @@
         <div class="field">
           <label>Format:<br />
             <select name="format" id="format">
-              <option py:for="format in ['plain', 'wiki']"
+              <option py:for="format in text_formats"
                   value="${format}">${format.capitalize()}</option>
             </select>
           </label>
@@ -127,9 +127,6 @@
           </fieldset>
         </div>
         <div class="field">
-          <label for="cols">Size of Textarea:<br />
-            Cols: <input type="text" name="cols" id="cols" size="2" />
-          </label>
           <label for="rows">
             Rows: <input type="text" size="2" name="rows" id="rows" />
           </label>
@@ -182,7 +179,7 @@
           </tbody>
         </table>
         <div class="buttons">
-          <input type="submit" name="remove"
+          <input class="trac-disable-on-submit" type="submit" name="remove"
                  value="${_('Remove selected items')}" />
           <input type="submit" name="apply" value="${_('Apply changes')}" />
         </div>

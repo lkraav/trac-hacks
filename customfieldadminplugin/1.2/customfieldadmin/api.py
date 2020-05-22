@@ -8,23 +8,23 @@ License: BSD
 (c) 2005-2012 ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
+import pkg_resources
 import re
-
-from pkg_resources import resource_filename
 
 from trac.core import *
 from trac.ticket.api import TicketSystem
 
 try:
     from  trac.util.translation import domain_functions
-    add_domain, _, tag_ = \
-        domain_functions('customfieldadmin', ('add_domain', '_', 'tag_'))
 except:
     # fall back to 0.11 behavior, i18n functions are no-ops then
-    from genshi.builder import tag as tag_
+    from trac.util.html import html as tag_
     from trac.util.translation import gettext as _
     def add_domain(*args, **kwargs):
         pass
+else:
+    add_domain, _, tag_ = \
+        domain_functions('customfieldadmin', ('add_domain', '_', 'tag_'))
 
 
 class CustomFields(Component):
@@ -40,29 +40,22 @@ class CustomFields(Component):
         value = default value for field content
         options = options for select and radio types
                   (list, leave first empty for optional)
-        cols = number of columns for text area
         rows = number of rows for text area
         order = specify sort order for field
         format = text|wiki (for text and textarea)
     """
 
-    config_options = ['label', 'value', 'options', 'cols', 'rows',
-                         'order', 'format']
+    config_options = ['label', 'value', 'options', 'rows', 'order', 'format']
 
     def __init__(self):
         # bind the 'customfieldadmin' catalog to the specified locale directory
         try:
-            locale_dir = resource_filename(__name__, 'locale')
-            add_domain(self.env.path, locale_dir)
+            locale_dir = pkg_resources.resource_filename(__name__, 'locale')
         except KeyError:
             # No 'locale', hence no compiled message catalogs. Ignore.
             pass
-        # TODO: Remove systeminfo compat code when only supporting Trac>=0.12
-        try:
-            from trac.loader import get_plugin_info
-        except ImportError:
-            from customfieldadmin import __version__
-            self.env.systeminfo.append(('CustomFieldAdmin', __version__))
+        else:
+            add_domain(self.env.path, locale_dir)
 
     def get_custom_fields(self, cfield=None):
         """ Returns the custom fields from TicketSystem component.
@@ -180,14 +173,14 @@ class CustomFields(Component):
         if not modify:
             # Permanent delete - reorder later fields to lower order
             order_to_delete = self.config.getint('ticket-custom',
-                                                    cfield['name']+'.order')
+                                                 cfield['name']+'.order')
             cfs = self.get_custom_fields()
             for field in cfs:
                 if field['order'] > order_to_delete:
-                    self.config.set('ticket-custom', field['name']+'.order',
-                                                    field['order'] -1 )
+                    self.config.set('ticket-custom', field['name'] + '.order',
+                                    field['order'] - 1 )
         supported_options = [cfield['name']] + \
-            [cfield['name']+'.'+opt for opt in self.config_options]
+            [cfield['name'] + '.' + opt for opt in self.config_options]
         for option, _value in self.config.options('ticket-custom'):
             if modify and not option in supported_options:
                 # Only delete supported options when modifying
@@ -203,12 +196,7 @@ class CustomFields(Component):
     def _save(self, cfield=None):
         """ Saves a value, clear caches if needed / supported. """
         self.config.save()
-        try:
-            # cache support for Trac >= 0.12
-            del TicketSystem(self.env).custom_fields
-        except AttributeError:
-            # 0.11 cached values internally
-            TicketSystem(self.env)._custom_fields = None
+        del TicketSystem(self.env).custom_fields
         # Re-populate contents of cfield with new values and defaults
         if cfield:
             stored = self.get_custom_fields(cfield=cfield)
