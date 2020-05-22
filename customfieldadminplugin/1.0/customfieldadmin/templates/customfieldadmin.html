@@ -1,0 +1,195 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="customfieldadmin">
+  <xi:include href="admin.html" />
+  <head>
+    <title>Custom Fields Admin</title>
+  </head>
+
+  <body>
+
+    <h2>Manage Custom Fields</h2>
+
+    <!--! Detail view -->
+    <form py:if="cf_display=='detail'" class="mod" id="addcf" method="POST">
+      <fieldset>
+        <legend>Modify Custom Field:</legend>
+        <div class="field">
+          <label>Name (cannot modify): <strong>${cfield.name}</strong></label>
+        </div>
+        <input name="name" value="${cfield.name}" type="hidden" />
+        <input name="order" value="${cfield.order}" type="hidden" />
+        <div class="field">
+          <label>Type:<br />
+            <select name="type" id="type">
+              <option py:for="value in
+                       ['text', 'select', 'checkbox', 'radio', 'textarea']"
+                  value="${value}"
+                  selected="${cfield.type==value and 'selected' or None}">
+                ${value.capitalize()}</option>
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <label>Label:<br />
+            <input type="text" name="label" value="${cfield.label}" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Default value
+                  (regular text for Text, Textarea, Radio or Select):<br />
+            <input type="text" name="value" value="${cfield.value}" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Format (Text or Textarea):<br />
+            <select name="format" id="format">
+              <option py:for="format in ['plain', 'wiki']" value="${format}"
+                  selected="${cfield.format==format and 'selected' or None}">
+                ${format.capitalize()}</option>
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <fieldset class="iefix">
+            <label for="options">
+              Options for Radio or Select
+                  (for Select, empty first line makes field optional):
+            </label>
+            <p>
+              <textarea id="options" name="options"
+                        rows="5" cols="30">${cfield.options}</textarea>
+            </p>
+          </fieldset>
+        </div>
+        <div class="field">
+          <label for="cols">Size of Textarea for entry (Textarea only):<br />
+            Columns: <input type="text" name="cols" id="cols" size="5" value="${cfield.cols}" />
+          </label>
+          <label for="rows">
+            Rows: <input type="text" size="5" name="rows" id="rows" value="${cfield.rows}" />
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="cancel" value="${_('Cancel')}" />
+          <input type="submit" name="save" value="${_('Save')}" />
+        </div>
+      </fieldset>
+    </form>
+
+    <form py:if="cf_display=='list'" class="addnew" id="addcf" method="POST">
+      <fieldset>
+        <legend>Add Custom Field:</legend>
+        <div class="field">
+          <label>Name:<br />
+            <input type="text" name="name" id="name" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Type:<br />
+            <select name="type" id="type">
+              <option py:for="value in
+                       ['text', 'select', 'checkbox', 'radio', 'textarea']"
+                  value="${value}">${value.capitalize()}</option>
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <label>Label:<br />
+            <input type="text" name="label" id="label" />
+          </label>
+        </div>
+        <div class="field">
+          <label for="value">Default value:<br />
+            <input type="text" name="value" id="value" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Format:<br />
+            <select name="format" id="format">
+              <option py:for="format in ['plain', 'wiki']"
+                  value="${format}">${format.capitalize()}</option>
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <fieldset class="iefix">
+            <label for="options">Options:</label>
+            <p>
+              <textarea id="options" name="options"
+                        rows="4" cols="17"></textarea>
+            </p>
+          </fieldset>
+        </div>
+        <div class="field">
+          <label for="cols">Size of Textarea:<br />
+            Cols: <input type="text" name="cols" id="cols" size="2" />
+          </label>
+          <label for="rows">
+            Rows: <input type="text" size="2" name="rows" id="rows" />
+          </label>
+        </div>
+        <div class="buttons">
+          <input type="submit" name="add" value="${_('Add')}" />
+        </div>
+      </fieldset>
+    </form>
+
+    <div py:if="cf_display=='list'" py:strip="">
+      <p py:if="not len(cfields)" class="help">
+        No Custom Fields defined for this project.
+      </p>
+      <form py:if="len(cfields)" method="POST">
+        <table class="listing" id="cflist">
+          <thead>
+            <tr>
+              <th class="sel">&nbsp;</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Label</th>
+              <th>Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr py:for="cf in cfields">
+              <td py:if="not cf.registry"><input type="checkbox" name="sel"
+                value="${cf.name}"/></td>
+              <td py:if="cf.registry"
+                title="Field cannot be deleted (declared in source code)"/>
+              <td><a href="${cf.href}">${cf.name}</a></td>
+              <td>${cf.type}</td>
+              <td>${cf.label}</td>
+              <td class="default">
+                <select name="order_${cf.name}" py:with="count = len(cfields)">
+                  <option py:for="num in range(1, count+1)"
+                      selected="${num==cf.order and 'selected' or None}">
+                      ${num}
+                  </option>
+                  <!--! Extra option in case value is outside regular range -->
+                  <py:if test="cf.order not in range(1, count+1)">
+                    <option disabled="disabled">&mdash;</option>
+                    <option title="Currently outside regular range"
+                            selected="selected">${cf.order}</option>
+                  </py:if>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="buttons">
+          <input type="submit" name="remove"
+                 value="${_('Remove selected items')}" />
+          <input type="submit" name="apply" value="${_('Apply changes')}" />
+        </div>
+      </form>
+    </div>
+
+  </body>
+
+</html>
+
