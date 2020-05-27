@@ -53,9 +53,6 @@ from trac.web.api import IRequestHandler
 from trac.wiki.api import IWikiMacroProvider, WikiSystem
 from trac.wiki.formatter import extract_link, WikiProcessor
 
-__id__        = '$Id$'
-__version__ = pkg_resources.get_distribution('graphviz')
-
 
 class Graphviz(Component):
     """
@@ -85,7 +82,8 @@ class Graphviz(Component):
                      ],
 
         'darwin':   ['/opt/local/bin',
-                     '/sw/bin',],
+                     '/sw/bin',
+                     '/usr/local/bin'],
 
         }
 
@@ -182,7 +180,6 @@ class Graphviz(Component):
     sanitizer = None
 
     def __init__(self):
-        self.log.info('version: %s - id: %s', __version__, str(__id__))
         wiki = WikiSystem(self.env)
         if not wiki.render_unsafe_content:
             self.sanitizer = TracHTMLSanitizer(wiki.safe_schemes)
