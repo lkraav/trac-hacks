@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 
 setup (
     name = 'TracGraphviz',
-    version = '1.4.0.0',
+    version = '1.4.0.1',
     author = "Peter Kropf",
     author_email = "pkropf@gmail.com",
     packages = find_packages(),
