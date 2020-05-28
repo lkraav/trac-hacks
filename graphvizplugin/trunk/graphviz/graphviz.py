@@ -520,7 +520,7 @@ class Graphviz(Component):
             pname = self._find_cmd(name, cmd_paths)
 
             if not pname:
-                self.log.warn('The %s program was not found. '
+                self.log.info('The %s program was not found. '
                               'The graphviz/%s macro will be disabled.',
                               pname, name)
                 Graphviz.Processors.remove(name)
