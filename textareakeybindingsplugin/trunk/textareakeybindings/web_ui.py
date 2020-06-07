@@ -9,7 +9,8 @@ except ImportError:
 
 from trac.core import *
 from trac.web import IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_script
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
+from trac.wiki.interwiki import InterWikiMap
 
 
 class TextareaKeyBindingsModule(Component):
@@ -25,11 +26,31 @@ class TextareaKeyBindingsModule(Component):
     def post_process_request(self, req, template, data, content_type):
         if (req.path_info.startswith('/wiki') or
             req.path_info.startswith('/ticket') or
-            req.path_info.startswith('/newticket') or
-            req.path_info.startswith('/discussion')):
-            if req.method == 'GET':
-                self.env.log.info('Injecting textareakeybindings.js')
-                add_script(req, 'textareakeybindings/js/textareakeybindings.js')
+            req.path_info.startswith('/newticket')):
+            self.env.log.debug('Injecting textareakeybindings.js')
+
+            def url_pattern_to_re(name, url):
+                if not '$' in url:
+                    return name + ":", re.escape(url)
+                outer = [name]
+                def repl(matchobj):
+                    outer[0] += ":$" + matchobj.group(1)
+                    return '(.+)'
+                url = re.sub(r'\\\$(\d)', repl, re.escape(url))
+                return outer[0], url
+            links = {}
+            links.update(url_pattern_to_re(name, url)
+                        for name, url, title
+                        in InterWikiMap(self.env).interwiki_map.values()
+                        )
+
+            baseurl_pattern = '%s/(\w+)/(\S+)' % (re.escape(req.base_url),)
+            script_data = {
+                'baseurl_pattern': baseurl_pattern,
+                'links': links,
+            }
+            add_script_data(req, {'textareakeybindings': script_data})
+            add_script(req, 'textareakeybindings/js/textareakeybindings.js')
         return (template, data, content_type)
 
     # ITemplateProvider methods
