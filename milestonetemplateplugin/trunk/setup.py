@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016
+# Copyright (C) 2016-2020
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -12,7 +12,7 @@ setup(
     name='MilestoneTemplatePlugin',
     description='Use templates when creating milestones.',
     long_description='Use templates when creating milestones.',
-    version='1.2.0',
+    version='1.2.1',
     url='https://trac-hacks.org/wiki/MilestoneTemplatePlugin',
     license="New BSD",
     author='Cinc-th',
@@ -27,4 +27,5 @@ setup(
         [trac.plugins]
         MilestoneTemplatePlugin = milestonetemplate.web_ui
     """,
+    test_suite = 'milestonetemplate.tests.test_suite',
 )

@@ -1,4 +1,28 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2016-2020 Cinc
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 __author__ = 'Cinc'
 
@@ -12,6 +36,7 @@ from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, ITemplateProvider, ITemplateStreamFilter, \
     add_script, add_script_data, add_notice, add_stylesheet
 from trac.wiki import WikiSystem, WikiPage
+from genshi import HTML
 from genshi.filters import Transformer
 from genshi.template.markup import MarkupTemplate
 from string import Template
@@ -40,33 +65,33 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
 
     MILESTONE_TEMPLATES_PREFIX = u'MilestoneTemplates/'
 
-    admin_page_template = u"""
-        <div xmlns:py="http://genshi.edgewall.org/" class="field">
+    admin_page_template = u"""<div class="field">
             <label>Template:
             <select id="ms-templates" name="template">
                 <option value="">(blank)</option>
-                <option py:for="tmpl in templates" value="$tmpl">
-                    ${tmpl}
-                </option>
+                {options}
             </select>
             <span class="hint">For Milestone description</span>
             </label>
-        </div>
-        """
-    edit_page_template = u"""
-        <div xmlns:py="http://genshi.edgewall.org/" class="field">
+        </div>"""
+    admin_option_tmpl = u"""<option value="{templ}">
+                    {templ}
+                </option>"""
+
+    milestone_page_template = u"""<div class="field">
             <p>Or use a template for the description:</p>
             <label>Template:
             <select id="ms-templates" name="template">
-                <option value="" selected="${sel == None or None}">(Use given Description)</option>
-                <option py:for="tmpl in templates" value="$tmpl" selected="${sel == tmpl or None}">
-                    ${tmpl}
-                </option>
+                <option value=""{sel}>(Use given Description)</option>
+                {options}
             </select>
             <span class="hint">The description will be replaced with the template contents on submit.</span>
             </label>
-        </div>
-        """
+        </div>"""
+    milestone_option_tmpl = u"""<option value="{templ}"{sel}>
+                    {templ}
+                </option>"""
+
     preview_tmpl = u"""
             <div id="mschange" class="ticketdraft" style="display: none">
                 <h3 id="ms-change-h3">Preview:</h3>
@@ -134,7 +159,7 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                     templates = self.get_milestone_templates(req)
                     if templates:
                         filter_ = Transformer('//form[@id="addmilestone"]//div[@class="buttons"]')
-                        stream = stream | filter_.before(self.create_templ_select_ctrl(templates, self.admin_page_template))
+                        stream = stream | filter_.before(HTML(self.create_admin_page_select_ctrl(templates)))
                 elif view == 'detail':
                     # Add preview div
                     tmpl = MarkupTemplate(self.preview_tmpl)
@@ -149,7 +174,7 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                 self._add_preview(req)
                 filter_ = Transformer('//form[@id="edit"]//div[contains(@class, "description")]')
                 if templates:
-                    stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template))
+                    stream = stream | filter_.after(HTML(self.create_milestone_page_select_ctrl(templates)))
                 tmpl = MarkupTemplate(self.preview_tmpl)
                 stream = stream | filter_.after(tmpl.generate())
             elif action == 'edit':
@@ -159,8 +184,8 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                     # Milestone creation from roadmap page. Duplicate name redirected to edit page.
                     templates = self.get_milestone_templates(req)
                     if templates:
-                        stream = stream | filter_.after(self.create_templ_select_ctrl(templates, self.edit_page_template,
-                                                                                      req.args.get('template', None)))
+                        stream = stream | filter_.after(HTML(self.create_milestone_page_select_ctrl(templates,
+                                                                                      req.args.get('template', None))))
                 tmpl = MarkupTemplate(self.preview_tmpl)
                 stream = stream | filter_.after(tmpl.generate())
 
@@ -183,17 +208,32 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                     if 'WIKI_VIEW' in req.perm('wiki', template)]
         return templates
 
-    def create_templ_select_ctrl(self, templates, tmpl, cur_sel=None):
-        """Create a selct control to be added to add milestone page or edit milestone page.
+    def create_admin_page_select_ctrl(self, templates):
+        """Create a select control to be added to 'Add milestone' page in the admin area.
 
-        :param templates: list of templates (wikipage names)
-        :param tmpl: Genshi template to be used for creating the select control
-        :param cur_sel: tempalte selected by the user of None if using description
-
-        :return <div> tag holding a select control with label
+        :param templates: list of templates (wiki page names)
+        :return <div> tag holding a select control with label (unicode)
         """
-        sel = MarkupTemplate(tmpl)
-        return sel.generate(templates=templates, sel=cur_sel)
+        tmpl = self.admin_page_template
+        opt = ''
+        for item in templates:
+            opt += self.admin_option_tmpl.format(templ=item)
+        return tmpl.format(options=opt)
+
+    def create_milestone_page_select_ctrl(self, templates, cur_sel=None):
+        """Create a select control to be added to 'Add milestone' page or 'Edit milestone' page. USed when creating
+           milestones from the Roadmap page.
+
+        :param templates: list of templates (wiki page names)
+        :param cur_sel: template selected by the user or None if using description field. Note that this is always
+                        None for admin page
+        :return <div> tag holding a select control with label (unicode)
+        """
+        tmpl = self.milestone_page_template
+        opt = ''
+        for item in templates:
+            opt += self.milestone_option_tmpl.format(templ=item, sel=' selected="selected"' if cur_sel == item else '')
+        return tmpl.format(sel=' selected="selected"' if not cur_sel else '', options=opt)
 
     # IRequestFilter methods
 
