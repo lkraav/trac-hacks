@@ -33,13 +33,24 @@ from trac.ticket.model import Milestone
 from trac.util.datefmt import parse_date
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
-from trac.web.chrome import Chrome, ITemplateProvider, ITemplateStreamFilter, \
+from trac.web.chrome import Chrome, ITemplateProvider, \
     add_script, add_script_data, add_notice, add_stylesheet
 from trac.wiki import WikiSystem, WikiPage
-from genshi import HTML
-from genshi.filters import Transformer
-from genshi.template.markup import MarkupTemplate
 from string import Template
+
+class JTransformer(object):
+    """Class modelled after the Genshi Transformer class. Instead of an xpath it uses a
+       selector usable by jQuery.
+       You may use cssify (https://github.com/santiycr/cssify) to convert a xpath to a selector."""
+
+    def __init__(self, xpath):
+        self.css = xpath  # xpath must be a css selector for jQuery
+
+    def after(self, html):
+        return {'pos': 'after', 'css': self.css, 'html': html}
+
+    def before(self, html):
+        return {'pos': 'before', 'css': self.css, 'html': html}
 
 
 class MilestoneTemplatePlugin(MilestoneAdminPanel):
@@ -61,7 +72,7 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
     }}}
     """
 
-    implements(ITemplateStreamFilter, IRequestFilter, ITemplateProvider)
+    implements(IRequestFilter, ITemplateProvider)
 
     MILESTONE_TEMPLATES_PREFIX = u'MilestoneTemplates/'
 
@@ -103,6 +114,8 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         # Let our component handle the milestone stuff
         if self.env.is_enabled(MilestoneAdminPanel):
             self.env.disable_component(MilestoneAdminPanel)
+
+        self.is_trac_1_2 = self.env.trac_version[:3] == '1.2'
 
     def render_admin_panel(self, req, cat, page, version):
         req.perm.require('MILESTONE_VIEW')
@@ -146,50 +159,6 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
                 'WIKI_VIEW' in req.perm(template_page.resource):
             return Template(template_page.text).safe_substitute(MILESTONE=ms_name)
         return u""
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        path = req.path_info.split('/')
-        if filename == 'admin_milestones.html':
-            # Milestone creation from admin page
-            if data:
-                view = data.get('view')
-                if view == 'list':
-                    templates = self.get_milestone_templates(req)
-                    if templates:
-                        filter_ = Transformer('//form[@id="addmilestone"]//div[@class="buttons"]')
-                        stream = stream | filter_.before(HTML(self.create_admin_page_select_ctrl(templates)))
-                elif view == 'detail':
-                    # Add preview div
-                    tmpl = MarkupTemplate(self.preview_tmpl)
-                    self._add_preview(req)
-                    filter_ = Transformer('//form[@id="edit"]//textarea')
-                    stream = stream | filter_.after(tmpl.generate())
-        elif len(path) > 1 and path[1] == 'milestone':
-            action = req.args.get('action')
-            if action == 'new':
-                # Milestone creation from roadmap page
-                templates = self.get_milestone_templates(req)
-                self._add_preview(req)
-                filter_ = Transformer('//form[@id="edit"]//div[contains(@class, "description")]')
-                if templates:
-                    stream = stream | filter_.after(HTML(self.create_milestone_page_select_ctrl(templates)))
-                tmpl = MarkupTemplate(self.preview_tmpl)
-                stream = stream | filter_.after(tmpl.generate())
-            elif action == 'edit':
-                self._add_preview(req)
-                filter_ = Transformer('//form[@id="edit"]//textarea')
-                if req.method == "POST":
-                    # Milestone creation from roadmap page. Duplicate name redirected to edit page.
-                    templates = self.get_milestone_templates(req)
-                    if templates:
-                        stream = stream | filter_.after(HTML(self.create_milestone_page_select_ctrl(templates,
-                                                                                      req.args.get('template', None))))
-                tmpl = MarkupTemplate(self.preview_tmpl)
-                stream = stream | filter_.after(tmpl.generate())
-
-        return stream
 
     def _add_preview(self, req):
         Chrome(self.env).add_auto_preview(req)
@@ -258,7 +227,65 @@ class MilestoneTemplatePlugin(MilestoneAdminPanel):
         return False
 
     def post_process_request(self, req, template, data, content_type):
+        filter_list = []
+        if template and data:
+            self.filter_html(req, template, data, filter_list)
+            if filter_list:
+                add_script_data(req, {'ms_filter': filter_list})
+                add_script(req, 'mstemplate/js/ms_add_select.js')
+
         return template, data, content_type
+
+    def filter_html(self, req, filename, data, filter_lst):
+        """Create filter information for Javascript. The filters may specify some html to be appended or prepended
+           to DOM elements using jQuery $().before() and $().after() statements. A separate script file takes
+           the filter data and executes jQuery code."""
+
+        path = req.path_info.split('/')
+        if filename == 'admin_milestones.html':
+            # Milestone creation from admin page
+            view = data.get('view')
+            if view == 'list':
+                templates = self.get_milestone_templates(req)
+                if templates:
+                    # xpath: //form[@id="addmilestone"]//div[@class="buttons"]
+                    xform = JTransformer('form#addmilestone div.buttons')
+                    filter_lst.append(xform.before(self.create_admin_page_select_ctrl(templates)))
+            elif view == 'detail':
+                if self.is_trac_1_2:
+                    # Add preview div
+                    self._add_preview(req)
+                    # xpath: //form[@id="edit"]//textarea
+                    xform = JTransformer('form#edit textarea')
+                    filter_lst.append(xform.after(self.preview_tmpl))
+        elif len(path) > 1 and path[1] == 'milestone':
+            templates = self.get_milestone_templates(req)
+            action = req.args.get('action')
+
+            if templates and action == 'new':
+                # Milestone creation from roadmap page
+                # xpath: //form[@id="edit"]//div[contains(@class, "description")]
+                xform = JTransformer('form#edit div[class*=description]')
+                filter_lst.append(xform.after(self.create_milestone_page_select_ctrl(templates)))
+                if self.is_trac_1_2:
+                    # Preview
+                    self._add_preview(req)
+                    filter_lst.append(xform.after(self.preview_tmpl))
+
+            elif templates and action == 'edit':
+                self._add_preview(req)
+                # xpath: //form[@id="edit"]//textarea
+                xform = JTransformer('form#edit textarea')
+                if req.method == "POST":
+                    # Milestone creation from roadmap page. Duplicate name redirected to edit page.
+                    filter_lst.append(xform.after(self.create_milestone_page_select_ctrl(templates,
+                                                                                         req.args.get('template', None)
+                                                                                         )))
+                if self.is_trac_1_2:
+                    # Preview area
+                    self._add_preview(req)
+                    filter_lst.append(xform.after(self.preview_tmpl))
+        return filter_lst
 
     # ITemplateProvider methods
 
