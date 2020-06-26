@@ -10,9 +10,12 @@
 import io
 import json
 from ConfigParser import SafeConfigParser, ParsingError
-from pkg_resources import resource_filename
+from pkg_resources import resource_filename, get_distribution, parse_version
+try:
+    from genshi.output import HTMLSerializer
+except ImportError:
+    pass
 
-from genshi.output import HTMLSerializer
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.ticket.model import Type
@@ -165,6 +168,10 @@ class MultipleWorkflowAdminModule(Component):
 
     implements(IAdminPanelProvider, ITemplateProvider, IRequestHandler)
 
+    # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
+    # creation using trac.util.html.tag and friends
+    pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
+
     # IRequestHandler methods
 
     def match_request(self, req):
@@ -173,9 +180,14 @@ class MultipleWorkflowAdminModule(Component):
     def process_request(self, req):
         req.perm.require('TICKET_ADMIN')
 
+        # div may be a Genshi fragment or a new Trac 1.3 fragment
         div, scr_data, graph = create_graph_data(self, req)
-        rendered = "".join(HTMLSerializer()(div.generate()))
-        data = {'html': rendered.encode("utf-8"), 'graph_data': graph}
+        if self.pre_1_3:
+            rendered = "".join(HTMLSerializer()(div.generate()))
+            data = {'html': rendered.encode("utf-8"), 'graph_data': graph}
+        else:
+            rendered = unicode(div)
+            data = {'html': rendered, 'graph_data': graph}
         write_json_response(req, data)
 
     # IAdminPanelProvider methods
@@ -274,10 +286,10 @@ class MultipleWorkflowAdminModule(Component):
                 'form_token': req.form_token,
                 'trac_types': data['trac_types']})
 
-        if hasattr(Chrome(self.env), 'jenv'):
-            return 'multipleworkflowadmin.html', data, None
-        else:
+        if self.pre_1_3:
             return 'multipleworkflowadmin.html', data
+        else:
+            return 'multipleworkflowadmin.html', data, None
 
     # ITemplateProvider methods
 
