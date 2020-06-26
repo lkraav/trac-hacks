@@ -19,8 +19,8 @@ from trac.ticket.model import Type
 from trac.util.html import html as tag
 from trac.util.translation import _, dgettext
 from trac.web.api import IRequestHandler
-from trac.web.chrome import ITemplateProvider, add_script_data, add_script, \
-                            add_warning
+from trac.web.chrome import (
+    ITemplateProvider, Chrome, add_script_data, add_script, add_warning)
 
 from workflow import get_workflow_config_by_type, parse_workflow_config
 
@@ -274,7 +274,10 @@ class MultipleWorkflowAdminModule(Component):
                 'form_token': req.form_token,
                 'trac_types': data['trac_types']})
 
-        return 'multipleworkflowadmin.html', data
+        if hasattr(Chrome(self.env), 'jenv'):
+            return 'multipleworkflowadmin.html', data, None
+        else:
+            return 'multipleworkflowadmin.html', data
 
     # ITemplateProvider methods
 
