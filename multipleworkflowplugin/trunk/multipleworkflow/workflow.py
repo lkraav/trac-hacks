@@ -6,15 +6,14 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.filters.transform import Transformer
 from trac.core import implements
 from trac.ticket import model
 from trac.ticket.default_workflow import ConfigurableTicketWorkflow, \
                                          parse_workflow_config
 from trac.ticket.api import ITicketActionController
 from trac.util import sub_val
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-
+from trac.web.api import IRequestFilter
+from trac.web.chrome import add_script
 
 def get_workflow_config_by_type(config, ticket_type):
     """return the [ticket-workflow-type] session"""
@@ -106,7 +105,7 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
     verify.permissions = TICKET_MODIFY
     }}}
     """
-    implements(ITicketActionController, ITemplateStreamFilter, IRequestFilter)
+    implements(ITicketActionController, IRequestFilter)
 
     def __init__(self):
         self.type_actions = {}
@@ -136,10 +135,10 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        """Implements the special behaviour for requests with 'refresh'
+        """Implements the special behaviour for requests with 'mw_refresh'
         argument should provide the proper list of available actions.
         """
-        mine = ['/newticket', '/ticket', '/simpleticket']
+        mine = ('/newticket', '/ticket', '/simpleticket')
 
         match = False
         for target in mine:
@@ -148,45 +147,13 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
                 break
 
         if match:
-            if 'refresh' in req.args:
+            if 'mw_refresh' in req.args:
+                # This is our outosubmit handler for the type field requesting an update for the
+                # ticket actions
                 template = 'ticket_workflow.html'
-
+            else:
+                add_script(req, 'multipleworkflow/js/refresh_actions.js')
         return template, data, content_type
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        """Returns a transformed stream extended with action refresh
-        functionality.
-        """
-        # The jQuery code responsible for refreshing the list of actions will
-        # be injected after certain points (matched based on regex) in the
-        # original ticket template
-
-        # Note: refresh should preserve the previous selection if applicable
-        script = '''\n
-        $("#field-type").autoSubmit({refresh: '1'}, function(data, reply) {
-            var previouslyCheckedAction = $("#action input[name='action']:checked");
-            var items = $(reply);
-            var actions = items.filter('#action');
-            $("#action").replaceWith(actions);
-            var actionToClick = $("#action input[id='" + previouslyCheckedAction.attr('id') + "']");
-            if (actionToClick.length != 0)
-            {
-                actionToClick.click();
-            }
-            else
-                $("#action input[name='action']:first").click();
-        }, "#action .trac-loading");'''
-        # Applying changes only on ticket.html
-        if filename == 'ticket.html':
-            stream = stream | Transformer('.//script').\
-                              substitute('#ticket \.trac-loading\"\);',
-                                         '#ticket .trac-loading");' + script)
-            stream = stream | Transformer('.//script').\
-                              substitute('#changelog \.trac-loading\"\);',
-                                         '#changelog .trac-loading");' + script)
-        return stream
 
     # ITicketActionController methods
 

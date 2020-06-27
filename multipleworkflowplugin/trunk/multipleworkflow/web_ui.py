@@ -23,7 +23,7 @@ from trac.util.html import html as tag
 from trac.util.translation import _, dgettext
 from trac.web.api import IRequestHandler
 from trac.web.chrome import (
-    ITemplateProvider, Chrome, add_script_data, add_script, add_warning)
+    ITemplateProvider, add_script_data, add_script, add_warning)
 
 from workflow import get_workflow_config_by_type, parse_workflow_config
 
