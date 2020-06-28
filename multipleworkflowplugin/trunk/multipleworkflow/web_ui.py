@@ -19,11 +19,11 @@ except ImportError:
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.ticket.model import Type
-from trac.util.html import html as tag
+from trac.util.html import Markup, html as tag
 from trac.util.translation import _, dgettext
 from trac.web.api import IRequestHandler
-from trac.web.chrome import (
-    ITemplateProvider, add_script_data, add_script, add_warning)
+from trac.web.chrome import (add_notice, add_warning,
+    ITemplateProvider, add_script_data, add_script)
 
 from workflow import get_workflow_config_by_type, parse_workflow_config
 
@@ -212,6 +212,24 @@ class MultipleWorkflowAdminModule(Component):
                     types.append(section[len('ticket-workflow-'):])
         return types
 
+    def install_workflow_controller(self, req):
+        """Set MultipleWorkflowPlugin as the current workflow controller in trac.ini.
+
+        Note that the current setting will be replaced and saved using the key 'workflow_mwf_install'. If
+        you want to use several workflow controllers at the same time you have to create a list on your own.
+
+        A notice will be shown to the user on success.
+        """
+        save_key = 'workflow_mwf_install'  # key in section [ticket] to keep the previous setting
+        prev_controller = self.config.get('ticket', 'workflow', '')
+        self.config.set('ticket', 'workflow', 'MultipleWorkflowPlugin')
+        self.config.set('ticket', save_key, prev_controller)
+        self.config.save()
+        add_notice(req, Markup(_(u'Workflow controller installed by setting <em>workflow=MultipleWorkflowPlugin</em> '
+                                 u'in section <em>[ticket]</em>.')))
+        add_notice(req, Markup(_(u'Previous workflow controller was saved as '
+                                 u'<em>%s=%s</em> in section <em>[ticket]</em>.') % (save_key, prev_controller)))
+
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('TICKET_ADMIN')
 
@@ -261,12 +279,16 @@ class MultipleWorkflowAdminModule(Component):
                         # Empty line or missing val
                         pass
                 self.config.save()
+            elif req.args.get('install'):
+                self.install_workflow_controller(req)
 
             req.redirect(req.href.admin(cat, page))
 
         # GET, show admin page
+        wf_controllers = self.config.getlist('ticket', 'workflow', [])
         data = {'types': self._get_all_types_with_workflow(),
-                'trac_types': [enum.name for enum in Type.select(self.env)]}
+                'trac_types': [enum.name for enum in Type.select(self.env)],
+                'wf_controller_installed': u'MultipleWorkflowPlugin' in wf_controllers}
         if not path_info:
             data.update({'view': 'list', 'name': 'default'})
         else:

@@ -72,6 +72,26 @@
       </form>
     </py:when>
     <py:otherwise>
+        <py:if test="not wf_controller_installed">
+          <div class="system-message warning">
+            Workflow controller <strong>MultipleWorkflowPlugin</strong> is not set in trac.ini.
+          </div>
+          <div>
+              <p class="help">${_("It must be added as a workflow controller in section [ticket]. Only the default ticket workflow will currently be used.")}
+              </p>
+          </div>
+          <form class="addnew" id="install-controller" method="post" action="">
+            <fieldset>
+                <legend>${_("Install Workflow Controller:")}</legend>
+                <p>${_("You may install the workflow controller by clicking the following button.")}</p>
+                <div class="buttons">
+                    <input type="submit" name="install" value="${_('Install')}"/>
+                </div>
+            </fieldset>
+          </form>
+          <hr/>
+        </py:if>
+
       <form class="addnew" id="addworkflow" method="post" action="">
         <fieldset>
           <legend>Add Workflow:</legend>
