@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2009-2015
+# Copyright (C) 2009-2015 ermal
+# Copyright (C) 2015-2020 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which

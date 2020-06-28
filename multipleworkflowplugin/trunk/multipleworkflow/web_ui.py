@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Cinc
+# Copyright (C) 2015-2020 Cinc
 #
 # All rights reserved.
 #
@@ -289,7 +289,7 @@ class MultipleWorkflowAdminModule(Component):
         if self.pre_1_3:
             return 'multipleworkflowadmin.html', data
         else:
-            return 'multipleworkflowadmin.html', data, None
+            return 'multipleworkflowadmin_jinja.html', data, {}
 
     # ITemplateProvider methods
 

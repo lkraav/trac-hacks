@@ -1,0 +1,167 @@
+{#
+# Copyright (C) 2020 Cinc
+#
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#}
+
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>
+      # block admintitle
+      ${_("Workflow Admin")}
+      # endblock admintitle
+    </title>
+    # block head
+    ${ super() }
+    # if view == 'detail':
+    <script type="text/javascript">
+    jQuery(document).ready(function ($) {
+      $("#workflow-actions").autoPreviewWorkflow("${href()}/multipleworkflow/workflow_render", "",
+          function (textarea, text, rendered) {
+            if (rendered) {
+              $('#workflow-graph').html(rendered['html']);
+              var graphdiv = $('.multiple-workflow-graph');
+              var data = rendered['graph_data'];
+              window.drawWorkflows(data, graphdiv);
+            }
+          });
+      $('#name').bind('input', function () {
+        /* trac_types holds all the known ticket types */
+        if ($.inArray($(this).val(), trac_types) == -1) {
+          $('#trac-type-hint').show();
+        }
+        else {
+          $('#trac-type-hint').hide();
+        }
+        ;
+      });
+    });
+    </script>
+    # endif
+    # endblock head
+</head>
+<body>
+    # block adminpanel
+    <h2>${_("Manage Workflows")}
+    # if view == 'list':
+        <span class="trac-count">(${len(types) + 1})</span>
+    # endif
+    </h2>
+    <div>
+
+        # if view == 'detail':
+        <form class="mod" id="modworkflow" method="post" action="">
+            ${jmacros.form_token_input()}
+            <fieldset>
+                <legend>${_("Modify Workflow:")}</legend>
+                <div class="field">
+                    <label>${_("Name:")}<br/>
+                        <input name="name" value="${name}"
+                               type="text" id="name"${{'disabled': name == 'default'}|htmlattr}/>
+                    </label>
+                </div>
+                <div class="field">
+                    <textarea id="workflow-actions"
+                              name="workflow-actions"
+                              class="wikitext trac-resizable" rows="15"
+                              cols="78">${''.join(workflow)}</textarea>
+                </div>
+                <p class="help" id="trac-type-hint"${{'style':
+                {'display': 'none' if name in trac_types or name == "default"}}|htmlattr}>
+                    ${_("There is currently no ticket type matching this workflow.")}
+                </p>
+                <div class="buttons">
+                    <input type="submit" name="cancel" value="${_('Cancel')}"/>
+                    <input type="submit" name="save" value="${_('Save')}"/>
+                </div>
+
+                <h3>${_("Workflow Graph")}</h3>
+                <div id="workflow-graph">
+                    ${workflowgraph}
+                </div>
+            </fieldset>
+        </form>
+
+        # endif
+
+        # if view == 'list':
+        <form class="addnew" id="addworkflow" method="post" action="">
+            ${jmacros.form_token_input()}
+            <fieldset>
+                <legend>${_("Add Workflow:")}</legend>
+                <div class="field">
+                    <label>${_("Name:")}<br/><input type="text" name="name"/></label>
+                </div>
+                <label>${_("Copy from:")}<br/>
+                    <select name="type" id="tkt-types" style="margin-left: 1em;">
+                        <option value="default">${_("Default workflow")}</option>
+                        # for tkt_type in types:
+                        <option${{'selected': tkt_type == selected, 'value': tkt_type
+                             }|htmlattr}> ${tkt_type}
+                        </option>
+                        # endfor
+                    </select>
+                </label>
+
+                <div class="buttons">
+                    <input type="submit" name="add" value="${_('Add')}"/>
+                </div>
+            </fieldset>
+        </form>
+
+        <form id="workflow_table" method="post" action="">
+            ${jmacros.form_token_input()}
+            <table class="listing" id="workflowlist">
+                <thead>
+                    <tr>
+                        <th class="sel">&nbsp;</th>
+                        <th>${_("Ticket Workflow")}</th>
+                        <th>${_("Description")}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="sel"></td>
+                        <td class="name">
+                            <a href="${panel_href('default')}">${_("default")}</a>
+                        </td>
+                        <td>
+                            ${_("Trac default workflow. It is used for ticket types without any specific workflow.")}
+                        </td>
+                    </tr>
+                    # for tkt_type in types:
+                    <tr>
+                        <td class="sel"><input type="checkbox" name="sel" value="${tkt_type}"/></td>
+                        <td class="name">
+                            <a href="${panel_href(tkt_type)}">${tkt_type}</a>
+                        </td>
+                        <td>
+                            Workflow for tickets of type <strong>${tkt_type}</strong>.
+                            # if tkt_type not in trac_types:
+                            <p class="help">
+                                ${_("There is currently no ticket type matching this workflow.")}
+                            </p>
+                            # endif
+                        </td>
+                    </tr>
+                    # endfor
+                </tbody>
+            </table>
+            <div class="buttons">
+                <input type="submit" name="remove" value="${_('Remove selected items')}"/>
+            </div>
+            <p class="help">
+                ${_("You can't remove the default workflow.")}
+            </p>
+        </form>
+        # endif
+
+    </div>
+    # endblock adminpanel
+</body>
+</html>
