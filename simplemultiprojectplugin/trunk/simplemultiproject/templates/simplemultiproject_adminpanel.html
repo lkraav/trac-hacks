@@ -63,6 +63,11 @@
                 </fieldset>
             </form>
             <py:otherwise>
+                <py:if test="not custom_field">
+                    <div class="system-message warning">
+                        Ticket custom field not set. See installation instructions.
+                    </div>
+                </py:if>
                 <form py:if="'PROJECT_ADMIN' in perm" class="addnew" id="simplemultiproject" action="" method="post">
                     <fieldset>
                         <legend>Add Project</legend>

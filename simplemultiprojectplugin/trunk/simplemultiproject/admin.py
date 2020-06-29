@@ -163,7 +163,9 @@ class SmpAdminPanel(Component):
                 else:
                     pass
             else:
+
                 data = {
+                    'custom_field': self.config.get('ticket-custom', 'project', None) != None,
                     'view': 'init',
                     'projects': projects,
                     'datetime_hint': get_datetime_format_hint()
