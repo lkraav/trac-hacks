@@ -35,17 +35,24 @@ class CustomFields(Component):
 
     Input to methods is a 'cfield' dict supporting these keys:
         name = name of field (ascii alphanumeric only)
-        type = text|checkbox|select|radio|textarea
+        type = text|checkbox|select|radio|textarea|time
         label = label description
         value = default value for field content
         options = options for select and radio types
                   (list, leave first empty for optional)
         rows = number of rows for text area
         order = specify sort order for field
-        format = text|wiki (for text and textarea)
+        format = text|wiki|reference|list (for text)
+        format = text|wiki (for textarea)
+        format = relative|date|datetime (for time)
     """
 
     config_options = ['label', 'value', 'options', 'rows', 'order', 'format']
+    formats = {
+        'text': ['plain', 'wiki', 'reference', 'list'],
+        'textarea': ['plain', 'wiki'],
+        'time': ['relative', 'date', 'datetime'],
+    }
 
     def __init__(self):
         # bind the 'customfieldadmin' catalog to the specified locale directory
@@ -64,8 +71,6 @@ class CustomFields(Component):
         items = TicketSystem(self.env).get_custom_fields()
         for item in items:
             if item['type'] == 'textarea':
-                if 'width' in item:
-                    item['cols'] = item.pop('width')
                 item['rows'] = item.pop('height')
             if cfield and item['name'] == cfield['name']:
                 return item  # only return specific item with cfname
@@ -99,9 +104,9 @@ class CustomFields(Component):
                     _("Custom field name must begin with a character (a-z)."))
         # Check that it is a valid field type
         if not cfield['type'] in \
-                        ['text', 'checkbox', 'select', 'radio', 'textarea']:
+                ['text', 'checkbox', 'select', 'radio', 'textarea', 'time']:
             raise TracError(_("%(field_type)s is not a valid field type",
-                                        field_type=cfield['type']))
+                              field_type=cfield['type']))
         # Check that field does not already exist
         # (if modify it should already be deleted)
         if create and self.config.get('ticket-custom', cfield['name']):
@@ -126,23 +131,23 @@ class CustomFields(Component):
         if 'value' in cfield:
             self.config.set('ticket-custom', cfield['name'] + '.value',
                                                         cfield['value'])
-        if 'options' in cfield:
+        if cfield['type'] in ('select', 'radio') and \
+                'options' in cfield:
             if cfield.get('optional', False) and '' not in cfield['options']:
                 self.config.set('ticket-custom', cfield['name'] + '.options',
                                 '|' + '|'.join(cfield['options']))
             else:
                 self.config.set('ticket-custom', cfield['name'] + '.options',
                                '|'.join(cfield['options']))
-        if 'format' in cfield and cfield['type'] in ('text', 'textarea'):
+        if 'format' in cfield and \
+                cfield['type'] in ('text', 'textarea', 'time') and \
+                cfield['format'] in self.formats[cfield['type']]:
             self.config.set('ticket-custom', cfield['name'] + '.format',
-                                                        cfield['format'])
+                            cfield['format'])
         # Textarea
         if cfield['type'] == 'textarea':
-            cols = cfield.get('cols') and int(cfield.get('cols', 0)) > 0 \
-                                                and cfield.get('cols') or 60
             rows = cfield.get('rows', 0) and int(cfield.get('rows', 0)) > 0 \
                                                 and cfield.get('rows') or 5
-            self.config.set('ticket-custom', cfield['name'] + '.cols', cols)
             self.config.set('ticket-custom', cfield['name'] + '.rows', rows)
         # Order
         order = cfield.get('order') or count_current_fields + 1

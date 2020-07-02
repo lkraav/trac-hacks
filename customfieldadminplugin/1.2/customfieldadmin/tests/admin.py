@@ -42,10 +42,8 @@ class CustomFieldAdminPageTestCase(unittest.TestCase):
             self.plugin.render_admin_panel(req, 'ticket', 'customfields', None)
         self.assertEquals([
             (u'test', u'textarea'),
-            (u'test.cols', u'60'),
             (u'test.format', u'wiki'),
             (u'test.label', u'testing'),
-            (u'test.options', u''),
             (u'test.order', u'1'),
             (u'test.rows', u'5'),
             (u'test.value', u''),
