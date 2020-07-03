@@ -11,7 +11,7 @@
     <title>Custom Fields Admin</title>
   </head>
 
-  <body py:with="text_formats = ['plain', 'wiki', 'reference', 'list']">
+  <body>
 
     <h2>Manage Custom Fields</h2>
 
@@ -27,8 +27,7 @@
         <div class="field">
           <label>Type:<br />
             <select name="type" id="type">
-              <option py:for="value in
-                       ['text', 'select', 'checkbox', 'radio', 'textarea']"
+              <option py:for="value in field_types"
                   value="${value}"
                   selected="${cfield.type==value and 'selected' or None}">
                 ${value.capitalize()}</option>
@@ -48,11 +47,7 @@
         </div>
         <div class="field">
           <label>Format (Text or Textarea):<br />
-            <select name="format" id="format">
-              <option py:for="format in text_formats" value="${format}"
-                  selected="${cfield.format==format and 'selected' or None}">
-                ${format.capitalize()}</option>
-            </select>
+            <select name="format" id="format"></select>
           </label>
         </div>
         <div class="field">
@@ -68,10 +63,7 @@
           </fieldset>
         </div>
         <div class="field">
-          <label for="cols">Size of Textarea for entry (Textarea only):<br />
-            Columns: <input type="text" name="cols" id="cols" size="5" value="${cfield.cols}" />
-          </label>
-          <label for="rows">
+          <label>
             Rows: <input type="text" size="5" name="rows" id="rows" value="${cfield.rows}" />
           </label>
         </div>
@@ -93,8 +85,7 @@
         <div class="field">
           <label>Type:<br />
             <select name="type" id="type">
-              <option py:for="value in
-                       ['text', 'select', 'checkbox', 'radio', 'textarea']"
+              <option py:for="value in field_types"
                   value="${value}">${value.capitalize()}</option>
             </select>
           </label>
@@ -112,8 +103,6 @@
         <div class="field">
           <label>Format:<br />
             <select name="format" id="format">
-              <option py:for="format in text_formats"
-                  value="${format}">${format.capitalize()}</option>
             </select>
           </label>
         </div>

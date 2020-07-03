@@ -13,7 +13,8 @@ from pkg_resources import resource_filename
 from trac.admin.api import IAdminPanelProvider
 from trac.config import Option
 from trac.core import *
-from trac.web.chrome import Chrome, ITemplateProvider, add_script, add_warning
+from trac.web.chrome import (
+    Chrome, ITemplateProvider, add_script, add_script_data, add_warning)
 
 from customfieldadmin.api import CustomFields, _
 
@@ -32,6 +33,8 @@ class CustomFieldAdminPage(Component):
     def render_admin_panel(self, req, cat, page, customfield):
         req.perm('admin', 'ticket/customfields').require('TICKET_ADMIN')
 
+        cf_api = CustomFields(self.env)
+        add_script_data(req, field_formats=cf_api.field_formats)
         add_script(req, 'customfieldadmin/js/customfieldadmin.js')
 
         def _customfield_from_req(self, req):
@@ -49,8 +52,8 @@ class CustomFieldAdminPage(Component):
             }
             return cfield
 
-        cf_api = CustomFields(self.env)
-        cf_admin = {} # Return values for template rendering
+        cf_admin = {'field_types': cf_api.field_types}
+
 
         # Detail view?
         if customfield:

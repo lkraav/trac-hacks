@@ -48,7 +48,8 @@ class CustomFields(Component):
     """
 
     config_options = ['label', 'value', 'options', 'rows', 'order', 'format']
-    formats = {
+    field_types = ['text', 'checkbox', 'select', 'radio', 'textarea', 'time']
+    field_formats = {
         'text': ['plain', 'wiki', 'reference', 'list'],
         'textarea': ['plain', 'wiki'],
         'time': ['relative', 'date', 'datetime'],
@@ -103,8 +104,7 @@ class CustomFields(Component):
             raise TracError(
                     _("Custom field name must begin with a character (a-z)."))
         # Check that it is a valid field type
-        if not cfield['type'] in \
-                ['text', 'checkbox', 'select', 'radio', 'textarea', 'time']:
+        if not cfield['type'] in self.field_types:
             raise TracError(_("%(field_type)s is not a valid field type",
                               field_type=cfield['type']))
         # Check that field does not already exist
@@ -141,7 +141,7 @@ class CustomFields(Component):
                                '|'.join(cfield['options']))
         if 'format' in cfield and \
                 cfield['type'] in ('text', 'textarea', 'time') and \
-                cfield['format'] in self.formats[cfield['type']]:
+                cfield['format'] in self.field_formats[cfield['type']]:
             self.config.set('ticket-custom', cfield['name'] + '.format',
                             cfield['format'])
         # Textarea
