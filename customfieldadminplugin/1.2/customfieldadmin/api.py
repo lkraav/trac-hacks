@@ -113,8 +113,8 @@ class CustomFields(Component):
             raise TracError(_("Can not create as field already exists."))
         if create and [f for f in tktsys.fields
                          if f['name'] == cfield['name']]:
-                raise TracError(_("Can't create a custom field with the "
-                                  "same name as a built-in field."))
+            raise TracError(_("Can't create a custom field with the "
+                              "same name as a built-in field."))
 
     def create_custom_field(self, cfield):
         """ Create the new custom fields (that may just have been deleted as

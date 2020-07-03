@@ -15,4 +15,3 @@ def test_suite():
     from customfieldadmin.tests import admin
     suite.addTest(makeSuite(admin.CustomFieldAdminPageTestCase))
     return suite
-

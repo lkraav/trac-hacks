@@ -39,4 +39,3 @@ setup(name='TracCustomFieldAdmin',
       extras_require = {'Babel': 'Babel>= 0.9.5'},
       **extra
  )
-
