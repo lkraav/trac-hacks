@@ -155,9 +155,10 @@ class SmpAdminPanel(Component):
                     sel = req.args.getlist('sel')
                     if not sel:
                         raise TracError('No project selected')
-
+                    p_names = [self.__SmpModel.get_project_name(pid) for pid in sel]
                     self.__SmpModel.delete_project(sel)
-
+                    for p_name in p_names:
+                        add_notice(req, "'The project '%s' has been removed." % p_name)
                     req.redirect(req.href.admin(category, page))
 
                 else:
@@ -172,7 +173,7 @@ class SmpAdminPanel(Component):
                 }
 
         if hasattr(Chrome(self.env), 'jenv'):
-            return 'simplemultiproject_adminpanel.html', data, None
+            return 'smp_admin_jinja.html', data, {}
         else:
             return 'simplemultiproject_adminpanel.html', data
 

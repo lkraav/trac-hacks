@@ -1,0 +1,169 @@
+{#
+# Copyright (C) 2020 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>
+      # block admintitle
+      ${_("Manage Projects")}
+      # endblock admintitle
+    </title>
+    # block head
+    ${ super() }
+    <script type="text/javascript">
+          jQuery(document).ready(function($) {
+            function updateDueDate() {
+              $("#projectcloseddate").enable($("#closed").checked());
+            }
+            $("#closed").click(updateDueDate);
+            updateDueDate();
+            $("#name").get(0).focus()
+          });
+    </script>
+    # endblock head
+</head>
+<body>
+    # block adminpanel
+    <h2>${_("Manage Projects")}
+    # if view == 'init':
+        <span class="trac-count">(${len(projects)})</span>
+    # endif
+    </h2>
+    <div>
+        # if view == 'detail':
+
+        <form class="mod" id="simplemultiproject" action="" method="post">
+            ${jmacros.form_token_input()}
+            <fieldset>
+                <legend>${_("Modify Project")}</legend>
+                <div class="field">
+                    <label>${_("Name:")}<br />
+                        <input type="text" name="name" value="${project.name}"/>
+                    </label>
+                </div>
+                <div class="field">
+                    <label>${_("Summary:")}<br />
+                        <input type="text" name="summary" value="${project.summary}"/>
+                    </label>
+                </div>
+                <div class="field">
+                    <label>${_("Description:")}<br />
+                        <textarea cols="60" rows="10" class="wikitext trac-resizable"  name="description">${project.description}</textarea>
+                    </label>
+                </div>
+                <div class="field">
+                    <label>${_("Restricted To Users:")}<br />
+                        <textarea cols="60" rows="2" class="wikitext trac-resizable"  name="restrict">${project.restrict}</textarea>
+                    </label>
+                </div>
+                <div class="field">
+                    <label>
+                      <input type="checkbox" id="closed" name="closed" ${{"checked": project.closed}|htmlattr}/>
+                      ${_("Closed:")}<br />
+                    </label>
+                    <label>
+                      <input type="text" id="projectcloseddate" name="time" size="${len(datetime_hint)}"
+                             value="${format_datetime(project.closed)}"
+                             title="${_('Format: %(datehint)s', datehint=datetime_hint)}" />
+                      <em msg="datehint">${_("Format:")} ${datetime_hint}</em>
+                    </label>
+                </div>
+                <input type="hidden" name="id" value="${project.id}"/>
+                <div class="buttons">
+                    <input type="submit" name="modify" value="Modify" />
+                    <input type="submit" name="cancel" value="Cancel" />
+                </div>
+            </fieldset>
+        </form>
+
+        # else:
+
+        # if not custom_field:
+        <div class="system-message warning">${_("Ticket custom field not set. See installation instructions.")}</div>
+        # endif
+        # if 'PROJECT_ADMIN' in perm:
+        <form class="addnew" id="simplemultiproject" action="" method="post">
+            ${jmacros.form_token_input()}
+            <fieldset>
+                <legend>${_("Add Project")}</legend>
+                <div class="field">
+                    <label>${_("Name:")}<br />
+                        <input type="text" name="name" value=""/>
+                    </label>
+                </div>
+                <div class="field">
+                    <label>${_("Summary:")}<br />
+                        <input type="text" name="summary" value=""/>
+                    </label>
+                </div>
+                <div class="field">
+                    <label>${_("Description:")}<br />
+                        <textarea cols="48" rows="5" class="wikitext trac-resizable"  name="description"></textarea>
+                    </label>
+                </div>
+                <div class="field">
+                    <label>${_("Restricted To Users:")}<br />
+                        <textarea cols="48" rows="2" class="wikitext trac-resizable"  name="restrict"></textarea>
+                    </label>
+                </div>
+                <div class="buttons">
+                    <input type="submit" name="add" value="Add" />
+                </div>
+            </fieldset>
+        </form>
+        # endif
+        <form id="project_table" method="post" action="">
+            ${jmacros.form_token_input()}
+            <table class="listing" id="millist">
+                <thead>
+                    <tr>
+                        <th class="sel">&nbsp;</th>
+                        <th>${_("Name")}</th>
+                        <th>${_("Summary")}</th>
+                        <th>${_("Restricted To Users")}</th>
+                        <th>${_("Closed")}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                # for project in projects:
+                    <tr>
+                        <td>
+                            # if 'PROJECT_ADMIN' in perm:
+                            <input type="checkbox" name="sel" value="${project.id}" />
+                            # endif
+                        </td>
+                        # if 'PROJECT_ADMIN' in perm:
+                        <td>
+                            <a href="${href.admin('projects','simplemultiproject')}/${project.id}" method="post">${project.name}</a>
+                        </td>
+                        # else:
+                        <td>
+                            ${project.name}
+                        </td>
+                        # endif
+                        <td>${project.summary}</td>
+                        <td>${project.restrict}</td>
+                        <td>${project.closed or None}</td>
+                    </tr>
+                # endfor
+                </tbody>
+            </table>
+            # if 'PROJECT_ADMIN' in perm:
+            <div class="buttons">
+                <input type="submit" name="remove" value="Remove selected items"/>
+            </div>
+            # endif
+        </form>
+
+        # endif
+    </div>
+    # endblock adminpanel
+</body>
+</html>
