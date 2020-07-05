@@ -1,6 +1,6 @@
 import unittest
 
-from simplemultiproject.tests import test_session, test_smpcomponent, \
+from simplemultiproject.tests import test_smpcomponent, test_prjlist_prefs, test_session, \
                                      test_smpmilestone, test_smpversion
 
 
@@ -10,6 +10,7 @@ def test_suite():
     suite.addTest(test_smpcomponent.test_suite())
     suite.addTest(test_smpmilestone.test_suite())
     suite.addTest(test_smpversion.test_suite())
+    suite.addTest(test_prjlist_prefs.test_suite())
     return suite
 
 

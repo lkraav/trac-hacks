@@ -11,7 +11,7 @@ from genshi.filters import Transformer
 from trac.config import OrderedExtensionsOption
 from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import Chrome, add_stylesheet
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
 
 from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 from simplemultiproject.api import IRoadmapDataProvider
@@ -180,13 +180,31 @@ class SmpRoadmapModule(Component):
 class SmpRoadmapProjectFilter(Component):
     """Filter roadmap by project(s)"""
 
-    implements(ITemplateStreamFilter, IRoadmapDataProvider)
+    implements(IRequestFilter, IRoadmapDataProvider)
 
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
         self.smp_project = SmpProject(self.env)  # For create_projects_table
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_version = SmpVersion(self.env)
+
+    # IRequestFilter
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        path_elms = req.path_info.split('/')
+        if data and len(path_elms) > 1 and path_elms[1] == 'roadmap':
+            # xpath: //form[@id="prefs"]
+            filter_list = [{'pos': 'prepend',
+                            'css': 'form#prefs',
+                            'html': create_proj_table(self, self._SmpModel, req, 'roadmap')}]
+            if filter_list:
+                add_script_data(req, {'smp_filter': filter_list})
+                add_script(req, 'simplemultiproject/js/smp_add_prefs.js')
+
+        return template, data, content_type
 
     # IRoadmapDataProvider
 
@@ -195,8 +213,7 @@ class SmpRoadmapProjectFilter(Component):
 
     def filter_data(self, req, data):
 
-        filter_proj = \
-            get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')
+        filter_proj = get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')
 
         if 'All' in filter_proj:
             return data
@@ -252,39 +269,36 @@ class SmpRoadmapProjectFilter(Component):
 
         return data
 
-    # ITemplateStreamFilter methods
 
-    def filter_stream(self, req, method, filename, stream, data):
-        path_elms = req.path_info.split('/')
-        if len(path_elms) > 1 and path_elms[1] == 'roadmap':
-            # Add project selection to the roadmap preferences
-            xformer = Transformer('//form[@id="prefs"]')
-            stream |= xformer.prepend(create_proj_table(self, self._SmpModel, req))
-
-        return stream
-
-
-# Genshi template for creating the project selection
-table_proj = """
-<div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
+def div_from_projects(all_projects, filter_prj, size):
+    """Create the project select div for the preference pane on Roadmap and timeline page."""
+    # Don't change indentation here without fixing the test cases
+    div_templ = u"""<div style="overflow:hidden;">
 <div>
 <label>Filter Project:</label>
 </div>
 <div>
-<input type="hidden" name="smp_update" value="filter" />
-<select id="Filter-Projects" name="smp_projects" multiple="multiple" size="$size" style="overflow:auto;">
-    <option value="All" >All</option>
-    <option py:for="prj in all_projects" value="${prj[1]}" selected="${'selected' if prj[1] in filter_prj else None}">
-        ${prj[1]}
-    </option>
+<input type="hidden" name="smp_update" value="filter">
+<select id="Filter-Projects" name="smp_projects" multiple size="{size}" style="overflow:auto;">
+    <option value="All">All</option>
+    {options}
 </select>
 </div>
-<br />
-</div>
-"""
+<br>
+</div>"""
+    option_tmpl = u"""<option value="{p_name}"{sel}>
+        {p_name}
+    </option>"""
+
+    options = u""
+    for item in all_projects:
+        sel = u' selected' if item[1] in filter_prj else u''
+        options += option_tmpl.format(p_name=item[1], sel=sel)
+
+    return div_templ.format(size=size,options=options)
 
 
-def create_proj_table(self, _SmpModel, req):
+def create_proj_table(self, _SmpModel, req, session_name='roadmap'):
     """Create a select tag holding valid projects (means not closed) for
     the current user.
 
@@ -298,7 +312,7 @@ def create_proj_table(self, _SmpModel, req):
     all_projects = [[project[0], project[1]] for project in self.smp_project.get_all_projects()]
     all_project_names = [name for p_id, name in all_projects]
 
-    temp_lst = [ name for name in all_project_names]
+    temp_lst = [name for name in all_project_names]
     # no closed projects
     for project_name in temp_lst:
         project_info = _SmpModel.get_project_info(project_name)
@@ -309,15 +323,14 @@ def create_proj_table(self, _SmpModel, req):
     if filtered_projects:
         size = len(filtered_projects) + 1  # Account for 'All' option
     else:
-        return MarkupTemplate('<div xmlns:py="http://genshi.edgewall.org/">'
-                              '<p>No projects defined.</p>'
-                              '<br />'
-                              '</div>').generate()
+        return u'<div><p>No projects defined.</p><br></div>'
+
     if size > 5:
         size = 5
 
-    filter_prj = get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')  # list of currently selected projects
+    # list of currently selected projects. The info is stored in the request or session data
+    filter_prj = get_project_filter_settings(req, session_name, 'smp_projects', 'All')
     if 'All' in filter_prj:
         filter_prj = []
-    tbl = MarkupTemplate(table_proj)
-    return tbl.generate(all_projects=filtered_projects, filter_prj=filter_prj, size=size)
+
+    return div_from_projects(filtered_projects, filter_prj, size)

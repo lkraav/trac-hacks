@@ -10,9 +10,10 @@ from trac.core import *
 from trac.ticket.model import Ticket
 from trac.util.html import html as tag
 from trac.web.api import ITemplateStreamFilter, IRequestFilter
+from trac.web.chrome import add_script, add_script_data
 
 from simplemultiproject.model import *
-from simplemultiproject.roadmap import create_proj_table
+from simplemultiproject.roadmap import create_proj_table, create_proj_table_jinja
 from simplemultiproject.smp_model import SmpProject
 from simplemultiproject.session import get_project_filter_settings
 
@@ -20,7 +21,7 @@ from simplemultiproject.session import get_project_filter_settings
 class SmpTimelineProjectFilter(Component):
     """Allow filtering of timeline by projects."""
 
-    implements(IRequestFilter, ITemplateStreamFilter)
+    implements(IRequestFilter)
 
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
@@ -34,6 +35,15 @@ class SmpTimelineProjectFilter(Component):
     def post_process_request(self, req, template, data, content_type):
         path_elms = req.path_info.split('/')
         if data and len(path_elms) > 1 and path_elms[1] == 'timeline':
+
+            # xpath: //form[@id="prefs"]
+            filter_list = [{'pos': 'prepend',
+                            'css': 'form#prefs',
+                            'html': create_proj_table(self, self._SmpModel, req, 'timeline')}]
+            if filter_list:
+                add_script_data(req, {'smp_filter': filter_list})
+                add_script(req, 'simplemultiproject/js/smp_add_prefs.js')
+
             # These are the defined events for the ticket subsystem
             ticket_kinds = ['newticket', 'closedticket', 'reopenedticket', 'editedticket', 'attachment']
             proj_filter = get_project_filter_settings(req, 'timeline', 'smp_projects', 'All')  # This returns a list of names
@@ -57,17 +67,6 @@ class SmpTimelineProjectFilter(Component):
             data['events'] = filtered_events
 
         return template, data, content_type
-
-    # ITemplateStreamFilter
-
-    def filter_stream(self, req, method, filename, stream, data):
-        path_elms = req.path_info.split('/')
-        if len(path_elms) > 1 and path_elms[1] == 'timeline':
-            # Add project selection to the roadmap preferences
-            xformer = Transformer('//form[@id="prefs"]')
-            stream |= xformer.prepend(create_proj_table(self, self._SmpModel, req))
-
-        return stream
 
     def _lambda_render_func(self, proj_name, old_render):
         """Lambda function which saves some parameters for our private
