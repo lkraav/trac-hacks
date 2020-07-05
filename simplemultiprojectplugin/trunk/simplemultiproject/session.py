@@ -76,7 +76,7 @@ def get_list_from_req_or_session(req, context, name, default=None):
         else:
             session_data = default
     else:
-        session_data = req.args.get(name)  # This is a list
+        session_data = req.args.getlist(name)  # This is a list
 
     if 'smp_update' in req.args:
         if cur_filter in req.args:
