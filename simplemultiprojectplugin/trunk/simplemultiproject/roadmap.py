@@ -298,8 +298,9 @@ def create_proj_table(self, _SmpModel, req):
     all_projects = [[project[0], project[1]] for project in self.smp_project.get_all_projects()]
     all_project_names = [name for p_id, name in all_projects]
 
+    temp_lst = [ name for name in all_project_names]
     # no closed projects
-    for project_name in all_project_names:
+    for project_name in temp_lst:
         project_info = _SmpModel.get_project_info(project_name)
         _SmpModel.filter_project_by_conditions(all_project_names, project_name, project_info, req)
 
