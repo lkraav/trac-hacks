@@ -13,7 +13,7 @@ from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.web.chrome import add_script, add_script_data
 
 from simplemultiproject.model import *
-from simplemultiproject.roadmap import create_proj_table, create_proj_table_jinja
+from simplemultiproject.roadmap import create_proj_table
 from simplemultiproject.smp_model import SmpProject
 from simplemultiproject.session import get_project_filter_settings
 
