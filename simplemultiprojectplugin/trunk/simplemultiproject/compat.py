@@ -8,8 +8,6 @@
 # you should have received as part of this distribution.
 #
 
-# Methods backported from Trac 1.2
-
 from __future__ import with_statement
 
 from trac.core import TracError
@@ -17,6 +15,22 @@ from trac.db.api import DatabaseManager
 from trac.db.schema import Table
 from trac.util.translation import _
 
+# For migrating away from Genshi
+class JTransformer(object):
+    """Class modelled after the Genshi Transformer class. Instead of an xpath it uses a
+       selector usable by jQuery.
+       You may use cssify (https://github.com/santiycr/cssify) to convert a xpath to a selector."""
+
+    def __init__(self, xpath):
+        self.css = xpath  # xpath must be a css selector for jQuery
+
+    def after(self, html):
+        return {'pos': 'after', 'css': self.css, 'html': html}
+
+    def before(self, html):
+        return {'pos': 'before', 'css': self.css, 'html': html}
+
+# Methods backported from Trac 1.2
 
 if not hasattr(DatabaseManager, 'drop_tables'):
     def drop_tables(self, schema):
