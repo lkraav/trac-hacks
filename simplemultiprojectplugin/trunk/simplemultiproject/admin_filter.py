@@ -4,7 +4,7 @@
 #
 # License: 3-clause BSD
 #
-
+from collections import defaultdict
 from genshi.filters.transform import Transformer, InjectorTransformation
 from genshi.template.markup import MarkupTemplate
 from trac.config import BoolOption
@@ -19,6 +19,8 @@ from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateStreamFilter, add_script, \
     add_script_data, add_stylesheet
 
+from simplemultiproject.compat import JTransformer
+from simplemultiproject.milestone import create_projects_table_j
 from simplemultiproject.model import SmpModel
 from simplemultiproject.smp_model import SmpComponent, SmpProject, \
     SmpVersion, SmpMilestone
@@ -504,7 +506,7 @@ class SmpFilterDefaultComponentPanels(Component):
     simplemultiproject.admin_component.* = disabled
     }}}
     """
-    implements(ITemplateStreamFilter, IRequestFilter)
+    implements(IRequestFilter)
 
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
@@ -542,41 +544,48 @@ class SmpFilterDefaultComponentPanels(Component):
         return False
 
     def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type
 
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == "admin_components.html":
+        if data and template == "admin_components.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
-            if not req.args['path_info']:
+            filter_list = []
+            if not req.args.get('path_info'):
                 # Main components page
-                all_proj = {}
-                for name, p_id in self.smp_project.get_name_and_id():
-                    all_proj[p_id] = name
-                all_comp_proj = {}  # key is component name, value is a list of projects
+                all_proj = { p_id: name for name, p_id in self.smp_project.get_name_and_id()}
+                all_comp_proj = defaultdict(list)  # key is component name, value is a list of projects
                 for comp, p_id in self.smp_model.get_all_components_and_project_id():
-                    try:
-                        all_comp_proj[comp].append(all_proj[p_id])
-                    except KeyError:
-                        # Component is not in dict 'all_comp_proj' yet
-                        # all_comp_proj[comp] = all_proj[p_id]
-                        all_comp_proj[comp] = [all_proj[p_id]]
+                    all_comp_proj[comp].append(u'<span>%s</span><br>' % all_proj[p_id])
 
                 # The 'Add component' part of the page
-                filter_form = Transformer('//form[@id="addcomponent"]//div[@class="field"][2]')
-                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req))
+                # xpath: //form[@id="addcomponent"]//div[@class="field"][2]
+                xform = JTransformer('form#addcomponent div.field:nth-of-type(2)')
+                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req)))
 
-                stream |= Transformer('//table[@id="complist"]').before(
-                    tag.p(_("A component is visible for all projects when not associated with any project."),
-                          class_="help"))
-                # Add project column to component table
-                stream |= Transformer('//table[@id="complist"]//th[2]').\
-                    after(tag.th(_("Restricted to Project")))
-                stream |= Transformer('//table[@id="complist"]//tr').apply(InsertProjectTd("", all_comp_proj))
+                # xpath: //table[@id="complist"]
+                xform = JTransformer('table#complist')
+                filter_list.append(xform.before('<p class="help">%s</p>' %
+                                                _("A component is visible for all projects when not associated with "
+                                                  "any project.")))
+                # Add project column to component table. This is done with javascript
+                column_data = {}
+                for item in all_comp_proj:
+                    column_data[item] = ''.join(all_comp_proj[item])
+                add_script_data(req, {'smp_tbl_hdr': {'css': 'table#complist',
+                                                      'html': '<th>%s</th>' % _("Restricted to Project")
+                                                      },
+                                      'smp_tbl_cols': column_data,
+                                      'smp_td_class': 'project'
+                                      })
+                add_script(req, 'simplemultiproject/js/smp_insert_column.js')
             else:
-                # 'Manage Component' panel
-                filter_form = Transformer('//form[@id="modcomp" or @id="edit"]//div[@class="field"][1]')
-                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req))
-        return stream
+                # 'Edit Component' panel
+                # xform: //form[@id="modcomp" or @id="edit"]//div[@class="field"][1] where is modcomp used?
+                # xform: //form[@id="edit"]//div[@class="field"][1]
+                xform = JTransformer('form#edit div.field:nth-of-type(1)')
+                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req)))
+
+            if filter_list:
+                add_script_data(req, {'smp_filter': filter_list})
+                add_script(req, 'simplemultiproject/js/jtransform.js')
+
+        return template, data, content_type
