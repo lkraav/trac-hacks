@@ -7,7 +7,7 @@
 import unittest
 
 from trac.test import EnvironmentStub, MockRequest
-from simplemultiproject.admin_filter import create_projects_table, SmpFilterDefaultMilestonePanels
+from simplemultiproject.admin_filter import SmpFilterDefaultMilestonePanels
 from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.milestone import create_cur_projects_table, create_projects_table_j
 from simplemultiproject.model import SmpModel
@@ -48,13 +48,8 @@ class TestProjectTableNoMilestones(unittest.TestCase):
 </div>
 <div></div>
 </div>"""
-        res = create_projects_table(self.plugin, self.model, self.req)
-        self.assertEqual(expected, res.render('html'))
-
-        # TODO: remove the following when Genshi isn't used anymore
-        res = create_projects_table(self.plugin, self.model, self.req)
-        resj = create_projects_table_j(self.plugin, self.model, self.req)
-        self.assertEqual(res.render('html'), resj)
+        res = create_projects_table_j(self.plugin, self.model, self.req)
+        self.assertEqual(expected, res)
 
     def test_with_projects_checkbox(self):
         expected = u"""<div style="overflow:hidden;">
@@ -93,13 +88,8 @@ class TestProjectTableNoMilestones(unittest.TestCase):
         self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
         self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
 
-        res = create_projects_table(self.plugin, self.model, self.req)
-        self.assertEqual(expected, res.render('html'))
-
-        # TODO: remove the following when Genshi isn't used anymore
-        res = create_projects_table(self.plugin, self.model, self.req)
-        resj = create_projects_table_j(self.plugin, self.model, self.req)
-        self.assertEqual(res.render('html'), resj)
+        res = create_projects_table_j(self.plugin, self.model, self.req)
+        self.assertEqual(expected, res)
 
     def test_with_projects_radio(self):
         expected = u"""<div style="overflow:hidden;">
@@ -138,13 +128,8 @@ class TestProjectTableNoMilestones(unittest.TestCase):
         self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
         self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
 
-        res = create_projects_table(self.plugin, self.model, self.req, 'radio')
-        self.assertEqual(expected, res.render('html'))
-
-        # TODO: remove the following when Genshi isn't used anymore
-        res = create_projects_table(self.plugin, self.model, self.req, 'radio')
-        resj = create_projects_table_j(self.plugin, self.model, self.req, 'radio')
-        self.assertEqual(res.render('html'), resj)
+        res = create_projects_table_j(self.plugin, self.model, self.req, 'radio')
+        self.assertEqual(expected, res)
 
 
 class TestProjectTableMilestones(unittest.TestCase):
@@ -205,13 +190,8 @@ class TestProjectTableMilestones(unittest.TestCase):
 <div></div>
 </div>"""
 
-        res = create_projects_table(self.plugin, self.model, self.req, item_name='ms1')
-        self.assertEqual(expected, res.render('html'))
-
-        # TODO: remove the following when Genshi isn't used anymore
-        res = create_projects_table(self.plugin, self.model, self.req, item_name='ms1')
-        resj = create_projects_table_j(self.plugin, self.model, self.req, item_name='ms1')
-        self.assertEqual(res.render('html'), resj)
+        res = create_projects_table_j(self.plugin, self.model, self.req, item_name='ms1')
+        self.assertEqual(expected, res)
 
     def test_with_radio_edit_milestone_ms1(self):
         expected = u"""<div style="overflow:hidden;">
@@ -247,13 +227,8 @@ class TestProjectTableMilestones(unittest.TestCase):
 <div></div>
 </div>"""
 
-        res = create_projects_table(self.plugin, self.model, self.req, 'radio', item_name='ms1')
-        self.assertEqual(expected, res.render('html'))
-
-        # TODO: remove the following when Genshi isn't used anymore
-        res = create_projects_table(self.plugin, self.model, self.req, 'radio', item_name='ms1')
-        resj = create_projects_table_j(self.plugin, self.model, self.req, 'radio', item_name='ms1')
-        self.assertEqual(res.render('html'), resj)
+        res = create_projects_table_j(self.plugin, self.model, self.req, 'radio', item_name='ms1')
+        self.assertEqual(expected, res)
 
     def test_with_checkbox_edit_milestone_ms2_dual_prj(self):
         """Check a milestone with two associated projects."""
@@ -290,13 +265,8 @@ class TestProjectTableMilestones(unittest.TestCase):
 <div></div>
 </div>"""
 
-        res = create_projects_table(self.plugin, self.model, self.req, item_name='ms2')
-        self.assertEqual(expected, res.render('html'))
-
-        # TODO: remove the following when Genshi isn't used anymore
-        res = create_projects_table(self.plugin, self.model, self.req, item_name='ms2')
-        resj = create_projects_table_j(self.plugin, self.model, self.req, item_name='ms2')
-        self.assertEqual(res.render('html'), resj)
+        res = create_projects_table_j(self.plugin, self.model, self.req, item_name='ms2')
+        self.assertEqual(expected, res)
 
     def test_with_radio_edit_milestone_ms2_dual_prj(self):
         """Check a milestone with two associated projects."""
@@ -333,13 +303,8 @@ class TestProjectTableMilestones(unittest.TestCase):
 <div></div>
 </div>"""
 
-        res = create_projects_table(self.plugin, self.model, self.req, 'radio', item_name='ms2')
-        self.assertEqual(expected, res.render('html'))
-
-        # TODO: remove the following when Gendsi isn't used anymore
-        res = create_projects_table(self.plugin, self.model, self.req, 'radio', item_name='ms2')
-        resj = create_projects_table_j(self.plugin, self.model, self.req, 'radio', item_name='ms2')
-        self.assertEqual(res.render('html'), resj)
+        res = create_projects_table_j(self.plugin, self.model, self.req, 'radio', item_name='ms2')
+        self.assertEqual(expected, res)
 
 
 class TestCurProjectTableNoMilestones(unittest.TestCase):

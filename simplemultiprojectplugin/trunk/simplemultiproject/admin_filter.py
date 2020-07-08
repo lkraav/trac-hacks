@@ -5,18 +5,15 @@
 # License: 3-clause BSD
 #
 from collections import defaultdict
-from genshi.filters.transform import Transformer, InjectorTransformation
-from genshi.template.markup import MarkupTemplate
 from trac.config import BoolOption
 from trac.core import *
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Component as TicketComponent
 from trac.ticket.model import Milestone, Version
 from trac.ticket.api import IMilestoneChangeListener
-from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateStreamFilter, add_script, \
+from trac.web.chrome import add_script, \
     add_script_data, add_stylesheet
 
 from simplemultiproject.compat import JTransformer
@@ -24,89 +21,6 @@ from simplemultiproject.milestone import create_projects_table_j
 from simplemultiproject.model import SmpModel
 from simplemultiproject.smp_model import SmpComponent, SmpProject, \
     SmpVersion, SmpMilestone
-
-
-class InsertProjectTd(InjectorTransformation):
-    """Transformation to insert the project column into the milestone
-    and version tables
-    """
-    _value = None
-    _td = 0
-
-    def __init__(self, content, all_proj):
-        self._all_proj = all_proj
-        super(InsertProjectTd, self).__init__(content)
-
-    def __call__(self, stream):
-
-        for event in stream:
-            mark, (kind, data, pos) = event
-
-            if self._value:
-                yield event  # Yield the event so the column is closed
-                # Depending on the stream data may be '{http://www.w3.org/1999/xhtml}td' or just 'td'
-                if mark == 'INSIDE' and kind == 'END' and data.endswith('td'):
-                    # The end of a table column, tag: </td>
-                    self._td += 1
-                    if self._td == 2:
-                        try:
-                            # Special handling for components. A component may have several projects
-                            if isinstance(self._all_proj[self._value], list):
-                                self.content = tag.td(((tag.span(item), tag.br) for item in
-                                                       self._all_proj[self._value]),
-                                                      class_="project")
-                            else:
-                                self.content = tag.td(self._all_proj[self._value], class_="project")
-                        except KeyError:
-                            # We end up here when the milestone has no project yet
-                            # self.content = tag.td(tag.span("(all projects)", style="color:lightgrey"))
-                            self.content = tag.td(class_="project")
-                        self._value = None
-                        self._td = 0
-                        for n, ev in self._inject():
-                            yield 'INSIDE', ev
-            else:
-                if mark == 'INSIDE' and kind == 'START' and data[0].localname == 'input':
-                    if data[1].get('type') == u"checkbox":
-                        self._value = data[1].get('value') or data[1].get('name')
-                        self._td = 0
-                yield event
-
-
-def create_script_tag(input_type="checkbox"):
-    """Create javascript tag which holds code to enable/disable 'add'
-    button for milestones.
-
-    :param input_type:
-    :return: javascript tag (Genshi)
-    """
-    script = """
-    jQuery(document).ready(function($) {
-        function anyChecked(){
-            var any = false;
-            $('#projectlist input:%s').each(function(){
-                if (this.checked) {
-                    any = true;
-                };
-            });
-            return any;
-        };
-        if(!anyChecked())
-        {
-            $('#smp-btn-id').attr('disabled', 'disabled');
-        };
-        $('#projectlist input:%s').change(function() {
-            if(!anyChecked()){
-                $('#smp-btn-id').attr('disabled', 'disabled');
-            }
-            else{
-                $('#smp-btn-id').removeAttr('disabled');
-            };
-        });
-    });
-    """
-    return tag.script(script % (input_type, input_type),
-                      type='text/javascript')
 
 
 def _allow_no_project(self):
@@ -124,7 +38,7 @@ def get_milestone_from_trac(env, name):
     except ResourceNotFound:
         return None
 
-projects_tmpl = """
+projects_tmpl = u"""
 <div xmlns:py="http://genshi.edgewall.org/" id="smp-ms-sel-div" py:if="all_projects">
 $proj
 <select id="smp-project-sel">
@@ -189,7 +103,7 @@ class SmpFilterDefaultMilestonePanels(Component):
                with a milestone. The default value is {{{False}}}.
                """)
 
-    implements(ITemplateStreamFilter, IRequestFilter, IMilestoneChangeListener)
+    implements(IRequestFilter, IMilestoneChangeListener)
 
     def __init__(self):
         self._SmpModel = SmpModel(self.env)
@@ -228,70 +142,84 @@ class SmpFilterDefaultMilestonePanels(Component):
         return False
 
     def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-
-        if filename == "admin_milestones.html":
+        if data and template == "admin_milestones.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
-            add_script(req, "simplemultiproject/js/filter_milestone_table.js")
             if self.single_project:
                 input_type = 'radio'
             else:
                 input_type = "checkbox"  # Default input type for project selection.
+            filter_list = []
             if not req.args['path_info']:
 
                 all_proj = {}
                 for name, p_id in self.smp_project.get_name_and_id():
                     all_proj[p_id] = name
 
-                all_ms_proj = {}
+                # Note:
+                # A milestone without a project may have for historical reasons
+                # a project id of '0' instead of missing from the SMP milestone table
+                all_ms_proj = defaultdict(list)
+                all_ms_proj_2 = defaultdict(list)
                 for ms, p_id in self.smp_model.get_all_milestones_and_id_project_id():
-                    try:
-                        all_ms_proj[ms].append(all_proj[p_id])
-                    except KeyError:
-                        if p_id:
-                            all_ms_proj[ms] = [all_proj[p_id]]
-                        else:
-                            # A milestone without a project
-                            # For historical reasons these milestones
-                            # may have a project id of '0' instead of
-                            # missing from the SMP milestone table
-                            all_ms_proj[ms] = [""]
+                    all_ms_proj_2[ms].append((u'<span>%s</span><br>' % all_proj[p_id]) if p_id else '')
+                    all_ms_proj[ms].append(all_proj[p_id] if p_id else '')
 
-                add_script_data(req, {'smp_proj_ms': all_ms_proj})
-                # Add project column to main milestone table
-                stream |= Transformer('//table[@id="millist"]//th[2]').after(tag.th(_("Project")))
-                stream |= Transformer('//table[@id="millist"]//tr').apply(InsertProjectTd("", all_ms_proj))
+                add_script_data(req, {'smp_proj_per_item': all_ms_proj})
+
+                # Add project column to main version table
+                column_data = {}
+                for item in all_ms_proj_2:
+                    column_data[item] = ''.join(all_ms_proj_2[item])
+
+                add_script_data(req, {'smp_tbl_hdr': {'css': 'table#millist',
+                                                      'html': '<th>%s</th>' % _("Restricted to Project")
+                                                      },
+                                      'smp_tbl_cols': column_data,
+                                      'smp_td_class': 'project',
+                                      'smp_tbl_selector': '#millist'
+                                      })
+                add_script(req, 'simplemultiproject/js/smp_insert_column.js')
+
                 # Add select control with projects for hiding milestones
-                sel = MarkupTemplate(projects_tmpl)
-                all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
-                stream |= Transformer('//table[@id="millist"]').\
-                   before(sel.generate(proj=_("Project"), all_projects=all_proj,
-                                       sel_prj="", all_label=_("All")))
-                # The 'add milestone' part of the page
-                if not self.allow_no_project:
-                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
-                    stream |= Transformer('//form[@id="addmilestone"]//input[@name="add"]') \
-                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
+                known_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+                xform = JTransformer('table#millist')
+                filter_list.append(xform.before(create_project_select_ctrl(known_proj)))
 
-                # The 'Add milestone' part of the page
-                filter_form = Transformer('//form[@id="addmilestone"]//div[@class="field"][1]')
-                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
-                                                                          input_type=input_type))
-            else:
-                # 'Modify Milestone' panel
+                # The 'add milestone' part of the page
+                # Insert project selection control
+                # xpath: //form[@id="addmilestone"]//div[@class="field"][1]
+                xform = JTransformer('form#addmilestone div.field:nth-of-type(1)')
+                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req,
+                                                                       input_type=input_type)))
+                if filter_list:
+                    add_script_data(req, {'smp_filter': filter_list})
+                    add_script(req, 'simplemultiproject/js/jtransform.js')
+
+                # disable button script must be inserted at the end.
                 if not self.allow_no_project:
-                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
-                    stream |= Transformer('//form[@id="modifymilestone"]//input[@name="save"]') \
-                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
-                filter_form = Transformer('//form[@id="modifymilestone" or @id="edit"]//div[@class="field"][1]')
-                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
-                                                                          input_type=input_type))
-        return stream
+                    add_script_data(req, {'smp_input_control': '#projectlist input:' + input_type,
+                                          'smp_submit_btn': 'form#addmilestone input[name=add]'})
+                    add_script(req, 'simplemultiproject/js/disable_submit_btn.js')
+
+                add_script(req, "simplemultiproject/js/filter_table.js")
+            else:
+                # Insert project selection control
+                # xpath: //form[@id="edit"]//div[@class="field"][1]
+                xform = JTransformer('form#edit div.field:nth-of-type(1)')
+                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req,
+                                                                       input_type=input_type)))
+                if filter_list:
+                    add_script_data(req, {'smp_filter': filter_list})
+                    add_script(req, 'simplemultiproject/js/jtransform.js')
+
+                # disable button script must be inserted at the end.
+                if not self.allow_no_project:
+                    add_script_data(req, {'smp_input_control': '#projectlist input:' + input_type,
+                                          'smp_submit_btn': 'form#edit input[name=save]'})
+                    add_script(req, 'simplemultiproject/js/disable_submit_btn.js')
+
+        return template, data, content_type
 
     # IMilestoneChangeListener methods
 
@@ -464,67 +392,6 @@ class SmpFilterDefaultVersionPanels(Component):
                     add_script(req, 'simplemultiproject/js/disable_submit_btn.js')
 
         return template, data, content_type
-
-
-table_tmpl = """
-<div xmlns:py="http://genshi.edgewall.org/"  style="overflow:hidden;">
-<div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
-</div>
-<div class="admin-smp-proj-tbl-div">
-<table id="projectlist" class="listing admin-smp-project-table">
-    <thead>
-        <tr><th></th><th>Project</th></tr>
-    </thead>
-    <tbody>
-    <tr py:for="prj in all_projects">
-        <td class="name">
-            <input name="sel" value="${prj[0]}"
-                   py:attrs="{'checked': 'checked'} if prj[1] in comp_prj else {}" type="$input_type" />
-        </td>
-        <td>${prj[1]}</td>
-    </tr>
-    </tbody>
-</table>
-</div>
-<div></div>
-</div>
-"""
-
-
-def create_projects_table(self, _SmpModel, req, input_type='checkbox',
-                          item_name=''):
-    """Create a table for admin panels holding valid projects (means not closed).
-
-    @param self: Component instance filtering an admin page
-    @param _SmpModel: SmpModel object
-    @param req      : Trac request object
-
-    @return DIV tag holding a project select control with label
-    """
-    # project[0] is the id, project[1] the name
-    all_projects = [[project[0], project[1]]
-                    for project in self.smp_project.get_all_projects()]
-    all_project_names = [name for p_id, name in all_projects]
-
-    # no closed projects
-    for project_name in list(all_project_names):
-        project_info = _SmpModel.get_project_info(project_name)
-        _SmpModel.filter_project_by_conditions(all_project_names, project_name,
-                                               project_info, req)
-
-    filtered_projects = [[p_id, project_name]
-                         for p_id, project_name in all_projects
-                         if project_name in all_project_names]
-
-    item = req.args.get('path_info', "")
-    if not item:
-        item = item_name
-    comp_prj = self.smp_model.get_project_names_for_item(item)
-    tbl = MarkupTemplate(table_tmpl)
-    return tbl.generate(all_projects=filtered_projects, comp_prj=comp_prj,
-                        input_type=input_type)
 
 
 def get_component_from_trac(env, name):
