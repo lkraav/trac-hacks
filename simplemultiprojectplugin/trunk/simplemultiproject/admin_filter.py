@@ -134,6 +134,27 @@ $proj
 </div>
 """
 
+def create_project_select_ctrl(all_proj):
+    div_templ = u"""<div id="smp-ms-sel-div">
+{proj}
+<select id="smp-project-sel">
+    <option value="" selected>{all_label}</option>
+    {options}
+</select>
+</div>"""
+    options_templ = u"""<option value="{prj}">{prj}</option>"""
+
+    if not all_proj:
+        return ''
+
+    options = u''
+    for prj in all_proj:
+        options += options_templ.format(prj=prj)
+
+    return div_templ.format(proj=_("Project"), all_projects=all_proj, sel_prj="", all_label=_("All"),
+                            options=options)
+
+
 class SmpFilterDefaultMilestonePanels(Component):
     """Modify default Trac admin panels for milestones to include
     project selection.
@@ -312,7 +333,7 @@ class SmpFilterDefaultVersionPanels(Component):
     }}}
     """
 
-    implements(ITemplateStreamFilter, IRequestFilter)
+    implements(IRequestFilter)
 
     allow_no_project = BoolOption(
         'simple-multi-project', 'version_without_project', False,
@@ -363,65 +384,86 @@ class SmpFilterDefaultVersionPanels(Component):
         return False
 
     def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == "admin_versions.html":
+        if data and template == "admin_versions.html":
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
-            add_script(req, "simplemultiproject/js/filter_version_table.js")
+
+            filter_list = []
             if self.single_project:
                 input_type = 'radio'
             else:
                 input_type = "checkbox"  # Default input type for project selection.
+
             if not req.args['path_info']:
                 all_proj = {}
                 for name, p_id in self.smp_project.get_name_and_id():
                     all_proj[p_id] = name
 
-                all_ver_proj = {}
+                all_ver_proj = defaultdict(list)  # Needed for filtering
+                all_ver_proj_2 = defaultdict(list)  # Needed for column insertion
                 for ver, p_id in self.smp_model.get_all_versions_and_project_id():
-                    try:
-                        all_ver_proj[ver].append(all_proj[p_id])
-                    except KeyError:
-                        # A version without a project
-                        all_ver_proj[ver] = [all_proj[p_id]]
-                add_script_data(req, {'smp_proj_ver': all_ver_proj})
+                    all_ver_proj[ver].append(all_proj[p_id])
+                    all_ver_proj_2[ver].append(u'<span>%s</span><br>' % all_proj[p_id])
+                add_script_data(req, {'smp_proj_per_item': all_ver_proj})
+
                 # Add project column to main version table
-                stream |= Transformer('//table[@id="verlist"]//th[2]').after(tag.th(_("Project")))
-                stream |= Transformer('//table[@id="verlist"]//tr').apply(InsertProjectTd("", all_ver_proj))
+                column_data = {}
+                for item in all_ver_proj_2:
+                    column_data[item] = ''.join(all_ver_proj_2[item])
 
-                sel = MarkupTemplate(projects_tmpl)
-                all_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
-                stream |= Transformer('//table[@id="verlist"]'). \
-                    before(sel.generate(proj=_("Project"), all_projects=all_proj,
-                                        sel_prj="", all_label=_("All")))
+                add_script_data(req, {'smp_tbl_hdr': {'css': 'table#verlist',
+                                                      'html': '<th>%s</th>' % _("Restricted to Project")
+                                                      },
+                                      'smp_tbl_cols': column_data,
+                                      'smp_td_class': 'project',
+                                      'smp_tbl_selector': '#verlist'
+                                      })
+                add_script(req, 'simplemultiproject/js/smp_insert_column.js')
 
-                # The 'add version' part of the page
-                if not self.allow_no_project:
-                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
-                    stream |= Transformer('//form[@id="addversion"]//input[@name="add"]') \
-                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
+                known_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+                xform = JTransformer('table#verlist')
+                filter_list.append(xform.before(create_project_select_ctrl(known_proj)))
+
                 # Insert project selection control
-                filter_form = Transformer('//form[@id="addversion"]//div[@class="field"][1]')
-                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
-                                                                          input_type=input_type))
+                # xpath: //form[@id="addversion"]//div[@class="field"][1]
+                xform = JTransformer('form#addversion div.field:nth-of-type(1)')
+                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req,
+                                                                       input_type=input_type)))
 
                 # Remove current date/time as release date otherwise the version will be filtered on the roadmap.
                 # User probably forgets to change it on creation and would be surprised not finding it.
-                stream |= Transformer('//form[@id="addversion"]//input[@id="releaseddate"]').attr("value", '')
+                #stream |= Transformer('//form[@id="addversion"]//input[@id="releaseddate"]').attr("value", '')
+
+                if filter_list:
+                    add_script_data(req, {'smp_filter': filter_list})
+                    add_script(req, 'simplemultiproject/js/jtransform.js')
+
+                # disable button script must be inserted at the end.
+                if not self.allow_no_project:
+                    add_script_data(req, {'smp_input_control': '#projectlist input:' + input_type,
+                                          'smp_submit_btn': 'form#addversion input[name=add]'})
+                    add_script(req, 'simplemultiproject/js/disable_submit_btn.js')
+
+                add_script(req, "simplemultiproject/js/filter_table.js")
             else:
                 # 'Modify versions' panel
+
+                # Insert project selection control
+                # xpath: //form[@id="edit"]//div[@class="field"][1]
+                xform = JTransformer('form#edit div.field:nth-of-type(1)')
+                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req,
+                                                                       input_type=input_type)))
+                if filter_list:
+                    add_script_data(req, {'smp_filter': filter_list})
+                    add_script(req, 'simplemultiproject/js/jtransform.js')
+
+                # disable button script must be inserted at the end.
                 if not self.allow_no_project:
-                    stream |= Transformer('//head').append(create_script_tag(input_type=input_type))
-                    stream |= Transformer('//form[@id="modifyversion"]//input[@name="save"]') \
-                              .attr('id', 'smp-btn-id')  # Add id for use from javascript
-                filter_form = Transformer('//form[@id="modifyversion" or @id="edit"]//div[@class="field"][1]')
-                stream |= filter_form.after(create_projects_table(self, self._SmpModel, req,
-                                                                  input_type=input_type))
-        return stream
+                    add_script_data(req, {'smp_input_control': '#projectlist input:' + input_type,
+                                          'smp_submit_btn': 'form#edit input[name=save]'})
+                    add_script(req, 'simplemultiproject/js/disable_submit_btn.js')
+
+        return template, data, content_type
 
 
 table_tmpl = """
