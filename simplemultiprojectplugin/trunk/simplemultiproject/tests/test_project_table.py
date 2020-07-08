@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2020 Cinc
+#
+# License: 3-clause BSD
+#
 import unittest
 
 from trac.test import EnvironmentStub, MockRequest
@@ -51,7 +57,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
         self.assertEqual(res.render('html'), resj)
 
     def test_with_projects_checkbox(self):
-        expected = """<div style="overflow:hidden;">
+        expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
  restrictions are imposed.</p>
@@ -66,7 +72,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
         <td class="name">
             <input name="sel" value="1" type="checkbox">
         </td>
-        <td>foo1</td>
+        <td>foo1öäü</td>
     </tr><tr>
         <td class="name">
             <input name="sel" value="2" type="checkbox">
@@ -83,7 +89,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
 </div>
 <div></div>
 </div>"""
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
         self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
         self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
 
@@ -96,7 +102,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
         self.assertEqual(res.render('html'), resj)
 
     def test_with_projects_radio(self):
-        expected = """<div style="overflow:hidden;">
+        expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
  restrictions are imposed.</p>
@@ -111,7 +117,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
         <td class="name">
             <input name="sel" value="1" type="radio">
         </td>
-        <td>foo1</td>
+        <td>foo1öäü</td>
     </tr><tr>
         <td class="name">
             <input name="sel" value="2" type="radio">
@@ -128,7 +134,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
 </div>
 <div></div>
 </div>"""
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
         self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
         self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
 
@@ -153,7 +159,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
         self.model = SmpModel(self.env)
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
         self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
         self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
         self.msmodel = SmpMilestone(self.env)
@@ -166,7 +172,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         self.env.reset_db()
 
     def test_with_checkbox_edit_milestone_ms1(self):
-        expected = """<div style="overflow:hidden;">
+        expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
  restrictions are imposed.</p>
@@ -181,7 +187,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         <td class="name">
             <input name="sel" value="1" type="checkbox" checked>
         </td>
-        <td>foo1</td>
+        <td>foo1öäü</td>
     </tr><tr>
         <td class="name">
             <input name="sel" value="2" type="checkbox">
@@ -208,7 +214,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         self.assertEqual(res.render('html'), resj)
 
     def test_with_radio_edit_milestone_ms1(self):
-        expected = """<div style="overflow:hidden;">
+        expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
  restrictions are imposed.</p>
@@ -223,7 +229,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         <td class="name">
             <input name="sel" value="1" type="radio" checked>
         </td>
-        <td>foo1</td>
+        <td>foo1öäü</td>
     </tr><tr>
         <td class="name">
             <input name="sel" value="2" type="radio">
@@ -251,7 +257,7 @@ class TestProjectTableMilestones(unittest.TestCase):
 
     def test_with_checkbox_edit_milestone_ms2_dual_prj(self):
         """Check a milestone with two associated projects."""
-        expected = """<div style="overflow:hidden;">
+        expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
  restrictions are imposed.</p>
@@ -266,7 +272,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         <td class="name">
             <input name="sel" value="1" type="checkbox">
         </td>
-        <td>foo1</td>
+        <td>foo1öäü</td>
     </tr><tr>
         <td class="name">
             <input name="sel" value="2" type="checkbox" checked>
@@ -294,7 +300,7 @@ class TestProjectTableMilestones(unittest.TestCase):
 
     def test_with_radio_edit_milestone_ms2_dual_prj(self):
         """Check a milestone with two associated projects."""
-        expected = """<div style="overflow:hidden;">
+        expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
  restrictions are imposed.</p>
@@ -309,7 +315,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         <td class="name">
             <input name="sel" value="1" type="radio">
         </td>
-        <td>foo1</td>
+        <td>foo1öäü</td>
     </tr><tr>
         <td class="name">
             <input name="sel" value="2" type="radio" checked>

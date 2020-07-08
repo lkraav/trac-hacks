@@ -18,7 +18,7 @@ from simplemultiproject.model import *
 from simplemultiproject.smp_model import SmpProject, SmpMilestone
 
 
-table_tmpl = """<div style="overflow:hidden;">
+table_tmpl = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
  restrictions are imposed.</p>
@@ -93,7 +93,7 @@ def create_cur_projects_table(smp_model, name):
 
     @return <div> tag holding a project select control with label. If name is 'None' or '' return ''.
     """
-    cur_project_tmpl = """<div style="overflow:hidden;">
+    cur_project_tmpl = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
 <p class="help">This milestone is connected to the following projects.</p>
 </div>
