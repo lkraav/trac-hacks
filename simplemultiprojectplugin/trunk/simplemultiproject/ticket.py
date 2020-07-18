@@ -13,7 +13,7 @@ from trac.web.api import ITemplateStreamFilter, IRequestFilter
 from trac.web.chrome import add_script, add_script_data
 
 from simplemultiproject.model import *
-from simplemultiproject.smp_model import get_all_versions_without_project
+from simplemultiproject.smp_model import get_all_versions_without_project, SmpProject
 
 
 class SmpTicketProject(Component):
@@ -22,6 +22,7 @@ class SmpTicketProject(Component):
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
+        self.smp_project = SmpProject(self.env)
 
     # IRequestFilter methods
 
@@ -126,7 +127,7 @@ class SmpTicketProject(Component):
         add_script_data(req, smp_milestonesForProject)
 
     def _projects_field_ticket_input(self, req, ticket_data):
-        all_projects = [project[1] for project in sorted(self.__SmpModel.get_all_projects(), key=itemgetter(1))]
+        all_projects = [project[1] for project in sorted(self.smp_project.get_all_projects(), key=itemgetter(1))]
         select = tag.select(name="field_project", id="field-project")
 
         cur_project = ticket_data.get_value_or_default('project')

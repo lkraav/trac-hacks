@@ -15,6 +15,7 @@ from trac.util.datefmt import from_utimestamp, get_datetime_format_hint, \
     parse_date, to_utimestamp, user_time
 
 from simplemultiproject.model import *
+from simplemultiproject.smp_model import SmpProject
 
 
 class SmpAdminPanel(Component):
@@ -32,13 +33,14 @@ class SmpAdminPanel(Component):
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
+        self.smp_project = SmpProject(self.env)
 
     def add_project(self, name, summary, description, closed, restrict):
         try:
             self.log.info("Simple Multi Project: Adding project %s", name)
             self.__SmpModel.insert_project(name, summary, description, closed, restrict)
             # Make sure the internal list of projects is up to date
-            self.__SmpModel.get_all_projects()
+            self.smp_project.get_all_projects()
             self.config.save()  # Fixes #12524
             return True
         except Exception, e:
@@ -56,7 +58,7 @@ class SmpAdminPanel(Component):
             if old_project_name and old_project_name != name:
                 self.__SmpModel.update_custom_ticket_field(old_project_name, name)
             # Make sure the internal list of projects is up to date
-            self.__SmpModel.get_all_projects()
+            self.smp_project.get_all_projects()
             self.config.save()  # Fixes #12524
             return True
         except Exception, e:
@@ -68,7 +70,7 @@ class SmpAdminPanel(Component):
         """
         data = {}
         req.perm.require('PROJECT_SETTINGS_VIEW')
-        projects_rows = self.__SmpModel.get_all_projects()
+        projects_rows = self.smp_project.get_all_projects()
         projects = []
         for row in sorted(projects_rows, key=itemgetter(1)):
             time_str = None

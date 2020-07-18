@@ -167,12 +167,6 @@ class SmpModel(Component):
 
     # VersionProject Methods
 
-    def insert_version_project(self, version, id_project):
-        self.env.db_transaction("""
-                INSERT INTO smp_version_project(version, id_project)
-                VALUES (%s,%s)
-                """, (version, id_project))
-
     def get_versions_of_project(self, project):
         return [version for version, in self.env.db_query("""
                 SELECT m.version AS version
@@ -195,17 +189,6 @@ class SmpModel(Component):
                 """, (version,)):
             return id_
 
-    def delete_version_project(self, version):
-        self.env.db_transaction("""
-            DELETE FROM smp_version_project WHERE version=%s
-            """, (version,))
-
-    def update_version_project(self, version, project):
-        self.env.db_transaction("""
-            UPDATE smp_version_project
-            SET id_project=%s WHERE version=%s
-            """, (project, version))
-
     def rename_version_project(self, old_version, new_version):
         self.env.db_transaction("""
             UPDATE smp_version_project
@@ -214,43 +197,12 @@ class SmpModel(Component):
 
     # ComponentProject Methods
 
-    def insert_component_projects(self, component, id_projects):
-        if not id_projects:
-            return
-
-        if type(id_projects) is not list:
-            id_projects = [id_projects]
-
-        with self.env.db_transaction as db:
-            for id_project in id_projects:
-                db("""
-                    INSERT INTO smp_component_project(component, id_project)
-                    VALUES (%s, %s)
-                    """, (component, id_project))
-
     def get_projects_component(self, component):
         return [name for name, in self.env.db_query("""
                 SELECT name
                 FROM smp_project AS p, smp_component_project AS m
                 WHERE m.component=%s and m.id_project = p.id_project
                 """, (component,))]
-
-    def get_id_projects_component(self, component):
-        return [id_project for id_project, in self.env.db_query("""
-                SELECT id_project
-                FROM smp_component_project WHERE component=%s
-                """, (component,))]
-
-    def delete_component_projects(self, component):
-        self.env.db_transaction("""
-            DELETE FROM smp_component_project WHERE component=%s
-            """, (component,))
-
-    def rename_component_project(self, old_component, new_component):
-        self.env.db_transaction("""
-            UPDATE smp_component_project
-            SET component=%s WHERE component=%s
-            """, (new_component, old_component))
 
     def is_milestone_completed(self, milestone_name):
         completed = None

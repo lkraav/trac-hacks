@@ -18,7 +18,7 @@ class SmpBaseModel(object):
         self.resource_name = "base"
 
     def delete(self, name):
-        """Delete item 'name' from database. Name may be a list or a
+        """Delete item 'name' from database table associating item and projects. Name may be a list or a
         single item.
 
         @param name: single name or list of names.
@@ -190,7 +190,7 @@ class SmpProject(SmpBaseModel):
                 SELECT id_project,name,summary,description,closed,restrict_to
                 FROM smp_project ORDER BY name
                 """)
-
+        # TODO: this sorting isn't necessary here because of ORDER BY
         project_names = [r[1] for r in sorted(projects, key=lambda k: k[1])]
         self.env.config.set('ticket-custom', 'project.options',
                             '|'.join(project_names))
@@ -220,10 +220,11 @@ class SmpVersion(SmpBaseModel):
 
         :return a list of tuples (version_name, project_id)
         """
+        # TODO: this shouldn't be called with the resource name
         return self._get_all_names_and_project_id_for_resource('version')
 
     def update_project_id_for_version(self, version_name, id_project):
-        """TODO: get rid of old model"""
+        # TODO: this shouldn't be called with the resource name
         self._update('version', version_name, id_project)
 
     def get_versions_for_project_id(self, id_project):

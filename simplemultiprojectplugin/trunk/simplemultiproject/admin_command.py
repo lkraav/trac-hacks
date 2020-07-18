@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014-2015 Cinc
+# Copyright (C) 2014-2020 Cinc
 #
 # License: BSD
 #
@@ -11,7 +11,7 @@ from trac.util.text import printout
 from trac.util.translation import _
 
 from simplemultiproject.model import SmpModel
-from simplemultiproject.smp_model import SmpMilestone
+from simplemultiproject.smp_model import SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
 class SmpAdminCommands(Component):
@@ -60,6 +60,9 @@ class SmpAdminCommands(Component):
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
         self.smp_milestone = SmpMilestone(self.env)
+        self.smp_component = SmpComponent(self.env)
+        self.smp_version = SmpVersion(self.env)
+        self.smp_project = SmpProject(self.env)
 
     def get_admin_commands(self):
         yield ('project add', '<project> [summary]',
@@ -121,7 +124,7 @@ class SmpAdminCommands(Component):
 
     def _list_projects(self, detailed_list=""):
         for id_project, name, summary, description, closed, restrict_to \
-                in self.__SmpModel.get_all_projects():
+                in self.smp_project.get_all_projects():
             if detailed_list:
                 printout("\n%s:" % name)
                 printout("  Summary:\t%s" % summary)
@@ -196,18 +199,18 @@ class SmpAdminCommands(Component):
             self._print_no_project()
         else:
             if what == 'component':
-                self.__SmpModel.insert_component_projects(item, dat[0])
+                self.smp_component.add(item, dat[0])
             elif what == 'milestone':
                 self.smp_milestone.add(item, dat[0])
             elif what == 'version':
-                self.__SmpModel.insert_version_project(item, dat[0])
+                self.smp_version.add(item, dat[0])
 
     def _unassign_project(self, what, item):
         if what == 'component':
-            self.__SmpModel.delete_component_projects(item)
+            self.smp_component.delete(item)
         elif what == 'milestone':
             self.smp_milestone.delete(item)
         elif what == 'version':
-            self.__SmpModel.delete_version_project(item)
+            self.smp_version.delete(item)
         else:
             printout("Parameter 1 must be one of component, milestone or version, was: %s" % what)

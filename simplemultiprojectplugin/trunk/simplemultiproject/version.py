@@ -88,6 +88,7 @@ class SmpVersionProject(Component):
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
+        self.smp_version = SmpVersion(self.env)
 
     # IRequestHandler methods
     def match_request(self, req):
@@ -231,7 +232,7 @@ class SmpVersionProject(Component):
         version_name = version.name
         version.delete()
 
-        self.__SmpModel.delete_version_project(version_name)
+        self.smp_version.delete(version_name)
 
         add_notice(req, _('The version "%(name)s" has been deleted.',
                           name=version_name))
@@ -297,15 +298,15 @@ class SmpVersionProject(Component):
                 self.__SmpModel.rename_version_project(old_name, version.name)
 
             if not version_project:
-                self.__SmpModel.delete_version_project(version.name)
+                self.smp_version.delete(version.name)
             elif not old_version_project:
-                self.__SmpModel.insert_version_project(version.name, version_project)
+                self.smp_version.add(version.name, version_project)
             else:
-                self.__SmpModel.update_version_project(version.name, version_project)
+                self.smp_version.update_project_id_for_version(version.name, version_project)
         else:
             version.insert()
             if version_project:
-                self.__SmpModel.insert_version_project(version.name, version_project)
+                self.smp_version.add(version.name, version_project)
 
         add_notice(req, _('Your changes have been saved.'))
         req.redirect(req.href.version(version.name))
