@@ -180,6 +180,41 @@ class SmpProject(SmpBaseModel):
         # TODO: a call to get_all_projects is missing to fill the custom
         # ticket field. Make sure to look at #12393 when implementing
 
+    def add(self, name, summary=None, description=None, closed=None, restrict_to=None):
+        """Insert the given project into the table of know projects.
+
+        Don't allow duplicate names here to prevent user confusion (the project IDis not visible to the user).
+
+        :returns 0 on error, project_id as an integer otherwise
+        """
+
+        if self.project_exists(project_name=name):
+            return 0
+
+        prj_id = None
+        with self.env.db_transaction as db:
+            cursor = db.cursor()
+            cursor.execute("""INSERT INTO smp_project (name, summary, description, closed, restrict_to) 
+                           VALUES(%s,%s,%s,%s,%s)""", (name , summary, description, closed, restrict_to))
+            prj_id = db.get_last_id(cursor, 'smp_project')
+        return prj_id
+
+    def delete(self, prj_id=None):
+        if not prj_id:
+            return
+
+        if type(prj_id) is not list:
+            prj_id = [prj_id]
+
+        with self.env.db_transaction as db:
+            for prj in prj_id:
+                for res in ('component', 'milestone', 'version'):
+                    db("""DELETE FROM smp_%s_project WHERE id_project=%%s""" % res, (prj,))
+                db("""DELETE FROM smp_project WHERE id_project=%s""", (prj,))
+
+        # keep internal ticket custom field data up to date
+        self.get_all_projects()
+
     def get_name_and_id(self):
         return sorted(self.env.db_query("""
                 SELECT name, id_project FROM smp_project
@@ -193,9 +228,20 @@ class SmpProject(SmpBaseModel):
         # TODO: this sorting isn't necessary here because of ORDER BY
         project_names = [r[1] for r in sorted(projects, key=lambda k: k[1])]
         self.env.config.set('ticket-custom', 'project.options',
-                            '|'.join(project_names))
+                            '|'.join(project_names))  # We don't save here. But see #12524
 
         return projects
+
+    def project_exists(self, project_id=None, project_name=None):
+        if not project_id and not project_name:
+            return False
+
+        if project_id:
+            return self.env.db_query("""SELECT id_project FROM smp_project WHERE id_project = %s""" %
+                                     (project_id, )) != []
+        else:
+            return self.env.db_query("""SELECT id_project FROM smp_project WHERE name = '%s'""" %
+                                     (project_name, )) != []
 
 
 def get_all_versions_without_project(env):

@@ -34,7 +34,7 @@ setup(
         'simplemultiproject.ticket = simplemultiproject.ticket',
         'simplemultiproject.timeline = simplemultiproject.timeline',
         'simplemultiproject.version = simplemultiproject.version',
-
+        'simplemultiproject.permission = simplemultiproject.permission',
     ]},
     test_suite='simplemultiproject.tests.test_suite'
 )

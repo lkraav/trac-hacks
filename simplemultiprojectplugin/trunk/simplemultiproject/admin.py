@@ -8,7 +8,6 @@ from operator import itemgetter
 from trac.admin.api import IAdminPanelProvider
 from trac.core import *
 from trac.config import *
-from trac.perm import IPermissionRequestor
 from trac.web.chrome import Chrome, ITemplateProvider, add_notice
 from trac.util.translation import _
 from trac.util.datefmt import from_utimestamp, get_datetime_format_hint, \
@@ -21,15 +20,7 @@ from simplemultiproject.smp_model import SmpProject
 class SmpAdminPanel(Component):
     """Admin panel for editing project settings."""
 
-    implements(IPermissionRequestor, IAdminPanelProvider, ITemplateProvider)
-
-    # IPermissionRequestor method
-
-    def get_permission_actions(self):
-        """ Permissions supported by the plugin. """
-        action = ['PROJECT_SETTINGS_VIEW', 'PROJECT_ADMIN']
-        return [action[0],
-                (action[1], [action[0]])]
+    implements(IAdminPanelProvider, ITemplateProvider)
 
     def __init__(self):
         self.__SmpModel = SmpModel(self.env)
