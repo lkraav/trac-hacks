@@ -1,42 +1,51 @@
-jQuery(document).ready(function($) {
-	$('.multiselect').each(function(i) {
-		// Assumes that the previous (hidden) element contains the actual data.
-		var field = $(this);
-		var dataField = field.prev();
-		var uiField = field;
+jQuery(function($) {
+  $("input[type='text']").each(function() {
+    var $field = $(this);
+    name = $field.attr('name').slice(6);
+    if (Object.keys(multiselectFields).indexOf(name) === -1) {
+      return;
+    }
 
-		function updateUiField() {
-			var value = dataField.attr('value');
-			if (value) {
-				// The value of multiselectfieldDelimiter is passed to js from python.
-				var options = value.split(multiselectfieldDelimiter);
-				uiField.val(options);
-			}
-		}
+    $multi = $(
+      "<select multiple='multiple' class='multiselect' style='width:100%' />"
+    )
+    multiselectFields[name].forEach(function (opt) {
+      $multi.append(new Option(opt, opt));
+    });
+    $field.prop('style', 'display:none').after($multi);
 
-		updateUiField();
+    function updateUiField() {
+      var value = $field.attr('value');
+      if (value) {
+        // The value of multiselectfieldDelimiter is passed to js from python.
+        var options = value.split(multiselectfieldDelimiter);
+        $multi.val(options);
+      }
+    }
 
-		if (!multiselectfieldSimple) {
-			// Use improved "chosen" selection box.
-			uiField.chosen();
-		}
+    updateUiField();
 
-		// Listen to changes in the UI.
-		uiField.change(function(event) {
-			var values = $(event.target).val();
-			if (values === null)  {
-				dataField.attr('value', '');
-			} else {
-				dataField.attr('value', values.join(multiselectfieldDelimiter));
-			}
-		});
+    if (!multiselectfieldSimple) {
+      // Use improved "chosen" selection box.
+      $multi.chosen();
+    }
 
-		// Listen to changes in the data (like revert).
-		dataField.change(function(event) {
-			updateUiField();
-			if (!multiselectfieldSimple) {
-				uiField.trigger("chosen:updated");
-			}
-		});
-	});
+    // Listen to changes in the UI.
+    $multi.change(function(event) {
+      var values = $(event.target).val();
+      if (values === null)  {
+        $field.attr('value', '');
+      } else {
+        $field.attr('value', values.join(multiselectfieldDelimiter));
+      }
+    });
+
+    // Listen to changes in the data (like revert).
+    $field.change(function(event) {
+      updateUiField();
+      if (!multiselectfieldSimple) {
+        $multi.trigger("chosen:updated");
+      }
+    });
+  });
 });

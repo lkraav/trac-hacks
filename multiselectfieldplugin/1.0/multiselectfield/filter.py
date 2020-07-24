@@ -2,12 +2,11 @@
 
 from trac.core import Component, implements
 from trac.config import BoolOption, Option
+from trac.util import lazy
 from trac.util.html import html as tag
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import ITemplateProvider, add_script, add_script_data, \
-                            add_stylesheet
-
-from genshi.filters.transform import Transformer
+from trac.web.api import IRequestFilter
+from trac.web.chrome import (
+    ITemplateProvider, add_script, add_script_data, add_stylesheet)
 
 
 class MultiSelectFieldModule(Component):
@@ -15,7 +14,7 @@ class MultiSelectFieldModule(Component):
     multiple predefined values.
     """
 
-    implements(IRequestFilter, ITemplateStreamFilter, ITemplateProvider)
+    implements(IRequestFilter, ITemplateProvider)
 
     option_simple_selection = BoolOption(
         'multiselectfield', 'simple_selection', False,
@@ -40,18 +39,17 @@ class MultiSelectFieldModule(Component):
         value is probably not good idea
         """)
 
-    paths = '/newticket', '/ticket', '/simpleticket'
-
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith(self.paths):
+        if template == 'ticket.html':
             add_script_data(req, {
                 'multiselectfieldDelimiter': self.option_delimiter or ' ',
-                'multiselectfieldSimple': self.option_simple_selection
+                'multiselectfieldSimple': self.option_simple_selection,
+                'multiselectFields': self._multi_select_fields,
             })
 
             if not self.option_simple_selection:
@@ -61,38 +59,6 @@ class MultiSelectFieldModule(Component):
             add_script(req, 'multiselectfield/multiselectfield.js')
 
         return template, data, content_type
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-
-        if filename == 'ticket.html':
-            for field in list(self._multi_select_fields()):
-                # For all multiselect fields:
-                #   The actual data is a standard custom text field containing
-                #   something like "value1 value2 value3". This custom field
-                #   uses the "list" type so each value separated by whitespace
-                #   is treated as a separate value. We hide that field from
-                #   the user and and another "select" element after it with
-                #   multiple selection enabled.
-
-                options = self.config.getlist('ticket-custom',
-                                              field + '.options', sep='|')
-                options_html = tag()
-                for option in options:
-                    if self.option_strip_whitespace:
-                        option_without_white_space = '_'.join(option.split())
-                        options_html(tag.option(option, value=option_without_white_space))
-                    else:
-                        options_html(tag.option(option, value=option))
-
-                stream |= Transformer('//input[@name="field_%s"]' % field) \
-                          .attr('style', 'display:none;') \
-                          .after(tag.select(multiple="multiple",
-                                            class_="multiselect",
-                                            style="width:100%;")(options_html))
-
-        return stream
 
     # ITemplateProvider methods
 
@@ -104,7 +70,21 @@ class MultiSelectFieldModule(Component):
         return []
 
     # Internal methods
+
+    @lazy
     def _multi_select_fields(self):
-        for key, value in self.config['ticket-custom'].options():
-            if key.endswith('.multiselect') and value == 'true':
-                yield key.split('.', 1)[0]
+        def opt_name(k):
+            return k.split('.', 1)[0]
+
+        def opts(k):
+            n = opt_name(k)
+            opts = self.config.getlist('ticket-custom', n + '.options', sep='|')
+            if self.option_strip_whitespace:
+                opts = ['_'.join(e.split()) for e in opts]
+            return opts
+
+        return {
+            opt_name(k): opts(k)
+            for k, v in self.config['ticket-custom'].options()
+            if k.endswith('.multiselect') and v == 'true'
+        }

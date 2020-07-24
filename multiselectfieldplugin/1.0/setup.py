@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='TracMultiSelectField',
-    version='1.0.2',
+    version='1.0.3',
     packages=['multiselectfield'],
     author='Olli Kallioinen',
     author_email='olli.kallioinen@iki.fi',
