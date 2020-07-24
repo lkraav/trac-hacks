@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
@@ -25,7 +26,7 @@ except ImportError:
     pass
 
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 
 setup(
     name=PACKAGE,

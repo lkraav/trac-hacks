@@ -1,0 +1,61 @@
+# import "macros.html" as jmacros with context
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>${_("Cc selector window")}</title>
+    #   if chrome.links:
+    #     for rel, links in chrome.links.items():
+    #       for link in links:
+    <link rel="${rel}" ${link|htmlattr} />
+    #       endfor
+    #     endfor
+    #   endif
+
+    #   if chrome.script_data:
+    <script>
+      #   for key, value in chrome.script_data.iteritems():
+      var ${key}=${to_json(value)|safe};
+      #   endfor
+    </script>
+    #   endif
+
+    #   for script in chrome.scripts:
+    ${script.prefix}<script${script.attrs|htmlattr}></script>${script.suffix}
+    #   endfor
+  </head>
+
+  <body>
+    <p>Select Cc, then
+      <a href="javascript:window.close();">close</a> this window.
+    </p>
+
+    <div id="ccdiv">
+      <!-- checkboxes will be inserted here -->
+    </div>
+
+    <div id="cc_developers" >
+      <!-- developer names will be taken from here  -->
+      # for d in cc_developers:
+      <var class="cc_dev" title="${d[0]}" name="${d[1]}" email="${d[2]}">
+      </var>
+      # endfor
+    </div>
+
+    <div id="cc_popup_hints">
+      <!-- variables for popup generator code stored here  -->
+      <var id="cc_to" title="${cc_to}"></var>
+      # if show_fullname:
+      <var id="show_fullname"></var>
+      # endif
+    </div>
+
+    <!-- additional close button, removed from short lists -->
+    # if len(cc_developers) > 9:
+    <p>
+      <input type="button" name="btt_close"
+             value="${dgettext('cc_selector', 'Close')}"
+             title="Back to ticket editor" onclick="window.close()" />
+    </p>
+    # endif
+  </body>
+</html>

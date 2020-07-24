@@ -28,7 +28,7 @@ for the JavaScript code in this page.
 */
 
 // automatically add button on load:
-jQuery(document).ready(function($) {
+jQuery(function($) {
   // populate the list of default developers that should always be there
   function get_default_devs() {
     var retval = new Array();

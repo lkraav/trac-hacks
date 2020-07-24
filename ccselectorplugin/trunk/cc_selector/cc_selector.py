@@ -9,7 +9,7 @@ from trac.config import BoolOption, Option
 from trac.core import *
 from trac.perm import PermissionSystem
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import add_script, ITemplateProvider
+from trac.web.chrome import Chrome, ITemplateProvider, add_script
 
 # Import i18n methods.  Fallback modules maintain compatibility to Trac 0.11
 # by keeping Babel optional here.
@@ -30,6 +30,7 @@ class TicketWebUiAddon(Component):
     show_fullname = BoolOption(
         'cc_selector', 'show_fullname', False,
         doc="Display full names instead of usernames if available.")
+
     username_blacklist = Option(
         'cc_selector', 'username_blacklist', '',
         doc="Usernames separated by comma, that should never get listed.")
@@ -85,4 +86,7 @@ class TicketWebUiAddon(Component):
             'cc_to': cc_to,
             'show_fullname': self.show_fullname
         }
-        return 'cc_selector.html', data, None
+        if hasattr(Chrome(self.env), 'jenv'):
+            return 'cc_selector_jinja.html', data
+        else:
+            return 'cc_selector.html', data, None
