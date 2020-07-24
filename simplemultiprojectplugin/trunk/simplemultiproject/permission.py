@@ -28,7 +28,8 @@ class SmpPermission(Component):
         prj_admin = (admin_action[1], [item for item in actions])
         actions.append(prj_admin)
 
-        return actions
+        # return actions
+        return [admin_action[0], (admin_action[1], [admin_action[0]])]
 
     # IPermissionPolicy methods
 
