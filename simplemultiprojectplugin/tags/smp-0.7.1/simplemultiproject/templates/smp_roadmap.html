@@ -1,0 +1,96 @@
+<!--!
+ (c) Cinc 2015, License 3-clause BSD
+ -->
+<div xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:py="http://genshi.edgewall.org/"
+    xmlns:i18n="http://genshi.edgewall.org/i18n"
+    xmlns:xi="http://www.w3.org/2001/XInclude"
+    class="milestones">
+
+    <fieldset py:for="proj in projects" class="project"
+              style="${None if proj[0] in visible_projects else 'display:none'}">
+      <legend>Project <em>${proj[1]}</em> - ${proj[2]}</legend>
+        <!--! <div py:if="not proj[0] in projects_with_ms">
+            <p>There is no milestone for this project.</p>
+        </div>-->
+        <div>
+            ${wiki_to_html(context, proj[3])}
+        </div>
+        <hr py:if="milestones" />
+          <py:for each="idx, milestone in enumerate(milestones)">
+            <div py:if="proj[0] in milestone.id_project" class="milestone">
+              <div class="info trac-progress" py:with="mstats = milestone_stats[idx]">
+                <h3><a href="${href.milestone(milestone.name)}">
+                  Milestone: <em>${milestone.name}</em>
+                </a></h3>
+                <py:choose>
+                  <p py:when="milestone.completed" class="date">
+                    <i18n:msg params="duration, date">
+                      Completed ${dateinfo(milestone.completed)} ago (${format_datetime(milestone.completed)})
+                    </i18n:msg>
+                  </p>
+                  <p py:when="milestone.is_late" class="date">
+                    <i18n:msg params="duration, date">
+                      <strong>${dateinfo(milestone.due)} late</strong> (${format_datetime(milestone.due)})
+                    </i18n:msg>
+                  </p>
+                  <p py:when="milestone.due" class="date">
+                    <i18n:msg params="duration, date">
+                      Due in ${dateinfo(milestone.due)} (${format_datetime(milestone.due)})
+                    </i18n:msg>
+                  </p>
+                  <p py:otherwise="" class="date">
+                    No date set
+                  </p>
+                </py:choose>
+                <xi:include href="progress_bar.html" py:if="mstats.stats.count"
+                            py:with="stats = mstats.stats; interval_hrefs = mstats.interval_hrefs;
+                                     stats_href = mstats.stats_href;"/>
+              </div>
+              <div class="description" xml:space="preserve">
+                ${wiki_to_html(context(milestone.resource), milestone.description)}
+              </div>
+            </div>
+          </py:for>
+
+        <!--! <div py:if="not proj[0] in projects_with_ver">
+            <p>There is no version for this project.</p>
+        </div>-->
+        <hr py:if="versions" />
+          <py:for each="idx, item in enumerate(versions)">
+            <div py:if="proj[0] in item.id_project" class="milestone">
+              <div class="info trac-progress" py:with="mstats = version_stats[idx]">
+                <h3><a href="${href.version(item.name)}">
+                  Version: <em>${item.name}</em>
+                </a></h3>
+                <py:choose>
+                  <p py:when="item.completed" class="date">
+                    <i18n:msg params="duration, date">
+                      Completed ${dateinfo(item.time)} ago (${format_datetime(item.time)})
+                    </i18n:msg>
+                  </p>
+                  <p py:when="item.is_late" class="date">
+                    <i18n:msg params="duration, date">
+                      <strong>${dateinfo(item.due)} late</strong> (${format_datetime(item.due)})
+                    </i18n:msg>
+                  </p>
+                  <p py:when="item.due" class="date">
+                    <i18n:msg params="duration, date">
+                      Due in ${dateinfo(item.time)} (${format_datetime(item.time)})
+                    </i18n:msg>
+                  </p>
+                  <p py:otherwise="" class="date">
+                    No date set
+                  </p>
+                </py:choose>
+                <xi:include href="progress_bar.html" py:if="mstats.stats.count"
+                            py:with="stats = mstats.stats; interval_hrefs = mstats.interval_hrefs;
+                                     stats_href = mstats.stats_href"/>
+              </div>
+              <div class="description" xml:space="preserve">
+                ${wiki_to_html(context(item.resource), item.description)}
+              </div>
+            </div>
+          </py:for>
+    </fieldset>
+</div>

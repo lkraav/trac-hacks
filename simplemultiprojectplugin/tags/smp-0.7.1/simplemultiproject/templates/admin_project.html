@@ -1,0 +1,140 @@
+<!--!
+ (c) Cinc 2020, License 3-clause BSD
+ -->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="admin.html" />
+<head>
+    <title>${_("Manage Projects")}</title>
+</head>
+<body>
+    <h2>${_("Manage Projects")}</h2>
+    <py:choose test="view">
+        <py:when test="'detail'">
+
+          <form class="mod" id="modworkflow" method="post" action="">
+            <fieldset>
+              <legend>Modify Workflow:</legend>
+              <div class="field">
+                <label>Name:<br/>
+                  <input name="name" value="$name" type="text" id="name"
+                         disabled="${name == 'default' or None}"/>
+                </label>
+              </div>
+              <div class="field">
+                                <textarea id="workflow-actions"
+                                          name="workflow-actions"
+                                          class="wikitext trac-resizable" rows="15"
+                                          cols="78">$workflow</textarea>
+              </div>
+              <p style='${(name in trac_types or name == "default") and "display: none" or None}'
+                 class="help" id="trac-type-hint">
+                There is currently no ticket type matching this workflow.
+              </p>
+              <div class="buttons">
+                <input type="submit" name="cancel" value="${_('Cancel')}"/>
+                <input type="submit" name="save" value="${_('Save')}"/>
+              </div>
+
+              <h3>Workflow Graph</h3>
+              <div id="workflow-graph">
+                $workflowgraph
+              </div>
+            </fieldset>
+          </form>
+        </py:when>
+        <py:otherwise>
+            <!--! Main page -->
+            <form class="mod" id="addproject" method="post" action="">
+                <fieldset>
+                    <legend>${_("Add Project:")}</legend>
+                    <div class="field">
+                        <label>Name:
+                            <br/>
+                            <input type="text" name="name"/>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>Summary:
+                            <br />
+                            <input type="text" name="summary" size="52"/>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>
+                            Description:
+                            <br />
+                            <div>
+                                <textarea class="trac-resizable" rows="3" cols="50"></textarea>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>
+                            <input type="checkbox" name="restrict" value="restrict"/>
+                            Restrict Project
+                        </label>
+                        <p class="help">Select this if you want to restrict this project and associated data to
+                            specific users or groups.<br/>
+                        Users can be associated with a project using the 'Permissions' panel.</p>
+                    </div>
+                    <div>
+                        <div class="buttons">
+                            <input type="submit" name="add" value="${_('Add')}"/>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+
+            <form id="project_table" method="post" action="">
+                <table class="listing" id="projectlist">
+                    <thead>
+                        <tr>
+                            <th class="sel">&nbsp;</th>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Summary</th>
+                            <th>Is restricted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr py:for="prj in all_projects">
+                            <td class="sel"><input type="checkbox" name="sel"
+                                                   value="${prj[0]}"/>
+                            </td>
+                            <td class="project_id">
+                                <a href="${href.admin('projects', 'projects', prj[1])}">${prj[0]}</a>
+                            </td>
+                            <td class="name">
+                                <a href="${href.admin('projects', 'projects', prj[1])}">${prj[1]}</a>
+                            </td>
+                            <td class="summary">
+                            </td>
+                            <td class="restricted">
+                                <p class="help"></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="buttons">
+                    <input type="submit" name="remove"
+                        value="${_('Remove selected items')}"/>
+                </div>
+            </form>
+        </py:otherwise>
+    </py:choose>
+
+
+
+
+
+
+
+
+
+</body>
+</html>
