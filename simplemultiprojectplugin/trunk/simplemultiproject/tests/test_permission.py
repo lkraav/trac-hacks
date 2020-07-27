@@ -9,7 +9,7 @@ import unittest
 from trac.test import EnvironmentStub
 from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.smp_model import SmpProject
-from simplemultiproject.permission import SmpPermission
+from simplemultiproject.permission import SmpPermissionPolicy
 from simplemultiproject.tests.util import revert_schema
 
 
@@ -22,13 +22,13 @@ class TestPermisssionProvider(unittest.TestCase):
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
         self.prj_model = SmpProject(self.env)
-        self.perm_plugin = SmpPermission(self.env)
+        self.perm_plugin = SmpPermissionPolicy(self.env)
 
     def tearDown(self):
         self.env.reset_db()
 
     def test_permission_no_projects(self):
-        """This should be [PROJECT_SETTINGS_VIEW, (PROJECTS_ADMIN, [PROJECT_STTINGS_VIEW])]"""
+        """This should be [PROJECT_SETTINGS_VIEW, (PROJECTS_ADMIN, [PROJECT_SETTINGS_VIEW])]"""
         perms = self.perm_plugin.get_permission_actions()
         self.assertEqual(2, len(perms))
         for item in perms:
@@ -59,11 +59,11 @@ class TestPermisssionProvider(unittest.TestCase):
                 # PROJECT_ADMIN is a meta permission
                 self.assertEqual(2, len(item))
                 self.assertEqual('PROJECT_ADMIN', item[0])
-                self.assertEqual(5, len(item[1]))  # PROJECT_STTINGS_VIEW + 4 * project member
+                self.assertEqual(5, len(item[1]))  # PROJECT_SETTINGS_VIEW + 4 * project member
                 perm_lst = sorted(item[1])
                 self.assertSequenceEqual(perm_lst, expected)
             else:
-                # project member perms and PROJECT_STTINGS_VIEW are strings
+                # project member perms and PROJECT_SETTINGS_VIEW are strings
                 self.assertIn(item, expected)  # this doesn't check for distinctiveness
 
         # Check only the non tuple perms
@@ -95,11 +95,11 @@ class TestPermisssionProvider(unittest.TestCase):
                 # PROJECT_ADMIN is a meta permission
                 self.assertEqual(2, len(item))
                 self.assertEqual('PROJECT_ADMIN', item[0])
-                self.assertEqual(4, len(item[1]))  # PROJECT_STTINGS_VIEW + 3 * project member
+                self.assertEqual(4, len(item[1]))  # PROJECT_SETTINGS_VIEW + 3 * project member
                 perm_lst = sorted(item[1])
                 self.assertSequenceEqual(perm_lst, expected)
             else:
-                # project member perms and PROJECT_STTINGS_VIEW are strings
+                # project member perms and PROJECT_SETTINGS_VIEW are strings
                 self.assertIn(item, expected)  # this doesn't check for distinctiveness
 
         # Check only the non tuple perms
@@ -134,11 +134,11 @@ class TestPermisssionProvider(unittest.TestCase):
                 # PROJECT_ADMIN is a meta permission
                 self.assertEqual(2, len(item))
                 self.assertEqual('PROJECT_ADMIN', item[0])
-                self.assertEqual(5, len(item[1]))  # PROJECT_STTINGS_VIEW + 4 * project member
+                self.assertEqual(5, len(item[1]))  # PROJECT_SETTINGS_VIEW + 4 * project member
                 perm_lst = sorted(item[1])
                 self.assertSequenceEqual(perm_lst, expected)
             else:
-                # project member perms and PROJECT_STTINGS_VIEW are strings
+                # project member perms and PROJECT_SETTINGS_VIEW are strings
                 self.assertIn(item, expected)  # this doesn't check for distinctiveness
 
         # Check only the non tuple perms

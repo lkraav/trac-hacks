@@ -4,10 +4,16 @@
 #
 # License: 3-clause BSD
 #
-
+from collections import namedtuple
+from trac.perm import PermissionSystem
 from trac.ticket.model import Version
 
-__all__ = ['SmpMilestone', 'SmpComponent', 'SmpProject', 'SmpVersion']
+
+__all__ = ['PERM_TEMPLATE', 'SmpMilestone', 'SmpComponent', 'SmpProject', 'SmpVersion']
+
+
+PERM_TEMPLATE = u"PROJECT_%s_MEMBER"
+Project = namedtuple('Project', ['id', 'name', 'summary', 'description', 'closed', 'restricted'])
 
 
 class SmpBaseModel(object):
@@ -175,10 +181,15 @@ class SmpMilestone(SmpBaseModel):
 
 class SmpProject(SmpBaseModel):
 
+    prj_cache = {}
+
     def __init__(self, env):
         super(SmpProject, self).__init__(env)
         # TODO: a call to get_all_projects is missing to fill the custom
         # ticket field. Make sure to look at #12393 when implementing
+
+    def _update_cache(self, projects):
+        self.prj_cache = {project.name: project for project in projects}
 
     def add(self, name, summary=None, description=None, closed=None, restrict_to=None):
         """Insert the given project into the table of know projects.
@@ -197,9 +208,16 @@ class SmpProject(SmpBaseModel):
             cursor.execute("""INSERT INTO smp_project (name, summary, description, closed, restrict_to) 
                            VALUES(%s,%s,%s,%s,%s)""", (name , summary, description, closed, restrict_to))
             prj_id = db.get_last_id(cursor, 'smp_project')
+
+        # keep internal ticket custom field data up to date
+        projects = self.get_all_projects()
+        self._update_cache(projects)
+
         return prj_id
 
-    def delete(self, prj_id=None):
+    def delete(self, prj_id):
+        """Delete a project. This removes association for components, milestones and versions and removes
+           user permissions if set"""
         if not prj_id:
             return
 
@@ -212,8 +230,44 @@ class SmpProject(SmpBaseModel):
                     db("""DELETE FROM smp_%s_project WHERE id_project=%%s""" % res, (prj,))
                 db("""DELETE FROM smp_project WHERE id_project=%s""", (prj,))
 
+        # remove permission from user
+        permsys = PermissionSystem(self.env)
+        for project_id in prj_id:
+            permission = PERM_TEMPLATE % project_id
+            users = permsys.get_users_with_permission(permission)
+            for user in users:
+                permsys.revoke_permission(user, permission)
+
         # keep internal ticket custom field data up to date
-        self.get_all_projects()
+        projects = self.get_all_projects()
+        self._update_cache(projects)
+
+    def _rename_project_in_ticket_custom_fields(self, old_name, name, db):
+        """Change the project name in the ticket custom fields 'project' to a new name.
+
+        Project information of tickets is held in a ticket custom field 'project'. When a project
+        is renamed each ticket custom field for each affected ticket must be changed accordingly.
+        """
+        db("""UPDATE ticket_custom SET value='%s' WHERE name='project' AND value='%s'""" %
+           (name, old_name))
+
+    def update(self, prj_id, name, summary, desc, closed, restrict_to):
+        if not prj_id:
+            return
+
+        with self.env.db_transaction as db:
+            try:
+                old_name = db("""SELECT name FROM smp_project WHERE id_project = %s""" %
+                                         (prj_id, ))[0][0]
+            except IndexError:
+                return
+            db("""UPDATE smp_project 
+                  SET name=%s, summary=%s, description=%s, closed=%s, restrict_to=%s
+                  WHERE id_project=%s""", (name, summary, desc, closed, restrict_to, prj_id))
+            if old_name != name:
+                self._rename_project_in_ticket_custom_fields(old_name, name, db)
+                projects = self.get_all_projects()
+                self._update_cache(projects)
 
     def get_name_and_id(self):
         return sorted(self.env.db_query("""
@@ -225,12 +279,12 @@ class SmpProject(SmpBaseModel):
                 SELECT id_project,name,summary,description,closed,restrict_to
                 FROM smp_project ORDER BY name
                 """)
-        # TODO: this sorting isn't necessary here because of ORDER BY
-        project_names = [r[1] for r in sorted(projects, key=lambda k: k[1])]
+        project_names = [r[1] for r in projects]
         self.env.config.set('ticket-custom', 'project.options',
                             '|'.join(project_names))  # We don't save here. But see #12524
 
-        return projects
+        return [Project(*prj) for prj in projects]
+        # return [Project(prj[0], prj[1], prj[2], prj[3],None if not prj[4] else prj[4], prj[5]) for prj in projects]
 
     def project_exists(self, project_id=None, project_name=None):
         if not project_id and not project_name:
@@ -242,6 +296,37 @@ class SmpProject(SmpBaseModel):
         else:
             return self.env.db_query("""SELECT id_project FROM smp_project WHERE name = '%s'""" %
                                      (project_name, )) != []
+
+    def apply_user_restrictions(self, projects, username):
+        """Create a new list of projects the user has access to.
+
+        :param projects: list of projects. each item is a tuple with all known project informations
+        :param username: name of the current user
+        :return: a new filtered list of projects
+
+        Filtering is done by checking if the user has permission PROJECT_<project_id>_MEMBER for any project
+        in the project list.
+        """
+        perms = PermissionSystem(self.env).get_user_permissions(username)
+
+        # Note that the permission may be present but set to False
+        return [prj for prj in projects if not prj.restricted or
+                (PERM_TEMPLATE % prj.id in perms and perms[PERM_TEMPLATE % prj.id])]
+
+    def get_project_from_ticket(self, tkt_id):
+        if not self.prj_cache:
+            projects = self.get_all_projects()
+            self._update_cache(projects)
+        for project_name in self.env.db_query("""SELECT value FROM ticket_custom 
+                                            WHERE name='project' AND ticket = %s""" % (tkt_id,)):
+            name = project_name[0]
+            try:
+                return self.prj_cache[name]
+            except KeyError:
+                # Some old project name without a real project lingering in the ticket custom data for some reason.
+                return None
+
+        return None
 
 
 def get_all_versions_without_project(env):

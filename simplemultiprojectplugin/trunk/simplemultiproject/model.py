@@ -95,12 +95,6 @@ class SmpModel(Component):
             return not allowed
         return False
 
-    def get_project_name(self, project_id):
-        for name, in self.env.db_query("""
-                SELECT name FROM smp_project WHERE id_project=%s
-                """, (project_id,)):
-            return name
-
     def update_custom_ticket_field(self, old_project_name, new_project_name):
         self.env.db_transaction("""
                 UPDATE ticket_custom SET value=%s

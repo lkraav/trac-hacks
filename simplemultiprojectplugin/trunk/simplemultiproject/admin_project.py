@@ -6,12 +6,14 @@
 #
 
 from pkg_resources import resource_filename, get_distribution, parse_version
-from simplemultiproject.smp_model import SmpProject
+from simplemultiproject.smp_model import PERM_TEMPLATE, SmpProject
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.resource import IResourceManager, Resource, ResourceNotFound
+from trac.util.datefmt import datetime_now, get_datetime_format_hint, parse_date,\
+    to_utimestamp, user_time, utc
 from trac.util.translation import _
-from trac.web.chrome import add_script, ITemplateProvider
+from trac.web.chrome import add_notice, add_script, add_warning, Chrome, ITemplateProvider
 
 class SmpProjectAdmin(Component):
 
@@ -21,48 +23,130 @@ class SmpProjectAdmin(Component):
     # creation using trac.util.html.tag and friends
     pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
 
-
     def __init__(self):
         self.smp_project = SmpProject(self.env)
 
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
-        if 'PROJECT_SETTINGS_VIEW_TEST' in req.perm('projects'):
+        if 'PROJECT_SETTINGS_VIEW' in req.perm('projects'):
             yield ('projects', _('Manage Projects'),
-                   'projects', _("Projects_"))
+                   'projects', _("Projects"))
+
+    def check_project_name(self, req, projects):
+        name = req.args.get('name', None)
+        if name:
+            for project in projects:
+                if name == project.name:
+                    add_warning(req, _('Project name "%s" already exists.') % project.name)
+                    return False
+        else:
+            add_warning(req, _("You need to provide a project name."))
+            return False
+        return True
 
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('PROJECT_SETTINGS_VIEW')
 
+        name = req.args.get('name', None)
+        summary = req.args.get('summary', None)
+        description =req.args.get('description', None)
+        restricted = req.args.get('restricted', None)
+        sel = req.args.getlist('sel')
+        projects = self.smp_project.get_all_projects()
+
+        def add_project_warning_and_redirect():
+            add_warning(req, _("Project '%s' does not exist or you don't have the necessary permission "
+                               "to access it."), path_info)
+            req.redirect(req.href.admin(cat, page))
+
+        # Prevent users from directly accessing projects or guessing project names
+        if path_info:
+            for project in projects:
+                if path_info == project.name:
+                    if project.restricted and not req.perm.has_permission(PERM_TEMPLATE % project.id):
+                        add_project_warning_and_redirect()
+                    break
+            else:
+                add_project_warning_and_redirect()
+
         if req.method == 'POST':
+            req.perm.require("PROJECT_ADMIN")
+            def redirect_with_parms():
+                req.redirect(req.href.admin(cat, page, name=name, summary=summary,
+                                            description=description, restricted=restricted))
             if req.args.get('add'):
-                pass
-                #self.config.set(section, key, val)
-                #self.config.save()
+                # Check name
+                if not self.check_project_name(req, projects):
+                    redirect_with_parms()
+
+                # Add new project
+                self.smp_project.add(name, summary, description, None, 'YES' if restricted else None)
+                # update internal caches
+                self.smp_project.get_all_projects()
+                self.config.save()  # See #12524
+                add_notice(req, _('The project "%s" has been added.') % name)
+                self.log.info('SMP - The project "%s" has been added.' % name)
             elif req.args.get('remove'):
-                pass
-                #self.config.remove(workflow, key)
-                #self.config.save()
+                self.smp_project.delete(sel)
+                self.smp_project.get_all_projects()
+                self.config.save()  # See #12524
+                add_notice(req, _('The selected projects have been removed.'))
+                self.log.info("SMP - The project(s) %s have been removed" % sel)
             elif req.args.get('save'):
-                pass
-                #self.config.save()
+                # TODO: we lose all changes with this redirect
+                old_name = req.args.get('old_name')
+                project_id = req.args.get('project_id', 0)
+                if name != old_name and not self.check_project_name(req, projects):
+                    req.redirect(req.href.admin(cat, page, path_info))
+
+                if 'completed' in req.args:
+                    completed = req.args.get('completeddate', '')
+                    completed = user_time(req, parse_date, completed,
+                                          hint='datetime') if completed else None
+                    if completed and completed > datetime_now(utc):
+                        add_warning(req, _('Completion date may not be in the future'))
+                else:
+                    completed = None
+                # to_utimestamp(None) gives 0 which is a valid time. For not completed
+                # projects we want to have None in the database instead. So we convert to utimestamp only
+                # when there is a real completeddate.
+                if completed:
+                    completed = to_utimestamp(completed)
+                self.smp_project.update(project_id, name, summary, description,
+                                        completed, 'YES' if restricted else None)
+
+                self.smp_project.get_all_projects()
+                self.config.save()  # See #12524
             req.redirect(req.href.admin(cat, page))
 
         # GET, show admin page
-        data = {'all_projects': self.smp_project.get_all_projects()}
+        user_projects = self.smp_project.apply_user_restrictions(projects, req.authname)
+        data = {'all_projects': user_projects}
         if not path_info:
-            data.update({'view': 'list', 'name': 'default'})
-        else:
-            data.update({'view': 'detail',
-                         'name': path_info,
+            # The main pages
+            data.update({'view': 'list',
+                         'name': name,
+                         'summary': summary,
+                         'description': description,
+                         'restricted': restricted
                          })
+        else:
+            for project in user_projects:
+                if project.name == path_info:
+                    data.update({'project': project,
+                                 'view': 'detail',
+                                 'datetime_hint': get_datetime_format_hint(req.lc_time)
+                                 })
+                    break
+            Chrome(self.env).add_wiki_toolbars(req)
 
         add_script(req, 'common/js/resizer.js')
         if self.pre_1_3:
             return 'admin_project.html', data
         else:
-            return 'admin_project_j.html', data, {}
+            return 'admin_project.html', data, None
+            # return 'admin_project_j.html', data, {}
 
     # IResourceManager methods
 
