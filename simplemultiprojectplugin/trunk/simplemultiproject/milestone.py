@@ -5,8 +5,7 @@
 # License: BSD
 #
 
-from genshi.filters import Transformer
-from genshi.template.markup import MarkupTemplate
+
 from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.ticket.api import IMilestoneChangeListener
@@ -15,6 +14,7 @@ from trac.web.chrome import add_script, add_script_data, add_stylesheet
 
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.model import *
+from simplemultiproject.permission import SmpPermissionPolicy
 from simplemultiproject.smp_model import SmpProject, SmpMilestone
 
 
@@ -41,37 +41,24 @@ tr_templ = u"""<tr>
         <td>{p_name}</td>
     </tr>"""
 
-def create_projects_table_j(self, _SmpModel, req, input_type='checkbox',
+def create_projects_table_j(self, req, input_type='checkbox',
                           item_name=''):
     """Create a table for admin panels holding valid projects (means not closed).
 
     @param self: Component with 'self.smp_project = SmpProject(self.env)'
-    @param _SmpModel: SmpModel object
     @param req      : Trac request object
     @param input_type: either 'checkbox' or 'radio'. Allows single or multiple paroject selection
     @param item_name: name of the milestone currently edited
 
     @return DIV tag holding a project select control with label
     """
-    # project[0] is the id, project[1] the name
-    all_projects = [[project[0], project[1]]
-                    for project in self.smp_project.get_all_projects()]
-    all_project_names = [name for p_id, name in all_projects]
-
-    # no closed projects
-    for project_name in list(all_project_names):
-        project_info = _SmpModel.get_project_info(project_name)
-        _SmpModel.filter_project_by_conditions(all_project_names, project_name,
-                                               project_info, req)
-
-    filtered_projects = [[p_id, project_name]
-                         for p_id, project_name in all_projects
-                         if project_name in all_project_names]
+    projects = self.smp_project.get_all_projects()
+    filtered_projects = SmpPermissionPolicy.active_projects_by_permission(req, projects)
 
     item = req.args.get('path_info', "")
     if not item:
         item = item_name
-    comp_prj = self.smp_model.get_project_names_for_item(item)
+    item_prj = self.smp_model.get_project_names_for_item(item)
 
     # This different tr initialization is for now so Genshi output and string format output are identical for the tests
     if filtered_projects:
@@ -79,8 +66,8 @@ def create_projects_table_j(self, _SmpModel, req, input_type='checkbox',
     else:
         tr = u""
     for prj in filtered_projects:
-        sel = ' checked' if prj[1] in comp_prj else ''
-        tr += tr_templ.format(p_id=prj[0], p_name=prj[1], input_type=input_type, sel=sel)
+        sel = ' checked' if prj[1] in item_prj else ''
+        tr += tr_templ.format(p_id=prj.id, p_name=prj.name, input_type=input_type, sel=sel)
 
     return table_tmpl.format(tr=tr)
 
@@ -186,7 +173,7 @@ class SmpMilestoneProject(Component):
 
             # xpath: //form[@id="edit"]//div[@class="field"][1]
             xform = JTransformer('form#edit div.field:nth-of-type(1)')
-            filter_list = [xform.after(create_projects_table_j(self, self._SmpModel, req,
+            filter_list = [xform.after(create_projects_table_j(self, req,
                                                             input_type=input_type,
                                                             item_name=data.get('milestone').name))]
             add_script_data(req, {'smp_filter': filter_list})

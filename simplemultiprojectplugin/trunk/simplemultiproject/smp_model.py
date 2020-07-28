@@ -181,7 +181,7 @@ class SmpMilestone(SmpBaseModel):
 
 class SmpProject(SmpBaseModel):
 
-    prj_cache = {}
+    prj_cache = {}  # key: project name, value namedtuple with complete project info
 
     def __init__(self, env):
         super(SmpProject, self).__init__(env)

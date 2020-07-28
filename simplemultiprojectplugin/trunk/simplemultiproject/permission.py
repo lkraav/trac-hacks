@@ -7,7 +7,7 @@
 
 from trac.core import Component, implements
 from trac.perm import IPermissionRequestor, IPermissionPolicy, PermissionSystem
-from simplemultiproject.smp_model import SmpProject
+from simplemultiproject.smp_model import PERM_TEMPLATE, SmpProject
 
 
 class SmpPermissionPolicy(Component):
@@ -16,6 +16,19 @@ class SmpPermissionPolicy(Component):
 
     def __init__(self):
         self.smp_project = SmpProject(self.env)
+
+    @staticmethod
+    def active_projects_by_permission(req, projects):
+        filtered = []
+        for project in projects:
+            if not project.closed:
+                if project.restricted:
+                    action = PERM_TEMPLATE % project.id
+                    if action in req.perm:
+                        filtered.append(project)
+                else:
+                    filtered.append(project)
+        return filtered
 
     # IPermissionRequestor method
 

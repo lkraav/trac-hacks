@@ -18,7 +18,6 @@ from trac.web.chrome import add_script, \
 
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.milestone import create_projects_table_j
-from simplemultiproject.model import SmpModel
 from simplemultiproject.smp_model import SmpComponent, SmpProject, \
     SmpVersion, SmpMilestone
 
@@ -45,7 +44,6 @@ class SmpFilterBase(Component):
     single_project = False
 
     def __init__(self):
-        self._SmpModel = SmpModel(self.env)
         self.smp_project = SmpProject(self.env)
 
     @staticmethod
@@ -125,7 +123,7 @@ class SmpFilterBase(Component):
         # Insert project selection control
         # xpath: //form[@id="addmilestone"]//div[@class="field"][1]
         xform = JTransformer('form#%s div.field:nth-of-type(1)' % form_id)
-        filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req,
+        filter_list.append(xform.after(create_projects_table_j(self, req,
                                                                input_type=input_type)))
         if filter_list:
             add_script_data(req, {'smp_filter': filter_list})
@@ -153,7 +151,7 @@ class SmpFilterBase(Component):
         # Insert project selection control
         # xpath: //form[@id="edit"]//div[@class="field"][1]
         xform = JTransformer('form#edit div.field:nth-of-type(1)')
-        filter_list = [xform.after(create_projects_table_j(self, self._SmpModel, req, input_type=input_type))]
+        filter_list = [xform.after(create_projects_table_j(self, req, input_type=input_type))]
 
         add_script_data(req, {'smp_filter': filter_list})
         add_script(req, 'simplemultiproject/js/jtransform.js')
@@ -362,7 +360,6 @@ class SmpFilterDefaultComponentPanels(Component):
     implements(IRequestFilter)
 
     def __init__(self):
-        self._SmpModel = SmpModel(self.env)
         self.smp_model = SmpComponent(self.env)
         self.smp_project = SmpProject(self.env)
 
@@ -421,7 +418,7 @@ class SmpFilterDefaultComponentPanels(Component):
                 # The 'Add component' part of the page
                 # xpath: //form[@id="addcomponent"]//div[@class="field"][2]
                 xform = JTransformer('form#addcomponent div.field:nth-of-type(2)')
-                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req)))
+                filter_list.append(xform.after(create_projects_table_j(self,  req)))
 
                 # xpath: //table[@id="complist"]
                 xform = JTransformer('table#complist')
@@ -444,7 +441,7 @@ class SmpFilterDefaultComponentPanels(Component):
                 # xform: //form[@id="modcomp" or @id="edit"]//div[@class="field"][1] where is modcomp used?
                 # xform: //form[@id="edit"]//div[@class="field"][1]
                 xform = JTransformer('form#edit div.field:nth-of-type(1)')
-                filter_list.append(xform.after(create_projects_table_j(self, self._SmpModel, req)))
+                filter_list.append(xform.after(create_projects_table_j(self, req)))
 
             if filter_list:
                 add_script_data(req, {'smp_filter': filter_list})
