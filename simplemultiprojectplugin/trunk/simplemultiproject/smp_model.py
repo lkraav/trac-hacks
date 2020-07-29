@@ -181,13 +181,16 @@ class SmpMilestone(SmpBaseModel):
 
 class SmpProject(SmpBaseModel):
 
-    prj_cache = {}  # key: project name, value namedtuple with complete project info
+    # Not used, because we had to keep different instances in sync
+    # Each component holds a private instance atm
+    _prj_cache = {}  # key: project name, value namedtuple with complete project info
 
     def __init__(self, env):
         super(SmpProject, self).__init__(env)
         # TODO: a call to get_all_projects is missing to fill the custom
         # ticket field. Make sure to look at #12393 when implementing
 
+    # Not used atm
     def _update_cache(self, projects):
         self.prj_cache = {project.name: project for project in projects}
 
@@ -210,9 +213,7 @@ class SmpProject(SmpBaseModel):
             prj_id = db.get_last_id(cursor, 'smp_project')
 
         # keep internal ticket custom field data up to date
-        projects = self.get_all_projects()
-        self._update_cache(projects)
-
+        self.get_all_projects()
         return prj_id
 
     def delete(self, prj_id):
@@ -239,8 +240,7 @@ class SmpProject(SmpBaseModel):
                 permsys.revoke_permission(user, permission)
 
         # keep internal ticket custom field data up to date
-        projects = self.get_all_projects()
-        self._update_cache(projects)
+        self.get_all_projects()
 
     def _rename_project_in_ticket_custom_fields(self, old_name, name, db):
         """Change the project name in the ticket custom fields 'project' to a new name.
@@ -266,8 +266,7 @@ class SmpProject(SmpBaseModel):
                   WHERE id_project=%s""", (name, summary, desc, closed, restrict_to, prj_id))
             if old_name != name:
                 self._rename_project_in_ticket_custom_fields(old_name, name, db)
-                projects = self.get_all_projects()
-                self._update_cache(projects)
+            self.get_all_projects()
 
     def get_name_and_id(self):
         return sorted(self.env.db_query("""
@@ -314,19 +313,31 @@ class SmpProject(SmpBaseModel):
                 (PERM_TEMPLATE % prj.id in perms and perms[PERM_TEMPLATE % prj.id])]
 
     def get_project_from_ticket(self, tkt_id):
-        if not self.prj_cache:
-            projects = self.get_all_projects()
-            self._update_cache(projects)
+        # TODO: create usint test and rewrite as for loop
+        projects = self.get_all_projects()
+        prj_cache = {project.name: project for project in projects}
+
         for project_name in self.env.db_query("""SELECT value FROM ticket_custom 
                                             WHERE name='project' AND ticket = %s""" % (tkt_id,)):
             name = project_name[0]
             try:
-                return self.prj_cache[name]
+                return prj_cache[name]
             except KeyError:
                 # Some old project name without a real project lingering in the ticket custom data for some reason.
                 return None
 
         return None
+
+    def get_project_from_name(self, name):
+        # TODO: create usint test and rewrite as for loop
+        projects = self.get_all_projects()
+        prj_cache = {project.name: project for project in projects}
+
+        try:
+            return prj_cache[name]
+        except KeyError:
+            # Some old project name without a real project lingering in the ticket custom data for some reason.
+            return None
 
 
 def get_all_versions_without_project(env):

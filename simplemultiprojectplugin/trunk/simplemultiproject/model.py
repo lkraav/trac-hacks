@@ -95,12 +95,6 @@ class SmpModel(Component):
             return not allowed
         return False
 
-    def update_custom_ticket_field(self, old_project_name, new_project_name):
-        self.env.db_transaction("""
-                UPDATE ticket_custom SET value=%s
-                WHERE name='project' AND value=%s
-                """, (new_project_name, old_project_name))
-
     # AdminPanel Methods
 
     def insert_project(self, name, summary, description, closed, restrict):
@@ -113,33 +107,6 @@ class SmpModel(Component):
         # Keep internal list of values for ticket-custom field 'project'
         # updated. This list is used for the dropdown on the query page.
         self.get_all_projects()
-
-    def delete_project(self, ids_projects):
-        with self.env.db_transaction as db:
-            for id_ in ids_projects:
-                db("""
-                    DELETE FROM smp_project WHERE id_project=%s
-                    """, (id_,))
-                db("""
-                    DELETE FROM smp_milestone_project WHERE id_project=%s
-                    """, (id_,))
-                db("""
-                    DELETE FROM smp_version_project WHERE id_project=%s
-                    """, (id_,))
-                db("""
-                    DELETE FROM smp_component_project WHERE id_project=%s
-                    """, (id_,))
-
-        # Keep internal list of values for ticket-custom field 'project'
-        # updated. This list is used for the dropdown on the query page.
-        self.get_all_projects()
-
-    def update_project(self, id, name, summary, description, closed, restrict):
-        self.env.db_transaction("""
-            UPDATE smp_project
-            SET name=%s, summary=%s, description=%s, closed=%s, restrict_to=%s
-            WHERE id_project=%s
-            """, (name, summary, description, closed, restrict, id))
 
     # Ticket Methods
 

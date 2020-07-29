@@ -10,7 +10,6 @@ from trac.core import Component, implements
 from trac.util.text import printout
 from trac.util.translation import _
 
-from simplemultiproject.model import SmpModel
 from simplemultiproject.smp_model import SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
@@ -58,7 +57,6 @@ class SmpAdminCommands(Component):
     implements(IAdminCommandProvider)
 
     def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_component = SmpComponent(self.env)
         self.smp_version = SmpVersion(self.env)
@@ -89,7 +87,7 @@ class SmpAdminCommands(Component):
         yield ('project rename', '<project> <newname>',
                'Rename project.',
                None, self._rename_project)
-        yield ('project restrict', '<project> <restrictions>',
+        yield ('project restrict', '<project> <Yes|No>',
                'Change restrictions of project.',
                None, self._change_restrictions)
         yield ('project summary', '<project> <summary>',
@@ -106,21 +104,19 @@ class SmpAdminCommands(Component):
         printout("Command not implemented.")
 
     def _add_project(self, name, summary=""):
-        if not self.__SmpModel.get_project_info(name):
-            self.__SmpModel.insert_project(name, summary=summary, description="", closed=0, restrict="")
+        projects = [project.name for project in self.smp_project.get_all_projects()]
+        if name not in projects:
+            self.smp_project.add(name, summary=summary, description="", closed=None, restrict_to="")
         else:
             printout(_("Project already exists."))
 
     def _rename_project(self, name, newname):
-
-        dat = self.__SmpModel.get_project_info(name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(name)
+        if not project:
             self._print_no_project()
         else:
-            self.__SmpModel.update_project(dat[0], newname, dat[2], dat[3], dat[4], dat[5])
-            if newname != name:
-                self.__SmpModel.update_custom_ticket_field(name, newname)
+            self.smp_project.update(project.id, newname, project.summary, project.description,
+                                    project.closed, project.restricted)
 
     def _list_projects(self, detailed_list=""):
         for id_project, name, summary, description, closed, restrict_to \
@@ -135,77 +131,75 @@ class SmpAdminCommands(Component):
                 printout("%s" % name)
 
     def _remove_project(self, name):
-        dat = self.__SmpModel.get_project_info(name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(name)
+        if not project:
             self._print_no_project()
         else:
-            self.__SmpModel.delete_project([dat[0]])
+            self.smp_project.delete(project.id)
 
     def _change_summary(self, name, summary):
-
-        dat = self.__SmpModel.get_project_info(name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(name)
+        if not project:
             self._print_no_project()
         else:
-            self.__SmpModel.update_project(dat[0], dat[1], summary, dat[3], dat[4], dat[5])
+            self.smp_project.update(project.id, project.name, summary, project.description,
+                                    project.closed, project.restricted)
 
     def _change_description(self, name, description):
-
-        dat = self.__SmpModel.get_project_info(name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(name)
+        if not project:
             self._print_no_project()
         else:
-            self.__SmpModel.update_project(dat[0], dat[1], dat[2], description, dat[4], dat[5])
+            self.smp_project.update(project.id, project.name, project.summary, description,
+                                    project.closed, project.restricted)
 
     def _change_restrictions(self, name, restrictions):
+        if restrictions.upper() not in  ('YES', 'NO'):
+            printout(_("Restriction must be Yes or No."))
+            return
 
-        dat = self.__SmpModel.get_project_info(name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(name)
+        if not project:
             self._print_no_project()
         else:
-            self.__SmpModel.update_project(dat[0], dat[1], dat[2], dat[3], dat[4], restrictions)
+            restricted = 'YES' if restrictions.upper() == 'YES' else ''
+            self.smp_project.update(project.id, project.name, project.summary, project.description,
+                                    project.closed, restricted)
 
     def _close_project(self, name):
-
-        dat = self.__SmpModel.get_project_info(name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(name)
+        if not project:
             self._print_no_project()
         else:
-            if not dat[4]:
+            if not project.closed:
                 from trac.util.datefmt import to_utimestamp, localtz
                 from datetime import datetime
                 time = to_utimestamp(datetime.now(localtz))
-                self.__SmpModel.update_project(dat[0], dat[1], dat[2], dat[3], time, dat[5])
+                self.smp_project.update(project.id, project.name, project.summary, project.description,
+                                        time, project.restricted)
 
     def _open_project(self, name):
-
-        dat = self.__SmpModel.get_project_info(name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(name)
+        if not project:
             self._print_no_project()
         else:
-            self.__SmpModel.update_project(dat[0], dat[1], dat[2], dat[3], 0, dat[5])
+            self.smp_project.update(project.id, project.name, project.summary, project.description,
+                                    None, project.restricted)
 
     def _assign_project(self, what, prj_name, item):
-
-        dat = self.__SmpModel.get_project_info(prj_name)
-
-        if not dat:
+        project = self.smp_project.get_project_from_name(prj_name)
+        if not project:
             self._print_no_project()
         else:
             if what == 'component':
-                self.smp_component.add(item, dat[0])
+                self.smp_component.add(item, project.id)
             elif what == 'milestone':
-                self.smp_milestone.add(item, dat[0])
+                self.smp_milestone.add(item, project.id)
             elif what == 'version':
-                self.smp_version.add(item, dat[0])
+                self.smp_version.add(item, project.id)
 
     def _unassign_project(self, what, item):
+        # TODO: unassign single projects here
         if what == 'component':
             self.smp_component.delete(item)
         elif what == 'milestone':
