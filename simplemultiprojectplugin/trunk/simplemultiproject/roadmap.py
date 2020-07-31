@@ -16,6 +16,7 @@ from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
 from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.model import SmpModel
+from simplemultiproject.permission import SmpPermissionPolicy
 from simplemultiproject.session import get_project_filter_settings, \
     get_filter_settings
 
@@ -199,7 +200,7 @@ class SmpRoadmapProjectFilter(Component):
             # xpath: //form[@id="prefs"]
             filter_list = [{'pos': 'prepend',
                             'css': 'form#prefs',
-                            'html': create_proj_table(self, self._SmpModel, req, 'roadmap')}]
+                            'html': create_proj_table(self, req, 'roadmap')}]
             if filter_list:
                 add_script_data(req, {'smp_filter': filter_list})
                 add_script(req, 'simplemultiproject/js/smp_add_prefs.js')
@@ -280,7 +281,7 @@ def div_from_projects(all_projects, filter_prj, size):
 <div>
 <input type="hidden" name="smp_update" value="filter">
 <select id="Filter-Projects" name="smp_projects" multiple size="{size}" style="overflow:auto;">
-    <option value="All">All</option>
+    <option value="All"{all_selected}>All</option>
     {options}
 </select>
 </div>
@@ -295,31 +296,21 @@ def div_from_projects(all_projects, filter_prj, size):
         sel = u' selected' if item[1] in filter_prj else u''
         options += option_tmpl.format(p_name=item[1], sel=sel)
 
-    return div_templ.format(size=size,options=options)
+    return div_templ.format(size=size, all_selected='' if filter_prj else u' selected', options=options)
 
 
-def create_proj_table(self, _SmpModel, req, session_name='roadmap'):
+def create_proj_table(self, req, session_name='roadmap'):
     """Create a select tag holding valid projects (means not closed) for
     the current user.
 
     @param self: Component instance holding a self.smp_project =  SmpProject(env)
-    @param _SmpModel: SmpModel object used for filtering functions
     @param req      : Trac request object
 
     @return DIV tag holding a project select control with label
     """
-    # project[0] is the id, project[1] the name
-    all_projects = [[project[0], project[1]] for project in self.smp_project.get_all_projects()]
-    all_project_names = [name for p_id, name in all_projects]
+    projects = self.smp_project.get_all_projects()
+    filtered_projects = SmpPermissionPolicy.active_projects_by_permission(req, projects)
 
-    temp_lst = [name for name in all_project_names]
-    # no closed projects
-    for project_name in temp_lst:
-        project_info = _SmpModel.get_project_info(project_name)
-        _SmpModel.filter_project_by_conditions(all_project_names, project_name, project_info, req)
-
-    filtered_projects = [[p_id, project_name] for p_id, project_name in all_projects
-                         if project_name in all_project_names]
     if filtered_projects:
         size = len(filtered_projects) + 1  # Account for 'All' option
     else:

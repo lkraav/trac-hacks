@@ -39,7 +39,7 @@ class SmpTimelineProjectFilter(Component):
             # xpath: //form[@id="prefs"]
             filter_list = [{'pos': 'prepend',
                             'css': 'form#prefs',
-                            'html': create_proj_table(self, self._SmpModel, req, 'timeline')}]
+                            'html': create_proj_table(self, req, 'timeline')}]
             if filter_list:
                 add_script_data(req, {'smp_filter': filter_list})
                 add_script(req, 'simplemultiproject/js/smp_add_prefs.js')
