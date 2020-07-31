@@ -91,8 +91,7 @@ class SmpPermissionPolicy(Component):
                 if project:
                     if project.restricted and ("PROJECT_%s_MEMBER" % project.id) not in perm:
                         return False  # We deny access no matter what other policies may have decided
-            else:
-                if resource and resource.realm == 'milestone' and resource.id is not None:
+            elif resource and resource.realm == 'milestone' and resource.id is not None:
                     # res = self.check_milestone_permission(resource.id, perm)
                     # self.log.info('################# %s %s %s', resource, resource.realm, res)
                     return self.check_milestone_permission(resource.id, perm)
