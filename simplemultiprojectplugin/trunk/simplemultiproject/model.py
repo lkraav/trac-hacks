@@ -108,24 +108,6 @@ class SmpModel(Component):
         # updated. This list is used for the dropdown on the query page.
         self.get_all_projects()
 
-    # Ticket Methods
-
-    def get_ticket_project(self, id):
-        for project, in self.env.db_query("""
-                SELECT value FROM ticket_custom
-                WHERE name='project' AND ticket=%s
-                """, (id,)):
-            return project
-
-    # MilestoneProject Methods
-
-    def get_milestones_of_project(self, project):
-        return [milestone for milestone, in self.env.db_query("""
-                SELECT m.milestone AS milestone
-                FROM smp_project AS p, smp_milestone_project AS m
-                WHERE p.name = %s AND p.id_project = m.id_project
-                """, (project,))]
-
     # VersionProject Methods
 
     def get_versions_of_project(self, project):
@@ -155,20 +137,3 @@ class SmpModel(Component):
             UPDATE smp_version_project
             SET version=%s WHERE version=%s
             """, (new_version, old_version))
-
-    # ComponentProject Methods
-
-    def get_projects_component(self, component):
-        return [name for name, in self.env.db_query("""
-                SELECT name
-                FROM smp_project AS p, smp_component_project AS m
-                WHERE m.component=%s and m.id_project = p.id_project
-                """, (component,))]
-
-    def is_milestone_completed(self, milestone_name):
-        completed = None
-        for completed, in self.env.db_query("""
-                SELECT completed FROM milestone WHERE name=%s
-                """, (milestone_name,)):
-            break
-        return completed and completed > 0

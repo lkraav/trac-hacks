@@ -60,6 +60,7 @@ class SmpRoadmapGroup(Component):
 
             # TODO: this stuff probably should be in filter_data()
             # Get list of projects for this user. Any permission filter is applied
+            # TODO: This doesn't work with the new permission system anymore
             all_proj = self._SmpModel.get_all_projects_filtered_by_conditions(req)  # This is a list of tuples
             usr_proj = [project for project in sorted(all_proj, key=lambda k: k[1])]
             all_known_proj_ids = [p[0] for p in usr_proj]
@@ -184,7 +185,6 @@ class SmpRoadmapProjectFilter(Component):
     implements(IRequestFilter, IRoadmapDataProvider)
 
     def __init__(self):
-        self._SmpModel = SmpModel(self.env)
         self.smp_project = SmpProject(self.env)  # For create_projects_table
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_version = SmpVersion(self.env)

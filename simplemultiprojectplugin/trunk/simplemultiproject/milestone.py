@@ -131,7 +131,6 @@ class SmpMilestoneProject(Component):
                """)
 
     def __init__(self):
-        self._SmpModel = SmpModel(self.env)
         self.smp_model = SmpMilestone(self.env)
         self.smp_project = SmpProject(self.env)
 
