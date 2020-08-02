@@ -7,7 +7,7 @@ from datetime import datetime
 from trac.util.datefmt import to_utimestamp, utc
 from trac.test import EnvironmentStub, MockPerm, MockRequest
 from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
-from simplemultiproject.model import SmpModel
+from simplemultiproject.smp_model import SmpProject
 from simplemultiproject.roadmap import create_proj_table, SmpRoadmapProjectFilter
 from simplemultiproject.tests.util import revert_schema
 
@@ -23,7 +23,6 @@ class TestProjectListPrefsNoProject(unittest.TestCase):
         self.plugin = SmpRoadmapProjectFilter(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
 
     def tearDown(self):
         self.env.reset_db()
@@ -44,10 +43,10 @@ class TestProjectListPrefs(unittest.TestCase):
         self.plugin = SmpRoadmapProjectFilter(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model = SmpProject(self.env)
+        self.model.add("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
     def tearDown(self):
         self.env.reset_db()
@@ -96,10 +95,10 @@ class TestProjectListPrefsWithRestrictions(unittest.TestCase):
         self.req = MockRequest(self.env, username='Tester')
         self.req.perm = Perm()
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, 'YES')
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model = SmpProject(self.env)
+        self.model.add("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, 'YES')
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
     def tearDown(self):
         self.env.reset_db()
@@ -167,11 +166,11 @@ class TestProjectListPrefsClosed(unittest.TestCase):
         self.plugin = SmpRoadmapProjectFilter(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model = SmpProject(self.env)
+        self.model.add("foo1", 'Summary 1', 'Description 1', None, None)
         time = to_utimestamp(datetime(2000, 1, 1, tzinfo=utc))
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', time, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', time, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
     def tearDown(self):
         self.env.reset_db()

@@ -13,10 +13,10 @@ setup(
         ]
     },
     install_requires=['Trac'],
-    author='Christopher Paredes',
-    author_email='jesuchristopher@gmail.com',
+    author='Christopher Paredes, falkb, Cinc-th, Ryan J Ollos',
+    author_email='',
     maintainer="Cinc-th",
-    license='GPL',
+    license='BSD',
     url='https://trac-hacks.org/wiki/SimpleMultiProjectPlugin',
     description='Simple Multi Project plugin for managing several projects '
                 'with one Trac instance.',
@@ -28,7 +28,6 @@ setup(
         'simplemultiproject.admin_filter = simplemultiproject.admin_filter',
         'simplemultiproject.environmentSetup = simplemultiproject.environmentSetup',
         'simplemultiproject.milestone = simplemultiproject.milestone',
-        'simplemultiproject.model = simplemultiproject.model',
         'simplemultiproject.roadmap = simplemultiproject.roadmap',
         'simplemultiproject.ticket = simplemultiproject.ticket',
         'simplemultiproject.timeline = simplemultiproject.timeline',

@@ -15,7 +15,6 @@ from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
 
 from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 from simplemultiproject.api import IRoadmapDataProvider
-from simplemultiproject.model import SmpModel
 from simplemultiproject.permission import PERM_TEMPLATE, SmpPermissionPolicy
 from simplemultiproject.session import get_project_filter_settings, \
     get_filter_settings
@@ -34,7 +33,6 @@ class SmpRoadmapGroup(Component):
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_project = SmpProject(self.env)
         self.smp_version = SmpVersion(self.env)
-        self._SmpModel = SmpModel(self.env)
 
     # IRoadmapDataProvider
 

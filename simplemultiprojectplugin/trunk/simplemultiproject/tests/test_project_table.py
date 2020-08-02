@@ -11,9 +11,8 @@ from trac.test import EnvironmentStub, MockPerm, MockRequest
 from simplemultiproject.admin_filter import SmpFilterDefaultMilestonePanels
 from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.milestone import create_cur_projects_table, create_projects_table_j
-from simplemultiproject.model import SmpModel
 from simplemultiproject.tests.util import revert_schema
-from simplemultiproject.smp_model import SmpMilestone
+from simplemultiproject.smp_model import SmpMilestone, SmpProject
 
 
 class TestProjectTableNoMilestones(unittest.TestCase):
@@ -27,7 +26,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
         self.plugin = SmpFilterDefaultMilestonePanels(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
+        self.model = SmpProject(self.env)
 
     def tearDown(self):
         self.env.reset_db()
@@ -85,9 +84,9 @@ class TestProjectTableNoMilestones(unittest.TestCase):
 </div>
 <div></div>
 </div>"""
-        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model.add(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
         res = create_projects_table_j(self.plugin, self.req)
         self.assertEqual(expected, res)
@@ -125,9 +124,9 @@ class TestProjectTableNoMilestones(unittest.TestCase):
 </div>
 <div></div>
 </div>"""
-        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model.add(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
         res = create_projects_table_j(self.plugin, self.req, 'radio')
         self.assertEqual(expected, res)
@@ -144,10 +143,10 @@ class TestProjectTableMilestones(unittest.TestCase):
         self.plugin = SmpFilterDefaultMilestonePanels(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
-        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model = SmpProject(self.env)
+        self.model.add(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
         self.msmodel = SmpMilestone(self.env)
         self.msmodel.add("ms1", 1)  # second parm is project id
         self.msmodel.add("ms2", (2, 3))  # this milestone belongs to project 2 and 3
@@ -319,7 +318,7 @@ class TestCurProjectTableNoMilestones(unittest.TestCase):
         self.plugin = SmpFilterDefaultMilestonePanels(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
+        self.model = SmpProject(self.env)
         self.msmodel = SmpMilestone(self.env)
 
     def tearDown(self):
@@ -332,9 +331,9 @@ class TestCurProjectTableNoMilestones(unittest.TestCase):
 
     def test_with_projects(self):
         expected = """"""
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model.add("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
         res = create_cur_projects_table(self.msmodel, '')
         self.assertEqual(expected, res)
@@ -351,10 +350,10 @@ class TestCurProjectTableMilestones(unittest.TestCase):
         self.plugin = SmpFilterDefaultMilestonePanels(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
-        self.model.insert_project("foo1", 'Summary 1', 'Description 1', None, None)
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model = SmpProject(self.env)
+        self.model.add("foo1", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
         self.msmodel = SmpMilestone(self.env)
         self.msmodel.add("ms1", 1)  # second parm is project id
         self.msmodel.add("ms2", (2, 3))  # this milestone belongs to project 2 and 3
@@ -432,7 +431,7 @@ class TestProjectTableNoMilestonesWithRetrictions(unittest.TestCase):
         self.req = MockRequest(self.env, username='Tester')
         self.req.perm = Perm()
         # self.env.config.set("ticket-custom", "project", "select")
-        self.model = SmpModel(self.env)
+        self.model = SmpProject(self.env)
 
     def tearDown(self):
         self.env.reset_db()
@@ -469,9 +468,9 @@ class TestProjectTableNoMilestonesWithRetrictions(unittest.TestCase):
 </div>
 <div></div>
 </div>"""
-        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, "YES")
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model.add(u"foo1öäü", 'Summary 1', 'Description 1', None, "YES")
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
         res = create_projects_table_j(self.plugin, self.req)
         self.assertEqual(expected, res)
@@ -514,9 +513,9 @@ class TestProjectTableNoMilestonesWithRetrictions(unittest.TestCase):
 <div></div>
 </div>"""
         # Setup projects
-        self.model.insert_project(u"foo1öäü", 'Summary 1', 'Description 1', None, "YES")
-        self.model.insert_project("foo2", 'Summary 2', 'Description 2', None, None)
-        self.model.insert_project("foo3", 'Summary 3', 'Description 3', None, None)
+        self.model.add(u"foo1öäü", 'Summary 1', 'Description 1', None, "YES")
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
 
         self.req.perm.perms.append('PROJECT_2_MEMBER')
         res = create_projects_table_j(self.plugin, self.req)
