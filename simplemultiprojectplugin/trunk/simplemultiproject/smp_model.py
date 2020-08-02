@@ -278,7 +278,15 @@ class SmpProject(SmpBaseModel):
                 SELECT id_project,name,summary,description,closed,restrict_to
                 FROM smp_project ORDER BY name
                 """)
-        project_names = [r[1] for r in projects]
+        project_names = [project[1] for project in projects]
+
+        # TODO: Fix me. This only works sometimes. If the emmpty project name is already saved
+        # in trac.ini, it will be loaded as default on startup and the 'ticket_without_project'
+        # setting has no effect.
+        #if self.env.config.getbool('simple-multi-project', 'ticket_without_project', False):
+
+        # For now make tickets without projects the default
+        project_names.append('')
         self.env.config.set('ticket-custom', 'project.options',
                             '|'.join(project_names))  # We don't save here. But see #12524
 

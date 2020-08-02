@@ -58,10 +58,11 @@ class SmpTicket(TracComponent):
                 projects, project_map = self.get_projects_for_user(req)
                 data['fields'][field]['options'] = projects
                 # Allow for no project
-                if self.allow_no_project:
-                    data['fields'][field]['optional'] = True
-                else:
-                    data['fields'][field]['optional'] = False
+                # TODO: see smp_model->get_all_projects() why this is broken
+                # if self.allow_no_project:
+                #     data['fields'][field]['optional'] = True
+                # else:
+                #     data['fields'][field]['optional'] = False
                 add_script_data(req, {'smp_project_map': project_map})
 
             # Create a new list of available versions and project mapping for the ticket
