@@ -5,18 +5,126 @@
 # License: 3-clause BSD
 #
 from collections import defaultdict
-from trac.core import Component, implements
+from trac.core import Component as TracComponent, implements
 from trac.perm import IPermissionRequestor, IPermissionPolicy, PermissionSystem
-from simplemultiproject.smp_model import PERM_TEMPLATE, SmpMilestone, SmpProject
+from trac.ticket.model import Component, Version
+from trac.web.api import IRequestFilter
+from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
-class SmpPermissionPolicy(Component):
+def get_user_projects(req, smp_project):
+    """Get all projects user has access to."""
+    usr_projects = []
+    for project in smp_project.get_all_projects():  # This is already sorted by name
+        if project.restricted:
+            if (PERM_TEMPLATE % project.id) in req.perm:
+                usr_projects.append(project)
+        else:
+            usr_projects.append(project)
+    return usr_projects
+
+def get_user_components(req, smp_component, comp_iterator):
+    """Get all components the user has access to.
+    :param req: Trac Request object
+    :param comp_iterator: iterator of all components as returned by Component.select()
+    :returns list of component names
+    """
+    # Get components with projects
+    components = defaultdict(list)  # key: component name, val: list of project ids
+    for comp in smp_component.get_all_components_and_project_id():
+        components[comp[0]].append(comp[1])  # comp[0]: name, comp[1]: project id
+
+    comps = []
+    for comp in comp_iterator:
+        if comp.name in components:
+            project_ids = components[comp.name]
+            for prj_id in project_ids:
+                if (PERM_TEMPLATE % prj_id) in req.perm:
+                    comps.append(comp.name)
+                    break
+            del components[comp.name]
+        else:
+            # Component names without projects
+            comps.append(comp.name)
+
+    return sorted(comps)
+
+
+def get_user_versions(req, smp_version, version_iterator):
+    """Get all versions user has access to.
+    :param req: Trac Request object
+    :param version_iterator: iterator for all versions as returned by Version.select()
+    :returns list of version names
+    """
+    # Get components with projects
+    versions = defaultdict(list)  # key: component name, val: list of project ids
+    for ver in smp_version.get_all_versions_and_project_id():
+        versions[ver[0]].append(ver[1])  # ver[0]: name, ver[1]: project id
+
+    vers = []
+    for version in version_iterator:
+        if version.name in versions:
+            project_ids = versions[version.name]
+            for prj_id in project_ids:
+                if (PERM_TEMPLATE % prj_id) in req.perm:
+                    vers.append(version.name)
+                    break
+            del versions[version.name]
+        else:
+            # Component names without projects
+            vers.append(version.name)
+
+    return sorted(vers)
+
+
+class SmpPermissionPolicy(TracComponent):
     """Implements the permission system for SimpleMultipleProject."""
-    implements(IPermissionRequestor, IPermissionPolicy)
+    implements(IRequestFilter, IPermissionPolicy, IPermissionRequestor)
 
     def __init__(self):
         self.smp_project = SmpProject(self.env)
+        self.smp_component = SmpComponent(self.env)
         self.smp_milestone = SmpMilestone(self.env)
+        self.smp_version = SmpVersion(self.env)
+
+    # IRequestFilter Methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        # Filter data by permission for the query page
+        # Note that milestones are filtered by the permission policy
+        if data and template == "query.html":
+            # TODO: create project mappings here and change milestone, components and version lists
+            # when project is changed
+
+            # Limit projects to those we have access to
+            try:
+                field = data['fields']['project']
+            except KeyError:
+                pass
+            else:
+                projects = get_user_projects(req, self.smp_project)
+                field['options'] = [project.name for project in projects]
+            # Limit components to those we have access to
+            try:
+                field = data['fields']['component']
+            except KeyError:
+                pass
+            else:
+                comps = get_user_components(req, self.smp_component, Component.select(self.env))
+                field['options'] = [comp for comp in comps]
+            # Limit versions to those we have access to
+            try:
+                field = data['fields']['version']
+            except KeyError:
+                pass
+            else:
+                vers = get_user_versions(req, self.smp_version, Version.select(self.env))
+                field['options'] = [ver for ver in vers]
+
+        return template, data, content_type
 
     @staticmethod
     def active_projects_by_permission(req, projects):
@@ -32,7 +140,7 @@ class SmpPermissionPolicy(Component):
         return filtered
 
     def check_milestone_permission(self, milestone, perm):
-        """Check if user has access tothis milestone. Returns True if access is possible otherwise False-"""
+        """Check if user has access to this milestone. Returns True if access is possible otherwise False-"""
         # dict with key: milestone, val: list of project ids
         milestones = defaultdict(list)
         for ms in self.smp_milestone.get_all_milestones_and_id_project_id():
