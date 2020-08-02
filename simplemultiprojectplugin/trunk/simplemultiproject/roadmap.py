@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Cinc
+# Copyright (C) 2015-2020 Cinc
 #
 # License: 3-clause BSD
 #
@@ -16,7 +16,7 @@ from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
 from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.model import SmpModel
-from simplemultiproject.permission import SmpPermissionPolicy
+from simplemultiproject.permission import PERM_TEMPLATE, SmpPermissionPolicy
 from simplemultiproject.session import get_project_filter_settings, \
     get_filter_settings
 
@@ -59,11 +59,15 @@ class SmpRoadmapGroup(Component):
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
 
             # TODO: this stuff probably should be in filter_data()
-            # Get list of projects for this user. Any permission filter is applied
-            # TODO: This doesn't work with the new permission system anymore
-            all_proj = self._SmpModel.get_all_projects_filtered_by_conditions(req)  # This is a list of tuples
-            usr_proj = [project for project in sorted(all_proj, key=lambda k: k[1])]
-            all_known_proj_ids = [p[0] for p in usr_proj]
+            # Get all projects user has access to.
+            usr_projects = []
+            for project in self.smp_project.get_all_projects():  # This is already sorted by name
+                if project.restricted:
+                    if (PERM_TEMPLATE % project.id) in req.perm:
+                        usr_projects.append(project)
+                else:
+                    usr_projects.append(project)
+            all_known_proj_ids = [project.id for project in usr_projects]
 
             # Get list of project ids linked to any milestone. Note this list may have duplicates
             ms_project_ids = [id_p for ms, id_p in self.smp_milestone.get_all_milestones_and_id_project_id()]
@@ -90,22 +94,18 @@ class SmpRoadmapGroup(Component):
                         item.id_project = ids_for_ver
 
             # TODO: don't access private filter data here. This may fail if filter plugin is disabled later on
-            filter_project = get_project_filter_settings(req, 'roadmap', 'smp_projects')
+            filtered_project_names = get_project_filter_settings(req, 'roadmap', 'smp_projects')
 
-            if filter_project and 'All' not in filter_project:
-                l = []
-                for p in usr_proj:
-                    if p[1] in filter_project:
-                        l.append(p[0])
-                show_proj = l
+            if filtered_project_names and 'All' not in filtered_project_names:
+                show_proj_ids = [project.id for project in usr_projects if project[1] in filtered_project_names]
             else:
-                show_proj = [p[0] for p in usr_proj]
+                show_proj_ids = [pproject.id for pproject in usr_projects]
 
-            data.update({'projects': usr_proj,
+            data.update({'projects': usr_projects,
                          'show': req.args.get('show', []),  # TODO: is this used at all?
                          'projects_with_ms': ms_project_ids,  # Currently not used in the template
                          'projects_with_ver': vers_project_ids,  # Currently not used in the template
-                         'visible_projects': show_proj})
+                         'visible_projects': show_proj_ids})
 
         return template, data, content_type
 
@@ -221,9 +221,9 @@ class SmpRoadmapProjectFilter(Component):
         # Filter the given data
         if 'projects' in data:
             filtered = []
-            for p in data['projects']:
-                if p[1] in filter_proj:
-                    filtered.append(p)
+            for project in data['projects']:
+                if project[1] in filter_proj:
+                    filtered.append(project)
             data['projects'] = filtered
 
         if 'milestones' in data:
