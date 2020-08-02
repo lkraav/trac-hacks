@@ -116,8 +116,7 @@ class SmpRoadmapGroup(Component):
         if filename == 'roadmap.html':
             # Change label to include versions
             filter_ = Transformer('//label[@for="showcompleted"]')
-            stream |= filter_.replace(HTML(u'<label for="showcompleted">Show completed milestones and '
-                                                   'versions</label>'))
+            stream |= filter_.replace(HTML(u'<label for="showcompleted">Show completed milestones</label>'))
             # Add additional checkboxes to preferences
             data['smp_render'] = 'prefs'  # specify which part of template to render
 
@@ -150,7 +149,7 @@ class SmpRoadmapModule(Component):
 
     data_provider = OrderedExtensionsOption(
         'simple-multi-project', 'roadmap_data_provider', IRoadmapDataProvider,
-        default="SmpVersionProject, SmpRoadmapGroup, SmpRoadmapProjectFilter",
+        default="SmpRoadmapGroup, SmpRoadmapProjectFilter",
         doc="""Specify the order of plugins providing data for roadmap page""")
 
     data_filters = OrderedExtensionsOption(

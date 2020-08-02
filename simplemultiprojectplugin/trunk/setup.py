@@ -32,7 +32,6 @@ setup(
         'simplemultiproject.roadmap = simplemultiproject.roadmap',
         'simplemultiproject.ticket = simplemultiproject.ticket',
         'simplemultiproject.timeline = simplemultiproject.timeline',
-        'simplemultiproject.version = simplemultiproject.version',
         'simplemultiproject.permission = simplemultiproject.permission',
         'simplemultiproject.admin_project = simplemultiproject.admin_project',
     ]},
