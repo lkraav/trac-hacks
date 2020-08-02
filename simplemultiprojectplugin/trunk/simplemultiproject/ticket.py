@@ -5,6 +5,7 @@
 # License: 3-clause BSD
 #
 from collections import defaultdict
+from trac.config import BoolOption
 from trac.core import Component as TracComponent, implements
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
@@ -15,6 +16,13 @@ from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilesto
 class SmpTicket(TracComponent):
     """Filtering of components for now"""
     implements(IRequestFilter)
+
+    allow_no_project = BoolOption(
+        'simple-multi-project', 'ticket_without_project', False,
+        doc="""Set this option to {{{True}}} if you want to create tickets
+                   without associated projects. The default value is {{{False}}}.
+                   """)
+
 
     def __init__(self):
         self.smp_project = SmpProject(self.env)
@@ -49,6 +57,11 @@ class SmpTicket(TracComponent):
             else:
                 projects, project_map = self.get_projects_for_user(req)
                 data['fields'][field]['options'] = projects
+                # Allow for no project
+                if self.allow_no_project:
+                    data['fields'][field]['optional'] = True
+                else:
+                    data['fields'][field]['optional'] = False
                 add_script_data(req, {'smp_project_map': project_map})
 
             # Create a new list of available versions and project mapping for the ticket
@@ -132,6 +145,7 @@ class SmpTicket(TracComponent):
                 else:
                     ms_map[str(project.id)] += temp
                     ms_map[str(project.id)].sort()
+            ms_map['0'] = temp  # used, when no project is selected
 
             # Convert to single optgroup HTML string
             for project_id, ms_list in ms_map.items():
@@ -192,6 +206,7 @@ class SmpTicket(TracComponent):
             else:
                 comp_map[str(project.id)] += temp
                 comp_map[str(project.id)].sort()
+        comp_map['0'] = temp  # used, when no project is selected
 
         # Convert to HTML string so javascript can easily replace the options of the select control
         for key, val in comp_map.items():
@@ -256,11 +271,13 @@ class SmpTicket(TracComponent):
             else:
                 ver_map[str(project.id)] += temp
                 ver_map[str(project.id)].sort()
+        ver_map['0'] = temp  # used, when no project is selected
+
         # Convert to HTML string so javascript can easily replace the options of the select control
-        for key, val in ver_map.items():
+        for project_id, val in ver_map.items():
             options = u'<option></option>' if optional else u''
             for item in val:
                 options += self.create_option(item)
-            ver_map[key] = options
+            ver_map[project_id] = options
 
         return vers, ver_map

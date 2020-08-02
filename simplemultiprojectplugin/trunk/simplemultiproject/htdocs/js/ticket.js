@@ -43,14 +43,22 @@ jQuery(document).ready(function($) {
         }
     };
 
-    $('#field-project').change(function() {
+    function get_cur_prj_id(){
         var cur_prj = smp_project_map[$('#field-project').val()]
+        if(cur_prj === undefined){
+            cur_prj = '0';
+        };
+        return cur_prj;
+    };
+
+    $('#field-project').change(function() {
+        var cur_prj = get_cur_prj_id();
         comp_list(cur_prj);
         ver_list(cur_prj);
         ms_list(cur_prj);
     });
 
-    var cur_prj = smp_project_map[$('#field-project').val()]
+    var cur_prj = get_cur_prj_id();
     /* Save initial selection so we remember ist after project changes */
     smp_component_sel = $('#field-component :selected').val();
     smp_version_sel = $('#field-version :selected').val();
