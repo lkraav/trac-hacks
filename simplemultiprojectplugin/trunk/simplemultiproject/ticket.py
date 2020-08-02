@@ -9,7 +9,7 @@ from trac.core import Component as TracComponent, implements
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data
-from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpProject, SmpVersion
+from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
 class SmpTicket(TracComponent):
@@ -20,6 +20,7 @@ class SmpTicket(TracComponent):
         self.smp_project = SmpProject(self.env)
         self.smp_component = SmpComponent(self.env)
         self.smp_version = SmpVersion(self.env)
+        self.smp_milestone = SmpMilestone(self.env)
 
     # IRequestFilter methods
 
@@ -28,13 +29,14 @@ class SmpTicket(TracComponent):
 
     def post_process_request(self, req, template, data, content_type):
         if data and template == "ticket.html":
-            # Create a new list of available components for the ticket
+            # Create a new list of available components and project mapping for the ticket
             try:
                 comp_field = data['fields_map']['component']
             except KeyError:
-                pass  # May have been filtered but one of the ticket field filter plugins
+                pass  # May have been filtered by one of the ticket field filter plugins
             else:
-                comps, comp_map = self.get_components_for_user(req, data['fields'][comp_field]['options'])
+                comps, comp_map = self.get_component_project_mapping_for_user(req,
+                                                                              data['fields'][comp_field]['options'])
                 data['fields'][comp_field]['options'] = comps
                 add_script_data(req, {'smp_component_map': comp_map,
                                       'smp_component_sel': ''})  # used by javascript to hold initial selected component
@@ -43,39 +45,119 @@ class SmpTicket(TracComponent):
             try:
                 field = data['fields_map']['project']
             except KeyError:
-                pass  # May have been filtered but one of the ticket field filter plugins
+                pass  # May have been filtered by one of the ticket field filter plugins
             else:
                 projects, project_map = self.get_projects_for_user(req)
                 data['fields'][field]['options'] = projects
                 add_script_data(req, {'smp_project_map': project_map})
 
-            # Create a new list of available versions for the ticket
+            # Create a new list of available versions and project mapping for the ticket
             try:
                 field = data['fields_map']['version']
             except KeyError:
-                pass  # May have been filtered but one of the ticket field filter plugins
+                pass  # May have been filtered by one of the ticket field filter plugins
             else:
-                versions, version_map = self.get_versions_for_user(req, data['fields'][field]['options'],
-                                                                   data['fields'][field]['optional'])
+                # This filters versions the user has no access to
+                versions, version_map = self.get_version_project_mapping_for_user(req, data['fields'][field]['options'],
+                                                                                  data['fields'][field]['optional'])
                 data['fields'][field]['options'] = versions
                 add_script_data(req, {'smp_version_map': version_map,
                                       'smp_version_sel': ''})  # used by javascript to hold initial selected component
-            comp_warn = _("Project changed. The previous component is no longer available. Check component selection.")
-            ver_warn = _("Project changed. The previous version is no longer available. Check version selection.")
+
+            comp_warn = _("Project changed. The previous component is not available for this project. "
+                          "Check component selection.")
+            ver_warn = _("Project changed. The previous version is not available for this project. "
+                         "Check version selection.")
+            ms_warn = _("Project changed. The previous milestone is not available for this project. "
+                        "Check milestone selection.")
+
             add_script_data(req, {'smp_component_warning':
                                       '<div id="smp-comp-warn" class="system-message warning" '
                                       'style="display: none">%s</div>' % comp_warn,
                                   'smp_version_warning':
                                       '<div id="smp-version-warn" class="system-message warning" '
-                                      'style="display: none">%s</div>' % ver_warn
+                                      'style="display: none">%s</div>' % ver_warn,
+                                  'smp_milestone_warning':
+                                      '<div id="smp-milestone-warn" class="system-message warning" '
+                                      'style="display: none">%s</div>' % ms_warn
                                   })
+            # Create a new list of available projects for the ticket
+            try:
+                field = data['fields_map']['milestone']
+            except KeyError:
+                pass  # May have been filtered by one of the ticket field filter plugins
+            else:
+                milestone_map = self.get_milestone_project_mapping_for_user(req, data['fields'][field]['optgroups'],
+                                                                            data['fields'][field]['optional'])
+                add_script_data(req, {'smp_milestone_map': milestone_map,
+                                      'smp_milestone_sel': ''})
+
             add_script(req, 'simplemultiproject/js/ticket.js')
         return template, data, content_type
 
     def create_option(self, name):
         return u'<option value="{name}">{name}</option>'.format(name=name)
 
-    def get_components_for_user(self, req, tkt_comps):
+    def get_milestone_project_mapping_for_user(self, req, tkt_ms_groups, optional):
+        # Note that milestones filtering by access rights is already done by a permission policy.
+        # Get milestones with projects
+        milestones = defaultdict(list)  # key: milestone name, val: list of project ids
+        for ms in self.smp_milestone.get_all_milestones_and_id_project_id():
+            milestones[ms[0]].append(ms[1])  # ms[0]: name, ms[1]: project id
+
+        projects = self.smp_project.get_all_projects()
+
+        # We do a project grouping for every optgroup in the milestone data
+        ms_group_map = []
+        for group in tkt_ms_groups:
+            temp = []  # holds milestone names without any associated project
+            ms_map = defaultdict(list)  # key: project id, value: list of milestones
+            for ms in group['options']:
+                if ms in milestones:
+                    project_ids = milestones[ms]
+                    for prj_id in project_ids:
+                        ms_map[str(prj_id)].append(ms)
+                    del milestones[ms]
+                else:
+                    # milestone names without associated projects for this optgroup
+                    temp.append(ms)
+
+            # Add project grouping for projects not found in the milestone association table. Add milestones without
+            # restrictions to the projects. Add milestones without restrictions to the projects we already found in
+            # the milestone table.
+            temp.sort()
+            for project in projects:
+                if not str(project.id) in ms_map:
+                    ms_map[str(project.id)] = temp
+                else:
+                    ms_map[str(project.id)] += temp
+                    ms_map[str(project.id)].sort()
+
+            # Convert to single optgroup HTML string
+            for project_id, ms_list in ms_map.items():
+                if ms_list:
+                    options_html = u''
+                    for item in ms_list:
+                        options_html += self.create_option(item)
+
+                    optgroup_html = u'<optgroup label="{label}">{options}</optgroup>'.format(label=group['label'],
+                                                                                             options=u'{options}')
+                    ms_map[project_id] = optgroup_html.format(options=options_html)
+                else:
+                    # No milestones for this group so remove the optgroup altogether
+                    ms_map[project_id] = u''
+            ms_group_map.append(ms_map)
+
+        # build the whole optgroup string for each project id
+        optional = u'<option></option>' if optional else u''
+        ms_optgroup_map = {key: optional for key in ms_group_map[0]}
+        for group in ms_group_map:
+            for project_id, optgroup_html in group.items():
+                ms_optgroup_map[project_id] += optgroup_html
+
+        return ms_optgroup_map
+
+    def get_component_project_mapping_for_user(self, req, tkt_comps):
         """Get all components the user has access to.
         :param req: Trac Request object
         :param tkt_comps: list of component names taken from the ticket data
@@ -139,7 +221,7 @@ class SmpTicket(TracComponent):
 
         return usr_projects, project_map
 
-    def get_versions_for_user(self, req, tkt_vers, optional):
+    def get_version_project_mapping_for_user(self, req, tkt_vers, optional):
         """Get all versions the user has access to.
         :param req: Trac Request object
         :param tkt_vers: list of versions taken from the ticket data
@@ -151,7 +233,6 @@ class SmpTicket(TracComponent):
         for ver in self.smp_version.get_all_versions_and_project_id():
             versions[ver[0]].append(ver[1])  # ver[0]: name, ver[1]: project id
 
-        self.log.info('### %s ', versions)
         # Map project ids to list of version names
         vers = []
         temp = []  # holds version names without any associated project
