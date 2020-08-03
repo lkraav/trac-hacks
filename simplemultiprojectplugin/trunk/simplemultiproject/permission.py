@@ -9,6 +9,7 @@ from trac.core import Component as TracComponent, implements
 from trac.perm import IPermissionRequestor, IPermissionPolicy, PermissionSystem
 from trac.ticket.model import Component, Version
 from trac.web.api import IRequestFilter
+from trac.web.chrome import add_script, add_script_data
 from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
@@ -95,6 +96,7 @@ class SmpPermissionPolicy(TracComponent):
     def post_process_request(self, req, template, data, content_type):
         # Filter data by permission for the query page
         # Note that milestones are filtered by the permission policy
+        self.log.info('##### %s', template)
         if data and template == "query.html":
             # TODO: create project mappings here and change milestone, components and version lists
             # when project is changed
@@ -123,6 +125,13 @@ class SmpPermissionPolicy(TracComponent):
             else:
                 vers = get_user_versions(req, self.smp_version, Version.select(self.env))
                 field['options'] = [ver for ver in vers]
+        elif data and template == "admin_perms.html":
+            # Add the project name as a title to all permissions on the Trac permission page.
+            # This way the tooltip shows the project name. 'This works at least with installed
+            # AccountManagerPlugin
+            prj_perms = {"PROJECT_%s_MEMBER" % id_: name for name, id_ in self.smp_project.get_name_and_id()}
+            add_script_data(req, {'smp_permissions': prj_perms})
+            add_script(req, 'simplemultiproject/js/admin_prefs.js')
 
         return template, data, content_type
 
@@ -166,7 +175,7 @@ class SmpPermissionPolicy(TracComponent):
         # Permissions for administration
         admin_action = ['PROJECT_SETTINGS_VIEW', 'PROJECT_ADMIN']
 
-        actions = ["PROJECT_%s_MEMBER" % id_ for name, id_ in SmpProject(self.env).get_name_and_id()] \
+        actions = ["PROJECT_%s_MEMBER" % id_ for name, id_ in self.smp_project.get_name_and_id()] \
             + [admin_action[0]]
 
         # Define actions PROJECT_ADMIN is allowed to perform
