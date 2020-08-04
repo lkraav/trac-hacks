@@ -196,9 +196,9 @@ class WantedPagesMacro(WikiMacroBase):
             _ml_parser.reset()
 
         if _show_referrers:
-            _data ='||Missing link||Referrer(s)||\n'
+            _data ='||=Missing link=||=Referrer(s)=||\n'
         else:
-            _data ='||Missing link||\n'
+            _data ='||=Missing link=||\n'
         _missing_link_count = 0
         for _page in _missing_links:
             _data = _data + '||[["%s"]]' % \
