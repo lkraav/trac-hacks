@@ -96,7 +96,7 @@ class SmpPermissionPolicy(TracComponent):
     def post_process_request(self, req, template, data, content_type):
         # Filter data by permission for the query page
         # Note that milestones are filtered by the permission policy
-        self.log.info('##### %s', template)
+
         if data and template == "query.html":
             # TODO: create project mappings here and change milestone, components and version lists
             # when project is changed
