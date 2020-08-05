@@ -1,7 +1,11 @@
 jQuery(function($) {
   $("input[type='text']").each(function() {
     var $field = $(this);
-    name = $field.attr('name').slice(6);
+    var field_name = $field.attr('name');
+    if (!field_name || !field_name.startsWith('field_')) {
+      return;
+    }
+    var name = field_name.slice(6);
     if (Object.keys(multiselectFields).indexOf(name) === -1) {
       return;
     }
