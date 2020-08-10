@@ -10,10 +10,10 @@
 import os
 import posixpath
 
-from genshi.builder import tag
 from trac.core import *
-from trac.web.chrome import INavigationContributor, ITemplateProvider, \
-    add_script
+from trac.util.html import html as tag
+from trac.web.chrome import (
+    INavigationContributor, ITemplateProvider, add_script)
 from trac.web.api import IRequestFilter
 from trac.web.main import open_environment
 
@@ -22,7 +22,7 @@ class ProjectMenuModule(Component):
 
     implements(INavigationContributor, ITemplateProvider, IRequestFilter)
 
-    # INavigationProvider methods
+    # INavigationContributor methods
 
     def get_navigation_items(self, req):
         projects = []
@@ -66,8 +66,9 @@ class ProjectMenuModule(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        add_script(req, 'projectmenu/projectmenu.js')
         return handler
 
-    def post_process_request(self, req, template, content_type):
-        return template, content_type
+    def post_process_request(self, req, template, data, content_type,
+                             methods=None):
+        add_script(req, 'projectmenu/projectmenu.js')
+        return template, data, content_type
