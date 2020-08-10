@@ -14,31 +14,13 @@ from trac.core import *
 from trac.wiki.api import IWikiMacroProvider
 
 
-class MediaWikiRenderer(Component):
-    """
-    Renders plain text in MediaWiki format as HTML
-    """
-    implements(IWikiMacroProvider)
-
-    def get_macros(self):
-        """Return a list of provided macros"""
-        yield 'mediawiki'
-
-    def get_macro_description(self, name):
-        return '''desc'''
-
-    def expand_macro(self, formatter, name, content):
-        if name == 'mediawiki':
-            return parse(content)
-
-
-    if __name__ == "__main__":
-        import sys
-        try:
-            file = open(sys.argv[1])
-            print parse(file.read())
-        except:
-            pass
+if __name__ == "__main__":
+    import sys
+    try:
+        file = open(sys.argv[1])
+        print parse(file.read())
+    except:
+        pass
 
 mTagHooks = {}
 
@@ -927,16 +909,16 @@ def slugifyBit(bit):
 def slugify(text):
     return u'/'.join(slugifyBit(t) for t in text.split(u'/'))
 
-_linkPat = re.compile(ur'^([A-Za-z0-9\s]+:)?([A-Za-z0-9_\.\-\s\/]+)(?:\|([^\n]+?))?\]\](.*)$', re.UNICODE | re.DOTALL)
+_linkPat = re.compile(ur'^([A-Za-z0-9\s]+:)?(#)?([A-Za-z0-9_\.\-\s\/\(\)]+)(?:\|([^\n]+?))?\]\](.*)$', re.UNICODE | re.DOTALL)
 def replaceInternalLinks(text):
     arr = text.split('[[')
     sb = []
     sb.append(arr.pop(0))
     for bit in arr:
-        namespace, link, alt, rest = None, None, None, None
+        namespace, anchorchar, link, alt, rest = None, None, None, None, None
         match = _linkPat.match(bit)
         if match:
-            namespace, link, alt, rest = match.groups()
+            namespace, anchorchar, link, alt, rest = match.groups()
         if link:
             if not namespace:
                 namespace = u'wiki'
@@ -955,10 +937,15 @@ def replaceInternalLinks(text):
                 #sb.append(u'<a href="/')
                 #sb.append(namespace)
                 #sb.append(u'/')
-                sb.append(slugify(link))
+                if anchorchar:
+                    sb.append(u'#')
+                    sb.append(slugifyBit(link))
+                    sb.append(u'">')
+                else:
+                    sb.append(slugify(link))
+                    sb.append(u'/">')
                 if alt:
                     link = alt
-                sb.append(u'/">')
                 sb.append(link)
                 sb.append(u'</a>')
             sb.append(rest)
@@ -978,7 +965,7 @@ def checkTOC(text):
         showToc = True
     return text, showToc
 
-_bracketedLinkPat = re.compile(ur'(?:\[((?:https?://|ftp://|/)[^<>\]\[' + u"\x00-\x20\x7f" + ur']+)\s*(.*?)\])', re.UNICODE)
+_bracketedLinkPat = re.compile(ur'(?:\[((?:https?://|ftp://|/)[^<>\]\[' + ur'\u0000-\u0020\u007f-\u009f' + ur']+)\s*(.*?)\])', re.UNICODE)
 def replaceExternalLinks(text):
     sb = []
     bits = _bracketedLinkPat.split(text)
@@ -1005,7 +992,7 @@ def replaceExternalLinks(text):
     return ''.join(sb)
 
 _protocolPat = re.compile(ur'(\b(?:https?://|ftp://))', re.UNICODE)
-_specialUrlPat = re.compile(ur'^([^<>\]\[' + u"\x00-\x20\x7f" + ur']+)(.*)$', re.UNICODE)
+_specialUrlPat = re.compile(ur'^([^<>\]\[' + ur'\u0000-\u0020\u007f-\u009f' + ur']+)(.*)$', re.UNICODE | re.DOTALL)
 _protocolsPat = re.compile(ur'^(https?://|ftp://)$', re.UNICODE)
 
 def replaceFreeExternalLinks(text):
@@ -1044,17 +1031,17 @@ def replaceFreeExternalLinks(text):
             if '(' not in url:
                 sep += ')'
 
-            i = len(url)-1
-            while i >= 0:
-                char = url[i]
+            j = len(url)-1
+            while j >= 0:
+                char = url[j]
                 if char not in sep:
                     break
-                i -= 1
-            i += 1
+                j -= 1
+            j += 1
 
-            if i != len(url):
-                trail = url[i:] + trail
-                url = url[0:i]
+            if j != len(url):
+                trail = url[j:] + trail
+                url = url[0:j]
 
             url = cleanURL(url)
 
@@ -1063,7 +1050,6 @@ def replaceFreeExternalLinks(text):
             sb.append(u'">')
             sb.append(url)
             sb.append(u'</a>')
-            sb.append(text)
             sb.append(trail)
         else:
             sb.append(protocol)
@@ -1076,7 +1062,7 @@ def urlencode(char):
         return '+'
     return "%%%02x" % num
 
-_controlCharsPat = re.compile(ur'[\]\[<>"' + u"\\x00-\\x20\\x7F" + ur']]', re.UNICODE)
+_controlCharsPat = re.compile(ur'[\]\[<>"' + ur'\u0000-\u0020\u007f-\u009f' + ur']]', re.UNICODE)
 _hostnamePat = re.compile(ur'^([^:]+:)(//[^/]+)?(.*)$', re.UNICODE)
 _stripPat = re.compile(u'\\s|\u00ad|\u1806|\u200b|\u2060|\ufeff|\u03f4|\u034f|\u180b|\u180c|\u180d|\u200c|\u200d|[\ufe00-\ufe0f]', re.UNICODE)
 def cleanURL(url):
@@ -2342,7 +2328,7 @@ def doBlockLevels(text, linestart, mUniqPrefix):
                 mDTopen = False
                 lastPrefixLength -= 1
             if prefixLength <= commonPrefixLength and commonPrefixLength > 0:
-                tmpOutput, tmpMDTopen = nextItem(pref[commonPrefixLength-1])
+                tmpOutput, tmpMDTopen = nextItem(pref[commonPrefixLength-1], mDTopen)
                 output += tmpOutput
                 if tmpMDTopen is not None:
                     mDTopen = tmpMDTopen
