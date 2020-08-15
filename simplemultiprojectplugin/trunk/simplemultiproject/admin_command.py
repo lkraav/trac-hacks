@@ -4,13 +4,12 @@
 #
 # License: BSD
 #
-
+from simplemultiproject.model import Project
+from simplemultiproject.smp_model import SmpComponent, SmpMilestone, SmpProject, SmpVersion
 from trac.admin import IAdminCommandProvider
 from trac.core import Component, implements
 from trac.util.text import printout
 from trac.util.translation import _
-
-from simplemultiproject.smp_model import SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
 class SmpAdminCommands(Component):
@@ -104,7 +103,7 @@ class SmpAdminCommands(Component):
         printout("Command not implemented.")
 
     def _add_project(self, name, summary=""):
-        projects = [project.name for project in self.smp_project.get_all_projects()]
+        projects = [project.name for project in Project.select(self.env)]
         if name not in projects:
             self.smp_project.add(name, summary=summary, description="", closed=None, restrict_to="")
         else:

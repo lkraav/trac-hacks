@@ -13,7 +13,7 @@ __all__ = ['PERM_TEMPLATE', 'SmpMilestone', 'SmpComponent', 'SmpProject', 'SmpVe
 
 
 PERM_TEMPLATE = u"PROJECT_%s_MEMBER"
-Project = namedtuple('Project', ['id', 'name', 'summary', 'description', 'closed', 'restricted'])
+Projecttuple = namedtuple('Projecttuple', ['id', 'name', 'summary', 'description', 'closed', 'restricted'])
 
 
 class SmpBaseModel(object):
@@ -290,7 +290,7 @@ class SmpProject(SmpBaseModel):
         self.env.config.set('ticket-custom', 'project.options',
                             '|'.join(project_names))  # We don't save here. But see #12524
 
-        return [Project(*prj) for prj in projects]
+        return [Projecttuple(*prj) for prj in projects]
         # return [Project(prj[0], prj[1], prj[2], prj[3],None if not prj[4] else prj[4], prj[5]) for prj in projects]
 
     def project_exists(self, project_id=None, project_name=None):
