@@ -27,7 +27,8 @@
 
 </head>
 <body>
-    <h2>${_("Manage Projects")}</h2>
+    <h2>${_("Manage Projects")} <span py:if="view != 'details'" class="trac-count">(${len(all_projects)})</span>
+</h2>
     <py:choose test="view">
         <py:when test="'detail'">
 
@@ -37,7 +38,7 @@
                     <input class="" name="project_id" value="${project.id}" type="hidden"/>
                 </div>
                 <fieldset>
-                    <legend>Modify Project:</legend>
+                    <legend>${_("Modify Project:")}</legend>
                     <div class="field">
                         <label>${_("Name:")}
                             <br/>
@@ -72,17 +73,17 @@
                     </div>
                     <div class="field">
                         <label>
-                            <input type="checkbox" id="completed" name="completed" value="compled"
+                            <input type="checkbox" id="completed" name="completed" value="completed"
                                    checked="${'checked' if project.closed else None}"/>
                             ${_("Mark as completed")}<br />
                         </label>
                         <label class="disabled">
                             <input type="text" id="completeddate" name="completeddate" class="trac-datetimepicker"
-                                   size="20"
+                                   size="${len(datetime_hint) + 2}"
                                    title="${_('Format: %(datehint)s', datehint=datetime_hint)}"
                                    disabled=""
                                    value="${format_datetime(project.closed if project.closed else None)}"/>
-                            <span class="trac-datetimehint" i18n:msg="datehint">Format: ${datetime_hint}</span>
+                            <span class="trac-datetimehint" i18n:msg="datehint">${_("Format:")} ${datetime_hint}</span>
                         </label>
                     </div>
 
