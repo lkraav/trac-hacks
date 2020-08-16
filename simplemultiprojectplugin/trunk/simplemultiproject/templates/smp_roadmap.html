@@ -1,24 +1,24 @@
 <!--!
- (c) Cinc 2015, License 3-clause BSD
+ (c) Cinc 2015-2020, License 3-clause BSD
  -->
 <div xmlns="http://www.w3.org/1999/xhtml"
     xmlns:py="http://genshi.edgewall.org/"
     xmlns:i18n="http://genshi.edgewall.org/i18n"
     xmlns:xi="http://www.w3.org/2001/XInclude"
-    class="milestones">
+    class="projects">
 
-    <fieldset py:for="proj in projects" class="project"
-              style="${None if proj[0] in visible_projects else 'display:none'}">
-      <legend>Project <em>${proj[1]}</em> - ${proj[2]}</legend>
-        <!--! <div py:if="not proj[0] in projects_with_ms">
-            <p>There is no milestone for this project.</p>
-        </div>-->
-        <div>
-            ${wiki_to_html(context, proj[3])}
+
+    <div py:for="proj in projects" class="milestone">
+      <div class="smp-project-group">
+        <div class="info">
+          <h2>Project: <em>${proj.name}</em><span py:if="proj.summary"> - ${proj.summary}</span></h2>
         </div>
-        <hr py:if="milestones" />
+        <div class="smp-grouped-ms">
+          ${wiki_to_html(context, proj.description)}
+
+          <hr py:if="milestones" />
           <py:for each="idx, milestone in enumerate(milestones)">
-            <div py:if="proj[0] in milestone.id_project" class="milestone">
+            <div py:if="proj.id in milestone.id_project" class="milestone">
               <div class="info trac-progress" py:with="mstats = milestone_stats[idx]">
                 <h3><a href="${href.milestone(milestone.name)}">
                   Milestone: <em>${milestone.name}</em>
@@ -53,12 +53,11 @@
             </div>
           </py:for>
 
-        <!--! <div py:if="not proj[0] in projects_with_ver">
-            <p>There is no version for this project.</p>
-        </div>-->
-        <hr py:if="versions" />
+          <!--! No version display atm because the version component was removed due to licensing. See #13849.
+          There is no 'versions' variable defined.
+          -->
           <py:for each="idx, item in enumerate(versions)">
-            <div py:if="proj[0] in item.id_project" class="milestone">
+            <div py:if="proj.id in item.id_project" class="milestone">
               <div class="info trac-progress" py:with="mstats = version_stats[idx]">
                 <h3><a href="${href.version(item.name)}">
                   Version: <em>${item.name}</em>
@@ -92,5 +91,9 @@
               </div>
             </div>
           </py:for>
-    </fieldset>
+
+        </div>
+      </div> <!--! Grouped project -->
+    </div>
+
 </div>

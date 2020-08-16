@@ -130,13 +130,11 @@ class SmpRoadmapGroup(Component):
                                             '<label for="groupbyproject">Group by project</label></div><br />' %
                                             chked))
             if chked:
-                # Remove contents leaving the preferences
                 filter_ = Transformer('//div[@class="milestones"]')
-                stream |= filter_.remove()
                 # Add new grouped content
-                filter_ = Transformer('//form[@id="prefs"]')
-                stream |= filter_.after(self.group_tmpl.generate(**data))
-
+                stream |= filter_.before(self.group_tmpl.generate(**data))
+                # Remove old milestone contents
+                stream |= filter_.remove()
         return stream
 
 

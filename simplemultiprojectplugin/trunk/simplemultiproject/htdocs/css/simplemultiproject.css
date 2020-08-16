@@ -1,3 +1,4 @@
+/* Project table on milestone, component, ... admin pages */
 table.admin-smp-project-table {
     padding-right: 1em;
     margin-top: 0px;
@@ -13,7 +14,9 @@ table.admin-smp-project-table {
 #project-help-div {
     clear:both;
 }
+/* end */
 
+/* Roadmap page */
 fieldset.project {
    margin-bottom: 2em;
    box-shadow: 1px 5px 5px #dddddd;
@@ -25,6 +28,14 @@ div.project > h2:after {
   border:1px solid lightgrey;
   width: 65%;
 }
+
+.smp-project-group{
+  box-shadow: 1px 5px 5px #dddddd;
+}
+.smp-grouped-ms{
+  margin-left: 2em;
+}
+/* end */
 
 /* Hide milestones checkbox */
 #smp-hide-completed{
