@@ -215,6 +215,8 @@ class SmpRoadmapProjectFilter(Component):
             return data
 
         # Filter the given data
+        # TODO: this data isn't necessarily available here because it is added in post_process_req() of SmpRoadmapGroup
+        # which may be called after this. filter_data() is called by SmpRoadmapModule
         if 'projects' in data:
             filtered = []
             for project in data['projects']:
