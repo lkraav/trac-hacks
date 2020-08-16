@@ -145,8 +145,8 @@ class SmpProjectAdmin(Component):
         if self.pre_1_3:
             return 'admin_project.html', data
         else:
-            return 'admin_project.html', data, None
-            # return 'admin_project_j.html', data, {}
+            #return 'admin_project.html', data, None
+            return 'admin_project_jinja.html', data, {}
 
     # IResourceManager methods
 
