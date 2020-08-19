@@ -30,6 +30,9 @@ class JTransformer(object):
     def before(self, html):
         return {'pos': 'before', 'css': self.css, 'html': html}
 
+    def prepend(self, html):
+        return {'pos': 'prepend', 'css': self.css, 'html': html}
+
 # Methods backported from Trac 1.2
 
 if not hasattr(DatabaseManager, 'drop_tables'):

@@ -40,7 +40,7 @@ class SmpTimelineProjectFilter(Component):
                             'css': 'form#prefs',
                             'html': create_proj_table(self, req, 'timeline')}]
             if filter_list:
-                add_script_data(req, {'smp_filter': filter_list})
+                add_script_data(req, {'smp_pref_filter': filter_list})
                 add_script(req, 'simplemultiproject/js/smp_add_prefs.js')
 
             # These are the defined events for the ticket subsystem

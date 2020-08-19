@@ -13,11 +13,12 @@ from trac.core import *
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
 
-from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 from simplemultiproject.api import IRoadmapDataProvider
+from simplemultiproject.compat import JTransformer
 from simplemultiproject.permission import PERM_TEMPLATE, SmpPermissionPolicy
 from simplemultiproject.session import get_project_filter_settings, \
     get_filter_settings
+from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
 
 __all__ = ['SmpRoadmapGroup', 'SmpRoadmapProjectFilter', 'SmpRoadmapModule']
 
@@ -55,6 +56,20 @@ class SmpRoadmapGroup(Component):
         if data and len(path_elms) > 1 and path_elms[1] == 'roadmap':
             # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+
+            group_proj = get_filter_settings(req, 'roadmap', 'smp_group')
+            chked = ' checked="1"' if group_proj else ''
+
+            # xpath: //form[@id="prefs"]
+            filter = JTransformer('form#prefs')
+            filter_list =[filter.prepend(u'<div>'
+                                      u'<input type="hidden" name="smp_update" value="group" />'
+                                      u'<input type="checkbox" id="groupbyproject" name="smp_group" '
+                                      u'value="1"%s/>'
+                                      u'<label for="groupbyproject">Group by project</label></div><br />' %
+                                      chked)]
+            add_script_data(req, {'smp_filter': filter_list})
+            add_script(req, 'simplemultiproject/js/jtransform.js')
 
             # TODO: this stuff probably should be in filter_data()
             # Get all projects user has access to.
@@ -122,13 +137,6 @@ class SmpRoadmapGroup(Component):
             chked = ''
             if group_proj:
                 chked = 'checked="1"'
-            filter_ = Transformer('//form[@id="prefs"]')
-            stream |= filter_.prepend(HTML(u'<div>'
-                                            '<input type="hidden" name="smp_update" value="group" />'
-                                            '<input type="checkbox" id="groupbyproject" name="smp_group" '
-                                            'value="1" %s />'
-                                            '<label for="groupbyproject">Group by project</label></div><br />' %
-                                            chked))
             if chked:
                 filter_ = Transformer('//div[@class="milestones"]')
                 # Add new grouped content
@@ -197,7 +205,7 @@ class SmpRoadmapProjectFilter(Component):
                             'css': 'form#prefs',
                             'html': create_proj_table(self, req, 'roadmap')}]
             if filter_list:
-                add_script_data(req, {'smp_filter': filter_list})
+                add_script_data(req, {'smp_pref_filter': filter_list})
                 add_script(req, 'simplemultiproject/js/smp_add_prefs.js')
 
         return template, data, content_type
