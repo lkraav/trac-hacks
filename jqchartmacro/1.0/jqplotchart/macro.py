@@ -268,8 +268,6 @@ class JQChartMacro(WikiMacroBase):
     """JQChart based chart macro.
 
     {{{
-    #!JQChart
-
     # data is a list of series. A series is a sequence of data points.
 
     # An axis is the vertical or horizontal line with ticks.
