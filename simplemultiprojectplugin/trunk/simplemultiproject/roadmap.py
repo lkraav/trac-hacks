@@ -4,19 +4,18 @@
 #
 # License: 3-clause BSD
 #
-from genshi.filters import Transformer
-from trac.config import OrderedExtensionsOption
-from trac.core import *
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
-
 from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.model import Project
 from simplemultiproject.permission import PERM_TEMPLATE, SmpPermissionPolicy
 from simplemultiproject.session import get_project_filter_settings, \
     get_filter_settings
-from simplemultiproject.smp_model import SmpMilestone, SmpProject, SmpVersion
+from simplemultiproject.smp_model import SmpMilestone, SmpVersion
+from trac.config import OrderedExtensionsOption
+from trac.core import *
+from trac.web.api import IRequestFilter
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
+
 
 __all__ = ['SmpRoadmapModule']
 
@@ -27,7 +26,7 @@ class SmpRoadmapModule(Component):
     This component allows to filter roadmap entries by project. It is possible to group entries by project.
     """
 
-    implements(IRequestFilter, IRoadmapDataProvider, ITemplateStreamFilter)
+    implements(IRequestFilter, IRoadmapDataProvider)
 
     data_provider = OrderedExtensionsOption(
         'simple-multi-project', 'roadmap_data_provider', IRoadmapDataProvider,
@@ -42,7 +41,6 @@ class SmpRoadmapModule(Component):
     def __init__(self):
         chrome = Chrome(self.env)
         self.group_tmpl = chrome.load_template("smp_roadmap.html", None)
-        self.smp_project = SmpProject(self.env)  # For create_projects_table
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_version = SmpVersion(self.env)
 
@@ -88,6 +86,14 @@ class SmpRoadmapModule(Component):
                 # xpath: //label[@for="showcompleted"]
                 # xform = JTransformer('label[for=showcompleted]')
                 # filter_list.append(xform.replace(u'<label for="showcompleted">Show completed milestones</label>'))
+
+                if chked:
+                    # Add new grouped content
+                    # xpath: //div[@class="milestones"]
+                    xform = JTransformer('div.milestones')
+                    data = Chrome(self.env).populate_data(req, data)
+                    filter_list.append(xform.before(self.group_tmpl.generate(**data).render('html')))
+                    filter_list.append(xform.remove())  # Remove default milestone entries
 
                 add_script_data(req, {'smp_filter': filter_list})
                 add_script(req, 'simplemultiproject/js/jtransform.js')
@@ -206,24 +212,6 @@ class SmpRoadmapModule(Component):
             data['version_stats'] = filtered_item_stats
 
         return data
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-
-        if filename == 'roadmap.html':
-
-            group_proj = get_filter_settings(req, 'roadmap', 'smp_group')
-            chked = ''
-            if group_proj:
-                chked = 'checked="1"'
-            if chked:
-                filter_ = Transformer('//div[@class="milestones"]')
-                # Add new grouped content
-                stream |= filter_.before(self.group_tmpl.generate(**data))
-                # Remove old milestone contents
-                stream |= filter_.remove()
-        return stream
 
 
 def div_from_projects(all_projects, filter_prj, size):

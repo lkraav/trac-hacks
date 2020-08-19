@@ -13,6 +13,9 @@ jQuery(document).ready(function($) {
       case 'prepend':
         $(html['css']).prepend(html['html']);
         break;
+      case 'remove':
+        $(html['css']).remove();
+        break;
       default:
         break;
     };
