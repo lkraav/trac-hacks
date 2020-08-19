@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Cinc
+# Copyright (C) 2015-2020 Cinc
 #
 # License: 3-clause BSD
 #
@@ -19,7 +19,14 @@ from simplemultiproject.session import get_project_filter_settings
 
 
 class SmpTimelineProjectFilter(Component):
-    """Allow filtering of timeline by projects."""
+    """Allow filtering of timeline by projects.
+
+    This component adds a project table to the timeline and allows to filter the shown ticket events by project.
+    It adds the project name to the title of each ticket.
+
+    Permissions are checked by the installed permission policy handler so resources are filtered by user even
+    if this component isn't activated.
+    """
 
     implements(IRequestFilter)
 
@@ -45,24 +52,26 @@ class SmpTimelineProjectFilter(Component):
 
             # These are the defined events for the ticket subsystem
             ticket_kinds = ['newticket', 'closedticket', 'reopenedticket', 'editedticket', 'attachment']
-            proj_filter = get_project_filter_settings(req, 'timeline', 'smp_projects', 'All')  # This returns a list of names
+            # This returns a list of names
+            proj_filter = get_project_filter_settings(req, 'timeline', 'smp_projects', 'All')
             filtered_events = []
 
             for event in data.get('events'):
                 if event['kind'] in ticket_kinds:
                     resource = event['data'][0].parent if event['kind'] == 'attachment' else event['data'][0]
-                    if event['kind'] in ticket_kinds and 'All' not in proj_filter and resource.realm == 'ticket':
-                        # We have some ticket event, maybe attachment to ticket
+                    if resource.realm == 'ticket':
                         tkt = Ticket(self.env, resource.id)
-                        if tkt['project'] in proj_filter:
-                            # New render function enhancing the title
+                        # New render function enhancing the title
+                        if tkt['project']:
                             event['render'] = self._lambda_render_func(tkt['project'], event['render'])
+                        if 'All' in proj_filter:
+                            filtered_events.append(event)
+                        elif tkt['project'] in proj_filter:
                             filtered_events.append(event)
                     else:
-                        filtered_events.append(event)  # Show this event
+                        filtered_events.append(event)
                 else:
-                    filtered_events.append(event)  # Show this event
-
+                    filtered_events.append(event)
             data['events'] = filtered_events
 
         return template, data, content_type
