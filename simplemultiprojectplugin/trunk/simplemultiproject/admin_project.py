@@ -10,6 +10,7 @@ from simplemultiproject.smp_model import PERM_TEMPLATE, SmpProject
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.resource import IResourceManager, Resource, ResourceNotFound
+from trac.ticket.model import TicketSystem
 from trac.util.datefmt import datetime_now, get_datetime_format_hint, parse_date,\
     to_utimestamp, user_time, utc
 from trac.util.translation import _
@@ -125,11 +126,13 @@ class SmpProjectAdmin(Component):
         data = {'all_projects': user_projects}
         if not path_info:
             # The main pages
+            ticket_fields = [field['name'] for field in TicketSystem(self.env).fields]
             data.update({'view': 'list',
                          'name': name,
                          'summary': summary,
                          'description': description,
-                         'restricted': restricted
+                         'restricted': restricted,
+                         'custom_field': 'project' in ticket_fields
                          })
         else:
             for project in user_projects:

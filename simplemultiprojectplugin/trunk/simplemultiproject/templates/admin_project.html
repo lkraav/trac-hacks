@@ -96,6 +96,7 @@
         </py:when>
         <py:otherwise>
             <!--! Main page -->
+            <div py:if="not custom_field" class="system-message warning">${_("Ticket custom field 'project' not configured. See installation instructions.")}</div>
             <form py:if="'PROJECT_ADMIN' in perm" class="mod" id="addproject" method="post" action="">
                 <fieldset>
                     <legend>${_("Add Project:")}</legend>

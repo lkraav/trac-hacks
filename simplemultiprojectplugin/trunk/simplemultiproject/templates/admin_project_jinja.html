@@ -108,11 +108,11 @@
         # else:
         {# Main page
          #}
-        {#
+
         # if not custom_field:
-        <div class="system-message warning">${_("Ticket custom field not set. See installation instructions.")}</div>
+        <div class="system-message warning">${_("Ticket custom field 'project' not configured. See installation instructions.")}</div>
         # endif
-        #}
+
         # if 'PROJECT_ADMIN' in perm:
         <form class="mod" id="addproject" method="post" action="">
             ${jmacros.form_token_input()}
