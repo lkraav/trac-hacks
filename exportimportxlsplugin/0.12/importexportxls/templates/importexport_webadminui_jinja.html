@@ -1,0 +1,277 @@
+# extends 'admin.html'
+<!DOCTYPE html>
+  <head>
+    <title>
+    # block admintitle
+    ${ super() } Import/Export Excel
+    # endblock admintitle
+    </title>
+  </head>
+
+  <body>
+    # block adminpanel
+    <h2>Import/Export Excel</h2>
+      <form method="POST">
+        ${jmacros.form_token_input()}
+        <fieldset>
+            <legend>Configuration</legend>
+            <table class="listing" id="cflist">
+              <thead>
+                <tr>
+                  <th width="20">Weight</th>
+                  <th>Name</th>
+                  <th>Label</th>
+                  <th>Excel Type</th>
+                  <th>Exportable</th>
+                  <th>Importable</th>
+                </tr>
+              </thead>
+              <tbody>
+                # for fd in sortedallfields:
+                <tr>
+                  <td>
+                      <input style="width:20pt;" name="${fd.name}.weight" type="text" value="${fieldsWeight[fd.name]}" />
+                  </td>
+                  <td>${fd.name}</td>
+                  <td>${fd.label}</td>
+                  <td>
+                    # if fd in defaultfields:
+                        ${fieldsFormat[fd.name]}
+                    # else
+                        <select name="${fd.name}.format">
+                          # for fmt in formats:
+                              # if fieldsFormat[fd.name] == fmt:
+                                <option selected='selected' value="${fmt}">${fmt}</option>
+                              # else
+                                <option value="${fmt}">${fmt}</option>
+                              # endif
+                          # endfor
+                        </select>
+                    # endif
+                  </td>
+                  <td>
+                    # if fd in defaultfields and fd.name in exportForced:
+                      <input checked="checked" disabled="disabled" name="${fd.name}.export" type="checkbox" value="True" />
+                    # elif fieldsExport[fd.name] == True:
+                      <input checked="checked" name="${fd.name}.export" type="checkbox" value="True" />
+                    # else
+                      <input name="${fd.name}.export" type="checkbox" value="True" />
+                    # endif
+                  </td>
+                  <td>
+                    # if fd in defaultfields and fd.name in importForbidden:
+                      <input disabled="disabled" name="${fd.name}.import" type="checkbox" value="True" />
+                    # elif fieldsImport[fd.name] == True:
+                      <input checked="checked" name="${fd.name}.import" type="checkbox" value="True" />
+                    # else
+                      <input name="${fd.name}.import" type="checkbox" value="True" />
+                    # endif
+                  </td>
+                </tr>
+                # endfor
+              </tbody>
+            </table>
+            
+            <div class="buttons">
+              <input type="submit" name="save" value="Save" />
+            </div>
+        </fieldset>
+    </form>
+
+    <form method="POST">
+        ${jmacros.form_token_input()}
+        <fieldset>
+            <legend>Export</legend>
+            <div>
+                <table style="border:0px;">
+                    <thead>
+                        # if len(types) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'type':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                        # if len(versions) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'version':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                        # if len(milestones) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'milestone':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                        # if len(components) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'component':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                        # if len(status) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'status':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                        # if len(priorities) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'priority':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                        # if len(severities) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'severity':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                        # if len(resolutions) > 0:
+                          # set foundone = False
+                          # for fd in defaultfields:
+                            # if fd.name == 'resolution':
+                              # if not foundone:
+                              <th>${fd.label}</th>
+                              # endif
+                              # set foundone = True
+                            # endif
+                          # endfor
+                        # endif 
+                    </thead>
+                    <tbody>
+                        # if len(types) > 0:
+                        <td style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
+                            <select name="filter.type" multiple="multiple" size="5">
+                                # for type in types:
+                                <option value="${type}">${type}</option>
+                                # endfor 
+                            </select>
+                        </td>
+                        # endif 
+                        # if len(versions) > 0:
+                        <td style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
+                            <select name="filter.version" multiple="multiple" size="5">
+                                # for version in versions:
+                                <option value="${version}">${version}</option>
+                                # endfor 
+                            </select>
+                        </td>
+                        # endif 
+                        # if len(milestones) > 0:
+                        <td style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
+                            <select name="filter.milestone" multiple="multiple" size="5">
+                                # for m in milestones:
+                                <option value="${m}">${m}</option>
+                                # endfor 
+                            </select>
+                        </td>
+                        # endif 
+                        # if len(components) > 0:
+                        <td style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
+                            <select name="filter.component" multiple="multiple" size="5">
+                                # for component in components:
+                                <option value="${component}">${component}</option>
+                                # endfor 
+                            </select>
+                        </td>
+                        # endif 
+                        # if len(status) > 0:
+                        <td style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
+                            <select name="filter.status" multiple="multiple" size="5">
+                                # for stat in status:
+                                <option value="${stat}">${stat}</option>
+                                # endfor 
+                            </select>
+                        </td>
+                        # endif 
+                        # if len(priorities) > 0:
+                        <td style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
+                            <select name="filter.priority" multiple="multiple" size="5">
+                                # for prior in priorities:
+                                <option value="${prior}">${prior}</option>
+                                # endfor 
+                            </select>
+                        </td>
+                        # endif 
+                        # if len(severities) > 0:
+                        <td style="border-top:0px;border-left:0px;border-bottom:0px;border-right:1px dotted black;">
+                            <select name="filter.severity" multiple="multiple" size="5">
+                                # for sever in severities:
+                                <option value="${sever}">${sever}</option>
+                                # endfor 
+                            </select>
+                        </td>
+                        # endif 
+                        # if len(resolutions) > 0:
+                        <td style="border:0px;">
+                            <select name="filter.resolution" multiple="multiple" size="5">
+                                # for res in resolutions:
+                                <option value="${res}">${res}</option>
+                                # endfor
+                            </select>
+                        </td>
+                        # endif 
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <input checked="checked" name="export.statistics" type="checkbox" value="True" /> With statistics sheet (needs type, milestone and status colomns)<br />
+                <input name="export.changeset" type="checkbox" value="True" /> With all comments in tickets changet set
+            </div>
+            <div class="buttons">
+                <input type="submit" name="export" value="Export Tickets" />
+            </div>
+        </fieldset>
+    </form>
+    <form method="POST" enctype="multipart/form-data">
+        ${jmacros.form_token_input()}
+        <fieldset>
+            <legend>Import</legend>
+            <div class="buttons">
+                <label for="import-file">File to import:</label>
+                <input type="file" name="import-file" />
+                <br /> <br />
+                <input type="submit" name="import_preview" value="Import Tickets (Preview)" />
+            </div>
+        </fieldset>
+    </form>
+    # endblock adminpanel
+  </body>
+
+</html>

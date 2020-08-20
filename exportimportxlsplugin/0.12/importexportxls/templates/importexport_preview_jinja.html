@@ -1,0 +1,109 @@
+# extends 'admin.html'
+<!DOCTYPE html>
+  <head>
+    # block admintitle
+    ${ super() } Import Preview
+    # endblock admintitle
+
+    # block head
+    ${ super() }
+    <style type="text/css">
+        .warning { color:#990000 }
+        .modified { background-color:#FF9999 }
+        .added { background-color:#99FF99 }
+    </style>
+    # endblock head
+  </head>
+
+  <body>
+    # block adminpanel
+    <h2>Import Preview</h2>
+      # if len(warnings) > 0:
+        <fieldset>
+            <legend>Warnings</legend>
+            <div class="warning">
+                # for warn in warnings:
+                  ${warn}<br/>
+                # endfor
+            </div>
+        </fieldset>
+      # endif
+      <fieldset>
+        <legend>Legend</legend>
+        <div>Unmodified ticket</div>
+        <div class='modified'>Modified ticket</div>
+        <div class='added'>Added ticket</div>
+      </fieldset>
+      <form method="POST">
+        ${jmacros.form_token_input()}
+        <table class="listing" id="cflist">
+          <thead>
+            <tr>
+              <th>Import</th>
+              # for c in defaultfields:
+                # if c['name'] == 'id':
+                  <th>${c.label}</th>
+                # endif
+              # endfor
+              # for c in defaultfields:
+                # if c['name'] == 'summary':
+                  <th>${c.label}</th>
+                # endif
+              # endfor
+              # for fd in importedFields:
+                # if fieldsImport[fd.name] == True:
+                  <th>${fd.label}</th>
+                # endif
+              # endfor
+            </tr>
+          </thead>
+          <tbody>
+            # macro print_ticket(t)
+              # for fd in importedFields:
+                # if t.exists and fd.name in t._old:
+                  <td class='modified'>${t[fd.name]}</td>
+                  <script type="text/javascript">modified_tickets['ticket.${tickets.index(t)}']='ticket.${tickets.index(t)}';</script>
+                # else
+                  <td>${t[fd.name]}</td>
+                # endif
+              # endfor
+            # endmacro
+
+            # for t in tickets:
+              # if not t.exists:
+                  <tr class='added'>
+                    <td><input type="checkbox" checked="checked" name="ticket.${tickets.index(t)}" id="ticket.${tickets.index(t)}" value="True" />
+                        <script type="text/javascript">added_tickets['ticket.${tickets.index(t)}']='ticket.${tickets.index(t)}';</script></td>
+                    <td>#</td>
+                    <td>${t['summary']}</td>
+                    ${print_ticket(t)}
+                  </tr>
+              # else
+                  <tr>
+                    <td><input type="checkbox" checked="checked" name="ticket.${tickets.index(t)}" id="ticket.${tickets.index(t)}" value="True" /></td>
+                    <td><a href="${req.href('ticket', t.id)}" target="_blank">#${t.id}</a></td>
+                    <td>${t['summary']}</td>
+                    ${print_ticket(t)}
+                  </tr>
+              # endif
+            # endfor
+          </tbody>
+        </table>
+        
+        <div class="buttons">
+          <input type="button" value="Select All" onclick="importexportxls_set_import_checkbox(true)" />
+          <input type="button" value="Uncheck All" onclick="importexportxls_set_import_checkbox(false)" />
+          <input type="button" value="Select modified" onclick="importexportxls_select(modified_tickets)" />
+          <input type="button" value="Select added" onclick="importexportxls_select(added_tickets)" />
+          <input type="button" value="Hide unchanged" onclick="importexportxls_hide(added_tickets, modified_tickets, true)" />
+          <input type="button" value="Unhide unchanged" onclick="importexportxls_hide(added_tickets, modified_tickets, false)" />
+        </div>
+        <div class="buttons">
+          <input type="submit" name="import" value="Save" />
+        </div>
+      </form>
+
+    # endblock adminpanel
+  </body>
+
+</html>

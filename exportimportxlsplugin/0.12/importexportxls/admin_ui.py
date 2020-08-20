@@ -84,7 +84,11 @@ class ImportExportAdminPanel(Component):
     def render_admin_panel(self, req, cat, page, version):
         req.perm.require('TICKET_ADMIN')
 
+        has_jinja = hasattr(Chrome, 'jenv')
+
         template = 'importexport_webadminui.html'
+        if has_jinja:
+            template = 'importexport_webadminui_jinja.html'
 
         allfields = [ {'name':'id', 'label':'id'} ]
         allfields.extend( TicketSystem(self.env).get_ticket_fields() )
@@ -134,13 +138,19 @@ class ImportExportAdminPanel(Component):
                 self._send_export(req)
             if req.args.get('import_preview'):
                 (settings['tickets'], settings['importedFields'], settings['warnings']) = self._get_import_preview(req)
-                template = 'importexport_preview.html'
+                if has_jinja:
+                    template = 'importexport_preview_jinja.html'
+                else:
+                    template = 'importexport_preview.html'
                 add_script(req, "importexportxls/importexport_preview.js")
             if req.args.get('import'):
                 settings = self._process_import(req)
-                template = 'importexport_done.html'
+                if has_jinja:
+                    template = 'importexport_done_jinja.html'
+                else:
+                    template = 'importexport_done.html'
 
-        if template == 'importexport_webadminui.html' and not req.args.get('export'):
+        if template.startswith( 'importexport_webadminui' ) and not req.args.get('export'):
             settings['types'] = [m.name for m in model.Type.select(self.env)]
             settings['versions'] = [m.name for m in model.Version.select(self.env)]
             settings['milestones'] = [m.name for m in model.Milestone.select(self.env, True)]
@@ -150,6 +160,10 @@ class ImportExportAdminPanel(Component):
             settings['severities'] = [m.name for m in model.Severity.select(self.env)]
             settings['resolutions'] = [m.name for m in model.Resolution.select(self.env)]
             settings['fieldsWeight'] = fieldsWeight
+            if has_jinja:
+                sortedallfields = sorted(defaultfields + customfields,
+                                         key=lambda a : fieldsWeight[a['name']])
+                settings['sortedallfields'] = sortedallfields
         settings['defaultfields'] = defaultfields
         settings['customfields'] = customfields
         settings['formats'] = self.formats
@@ -160,7 +174,10 @@ class ImportExportAdminPanel(Component):
         settings['importForbidden'] = self.importForbidden
         settings['req'] = req
         if hasattr(Chrome, 'jenv'):
-            return template, settings, None
+            if has_jinja:
+                return template, settings
+            else:
+                return template, settings, None
         else:
             return template, settings
 

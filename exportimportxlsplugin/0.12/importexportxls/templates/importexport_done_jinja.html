@@ -1,0 +1,25 @@
+# extends 'admin.html'
+<!DOCTYPE html>
+  <head>
+    <title>
+    # block admintitle
+    ${ super() }
+    Import/Export Excel
+    # endblock admintitle
+    </title>
+  </head>
+
+  <body>
+    # block adminpanel
+    <h2>Import/Export Excel</h2>
+    
+    <p>Import Done</p>
+    <ul>
+      <li>Added: ${added}</li>
+      <li>Modified: ${modified}</li>
+    </ul>
+    
+    # endblock adminpanel
+  </body>
+
+</html>
