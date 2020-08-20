@@ -4,6 +4,7 @@
 #
 # License: 3-clause BSD
 #
+from pkg_resources import get_distribution, parse_version
 from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.model import Project
@@ -38,9 +39,16 @@ class SmpRoadmapModule(Component):
         default="",
         doc="""Specify the order of plugins filtering data for roadmap page""")
 
+    # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
+    # creation using trac.util.html.tag and friends
+    pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
+
     def __init__(self):
         chrome = Chrome(self.env)
-        self.group_tmpl = chrome.load_template("smp_roadmap.html", None)
+        if self.pre_1_3:
+            self.group_tmpl = chrome.load_template("smp_roadmap.html", None)
+        else:
+            self.group_tmpl = chrome.load_template("roadmap_jinja.html", False)
         self.smp_milestone = SmpMilestone(self.env)
         self.smp_version = SmpVersion(self.env)
 
@@ -91,8 +99,12 @@ class SmpRoadmapModule(Component):
                     # Add new grouped content
                     # xpath: //div[@class="milestones"]
                     xform = JTransformer('div.milestones')
-                    data = Chrome(self.env).populate_data(req, data)
-                    filter_list.append(xform.before(self.group_tmpl.generate(**data).render('html')))
+                    chrome = Chrome(self.env)
+                    data = chrome.populate_data(req, data)
+                    if self.pre_1_3:
+                        filter_list.append(xform.before(self.group_tmpl.generate(**data).render('html')))
+                    else:
+                        filter_list.append(xform.before(chrome.render_template_string(self.group_tmpl, data)))
                     filter_list.append(xform.remove())  # Remove default milestone entries
 
                 add_script_data(req, {'smp_filter': filter_list})

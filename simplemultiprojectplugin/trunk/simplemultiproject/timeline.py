@@ -4,8 +4,6 @@
 #
 # License: 3-clause BSD
 #
-
-from genshi.filters import Transformer
 from trac.core import *
 from trac.ticket.model import Ticket
 from trac.util.html import html as tag
