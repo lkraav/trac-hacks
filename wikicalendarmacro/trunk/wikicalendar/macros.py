@@ -616,8 +616,8 @@ class WikiCalendarMacros(Component):
 
                     match = []
                     match_od = []
-                    ticket_heap = tag('')
-                    ticket_list = tag.div('')
+                    ticket_heap = tag.tag()
+                    ticket_list = tag.div()
                     ticket_list(align='left', class_='condense')
 
                     # Get tickets with due date set to day.

@@ -45,33 +45,27 @@ class WikiCalendarTicketProvider(WikiCalendarBuilder):
 
     def harvest(self, req, content):
         """TicketQuery provider method."""
-        # Parse args and kwargs.
-        argv, kwargs = parse_args(content, strict=False)
+        query_string = content
 
-        # Define minimal set of values.
-        std_fields = ['description', 'owner', 'status', 'summary']
-        kwargs['col'] = "|".join(std_fields)
+        cols = '|'.join(['description', 'owner', 'status', 'summary'])
 
         # Options from old 'wikiticketcalendar' section have been migrated to
         # 'wikicalendar' configuration section.
         due_field = self.config.get('wikicalendar', 'ticket.due_field')
-
         if due_field:
-            kwargs['col'] += '|' + due_field
+            cols += '|' + due_field
 
-        # Construct the query-string.
-        query_string = '&'.join('%s=%s' % i for i in kwargs.iteritems())
-
-        # Get the Query object.
+        query_string += '&cols=%s' % cols
+        print(query_string)
         query = Query.from_string(self.env, query_string)
 
-        # Initialize query and get 1st "page" of Ticket objects.
         result = query.execute(req)
-        # Collect tickets from all other query "pages", if available.
         while query.offset + query.max < query.num_items:
             query.offset += query.max
             result.extend(query.execute(req))
-        # Filter tickets according to (view) permission.
-        tickets = [t for t in result
-                   if 'TICKET_VIEW' in req.perm('ticket', t['id'])]
+
+        tickets = [
+            t for t in result if 'TICKET_VIEW' in req.perm('ticket', t['id'])
+        ]
+
         return tickets
