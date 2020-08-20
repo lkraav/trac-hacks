@@ -29,7 +29,7 @@ except ImportError:
 VERSION = '0.2.0'
 
 setup(
-    name=PACKAGE,
+    name='TracCcSelector',
     version=VERSION,
     description='Visual Cc ticket field editor for Trac',
     keywords='trac cc ticket editor',
