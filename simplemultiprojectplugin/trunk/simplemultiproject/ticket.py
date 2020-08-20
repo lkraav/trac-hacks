@@ -5,16 +5,19 @@
 # License: 3-clause BSD
 #
 from collections import defaultdict
+from simplemultiproject.model import Project
+from simplemultiproject.permission import SmpPermissionPolicy
+from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilestone, SmpVersion
 from trac.config import BoolOption
 from trac.core import Component as TracComponent, implements
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data
-from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
 class SmpTicket(TracComponent):
-    """Filtering of components for now"""
+    """Provide allowed projects and components. Filter milestones,
+    components and versions according to project selecton."""
     implements(IRequestFilter)
 
     allow_no_project = BoolOption(
@@ -23,9 +26,7 @@ class SmpTicket(TracComponent):
                    without associated projects. The default value is {{{False}}}.
                    """)
 
-
     def __init__(self):
-        self.smp_project = SmpProject(self.env)
         self.smp_component = SmpComponent(self.env)
         self.smp_version = SmpVersion(self.env)
         self.smp_milestone = SmpMilestone(self.env)
@@ -86,14 +87,14 @@ class SmpTicket(TracComponent):
                         "Check milestone selection.")
 
             add_script_data(req, {'smp_component_warning':
-                                      '<div id="smp-comp-warn" class="system-message warning" '
-                                      'style="display: none">%s</div>' % comp_warn,
+                                  '<div id="smp-comp-warn" class="system-message warning" '
+                                  'style="display: none">%s</div>' % comp_warn,
                                   'smp_version_warning':
-                                      '<div id="smp-version-warn" class="system-message warning" '
-                                      'style="display: none">%s</div>' % ver_warn,
+                                  '<div id="smp-version-warn" class="system-message warning" '
+                                  'style="display: none">%s</div>' % ver_warn,
                                   'smp_milestone_warning':
-                                      '<div id="smp-milestone-warn" class="system-message warning" '
-                                      'style="display: none">%s</div>' % ms_warn
+                                  '<div id="smp-milestone-warn" class="system-message warning" '
+                                  'style="display: none">%s</div>' % ms_warn
                                   })
             # Create a new list of available projects for the ticket
             try:
@@ -119,8 +120,6 @@ class SmpTicket(TracComponent):
         for ms in self.smp_milestone.get_all_milestones_and_id_project_id():
             milestones[ms[0]].append(ms[1])  # ms[0]: name, ms[1]: project id
 
-        projects = self.smp_project.get_all_projects()
-
         # We do a project grouping for every optgroup in the milestone data
         ms_group_map = []
         for group in tkt_ms_groups:
@@ -140,7 +139,7 @@ class SmpTicket(TracComponent):
             # restrictions to the projects. Add milestones without restrictions to the projects we already found in
             # the milestone table.
             temp.sort()
-            for project in projects:
+            for project in Project.select(self.env):
                 if not str(project.id) in ms_map:
                     ms_map[str(project.id)] = temp
                 else:
@@ -201,7 +200,7 @@ class SmpTicket(TracComponent):
                 temp.append(comp)
 
         temp.sort()
-        for project in self.smp_project.get_all_projects():
+        for project in Project.select(self.env):
             if not str(project.id) in comp_map:
                 comp_map[str(project.id)] = temp
             else:
@@ -219,23 +218,21 @@ class SmpTicket(TracComponent):
         return comps, comp_map
 
     def get_projects_for_user(self, req):
-        """Get all projects user has access to.
+        """Get all active projects user has access to.
+
         :param req: Trac Request object
-        :returns list of project names
+        :returns list of project names, dict with mapping project.name - project.id
+
+        Closed projects are omitted.
         """
-        projects = self.smp_project.get_all_projects()
-        usr_projects = []
+        projects = SmpPermissionPolicy.active_projects_by_permission(req, Project.select(self.env))
+        project_names = []
         project_map = {}
         for project in projects:
-            if project.restricted:
-                if (PERM_TEMPLATE % project.id) in req.perm:
-                    usr_projects.append(project.name)
-                    project_map[project.name] = str(project.id)
-            else:
-                usr_projects.append(project.name)
-                project_map[project.name] = str(project.id)
+            project_names.append(project.name)
+            project_map[project.name] = str(project.id)
 
-        return usr_projects, project_map
+        return project_names, project_map
 
     def get_version_project_mapping_for_user(self, req, tkt_vers, optional):
         """Get all versions the user has access to.
@@ -266,7 +263,7 @@ class SmpTicket(TracComponent):
                 vers.append(ver)
                 temp.append(ver)
         temp.sort()
-        for project in self.smp_project.get_all_projects():
+        for project in Project.select(self.env):
             if not str(project.id) in ver_map:
                 ver_map[str(project.id)] = temp
             else:
