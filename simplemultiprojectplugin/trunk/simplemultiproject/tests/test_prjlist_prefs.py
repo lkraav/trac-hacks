@@ -8,7 +8,8 @@ from trac.util.datefmt import to_utimestamp, utc
 from trac.test import EnvironmentStub, MockPerm, MockRequest
 from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.smp_model import SmpProject
-from simplemultiproject.roadmap import create_proj_table, SmpRoadmapProjectFilter
+from simplemultiproject.roadmap import create_proj_table
+from simplemultiproject.timeline import SmpTimelineProjectFilter
 from simplemultiproject.tests.util import revert_schema
 
 
@@ -20,7 +21,7 @@ class TestProjectListPrefsNoProject(unittest.TestCase):
         with self.env.db_transaction as db:
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
-        self.plugin = SmpRoadmapProjectFilter(self.env)
+        self.plugin = SmpTimelineProjectFilter(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
 
@@ -40,7 +41,7 @@ class TestProjectListPrefs(unittest.TestCase):
         with self.env.db_transaction as db:
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
-        self.plugin = SmpRoadmapProjectFilter(self.env)
+        self.plugin = SmpTimelineProjectFilter(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
         self.model = SmpProject(self.env)
@@ -91,7 +92,7 @@ class TestProjectListPrefsWithRestrictions(unittest.TestCase):
         with self.env.db_transaction as db:
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
-        self.plugin = SmpRoadmapProjectFilter(self.env)
+        self.plugin = SmpTimelineProjectFilter(self.env)
         self.req = MockRequest(self.env, username='Tester')
         self.req.perm = Perm()
         # self.env.config.set("ticket-custom", "project", "select")
@@ -163,7 +164,7 @@ class TestProjectListPrefsClosed(unittest.TestCase):
         with self.env.db_transaction as db:
             revert_schema(self.env)
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
-        self.plugin = SmpRoadmapProjectFilter(self.env)
+        self.plugin = SmpTimelineProjectFilter(self.env)
         self.req = MockRequest(self.env, username='Tester')
         # self.env.config.set("ticket-custom", "project", "select")
         self.model = SmpProject(self.env)

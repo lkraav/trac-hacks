@@ -7,7 +7,7 @@
 from trac.core import *
 from trac.ticket.model import Ticket
 from trac.util.html import html as tag
-from trac.web.api import ITemplateStreamFilter, IRequestFilter
+from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data
 
 from simplemultiproject.model import *
