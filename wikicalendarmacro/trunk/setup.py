@@ -30,12 +30,9 @@ if cmdclass:
     }
 
 
-PACKAGE = "WikiCalendarMacro"
-VERSION = "2.2.0"
-
 setup(
-    name = PACKAGE,
-    version = VERSION,
+    name = "TracWikiCalendarMacro",
+    version = "2.2.0",
     author = "Matthew Good",
     author_email = "trac@matt-good.net",
     maintainer = "Steffen Hoffmann",
