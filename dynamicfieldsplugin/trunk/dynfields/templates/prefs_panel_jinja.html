@@ -1,0 +1,50 @@
+# extends 'prefs.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block preftitle
+      Dynamic Fields Options
+      # endblock preftitle
+    </title>
+  </head>
+  <body>
+    # block prefpanel
+    # if saved:
+    <div class="system-message" id="notice">
+      Your preferences have been saved.
+    </div>
+    # endif
+    <p class="hint">
+      Enable/disable a rule below by checking/unchecking its checkbox.
+    </p>
+    # for title in data:
+    <fieldset>
+      <legend>${title}</legend>
+      <div class="field">
+        <p class="hint">${data[title]['desc']}</p>
+        # for pref in data[title]['prefs']:
+          <br/>
+          <label>
+            <input type="checkbox" name="${pref['id']}"
+              value="1"${{'checked': 'checked' if pref['enabled'] == '1'}|htmlattr} />
+            ${pref['label']}
+          </label>
+          # if pref['type'] == 'select':
+          <select name="${pref['id']}.value">
+            # for option in pref['options']:
+            <option value="${option}"${{'selected': 'selected' if option==pref['value']}|htmlattr}>${option}</option>
+            # endfor
+          </select>
+          # endif
+          # if pref['type'] == 'text':
+          <input type="text" name="${pref['id']}.value"
+                 value="${pref['value']}" size="20" />
+          # endif
+        # endfor
+      </div>
+    </fieldset>
+    # endfor
+    # endblock prefpanel
+  </body>
+</html>

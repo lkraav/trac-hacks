@@ -69,11 +69,11 @@ class DynamicFieldsModule(Component):
             opts.set_prefs(req)
         prefs_data = self._get_prefs_data(req, opts)
         data = {'data': prefs_data, 'saved': req.method == 'POST'}
-        template = 'prefs_panel.html'
-        if hasattr(Chrome(self.env), 'jenv'):
-            return template, data, None
+        if hasattr(Chrome, 'jenv'):
+            template = 'prefs_panel_jinja.html'
         else:
-            return template, data
+            template = 'prefs_panel.html'
+        return template, data
 
     # Internal methods
 
