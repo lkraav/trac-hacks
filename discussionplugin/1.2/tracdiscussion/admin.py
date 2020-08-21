@@ -9,7 +9,7 @@
 
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
-from trac.web.chrome import web_context
+from trac.web.chrome import Chrome, web_context
 
 from tracdiscussion.api import DiscussionApi
 
@@ -53,4 +53,7 @@ class DiscussionWebAdmin(Component):
             req.redirect(req.href('discussion', 'redirect',
                                   redirect_url=href))
         else:
-            return template, data
+            if hasattr(Chrome, 'jenv'):
+                return template, data, None
+            else:
+                return template, data
