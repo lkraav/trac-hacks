@@ -26,11 +26,9 @@ except ImportError:
     pass
 
 
-VERSION = '0.2.0'
-
 setup(
     name='TracCcSelector',
-    version=VERSION,
+    version='0.2.1',
     description='Visual Cc ticket field editor for Trac',
     keywords='trac cc ticket editor',
     url='https://trac-hacks.org/wiki/CcSelectorPlugin',

@@ -86,7 +86,7 @@ class TicketWebUiAddon(Component):
             'cc_to': cc_to,
             'show_fullname': self.show_fullname
         }
-        if hasattr(Chrome(self.env), 'jenv'):
+        if hasattr(Chrome, 'jenv'):
             return 'cc_selector_jinja.html', data
         else:
             return 'cc_selector.html', data, None

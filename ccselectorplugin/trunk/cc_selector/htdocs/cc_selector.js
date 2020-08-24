@@ -40,8 +40,8 @@ jQuery(function($) {
       if (d.title) {
         var dev = new Array()
         dev.title = d.title
-        dev.name = d.getAttribute("name")
-        dev.email = d.getAttribute("email")
+        dev.name = d.getAttribute("data-name")
+        dev.email = d.getAttribute("data-email")
         devs.push(dev);
       }
     }
