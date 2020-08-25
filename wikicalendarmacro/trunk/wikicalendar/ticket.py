@@ -56,7 +56,6 @@ class WikiCalendarTicketProvider(WikiCalendarBuilder):
             cols += '|' + due_field
 
         query_string += '&cols=%s' % cols
-        print(query_string)
         query = Query.from_string(self.env, query_string)
 
         result = query.execute(req)
