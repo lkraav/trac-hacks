@@ -4,7 +4,7 @@
 #
 # License: 3-clause BSD
 #
-from pkg_resources import get_distribution, parse_version
+from pkg_resources import get_distribution, parse_version, resource_filename
 from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.model import Project
@@ -15,7 +15,7 @@ from simplemultiproject.smp_model import SmpMilestone, SmpVersion
 from trac.config import OrderedExtensionsOption
 from trac.core import *
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome, ITemplateProvider
 
 
 __all__ = ['SmpRoadmapModule']
@@ -27,7 +27,7 @@ class SmpRoadmapModule(Component):
     This component allows to filter roadmap entries by project. It is possible to group entries by project.
     """
 
-    implements(IRequestFilter, IRoadmapDataProvider)
+    implements(IRequestFilter, IRoadmapDataProvider, ITemplateProvider)
 
     data_provider = OrderedExtensionsOption(
         'simple-multi-project', 'roadmap_data_provider', IRoadmapDataProvider,
@@ -42,15 +42,18 @@ class SmpRoadmapModule(Component):
     # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
     # creation using trac.util.html.tag and friends
     pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
+    group_tmpl = None
 
     def __init__(self):
+        self.smp_milestone = SmpMilestone(self.env)
+        self.smp_version = SmpVersion(self.env)
+
+    def _load_template(self):
         chrome = Chrome(self.env)
         if self.pre_1_3:
             self.group_tmpl = chrome.load_template("smp_roadmap.html", None)
         else:
             self.group_tmpl = chrome.load_template("roadmap_jinja.html", False)
-        self.smp_milestone = SmpMilestone(self.env)
-        self.smp_version = SmpVersion(self.env)
 
     # IRequestFilter methods
 
@@ -96,6 +99,8 @@ class SmpRoadmapModule(Component):
                 # filter_list.append(xform.replace(u'<label for="showcompleted">Show completed milestones</label>'))
 
                 if chked:
+                    if not self.group_tmpl:
+                        self._load_template()
                     # Add new grouped content
                     # xpath: //div[@class="milestones"]
                     xform = JTransformer('div.milestones')
@@ -224,6 +229,15 @@ class SmpRoadmapModule(Component):
             data['version_stats'] = filtered_item_stats
 
         return data
+
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        self.log.info(resource_filename(__name__, 'templates'))
+        return [resource_filename(__name__, 'templates')]
+
+    def get_htdocs_dirs(self):
+        return [('simplemultiproject', resource_filename(__name__, 'htdocs'))]
 
 
 def div_from_projects(all_projects, filter_prj, size):
