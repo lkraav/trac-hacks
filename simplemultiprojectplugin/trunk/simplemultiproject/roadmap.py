@@ -67,7 +67,6 @@ class SmpRoadmapModule(Component):
         if data:
             path_elms = req.path_info.split('/')
             if len(path_elms) > 1 and path_elms[1] == 'roadmap':
-                # ITemplateProvider is implemented in another component
                 add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
 
                 for provider in self.data_provider:

@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Cinc
+# Copyright (C) 2015-2020 Cinc
 #
 # License: BSD
 #
 
-
+from pkg_resources import resource_filename
 from trac.config import BoolOption
 from trac.core import Component, implements
 from trac.ticket.api import IMilestoneChangeListener
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_script, add_script_data, add_stylesheet
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
 
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.model import *
@@ -116,7 +116,7 @@ def create_cur_projects_table(smp_model, name):
 class SmpMilestoneProject(Component):
     """Connect milestones to projects from the roadmap page."""
 
-    implements(IRequestFilter, IMilestoneChangeListener)
+    implements(IRequestFilter, IMilestoneChangeListener, ITemplateProvider)
 
     single_project = BoolOption(
         'simple-multi-project', 'single_project_milestones', False,
@@ -163,7 +163,6 @@ class SmpMilestoneProject(Component):
 
         if data and template == 'milestone_edit.html':
             # 'new Milestone' or 'edit milestone' page opened from the roadmap page
-            # ITemplateProvider is implemented in another component
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
             if self.single_project:
                 input_type = 'radio'
@@ -207,3 +206,12 @@ class SmpMilestoneProject(Component):
 
     def milestone_deleted(self, milestone):
         self.smp_model.delete(milestone.name)
+
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        self.log.info(resource_filename(__name__, 'templates'))
+        return [resource_filename(__name__, 'templates')]
+
+    def get_htdocs_dirs(self):
+        return [('simplemultiproject', resource_filename(__name__, 'htdocs'))]

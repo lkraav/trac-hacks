@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 Cinc
+# Copyright (C) 2014-2020 Cinc
 #
 # License: 3-clause BSD
 #
 from collections import defaultdict
+from pkg_resources import resource_filename
 from trac.config import BoolOption
 from trac.core import *
 from trac.resource import ResourceNotFound
@@ -14,7 +15,7 @@ from trac.ticket.api import IMilestoneChangeListener
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, \
-    add_script_data, add_stylesheet
+    add_script_data, add_stylesheet, ITemplateProvider
 
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.milestone import create_projects_table_j
@@ -35,6 +36,8 @@ def _allow_no_project(self):
 class SmpFilterBase(Component):
     """Must be activated when SmpFilterDefaultMilestonePanels or SmpFilterDefaultVersionPanels are used."""
 
+    implements(ITemplateProvider)
+
     # The following are verridden in subclass
     template_name = ""  # name of html file
     add_form_id = ''  # id of form used to add a new item on main admin page
@@ -45,6 +48,15 @@ class SmpFilterBase(Component):
 
     def __init__(self):
         self.smp_project = SmpProject(self.env)
+
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        self.log.info(resource_filename(__name__, 'templates'))
+        return [resource_filename(__name__, 'templates')]
+
+    def get_htdocs_dirs(self):
+        return [('simplemultiproject', resource_filename(__name__, 'htdocs'))]
 
     @staticmethod
     def is_valid_request(req, path):
@@ -357,7 +369,7 @@ class SmpFilterDefaultComponentPanels(Component):
     simplemultiproject.admin_component.* = disabled
     }}}
     """
-    implements(IRequestFilter)
+    implements(IRequestFilter, ITemplateProvider)
 
     def __init__(self):
         self.smp_model = SmpComponent(self.env)
@@ -448,3 +460,12 @@ class SmpFilterDefaultComponentPanels(Component):
                 add_script(req, 'simplemultiproject/js/jtransform.js')
 
         return template, data, content_type
+
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        self.log.info(resource_filename(__name__, 'templates'))
+        return [resource_filename(__name__, 'templates')]
+
+    def get_htdocs_dirs(self):
+        return [('simplemultiproject', resource_filename(__name__, 'htdocs'))]
