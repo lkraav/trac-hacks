@@ -75,7 +75,7 @@
               </td>
             </tr>
             <tr class="collapsible-${_fix(section_name)} section-description" py:if="descriptions.get(section_name)">
-              <td>${wiki_to_html(context, descriptions[section_name])}</td>
+              <td colspan="3">${wiki_to_html(context, descriptions[section_name])}</td>
             </tr>
             <py:for each="access_level, access_level_options in (('modifiable', modifiable_options[section_name]), ('readonly', readonly_options[section_name]))">
               <tr py:if="len(access_level_options) != 0" class="collapsible-${_fix(section_name)}">
