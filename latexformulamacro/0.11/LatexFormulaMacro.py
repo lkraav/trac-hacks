@@ -130,7 +130,8 @@ def render(env, texData, density, fleqnMode, mathMode):
     texMag = cfg.get('latex', 'text_mag', 1000)
     imageFormat = cfg.get('latex', 'image_format', 'png')
 
-    imagePath = os.path.join(env.htdocs_dir, 'formulas')
+    imagePath = os.path.normpath(
+        os.path.join(env.get_htdocs_dir(), "formulas"))
     if not os.path.exists(imagePath):
         try:
             os.mkdir(imagePath)
