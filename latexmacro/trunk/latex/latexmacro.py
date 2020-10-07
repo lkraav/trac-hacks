@@ -18,7 +18,7 @@
 # Based on trac2latex http://trac-hacks.org/wiki/Trac2LatexPlugin
 #      and latex-math https://labs.truelite.it/packages/wiki/TrueliteTracUtils
 #
-# Requirements: trac 0.11, latex, dvipng
+# Requirements: latex, dvipng
 #               trac2latex's LatexMacro must be disabled
 
 from trac.wiki.macros import WikiMacroBase
@@ -27,11 +27,11 @@ import os, tempfile, md5, glob
 
 # Include your favourite LaTeX preamble
 tex_preamble = r'''
-\documentclass{article} 
+\documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
-\pagestyle{empty} 
+\pagestyle{empty}
 \begin{document}
 \begin{equation*}
 '''
@@ -40,10 +40,11 @@ tex_end = r'''
 \end{document}
 '''
 
+
 class LatexMacro(WikiMacroBase):
     r"""Latex WikiProcessor:
     Now you can specify small pieces of latex code into any wiki context, like WikiHtml.
-    
+
     Ex.:
     {{{
        {{{
@@ -59,32 +60,31 @@ class LatexMacro(WikiMacroBase):
 
        filename = md5.new(content).hexdigest()
        images_url = formatter.href.chrome('site', '/latex-images')
-       images_folder = os.path.join(os.path.normpath(self.env.get_htdocs_dir()), 'latex-images')
+       images_folder = os.path.join(self.env.htdocs_dir, 'latex-images')
 
        if not os.path.exists(images_folder):
            os.mkdir(images_folder)
-       
+
        if not os.access('%s/%s.png' % (images_folder, filename), os.F_OK):
            tmpdir = tempfile.mkdtemp(prefix="latexmacro")
            fn = tmpdir + "/macro"
 
-           f = open(fn + ".tex", 'w+')
-           f.write(tex_preamble)
-           f.write(content)
-           f.write(tex_end)
-           f.close()
-           
+           with open(fn + ".tex", 'w+') as f:
+               f.write(tex_preamble)
+               f.write(content)
+               f.write(tex_end)
+
            # compile LaTeX document. A DVI file is created
            ret = os.system('latex -output-directory %s -interaction nonstopmode %s >/dev/null 2>/dev/null' % (tmpdir, fn + ".tex"))
            cmd = "dvipng -T tight -x 1200 -z 6 -bg Transparent " \
                  + "-o %s/%s.png %s 2>/dev/null 1>/dev/null" \
                  % (images_folder, filename, fn)
            ret = os.system(cmd)
-       
+
            self.clean_tmp_dir(tmpdir)
-           
+
        filepath = "%s/%s.png" % (images_url, filename)
-           
+
        return '<a href="%s"><img src="%s"/></a>' % (filepath, filepath)
 
     def clean_tmp_dir(self, tmpdir):
