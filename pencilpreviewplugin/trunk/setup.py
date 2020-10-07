@@ -10,7 +10,7 @@ setup(
     author_email = 'peter@lucid.ch',
     description = 'HTML Preview for Evolus Pencil .ep mockup files',
     packages = ['pencilpreview'],
-    
+
     entry_points = {'trac.plugins': [
             'pencilpreview.preview = pencilpreview.preview',
         ]
