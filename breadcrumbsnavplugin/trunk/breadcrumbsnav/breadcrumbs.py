@@ -43,43 +43,20 @@ class BreadCrumbsSystem(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        self._upgrade_db(self.env.get_db_cnx())
+        self.upgrade_environment()
 
-    def environment_needs_upgrade(self, db):
-        cursor = db.cursor()
+    def environment_needs_upgrade(self):
+        with self.env.db_transaction as db:
+            for _ in db("""
+                    SELECT * FROM session_attribute
+                    WHERE name='breadcrumbs_list'
+                    """):
+                db("""
+                    DELETE FROM session_attribute WHERE name='breadcrumbs_list'
+                    """)
 
-        try:
-            cursor.execute("""
-                SELECT count(*)
-                  FROM session_attribute
-                 WHERE name = %s
-                """, ("breadcrumbs list",)
-                           )
-            result = cursor.fetchone()
-            if int(result[0]):
-                return True
-
-            return False
-        except:
-            db.rollback()
-            return True
-
-    def upgrade_environment(self, db):
-        self._upgrade_db(db)
-
-    def _upgrade_db(self, db):
-        try:
-            cursor = db.cursor()
-            cursor.execute("""
-                DELETE
-                  FROM session_attribute
-                 WHERE name = %s
-                """, ("breadcrumbs list",)
-                           )
-        except Exception, e:
-            db.rollback()
-            self.log.error(e, exc_info=True)
-            raise TracError(str(e))
+    def upgrade_environment(self):
+        pass
 
     # IRequestFilter methods
 

@@ -34,8 +34,8 @@
 from setuptools import setup
 
 setup(
-    name='BreadCrumbsNav',
-    version='0.3',
+    name='TracBreadCrumbsNav',
+    version='0.4',
     author='Stephen Hansen',
     author_email='shansen@advpubtech.com',
     maintainer='Steffen Hoffmann',
