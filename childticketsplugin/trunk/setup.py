@@ -15,7 +15,7 @@ setup(
     description='Provides support for pseudo child-tickets and a visual reference to these within a parent ticket.',
     keywords='trac plugins ticket dependency childtickets',
     url='https://trac-hacks.org/wiki/ChildTicketsPlugin',
-    install_requires=['Trac'],
+    install_requires=['genshi'],
     entry_points="""
         [trac.plugins]
         childtickets = childtickets
