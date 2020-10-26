@@ -11,7 +11,7 @@
 # furnished to do so, subject to the following conditions:
 #
 #   The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software. 
+#   all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -48,10 +48,11 @@ _oldmessage_pat = [
     (r'^{{{\s*#!div class="ticket-commit-message"\s+'
      r'\[(?P<rev>[0-9]+)\]:\s+(?P<message>.*?)\s+}}}\s*(?P<comment>.*?)$',
      lambda extract: ('', extract[0], extract[1], '', extract[2])),
-    ]
+]
 
 _oldmessage_re = [(re.compile(pat, re.DOTALL), extract) for
-                 pat, extract in _oldmessage_pat]
+                  pat, extract in _oldmessage_pat]
+
 
 def _reformat_message(oldmessage):
     """Reformat old formatted message to current format.
@@ -70,44 +71,44 @@ def _reformat_message(oldmessage):
         return make_ticket_comment(rev, message, reponame, startcomment,
                                    endcomment)
 
-    
+
 class TicketChangesetsAdmin(Component):
     """trac-admin command provider for ticketchangesets plugin."""
 
     implements(IAdminCommandProvider)
 
     # IAdminCommandProvider methods
-    
+
     def get_admin_commands(self):
         yield ('ticket_changesets diff', '',
                """Examine ticket commit messages before reformat
-               
+
                Generate a diff-like output for analysis before reformatting.
                The database will not be changed.
-               
+
                Before this operation, you may want to run
 
                trac-admin $ENV repository resync "*"
                """,
                None, self.diff)
-               
+
         yield ('ticket_changesets get', '[ticketid]',
                """Get a comma-separated list of related revisions.
-               
+
                List format:
                #ticketid: rev/reponame,...
-               
+
                "/reponame" is left out for the default repository.
-               
+
                All tickets related to changesets are listed if ticketid is
                omitted (one ticket on each line). If no changeset relation
                exists, "None" is displayed.
                """,
                None, self.get_revs)
-               
+
         yield ('ticket_changesets reformat', '',
                """Reformat ticket commit messages (DANGEROUS!)
-               
+
                Before this operation, you may want to run:
 
                trac-admin $ENV repository resync "*"
@@ -117,26 +118,26 @@ class TicketChangesetsAdmin(Component):
                trac-admin $ENV ticket_changesets diff
                """,
                None, self.reformat)
-               
+
         yield ('ticket_changesets resync', '',
                """Re-synchronize ticket changesets with all repositories
-               
+
                Relations between tickets and changesets are re-built by
                examining all commit messages, in all repositories, for ticket
                references. Ticket comments are neither updated nor added due
                to new discoveries.
-               
+
                Before this operation, you may want to run:
 
                trac-admin $ENV repository resync "*"
                """,
                None, self.resync)
-               
+
     # Internal methods
-    
+
     def diff(self):
         self._scan_ticket_commit_messages(False)
-        
+
     def get_revs(self, tkt_id=None):
         r = {}
         if tkt_id is None:
@@ -157,10 +158,10 @@ class TicketChangesetsAdmin(Component):
                 printout('#%s: %s' % (tkt_id, ','.join(revs)))
         else:
             printout('None')
-            
+
     def reformat(self):
         self._scan_ticket_commit_messages(True)
-        
+
     def resync(self):
         """Resync ticket changesets from commit messages in all repos.
         """
@@ -206,9 +207,9 @@ class TicketChangesetsAdmin(Component):
             printout('Reformatting ticket commit messages...')
         else:
             printout('diff ticket commit messages to be reformatted')
-        
+
         n_matches = [0]
-                         
+
         @self.env.with_transaction()
         def do_update(db):
             cursor = db.cursor()
@@ -217,16 +218,16 @@ class TicketChangesetsAdmin(Component):
                            'FROM ticket_change WHERE field=%s', ['comment'])
             for row in cursor.fetchall():
                 ticket, time, oldvalue, oldmessage = row
-                if oldvalue.isnumeric(): # ticket comment number
+                if oldvalue.isnumeric():  # ticket comment number
                     newmessage = _reformat_message(oldmessage)
                     if newmessage:
                         n_matches[0] += 1
                         if reformat:
                             cursor.execute(
-                                    'UPDATE ticket_change SET newvalue=%s '
-                                    'WHERE ticket=%s and time=%s and '
-                                    'oldvalue=%s',
-                                    [newmessage, ticket, time, oldvalue])
+                                'UPDATE ticket_change SET newvalue=%s '
+                                'WHERE ticket=%s and time=%s and '
+                                'oldvalue=%s',
+                                [newmessage, ticket, time, oldvalue])
                         else:
                             printout('@@ comment:%s:ticket:%d (db time %d) @@'
                                      % (oldvalue, ticket, time))
@@ -238,16 +239,16 @@ class TicketChangesetsAdmin(Component):
                            ['_comment_%'])
             for row in cursor.fetchall():
                 ticket, time, oldmessage, edit_time = row
-                if edit_time.isnumeric(): # ticket comment change time
+                if edit_time.isnumeric():  # ticket comment change time
                     newmessage = _reformat_message(oldmessage)
                     if newmessage:
                         n_matches[0] += 1
                         if reformat:
                             cursor.execute(
-                                    'UPDATE ticket_change SET oldvalue=%s '
-                                    'WHERE ticket=%s and time=%s and '
-                                    'newvalue=%s',
-                                    [newmessage, ticket, time, edit_time])
+                                'UPDATE ticket_change SET oldvalue=%s '
+                                'WHERE ticket=%s and time=%s and '
+                                'newvalue=%s',
+                                [newmessage, ticket, time, edit_time])
                         else:
                             printout('@@ comment:(edit):ticket:%d (db time %d) @@'
                                      % (ticket, edit_time))
@@ -257,4 +258,3 @@ class TicketChangesetsAdmin(Component):
             printout('%d messages reformatted' % n_matches[0])
         else:
             printout('%d messages to be reformatted' % n_matches[0])
-            

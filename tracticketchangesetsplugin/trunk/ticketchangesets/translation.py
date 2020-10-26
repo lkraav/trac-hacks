@@ -11,7 +11,7 @@
 # furnished to do so, subject to the following conditions:
 #
 #   The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software. 
+#   all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -31,7 +31,7 @@ _, tag_, N_, add_domain = domain_functions('tracticketchangesetsplugin',
 
 
 def init_translation(envpath):
-    #Bind the language catalogs to the locale directory
+    # Bind the language catalogs to the locale directory
     import pkg_resources
     locale_dir = pkg_resources.resource_filename(__name__, 'locale')
     add_domain(envpath, locale_dir)

@@ -11,7 +11,7 @@
 # furnished to do so, subject to the following conditions:
 #
 #   The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software. 
+#   all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -28,6 +28,7 @@ from trac.env import IEnvironmentSetupParticipant
 
 # Last database schema version
 last_db_version = 1
+
 
 class TicketChangesetsInit(Component):
     """Initialise database and environment for plugin."""
@@ -51,7 +52,7 @@ class TicketChangesetsInit(Component):
 
         # Perform incremental upgrades.
         for I in range(db_version + 1, last_db_version + 1):
-            script_name  = 'db%i' % I
+            script_name = 'db%i' % I
             module = __import__('ticketchangesets.db.%s' % script_name,
                                 globals(), locals(), ['do_upgrade'])
             module.do_upgrade(self.env, db)

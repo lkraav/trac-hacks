@@ -62,14 +62,14 @@ class ViewTicketChangesets(Component):
     """
 
     collapsed = BoolOption('ticket-changesets', 'collapsed', 'false',
-        """Show section on ticket page as initially collapsed.""")
+                           """Show section on ticket page as initially collapsed.""")
 
     compact = BoolOption('ticket-changesets', 'compact', 'true',
-        """Make compact presentation of revision ranges, for example ![1-3]
+                         """Make compact presentation of revision ranges, for example ![1-3]
         instead of ![1] ![2] ![3].""")
 
     hide_when_none = BoolOption('ticket-changesets', 'hide_when_none', 'false',
-        """Hide section on ticket page when no changesets relates to the
+                                """Hide section on ticket page when no changesets relates to the
         ticket.""")
 
     implements(ITemplateStreamFilter)
@@ -116,7 +116,7 @@ class TicketChangesetsFormatter(object):
         self.context = context
         self.tkt_id = tkt_id
         self.hint = hint
-        self.compact =  env.config.getbool('ticket-changesets', 'compact')
+        self.compact = env.config.getbool('ticket-changesets', 'compact')
         self.changesets = TicketChangesets(env).get(tkt_id)
 
     def exists(self):
@@ -130,7 +130,7 @@ class TicketChangesetsFormatter(object):
                            class_='ticketchangesets hint')
             return
         n = len(self.changesets)
-        ix = 0 # current index for adding separation markers between repos
+        ix = 0  # current index for adding separation markers between repos
         for (reponame, changesets) in self.changesets:
             if n > 1:
                 if self.hint == 'ticket':
@@ -200,11 +200,12 @@ class CommitMessageMacro(WikiMacroBase):
             if not any(int(tkt_id) == formatter.context.resource.id
                        for tkt_id in ticket_re.findall(message)):
                 return tag.div(tag.p(_("(The changeset message doesn't "
-                    "reference this ticket)"), class_='hint'),
-                    class_='commitmessage')
+                                       "reference this ticket)"), class_='hint'),
+                               class_='commitmessage')
         if ChangesetModule(self.env).wiki_format_messages:
             return tag.div(format_to_html(self.env,
-                formatter.context('changeset', rev, parent=repos.resource),
-                message, escape_newlines=True), class_='commitmessage')
+                                          formatter.context(
+                                              'changeset', rev, parent=repos.resource),
+                                          message, escape_newlines=True), class_='commitmessage')
         else:
             return tag.pre(message, class_='commitmessage')

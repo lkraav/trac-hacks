@@ -11,7 +11,7 @@
 # furnished to do so, subject to the following conditions:
 #
 #   The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software. 
+#   all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -68,7 +68,7 @@ class TicketChangesets(object):
                 cursor.execute('INSERT INTO ticket_changesets '
                                '(ticket,repository,value) VALUES(%s,%s,%s)',
                                [tkt_id, repo_id, value])
-    
+
     def add(self, tkt_id, repo_id, rev):
         changesets = self._read(tkt_id, repo_id)
         self.env.log.debug('ticketchangesets: Add rev %d to #%d' %
@@ -86,7 +86,7 @@ class TicketChangesets(object):
     def get(self, tkt_id):
         """Return a sorted list of tuples (reponame, changesets) for a ticket.
         """
-        changesets = [] # [(reponame, Changesets)]
+        changesets = []  # [(reponame, Changesets)]
         repos = RepositoryManager(self.env).get_real_repositories()
 
         for repo in sorted(repos, key=lambda r: r.reponame):
@@ -99,9 +99,10 @@ class TicketChangesets(object):
 class Changesets(object):
     """Manipulates and formats changesets, stored on string format, for one
     repository and ticket.
-    
+
     Format: comma separated numbers "a,b,c,d,..."
     """
+
     def __init__(self, revs=None):
         """revs is a comma separated list of revs"""
         self.exists = revs is not None
@@ -121,7 +122,7 @@ class Changesets(object):
 
     def get_compact(self):
         """Returns a compacted sequence of revisions.
-        
+
         Example: 1,2,3,5,6,7 compacts to 1-3,5-7
         """
         c = []
@@ -173,8 +174,8 @@ class Changesets(object):
         """Make wiki text of link to revision log for given repo"""
         if reponame and reponame != '(default)':
             return '[log:%s@%s %s/%s]' % (reponame, ','.join([str(r) for r in
-                   self.get_compact()]), _("Revision Log"), reponame)
+                                                              self.get_compact()]), _("Revision Log"), reponame)
         else:
             return '[log:@%s %s]' % (','.join([str(r) for r in
-                                     self.get_compact()]),
+                                               self.get_compact()]),
                                      _("Revision Log"))

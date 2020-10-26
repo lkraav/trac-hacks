@@ -9,7 +9,7 @@ from ticketchangesets.admin import _reformat_message
 
 # [("message", "converted message")]
 testmessages = [
-    #1 -- Message created by old custom script by mrelbe for Trac 0.11.x:
+    # 1 -- Message created by old custom script by mrelbe for Trac 0.11.x:
     ("""\
 {{{
 #!div class="ticket-commit-message"
@@ -30,14 +30,14 @@ project-sites/trac/share: Added InterTrac link Sales, and alias SM, for all proj
 #!CommitMessage revision="229"
 project-sites/scripts: Adjusted for new server (re #41)
 }}}""",
-    """\
+     """\
 [229]:
 {{{
 #!CommitMessage revision="229"
 project-sites/scripts: Adjusted for new server (re #41)
 }}}"""),
 
-    #3 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater):
+    # 3 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater):
     ("""\
 In [234]:
 {{{
@@ -46,7 +46,7 @@ Committing to repo for testing ticket commit updater, see #61
 
 End...
 }}}""",
-    """\
+     """\
 [234]:
 {{{
 #!CommitMessage revision="234"
@@ -55,7 +55,7 @@ Committing to repo for testing ticket commit updater, see #61
 End...
 }}}"""),
 
-    #4 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater):
+    # 4 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater):
     ("""\
 In [234]:
 {{{
@@ -64,7 +64,7 @@ Committing to repo for testing ticket commit updater, see #61
 
 End...
 }}}""",
-    """\
+     """\
 [234/reponame]:
 {{{
 #!CommitMessage repository="reponame" revision="234"
@@ -73,7 +73,7 @@ Committing to repo for testing ticket commit updater, see #61
 End...
 }}}"""),
 
-    #5 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
+    # 5 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
     #     with manually added comment at end
     #  -- Old
     ("""\
@@ -84,8 +84,8 @@ Committing to repo for testing ticket commit updater, see #61
 
 End...
 }}}Manual edit line 1""",
-    #  -- New
-    """\
+     #  -- New
+     """\
 [234/reponame]:
 {{{
 #!CommitMessage repository="reponame" revision="234"
@@ -96,7 +96,7 @@ End...
 
 Manual edit line 1"""),
 
-    #6 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
+    # 6 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
     #     with manually added comment at end
     #  -- Old
     ("""\
@@ -112,8 +112,8 @@ End...
 Manual edit line 1
 
 """,
-    #  -- New
-    """\
+     #  -- New
+     """\
 [234/reponame]:
 {{{
 #!CommitMessage repository="reponame" revision="234"
@@ -124,7 +124,7 @@ End...
 
 Manual edit line 1"""),
 
-    #7 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
+    # 7 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
     #     with manually added comment at end
     #  -- Old
     ("""\
@@ -136,8 +136,8 @@ Committing to repo for testing ticket commit updater, see #61
 End...
 }}}Manual edit line 1
 Manual edit line 2""",
-    #  -- New
-    """\
+     #  -- New
+     """\
 [234/reponame]:
 {{{
 #!CommitMessage repository="reponame" revision="234"
@@ -149,7 +149,7 @@ End...
 Manual edit line 1
 Manual edit line 2"""),
 
-    #8 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
+    # 8 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
     #     with manually added comment at start
     #  -- Old
     ("""\
@@ -160,8 +160,8 @@ Committing to repo for testing ticket commit updater, see #61
 
 End...
 }}}""",
-    #  -- New
-    """\
+     #  -- New
+     """\
 Manual edit line 1
 
 [234/reponame]:
@@ -172,7 +172,7 @@ Committing to repo for testing ticket commit updater, see #61
 End...
 }}}"""),
 
-    #9 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
+    # 9 -- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
     #     with manually added comment at start
     #  -- Old
     ("""\
@@ -185,8 +185,8 @@ Committing to repo for testing ticket commit updater, see #61
 
 End...
 }}}""",
-    #  -- New
-    """\
+     #  -- New
+     """\
 Manual edit line 1
 
 [234/reponame]:
@@ -197,7 +197,7 @@ Committing to repo for testing ticket commit updater, see #61
 End...
 }}}"""),
 
-    #10-- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
+    # 10-- Message created by Trac 0.12 (tracopt.ticket.commit_updater)
     #     with manually added comment at both start and end
     #  -- Old
     ("""\
@@ -212,8 +212,8 @@ End...
 }}}
 Manual edit line 1
 Manual edit line 2""",
-    #  -- New
-    """\
+     #  -- New
+     """\
 Manual edit line 1
 Manual edit line 2
 
@@ -262,5 +262,6 @@ Test %d FAILED!
             print('Old message:\n%s' % oldmessage)
             print('New message:\n%s' % newmessage)
             raise ValueError
+
 
 test()

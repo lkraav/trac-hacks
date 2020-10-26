@@ -35,7 +35,7 @@
 # furnished to do so, subject to the following conditions:
 #
 #   The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software. 
+#   all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -65,7 +65,7 @@ from ticketchangesets.api import TicketChangesets
 
 class CommitTicketUpdater(Component):
     """Update tickets based on commit messages.
-    
+
     This component hooks into changeset notifications and searches commit
     messages for text in the form of:
     {{{
@@ -74,7 +74,7 @@ class CommitTicketUpdater(Component):
     command #1 & #2 
     command #1 and #2
     }}}
-    
+
     Instead of the short-hand syntax "#1", "ticket:1" can be used as well,
     e.g.:
     {{{
@@ -83,30 +83,30 @@ class CommitTicketUpdater(Component):
     command ticket:1 & ticket:2 
     command ticket:1 and ticket:2
     }}}
-    
+
     In addition, the ':' character can be omitted and issue or bug can be used
     instead of ticket.
-    
+
     You can have more than one command in a message. The following commands
     are supported. There is more than one spelling for each command, to make
     this as user-friendly as possible.
-    
+
       close, closed, closes, fix, fixed, fixes::
         The specified tickets are closed, and the commit message is added to
         them as a comment.
-    
+
       references, refs, addresses, re, see::
         The specified tickets are left in their current status, and the commit
         message is added to them as a comment. 
-    
+
     A fairly complicated example of what you can do is with a commit message
     of:
-    
+
         Changed blah and foo to do this or that. Fixes #10 and #12,
         and refs #12.
-    
+
     This will close #10 and #12, and add a note to #12.
-    
+
     == Configuration ==
     Enable the plugin in trac.ini:
     {{{
@@ -116,42 +116,42 @@ class CommitTicketUpdater(Component):
     See [TracIni#ticket-changesets-section here] on how to configure
     the plugin.
     """
-    
+
     implements(IRepositoryChangeListener)
-    
+
     envelope = Option('ticket-changesets', 'envelope', '',
-        """Require commands to be enclosed in an envelope.
+                      """Require commands to be enclosed in an envelope.
         
         Must be empty or contain two characters. For example, if set to "[]",
         then commands must be in the form of [closes #4].""")
-    
+
     commands_close = Option('ticket-changesets', 'commands.close',
-        'close closed closes fix fixed fixes',
-        """Commands that close tickets, as a space-separated list.""")
-    
+                            'close closed closes fix fixed fixes',
+                            """Commands that close tickets, as a space-separated list.""")
+
     commands_refs = Option('ticket-changesets', 'commands.refs',
-        'addresses re references refs see',
-        """Commands that add a reference, as a space-separated list.
+                           'addresses re references refs see',
+                           """Commands that add a reference, as a space-separated list.
         
         If set to the special value <ALL>, all tickets referenced by the
         message will get a reference to the changeset.""")
-    
+
     check_perms = BoolOption('ticket-changesets', 'check_perms', 'true',
-        """Check that the committer has permission to perform the requested
+                             """Check that the committer has permission to perform the requested
         operations on the referenced tickets.
         
         This requires that the user names be the same for Trac and repository
         operations.""")
 
     notify = BoolOption('ticket-changesets', 'notify', 'true',
-        """Send ticket change notification when updating a ticket.""")
+                        """Send ticket change notification when updating a ticket.""")
 
     resolution = Option('ticket-changesets', 'resolution', 'fixed',
-        """The resolution to set to a ticket closed by a commit message.""")
+                        """The resolution to set to a ticket closed by a commit message.""")
 
     ticket_comments = BoolOption('ticket-changesets', 'ticket_comments',
-        'true',
-        """Add a ticket comment based on changeset info, for each referenced
+                                 'true',
+                                 """Add a ticket comment based on changeset info, for each referenced
         ticket.""")
 
     ticket_prefix = '(?:#|(?:ticket|issue|bug)[: ]?)'
@@ -165,13 +165,13 @@ class CommitTicketUpdater(Component):
         (begin, end) = (re.escape(self.envelope[0:1]),
                         re.escape(self.envelope[1:2]))
         return re.compile(begin + self.ticket_command + end)
-    
+
     ticket_re = re.compile(ticket_prefix + '([0-9]+)')
-    
+
     _last_cset_id = None
-    
+
     # IRepositoryChangeListener methods
-    
+
     def changeset_added(self, repos, changeset):
         if self._is_duplicate(changeset):
             return
@@ -184,7 +184,7 @@ class CommitTicketUpdater(Component):
         tkt_changesets = TicketChangesets(self.env)
         for tkt_id, cmds in tickets.iteritems():
             tkt_changesets.add(tkt_id, repos.id, changeset.rev)
-    
+
     def changeset_modified(self, repos, changeset, old_changeset):
         if self._is_duplicate(changeset):
             return
@@ -207,7 +207,7 @@ class CommitTicketUpdater(Component):
                        if each[0] not in current_tickets)
         for tkt_id, cmds in tickets.iteritems():
             tkt_changesets.remove(tkt_id, repos.id, changeset.rev)
-    
+
     def _is_duplicate(self, changeset):
         # Avoid duplicate changes with multiple scoped repositories
         cset_id = (changeset.rev, changeset.message, changeset.author,
@@ -216,7 +216,7 @@ class CommitTicketUpdater(Component):
             self._last_cset_id = cset_id
             return False
         return True
-        
+
     def parse_message(self, message):
         """Parse the commit message and return the ticket references."""
         cmd_groups = self.command_re.findall(message)
@@ -230,12 +230,12 @@ class CommitTicketUpdater(Component):
                 for tkt_id in self.ticket_re.findall(tkts):
                     tickets.setdefault(int(tkt_id), []).append(func)
         return tickets
-    
+
     def make_ticket_comment(self, repos, changeset):
         """Create the ticket comment from the changeset data."""
         return make_ticket_comment(changeset.rev, changeset.message,
                                    repos.reponame)
-        
+
     def _update_tickets(self, tickets, changeset, comment, date):
         """Update the tickets with the given comment."""
         perm = PermissionCache(self.env, changeset.author)
@@ -243,6 +243,7 @@ class CommitTicketUpdater(Component):
             try:
                 self.log.debug('ticketchangesets: Updating #%d', tkt_id)
                 ticket = [None]
+
                 @self.env.with_transaction()
                 def do_update(db):
                     ticket[0] = Ticket(self.env, tkt_id, db)
@@ -253,7 +254,7 @@ class CommitTicketUpdater(Component):
             except Exception, e:
                 self.log.error('Unexpected error while processing ticket '
                                '#%s: %s', tkt_id, exception_to_unicode(e))
-    
+
     def _notify(self, ticket, date):
         """Send a ticket update notification."""
         if not self.notify:
@@ -263,8 +264,8 @@ class CommitTicketUpdater(Component):
             tn.notify(ticket, newticket=False, modtime=date)
         except Exception, e:
             self.log.error('Failure sending notification on change to '
-                    'ticket #%s: %s', ticket.id, exception_to_unicode(e))
-    
+                           'ticket #%s: %s', ticket.id, exception_to_unicode(e))
+
     def _get_functions(self):
         """Create a mapping from commands to command functions."""
         functions = {}
@@ -275,7 +276,7 @@ class CommitTicketUpdater(Component):
             for cmd in getattr(self, 'commands_' + each[4:], '').split():
                 functions[cmd] = func
         return functions
-    
+
     def cmd_close(self, ticket, changeset, perm):
         if not self.check_perms or 'TICKET_MODIFY' in perm:
             ticket['status'] = 'closed'
