@@ -16,7 +16,9 @@ from trac.resource import get_resource_name
 from trac.util.datefmt import format_datetime, to_datetime
 from trac.util.html import Markup
 from trac.util.translation import _
+from trac.wiki.formatter import system_message
 from trac.wiki.macros import WikiMacroBase, parse_args
+from trac.wiki.model import WikiPage
 
 revision = "$Rev$"
 url = "http://trac-hacks.org/wiki/LastModifiedMacro"
@@ -128,3 +130,21 @@ class LastModifiedMacro(WikiMacroBase):
             text = format_datetime(time_int, date_format)
 
         return Markup(text)
+
+
+class LatestRevision(WikiMacroBase):
+    """Displays the latest revision of a wiki page.
+
+    {{{
+    [[LatestRevision]]
+    }}}
+    """
+
+    def expand_macro(self, formatter, name, content):
+        if formatter.resource.realm != 'wiki':
+            return system_message(
+                _("PageRevision macro is only applicable to wiki pages"))
+
+        page = WikiPage(self.env, formatter.resource.id)
+        return page.version
+
