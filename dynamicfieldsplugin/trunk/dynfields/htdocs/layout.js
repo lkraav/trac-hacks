@@ -124,7 +124,8 @@ inputs_layout.order_fields = function (new_fields) {
     var cell = this_.get_tx(name);
     cells[name] = cell;
     headers[name] = cell.prev('th');
-    fullrows[name] = cell.hasClass('fullrow');
+    // colspan is checked for Trac 1.0.x compatibility.
+    fullrows[name] = cell.hasClass('fullrow') || cell.attr('colspan') === '3';
   });
   var groups = dynfields_group(new_fields, 2,
                                function(name) { return fullrows[name] });
