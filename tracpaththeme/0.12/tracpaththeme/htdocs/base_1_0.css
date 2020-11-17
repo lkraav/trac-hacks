@@ -14,6 +14,17 @@ input[type=button]:hover, input[type=submit]:hover, input[type=reset]:hover {
 #mainnav {
  box-shadow: none;
 }
+#metanav form.trac-logout button {
+ color: #eee;
+ border-radius: 0;
+ box-shadow: none;
+ height: 100%;
+ vertical-align: top;
+}
+#metanav form.trac-logout button:hover {
+ color: #fff;
+ background: transparent;
+}
 #mainnav li {
  border: 0;
 }
