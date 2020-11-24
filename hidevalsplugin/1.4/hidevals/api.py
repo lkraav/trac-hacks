@@ -3,7 +3,7 @@
 # Copyright (c) 2007 Noah Kantrowitz. All rights reserved.
 
 from trac.config import ListOption
-from trac.core import Component, ExtensionPoint, implements
+from trac.core import Component, implements
 from trac.db.api import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor, PermissionSystem
