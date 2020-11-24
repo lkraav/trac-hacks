@@ -5,7 +5,7 @@
 from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.ticket.api import TicketSystem
-from trac.web.chrome import Chrome, ITemplateProvider
+from trac.web.chrome import ITemplateProvider
 
 from api import HideValsSystem
 
@@ -35,7 +35,7 @@ class HideValsAdminModule(Component):
             if 'add' in req.args:
                 group = req.args['group']
                 value = req.args['value']
-                if group, value not in values:
+                if (group, value) not in values:
                     self.env.db_transaction("""
                         INSERT INTO hidevals (sid, field, value)
                         VALUES (%s, %s, %s)
@@ -60,16 +60,11 @@ class HideValsAdminModule(Component):
 
             req.redirect(req.href.admin(cat, page))
 
-        template = 'admin_hidevals.html'
-        data = {
+        return 'admin_hidevals.html', {
             'field': field,
             'values': [{'group': g, 'value': v} for g, v in values],
             'enabled': enabled
         }
-        if hasattr(Chrome(self.env), 'jenv'):
-            return template, data, None
-        else:
-            return template, data
 
     # ITemplateProvider methods
 

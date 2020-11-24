@@ -1,64 +1,79 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
-  <xi:include href="admin.html" />
+{# Copyright (C) 2008-2020
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
   <head>
-    <title>Hide Values</title>
+    <title>
+      # block admintitle
+      ${_("Hide Values")}
+      # endblock admintitle
+    </title>
+    # block head
+    ${ super() }
+    # endblock head
   </head>
-
   <body>
-        <h2>Values for ${field.label}</h2>
-        <form id="addhideval" class="addnew" method="post">
-          <fieldset>
-            <legend>Add Field Mask</legend>
-            <div class="field">
-              <label>Group: <br />
-                <input type="text" name="group" />
-              </label>
-            </div>
-            <div class="field">
-              <label>Value: <br />
-                <select name="value">
-                  <option py:for="option in field.options" value="${option}">${option}</option>
-                </select>
-              </label>
-            </div>
-            <p class="help">Allow a group to see the given field value</p>
-            <div class="buttons">
-              <input type="submit" name="add" value="Add" />
-            </div>
-          </fieldset>
-        </form>
-        <form id="enablehideval" method="post">
-          Filtering for this field is currently 
-                <py:choose test="enabled"> 
-                        <py:when test="True">enabled <input type="submit" name="toggle" value="Disable"/></py:when>
-                        <py:otherwise>disabled <input type="submit" name="toggle" value="Enable"/></py:otherwise>
-                </py:choose>
-        </form>
-        <form id="listhideval" method="post">
-          <table class="listing">
-            <thead>
-              <tr>
-                <th class="sel">&nbsp;</th>
-                <th>Group</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
-                <tr py:for="value in values">
-                  <td><input type="checkbox" name="sel" value="${value.group}#${value.value}" /></td>
-                  <td>${value.group}</td>
-                  <td>${value.value}</td>
-                </tr>
-            </tbody>
-          </table>
-          <div class="buttons">
-             <input type="submit" name="remove" value="Remove selected items" />
-          </div>
-        </form>
+    # block adminpanel
+    <h2>${_("Values for %(field)s", field=field.label)}</h2>
+    <form id="addhideval" class="addnew" method="post" action="#">
+      ${jmacros.form_token_input()}
+      <fieldset>
+        <legend>${_("Add Field Mask")}</legend>
+        <div class="field">
+          <label>Group: <br />
+            <input type="text" name="group" />
+          </label>
+        </div>
+        <div class="field">
+          <label>Value: <br />
+            <select name="value">
+              # for option in field.options:
+              <option value="${option}">${option}</option>
+              # endfor
+            </select>
+          </label>
+        </div>
+        <p class="help">${_("Allow a group to see the given field value")}</p>
+        <div class="buttons">
+          <input type="submit" name="add" value="Add" />
+        </div>
+      </fieldset>
+    </form>
+    <form id="enablehideval" method="post" action="#">
+      ${jmacros.form_token_input()}
+      # if enabled:
+      ${_("Filtering for this field is currently enabled")}
+      <input type="submit" name="toggle" value="Disable" />
+      # else:
+      ${_("Filtering for this field is currently disabled")}
+      <input type="submit" name="toggle" value="Enable" />
+      # endif
+    </form>
+    <form id="listhideval" method="post" action="#">
+      ${jmacros.form_token_input()}
+      <table class="listing">
+        <thead>
+          <tr>
+            <th class="sel">&nbsp;</th>
+            <th>${_("Group")}</th>
+            <th>${_("Value")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          # for value in values:
+          <tr>
+            <td><input type="checkbox" name="sel" value="${value.group}#${value.value}" /></td>
+            <td>${value.group}</td>
+            <td>${value.value}</td>
+          </tr>
+          # endfor
+        </tbody>
+      </table>
+      <div class="buttons">
+        <input type="submit" name="remove" value="${_('Remove selected items')}"/>
+      </div>
+    </form>
+    # endblock adminpanel
   </body>
 </html>
