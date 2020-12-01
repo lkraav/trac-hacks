@@ -13,9 +13,10 @@ import time
 import re
 
 from trac.util.html import HTMLParser, Markup, escape
+from trac.util.text import unicode_unquote
+from trac.web.chrome import web_context
 from trac.wiki.api import parse_args
 from trac.wiki.formatter import HtmlFormatter, Formatter, format_to_html
-from trac.wiki.parser import WikiParser
 from trac.wiki.macros import WikiMacroBase
 
 
@@ -29,59 +30,11 @@ def format_to(env, context, wikidom, shorten=None):
     return WantedPagesHtmlFormatter(env, context, wikidom).generate(shorten)
 
 
-# Parse time is proportional to the number of regular expressions
-# in the wiki parser. We subclass the wiki parser so we can remove
-# all unwanted wiki markup to speed things up
-class WantedPagesWikiParser(WikiParser):
-    STARTBLOCK_TOKEN = WikiParser.STARTBLOCK_TOKEN
-    ENDBLOCK_TOKEN = WikiParser.ENDBLOCK_TOKEN
-    INLINE_TOKEN = WikiParser.INLINE_TOKEN
-    LINK_SCHEME = WikiParser.LINK_SCHEME
-    QUOTED_STRING = WikiParser.QUOTED_STRING
-    SHREF_TARGET_FIRST = WikiParser.SHREF_TARGET_FIRST
-    SHREF_TARGET_MIDDLE = WikiParser.SHREF_TARGET_MIDDLE
-    SHREF_TARGET_LAST = WikiParser.SHREF_TARGET_LAST
-    LHREF_RELATIVE_TARGET = WikiParser.LHREF_RELATIVE_TARGET
-    XML_NAME = WikiParser.XML_NAME
-    ENDBLOCK = WikiParser.ENDBLOCK
-    STARTBLOCK = WikiParser.STARTBLOCK
-
-    _pre_rules = [
-        r"(?P<inlinecode>!?%s(?P<inline>.*?)%s)" \
-        % (STARTBLOCK_TOKEN, ENDBLOCK_TOKEN),
-        r"(?P<inlinecode2>!?%s(?P<inline2>.*?)%s)" \
-        % (INLINE_TOKEN, INLINE_TOKEN),
-        ]
-
-    # Rules provided by IWikiSyntaxProviders will be inserted here
-
-    _post_rules = [
-        # <wiki:Trac bracket links>
-        r"(?P<shrefbr>!?<(?P<snsbr>%s):(?P<stgtbr>[^>]+)>)" % LINK_SCHEME,
-        # wiki:TracLinks or intertrac:wiki:TracLinks
-        r"(?P<shref>!?((?P<sns>%s):(?P<stgt>%s:(?:%s)|%s|%s(?:%s*%s)?)))" \
-        % (LINK_SCHEME, LINK_SCHEME, QUOTED_STRING, QUOTED_STRING,
-           SHREF_TARGET_FIRST, SHREF_TARGET_MIDDLE, SHREF_TARGET_LAST),
-        # [wiki:TracLinks with optional label] or [/relative label]
-        (r"(?P<lhref>!?\[(?:"
-         r"(?P<rel>%s)|" % LHREF_RELATIVE_TARGET + # ./... or /...
-         r"(?P<lns>%s):(?P<ltgt>%s:(?:%s)|%s|[^\]\s\%s]*))" % \
-         (LINK_SCHEME, LINK_SCHEME, QUOTED_STRING, QUOTED_STRING, u'\u200b') +
-         # wiki:TracLinks or wiki:"trac links" or intertrac:wiki:"trac links"
-         r"(?:[\s%s]+(?P<label>%s|[^\]]*))?\])" % \
-         (u'\u200b', QUOTED_STRING)), # trailing space, optional label
-        # [[macro]] call or [[WikiCreole link]]
-        (r"(?P<macrolink>!?\[\[(?:[^]]|][^]])+\]\])"),
-        ]
-
-
 # subclass formatter so we can ignore content without links
 class WantedPagesFormatter(Formatter):
     # override a few formatters to make formatting faster
     def __init__(self, env, context):
         super(WantedPagesFormatter, self).__init__(env, context)
-        # use our own wiki parser
-        self.wikiparser = WantedPagesWikiParser(self.env)
 
     def _inlinecode_formatter(self, match, fullmatch):
         return ''
@@ -143,7 +96,8 @@ class MissingLinksHTMLParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         # ignore all but links
-        if tag != 'a': return
+        if tag != 'a':
+            return
         _save = False
         _href = None
         for attr in attrs:
@@ -177,10 +131,9 @@ class WantedPagesMacro(WikiMacroBase):
         _missing_links = collections.OrderedDict()
 
         for _name, _text in self.get_wiki_pages(_ignored_referrers, _filtertype):
-            # set up context for relative links
-            formatter.resource.id = _name
+            ctxt = web_context(formatter.req, 'wiki', _name)
             # parse formatted wiki page for missing links
-            _ml_parser.feed(format_to(self.env, formatter.context, _text))
+            _ml_parser.feed(format_to(self.env, ctxt, _text))
             if _ml_parser.data:
                 for _page in _ml_parser.data:
                     if _page in _missing_links:
@@ -198,7 +151,7 @@ class WantedPagesMacro(WikiMacroBase):
         _missing_link_count = 0
         for _page in _missing_links:
             _data = _data + '||[["%s"]]' % \
-                        _page.partition('/wiki/')[2].replace('%20',' ')
+                        unicode_unquote(_page.partition('/wiki/')[2])
             if _show_referrers:
                 _first = True
                 for _name in _missing_links[_page]:
@@ -210,7 +163,6 @@ class WantedPagesMacro(WikiMacroBase):
                     _missing_link_count = _missing_link_count + 1
             _data = _data + "||\n"
         # reset context for relative links
-        formatter.resource.id = ''
         self.log.debug("Found %d missing pages in %s seconds'" % \
                        (_missing_link_count, (time.time() - _start_time)))
         return format_to_html(self.env, formatter.context, _data)

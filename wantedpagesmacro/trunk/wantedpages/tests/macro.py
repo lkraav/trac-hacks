@@ -152,6 +152,8 @@ IL [trac 1508]       !InterTrac
 == Complex paths ==
 WP this/is/a/valid/wiki/link
 
+== Anchor in heading ignore #AnchorInHeading
+
 == Ignore everything inside (nested) blocks:
 {{{
 <IfModule mod_fastcgi.c>
