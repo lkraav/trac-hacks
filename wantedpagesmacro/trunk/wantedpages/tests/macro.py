@@ -23,8 +23,8 @@ MACRO_TEST_CASE = u"""
 ------------------------------
 <p>
 </p><table class="wiki">
-<tr><td>Missing link
-</td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe" rel="nofollow">TimLowe</a>
+<tr><th>Missing link
+</th></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe" rel="nofollow">TimLowe</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/TimLowe#Bio" rel="nofollow">TimLowe#Bio</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/UpgradeEnvironment" rel="nofollow">UpgradeEnvironment</a>
 </td></tr><tr><td><a class="missing wiki" href="/wiki/ParentWiki/ChildWiki" rel="nofollow">ParentWiki/ChildWiki</a>
@@ -121,6 +121,7 @@ WP [[WikiCreole link style]]
 WP [[WikiCreole link style|WikiCreole style links]]
 WP [[NonExistingMacro]]                 interpreted as Creole link
 WP [[NonExistingMacro(MyMacroParam)]]   interpreted as Creole link
+WP [[https://google.com|Malformed]      not interpreted as link
 
 == External Pages, ignore all:
 IL [[trac:any_page_in_trac]] ignore external pages

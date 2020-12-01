@@ -14,14 +14,13 @@ import re
 
 from trac.util.html import HTMLParser, Markup, escape
 from trac.wiki.api import parse_args
-from trac.wiki.formatter import InlineHtmlFormatter, OneLinerFormatter, \
-        format_to_html
+from trac.wiki.formatter import HtmlFormatter, Formatter, format_to_html
 from trac.wiki.parser import WikiParser
 from trac.wiki.macros import WikiMacroBase
 
 
 # copied from trac/wiki/fomatter.py to use our HTML formatter
-def format_to_oneliner(env, context, wikidom, shorten=None):
+def format_to(env, context, wikidom, shorten=None):
     if not wikidom:
         return Markup()
     if shorten is None:
@@ -74,14 +73,13 @@ class WantedPagesWikiParser(WikiParser):
         # [[macro]] call or [[WikiCreole link]]
         (r"(?P<macrolink>!?\[\[(?:[^]]|][^]])+\]\])"),
         ]
-    pass
 
 
 # subclass formatter so we can ignore content without links
-class WantedPagesFormatter(OneLinerFormatter):
+class WantedPagesFormatter(Formatter):
     # override a few formatters to make formatting faster
     def __init__(self, env, context):
-        OneLinerFormatter.__init__(self, env, context)
+        super(WantedPagesFormatter, self).__init__(env, context)
         # use our own wiki parser
         self.wikiparser = WantedPagesWikiParser(self.env)
 
@@ -89,6 +87,9 @@ class WantedPagesFormatter(OneLinerFormatter):
         return ''
 
     def _inlinecode2_formatter(self, match, fullmatch):
+        return ''
+
+    def _macro_formatter(self, match, fullmatch, macro):
         return ''
 
     def handle_match(self, fullmatch):
@@ -114,9 +115,9 @@ class WantedPagesFormatter(OneLinerFormatter):
                     return internal_handler(match, fullmatch)
 
 
-class WantedPagesHtmlFormatter(InlineHtmlFormatter):
+class WantedPagesHtmlFormatter(HtmlFormatter):
     # override to use our own HTML formatter
-    def generate(self, shorten=False):
+    def generate(self, escape_newlines=False):
         """Generate HTML inline elements.
 
         If `shorten` is set, the generation will stop once enough characters
@@ -126,17 +127,20 @@ class WantedPagesHtmlFormatter(InlineHtmlFormatter):
         out = io.StringIO()
         # use our own formatter
         WantedPagesFormatter(self.env, self.context).format(self.wikidom, out,
-                                                         shorten)
+                                                            escape_newlines)
         return Markup(out.getvalue())
 
 
 class MissingLinksHTMLParser(HTMLParser):
+
     def __init__(self):
         HTMLParser.__init__(self)
         self.data = list()
+
     def reset(self):
         HTMLParser.reset(self)
         self.data = list()
+
     def handle_starttag(self, tag, attrs):
         # ignore all but links
         if tag != 'a': return
@@ -169,22 +173,14 @@ class WantedPagesMacro(WikiMacroBase):
             _ignored_referrers = _kwargs.get('filter', None)
         # default option is 'exclusive' for backward compatibility
         _filtertype = _kwargs.get('filtertype', 'exclusive')
-        # get all wiki page names and their content
-        self.page_names, self.page_texts = \
-            self.get_wiki_pages(_ignored_referrers, _filtertype)
         _ml_parser = MissingLinksHTMLParser()
-        # OrderedDict is needed to run test cases, but was only added in Python 2.7
-        try:
-            _missing_links = collections.OrderedDict()
-        except:
-            _missing_links = dict()
+        _missing_links = collections.OrderedDict()
 
-        for _name, _text in zip(self.page_names, self.page_texts):
+        for _name, _text in self.get_wiki_pages(_ignored_referrers, _filtertype):
             # set up context for relative links
             formatter.resource.id = _name
             # parse formatted wiki page for missing links
-            _ml_parser.feed(format_to_oneliner(self.env, formatter.context,
-                                               _text))
+            _ml_parser.feed(format_to(self.env, formatter.context, _text))
             if _ml_parser.data:
                 for _page in _ml_parser.data:
                     if _page in _missing_links:
@@ -220,13 +216,11 @@ class WantedPagesMacro(WikiMacroBase):
         return format_to_html(self.env, formatter.context, _data)
 
     def get_wiki_pages(self, ignored_referrers=None, filter='exclusive'):
-        page_texts = [] # list of referrer link, wiki-able text tuples
-        page_names = [] # list of wikiPages seen
-
-        # query is ordered by latest version first
-        # so it's easy to extract the latest pages
         for name, text in self.env.db_query("""
-                SELECT name, text FROM wiki ORDER BY version DESC
+                SELECT w1.name, w1.text FROM wiki w1,
+                 (SELECT name, max(version) as max_version
+                  FROM wiki GROUP BY name) w2
+                WHERE w1.version = w2.max_version AND w1.name = w2.name
                 """):
             if filter == 'exclusive':
                 if ignored_referrers and re.search(ignored_referrers, name):
@@ -238,7 +232,4 @@ class WantedPagesMacro(WikiMacroBase):
                     pass  # include matching names
                 else:
                     continue  # skip non-matching names
-            if name not in page_names:
-                page_names.append(name)
-                page_texts.append(text)
-        return page_names, page_texts
+            yield name, text
