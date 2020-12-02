@@ -22,7 +22,7 @@ from trac.core import Component, implements
 from trac.util.datefmt import format_date, to_utimestamp
 from trac.util.text import shorten_line, to_unicode
 from trac.util.translation import cleandoc_
-from trac.util.html import Markup, tag
+from trac.util.html import Markup, html as tag
 from trac.web.href import Href
 from trac.web.chrome import add_stylesheet, ITemplateProvider
 from trac.wiki.api import parse_args, IWikiMacroProvider, WikiSystem
