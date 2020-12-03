@@ -3,12 +3,14 @@
 # Copyright (C) 2012 Thomas Doering
 #
 
-from genshi.filters.transform import Transformer
 from pkg_resources import resource_filename
+
+from genshi.filters.transform import Transformer
 from trac.core import *
 from trac.util.html import html as tag
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data, \
+                            add_stylesheet
 
 
 class GroupTicketFields(Component):
@@ -33,18 +35,22 @@ class GroupTicketFields(Component):
 
             for option in self.config.options('group-ticket-fields'):
                 if option[0] == 'group_order':
-                    group_order = self.config.getlist('group-ticket-fields', 'group_order')
+                    group_order = self.config.getlist(
+                        'group-ticket-fields', 'group_order')
                 elif option[0].find('.') == -1:
-                    group = { 'name' : option[0], 'label': option[1] }
+                    group = {'name': option[0], 'label': option[1]}
 
                     if self.config.has_option('group-ticket-fields', '%s.fields' % option[0]):
-                        group['fields'] = self.config.getlist('group-ticket-fields', '%s.fields' % option[0])
+                        group['fields'] = self.config.getlist(
+                            'group-ticket-fields', '%s.fields' % option[0])
 
                     if self.config.has_option('group-ticket-fields', '%s.properties' % option[0]):
-                        group['properties'] = self.config.getlist('group-ticket-fields', '%s.properties' % option[0])
+                        group['properties'] = self.config.getlist(
+                            'group-ticket-fields', '%s.properties' % option[0])
 
                     if self.config.has_option('group-ticket-fields', '%s.columns' % option[0]):
-                        group['columns'] = self.config.getint('group-ticket-fields', '%s.columns' % option[0])
+                        group['columns'] = self.config.getint(
+                            'group-ticket-fields', '%s.columns' % option[0])
 
                     groups.append(group)
 
@@ -59,8 +65,8 @@ class GroupTicketFields(Component):
 
             filtered_fields.extend(append_fields)
 
-            groups_list = { 'field_groups': groups }
-            group_order = { 'field_groups_order': group_order }
+            groups_list = {'field_groups': groups}
+            group_order = {'field_groups_order': group_order}
             data['fields'] = filtered_fields
             data['field_groups'] = groups
 

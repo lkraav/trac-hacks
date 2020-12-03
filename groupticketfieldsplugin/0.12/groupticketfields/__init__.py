@@ -5,4 +5,5 @@
 
 from ticket import *
 
-__version__ = __import__('pkg_resources').get_distribution('GroupTicketFields').version
+__version__ = __import__('pkg_resources').get_distribution(
+    'GroupTicketFields').version
