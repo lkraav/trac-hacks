@@ -12,7 +12,7 @@ from setuptools import setup
 
 setup(
     name='TracWantedPages',
-    version='0.7.0',
+    version='0.6.0',
     author='Justin Francis',
     author_email='jfrancis@justinfrancis.org',
     maintainer='Geert Linders',

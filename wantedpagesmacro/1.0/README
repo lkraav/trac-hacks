@@ -1,0 +1,63 @@
+== Install
+You must have setuptools installed.
+
+Run the following commands in the source directory:
+{{{#!sh
+  python setup.py bdist_egg
+  cp dist/*.egg /path/to/projenv/plugins
+}}}
+
+== Syntax
+[[WantedPages]] or [[WantedPages(show_referrers)]]
+
+Will yield a list of wanted wiki pages or a list of wanted wiki pages with
+a list of pages where the wanted wiki page link was found, respectively.
+
+More options:
+- ignored_referrers: regex that identifies referring pages
+- filter: alias for ignored_referrers
+- filtertype: inclusive|exclusive, flags whether filter option is inclusive
+  or exclusive, default is exclusive (for backward compatibility)
+
+Examples:
+- ignore all pages that contain 'Trac' in their name:
+  [[WantedPages(show_referrers,ignored_referrers=Trac)]]
+  [[WantedPages(show_referrers,ignored_referrers=Trac,filtertype=exclusive)]]
+  [[WantedPages(show_referrers,filter=Trac)]]
+  [[WantedPages(show_referrers,filter=Trac,filtertype=exclusive)]]
+- only show pages that contain 'Trac' in their name:
+  [[WantedPages(show_referrers,ignored_referrers=Trac,filtertype=inclusive)]]
+  [[WantedPages(show_referrers,filter=Trac,filtertype=inclusive)]]
+
+== Running the Tests ==
+
+To run the tests, you must have trac installed and its python files
+must be accessible to python.
+
+To run the tests, run `python tests.py` in the wanted_pages subdirectory of the
+root of the WantedPages source distribution. The tests parse this file and then
+checks the positive and negative test cases listed below.
+
+== 0.5.1 changelog
+ * added 'filter' as an alias for option 'ignored_referrers'
+ * added option 'filtertype' to affect how 'filter' is applied
+
+== 0.5 changelog
+ * major changes: now using the same formatter of Trac
+   this will fix most issues where pages were missing pages were not found
+   or existing pages were labelled as missing pages
+
+== 0.4 Changelog
+ * The Component is now enabled as `wantedpages.* = enabled`
+
+== 0.3 Changelog
+ * Added support to show the referrers for each wanted page
+
+== 0.2 Changelog
+
+ * Improved link detection, fixing many bugs not even reported
+ * Fixed [wiki:link] not being picked up
+ * No longer need spaces around a wiki link for it to show up
+ * Fixed {{{ CodeSegments }}} being picked up
+
+EndOfFile
