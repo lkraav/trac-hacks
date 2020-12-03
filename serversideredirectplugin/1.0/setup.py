@@ -17,7 +17,7 @@ setup(
     author='Martin Scharrer',
     author_email='martin@scharrer-online.de',
     description="Server side redirect plugin for Trac.",
-    url='https://www.trac-hacks.org/wiki/ServerSideRedirectPlugin',
+    url='https://trac-hacks.org/wiki/ServerSideRedirectPlugin',
     license='GPLv3 or 3-Clause BSD',
     zip_safe=False,
     keywords='trac plugin server redirect',
