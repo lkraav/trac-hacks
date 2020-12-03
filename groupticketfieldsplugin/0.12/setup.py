@@ -28,5 +28,9 @@ setup(
     description='Group Ticket Fields',
     long_description='Group Ticket Fields',
     keywords='Group Ticket Fields',
-    entry_points={'trac.plugins': ['groupticketfields = groupticketfields']}
+    entry_points={
+        'trac.plugins': [
+            'groupticketfields = groupticketfields.ticket'
+        ]
+    }
 )

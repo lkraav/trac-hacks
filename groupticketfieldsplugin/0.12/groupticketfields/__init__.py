@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright (C) 2012 Thomas Doering
-#
 
-from ticket import *
+import pkg_resources
 
-__version__ = __import__('pkg_resources').get_distribution(
-    'GroupTicketFields').version
+pkg_resources.require('Trac >= 1.0')
