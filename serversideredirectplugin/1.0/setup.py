@@ -12,7 +12,7 @@ from setuptools import setup
 
 setup(
     name='TracServerSideRedirectPlugin',
-    version='1.0.1',
+    version='1.0.2',
     packages=['tracserversideredirect'],
     author='Martin Scharrer',
     author_email='martin@scharrer-online.de',
@@ -24,8 +24,8 @@ setup(
     classifiers=['Framework :: Trac'],
     dependency_links=[
         'https://trac-hacks.org/svn/extracturlplugin/0.11'
-        '#egg=TracExtractUrl-0.3'],
-    install_requires=['TracExtractUrl>=0.3', 'Trac'],
+        '#egg=TracExtractUrl-0.5'],
+    install_requires=['TracExtractUrl>=0.5', 'Trac'],
     entry_points={'trac.plugins': [
         'tracserversideredirect.plugin = tracserversideredirect.plugin']},
     test_suite='tracserversideredirect.tests.suite'
