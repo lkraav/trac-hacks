@@ -1,5 +1,6 @@
-from trac.core import *
 import re
+
+from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
 import trac.ticket.notification as note
 
@@ -8,26 +9,30 @@ class NeverNotifyUpdaterSetupParticipant(Component):
     """ This component monkey patches note.TicketNotifyEmail.get_recipients so that trac will never
     notify the person who updated the ticket about their own update"""
     implements(IEnvironmentSetupParticipant)
-    def __init__(self):
-        #only if we should be enabled do we monkey patch
 
+    def __init__(self):
+        # only if we should be enabled do we monkey patch
 
         old_get_recipients = note.TicketNotifyEmail.get_recipients
 
         def new_get_recipients(self, tktid):
-            locally_enabled = self.env.compmgr.enabled.get(NeverNotifyUpdaterSetupParticipant)
+            locally_enabled = self.env.compmgr.enabled.get(
+                NeverNotifyUpdaterSetupParticipant)
             self.env.log.debug('NeverNotifyUpdaterPlugin: getting recipients for %s,'
                                ' locally enabled:%s' % (tktid, locally_enabled))
-            (torecipients, ccrecipients) = old_get_recipients(self,tktid)
+            (torecipients, ccrecipients) = old_get_recipients(self, tktid)
             if not locally_enabled:
-                self.env.log.debug('NeverNotifyUpdaterPlugin: disabled, returning original results')
+                self.env.log.debug(
+                    'NeverNotifyUpdaterPlugin: disabled, returning original results')
                 return (torecipients, ccrecipients)
 
             self.env.log.debug('NeverNotifyUpdaterPlugin: START tkt:%s, tos , ccs = %s, %s' %
                                (tktid, torecipients, ccrecipients))
-            defaultDomain = self.env.config.get("notification", "smtp_default_domain")
+            defaultDomain = self.env.config.get(
+                "notification", "smtp_default_domain")
             domain = ''
-            if defaultDomain: domain = '@'+defaultDomain
+            if defaultDomain:
+                domain = '@'+defaultDomain
             db = self.env.get_read_db()
             cursor = db.cursor()
             # Suppress the updater from the recipients
@@ -35,22 +40,26 @@ class NeverNotifyUpdaterSetupParticipant(Component):
             up_em = None
             cursor.execute("SELECT author FROM ticket_change WHERE ticket=%s "
                            "ORDER BY time DESC LIMIT 1", (tktid,))
-            for updater, in cursor: break
+            for updater, in cursor:
+                break
             else:
                 cursor.execute("SELECT reporter FROM ticket WHERE id=%s",
                                (tktid,))
-                for updater, in cursor: break
+                for updater, in cursor:
+                    break
 
-            cursor.execute("SELECT value FROM session_attribute WHERE name='email' and sid=%s;",(updater,))
-            for up_em, in cursor: break
+            cursor.execute(
+                "SELECT value FROM session_attribute WHERE name='email' and sid=%s;", (updater,))
+            for up_em, in cursor:
+                break
 
             def finder(r):
                 if not r:
                     return None
-                self.env.log.debug('NeverNotifyUpdaterPlugin: testing recipient %s' \
-                                     ' to see if they are the updater %s'\
-                                     % ([r, r+domain], [updater, up_em, updater+domain]))
-                regexp = "<\s*%s(%s)?\s*>" % (r, domain);
+                self.env.log.debug('NeverNotifyUpdaterPlugin: testing recipient %s'
+                                   ' to see if they are the updater %s'
+                                   % ([r, r+domain], [updater, up_em, updater+domain]))
+                regexp = "<\s*%s(%s)?\s*>" % (r, domain)
                 rtn = (updater == r
                        or updater == r+domain
                        or updater+domain == r
@@ -62,7 +71,8 @@ class NeverNotifyUpdaterSetupParticipant(Component):
                        or re.findall(regexp, updater)
                        or re.findall(regexp, updater+domain))
                 if rtn:
-                    self.env.log.debug('NeverNotifyUpdaterPlugin: blocking recipient %s' % r)
+                    self.env.log.debug(
+                        'NeverNotifyUpdaterPlugin: blocking recipient %s' % r)
                     return rtn
 
             torecipients = [r for r in torecipients if not finder(r)]
@@ -70,7 +80,6 @@ class NeverNotifyUpdaterSetupParticipant(Component):
             self.env.log.debug('NeverNotifyUpdaterPlugin: DONE tos , ccs = %s, %s' %
                                (torecipients, ccrecipients))
             return (torecipients, ccrecipients)
-
 
         if self.compmgr.enabled[self.__class__]:
             note.TicketNotifyEmail.get_recipients = new_get_recipients

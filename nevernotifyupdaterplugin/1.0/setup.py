@@ -1,10 +1,8 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
-PACKAGE = 'TracNeverNotifyUpdater'
-
-setup(name=PACKAGE,
+setup(name='TracNeverNotifyUpdater',
       version='1.0',
-      packages=[PACKAGE],
+      packages=find_packages(exclude=['*.tests']),
       url='https://www.trac-hacks.org/wiki/NeverNotifyUpdaterPlugin',
       license='http://www.opensource.org/licenses/mit-license.php',
       author='Russ Tyndall at Acceleration.net',
@@ -13,6 +11,10 @@ setup(name=PACKAGE,
       Never send emails to the person who made the change.
       Presumably they already know they made that change.
       """,
-      entry_points={'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE)},
+      entry_points={
+          'trac.plugins': [
+              'tracnevernotifyupdater=tracnevernotifyupdater.api'
+          ]
+      },
       install_requires=['Trac'],
-)
+      )
