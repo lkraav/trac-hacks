@@ -1,6 +1,6 @@
 from setuptools import setup
 
-PACKAGE = 'nevernotifyupdaterplugin'
+PACKAGE = 'TracNeverNotifyUpdater'
 
 setup(name=PACKAGE,
       version='1.0',
