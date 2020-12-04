@@ -9,8 +9,8 @@
 
 from setuptools import setup
 
-setup(name='NavAdd',
-      version='0.4',
+setup(name='TracNavAdd',
+      version='0.5',
       packages=['navadd'],
       author='Michael Renzmann',
       author_email='mrenzmann@otaku42.de',
