@@ -11,9 +11,9 @@ import graphviz
 from setuptools import setup, find_packages
 
 setup (
-    name = 'graphviz',
+    name = 'TracGraphviz',
     version = graphviz.__version__,
-    install_requires='Trac >=1.0dev',
+    install_requires='Trac',
     packages = find_packages(),
     package_data = { 'graphviz' : ['examples/*',],
     },
@@ -21,7 +21,7 @@ setup (
     author = "Peter Kropf",
     author_email = "pkropf@gmail.com",
     keywords = "trac graphviz",
-    url = "http://trac-hacks.org/wiki/GraphvizPlugin",
+    url = "https://trac-hacks.org/wiki/GraphvizPlugin",
     description = "Graphviz plugin for Trac 1.0",
     long_description = """
     The graphviz wiki processor is a plugin for Trac that allows the
