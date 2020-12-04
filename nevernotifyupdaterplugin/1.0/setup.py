@@ -13,7 +13,7 @@ setup(name='TracNeverNotifyUpdater',
       """,
       entry_points={
           'trac.plugins': [
-              'tracnevernotifyupdater=tracnevernotifyupdater.api'
+              'nevernotifyupdater=nevernotifyupdater.api'
           ]
       },
       install_requires=['Trac'],
