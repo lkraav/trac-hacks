@@ -13,8 +13,8 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='BlackMagicTicketTweaks',
-    version='0.12.3',
+    name='TracBlackMagicTicketTweaks',
+    version='0.12.4',
     author='Stephen Hansen',
     maintainer='Rowan Wookey',
     maintainer_email='support@obsidianproject.co.uk',
