@@ -14,6 +14,37 @@ from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 
 
+class BackLinksListMacro(WikiMacroBase):
+    """
+    Inserts a list of all wiki pages with links to the page where this
+    macro is used with a cleaner look.
+
+    Accepts a page name as a parameter: if provided, pages that link to the
+    provided page name are listed instead.
+    """
+
+    def expand_macro(self, formatter, name, args):
+
+        caller_page = WikiPage(self.env, formatter.context.resource).name
+        backlinks_page = args or caller_page
+
+        backlinked_pages = \
+            _get_backlinked_pages(self.env, caller_page, backlinks_page)
+
+        if backlinked_pages:
+            last_page = backlinked_pages.pop()
+            buf = StringIO()
+            for page in backlinked_pages:
+                buf.write('<a href="%s">' % formatter.req.href.wiki(page))
+                buf.write(page)
+                buf.write('</a>, ')
+            buf.write('<a href="%s">' % formatter.req.href.wiki(last_page))
+            buf.write(last_page)
+            buf.write('</a>')
+
+        return buf.getvalue()
+
+
 class BackLinksMacro(WikiMacroBase):
     """
     Inserts a list of all wiki pages with links to the page where this
