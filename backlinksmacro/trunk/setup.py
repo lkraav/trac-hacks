@@ -11,7 +11,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = 'BackLinksMacro',
+    name = 'TracBackLinksMacro',
     version = '8.0',
     author = "Trapanator",
     author_email = "trap@trapanator.com",
