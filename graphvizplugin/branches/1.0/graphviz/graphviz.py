@@ -28,9 +28,6 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__id__        = '$Id$'
-__version__ = '1.0.0.8'
-
 import inspect
 import locale
 import os
@@ -181,7 +178,6 @@ class Graphviz(Component):
     sanitizer = None
 
     def __init__(self):
-        self.log.info('version: %s - id: %s', __version__, str(__id__))
         wiki = WikiSystem(self.env)
         if not wiki.render_unsafe_content:
             self.sanitizer = TracHTMLSanitizer(wiki.safe_schemes)

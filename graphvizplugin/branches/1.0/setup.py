@@ -6,18 +6,16 @@
 
 """Python egg setup file for the graphviz trac wiki processor."""
 
-import graphviz
-
 from setuptools import setup, find_packages
 
 setup (
     name = 'TracGraphviz',
-    version = graphviz.__version__,
+    version = '1.0.0.9',
     install_requires='Trac',
     packages = find_packages(),
     package_data = { 'graphviz' : ['examples/*',],
     },
-    entry_points={'trac.plugins': 'graphviz = graphviz'},
+    entry_points={'trac.plugins': 'graphviz = graphviz.graphviz'},
     author = "Peter Kropf",
     author_email = "pkropf@gmail.com",
     keywords = "trac graphviz",

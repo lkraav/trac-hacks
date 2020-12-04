@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 
 setup (
     name = 'TracGraphViz',
-    version = '1.0.0.9',
+    version = '1.2.0.0',
     install_requires='Trac',
     packages = find_packages(),
     package_data = { 'graphviz' : ['examples/*',],
@@ -20,7 +20,7 @@ setup (
     author_email = "pkropf@gmail.com",
     keywords = "trac graphviz",
     url = "https://trac-hacks.org/wiki/GraphvizPlugin",
-    description = "Graphviz plugin for Trac 1.0",
+    description = "Graphviz plugin for Trac 1.2",
     long_description = """
     The graphviz wiki processor is a plugin for Trac that allows the
 dynamic generation of diagrams by the various graphviz programs. The
