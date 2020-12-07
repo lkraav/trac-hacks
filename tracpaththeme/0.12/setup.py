@@ -15,7 +15,7 @@ if __name__ == '__main__':
         name = 'TracpathTheme',
         version = '1.0.1',
         description = '5 themes for Trac and ThemeEnginePlugin based on tracpath.com',
-        url = 'http://trac-hacks.org/wiki/TracpathTheme',
+        url = 'https://trac-hacks.org/wiki/TracpathTheme',
         keywords = 'trac plugin theme',
         classifiers = ['Framework :: Trac'],
 

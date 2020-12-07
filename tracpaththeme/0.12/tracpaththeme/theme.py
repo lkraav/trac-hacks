@@ -80,7 +80,7 @@ class TracpathTheme(Component):
             raise TracError('Internal Error')
         color = name[len('tracpath_'):]
         return {
-            'description': '5 themes based on http://tracpath.com/.',
+            'description': '5 themes based on https://tracpath.com/.',
             'screenshot': 'htdocs/screenshot_%s.png' % color,
         }
 
