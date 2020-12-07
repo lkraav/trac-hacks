@@ -50,14 +50,13 @@ class TracpathTheme(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if template:
-            theme = self._get_tracpath_theme()
-            if theme:
-                self._add_jquery_ui(req)
-                for path in theme['stylesheets']:
-                    add_stylesheet(req, path)
-                add_script(req, 'tracpaththeme/base.js')
-                req.chrome['theme'] = 'tracpath_theme.html'
+        theme = self._get_tracpath_theme()
+        if theme:
+            self._add_jquery_ui(req)
+            for path in theme['stylesheets']:
+                add_stylesheet(req, path)
+            add_script(req, 'tracpaththeme/base.js')
+            req.chrome['theme'] = 'tracpath_theme.html'
         return template, data, content_type
 
     def get_htdocs_dirs(self):
