@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     setup(
         name = 'TracpathTheme',
-        version = '1.0.1',
+        version = '1.0.2',
         description = '5 themes for Trac and ThemeEnginePlugin based on tracpath.com',
         url = 'https://trac-hacks.org/wiki/TracpathTheme',
         keywords = 'trac plugin theme',
