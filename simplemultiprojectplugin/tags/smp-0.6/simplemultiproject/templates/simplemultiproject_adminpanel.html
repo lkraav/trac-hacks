@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include href="admin.html" />
+    <head>
+        <title>Manage Projects</title>
+        <script type="text/javascript">/*<![CDATA[*/
+          jQuery(document).ready(function($) {
+            function updateDueDate() {
+              $("#projectcloseddate").enable($("#closed").checked());
+            }
+            $("#closed").click(updateDueDate);
+            updateDueDate();
+            $("#name").get(0).focus()
+          });
+        /*]]>*/</script>
+    </head>
+    <body>
+        <h2>Manage Projects</h2>
+        <py:choose test="view">
+            <form py:when="'detail'" class="mod" id="simplemultiproject" action="" method="post">
+                <fieldset>
+                    <legend>Modify Project</legend>
+                    <div class="field">
+                        <label>Name:<br />
+                            <input type="text" name="name" value="${project.name}"/>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>Summary:<br />
+                            <input type="text" name="summary" value="${project.summary}"/>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>Description:<br />
+                            <textarea cols="60" rows="10" class="wikitext trac-resizable"  name="description">${project.description}</textarea>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>Restricted To Users:<br />
+                            <textarea cols="60" rows="2" class="wikitext trac-resizable"  name="restrict">${project.restrict}</textarea>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>
+                          <input type="checkbox" id="closed" name="closed" checked="${project.closed or None}" />
+                          Closed:<br />
+                        </label>
+                        <label>
+                          <input type="text" id="projectcloseddate" name="time" size="${len(datetime_hint)}"
+                                 value="${format_datetime(project.closed)}"
+                                 title="${_('Format: %(datehint)s', datehint=datetime_hint)}" />
+                          <em i18n:msg="datehint">Format: ${datetime_hint}</em>
+                        </label>
+                    </div>
+                    <input type="hidden" name="id" value="${project.id}"/>
+                    <div class="buttons">
+                        <input type="submit" name="modify" value="Modify" />
+                        <input type="submit" name="cancel" value="Cancel" />
+                    </div>
+                </fieldset>
+            </form>
+            <py:otherwise>
+                <form py:if="'PROJECT_ADMIN' in perm" class="addnew" id="simplemultiproject" action="" method="post">
+                    <fieldset>
+                        <legend>Add Project</legend>
+                        <div class="field">
+                            <label>Name:<br />
+                                <input type="text" name="name" value=""/>
+                            </label>
+                        </div>
+                        <div class="field">
+                            <label>Summary:<br />
+                                <input type="text" name="summary" value=""/>
+                            </label>
+                        </div>
+                        <div class="field">
+                            <label>Description:<br />
+                                <textarea cols="48" rows="5" class="wikitext trac-resizable"  name="description"></textarea>
+                            </label>
+                        </div>
+                        <div class="field">
+                            <label>Restricted To Users:<br />
+                                <textarea cols="48" rows="2" class="wikitext trac-resizable"  name="restrict"></textarea>
+                            </label>
+                        </div>
+                        <div class="buttons">
+                            <input type="submit" name="add" value="Add" />
+                        </div>
+                    </fieldset>
+                </form>
+                <py:choose>
+                    <form py:when="list" id="project_table" method="post" action="">
+                        <table class="listing" id="millist">
+                            <thead>
+                                <tr>
+                                    <th class="sel">&nbsp;</th>
+                                    <th>Name</th>
+                                    <th>Summary</th>
+                                    <th>Restricted To Users</th>
+                                    <th>Closed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr py:for="project in projects">
+                                    <td><input py:if="'PROJECT_ADMIN' in perm" type="checkbox" name="sel" value="$project.id" /></td>
+                                    <py:choose>
+                                        <td py:when="'PROJECT_ADMIN' in perm">
+                                            <a href="${href.admin('projects','simplemultiproject')}/${project.id}" method="post">${project.name}</a>
+                                        </td>
+                                        <td py:otherwise="">
+                                            ${project.name}
+                                        </td>
+                                    </py:choose>
+                                    <td>${project.summary}</td>
+                                    <td>${project.restrict}</td>
+                                    <td>${project.closed or None}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div py:if="'PROJECT_ADMIN' in perm" class="buttons">
+                            <input type="submit" name="remove" value="Remove selected items"/>
+                        </div>
+                    </form>
+                </py:choose>
+            </py:otherwise>
+        </py:choose>
+
+    </body>
+</html>
