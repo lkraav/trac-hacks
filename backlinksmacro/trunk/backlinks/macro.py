@@ -31,9 +31,9 @@ class BackLinksListMacro(WikiMacroBase):
         backlinked_pages = \
             _get_backlinked_pages(self.env, caller_page, backlinks_page)
 
+        buf = StringIO()
         if backlinked_pages:
             last_page = backlinked_pages.pop()
-            buf = StringIO()
             for page in backlinked_pages:
                 buf.write('<a href="%s">' % formatter.req.href.wiki(page))
                 buf.write(page)

@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'TracBackLinksMacro',
-    version = '8.0',
+    version = '8.1',
     author = "Trapanator",
     author_email = "trap@trapanator.com",
     description = """A wiki macro to show links to other wiki pages which link \
