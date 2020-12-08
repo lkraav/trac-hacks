@@ -1,0 +1,128 @@
+{# Copyright (C) 2013 OpenGroove,Inc.
+   All rights reserved.
+
+   This software is licensed as described in the file COPYING, which
+   you should have received as part of this distribution.
+#}
+<!DOCTYPE html>
+<html lang="${trac_lang}">
+  <head>
+    <!-- # block head (placeholder in theme.html) -->
+    # block head
+    # endblock head
+    <!-- # endblock head (placeholder in theme.html) -->
+  </head>
+
+  <body>
+    # block body
+    <!-- # block body (content inherited from theme.html) -->
+    <!--   # include 'site_header.html' (theme.html) -->
+    #   include 'site_header.html' ignore missing
+    <!--   end of site_header.html -->
+
+    #   macro navigation(category)
+    <div id="${category}" class="nav">
+      #   if chrome.nav[category]:
+      <ul>{%
+        for item in chrome.nav[category]
+        %}<li ${{'class': {
+              'first': loop.first, 'last': loop.last, 'active': item.active
+              }}|htmlattr}>${item.label}</li>{%
+        endfor
+      %}</ul>
+      #   endif
+    </div>
+    #   endmacro
+
+    <div id="banner-container">
+      ${navigation('metanav')}
+      <form id="search" action="${href.search()}" method="get">
+        # if trac_error_rendering is undefined and 'SEARCH_VIEW' in perm:
+        <div>
+          <label for="proj-search">${_("Search:")}</label>
+          <input type="text" id="proj-search" name="q" size="18"
+                 ${accesskey("f")} value="" />
+          <input type="submit" value="${_('Search')}" />
+        </div>
+        # endif
+      </form>
+      <div id="banner">
+        <div id="banner-decoration">
+          <div id="header">
+            # if chrome.logo.src:
+            <a id="logo"
+               href="${chrome.logo.link or
+                     href.wiki('TracIni') + '#header_logo-section'}">
+              <img ${{
+                   'src': chrome.logo.src,
+                   'alt': chrome.logo.alt,
+                   'height': chrome.logo.height,
+                   'width': chrome.logo.width,
+                   }|htmlattr} /></a>
+            # else:
+            <h1><a href="${chrome.logo.link}">${project.name}</a></h1>
+            # endif
+          </div>
+          ${navigation('mainnav')}
+        </div>
+      </div>
+    </div>
+
+    <div id="main"
+         ${{'class': {
+         'uisymbols': req.session.get('ui.use_symbols'),
+         'uinohelp': req.session.get('ui.hide_help'),
+         }}|htmlattr}>
+      # if resourcepath_template:
+      #   include resourcepath_template ignore missing
+      # endif
+      <div id="ctxtnav" class="nav">
+        # if chrome.ctxtnav:
+        <ul>
+          # for elm in chrome.ctxtnav:
+          <li ${{'class': {'first': loop.first, 'last': loop.last}}|htmlattr}>${elm}</li>
+          # endfor
+        </ul>
+        # endif
+        <hr />
+      </div>
+      ${jmacros.warnings(chrome.warnings)}
+      ${jmacros.notices(chrome.notices)}
+      <!-- # block content (placeholder in theme.html) -->
+      # block content
+      # endblock content
+      <!-- # endblock content (placeholder in theme.html) -->
+    </div>
+
+    <div id="footer"><hr/>
+      <a id="tracpowered" href="https://trac.edgewall.org/"
+         ><img src="${chrome.htdocs_location}trac_logo_mini.png" height="30"
+               width="107" alt="${_('Trac Powered')}"/></a>
+      <p class="left">
+        # set trac_version
+        <a href="${href.about()}"><strong>Trac ${trac.version}</strong></a>
+        <br />
+        # endset
+        # set eo
+        <a href="http://www.edgewall.org/">Edgewall Software</a>
+        # endset
+        # trans trac_version, eo
+
+        Powered by ${trac_version}
+        By ${eo}.
+
+        # endtrans
+      </p>
+      <p class="left rightmost">
+        Theme based on <a href="https://tracpath.com/"><strong>tracpath</strong></a><br/>
+        By <a href="https://www.opengroove.com/">OpenGroove,Inc.</a>
+      </p>
+      <p class="right">${chrome.footer}</p>
+    </div>
+    <!--   # include 'site_footer.html' (theme.html) -->
+    # include 'site_footer.html' ignore missing
+    <!--   end of site_footer.html -->
+    <!-- # endblock body (content inherited from theme.html) -->
+    # endblock body
+  </body>
+</html>

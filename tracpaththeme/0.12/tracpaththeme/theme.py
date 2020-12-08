@@ -9,7 +9,7 @@
 
 from pkg_resources import parse_version, resource_filename
 
-from trac import __version__ as trac_version
+from trac import __version__
 from trac.core import Component, TracError, implements
 from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, ITemplateProvider, add_script, \
@@ -24,7 +24,16 @@ except ImportError:
 __all__ = ['TracpathTheme']
 
 
-if parse_version(trac_version) < parse_version('1.0'):
+_parsed_version = parse_version(__version__)
+
+if _parsed_version >= parse_version('1.4'):
+    _use_jinja2 = True
+elif _parsed_version >= parse_version('1.3'):
+    _use_jinja2 = hasattr(Chrome, 'jenv')
+else:
+    _use_jinja2 = False
+
+if _parsed_version < parse_version('1.0'):
     _stylesheets = ('tracpaththeme/base.css',
                     'tracpaththeme/color/%s/base.css')
 else:
@@ -43,6 +52,10 @@ class TracpathTheme(Component):
 
     css = False
     htdocs = True
+
+    _templates_dir = resource_filename(__name__,
+                                       'templates/jinja2' if _use_jinja2 else
+                                       'templates/genshi')
 
     _tracpath_theme = None
 
@@ -63,7 +76,7 @@ class TracpathTheme(Component):
         return [('tracpaththeme', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
-        return [resource_filename(__name__, 'templates')]
+        return [self._templates_dir]
 
     def get_theme_names(self):
         yield 'tracpath_blue'

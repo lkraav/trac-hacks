@@ -28,7 +28,8 @@ if __name__ == '__main__':
         packages = ['tracpaththeme'],
         package_data = {
             'tracpaththeme': [
-                'templates/*.html',
+                'templates/genshi/*.html',
+                'templates/jinja2/*.html',
                 'htdocs/*.js',
                 'htdocs/*.css',
                 'htdocs/*.png',

@@ -172,109 +172,9 @@ span.system-message {
  color: #fff;
 }
 
-.narrow-width {
- width: 320px;
- margin: 0 auto;
-}
 .recommend-upgrade-browser {
  clear: both;
 }
-.narrow {
-    width: 320px;
-    margin: 160px auto 0;
-    padding: 8px 20px;
-    border-width: 1px;
-    border-color: #ddd #777 #777 #ddd;
-    border-style: solid;
-    background-color: #fff;
-}
-.narrow div.field {
-    margin: 1em 0px;
-    font-weight: bold;
-}
-.narrow input[type=text], .narrow input[type=password] {
-    font-size: 150%;
-    width: 290px;
-}
-.narrow input[type=submit] {
-    font-size: 120%;
-    vertical-align: bottom;
-}
-.narrow span.link {
-    display: inline-block;
-    margin: 0 0 .5em 1em;
-}
-
-#content.auth .narrow {
- padding: 3px 16px;
- width: 320px;
- background: #4c91ce none;
- border-width: 1px;
- border-style: solid;
- border-color: #ececec #c0bfb5 #407aae #ececec;
- -moz-border-radius: 4px;
- -webkit-border-radius: 4px;
- border-radius: 4px;
-}
-#content.auth .narrow h1 {
- margin: 0;
- padding: 6px 6px 0;
- height: auto;
- font-size: 153.8%;
- line-height: 1.0;
- background: transparent none;
- color: #fff;
-}
-#content.auth .narrow p {
- margin: 0;
- padding: 0 6px 6px;
-}
-#content.auth .narrow form {
- margin: 0;
- padding: 0;
- font-size: 100%;
- background: transparent none;
- color: #fff;
-}
-#content.auth .narrow input[type=submit] {
- background: transparent url(login-button.png) 50% 0 repeat-x;
- border-width: 1px;
- border-style: solid;
- border-color: #bbb #bbb #aaa #bbb;
- -moz-border-radius: 3px;
- -webkit-border-radius: 3px;
- border-radius: 3px;
- color: #444;
- font-size: 100%;
-}
-#content.auth .narrow input[type=submit]:hover {
- background: #f8f8f8 none;
- border-color: #aaa #aaa #888 #aaa;
- color: #222;
-}
-#content.auth .narrow input[type=submit][name=cancel] {
- background: #f3f3f3 none;
- border-color: #bbb;
- color: #555;
-}
-#content.auth .narrow input[type=submit][name=cancel]:hover {
- background: #e8e8e8;
- border-color: #555;
- color: #222;
-}
-#content.auth .narrow :link, #content.auth .narrow :visited { color: #fff }
-#content.auth .narrow :link:hover, #content.auth .narrow :visited:hover {
- color: #000;
-}
-#content.auth .narrow div.field { margin: 8px 0 }
-#content.auth #siteseal {
- margin: 32px auto 0;
- width: 352px;
-}
-#content.signup #siteseal { margin-top: 32px }
-#siteseal a { border-style: none; background: none }
-#siteseal a img { width: 100px; height: 50px }
-
 #banner-container {
  height: 85px;
 }
@@ -376,6 +276,9 @@ body .nav ul ul { font-size: 100% }
  background-repeat: no-repeat;
  border: 0;
  color: #eee;
+}
+#mainnav li :link, #mainnav li :visited,
+#mainnav li :link:hover, #mainnav li :visited:hover {
  padding: 0 10px 0 6px;
 }
 #mainnav ul ul {
