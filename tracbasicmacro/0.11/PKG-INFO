@@ -1,0 +1,46 @@
+Metadata-Version: 1.1
+Name: TracBasicMacros
+Version: 1.0.2
+Summary: Simple but useful Trac macros
+Home-page: https://opensvn.csie.org/traccgi/swlcu/wiki/En/Devel/TracBasicMacros
+Author: Olemis Lang
+Author-email: olemis+trac@gmail.com
+License: UNKNOWN
+Download-URL: http://pypi.python.org/packages/2.5/T/TracBasicMacros/TracBasicMacros-1.0.2-py2.5.egg
+Description: Simple but useful Trac macros
+        
+        Expand Trac capabilities by embed simple snippets in wiki pages using simple macros.
+        
+        Copyright 2009-2011 Olemis Lang <olemis at gmail.com>
+        Licensed under the Apache License
+        
+        
+        
+        What's new in version 1.0.0
+        ---------------------------
+        
+        - XXX
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Plugins
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Trac
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: Other Audience
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.5
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries
+Classifier: Topic :: Internet :: WWW/HTTP :: HTTP Servers
+Classifier: Topic :: Internet :: WWW/HTTP :: WSGI
+Classifier: Topic :: Software Development :: Bug Tracking
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires: trac
+Requires: trac
+Provides: tracbmacros (1.0.2)
+Obsoletes: tracbmacros (>=1.0.0, <1.0.2)

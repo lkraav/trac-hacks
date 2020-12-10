@@ -1,0 +1,60 @@
+
+= Simple but useful Trac macros =
+
+Expand Trac capabilities by embedding simple snippets in wiki pages using simple macros.
+
+== !ToDo ==
+
+Outstanding tasks are :
+
+[[TicketQuery(component=trac-basic-macros&priority=major, format=list, rows=id|summary)]]
+
+== Dependencies ==
+
+This plugin depends on the following components to be installed:
+
+  - None yet.
+
+== Installation ==
+
+This plugin has been tested with 
+[http://trac.edgewall.org/ Trac]  [http://trac.edgewall.org/wiki/0.11 0.11] . 
+
+The first step to make it work is to [wiki:TracPlugins install this plugin] 
+either for a particular environment or otherwise make it available to
+all the environments:
+
+{{{
+$ easy_install /path/to/unpacked/TracBasicMacros-x.y.z.zip
+}}}
+
+,, where ''x.y.z'' is the version of the plugin,,
+
+... or alternately ...
+
+{{{
+$ easy_install TracBasicMacros
+}}}
+
+In case of having internet connection and access to 
+[http://pypi.python.org/pypi PyPI] or a simlar repository, both these 
+methods '''should''' automatically retrieve the [#Dependencies external 
+dependencies] from there.
+
+== Configuration ==
+
+In order to enable [wiki:/En/Devel/TracBasicMacros TracBasicMacros] plugin, 
+the only thing to do is to add the following lines to [wiki:TracIni trac.ini].
+
+{{{
+[components]
+tracbmacros.* = enabled
+}}}
+
+== Bug / feature requests ==
+
+Existing bugs and feature requests for [wiki:/En/Devel/TracBasicMacros TracBasicMacros] are
+[query:status=new|assigned|reopened&component=trac-basic-macros here].
+If you have any issues, please create a [/newticket?component=trac-basic-macros new ticket].
+
+
