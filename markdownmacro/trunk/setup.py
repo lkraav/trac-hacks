@@ -14,7 +14,7 @@ from setuptools import setup
 
 setup(
     name='TracMarkdownMacro',
-    packages=['markdown'],
+    packages=['tracmarkdown'],
     version='0.11.9',
 
     author='Douglas Clifton',
@@ -29,7 +29,7 @@ setup(
     url='https://trac-hacks.org/wiki/MarkdownMacro',
     license='BSD 3-Clause',
 
-    entry_points={'trac.plugins': ['markdown.macro = markdown.macro']},
+    entry_points={'trac.plugins': ['tracmarkdown.macro = tracmarkdown.macro']},
     classifiers=['Framework :: Trac'],
     install_requires=['Trac'],
 )
