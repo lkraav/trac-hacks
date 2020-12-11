@@ -31,5 +31,5 @@ setup(
 
     entry_points={'trac.plugins': ['tracmarkdown.macro = tracmarkdown.macro']},
     classifiers=['Framework :: Trac'],
-    install_requires=['Trac'],
+    install_requires=['Trac', 'Markdown < 3.2'],
 )
