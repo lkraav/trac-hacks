@@ -15,7 +15,7 @@ from setuptools import setup
 setup(
     name='TracMarkdownMacro',
     packages=['Markdown'],
-    version='0.11.8',
+    version='0.11.9',
 
     author='Douglas Clifton',
     author_email='dwclifton@gmail.com',
@@ -24,6 +24,7 @@ setup(
     description='Implements Markdown syntax WikiProcessor as a Trac macro.',
     long_description=open(
         os.path.join(os.path.dirname(__file__), 'README')).read(),
+    long_description_content_type='text/markdown',
     keywords='0.11 dwclifton processor macro wiki',
     url='https://trac-hacks.org/wiki/MarkdownMacro',
     license='BSD 3-Clause',

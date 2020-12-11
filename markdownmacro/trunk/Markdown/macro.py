@@ -68,7 +68,7 @@ class MarkdownMacro(WikiMacroBase):
             return system_message(WARNING)
 
 
-class MarkdownEverywhere(Component):
+class MarkdownFormatter(Component):
 
     implements(IRequestFilter)
 

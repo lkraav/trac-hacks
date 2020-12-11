@@ -33,8 +33,7 @@ Proceed to install the plugin as described in t:TracPlugins.
 
 Enable the macro in `trac.ini`:
 
-{{{
-#!ini
+{{{#!ini
 [components]
 Markdown.* = enabled
 }}}
@@ -44,8 +43,7 @@ You may have to restart your Web server.
 == Example ==
 
 {{{
-{{{
-#!Markdown
+{{{#!Markdown
 
 # RGB
 
