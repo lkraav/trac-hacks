@@ -1,0 +1,33 @@
+img.tracvatar {
+  box-shadow: 2px 2px 4px #444;
+}
+
+img.tracvatar.ticket-reporter {
+  float:left;
+  margin:0 10px 10px 0px;
+}
+
+img.tracvatar.ticket-comment {
+  margin:0 5px 5px 0;
+}
+
+img.tracvatar.ticket-comment-diff {
+  margin:0 5px 5px 0;
+}
+
+img.tracvatar.browser-lineitem {
+  margin:0 5px 0 0;
+}
+
+img.tracvatar.timeline {
+  margin:2px 5px 0 0;
+}
+
+img.tracvatar.browser-changeset {
+  margin:3px 10px 0px 0px;
+}
+
+td.tracvatar.prefs-avatar {
+  vertical-align:middle;
+  white-space:nowrap;
+}

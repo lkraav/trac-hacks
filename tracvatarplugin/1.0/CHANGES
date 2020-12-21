@@ -1,0 +1,49 @@
+2.0
+---
+- Added support for the trac 1.0 database
+  API, courtesy Ryan Ollos and Leho Kraav.
+
+- Add support for gravatar in "metanav"
+  menu, courtesy Leho Kraav.
+
+1.9
+---
+- Added support for libravatar, courtesy
+  Ralph Bean.
+
+1.8
+---
+- Fixed KeyError which could arise
+  when viewing the change history
+  for a ticket.
+
+1.7
+---
+- Added support for gravatar in
+  "ticket comment diff" screen.
+
+1.6
+---
+- Fixed bug where a NULL stored as the
+  author of a ticket comment would
+  cause a variety of NoneType errors.
+
+1.5
+---
+
+- Detect if https:// is in use, generate
+  https:// Gravatars in this case.
+
+- Fixed bug whereby ui would crash on
+  the "browse" page of a multiple-repository
+  setup with no default repository
+
+1.4
+---
+
+- Add a drop shadow, some CSS tweaks
+
+1.3
+---
+
+- First release without major bugs
