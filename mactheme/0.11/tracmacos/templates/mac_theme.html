@@ -1,0 +1,247 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      py:strip="">
+
+  <ul py:def="navigation(category, skip)" class="menu">
+    <li id="${category}" class="nav">
+      <ul py:if="chrome.nav[category]">
+        <li py:for="idx, item in  enumerate(i for i in chrome.nav[category] if i.name not in skip)"
+            class="${classes(first_last(idx, chrome.nav[category]), active=item.active)} id_${item.name}">${item.label}</li>
+      </ul>
+    </li>
+  </ul>
+
+  <py:match path="body" once="true" buffer="false"><body py:with="macos=getattr(req, 'macos')">
+    <div id="fixed-wrapper">
+      <div id="mainpanel" class="nav">
+        <span> 
+          <ul style="padding: 0px;">
+            <li id="mainmenu"> 
+              <div id="mainbutton">
+                <div class="round4"></div>
+                <div class="round2"></div>
+                <div class="round1"></div>
+                <div class="box-inner"></div>
+                <div class="round1"></div>
+                <div class="round2"></div>
+                <div class="round4"></div>
+              </div>
+              ${navigation("mainnav", [])}
+            </li>
+          </ul>
+        </span>
+        <span id="navitem" class="active">
+          <py:with vars="active = [item.label for item in chrome.nav.get('mainnav', []) if item.active]">
+            <py:choose test="">
+              <py:when test="active">
+                ${active[0]}
+              </py:when>
+              <py:otherwise>
+                <a href="${req.href.about()}"> Trac</a>
+              </py:otherwise>
+            </py:choose>
+          </py:with>
+        </span>
+        <span id="ctxtnav" class="nav">
+          <h2>Context Navigation</h2>
+            <ul py:if="chrome.ctxtnav">
+              <li py:for="i, elm in enumerate(chrome.ctxtnav)" class="${i == 0 and 'first ' or None}${i+1 == len(chrome.ctxtnav) and 'last' or None}">$elm</li>
+            </ul>
+          <hr />
+        </span>
+        <span py:with="metaitems = macos.metanav" 
+              id="metanav" class="nav">
+          <ul py:if="chrome.nav['metanav']">
+            <li py:for="idx, item in  enumerate(chrome.nav['metanav'])" py:if="item.name in metaitems"
+                class="${classes(first_last(idx, chrome.nav['metanav']), active=item.active)} id_${item.name}">
+              ${item.label}
+            </li>
+            <li class="more"> <span style="clear:both;"> <em>more</em></span> ${navigation("metanav", metaitems)}</li>
+          </ul>
+        </span>
+      </div>
+    </div>
+    <div id="banner" py:choose="">
+      <form id="search" action="${href.search()}" method="get">
+        <div py:if="'SEARCH_VIEW' in perm">
+          <label for="proj-search">Search:</label>
+          <input type="text" id="proj-search" name="q" size="18" accesskey="f" value="" />
+          <input type="submit" value="Search" />
+        </div>
+      </form>
+      <div id="header" py:choose="" style="width: 65%;">
+        <div py:when="chrome.logo.src" style="vertical-align: middle;"> 
+          <div style="float: left; height: 60px;">
+            <a id="logo" href="${chrome.logo.link or href.wiki('TracIni')+'#header_logo-section'}">
+                <img src="${chrome.logo.src}" alt="${chrome.logo.alt}" 
+                     height="55px" width="153px" />
+            </a> 
+          </div>
+          <div id="pname"> ${project.name} </div>
+          <div id="psum"> ${project.descr or project.description} </div>
+        </div>
+        <h1 py:otherwise="">
+          <a href="${chrome.logo.link or href.wiki('TracIni')+'#header_logo-section'}">
+            ${project.name}
+          </a>
+        </h1>
+      </div>
+      <!-- > ${navigation('metanav')} <!-->
+
+    </div>
+    <div id="docknav">
+      <a py:for="itm in chrome.nav['mainnav']" 
+         href="${macos.util.extract_href(itm.label)}" 
+         title="${macos.util.striptags(itm.label)}">
+        <img src="${href(macos.imgs.dock.get(itm.name, macos.imgs.dock_default))}" />
+      </a>
+    </div>
+    <div id="outer-wrapper">
+      <div id="content-wrapper">
+
+        <div id="main-wrapper">
+          <!-- >
+          <div id="ctxtnav" class="nav">
+            <h2>Context Navigation</h2>
+              <ul py:if="chrome.ctxtnav">
+                <li py:for="i, elm in enumerate(chrome.ctxtnav)" class="${i == 0 and 'first ' or None}${i+1 == len(chrome.ctxtnav) and 'last' or None}">$elm</li>
+              </ul>
+            <hr />
+          </div>
+          <!-->
+          <div id="main">
+            <div id="warning" py:if="chrome.warnings" class="system-message">
+              <py:choose test="len(chrome.warnings)">
+                <py:when test="1">
+                  <strong>Warning:</strong> ${chrome.warnings[0]}
+                </py:when>
+                <py:otherwise>
+                  <strong>Warnings:</strong>
+                  <ul><li py:for="w in chrome.warnings">$w</li></ul>
+                </py:otherwise>
+              </py:choose>
+            </div>
+            <div id="notice" py:if="chrome.notices" class="system-message">
+              <py:choose test="len(chrome.notices)">
+                <py:when test="1">
+                  <strong>Notice:</strong> ${chrome.notices[0]}
+                </py:when>
+                <py:otherwise>
+                  <strong>Notices:</strong>
+                  <ul><li py:for="w in chrome.notices">$w</li></ul>
+                </py:otherwise>
+              </py:choose>
+            </div>
+      
+            ${select('*|text()')}
+        
+          
+          </div>  
+      
+        </div>
+      </div>
+      
+    </div>
+    <div id="footer" xml:lang="en"><hr/>
+      <a id="tracpowered" href="http://trac.edgewall.org/"><img
+          src="${chrome.htdocs_location}trac_logo_mini.png" height="30"
+          width="107" alt="Trac Powered"/></a>
+      <p class="left">
+        Powered by <a href="${href.about()}"><strong>Trac ${trac.version}</strong></a>.
+        By <a href="http://www.edgewall.org/">Edgewall Software</a>.
+        <br />
+        MacOS theme - maintained by <a href="http://simelo-es.blogspot.com/">Olemis Lang</a>.
+      </p>
+      <p class="right">${chrome.footer}</p>
+    </div>
+    
+    <div id="mactb" class="mactb" 
+         py:with="tb_cnt = macos.tb_count; tb_items = chrome.nav['mainnav']">
+      <table class="tb_tbl" cellspacing="0" cellpadding="0" border="0" >
+        <tbody>
+          <tr>
+            <td class="tb_td tb_bl" align="left" width="15" valign="top" />
+            <td class="tb_td tb_c" valign="bottom" style="padding-top: 4px;">
+              <div class="tb_item">
+                <div id="tb_search">
+                  <div id="tb_search_icon" />
+                  <form id="tb_search_form" action="${href.search()}" method="get">
+                    <input id="tb_searchbox" name="q" type="text" />
+                    <div id="tb_searchbtn" />
+                  </form>
+                </div>
+              </div>
+              <div py:for="itm in tb_items[:tb_cnt]" class="tb_item">
+                <div class="tb_nav_item tb_nav_lsep" />
+                <div class="tb_nav_item tb_nav_main id_${itm.name}">
+                  ${itm.label}
+                </div>
+                <div class="tb_nav_item tb_nav_rsep" />
+              </div>
+            </td>
+            <td id="tb_more" class="tb_td" py:if="tb_cnt &lt; len(tb_items)">
+              <em>more</em>
+              ${navigation('mainnav',[itm.name for itm in tb_items[:tb_cnt]])}
+            </td>
+            <td class="tb_td tb_br" >
+              <a href="javascript:animatedcollapse.show('mactb_min')" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <a href="javascript:animatedcollapse.show('mactb')" >
+      <div id="mactb_min" class="mactb">
+        <table class="tb_tbl" cellspacing="0" cellpadding="0" border="0" >
+          <tbody>
+            <tr>
+              <td class="tb_td tb_bl" align="left" width="15" valign="top" />
+              <td class="tb_td tb_c">
+                Tools
+              </td>
+              <td class="tb_td tb_br" >
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </a>
+    
+    <script type='text/javascript'>
+      jQuery('a.ext-link').each(function() {
+          // Let's make external links open in a new window.
+          jQuery(this).attr("target", jQuery(this).attr("href"));
+        });
+      opts = {
+      <py:for each="k, v in macos.opts.iteritems()">
+              $k: $v,
+      </py:for>
+              align: 'left',
+              size: 34
+              };
+      jQuery('#docknav').jqDock(opts);
+      jQuery('#tb_searchbtn').click(function() {
+                                      jQuery('#tb_search_form').submit();
+                                    });
+      
+      tbmin = jQuery.cookie('tbactive') == 'mactb_min';
+      jQuery('#' + ((tbmin)? 'mactb' : 'mactb_min')).hide();
+      animatedcollapse.addDiv('mactb', 'fade=100,speed=400,group=mactb' + 
+                                       ((tbmin)? ',hide=1' : ''));
+      animatedcollapse.addDiv('mactb_min', 'fade=100,speed=400,group=mactb' +
+                                       ((tbmin)? '' : ',hide=1'));
+      animatedcollapse.ontoggle=function(_, divobj, state) {
+                                  if (state == 'block') {
+                                    tbname = jQuery(divobj).attr('id');
+                                    jQuery.cookie('tbactive', tbname);
+                                  }
+                                }
+      animatedcollapse.init();
+    </script>
+  </body></py:match>
+</html>

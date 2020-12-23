@@ -1,0 +1,1117 @@
+/* 
+# Copyright (c) 2010 Olemis Lang. All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Trac custom stylesheet for Trac Mac OS theme 
+*/
+
+.nav ul {
+  display: inline-block;
+}
+
+.nav .active :link, .nav .active :visited, 
+.nav .active :hover {
+  font-size: 110%;
+  font-weight: bold;
+}
+
+.blog #sidebar :visited:hover, 
+.blog .metainfo :visited:hover,
+.blog .blog-comment :visited:hover,
+:link:hover, :visited:hover, .nav li:hover, 
+.nav li:hover>:link, .nav li:hover>:visited,
+a.prev:hover, a.next:hover {
+  background-color: #3366ff;
+  color: #FFFFFF;
+}
+
+:visited {
+  background-color: #FFFFCC;
+}
+
+:visited, :link {
+  color: #0000CC;
+}
+
+.nav :link, .nav :visited {
+  color: #000000;
+  border: none;
+  background-color: transparent;
+}
+
+#altlinks li :link, #altlinks li :visited {
+  color: #0000CC;
+}
+
+#altlinks li:hover :link, #altlinks li:hover :visited {
+  color: #FFFFFF;
+}
+
+a.ext-link .icon {
+  background-image: url(extlink.png);
+}
+
+a.trac-rawlink {
+  background-image: url(downl_trac_16_x_16.png);
+  background-repeat: no-repeat;
+  padding: 0 9px;
+}
+
+a.trac-rawlink img {
+  display:none;
+}
+
+.nav li {
+  border-right: none;
+}
+
+#metanav {
+/*
+  border-left: 1px solid #999999; 
+*/
+  float: right;
+  position: absolute;
+  right: 3em;
+  text-align: right;
+  top: 10px;
+}
+
+/* Drop down menus */
+
+#mainmenu {
+  display: block;
+  padding: 0px;
+  position: absolute;
+  top: 1px;
+  z-index: 1;
+}
+
+#mainmenu:hover {
+  background-color: transparent;
+}
+
+#mainmenu:hover>ul.menu {
+  display: block;
+}
+
+#mainmenu>ul.menu {
+  display: none;
+  left: 10px;
+  position: fixed;
+  top: 40px;
+}
+
+.menu, .menu ul {
+  border: none !important;
+  display: block;
+  list-style-type: none;
+  margin: 0px !important;
+  opacity: 0.95;
+  padding: 0 1px 1px 0;
+}
+
+#metanav .more>ul {
+  position: fixed;
+  right: 1em;
+  top: 22px;
+}
+
+.menu {
+  background: #999999 none repeat scroll 0pt 0pt;
+  z-index: 1;
+}
+
+.menu ul {
+  background: #EEEEEE none repeat scroll 0pt 0pt;
+}
+
+.menu li {
+  background: #EEEEEE none repeat scroll 0pt 0pt;
+  display: block;
+  text-align: left;
+  width: auto;
+}
+
+#mainnav {
+  border: none;
+  margin: 0;
+}
+
+#mainnav :link, #mainnav :visited,
+#mainnav .active :link, #mainnav .active :visited {
+  background: none no-repeat scroll 0 0 transparent ;
+  border: medium none;
+  display: list-item;
+}
+
+#mainnav .active :link, #mainnav .active :visited {
+  font-weight: bold;
+}
+
+#mainmenu #mainnav .active :link, #mainmenu #mainnav .active :visited {
+  background-image: url(active.png);
+  background-repeat: no-repeat;
+  color: #000000;
+}
+
+#mainnav li:hover :link, #mainnav li:hover :visited, 
+#mainnav .active :link:hover, #mainnav .active :visited:hover {
+  background-color: transparent;
+  border: none;
+  color: #FFFFFF;
+}
+
+#metanav {
+  padding: 0;
+}
+
+.more:hover {
+  background-color: transparent;
+}
+
+.more>ul.menu {
+  display: none;
+}
+
+.more>ul.menu ul>li>a {
+  display: list-item;
+}
+
+.more:hover>ul.menu {
+  display: block;
+}
+
+li#metanav {
+  background-color: transparent !important;
+  float: none;
+  left: 0;
+  padding-top: 6px;
+  position: relative;
+  top: 0;
+  width: auto;
+}
+
+/* Round boxes */
+
+.round1 {
+  border-left: 1px solid #fff;
+  border-right: 1px solid #fff;
+}
+
+.round2 {
+  border-left: 2px solid #fff;
+  border-right: 2px solid #fff;
+}
+
+.round4 {
+  border-left: 4px solid #fff;
+  border-right: 4px solid #fff;
+}
+
+.round1,
+.round2,
+.round4 {
+  font-size: 0;
+  margin: 0;
+  padding: 0;
+  height: 1px;
+}
+
+/* Main panel */
+
+#fixed-wrapper {
+  left: 0;
+  padding-left: 10px;
+  background-color: #FFFFFF;
+  clear: both;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 102;
+}
+
+#mainpanel {
+  background-color: #E1E1E1;
+  min-height: 18px;
+  
+  border-bottom: 1px solid #999999;
+  font-size: 10px;
+  font-size-adjust: none;
+  font-stretch: normal;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  line-height: normal;
+  margin: 4px 0pt 0pt 0pt;
+  padding: 0.4em 0pt 0.1em 0pt;
+}
+
+#mainbutton {
+  background-color: #E1E1E1;
+  display: block; 
+  padding: 0px; 
+/*
+  position: absolute;
+  top:5px;
+*/
+  width: 34px;
+}
+
+#mainbutton:hover {
+/*  background-image: url(btnbg_64.png); */
+  background-image: url(btnbg_32.png);
+  background-repeat: repeat-y;
+}
+
+#mainbutton .box-inner {
+/*  background-image: url(trac_64_x_64.png); */
+  background-image: url(trac_32_x_32.png);
+  background-position: center center;
+  background-repeat: no-repeat;
+  border-right: 1px solid #999999;
+/*  padding: 33px; */
+  padding: 17px;
+}
+
+#navitem {
+  margin-left: 40px;
+}
+
+/* Meta navigation */
+
+.more {
+  background-image: url(more_trac_16_x_16.png);
+}
+
+#metanav>ul>li {
+  padding: 4px 0pt 0pt 18px;
+  min-height: 18px;
+  background-repeat: no-repeat;
+  background-position: left;
+}
+
+/* Background images */
+
+#metanav .id_login,
+#metanav .id_openidlogin {
+  background-image: url(login_trac_16_x_16.png);
+}
+
+#metanav .id_prefs {
+  background-image: url(prefs_trac_16_x_16.png);
+}
+
+#metanav .id_help {
+  background-image: url(help_trac_16_x_16.png);
+}
+
+#metanav .id_about {
+  background-image: url(about_trac_16_x_16.png);
+}
+
+#metanav .id_logout {
+  background-image: url(logout_trac_16_x_16.png);
+}
+
+#metanav .id_developer {
+  background-image: url(dev_trac_16_x_16.png);
+}
+
+#metanav #tracdeveloper-logbutton {
+  background-image: url(logging_trac_16_x_16.png);
+  background-repeat: no-repeat;
+  margin-left: -16px;
+  padding: 2px 0 2px 21px;
+}
+
+/* Banner & header */
+
+#banner {
+  background-color: #FFFFFF;
+  left: 30px;
+  padding-left: 20px;
+  padding-top: 30px;
+  position: fixed;
+  top: 0px;
+  width: 100%;
+  z-index: 100;
+}
+
+#header {
+  height: 60px;
+  margin-top: -34px;
+  overflow: hidden;
+  padding-left: 0.5em;
+  width: 100%;
+}
+
+#header img {
+  height: 56px;
+  min-width: 56px;
+}
+
+#pname, #psum {
+  padding-left: 2em;
+}
+
+#pname {
+  font-weight: bold;
+  height: 1.3em;
+  max-width: 65%;
+  overflow: hidden;
+}
+
+#psum {
+  font-size: 90%;
+  font-style: italic;
+  height: 2.8em;
+  max-width: 65%;
+  overflow: hidden;
+}
+
+#outer-wrapper {
+  margin-top: 90px;
+  margin-left: 50px;
+}
+
+#search {
+  margin-right: 65px;
+}
+
+/* Fonts & Typography */
+
+.wikipage>h1:first-child+p:first-letter, h1:first-child+p+div.wiki-toc+p+p:first-letter, div.blog-body > p:first-child:first-letter {
+  color: #000000;
+  background-image: url(fl_alt.png);
+  background-position: left;
+  background-repeat: no-repeat;
+  float: left;
+  font-size: 2.5em;
+  font-family: 'Palatino Linotype',Palatino,'Times New Roman',serif;
+  font-weight: bold;
+  margin: 0px 0.05em 0.2em 0px; 
+  padding: 20px 37px 26px 15px;
+}
+
+.wikipage>h1+p+h2, h1+p+div.wiki-toc+p+p+h2 {
+  margin-top: 0.3em;
+}
+
+#main h1+p+div.wiki-toc+p+p {
+  text-indent: 0em;
+}
+
+#main p+p {
+  text-indent: 0.5em;
+}
+
+/* Headings & TOC & footer */
+
+.wikipage h1,
+.wikipage h2,
+.wikipage h3,
+.wikipage h4,
+.wikipage h5 {
+  clear: left;
+}
+
+h1.blog-title :visited,
+.wikipage h1 :visited,
+.wikipage h2 :visited,
+.wikipage h3 :visited,
+.wikipage h4 :visited,
+.wikipage h5 :visited,
+h1.blog-title :link,
+.wikipage h1 :link,
+.wikipage h2 :link,
+.wikipage h3 :link,
+.wikipage h4 :link,
+.wikipage h5 :link {
+  background-color: transparent;
+  color: #000000;
+}
+
+h1.blog-title :visited:hover,
+.wikipage h1 :visited:hover,
+.wikipage h2 :visited:hover,
+.wikipage h3 :visited:hover,
+.wikipage h4 :visited:hover,
+.wikipage h5 :visited:hover,
+h1.blog-title :link:hover,
+.wikipage h1 :link:hover,
+.wikipage h2 :link:hover,
+.wikipage h3 :link:hover,
+.wikipage h4 :link:hover,
+.wikipage h5 :link:hover {
+  background-color: transparent;
+  color: #999999;
+}
+
+.wikipage h1, h1.blog-title {
+  background-image: url(bg1.png);
+  background-repeat: repeat;
+  border-bottom: 1px solid #99CCFF;
+  border-top: 1px solid #99CCFF;
+  padding-bottom: 0px;
+}
+
+.wikipage h2 {
+  border-bottom: 3px groove #3366CC;
+}
+
+.wikipage h3 {
+  border-bottom: 1px solid #3366CC;
+}
+
+.wiki-toc .active :link {
+  border: none;
+}
+
+.wiki-toc .active :visited {
+  background-color: transparent;
+  color: #000000;
+  font-style: italic;
+}
+.wiki-toc .active {
+  background: url("bg1.png") repeat-x;
+}
+
+.wiki-toc :link, .wiki-toc :visited {
+  border-bottom: none;
+}
+
+pre.wiki, pre.literal-block {
+  background: none repeat scroll 0 0 #E0ECFF;
+  border: 1px solid #3366CC;
+}
+
+#footer {
+  color: #0000CC;
+  font-size: 10px;
+  margin-bottom: 35px;
+  margin-left: 50px;
+}
+
+#footer :link, #footer :visited {
+  color: #0000CC;
+}
+
+#footer :link:hover, #footer :visited:hover {
+  color: #FFFFFF;
+}
+
+#footer p.left {
+  border-left: 1px solid #0000CC;
+  border-right: 1px solid #0000CC;
+}
+
+/* Other rules for WikiFormatting */
+
+del {
+  color: #CC3333;
+}
+
+tt {
+  color: #006633;
+}
+
+dt {
+  color: #006633;
+  text-decoration: underline;
+}
+
+dd {
+  font-style: italic;
+}
+
+blockquote {
+  background-color: #EEEEEE;
+  background-image: url("active.png");
+  background-position: left top;
+  background-repeat: no-repeat;
+  border: 1px solid #999999;
+  clear: left;
+  margin-left: 22px;
+  padding: 5px 0 5px 20px; 
+}
+
+blockquote.citation {
+  margin: 0.5em 0;
+  background-color: transparent;
+  background-image: none;
+  margin: 0.5em 0;
+  padding: 0 0 0 0.5em;
+}
+
+table.wiki td {
+  border: 2px groove #000000;
+}
+
+table.wiki {
+  border: 3px double #000000;
+}
+
+/* Forms & inputs */
+
+#input[type="button"], input[type="submit"], input[type="reset"] {
+  background-color: transparent;
+  background-image: url("btn.png");
+  background-repeat: repeat-x;
+}
+
+input[type="button"]:hover, input[type="submit"]:hover, input[type="reset"]:hover {
+  background-image: url("btnhover.png");
+  border: 1px outset #666666;
+}
+
+input[type=text]:focus, input.textwidget:focus, textarea:focus {
+  background-color: #FFFFCC;
+}
+
+#prefs {
+  background: none repeat scroll 0 0 #E0ECFF;
+  border: 1px outset #CCCCCC;
+}
+
+/* Roadmap */
+
+.milestone .info h2 :link:hover, .milestone .info h2 :visited:hover {
+  background-color: #CCCCCC;
+}
+
+.milestone .info h2 em {
+  color: #006633 !important;
+}
+
+table.progress td.closed {
+  background-image: url("hbar.png") !important;
+  background-repeat: repeat-x !important;
+}
+
+.milestone .info dt {
+  text-decoration: none;
+}
+
+/* Timeline */
+
+.timeline dt  {
+  text-decoration: none !important;
+}
+
+.timeline dt em {
+  color: #006633 !important;
+}
+
+/* Main toolbar */
+
+#mactb, .mactb div, .mactb table, .mactb tr, 
+.mactb td, .mactb tr:hover td, .mactb img, 
+.mactb a img, #mactb_min tr, #mactb_min td, 
+#mactb_min img, #mactb_min a img, 
+.tb_td tr:hover td {
+  background-color: transparent;
+  border: medium none;
+  border-collapse: separate;
+  direction: ltr;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+#mactb, .mactb div, .mactb table, .mactb tr, 
+.mactb td, .mactb tr:hover td, .mactb img, 
+.mactb a img, #mactb_min tr, #mactb_min td, 
+#mactb_min img, #mactb_min a img, 
+.tb_td tr:hover td {
+  background-color: transparent;
+  border: medium none;
+  border-collapse: separate;
+  direction: ltr;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.tb_td {
+  background-color: transparent;
+  border: medium none;
+  line-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.tb_tbl {
+  height: 30px;
+  width: 100%;
+}
+
+.mactb {
+  bottom: 0;
+  color: #333333;
+  font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+  font-size: 11px;
+  font-weight: normal;
+  height: 30px;
+  line-height: 14px;
+  position: fixed !important;
+  z-index: 103;
+}
+
+#mactb {
+  left: 0;
+  width: 100%;
+}
+
+.tb_bl {
+  background-image: url("toolbar.png");
+  background-position: 0 -150px;
+  background-repeat: no-repeat;
+  display: inline;
+  float: right;
+  height: 30px;
+  margin-top:  1px; /* EXTRA */
+  width: 9px;
+}
+
+.tb_c .tb_item {
+  background-color: transparent;
+  display: block;
+  float: left;
+  height: 26px;
+}
+
+#tb_search {
+  height: 26px;
+  left: 0;
+  position: relative;
+  top: 0;
+  width: 160px;
+}
+
+#tb_search_icon {
+  background-color: white !important;
+  background-image:  url("trac_16_x_16.png");
+  background-repeat:  no-repeat;
+  border:  2px solid #A0A0A0 !important;
+  height: 20px;
+  left: 1px;
+  overflow:  hidden;
+  position: absolute;
+  top: 0;
+  width: 30px;
+}
+
+.tb_c {
+  background-image: url("toolbar.png");
+  background-position: 0 -120px;
+  background-repeat: repeat-x;
+  padding-top: 4px;
+  position: relative;
+  vertical-align: bottom;
+}
+
+#tb_search_form {
+  background-image: url("searchbox.png");
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  height: 22px;
+  width: 118px;
+  left: 34px;
+  position: absolute;
+  top: 1px;
+}
+
+#tb_searchbox {
+  color: #777777;
+  font-style: italic;
+  background-color: transparent;
+  border: 0 none transparent;
+  font-family: Arial,Verdana;
+  font-size: 13px;
+  left: 1px;
+  margin: 2px 2px 4px !important;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  width: 95px;
+}
+
+.tb_br, .tb_br div {
+  background-image: url("toolbar.png");
+  background-repeat: no-repeat;
+  width: 35px !important;
+}
+
+#mactb .tb_br {
+  background-position: 0 0;
+}
+
+#mactb .tb_br:hover {
+  background-position: 0 -30px;
+}
+
+#mactb_min .tb_br {
+  background-position: 0 -60px;
+}
+
+#mactb_min:hover .tb_br {
+  background-position: 0 -90px;
+}
+
+.tb_nav_lsep  {
+  background-image: url("toolbar.png");
+  background-position: -10px -154px;
+  background-repeat: no-repeat;
+  cursor:pointer;
+  display: inline;
+  float: left;
+  height: 26px;
+  width: 4px;
+}
+
+.tb_nav_rsep  {
+  background-repeat: no-repeat;
+  cursor:pointer;
+  display: inline;
+  float: right;
+  height: 26px;
+  width: 4px;
+}
+
+.tb_item:hover .tb_nav_lsep {
+  background-image: url("toolbar.png");
+  background-position:0 -425px;
+}
+
+.tb_item:hover .tb_nav_rsep {
+  background-image: url("toolbar.png");
+  background-position: -4px -425px;
+}
+
+.tb_item:hover .tb_nav_main {
+  background-image: url("toolbar.png");
+  background-position: 0 -450px;
+}
+
+.tb_nav_item  {
+  background-color: transparent !important;
+  display: list-item;
+  float: left;
+  height: 26px;
+  list-style-type: none;
+  padding-left: 3px;
+  position: relative;
+/*  width: auto; */
+  z-index: 1;
+}
+
+.tb_nav_item :link, .tb_nav_item :visited,
+.tb_nav_item :link:hover, .tb_nav_item :visited:hover {
+  background-color: transparent;
+  background-repeat: no-repeat;
+  border: none;
+  color: #F1F2F2;
+  display: inline;
+  float: left;
+  font-family: Arial,Verdana;
+  font-size: 11px;
+  height: auto;
+  margin: 4px 10px 6px 4px;
+  min-height: 18px;
+  padding: 2px 0 0 21px;
+  position: static;
+  width: auto;
+}
+
+#mactb .id_wiki a {
+  background-image: url(tb_mac.png) !important;
+}
+
+#mactb .id_roadmap a {
+  background-image: url(tb_roadmap.png) !important;
+}
+
+#mactb .id_timeline a {
+  background-image: url(tb_timeline.png) !important;
+}
+
+#mactb .id_browser a {
+  background-image: url(tb_finder2.png) !important;
+}
+
+#mactb .id_tickets a {
+  background-image: url(tb_list.png) !important;
+}
+
+#mactb .id_newticket a {
+  background-image: url(tb_bug.gif) !important;
+}
+
+#mactb .id_search a {
+  background-image: url(tb_search.png) !important;
+}
+
+#mactb .id_builds a {
+  background-image: url(tb_builds.png) !important;
+}
+
+#mactb .id_admin a {
+  background-image: url(tb_admin.png) !important;
+}
+
+#mactb .id_pydoc a {
+  background-image: url(tb_py.png) !important;
+}
+
+#tb_more {
+  background-image: url(toolbar.png);
+  background-position: 0 -528px;
+  background-repeat: repeat-x;
+  color: #FFFFFF;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 0 5px;
+  width: 35px !important;
+}
+
+#tb_more>ul {
+  background-color: #666666;
+  bottom: 25px;
+  display: none;
+  opacity: 0.95;
+  position: fixed;
+  right: 1em;
+}
+
+#tb_more:hover>ul {
+  display: block;
+}
+
+#tb_more>ul>li>ul>li {
+  background-color: #666666;
+  margin: 0px !important;
+  padding-top: 4px ;
+  padding-left: 3px;
+  position: relative;
+  vertical-align: bottom;
+}
+
+#tb_more > ul > li > ul > li:hover {
+  background-color: #9FA7AE;
+}
+
+#tb_more>ul>li>ul>li :link,
+#tb_more>ul>li>ul>li :visited {
+  color: #FFFFFF;
+  padding-left: 21px;
+}
+
+#tb_searchbtn  {
+  cursor: pointer;
+  float: right;
+  padding: 10px;
+}
+
+#mactb_min {
+//  display: none;
+  right: 0;
+  width: 12em;
+}
+
+#mactb_min .tb_c {
+  color: #FFFFFF;
+  font-weight: bold;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.mactb .tb_br :link, 
+.mactb .tb_br :visited {
+  background-color: transparent !important;
+  border: medium none !important;
+  padding: 0 100%;
+}
+
+/* Dock Navigation */
+
+#docknav {
+  background-color: #FFFFFF;
+  left: 0;
+  padding-left: 10px;
+  padding-top: 5px;
+  position: fixed;
+  top: 60px;
+  width: 36px;
+  z-index: 101;
+}
+
+#docknav img {
+  width: 36px;  /* Overriden by docknav */
+}
+
+#docknav :link, #docknav :visited,
+#docknav :link:hover, #docknav :visited:hover {
+  background-color: transparent;
+  border: none;
+}
+
+.jqDocked {
+  top: 25px !important;
+}
+
+.jqDockLabel {
+  background-color: #FFFFCC;
+  color: #000000;
+  display: none;    /* Force hiding docknav labels */
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Source browser */
+
+.browser :link,
+.browser :visited,
+.listing :link,
+.listing :visited {
+  background-color: transparent;
+  color: #0000CC;
+}
+
+/* Search results */
+
+#results dt {
+  text-decoration: none;
+}
+
+#content.search #results dt :link:hover,
+#content.search #results dt :visited:hover {
+  color: #FFFFFF;
+}
+
+#content.search #results dt :link:hover .searchword0,
+#content.search #results dt :visited:hover .searchword0, 
+#content.search #results dt :link:hover .searchword1,
+#content.search #results dt :visited:hover .searchword1, 
+#content.search #results dt :link:hover .searchword2,
+#content.search #results dt :visited:hover .searchword2, 
+#content.search #results dt :link:hover .searchword3,
+#content.search #results dt :visited:hover .searchword3, 
+#content.search #results dt :link:hover .searchword4,
+#content.search #results dt :visited:hover .searchword4, 
+#content.search #results dt :link:hover .searchword5,
+#content.search #results dt :visited:hover .searchword5 { 
+  color: #0000CC;
+}
+
+#content.search #results .author, 
+#results .date {
+  color: #006633;
+}
+
+/* Admin panels */
+
+#tabs {
+  background: #E0ECFF none repeat scroll 0% 0%;
+}
+
+h1 :link, h1 :visited, 
+h2 :link, h2 :visited, 
+h3 :link, h3 :visited, 
+h4 :link, h4 :visited, 
+h5 :link, h5 :visited, 
+h6 :link, h6 :visited {
+  color: #0000CC;
+}
+
+#tabs :link, #tabs :visited {
+  background-color: transparent;
+}
+
+#tabs li {
+  color: #333333;
+}
+
+/* Preferences */
+
+#content.prefs #tabs {
+  background: none repeat scroll 0 0 transparent;
+}
+
+/* Styles for PyDoc macro */
+
+tr.pydocheading, font.pydocheading {
+  background-color: #999999;
+  padding-left: 5px;
+}
+
+tr.pydocheading a, font.pydocheading a,
+tr.pydocheading td, font.pydocheading td {
+  color: #FFFFFF;
+}
+
+tr.pydocheading>td {
+  /* border-top: 1px solid #009900;  */
+}
+
+tr.pydocsection, td.pydocsection, font.pydocsection {
+  background-color: #EEEEEE;
+}
+
+tbody>tr.pydocsection:first-child>td:first-child {
+  border-top: 1px solid #666666; 
+}
+
+tr.pydocsection>td:first-child {
+  border-left: 1px solid #666666;
+}
+
+font.pydocgrey {
+  background-color: #FFFFCC;
+  color:#006633;
+  font-style:italic;
+}
+
+tr.pydocsection+tr>td+td+td>dl:first-child font {
+  background-color: #FFFFCC;
+}
+
+/* Styles for FullBlogPlugin */
+
+.blog #sidebar {
+  background-color: #DDF8CC;
+}
+
+.blog #sidebar :visited ,
+.blog .blog-comment :visited , 
+.blog .metainfo :visited {
+  background: none;
+}
+
+#content div.odd {
+  background-color: #E0ECFF;
+}
+
+.sidebar-section {
+  border-bottom: 1px solid #009900 !important;
+}
+
+.blog-body {
+  background-color: #F9F9F9;
+  border-bottom: 1px solid #999999;
+  border-right: 1px solid #999999;
+  min-height: 80px;
+}
+

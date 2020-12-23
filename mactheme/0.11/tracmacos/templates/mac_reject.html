@@ -1,0 +1,43 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      py:strip="">
+  <head>
+    <title>Unsupported browser</title>
+  </head>
+
+  <body>
+    <h1>Unsupported browser</h1>
+    <img src="${req.abs_href.chrome('theme', 'dk_bug.png')}"
+         width="64px" style="float: left;" />
+    <p><a href="http://trac-hacks.org/wiki/TracMacTheme">Trac Mac OS theme</a>
+      is not compatible with this browser. 
+      Support for your browser should be added soon.
+    </p>
+    <p>
+      In the mean time please try another from the list shown 
+      below. You may use the links to visit their home sites
+      in order to look for the latest version, download links, 
+      as well as other installation and configuration instructions. 
+    </p>
+    <p>
+      For further details about supported browsers please consult 
+      <a href="http://trac-hacks.org/wiki/TracMacTheme">this page</a>.
+    </p>
+    <p>
+      Sorry if this caused you any trouble.
+    </p>
+    <ul>
+      <li py:for="b in supported">
+        <a href="${b[1]}">${b[0]}</a>
+      </li>
+    </ul>
+    <p>
+      <a href="http://trac-hacks.org/wiki/TracMacTheme">Trac Mac OS theme</a>
+      Copyright(c) 2010 
+      <a href="http://simelo-es.blogspot.com">Olemis Lang</a>
+    </p>
+  </body>
+</html>
