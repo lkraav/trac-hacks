@@ -1,0 +1,19 @@
+diff --git a/trac/ticket/templates/ticket.html b/trac/ticket/templates/ticket.html
+index 6850ac0..b18a214 100644
+--- a/trac/ticket/templates/ticket.html
++++ b/trac/ticket/templates/ticket.html
+@@ -60,6 +60,14 @@
+                 input.val([field_value]);
+               } else if (input.filter("input[type=checkbox]").length > 0) {
+                 input.val(field_value == "1" ? [field_value] : []);
++              } else if (input.is("select") && input.attr("multiple")) {
++                input.val("");  // clear selected all options
++                var values = field_value.split(" ");
++                input.find("option").each(function(i, opt) {
++                  if ($.inArray(opt.value, values) != -1) {
++                    $(opt).attr("selected", "selected");
++                  }
++                });
+               } else {
+                 input.val(field_value);
+               }
