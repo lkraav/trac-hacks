@@ -18,17 +18,21 @@ from setuptools import find_packages, setup
 # use package name as entry_points
 setup(
     name='Roadmap Plugin',
-    version='0.4.1',
+    version='0.4.2',
     author='Franz Mayer, Gefasoft AG',
     author_email='franz.mayer@gefasoft.de',
     description='Sorts roadmap in descending order and adds an filter fields.',
-    url='http://www.gefasoft-muenchen.de',
-    download_url='http://trac-hacks.org/wiki/RoadmapPlugin',
+    url='https://trac-hacks.org/wiki/RoadmapPlugin',
+    install_requires=['Trac', 'genshi'],
     packages=find_packages(exclude=['*.tests*']),
     entry_points="""
         [trac.plugins]
         roadmapplugin = roadmapplugin
     """,
-    package_data={'roadmapplugin': ['locale/*.*',
-                                    'locale/*/LC_MESSAGES/*.*']},
+    package_data={
+        'roadmapplugin': [
+            'locale/*.*',
+            'locale/*/LC_MESSAGES/*.*',
+        ]
+    },
 )

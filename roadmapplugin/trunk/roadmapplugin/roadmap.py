@@ -11,15 +11,15 @@
 #
 # Author: Franz Mayer <franz.mayer@gefasoft.de>
 
-from genshi.filters import Transformer
-from genshi.builder import tag
-from genshi import HTML
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.core import Component, implements
-from trac.util.translation import domain_functions
+import re
 from operator import attrgetter
 from pkg_resources import resource_filename  # @UnresolvedImport
-import re
+
+from genshi.filters import Transformer
+from trac.core import Component, implements
+from trac.util.html import HTML, html as tag
+from trac.util.translation import domain_functions
+from trac.web.api import IRequestFilter, ITemplateStreamFilter
 
 
 _, tag_, N_, add_domain = domain_functions(
@@ -41,9 +41,9 @@ def _set_session_attrib(req, name, value):
 
 
 def _save_show_to_session(req):
-    if req.args.has_key('show'):
+    if 'show-roadmap' in req.args:
         for key in keys:
-            if key in req.args['show']:
+            if key in req.args['show-roadmap']:
                 _set_session_attrib(req, showkeys[key], '1')
             else:
                 _set_session_attrib(req, showkeys[key], '0')
@@ -65,17 +65,17 @@ def _get_show(req):
 
 
 def _get_settings(req, name, default):
-    sessionKey = _get_session_key_name(name)
+    session_key = _get_session_key_name(name)
     # user pressed submit button in the config area so this settings have to be used
-    if req.args.has_key('user_modification'):
-        if not (req.args.has_key(name)):  # key with given name does not exist in request
+    if 'user_modification' in req.args:
+        if name not in req.args:  # key with given name does not exist in request
             return default
         else:  # value of the given key is saved to session keys
-            req.session[sessionKey] = req.args[name]
+            req.session[session_key] = req.args[name]
             return req.args[name]
     # user reloaded the page or gave no attribs, so session keys will be given, if existing
-    elif req.session.has_key(sessionKey):
-        return req.session[sessionKey]
+    elif session_key in req.session:
+        return req.session[session_key]
     else:
         return default
 
@@ -104,7 +104,7 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
         return req.session.get(_get_session_key_name(name), default)
 
     def _getCheckbox(self, req, name, default):
-        sessionKey = _get_session_key_name(name)
+        session_key = _get_session_key_name(name)
         result = '0'
 
         if req.args.has_key('user_modification'):
@@ -113,10 +113,10 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
             if req.args.has_key(name):
                 result = '1'
             if result == '1':
-                req.session[sessionKey] = '1'
+                req.session[session_key] = '1'
             else:
-                req.session[sessionKey] = '0'
-        elif req.session.get(sessionKey, default) == '1':
+                req.session[session_key] = '0'
+        elif req.session.get(session_key, default) == '1':
             result = '1'
 
         return result
@@ -144,10 +144,10 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        if req.args.has_key('user_modification'):
+        if 'user_modification' in req.args:
             _save_show_to_session(req)
         else:
-            req.args['show'] = _get_show(req)
+            req.args['show-roadmap'] = _get_show(req)
         return handler
 
     def post_process_request(self, req, template, data, content_type):
@@ -288,15 +288,13 @@ which allows you to sort milestones in descending order of due date."""
             return 0
 
     def pre_process_request(self, req, handler):
-        if req.args.has_key('user_modification'):
+        if 'user_modification' in req.args:
             _save_show_to_session(req)
         else:
-            req.args['show'] = _get_show(req)
-        """ overridden from IRequestFilter"""
+            req.args['show-roadmap'] = _get_show(req)
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        """ overridden from IRequestFilter"""
         if template == 'roadmap.html':
 
             sort_direct = _get_settings(req, 'sortdirect', self.directions[0])
