@@ -4,9 +4,9 @@
 # Copyright (C) 2010-2012 Franz Mayer <franz.mayer@gefasoft.de>
 #
 # "THE BEER-WARE LICENSE" (Revision 42):
-# <franz.mayer@gefasoft.de> wrote this file.  As long as you retain this 
-# notice you can do whatever you want with this stuff. If we meet some day, 
-# and you think this stuff is worth it, you can buy me a beer in return. 
+# <franz.mayer@gefasoft.de> wrote this file.  As long as you retain this
+# notice you can do whatever you want with this stuff. If we meet some day,
+# and you think this stuff is worth it, you can buy me a beer in return.
 # Franz Mayer
 #
 # Author: Franz Mayer <franz.mayer@gefasoft.de>
@@ -18,22 +18,28 @@ from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.core import Component, implements
 from trac.util.translation import domain_functions
 from operator import attrgetter
-from pkg_resources import resource_filename #@UnresolvedImport
+from pkg_resources import resource_filename  # @UnresolvedImport
 import re
 
 
-_, tag_, N_, add_domain = domain_functions('roadmapplugin', '_', 'tag_', 'N_', 'add_domain')
+_, tag_, N_, add_domain = domain_functions(
+    'roadmapplugin', '_', 'tag_', 'N_', 'add_domain')
 
-keys = [u'noduedate',u'completed']
-showkeys = {'noduedate':'hidenoduedate','completed':'showcompleted'}
+keys = [u'noduedate', u'completed']
+showkeys = {'noduedate': 'hidenoduedate', 'completed': 'showcompleted'}
 
 # returns the name of the attribute plus the prefix roadmap.filter
+
+
 def _get_session_key_name(name):
-        return "roadmap.filter.%s" % name
+    return "roadmap.filter.%s" % name
 # saves a single attribute as a session key
+
+
 def _set_session_attrib(req, name, value):
-        req.session[_get_session_key_name(name)] = value
-        
+    req.session[_get_session_key_name(name)] = value
+
+
 def _save_show_to_session(req):
     if req.args.has_key('show'):
         for key in keys:
@@ -44,11 +50,12 @@ def _save_show_to_session(req):
     else:
         for key in keys:
             _set_session_attrib(req, showkeys[key], '0')
-            
+
+
 def _get_show(req):
     show = []
     for key in keys:
-        erg = req.session.get(_get_session_key_name(showkeys[key]),'0')
+        erg = req.session.get(_get_session_key_name(showkeys[key]), '0')
         if erg == '1':
             if len(show) == 0:
                 show = [key]
@@ -56,25 +63,27 @@ def _get_show(req):
                 show.append(key)
     return show
 
+
 def _get_settings(req, name, default):
     sessionKey = _get_session_key_name(name)
-    #user pressed submit button in the config area so this settings have to be used 
+    # user pressed submit button in the config area so this settings have to be used
     if req.args.has_key('user_modification'):
-        if not (req.args.has_key(name)): #key with given name does not exist in request
+        if not (req.args.has_key(name)):  # key with given name does not exist in request
             return default
-        else: #value of the given key is saved to session keys
+        else:  # value of the given key is saved to session keys
             req.session[sessionKey] = req.args[name]
             return req.args[name]
-    #user reloaded the page or gave no attribs, so session keys will be given, if existing
+    # user reloaded the page or gave no attribs, so session keys will be given, if existing
     elif req.session.has_key(sessionKey):
         return req.session[sessionKey]
     else:
         return default
-    
+
+
 class FilterRoadmap(Component):
     """Filters roadmap milestones.
 
-Existing Trac convention says that the following prefixes on the filter 
+Existing Trac convention says that the following prefixes on the filter
 do different things:
  - `~` contains
  - `^` starts with
@@ -82,7 +91,7 @@ do different things:
 
 This plugin uses same convention.
 
-For more information about this plugin, see 
+For more information about this plugin, see
 [http://trac-hacks.org/wiki/RoadmapPlugin trac-hacks page].
 
 Mainly copied from [https://trac-hacks.org/wiki/RoadmapFilterPlugin RoadmapFilterPlugin]
@@ -93,7 +102,7 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
 
     def _session(self, req, name, default):
         return req.session.get(_get_session_key_name(name), default)
-       
+
     def _getCheckbox(self, req, name, default):
         sessionKey = _get_session_key_name(name)
         result = '0'
@@ -143,11 +152,12 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
 
     def post_process_request(self, req, template, data, content_type):
         if template == 'roadmap.html':
-                
-            inc_milestones = _get_settings(req, 'inc_milestones','')
-            exc_milestones = _get_settings(req, 'exc_milestones','')
-            show_descriptions = self._getCheckbox(req, 'show_descriptions', '1') == '1'
-            
+
+            inc_milestones = _get_settings(req, 'inc_milestones', '')
+            exc_milestones = _get_settings(req, 'exc_milestones', '')
+            show_descriptions = self._getCheckbox(
+                req, 'show_descriptions', '1') == '1'
+
             if inc_milestones != '':
                 inc_milestones = [m.strip() for m in inc_milestones.split('|')]
                 filteredMilestones = []
@@ -159,7 +169,7 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
                         filteredStats.append(data['milestone_stats'][i])
                 data['milestones'] = filteredMilestones
                 data['milestone_stats'] = filteredStats
-                
+
             if exc_milestones != '':
                 exc_milestones = [m.strip() for m in exc_milestones.split('|')]
                 filteredMilestones = []
@@ -198,15 +208,15 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
     def _toggleBox(self, req, label, name, default):
         if self._session(req, name, default) == '1':
             checkbox = tag.input(type='checkbox',
-                                id=name,
-                                name=name,
-                                value='true',
-                                checked='checked')
+                                 id=name,
+                                 name=name,
+                                 value='true',
+                                 checked='checked')
         else:
             checkbox = tag.input(type='checkbox',
-                                id=name,
-                                name=name,
-                                value='true')
+                                 id=name,
+                                 name=name,
+                                 value='true')
         return checkbox + ' ' + tag.label(label, for_=name)
 
     def _hackedHiddenField(self):
@@ -218,27 +228,28 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
 
     def _user_field_input(self, req):
         add_fields = tag.div(self._hackedHiddenField()
-                       + self._toggleBox(req,
-                                         _('Show milestone descriptions'),
-                                         'show_descriptions',
-                                         'true')
-                       )
+                             + self._toggleBox(req,
+                                               _('Show milestone descriptions'),
+                                               'show_descriptions',
+                                               'true')
+                             )
         add_fields += tag.br()
         add_fields += self._filterBox(req, _('Filter:  '), "inc_milestones")
         return add_fields
 
+
 class SortRoadMap(Component):
-    """Shows another checkbox in roadmap view, 
+    """Shows another checkbox in roadmap view,
 which allows you to sort milestones in descending order of due date."""
     implements(IRequestFilter, ITemplateStreamFilter)
-    
+
     directions = ['Descending', 'Ascending']
     criterias = ['Name', 'Due']
-    
+
     def __init__(self):
-        locale_dir = resource_filename(__name__, 'locale') 
+        locale_dir = resource_filename(__name__, 'locale')
         add_domain(self.env.path, locale_dir)
-        
+
     def _comparems(self, m1, m2, sort_crit):
         if sort_crit == self.criterias[0]:
             # the milestone names are divided at the dots to compare (sub)versions
@@ -252,7 +263,7 @@ which allows you to sort milestones in descending order of due date."""
                     # Find leading Numbers in both entrys
                     leadnum1 = re.search(r"\A\d+", v1[depth])
                     leadnum2 = re.search(r"\A\d+", v2[depth])
-                    if leadnum1 and leadnum2:         
+                    if leadnum1 and leadnum2:
                         if leadnum1 != leadnum2:
                             return int(leadnum1.group(0)) - int(leadnum2.group(0))
                         else:
@@ -263,38 +274,38 @@ which allows you to sort milestones in descending order of due date."""
                         return 1
                     elif leadnum2:
                         return -1
-                    else: 
+                    else:
                         return 1 if (v1[depth] > v2[depth]) else -1
                 # otherwise look in next depth
                 depth += 1
                 # End of WHILE
-                   
+
             # At least one of the arrays ended and all numbers were equal so far
             # milestone with more numbers is bigger
             return len(v1) - len(v2)
-        # other criteria not needed. Can be sorted easier by buildin methods  
+        # other criteria not needed. Can be sorted easier by buildin methods
         else:
             return 0
-              
+
     def pre_process_request(self, req, handler):
-        if req.args.has_key('user_modification'): 
+        if req.args.has_key('user_modification'):
             _save_show_to_session(req)
         else:
             req.args['show'] = _get_show(req)
         """ overridden from IRequestFilter"""
         return handler
-        
+
     def post_process_request(self, req, template, data, content_type):
         """ overridden from IRequestFilter"""
         if template == 'roadmap.html':
-                            
+
             sort_direct = _get_settings(req, 'sortdirect', self.directions[0])
             sort_crit = _get_settings(req, 'sortcrit', self.criterias[0])
-            
+
             milestones = data['milestones']
             sortedmilestones = []
-            
-            if sort_crit == self.criterias[0]:                
+
+            if sort_crit == self.criterias[0]:
                 for m in milestones:
                     if len(sortedmilestones) == 0:
                         sortedmilestones.append(m)
@@ -303,7 +314,7 @@ which allows you to sort milestones in descending order of due date."""
                         inserted = False
                         while not inserted and index < len(sortedmilestones):
                             sm = sortedmilestones[index]
-                            if  self._comparems(m, sm, sort_crit) >= 0:
+                            if self._comparems(m, sm, sort_crit) >= 0:
                                 sortedmilestones.insert(index, m)
                                 inserted = True
                             else:
@@ -324,15 +335,15 @@ which allows you to sort milestones in descending order of due date."""
                 stats = data['milestone_stats']
                 new_stats = []
                 sortedmilestones = sorted(ms_with_due, key=attrgetter('due'))
-                sortedmilestones.extend(ms_wo_due)    
-            
+                sortedmilestones.extend(ms_wo_due)
+
             if sort_direct == self.directions[1]:
                 sortedmilestones.reverse()
-                        
+
             stats = data['milestone_stats']
             new_stats = []
-            
-            for  m in sortedmilestones:
+
+            for m in sortedmilestones:
                 for j, om in enumerate(milestones):
                     if m.name == om.name:
                         new_stats.append(stats[j])
@@ -340,7 +351,7 @@ which allows you to sort milestones in descending order of due date."""
             data['milestones'] = sortedmilestones
             data['milestone_stats'] = new_stats
         return template, data, content_type
-            
+
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'roadmap.html':
             sortcrit = _get_settings(req, 'sortcrit', self.criterias[0])
@@ -350,11 +361,13 @@ which allows you to sort milestones in descending order of due date."""
             html_str = '<div>' + _('Sort by: ')
             html_str += '<select name="sortcrit">'
             for crit in self.criterias:
-                html_str += '<option value ="%s" %s>%s</option>' % (crit, sel if sortcrit == crit else '', _(crit))
+                html_str += '<option value ="%s" %s>%s</option>' % (
+                    crit, sel if sortcrit == crit else '', _(crit))
             html_str += '</select>'
             html_str += '<select name="sortdirect">'
             for dir in self.directions:
-                html_str += '<option value ="%s" %s>%s</option>' % (dir, sel if sortdirect == dir else '', _(dir))
+                html_str += '<option value ="%s" %s>%s</option>' % (
+                    dir, sel if sortdirect == dir else '', _(dir))
             html_str += '</select></div>'
             html = HTML(html_str)
             filter = Transformer('//form[@id="prefs"]/div[@class="buttons"]')
