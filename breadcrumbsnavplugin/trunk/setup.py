@@ -49,7 +49,7 @@ setup(
     url="https://trac-hacks.org/wiki/BreadCrumbsNavPlugin",
     packages=['breadcrumbsnav'],
     package_data={'breadcrumbsnav': ['htdocs/css/*.css']},
-    install_requires=['Trac'],
+    install_requires=['Trac', 'genshi'],
     entry_points={
         'trac.plugins': ['breadcrumbsnav = breadcrumbsnav.breadcrumbs']
     }
