@@ -13,8 +13,8 @@ import os
 import pkg_resources
 import tempfile
 import unittest
-from cStringIO import StringIO
 from datetime import datetime
+from io import BytesIO
 
 from trac.attachment import Attachment
 from trac.core import Component, implements
@@ -281,7 +281,7 @@ class GatherLinksTestCase(unittest.TestCase):
             with self.env.db_transaction:
                 page = WikiPage(self.env, 'SandBox')
                 att = Attachment(self.env, page.realm, page.name)
-                att.insert('test.txt', StringIO('test'), 4)
+                att.insert('test.txt', BytesIO(b'test'), 4)
             actual = set(self._gather(page, text))
             expected = set(expected)
             self.assertEqual(expected - (expected & actual),
@@ -474,7 +474,7 @@ class ChangeListenersTestCase(unittest.TestCase):
 
         att = Attachment(self.env, page.realm, page.name)
         att.description = 'See #1, SandBox and TracIni'
-        att.insert('foo.txt', StringIO('test'), 4)
+        att.insert('foo.txt', BytesIO(b'test'), 4)
         self._verify_sets([('wiki', 'TracIni', None, None,
                             'attachment', 'foo.txt', 'wiki', 'SandBox'),
                            ('ticket', '1', None, None,
@@ -483,7 +483,7 @@ class ChangeListenersTestCase(unittest.TestCase):
 
         att = Attachment(self.env, page.realm, page.name)
         att.description = 'See [milestone:milestone3]'
-        att.insert('bar.txt', StringIO('test'), 4)
+        att.insert('bar.txt', BytesIO(b'test'), 4)
         self._verify_sets([('wiki', 'TracIni', None, None,
                             'attachment', 'foo.txt', 'wiki', 'SandBox'),
                            ('ticket', '1', None, None,
@@ -494,10 +494,10 @@ class ChangeListenersTestCase(unittest.TestCase):
 
         att = Attachment(self.env, 'ticket', t1.id)
         att.description = 'See WikiStart'
-        att.insert('screen1.png', StringIO('test'), 4)
+        att.insert('screen1.png', BytesIO(b'test'), 4)
         att = Attachment(self.env, 'ticket', t1.id)
         att.description = 'See TracIni'
-        att.insert('screen2.png', StringIO('test'), 4)
+        att.insert('screen2.png', BytesIO(b'test'), 4)
         self._verify_sets([('wiki', 'TracIni', None, None,
                             'attachment', 'foo.txt', 'wiki', 'SandBox'),
                            ('ticket', '1', None, None,

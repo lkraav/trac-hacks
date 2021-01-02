@@ -173,16 +173,17 @@ class TracBackLinkSystem(Component):
     def environment_created(self):
         self._create_schema()
 
-    def environment_needs_upgrade(self, db):
-        if 'backlink' not in db.get_table_names():
-            return True
-        columns = db.get_column_names('backlink')
-        for table in db_default.schema:
-            if table.name == 'backlink':
-                if set(c.name for c in table.columns) != set(columns):
-                    return True
+    def environment_needs_upgrade(self, db=None):
+        with self.env.db_query as db:
+            if 'backlink' not in db.get_table_names():
+                return True
+            columns = db.get_column_names('backlink')
+            for table in db_default.schema:
+                if table.name == 'backlink':
+                    if set(c.name for c in table.columns) != set(columns):
+                        return True
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         self._create_schema()
 
     # IAttachmentChangeListener methods
@@ -204,7 +205,7 @@ class TracBackLinkSystem(Component):
     def wiki_page_added(self, page):
         self._invoke('wiki_page_added', self._wiki_added, page)
 
-    def wiki_page_changed(self, page, version, t, comment, author, ipnr):
+    def wiki_page_changed(self, page, version, t, comment, author, ipnr=None):
         self._invoke('wiki_page_changed', self._wiki_changed, page)
 
     def wiki_page_deleted(self, page):

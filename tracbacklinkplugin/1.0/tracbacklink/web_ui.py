@@ -8,54 +8,124 @@
 
 from __future__ import with_statement
 
-from genshi.builder import tag
-from genshi.core import Markup
-from genshi.filters.transform import Transformer
-from genshi.path import Path
+from pkg_resources import parse_version, resource_filename
 
+from trac import __version__
 from trac.core import Component, TracError, implements
 from trac.resource import (
     Resource, ResourceNotFound, get_resource_description, get_resource_url)
 from trac.ticket.api import TicketSystem
+from trac.util.html import Markup, tag
 from trac.util.text import shorten_line, to_unicode
 from trac.util.translation import dgettext
 from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.cache import CachedRepository
-from trac.web.chrome import ITemplateStreamFilter, web_context
+from trac.web.chrome import Chrome, add_script, add_script_data, web_context
 from trac.wiki.model import WikiPage
 
+try:
+    from trac.web.chrome import chrome_resource_path
+except ImportError:
+    from trac.web.chrome import _chrome_resource_path as chrome_resource_path
+
 from tracbacklink.api import _
+
+
+_parsed_version = parse_version(__version__)
+
+if _parsed_version >= parse_version('1.4'):
+    _use_jinja2 = True
+elif _parsed_version >= parse_version('1.3'):
+    _use_jinja2 = hasattr(Chrome, 'jenv')
+else:
+    _use_jinja2 = False
+
+
+IRequestFilter = ITemplateProvider = ITemplateStreamFilter = None
+
+if _use_jinja2:
+    from trac.web.api import IRequestFilter
+    from trac.web.chrome import ITemplateProvider
+else:
+    from genshi.filters.transform import Transformer
+    from genshi.path import Path
+    from trac.web.chrome import ITemplateStreamFilter
+
+    class PathOnce(Path):
+
+        def test(self, ignore_context=False):
+            def test_once(event, namespaces, variables, updateonly=False):
+                if match[0] is True:
+                    return None
+                rv = test(event, namespaces, variables, updateonly=updateonly)
+                if rv is True:
+                    match[0] = True
+                return rv
+
+            match = [False]
+            test = super(PathOnce, self).test(ignore_context=ignore_context)
+            return test_once
+
+    class TransformerOnce(Transformer):
+
+        def __init__(self, path='.'):
+            super(TransformerOnce, self).__init__(PathOnce(path))
 
 
 def dgettext_messages(msgid, **kwargs):
     return dgettext('messages', msgid, **kwargs)
 
 
-class PathOnce(Path):
-
-    def test(self, ignore_context=False):
-        def test_once(event, namespaces, variables, updateonly=False):
-            if match[0] is True:
-                return None
-            rv = test(event, namespaces, variables, updateonly=updateonly)
-            if rv is True:
-                match[0] = True
-            return rv
-
-        match = [False]
-        test = super(PathOnce, self).test(ignore_context=ignore_context)
-        return test_once
-
-
-class TransformerOnce(Transformer):
-
-    def __init__(self, path='.'):
-        super(TransformerOnce, self).__init__(PathOnce(path))
-
-
 class TracBackLinkModule(Component):
 
-    implements(ITemplateStreamFilter)
+    implements(*filter(None, (IRequestFilter, ITemplateProvider,
+                              ITemplateStreamFilter)))
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, metadata):
+        if template == 'ticket.html':
+            type_ = 'ticket'
+            key = 'ticket'
+        elif template == 'wiki_view.html':
+            type_ = 'wiki'
+            key = 'page'
+        elif template == 'milestone_view.html':
+            type_ = 'milestone'
+            key = 'milestone'
+        else:
+            type_ = None
+        content = self._get_backlinks_content(req, data.get(key)) \
+                  if type_ else None
+        if content is not None:
+            script_data = {'type': type_, 'content': content}
+            add_script_data(req, tracbacklink=script_data)
+            add_script(req, 'tracbacklink/base.js')
+            # tracbacklink/base.js should be added before common/js/wiki.js
+            if type_ == 'wiki':
+                href = chrome_resource_path(req, 'common/js/wiki.js')
+                scripts = req.chrome['scripts']
+                for idx, script in enumerate(scripts):
+                    if script['attrs']['src'] == href:
+                        scripts.insert(idx, scripts.pop())
+                        break
+                else:
+                    raise RuntimeError('Unable to find %s in '
+                                       'web.chrome["scripts"]' % href)
+        return template, data, metadata
+
+    # ITemplateProvider methods
+
+    _htdocs_dir = resource_filename(__name__, 'htdocs')
+
+    def get_htdocs_dirs(self):
+        yield 'tracbacklink', self._htdocs_dir
+
+    def get_templates_dirs(self):
+        return ()
 
     # ITemplateStreamFilter methods
 
@@ -73,9 +143,9 @@ class TracBackLinkModule(Component):
                    .before
         else:
             return stream
-        contents = self._get_backlinks_content(req, data.get(key))
-        if contents is not None:
-            stream |= xfmr(contents)
+        content = self._get_backlinks_content(req, data.get(key))
+        if content is not None:
+            stream |= xfmr(tag(content))
         return stream
 
     # Internal methods
@@ -96,7 +166,7 @@ class TracBackLinkModule(Component):
                        class_='backlinks')
         contents = tag.div(header, body, id='backlinks',
                            class_='collapsed noprint')
-        return tag(Markup(contents))
+        return Markup(contents)
 
     def _get_backlink_sources(self, resource):
         def normalize_id(realm, id_):
