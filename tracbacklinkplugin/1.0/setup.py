@@ -23,7 +23,7 @@ def main():
         'packages': find_packages(exclude=['*.tests*']),
         'package_data': {
             'tracbacklink': [
-                'locale/*.*', 'locale/*/LC_MESSAGES/*.mo',
+                'htdocs/*.js', 'locale/*.*', 'locale/*/LC_MESSAGES/*.mo',
             ],
         },
         'test_suite': 'tracbacklink.tests.test_suite',
