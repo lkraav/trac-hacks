@@ -355,18 +355,18 @@ which allows you to sort milestones in descending order of due date."""
             sortcrit = _get_settings(req, 'sortcrit', self.criterias[0])
             sortdirect = _get_settings(req, 'sortdirect', self.directions[0])
 
-            sel = ' selected = "selected"'
-            html_str = '<div>' + _('Sort by: ')
-            html_str += '<select name="sortcrit">'
+            sel = u' selected = "selected"'
+            html_str = u'<div>' + _('Sort by: ')
+            html_str += u'<select name="sortcrit">'
             for crit in self.criterias:
-                html_str += '<option value ="%s" %s>%s</option>' % (
+                html_str += u'<option value ="%s" %s>%s</option>' % (
                     crit, sel if sortcrit == crit else '', _(crit))
-            html_str += '</select>'
-            html_str += '<select name="sortdirect">'
+            html_str += u'</select>'
+            html_str += u'<select name="sortdirect">'
             for dir in self.directions:
-                html_str += '<option value ="%s" %s>%s</option>' % (
+                html_str += u'<option value ="%s" %s>%s</option>' % (
                     dir, sel if sortdirect == dir else '', _(dir))
-            html_str += '</select></div>'
+            html_str += u'</select></div>'
             html = HTML(html_str)
             filter = Transformer('//form[@id="prefs"]/div[@class="buttons"]')
             return stream | filter.before(html)
