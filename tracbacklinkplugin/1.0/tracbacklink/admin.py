@@ -6,8 +6,6 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from __future__ import with_statement
-
 import os
 import sys
 
@@ -172,7 +170,7 @@ class TracBackLinkCommandProvider(Component):
                 continue
             try:
                 repos = manager.get_repository(reponame)
-            except TracError, e:
+            except TracError as e:
                 self.log.warning('Exception caught from RepositoryManager.'
                                  'get_repository(%r): %s',
                                  reponame, exception_to_unicode(e))
@@ -197,7 +195,7 @@ class TracBackLinkCommandProvider(Component):
     def _iter_normal_csets(self, repos):
         try:
             node = repos.get_node('')
-        except Exception, e:
+        except Exception as e:
             self.log.warning('Exception caught from %s.get_node("") for '
                              'repository "%s": %s',
                              repos.__class__.__name__, repos.reponame,
@@ -206,7 +204,7 @@ class TracBackLinkCommandProvider(Component):
         for path, rev, change in node.get_history():
             try:
                 cset = repos.get_changeset(rev)
-            except Exception, e:
+            except Exception as e:
                 self.log.warning('Exception caught from %s.get_changeset() '
                                  'for repository "%s": %s',
                                  repos.__class__.__name__, repos.reponame,

@@ -6,8 +6,6 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from __future__ import with_statement
-
 import inspect
 import os
 import pkg_resources
@@ -124,13 +122,7 @@ class GatherLinksTestCase(unittest.TestCase):
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, path=_mkdtemp(),
                                    enable=['trac.*', RepositoryStubConnector])
-        dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
-        pages = pkg_resources.resource_listdir('trac.wiki', 'default-pages')
-        with self.env.db_transaction:
-            admin = WikiAdmin(self.env)
-            for name in pages:
-                filename = os.path.join(dir_, name)
-                admin.import_page(filename, name)
+        _import_default_pages(self.env)
 
     def tearDown(self):
         self.env.reset_db()
@@ -417,15 +409,11 @@ class ChangeListenersTestCase(unittest.TestCase):
 
     def setUp(self):
         self.env = EnvironmentStub(default_data=True, path=_mkdtemp(),
-                                   enable=['trac.*', TracBackLinkSystem,
-                                           RepositoryStubConnector])
-        dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
-        pages = pkg_resources.resource_listdir('trac.wiki', 'default-pages')
-        with self.env.db_transaction:
-            admin = WikiAdmin(self.env)
-            for name in pages:
-                filename = os.path.join(dir_, name)
-                admin.import_page(filename, name)
+                                   enable=['trac.*', RepositoryStubConnector])
+        _import_default_pages(self.env)
+        # Enable the component after pages are created, in order to avoid
+        # listeners of the component are called
+        self.env.enable_component(TracBackLinkSystem)
         system = TracBackLinkSystem(self.env)
         system.environment_created()
         system._invoke = self._invoke
@@ -605,7 +593,7 @@ class ChangeListenersTestCase(unittest.TestCase):
         self._verify_sets([('ticket', '1', None, None,
                             'ticket', '2', None, None),
                           ], self._db_query())
-        for i in xrange(5):
+        for i in range(5):
             t2.save_changes('anonymous', '...')
 
         t3 = Ticket(self.env)
@@ -807,6 +795,16 @@ def _set_cset(env, reponame, message, *revs):
 
 def _mkdtemp():
     return os.path.realpath(tempfile.mkdtemp(prefix='trac-testdir-'))
+
+
+def _import_default_pages(env):
+    dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
+    pages = pkg_resources.resource_listdir('trac.wiki', 'default-pages')
+    wikiadm = WikiAdmin(env)
+    with env.db_transaction:
+        for name in pages:
+            filename = os.path.join(dir_, name)
+            wikiadm.import_page(filename, name)
 
 
 def test_suite():

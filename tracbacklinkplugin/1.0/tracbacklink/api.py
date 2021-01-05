@@ -6,9 +6,7 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from __future__ import with_statement
-
-from StringIO import StringIO
+import io
 import pkg_resources
 import re
 
@@ -492,7 +490,7 @@ def MockRequest(env, **kwargs):
 
     status_sent = []
     headers_sent = {}
-    response_sent = StringIO()
+    response_sent = io.BytesIO()
 
     def start_response(status, headers, exc_info=None):
         status_sent.append(status)
@@ -526,13 +524,27 @@ def MockRequest(env, **kwargs):
     return req
 
 
+if hasattr(dict, 'iteritems'):
+    def _iteritems(value):
+        return value.iteritems()
+else:
+    def _iteritems(value):
+        return value.items()
+
+
+try:
+    _u = unicode
+except NameError:
+    _u = str
+
+
 def _to_u(value):
     if value is None:
         pass
-    elif isinstance(value, str):
-        value = unicode(value, 'utf-8')
-    elif not isinstance(value, unicode):
-        value = unicode(value)
+    elif isinstance(value, bytes):
+        value = _u(value, 'utf-8')
+    elif not isinstance(value, _u):
+        value = _u(value)
     return value
 
 
@@ -593,7 +605,7 @@ class LinksGatherer(Formatter):
 
     def handle_match(self, fullmatch):
         wikiparser = self.wikiparser
-        for itype, match in fullmatch.groupdict().iteritems():
+        for itype, match in _iteritems(fullmatch.groupdict()):
             if not match or itype in wikiparser.helper_patterns:
                 continue
             if match[0] == '!':
@@ -776,7 +788,7 @@ class LinksGatherer(Formatter):
 
     def _add_ticket_link(self, target):
         try:
-            target = target.encode('utf-8')
+            target.encode('ascii')  # means isascii()
         except:
             return
         for id_ in target.split(','):

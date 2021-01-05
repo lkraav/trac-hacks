@@ -6,8 +6,6 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from __future__ import with_statement
-
 from pkg_resources import parse_version, resource_filename
 
 from trac import __version__
