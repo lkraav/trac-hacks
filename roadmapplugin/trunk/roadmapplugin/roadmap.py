@@ -17,6 +17,7 @@ from pkg_resources import resource_filename  # @UnresolvedImport
 
 from genshi.filters import Transformer
 from trac.core import Component, implements
+from trac.ticket.roadmap import RoadmapModule
 from trac.util.html import HTML, html as tag
 from trac.util.translation import domain_functions
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
@@ -144,10 +145,11 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        if 'user_modification' in req.args:
-            _save_show_to_session(req)
-        else:
-            req.args['show-roadmap'] = _get_show(req)
+        if handler is RoadmapModule:
+            if 'user_modification' in req.args:
+                _save_show_to_session(req)
+            else:
+                req.args['show-roadmap'] = _get_show(req)
         return handler
 
     def post_process_request(self, req, template, data, content_type):
@@ -288,10 +290,11 @@ which allows you to sort milestones in descending order of due date."""
             return 0
 
     def pre_process_request(self, req, handler):
-        if 'user_modification' in req.args:
-            _save_show_to_session(req)
-        else:
-            req.args['show-roadmap'] = _get_show(req)
+        if handler is RoadmapModule:
+            if 'user_modification' in req.args:
+                _save_show_to_session(req)
+            else:
+                req.args['show-roadmap'] = _get_show(req)
         return handler
 
     def post_process_request(self, req, template, data, content_type):
