@@ -29,8 +29,8 @@ from trac.util.translation import domain_functions
 from trac.web.chrome import Chrome, add_warning
 
 
-_, tag_, add_domain = domain_functions('advancedworkflow',
-                                       '_', 'tag_', 'add_domain')
+_, tag_, ngettext, add_domain = \
+    domain_functions('advancedworkflow', '_', 'tag_', 'ngettext', 'add_domain')
 
 
 class TicketWorkflowOpBase(Component):
