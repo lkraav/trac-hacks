@@ -12,9 +12,10 @@ from trac.ticket import model
 from trac.ticket.default_workflow import ConfigurableTicketWorkflow, \
                                          parse_workflow_config
 from trac.ticket.api import ITicketActionController
-from trac.util import sub_val
+from trac.util import lazy, sub_val
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script
+
 
 def get_workflow_config_by_type(config, ticket_type):
     """return the [ticket-workflow-type] session"""
@@ -108,14 +109,16 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
     """
     implements(ITicketActionController, IRequestFilter)
 
-    def __init__(self):
-        self.type_actions = {}
+    @lazy
+    def type_actions(self):
+        type_actions = {}
         for t in self._ticket_types + ['default']:
             actions = self.get_all_actions_for_type(t)
             if actions:
-                self.type_actions[t] = actions
+                type_actions[t] = actions
         self.log.debug('Workflow actions at initialization: %s\n',
-                       self.type_actions)
+                       type_actions)
+        return type_actions
 
     @property
     def _ticket_types(self):

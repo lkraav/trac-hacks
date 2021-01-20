@@ -16,5 +16,5 @@ jQuery(document).ready(function(){
         else
             $("#action input[name='action']:first").click();
     }, "#action .trac-loading");
-    $("#field-type").blur()
+//    $("#field-type").blur()
 });
