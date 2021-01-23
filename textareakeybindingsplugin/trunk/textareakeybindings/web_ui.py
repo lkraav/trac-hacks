@@ -38,11 +38,13 @@ class TextareaKeyBindingsModule(Component):
                     return '(.+)'
                 url = re.sub(r'\\\$(\d)', repl, re.escape(url))
                 return outer[0], url
-            links = {}
-            links.update(url_pattern_to_re(name, url)
-                        for name, url, title
-                        in InterWikiMap(self.env).interwiki_map.values()
-                        )
+            def sortkey(tuple):
+                name, url, title = tuple
+                return len(url)
+            tuples = InterWikiMap(self.env).interwiki_map.values()
+            links = [url_pattern_to_re(name, url)
+                     for name, url, title
+                     in sorted(tuples, key=sortkey, reverse=True)]
 
             baseurl_pattern = '%s/(\w+)/(\S+)' % (re.escape(req.base_url),)
             script_data = {

@@ -108,8 +108,9 @@
             return match;
         });
 
-        Object.keys(data.links).forEach(key => {
-            const url_re = data.links[key];
+        data.links.forEach(key_and_url_re => {
+            const key = key_and_url_re[0];
+            const url_re = key_and_url_re[1];
             text_to_insert = text_to_insert.replaceAll(new RegExp(url_re, 'g'), key);
         });
 
