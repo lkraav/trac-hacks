@@ -227,7 +227,8 @@ prototype.listenerToggleEditor = function(selected, unselected) {
 };
 
 prototype.activeEditor = function() {
-    return this.textarea.style.position == "absolute" ? "wysiwyg" : "textarea";
+    var style = (this.textareaResizable || this.textarea).style;
+    return style.position == "absolute" ? "wysiwyg" : "textarea";
 };
 
 prototype.setupFormEvent = function() {
