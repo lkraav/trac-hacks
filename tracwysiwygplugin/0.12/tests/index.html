@@ -6,11 +6,6 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <link rel="stylesheet" href="./chrome/common/css/trac.css" type="text/css" />
   <link rel="stylesheet" href="../tracwysiwyg/htdocs/wysiwyg.css" type="text/css" />
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
-  <script type="text/javascript" src="./trac.js"></script>
-  <script type="text/javascript" src="../tracwysiwyg/htdocs/wysiwyg.js"></script>
-  <script type="text/javascript" src="./testunit.js"></script>
-  <script type="text/javascript" src="./testcase.js"></script>
   <script type="text/javascript">var _tracwysiwyg = { escapeNewlines: false }</script>
   <style type="text/css">
   html { font-size: 13px; *font-size: small; }
@@ -35,6 +30,13 @@
   <form method="post">
     <textarea id="textarea" class="wikitext" cols="50" rows="20" wrap="off"></textarea>
     <div>
+      Trac:
+      <label><input type="radio" name="version" value="branches/1.0-stable" / >1.0-stable</label>
+      <label><input type="radio" name="version" value="branches/1.2-stable" / >1.2-stable</label>
+      <label><input type="radio" name="version" value="branches/1.4-stable" / >1.4-stable</label>
+      <label><input type="radio" name="version" value="trunk" / > trunk</label>
+    </div>
+    <div>
       <label><input type="checkbox" id="show-wysiwyg-html" value="1"
         onclick="document.getElementById('wysiwyg-html').style.display=this.checked?'':'none'"
         />show html</label>
@@ -46,4 +48,37 @@
     </div>
   </form>
 </body>
+<script type="text/javascript">(function() {
+  var click = function() {
+    var i;
+    var version = this.value;
+    for (i = 0; i < inputs.length; i++) {
+      inputs[i].setAttribute('disabled', 'disabled');
+    }
+    var srcs = [
+      "https://svn.edgewall.org/repos/trac/<version>/trac/htdocs/js/jquery.js",
+      "https://svn.edgewall.org/repos/trac/<version>/trac/htdocs/js/babel.js",
+      "https://svn.edgewall.org/repos/trac/<version>/trac/htdocs/js/trac.js",
+      "../tracwysiwyg/htdocs/wysiwyg.js", "./testunit.js", "./testcase.js" ];
+    var head = document.querySelector('head');
+    for (i = 0; i < srcs.length; i++) {
+      var src = srcs[i].replace(/<version>/g, version);
+      if (!/^(?:https?:)?\/\//.test(src))
+        src += '?_=' + (new Date).valueOf();
+      var script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.async = false;
+      script.src = src;
+      head.appendChild(script);
+    }
+    this.blur();
+  };
+  var inputs = document.querySelectorAll('input[name=version]');
+  for (var i = 0; i < inputs.length; i++) {
+    var input = inputs[i];
+    input.checked = false;
+    input.addEventListener('click', click);
+  }
+})();
+</script>
 </html>

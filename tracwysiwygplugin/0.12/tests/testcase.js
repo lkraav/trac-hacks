@@ -1,4 +1,4 @@
-addEvent(window, "load", function() {
+(function($) {
     TracWysiwyg.tracPaths = { base: ".", stylesheets: [] };
     var options = TracWysiwyg.getOptions();
     var instance = new TracWysiwyg(document.getElementById("textarea"), options);
@@ -1742,10 +1742,11 @@ addEvent(window, "load", function() {
         unit.run();
     }
 
-    var button = document.createElement("button");
-    button.innerHTML = "run &#187;";
-    button.style.textDecoration = "underline";
-    document.body.appendChild(button);
-    addEvent(button, "click", run);
-    button.focus();
-});
+    (function() {
+        var body = $(document.body);
+        var button = $(document.createElement("button"));
+        button.text('run \u00bb');
+        button.on('click', run);
+        body.append(button, ' jQuery: ', jQuery.fn.jquery);
+    })();
+})(jQuery);
