@@ -17,6 +17,7 @@ setup(
     author_email="",
     license="3-Clause BSD",
     url="https://trac-hacks.org/wiki/InfoSnippetPlugin",
+    install_requires = ['Trac'],
     packages=find_packages(exclude=['*.tests*']),
     package_data={'infosnippet': ['htdocs/*.js', 'htdocs/*.css','README']},
     entry_points={'trac.plugins': ['infosnippet = infosnippet']}
