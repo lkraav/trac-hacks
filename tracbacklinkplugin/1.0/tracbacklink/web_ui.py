@@ -26,7 +26,7 @@ try:
 except ImportError:
     from trac.web.chrome import _chrome_resource_path as chrome_resource_path
 
-from tracbacklink.api import _
+from .api import _, _iteritems, _itervalues, _str_types, _u
 
 
 _parsed_version = parse_version(__version__)
@@ -169,7 +169,7 @@ class TracBackLinkModule(Component):
     def _get_backlink_sources(self, resource):
         def normalize_id(realm, id_):
             if realm in ('ticket', 'comment') and \
-                    isinstance(id_, basestring) and id_.isdigit():
+                    isinstance(id_, _str_types) and id_.isdigit():
                 id_ = int(id_)
             return id_
 
@@ -191,8 +191,8 @@ class TracBackLinkModule(Component):
                 sources.setdefault(key, {})
                 if parent_realm:
                     sources[key].setdefault(realm, []).append(id_)
-        for values in sources.itervalues():
-            for ids in values.itervalues():
+        for values in _itervalues(sources):
+            for ids in _itervalues(values):
                 ids.sort()
 
         return sources
@@ -209,7 +209,7 @@ class TracBackLinkModule(Component):
     def _render_wiki_backlinks(self, req, sources):
         realm = 'wiki'
         href = req.href
-        names = dict((key[1], value) for key, value in sources.iteritems()
+        names = dict((key[1], value) for key, value in _iteritems(sources)
                                      if key[0] == realm)
         for name in sorted(names):
             try:
@@ -239,18 +239,18 @@ class TracBackLinkModule(Component):
                 for idx, (version, comment) in enumerate(rows):
                     version_resource = resource(version=version)
                     url = self._get_resource_url(version_resource, href)
-                    rendered(', ' if idx else u' \u2013 ',
-                             tag.a('@%d' % version, href=url,
-                                   title=self._shorten_line(comment)))
+                    rendered.append(', ' if idx else u' \u2013 ')
+                    rendered.append(tag.a('@%d' % version, href=url,
+                                          title=self._shorten_line(comment)))
             if 'attachment' in child_ids:
-                rendered(self._render_attachment_backlinks(
-                    req, child_ids['attachment'], realm, name))
+                rendered.append(self._render_attachment_backlinks(
+                                req, child_ids['attachment'], realm, name))
             yield (realm, name), rendered
 
     def _render_ticket_backlinks(self, req, sources):
         realm = 'ticket'
         tktids = dict((key[1], value)
-                       for key, value in sources.iteritems()
+                       for key, value in _iteritems(sources)
                        if key[0] == realm and
                             'TICKET_VIEW' in req.perm(realm, key[1]))
         if not tktids:
@@ -277,14 +277,15 @@ class TracBackLinkModule(Component):
                         WHERE ticket=%s AND field='comment' AND newvalue!=''
                         ORDER BY time""", (tktid,)))
                 for idx, cnum in enumerate(cnums):
-                    cnum = unicode(cnum)
+                    cnum = _u(cnum)
                     title = self._shorten_line(comments.get(cnum))
-                    rendered(', ' if idx else u' \u2013 ',
-                             tag.a(None if idx else 'comment:', cnum,
-                                   href=url + '#comment:' + cnum, title=title))
+                    rendered.append(', ' if idx else u' \u2013 ')
+                    rendered.append(tag.a(None if idx else 'comment:', cnum,
+                                          href=url + '#comment:' + cnum,
+                                          title=title))
             if 'attachment' in child_ids:
-                rendered(self._render_attachment_backlinks(
-                    req, child_ids['attachment'], realm, tktid))
+                rendered.append(self._render_attachment_backlinks(
+                                req, child_ids['attachment'], realm, tktid))
             yield (realm, tktid), rendered
 
     def _render_milestone_backlinks(self, req, sources):
@@ -293,7 +294,7 @@ class TracBackLinkModule(Component):
 
     def _render_repository_backlinks(self, req, sources):
         revs = dict((key[1], value.get('changeset', ()))
-                     for key, value in sources.iteritems()
+                     for key, value in _iteritems(sources)
                      if key[0] == 'repository')
         if not revs:
             return
@@ -320,7 +321,8 @@ class TracBackLinkModule(Component):
                 if isinstance(repos, CachedRepository) else \
                 self._render_normal_cset_backlinks
             for idx, item in enumerate(f(req, context, repos, revs[reponame])):
-                rendered(' ' if idx else u' \u2013 ', item)
+                rendered.append(' ' if idx else u' \u2013 ')
+                rendered.append(item)
             yield ('repository', reponame), rendered
 
     def _render_cached_cset_backlinks(self, req, context, repos, revs):
@@ -364,8 +366,8 @@ class TracBackLinkModule(Component):
                                  href=url))
             child_ids = sources[(realm, name)]
             if 'attachment' in child_ids:
-                rendered(self._render_attachment_backlinks(
-                    req, child_ids['attachment'], realm, name))
+                rendered.append(self._render_attachment_backlinks(
+                                req, child_ids['attachment'], realm, name))
             yield (realm, name), rendered
 
     def _render_attachment_backlinks(self, req, filenames, realm, id_):
@@ -381,14 +383,14 @@ class TracBackLinkModule(Component):
                          filename, href=url, title=title))
 
     def _display_rev(self, repos, rev):
-        if isinstance(rev, basestring):
+        if isinstance(rev, _str_types):
             klass = repos.__class__.__name__
             if 'Git' in klass:
                 rev = rev[:7]
             elif 'Mercurial' in klass:
                 rev = rev[:12]
         else:
-            rev = unicode(rev)
+            rev = _u(rev)
         return rev
 
     def _get_resource_url(self, resource, href):

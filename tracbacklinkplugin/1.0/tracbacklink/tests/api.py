@@ -51,8 +51,9 @@ class RepositoryStubConnector(Component):
         yield 'raw-stub', 1
 
     def get_repository(self, repos_type, repos_dir, params):
-        repos = RepositoryStub(params['name'], params, self.log)
         assert repos_type in ('cached-stub', 'raw-stub')
+        name = '%s:%s' % (repos_type, repos_dir)
+        repos = RepositoryStub(name, params, self.log)
         if repos_type == 'cached-stub':
             repos = CachedRepositoryStub(self.env, repos, self.log)
         return repos

@@ -525,17 +525,20 @@ def MockRequest(env, **kwargs):
 
 
 if hasattr(dict, 'iteritems'):
-    def _iteritems(value):
-        return value.iteritems()
+    _iteritems = lambda value: value.iteritems()
+    _itervalues = lambda value: value.itervalues()
 else:
-    def _iteritems(value):
-        return value.items()
+    _iteritems = lambda value: value.items()
+    _itervalues = lambda value: value.values()
 
 
 try:
     _u = unicode
 except NameError:
     _u = str
+    _str_types = (str,)
+else:
+    _str_types = (unicode, bytes)
 
 
 def _to_u(value):

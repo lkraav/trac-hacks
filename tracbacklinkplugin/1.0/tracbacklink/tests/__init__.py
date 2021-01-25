@@ -10,8 +10,8 @@ import unittest
 
 
 def test_suite():
-    from tracbacklink.tests import api
+    from . import api, web_ui
     suite = unittest.TestSuite()
-    for module in [api]:
+    for module in (api, web_ui):
         suite.addTest(module.test_suite())
     return suite
