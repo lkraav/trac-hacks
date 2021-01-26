@@ -1,5 +1,8 @@
 (function($, window, document) {
 
+var styleActive = { height: '', overflow: '', display: '' };
+var styleInactive = { height: '0', overflow: 'hidden', display: 'block' };
+
 var TracWysiwyg = function(textarea, options) {
     var self = this;
     var editorMode = getEditorMode();
@@ -47,29 +50,25 @@ var TracWysiwyg = function(textarea, options) {
     this.setupToggleEditorButtons();
     this.setupSyncTextAreaHeight();
 
-    var styleStatic = { position: "static", left: "-9999px", top: "-9999px" };
-    var styleAbsolute = { position: "absolute", left: "-9999px", top: "-9999px" };
     switch (editorMode) {
     case "textarea":
-        setStyle(textareaResizable || textarea, styleStatic);
+        setStyle(textareaResizable || textarea, styleActive);
         if (wikitextToolbar) {
-            setStyle(wikitextToolbar, styleStatic);
+            wikitextToolbar.style.display = '';
         }
-        setStyle(resizable || frame, { position: "absolute",
-            left: "-9999px", top: elementPosition(textareaResizable || textarea).top + "px" });
-        setStyle(this.wysiwygToolbar, styleAbsolute);
+        setStyle(resizable || frame, styleInactive);
+        this.wysiwygToolbar.style.display = 'none';
         setStyle(this.autolinkButton.parentNode, { display: "none" });
         textarea.setAttribute("tabIndex", "");
         frame.setAttribute("tabIndex", "-1");
         break;
     case "wysiwyg":
-        setStyle(textareaResizable || textarea, { position: "absolute",
-            left: "-9999px", top: elementPosition(textareaResizable || textarea).top + "px" });
+        setStyle(textareaResizable || textarea, styleInactive);
         if (wikitextToolbar) {
-            setStyle(wikitextToolbar, styleAbsolute);
+            wikitextToolbar.style.display = 'none';
         }
-        setStyle(resizable || frame, styleStatic);
-        setStyle(this.wysiwygToolbar, styleStatic);
+        setStyle(resizable || frame, styleActive);
+        this.wysiwygToolbar.style.display = '';
         setStyle(this.autolinkButton.parentNode, { display: "" });
         textarea.setAttribute("tabIndex", "-1");
         frame.setAttribute("tabIndex", "");
@@ -95,11 +94,12 @@ var TracWysiwyg = function(textarea, options) {
             self.setupEditorEvents();
             self.setupFormEvent();
             if (exception) {
-                (self.textareaResizable || self.textarea).style.position = "static";
+                setStyle(self.textareaResizable || self.textarea, styleActive);
                 if (self.wikitextToolbar) {
-                    self.wikitextToolbar.style.position = "static";
+                    self.wikitextToolbar.style.display = '';
                 }
-                (self.resizable || self.frame).style.position = self.wysiwygToolbar.style.position = "absolute";
+                setStyle(self.resizable || self.frame, styleInactive);
+                self.wysiwygToolbar.style.display = 'none';
                 self.autolinkButton.parentNode.style.display = "none";
                 alert("Failed to activate the wysiwyg editor.");
                 throw exception;
@@ -182,16 +182,17 @@ prototype.listenerToggleEditor = function(selected, unselected) {
         return function(event) {
             toggle();
             var textarea = self.textareaResizable || self.textarea;
-            if (textarea.style.position == "absolute") {
+            if (textarea.style.overflow === 'hidden') {
                 self.hideAllMenus();
                 self.loadTracWikiText();
-                textarea.style.position = "static";
+                setStyle(textarea, styleActive);
                 self.textarea.setAttribute("tabIndex", "");
                 if (self.wikitextToolbar) {
-                    self.wikitextToolbar.style.position = "static";
+                    self.wikitextToolbar.style.display = '';
                 }
                 self.syncTextAreaHeight();
-                (self.resizable || self.frame).style.position = self.wysiwygToolbar.style.position = "absolute";
+                setStyle(self.resizable || self.frame, styleInactive);
+                self.wysiwygToolbar.style.display = 'none';
                 self.frame.setAttribute("tabIndex", "-1");
                 self.autolinkButton.parentNode.style.display = "none";
                 setEditorMode(type);
@@ -202,7 +203,7 @@ prototype.listenerToggleEditor = function(selected, unselected) {
         return function(event) {
             toggle();
             var frame = self.resizable || self.frame;
-            if (frame.style.position == "absolute") {
+            if (frame.style.overflow === 'hidden') {
                 try {
                     self.loadWysiwygDocument();
                 }
@@ -211,12 +212,13 @@ prototype.listenerToggleEditor = function(selected, unselected) {
                     alert("Failed to activate the wysiwyg editor.");
                     throw e;
                 }
-                (self.textareaResizable || self.textarea).style.position = "absolute";
+                setStyle(self.textareaResizable || self.textarea, styleInactive);
                 self.textarea.setAttribute("tabIndex", "-1");
                 if (self.wikitextToolbar) {
-                    self.wikitextToolbar.style.position = "absolute";
+                    self.wikitextToolbar.style.display = 'none';
                 }
-                frame.style.position = self.wysiwygToolbar.style.position = "static";
+                setStyle(frame, styleActive);
+                self.wysiwygToolbar.style.display = '';
                 self.frame.setAttribute("tabIndex", "");
                 self.autolinkButton.parentNode.style.display = "";
                 setEditorMode(type);
@@ -227,8 +229,8 @@ prototype.listenerToggleEditor = function(selected, unselected) {
 };
 
 prototype.activeEditor = function() {
-    var style = (this.textareaResizable || this.textarea).style;
-    return style.position == "absolute" ? "wysiwyg" : "textarea";
+    var style = (this.textareaResizable || textarea).style
+    return style.overflow === "hidden" ? "wysiwyg" : "textarea";
 };
 
 prototype.setupFormEvent = function() {
@@ -237,7 +239,7 @@ prototype.setupFormEvent = function() {
     function listener(event) {
         var textarea = self.textareaResizable || self.textarea;
         try {
-            if (textarea.style.position == "absolute") {
+            if (textarea.style.overflow === 'hidden') {
                 var body = self.contentDocument.body;
                 if (self.savedWysiwygHTML !== null && body.innerHTML != self.savedWysiwygHTML) {
                     self.textarea.value = self.domToWikitext(body, self.options);
