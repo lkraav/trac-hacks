@@ -1,4 +1,4 @@
-#   Copyright 2010 Matthew Noyes <thecodingking at gmail.com>   
+#   Copyright 2010 Matthew Noyes <thecodingking at gmail.com>
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ __all__ = ['CollapsiblePlugin']
 class CollapsibleStartMacro(WikiMacroBase):
     r"""CollapsibleStartMacro marks the start of a collapsible list
 
-    Example:    
+    Example:
     `[[CollapsibleStart(Title)]]`
      """
-    
+
     def expand_macro(self, formatter, name, content):
 
         # process arguments
@@ -37,8 +37,8 @@ class CollapsibleStartMacro(WikiMacroBase):
         for i in range(0, len(args)):
             title += args[i]
 
-        return("<div> " +
-               "<h3 class=\"foldable\">" + title + "</h3>" + 
+        return("<div class=\"collapsed\"> " +
+               "<h3 class=\"foldable\">" + title + "</h3>" +
                "<div>")
 
 
