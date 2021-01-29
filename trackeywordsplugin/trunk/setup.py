@@ -17,7 +17,7 @@ setup(
     description="Allows adding and removing keywords on a ticket from a list",
     author="Thomas Vander Stichele",
     author_email="thomas at apestaart dot org",
-    maintainer = "Clemens Feige"
+    maintainer = "Clemens Feige",
     license="BSD",
     url="https://trac-hacks.org/wiki/TracKeywordsPlugin",
     packages=find_packages(exclude=['*.tests*']),
