@@ -65,8 +65,7 @@ jQuery(function($) {
         return false;
       }));
   })
-
+  
+  // append the keyword box right after the "Change Properties" ticket box.
   $("div.ticket #properties").after($fieldset);
-  $("div.wiki #changeinfo").after($fieldset);
-
 })
