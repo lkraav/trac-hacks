@@ -13,7 +13,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracKeywordsPlugin',
-    version=1.0,
+    version=1.1,
     description="Allows adding and removing keywords on a ticket from a list",
     author="Thomas Vander Stichele",
     author_email="thomas at apestaart dot org",
