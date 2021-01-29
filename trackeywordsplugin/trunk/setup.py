@@ -21,12 +21,7 @@ setup(
     license="BSD",
     url="https://trac-hacks.org/wiki/TracKeywordsPlugin",
     packages=find_packages(exclude=['*.tests*']),
-    package_data={
-        'trackeywords': [
-            'htdocs/*.js', 'htdocs/*.css',
-            'README', 'TODO', 'ChangeLog'
-        ]
-    },
+    package_data={'trackeywords': ['htdocs/*.js', 'htdocs/*.css','README']},
     entry_points="""
         [trac.plugins]
         trackeywords = trackeywords.web_ui

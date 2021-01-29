@@ -1,6 +1,8 @@
 Ticket Keywords Plug-in
 -----------------------
 
+https://trac-hacks.org/wiki/TracKeywordsPlugin
+
 This plug-in allows you to add keywords to a ticket from a configured list
 of keywords.
 
