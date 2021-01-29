@@ -25,6 +25,9 @@ jQuery(function($) {
     }
     // Strip leading and trailing white spaces and separator.
     el.value = newval.join(' ').replace(/^[;,\s]+|[;,\s]+$/, '');
+    // trigger change event on the edit field in order to evoke ticket preview
+    el.dispatchEvent(new Event('change'));
+
   }
 
   // Avoid duplicate insertion of keyword section.
