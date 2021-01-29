@@ -1,3 +1,40 @@
-#trac-keywords ul { list-style: none; padding-left: 0; margin: 0; }
-#trac-keywords li { display: inline-block; margin: 0.25em 0.5em 0.25em 0 }
-#trac-keywords .trac-keyword { text-decoration: underline }
+/*
+Style for TracKeywordsPlugin
+https://trac-hacks.org/wiki/TracKeywordsPlugin
+*/
+
+#trac-keywords ul
+{
+ list-style: none;
+ padding-left: 0;
+ margin: 0;
+}
+
+#trac-keywords li
+{
+ display: inline-block;
+ margin: 0.25em 0.5em 0.25em 0
+}
+
+/*
+#trac-keywords .trac-keyword
+{
+ text-decoration: underline
+}
+*/
+
+#trac-keywords a
+{
+ margin-right: 0.2em;
+ border: 1px solid #d7d7d7;
+ border-radius: .4em;
+ padding: 2pt;
+ color: inherit;
+ line-height: 2.0em;
+}
+
+#trac-keywords li.trac-keyword a
+{
+ border-color: darkgray;
+ background-color: lavender;
+}
