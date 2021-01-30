@@ -1,7 +1,8 @@
 // TracKeywordsPlugin 
 jQuery(function($) {
 
-  // the ID of the ticket "keywords" field
+  // Normally the keywords are only supported for tickets by means of the "field-keywords".
+  // However, if the TagsPlugin is loaded then "tags" apply for tickets and wiki pages.
   field_id = document.getElementById('tags') ? "tags" : "field-keywords";
 
   // Remove or add a keyword tag to the field.
@@ -65,7 +66,8 @@ jQuery(function($) {
         return false;
       }));
   })
-  
-  // append the keyword box right after the "Change Properties" ticket box.
+
+  // insert the keyword list into the DOM
   $("div.ticket #properties").after($fieldset);
+  $("div.wiki #changeinfo").after($fieldset);// wiki pages are supported with TagsPlugin
 })
