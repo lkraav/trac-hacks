@@ -7,7 +7,9 @@ margin: 0;
 #content.ticket #ticketinfo-button
 {
 float: right;
+font-size: 0.85em;
 }
+
 #content.ticket #ticketinfo-button a.button
 {
 border: 1px solid #ddd;

@@ -11,7 +11,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='InfoSnippetPlugin',
-    version=0.1,
+    version=0.2,
     description="Offers a box with ticket infos (to be copied into clipboard).",
     author="Clemens",
     author_email="",
@@ -19,6 +19,6 @@ setup(
     url="https://trac-hacks.org/wiki/InfoSnippetPlugin",
     install_requires = ['Trac'],
     packages=find_packages(exclude=['*.tests*']),
-    package_data={'infosnippet': ['htdocs/*.js', 'htdocs/*.css','README']},
+    package_data={'infosnippet': ['htdocs/*.js', 'htdocs/*.css']},
     entry_points={'trac.plugins': ['infosnippet = infosnippet']}
 )
