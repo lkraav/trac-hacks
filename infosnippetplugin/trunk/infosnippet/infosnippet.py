@@ -58,7 +58,6 @@ class InfoSnippetComponent(Component):
     def post_process_request(self, req, template, data, content_type):
 
         if template in ('ticket.html'):
-
             ticket = data['ticket']
             if ticket is not None:
                 self.log.debug("Preparing InfoSnippet plugin for ticket.")
@@ -72,11 +71,9 @@ class InfoSnippetComponent(Component):
                 add_stylesheet(req, 'info/infosnippet.css')
 
         if template in ('wiki_view.html'):
-            self.log.debug("Preparing InfoSnippet plugin for wiki.")
             page = data.get('page')
             if page is not None:
-                self.log.debug(page.name)
-           
+                self.log.debug("Preparing InfoSnippet plugin for wiki.")
                 add_script_data(req, info={
                           'navoption':self.nav_option,
                           'boxoption':self.box_option,
