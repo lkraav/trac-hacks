@@ -1,16 +1,16 @@
-#content.ticket #ticketinfo-text 
+#infosnippet-text 
 {
 font-size: 0.85em;
 margin: 0;
 }
 
-#content.ticket #ticketinfo-button
+#infosnippet-button
 {
 float: right;
 font-size: 0.85em;
 }
 
-#content.ticket #ticketinfo-button a.button
+#infosnippet-button a.button
 {
 border: 1px solid #ddd;
 border-radius: 1em;

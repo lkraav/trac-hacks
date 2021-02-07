@@ -28,12 +28,12 @@ class InfoSnippetComponent(Component):
 
     nav_option = ChoiceOption('infosnippet','nav',
       ['all','ticket','wiki','none'],
-      """Specifies if the 'COPY' menu item shall appear in the context navigation menu at top of the page.
+      """Specifies if the 'INFO' menu item shall appear in the context navigation menu at top of the page.
       Clicking this menu option will not navigate but instead copy the information snippet (as text) into the system clipboard.
 
       Valid options are: 
       - `ticket` only for ticket pages
-      - `wiki` only for wiki pages (not supported yet)
+      - `wiki` only for wiki pages
       - `all` for both of them
       - `none` neither of them
       """)
@@ -45,7 +45,7 @@ class InfoSnippetComponent(Component):
 
       Valid options are: 
       - `ticket` only for ticket pages
-      - `wiki` only for wiki pages (not supported yet)
+      - `wiki` only for wiki pages
       - `all` for both of them
       - `none` neither of them
       """)
@@ -56,20 +56,35 @@ class InfoSnippetComponent(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
+
         if template in ('ticket.html'):
-	    # self.log.debug("Clemens: Info Snippet running.")
 
             ticket = data['ticket']
-            # TODO must check if this is was sucessful!!
-
-            add_script_data(req, info={
+            if ticket is not None:
+                self.log.debug("Preparing InfoSnippet plugin for ticket.")
+                add_script_data(req, info={
                           'navoption':self.nav_option,
                           'boxoption':self.box_option,
                           'projectname':self.env.project_name,
                           'ticketid':str(ticket.id),
                           'ticketsummary':ticket['summary']})
-            add_script(req, 'info/infosnippet.js')
-            add_stylesheet(req, 'info/infosnippet.css')
+                add_script(req, 'info/infosnippet.js')
+                add_stylesheet(req, 'info/infosnippet.css')
+
+        if template in ('wiki_view.html'):
+            self.log.debug("Preparing InfoSnippet plugin for wiki.")
+            page = data.get('page')
+            if page is not None:
+                self.log.debug(page.name)
+           
+                add_script_data(req, info={
+                          'navoption':self.nav_option,
+                          'boxoption':self.box_option,
+                          'projectname':self.env.project_name,
+                          'page':page.name})
+                add_script(req, 'info/infosnippet.js')
+                add_stylesheet(req, 'info/infosnippet.css')
+
         return template, data, content_type
 
     # ITemplateProvider methods

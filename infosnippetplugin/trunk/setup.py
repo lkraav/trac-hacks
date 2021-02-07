@@ -11,7 +11,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='InfoSnippetPlugin',
-    version=0.2,
+    version=0.3,
     description="Offers a box with ticket infos (to be copied into clipboard).",
     author="Clemens",
     author_email="",
