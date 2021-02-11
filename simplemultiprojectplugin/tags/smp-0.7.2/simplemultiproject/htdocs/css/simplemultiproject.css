@@ -1,0 +1,62 @@
+/* Project table on milestone, component, ... admin pages */
+table.admin-smp-project-table {
+    padding-right: 1em;
+    margin-top: 0px;
+}
+
+.admin-smp-proj-tbl-div {
+    max-height: 300px;
+    overflow-y: auto;
+    float: left;
+    margin: 10px;
+}
+
+#project-help-div {
+    clear:both;
+}
+/* end */
+
+/* Roadmap page */
+fieldset.project {
+   margin-bottom: 2em;
+   box-shadow: 1px 5px 5px #dddddd;
+}
+
+div.project > h2:after {
+  display: block;
+  content:' ';
+  border:1px solid lightgrey;
+  width: 65%;
+}
+
+.smp-project-group{
+  box-shadow: 1px 5px 5px #dddddd;
+}
+.smp-grouped-ms{
+  margin-left: 2em;
+}
+/* end */
+
+/* Hide milestones checkbox */
+#smp-hide-completed{
+  margin-right: 0.5em;
+}
+
+#smp-hide-label{
+  float: right;
+}
+
+.smp-hide-completed{
+  display: none;
+}
+/* end */
+/* Hide by project*/
+#smp-ms-sel-div{
+  display: inline-block;
+  margin-right: 2em;
+}
+
+.smp-hide-project{
+  display: none;
+}
+/* end */

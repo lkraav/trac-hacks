@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='TracSimpleMultiProject',
-    version='0.7.3',
+    version='0.7.2',
     packages=['simplemultiproject'],
     package_data={
         'simplemultiproject': [
