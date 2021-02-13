@@ -35,7 +35,7 @@ jQuery(document).ready(function($) {
                 };
                 $.getJSON(wikiautocomplete.url + '/' + strategy.name, data)
                     .done(function(resp) {
-                        cache[strategy] = resp;
+                        cache[strategy.name] = resp;
                         invoke_callback(resp);
                     })
                     .fail(function() { callback([]) });
