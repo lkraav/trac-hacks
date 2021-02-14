@@ -56,7 +56,9 @@ class ReleasesModule(Component):
             if (show_all or not is_released) and \
                     'VERSION_VIEW' in req.perm(resource):
                 version.is_released = is_released
-                version.resource = resource
+                # Property was added in 1.3.2dev: r15844.
+                if not hasattr(version, 'resource'):
+                    version.resource = resource
                 versions.append(version)
 
         versions.reverse()
