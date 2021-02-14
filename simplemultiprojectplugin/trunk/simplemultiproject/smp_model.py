@@ -304,17 +304,19 @@ class SmpProject(SmpBaseModel):
             return self.env.db_query("""SELECT id_project FROM smp_project WHERE name = '%s'""" %
                                      (project_name, )) != []
 
-    def apply_user_restrictions(self, projects, username):
+    def apply_user_restrictions(self, projects, username=None, perms=None):
         """Create a new list of projects the user has access to.
 
         :param projects: list of projects. each item is a tuple with all known project informations
         :param username: name of the current user
+        :param perms: PermissionCache object
         :return: a new filtered list of projects
 
         Filtering is done by checking if the user has permission PROJECT_<project_id>_MEMBER for any project
         in the project list.
         """
-        perms = PermissionSystem(self.env).get_user_permissions(username)
+        if not perms:
+            perms = PermissionSystem(self.env).get_user_permissions(username)
 
         # Note that the permission may be present but set to False
         return [prj for prj in projects if not prj.restricted or

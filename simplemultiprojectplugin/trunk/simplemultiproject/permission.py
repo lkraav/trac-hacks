@@ -149,7 +149,12 @@ class SmpPermissionPolicy(TracComponent):
         return filtered
 
     def check_milestone_permission(self, milestone, perm):
-        """Check if user has access to this milestone. Returns True if access is possible otherwise False-"""
+        """Check if user has access to this milestone. Returns True if access is possible otherwise False.
+
+        :param milestone: name of milestone (resource.id)
+        :param perm: PermissionCache object
+        :return True if access permitted, False otherwise
+        """
         # dict with key: milestone, val: list of project ids
         milestones = defaultdict(list)
         for ms in self.smp_milestone.get_all_milestones_and_id_project_id():
@@ -161,8 +166,10 @@ class SmpPermissionPolicy(TracComponent):
             # first access. With normal dict this would have been a KeyError.
             return True
         else:
+            filtered_prjs = self.smp_project.apply_user_restrictions(self.smp_project.get_all_projects(), perm)
+            allowed_prjs = [prj.id for prj in filtered_prjs]
             for project in project_ids:
-                if (PERM_TEMPLATE % project) in perm:
+                if project in allowed_prjs:
                     return True
 
         return False
@@ -210,7 +217,7 @@ class SmpPermissionPolicy(TracComponent):
                         return False  # We deny access no matter what other policies may have decided
             elif resource and resource.realm == 'milestone' and resource.id is not None:
                     # res = self.check_milestone_permission(resource.id, perm)
-                    # self.log.info('################# %s %s %s', resource, resource.realm, res)
+                    # self.log.info('################# %s %s', resource.id, self.check_milestone_permission(resource.id, perm))
                     return self.check_milestone_permission(resource.id, perm)
 
         return None  # We don't care, let another policy check the item
