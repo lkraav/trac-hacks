@@ -4,7 +4,6 @@ div#childtickets {
 }
 
 table.childtickets_listing {
-  clear: both;
   border-bottom: 1px solid #d7d7d7;
   border-collapse: collapse;
   border-spacing: 0;

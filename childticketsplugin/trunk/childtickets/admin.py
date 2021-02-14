@@ -8,6 +8,15 @@ from trac.web.chrome import ITemplateProvider
 from trac.web.chrome import add_notice, add_warning, add_stylesheet
 
 
+def genshi_template_args(env, filename, data):
+    """Compatibility function for IAdminPanelProviders."""
+    from trac.web.chrome import Chrome
+    if hasattr(Chrome(env), 'jenv'):
+        return filename, data, None
+    else:
+        return filename, data
+
+
 def _save_config(config, req, log):
     """Try to save the config, and display either a success notice or a
     failure warning.
@@ -122,7 +131,7 @@ class ChildTicketsAdminPanel(Component):
         # Add our own styles for the ticket lists.
         add_stylesheet(req, 'ct/css/childtickets.css')
 
-        return 'admin_childtickets.html', data
+        return genshi_template_args(self.env, 'admin_childtickets.html', data)
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
