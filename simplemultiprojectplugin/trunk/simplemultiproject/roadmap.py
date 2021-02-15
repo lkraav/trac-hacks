@@ -141,14 +141,16 @@ class SmpRoadmapModule(Component):
 
     def add_project_info_to_milestones(self, data):
         # Do the milestone updates
+        data['ms_without_prj'] = False
         if data.get('milestones'):
             all_known_proj_ids = data['project_ids']
             # Add info about linked projects
             for item in data.get('milestones'):
+                # Used in smp_roadmap.html to check if there is a ms - proj link
                 ids_for_ms = self.smp_milestone.get_project_ids_for_resource_item('milestone', item.name)
                 if not ids_for_ms:
-                    # Used in smp_roadmap.html to check if there is a ms - proj link
-                    item.id_project = all_known_proj_ids  # Milestones without a project are for all
+                    item.id_project = []  # all_known_proj_ids  # Milestones without a project are for all
+                    data['ms_without_prj'] = True
                 else:
                     item.id_project = ids_for_ms
 
