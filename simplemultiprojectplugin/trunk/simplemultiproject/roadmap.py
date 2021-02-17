@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2020 Cinc
+# Copyright (C) 2015-2021 Cinc
 #
 # License: 3-clause BSD
 #
@@ -124,20 +124,16 @@ class SmpRoadmapModule(Component):
     def add_projects_to_dict(self, req, data):
         """Add allowed projects to the data dict.
 
-        This checks if the user has access to a project. If not the project won't be added.
-        """
-        # Get all projects user has access to.
-        usr_projects = []
-        for project in Project.select(self.env):  # This is already sorted by name
-            if project.restricted:
-                if (PERM_TEMPLATE % project.id) in req.perm:
-                    usr_projects.append(project)
-            else:
-                usr_projects.append(project)
-        all_known_proj_ids = [project.id for project in usr_projects]
+        :param req: a Request object
+        :param data: dictionary holding data for template
+        :return None
 
+        This checks if the user has access to the projects. If not a project won't be added to the list of available
+        projects. Closed projects are ignored, too.
+        """
+        usr_projects = SmpPermissionPolicy.active_projects_by_permission(req, Project.select(self.env))
         data.update({'projects': usr_projects,
-                     'project_ids': all_known_proj_ids})
+                     'project_ids': [project.id for project in usr_projects]})
 
     def add_project_info_to_milestones(self, data):
         # Do the milestone updates

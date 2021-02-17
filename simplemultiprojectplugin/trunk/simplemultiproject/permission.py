@@ -137,6 +137,15 @@ class SmpPermissionPolicy(TracComponent):
 
     @staticmethod
     def active_projects_by_permission(req, projects):
+        """Filter the given list of projects by user permission. Only active projects allowed.
+
+        :param req: Request object. Must hold the users permission object
+        :param projects: list of Project objects
+        :return filtered list of Project objects
+
+        Closed projects are filtered out. Restricted projects are only added to the list if the
+        user has permission to access.
+        """
         filtered = []
         for project in projects:
             if not project.closed:
