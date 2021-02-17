@@ -157,7 +157,7 @@ class TestPermissionProvider(unittest.TestCase):
         #  c) is associated with several projects and at least one of them is not restricted
         #  d) is associated with a project without restrictions
 
-        prjs = ((1, 'p 1', None), (2, 'p 2', None), (3, 'p 3', 'YES'), (4, 'p 4', None),
+        prjs = ((1, 'p 1', 'YES'), (2, 'p 2', None), (3, 'p 3', 'YES'), (4, 'p 4', None),
                 (5, 'p 5', 'YES'), (6, 'p 6', 'YES'), (7, 'p 7', None), (8, 'p 8', None))
         for p_id, name, restrict in prjs:
             prj_id = self.prj_model.add(name, restrict_to=restrict)
@@ -177,7 +177,7 @@ class TestPermissionProvider(unittest.TestCase):
         perm = Perm()
         # This milestone has no project thus user can access it (a)
         self.assertTrue(self.perm_plugin.check_milestone_permission('no_prj', perm))
-        # Milestone for project 1 but user has permission PROJECT_1_MEMBER (b)
+        # Milestone for restricted project 1 but user has permission PROJECT_1_MEMBER (b)
         self.assertTrue(self.perm_plugin.check_milestone_permission('foo1', perm))
         # Milestone for project 2 but the project has no restrictions thus user may access it (d)
         self.assertTrue(self.perm_plugin.check_milestone_permission('bar', perm))

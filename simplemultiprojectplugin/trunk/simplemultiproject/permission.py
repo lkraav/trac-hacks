@@ -5,12 +5,13 @@
 # License: 3-clause BSD
 #
 from collections import defaultdict
+from simplemultiproject.model import Project
+from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilestone, SmpProject, SmpVersion
 from trac.core import Component as TracComponent, implements
 from trac.perm import IPermissionRequestor, IPermissionPolicy, PermissionSystem
 from trac.ticket.model import Component, Version
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data
-from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilestone, SmpProject, SmpVersion
 
 
 def get_user_projects(req, smp_project):
@@ -157,6 +158,11 @@ class SmpPermissionPolicy(TracComponent):
                     filtered.append(project)
         return filtered
 
+    @staticmethod
+    def apply_user_permissions(projects, perms):
+        return [prj for prj in projects if not prj.restricted or
+                (PERM_TEMPLATE % prj.id in perms)]
+
     def check_milestone_permission(self, milestone, perm):
         """Check if user has access to this milestone. Returns True if access is possible otherwise False.
 
@@ -175,7 +181,7 @@ class SmpPermissionPolicy(TracComponent):
             # first access. With normal dict this would have been a KeyError.
             return True
         else:
-            filtered_prjs = self.smp_project.apply_user_restrictions(self.smp_project.get_all_projects(), perm)
+            filtered_prjs = self.apply_user_permissions(Project.select(self.env), perm)
             allowed_prjs = [prj.id for prj in filtered_prjs]
             for project in project_ids:
                 if project in allowed_prjs:
