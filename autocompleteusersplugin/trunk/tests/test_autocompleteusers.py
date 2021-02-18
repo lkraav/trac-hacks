@@ -6,6 +6,7 @@
 # you should have received as part of this distribution.
 
 from cStringIO import StringIO
+import json
 
 from trac.test import EnvironmentStub, MockPerm
 from trac.util.datefmt import utc
@@ -45,9 +46,13 @@ class Test(object):
         return environ
 
     def _make_req(self, args={}):
+
+        def start_response(status, headers, exc_info=None):
+            return buf.write
+
         buf = StringIO()
         environ = self._make_environ(PATH_INFO='/subjects')
-        req = Request(environ, lambda status, headers: buf.write)
+        req = Request(environ, start_response)
         req.authname = 'anonymous'
         req.args.update(args)
         req.arg_list = [(name, value)
@@ -69,41 +74,50 @@ class Test(object):
             self.mod.process_request(req)
             raise AssertionError('not raising RequestDone')
         except RequestDone:
-            return req.response_sent.getvalue().decode('utf-8')
+            return json.loads(req.response_sent.getvalue())
 
     def test_no_users(self):
         req = self._make_req(args={'users': '1'})
-        assert '' == self._process_request(req)
+        assert [] == self._process_request(req)
 
     def test_users(self):
         self._insert_test_users()
         req = self._make_req(args={'users': '1'})
-        assert self._process_request(req) == \
-            u'alice|<alice@example.org> |Alïcé\n' \
-            u'bob||Böb\n' \
-            u'charlie|<charlie@example.org> |'
-        req = self._make_req(args={'users': '1', 'q': 'cH'})
-        assert self._process_request(req) == u'charlie|<charlie@example.org> |'
+        assert self._process_request(req) == [
+            [u'alice', u'<alice@example.org> ', u'Alïcé'],
+            [u'bob', '', u'Böb'],
+            [u'charlie', u'<charlie@example.org> ', u''],
+        ]
+        req = self._make_req(args={'users': '1', 'term': 'cH'})
+        assert self._process_request(req) == [
+            [u'charlie', u'<charlie@example.org> ', u''],
+        ]
 
     def test_users_without_email_view(self):
         self._insert_test_users()
         req = self._make_req(args={'users': '1'})
         req.perm = {}  # no permissions
-        assert self._process_request(req) == \
-            u'alice|<alice@…> |Alïcé\n' \
-            u'bob||Böb\n' \
-            u'charlie|<charlie@…> |'
-        req = self._make_req(args={'users': '1', 'q': 'B'})
-        assert self._process_request(req) == u'bob||Böb'
+        assert self._process_request(req) == [
+            [u'alice', u'<alice@…> ', u'Alïcé'],
+            [u'bob', u'', u'Böb'],
+            [u'charlie', u'<charlie@…> ', u''],
+        ]
+        req = self._make_req(args={'users': '1', 'term': 'B'})
+        assert self._process_request(req) == [
+            [u'bob', u'', u'Böb'],
+        ]
 
     def test_users_with_groups(self):
         self._insert_test_users()
         req = self._make_req(args={'users': '1', 'groups': '1'})
-        assert self._process_request(req) == \
-            u'alice|<alice@example.org> |Alïcé\n' \
-            u'bob||Böb\n' \
-            u'charlie|<charlie@example.org> |\n' \
-            u'anonymous||group\n' \
-            u'authenticated||group'
-        req = self._make_req(args={'users': '1', 'groups': '1', 'q': 'An'})
-        assert self._process_request(req) == u'anonymous||group'
+        assert self._process_request(req) == [
+            [u'alice', u'<alice@example.org> ', u'Alïcé'],
+            [u'bob', u'', u'Böb'],
+            [u'charlie', u'<charlie@example.org> ', u''],
+            [u'anonymous', u'', u'group'],
+            [u'authenticated', u'', u'group'],
+        ]
+        req = self._make_req(args={'users': '1', 'groups': '1', 'term': 'An'})
+        assert self._process_request(req) == [
+            [u'anonymous', u'', u'group'],
+        ]
