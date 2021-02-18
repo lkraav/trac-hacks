@@ -1,0 +1,9 @@
+.tracautocompleteusers li:nth-child(odd) { background-color: #eee }
+.tracautocompleteusers li.ui-state-focus { position: relative; z-index: 1 }
+.tracautocompleteusers li a { display: block }
+.tracautocompleteusers li a.ui-state-hover { position: relative; z-index: 1 }
+.tracautocompleteusers li a span {
+ display: block;
+ font-size: 80%;
+ color: #888;
+}
