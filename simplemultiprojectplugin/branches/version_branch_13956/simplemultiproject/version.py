@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2012 Thomas Doering
+# Copyright (C) falkb
+# Copyright (C) Cinc
 #
 
 import re
@@ -31,6 +33,7 @@ from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.model import *
 from simplemultiproject.session import get_filter_settings
 from simplemultiproject.smp_model import SmpVersion
+from simplemultiproject.permission import SmpPermissionPolicy
 
 
 def get_tickets_for_any(env, any_name, any_value, field='component'):
@@ -72,7 +75,7 @@ def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component',
     }
 
 
-class SmpVersionProject(Component):
+class SmpVersionModule(Component):
     """Create Project dependent versions"""
 
     implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider,
@@ -87,7 +90,7 @@ class SmpVersionProject(Component):
         """)
 
     def __init__(self):
-        self.__SmpModel = SmpModel(self.env)
+        self.__SmpModel = None  # SmpModel(self.env)
         self.smp_version = SmpVersion(self.env)
 
     # IRequestHandler methods
@@ -135,7 +138,8 @@ class SmpVersionProject(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if data and 'is_SMP' in data and \
+        self.log.info('###### This code is disabled right now')
+        if data and 'is_SMP_DISABLED' in data and \
                 req.path_info.startswith('/version'):  # #12371
             version = data['version']
             if version and type(version) is Version:
@@ -145,6 +149,18 @@ class SmpVersionProject(Component):
                     self.__SmpModel.check_project_permission(req,
                                                              project_name[0])
         return template, data, content_type
+
+    def add_project_info_to_versions(self, data):
+        data['version_without_prj'] = False
+        if data.get('versions'):
+            for item in data.get('versions'):
+                ids_for_ver = self.smp_version.get_project_ids_for_resource_item('version', item.name)
+                if not ids_for_ver:
+                    # Used in smp_roadmap.html to check if there is a version - proj link
+                    item.id_project = []  # Versions without a project are for all
+                    data['version_without_prj'] = True
+                else:
+                    item.id_project = ids_for_ver
 
     # IRoadmapDataProvider
 
@@ -161,10 +177,13 @@ class SmpVersionProject(Component):
         if data and hide:
             data['hide'] = hide
 
-        if data and (not hide or 'versions' not in hide):
-            versions, version_stats = self._versions_and_stats(req, None)
+        if data and (not hide or 'versions' not in hide):  # TODO: This clause must be revised
+            projects = list(Project.select(self.env))  # select() is a generator
+            versions, version_stats = \
+                self._versions_and_stats(req, [prj.id for prj in SmpPermissionPolicy.apply_user_permissions(projects, req.perm)])
             data['versions'] = versions
             data['version_stats'] = version_stats
+            self.add_project_info_to_versions(data)
 
         if data and hide and 'milestones' in hide:
             data['milestones'] = []
@@ -191,13 +210,9 @@ class SmpVersionProject(Component):
     # Internal methods
 
     def __edit_project(self, data, req):
-        version = data.get('version').name
-        all_projects = \
-            self.__SmpModel.get_all_projects_filtered_by_conditions(req)
-        id_project_version = self.__SmpModel.get_id_project_version(version)
-
-        id_project_selected = id_project_version \
-            if id_project_version is not None else None
+        version_name = data.get('version').name
+        all_projects = SmpPermissionPolicy.apply_user_permissions(Project.select(self.env), req.perm)
+        project_ids_version = self.smp_version.get_project_ids_for_version(version_name)
 
         return tag.div(
             tag.label(
@@ -205,8 +220,8 @@ class SmpVersionProject(Component):
                 tag.br(),
                 tag.select(
                     tag.option(),
-                    [tag.option(row[1], selected=(id_project_selected == row[0] or None), value=row[0])
-                     for row in sorted(all_projects, key=itemgetter(1))],
+                    [tag.option(prj.name, selected=((prj.id in project_ids_version) or None), value=prj.id)
+                     for prj in sorted(all_projects, key=lambda item: item.name)],
                     name="project")
             ),
             class_="field")
@@ -439,7 +454,13 @@ class SmpVersionProject(Component):
         else:
             return datetime(9999, 12, 31).strftime('%Y%m%d%H%M%S') + version.name
 
-    def _versions_and_stats(self, req, filter_projects):
+    def _versions_and_stats(self, req, user_projects):
+        """
+
+        :param req: Request object
+        :param user_projects: list of allowed project ids for this user
+        :return:
+        """
         req.perm.require('MILESTONE_VIEW')
 
         versions = Version.select(self.env)
@@ -450,10 +471,10 @@ class SmpVersionProject(Component):
         show = req.args.getlist('show')
 
         for version in sorted(versions, key=lambda v: self._version_time(v)):
-            project = self.__SmpModel.get_project_version(version.name)
+            project_ids = self.smp_version.get_project_ids_for_version(version.name)
             version.due = None
             version.completed = None
-            if not filter_projects or (project and project[0] in filter_projects):
+            if not project_ids or (set(project_ids) & set(user_projects)):
                 if not version.time or version.time.replace(tzinfo=None) >= datetime.now() or 'completed' in show:
                     if version.time:
                         if version.time.replace(tzinfo=None) >= datetime.now():
@@ -468,11 +489,10 @@ class SmpVersionProject(Component):
                     stat = get_ticket_stats(self.stats_provider, tickets)
                     stats.append(any_stats_data(self.env, req, stat,
                                                 'version', version.name))
-
         return filtered_versions, stats
 
 
-class SmpVersionModule(Component):
+class SmpVersionRoadmap(Component):
     """Module to keep version information for projects up to date when
     SmpFilterDefaultVersionPanel is deactivated.
     """
@@ -518,6 +538,16 @@ class SmpVersionModule(Component):
     def filter_stream(self, req, method, filename, stream, data):
 
         if filename == 'roadmap.html':
+            # Add versions to page
+            # Roadmap group plugin is grouping by project
+            if not get_filter_settings(req, 'roadmap', 'smp_group'):
+                data['infodivclass'] = self.infodivclass
+                # Specify part of template to be rendered
+                data['smp_render'] = 'versions'
+                filter_ = Transformer('//div[@class="milestones"]')
+                stream |= filter_.after(self.version_tmpl.generate(**data))
+
+        if filename == 'roadmap.html____':
             # Add button to create new versions
             stream |= self._add_version_button(data)
             # Change label to include versions
@@ -527,15 +557,6 @@ class SmpVersionModule(Component):
             data['smp_render'] = 'prefs'
             filter_ = Transformer('//form[@id="prefs"]')
             stream |= filter_.prepend(self.version_tmpl.generate(**data))
-
-            # Add versions to page
-            # Roadmap group plugin is grouping by project
-            if 'smp_groupproject' not in data:
-                data['infodivclass'] = self.infodivclass
-                # Specify part of template to be rendered
-                data['smp_render'] = 'versions'
-                filter_ = Transformer('//div[@class="milestones"]')
-                stream |= filter_.after(self.version_tmpl.generate(**data))
 
         return stream
 

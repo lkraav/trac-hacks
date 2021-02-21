@@ -106,6 +106,7 @@ class SmpRoadmapModule(Component):
                     chrome = Chrome(self.env)
                     data = chrome.populate_data(req, data)
                     if self.pre_1_3:
+                        self.log.info('########################## group')
                         filter_list.append(xform.before(self.group_tmpl.generate(**data).render('html')))
                     else:
                         filter_list.append(xform.before(chrome.render_template_string(self.group_tmpl, data)))
@@ -139,33 +140,21 @@ class SmpRoadmapModule(Component):
         # Do the milestone updates
         data['ms_without_prj'] = False
         if data.get('milestones'):
-            all_known_proj_ids = data['project_ids']
             # Add info about linked projects
             for item in data.get('milestones'):
                 # Used in smp_roadmap.html to check if there is a ms - proj link
                 ids_for_ms = self.smp_milestone.get_project_ids_for_resource_item('milestone', item.name)
                 if not ids_for_ms:
-                    item.id_project = []  # all_known_proj_ids  # Milestones without a project are for all
+                    item.id_project = []  # Milestones without a project are for all
                     data['ms_without_prj'] = True
                 else:
                     item.id_project = ids_for_ms
-
-    def add_project_info_to_versions(self, data):
-        if data.get('versions'):
-            all_known_proj_ids = data['project_ids']
-            for item in data.get('versions'):
-                ids_for_ver = self.smp_version.get_project_ids_for_resource_item('version', item.name)
-                if not ids_for_ver:
-                    # Used in smp_roadmap.html to check if there is a version - proj link
-                    item.id_project = all_known_proj_ids  # Versions without a project are for all
-                else:
-                    item.id_project = ids_for_ver
 
     def add_data(self, req, data):
         # Get all projects user has access to.
         self.add_projects_to_dict(req, data)
         self.add_project_info_to_milestones(data)
-        self.add_project_info_to_versions(data)
+        # self.add_project_info_to_versions(data)
 
         return data
 
@@ -204,6 +193,7 @@ class SmpRoadmapModule(Component):
             data['milestones'] = filtered_items
             data['milestone_stats'] = filtered_item_stats
 
+        # TODO: Is this still needed?
         if 'versions' in data:
             item_stats = data.get('version_stats')
             filtered_items = []

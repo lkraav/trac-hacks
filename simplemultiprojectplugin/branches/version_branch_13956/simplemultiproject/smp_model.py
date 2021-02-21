@@ -387,3 +387,11 @@ class SmpVersion(SmpBaseModel):
                  May be empty.
         """
         return self.get_items_for_project_id(id_project)
+
+    def get_project_ids_for_version(self, version_name):
+        """Get a list of project ids his version is associated with
+
+        :param version_name: name of a version
+        :return: list of project ids
+        """
+        return self.get_project_ids_for_resource_item(self.resource_name, version_name)
