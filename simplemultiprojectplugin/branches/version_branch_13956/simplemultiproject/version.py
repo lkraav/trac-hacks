@@ -76,18 +76,9 @@ def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component',
 
 
 class SmpVersionModule(Component):
-    """Create Project dependent versions"""
+    """Create Project dependent versions from the roadmap page."""
 
-    implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider,
-               ITemplateStreamFilter)
-
-    stats_provider = ExtensionOption(
-        'roadmap', 'stats_provider',
-        ITicketGroupStatsProvider, 'DefaultTicketGroupStatsProvider',
-        """Name of the component implementing `ITicketGroupStatsProvider`,
-        which is used to collect statistics on groups of tickets for display
-        in the roadmap views.
-        """)
+    implements(IRequestFilter, IRequestHandler, ITemplateStreamFilter)
 
     def __init__(self):
         self.__SmpModel = None  # SmpModel(self.env)
@@ -149,50 +140,6 @@ class SmpVersionModule(Component):
                     self.__SmpModel.check_project_permission(req,
                                                              project_name[0])
         return template, data, content_type
-
-    def add_project_info_to_versions(self, data):
-        data['version_without_prj'] = False
-        if data.get('versions'):
-            for item in data.get('versions'):
-                ids_for_ver = self.smp_version.get_project_ids_for_resource_item('version', item.name)
-                if not ids_for_ver:
-                    # Used in smp_roadmap.html to check if there is a version - proj link
-                    item.id_project = []  # Versions without a project are for all
-                    data['version_without_prj'] = True
-                else:
-                    item.id_project = ids_for_ver
-
-    # IRoadmapDataProvider
-
-    def add_data(self, req, data):
-
-        hide = []
-        if get_filter_settings(req, 'roadmap', 'smp_hideversions'):
-            hide.append('versions')
-        if get_filter_settings(req, 'roadmap', 'smp_hidemilestones'):
-            hide.append('milestones')
-        if get_filter_settings(req, 'roadmap', 'smp_hideprojdesc'):
-            hide.append('projectdescription')
-
-        if data and hide:
-            data['hide'] = hide
-
-        if data and (not hide or 'versions' not in hide):  # TODO: This clause must be revised
-            projects = list(Project.select(self.env))  # select() is a generator
-            versions, version_stats = \
-                self._versions_and_stats(req, [prj.id for prj in SmpPermissionPolicy.apply_user_permissions(projects, req.perm)])
-            data['versions'] = versions
-            data['version_stats'] = version_stats
-            self.add_project_info_to_versions(data)
-
-        if data and hide and 'milestones' in hide:
-            data['milestones'] = []
-            data['milestone_stats'] = []
-
-        return data
-
-    def filter_data(self, req, data):
-        return data
 
     # ITemplateStreamFilter methods
 
@@ -447,6 +394,71 @@ class SmpVersionModule(Component):
         add_script(req, 'common/js/folding.js')
         return 'version_view.html', data, None
 
+
+class SmpVersionRoadmap(Component):
+    """Add version information to the roadmap page."""
+
+    implements(ITemplateStreamFilter, IRoadmapDataProvider)
+
+    stats_provider = ExtensionOption(
+        'roadmap', 'stats_provider',
+        ITicketGroupStatsProvider, 'DefaultTicketGroupStatsProvider',
+        """Name of the component implementing `ITicketGroupStatsProvider`,
+        which is used to collect statistics on groups of tickets for display
+        in the roadmap views.
+        """)
+
+    def __init__(self):
+        self.smp_version = SmpVersion(self.env)
+        chrome = Chrome(self.env)
+        self.version_tmpl = chrome.load_template("roadmap_versions.html", None)
+        # CSS class for milestones and versions
+        self.infodivclass = 'info trac-progress'
+
+    def add_project_info_to_versions(self, data):
+        data['version_without_prj'] = False
+        if data.get('versions'):
+            for item in data.get('versions'):
+                ids_for_ver = self.smp_version.get_project_ids_for_resource_item('version', item.name)
+                if not ids_for_ver:
+                    # Used in smp_roadmap.html to check if there is a version - proj link
+                    item.id_project = []  # Versions without a project are for all
+                    data['version_without_prj'] = True
+                else:
+                    item.id_project = ids_for_ver
+
+    # IRoadmapDataProvider
+
+    def add_data(self, req, data):
+
+        hide = []
+        if get_filter_settings(req, 'roadmap', 'smp_hideversions'):
+            hide.append('versions')
+        if get_filter_settings(req, 'roadmap', 'smp_hidemilestones'):
+            hide.append('milestones')
+        if get_filter_settings(req, 'roadmap', 'smp_hideprojdesc'):
+            hide.append('projectdescription')
+
+        if data and hide:
+            data['hide'] = hide
+
+        if data and (not hide or 'versions' not in hide):  # TODO: This clause must be revised
+            projects = list(Project.select(self.env))  # select() is a generator
+            versions, version_stats = \
+                self._versions_and_stats(req, [prj.id for prj in SmpPermissionPolicy.apply_user_permissions(projects, req.perm)])
+            data['versions'] = versions
+            data['version_stats'] = version_stats
+            self.add_project_info_to_versions(data)
+
+        if data and hide and 'milestones' in hide:
+            data['milestones'] = []
+            data['milestone_stats'] = []
+
+        return data
+
+    def filter_data(self, req, data):
+        return data
+
     @staticmethod
     def _version_time(version):
         if version.time:
@@ -491,48 +503,6 @@ class SmpVersionModule(Component):
                                                 'version', version.name))
         return filtered_versions, stats
 
-
-class SmpVersionRoadmap(Component):
-    """Module to keep version information for projects up to date when
-    SmpFilterDefaultVersionPanel is deactivated.
-    """
-    implements(IRequestFilter, ITemplateStreamFilter)
-
-    def __init__(self):
-        self.smp_model = SmpVersion(self.env)
-        chrome = Chrome(self.env)
-        self.version_tmpl = chrome.load_template("roadmap_versions.html", None)
-        # CSS class for milestones and versions
-        self.infodivclass = 'info trac-progress'
-
-    # IRequestFilter methods
-
-    def pre_process_request(self, req, handler):
-        if self._is_valid_request(req) and req.method == "POST":
-            # Try to delete only if version page filter is disabled.
-            # Deleting is usually done there.
-            if not self.env.enabled[SmpFilterDefaultVersionPanels]:
-                if 'remove' in req.args:
-                    # 'Remove' button on main version panel
-                    self.smp_model.delete(req.args.getlist('sel'))
-                elif 'save' in req.args:
-                    # 'Save' button on 'Manage version' panel
-                    p_ids = req.args.getlist('sel')
-                    self.smp_model.delete(req.args.get('path_info'))
-                    self.smp_model.add_after_delete(req.args.get('name'), p_ids)
-        return handler
-
-    @staticmethod
-    def _is_valid_request(req):
-        """Check request for correct path and valid form token"""
-        if req.path_info.startswith('/admin/ticket/versions') and \
-                req.args.get('__FORM_TOKEN') == req.form_token:
-            return True
-        return False
-
-    def post_process_request(self, req, template, data, content_type):
-        return template, data, content_type
-
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
@@ -564,6 +534,44 @@ class SmpVersionRoadmap(Component):
         filter_ = Transformer('//div[@class="buttons"][2]')
         template = MarkupTemplate(add_version_button).generate(**data)
         return filter_.append(template)
+
+
+class SmpVersionPageObserver(Component):
+    """Module to keep version information for projects up to date when
+    SmpFilterDefaultVersionPanel is deactivated.
+    """
+    implements(IRequestFilter)
+
+    def __init__(self):
+        self.smp_model = SmpVersion(self.env)
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        if self._is_valid_request(req) and req.method == "POST":
+            # Try to delete only if version page filter is disabled.
+            # Deleting is usually done there.
+            if not self.env.enabled[SmpFilterDefaultVersionPanels]:
+                if 'remove' in req.args:
+                    # 'Remove' button on main version panel
+                    self.smp_model.delete(req.args.getlist('sel'))
+                elif 'save' in req.args:
+                    # 'Save' button on 'Manage version' panel
+                    p_ids = req.args.getlist('sel')
+                    self.smp_model.delete(req.args.get('path_info'))
+                    self.smp_model.add_after_delete(req.args.get('name'), p_ids)
+        return handler
+
+    @staticmethod
+    def _is_valid_request(req):
+        """Check request for correct path and valid form token"""
+        if req.path_info.startswith('/admin/ticket/versions') and \
+                req.args.get('__FORM_TOKEN') == req.form_token:
+            return True
+        return False
+
+    def post_process_request(self, req, template, data, content_type):
+        return template, data, content_type
 
 
 show_completed_label = u"""\
