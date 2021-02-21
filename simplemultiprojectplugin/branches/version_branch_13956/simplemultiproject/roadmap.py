@@ -106,7 +106,6 @@ class SmpRoadmapModule(Component):
                     chrome = Chrome(self.env)
                     data = chrome.populate_data(req, data)
                     if self.pre_1_3:
-                        self.log.info('########################## group')
                         filter_list.append(xform.before(self.group_tmpl.generate(**data).render('html')))
                     else:
                         filter_list.append(xform.before(chrome.render_template_string(self.group_tmpl, data)))

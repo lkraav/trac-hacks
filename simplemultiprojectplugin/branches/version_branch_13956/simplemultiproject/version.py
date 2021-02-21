@@ -9,9 +9,8 @@ import re
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from genshi import HTML
 from genshi.filters.transform import Transformer
-from genshi.template.markup import MarkupTemplate
+from pkg_resources import get_distribution, parse_version, resource_filename
 from trac.attachment import AttachmentModule
 from trac.config import ExtensionOption
 from trac.core import *
@@ -19,7 +18,7 @@ from trac.ticket.model import Version, TicketSystem
 from trac.ticket.query import QueryModule
 from trac.ticket.roadmap import ITicketGroupStatsProvider, \
     apply_ticket_permissions, get_ticket_stats
-from trac.web.chrome import web_context
+from trac.web.chrome import ITemplateProvider, web_context
 from trac.util.datefmt import get_datetime_format_hint, parse_date, \
     user_time, utc
 from trac.util.html import html as tag
@@ -73,6 +72,15 @@ def any_stats_data(env, req, stat, any_name, any_value, grouped_by='component',
         'interval_hrefs': [query_href(interval['qry_args'])
                            for interval in stat.intervals]
     }
+
+
+def writeResponse(req, data, httperror=200, content_type='text/plain'):
+    data=data.encode('utf-8')
+    req.send_response(httperror)
+    req.send_header('Content-Type', '%s; charset=utf-8' % content_type)
+    req.send_header('Content-Length', len(data))
+    req.end_headers()
+    req.write(data)
 
 
 class SmpVersionModule(Component):
@@ -398,7 +406,7 @@ class SmpVersionModule(Component):
 class SmpVersionRoadmap(Component):
     """Add version information to the roadmap page."""
 
-    implements(ITemplateStreamFilter, IRoadmapDataProvider)
+    implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider, ITemplateProvider)
 
     stats_provider = ExtensionOption(
         'roadmap', 'stats_provider',
@@ -408,12 +416,73 @@ class SmpVersionRoadmap(Component):
         in the roadmap views.
         """)
 
+    # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
+    # creation using trac.util.html.tag and friends
+    pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
+    version_tmpl = None
+
     def __init__(self):
         self.smp_version = SmpVersion(self.env)
-        chrome = Chrome(self.env)
-        self.version_tmpl = chrome.load_template("roadmap_versions.html", None)
+        #chrome = Chrome(self.env)
+        #self.version_tmpl = chrome.load_template("roadmap_versions.html", None)
         # CSS class for milestones and versions
         self.infodivclass = 'info trac-progress'
+
+    def _load_template(self):
+        chrome = Chrome(self.env)
+        if self.pre_1_3:
+            self.version_tmpl = chrome.load_template("roadmap_versions.html", None)
+        else:
+            self.version_tmpl = chrome.load_template("roadmap_versions_jinja.html", False)
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+
+        if data:
+            path_elms = req.path_info.split('/')
+            if len(path_elms) > 1 and path_elms[1] == 'roadmap':
+                # Add versions to page
+                # Only when not grouped. When grouped the version information is added in SmpRoadmapModule
+                if not get_filter_settings(req, 'roadmap', 'smp_group'):
+                    add_script(req, 'simplemultiproject/js/add_version_roadmap.js')
+
+        return template, data, content_type
+
+    # IRequestHandler methods
+
+    def match_request(self, req):
+        if req.path_info == '/smpversionroadmap':
+            return True
+
+    def process_request(self, req):
+        # Add versions to page
+        # Roadmap group plugin is grouping by project
+        if not get_filter_settings(req, 'roadmap', 'smp_group'):
+            if not self.version_tmpl:
+                self._load_template()
+
+            chrome = Chrome(self.env)
+            data = {'infodivclass': self.infodivclass,
+                    'smp_add_version_data': True}  # Mark for add_data()
+            # Specify part of template to be rendered
+            data['smp_render'] = 'versions'
+            data = chrome.populate_data(req, data)
+            # Add version data
+            self.add_data(req, data)
+            if self.pre_1_3:
+                html = self.version_tmpl.generate(**data).render('html')
+            else:
+                html = chrome.render_template_string(self.version_tmpl, data)
+
+            writeResponse(req, html, 200, 'text/html')
+
+            return
+
+    # IRoadmapDataProvider
 
     def add_project_info_to_versions(self, data):
         data['version_without_prj'] = False
@@ -427,9 +496,15 @@ class SmpVersionRoadmap(Component):
                 else:
                     item.id_project = ids_for_ver
 
-    # IRoadmapDataProvider
-
     def add_data(self, req, data):
+
+        # When not grouped the version information is added in process_request().
+        # We must still make sure the data is added when grouped but called as part of IRoadmapDataProvider.
+        #
+        # To decide the var smp_add_version_data is used, which is added in process_request().
+        # This way in case of grouping we don't process this method twice.
+        if not get_filter_settings(req, 'roadmap', 'smp_group') and not data.get('smp_add_version_data'):
+           return data
 
         hide = []
         if get_filter_settings(req, 'roadmap', 'smp_hideversions'):
@@ -450,6 +525,7 @@ class SmpVersionRoadmap(Component):
             data['version_stats'] = version_stats
             self.add_project_info_to_versions(data)
 
+        # TODO: is this the right place to do this?
         if data and hide and 'milestones' in hide:
             data['milestones'] = []
             data['milestone_stats'] = []
@@ -503,20 +579,10 @@ class SmpVersionRoadmap(Component):
                                                 'version', version.name))
         return filtered_versions, stats
 
-    # ITemplateStreamFilter methods
+    # ITemplateStreamFilter methods This is not used anymore
 
-    def filter_stream(self, req, method, filename, stream, data):
-
-        if filename == 'roadmap.html':
-            # Add versions to page
-            # Roadmap group plugin is grouping by project
-            if not get_filter_settings(req, 'roadmap', 'smp_group'):
-                data['infodivclass'] = self.infodivclass
-                # Specify part of template to be rendered
-                data['smp_render'] = 'versions'
-                filter_ = Transformer('//div[@class="milestones"]')
-                stream |= filter_.after(self.version_tmpl.generate(**data))
-
+    def _filter_stream(self, req, method, filename, stream, data):
+        # TODO: this is still here as a reminder we have to include this feature later
         if filename == 'roadmap.html____':
             # Add button to create new versions
             stream |= self._add_version_button(data)
@@ -534,6 +600,14 @@ class SmpVersionRoadmap(Component):
         filter_ = Transformer('//div[@class="buttons"][2]')
         template = MarkupTemplate(add_version_button).generate(**data)
         return filter_.append(template)
+
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        return [resource_filename(__name__, 'templates')]
+
+    def get_htdocs_dirs(self):
+        return [('simplemultiproject', resource_filename(__name__, 'htdocs'))]
 
 
 class SmpVersionPageObserver(Component):
