@@ -9,7 +9,7 @@ import re
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from genshi.filters.transform import Transformer
+# from genshi.filters.transform import Transformer
 from pkg_resources import get_distribution, parse_version, resource_filename
 from trac.attachment import AttachmentModule
 from trac.config import ExtensionOption
