@@ -246,3 +246,15 @@ if not hasattr(DatabaseManager, 'upgrade_tables'):
                                                col.name)
                     self.drop_tables((temp_table_name,))
     DatabaseManager.upgrade_tables = upgrade_tables
+
+
+if not hasattr(DatabaseManager, 'has_table'):
+    def has_table(self, table):
+        table_name = table.name if isinstance(table, Table) else table
+        names = self.get_table_names()
+        if table_name in names:
+            return True
+        else:
+            return False
+
+    DatabaseManager.has_table = has_table
