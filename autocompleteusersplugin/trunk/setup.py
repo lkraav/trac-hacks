@@ -45,7 +45,7 @@ setup(
         'Framework :: Trac',
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
-        'License :: OSI Approved :: Apache Software License',
+        'License :: OSI Approved :: BSD License',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
