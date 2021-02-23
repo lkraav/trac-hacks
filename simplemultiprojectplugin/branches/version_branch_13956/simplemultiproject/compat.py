@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2012 Rob Guttman <guttman@alum.mit.edu>
 # Copyright (C) 2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -14,6 +15,7 @@ from trac.core import TracError
 from trac.db.api import DatabaseManager
 from trac.db.schema import Table
 from trac.util.translation import _
+
 
 # For migrating away from Genshi
 class JTransformer(object):
@@ -149,6 +151,23 @@ if not hasattr(DatabaseManager, 'get_table_names'):
             raise TracError('Unsupported %s database' % dburi.split(':')[0])
         return sorted(row[0] for row in self.env.db_transaction(query))
     DatabaseManager.get_table_names = get_table_names
+
+
+if not hasattr(DatabaseManager, 'get_column_names'):
+    def get_column_names(self, table):
+        """Returns a list of the column names for `table`.
+
+        :param table: a `Table` object or table name.
+
+        :since: 1.2
+        """
+        table_name = table.name if isinstance(table, Table) else table
+        with self.env.db_query as db:
+            if not self.has_table(table_name):
+                raise self.env.db_exc.OperationalError('Table %s not found' %
+                                                       db.quote(table_name))
+            return db.get_column_names(table_name)
+    DatabaseManager.get_column_names = get_column_names
 
 
 if not hasattr(DatabaseManager, 'needs_upgrade'):
