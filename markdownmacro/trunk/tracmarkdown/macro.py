@@ -93,7 +93,7 @@ def format_to_markdown(env, context, content):
     abs_href = env.abs_href.base
     abs_href = abs_href[:len(abs_href) - len(env.href.base)]
     f = Formatter(env, context)
-    tab_length = env.config.get('markdown', 'tab_length')
+    tab_length = env.config.getint('markdown', 'tab_length')
 
     def convert(m):
         pre, target, suf = filter(None, m.groups())
