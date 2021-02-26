@@ -1,0 +1,32 @@
+# extends "admin.html"
+<!DOCTYPE html>
+<html>
+<head>
+  <title>
+  # block admintitle
+  ${_("Subversion: Path-based Authorization")}
+  # endblock admintitle
+  </title>
+</head>
+<body>
+  # block adminpanel
+  <h2>Subversion: Path-based Authorization</h2>
+  <form id="saveauthzfile" method="post" action="">
+    ${jmacros.form_token_input()}
+    <div class="field">
+      <textarea rows="20" cols="20" class="trac-fullwidth"
+                title="Authz file content" name="current">${auth_data}</textarea>
+    </div>
+    <div class="buttons">
+      <input type="submit" name="saveauthzfile" value="Apply changes" />
+      <input type="reset" value="Reset" />
+    </div>
+  </form>
+  <div id="help">
+    <strong>Note:</strong> See the
+    <a href="http://svnbook.red-bean.com/nightly/en/svn.serverconfig.pathbasedauthz.html">SVN Book</a>
+    for information about path-based authorization.
+  </div>
+  # endblock adminpanel
+</body>
+</html>
