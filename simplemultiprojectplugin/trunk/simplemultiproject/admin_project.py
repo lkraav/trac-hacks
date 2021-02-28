@@ -64,7 +64,10 @@ class SmpProjectAdmin(Component):
     def render_basics_panel(self, req, cat, page, path_info):
         data = {'custom_field': self.ticket_custom_field_exists(),
                 'allow_no_prj_ms': self.config.getbool('simple-multi-project', 'milestone_without_project', False),
-                'single_prj_ms': self.config.getbool('simple-multi-project', 'single_project_milestones', False)}
+                'single_prj_ms': self.config.getbool('simple-multi-project', 'single_project_milestones', False),
+                'allow_no_prj_ver': self.config.getbool('simple-multi-project', 'version_without_project', False),
+                'single_prj_ver': self.config.getbool('simple-multi-project', 'single_project_versions', False)
+                }
 
         # data.update({})
 
@@ -89,6 +92,17 @@ class SmpProjectAdmin(Component):
                     self.config.set('simple-multi-project', 'milestone_without_project', 'disabled')
                 self.config.save()
                 add_notice(req, "The configuration for milestones was saved.")
+            elif req.args.get('save-ver'):
+                if req.args.get('cb-single-prj-ver'):
+                    self.config.set('simple-multi-project', 'single_project_versions', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'single_project_versions', 'disabled')
+                if req.args.get('cb-allow-no-prj-ver'):
+                    self.config.set('simple-multi-project', 'version_without_project', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'version_without_project', 'disabled')
+                self.config.save()
+                add_notice(req, "The configuration for versions was saved.")
             req.redirect(req.href.admin(cat, page))
 
         if self.pre_1_3:
