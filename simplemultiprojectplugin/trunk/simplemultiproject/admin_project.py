@@ -75,6 +75,7 @@ class SmpProjectAdmin(Component):
                 self.config.set('ticket-custom', 'project.value', None)
                 self.config.set('ticket-custom', 'project.options', None)
                 self.config.save()
+                add_notice(req, "The ticket custom field 'project' was added to the configuration.")
             req.redirect(req.href.admin(cat, page))
 
         if self.pre_1_3:
