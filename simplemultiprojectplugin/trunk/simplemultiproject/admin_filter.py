@@ -62,14 +62,10 @@ class SmpFilterBase(Component):
         div_templ = u"""<div id="smp-ms-sel-div">
     {proj}
     <select id="smp-project-sel">
-        <option value="" selected>{all_label}</option>
-        {options}
+        <option value="" selected>{all_label}</option>{options}
     </select>
     </div>"""
         options_templ = u"""<option value="{prj}">{prj}</option>"""
-
-        if not all_proj:
-            return ''
 
         options = u''
         for prj in all_proj:
@@ -115,14 +111,15 @@ class SmpFilterBase(Component):
                               })
         add_script(req, 'simplemultiproject/js/smp_insert_column.js')
 
-        input_type = 'radio' if self.single_project else "checkbox"
         filter_list = []
-        # Add select control with projects for hiding milestones
+        # Add select control with projects for hiding rows of the table
         known_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
         xform = JTransformer('table#%s' % table_id)
         filter_list.append(xform.before(SmpFilterBase.create_project_select_ctrl(known_proj)))
 
         # The 'add milestone' part of the page
+        input_type = 'radio' if self.single_project else "checkbox"
+
         # Insert project selection control
         # xpath: //form[@id="addmilestone"]//div[@class="field"][1]
         xform = JTransformer('form#%s div.field:nth-of-type(1)' % form_id)
