@@ -1,0 +1,33 @@
+<!--!
+ (c) Cinc 2021, License 3-clause BSD
+ -->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n" py:strip="">
+  <xi:include href="admin.html" />
+<head>
+    <title>${_("Basic Settings")}</title>
+</head>
+<body>
+    <h2>${_("Basic Settings")}</h2>
+    <div py:if="not custom_field">
+        <form action="" method="POST">
+            <fieldset>
+                <legend>Ticket custom field</legend>
+                <div class="system-message warning">${_("Ticket custom field 'project' not configured. See installation instructions.")}</div>
+                <p>Do you want to create the ticket custom field now?</p>
+                <p class="help">Without the proper ticket custom field it's not possible to link tickets to projects.</p>
+                <div py:if="'PROJECT_ADMIN' in perm">
+                    <div class="buttons">
+                        <input type="submit" name="create-ticket-custom" value="${_('Create')}"/>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</body>
+</html>
