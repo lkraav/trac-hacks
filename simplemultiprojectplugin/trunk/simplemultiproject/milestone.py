@@ -41,6 +41,13 @@ tr_templ = u"""<tr>
         <td>{p_name}</td>
     </tr>"""
 
+
+no_prj_tmpl = u"""<div><div class="system-message warning">No projects are defined or all projects are completed.</div>
+<p>Your current configuration requires that you associate the {item} with at least one 
+project before you can add it. Go to the <em>Manage Projects</em> section to define projects.</p></div>"""
+no_prj_msg = u"""<div><p>No projects are defined or all projects are completed.</p></div>"""
+
+
 def create_projects_table_j(self, req, input_type='checkbox',
                           item_name=''):
     """Create a table for admin panels holding valid projects (means not closed).
@@ -48,13 +55,20 @@ def create_projects_table_j(self, req, input_type='checkbox',
     @param self: Component with 'self.smp_project = SmpProject(self.env)'
     @param req      : Trac request object
     @param input_type: either 'checkbox' or 'radio'. Allows single or multiple paroject selection
-    @param item_name: name of the milestone currently edited
+    @param item_name: name of the milestone currently edited. This is set when called from the roadmap pages.
 
     @return DIV tag holding a project select control with label
     """
     projects = self.smp_project.get_all_projects()
     filtered_projects = SmpPermissionPolicy.active_projects_by_permission(req, projects)
 
+    if not filtered_projects:
+        if self.allow_no_project:
+            return no_prj_msg
+        else:
+            return no_prj_tmpl.format(item='item')
+
+    # path_info is not available when on the main admin page
     item = req.args.get('path_info', "")
     if not item:
         item = item_name

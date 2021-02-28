@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2020 Cinc
+# Copyright (C) 2020-2021 Cinc
 #
 # License: 3-clause BSD
 #
@@ -8,11 +8,86 @@ import unittest
 
 from trac.admin.console import TracAdmin
 from trac.test import EnvironmentStub, MockPerm, MockRequest
-from simplemultiproject.admin_filter import SmpFilterDefaultMilestonePanels
+from simplemultiproject.admin_filter import SmpFilterDefaultMilestonePanels, SmpFilterDefaultVersionPanels
 from simplemultiproject.environmentSetup import smpEnvironmentSetupParticipant
 from simplemultiproject.milestone import create_cur_projects_table, create_projects_table_j
 from simplemultiproject.tests.util import revert_schema
 from simplemultiproject.smp_model import SmpMilestone, SmpProject
+
+
+class TestProjectTableVersionNoProjects(unittest.TestCase):
+    """Test if the informational message about no defined projects is shown on the version page."""
+    def setUp(self):
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=["trac.*", "simplemultiproject.*"])
+        with self.env.db_transaction as db:
+            revert_schema(self.env)
+            smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
+        self.plugin = SmpFilterDefaultVersionPanels(self.env)
+        self.req = MockRequest(self.env, username='Tester')
+
+    def tearDown(self):
+        self.env.reset_db()
+
+    def test_no_projects_but_required(self):
+        """No projects are defined, default configuration is 'milestone_without_project = disabled'."""
+        expected = u"""<div><div class="system-message warning">No projects are defined or all projects are completed.</div>
+<p>Your current configuration requires that you associate the {item} with at least one 
+project before you can add it. Go to the <em>Manage Projects</em> section to define projects.</p></div>""".format(item='item')
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertEqual(expected, res)
+
+    def test_no_projects_allow_for_ms(self):
+        """No projects are defined but configuration is 'milestone_without_project = True'."""
+        expected = u"""<div><p>No projects are defined or all projects are completed.</p></div>"""
+        self.env.config.set('simple-multi-project', 'milestone_without_project', True)
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertNotEqual(expected, res)
+
+    def test_no_projects_but_allow_for_version(self):
+        """No projects are defined but configuration is 'version_without_project = True'."""
+        expected = u"""<div><p>No projects are defined or all projects are completed.</p></div>"""
+        self.env.config.set('simple-multi-project', 'version_without_project', True)
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertEqual(expected, res)
+
+
+class TestProjectTableMilestonesNoProjects(unittest.TestCase):
+    """Test if the informational message about no defined projects is shown on the milestone page."""
+
+    def setUp(self):
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=["trac.*", "simplemultiproject.*"])
+        with self.env.db_transaction as db:
+            revert_schema(self.env)
+            smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
+        self.plugin = SmpFilterDefaultMilestonePanels(self.env)
+        self.req = MockRequest(self.env, username='Tester')
+
+    def tearDown(self):
+        self.env.reset_db()
+
+    def test_no_projects_but_required(self):
+        """No projects are defined, default configuration is 'milestone_without_project = disabled'."""
+        expected = u"""<div><div class="system-message warning">No projects are defined or all projects are completed.</div>
+<p>Your current configuration requires that you associate the {item} with at least one 
+project before you can add it. Go to the <em>Manage Projects</em> section to define projects.</p></div>""".format(item='item')
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertEqual(expected, res)
+
+    def test_no_projects_but_allow_version(self):
+        """No projects are defined but configuration is 'version_without_milestone = True'."""
+        expected = u"""<div><p>No projects are defined or all projects are completed.</p></div>"""
+        self.env.config.set('simple-multi-project', 'milestone_without_project', True)
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertEqual(expected, res)
+
+    def test_no_projects_but_allow_ms(self):
+        """No projects are defined but configuration is 'milestone_without_project = True'."""
+        expected = u"""<div><p>No projects are defined or all projects are completed.</p></div>"""
+        self.env.config.set('simple-multi-project', 'milestone_without_project', True)
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertEqual(expected, res)
 
 
 class TestProjectTableNoMilestones(unittest.TestCase):
@@ -30,26 +105,6 @@ class TestProjectTableNoMilestones(unittest.TestCase):
 
     def tearDown(self):
         self.env.reset_db()
-
-    def test_no_projects(self):
-        expected = """<div style="overflow:hidden;">
-<div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
-</div>
-<div class="admin-smp-proj-tbl-div">
-<table id="projectlist" class="listing admin-smp-project-table">
-    <thead>
-        <tr><th></th><th>Project</th></tr>
-    </thead>
-    <tbody>
-    </tbody>
-</table>
-</div>
-<div></div>
-</div>"""
-        res = create_projects_table_j(self.plugin, self.req)
-        self.assertEqual(expected, res)
 
     def test_with_projects_checkbox(self):
         expected = u"""<div style="overflow:hidden;">
