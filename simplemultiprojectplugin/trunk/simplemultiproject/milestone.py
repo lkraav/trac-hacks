@@ -20,8 +20,7 @@ from simplemultiproject.smp_model import SmpProject, SmpMilestone
 
 table_tmpl = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.{restrict_msg}</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -40,7 +39,8 @@ tr_templ = u"""<tr>
         </td>
         <td>{p_name}</td>
     </tr>"""
-
+restrict_msg = u""" Without a selection here no
+ restrictions are imposed."""
 
 no_prj_tmpl = u"""<div><div class="system-message warning">No projects are defined or all projects are completed.</div>
 <p>Your current configuration requires that you associate the {item} with at least one 
@@ -64,9 +64,9 @@ def create_projects_table_j(self, req, input_type='checkbox',
 
     if not filtered_projects:
         if self.allow_no_project:
-            return no_prj_msg
+            return no_prj_msg  # This is purely informational
         else:
-            return no_prj_tmpl.format(item='item')
+            return no_prj_tmpl.format(item='item')  # This displays a warning
 
     # path_info is not available when on the main admin page
     item = req.args.get('path_info', "")
@@ -83,7 +83,7 @@ def create_projects_table_j(self, req, input_type='checkbox',
         sel = ' checked' if prj[1] in item_prj else ''
         tr += tr_templ.format(p_id=prj.id, p_name=prj.name, input_type=input_type, sel=sel)
 
-    return table_tmpl.format(tr=tr)
+    return table_tmpl.format(tr=tr, restrict_msg=restrict_msg if self.allow_no_project else u"")
 
 
 def create_cur_projects_table(smp_model, name):
