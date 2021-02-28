@@ -62,7 +62,9 @@ class SmpProjectAdmin(Component):
         return self.config.get('ticket-custom', 'project', None)
 
     def render_basics_panel(self, req, cat, page, path_info):
-        data = {'custom_field': self.ticket_custom_field_exists()}
+        data = {'custom_field': self.ticket_custom_field_exists(),
+                'allow_no_prj_ms': self.config.getbool('simple-multi-project', 'milestone_without_project', False),
+                'single_prj_ms': self.config.getbool('simple-multi-project', 'single_project_milestones', False)}
 
         # data.update({})
 
@@ -76,6 +78,17 @@ class SmpProjectAdmin(Component):
                 self.config.set('ticket-custom', 'project.options', None)
                 self.config.save()
                 add_notice(req, "The ticket custom field 'project' was added to the configuration.")
+            elif req.args.get('save-ms'):
+                if req.args.get('cb-single-prj-ms'):
+                    self.config.set('simple-multi-project', 'single_project_milestones', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'single_project_milestones', 'disabled')
+                if req.args.get('cb-allow-no-prj-ms'):
+                    self.config.set('simple-multi-project', 'milestone_without_project', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'milestone_without_project', 'disabled')
+                self.config.save()
+                add_notice(req, "The configuration for milestones was saved.")
             req.redirect(req.href.admin(cat, page))
 
         if self.pre_1_3:

@@ -27,7 +27,7 @@
         <form action="" method="POST">
             ${jmacros.form_token_input()}
             <fieldset>
-                <legend>Ticket custom field</legend>
+                <legend>Ticket Custom Field</legend>
                 <div class="system-message warning">${_("Ticket custom field 'project' not configured. See installation instructions.")}</div>
                 <p>Do you want to create the ticket custom field now?</p>
                 <p class="help">Without the proper ticket custom field it's not possible to link tickets to projects.</p>
@@ -42,6 +42,43 @@
         </form>
     </div>
     # endif
+
+    {# Milestones #}
+    <div>
+        <form action="" method="POST">
+            ${jmacros.form_token_input()}
+            <fieldset>
+                <legend>Milestone Configuration</legend>
+                <div class="field">
+                    <label>
+                        <input type="checkbox" name="cb-allow-no-prj-ms" value="allow_no_prj_ms"
+                               ${{"checked": allow_no_prj_ms}|htmlattr}/>
+                        ${_("Allow milestones without a project")}
+                    </label>
+                    <p class="help">${_("Check this option if you want to create milestones without linked projects. Such milestones can be used freely in any project.")}</p>
+                </div>
+                <p></p>
+                <div class="field">
+                    <label>
+                        <input type="checkbox" name="cb-single-prj-ms" value="single_prj_ms"
+                               ${{"checked": single_prj_ms}|htmlattr}/>
+                        ${_("Single project milestones")}
+                    </label>
+                    <p class="help">${_("Check this option if you want to link milestones only to a single project.")}</p>
+                </div>
+
+                # if 'PROJECT_ADMIN' in perm:
+                <div>
+                    <div class="buttons">
+                        <input type="submit" name="save-ms" value="${_('Save')}"/>
+                    </div>
+                </div>
+                # endif
+            </fieldset>
+        </form>
+    </div>
+
+
 
     # endblock adminpanel
 </body>
