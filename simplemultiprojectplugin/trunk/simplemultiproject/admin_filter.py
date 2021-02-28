@@ -113,7 +113,7 @@ class SmpFilterBase(Component):
 
         filter_list = []
         # Add select control with projects for hiding rows of the table
-        known_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+        known_proj = [name for name, p_id in self.smp_project.get_name_and_id()]
         xform = JTransformer('table#%s' % table_id)
         filter_list.append(xform.before(SmpFilterBase.create_project_select_ctrl(known_proj)))
 
