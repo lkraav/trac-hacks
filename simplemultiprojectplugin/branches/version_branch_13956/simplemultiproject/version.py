@@ -232,7 +232,7 @@ class SmpVersionModule(Component):
 
     def _do_save(self, req, version):
         version_name = req.args.get('name')
-        version_project = req.args.get('sel')  # this is a single project id or a list of ids
+        version_project = req.args.getlist('sel')  # this is a list of ids
         old_version_project = self.smp_model.get_project_ids_for_version(version.name)  # this is a list
 
         if version.exists:
@@ -293,7 +293,6 @@ class SmpVersionModule(Component):
             elif not old_version_project:
                 self.smp_model.add(version.name, version_project)
             else:
-                add_notice(req, "Old project id %s, new %s" % (old_version_project, version_project))
                 self.smp_model.add_after_delete(req.args.get('name'), version_project)
         else:
             version.insert()
@@ -338,7 +337,10 @@ class SmpVersionModule(Component):
             req.perm.require('MILESTONE_CREATE')
 
         Chrome(self.env).add_wiki_toolbars(req)
-        return 'version_edit.html', data, None
+        if self.pre_1_3:
+            return 'version_edit.html', data, None
+        else:
+            return 'version_edit_jinja.html', data, {}
 
     def _render_view(self, req, version):
         version_groups = []
