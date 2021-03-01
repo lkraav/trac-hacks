@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014-2020 Cinc
+# Copyright (C) 2014-2021 Cinc
 #
 # License: 3-clause BSD
 #
@@ -23,22 +23,13 @@ from simplemultiproject.smp_model import SmpComponent, SmpProject, \
     SmpVersion, SmpMilestone
 
 
-#Not used atm
-def _allow_no_project(self):
-    """Check config if user enabled milestone creation without prior
-    selection of a project.
-
-    @return: True if milestones may be created without a project
-    """
-    return self.env.config.getbool("simple-multi-project", "allow_no_project", False)
-
-
 class SmpFilterBase(Component):
     """Must be activated when SmpFilterDefaultMilestonePanels or SmpFilterDefaultVersionPanels are used."""
 
     implements(ITemplateProvider)
 
     # The following are verridden in subclass
+    # TODO: this is not used yet
     template_name = ""  # name of html file
     add_form_id = ''  # id of form used to add a new item on main admin page
     table_id = ''  # id of table holding all the items. Is used to hide/show rows and add columns with javascript
@@ -71,14 +62,10 @@ class SmpFilterBase(Component):
         div_templ = u"""<div id="smp-ms-sel-div">
     {proj}
     <select id="smp-project-sel">
-        <option value="" selected>{all_label}</option>
-        {options}
+        <option value="" selected>{all_label}</option>{options}
     </select>
     </div>"""
         options_templ = u"""<option value="{prj}">{prj}</option>"""
-
-        if not all_proj:
-            return ''
 
         options = u''
         for prj in all_proj:
@@ -124,14 +111,15 @@ class SmpFilterBase(Component):
                               })
         add_script(req, 'simplemultiproject/js/smp_insert_column.js')
 
-        input_type = 'radio' if self.single_project else "checkbox"
         filter_list = []
-        # Add select control with projects for hiding milestones
-        known_proj = self.env.config.getlist('ticket-custom', 'project.options', sep='|')
+        # Add select control with projects for hiding rows of the table
+        known_proj = [name for name, p_id in self.smp_project.get_name_and_id()]
         xform = JTransformer('table#%s' % table_id)
         filter_list.append(xform.before(SmpFilterBase.create_project_select_ctrl(known_proj)))
 
         # The 'add milestone' part of the page
+        input_type = 'radio' if self.single_project else "checkbox"
+
         # Insert project selection control
         # xpath: //form[@id="addmilestone"]//div[@class="field"][1]
         xform = JTransformer('form#%s div.field:nth-of-type(1)' % form_id)
@@ -354,7 +342,7 @@ class SmpFilterDefaultVersionPanels(SmpFilterBase):
 
         return template, data, content_type
 
-
+# TODO: use the base class SmpFilterBase here
 class SmpFilterDefaultComponentPanels(Component):
     """Modify default Trac admin panels for components to include
     project selection.
@@ -370,6 +358,10 @@ class SmpFilterDefaultComponentPanels(Component):
     }}}
     """
     implements(IRequestFilter, ITemplateProvider)
+
+    # TODO: When using a base class this may go away
+    allow_no_project = True
+    single_project = False
 
     def __init__(self):
         self.smp_model = SmpComponent(self.env)

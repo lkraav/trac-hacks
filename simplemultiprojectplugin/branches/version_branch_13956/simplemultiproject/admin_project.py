@@ -31,8 +31,11 @@ class SmpProjectAdmin(Component):
 
     def get_admin_panels(self, req):
         if 'PROJECT_SETTINGS_VIEW' in req.perm('projects'):
-            yield ('projects', _('Manage Projects'),
+            yield ('smproject', _('Manage Projects'),
                    'projects', _("Projects"))
+            excl_mark = '' if self.ticket_custom_field_exists() else ' (!)'
+            yield ('smproject', _('Manage Projects'),
+                   'basics', _("Basic Settings") + excl_mark)
 
     def check_project_name(self, req, projects):
         name = req.args.get('name', None)
@@ -46,12 +49,76 @@ class SmpProjectAdmin(Component):
             return False
         return True
 
+    def ticket_custom_field_exists(self):
+        """Check if the ticket custom field 'project' is configured.
+
+        :returns None if not configured, otherwise the field type
+
+        Note that we have to check the config here. 'TicketSystem(self.env).fields' does not hold
+        the custom field until 'project.options' has some value.
+
+        We don't check for proper custom field type here.
+        """
+        return self.config.get('ticket-custom', 'project', None)
+
+    def render_basics_panel(self, req, cat, page, path_info):
+        data = {'custom_field': self.ticket_custom_field_exists(),
+                'allow_no_prj_ms': self.config.getbool('simple-multi-project', 'milestone_without_project', False),
+                'single_prj_ms': self.config.getbool('simple-multi-project', 'single_project_milestones', False),
+                'allow_no_prj_ver': self.config.getbool('simple-multi-project', 'version_without_project', False),
+                'single_prj_ver': self.config.getbool('simple-multi-project', 'single_project_versions', False)
+                }
+
+        # data.update({})
+
+        if req.method == 'POST':
+            req.perm.require("PROJECT_ADMIN")
+
+            if req.args.get('create-ticket-custom'):
+                self.config.set('ticket-custom', 'project', 'select')
+                self.config.set('ticket-custom', 'project.label', _('Project'))
+                self.config.set('ticket-custom', 'project.value', None)
+                self.config.set('ticket-custom', 'project.options', None)
+                self.config.save()
+                add_notice(req, "The ticket custom field 'project' was added to the configuration.")
+            elif req.args.get('save-ms'):
+                if req.args.get('cb-single-prj-ms'):
+                    self.config.set('simple-multi-project', 'single_project_milestones', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'single_project_milestones', 'disabled')
+                if req.args.get('cb-allow-no-prj-ms'):
+                    self.config.set('simple-multi-project', 'milestone_without_project', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'milestone_without_project', 'disabled')
+                self.config.save()
+                add_notice(req, "The configuration for milestones was saved.")
+            elif req.args.get('save-ver'):
+                if req.args.get('cb-single-prj-ver'):
+                    self.config.set('simple-multi-project', 'single_project_versions', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'single_project_versions', 'disabled')
+                if req.args.get('cb-allow-no-prj-ver'):
+                    self.config.set('simple-multi-project', 'version_without_project', 'enabled')
+                else:
+                    self.config.set('simple-multi-project', 'version_without_project', 'disabled')
+                self.config.save()
+                add_notice(req, "The configuration for versions was saved.")
+            req.redirect(req.href.admin(cat, page))
+
+        if self.pre_1_3:
+            return 'admin_smp_basics.html', data
+        else:
+            return 'admin_smp_basics_jinja.html', data, {}
+
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('PROJECT_SETTINGS_VIEW')
 
+        if page == 'basics':
+            return self.render_basics_panel(req, cat, page, path_info)
+
         name = req.args.get('name', None)
         summary = req.args.get('summary', None)
-        description =req.args.get('description', None)
+        description = req.args.get('description', None)
         restricted = req.args.get('restricted', None)
         sel = req.args.getlist('sel')
         projects = self.smp_project.get_all_projects()
@@ -73,6 +140,7 @@ class SmpProjectAdmin(Component):
 
         if req.method == 'POST':
             req.perm.require("PROJECT_ADMIN")
+
             def redirect_with_parms():
                 req.redirect(req.href.admin(cat, page, name=name, summary=summary,
                                             description=description, restricted=restricted))
@@ -126,13 +194,12 @@ class SmpProjectAdmin(Component):
         data = {'all_projects': user_projects}
         if not path_info:
             # The main pages
-            ticket_fields = [field['name'] for field in TicketSystem(self.env).fields]
             data.update({'view': 'list',
                          'name': name,
                          'summary': summary,
                          'description': description,
                          'restricted': restricted,
-                         'custom_field': 'project' in ticket_fields
+                         'custom_field': self.ticket_custom_field_exists()
                          })
         else:
             for project in user_projects:
@@ -148,7 +215,6 @@ class SmpProjectAdmin(Component):
         if self.pre_1_3:
             return 'admin_project.html', data
         else:
-            #return 'admin_project.html', data, None
             return 'admin_project_jinja.html', data, {}
 
     # IResourceManager methods
@@ -189,7 +255,6 @@ class SmpProjectAdmin(Component):
                 return False
 
         raise ResourceNotFound('Resource %s not found.' % resource.realm)
-
 
     # ITemplateProvider methods
 

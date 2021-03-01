@@ -54,8 +54,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
     def test_with_projects_checkbox(self):
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -94,8 +93,7 @@ class TestProjectTableNoMilestones(unittest.TestCase):
     def test_with_projects_radio(self):
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -159,8 +157,7 @@ class TestProjectTableMilestones(unittest.TestCase):
     def test_with_checkbox_edit_milestone_ms1(self):
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -196,8 +193,7 @@ class TestProjectTableMilestones(unittest.TestCase):
     def test_with_radio_edit_milestone_ms1(self):
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -234,8 +230,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         """Check a milestone with two associated projects."""
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -272,8 +267,7 @@ class TestProjectTableMilestones(unittest.TestCase):
         """Check a milestone with two associated projects."""
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -443,8 +437,7 @@ class TestProjectTableNoMilestonesWithRetrictions(unittest.TestCase):
         """
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -482,8 +475,7 @@ class TestProjectTableNoMilestonesWithRetrictions(unittest.TestCase):
         """
         expected = u"""<div style="overflow:hidden;">
 <div id="project-help-div">
-<p class="help">Please chose the projects for which this item will be selectable. Without a selection here no
- restrictions are imposed.</p>
+<p class="help">Please chose the projects this item will be associated with.</p>
 </div>
 <div class="admin-smp-proj-tbl-div">
 <table id="projectlist" class="listing admin-smp-project-table">
@@ -527,13 +519,116 @@ class TestProjectTableNoMilestonesWithRetrictions(unittest.TestCase):
         self.assertEqual(expected, res)
 
 
+class TestProjectTableMilestoneRestrictMessage(unittest.TestCase):
+    """There are different messages wrt project selection depending on configuration.
+
+    Note that we only test this for the milestone admin page. The version page uses the same code.
+    """
+    def setUp(self):
+        self.env = EnvironmentStub(default_data=True,
+                                   enable=["trac.*", "simplemultiproject.*"])
+        with self.env.db_transaction as db:
+            revert_schema(self.env)
+            smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
+        self.plugin = SmpFilterDefaultMilestonePanels(self.env)
+        self.req = MockRequest(self.env, username='Tester')
+        # self.env.config.set("ticket-custom", "project", "select")
+        self.model = SmpProject(self.env)
+
+    def tearDown(self):
+        self.env.reset_db()
+
+    def test_with_projects_required(self):
+        expected = u"""<div style="overflow:hidden;">
+<div id="project-help-div">
+<p class="help">Please chose the projects this item will be associated with.</p>
+</div>
+<div class="admin-smp-proj-tbl-div">
+<table id="projectlist" class="listing admin-smp-project-table">
+    <thead>
+        <tr><th></th><th>Project</th></tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="name">
+            <input name="sel" value="1" type="checkbox">
+        </td>
+        <td>foo1öäü</td>
+    </tr><tr>
+        <td class="name">
+            <input name="sel" value="2" type="checkbox">
+        </td>
+        <td>foo2</td>
+    </tr><tr>
+        <td class="name">
+            <input name="sel" value="3" type="checkbox">
+        </td>
+        <td>foo3</td>
+    </tr>
+    </tbody>
+</table>
+</div>
+<div></div>
+</div>"""
+        self.model.add(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
+
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertEqual(expected, res)
+
+    def test_with_projects_not_required(self):
+        expected = u"""<div style="overflow:hidden;">
+<div id="project-help-div">
+<p class="help">Please chose the projects this item will be associated with. Without a selection here no
+ restrictions are imposed.</p>
+</div>
+<div class="admin-smp-proj-tbl-div">
+<table id="projectlist" class="listing admin-smp-project-table">
+    <thead>
+        <tr><th></th><th>Project</th></tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="name">
+            <input name="sel" value="1" type="checkbox">
+        </td>
+        <td>foo1öäü</td>
+    </tr><tr>
+        <td class="name">
+            <input name="sel" value="2" type="checkbox">
+        </td>
+        <td>foo2</td>
+    </tr><tr>
+        <td class="name">
+            <input name="sel" value="3" type="checkbox">
+        </td>
+        <td>foo3</td>
+    </tr>
+    </tbody>
+</table>
+</div>
+<div></div>
+</div>"""
+        self.env.config.set('simple-multi-project', 'milestone_without_project', True)
+        self.model.add(u"foo1öäü", 'Summary 1', 'Description 1', None, None)
+        self.model.add("foo2", 'Summary 2', 'Description 2', None, None)
+        self.model.add("foo3", 'Summary 3', 'Description 3', None, None)
+
+        res = create_projects_table_j(self.plugin, self.req)
+        self.assertEqual(expected, res)
+
+
 def test_suite():
     suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestProjectTableVersionNoProjects))
+    suite.addTest(unittest.makeSuite(TestProjectTableMilestonesNoProjects))
     suite.addTest(unittest.makeSuite(TestProjectTableNoMilestones))
     suite.addTest(unittest.makeSuite(TestProjectTableMilestones))
     suite.addTest(unittest.makeSuite(TestCurProjectTableNoMilestones))
     suite.addTest(unittest.makeSuite(TestCurProjectTableMilestones))
     suite.addTest(unittest.makeSuite(TestProjectTableNoMilestonesWithRetrictions))
+    suite.addTest(unittest.makeSuite(TestProjectTableMilestoneRestrictMessage))
     return suite
 
 
