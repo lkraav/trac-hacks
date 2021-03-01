@@ -12,7 +12,7 @@ from operator import itemgetter
 from genshi.filters.transform import Transformer
 from pkg_resources import get_distribution, parse_version, resource_filename
 from trac.attachment import AttachmentModule
-from trac.config import ExtensionOption
+from trac.config import BoolOption, ExtensionOption
 from trac.core import *
 from trac.ticket.model import Version
 from trac.ticket.query import QueryModule
@@ -24,14 +24,16 @@ from trac.util.datefmt import get_datetime_format_hint, parse_date, \
 from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestHandler, IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import add_notice, add_script, add_stylesheet, \
+from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, \
     add_warning, Chrome
 
 from simplemultiproject.admin_filter import SmpFilterDefaultVersionPanels
 from simplemultiproject.api import IRoadmapDataProvider
+from simplemultiproject.compat import JTransformer
+from simplemultiproject.milestone import create_projects_table_j
 from simplemultiproject.model import *
 from simplemultiproject.session import get_filter_settings
-from simplemultiproject.smp_model import SmpVersion
+from simplemultiproject.smp_model import SmpProject, SmpVersion
 from simplemultiproject.permission import SmpPermissionPolicy
 
 
@@ -96,13 +98,26 @@ class SmpVersionModule(Component):
         in the roadmap views.
         """)
 
+    allow_no_project = BoolOption(
+        'simple-multi-project', 'version_without_project', False,
+        doc="""Set this option to {{{True}}} if you want to create versions
+                   without associated projects. The default value is {{{False}}}.
+                   """)
+
+    single_project = BoolOption(
+        'simple-multi-project', 'single_project_versions', False,
+        doc="""If set to {{{True}}} only a single project can be associated
+                   with a version. The default value is {{{False}}}.
+                   """)
+
     # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
     # creation using trac.util.html.tag and friends
     pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
 
     def __init__(self):
         self.__SmpModel = None  # SmpModel(self.env)
-        self.smp_version = SmpVersion(self.env)
+        self.smp_model = SmpVersion(self.env)
+        self.smp_project = SmpProject(self.env)  # For project select on edit page
 
     # IRequestHandler methods
     def match_request(self, req):
@@ -159,6 +174,18 @@ class SmpVersionModule(Component):
                 if project_name and project_name[0]:
                     self.__SmpModel.check_project_permission(req,
                                                              project_name[0])
+
+        if data and template in ('version_edit.html', 'version_edit_jinja.html'):
+            input_type = 'radio' if self.single_project else "checkbox"
+            # Insert project selection control
+            # xpath: //form[@id="edit"]/div[1]
+            xform = JTransformer('form#edit > div:nth-of-type(1)')
+            version = data['version']
+            filter_list = [xform.before(create_projects_table_j(self, req,
+                                                                input_type=input_type, item_name=version.name))]
+            add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
+            add_script_data(req, {'smp_filter': filter_list})
+            add_script(req, 'simplemultiproject/js/jtransform.js')
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -169,29 +196,12 @@ class SmpVersionModule(Component):
             action = req.args.get('action', 'view')
             if action == 'new':
                 return stream | filter_.before(self.__new_project(req))
-            elif action == 'edit':
-                return stream | filter_.before(self.__edit_project(data, req))
+            # elif action == 'edit':
+            #     return stream | filter_.before(self.__edit_project(data, req))
 
         return stream
 
     # Internal methods
-
-    def __edit_project(self, data, req):
-        version_name = data.get('version').name
-        all_projects = SmpPermissionPolicy.apply_user_permissions(Project.select(self.env), req.perm)
-        project_ids_version = self.smp_version.get_project_ids_for_version(version_name)
-
-        return tag.div(
-            tag.label(
-                'Project:',
-                tag.br(),
-                tag.select(
-                    tag.option(),
-                    [tag.option(prj.name, selected=((prj.id in project_ids_version) or None), value=prj.id)
-                     for prj in sorted(all_projects, key=lambda item: item.name)],
-                    name="project")
-            ),
-            class_="field")
 
     def __new_project(self, req):
         all_projects = \
@@ -214,7 +224,7 @@ class SmpVersionModule(Component):
         version_name = version.name
         version.delete()
 
-        self.smp_version.delete(version_name)
+        self.smp_model.delete(version_name)
 
         add_notice(req, _('The version "%(name)s" has been deleted.',
                           name=version_name))
@@ -222,9 +232,8 @@ class SmpVersionModule(Component):
 
     def _do_save(self, req, version):
         version_name = req.args.get('name')
-        version_project = req.args.get('project')
-        old_version_project = \
-            self.__SmpModel.get_id_project_version(version.name)
+        version_project = req.args.get('sel')  # this is a single project id or a list of ids
+        old_version_project = self.smp_model.get_project_ids_for_version(version.name)  # this is a list
 
         if version.exists:
             req.perm.require('MILESTONE_MODIFY')
@@ -280,15 +289,16 @@ class SmpVersionModule(Component):
                 self.__SmpModel.rename_version_project(old_name, version.name)
 
             if not version_project:
-                self.smp_version.delete(version.name)
+                self.smp_model.delete(version.name)
             elif not old_version_project:
-                self.smp_version.add(version.name, version_project)
+                self.smp_model.add(version.name, version_project)
             else:
-                self.smp_version.update_project_id_for_version(version.name, version_project)
+                add_notice(req, "Old project id %s, new %s" % (old_version_project, version_project))
+                self.smp_model.add_after_delete(req.args.get('name'), version_project)
         else:
             version.insert()
             if version_project:
-                self.smp_version.add(version.name, version_project)
+                self.smp_model.add(version.name, version_project)
 
         add_notice(req, _('Your changes have been saved.'))
         req.redirect(req.href.version(version.name))
@@ -304,6 +314,10 @@ class SmpVersionModule(Component):
         return 'version_delete.html', data, None
 
     def _render_editor(self, req, version):
+        """Render the version edit page.
+        :param req: Request object
+        :param version: a Trac Version object
+        """
         # Suggest a default due time of 18:00 in the user's timezone
         default_time = datetime.now(req.tz).replace(hour=18, minute=0, second=0,
                                                     microsecond=0)
@@ -318,8 +332,8 @@ class SmpVersionModule(Component):
 
         if version.exists:
             req.perm.require('MILESTONE_MODIFY')
-            versions = [v for v in Version.select(self.env)
-                        if v.name != version.name and 'MILESTONE_VIEW' in req.perm]
+            # versions = [v for v in Version.select(self.env)
+            #             if v.name != version.name and 'MILESTONE_VIEW' in req.perm]
         else:
             req.perm.require('MILESTONE_CREATE')
 

@@ -55,7 +55,7 @@ def create_projects_table_j(self, req, input_type='checkbox',
     @param self: Component with 'self.smp_project = SmpProject(self.env)'
     @param req      : Trac request object
     @param input_type: either 'checkbox' or 'radio'. Allows single or multiple paroject selection
-    @param item_name: name of the milestone currently edited. This is set when called from the roadmap pages.
+    @param item_name: name of the milestone/version currently edited. This is set when called from the roadmap pages.
 
     @return DIV tag holding a project select control with label
     """

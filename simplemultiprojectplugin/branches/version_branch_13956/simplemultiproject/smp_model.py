@@ -66,7 +66,7 @@ class SmpBaseModel(object):
         """Update data sets for item 'name' and the list of projects
         id_projects.
 
-        @param name: the name of them item
+        @param name: the name of the item
         @param id_projects: single id of a project or list if ids
 
         Update is done by deleting the item from the SMP database and
@@ -83,12 +83,6 @@ class SmpBaseModel(object):
         return self.env.db_query("""
                 SELECT %s, id_project FROM smp_%s_project
                 """ % (resource_name, resource_name))
-
-    def _update(self, resource_name, name, id_projects):
-
-        self.env.db_transaction("""
-            UPDATE smp_%s_project SET id_project=%%s WHERE %s=%%s
-            """ % (resource_name, resource_name), (id_projects, name))
 
     def get_project_names_for_item(self, name):
         """Get a list of project names the item
@@ -374,10 +368,6 @@ class SmpVersion(SmpBaseModel):
         """
         # TODO: this shouldn't be called with the resource name
         return self._get_all_names_and_project_id_for_resource('version')
-
-    def update_project_id_for_version(self, version_name, id_project):
-        # TODO: this shouldn't be called with the resource name
-        self._update('version', version_name, id_project)
 
     def get_versions_for_project_id(self, id_project):
         """Get versions for the given project id.
