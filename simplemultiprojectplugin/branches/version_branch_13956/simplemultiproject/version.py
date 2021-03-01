@@ -2,19 +2,19 @@
 #
 # Copyright (C) 2012 Thomas Doering
 # Copyright (C) falkb
-# Copyright (C) Cinc
+# Copyright (C) 2021 Cinc
 #
 
 import re
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-# from genshi.filters.transform import Transformer
+from genshi.filters.transform import Transformer
 from pkg_resources import get_distribution, parse_version, resource_filename
 from trac.attachment import AttachmentModule
 from trac.config import ExtensionOption
 from trac.core import *
-from trac.ticket.model import Version, TicketSystem
+from trac.ticket.model import Version
 from trac.ticket.query import QueryModule
 from trac.ticket.roadmap import ITicketGroupStatsProvider, \
     apply_ticket_permissions, get_ticket_stats
@@ -87,6 +87,18 @@ class SmpVersionModule(Component):
     """Create Project dependent versions from the roadmap page."""
 
     implements(IRequestFilter, IRequestHandler, ITemplateStreamFilter)
+
+    stats_provider = ExtensionOption(
+        'roadmap', 'stats_provider',
+        ITicketGroupStatsProvider, 'DefaultTicketGroupStatsProvider',
+        """Name of the component implementing `ITicketGroupStatsProvider`,
+        which is used to collect statistics on groups of tickets for display
+        in the roadmap views.
+        """)
+
+    # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
+    # creation using trac.util.html.tag and friends
+    pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
 
     def __init__(self):
         self.__SmpModel = None  # SmpModel(self.env)
@@ -400,8 +412,10 @@ class SmpVersionModule(Component):
 
         add_stylesheet(req, 'common/css/roadmap.css')
         add_script(req, 'common/js/folding.js')
-        return 'version_view.html', data, None
-
+        if self.pre_1_3:
+            return 'version_view.html', data, None
+        else:
+            return 'version_view_jinja.html', data, {}
 
 class SmpVersionRoadmap(Component):
     """Add version information to the roadmap page."""
