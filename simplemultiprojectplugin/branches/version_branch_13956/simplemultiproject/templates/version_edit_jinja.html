@@ -18,8 +18,6 @@
         </title>
         # block head
         ${ super() }
-        <link rel="stylesheet" type="text/css"
-              href="${chrome.htdocs_location}css/roadmap.css" />
     <script type="text/javascript">/*<![CDATA[*/
       jQuery(document).ready(function($) {
         function updateDueDate() {
@@ -60,10 +58,12 @@
                         Due:<br />
                     </label>
                     <label>
-                        <input type="text" id="versiondate" name="time" size="${len(datetime_hint)}"
-                             value="${format_datetime(version.time)}"
-                             title="${_('Format: %(datehint)s', datehint=datetime_hint)}" />
-                        <em>Format: ${datetime_hint}</em>
+                        <input type="text" id="versiondate" name="time"
+                               class="trac-datetimepicker"
+                               size="${len(datetime_hint) + 1}"
+                               value="${format_datetime(version.time)}"
+                               title="${_('Format: %(datehint)s', datehint=datetime_hint)}" />
+                        <span class="trac-datetimehint">Format: ${datetime_hint}</span>
                     </label>
                 </div>
             </fieldset>
@@ -82,6 +82,10 @@
                 <input type="submit" name="save" value="${_('Save')}"/>
             </div>
         </form>
+        <div id="help"><strong>Note:</strong> See
+            <a href="${href.wiki('TracRoadmap')}">TracRoadmap</a> for help on using
+            the roadmap.
+        </div>
     </div>
     ${ super() }
     # endblock

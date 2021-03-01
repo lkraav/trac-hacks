@@ -25,7 +25,7 @@ from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestHandler, IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, \
-    add_warning, Chrome
+    add_warning, Chrome, INavigationContributor
 
 from simplemultiproject.admin_filter import SmpFilterDefaultVersionPanels
 from simplemultiproject.api import IRoadmapDataProvider
@@ -88,7 +88,7 @@ def writeResponse(req, data, httperror=200, content_type='text/plain'):
 class SmpVersionModule(Component):
     """Create Project dependent versions from the roadmap page."""
 
-    implements(IRequestFilter, IRequestHandler, ITemplateStreamFilter)
+    implements(INavigationContributor, IRequestFilter, IRequestHandler, ITemplateStreamFilter)
 
     stats_provider = ExtensionOption(
         'roadmap', 'stats_provider',
@@ -119,7 +119,16 @@ class SmpVersionModule(Component):
         self.smp_model = SmpVersion(self.env)
         self.smp_project = SmpProject(self.env)  # For project select on edit page
 
+    # INavigationContributor methods
+
+    def get_active_navigation_item(self, req):
+        return 'roadmap'
+
+    def get_navigation_items(self, req):
+        return []
+
     # IRequestHandler methods
+
     def match_request(self, req):
         match = re.match(r'/version(?:/(.+))?$', req.path_info)
         if match:
@@ -336,7 +345,11 @@ class SmpVersionModule(Component):
         else:
             req.perm.require('MILESTONE_CREATE')
 
-        Chrome(self.env).add_wiki_toolbars(req)
+        chrome = Chrome(self.env)
+        chrome.add_jquery_ui(req)
+        chrome.add_wiki_toolbars(req)
+
+        add_stylesheet(req, 'common/css/roadmap.css')
         if self.pre_1_3:
             return 'version_edit.html', data, None
         else:
