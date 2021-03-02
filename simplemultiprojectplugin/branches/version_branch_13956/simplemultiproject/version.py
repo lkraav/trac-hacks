@@ -87,7 +87,7 @@ def writeResponse(req, data, httperror=200, content_type='text/plain'):
 class SmpVersionModule(Component):
     """Create Project dependent versions from the roadmap page."""
 
-    implements(INavigationContributor, IRequestFilter, IRequestHandler, ITemplateStreamFilter)
+    implements(INavigationContributor, IRequestFilter, IRequestHandler, ITemplateProvider)
 
     stats_provider = ExtensionOption(
         'roadmap', 'stats_provider',
@@ -198,36 +198,7 @@ class SmpVersionModule(Component):
             add_script(req, 'simplemultiproject/js/jtransform.js')
         return template, data, content_type
 
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'version_edit.html':
-            filter_ = Transformer('//form[@id="edit"]/div[1]')
-            action = req.args.get('action', 'view')
-            if action == 'new':
-                return stream | filter_.before(self.__new_project(req))
-            # elif action == 'edit':
-            #     return stream | filter_.before(self.__edit_project(data, req))
-
-        return stream
-
     # Internal methods
-
-    def __new_project(self, req):
-        all_projects = \
-            self.__SmpModel.get_all_projects_filtered_by_conditions(req)
-
-        return tag.div(
-            tag.label(
-                'Project:',
-                tag.br(),
-                tag.select(
-                    tag.option(),
-                    [tag.option(row[1], value=row[0])
-                     for row in sorted(all_projects, key=itemgetter(1))],
-                    name="project")
-            ),
-            class_="field")
 
     def _do_delete(self, req, version):
         req.perm.require('MILESTONE_DELETE')
@@ -448,10 +419,19 @@ class SmpVersionModule(Component):
         else:
             return 'version_view_jinja.html', data, {}
 
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        return [resource_filename(__name__, 'templates')]
+
+    def get_htdocs_dirs(self):
+        return [('simplemultiproject', resource_filename(__name__, 'htdocs'))]
+
+
 class SmpVersionRoadmap(Component):
     """Add version information to the roadmap page."""
 
-    implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider, ITemplateProvider)
+    implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider, ITemplateProvider, ITemplateStreamFilter)
 
     stats_provider = ExtensionOption(
         'roadmap', 'stats_provider',
@@ -495,6 +475,10 @@ class SmpVersionRoadmap(Component):
                 if not get_filter_settings(req, 'roadmap', 'smp_group'):
                     add_script(req, 'simplemultiproject/js/add_version_roadmap.js')
 
+                # Add the "create new version" button
+                if 'MILESTONE_CREATE' in req.perm:
+                    add_script_data(req, {'smp_add_version': self.create_version_button(req)})
+                    add_script(req, 'simplemultiproject/js/smp_add_version_button.js')
         return template, data, content_type
 
     # IRequestHandler methods
@@ -512,9 +496,9 @@ class SmpVersionRoadmap(Component):
 
             chrome = Chrome(self.env)
             data = {'infodivclass': self.infodivclass,
-                    'smp_add_version_data': True}  # Mark for add_data()
+                    'smp_add_version_data': True,  # Mark for add_data()
+                    'smp_render': 'versions'}
             # Specify part of template to be rendered
-            data['smp_render'] = 'versions'
             data = chrome.populate_data(req, data)
             # Add version data
             self.add_data(req, data)
@@ -626,14 +610,14 @@ class SmpVersionRoadmap(Component):
 
     # ITemplateStreamFilter methods This is not used anymore
 
-    def _filter_stream(self, req, method, filename, stream, data):
+    def filter_stream(self, req, method, filename, stream, data):
         # TODO: this is still here as a reminder we have to include this feature later
-        if filename == 'roadmap.html____':
-            # Add button to create new versions
-            stream |= self._add_version_button(data)
+        if filename == 'roadmap.html__':
+            if not self.version_tmpl:
+                self._load_template()
             # Change label to include versions
             filter_ = Transformer('//label[@for="showcompleted"]')
-            stream |= filter_.replace(HTML(show_completed_label))
+            # TODO: stream |= filter_.replace(HTML(show_completed_label))
             # Add additional checkboxes to preferences
             data['smp_render'] = 'prefs'
             filter_ = Transformer('//form[@id="prefs"]')
@@ -641,10 +625,16 @@ class SmpVersionRoadmap(Component):
 
         return stream
 
-    def _add_version_button(self, data):
-        filter_ = Transformer('//div[@class="buttons"][2]')
-        template = MarkupTemplate(add_version_button).generate(**data)
-        return filter_.append(template)
+    def create_version_button(self, req):
+        add_version_button = u"""\
+        <form id="add-version" method="get" action="{action_url}">
+          <div>
+            <input type="hidden" name="action" value="new" />
+            <input type="submit" value="{label}" />
+          </div>
+        </form>
+        """
+        return add_version_button.format(label=_(u"Add new version"), action_url=req.href.version())
 
     # ITemplateProvider methods
 
@@ -695,13 +685,4 @@ class SmpVersionPageObserver(Component):
 
 show_completed_label = u"""\
 <label for="showcompleted">Show completed milestones and versions</label>
-"""
-
-add_version_button = u"""\
-<form id="add-version" method="get" action="${href.version()}">
-  <div>
-    <input type="hidden" name="action" value="new" />
-    <input type="submit" value="Add new version" />
-  </div>
-</form>
 """
