@@ -33,6 +33,7 @@ setup(
         'simplemultiproject.timeline = simplemultiproject.timeline',
         'simplemultiproject.permission = simplemultiproject.permission',
         'simplemultiproject.admin_project = simplemultiproject.admin_project',
+        'simplemultiproject.version = simplemultiproject.version'
     ]},
     test_suite='simplemultiproject.tests.test_suite'
 )
