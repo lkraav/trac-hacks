@@ -41,7 +41,7 @@ setup(
     license="3-Clause BSD",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests*']),
     include_package_data=True,
-    package_data={'ticketlog': ['*.txt', 'templates/*.*', 'htdocs/*.*',
+    package_data={'ticketlog': ['*.txt', 'htdocs/*.*',
                                 'tests/*.*', 'locale/*.*',
                                 'locale/*/LC_MESSAGES/*.*']},
     zip_safe=False,

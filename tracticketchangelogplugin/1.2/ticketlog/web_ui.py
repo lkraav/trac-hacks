@@ -10,7 +10,6 @@
 
 from pkg_resources import resource_filename
 
-from genshi.filters.transform import Transformer
 from trac.admin.api import IAdminCommandProvider
 from trac.config import IntOption
 from trac.core import implements
@@ -19,11 +18,12 @@ from trac.db.schema import Column, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import Resource
 from trac.versioncontrol.api import RepositoryManager
-from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
-                            web_context
+from trac.web.api import IRequestFilter
+from trac.web.chrome import (Chrome, ITemplateProvider, add_script,
+                             add_script_data, add_stylesheet, web_context)
 from trac.wiki.formatter import format_to_html, format_to_oneliner
 from trac.util.datefmt import format_datetime, from_utimestamp, user_time
+from trac.util.html import Markup, tag
 from trac.util.text import exception_to_unicode, shorten_line
 from trac.util.translation import domain_functions
 from tracopt.ticket.commit_updater import CommitTicketUpdater
@@ -34,7 +34,7 @@ gettext, _, tag_, N_, add_domain = \
 
 class TicketLogModule(CommitTicketUpdater):
     implements(IAdminCommandProvider, IEnvironmentSetupParticipant,
-               ITemplateProvider, ITemplateStreamFilter)
+               IRequestFilter, ITemplateProvider)
 
     max_message_length = IntOption('ticketlog', 'log_message_maxlength',
         doc="""Maximum length of log message to display.""")
@@ -134,21 +134,25 @@ class TicketLogModule(CommitTicketUpdater):
     def get_htdocs_dirs(self):
         return [('ticketlog', resource_filename(__name__, 'htdocs'))]
 
-    # ITemplateStreamFilter methods
+    # IRequestFilter methods
 
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'ticket.html' and \
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, metadata):
+        if template == 'ticket.html' and \
                 req.path_info.startswith('/ticket/'):
             ticket_id = req.args.getint('id')
             resource = Resource('ticket', ticket_id)
             if 'CHANGESET_VIEW' in req.perm(resource):
                 add_stylesheet(req, 'ticketlog/ticketlog.css')
+                add_script(req, 'ticketlog/ticketlog.js')
                 revisions = self._get_ticket_revisions(req, ticket_id)
-                template = Chrome(self.env) \
-                    .load_template('ticketlog.html', None) \
-                    .generate(revisions=revisions)
-                stream |= Transformer('//div[@id="ticket"]').after(template)
-        return stream
+                script_data = {
+                    'content': self._render_commit_history(revisions),
+                }
+                add_script_data(req, ticketlog=script_data)
+        return template, data, metadata
 
     # Internal methods
 
@@ -230,3 +234,24 @@ class TicketLogModule(CommitTicketUpdater):
         revisions.sort(key=lambda r: r['timestamp'], reverse=True)
 
         return revisions
+
+    def _render_commit_history(self, revisions):
+        header = tag.h3(_("Commit History"), ' ',
+                        tag.span('(%d)' % len(revisions), class_='trac-count'),
+                        class_='foldable')
+        if revisions:
+            thead = tag.thead(tag.tr(tag.th(_("Changeset"), class_='rev'),
+                                     tag.th(_("Author"), class_='author'),
+                                     tag.th(_("Time"), class_='time'),
+                                     tag.th(_("ChangeLog"), class_='summary')))
+            tbody = tag.tbody()
+            for entry in revisions:
+                tr = tag.tr(tag.td(entry['rev']), tag.td(entry['author']),
+                            tag.td(entry['time']), tag.td(entry['message']))
+                tbody.append(tr)
+            content = tag.table(thead, tbody, id='ticket_revisions',
+                                class_='listing')
+        else:
+            content = tag.div(tag.p(_("(No commits)"), class_='hint'))
+        return Markup(tag.div(header, content, id='ticket_log',
+                              class_='collapsed'))
