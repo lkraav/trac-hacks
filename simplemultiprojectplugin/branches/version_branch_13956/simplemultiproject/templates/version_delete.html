@@ -8,8 +8,6 @@
   <xi:include href="layout.html" />
   <head>
     <title>Delete Version ${version.name}</title>
-    <link rel="stylesheet" type="text/css"
-          href="${chrome.htdocs_location}css/roadmap.css" />
     <script type="text/javascript">
       jQuery(document).ready(function($) {
         $("#retarget").click(function(){ $("#target").enable(this.checked) });
@@ -18,17 +16,18 @@
   </head>
 
   <body>
-    <div id="content" class="version">
+    <div id="content" class="milestone">
       <h1>Delete Version ${version.name}</h1>
 
     <form id="edit" action="" method="post">
       <div>
         <input type="hidden" name="action" value="delete" />
         <p><strong>Are you sure you want to delete this version?</strong></p>
+        <p><strong>This is an irreversible operation.</strong></p>
       </div>
       <div class="buttons">
-        <input type="submit" name="cancel" value="${_('Cancel')}" />
         <input type="submit" value="${_('Delete version')}" />
+        <input type="submit" name="cancel" value="${_('Cancel')}" />
       </div>
     </form>
 

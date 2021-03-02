@@ -15,12 +15,11 @@ from trac.attachment import AttachmentModule
 from trac.config import BoolOption, ExtensionOption
 from trac.core import *
 from trac.ticket.model import Version
+from trac.perm import PermissionError
 from trac.ticket.query import QueryModule
-from trac.ticket.roadmap import ITicketGroupStatsProvider, \
-    apply_ticket_permissions, get_ticket_stats
+from trac.ticket.roadmap import ITicketGroupStatsProvider, apply_ticket_permissions, get_ticket_stats
 from trac.web.chrome import ITemplateProvider, web_context
-from trac.util.datefmt import get_datetime_format_hint, parse_date, \
-    user_time, utc
+from trac.util.datefmt import get_datetime_format_hint, parse_date, user_time, utc
 from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestHandler, IRequestFilter, ITemplateStreamFilter
@@ -173,16 +172,18 @@ class SmpVersionModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        self.log.info('###### This code is disabled right now')
-        if data and 'is_SMP_DISABLED' in data and \
+        # Prevent opening of restricted versions
+        if data and 'is_SMP' in data and \
                 req.path_info.startswith('/version'):  # #12371
             version = data['version']
             if version and type(version) is Version:
-                project_name = \
-                    self.__SmpModel.get_project_version(version.name)
-                if project_name and project_name[0]:
-                    self.__SmpModel.check_project_permission(req,
-                                                             project_name[0])
+                # This includes released projects
+                all_prjs = SmpPermissionPolicy.apply_user_permissions(Project.select(self.env), req.perm)
+                all_prjs = [p.id for p in all_prjs]
+                ver_prjs = self.smp_model.get_project_ids_for_version(version.name)
+
+                if ver_prjs and not (set(all_prjs) & set(ver_prjs)):
+                    raise PermissionError()
 
         if data and template in ('version_edit.html', 'version_edit_jinja.html'):
             input_type = 'radio' if self.single_project else "checkbox"
@@ -295,7 +296,8 @@ class SmpVersionModule(Component):
             version.update()
 
             if old_name != version.name:
-                self.__SmpModel.rename_version_project(old_name, version.name)
+                self.smp_model.delete(old_name)
+                self.smp_model.add(version.name, version_project)
 
             if not version_project:
                 self.smp_model.delete(version.name)
@@ -314,12 +316,14 @@ class SmpVersionModule(Component):
     def _render_confirm(self, req, version):
         req.perm.require('MILESTONE_DELETE')
 
-        version = [v for v in Version.select(self.env)
-                     if v.name != version.name and 'MILESTONE_VIEW' in req.perm]
         data = {
             'version': version
         }
-        return 'version_delete.html', data, None
+        add_stylesheet(req, 'common/css/roadmap.css')
+        if self.pre_1_3:
+            return 'version_delete.html', data, None
+        else:
+            return 'version_delete_jinja.html', data, {}
 
     def _render_editor(self, req, version):
         """Render the version edit page.
@@ -340,8 +344,6 @@ class SmpVersionModule(Component):
 
         if version.exists:
             req.perm.require('MILESTONE_MODIFY')
-            # versions = [v for v in Version.select(self.env)
-            #             if v.name != version.name and 'MILESTONE_VIEW' in req.perm]
         else:
             req.perm.require('MILESTONE_CREATE')
 
@@ -394,7 +396,7 @@ class SmpVersionModule(Component):
             'grouped_by': by,
             'groups': version_groups,
             'infodivclass': infodivclass,
-            'is_SMP': True
+            'is_SMP': True  # See #12371
         }
         data.update(any_stats_data(self.env, req, stat, 'version', version.name))
 

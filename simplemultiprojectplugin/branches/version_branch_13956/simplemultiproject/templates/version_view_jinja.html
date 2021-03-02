@@ -113,7 +113,7 @@
               </div>
             </form>
             # endif
-            # if 'MILESTONE_DELETE_disabled' in perm
+            # if 'MILESTONE_DELETE' in perm
             <form method="get" action="" id="deleteversion">
               <div>
                 <input type="hidden" name="action" value="delete" />
@@ -123,6 +123,10 @@
             #endif
         </div>
         # endif
+        <div class="trac-help"><strong>Note:</strong> See
+            <a href="${href.wiki('TracRoadmap')}">TracRoadmap</a> for help on using
+            the roadmap.
+        </div>
     </div>
     ${ super() }
     # endblock
