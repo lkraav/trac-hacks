@@ -186,10 +186,10 @@ class SmpVersionModule(Component):
         if data and template in ('version_edit.html', 'version_edit_jinja.html'):
             input_type = 'radio' if self.single_project else "checkbox"
             # Insert project selection control
-            # xpath: //form[@id="edit"]/div[1]
-            xform = JTransformer('form#edit > div:nth-of-type(1)')
+            # xpath: //form[@id="edit"]//div[@class="field"][1]
+            xform = JTransformer('form#edit div.field:nth-of-type(1)')
             version = data['version']
-            filter_list = [xform.before(create_projects_table_j(self, req,
+            filter_list = [xform.after(create_projects_table_j(self, req,
                                                                 input_type=input_type, item_name=version.name))]
             add_stylesheet(req, "simplemultiproject/css/simplemultiproject.css")
             add_script_data(req, {'smp_filter': filter_list})

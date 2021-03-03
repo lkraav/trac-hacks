@@ -29,11 +29,11 @@ jQuery(document).ready(function($) {
   };
 
   /* This is from the SmpRoadmapModule */
-  if(smp_filter !== undefined){
+  if(typeof smp_filter !== 'undefined'){
       apply_transform(smp_filter);
   };
   /* This is from the SmpVersionRoadmap */
-  if(smp_ver_filter !== undefined){
+  if(typeof smp_ver_filter !== 'undefined'){
       apply_transform(smp_ver_filter);
   };
 });

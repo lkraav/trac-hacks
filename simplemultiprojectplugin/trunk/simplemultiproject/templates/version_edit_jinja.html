@@ -41,16 +41,20 @@
 
         <form id="edit" action="" method="post">
             ${jmacros.form_token_input()}
-            <div class="field">
-                <input type="hidden" name="id" value="${version.name}" />
-                <input type="hidden" name="action" value="edit" />
-                <label>${_("Name of the version:")}<br />
-                    <input type="text" id="name" name="name" size="32"
-                           value="${version.name or req.args.get('name')}" />
-                </label>
-            </div>
             <fieldset>
-                <legend>${_("Schedule")}</legend>
+                # if version.exists
+                <legend>${_("Modify version")}</legend>
+                # else
+                <legend>${_("New version")}</legend>
+                # endif
+                <div class="field">
+                    <input type="hidden" name="id" value="${version.name}" />
+                    <input type="hidden" name="action" value="edit" />
+                    <label>${_("Name of the version:")}<br />
+                        <input type="text" class="trac-autofocus" id="name" name="name" size="32"
+                               value="${version.name or req.args.get('name')}" />
+                    </label>
+                </div>
                 <div class="field">
                     <label>
                         <input type="checkbox" id="due" name="due"
@@ -66,20 +70,19 @@
                         <span class="trac-datetimehint">Format: ${datetime_hint}</span>
                     </label>
                 </div>
-            </fieldset>
-            <div class="field">
-                <fieldset class="iefix">
+
+                <div class="field" style="margin-top: 1em">
                     <label for="description">
                       Description (you may use <a tabindex="42" href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here):
                     </label>
                     <p>
                       <textarea id="description" name="description" class="wikitext trac-resizable" rows="6" cols="60">${version.description}</textarea>
                     </p>
-                </fieldset>
-            </div>
+                </div>
+            </fieldset>
             <div class="buttons">
+                <input type="submit" name="save" value="${_('Submit changes')}"/>
                 <input type="submit" name="cancel" value="${_('Cancel')}"/>
-                <input type="submit" name="save" value="${_('Save')}"/>
             </div>
         </form>
         <div class="trac-help"><strong>Note:</strong> See
