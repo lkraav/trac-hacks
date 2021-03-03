@@ -9,7 +9,7 @@ import re
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from genshi.filters.transform import Transformer
+# from genshi.filters.transform import Transformer
 from pkg_resources import get_distribution, parse_version, resource_filename
 from trac.attachment import AttachmentModule
 from trac.config import BoolOption, ExtensionOption
@@ -22,7 +22,7 @@ from trac.web.chrome import ITemplateProvider, web_context
 from trac.util.datefmt import get_datetime_format_hint, parse_date, user_time, utc
 from trac.util.html import html as tag
 from trac.util.translation import _
-from trac.web.api import IRequestHandler, IRequestFilter, ITemplateStreamFilter
+from trac.web.api import IRequestHandler, IRequestFilter  # , ITemplateStreamFilter
 from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, \
     add_warning, Chrome, INavigationContributor
 
@@ -431,7 +431,7 @@ class SmpVersionModule(Component):
 class SmpVersionRoadmap(Component):
     """Add version information to the roadmap page."""
 
-    implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider, ITemplateProvider, ITemplateStreamFilter)
+    implements(IRequestFilter, IRequestHandler, IRoadmapDataProvider, ITemplateProvider)
 
     stats_provider = ExtensionOption(
         'roadmap', 'stats_provider',
@@ -610,7 +610,7 @@ class SmpVersionRoadmap(Component):
 
     # ITemplateStreamFilter methods This is not used anymore
 
-    def filter_stream(self, req, method, filename, stream, data):
+    def _filter_stream(self, req, method, filename, stream, data):
         # TODO: this is still here as a reminder we have to include this feature later
         if filename == 'roadmap.html__':
             if not self.version_tmpl:
