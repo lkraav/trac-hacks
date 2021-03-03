@@ -35,25 +35,4 @@
       </div>
     </div>
     </py:if>
-
-    <py:if test="smp_render == 'prefs'">
-        <div>
-              <input type="hidden" name="smp_update" id="smp_update_version" value="1" />
-              <input type="checkbox" id="hideversions" name="smp_hideversions" value="1"
-                     checked="${'versions' in hide or None}" />
-              <label for="hideversions">Hide versions</label>
-        </div>
-        <div>
-              <input type="checkbox" id="hidemilestones" name="smp_hidemilestones" value="1"
-                     checked="${'milestones' in hide or None}" />
-              <label for="hidemilestones">Hide milestones</label>
-        </div>
-        <div>
-              <input type="checkbox" id="hideprojectdescription" name="smp_hideprojdesc" value="1"
-                     checked="${'projectdescription' in hide or None}" />
-              <label for="hideprojectdescription">Hide project descriptions</label>
-        </div>
-        <br/>
-    </py:if>
-
 </div>

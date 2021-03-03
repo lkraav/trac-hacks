@@ -35,9 +35,14 @@ class JTransformer(object):
     def prepend(self, html):
         return {'pos': 'prepend', 'css': self.css, 'html': html}
 
+    def append(self, html):
+        return {'pos': 'append', 'css': self.css, 'html': html}
+
     def remove(self):
         return {'pos': 'remove', 'css': self.css, 'html': ''}
 
+    def replace(self, html):
+        return {'pos': 'replace', 'css': self.css, 'html': html}
 
 # Methods backported from Trac 1.2
 

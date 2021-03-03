@@ -14,6 +14,7 @@ from simplemultiproject.session import get_project_filter_settings, \
 from simplemultiproject.smp_model import SmpMilestone, SmpVersion
 from trac.config import OrderedExtensionsOption
 from trac.core import *
+from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome, ITemplateProvider
 
@@ -53,7 +54,26 @@ class SmpRoadmapModule(Component):
         if self.pre_1_3:
             self.group_tmpl = chrome.load_template("smp_roadmap.html", None)
         else:
-            self.group_tmpl = chrome.load_template("roadmap_jinja.html", False)
+            self.group_tmpl = chrome.load_template("smp_roadmap_jinja.html", False)
+
+    # Unused preference item
+    # if get_filter_settings(req, 'roadmap', 'smp_hideprojdesc'):
+    #     hide.append('projectdescription')
+    # prefs = """<div>
+    #               <input type="checkbox" id="hideprojectdescription" name="smp_hideprojdesc" value="1"
+    #                      {hideprjdescchk} />
+    #               <label for="hideprojectdescription">{hideprjdesclabel}</label>
+    #         </div>"""
+
+    def create_hide_milestone_item(self, req):
+        prefs = """
+        <div>
+              <input type="checkbox" id="hidemilestones" name="smp_hidemilestones" value="1"
+                     {hidemschk} />
+              <label for="hidemilestones">{hidemslabel}</label>
+        </div>"""
+        hidemschk = ' checked="checked"' if get_filter_settings(req, 'roadmap', 'smp_hidemilestones') else '',
+        return prefs.format(hidemslabel=_('Hide milestones'), hidemschk=hidemschk)
 
     # IRequestFilter methods
 
@@ -91,11 +111,9 @@ class SmpRoadmapModule(Component):
                                                  u'value="1"%s/>'
                                                  u'<label for="groupbyproject">Group by project</label></div><br />' %
                                                  chked))
-
-                # Change label to include versions
-                # xpath: //label[@for="showcompleted"]
-                # xform = JTransformer('label[for=showcompleted]')
-                # filter_list.append(xform.replace(u'<label for="showcompleted">Show completed milestones</label>'))
+                # Add preference checkbox
+                xform = JTransformer('#prefs div.buttons')
+                filter_list.append(xform.before(self.create_hide_milestone_item(req)))
 
                 if chked:
                     if not self.group_tmpl:
@@ -113,9 +131,6 @@ class SmpRoadmapModule(Component):
 
                 add_script_data(req, {'smp_filter': filter_list})
                 add_script(req, 'simplemultiproject/js/jtransform.js')
-
-                data.update({'show': req.args.get('show', [])  # TODO: is this used at all?
-                             })
 
         return template, data, content_type
 
@@ -159,8 +174,11 @@ class SmpRoadmapModule(Component):
 
     def filter_data(self, req, data):
 
-        filter_proj = get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')
+        if data and get_filter_settings(req, 'roadmap', 'smp_hidemilestones'):
+            data['milestones'] = []
+            data['milestone_stats'] = []
 
+        filter_proj = get_project_filter_settings(req, 'roadmap', 'smp_projects', 'All')
         if 'All' in filter_proj:
             return data
 
@@ -188,7 +206,7 @@ class SmpRoadmapModule(Component):
                         if name in filter_proj:
                             filtered_items.append(ms)
                             filtered_item_stats.append(item_stats[idx])
-                            break  # Only add a milstone once
+                            break  # Only add a milestone once
             data['milestones'] = filtered_items
             data['milestone_stats'] = filtered_item_stats
 

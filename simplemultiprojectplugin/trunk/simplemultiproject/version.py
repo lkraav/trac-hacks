@@ -9,7 +9,6 @@ import re
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-# from genshi.filters.transform import Transformer
 from pkg_resources import get_distribution, parse_version, resource_filename
 from trac.attachment import AttachmentModule
 from trac.config import BoolOption, ExtensionOption
@@ -20,9 +19,8 @@ from trac.ticket.query import QueryModule
 from trac.ticket.roadmap import ITicketGroupStatsProvider, apply_ticket_permissions, get_ticket_stats
 from trac.web.chrome import ITemplateProvider, web_context
 from trac.util.datefmt import get_datetime_format_hint, parse_date, user_time, utc
-from trac.util.html import html as tag
 from trac.util.translation import _
-from trac.web.api import IRequestHandler, IRequestFilter  # , ITemplateStreamFilter
+from trac.web.api import IRequestHandler, IRequestFilter
 from trac.web.chrome import add_notice, add_script, add_script_data, add_stylesheet, \
     add_warning, Chrome, INavigationContributor
 
@@ -31,7 +29,7 @@ from simplemultiproject.api import IRoadmapDataProvider
 from simplemultiproject.compat import JTransformer
 from simplemultiproject.milestone import create_projects_table_j
 from simplemultiproject.model import *
-from simplemultiproject.session import get_filter_settings
+from simplemultiproject.session import get_filter_settings, get_list_from_req_or_session
 from simplemultiproject.smp_model import SmpProject, SmpVersion
 from simplemultiproject.permission import SmpPermissionPolicy
 
@@ -448,8 +446,6 @@ class SmpVersionRoadmap(Component):
 
     def __init__(self):
         self.smp_version = SmpVersion(self.env)
-        #chrome = Chrome(self.env)
-        #self.version_tmpl = chrome.load_template("roadmap_versions.html", None)
         # CSS class for milestones and versions
         self.infodivclass = 'info trac-progress'
 
@@ -459,6 +455,21 @@ class SmpVersionRoadmap(Component):
             self.version_tmpl = chrome.load_template("roadmap_versions.html", None)
         else:
             self.version_tmpl = chrome.load_template("roadmap_versions_jinja.html", False)
+
+    def create_show_completed_label(self):
+        show_completed_label = u"""<label for="showcompleted">{label}</label>"""
+        return show_completed_label.format(label=_(u"Show completed milestones and versions"))
+
+    def create_hide_version_item(self, req):
+        prefs = """
+        <div>
+              <input type="hidden" name="smp_update" id="smp_update_version" value="1" />
+              <input type="checkbox" id="hideversions" name="smp_hideversions" value="1"
+                     {hideverchk} />
+              <label for="hideversions">{hideverlabel}</label>
+        </div>"""
+        hideverchk = ' checked="checked"' if get_filter_settings(req, 'roadmap', 'smp_hideversions') else '',
+        return prefs.format(hideverlabel=_('Hide versions'), hideverchk=hideverchk)
 
     # IRequestFilter methods
 
@@ -470,15 +481,31 @@ class SmpVersionRoadmap(Component):
         if data:
             path_elms = req.path_info.split('/')
             if len(path_elms) > 1 and path_elms[1] == 'roadmap':
-                # Add versions to page
+                # Add versions to page.
                 # Only when not grouped. When grouped the version information is added in SmpRoadmapModule
                 if not get_filter_settings(req, 'roadmap', 'smp_group'):
+                    # The query string holds the preference settings. We need this so the script
+                    # may get the correct data for display, e.g. completed versions
+                    add_script_data(req, {'smp_query_string': req.query_string})
                     add_script(req, 'simplemultiproject/js/add_version_roadmap.js')
 
                 # Add the "create new version" button
                 if 'MILESTONE_CREATE' in req.perm:
                     add_script_data(req, {'smp_add_version': self.create_version_button(req)})
                     add_script(req, 'simplemultiproject/js/smp_add_version_button.js')
+
+                filter_list = []
+                # Change label to include versions
+                # xpath: //label[@for="showcompleted"]
+                xform = JTransformer('label[for=showcompleted]')
+                filter_list.append(xform.replace(self.create_show_completed_label()))
+
+                # Add preference checkbox
+                xform = JTransformer('#prefs div.buttons')
+                filter_list.append(xform.before(self.create_hide_version_item(req)))
+
+                add_script_data(req, {'smp_ver_filter': filter_list})
+
         return template, data, content_type
 
     # IRequestHandler methods
@@ -538,13 +565,6 @@ class SmpVersionRoadmap(Component):
         hide = []
         if get_filter_settings(req, 'roadmap', 'smp_hideversions'):
             hide.append('versions')
-        if get_filter_settings(req, 'roadmap', 'smp_hidemilestones'):
-            hide.append('milestones')
-        if get_filter_settings(req, 'roadmap', 'smp_hideprojdesc'):
-            hide.append('projectdescription')
-
-        if data and hide:
-            data['hide'] = hide
 
         if data and (not hide or 'versions' not in hide):  # TODO: This clause must be revised
             projects = list(Project.select(self.env))  # select() is a generator
@@ -553,11 +573,6 @@ class SmpVersionRoadmap(Component):
             data['versions'] = versions
             data['version_stats'] = version_stats
             self.add_project_info_to_versions(data)
-
-        # TODO: is this the right place to do this?
-        if data and hide and 'milestones' in hide:
-            data['milestones'] = []
-            data['milestone_stats'] = []
 
         return data
 
@@ -585,7 +600,7 @@ class SmpVersionRoadmap(Component):
         filtered_versions = []
         stats = []
 
-        show = req.args.getlist('show')
+        show = get_list_from_req_or_session(req, 'roadmap', 'show', [])
 
         for version in sorted(versions, key=lambda v: self._version_time(v)):
             project_ids = self.smp_version.get_project_ids_for_version(version.name)
@@ -607,23 +622,6 @@ class SmpVersionRoadmap(Component):
                     stats.append(any_stats_data(self.env, req, stat,
                                                 'version', version.name))
         return filtered_versions, stats
-
-    # ITemplateStreamFilter methods This is not used anymore
-
-    def _filter_stream(self, req, method, filename, stream, data):
-        # TODO: this is still here as a reminder we have to include this feature later
-        if filename == 'roadmap.html__':
-            if not self.version_tmpl:
-                self._load_template()
-            # Change label to include versions
-            filter_ = Transformer('//label[@for="showcompleted"]')
-            # TODO: stream |= filter_.replace(HTML(show_completed_label))
-            # Add additional checkboxes to preferences
-            data['smp_render'] = 'prefs'
-            filter_ = Transformer('//form[@id="prefs"]')
-            stream |= filter_.prepend(self.version_tmpl.generate(**data))
-
-        return stream
 
     def create_version_button(self, req):
         add_version_button = u"""\
@@ -681,8 +679,3 @@ class SmpVersionPageObserver(Component):
 
     def post_process_request(self, req, template, data, content_type):
         return template, data, content_type
-
-
-show_completed_label = u"""\
-<label for="showcompleted">Show completed milestones and versions</label>
-"""
