@@ -27,10 +27,10 @@
         <form action="" method="POST">
             ${jmacros.form_token_input()}
             <fieldset>
-                <legend>Ticket Custom Field</legend>
+                <legend>${_("Ticket custom field")}</legend>
                 <div class="system-message warning">${_("Ticket custom field 'project' not configured. See installation instructions.")}</div>
-                <p>Do you want to create the ticket custom field now?</p>
-                <p class="help">Without the proper ticket custom field it's not possible to link tickets to projects.</p>
+                <p>${_("Do you want to create the ticket custom field now?")}</p>
+                <p class="help">${_("Without the proper ticket custom field it's not possible to link tickets to projects.")}</p>
                 # if 'PROJECT_ADMIN' in perm:
                 <div>
                     <div class="buttons">
@@ -48,7 +48,7 @@
         <form action="" method="POST">
             ${jmacros.form_token_input()}
             <fieldset>
-                <legend>Milestone Configuration</legend>
+                <legend>${_("Milestone configuration")}</legend>
                 <div class="field">
                     <label>
                         <input type="checkbox" name="cb-allow-no-prj-ms" value="allow_no_prj_ms"
@@ -70,7 +70,7 @@
                 # if 'PROJECT_ADMIN' in perm:
                 <div>
                     <div class="buttons">
-                        <input type="submit" name="save-ms" value="${_('Save')}"/>
+                        <input type="submit" name="save-ms" value="${_('Submit changes')}"/>
                     </div>
                 </div>
                 # endif
@@ -78,12 +78,12 @@
         </form>
     </div>
 
-    {# Versionss #}
+    {# Versions #}
     <div>
         <form action="" method="POST">
             ${jmacros.form_token_input()}
             <fieldset>
-                <legend>Version Configuration</legend>
+                <legend>${_("Version configuration")}</legend>
                 <div class="field">
                     <label>
                         <input type="checkbox" name="cb-allow-no-prj-ver" value="allow_no_prj_ver"
@@ -105,10 +105,37 @@
                 # if 'PROJECT_ADMIN' in perm:
                 <div>
                     <div class="buttons">
-                        <input type="submit" name="save-ver" value="${_('Save')}"/>
+                        <input type="submit" name="save-ver" value="${_('Submit changes')}"/>
                     </div>
                 </div>
                 # endif
+            </fieldset>
+        </form>
+    </div>
+
+    {# Permission policy #}
+    <div>
+        <form action="" method="POST">
+            ${jmacros.form_token_input()}
+            <fieldset>
+                <legend>${_("Permission policies")}</legend>
+                <div class="field">
+                    # if not permission_policy
+                    <div class="system-message warning">
+                        ${_("Permission policy 'SmpPermissionPolicy' is not installed.")}</div>
+                    # endif
+                    <p>${_("Specify the permission policies to be used.")}</p>
+                    <p class="help">${_("'SmpPermissionPolicy' checks user permissions for projects. Without installing it you still may link items to projects but no restrictions are enforced.")}</p>
+                    <p class="help">${_("Note that the order of policies is important here.")}</p>
+                    <input type="text" class="form-control trac-fullwidth" value="${permission_list}" name="permission-policies" />
+                    # if 'PROJECT_ADMIN' in perm:
+                    <div>
+                        <div class="buttons">
+                            <input type="submit" name="save-permission-policy" value="${_('Submit changes')}"/>
+                        </div>
+                    </div>
+                    # endif
+                </div>
             </fieldset>
         </form>
     </div>

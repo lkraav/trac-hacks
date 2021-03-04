@@ -62,11 +62,14 @@ class SmpProjectAdmin(Component):
         return self.config.get('ticket-custom', 'project', None)
 
     def render_basics_panel(self, req, cat, page, path_info):
+        policies = self.config.get('trac', 'permission_policies')
         data = {'custom_field': self.ticket_custom_field_exists(),
                 'allow_no_prj_ms': self.config.getbool('simple-multi-project', 'milestone_without_project', False),
                 'single_prj_ms': self.config.getbool('simple-multi-project', 'single_project_milestones', False),
                 'allow_no_prj_ver': self.config.getbool('simple-multi-project', 'version_without_project', False),
-                'single_prj_ver': self.config.getbool('simple-multi-project', 'single_project_versions', False)
+                'single_prj_ver': self.config.getbool('simple-multi-project', 'single_project_versions', False),
+                'permission_policy': 'SmpPermissionPolicy' in policies,
+                'permission_list': policies,
                 }
 
         # data.update({})
@@ -103,6 +106,11 @@ class SmpProjectAdmin(Component):
                     self.config.set('simple-multi-project', 'version_without_project', 'disabled')
                 self.config.save()
                 add_notice(req, "The configuration for versions was saved.")
+            elif req.args.get('save-permission-policy'):
+                pols = req.args.get('permission-policies')
+                self.config.set('trac', 'permission_policies', pols)
+                self.config.save()
+                add_notice(req, "The following permission policies were saved: %s", pols)
             req.redirect(req.href.admin(cat, page))
 
         if self.pre_1_3:

@@ -7,7 +7,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:py="http://genshi.edgewall.org/"
-      xmlns:i18n="http://genshi.edgewall.org/i18n" py:strip="">
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
   <xi:include href="admin.html" />
 <head>
     <title>${_("Basic Settings")}</title>
@@ -93,5 +93,27 @@
             </fieldset>
         </form>
     </div>
+    <!--! Permission policy -->
+    <div>
+        <form action="" method="POST">
+            <fieldset>
+                <legend>${_("Permission policies")}</legend>
+                <div class="field">
+                    <div py:if="not permission_policy" class="system-message warning">
+                        ${_("Permission policy 'SmpPermissionPolicy' is not installed.")}</div>
+                    <p>${_("Specify the permission policies to be used.")}</p>
+                    <p class="help">${_("'SmpPermissionPolicy' checks user permissions for projects. Without installing it you still may link items to projects but no restrictions are enforced.")}</p>
+                    <p class="help">${_("Note that the order of policies is important here.")}</p>
+                    <input type="text" class="form-control trac-fullwidth" value="${permission_list}" name="permission-policies" />
+                    <div py:if="'PROJECT_ADMIN' in perm">
+                        <div class="buttons">
+                            <input type="submit" name="save-permission-policy" value="${_('Submit changes')}"/>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
 </body>
 </html>
