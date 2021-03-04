@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2020 Cinc
+# Copyright (C) 2020-2021 Cinc
 #
 # License: 3-clause BSD
 #
@@ -17,6 +17,10 @@ from trac.util.translation import _
 from trac.web.chrome import add_notice, add_script, add_warning, Chrome, ITemplateProvider
 
 class SmpProjectAdmin(Component):
+    """Manage projects and configure global settings.
+
+
+    """
 
     implements(IAdminPanelProvider, IResourceManager, ITemplateProvider)
 

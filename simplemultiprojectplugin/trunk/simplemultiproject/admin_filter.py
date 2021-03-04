@@ -24,7 +24,7 @@ from simplemultiproject.smp_model import SmpComponent, SmpProject, \
 
 
 class SmpFilterBase(Component):
-    """Must be activated when SmpFilterDefaultMilestonePanels or SmpFilterDefaultVersionPanels are used."""
+    """Must be activated when any of the admin filter components is used."""
 
     implements(ITemplateProvider)
 
@@ -167,23 +167,27 @@ class SmpFilterDefaultMilestonePanels(SmpFilterBase):
     """Modify default Trac admin panels for milestones to include
     project selection.
 
-    Using this component you may associate a milestone with one or more
+    With this component you may associate a milestone with one or more
     projects using the default Trac admin panels.
 
+    ''Note: Make sure to also enable the component **!SmpMilestoneProject**.''
+    === Configuration
     Creation of milestones is only possible when a project is chosen.
-    You may disable this behaviour by setting the following in ''trac.ini'':
+    You may change this behaviour by setting the following in ''trac.ini'':
 
-    {{{
+    {{{#!ini
     [simple-multi-project]
     milestone_without_project = True
     }}}
 
     To ensure only a single project is associated with each milestone
     set the following in ''trac.ini'':
-    {{{
+    {{{#!ini
     [simple-multi-project]
     single_project_milestones = True
     }}}
+
+    There is also a configuration panel available for this. Go to **Manage Projects** / [[/admin/smproject/basics|Basic Settings]].
     """
 
     allow_no_project = BoolOption(
@@ -262,21 +266,27 @@ class SmpFilterDefaultMilestonePanels(SmpFilterBase):
 class SmpFilterDefaultVersionPanels(SmpFilterBase):
     """Modify default Trac admin panels for versions to include project selection.
 
+    With this component you may link a version with one or more
+    projects using the default Trac admin panels.
+
+    === Configuration
     Creation of versions is only possible when a project is chosen.
     You may disable this behaviour by setting the
     following in ''trac.ini'':
 
-    {{{
+    {{{#!ini
     [simple-multi-project]
     version_without_project = True
     }}}
 
     To ensure only a single project is associated with each version set
     the following in ''trac.ini'':
-    {{{
+    {{{#!ini
     [simple-multi-project]
     single_project_versions = True
     }}}
+
+    There is also a configuration panel available for this. Go to **Manage Projects** / [[/admin/smproject/basics|Basic Settings]].
     """
 
     implements(IRequestFilter)

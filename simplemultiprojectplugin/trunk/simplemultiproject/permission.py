@@ -80,7 +80,51 @@ def get_user_versions(req, smp_version, version_iterator):
 
 
 class SmpPermissionPolicy(TracComponent):
-    """Implements the permission system for SimpleMultipleProject."""
+    """Implements the permission system for SimpleMultipleProject.
+
+    This permission policy checks user permissions for projects.
+
+    Without enabling it you still may link items to projects but no restrictions are enforced. This means
+    filtering of milestones/tickets/versions/components by project is working but each user may see
+    every project. In addition you may not longer give granular access to the project admin panels.
+    A user with {{{TRAC_ADMIN}}} privileges has still access.
+    === Description
+    The following permissions are available to control access to the ''Manage Projects'' admin pages.
+    * {{{PROJECT_SETTINGS_VIEW}}}
+    * {{{PROJECT_ADMIN}}}
+
+    You may mark a project as restricted on the project admin page which has the following effects.
+
+    * Tickets linked with a restricted project can't be accessed by users without permissions.
+
+    This works for individual ticket pages, ticket queries, the timeline page and everywhere else a ticket is shown.
+    * Milestones belonging to restricted projects can't be accessed without permissions.
+
+    This affects ticket queries, the roadmap and timeline pages and individual ticket pages.
+    * Components and versions of restricted projects are not available for queries or when creating/modifying ticket pages.
+
+    Projects without restrictions and their linked resources can be accessed by any user.
+    Normal Trac permission settings apply.
+
+    Project permissions are assigned using the Trac permission admin panel. Each project has a unique ID
+    which is not changing over the lifetime of  a project, even if you change the project name.[[BR]]
+    To give a user access to a project you have to give the permission {{{PROJECT_<id>_MEMBER}}} where
+    ''<id>'' is the unique project id. For finer control over individual resources the normal Trac permissions
+    are available.
+
+    This means the project permission is a coarse filter to only prevent global project resources access.
+    You can't have individual fine grained resource access for different projects because normal Trac
+    permissions are defined for all projects. Use TracFineGrainedPermissions if you need such control.
+
+    === Configuration
+    Add this component to the front of your list of permission policies:
+    {{{#!ini
+    [trac]
+    permission_policies = SmpPermissionPolicy, ... any other ...
+    }}}
+    ''Note: order is important here.''
+
+    """
     implements(IRequestFilter, IPermissionPolicy, IPermissionRequestor)
 
     def __init__(self):

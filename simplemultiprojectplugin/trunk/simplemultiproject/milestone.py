@@ -128,7 +128,10 @@ def create_cur_projects_table(smp_model, name):
 
 
 class SmpMilestoneProject(Component):
-    """Connect milestones to projects from the roadmap page."""
+    """Connect milestones to projects from the roadmap page.
+
+    ''Note: Make sure to also enable the component **!SmpFilterDefaultMilestonePanels**.''
+    """
 
     implements(IRequestFilter, IMilestoneChangeListener, ITemplateProvider)
 
