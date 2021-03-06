@@ -1,8 +1,11 @@
 from setuptools import setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
     name='TracSimpleMultiProject',
-    version='0.7.3',
+    version='0.7.4',
     packages=['simplemultiproject'],
     package_data={
         'simplemultiproject': [
@@ -20,7 +23,7 @@ setup(
     url='https://trac-hacks.org/wiki/SimpleMultiProjectPlugin',
     description='Simple Multi Project plugin for managing several projects '
                 'with one Trac instance.',
-    long_description='Simple Multi Project',
+    long_description=long_description,
     keywords='Simple Multi Project',
     classifiers=['Framework :: Trac'],
     entry_points={'trac.plugins': [
