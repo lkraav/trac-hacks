@@ -219,12 +219,6 @@ class SmpProject(SmpBaseModel):
         if type(prj_id) is not list:
             prj_id = [prj_id]
 
-        with self.env.db_transaction as db:
-            for prj in prj_id:
-                for res in ('component', 'milestone', 'version'):
-                    db("""DELETE FROM smp_%s_project WHERE id_project=%%s""" % res, (prj,))
-                db("""DELETE FROM smp_project WHERE id_project=%s""", (prj,))
-
         # remove permission from user
         permsys = PermissionSystem(self.env)
         for project_id in prj_id:
@@ -232,6 +226,12 @@ class SmpProject(SmpBaseModel):
             users = permsys.get_users_with_permission(permission)
             for user in users:
                 permsys.revoke_permission(user, permission)
+
+        with self.env.db_transaction as db:
+            for prj in prj_id:
+                for res in ('component', 'milestone', 'version'):
+                    db("""DELETE FROM smp_%s_project WHERE id_project=%%s""" % res, (prj,))
+                db("""DELETE FROM smp_project WHERE id_project=%s""", (prj,))
 
         # keep internal ticket custom field data up to date
         self.get_all_projects()

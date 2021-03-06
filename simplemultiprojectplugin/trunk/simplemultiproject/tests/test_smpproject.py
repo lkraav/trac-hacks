@@ -6,6 +6,7 @@
 #
 import unittest
 from collections import defaultdict
+from pkg_resources import get_distribution, parse_version
 from trac.admin.console import TracAdmin
 from trac.perm import PermissionSystem
 from trac.test import EnvironmentStub
@@ -142,6 +143,18 @@ class TestSmpProjectDelete(unittest.TestCase):
             self.assertEqual(ver[0], "ver 3")
 
     def _prepare_permissions(self):
+        def _get_known_users(cnx=None):
+            """Taken from Trac 1.2.x """
+            return self.env.db_query("""
+                    SELECT DISTINCT s.sid, n.value, e.value
+                    FROM session AS s
+                     LEFT JOIN session_attribute AS n ON (n.sid=s.sid
+                      AND n.authenticated=1 AND n.name = 'name')
+                     LEFT JOIN session_attribute AS e ON (e.sid=s.sid
+                      AND e.authenticated=1 AND e.name = 'email')
+                    WHERE s.authenticated=1 ORDER BY s.sid
+            """)
+
         permsys = PermissionSystem(self.env)
         projects = self.prjmodel.get_all_projects()
 
@@ -173,6 +186,15 @@ class TestSmpProjectDelete(unittest.TestCase):
         admin.env_set(self.env.path, self.env)
         for user in (u'Foo', u'Bar', u'Baz', u'FooBar', u"FooBaz"):
             admin.onecmd("session add %s" % user)
+
+        if parse_version(get_distribution("Trac").version) < parse_version('1.1'):
+            # See #13923
+            # With Trac 1.2 stub method get_know_users() is gone from EnvironmentStub. This method returned
+            # the empty (default) instance variable 'known_users'. This test code uses somewhere deep down the
+            # user information thus failing when not finding any users. With Trac 1.2 the users are queried by the
+            # real Environment object from the database.
+            # Here the known users are added for Trac 1.0.
+            self.env.known_users = list(_get_known_users())
 
     def test_delete_multiple_projects_permissions(self):
         """Test if permission are removed from system and user after deletion of projects.
