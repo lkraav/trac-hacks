@@ -1,0 +1,50 @@
+{#
+# Copyright (C) falkb
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block title
+            ${_("Delete Version")} ${version.name}
+            ${ super() }
+            # endblock title
+        </title>
+        # block head
+        ${ super() }
+        # endblock
+    </head>
+    <body>
+    # block content
+    <div id="content" class="milestone">
+        <h1>${_("Delete Version")} ${version.name}</h1>
+
+        <form id="edit" action="" method="post">
+            ${jmacros.form_token_input()}
+            <div>
+                <input type="hidden" name="action" value="delete" />
+                <p><strong>Are you sure you want to delete this version?</strong></p>
+                <p><strong>This is an irreversible operation.</strong></p>
+            </div>
+            <div class="buttons">
+                <input type="submit" value="${_('Delete version')}" />
+                <input type="submit" name="cancel" value="${_('Cancel')}" />
+            </div>
+        </form>
+
+        <div class="trac-help"><strong>Note:</strong> See
+            <a href="${href.wiki('TracRoadmap')}">TracRoadmap</a> for help on using
+            the roadmap.
+        </div>
+
+    </div>
+    ${ super() }
+    # endblock
+    </body>
+</html>

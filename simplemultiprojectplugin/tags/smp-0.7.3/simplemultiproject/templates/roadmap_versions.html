@@ -1,0 +1,38 @@
+<div xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      class="${'milestones' if smp_render =='versions' else None}">
+
+    <!--! Versions -->
+
+    <py:if test="smp_render == 'versions'">
+        <hr py:if="versions and milestones"  />
+    <div py:for="idx, version in enumerate(versions)" class="milestone">
+      <div class="${infodivclass}" py:with="mstats = version_stats[idx]">
+        <h2><a href="${href.version(version.name)}">
+          Version: <em>${version.name}</em>
+        </a></h2>
+        <py:choose>
+          <p py:if="version.completed" class="date">
+            <i18n:msg params="duration, date">
+              Completed ${dateinfo(version.completed)} ago (${format_datetime(version.completed)})
+            </i18n:msg>
+          </p>
+          <p py:when="version.due" class="date">
+            <i18n:msg params="duration, date">
+              Due in ${dateinfo(version.due)} (${format_datetime(version.due)})
+            </i18n:msg>
+          </p>
+          <p py:otherwise="" class="date">
+            No date set
+          </p>
+        </py:choose>
+      </div>
+
+      <div class="description" xml:space="preserve">
+        ${wiki_to_html(context, version.description)}
+      </div>
+    </div>
+    </py:if>
+</div>
