@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2020 Cinc
+# Copyright (C) 2020-2021 Cinc
 #
 # License: 3-clause BSD
 #
 import unittest
+from itertools import groupby
 
 from trac.db.api import DatabaseManager
 from trac.db.schema import Column, Table
@@ -263,6 +264,14 @@ class TestEnvironmentUpgradeMigrateRestrictions(unittest.TestCase):
 
     def test_migrate_restrictions_user_names(self):
         """Test if usernames are without trailing or leading spaces."""
+        def _get_users_dict(perm_sys):
+            """ This is taken from perm.py (Trac 1.2.6)"""
+            perms = sorted((p for p in perm_sys.get_all_permissions()
+                            if p[1].isupper()), key=lambda p: p[0])
+
+            return dict((k, sorted(i[1] for i in list(g)))
+                        for k, g in groupby(perms, key=lambda p: p[0]))
+
         # upgrade to v7
         with self.env.db_transaction as db:
             smpEnvironmentSetupParticipant(self.env).upgrade_environment(db)
@@ -270,7 +279,7 @@ class TestEnvironmentUpgradeMigrateRestrictions(unittest.TestCase):
         permsys = PermissionSystem(self.env)
         names = sorted([u'Foo', u'Bar', u'Baz', u'anonymous', u'authenticated'])
 
-        known_users = sorted(permsys.get_users_dict())
+        known_users = sorted(_get_users_dict(permsys))
         self.assertEqual(5, len(known_users))  # there is always anonymour and authenticated
         self.assertListEqual(names, known_users)
 
