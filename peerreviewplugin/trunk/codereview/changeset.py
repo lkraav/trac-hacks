@@ -9,7 +9,7 @@ from codereview.repobrowser import get_node_from_repo
 from genshi.template import MarkupTemplate
 from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
-from trac.util.text import _
+from trac.util.translation import _
 from trac.versioncontrol.api import RepositoryManager
 from trac.web.chrome import Chrome
 from trac.web.api import IRequestFilter, IRequestHandler

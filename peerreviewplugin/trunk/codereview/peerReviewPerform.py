@@ -26,7 +26,7 @@ from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.resource import ResourceNotFound
 from trac.util import format_date
 from trac.util.html import html as tag
-from trac.util.text import _
+from trac.util.translation import _
 from trac.web.chrome import add_ctxtnav, INavigationContributor, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_script, web_context
 from trac.web.main import IRequestHandler
